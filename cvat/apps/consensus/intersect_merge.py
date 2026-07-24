@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import itertools
 from abc import ABCMeta, abstractmethod
-from collections.abc import Collection, Iterable, Sequence
+from collections.abc import Collection, Hashable, Iterable, Sequence
 from typing import ClassVar, TypeAlias
 
 import attrs
@@ -16,11 +16,8 @@ from datumaro.util import filter_dict
 from datumaro.util.annotation_util import mean_bbox
 from datumaro.util.attrs_util import ensure_cls
 
-from cvat.apps.quality_control.quality_reports import (
-    ComparisonParameters,
-    DistanceComparator,
-    segment_iou,
-)
+from cvat.apps.quality_control.annotation_matching import DistanceComparator, segment_iou
+from cvat.apps.quality_control.comparison_report import ComparisonParameters
 
 
 @attrs.define(kw_only=True, slots=False)
@@ -50,7 +47,22 @@ class IntersectMerge(datumaro.components.merge.intersect_merge.IntersectMerge):
         return dm.Dataset(super().__call__(*datasets))
 
     def _find_cluster_attrs(self, cluster, ann):
-        merged_attributes = super()._find_cluster_attrs(cluster, ann)
+        ignored_attributes = set(self.conf.ignored_attributes)
+        original_attributes = [s.attributes for s in cluster]
+
+        try:
+            for s in cluster:
+                s.attributes = {
+                    name: value
+                    for name, value in s.attributes.items()
+                    if name not in ignored_attributes and isinstance(value, Hashable)
+                }
+
+            merged_attributes = super()._find_cluster_attrs(cluster, ann)
+        finally:
+            for s, attributes in zip(cluster, original_attributes):
+                s.attributes = attributes
+
         merged_attributes["source"] = "consensus"
         return merged_attributes
 

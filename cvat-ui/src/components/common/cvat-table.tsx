@@ -23,11 +23,19 @@ type Props = TableProps & {
     onFilterDataSource?(data: TableProps['dataSource']): void;
     onChangeColumnVisibility?(id: number, isHidden: boolean): void;
     renderExtraActions?(): JSX.Element;
+    renderHeaderActions?(): JSX.Element;
+    columnVisibility?: {
+        groups?: Record<string, {
+            maxVisible?: number;
+            hint?: string;
+        }>;
+    };
     queryBuilder?: {
         config: Partial<Config>;
         memoryKey: string;
         memoryCapacity?: number;
         predefinedQueries?: Record<string, string>;
+        value?: string | null;
     }
     csvExport?: {
         filename: string;
@@ -35,6 +43,8 @@ type Props = TableProps & {
     tableTitle?: string | React.ReactNode;
     searchDataIndex?: (string | string[])[];
 };
+
+type CVATColumn = NonNullable<TableProps['columns']>[0] & { visibilityGroup?: string };
 
 function stringifyDataIndex(dataIndex: string | string[]): string {
     return [dataIndex].flat(Number.MAX_SAFE_INTEGER).join('.');
@@ -66,12 +76,14 @@ function CVATTable(props: Props): JSX.Element {
         onChangeColumnVisibility,
         onFilterDataSource,
         renderExtraActions,
+        renderHeaderActions,
         queryBuilder,
         searchDataIndex,
         tableTitle,
         dataSource,
         csvExport,
         columns,
+        columnVisibility,
         ...rest
     } = props;
 
@@ -79,6 +91,7 @@ function CVATTable(props: Props): JSX.Element {
     const [filterValue, setFilterValue] = useState<string | null>(null);
     const [searchPhrase, setSearchPhrase] = useState<string | null>(null);
     const [visibility, setVisibility] = useState(defaultVisibility);
+    const [columnSearchPhrase, setColumnSearchPhrase] = useState('');
     const [filteredDataSource, setFilteredDataSource] = useState<typeof dataSource>(dataSource);
     const [modifiedColumns, setModifiedColumns] = useState<NonNullable<typeof columns>>([]);
 
@@ -191,7 +204,7 @@ function CVATTable(props: Props): JSX.Element {
                         <div>
                             { FilteringComponent !== null && (
                                 <FilteringComponent
-                                    value={null}
+                                    value={queryBuilder.value ?? null}
                                     predefinedVisible={visibility.predefined}
                                     builderVisible={visibility.builder}
                                     recentVisible={visibility.recent}
@@ -216,33 +229,76 @@ function CVATTable(props: Props): JSX.Element {
                             placement='right'
                             trigger={['click']}
                             content={() => {
-                                const items = modifiedColumns.map((column, idx: number) => (
-                                    <Checkbox
-                                        key={idx}
-                                        onChange={(e: CheckboxChangeEvent) => {
-                                            const newIsHidden = !e.target.checked;
-                                            setModifiedColumns([
-                                                ...modifiedColumns.slice(0, idx),
-                                                {
-                                                    ...column,
-                                                    hidden: newIsHidden,
-                                                },
-                                                ...modifiedColumns.slice(idx + 1),
-                                            ]);
+                                const groups = columnVisibility?.groups ?? {};
+                                const groupHints = Object.entries(groups).map(([group, params]) => {
+                                    if (params.maxVisible == null) {
+                                        return null;
+                                    }
 
-                                            if (onChangeColumnVisibility) {
-                                                onChangeColumnVisibility(idx, newIsHidden);
-                                            }
-                                        }}
-                                        checked={!(column.hidden ?? false)}
-                                    >
-                                        {typeof column.title === 'function' ?
-                                            column.title({}) : (column.title ?? '')}
-                                    </Checkbox>
-                                ));
+                                    const visibleCount = modifiedColumns.filter((column) => {
+                                        const columnGroup = (column as CVATColumn).visibilityGroup;
+                                        return columnGroup === group && !(column.hidden ?? false);
+                                    }).length;
+
+                                    return (
+                                        <Text key={group} type='secondary'>
+                                            {params.hint ?? `You can select up to ${params.maxVisible} columns`}
+                                            {` (${visibleCount} of ${params.maxVisible})`}
+                                        </Text>
+                                    );
+                                }).filter((item): item is JSX.Element => item !== null);
+
+                                const items = modifiedColumns.map((column, idx: number) => {
+                                    const title = typeof column.title === 'string' ? column.title : '';
+                                    if (columnSearchPhrase &&
+                                        !title.toLowerCase().includes(columnSearchPhrase.toLowerCase())) {
+                                        return null;
+                                    }
+
+                                    const columnGroup = (column as CVATColumn).visibilityGroup;
+                                    const maxVisible = columnGroup ? groups[columnGroup]?.maxVisible : undefined;
+                                    const visibleCount = columnGroup ? modifiedColumns.filter((modifiedColumn) => {
+                                        const modifiedColumnGroup = (modifiedColumn as CVATColumn).visibilityGroup;
+                                        return modifiedColumnGroup === columnGroup && !(modifiedColumn.hidden ?? false);
+                                    }).length : 0;
+                                    const checked = !(column.hidden ?? false);
+                                    const disabled = !checked && maxVisible != null && visibleCount >= maxVisible;
+
+                                    return (
+                                        <Checkbox
+                                            key={idx}
+                                            disabled={disabled}
+                                            onChange={(e: CheckboxChangeEvent) => {
+                                                const newIsHidden = !e.target.checked;
+                                                setModifiedColumns([
+                                                    ...modifiedColumns.slice(0, idx),
+                                                    {
+                                                        ...column,
+                                                        hidden: newIsHidden,
+                                                    },
+                                                    ...modifiedColumns.slice(idx + 1),
+                                                ]);
+
+                                                if (onChangeColumnVisibility) {
+                                                    onChangeColumnVisibility(idx, newIsHidden);
+                                                }
+                                            }}
+                                            checked={checked}
+                                        >
+                                            {title}
+                                        </Checkbox>
+                                    );
+                                });
 
                                 return (
                                     <div className='cvat-table-columns-settings-menu'>
+                                        <Input.Search
+                                            size='small'
+                                            placeholder='Search'
+                                            onChange={(event) => setColumnSearchPhrase(event.target.value)}
+                                            value={columnSearchPhrase}
+                                        />
+                                        {groupHints}
                                         {items}
                                     </div>
                                 );
@@ -250,6 +306,7 @@ function CVATTable(props: Props): JSX.Element {
                         >
                             <MoreOutlined />
                         </Popover>
+                        { !!renderHeaderActions && renderHeaderActions() }
                     </Space>
                 </Col>
             </Row>

@@ -17,16 +17,18 @@ import {
 } from 'cvat-core/src/labels';
 import {
     SerializedAttribute, SerializedLabel, SerializedAPISchema,
-    OrganizationMembersFilter, AnalyticsEventsFilter, SerializedApiToken,
-    ApiTokensFilter, SerializedInterval,
+    SerializedApiToken, SerializedInterval,
 } from 'cvat-core/src/server-response-types';
-import { ApiTokenModifiableFields } from 'cvat-core/src/server-request-types';
+import {
+    OrganizationMembersFilter, AnalyticsEventsFilter, ApiTokensFilter, ApiTokenModifiableFields,
+} from 'cvat-core/src/server-request-types';
 import { UpdateStatusData } from 'cvat-core/src/core-types';
 import { Job, Task } from 'cvat-core/src/session';
 import Project from 'cvat-core/src/project';
-import QualityReport, { QualitySummary } from 'cvat-core/src/quality-report';
-import QualityConflict, { AnnotationConflict, ConflictSeverity } from 'cvat-core/src/quality-conflict';
-import QualitySettings, { TargetMetric, QualitySettingsSaveFields } from 'cvat-core/src/quality-settings';
+import {
+    AnnotationConflict, ConflictSeverity, QualityConflict, QualityReport, QualityRequirement,
+    QualityRequirementSaveFields, QualitySettings, QualitySettingsSaveFields, QualitySummary,
+} from 'cvat-core/src/quality';
 import ConsensusSettings from 'cvat-core/src/consensus-settings';
 import ApiToken from 'cvat-core/src/api-token';
 import { FramesMetaData, FrameData } from 'cvat-core/src/frames';
@@ -116,9 +118,9 @@ export {
     QualityReport,
     QualityConflict,
     QualitySettings,
+    QualityRequirement,
     ConsensusSettings,
     ApiToken,
-    TargetMetric,
     AnnotationConflict,
     ConflictSeverity,
     FramesMetaData,
@@ -151,6 +153,7 @@ export type {
     UpdateStatusData,
     OrganizationMembersFilter,
     QualitySettingsSaveFields,
+    QualityRequirementSaveFields,
     AnalyticsEventsFilter,
     MinimalShape,
     InteractorResults,

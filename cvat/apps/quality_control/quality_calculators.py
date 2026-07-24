@@ -1,0 +1,697 @@
+# Copyright (C) CVAT.ai Corporation
+#
+# SPDX-License-Identifier: MIT
+
+from __future__ import annotations
+
+import itertools
+from collections import Counter
+from contextlib import suppress
+from copy import deepcopy
+
+from django.db import transaction
+from django.db.models import OuterRef, Subquery, prefetch_related_objects
+
+from cvat.apps.engine.filters import JsonLogicFilter
+from cvat.apps.engine.media_io.frame_provider import TaskFrameProvider
+from cvat.apps.engine.models import (
+    Image,
+    Job,
+    JobType,
+    Project,
+    Task,
+    ValidationMode,
+)
+from cvat.apps.engine.utils import take_by
+from cvat.apps.quality_control import models
+from cvat.apps.quality_control.comparison_report import (
+    AnnotationConflict,
+    ComparisonParameters,
+    ComparisonReport,
+    ComparisonReportAnnotationsSummary,
+    ComparisonReportFrameComparisonSummary,
+    ComparisonReportFrameSummary,
+    ComparisonReportJobStats,
+    ComparisonReportParameters,
+    ComparisonReportRequirementSummary,
+    ComparisonReportSummary,
+    ComparisonReportTaskStats,
+    deduplicate_annotation_conflicts,
+)
+from cvat.apps.quality_control.quality_handlers import (
+    DatasetQualityEstimator,
+    build_requirement_comparison_summary,
+    build_requirement_report,
+    build_requirements_summary,
+    merge_frame_summaries,
+    resolve_effective_requirements,
+)
+from cvat.apps.quality_control.quality_reports import JobDataProvider, QualitySettingsManager
+from cvat.utils import django_database as db_utils
+
+_DEFAULT_FETCH_CHUNK_SIZE = 1000
+
+
+def _all_enabled_requirements_completed(summary: ComparisonReportSummary) -> bool:
+    requirements = summary.requirements
+    return bool(
+        summary.validation_frames
+        and requirements
+        and requirements.enabled
+        and requirements.completed == requirements.enabled
+    )
+
+
+class TaskQualityCalculator:
+    # JSON filter lookups
+    JOB_FILTER_LOOKUPS = {
+        "id": "id",
+        "type": "type",
+        "state": "state",
+        "stage": "stage",
+        "assignee": "assignee__username",
+        "task_id": "segment__task__id",
+        "task_name": "segment__task__name",
+    }
+
+    def compute_report(self, task: Task | int) -> models.QualityReport | None:
+        with db_utils.transaction_with_repeatable_read():
+            if isinstance(task, int):
+                task = Task.objects.select_related("data").get(id=task)
+
+            # The GT job could have been removed during scheduling, so we need to check it.
+            gt_job_id = (
+                Job.objects.filter(
+                    segment__task=task,
+                    type=JobType.GROUND_TRUTH,
+                )
+                .values_list("id", flat=True)
+                .first()
+            )
+            if not gt_job_id:
+                return None
+
+            quality_params = self.get_quality_params(task)
+            quality_settings = QualitySettingsManager().get_task_settings(task)
+
+            all_job_ids: set[int] = set(
+                Job.objects.filter(segment__task=task)
+                .exclude(type=JobType.GROUND_TRUTH)
+                .values_list("id", flat=True)
+            )
+
+            job_filter = JsonLogicFilter()
+            if job_filter_rules := job_filter.parse_query(
+                quality_settings.job_filter or "[]", raise_on_empty=False
+            ):
+                job_queryset = job_filter.apply_filter(
+                    Job.objects,
+                    parsed_rules=job_filter_rules,
+                    lookup_fields=self.JOB_FILTER_LOOKUPS,
+                )
+                filtered_job_ids: set[int] = set(
+                    job_id
+                    for ids_chunk in take_by(all_job_ids, chunk_size=_DEFAULT_FETCH_CHUNK_SIZE)
+                    for job_id in job_queryset.filter(id__in=ids_chunk).values_list("id", flat=True)
+                )
+            else:
+                filtered_job_ids = set(all_job_ids)
+
+            # TODO: Probably, can be optimized to this:
+            # - task updated (the gt job, frame set or labels changed) -> everything is computed
+            # - job updated -> job report is computed
+            #   old reports can be reused in this case
+
+            # Try to use a shared queryset to minimize DB requests
+            job_queryset = Job.objects.select_related("segment").filter(segment__task=task)
+
+            # Add prefetch data to the shared queryset
+            # All the jobs / segments share the same task, so we can load it just once.
+            # We reuse the same object for better memory use (OOM is possible otherwise).
+            # Perform manual "join", since django can't do this.
+            gt_job = JobDataProvider.add_prefetch_info(job_queryset).get(id=gt_job_id)
+
+            jobs: dict[int, Job] = [j for j in job_queryset if j.id in filtered_job_ids]
+            for job in job_queryset:
+                job.segment.task = gt_job.segment.task  # put the prefetched object
+
+            gt_job_data_provider = JobDataProvider(gt_job.id, queryset=job_queryset)
+            active_validation_frames = self.get_active_validation_frames(task, gt_job_data_provider)
+
+            job_data_providers = {
+                job.id: JobDataProvider(
+                    job.id,
+                    queryset=job_queryset,
+                    included_frames=active_validation_frames,
+                )
+                for job in jobs
+            }
+
+            quality_requirements = resolve_effective_requirements(
+                list(quality_settings.requirements.select_related("parent").all())
+            )
+
+            job_comparison_reports: dict[int, ComparisonReport] = {}
+            for job in jobs:
+                if job.id not in filtered_job_ids:
+                    continue
+
+                job_data_provider = job_data_providers[job.id]
+                comparator = DatasetQualityEstimator(
+                    job_data_provider,
+                    gt_job_data_provider,
+                    requirements=quality_requirements,
+                    parameters=quality_params,
+                )
+                job_comparison_reports[job.id] = comparator.generate_report()
+
+                # Release resources
+                del job_data_provider.dm_dataset
+
+        task_comparison_report = self._compute_task_report(
+            job_comparison_reports,
+            parameters=quality_params,
+            requirements=quality_requirements,
+            all_job_ids=all_job_ids,
+        )
+
+        with transaction.atomic():
+            job_quality_reports = {}
+            for job in jobs:
+                job_comparison_report = job_comparison_reports[job.id]
+                job_report = dict(
+                    job=job,
+                    target_last_updated=job.updated_date,
+                    gt_last_updated=gt_job.updated_date,
+                    assignee_id=job.assignee_id,
+                    assignee_last_updated=job.assignee_updated_date,
+                    data=job_comparison_report.to_json(),
+                    conflicts=[c.to_dict() for c in job_comparison_report.conflicts],
+                )
+
+                job_quality_reports[job.id] = job_report
+
+            task_report = self._save_reports(
+                task_report=dict(
+                    task=task,
+                    target_last_updated=task.updated_date,
+                    gt_last_updated=gt_job.updated_date,
+                    assignee_id=task.assignee_id,
+                    assignee_last_updated=task.assignee_updated_date,
+                    data=task_comparison_report.to_json(),
+                    conflicts=[],  # the task doesn't have own conflicts
+                ),
+                job_reports=list(job_quality_reports.values()),
+            )
+
+        return task_report
+
+    def get_active_validation_frames(self, task: Task, gt_job_data_provider: JobDataProvider):
+        active_validation_frames = gt_job_data_provider.job_data.get_included_frames()
+
+        validation_layout = task.data.validation_layout
+        if validation_layout.mode == ValidationMode.GT_POOL:
+            task_frame_provider = TaskFrameProvider(task)
+            active_validation_frames = set(
+                task_frame_provider.get_rel_frame_number(abs_frame)
+                for abs_frame, abs_real_frame in (
+                    Image.objects.filter(data=task.data, is_placeholder=True)
+                    .values_list("frame", "real_frame")
+                    .iterator(chunk_size=_DEFAULT_FETCH_CHUNK_SIZE)
+                )
+                if task_frame_provider.get_rel_frame_number(abs_real_frame)
+                in active_validation_frames
+            )
+
+        return active_validation_frames
+
+    def _compute_task_report(
+        self,
+        job_reports: dict[int, ComparisonReport],
+        parameters: ComparisonParameters,
+        requirements: list[models.QualityRequirement],
+        *,
+        all_job_ids: set[int],
+    ) -> ComparisonReport:
+        # Accumulate job stats
+        job_stats = ComparisonReportJobStats.create_empty()
+        job_stats.all.update(all_job_ids)
+        job_stats.excluded.update(all_job_ids - job_reports.keys())
+        job_stats.not_checkable.update(
+            jid for jid, r in job_reports.items() if not r.comparison_summary.validation_frames
+        )
+        job_stats.completed.update(
+            jid
+            for jid, r in job_reports.items()
+            if _all_enabled_requirements_completed(r.comparison_summary)
+        )
+
+        # The task dataset can be different from any jobs' dataset because of frame overlaps
+        # between jobs, from which annotations are merged to get the task annotations.
+        # Thus, a separate report could be computed for the task. Instead, here we only
+        # compute the combined summary of the job reports.
+        # It's possible that overlapped frames checked more than once, ignore extra checks
+        # in this statistics and results.
+        task_validated_frames = set()
+        task_validation_frames_count = 0  # in included and non-checkable jobs
+        task_total_frames = 0  # in included and non-checkable jobs
+        task_conflicts: list[AnnotationConflict] = []
+        task_frame_results: dict[int, ComparisonReportFrameSummary] = {}
+        task_group_frame_results: dict[str, dict[int, ComparisonReportFrameComparisonSummary]] = {}
+        task_group_parameters: dict[str, dict] = {}
+        for r in job_reports.values():
+            task_validated_frames.update(r.comparison_summary.frames)
+            task_validation_frames_count += r.comparison_summary.validation_frames
+            task_total_frames += r.comparison_summary.total_frames
+            task_conflicts.extend(r.conflicts)
+
+            for frame_id, job_frame_result in r.frame_results.items():
+                task_frame_result = task_frame_results.get(frame_id)
+
+                if task_frame_result is None:
+                    task_frame_result = deepcopy(job_frame_result)
+                else:
+                    task_frame_result.conflicts = deduplicate_annotation_conflicts(
+                        [*task_frame_result.conflicts, *job_frame_result.conflicts]
+                    )
+
+                task_frame_results[frame_id] = task_frame_result
+
+            for group_name, group_report in (r.groups or {}).items():
+                task_group_parameters.setdefault(group_name, deepcopy(group_report.parameters))
+                group_frame_results = task_group_frame_results.setdefault(group_name, {})
+
+                for frame_id, group_frame_result in (group_report.frame_results or {}).items():
+                    merged_group_frame_result = group_frame_results.get(frame_id)
+
+                    if merged_group_frame_result is None:
+                        merged_group_frame_result = deepcopy(group_frame_result)
+                    else:
+                        merge_frame_summaries(merged_group_frame_result, group_frame_result)
+
+                    group_frame_results[frame_id] = merged_group_frame_result
+
+        task_conflicts = deduplicate_annotation_conflicts(task_conflicts)
+
+        requirement_groups = {
+            group_name: build_requirement_report(
+                requirement=task_group_parameters[group_name],
+                frame_results=group_frame_results,
+            )
+            for group_name, group_frame_results in task_group_frame_results.items()
+        }
+        for requirement in requirements:
+            if not getattr(requirement, "enabled", True):
+                continue
+
+            requirement_groups.setdefault(
+                requirement.name,
+                build_requirement_report(
+                    requirement=requirement,
+                    frame_results={},
+                ),
+            )
+
+        target_requirements: list = requirements or [
+            group_report.parameters for group_report in requirement_groups.values()
+        ]
+        task_report_data = ComparisonReport(
+            parameters=ComparisonReportParameters.from_comparison_parameters(parameters),
+            comparison_summary=ComparisonReportSummary(
+                validation_frames=task_validation_frames_count,
+                total_frames=task_total_frames,
+                frames=sorted(task_validated_frames),
+                conflict_count=len(task_conflicts),
+                error_count=len(task_conflicts),
+                conflicts_by_type=Counter(c.type for c in task_conflicts),
+                tasks=None,
+                jobs=job_stats,
+                requirements=build_requirements_summary(target_requirements, requirement_groups),
+            ),
+            frame_results=task_frame_results,
+            groups=requirement_groups,
+        )
+
+        return task_report_data
+
+    def _save_reports(self, *, task_report: dict, job_reports: list[dict]) -> models.QualityReport:
+        db_task_report = models.QualityReport(
+            task=task_report["task"],
+            target_last_updated=task_report["target_last_updated"],
+            gt_last_updated=task_report["gt_last_updated"],
+            assignee_id=task_report["assignee_id"],
+            assignee_last_updated=task_report["assignee_last_updated"],
+            data=task_report["data"],
+        )
+        db_task_report.save()
+
+        db_job_reports = []
+        for job_report in job_reports:
+            db_job_report = models.QualityReport(
+                job=job_report["job"],
+                target_last_updated=job_report["target_last_updated"],
+                gt_last_updated=job_report["gt_last_updated"],
+                assignee_id=job_report["assignee_id"],
+                assignee_last_updated=job_report["assignee_last_updated"],
+                data=job_report["data"],
+            )
+            db_job_reports.append(db_job_report)
+
+        db_job_reports = db_utils.bulk_create(models.QualityReport, db_job_reports)
+        db_task_report.children.add(*db_job_reports)
+
+        db_conflicts = []
+        db_report_iter = itertools.chain([db_task_report], db_job_reports)
+        report_iter = itertools.chain([task_report], job_reports)
+        for report, db_report in zip(report_iter, db_report_iter):
+            for conflict in report["conflicts"]:
+                db_conflict = models.AnnotationConflict(
+                    report=db_report,
+                    type=conflict["type"],
+                    frame=conflict["frame_id"],
+                    severity=conflict["severity"],
+                    attribute_names=conflict.get("attribute_names", []),
+                )
+                db_conflicts.append(db_conflict)
+
+        db_conflicts = db_utils.bulk_create(models.AnnotationConflict, db_conflicts)
+
+        db_ann_ids = []
+        db_conflicts_iter = iter(db_conflicts)
+        for report in itertools.chain([task_report], job_reports):
+            for conflict, db_conflict in zip(report["conflicts"], db_conflicts_iter):
+                for ann_id in conflict["annotation_ids"]:
+                    db_ann_id = models.AnnotationId(
+                        conflict=db_conflict,
+                        job_id=ann_id["job_id"],
+                        obj_id=ann_id["obj_id"],
+                        type=ann_id["type"],
+                        shape_type=ann_id["shape_type"],
+                    )
+                    db_ann_ids.append(db_ann_id)
+
+        db_utils.bulk_create(models.AnnotationId, db_ann_ids)
+
+        return db_task_report
+
+    def get_quality_params(self, task: Task) -> ComparisonParameters:
+        quality_settings_manager = QualitySettingsManager()
+        task_own_settings = quality_settings_manager.get_task_settings(task, inherit=False)
+        task_effective_settings = quality_settings_manager.get_task_settings(task)
+        return ComparisonParameters.from_settings(
+            task_effective_settings, inherited=task_own_settings.id != task_effective_settings.id
+        )
+
+
+class ProjectQualityCalculator:
+    def is_task_report_relevant(self, quality_report: models.QualityReport) -> bool:
+        assert quality_report.target == models.QualityReportTarget.TASK
+
+        task = quality_report.task
+        quality_settings = QualitySettingsManager().get_task_settings(task)
+
+        return (quality_report.target_last_updated >= task.updated_date) and (
+            quality_report.target_last_updated >= quality_settings.updated_date
+        )
+
+    def compute_report(self, project: Project | int) -> models.QualityReport:
+        with transaction.atomic():
+            # Preload the required data for computations.
+            # Ideally, we would lock the task to fetch all the data and produce
+            # consistent report. However, data fetching can also take long time.
+            # For this reason, we don't guarantee absolute consistency.
+            if isinstance(project, int):
+                project = Project.objects.get(id=project)
+
+            project_quality_params = self.get_quality_params(project)
+            project_requirements = resolve_effective_requirements(
+                list(
+                    QualitySettingsManager()
+                    .get_project_settings(project)
+                    .requirements.select_related("parent")
+                    .all()
+                )
+            )
+
+            # Tasks could be added or removed in the project after initial report fetching
+            # Fix working the set of tasks by requesting ids first.
+            all_task_ids: set[int] = set(
+                Task.objects.filter(project=project).values_list("id", flat=True)
+            )
+
+            configured_task_ids: set[int] = set(
+                task_id
+                for ids_chunk in take_by(all_task_ids, chunk_size=_DEFAULT_FETCH_CHUNK_SIZE)
+                for task_id in Job.objects.filter(
+                    type=JobType.GROUND_TRUTH,
+                    segment__task__in=ids_chunk,
+                ).values_list("segment__task__id", flat=True)
+            )
+
+            # Prefetch in batches
+            configured_tasks = {}
+            for ids_batch in take_by(configured_task_ids, chunk_size=_DEFAULT_FETCH_CHUNK_SIZE):
+                tasks_batch = (
+                    project.tasks.filter(id__in=ids_batch)
+                    .annotate(
+                        latest_quality_report_id=Subquery(
+                            models.QualityReport.objects.filter(
+                                created_date__isnull=False,
+                                task_id=OuterRef("id"),
+                            )
+                            .order_by("-created_date")
+                            .values("id")[:1]
+                        )
+                    )
+                    .all()
+                )
+                configured_tasks.update((t.id, t) for t in tasks_batch)
+
+                prefetch_related_objects(tasks_batch, "quality_settings")
+
+        latest_quality_report_ids = set(
+            t.latest_quality_report_id for t in configured_tasks.values()
+        )
+        latest_quality_reports = {
+            r.id: r
+            for ids_chunk in take_by(
+                latest_quality_report_ids, chunk_size=_DEFAULT_FETCH_CHUNK_SIZE
+            )
+            for r in models.QualityReport.objects.filter(id__in=ids_chunk)
+        }
+
+        task_quality_reports: dict[int, models.QualityReport] = {}
+        for task in configured_tasks.values():
+            latest_task_quality_report_id = getattr(task, "latest_quality_report_id", None)
+            latest_task_quality_report = latest_quality_reports.get(latest_task_quality_report_id)
+            if not latest_task_quality_report:
+                continue
+
+            latest_task_quality_report.task = task  # put the prefetched object
+            if not self.is_task_report_relevant(latest_task_quality_report):
+                continue
+
+            task_quality_reports[task.id] = latest_task_quality_report
+
+        # Compute required task reports
+        # This loop can take long time, maybe use RQ dependencies for each task instead
+        tasks_without_reports = configured_tasks.keys() - task_quality_reports.keys()
+        for ids_batch in take_by(tasks_without_reports, chunk_size=_DEFAULT_FETCH_CHUNK_SIZE):
+            tasks_batch = [configured_tasks[task_id] for task_id in ids_batch]
+
+            prefetch_related_objects(
+                tasks_batch,
+                "data",
+                "data__validation_layout",
+            )
+
+            for task in tasks_batch:
+                if task.id in task_quality_reports:
+                    continue
+
+                # Tasks could have been deleted during report computations, ignore them.
+                # Tasks could be moved between projects. It can't be
+                # reliably checked and it is quite rare, so we ignore it.
+                with suppress(Task.DoesNotExist):
+                    task_report_calculator = TaskQualityCalculator()
+                    task_report = task_report_calculator.compute_report(task)
+                    if task_report:
+                        task_quality_reports[task.id] = task_report
+
+        task_comparison_reports: dict[int, ComparisonReport] = {
+            task_id: ComparisonReport.from_json(r.get_report_data())
+            for task_id, r in task_quality_reports.items()
+        }
+
+        project_comparison_report = self._compute_project_report(
+            task_reports=task_comparison_reports,
+            quality_params=project_quality_params,
+            requirements=project_requirements,
+            all_task_ids=all_task_ids,
+        )
+
+        with transaction.atomic():
+            project_report = self._save_report(
+                models.QualityReport(
+                    project=project,
+                    target_last_updated=project.updated_date,
+                    gt_last_updated=None,
+                    data=project_comparison_report.to_json(),
+                    # project reports don't include conflicts
+                ),
+                child_reports=[
+                    r for r in task_quality_reports.values() if r.task.id in task_comparison_reports
+                ],
+            )
+
+        return project_report
+
+    def _compute_project_report(
+        self,
+        task_reports: dict[int, ComparisonReport],
+        *,
+        quality_params: ComparisonParameters,
+        requirements: list[models.QualityRequirement],
+        all_task_ids: set[int],
+    ) -> ComparisonReport:
+        # Aggregate nested reports. It's possible that there are no child reports,
+        # but we still need to return a meaningful report.
+
+        # Compute task stats
+        task_stats = ComparisonReportTaskStats.create_empty()
+        task_stats.all.update(all_task_ids)
+        task_stats.not_configured.update(all_task_ids - task_reports.keys())
+        task_stats.custom.update(
+            tid for tid, r in task_reports.items() if not r.parameters.inherited
+        )
+        task_stats.excluded.update(
+            task_stats.all
+            - task_stats.not_configured
+            - task_stats.custom
+            - (
+                task_reports.keys()
+                - {
+                    # Consider tasks excluded if no jobs were included
+                    task_id
+                    for task_id, r in task_reports.items()
+                    if not r.comparison_summary.jobs.included_count
+                }
+            )
+        )
+
+        included_tasks: set[int] = (
+            task_reports.keys()
+            - task_stats.custom
+            - task_stats.not_configured
+            - task_stats.excluded
+        )
+        task_stats.completed.update(
+            task_id
+            for task_id in included_tasks
+            if _all_enabled_requirements_completed(task_reports[task_id].comparison_summary)
+        )
+
+        # Accumulate job stats
+        job_stats = ComparisonReportJobStats.create_empty()
+        for task_id in included_tasks:
+            task_report_summary = task_reports[task_id].comparison_summary
+            if not task_report_summary.jobs:
+                continue
+
+            job_stats.all.update(task_report_summary.jobs.all)
+            job_stats.excluded.update(task_report_summary.jobs.excluded)
+            job_stats.not_checkable.update(task_report_summary.jobs.not_checkable)
+            job_stats.completed.update(task_report_summary.jobs.completed)
+
+        total_frames = 0
+        total_validated_frames = 0
+        project_conflicts: list[AnnotationConflict] = []
+        project_group_parameters: dict[str, dict] = {}
+        project_group_annotations: dict[str, ComparisonReportAnnotationsSummary] = {}
+        project_group_conflicts: dict[str, list[AnnotationConflict]] = {}
+        for task_id, r in task_reports.items():
+            if task_id not in included_tasks:
+                continue
+
+            total_frames += r.comparison_summary.total_frames
+            total_validated_frames += r.comparison_summary.validation_frames
+
+            project_conflicts.extend(r.conflicts)
+
+            for group_name, group_report in (r.groups or {}).items():
+                project_group_parameters.setdefault(group_name, deepcopy(group_report.parameters))
+                group_total_frames = r.comparison_summary.total_frames
+                group_validated_frames = len(group_report.frame_results or {})
+
+                group_frame_share = group_validated_frames / (group_total_frames or 1)
+                group_weight = 1 / (group_frame_share or 1)
+                group_annotations = ComparisonReportAnnotationsSummary.from_confusion_matrix(
+                    group_report.comparison_summary.confusion_matrix
+                )
+                project_group_annotations.setdefault(
+                    group_name, ComparisonReportAnnotationsSummary.create_empty()
+                ).accumulate(group_annotations, weight=group_weight)
+                project_group_conflicts.setdefault(group_name, []).extend(group_report.conflicts)
+
+        requirement_groups = {}
+        for group_name, parameters in project_group_parameters.items():
+            group_conflicts = deduplicate_annotation_conflicts(
+                project_group_conflicts.get(group_name, [])
+            )
+            requirement_groups[group_name] = ComparisonReportRequirementSummary(
+                parameters=parameters,
+                comparison_summary=build_requirement_comparison_summary(
+                    requirement=parameters,
+                    annotations=project_group_annotations[group_name],
+                    conflicts=group_conflicts,
+                ),
+                frame_results=None,
+            )
+
+        for requirement in requirements:
+            if not getattr(requirement, "enabled", True):
+                continue
+
+            requirement_groups.setdefault(
+                requirement.name,
+                build_requirement_report(
+                    requirement=requirement,
+                    frame_results={},
+                    include_frame_results=False,
+                ),
+            )
+
+        target_requirements: list = requirements or [
+            group_report.parameters for group_report in requirement_groups.values()
+        ]
+        project_conflicts = deduplicate_annotation_conflicts(project_conflicts)
+        project_report_data = ComparisonReport(
+            parameters=ComparisonReportParameters.from_comparison_parameters(quality_params),
+            comparison_summary=ComparisonReportSummary(
+                total_frames=total_frames,
+                validation_frames=total_validated_frames,
+                frames=None,  # project reports do not provide this info
+                conflict_count=len(project_conflicts),
+                error_count=len(project_conflicts),
+                conflicts_by_type=Counter(c.type for c in project_conflicts),
+                tasks=task_stats,
+                jobs=job_stats,
+                requirements=build_requirements_summary(target_requirements, requirement_groups),
+            ),
+            frame_results=None,  # this is too detailed for a project report
+            groups=requirement_groups,
+        )
+
+        return project_report_data
+
+    def _save_report(
+        self, project_report: models.QualityReport, child_reports: list[models.QualityReport]
+    ) -> models.QualityReport:
+        project_report.save()
+        project_report.children.add(*child_reports)
+
+        return project_report
+
+    def get_quality_params(self, project: Project) -> ComparisonParameters:
+        quality_settings = QualitySettingsManager().get_project_settings(project)
+        return ComparisonParameters.from_settings(quality_settings, inherited=False)

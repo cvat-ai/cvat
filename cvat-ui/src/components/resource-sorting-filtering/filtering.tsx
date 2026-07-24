@@ -155,7 +155,7 @@ export default function ResourceFilterHOC(
                     if (tree && isValidTree(tree)) {
                         setAppliedFilter({
                             ...appliedFilter,
-                            predefined: splitFilterIntoPredefined(Object.values(predefinedFilters), value),
+                            predefined: splitFilterIntoPredefined(Object.values(predefinedFilters ?? {}), value),
                             built: JSON.stringify(QbUtils.jsonLogicFormat(tree, config).logic),
                         });
                         setState(tree);

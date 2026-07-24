@@ -11,6 +11,10 @@
 .cvat-quality-settings-title {
     margin-bottom: $grid-unit-size * 2;
     align-items: center;
+
+    .cvat-quality-settings-tooltip-icon {
+        opacity: 0.5;
+    }
 }
 
 .cvat-quality-control-settings-tab {
@@ -18,6 +22,7 @@
 
     display: block;
     height: 100%;
+    overflow-x: hidden;
     position: relative;
 
     .cvat-quality-settings-save-btn {
@@ -70,6 +75,215 @@
         display: block;
         position: relative;
         height: calc(100vh - $grid-unit-size * 30);
+    }
+
+    .cvat-quality-requirements-editor {
+        .ant-tabs-nav {
+            margin-bottom: $grid-unit-size * 2;
+        }
+    }
+
+    .cvat-quality-requirements-raw-viewer {
+        font-family: monospace;
+        min-height: $grid-unit-size * 62;
+        display: block;
+    }
+
+    .cvat-quality-requirements-raw-actions {
+        display: flex;
+        gap: $grid-unit-size * 2;
+        margin-top: $grid-unit-size * 2;
+        padding-bottom: $grid-unit-size * 4;
+
+        .ant-btn {
+            min-width: $grid-unit-size * 11;
+        }
+    }
+
+    .cvat-quality-requirements-table-actions {
+        display: flex;
+        justify-content: flex-start;
+        margin-left: $grid-unit-size * 2;
+    }
+
+    .cvat-quality-requirements-action-button {
+        color: $text-color;
+
+        &:hover, &:focus {
+            color: $text-color;
+        }
+    }
+
+    .cvat-quality-requirement-form {
+        padding-top: $grid-unit-size;
+
+        .ant-form-item {
+            margin-bottom: $grid-unit-size * 2;
+        }
+    }
+
+    .cvat-quality-requirement-form-header {
+        justify-content: space-between;
+        margin-bottom: $grid-unit-size * 2;
+    }
+
+    .cvat-quality-requirement-form-section-title {
+        align-items: center;
+        gap: $grid-unit-size;
+        margin-bottom: $grid-unit-size * 2;
+    }
+
+    .cvat-quality-requirement-form-short-input {
+        width: $grid-unit-size * 12;
+    }
+
+    .cvat-quality-requirement-overridden-label {
+        color: $validation-progress-color;
+
+        span {
+            color: $validation-progress-color;
+        }
+
+        .ant-btn {
+            color: $validation-progress-color;
+            height: $grid-unit-size * 2;
+            padding: 0;
+        }
+    }
+
+    .cvat-quality-requirement-revert-button {
+        vertical-align: baseline;
+    }
+
+    .cvat-quality-requirement-overridden-attribute-rule
+        .cvat-quality-requirement-match-unspecified-label {
+        color: $validation-progress-color;
+    }
+
+    .cvat-quality-requirement-overridden-attribute-rule
+        .cvat-quality-requirement-revert-button {
+        color: $validation-progress-color;
+    }
+
+    .cvat-quality-requirement-filter-control {
+        display: flex;
+        align-items: center;
+        gap: $grid-unit-size;
+
+        .cvat-quality-requirement-filter-input {
+            flex: 1;
+        }
+    }
+
+    .cvat-quality-requirement-filter-input {
+        cursor: pointer;
+
+        input {
+            cursor: pointer;
+        }
+
+        .ant-input-suffix .ant-btn {
+            height: $grid-unit-size * 3;
+            width: $grid-unit-size * 3;
+        }
+    }
+
+    .cvat-table-wrapper:has(.cvat-quality-requirement-attribute-rules-table) {
+        @include cvat-table-dynamic-size;
+
+        padding-bottom: $grid-unit-size * 18;
+
+        .ant-form-item {
+            margin-bottom: 0;
+        }
+
+        .ant-table-tbody .ant-table-cell {
+            padding: calc($grid-unit-size / 2) $grid-unit-size !important;
+        }
+
+        .cvat-quality-requirement-attribute-rule-field {
+            max-width: $grid-unit-size * 52;
+        }
+
+        .cvat-quality-requirement-inherited-attribute-rule {
+            color: $text-color-secondary;
+
+            .ant-select-selection-item,
+            .ant-table-cell {
+                color: $text-color-secondary;
+            }
+        }
+
+        .cvat-quality-requirement-overridden-attribute-rule {
+            .ant-select-selection-item,
+            .ant-table-cell {
+                color: $validation-progress-color;
+            }
+        }
+
+        .cvat-quality-requirement-attribute-rule-threshold-row {
+            padding: $grid-unit-size 0;
+        }
+    }
+
+    .cvat-table-wrapper:has(.cvat-quality-requirements-configuration-table) {
+        @include cvat-table-dynamic-size;
+
+        padding-bottom: $grid-unit-size * 3;
+
+        .ant-table-tbody .ant-table-cell {
+            padding: calc($grid-unit-size / 2) $grid-unit-size !important;
+        }
+
+        .cvat-quality-requirements-disabled-row {
+            .ant-table-cell,
+            .ant-typography,
+            .cvat-quality-requirements-action-button {
+                color: $text-color-secondary;
+            }
+        }
+    }
+}
+
+.cvat-quality-requirement-filter-builder {
+    width: 100%;
+
+    .query-builder-container {
+        margin-top: $grid-unit-size;
+    }
+
+    .cvat-quality-requirement-filter-recent-button {
+        align-self: flex-end;
+    }
+
+    .cvat-quality-requirement-filter-section {
+        width: 100%;
+        margin-top: $grid-unit-size;
+    }
+
+    .cvat-quality-requirement-filter-section-title {
+        align-self: flex-start;
+        margin-top: $grid-unit-size * 2;
+    }
+
+    .cvat-quality-requirement-filter-readonly-builder {
+        opacity: 0.65;
+        pointer-events: none;
+    }
+}
+
+.cvat-quality-requirement-filter-modal {
+    .ant-modal-body {
+        max-height: calc(100vh - $grid-unit-size * 28);
+        overflow: hidden auto;
+        padding: 0;
+    }
+
+    .cvat-quality-requirement-filter-builder {
+        align-items: stretch;
+        box-shadow: none;
+        border-radius: 0;
+        padding: $grid-unit-size * 2;
     }
 }
 
@@ -166,6 +380,10 @@ $excluded-background: #d9d9d973;
     > .ant-col {
         padding: 0 $grid-unit-size;
     }
+}
+
+.cvat-quality-control-gt-job {
+    margin-bottom: $grid-unit-size * 2;
 }
 
 .cvat-quality-control-management-tab {

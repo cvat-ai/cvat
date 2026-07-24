@@ -7,10 +7,9 @@ import {
     DimensionType, JobStage, JobState, JobType, MediaType, ProjectStatus,
     ShapeType, StorageLocation, LabelType,
     ShareFileType, Source, TaskMode, TaskStatus,
-    CloudStorageCredentialsType, CloudStorageProviderType, ObjectType,
+    CloudStorageCredentialsType, CloudStorageProviderType,
     DataStorageLocation, RQStatus,
 } from './enums';
-import { Camelized, CamelizedV2 } from './type-utils';
 
 export interface SerializedAnnotationImporter {
     name: string;
@@ -26,32 +25,6 @@ export interface SerializedAnnotationFormats {
     importers: SerializedAnnotationImporter[];
     exporters: SerializedAnnotationExporter[];
 }
-
-export interface APICommonFilterParams {
-    page?: number;
-    page_size?: number | 'all';
-    filter?: string;
-    sort?: string;
-    org_id?: number;
-    org?: string;
-    search?: string;
-}
-
-export interface ProjectsFilter extends APICommonFilterParams {
-    id?: number;
-}
-
-export interface APIApiTokensFilter extends APICommonFilterParams {
-    id?: number;
-    owner?: number;
-    created_date?: string;
-    updated_date?: string;
-    expiry_date?: string;
-    last_used_date?: string;
-    read_only?: boolean;
-    name?: string;
-}
-export type ApiTokensFilter = CamelizedV2<APIApiTokensFilter>;
 
 export interface SerializedUser {
     url: string;
@@ -94,12 +67,6 @@ export interface SerializedProject {
     task_subsets: string[];
     status: ProjectStatus;
 }
-
-export type TasksFilter = ProjectsFilter & { ordering?: string; }; // TODO: Need to clarify how "ordering" is used
-export type JobsFilter = ProjectsFilter & {
-    task_id?: number;
-    type?: JobType;
-};
 
 export interface SerializedTask {
     assignee: SerializedUser | null;
@@ -259,126 +226,7 @@ export interface SerializedOrganization {
     contact?: SerializedOrganizationContact;
 }
 
-export interface APIQualitySettingsFilter extends APICommonFilterParams {
-    task_id?: number;
-    project_id?: number;
-    parent_type?: string;
-}
-
-export type QualitySettingsFilter = Camelized<APIQualitySettingsFilter>;
-
-export interface APIConsensusSettingsFilter extends APICommonFilterParams {
-    task_id?: number;
-}
-
-export type ConsensusSettingsFilter = Camelized<APIConsensusSettingsFilter>;
-
-export interface SerializedQualitySettingsData {
-    id?: number;
-    task_id?: number;
-    target_metric?: string;
-    target_metric_threshold?: number;
-    max_validations_per_job?: number;
-    iou_threshold?: number;
-    oks_sigma?: number;
-    point_size_base?: string;
-    line_thickness?: number;
-    low_overlap_threshold?: number;
-    compare_line_orientation?: boolean;
-    line_orientation_threshold?: number;
-    compare_groups?: boolean;
-    group_match_threshold?: number;
-    check_covered_annotations?: boolean;
-    object_visibility_threshold?: number;
-    panoptic_comparison?: boolean;
-    compare_attributes?: boolean;
-    empty_is_annotated?: boolean;
-    descriptions?: Record<string, string>;
-    inherit?: boolean;
-    job_filter?: string;
-}
-
-export interface APIQualityConflictsFilter extends APICommonFilterParams {
-    report_id?: number;
-}
-export type QualityConflictsFilter = Camelized<APIQualityConflictsFilter>;
-
-export interface SerializedAnnotationConflictData {
-    job_id?: number;
-    obj_id?: number;
-    type?: ObjectType;
-    shape_type?: string | null;
-    conflict_type?: string;
-    severity?: string;
-}
-
-export interface SerializedQualityConflictData {
-    id?: number;
-    frame?: number | null;
-    type?: string;
-    annotation_ids?: SerializedAnnotationConflictData[];
-    data?: string;
-    severity?: string;
-    description?: string;
-}
-
-export interface APIQualityReportsFilter extends APICommonFilterParams {
-    parent_id?: number;
-    peoject_id?: number;
-    task_id?: number;
-    job_id?: number;
-    target?: string;
-}
-export type QualityReportsFilter = Camelized<APIQualityReportsFilter>;
-
-export interface SerializedQualityReportData {
-    id?: number;
-    parent_id?: number;
-    task_id?: number;
-    job_id?: number;
-    target: string;
-    created_date?: string;
-    gt_last_updated?: string;
-    assignee?: SerializedUser | null;
-    summary?: {
-        accuracy: number;
-        precision: number;
-        recall: number;
-        total_frames: number;
-        validation_frames: number;
-        validation_frame_share: number;
-        conflict_count: number;
-        valid_count: number;
-        ds_count: number;
-        gt_count: number;
-        total_count: number;
-        error_count: number;
-        warning_count: number;
-        conflicts_by_type: {
-            extra_annotation: number;
-            missing_annotation: number;
-            mismatching_label: number;
-            low_overlap: number;
-            mismatching_direction: number;
-            mismatching_attributes: number;
-            mismatching_groups: number;
-            covered_annotation: number;
-        }
-        tasks?: {
-            total: number;
-            custom: number;
-            not_configured: number;
-            excluded: number;
-            included: number;
-        }
-        jobs?: {
-            total: number;
-            excluded: number;
-            not_checkable: number;
-            included: number;
-        }
-    };
-}
+export * from './quality/server-response-types';
 
 export interface SerializedConsensusSettingsData {
     id?: number;
@@ -386,19 +234,6 @@ export interface SerializedConsensusSettingsData {
     iou_threshold?: number;
     descriptions?: Record<string, string>;
 }
-
-export interface APIAnalyticsEventsFilter {
-    from?: string;
-    to?: string;
-    filename?: string;
-    org_id?: number;
-    user_id?: number;
-    project_id?: number;
-    task_id?: number;
-    job_id?: number;
-}
-
-export type AnalyticsEventsFilter = CamelizedV2<APIAnalyticsEventsFilter>;
 
 export interface SerializedInvitationData {
     created_date: string;
@@ -624,6 +459,3 @@ export interface SerializedTaskValidationLayout extends SerializedJobValidationL
     validation_frames?: number[];
     disabled_frames?: number[];
 }
-
-export type APIOrganizationMembersFilter = APICommonFilterParams;
-export type OrganizationMembersFilter = Camelized<APIOrganizationMembersFilter>;
