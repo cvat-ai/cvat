@@ -2,6 +2,8 @@
 
 set -eu
 
+SCRIPT_DIR="$(dirname "$0")"
+
 fail() {
     printf >&2 "%s: %s\n" "$0" "$1"
     exit 1
@@ -37,21 +39,21 @@ cmd_bash() {
 
 cmd_init() {
     wait_for_db
-    ~/manage.py migrate
+    django-admin migrate
 
     wait_for_redis_inmem
-    ~/manage.py migrateredis
-    ~/manage.py syncperiodicjobs
+    django-admin migrateredis
+    django-admin syncperiodicjobs
 
     if [[ "${CVAT_ANALYTICS:-0}" == "1" ]]; then
         wait_for_clickhouse
-        python components/analytics/clickhouse/init.py
+        python "$SCRIPT_DIR/components/analytics/clickhouse/init.py"
     fi
 }
 
 _load_component_config() {
     declare -gA merged_config=()
-    for config_file in ~/backend_entrypoint.d/*.conf; do
+    for config_file in "$SCRIPT_DIR/backend_entrypoint.d/"*.conf; do
         declare -A config=$(cat $config_file)
         for key in "${!config[@]}"; do
             if [[ -n ${merged_config[$key]+_} ]]; then
@@ -86,7 +88,7 @@ _get_includes() {
 _get_reusable_includes() {
     extra_configs=()
     for include in "$@"; do
-        if ! [ -r "$HOME/supervisord/reusable/$include.conf" ]; then
+        if ! [ -r "$SCRIPT_DIR/supervisord/reusable/$include.conf" ]; then
             fail "Unexpected supervisor include: $include"
         fi
 
@@ -109,29 +111,29 @@ cmd_run() {
     _load_component_config
 
     case "$component" in
-        server|worker|nginx) ;;
+        server|worker|worker-pool|nginx) ;;
         *) fail "Unexpected run component: $component" ;;
     esac
 
     if [ "$component" = "nginx" ]; then
-        exec supervisord -c "supervisord/nginx.conf"
+        exec supervisord -c "$SCRIPT_DIR/supervisord/nginx.conf"
     fi
 
     if [ "$component" = "server" ]; then
         account_for_internal_proxy
-        ~/manage.py collectstatic --no-input
+        django-admin collectstatic --no-input
     fi
 
     wait_for_db
 
     echo "waiting for migrations to complete..."
-    while ! ~/manage.py migrate --check; do
+    while ! django-admin migrate --check; do
         sleep 10
     done
 
     wait_for_redis_inmem
     echo "waiting for Redis migrations to complete..."
-    while ! ~/manage.py migrateredis --check; do
+    while ! django-admin migrateredis --check; do
         sleep 10
     done
 
@@ -139,7 +141,7 @@ cmd_run() {
     postgres_app_name="cvat:$component"
     if [ "$component" = "server" ]; then
         supervisord_includes="$(_get_includes "server")$(_get_reusable_includes "${@:2}")"
-    elif [ "$component" = "worker"  ]; then
+    elif [ "$component" = "worker" ] || [ "$component" = "worker-pool" ]; then
         if [ "$#" -eq 1 ]; then
             fail "run worker: expected at least 1 queue name"
         fi
@@ -175,7 +177,7 @@ cmd_run() {
     export CVAT_POSTGRES_APPLICATION_NAME=$postgres_app_name
     export CVAT_SUPERVISORD_INCLUDES=$supervisord_includes
 
-    exec supervisord -c "supervisord/$component.conf"
+    exec supervisord -c "$SCRIPT_DIR/supervisord/$component.conf"
 }
 
 if [ $# -eq 0 ]; then

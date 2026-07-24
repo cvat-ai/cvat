@@ -11,6 +11,7 @@ import { CombinedState } from 'reducers';
 import { shallowEqual } from 'utils/redux';
 import AudioObjectsSideBar from 'audio/components/annotation-page/audio-workspace/objects-side-bar/audio-objects-side-bar';
 import AudioRegionsListContainer from 'audio/containers/annotation-page/audio-workspace/audio-regions-list';
+import AudioContextMenuWrapper from 'audio/containers/annotation-page/audio-workspace/audio-context-menu-wrapper';
 import RemoveConfirmComponent from 'components/annotation-page/standard-workspace/remove-confirm';
 
 import AudioCanvasWrapper from './audio-canvas-wrapper';
@@ -34,6 +35,7 @@ export default function AudioWorkspaceComponent(): JSX.Element {
                 objectsList={showSkeleton ? <AudioRegionsListSkeleton /> : <AudioRegionsListContainer />}
                 appearanceHidden={showSkeleton}
             />
+            <AudioContextMenuWrapper />
             <RemoveConfirmComponent />
         </Layout>
     );

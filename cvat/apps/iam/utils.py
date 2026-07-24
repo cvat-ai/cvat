@@ -63,6 +63,13 @@ def get_dummy_or_regular_user(email: str):
     return None, user
 
 
+def is_signup_email_required() -> bool:
+    from allauth.account import app_settings as allauth_settings
+
+    email_field = allauth_settings.SIGNUP_FIELDS.get("email")
+    return bool(email_field and email_field["required"])
+
+
 def clean_up_sessions() -> None:
     SessionStore: type[SessionBase] = importlib.import_module(settings.SESSION_ENGINE).SessionStore
     SessionStore.clear_expired()

@@ -7,9 +7,11 @@ from typing import Any
 
 import rq
 from crum import get_current_request, get_current_user
+from django.db import DatabaseError
 from rest_framework import status
 from rest_framework.exceptions import NotAuthenticated
-from rest_framework.views import exception_handler
+from rest_framework.response import Response
+from rest_framework.views import exception_handler as drf_exception_handler
 
 from cvat.apps.access_tokens.models import AccessToken
 from cvat.apps.access_tokens.serializers import AccessTokenReadSerializer
@@ -36,6 +38,7 @@ from cvat.apps.engine.serializers import (
     ProjectReadSerializer,
     TaskReadSerializer,
 )
+from cvat.apps.events import utils
 from cvat.apps.organizations.models import Invitation, Membership, Organization
 from cvat.apps.organizations.serializers import (
     InvitationReadSerializer,
@@ -44,6 +47,8 @@ from cvat.apps.organizations.serializers import (
 )
 from cvat.apps.webhooks.models import Webhook
 from cvat.apps.webhooks.serializers import WebhookReadSerializer
+from cvat.utils import django_database as db_utils
+from cvat.utils.http import ResourceIsBusyApiException
 
 from .cache import get_cache
 from .const import WORKING_TIME_RESOLUTION, WORKING_TIME_SCOPE
@@ -641,7 +646,10 @@ def handle_function_call(
     )
 
 
-def handle_rq_exception(rq_job, exc_type, exc_value, tb):
+def handle_rq_exception(rq_job: rq.job.Job, exc_type: type[Exception], exc_value: Exception, tb):
+    if utils.should_skip_rq_exception_event_recording(rq_job=rq_job, exc_value=exc_value):
+        return False
+
     rq_job_meta = BaseRQMeta.for_job(rq_job)
     oid = rq_job_meta.org_id
     oslug = rq_job_meta.org_slug
@@ -676,12 +684,21 @@ def handle_rq_exception(rq_job, exc_type, exc_value, tb):
     return False
 
 
-def handle_viewset_exception(exc, context):
+def exception_handler(exc: Exception, context) -> Response | None:
+    if isinstance(exc, DatabaseError):
+        if db_utils.is_lock_timeout_error(exc):
+            exc = ResourceIsBusyApiException()
+
+    return drf_exception_handler(exc=exc, context=context)
+
+
+def handle_viewset_exception(exc: Exception, context):
     response = exception_handler(exc, context)
 
     IGNORED_EXCEPTION_CLASSES = (NotAuthenticated,)
     if isinstance(exc, IGNORED_EXCEPTION_CLASSES):
         return response
+
     # the standard DRF exception handler only handle APIException, Http404 and PermissionDenied
     # exceptions types, any other will cause a 500 error
     status_code = status.HTTP_500_INTERNAL_SERVER_ERROR

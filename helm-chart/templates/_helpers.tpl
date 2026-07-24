@@ -218,12 +218,17 @@ The name of the service account to use for backend pods
 livenessProbe:
   exec:
     command:
-    - python
-    - manage.py
+    - django-admin
     - workerprobe
     {{- range .args }}
-    - {{ . }}
+    - {{ . | quote }}
     {{- end }}
 {{ toYaml (omit .livenessProbe "enabled") | indent 2}}
 {{- end }}
 {{- end }}
+
+{{- define "cvat.backend.worker.livenessProbe.workers" -}}
+{{- $numProcs := int (default 1 .numProcs) -}}
+{{- $numWorkers := int (default 1 .numWorkers) -}}
+{{- mul $numProcs $numWorkers -}}
+{{- end -}}
