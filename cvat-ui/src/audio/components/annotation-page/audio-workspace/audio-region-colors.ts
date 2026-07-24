@@ -3,14 +3,15 @@
 // SPDX-License-Identifier: MIT
 
 import { ColorBy } from 'reducers';
-import { AudioIntervalState, Label } from 'cvat-core-wrapper';
+import { Label } from 'cvat-core-wrapper';
 import { hexToRgba } from 'audio/utils/hex-color';
+import type { ClosedAudioInterval } from 'audio/utils/audio-interval';
 
 const DEFAULT_COLOR = '#6366F1';
 const AUDIO_MIN_OPACITY = 20;
 
 function resolveAudioHex(
-    interval: AudioIntervalState,
+    interval: ClosedAudioInterval,
     labels: Label[],
     colorBy: ColorBy,
 ): string {
@@ -22,7 +23,7 @@ function resolveAudioHex(
 }
 
 export function getAudioRegionColor(
-    interval: AudioIntervalState,
+    interval: ClosedAudioInterval,
     labels: Label[],
     colorBy: ColorBy,
     opacity: number,
@@ -35,7 +36,7 @@ export function getAudioRegionColor(
 }
 
 export function getRegionItemColor(
-    interval: AudioIntervalState,
+    interval: ClosedAudioInterval,
     labels: Label[],
     colorBy: ColorBy,
 ): string {

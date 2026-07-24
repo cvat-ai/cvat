@@ -107,6 +107,17 @@ export const audioActions = {
 
 export type AudioActions = ActionUnion<typeof audioActions>;
 
+export function selectAudioIntervalAt(frame: number): ThunkAction<Promise<number | null>> {
+    return async (_dispatch: ThunkDispatch, getState): Promise<number | null> => {
+        const job = getState().annotation.job.instance;
+        if (!job) return null;
+
+        const { intervals } = getState().audio.player;
+        const { state } = await job.annotations.selectInterval(intervals, frame);
+        return state?.clientID ?? null;
+    };
+}
+
 export function toggleAudioPlayback(): ThunkAction {
     return async (dispatch: ThunkDispatch, getState): Promise<void> => {
         const { playing, playIntervalOnceRequest } = getState().audio.player;

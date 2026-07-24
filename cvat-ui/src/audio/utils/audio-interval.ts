@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { AudioIntervalState } from 'cvat-core-wrapper';
+import type { Label, Source } from 'cvat-core-wrapper';
 import { clamp } from 'utils/math';
 
 export interface AudioTimeRange {
@@ -12,7 +12,19 @@ export interface AudioTimeRange {
     end: number;
 }
 
-export type ClosedAudioInterval = AudioIntervalState & { stop: number };
+/** Interval data with resolved non-null stop value */
+export interface ClosedAudioInterval {
+    clientID: number | null;
+    serverID: number | null;
+    start: number;
+    stop: number;
+    color: string;
+    hidden: boolean;
+    lock: boolean;
+    label: Label;
+    source: Source;
+    attributes: Record<number, string>;
+}
 
 const MILLISECONDS_PER_SECOND = 1000;
 const MILLISECOND_SNAP_EPSILON = 0.1;
