@@ -10,6 +10,19 @@ import { AnnotationContext } from './annotation-context';
 import type { AnnotationInjection, CommonUpdateFlags } from './types';
 import { computeNewSource, defaultGroupColor, deserializeAttributes } from './utils';
 
+function generateAnnotationUUID(): string {
+    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+        return crypto.randomUUID();
+    }
+
+    // Fallback for environments without crypto.randomUUID.
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (char) => {
+        const random = Math.floor(Math.random() * 16);
+        const value = char === 'x' ? random : ((random & 0x3) | 0x8);
+        return value.toString(16);
+    });
+}
+
 // Stores common annotation identity/state and field history mutations.
 export class AnnotationBase extends AnnotationContext {
     private _removed: boolean;
@@ -24,6 +37,8 @@ export class AnnotationBase extends AnnotationContext {
     };
 
     public readonly clientID: number;
+    // Client-generated idempotency key persisted on the server for create retries.
+    public uuid: string;
     public group: number;
     public label: Label;
     public lock: boolean;
@@ -63,6 +78,7 @@ export class AnnotationBase extends AnnotationContext {
         ) as AnnotationBase['groupObject'];
 
         this.clientID = clientID;
+        this.uuid = data.uuid ?? generateAnnotationUUID();
         this.group = data.group;
         this.label = this.labels[data.label_id];
         this.lock = false;
@@ -204,6 +220,8 @@ export class AnnotationBase extends AnnotationContext {
 
     public clearServerId(): void {
         this._serverId = undefined;
+        // Copied/pasted objects must not reuse the previous idempotency key.
+        this.uuid = generateAnnotationUUID();
     }
 
     protected updateTimestamp<T extends CommonUpdateFlags>(updated: T): void {

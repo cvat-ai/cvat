@@ -65,6 +65,7 @@ export class AudioInterval extends ScoredMixin(AnnotationBase) {
     public toJSON(): SerializedInterval {
         const result: SerializedInterval = {
             clientID: this.clientID,
+            uuid: this.uuid,
             label_id: this.label.id,
             start: this.start,
             stop: this.stop,

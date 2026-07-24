@@ -320,6 +320,21 @@ class JobAnnotation:
 
                     self._correct_frame_of_tracked_shapes(track)
 
+    def _existing_annotation_ids_by_uuid(
+        self, model, objects: Sequence[dict]
+    ) -> dict[str, int]:
+        """Map uuid -> existing DB id for this job (idempotent create support)."""
+        uuids = [obj["uuid"] for obj in objects if obj.get("uuid") is not None]
+        if not uuids:
+            return {}
+
+        return {
+            str(uuid_val): obj_id
+            for uuid_val, obj_id in model.objects.filter(
+                job=self.db_job, uuid__in=uuids
+            ).values_list("uuid", "id")
+        }
+
     def _save_tracks_to_db(self, tracks):
 
         def create_tracks(tracks, parent_track=None):
@@ -327,12 +342,33 @@ class JobAnnotation:
             db_track_attr_vals = []
             db_shapes = []
             db_shape_attr_vals = []
+            create_indices = []
 
             self._sync_frames(tracks, parent_track)
 
             tracks = [track for track in tracks if track["shapes"]]
+            existing_by_uuid = self._existing_annotation_ids_by_uuid(models.LabeledTrack, tracks)
 
-            for track in tracks:
+            for track_idx, track in enumerate(tracks):
+                track_uuid = track.get("uuid")
+                if track_uuid is not None and str(track_uuid) in existing_by_uuid:
+                    track["id"] = existing_by_uuid[str(track_uuid)]
+                    existing_shape_ids = dict(
+                        models.TrackedShape.objects.filter(track_id=track["id"]).values_list(
+                            "frame", "id"
+                        )
+                    )
+                    for shape in track.get("shapes", []):
+                        if shape["frame"] in existing_shape_ids:
+                            shape["id"] = existing_shape_ids[shape["frame"]]
+                    elements = track.get("elements", [])
+                    if elements or parent_track is None:
+                        track.setdefault("elements", elements)
+                    if elements:
+                        parent_db = models.LabeledTrack.objects.get(id=track["id"])
+                        create_tracks(elements, parent_db)
+                    continue
+
                 track_attributes = track.pop("attributes", [])
                 shapes = track.pop("shapes")
                 elements = track.pop("elements", [])
@@ -372,6 +408,7 @@ class JobAnnotation:
                     shape["attributes"] = shape_attributes
 
                 db_tracks.append(db_track)
+                create_indices.append(track_idx)
 
                 track["attributes"] = track_attributes
                 track["shapes"] = shapes
@@ -396,7 +433,12 @@ class JobAnnotation:
             db_utils.bulk_create(models.TrackedShapeAttributeVal, db_shape_attr_vals)
 
             shape_idx = 0
-            for track, db_track in zip(tracks, db_tracks):
+            created_idx = 0
+            for track_idx, track in enumerate(tracks):
+                if track_idx not in create_indices:
+                    continue
+                db_track = db_tracks[created_idx]
+                created_idx += 1
                 track["id"] = db_track.id
                 for shape in track["shapes"]:
                     shape["id"] = db_shapes[shape_idx].id
@@ -411,8 +453,21 @@ class JobAnnotation:
         def create_shapes(shapes, parent_shape=None):
             db_shapes = []
             db_attr_vals = []
+            create_indices = []
+            existing_by_uuid = self._existing_annotation_ids_by_uuid(models.LabeledShape, shapes)
 
-            for shape in shapes:
+            for shape_idx, shape in enumerate(shapes):
+                shape_uuid = shape.get("uuid")
+                if shape_uuid is not None and str(shape_uuid) in existing_by_uuid:
+                    shape["id"] = existing_by_uuid[str(shape_uuid)]
+                    shape_elements = shape.get("elements", [])
+                    if shape_elements or parent_shape is None:
+                        shape.setdefault("elements", shape_elements)
+                    if shape_elements:
+                        parent_db = models.LabeledShape.objects.get(id=shape["id"])
+                        create_shapes(shape_elements, parent_db)
+                    continue
+
                 attributes = shape.pop("attributes", [])
                 shape_elements = shape.pop("elements", [])
                 # FIXME: need to clamp points (be sure that all of them inside the image)
@@ -431,6 +486,7 @@ class JobAnnotation:
                     db_attr_vals.append(db_attr_val)
 
                 db_shapes.append(db_shape)
+                create_indices.append(shape_idx)
                 shape["attributes"] = attributes
                 if shape_elements or parent_shape is None:
                     shape["elements"] = shape_elements
@@ -442,7 +498,12 @@ class JobAnnotation:
 
             db_utils.bulk_create(models.LabeledShapeAttributeVal, db_attr_vals)
 
-            for shape, db_shape in zip(shapes, db_shapes):
+            created_idx = 0
+            for shape_idx, shape in enumerate(shapes):
+                if shape_idx not in create_indices:
+                    continue
+                db_shape = db_shapes[created_idx]
+                created_idx += 1
                 shape["id"] = db_shape.id
                 create_shapes(shape.get("elements", []), db_shape)
 
@@ -453,8 +514,15 @@ class JobAnnotation:
     def _save_tags_to_db(self, tags):
         db_tags = []
         db_attr_vals = []
+        create_indices = []
+        existing_by_uuid = self._existing_annotation_ids_by_uuid(models.LabeledImage, tags)
 
-        for tag in tags:
+        for tag_idx, tag in enumerate(tags):
+            tag_uuid = tag.get("uuid")
+            if tag_uuid is not None and str(tag_uuid) in existing_by_uuid:
+                tag["id"] = existing_by_uuid[str(tag_uuid)]
+                continue
+
             attributes = tag.pop("attributes", [])
             db_tag = models.LabeledImage(job=self.db_job, **tag)
 
@@ -469,6 +537,7 @@ class JobAnnotation:
                 db_attr_vals.append(db_attr_val)
 
             db_tags.append(db_tag)
+            create_indices.append(tag_idx)
             tag["attributes"] = attributes
 
         db_tags = db_utils.bulk_create(models.LabeledImage, db_tags)
@@ -478,8 +547,12 @@ class JobAnnotation:
 
         db_utils.bulk_create(models.LabeledImageAttributeVal, db_attr_vals)
 
-        for tag, db_tag in zip(tags, db_tags):
-            tag["id"] = db_tag.id
+        created_idx = 0
+        for tag_idx, tag in enumerate(tags):
+            if tag_idx not in create_indices:
+                continue
+            tag["id"] = db_tags[created_idx].id
+            created_idx += 1
 
         self.ir_data.tags = tags
 
@@ -487,8 +560,17 @@ class JobAnnotation:
         def write_objects(intervals: Sequence[dict]):
             db_intervals = []
             db_attr_vals = []
+            create_indices = []
+            existing_by_uuid = self._existing_annotation_ids_by_uuid(
+                models.LabeledInterval, intervals
+            )
 
-            for interval in intervals:
+            for interval_idx, interval in enumerate(intervals):
+                interval_uuid = interval.get("uuid")
+                if interval_uuid is not None and str(interval_uuid) in existing_by_uuid:
+                    interval["id"] = existing_by_uuid[str(interval_uuid)]
+                    continue
+
                 attributes = interval.pop("attributes", [])
                 db_interval = models.LabeledInterval(job=self.db_job, **interval)
 
@@ -504,6 +586,7 @@ class JobAnnotation:
                     db_attr_vals.append(db_attr_val)
 
                 db_intervals.append(db_interval)
+                create_indices.append(interval_idx)
                 interval["attributes"] = attributes
 
             db_intervals = db_utils.bulk_create(models.LabeledInterval, db_intervals)
@@ -513,8 +596,12 @@ class JobAnnotation:
 
             db_utils.bulk_create(models.LabeledIntervalAttributeVal, db_attr_vals)
 
-            for interval, db_interval in zip(intervals, db_intervals):
-                interval["id"] = db_interval.id
+            created_idx = 0
+            for interval_idx, interval in enumerate(intervals):
+                if interval_idx not in create_indices:
+                    continue
+                interval["id"] = db_intervals[created_idx].id
+                created_idx += 1
 
         write_objects(intervals)
 
@@ -707,6 +794,7 @@ class JobAnnotation:
                 "label_id",
                 "group",
                 "source",
+                "uuid",
             )
             .order_by("frame")
             .iterator(chunk_size=settings.DEFAULT_DB_ANNO_CHUNK_SIZE)
@@ -743,6 +831,7 @@ class JobAnnotation:
                 "rotation",
                 "points",
                 "parent",
+                "uuid",
             )
             .order_by("frame")
             .iterator(chunk_size=settings.DEFAULT_DB_ANNO_CHUNK_SIZE)
@@ -814,6 +903,7 @@ class JobAnnotation:
                 "group",
                 "source",
                 "parent",
+                "uuid",
             )
             .order_by("id")
             .iterator(chunk_size=settings.DEFAULT_DB_ANNO_CHUNK_SIZE)
@@ -908,6 +998,7 @@ class JobAnnotation:
                 "group",
                 "source",
                 "score",
+                "uuid",
             )
             .order_by("start")
             .iterator(chunk_size=settings.DEFAULT_DB_ANNO_CHUNK_SIZE)

@@ -8780,6 +8780,30 @@ components:
         source:
           type: string
           default: manual
+        uuid:
+          type: string
+          format: uuid
+          nullable: true
+        uuid:
+          type: string
+          format: uuid
+          nullable: true
+        uuid:
+          type: string
+          format: uuid
+          nullable: true
+        uuid:
+          type: string
+          format: uuid
+          nullable: true
+        uuid:
+          type: string
+          format: uuid
+          nullable: true
+        uuid:
+          type: string
+          format: uuid
+          nullable: true
         frame:
           type: integer
           minimum: 0
@@ -8809,6 +8833,54 @@ components:
           type: string
           minLength: 1
           default: manual
+        uuid:
+          type: string
+          format: uuid
+          nullable: true
+        uuid:
+          type: string
+          format: uuid
+          nullable: true
+        uuid:
+          type: string
+          format: uuid
+          nullable: true
+        uuid:
+          type: string
+          format: uuid
+          nullable: true
+        uuid:
+          type: string
+          format: uuid
+          nullable: true
+        uuid:
+          type: string
+          format: uuid
+          nullable: true
+        uuid:
+          type: string
+          format: uuid
+          nullable: true
+        uuid:
+          type: string
+          format: uuid
+          nullable: true
+        uuid:
+          type: string
+          format: uuid
+          nullable: true
+        uuid:
+          type: string
+          format: uuid
+          nullable: true
+        uuid:
+          type: string
+          format: uuid
+          nullable: true
+        uuid:
+          type: string
+          format: uuid
+          nullable: true
         frame:
           type: integer
           minimum: 0

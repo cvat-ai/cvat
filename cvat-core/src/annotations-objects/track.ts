@@ -45,6 +45,7 @@ export class Track extends Drawn {
 
         const result: SerializedTrack = {
             clientID: this.clientID,
+            uuid: this.uuid,
             label_id: this.label.id,
             frame: this.frame,
             group: this.group,

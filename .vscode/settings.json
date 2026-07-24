@@ -38,5 +38,12 @@
     "python.testing.cwd": "${workspaceFolder}/tests",
     "cSpell.words": [
         "crowdsourcing"
+    ],
+    "cursorpyright.analysis.exclude": [
+        "**/node_modules",
+        "**/__pycache__",
+        ".git",
+        "cvat-cli/build",
+        "cvat-sdk/build"
     ]
 }
