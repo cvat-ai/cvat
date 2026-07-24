@@ -16,9 +16,6 @@ class WithIAMContext(Protocol):
     iam_context: dict[str, Any]
 
 
-ORGANIZATION_ALL_ID = 0
-
-
 def get_organization(request: HttpRequest):
     from cvat.apps.organizations.models import Organization
 
@@ -49,23 +46,13 @@ def get_organization(request: HttpRequest):
 
         org_slug = org_slug if org_slug is not None else org_header
 
-        if org_id is not None:
-            if org_id == "":
-                organization_specified = True
-            else:
-                parsed_org_id = int(org_id)
-                if parsed_org_id == ORGANIZATION_ALL_ID:
-                    # Explicit request to return results from all organizations
-                    organization_specified = False
-                else:
-                    organization_specified = True
-                    organization = Organization.objects.select_related("owner").get(
-                        id=parsed_org_id
-                    )
-        elif org_slug is not None:
+        if org_slug is not None or org_id is not None:
             organization_specified = True
-            if org_slug:
-                organization = Organization.objects.select_related("owner").get(slug=org_slug)
+
+        if org_slug:
+            organization = Organization.objects.select_related("owner").get(slug=org_slug)
+        elif org_id:
+            organization = Organization.objects.select_related("owner").get(id=int(org_id))
     except Organization.DoesNotExist:
         raise NotFound(f"{org_slug or org_id} organization does not exist.")
 

@@ -5,7 +5,7 @@
 from django.contrib.auth.models import Group
 from django.test import RequestFactory, TestCase
 
-from cvat.apps.iam.middleware import ORGANIZATION_ALL_ID, get_organization
+from cvat.apps.iam.middleware import get_organization
 from cvat.apps.organizations.models import Organization
 
 
@@ -46,20 +46,14 @@ class OrganizationMiddlewareTestCase(TestCase):
         assert context["organization"] is None
         assert context["organization_specified"] is True
 
-    def test_org_id_zero_returns_all_organizations(self):
-        context = self._get_context(f"?org_id={ORGANIZATION_ALL_ID}")
-
-        assert context["organization"] is None
-        assert context["organization_specified"] is False
-
     def test_org_slug_selects_organization(self):
         context = self._get_context("?org=testorg")
 
         assert context["organization"] == self.organization
         assert context["organization_specified"] is True
 
-    def test_sandbox_context_does_not_infer_organization_from_resource_filters(self):
-        context = self._get_context("?org=&job_id=1")
+    def test_org_id_selects_organization(self):
+        context = self._get_context(f"?org_id={self.organization.id}")
 
-        assert context["organization"] is None
+        assert context["organization"] == self.organization
         assert context["organization_specified"] is True

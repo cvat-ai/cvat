@@ -142,9 +142,7 @@ class Client:
         If it's set to an empty string, requests will be made in the context
         of the user's personal workspace.
 
-        If set to None (the default), no organization context will be used and
-        list endpoints return results from all organizations available to the user.
-        Use org_id=0 in API calls to request all organizations explicitly.
+        If set to None (the default), no organization context will be used.
         """
         return self.api_client.default_headers.get(self._ORG_SLUG_HEADER)
 
