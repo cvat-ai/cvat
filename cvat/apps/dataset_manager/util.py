@@ -46,6 +46,31 @@ def make_zip_archive(src_path, dst_path):
                 archive.write(path, osp.relpath(path, src_path))
 
 
+def format_exception_chain(ex: Exception) -> str:
+    """
+    Produces a message including the whole exception cause chain,
+    e.g. "Failed to import dataset 'yolo' at '/tmp/xxx': [Errno 2] No such file
+    or directory: '/tmp/xxx/obj.names'".
+
+    Messages already included in a previous link (some exceptions embed their
+    cause's text) are skipped.
+    """
+    messages: list[str] = []
+    seen: set[int] = set()
+    current: BaseException | None = ex
+    while current is not None and id(current) not in seen:
+        seen.add(id(current))
+        message = str(current).strip()
+        if message and all(message not in m for m in messages):
+            messages.append(message)
+        current = current.__cause__ or (
+            None if current.__suppress_context__ else current.__context__
+        )
+    return ": ".join(
+        m.removesuffix(".") if i + 1 < len(messages) else m for i, m in enumerate(messages)
+    ) or type(ex).__name__
+
+
 def faster_deepcopy(v):
     "A slightly optimized version of the default deepcopy, can be used as a drop-in replacement."
     # Default deepcopy is very slow, here we do shallow copy for primitive types and containers

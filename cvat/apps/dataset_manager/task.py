@@ -24,7 +24,11 @@ from cvat.apps.dataset_manager.bindings import (
     JobData,
     TaskData,
 )
-from cvat.apps.dataset_manager.util import TmpDirManager, faster_deepcopy
+from cvat.apps.dataset_manager.util import (
+    TmpDirManager,
+    faster_deepcopy,
+    format_exception_chain,
+)
 from cvat.apps.engine import models, serializers
 from cvat.apps.engine.log import DatasetLogManager
 from cvat.apps.engine.plugins import plugin_decorator
@@ -1410,7 +1414,7 @@ def import_task_annotations(
                 import_mode=import_mode,
             )
         except (DatasetError, DatasetImportError, DatasetNotFoundError) as ex:
-            raise CvatImportError(str(ex))
+            raise CvatImportError(format_exception_chain(ex))
 
 
 @transaction.atomic
@@ -1437,4 +1441,4 @@ def import_job_annotations(
                 import_mode=import_mode,
             )
         except (DatasetError, DatasetImportError, DatasetNotFoundError) as ex:
-            raise CvatImportError(str(ex))
+            raise CvatImportError(format_exception_chain(ex))
