@@ -1071,19 +1071,16 @@ def _create_validation_jobs(
         db_gt_job.make_dirs()
 
 
-def _get_cloud_storage_manifest_files(
-    cloud_storage_manifest: ImageManifestManager | VideoManifestManager,
+def _get_dataset_files_from_manifest(
+    manifest: ImageManifestManager | VideoManifestManager,
 ) -> list[str]:
-    """
-    Returns the file names described by a cloud storage manifest,
-    relative to the manifest directory.
-
-    A video manifest describes a single video file, an image manifest - a set of images.
-    """
-    if isinstance(cloud_storage_manifest, VideoManifestManager):
-        return [cloud_storage_manifest.video_name]
-
-    return [image.full_name for _, image in cloud_storage_manifest]
+    match manifest:
+        case VideoManifestManager():
+            return [manifest.video_name]
+        case ImageManifestManager():
+            return [image.full_name for _, image in manifest]
+        case _:
+            raise AssertionError(f"Unexpected manifest type '{type(manifest)}'")
 
 
 def _filter_cloud_storage_files(
@@ -1106,7 +1103,7 @@ def _filter_cloud_storage_files(
         copy_of_dirs = dirs.copy()
         additional_files = []
         if cloud_storage_manifest:
-            manifest_files = _get_cloud_storage_manifest_files(cloud_storage_manifest)
+            manifest_files = _get_dataset_files_from_manifest(cloud_storage_manifest)
             for directory in dirs:
                 if cloud_storage_manifest_prefix:
                     # cloud_storage_manifest_prefix is a dirname of manifest,
@@ -1183,7 +1180,7 @@ def _filter_cloud_storage_files(
             if not data["filename_pattern"] == "*":
                 additional_files = fnmatch.filter(additional_files, data["filename_pattern"])
         else:
-            additional_files = _get_cloud_storage_manifest_files(cloud_storage_manifest)
+            additional_files = _get_dataset_files_from_manifest(cloud_storage_manifest)
             if cloud_storage_manifest_prefix:
                 additional_files = [
                     os.path.join(cloud_storage_manifest_prefix, f) for f in additional_files
@@ -1656,11 +1653,13 @@ def initialize_task(
             )
             if is_video_manifest(cloud_storage_manifest_path):
                 cloud_storage_manifest = VideoManifestManager(cloud_storage_manifest_path)
-            else:
+            elif is_dataset_manifest(cloud_storage_manifest_path):
                 cloud_storage_manifest = ImageManifestManager(
                     cloud_storage_manifest_path,
                     db_data.cloud_storage.get_storage_dirname(),
                 )
+            else:
+                raise ValidationError(f"Can't recognize type of the manifest at '{manifest_file}'")
             cloud_storage_manifest.set_index()
             cloud_storage_manifest_prefix = os.path.dirname(manifest_file)
 
