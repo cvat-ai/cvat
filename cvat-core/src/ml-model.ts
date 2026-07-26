@@ -120,8 +120,8 @@ Object.defineProperties(MLModel.prototype.preview, {
     implementation: {
         writable: false,
         enumerable: false,
-        value: async function implementation(): Promise<string | null> {
-            return null;
+        value: async function implementation(): Promise<string> {
+            return '';
         },
     },
 });

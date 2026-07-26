@@ -400,5 +400,5 @@ export function getVisibleSkeletonElements(
     filters: object[],
 ): Record<number, number[]> {
     const serializedStates = objectStates.map((objectState: ObjectState): SerializedData => objectState.serialize());
-    return new AnnotationsFilter().filterSerializedSkeletonElements(serializedStates, filters);
+    return new AnnotationsFilter(null).filterSerializedSkeletonElements(serializedStates, filters);
 }

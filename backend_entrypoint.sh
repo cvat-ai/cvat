@@ -2,6 +2,8 @@
 
 set -eu
 
+SCRIPT_DIR="$(dirname "$0")"
+
 fail() {
     printf >&2 "%s: %s\n" "$0" "$1"
     exit 1
@@ -19,48 +21,80 @@ wait_for_clickhouse() {
     wait-for-it "${CLICKHOUSE_HOST}:${CLICKHOUSE_PORT:-8123}" -t 0
 }
 
+account_for_internal_proxy() {
+    CVAT_NUM_PROXIES="${CVAT_NUM_PROXIES:-0}"
+
+    if ! [[ "$CVAT_NUM_PROXIES" =~ ^[0-9]+$ ]]; then
+        fail "CVAT_NUM_PROXIES must be a non-negative integer"
+    fi
+
+    # The user-facing setting counts proxies before the backend container.
+    # Add the internal nginx hop that proxies requests to uvicorn.
+    export CVAT_NUM_PROXIES=$((CVAT_NUM_PROXIES + 1))
+}
+
 cmd_bash() {
     exec bash "$@"
 }
 
 cmd_init() {
     wait_for_db
-    ~/manage.py migrate
+    django-admin migrate
 
     wait_for_redis_inmem
-    ~/manage.py migrateredis
-    ~/manage.py syncperiodicjobs
+    django-admin migrateredis
+    django-admin syncperiodicjobs
 
     if [[ "${CVAT_ANALYTICS:-0}" == "1" ]]; then
         wait_for_clickhouse
-        python components/analytics/clickhouse/init.py
+        python "$SCRIPT_DIR/components/analytics/clickhouse/init.py"
     fi
 }
 
-_get_includes() {
-    declare -A merged_config
-    for config in ~/backend_entrypoint.d/*.conf; do
-        declare -A config=$(cat $config)
+_load_component_config() {
+    declare -gA merged_config=()
+    for config_file in "$SCRIPT_DIR/backend_entrypoint.d/"*.conf; do
+        declare -A config=$(cat $config_file)
         for key in "${!config[@]}"; do
-            if [ -v merged_config[$key] ]; then
+            if [[ -n ${merged_config[$key]+_} ]]; then
                 fail "Duplicated component definition: $key"
             fi
             merged_config[$key]=${config[$key]}
         done
+        unset config
     done
+}
 
+_get_includes() {
     extra_configs=()
-    for component in "$@"; do
-        if ! [ -v merged_config[$component] ]; then
-            fail "Unexpected worker: $component"
+    for key in "$@"; do
+        if [[ -z ${merged_config[$key]+_} ]]; then
+            fail "Unexpected component: $key"
         fi
 
-        for include in ${merged_config["$component"]}; do
+        for include in ${merged_config["$key"]}; do
             if ! [[ ${extra_configs[@]} =~ $include ]] && \
                 ( ! [[ "$include" == "clamav" ]] || [[ "${CLAM_AV:-}" == "yes" ]] ); then
                 extra_configs+=("$include")
             fi
         done
+    done
+
+    if [ ${#extra_configs[@]} -gt 0 ]; then
+        printf 'reusable/%s.conf ' "${extra_configs[@]}"
+    fi
+}
+
+_get_reusable_includes() {
+    extra_configs=()
+    for include in "$@"; do
+        if ! [ -r "$SCRIPT_DIR/supervisord/reusable/$include.conf" ]; then
+            fail "Unexpected supervisor include: $include"
+        fi
+
+        if ! [[ ${extra_configs[@]} =~ $include ]]; then
+            extra_configs+=("$include")
+        fi
     done
 
     if [ ${#extra_configs[@]} -gt 0 ]; then
@@ -74,29 +108,40 @@ cmd_run() {
     fi
 
     component="$1"
+    _load_component_config
+
+    case "$component" in
+        server|worker|worker-pool|nginx) ;;
+        *) fail "Unexpected run component: $component" ;;
+    esac
+
+    if [ "$component" = "nginx" ]; then
+        exec supervisord -c "$SCRIPT_DIR/supervisord/nginx.conf"
+    fi
 
     if [ "$component" = "server" ]; then
-        ~/manage.py collectstatic --no-input
+        account_for_internal_proxy
+        django-admin collectstatic --no-input
     fi
 
     wait_for_db
 
     echo "waiting for migrations to complete..."
-    while ! ~/manage.py migrate --check; do
+    while ! django-admin migrate --check; do
         sleep 10
     done
 
     wait_for_redis_inmem
     echo "waiting for Redis migrations to complete..."
-    while ! ~/manage.py migrateredis --check; do
+    while ! django-admin migrateredis --check; do
         sleep 10
     done
 
     supervisord_includes=""
     postgres_app_name="cvat:$component"
     if [ "$component" = "server" ]; then
-        supervisord_includes=$(_get_includes "$component")
-    elif [ "$component" = "worker"  ]; then
+        supervisord_includes="$(_get_includes "server")$(_get_reusable_includes "${@:2}")"
+    elif [ "$component" = "worker" ] || [ "$component" = "worker-pool" ]; then
         if [ "$#" -eq 1 ]; then
             fail "run worker: expected at least 1 queue name"
         fi
@@ -125,14 +170,14 @@ cmd_run() {
 
         postgres_app_name+=":${queue_list// /+}"
 
-        supervisord_includes=$(_get_includes $queue_list)
+        supervisord_includes=$(_get_includes "${queues[@]}")
     fi
     echo "Additional supervisor configs that will be included: $supervisord_includes"
 
     export CVAT_POSTGRES_APPLICATION_NAME=$postgres_app_name
     export CVAT_SUPERVISORD_INCLUDES=$supervisord_includes
 
-    exec supervisord -c "supervisord/$component.conf"
+    exec supervisord -c "$SCRIPT_DIR/supervisord/$component.conf"
 }
 
 if [ $# -eq 0 ]; then
@@ -141,7 +186,8 @@ if [ $# -eq 0 ]; then
     echo >&2 "available subcommands:"
     echo >&2 "    bash <bash args...>"
     echo >&2 "    init"
-    echo >&2 "    run server"
+    echo >&2 "    run server [additional components]"
+    echo >&2 "    run nginx"
     echo >&2 "    run worker <list of queues>"
     exit 1
 fi

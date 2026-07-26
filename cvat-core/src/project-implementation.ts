@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: MIT
 
 import serverProxy from './server-proxy';
-import { decodePreview } from './frames';
+import { resolvePreviewResponse } from './frames';
 import ProjectClass from './project';
 import { exportDataset, importDataset } from './annotations';
 import { getUpdatedLabels } from './labels';
@@ -112,12 +112,7 @@ export default function implementProject(Project: typeof ProjectClass): typeof P
                 return Promise.resolve('');
             }
 
-            return serverProxy.projects.getPreview(this.id).then((preview) => {
-                if (!preview) {
-                    return Promise.resolve('');
-                }
-                return decodePreview(preview);
-            });
+            return serverProxy.projects.getPreview(this.id).then(resolvePreviewResponse);
         },
     });
 

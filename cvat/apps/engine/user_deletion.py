@@ -8,9 +8,9 @@ from typing import TypedDict
 from django.db import transaction
 from django.db.models import Count, Q, QuerySet
 
-from cvat.apps.engine.model_utils import _ModelT
 from cvat.apps.engine.models import CloudStorage, Project, Task, User
 from cvat.apps.organizations.models import Organization
+from cvat.utils.django_database.utils import _ModelT
 
 _USER_DELETION_VALIDATORS = []
 

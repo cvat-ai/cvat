@@ -7,10 +7,6 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useHistory } from 'react-router';
 import Modal from 'antd/lib/modal';
-import Text from 'antd/lib/typography/Text';
-import InputNumber from 'antd/lib/input-number';
-import Checkbox from 'antd/lib/checkbox';
-import Collapse from 'antd/lib/collapse';
 import Dropdown from 'antd/lib/dropdown';
 import Button from 'antd/lib/button';
 import message from 'antd/lib/message';
@@ -21,7 +17,6 @@ import { MainMenuIcon } from 'icons';
 import { Job, JobState } from 'cvat-core-wrapper';
 import { usePlugins } from 'utils/hooks';
 
-import CVATTooltip from 'components/common/cvat-tooltip';
 import { openAnnotationsActionModal } from 'components/annotation-page/annotations-actions/annotations-actions-modal';
 import { CombinedState } from 'reducers';
 import {
@@ -31,6 +26,7 @@ import {
 import { exportActions } from 'actions/export-actions';
 import { importActions } from 'actions/import-actions';
 import { updateJobAsync } from 'actions/jobs-actions';
+import RemoveAnnotationsConfirm, { RemoveAnnotationsConfirmProps } from './remove-annotations-confirm';
 
 export enum Actions {
     LOAD_JOB_ANNO = 'load_job_anno',
@@ -41,11 +37,19 @@ export enum Actions {
     FINISH_JOB = 'finish_job',
 }
 
-function AnnotationMenuComponent(): JSX.Element {
+interface Props {
+    removeAnnotationsConfirmComponent?: React.ComponentType<RemoveAnnotationsConfirmProps>;
+}
+
+function AnnotationMenuComponent(props: Props): JSX.Element {
+    const {
+        removeAnnotationsConfirmComponent: RemoveAnnotationsConfirmComponent = RemoveAnnotationsConfirm,
+    } = props;
     const dispatch = useDispatch();
     const history = useHistory();
     const jobInstance = useSelector((state: CombinedState) => state.annotation.job.instance as Job);
     const [jobState, setJobState] = useState(jobInstance.state);
+    const [removeAnnotationsConfirmOpen, setRemoveAnnotationsConfirmOpen] = useState(false);
     const pluginActions = usePlugins(
         (state: CombinedState) => state.plugins.components.annotationPage.menuActions.items,
         { jobInstance },
@@ -118,71 +122,7 @@ function AnnotationMenuComponent(): JSX.Element {
     menuItems.push([{
         key: Actions.REMOVE_ANNOTATIONS,
         label: 'Remove annotations',
-        onClick: () => {
-            let removeFrom: number | undefined;
-            let removeUpTo: number | undefined;
-            let removeOnlyKeyframes = false;
-            Modal.confirm({
-                title: 'Remove Annotations',
-                content: (
-                    <div>
-                        <Text>You are about to remove all annotations from every frame. </Text>
-                        <Text>If you want to remove them from certain frames only, select a range below.</Text>
-                        <Text>Changes take effect only when you save the job.</Text>
-                        <br />
-                        <br />
-                        <br />
-                        <Collapse
-                            bordered={false}
-                            items={[{
-                                key: 1,
-                                label: <Text>Select Range</Text>,
-                                children: (
-                                    <>
-                                        <Text>From: </Text>
-                                        <InputNumber
-                                            min={0}
-                                            max={stopFrame}
-                                            onChange={(value) => {
-                                                removeFrom = value ?? undefined;
-                                            }}
-                                        />
-                                        <Text>  To: </Text>
-                                        <InputNumber
-                                            min={0}
-                                            max={stopFrame}
-                                            onChange={(value) => {
-                                                removeUpTo = value ?? undefined;
-                                            }}
-                                        />
-                                        <CVATTooltip title='Applicable only for annotations in range'>
-                                            <br />
-                                            <br />
-                                            <Checkbox
-                                                onChange={(check) => {
-                                                    removeOnlyKeyframes = check.target.checked;
-                                                }}
-                                            >
-                                                Delete only keyframes for tracks
-                                            </Checkbox>
-                                        </CVATTooltip>
-                                    </>
-                                ),
-                            }]}
-                        />
-                    </div>
-                ),
-                className: 'cvat-modal-confirm-remove-annotation',
-                onOk: () => {
-                    dispatch(removeAnnotationsAsyncAction(removeFrom, removeUpTo, removeOnlyKeyframes));
-                },
-                okButtonProps: {
-                    type: 'primary',
-                    danger: true,
-                },
-                okText: 'Remove',
-            });
-        },
+        onClick: () => setRemoveAnnotationsConfirmOpen(true),
     }, 30]);
 
     menuItems.push([{
@@ -252,20 +192,30 @@ function AnnotationMenuComponent(): JSX.Element {
     const finalMenuItems = sortedMenuItems.map((menuItem) => menuItem[0]);
 
     return (
-        <Dropdown
-            trigger={['click']}
-            destroyPopupOnHide
-            menu={{
-                items: finalMenuItems,
-                triggerSubMenuAction: 'click',
-                className: 'cvat-annotation-menu',
-            }}
-        >
-            <Button type='link' className='cvat-annotation-header-menu-button cvat-annotation-header-button'>
-                <Icon component={MainMenuIcon} />
-                Menu
-            </Button>
-        </Dropdown>
+        <>
+            <RemoveAnnotationsConfirmComponent
+                open={removeAnnotationsConfirmOpen}
+                stopFrame={stopFrame}
+                onClose={() => setRemoveAnnotationsConfirmOpen(false)}
+                onRemove={(removeFrom, removeUpTo, removeOnlyKeyframes) => {
+                    dispatch(removeAnnotationsAsyncAction(removeFrom, removeUpTo, removeOnlyKeyframes));
+                }}
+            />
+            <Dropdown
+                trigger={['click']}
+                destroyPopupOnHide
+                menu={{
+                    items: finalMenuItems,
+                    triggerSubMenuAction: 'click',
+                    className: 'cvat-annotation-menu',
+                }}
+            >
+                <Button type='link' className='cvat-annotation-header-menu-button cvat-annotation-header-button'>
+                    <Icon component={MainMenuIcon} />
+                    Menu
+                </Button>
+            </Dropdown>
+        </>
     );
 }
 

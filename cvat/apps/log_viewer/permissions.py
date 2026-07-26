@@ -3,9 +3,11 @@
 #
 # SPDX-License-Identifier: MIT
 
+from enum import StrEnum
+
 from django.conf import settings
 
-from cvat.apps.iam.permissions import OpenPolicyAgentPermission, StrEnum, get_iam_context
+from cvat.apps.iam.permissions import OpenPolicyAgentPermission, get_iam_context
 
 
 class LogViewerPermission(OpenPolicyAgentPermission):
@@ -51,7 +53,7 @@ class LogViewerPermission(OpenPolicyAgentPermission):
 
     def get_opa_auth_payload(self):
         data = super().get_opa_auth_payload()
-        data["auth"]["user"]["has_analytics_access"] = self.has_analytics_access
+        data["user"]["has_analytics_access"] = self.has_analytics_access
         return data
 
     def get_resource(self):

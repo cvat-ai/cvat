@@ -4,6 +4,7 @@
 
 import json
 import os
+import zipfile
 from pathlib import Path
 
 import pytest
@@ -165,6 +166,29 @@ class TestCliTasks(TestCliBase):
         assert len(output_dir_files) == 1
         assert os.stat(output_dir + output_dir_files[0]).st_size > 0
 
+    def test_can_download_task_annotations_to_current_directory(
+        self, fxt_new_task: Task, monkeypatch: pytest.MonkeyPatch
+    ):
+        output_dir = self.tmp_path / "current_dir"
+        output_dir.mkdir()
+        monkeypatch.chdir(output_dir)
+
+        self.run_cli(
+            "task",
+            "export-dataset",
+            str(fxt_new_task.id),
+            "--format",
+            "CVAT for images 1.1",
+            "--with-images",
+            "no",
+            "--completion_verification_period",
+            "0.01",
+        )
+
+        output_dir_files = list(output_dir.iterdir())
+        assert len(output_dir_files) == 1
+        assert output_dir_files[0].stat().st_size > 0
+
     def test_can_download_task_backup(self, fxt_new_task: Task):
         filename = self.tmp_path / "task_{fxt_new_task.id}-cvat.zip"
         self.run_cli(
@@ -177,6 +201,8 @@ class TestCliTasks(TestCliBase):
         )
 
         assert 0 < filename.stat().st_size
+        with zipfile.ZipFile(filename) as backup_zip:
+            assert "task.json" in backup_zip.namelist()
 
     def test_can_download_task_backup_with_server_filename(self, fxt_new_task: Task):
         output_dir = str(self.tmp_path / "save_dir") + os.path.sep

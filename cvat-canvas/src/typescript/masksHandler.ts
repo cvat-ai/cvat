@@ -630,7 +630,9 @@ export class MasksHandlerImpl implements MasksHandler {
             this.startTimestamp = Date.now();
         }
 
-        if (!drawData.enabled && this.isDrawing) {
+        if (!drawData.enabled && this.isInsertion) {
+            this.releasePaste();
+        } else if (!drawData.enabled && this.isDrawing) {
             try {
                 if (this.drawnObjects.length) {
                     const wrappingBbox = this.getDrawnObjectsWrappingBox();

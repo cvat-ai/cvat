@@ -807,7 +807,7 @@ class TestWebhookExportEvents:
 
         _, payload = get_deliveries(webhook_id)
         assert payload["event"] == "create:export"
-        assert payload["status"] == "completed"
+        assert payload["status"] == "succeeded"
         assert payload["target"] == "task"
         assert payload["target_id"] == task["id"]
 
@@ -824,6 +824,6 @@ class TestWebhookBackupEvents:
 
         _, payload = get_deliveries(webhook_id)
         assert payload["event"] == "create:backup"
-        assert payload["status"] == "completed"
+        assert payload["status"] == "succeeded"
         assert payload["target"] == "task"
         assert payload["target_id"] == task["id"]

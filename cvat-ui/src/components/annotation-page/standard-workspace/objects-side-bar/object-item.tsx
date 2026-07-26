@@ -30,6 +30,9 @@ interface Props {
     labels: any[];
     attributes: any[];
     jobInstance: any;
+    zLayerDragProps?: React.HTMLAttributes<HTMLElement>;
+    zLayerDragging?: boolean;
+    zOrder: number;
     activate(activeElementID?: number): void;
     focusAndExpand(): void;
     copy(): void;
@@ -40,6 +43,7 @@ interface Props {
     toForeground(): void;
     toOneLayerBackward(): void;
     toOneLayerForward(): void;
+    toSpecificLayer(zOrder: number): void;
     remove(): void;
     changeLabel(label: any): void;
     changeColor(color: string): void;
@@ -63,6 +67,9 @@ function ObjectItemComponent(props: Props): JSX.Element {
         colorBy,
         elements,
         labels,
+        zLayerDragProps,
+        zLayerDragging,
+        zOrder,
         normalizedKeyMap,
         isGroundTruth,
         activate,
@@ -75,6 +82,7 @@ function ObjectItemComponent(props: Props): JSX.Element {
         toForeground,
         toOneLayerForward,
         toOneLayerBackward,
+        toSpecificLayer,
         remove,
         changeLabel,
         changeColor,
@@ -92,8 +100,10 @@ function ObjectItemComponent(props: Props): JSX.Element {
             `${shapeType.toUpperCase()} ${objectType.toUpperCase()}`;
 
     const className = !activated ?
-        'cvat-objects-sidebar-state-item' :
-        'cvat-objects-sidebar-state-item cvat-objects-sidebar-state-active-item';
+        `cvat-objects-sidebar-state-item${zLayerDragging ? ' cvat-objects-sidebar-state-item-dragging' : ''}` :
+        `cvat-objects-sidebar-state-item cvat-objects-sidebar-state-active-item${
+            zLayerDragging ? ' cvat-objects-sidebar-state-item-dragging' : ''
+        }`;
 
     const activateState = useCallback(() => {
         activate();
@@ -102,10 +112,11 @@ function ObjectItemComponent(props: Props): JSX.Element {
     return (
         <div style={{ display: 'flex', marginBottom: '1px' }}>
             <div
+                {...zLayerDragProps}
                 onMouseEnter={activateState}
                 onDoubleClick={focusAndExpand}
                 id={`cvat-objects-sidebar-state-item-${clientID}`}
-                className={className}
+                className={`${className}${zLayerDragProps ? ' cvat-objects-sidebar-state-item-draggable' : ''}`}
                 style={{ '--state-item-background': `${color}` } as React.CSSProperties}
             >
                 <ItemBasics
@@ -128,6 +139,7 @@ function ObjectItemComponent(props: Props): JSX.Element {
                     toForegroundShortcut={normalizedKeyMap.TO_FOREGROUND}
                     toOneLayerBackwardShortcut={normalizedKeyMap.TO_ONE_LAYER_BACKWARD}
                     toOneLayerForwardShortcut={normalizedKeyMap.TO_ONE_LAYER_FORWARD}
+                    zOrder={zOrder}
                     removeShortcut={normalizedKeyMap.DELETE_OBJECT_STANDARD_WORKSPACE}
                     changeColorShortcut={normalizedKeyMap.CHANGE_OBJECT_COLOR}
                     sliceShortcut={normalizedKeyMap.SWITCH_SLICE_MODE}
@@ -143,6 +155,7 @@ function ObjectItemComponent(props: Props): JSX.Element {
                     toForeground={toForeground}
                     toOneLayerBackward={toOneLayerBackward}
                     toOneLayerForward={toOneLayerForward}
+                    toSpecificLayer={toSpecificLayer}
                     resetCuboidPerspective={resetCuboidPerspective}
                     edit={edit}
                     slice={slice}

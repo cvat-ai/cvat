@@ -57,6 +57,10 @@ polyline.cvat_shape_drawing_opacity {
     fill: lightskyblue;
 }
 
+.cvat_canvas_text_layer {
+    fill: #73d13d;
+}
+
 .cvat_canvas_text_description {
     fill: yellow;
     font-style: oblique 40deg;
@@ -324,14 +328,7 @@ g.cvat_canvas_shape_occluded {
     // wrapping rect must not apply transform attribute from selectize.js
     // otherwise it rotated twice, because we apply the same rotation value to parent element (skeleton itself)
     transform: none !important;
-}
-
-.cvat_canvas_shape > .cvat_canvas_skeleton_wrapping_rect {
     visibility: hidden;
-}
-
-.cvat_canvas_shape.cvat_canvas_shape_activated > .cvat_canvas_skeleton_wrapping_rect {
-    visibility: initial;
 }
 
 .cvat_canvas_pixelized {

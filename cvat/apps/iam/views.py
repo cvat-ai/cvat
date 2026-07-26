@@ -6,7 +6,8 @@
 import functools
 
 from allauth.account import app_settings as allauth_settings
-from allauth.account.utils import complete_signup, has_verified_email, send_email_confirmation
+from allauth.account.internal.flows.email_verification import send_verification_email_for_user
+from allauth.account.utils import complete_signup, has_verified_email
 from allauth.account.views import ConfirmEmailView
 from dj_rest_auth.app_settings import api_settings as dj_rest_auth_settings
 from dj_rest_auth.registration.views import RegisterView
@@ -61,7 +62,7 @@ class LoginViewEx(LoginView):
             if has_verified_email(user):
                 raise
 
-            send_email_confirmation(request, user)
+            send_verification_email_for_user(request, user)
             # we cannot use redirect to ACCOUNT_EMAIL_VERIFICATION_SENT_REDIRECT_URL here
             # because redirect will make a POST request and we'll get a 404 code
             # (although in the browser request method will be displayed like GET)

@@ -26,6 +26,7 @@ from typing import Any
 
 import numpy as np
 import pytest
+import requests
 from cvat_sdk import exceptions
 from cvat_sdk.api_client import models
 from cvat_sdk.api_client.api_client import ApiClient, Endpoint
@@ -58,7 +59,9 @@ from shared.tasks.types import SourceDataType
 from shared.tasks.utils import parse_frame_step, to_rel_frames
 from shared.utils.config import (
     ASSETS_DIR,
+    USER_PASS,
     delete_method,
+    get_api_url,
     get_method,
     make_api_client,
     make_sdk_client,
@@ -566,6 +569,36 @@ class TestPostTasks:
             assert response.status == HTTPStatus.BAD_REQUEST
             assert b"remote_files" in response.data
             assert bad_url.encode() in response.data
+
+
+@pytest.mark.usefixtures("restore_db_per_function")
+class TestGetTaskDataMeta:
+    def test_cannot_get_data_meta_before_data_upload_is_finished(self, admin_user):
+        """Regression test for https://github.com/cvat-ai/cvat/pull/10855.
+
+        Requesting task metadata after data upload has started but before it
+        has finished used to raise `UnboundLocalError` (HTTP 500), because
+        `Task.data` existed while `Task.media_type` had not been detected yet.
+        The endpoint must now return HTTP 400 with a clear message.
+        """
+        with make_api_client(admin_user) as api_client:
+            task, _ = api_client.tasks_api.create({"name": "task without data"})
+
+            _, upload_response = api_client.tasks_api.create_data(task.id, upload_start=True)
+            assert upload_response.status == HTTPStatus.ACCEPTED
+
+            task, _ = api_client.tasks_api.retrieve(task.id)
+            assert task.data is not None
+            assert not task.media_type
+
+            _, response = api_client.tasks_api.retrieve_data_meta(
+                task.id,
+                _parse_response=False,
+                _check_status=False,
+            )
+
+            assert response.status == HTTPStatus.BAD_REQUEST
+            assert b"Data is not uploaded" in response.data
 
 
 @pytest.mark.usefixtures("restore_db_per_class")
@@ -1501,6 +1534,10 @@ class TestTaskBackups:
 
         assert "Backup of a task without data is not allowed" in str(capture.value.body)
 
+    def test_can_export_backup_for_audio_task(self, tasks):
+        task_id = next(t for t in tasks if t["media_type"] == "audio")["id"]
+        self._test_can_export_backup(task_id)
+
     @pytest.mark.with_external_services
     def test_can_export_and_import_backup_task_with_mounted_share(self):
         task_spec = {
@@ -1661,6 +1698,10 @@ class TestTaskBackups:
         task = tasks[gt_job["task_id"]]
 
         self._test_can_restore_task_from_backup(task["id"])
+
+    def test_can_import_backup_for_audio_task(self, tasks):
+        task_id = next(t for t in tasks if t["media_type"] == "audio")["id"]
+        self._test_can_export_backup(task_id)
 
     @pytest.mark.with_external_services
     def test_can_export_and_import_backup_with_backing_cs(self, request, cloud_storages):
@@ -2764,6 +2805,90 @@ class TestGetTaskPreview:
 
         self._test_assigned_users_cannot_see_task_preview(tasks, users, is_task_staff)
 
+    @pytest.mark.usefixtures("restore_db_per_function")
+    @pytest.mark.usefixtures("restore_redis_inmem_per_function")
+    def test_can_get_readable_error_in_task_without_data(self, admin_user, fxt_test_name):
+        with make_api_client(admin_user) as api_client:
+            task_id = api_client.tasks_api.create(
+                task_write_request=models.TaskWriteRequest(name=fxt_test_name)
+            )[0].id
+
+            api_client.tasks_api.create_data(task_id, upload_start=True)
+
+            preview_response = api_client.tasks_api.retrieve_preview(
+                task_id, _parse_response=False, _check_status=False
+            )[1]
+            assert preview_response.status == HTTPStatus.NOT_FOUND
+            assert preview_response.data == b'"Task has no media"'
+
+
+@pytest.mark.usefixtures("restore_db_per_class")
+class TestPreviewPreferHeader:
+    """
+    Covers the ``Prefer: handling=empty`` opt-in on preview endpoints:
+    point-cloud entities respond ``204`` when the preference is honored,
+    everything else (no preference, unrelated token, or an entity with a
+    real preview) keeps the legacy 200-with-PNG behavior.
+    """
+
+    @staticmethod
+    def _request_preview(username: str, endpoint: str, *, prefer: str | None):
+        headers = {"Prefer": prefer} if prefer is not None else {}
+        return requests.get(get_api_url(endpoint), headers=headers, auth=(username, USER_PASS))
+
+    @staticmethod
+    def _pick_entity(tasks, jobs, *, instance_type: str, media_type: str):
+        task = next(t for t in tasks if t.get("media_type") == media_type)
+
+        if instance_type == "task":
+            return f"tasks/{task['id']}/preview"
+        elif instance_type == "job":
+            job = next(j for j in jobs if j["task_id"] == task["id"])
+            return f"jobs/{job['id']}/preview"
+        else:
+            assert False
+
+    @parametrize(
+        "instance_type, media_type, prefer, expected_status, expected_applied",
+        [
+            ("task", "point_cloud", "handling=empty", HTTPStatus.NO_CONTENT, "handling=empty"),
+            ("task", "point_cloud", "HANDLING=Empty", HTTPStatus.NO_CONTENT, "handling=empty"),
+            ("task", "point_cloud", 'handling="empty"', HTTPStatus.NO_CONTENT, "handling=empty"),
+            ("task", "point_cloud", None, HTTPStatus.OK, None),
+            ("task", "point_cloud", "wait=5", HTTPStatus.OK, None),
+            ("task", "image", "handling=empty", HTTPStatus.OK, "handling=empty"),
+            ("job", "point_cloud", "handling=empty", HTTPStatus.NO_CONTENT, "handling=empty"),
+        ],
+    )
+    def test_preview_prefer_opt_in(
+        self,
+        admin_user,
+        tasks,
+        jobs,
+        instance_type,
+        media_type,
+        prefer,
+        expected_status,
+        expected_applied,
+    ):
+        endpoint = self._pick_entity(
+            tasks,
+            jobs,
+            instance_type=instance_type,
+            media_type=media_type,
+        )
+        response = self._request_preview(admin_user, endpoint, prefer=prefer)
+
+        assert response.status_code == expected_status
+        assert response.headers.get("Preference-Applied") == expected_applied
+        assert "Prefer" in (response.headers.get("Vary") or "")
+
+        if expected_status == HTTPStatus.NO_CONTENT:
+            assert response.content == b""
+        else:
+            assert response.headers.get("Content-Type", "").startswith("image/")
+            Image.open(io.BytesIO(response.content))
+
 
 @pytest.mark.usefixtures("restore_redis_ondisk_per_function")
 @pytest.mark.usefixtures("restore_redis_ondisk_after_class")
@@ -3606,6 +3731,42 @@ class TestImportTaskAnnotations:
             updated_annotations = json.loads(
                 api_client.tasks_api.retrieve_annotations(task["id"])[1].data
             )
+
+        assert (
+            compare_annotations(original_annotations, updated_annotations, ignore_source=True) == {}
+        )
+
+    def test_can_import_audio_tsv(self, tasks):
+        task = next(
+            t
+            for t in tasks
+            if t.get("size")
+            if t["media_type"] == "audio" and t.get("validation_mode") != "gt_pool"
+        )
+
+        format_name = "Generic TSV 1.0"
+
+        original_annotations = json.loads(
+            self.client.api_client.tasks_api.retrieve_annotations(task["id"])[1].data
+        )
+
+        dataset_file = io.BytesIO(
+            export_dataset(
+                self.client.api_client.tasks_api,
+                id=task["id"],
+                format=format_name,
+                save_images=False,
+            )
+        )
+
+        with TemporaryDirectory() as temp_dir:
+            annotation_file = Path(temp_dir) / "annotations.tsv"
+            annotation_file.write_bytes(dataset_file.getvalue())
+            self.client.tasks.retrieve(task["id"]).import_annotations(format_name, annotation_file)
+
+        updated_annotations = json.loads(
+            self.client.api_client.tasks_api.retrieve_annotations(task["id"])[1].data
+        )
 
         assert (
             compare_annotations(original_annotations, updated_annotations, ignore_source=True) == {}

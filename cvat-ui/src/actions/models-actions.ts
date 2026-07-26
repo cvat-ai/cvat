@@ -7,7 +7,9 @@ import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
 import {
     ActiveInference, ModelsQuery,
 } from 'reducers';
-import { getCore, MLModel, RQStatus } from 'cvat-core-wrapper';
+import {
+    getCore, MLModel, RQStatus,
+} from 'cvat-core-wrapper';
 
 export enum ModelsActionTypes {
     GET_MODELS = 'GET_MODELS',

@@ -19,6 +19,7 @@ from cvat.apps.iam.filters import ORGANIZATION_OPEN_API_PARAMETERS
 from cvat.apps.redis_handler.serializers import RqIdSerializer
 
 from .const import USER_ACTIVITY_SCOPE
+from .event import get_remote_addr
 from .export import export
 from .handlers import handle_client_events_push
 
@@ -105,6 +106,12 @@ class EventsViewSet(viewsets.ViewSet):
             if event["scope"] == USER_ACTIVITY_SCOPE:
                 # do not record these events, we only need them for correct working time computation
                 continue
+
+            if remote_addr := get_remote_addr(request):
+                event = {
+                    **event,
+                    "remote_addr": remote_addr,
+                }
 
             message = (
                 JSONRenderer()

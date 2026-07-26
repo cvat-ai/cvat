@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 CVAT_ROOT_DIR = next(dir.parent for dir in Path(__file__).parents if dir.name == "tests")
 CVAT_DB_DIR = ASSETS_DIR / "cvat_db"
-CLICKHOUSE_INIT_SCRIPT = "components/analytics/clickhouse/init.py"
+CLICKHOUSE_INIT_SCRIPT = "/opt/cvat/components/analytics/clickhouse/init.py"
 PREFIX = "test"
 
 CONTAINER_NAME_FILES = ["docker-compose.tests.yml"]
@@ -579,7 +579,7 @@ def session_finish(session):
 
 def collect_code_coverage_from_containers():
     for container in Container.covered():
-        process_command = "python3"
+        process_command = "python"
 
         # find process with code coverage
         pid = docker_exec(container, f"pidof {process_command} -o 1")
