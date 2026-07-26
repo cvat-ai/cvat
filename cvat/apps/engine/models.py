@@ -31,9 +31,9 @@ from drf_spectacular.utils import extend_schema_field
 
 from cvat.apps.engine.exceptions import CloudStorageMissingError
 from cvat.apps.engine.lazy_list import LazyList
-from cvat.apps.engine.model_utils import MaybeUndefined
 from cvat.apps.engine.utils import parse_specific_attributes, take_by
 from cvat.apps.events.utils import cache_deleted
+from cvat.utils import django_database as db_utils
 
 if TYPE_CHECKING:
     from cvat.apps.engine.cloud_provider import AbstractCloudStorage
@@ -90,6 +90,7 @@ class LabelType(str, Enum):
     POLYLINE = "polyline"
     RECTANGLE = "rectangle"
     SKELETON = "skeleton"
+    INTERVAL = "interval"
     TAG = "tag"
 
     @classmethod
@@ -459,12 +460,12 @@ class Data(models.Model):
     stop_frame = models.PositiveIntegerField(default=0)
     frame_filter = models.CharField(max_length=256, default="", blank=True)
     deleted_frames = IntArrayField(store_sorted=True, unique_values=True)
-    validation_layout: MaybeUndefined[ValidationLayout]
+    validation_layout: db_utils.MaybeUndefined[ValidationLayout]
 
     # Media descriptors
     images: models.manager.RelatedManager[Image]
-    video: MaybeUndefined[Video]
-    audio: MaybeUndefined[Audio]
+    video: db_utils.MaybeUndefined[Video]
+    audio: db_utils.MaybeUndefined[Audio]
     related_files: models.manager.RelatedManager[RelatedFile]
 
     # Cache descriptors
@@ -501,7 +502,7 @@ class Data(models.Model):
     client_files: models.manager.RelatedManager[ClientFile]
     server_files: models.manager.RelatedManager[ServerFile]
     remote_files: models.manager.RelatedManager[RemoteFile]
-    validation_params: MaybeUndefined[ValidationParams]
+    validation_params: db_utils.MaybeUndefined[ValidationParams]
     """
     Represents user-requested validation params before task is created.
     After the task creation, 'validation_layout' is used instead.
@@ -608,7 +609,9 @@ class Data(models.Model):
 
         if self.storage == StorageChoice.LOCAL and self.local_storage_backing_cs:
             return SubdirectoryCloudStorage(
-                db_storage_to_storage_instance(self.local_storage_backing_cs), f"data/{self.id}/raw"
+                # We can trust backing cloud storage, since only an admin can set it.
+                db_storage_to_storage_instance(self.local_storage_backing_cs, is_trusted=True),
+                f"data/{self.id}/raw",
             )
 
         return None
@@ -768,12 +771,14 @@ def clear_annotations_in_jobs(job_ids: Iterable[int]):
         LabeledShape.objects.filter(job_id__in=job_ids_chunk).delete()
         LabeledImageAttributeVal.objects.filter(job_id__in=job_ids_chunk).delete()
         LabeledImage.objects.filter(job_id__in=job_ids_chunk).delete()
+        LabeledIntervalAttributeVal.objects.filter(job_id__in=job_ids_chunk).delete()
+        LabeledInterval.objects.filter(job_id__in=job_ids_chunk).delete()
 
 
 @transaction.atomic(savepoint=False)
 def clear_annotations_on_frames_in_honeypot_task(db_task: Task, frames: Sequence[int]):
     if db_task.data.validation_mode != ValidationMode.GT_POOL:
-        # Tracks are prohibited in honeypot tasks
+        # Tracks and intervals are prohibited in honeypot tasks
         raise AssertionError
 
     for frames_batch in take_by(frames, chunk_size=1000):
@@ -972,7 +977,7 @@ class Task(TimestampedModel, AssignableModel, FileSystemRelatedModel):
 
     segment_set: models.manager.RelatedManager[Segment]
 
-    user_can_view_task: MaybeUndefined[bool]
+    user_can_view_task: db_utils.MaybeUndefined[bool]
     "Can be defined by the fetching queryset to avoid extra IAM checks, e.g. in a list serializer"
 
     # Extend default permission model
@@ -1319,13 +1324,16 @@ class Job(TimestampedModel, AssignableModel, FileSystemRelatedModel):
     labeledtrackattributeval_set: models.manager.RelatedManager[LabeledTrackAttributeVal]
     trackedshapeattributeval_set: models.manager.RelatedManager[TrackedShapeAttributeVal]
 
-    user_can_view_task: MaybeUndefined[bool]
+    labeledinterval_set: models.manager.RelatedManager[LabeledInterval]
+    labeledintervalattributeval_set: models.manager.RelatedManager[LabeledIntervalAttributeVal]
+
+    user_can_view_task: db_utils.MaybeUndefined[bool]
     "Can be defined by the fetching queryset to avoid extra IAM checks, e.g. in a list serializer"
 
-    issue__count: MaybeUndefined[int]
+    issue__count: db_utils.MaybeUndefined[int]
     "Can be defined by the fetching queryset"
 
-    child_jobs__count: MaybeUndefined[int]
+    child_jobs__count: db_utils.MaybeUndefined[int]
     "Can be defined by the fetching queryset"
 
     def get_target_storage(self) -> Storage | None:
@@ -1650,6 +1658,20 @@ class TrackedShape(FrameAnnotationMixin, ShapeAnnotationMixin):
 class TrackedShapeAttributeVal(AttributeVal):
     shape = models.ForeignKey(
         TrackedShape,
+        on_delete=models.DO_NOTHING,
+        related_name="attributes",
+        related_query_name="attribute",
+    )
+
+
+class LabeledInterval(Annotation, ScoredAnnotationMixin):
+    start = models.PositiveIntegerField()
+    stop = models.PositiveIntegerField(null=True)
+
+
+class LabeledIntervalAttributeVal(AttributeVal):
+    interval = models.ForeignKey(
+        LabeledInterval,
         on_delete=models.DO_NOTHING,
         related_name="attributes",
         related_query_name="attribute",

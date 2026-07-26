@@ -852,6 +852,40 @@
     }
   },
   {
+    "model": "engine.attributespec",
+    "pk": 19,
+    "fields": {
+      "default_value": "Alice",
+      "input_type": "select",
+      "label": 93,
+      "mutable": false,
+      "name": "speaker",
+      "values": "Alice\nBob"
+    }
+  },
+  {
+    "model": "engine.attributespec",
+    "pk": 20,
+    "fields": {
+      "default_value": "",
+      "input_type": "text",
+      "label": 93,
+      "mutable": true,
+      "name": "tr-en",
+      "values": ""
+    }
+  },
+  {
+    "model": "engine.audio",
+    "pk": 1,
+    "fields": {
+      "data": 35,
+      "has_cover_image": true,
+      "path": "sample2_with_cover.mp3",
+      "sampling_rate": 24000
+    }
+  },
+  {
     "model": "engine.clientfile",
     "pk": 131,
     "fields": {
@@ -2608,6 +2642,26 @@
       "sorting_method": "lexicographical",
       "start_frame": 0,
       "stop_frame": 1,
+      "storage": "local",
+      "storage_method": "cache"
+    }
+  },
+  {
+    "model": "engine.data",
+    "pk": 35,
+    "fields": {
+      "chunk_size": 6914,
+      "cloud_storage": null,
+      "compressed_chunk_type": "audio_mp3",
+      "content_size": 56401,
+      "deleted_frames": "[]",
+      "frame_filter": "",
+      "image_quality": 70,
+      "original_chunk_type": "audio_mp3",
+      "size": 6914,
+      "sorting_method": "lexicographical",
+      "start_frame": 0,
+      "stop_frame": 6913,
       "storage": "local",
       "storage_method": "cache"
     }
@@ -6193,6 +6247,38 @@
     }
   },
   {
+    "model": "engine.job",
+    "pk": 64,
+    "fields": {
+      "assignee": null,
+      "assignee_updated_date": null,
+      "created_date": "2026-05-11T17:25:43.509Z",
+      "parent_job": null,
+      "segment": 56,
+      "stage": "annotation",
+      "state": "new",
+      "status": "annotation",
+      "type": "annotation",
+      "updated_date": "2026-05-11T17:25:43.621Z"
+    }
+  },
+  {
+    "model": "engine.job",
+    "pk": 65,
+    "fields": {
+      "assignee": null,
+      "assignee_updated_date": null,
+      "created_date": "2026-05-11T17:25:43.568Z",
+      "parent_job": null,
+      "segment": 57,
+      "stage": "annotation",
+      "state": "new",
+      "status": "annotation",
+      "type": "ground_truth",
+      "updated_date": "2026-05-11T17:25:43.641Z"
+    }
+  },
+  {
     "model": "engine.label",
     "pk": 3,
     "fields": {
@@ -7213,6 +7299,18 @@
     }
   },
   {
+    "model": "engine.label",
+    "pk": 93,
+    "fields": {
+      "color": "#d76534",
+      "name": "event",
+      "parent": null,
+      "project": null,
+      "task": 36,
+      "type": "interval"
+    }
+  },
+  {
     "model": "engine.labeledimage",
     "pk": 1,
     "fields": {
@@ -7473,6 +7571,138 @@
       "image": 22,
       "job": 51,
       "spec": 18,
+      "value": ""
+    }
+  },
+  {
+    "model": "engine.labeledinterval",
+    "pk": 1,
+    "fields": {
+      "group": 0,
+      "job": 64,
+      "label": 93,
+      "score": 1.0,
+      "source": "manual",
+      "start": 0,
+      "stop": 6913
+    }
+  },
+  {
+    "model": "engine.labeledinterval",
+    "pk": 2,
+    "fields": {
+      "group": 0,
+      "job": 64,
+      "label": 93,
+      "score": 1.0,
+      "source": "manual",
+      "start": 0,
+      "stop": 6913
+    }
+  },
+  {
+    "model": "engine.labeledinterval",
+    "pk": 3,
+    "fields": {
+      "group": 0,
+      "job": 65,
+      "label": 93,
+      "score": 1.0,
+      "source": "manual",
+      "start": 0,
+      "stop": 6913
+    }
+  },
+  {
+    "model": "engine.labeledinterval",
+    "pk": 4,
+    "fields": {
+      "group": 0,
+      "job": 65,
+      "label": 93,
+      "score": 1.0,
+      "source": "manual",
+      "start": 0,
+      "stop": 6913
+    }
+  },
+  {
+    "model": "engine.labeledintervalattributeval",
+    "pk": 1,
+    "fields": {
+      "interval": 1,
+      "job": 64,
+      "spec": 19,
+      "value": "Bob"
+    }
+  },
+  {
+    "model": "engine.labeledintervalattributeval",
+    "pk": 2,
+    "fields": {
+      "interval": 1,
+      "job": 64,
+      "spec": 20,
+      "value": ""
+    }
+  },
+  {
+    "model": "engine.labeledintervalattributeval",
+    "pk": 3,
+    "fields": {
+      "interval": 2,
+      "job": 64,
+      "spec": 19,
+      "value": "Bob"
+    }
+  },
+  {
+    "model": "engine.labeledintervalattributeval",
+    "pk": 4,
+    "fields": {
+      "interval": 2,
+      "job": 64,
+      "spec": 20,
+      "value": ""
+    }
+  },
+  {
+    "model": "engine.labeledintervalattributeval",
+    "pk": 5,
+    "fields": {
+      "interval": 3,
+      "job": 65,
+      "spec": 19,
+      "value": "Bob"
+    }
+  },
+  {
+    "model": "engine.labeledintervalattributeval",
+    "pk": 6,
+    "fields": {
+      "interval": 3,
+      "job": 65,
+      "spec": 20,
+      "value": ""
+    }
+  },
+  {
+    "model": "engine.labeledintervalattributeval",
+    "pk": 7,
+    "fields": {
+      "interval": 4,
+      "job": 65,
+      "spec": 19,
+      "value": "Bob"
+    }
+  },
+  {
+    "model": "engine.labeledintervalattributeval",
+    "pk": 8,
+    "fields": {
+      "interval": 4,
+      "job": 65,
+      "spec": 20,
       "value": ""
     }
   },
@@ -10074,7 +10304,7 @@
       "points": "24.722413063049316, 37.791320228576296, 270.78543078899384, 610.5770170927044",
       "rotation": 0.0,
       "score": 1.0,
-      "source": "Ground truth",
+      "source": "manual",
       "type": "rectangle",
       "z_order": 0
     }
@@ -10093,7 +10323,7 @@
       "points": "87.86122530400826, 22.648517262936366, 277.2987968593843, 128.69934738874508",
       "rotation": 0.0,
       "score": 1.0,
-      "source": "Ground truth",
+      "source": "manual",
       "type": "rectangle",
       "z_order": 0
     }
@@ -10112,7 +10342,7 @@
       "points": "8.219268488885064, 76.40050053596497, 46.97136907577624, 76.9621251821518",
       "rotation": 0.0,
       "score": 1.0,
-      "source": "Ground truth",
+      "source": "manual",
       "type": "rectangle",
       "z_order": 0
     }
@@ -10131,7 +10361,7 @@
       "points": "40.372303777934576, 55.821463263035184, 232.15283377170636, 366.6659974813465",
       "rotation": 0.0,
       "score": 1.0,
-      "source": "Ground truth",
+      "source": "manual",
       "type": "rectangle",
       "z_order": 0
     }
@@ -10150,7 +10380,7 @@
       "points": "114.91701781749725, 49.88939428329468, 426.5192240476608, 201.82309412956238",
       "rotation": 0.0,
       "score": 1.0,
-      "source": "Ground truth",
+      "source": "manual",
       "type": "rectangle",
       "z_order": 0
     }
@@ -10169,7 +10399,7 @@
       "points": "69.46096818744991, 42.89721039235519, 143.9282634973515, 85.61091347932779",
       "rotation": 0.0,
       "score": 1.0,
-      "source": "Ground truth",
+      "source": "manual",
       "type": "rectangle",
       "z_order": 0
     }
@@ -10188,7 +10418,7 @@
       "points": "35.64345116019285, 190.86810638308634, 41.340930348635084, 213.02496989369502",
       "rotation": 0.0,
       "score": 1.0,
-      "source": "Ground truth",
+      "source": "manual",
       "type": "rectangle",
       "z_order": 0
     }
@@ -10511,7 +10741,7 @@
       "points": "17.650000000003274,11.30000000000291,30.55000000000291,21.700000000002547",
       "rotation": 0.0,
       "score": 1.0,
-      "source": "Ground truth",
+      "source": "manual",
       "type": "rectangle",
       "z_order": 0
     }
@@ -10530,7 +10760,7 @@
       "points": "18.850000000002183,12.000000000001819,25.850000000002183,19.50000000000182",
       "rotation": 0.0,
       "score": 1.0,
-      "source": "Ground truth",
+      "source": "manual",
       "type": "rectangle",
       "z_order": 0
     }
@@ -10549,7 +10779,7 @@
       "points": "26.150000000003274,25.00000000000182,34.150000000003274,34.50000000000182",
       "rotation": 0.0,
       "score": 1.0,
-      "source": "Ground truth",
+      "source": "manual",
       "type": "rectangle",
       "z_order": 0
     }
@@ -10568,7 +10798,7 @@
       "points": "24.600000000002183,11.500000000001819,37.10000000000218,18.700000000002547",
       "rotation": 0.0,
       "score": 1.0,
-      "source": "Ground truth",
+      "source": "manual",
       "type": "rectangle",
       "z_order": 0
     }
@@ -10587,7 +10817,7 @@
       "points": "17.863216443472993,36.43614886308387,41.266725327279346,42.765472201610464",
       "rotation": 0.0,
       "score": 1.0,
-      "source": "Ground truth",
+      "source": "manual",
       "type": "rectangle",
       "z_order": 0
     }
@@ -10606,7 +10836,7 @@
       "points": "34.349609375,52.806640625,27.086274131672326,63.1830161588623,40.229131337355284,67.44868033965395,48.87574792004307,59.03264019917333,45.53238950807099,53.3835173651496",
       "rotation": 0.0,
       "score": 1.0,
-      "source": "Ground truth",
+      "source": "manual",
       "type": "polygon",
       "z_order": 0
     }
@@ -10625,7 +10855,7 @@
       "points": "160.71132684643453,59.61108186333331,254.8470583598446,111.65360009838878",
       "rotation": 0.0,
       "score": 1.0,
-      "source": "Ground truth",
+      "source": "manual",
       "type": "rectangle",
       "z_order": 0
     }
@@ -10644,7 +10874,7 @@
       "points": "434.6998787309949,78.74436062622226,502.0490199763608,127.72555425921564",
       "rotation": 0.0,
       "score": 1.0,
-      "source": "Ground truth",
+      "source": "manual",
       "type": "rectangle",
       "z_order": 0
     }
@@ -10663,7 +10893,7 @@
       "points": "245.67336843180783,162.98163621791718,334.90269485918907,215.98915686784676",
       "rotation": 0.0,
       "score": 1.0,
-      "source": "Ground truth",
+      "source": "manual",
       "type": "rectangle",
       "z_order": 0
     }
@@ -11537,7 +11767,7 @@
       "points": "57.55191292719792,91.01746029323476,93.51269847403637,113.40121456218549",
       "rotation": 0.0,
       "score": 1.0,
-      "source": "Ground truth",
+      "source": "manual",
       "type": "rectangle",
       "z_order": 0
     }
@@ -11556,7 +11786,7 @@
       "points": "117.7311866994587,44.78216459015675,154.0589190375922,83.67852446735014",
       "rotation": 0.0,
       "score": 1.0,
-      "source": "Ground truth",
+      "source": "manual",
       "type": "rectangle",
       "z_order": 0
     }
@@ -11575,7 +11805,7 @@
       "points": "118.46508028204698,92.85219424970637,155.15975941147371,114.86900172736205",
       "rotation": 0.0,
       "score": 1.0,
-      "source": "Ground truth",
+      "source": "manual",
       "type": "rectangle",
       "z_order": 0
     }
@@ -11594,7 +11824,7 @@
       "points": "98.24876888892686,49.789385627491356,122.23616360333835,77.89582791912471",
       "rotation": 0.0,
       "score": 1.0,
-      "source": "Ground truth",
+      "source": "manual",
       "type": "rectangle",
       "z_order": 0
     }
@@ -11689,7 +11919,7 @@
       "points": "33.41885724702297,41.82305888866176,72.56171420808096,84.03594384666576",
       "rotation": 0.0,
       "score": 1.0,
-      "source": "Ground truth",
+      "source": "manual",
       "type": "rectangle",
       "z_order": 0
     }
@@ -11708,7 +11938,7 @@
       "points": "97.69756843307368,42.974319387516516,145.4748791355414,84.03594384666576",
       "rotation": 0.0,
       "score": 1.0,
-      "source": "Ground truth",
+      "source": "manual",
       "type": "rectangle",
       "z_order": 0
     }
@@ -11727,7 +11957,7 @@
       "points": "68.74419891008984,45.20736400021633,113.71758860208683,83.33201414520954",
       "rotation": 0.0,
       "score": 1.0,
-      "source": "Ground truth",
+      "source": "manual",
       "type": "rectangle",
       "z_order": 0
     }
@@ -15238,6 +15468,30 @@
     }
   },
   {
+    "model": "engine.segment",
+    "pk": 56,
+    "fields": {
+      "chunks_updated_date": "2026-05-11T17:25:43.503Z",
+      "frames": "[]",
+      "start_frame": 0,
+      "stop_frame": 6913,
+      "task": 36,
+      "type": "range"
+    }
+  },
+  {
+    "model": "engine.segment",
+    "pk": 57,
+    "fields": {
+      "chunks_updated_date": "2026-05-11T17:25:43.566Z",
+      "frames": "[]",
+      "start_frame": 0,
+      "stop_frame": 6913,
+      "task": 36,
+      "type": "range"
+    }
+  },
+  {
     "model": "engine.serverfile",
     "pk": 1,
     "fields": {
@@ -16650,6 +16904,34 @@
     }
   },
   {
+    "model": "engine.task",
+    "pk": 36,
+    "fields": {
+      "assignee": null,
+      "assignee_updated_date": null,
+      "bug_tracker": "",
+      "consensus_replicas": 0,
+      "created_date": "2026-05-11T17:25:43.375Z",
+      "data": 35,
+      "dimension": "1d",
+      "media_type": "audio",
+      "mode": "interpolation",
+      "name": "task with audio and gt",
+      "organization": 2,
+      "overlap": 0,
+      "owner": [
+        "user2"
+      ],
+      "project": null,
+      "segment_size": 6914,
+      "source_storage": null,
+      "status": "annotation",
+      "subset": "",
+      "target_storage": null,
+      "updated_date": "2026-05-11T17:25:43.643Z"
+    }
+  },
+  {
     "model": "engine.trackedshape",
     "pk": 1,
     "fields": {
@@ -17088,6 +17370,17 @@
       "frames_per_job_count": null,
       "mode": "gt",
       "task_data": 33
+    }
+  },
+  {
+    "model": "engine.validationlayout",
+    "pk": 8,
+    "fields": {
+      "disabled_frames": "[]",
+      "frames": "[]",
+      "frames_per_job_count": null,
+      "mode": "gt",
+      "task_data": 35
     }
   },
   {
@@ -23637,6 +23930,35 @@
     }
   },
   {
+    "model": "quality_control.qualitysettings",
+    "pk": 48,
+    "fields": {
+      "check_covered_annotations": true,
+      "compare_attributes": true,
+      "compare_groups": true,
+      "compare_line_orientation": true,
+      "created_date": "2026-05-11T17:25:43.435Z",
+      "empty_is_annotated": false,
+      "group_match_threshold": 0.5,
+      "inherit": true,
+      "iou_threshold": 0.4,
+      "job_filter": "",
+      "line_orientation_threshold": 0.1,
+      "line_thickness": 0.01,
+      "low_overlap_threshold": 0.8,
+      "max_validations_per_job": 0,
+      "object_visibility_threshold": 0.05,
+      "oks_sigma": 0.09,
+      "panoptic_comparison": true,
+      "point_size_base": "group_bbox_size",
+      "project": null,
+      "target_metric": "accuracy",
+      "target_metric_threshold": 0.7,
+      "task": 36,
+      "updated_date": "2026-05-11T17:25:43.435Z"
+    }
+  },
+  {
     "model": "sites.site",
     "pk": 1,
     "fields": {
@@ -23732,6 +24054,7 @@
     "model": "webhooks.webhookdelivery",
     "pk": 1,
     "fields": {
+      "attempt": null,
       "changed_fields": "",
       "created_date": "2023-09-15T07:53:52.457Z",
       "event": "create:invitation",
@@ -23767,6 +24090,7 @@
         },
         "webhook_id": 6
       },
+      "request_duration": null,
       "response": "<!doctype html>\n<html>\n<head>\n    <title>Example Domain</title>\n\n    <meta charset=\"utf-8\" />\n    <meta http-equiv=\"Content-type\" content=\"text/html; charset=utf-8\" />\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />\n    <style type=\"text/css\">\n    body {\n        background-color: #f0f0f2;\n        margin: 0;\n        padding: 0;\n        font-family: -apple-system, system-ui, BlinkMacSystemFont, \"Segoe UI\", \"Open Sans\", \"Helvetica Neue\", Helvetica, Arial, sans-serif;\n        \n    }\n    div {\n        width: 600px;\n        margin: 5em auto;\n        padding: 2em;\n        background-color: #fdfdff;\n        border-radius: 0.5em;\n        box-shadow: 2px 3px 7px 2px rgba(0,0,0,0.02);\n    }\n    a:link, a:visited {\n        color: #38488f;\n        text-decoration: none;\n    }\n    @media (max-width: 700px) {\n        div {\n            margin: 0 auto;\n            width: auto;\n        }\n    }\n    </style>    \n</head>\n\n<body>\n<div>\n    <h1>Example Domain</h1>\n    <p>This domain is for use in illustrative examples in documents. You may use this\n    domain in literature without prior coordination or asking for permission.</p>\n    <p><a href=\"https://www.iana.org/domains/example\">More information...</a></p>\n</div>\n</body>\n</html>\n",
       "status_code": 200,
       "updated_date": "2023-09-15T07:53:52.457Z",
@@ -23777,6 +24101,7 @@
     "model": "webhooks.webhookdelivery",
     "pk": 2,
     "fields": {
+      "attempt": null,
       "changed_fields": "",
       "created_date": "2023-09-15T07:53:52.659Z",
       "event": "create:invitation",
@@ -23812,6 +24137,7 @@
         },
         "webhook_id": 6
       },
+      "request_duration": null,
       "response": "<!doctype html>\n<html>\n<head>\n    <title>Example Domain</title>\n\n    <meta charset=\"utf-8\" />\n    <meta http-equiv=\"Content-type\" content=\"text/html; charset=utf-8\" />\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />\n    <style type=\"text/css\">\n    body {\n        background-color: #f0f0f2;\n        margin: 0;\n        padding: 0;\n        font-family: -apple-system, system-ui, BlinkMacSystemFont, \"Segoe UI\", \"Open Sans\", \"Helvetica Neue\", Helvetica, Arial, sans-serif;\n        \n    }\n    div {\n        width: 600px;\n        margin: 5em auto;\n        padding: 2em;\n        background-color: #fdfdff;\n        border-radius: 0.5em;\n        box-shadow: 2px 3px 7px 2px rgba(0,0,0,0.02);\n    }\n    a:link, a:visited {\n        color: #38488f;\n        text-decoration: none;\n    }\n    @media (max-width: 700px) {\n        div {\n            margin: 0 auto;\n            width: auto;\n        }\n    }\n    </style>    \n</head>\n\n<body>\n<div>\n    <h1>Example Domain</h1>\n    <p>This domain is for use in illustrative examples in documents. You may use this\n    domain in literature without prior coordination or asking for permission.</p>\n    <p><a href=\"https://www.iana.org/domains/example\">More information...</a></p>\n</div>\n</body>\n</html>\n",
       "status_code": 200,
       "updated_date": "2023-09-15T07:53:52.659Z",
@@ -23822,6 +24148,7 @@
     "model": "webhooks.webhookdelivery",
     "pk": 3,
     "fields": {
+      "attempt": null,
       "changed_fields": "is_active,joined_date",
       "created_date": "2023-09-15T07:53:52.906Z",
       "event": "update:membership",
@@ -23856,6 +24183,7 @@
           "joined_date": null
         }
       },
+      "request_duration": null,
       "response": "<!doctype html>\n<html>\n<head>\n    <title>Example Domain</title>\n\n    <meta charset=\"utf-8\" />\n    <meta http-equiv=\"Content-type\" content=\"text/html; charset=utf-8\" />\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />\n    <style type=\"text/css\">\n    body {\n        background-color: #f0f0f2;\n        margin: 0;\n        padding: 0;\n        font-family: -apple-system, system-ui, BlinkMacSystemFont, \"Segoe UI\", \"Open Sans\", \"Helvetica Neue\", Helvetica, Arial, sans-serif;\n        \n    }\n    div {\n        width: 600px;\n        margin: 5em auto;\n        padding: 2em;\n        background-color: #fdfdff;\n        border-radius: 0.5em;\n        box-shadow: 2px 3px 7px 2px rgba(0,0,0,0.02);\n    }\n    a:link, a:visited {\n        color: #38488f;\n        text-decoration: none;\n    }\n    @media (max-width: 700px) {\n        div {\n            margin: 0 auto;\n            width: auto;\n        }\n    }\n    </style>    \n</head>\n\n<body>\n<div>\n    <h1>Example Domain</h1>\n    <p>This domain is for use in illustrative examples in documents. You may use this\n    domain in literature without prior coordination or asking for permission.</p>\n    <p><a href=\"https://www.iana.org/domains/example\">More information...</a></p>\n</div>\n</body>\n</html>\n",
       "status_code": 200,
       "updated_date": "2023-09-15T07:53:52.906Z",
@@ -23866,6 +24194,7 @@
     "model": "webhooks.webhookdelivery",
     "pk": 4,
     "fields": {
+      "attempt": null,
       "changed_fields": "is_active,joined_date",
       "created_date": "2023-09-15T07:53:53.135Z",
       "event": "update:membership",
@@ -23900,6 +24229,7 @@
           "joined_date": null
         }
       },
+      "request_duration": null,
       "response": "<!doctype html>\n<html>\n<head>\n    <title>Example Domain</title>\n\n    <meta charset=\"utf-8\" />\n    <meta http-equiv=\"Content-type\" content=\"text/html; charset=utf-8\" />\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />\n    <style type=\"text/css\">\n    body {\n        background-color: #f0f0f2;\n        margin: 0;\n        padding: 0;\n        font-family: -apple-system, system-ui, BlinkMacSystemFont, \"Segoe UI\", \"Open Sans\", \"Helvetica Neue\", Helvetica, Arial, sans-serif;\n        \n    }\n    div {\n        width: 600px;\n        margin: 5em auto;\n        padding: 2em;\n        background-color: #fdfdff;\n        border-radius: 0.5em;\n        box-shadow: 2px 3px 7px 2px rgba(0,0,0,0.02);\n    }\n    a:link, a:visited {\n        color: #38488f;\n        text-decoration: none;\n    }\n    @media (max-width: 700px) {\n        div {\n            margin: 0 auto;\n            width: auto;\n        }\n    }\n    </style>    \n</head>\n\n<body>\n<div>\n    <h1>Example Domain</h1>\n    <p>This domain is for use in illustrative examples in documents. You may use this\n    domain in literature without prior coordination or asking for permission.</p>\n    <p><a href=\"https://www.iana.org/domains/example\">More information...</a></p>\n</div>\n</body>\n</html>\n",
       "status_code": 200,
       "updated_date": "2023-09-15T07:53:53.135Z",

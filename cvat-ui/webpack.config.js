@@ -144,11 +144,13 @@ module.exports = (env, argv = {}) => {
                             loader: 'css-loader',
                             options: {
                                 importLoaders: 2,
+                                sourceMap: false,
                             },
                         },
                         {
                             loader: 'postcss-loader',
                             options: {
+                                sourceMap: false,
                                 postcssOptions: {
                                     plugins: [
                                         [
@@ -158,7 +160,12 @@ module.exports = (env, argv = {}) => {
                                 },
                             },
                         },
-                        'sass-loader',
+                        {
+                            loader: 'sass-loader',
+                            options: {
+                                sourceMap: false,
+                            },
+                        },
                     ],
                 },
                 {

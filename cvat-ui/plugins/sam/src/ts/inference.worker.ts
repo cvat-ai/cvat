@@ -84,12 +84,12 @@ if ((self as any).importScripts) {
 
             decoder.run(inputs).then((results) => (
                 Promise.all([
-                    results.xtl.getData(),
-                    results.ytl.getData(),
-                    results.xbr.getData(),
-                    results.ybr.getData(),
-                    results.masks.getData(),
-                    results.low_res_masks.getData(),
+                    results.xtl.getData() as unknown as Int32Array,
+                    results.ytl.getData() as unknown as Int32Array,
+                    results.xbr.getData() as unknown as Int32Array,
+                    results.ybr.getData() as unknown as Int32Array,
+                    results.masks.getData() as unknown as Float32Array,
+                    results.low_res_masks.getData() as unknown as Float32Array,
                 ])
             )).then((
                 [xtl, ytl, xbr, ybr, mask, lowResMask]:

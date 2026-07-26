@@ -1,0 +1,15 @@
+<!--
+    Copyright (C) CVAT.ai Corporation
+    SPDX-License-Identifier: MIT
+-->
+
+<svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect x="2.5" y="3.5" width="1.6" height="17" rx="0.8" fill="#000"/>
+  <rect x="20.9" y="3.5" width="1.6" height="17" rx="0.8" fill="#000"/>
+  <rect x="5.6" y="9.6" width="1.2" height="4.8" rx="0.6" fill="#222"/>
+  <rect x="8.1" y="6.8" width="1.2" height="10.4" rx="0.6" fill="#222"/>
+  <rect x="10.6" y="4.4" width="1.2" height="15.2" rx="0.6" fill="#222"/>
+  <rect x="13.1" y="6.1" width="1.2" height="11.8" rx="0.6" fill="#222"/>
+  <rect x="15.6" y="8.4" width="1.2" height="7.2" rx="0.6" fill="#222"/>
+  <rect x="18.1" y="9.6" width="1.2" height="4.8" rx="0.6" fill="#222"/>
+</svg>

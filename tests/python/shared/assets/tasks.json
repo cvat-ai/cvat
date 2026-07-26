@@ -1,8 +1,56 @@
 {
-  "count": 30,
+  "count": 31,
   "next": null,
   "previous": null,
   "results": [
+    {
+      "assignee": null,
+      "assignee_updated_date": null,
+      "bug_tracker": "",
+      "consensus_enabled": false,
+      "created_date": "2026-05-11T17:25:43.375000Z",
+      "data": 35,
+      "data_chunk_size": 6914,
+      "data_cloud_storage_id": null,
+      "data_compressed_chunk_type": "audio_mp3",
+      "data_original_chunk_type": "audio_mp3",
+      "dimension": "1d",
+      "guide_id": null,
+      "id": 36,
+      "jobs": {
+        "completed": 0,
+        "count": 2,
+        "url": "http://localhost:8080/api/jobs?task_id=36",
+        "validation": 0
+      },
+      "labels": {
+        "url": "http://localhost:8080/api/labels?task_id=36"
+      },
+      "media_type": "audio",
+      "mode": "interpolation",
+      "name": "task with audio and gt",
+      "organization": 2,
+      "organization_id": 2,
+      "overlap": 0,
+      "owner": {
+        "first_name": "User",
+        "id": 3,
+        "last_name": "Second",
+        "url": "http://localhost:8080/api/users/3",
+        "username": "user2"
+      },
+      "project_id": null,
+      "project_name": null,
+      "segment_size": 6914,
+      "size": 6914,
+      "source_storage": null,
+      "status": "annotation",
+      "subset": "",
+      "target_storage": null,
+      "updated_date": "2026-05-11T17:25:43.643000Z",
+      "url": "http://localhost:8080/api/tasks/36",
+      "validation_mode": "gt"
+    },
     {
       "assignee": null,
       "assignee_updated_date": null,

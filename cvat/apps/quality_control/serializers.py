@@ -6,6 +6,7 @@ import textwrap
 from enum import Enum
 
 from django.db import models as django_models
+from django.db import transaction
 from rest_framework import serializers
 
 from cvat.apps.engine import field_validation
@@ -349,6 +350,7 @@ class QualitySettingsSerializer(WriteOnceMixin, serializers.ModelSerializer):
 
         return extra_kwargs
 
+    @transaction.atomic
     def update(self, instance, validated_data):
         if instance.task_id:
             instance.task.touch()

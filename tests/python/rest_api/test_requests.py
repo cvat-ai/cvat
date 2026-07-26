@@ -35,6 +35,7 @@ from .utils import (
 )
 
 
+@pytest.mark.timeout(60)
 @pytest.mark.usefixtures("restore_db_per_class")
 @pytest.mark.usefixtures("restore_redis_inmem_per_class")
 @pytest.mark.usefixtures("restore_redis_ondisk_per_class")
@@ -59,12 +60,12 @@ class TestRequestsListFilters(CollectionSimpleFilterTestBase):
 
     @pytest.fixture(scope="class")
     @classmethod
-    def setup_user(cls, find_users):
+    def setup_user(cls, restore_db_per_class, find_users):
         cls.user = find_users(privilege="user")[0]["username"]
 
     @pytest.fixture(scope="class")
     @classmethod
-    def setup_org_users(cls, find_users, organizations, memberships):
+    def setup_org_users(cls, restore_db_per_class, find_users, organizations, memberships):
         cls.org_slug = next(o["slug"] for o in organizations if o["id"] == cls._ORG_ID)
         # Pick an owner/maintainer so they can create projects/tasks in the org.
         cls.org_user = next(
@@ -77,7 +78,9 @@ class TestRequestsListFilters(CollectionSimpleFilterTestBase):
 
     @pytest.fixture(scope="class")
     @classmethod
-    def fxt_resources_ids(cls, setup_user):
+    def fxt_resources_ids(
+        cls, setup_user, restore_redis_inmem_per_class, restore_redis_ondisk_per_class
+    ):
         with make_api_client(cls.user) as api_client:
             project_ids = [
                 api_client.projects_api.create(
@@ -328,7 +331,7 @@ class TestRequestsListFilters(CollectionSimpleFilterTestBase):
 def test_list_requests_when_there_is_job_with_non_regular_or_corrupted_meta(
     jobs: Container, admin_user: str, request: pytest.FixtureRequest
 ):
-    job = next(iter(jobs))
+    job = next(j for j in jobs if j["media_type"] != "audio")
 
     export_job_dataset(admin_user, save_images=True, id=job["id"], download_result=False)
     export_job_dataset(admin_user, save_images=False, id=job["id"], download_result=False)
@@ -497,16 +500,16 @@ class TestGetRequests:
 
         if target_type == "project":
             export_func, import_func = export_project_dataset, import_project_dataset
-            target = next(iter(projects))
+            target = next(p for p in projects if p["dimension"] != "1d")
             owner = target["owner"]
         elif target_type == "task":
             export_func, import_func = export_task_dataset, import_task_annotations
-            target = next(iter(tasks))
+            target = next(t for t in tasks if t["media_type"] != "audio")
             owner = target["owner"]
         else:
             assert target_type == "job"
             export_func, import_func = export_job_dataset, import_job_annotations
-            target = next(iter(jobs))
+            target = next(j for j in jobs if j["media_type"] != "audio")
             owner = tasks[target["task_id"]]["owner"]
 
         target_id = target["id"]

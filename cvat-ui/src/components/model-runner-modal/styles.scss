@@ -5,17 +5,6 @@
 
 @import '../../base';
 
-.cvat-detector-runner-mapping-header {
-    text-align: center;
-    width: 100%;
-    margin-top: $grid-unit-size;
-    margin-bottom: $grid-unit-size * 3;
-
-    .anticon {
-        margin-right: $grid-unit-size;
-    }
-}
-
 .cvat-runner-label-mapping-row {
     margin-bottom: $grid-unit-size;
     align-items: baseline;
@@ -90,8 +79,6 @@
     }
 }
 
-
-
 .cvat-run-model-content > div:not(first-child) {
     margin-top: $grid-unit-size;
 }
@@ -105,15 +92,48 @@
 }
 
 .cvat-detector-runner-clean-previous-annotations-wrapper,
-.cvat-detector-runner-convert-masks-to-polygons-wrapper,
-.cvat-detector-runner-threshold-wrapper {
-    .ant-typography {
+.cvat-detector-runner-convert-masks-to-polygons-wrapper {
+    span {
         margin-left: $grid-unit-size;
     }
 }
 
-.cvat-detector-runner-threshold-wrapper {
+.cvat-detector-runner-clean-previous-annotations-wrapper,
+.cvat-detector-runner-convert-masks-to-polygons-wrapper,
+.cvat-detector-runner-mapping-header {
+    margin-bottom: $grid-unit-size;
+    display: flex;
+    vertical-align: baseline;
+
     .cvat-info-circle-icon {
         margin-left: $grid-unit-size;
+    }
+}
+
+
+.cvat-detector-runner-threshold-wrapper, .cvat-automatic-annotation-region-of-interest-container {
+    > div:nth-child(1) {
+        @extend .cvat-detector-runner-mapping-header;
+    }
+}
+
+.cvat-automatic-annotation-region-of-interest-container {
+    .cvat-correct-region-of-interest-value,
+    .cvat-errored-region-of-interest-value {
+        border-radius: $border-radius-base;
+        border-width: 1px;
+        border-style: solid;
+    }
+
+    .cvat-errored-region-of-interest-value {
+        border-color: $danger-icon-color;
+    }
+
+    .cvat-correct-region-of-interest-value {
+        border-color: $ok-icon-color;
+    }
+
+    input {
+        max-width: $grid-unit-size * 8;
     }
 }

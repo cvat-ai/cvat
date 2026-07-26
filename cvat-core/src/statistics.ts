@@ -3,42 +3,49 @@
 //
 // SPDX-License-Identifier: MIT
 
-interface ObjectStatistics {
+type ImageObjectStat = Readonly<{
     track: number;
     shape: number;
-}
+}>;
 
-interface StatisticsBody {
-    rectangle: ObjectStatistics;
-    polygon: ObjectStatistics;
-    polyline: ObjectStatistics;
-    points: ObjectStatistics;
-    ellipse: ObjectStatistics;
-    cuboid: ObjectStatistics;
-    skeleton: ObjectStatistics;
-    mask: {
+type IntervalStat = Readonly<{
+    count: number;
+    duration: number;
+    coverage: number;
+}>;
+
+type Stats = Readonly<{
+    rectangle: ImageObjectStat;
+    polygon: ImageObjectStat;
+    polyline: ImageObjectStat;
+    points: ImageObjectStat;
+    ellipse: ImageObjectStat;
+    cuboid: ImageObjectStat;
+    skeleton: ImageObjectStat;
+    mask: Readonly<{
         shape: number;
-    };
+    }>;
     tag: number;
+    interval: IntervalStat;
     manually: number;
     interpolated: number;
     total: number;
-}
+}>;
 
 export default class Statistics {
-    private labelData: Record<string, StatisticsBody>;
-    private totalData: StatisticsBody;
+    private labelData: Record<string, Stats>;
+    private totalData: Stats;
 
     constructor(label: Statistics['labelData'], total: Statistics['totalData']) {
         this.labelData = label;
         this.totalData = total;
     }
 
-    public get label(): Record<string, StatisticsBody> {
+    public get label(): Record<string, Stats> {
         return JSON.parse(JSON.stringify(this.labelData));
     }
 
-    public get total(): StatisticsBody {
+    public get total(): Stats {
         return JSON.parse(JSON.stringify(this.totalData));
     }
 }

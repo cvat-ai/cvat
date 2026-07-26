@@ -68,7 +68,7 @@
     @extend .cvat-frame-tags;
 
     position: absolute;
-    top: $grid-unit-size * 4;
+    top: $grid-unit-size;
     left: $grid-unit-size;
     z-index: 3;
 

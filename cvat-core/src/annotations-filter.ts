@@ -8,6 +8,7 @@ import { SerializedData } from './object-state';
 import { AttributeType, ObjectType, ShapeType } from './enums';
 import { SerializedCollection } from './server-response-types';
 import { Attribute, Label } from './labels';
+import type { AudioIntervalState } from './annotations-objects/audio-interval-state';
 
 function adjustName(name): string {
     return name.replace(/\./g, '\u2219');
@@ -136,6 +137,7 @@ interface BaseConvertedData {
     occluded: boolean | null;
     score: number | null;
     votes: number | null;
+    zOrder: number | null;
 }
 
 interface ConvertedElementData extends BaseConvertedData {
@@ -146,6 +148,17 @@ interface ConvertedObjectData extends BaseConvertedData {
     serverID: number | null;
     objectID: number | null;
     elements: ConvertedElementData[];
+}
+
+interface ConvertedAudioIntervalData {
+    clientID: number | null;
+    attr: Record<string, ConvertedAttributes>;
+    duration: number;
+    end: number;
+    label: string;
+    serverID: number | null;
+    source: string | null;
+    start: number;
 }
 
 function getRotation(shapeType: ShapeType, rotation?: number | null): number | null {
@@ -174,6 +187,39 @@ function getMatchingIDs(
 }
 
 export default class AnnotationsFilter {
+    private lastPosition: number | null;
+
+    constructor(lastPosition: number | null) {
+        this.lastPosition = lastPosition;
+    }
+
+    private _convertAudioIntervalStates(
+        intervalsData: AudioIntervalState[],
+    ): ConvertedAudioIntervalData[] {
+        if (this.lastPosition === null) {
+            throw new Error('Last position is required to filter audio intervals');
+        }
+
+        return intervalsData.map((interval) => {
+            const labelAttributes = buildAttributeMap(interval.label.attributes);
+            const attributes = convertAttributes(interval.attributes, labelAttributes);
+            const end = interval.stop ?? this.lastPosition;
+
+            return {
+                clientID: interval.clientID,
+                attr: {
+                    [adjustName(interval.label.name)]: attributes,
+                },
+                duration: end - interval.start,
+                end,
+                label: interval.label.name,
+                serverID: interval.serverID ?? null,
+                source: interval.source ?? null,
+                start: interval.start,
+            };
+        });
+    }
+
     private _convertSerializedObjectStates(statesData: SerializedData[]): ConvertedObjectData[] {
         return statesData.map((state) => {
             const labelAttributes = buildAttributeMap(state.label.attributes);
@@ -213,6 +259,7 @@ export default class AnnotationsFilter {
                         occluded: element.occluded ?? false,
                         score: null,
                         votes: null,
+                        zOrder: null,
                     };
                 }) :
                 [];
@@ -232,15 +279,20 @@ export default class AnnotationsFilter {
                 occluded: state.occluded ?? null,
                 score: state.score ?? null,
                 votes: state.votes ?? null,
+                zOrder: state.zOrder ?? null,
                 elements,
             };
         });
     }
 
     private _convertSerializedCollection(
-        collection: Omit<SerializedCollection, 'version'>,
+        collection: Pick<SerializedCollection, 'shapes' | 'tags' | 'tracks'>,
         labelsSpec: Label[],
-    ): { shapes: ConvertedObjectData[]; tags: ConvertedObjectData[]; tracks: ConvertedObjectData[] } {
+    ): {
+        shapes: ConvertedObjectData[];
+        tags: ConvertedObjectData[];
+        tracks: ConvertedObjectData[];
+    } {
         const { labelByID, attributeByID } = buildLabelMaps(labelsSpec);
 
         return {
@@ -277,6 +329,7 @@ export default class AnnotationsFilter {
                             occluded: element.occluded ?? false,
                             score: null,
                             votes: null,
+                            zOrder: null,
                         }];
                     }) :
                     [];
@@ -296,6 +349,7 @@ export default class AnnotationsFilter {
                     occluded: shape.occluded,
                     score: shape.score ?? null,
                     votes: null,
+                    zOrder: shape.z_order,
                     elements,
                 };
             }),
@@ -318,6 +372,7 @@ export default class AnnotationsFilter {
                     occluded: false,
                     score: null,
                     votes: null,
+                    zOrder: 0,
                     elements: [],
                 };
             }),
@@ -350,6 +405,7 @@ export default class AnnotationsFilter {
                             occluded: null,
                             score: null,
                             votes: null,
+                            zOrder: null,
                         }];
                     });
                 }
@@ -369,6 +425,7 @@ export default class AnnotationsFilter {
                     occluded: null,
                     score: null,
                     votes: null,
+                    zOrder: track.shapes[0]?.z_order ?? null,
                     elements,
                 };
             }),
@@ -384,11 +441,21 @@ export default class AnnotationsFilter {
         return getMatchingIDs(converted, filters[0], filters[1]);
     }
 
+    public filterAudioIntervalStates(audioIntervalStates: AudioIntervalState[], filters: object[]): number[] {
+        if (isEmptyFilter(filters[0])) {
+            return audioIntervalStates.map((intervalData): number => intervalData.clientID!);
+        }
+
+        const converted = this._convertAudioIntervalStates(audioIntervalStates);
+        return converted.filter((interval) => jsonLogic.apply(filters[0], interval))
+            .map((interval) => interval.clientID);
+    }
+
     public filterSerializedCollection(
-        collection: Omit<SerializedCollection, 'version'>,
+        collection: Pick<SerializedCollection, 'shapes' | 'tags' | 'tracks'>,
         labelsSpec: Label[],
         filters: object[],
-    ): { shapes: number[]; tags: number[]; tracks: number[] } {
+    ): { shapes: number[]; tags: number[]; tracks: number[]; } {
         if (isEmptyFilter(filters[0]) && isEmptyFilter(filters[1])) {
             return {
                 shapes: collection.shapes.map((shape) => shape.clientID),

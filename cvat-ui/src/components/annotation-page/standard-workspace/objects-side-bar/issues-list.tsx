@@ -25,7 +25,7 @@ import { ConflictSeverity, QualityConflict, Issue } from 'cvat-core-wrapper';
 import { changeShowGroundTruth } from 'actions/settings-actions';
 import { ShowGroundTruthIcon } from 'icons';
 
-export default function LabelsListComponent(): JSX.Element {
+export default function IssuesListComponent(): JSX.Element {
     const dispatch = useDispatch();
     const {
         frame,
@@ -55,14 +55,21 @@ export default function LabelsListComponent(): JSX.Element {
         activeControl: state.annotation.canvas.activeControl,
     }), shallowEqual);
 
+    if (workspace === Workspace.AUDIO) {
+        throw new Error('Not supported in audio workspace');
+    }
+
     let frames = issues
         .filter((issue: Issue) => !issuesResolvedHidden || !issue.resolved)
         .map((issue: Issue) => issue.frame)
         .sort((a: number, b: number) => +a - +b);
 
     if (showGroundTruth) {
+        // conflict frame is nullable for audio tasks
+        // but this component cannot be rendered in audio workspace
         const conflictFrames = conflicts
-            .map((conflict): number => conflict.frame).sort((a: number, b: number) => +a - +b);
+            .map((conflict) => conflict.frame!)
+            .sort((a, b) => a - b);
         frames = [...new Set([...frames, ...conflictFrames])];
     }
     const nearestLeft = frames.filter((_frame: number): boolean => _frame < frame).reverse()[0];

@@ -32,6 +32,7 @@ interface OwnProps {
     taskMeta: FramesMetaData;
     cloudStorageInstance: CloudStorage | null;
     onUpdateTaskMeta: (meta: FramesMetaData) => Promise<void>;
+    labelsEditorProps?: Record<string, unknown>;
 }
 
 interface StateToProps {
@@ -172,12 +173,13 @@ class DetailsComponent extends React.PureComponent<Props, State> {
     }
 
     private renderLabelsEditor(): JSX.Element {
-        const { task: taskInstance, onUpdateTask } = this.props;
+        const { task: taskInstance, onUpdateTask, labelsEditorProps } = this.props;
 
         return (
             <Row>
                 <Col span={24}>
                     <LabelsEditorComponent
+                        {...labelsEditorProps}
                         labels={taskInstance.labels.map((label) => label.toJSON())}
                         onSubmit={(labels: any[]): void => {
                             onUpdateTask(taskInstance, {

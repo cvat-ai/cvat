@@ -393,6 +393,7 @@ Cypress.Commands.add('headlessCreateObjects', (objects, jobId) => {
             shapes: objects.filter((object) => object.objectType === 'shape').map(convertShape(job)),
             tracks: objects.filter((object) => object.objectType === 'track').map(convertTrack(job)),
             tags: objects.filter((object) => object.objectType === 'tag').map(convertTag(job)),
+            intervals: [],
         }, $win);
 
         await job.annotations.import(data);
@@ -459,9 +460,9 @@ Cypress.Commands.add('headlessCreateUser', (userSpec) => {
             delete response.headers['set-cookie'];
             expect(response.statusCode).to.eq(201, response.body.username);
             expect(response.body.username).to.eq(userSpecSnake.username);
-            expect(response.body.email).to.eq(userSpecSnake.email);
-            expect(response.body.first_name).to.eq(userSpecSnake.first_name);
-            expect(response.body.last_name).to.eq(userSpecSnake.last_name);
+            expect(response.body.email).to.eq(userSpecSnake.email.toLowerCase());
+            expect(response.body.first_name).to.eq(userSpecSnake.first_name || '');
+            expect(response.body.last_name).to.eq(userSpecSnake.last_name || '');
         });
     }).as('registerRequest');
 
@@ -1828,7 +1829,6 @@ Cypress.Commands.add('interactAnnotationObjectMenu', (parentSelector, button) =>
 });
 
 Cypress.Commands.add('hideTooltips', () => {
-    // eslint-disable-next-line cypress/no-unnecessary-waiting
     cy.wait(500); // FIXME: wait while tooltips are opened
 
     cy.document().then((doc) => {

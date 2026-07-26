@@ -14,6 +14,7 @@ import pluginsReducer from './plugins-reducer';
 import modelsReducer from './models-reducer';
 import notificationsReducer from './notifications-reducer';
 import annotationReducer from './annotation-reducer';
+import audioReducer from './audio-reducer';
 import settingsReducer from './settings-reducer';
 import shortcutsReducer from './shortcuts-reducer';
 import userAgreementsReducer from './useragreements-reducer';
@@ -42,6 +43,7 @@ export default function createRootReducer(): Reducer {
         models: modelsReducer,
         notifications: notificationsReducer,
         annotation: annotationReducer,
+        audio: audioReducer,
         settings: settingsReducer,
         shortcuts: shortcutsReducer,
         userAgreements: userAgreementsReducer,

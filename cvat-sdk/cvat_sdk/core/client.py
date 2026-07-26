@@ -9,7 +9,7 @@ import logging
 import urllib.parse
 from abc import ABCMeta
 from collections.abc import Generator, Sequence
-from contextlib import contextmanager, suppress
+from contextlib import contextmanager
 from pathlib import Path
 from time import sleep
 from typing import Any, TypeVar
@@ -25,7 +25,6 @@ from cvat_sdk.api_client import ApiClient, Configuration, exceptions, models
 from cvat_sdk.core.exceptions import (
     BackgroundRequestException,
     IncompatibleVersionException,
-    InvalidHostException,
 )
 from cvat_sdk.core.proxies.issues import CommentsRepo, IssuesRepo
 from cvat_sdk.core.proxies.jobs import JobsRepo
@@ -34,6 +33,7 @@ from cvat_sdk.core.proxies.organizations import OrganizationsRepo
 from cvat_sdk.core.proxies.projects import ProjectsRepo
 from cvat_sdk.core.proxies.tasks import TasksRepo
 from cvat_sdk.core.proxies.users import UsersRepo
+from cvat_sdk.core.utils import ALLOWED_SERVER_SCHEMAS, normalize_server_url
 from cvat_sdk.version import VERSION
 
 _DEFAULT_CACHE_DIR = platformdirs.user_cache_path("cvat-sdk", "CVAT.ai")
@@ -112,7 +112,7 @@ class Client:
         self.logger = logger or logging.getLogger(__name__)
         """The root logger"""
 
-        url = self._validate_and_prepare_url(url)
+        url = normalize_server_url(url)
 
         self.config = config or Config()
         """Configuration for this object"""
@@ -162,62 +162,7 @@ class Client:
         finally:
             self.organization_slug = prev_slug
 
-    ALLOWED_SCHEMAS = ("https", "http")
-
-    def _validate_and_prepare_url(self, url: str) -> str:
-        url_parts = url.split("://", maxsplit=1)
-        if len(url_parts) == 2:
-            schema, base_url = url_parts
-        else:
-            schema = ""
-            base_url = url
-
-        base_url = base_url.rstrip("/")
-
-        if schema and schema not in self.ALLOWED_SCHEMAS:
-            raise InvalidHostException(
-                f"Invalid url schema '{schema}', expected "
-                f"one of <none>, {', '.join(self.ALLOWED_SCHEMAS)}"
-            )
-
-        if not schema:
-            schema = self._detect_schema(base_url)
-            url = f"{schema}://{base_url}"
-
-        return url
-
-    def _detect_schema(self, base_url: str) -> str:
-        def attempt(schema: str) -> bool:
-            with ApiClient(Configuration(host=f"{schema}://{base_url}")) as api_client:
-                with suppress(urllib3.exceptions.RequestError):
-                    _, response = api_client.server_api.retrieve_about(
-                        _request_timeout=5, _parse_response=False, _check_status=False
-                    )
-
-                    if response.status in [200, 401]:
-                        # Server versions prior to 2.3.0 respond with unauthorized
-                        # 2.3.0 allows unauthorized access
-                        return True
-            return False
-
-        if attempt("https"):
-            return "https"
-
-        self.logger.warning(
-            "Failed to connect to the server using HTTPS; will attempt HTTP instead"
-        )
-        self.logger.warning(
-            "This fallback will be removed in a future version of the SDK;"
-            " to avoid breakage, explicitly add 'https://' or 'http://' to the URL"
-        )
-
-        if attempt("http"):
-            return "http"
-
-        raise InvalidHostException(
-            "Failed to detect host schema automatically, please check "
-            "the server url and try to specify 'https://' or 'http://' explicitly"
-        )
+    ALLOWED_SCHEMAS = ALLOWED_SERVER_SCHEMAS
 
     def __enter__(self):
         self.api_client.__enter__()
