@@ -41,6 +41,7 @@ interface Props {
     onSkeletonSubmit?: () => SkeletonConfiguration | null;
     resetSkeleton?: () => void;
     onCancel: () => void;
+    showLabelType?: boolean;
 }
 
 type InputRef = React.ComponentRef<typeof Input>;
@@ -654,7 +655,7 @@ export default class LabelForm extends React.Component<Props> {
     }
 
     public render(): JSX.Element {
-        const { label, onSkeletonSubmit } = this.props;
+        const { label, onSkeletonSubmit, showLabelType = true } = this.props;
         const isSkeleton = !!onSkeletonSubmit;
 
         return (
@@ -678,7 +679,9 @@ export default class LabelForm extends React.Component<Props> {
             >
                 <Row justify='start' align='top'>
                     <Col span={8}>{this.renderLabelNameInput()}</Col>
-                    <Col span={3} offset={1}>{this.renderLabelTypeInput()}</Col>
+                    {showLabelType && (
+                        <Col span={3} offset={1}>{this.renderLabelTypeInput()}</Col>
+                    )}
                     <Col span={3} offset={1}>
                         {this.renderChangeColorButton()}
                     </Col>

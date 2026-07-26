@@ -83,7 +83,9 @@ export async function run(
             }, {});
 
         // Then apply user filter
-        const annotationsFilter = new AnnotationsFilter();
+        const annotationsFilter = new AnnotationsFilter(
+            instance instanceof Job ? instance.stopFrame : instance.size - 1,
+        );
         const filteredCollectionIDs = annotationsFilter
             .filterSerializedCollection(filteredByAction, instance.labels, filters);
         const filteredByUser = {

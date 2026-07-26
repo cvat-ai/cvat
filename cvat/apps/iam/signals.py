@@ -19,15 +19,16 @@ if settings.IAM_TYPE == "BASIC":
         if created and raw:
             return
 
-        from allauth.account import app_settings as allauth_settings
         from allauth.account.models import EmailAddress
+
+        from cvat.apps.iam.utils import is_signup_email_required
 
         if instance.is_superuser and instance.is_staff:
             db_group = Group.objects.get(name=settings.IAM_ADMIN_ROLE)
             instance.groups.add(db_group)
 
             # create and verify EmailAddress for superuser accounts
-            if allauth_settings.EMAIL_REQUIRED:
+            if is_signup_email_required():
                 EmailAddress.objects.get_or_create(
                     user=instance, email=instance.email, primary=True, verified=True
                 )

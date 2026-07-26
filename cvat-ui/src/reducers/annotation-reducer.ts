@@ -39,6 +39,19 @@ function updateActivatedStateID(newStates: ObjectState[], prevActivatedStateID: 
         null;
 }
 
+function computeZRange(states: ObjectState[]): [number, number] {
+    const layerStates = states.filter((state: ObjectState): boolean => state.objectType !== ObjectType.TAG);
+    let minZ = layerStates.length ? layerStates[0].zOrder : 0;
+    let maxZ = layerStates.length ? layerStates[0].zOrder : 0;
+
+    layerStates.forEach((state: ObjectState): void => {
+        minZ = Math.min(minZ, state.zOrder);
+        maxZ = Math.max(maxZ, state.zOrder);
+    });
+
+    return [minZ, maxZ];
+}
+
 export function labelShapeType(labelData?: Label | Partial<LabelType>): ShapeType | null {
     const labelType = labelData instanceof Label ? labelData.type : labelData;
     if (labelType) {
@@ -228,7 +241,9 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 activeObjectType = job.mode === 'interpolation' ? ObjectType.TRACK : ObjectType.SHAPE;
             }
 
-            if (job.dimension === DimensionType.DIMENSION_2D) {
+            if (job.dimension === DimensionType.DIMENSION_1D) {
+                workspaceSelected = Workspace.AUDIO;
+            } else if (job.dimension === DimensionType.DIMENSION_2D) {
                 if (queryParameters.initialWorkspace !== Workspace.STANDARD3D) {
                     workspaceSelected = queryParameters.initialWorkspace;
                 }
@@ -240,6 +255,13 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
 
             if (state.canvas.instance) {
                 state.canvas.instance.destroy();
+            }
+
+            let canvas: Canvas | Canvas3d | null = null;
+            if (job.dimension === DimensionType.DIMENSION_3D) {
+                canvas = new Canvas3d();
+            } else if (job.dimension === DimensionType.DIMENSION_2D) {
+                canvas = new Canvas();
             }
 
             return {
@@ -254,7 +276,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     labels: job.labels,
                     attributes: job.labels
                         .reduce((acc: Record<number, Label['attributes']>, label: Label) => {
-                            acc[label.id] = label.attributes;
+                            acc[label.id!] = label.attributes;
                             return acc;
                         }, {}),
                     groundTruthInfo: {
@@ -295,7 +317,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
                 canvas: {
                     ...state.canvas,
-                    instance: job.dimension === DimensionType.DIMENSION_2D ? new Canvas() : new Canvas3d(),
+                    instance: canvas,
                 },
                 colors,
                 workspace: isReview && job.dimension === DimensionType.DIMENSION_2D ?
@@ -367,13 +389,11 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 relatedFiles,
                 states,
                 history,
-                minZ,
-                maxZ,
-                curZ,
                 delay,
                 changeTime,
                 changeFrameEvent,
             } = action.payload;
+            const [minZ, maxZ] = computeZRange(states);
 
             return {
                 ...state,
@@ -400,7 +420,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     zLayer: {
                         min: minZ,
                         max: maxZ,
-                        cur: curZ,
+                        cur: maxZ,
                     },
                 },
             };
@@ -445,18 +465,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
             };
         }
-        case AnnotationActionTypes.SAVE_ANNOTATIONS_SUCCESS: {
-            return {
-                ...state,
-                annotations: {
-                    ...state.annotations,
-                    saving: {
-                        ...state.annotations.saving,
-                        uploading: false,
-                    },
-                },
-            };
-        }
+        case AnnotationActionTypes.SAVE_ANNOTATIONS_SUCCESS:
         case AnnotationActionTypes.SAVE_ANNOTATIONS_FAILED: {
             return {
                 ...state,
@@ -624,30 +633,28 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
         }
         case AnnotationActionTypes.UPDATE_ANNOTATIONS_SUCCESS: {
             const {
-                history, states: updatedStates, minZ, maxZ,
+                history, states: updatedStates,
             } = action.payload;
             const { states: prevStates } = state.annotations;
             const nextStates = [...prevStates];
 
-            const clientIDs = prevStates.map((prevState: ObjectState): number => prevState.clientID);
+            const clientIDs = prevStates.map((prevState: ObjectState): number => prevState.clientID!);
             for (const updatedState of updatedStates) {
                 const index = clientIDs.indexOf(updatedState.clientID);
                 if (index !== -1) {
                     nextStates[index] = updatedState;
                 }
             }
-
-            const maxZLayer = Math.max(state.annotations.zLayer.max, maxZ);
-            const minZLayer = Math.min(state.annotations.zLayer.min, minZ);
+            const [minZ, maxZ] = computeZRange(nextStates);
 
             return {
                 ...state,
                 annotations: {
                     ...state.annotations,
                     zLayer: {
-                        min: minZLayer,
-                        max: maxZLayer,
-                        cur: clamp(state.annotations.zLayer.cur, minZLayer, maxZLayer),
+                        min: minZ,
+                        max: maxZ,
+                        cur: clamp(state.annotations.zLayer.cur, minZ, maxZ),
                     },
                     states: nextStates,
                     renderData: getAnnotationsRenderData(nextStates, state.annotations.filters),
@@ -972,9 +979,8 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
         }
         case AnnotationActionTypes.FETCH_ANNOTATIONS_SUCCESS: {
             const { activatedStateID } = state.annotations;
-            const {
-                states, history, minZ, maxZ,
-            } = action.payload;
+            const { states, history } = action.payload;
+            const [minZ, maxZ] = computeZRange(states);
 
             return {
                 ...state,
@@ -1039,20 +1045,6 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     zLayer: {
                         ...state.annotations.zLayer,
                         cur: clamp(cur, min, max),
-                    },
-                },
-            };
-        }
-        case AnnotationActionTypes.ADD_Z_LAYER: {
-            const { max } = state.annotations.zLayer;
-            return {
-                ...state,
-                annotations: {
-                    ...state.annotations,
-                    zLayer: {
-                        ...state.annotations.zLayer,
-                        max: max + 1,
-                        cur: max + 1,
                     },
                 },
             };

@@ -11,7 +11,13 @@ from django.http import HttpResponseBadRequest, HttpResponseNotFound
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import never_cache
 from django_rq.queues import DjangoRQ
-from drf_spectacular.utils import OpenApiResponse, extend_schema, extend_schema_view
+from drf_spectacular.utils import (
+    OpenApiParameter,
+    OpenApiResponse,
+    OpenApiTypes,
+    extend_schema,
+    extend_schema_view,
+)
 from redis.exceptions import ConnectionError as RedisConnectionError
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
@@ -51,6 +57,13 @@ CVAT_CAN_STOP_STARTED_JOBS_KEY = "cvat_can_stop_started_jobs"
     ),
     retrieve=extend_schema(
         summary="Get request details",
+        parameters=[
+            OpenApiParameter(
+                "id",
+                OpenApiTypes.STR,
+                OpenApiParameter.PATH,
+            )
+        ],
         responses={
             "200": RequestSerializer,
         },
@@ -117,7 +130,16 @@ class RequestViewSet(viewsets.GenericViewSet):
         "org_id": SchemaField("integer"),
     }
 
+    class _SchemaQuerySet:
+        # drf-spectacular expects schema views to expose a queryset-like object
+        # with a model attribute. Requests are backed by RQ jobs, not Django models.
+        # See https://drf-spectacular.readthedocs.io/en/latest/faq.html#my-get-queryset-depends-on-some-attributes-not-available-at-schema-generation-time
+        model = None
+
     def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):
+            return self._SchemaQuerySet()
+
         return None
 
     @property
@@ -266,6 +288,13 @@ class RequestViewSet(viewsets.GenericViewSet):
 
     @extend_schema(
         summary="Cancel request",
+        parameters=[
+            OpenApiParameter(
+                "id",
+                OpenApiTypes.STR,
+                OpenApiParameter.PATH,
+            )
+        ],
         request=None,
         responses={
             "200": OpenApiResponse(description="The request has been cancelled"),

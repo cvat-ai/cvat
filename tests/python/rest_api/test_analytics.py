@@ -117,20 +117,38 @@ class TestGetAuditEvents:
         assert project_request_id is not None
         assert all(t[1] is not None for t in task_ids)
 
+        # Events are pushed to ClickHouse asynchronously,
+        # so we must wait until the expected number of events for every scope is present.
+        # Items: (filters, expected_count)
         event_filters = [
             (
-                (lambda e: json.loads(e["payload"])["request"]["id"], [project_request_id]),
-                ("scope", ["create:project"]),
+                (
+                    (lambda e: json.loads(e["payload"])["request"]["id"], [project_request_id]),
+                    ("scope", ["create:project"]),
+                ),
+                1,
             ),
         ]
-        for task_id in task_ids:
+        for task_id, task_request_id in task_ids:
             event_filters.extend(
                 (
                     (
-                        (lambda e: json.loads(e["payload"])["request"]["id"], [task_id[1]]),
-                        ("scope", ["create:task"]),
+                        (
+                            (
+                                lambda e: json.loads(e["payload"])["request"]["id"],
+                                [task_request_id],
+                            ),
+                            ("scope", ["create:task"]),
+                        ),
+                        1,
                     ),
-                    (("scope", ["create:job"]),),
+                    (
+                        (
+                            ("task_id", [str(task_id)]),
+                            ("scope", ["create:job"]),
+                        ),
+                        2,
+                    ),
                 )
             )
         self._wait_for_request_ids(event_filters)
@@ -141,7 +159,10 @@ class TestGetAuditEvents:
         while MAX_RETRIES > 0:
             data = self._test_get_audit_logs_as_csv()
             events = self._csv_to_dict(data)
-            if all(self._filter_events(events, filter) for filter in event_filters):
+            if all(
+                len(self._filter_events(events, filters)) >= expected_count
+                for filters, expected_count in event_filters
+            ):
                 break
             MAX_RETRIES -= 1
             sleep(SLEEP_INTERVAL)
@@ -272,20 +293,30 @@ class TestGetAuditEvents:
         response = delete_method("admin1", f"projects/{self.project_id}")
         assert response.status_code == HTTPStatus.NO_CONTENT
 
+        request_id = response.headers.get("X-Request-Id")
+        # Items: (filters, expected_count). The cascade delete emits one event per
+        # affected object under the same request id, so wait for all of them.
         event_filters = (
             (
                 (
-                    lambda e: json.loads(e["payload"])["request"]["id"],
-                    [response.headers.get("X-Request-Id")],
+                    (lambda e: json.loads(e["payload"])["request"]["id"], [request_id]),
+                    ("scope", ["delete:project"]),
                 ),
-                ("scope", ["delete:project"]),
+                1,
             ),
             (
                 (
-                    lambda e: json.loads(e["payload"])["request"]["id"],
-                    [response.headers.get("X-Request-Id")],
+                    (lambda e: json.loads(e["payload"])["request"]["id"], [request_id]),
+                    ("scope", ["delete:task"]),
                 ),
-                ("scope", ["delete:task"]),
+                2,
+            ),
+            (
+                (
+                    (lambda e: json.loads(e["payload"])["request"]["id"], [request_id]),
+                    ("scope", ["delete:job"]),
+                ),
+                4,
             ),
         )
 

@@ -9,7 +9,6 @@ import io
 import itertools
 import os
 import shutil
-import sysconfig
 import tempfile
 import zipfile
 from abc import ABC, abstractmethod
@@ -31,11 +30,10 @@ import av.video.stream
 import numpy as np
 from natsort import os_sorted
 from PIL import Image, ImageFile, ImageOps
-from pyunpack import Archive
 from rest_framework.exceptions import ValidationError
 
 from cvat.apps.engine.models import DimensionType, SortingMethod, TaskMode
-from cvat.apps.engine.utils import rotate_image
+from cvat.apps.engine.utils import extract_with_patool, rotate_image
 
 # fixes: "OSError:broken data stream" when executing line 72 while loading images downloaded from the web
 # see: https://stackoverflow.com/questions/42462431/oserror-broken-data-stream-when-reading-image-file
@@ -423,8 +421,7 @@ class ArchiveReader(DirectoryReader):
     ):
         (self._archive_source,) = source_paths
         tmp_dir = extract_dir if extract_dir else self._archive_source.parent
-        patool_path = os.path.join(sysconfig.get_path("scripts"), "patool")
-        Archive(self._archive_source).extractall(tmp_dir, False, patool_path)
+        extract_with_patool(self._archive_source, tmp_dir)
         if not extract_dir:
             os.remove(self._archive_source)
         super().__init__(

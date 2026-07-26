@@ -392,7 +392,13 @@ function ImportDatasetModal(props: StateToProps): JSX.Element {
             <Upload.Dragger
                 listType='text'
                 fileList={file ? [file] : ([] as any[])}
-                accept='.zip,.json,.xml'
+                accept={
+                    selectedLoader?.format
+                        .toLowerCase()
+                        .split(',')
+                        .map((v: string) => `.${v.trim()}`)
+                        .join(',')
+                }
                 beforeUpload={(_file: RcFile): boolean => {
                     if (!selectedLoader) {
                         message.warning('Please select a format first', 3);

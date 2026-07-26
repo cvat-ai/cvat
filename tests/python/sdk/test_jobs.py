@@ -15,6 +15,7 @@ from PIL import Image
 from pytest_cases import fixture_ref, parametrize
 
 from shared.fixtures.data import CloudStorageAssets
+from shared.utils.config import make_sdk_client
 
 from .common import TestDatasetExport
 from .util import make_pbar
@@ -75,6 +76,15 @@ class TestJobUsecases(TestDatasetExport):
 
         assert len(task_job_ids) != 0
         assert task_job_ids.issubset(j.id for j in jobs)
+        assert self.stdout.getvalue() == ""
+
+    def test_can_list_jobs_with_task_filter(self, fxt_new_task: Task):
+        task_job_ids = {j.id for j in fxt_new_task.get_jobs()}
+
+        jobs = self.client.jobs.list(task_id=fxt_new_task.id)
+
+        assert task_job_ids
+        assert {j.id for j in jobs} == task_job_ids
         assert self.stdout.getvalue() == ""
 
     def test_can_update_job_field_directly(self, fxt_new_task: Task):
@@ -353,3 +363,19 @@ class TestJobUsecases(TestDatasetExport):
         assert len(anns.tracks) == 1
         assert len(anns.tags) == 1
         assert self.stdout.getvalue() == ""
+
+
+@pytest.mark.usefixtures("restore_db_per_function")
+def test_org_maintainer_can_get_job_resources_without_explicit_org_context(
+    fxt_org_resource_hierarchy,
+):
+    resources = fxt_org_resource_hierarchy(include_issue=True)
+
+    with make_sdk_client(resources.maintainer_username) as maintainer_client:
+        job = maintainer_client.jobs.retrieve(resources.job_id)
+        labels = job.get_labels()
+        issues = job.get_issues()
+
+        assert maintainer_client.organization_slug is None
+        assert {label.name for label in labels} == {"car"}
+        assert [issue.id for issue in issues] == [resources.issue_id]

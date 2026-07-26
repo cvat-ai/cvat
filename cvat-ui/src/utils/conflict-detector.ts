@@ -16,6 +16,96 @@ interface FlatKeyMap {
     [scope:string]: FlatKeyMapItem
 }
 
+const shortcutScopeConflicts: Record<ShortcutScope, ShortcutScope[]> = {
+    [ShortcutScope.GENERAL]: Object.values(ShortcutScope),
+    [ShortcutScope.ANNOTATION_PAGE]: [
+        ShortcutScope.GENERAL,
+        ShortcutScope.ANNOTATION_PAGE,
+        ShortcutScope.OBJECTS_SIDEBAR,
+        ShortcutScope.STANDARD_WORKSPACE,
+        ShortcutScope.STANDARD_WORKSPACE_CONTROLS,
+        ShortcutScope.ATTRIBUTE_ANNOTATION_WORKSPACE,
+        ShortcutScope.SINGLE_SHAPE_ANNOTATION_WORKSPACE,
+        ShortcutScope.TAG_ANNOTATION_WORKSPACE,
+        ShortcutScope.REVIEW_WORKSPACE_CONTROLS,
+        ShortcutScope['3D_ANNOTATION_WORKSPACE'],
+        ShortcutScope['3D_ANNOTATION_WORKSPACE_CONTROLS'],
+    ],
+    [ShortcutScope.OBJECTS_SIDEBAR]: [
+        ShortcutScope.GENERAL,
+        ShortcutScope.ANNOTATION_PAGE,
+        ShortcutScope.OBJECTS_SIDEBAR,
+        ShortcutScope.STANDARD_WORKSPACE,
+        ShortcutScope.STANDARD_WORKSPACE_CONTROLS,
+        ShortcutScope.ATTRIBUTE_ANNOTATION_WORKSPACE,
+        ShortcutScope.SINGLE_SHAPE_ANNOTATION_WORKSPACE,
+        ShortcutScope.TAG_ANNOTATION_WORKSPACE,
+        ShortcutScope.REVIEW_WORKSPACE_CONTROLS,
+        ShortcutScope['3D_ANNOTATION_WORKSPACE'],
+        ShortcutScope['3D_ANNOTATION_WORKSPACE_CONTROLS'],
+    ],
+    [ShortcutScope.STANDARD_WORKSPACE]: [
+        ShortcutScope.GENERAL,
+        ShortcutScope.STANDARD_WORKSPACE,
+        ShortcutScope.STANDARD_WORKSPACE_CONTROLS,
+        ShortcutScope.OBJECTS_SIDEBAR,
+        ShortcutScope.ANNOTATION_PAGE,
+    ],
+    [ShortcutScope.STANDARD_WORKSPACE_CONTROLS]: [
+        ShortcutScope.GENERAL,
+        ShortcutScope.STANDARD_WORKSPACE_CONTROLS,
+        ShortcutScope.STANDARD_WORKSPACE,
+        ShortcutScope.ANNOTATION_PAGE,
+        ShortcutScope.OBJECTS_SIDEBAR,
+    ],
+    [ShortcutScope.ATTRIBUTE_ANNOTATION_WORKSPACE]: [
+        ShortcutScope.GENERAL,
+        ShortcutScope.ATTRIBUTE_ANNOTATION_WORKSPACE,
+        ShortcutScope.OBJECTS_SIDEBAR,
+        ShortcutScope.ANNOTATION_PAGE,
+    ],
+    [ShortcutScope.SINGLE_SHAPE_ANNOTATION_WORKSPACE]: [
+        ShortcutScope.GENERAL,
+        ShortcutScope.SINGLE_SHAPE_ANNOTATION_WORKSPACE,
+        ShortcutScope.OBJECTS_SIDEBAR,
+        ShortcutScope.ANNOTATION_PAGE,
+    ],
+    [ShortcutScope.TAG_ANNOTATION_WORKSPACE]: [
+        ShortcutScope.GENERAL,
+        ShortcutScope.TAG_ANNOTATION_WORKSPACE,
+        ShortcutScope.OBJECTS_SIDEBAR,
+        ShortcutScope.ANNOTATION_PAGE,
+    ],
+    [ShortcutScope.REVIEW_WORKSPACE_CONTROLS]: [
+        ShortcutScope.GENERAL,
+        ShortcutScope.REVIEW_WORKSPACE_CONTROLS,
+        ShortcutScope.ANNOTATION_PAGE,
+        ShortcutScope.OBJECTS_SIDEBAR,
+    ],
+    [ShortcutScope['3D_ANNOTATION_WORKSPACE']]: [
+        ShortcutScope.GENERAL,
+        ShortcutScope['3D_ANNOTATION_WORKSPACE'],
+        ShortcutScope['3D_ANNOTATION_WORKSPACE_CONTROLS'],
+        ShortcutScope.OBJECTS_SIDEBAR,
+        ShortcutScope.ANNOTATION_PAGE,
+    ],
+    [ShortcutScope['3D_ANNOTATION_WORKSPACE_CONTROLS']]: [
+        ShortcutScope.GENERAL,
+        ShortcutScope['3D_ANNOTATION_WORKSPACE_CONTROLS'],
+        ShortcutScope['3D_ANNOTATION_WORKSPACE'],
+        ShortcutScope.ANNOTATION_PAGE,
+        ShortcutScope.OBJECTS_SIDEBAR,
+    ],
+    [ShortcutScope.AUDIO_WORKSPACE_CONTROLS]: [
+        ShortcutScope.GENERAL,
+        ShortcutScope.AUDIO_WORKSPACE_CONTROLS,
+    ],
+    [ShortcutScope.LABELS_EDITOR]: [
+        ShortcutScope.GENERAL,
+        ShortcutScope.LABELS_EDITOR,
+    ],
+};
+
 export function conflict(sequence: string, existingSequence: string): boolean {
     if (isEqual(sequence, existingSequence)) {
         return true;
@@ -58,37 +148,7 @@ function updatedFlatKeyMap(scope: string, flatKeyMap: FlatKeyMap): FlatKeyMapIte
         sequences: [],
         items: {},
     };
-    const scopes = [];
-    if (scope === ShortcutScope.GENERAL) {
-        scopes.push(...Object.keys(ShortcutScope));
-    } else {
-        scopes.push(ShortcutScope.GENERAL);
-        if (scope === ShortcutScope.ANNOTATION_PAGE || scope === ShortcutScope.OBJECTS_SIDEBAR) {
-            scopes.push(
-                ShortcutScope.ANNOTATION_PAGE,
-                ShortcutScope.OBJECTS_SIDEBAR,
-                ...Object.keys(ShortcutScope).filter((s) => s.includes('WORKSPACE')),
-            );
-        } else if (scope.includes('WORKSPACE') && !scope.includes('CONTROLS')) {
-            const sidebar = `${scope}_CONTROLS`;
-            scopes.push(
-                scope,
-                sidebar,
-                ShortcutScope.OBJECTS_SIDEBAR,
-                ShortcutScope.ANNOTATION_PAGE,
-            );
-        } else if (scope.includes('WORKSPACE') && scope.includes('CONTROLS')) {
-            const workspace = scope.split(' controls')[0];
-            scopes.push(
-                scope,
-                workspace,
-                ShortcutScope.ANNOTATION_PAGE,
-                ShortcutScope.OBJECTS_SIDEBAR,
-            );
-        } else {
-            scopes.push(scope);
-        }
-    }
+    const scopes = shortcutScopeConflicts[scope as ShortcutScope] || [ShortcutScope.GENERAL, scope];
 
     for (const s of scopes) {
         if (!flatKeyMap[s]) {

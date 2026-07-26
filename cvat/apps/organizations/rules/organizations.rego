@@ -66,7 +66,7 @@ allow if {
 
 allow if {
     input.scope == utils.CREATE
-    utils.has_perm(utils.USER)
+    utils.has_perm(input.settings.organizations_min_role_to_create)
 }
 
 filter := {} if { # Django Q object to filter list of entries

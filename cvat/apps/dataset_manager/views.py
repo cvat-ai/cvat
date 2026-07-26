@@ -7,7 +7,6 @@ import logging
 import os
 import os.path as osp
 import shutil
-import traceback
 from datetime import timedelta
 from os.path import exists as osp_exists
 
@@ -22,10 +21,8 @@ import cvat.apps.dataset_manager.task as task
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.models import Job, Project, Task
 from cvat.apps.engine.rq import ExportRQMeta
-from cvat.apps.engine.utils import get_rq_lock_by_user, parse_exception_message
+from cvat.apps.engine.utils import get_rq_lock_by_user
 
-from .formats.registry import EXPORT_FORMATS, IMPORT_FORMATS
-from .signals import ExportStatus, export_finished
 from .util import (
     ExportCacheManager,
     LockNotAvailableError,
@@ -179,12 +176,6 @@ def export(
         ):
             if osp_exists(output_path):
                 extend_export_file_lifetime(output_path)
-                export_finished.send(
-                    sender=export,
-                    target=db_instance,
-                    dst_format=dst_format,
-                    status=ExportStatus.COMPLETED,
-                )
                 return output_path
 
         with TmpDirManager.get_tmp_directory_for_export(instance_type=instance_type) as temp_dir:
@@ -224,25 +215,7 @@ def export(
             )
         )
         raise
-    except Exception as exc:
-        export_finished.send(
-            sender=export,
-            target=db_instance,
-            dst_format=dst_format,
-            status=ExportStatus.FAILED,
-            message=parse_exception_message(
-                "".join(traceback.format_exception_only(type(exc), exc))
-            ),
-        )
-        log_exception(logger)
-        raise
 
-    export_finished.send(
-        sender=export,
-        target=db_instance,
-        dst_format=dst_format,
-        status=ExportStatus.COMPLETED,
-    )
     return output_path
 
 
@@ -281,10 +254,14 @@ def export_project_annotations(project_id: int, dst_format: str, *, server_url: 
 
 
 def get_export_formats():
+    from .formats.registry import EXPORT_FORMATS
+
     return list(EXPORT_FORMATS.values())
 
 
 def get_import_formats():
+    from .formats.registry import IMPORT_FORMATS
+
     return list(IMPORT_FORMATS.values())
 
 

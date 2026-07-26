@@ -9,7 +9,7 @@ import serverProxy from './server-proxy';
 import { ArgumentError } from './exceptions';
 import { CloudStorageCredentialsType, CloudStorageProviderType, CloudStorageStatus } from './enums';
 import User from './user';
-import { decodePreview } from './frames';
+import { resolvePreviewResponse } from './frames';
 import { SerializedRemoteFile, SerializedCloudStorage } from './server-response-types';
 
 function validateNotEmptyString(value: string): void {
@@ -367,9 +367,10 @@ Object.defineProperties(CloudStorage.prototype.preview, {
         writable: false,
         enumerable: false,
         value: async function implementation(this: CloudStorage): Promise<string> {
-            const preview = await serverProxy.cloudStorages.getPreview(this.id);
-            if (!preview) return '';
-            return decodePreview(preview);
+            // Cloud storages do not have a placeholder kind: the server either returns
+            // a real image (200) or a 404 when no manifest/image is available.
+            const response = await serverProxy.cloudStorages.getPreview(this.id);
+            return resolvePreviewResponse(response);
         },
     },
 });

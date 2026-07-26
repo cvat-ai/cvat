@@ -167,6 +167,8 @@ class WebhookDeliveryReadSerializer(serializers.ModelSerializer):
             "event",
             "status_code",
             "redelivery",
+            "attempt",
+            "request_duration",
             "created_date",
             "updated_date",
             "changed_fields",

@@ -89,7 +89,9 @@ export const organizationActions = {
         OrganizationActionsTypes.INVITE_ORGANIZATION_MEMBER_FAILED, { email, error },
     ),
     leaveOrganization: () => createAction(OrganizationActionsTypes.LEAVE_ORGANIZATION),
-    leaveOrganizationSuccess: () => createAction(OrganizationActionsTypes.LEAVE_ORGANIZATION_SUCCESS),
+    leaveOrganizationSuccess: (slug: string) => createAction(
+        OrganizationActionsTypes.LEAVE_ORGANIZATION_SUCCESS, { slug },
+    ),
     leaveOrganizationFailed: (error: any) => createAction(
         OrganizationActionsTypes.LEAVE_ORGANIZATION_FAILED, { error },
     ),
@@ -243,7 +245,7 @@ export function leaveOrganizationAsync(
         dispatch(organizationActions.leaveOrganization());
         try {
             await organization.leave(user);
-            dispatch(organizationActions.leaveOrganizationSuccess());
+            dispatch(organizationActions.leaveOrganizationSuccess(organization.slug));
             if (onLeaveSuccess) onLeaveSuccess();
         } catch (error) {
             dispatch(organizationActions.leaveOrganizationFailed(error));

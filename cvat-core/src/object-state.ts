@@ -8,25 +8,10 @@ import PluginRegistry from './plugins';
 import { ArgumentError } from './exceptions';
 import { Label } from './labels';
 import { isEnum } from './common';
-import { SerializedShape, SerializedTag, SerializedTrack } from './server-response-types';
-
-interface UpdateFlags {
-    label: boolean;
-    attributes: boolean;
-    description: boolean;
-    points: boolean;
-    rotation: boolean;
-    outside: boolean;
-    occluded: boolean;
-    keyframe: boolean;
-    zOrder: boolean;
-    pinned: boolean;
-    lock: boolean;
-    color: boolean;
-    hidden: boolean;
-    descriptions: boolean;
-    reset: () => void;
-}
+import {
+    SerializedShape, SerializedTag, SerializedTrack,
+} from './server-response-types';
+import type { UpdateFlags } from './annotations-objects/types';
 
 export interface SerializedData {
     objectType: ObjectType;
@@ -126,29 +111,28 @@ export default class ObjectState {
             );
         }
 
-        const updateFlags: UpdateFlags = {} as UpdateFlags;
-        // Shows whether any properties updated since the object initialization
-        Object.defineProperty(updateFlags, 'reset', {
-            value: function reset() {
-                this.label = false;
-                this.attributes = false;
-                this.descriptions = false;
+        const updateFlags: UpdateFlags = {
+            reset() {
+                delete this.label;
+                delete this.attributes;
+                delete this.descriptions;
 
-                this.points = false;
-                this.rotation = false;
-                this.outside = false;
-                this.occluded = false;
-                this.keyframe = false;
+                delete this.points;
+                delete this.rotation;
+                delete this.outside;
+                delete this.occluded;
+                delete this.keyframe;
 
-                this.zOrder = false;
-                this.pinned = false;
-                this.lock = false;
-                this.color = false;
-                this.hidden = false;
-                this.descriptions = false;
-
-                return reset;
+                delete this.zOrder;
+                delete this.pinned;
+                delete this.lock;
+                delete this.color;
+                delete this.hidden;
+                delete this.descriptions;
             },
+        };
+
+        Object.defineProperty(updateFlags, 'reset', {
             writable: false,
             enumerable: false,
         });
@@ -184,7 +168,6 @@ export default class ObjectState {
             objectType: serialized.objectType,
             shapeType: serialized.shapeType || null,
             updateFlags,
-            // score and votes are only available for shapes (not tracks or tags)
             score: serialized.objectType === ObjectType.SHAPE ? (serialized.score ?? 1.0) : undefined,
             votes: serialized.objectType === ObjectType.SHAPE ? (serialized.votes ?? 0) : undefined,
         };
@@ -581,10 +564,10 @@ export default class ObjectState {
 Object.defineProperty(ObjectState.prototype.save, 'implementation', {
     value: function saveImplementation(): ObjectState {
         if (this.__internal && this.__internal.save) {
-            return this.__internal.save(this);
+            return this.__internal.save(this.frame, this);
         }
 
-        return this;
+        throw new Error('Could not save object state. Context is not provided.');
     },
     writable: false,
 });
@@ -595,7 +578,7 @@ Object.defineProperty(ObjectState.prototype.export, 'implementation', {
             return this.__internal.export(this);
         }
 
-        return this;
+        throw new Error('Could not export object state. Context is not provided.');
     },
     writable: false,
 });
@@ -610,7 +593,7 @@ Object.defineProperty(ObjectState.prototype.delete, 'implementation', {
             return this.__internal.delete(frame, force);
         }
 
-        return false;
+        throw new Error('Could not delete object state. Context is not provided.');
     },
     writable: false,
 });
