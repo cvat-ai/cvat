@@ -105,7 +105,7 @@ class TaskVisionDataset(torchvision.datasets.VisionDataset):
         sample = self._underlying.samples[sample_index]
 
         sample_image = sample.media.load_image()
-        sample_target = Target(sample.annotations, self._label_id_to_index)
+        sample_target = Target(sample.annotations, self._label_id_to_index, sample_image.size)
 
         if self.transforms:
             sample_image, sample_target = self.transforms(sample_image, sample_target)

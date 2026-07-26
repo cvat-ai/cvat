@@ -50,6 +50,10 @@ export function logError(
             }
         }
 
+        if ('statusText' in error && typeof error.statusText === 'string') {
+            payload.status_text = error.statusText;
+        }
+
         if (!filename || ignoredSources.some((source) => filename.startsWith(source))) {
             // filename is missing or the error comes from external script (extension, console, snippets, etc)
             console.warn('Error will not be logged as comes from external source', error);

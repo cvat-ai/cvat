@@ -47,10 +47,10 @@ from cvat.apps.engine.media_extractors import (
 )
 from cvat.apps.engine.media_io.audio_provider import TaskAudioProvider
 from cvat.apps.engine.media_io.frame_provider import TaskFrameProvider
-from cvat.apps.engine.model_utils import bulk_create
 from cvat.apps.engine.rq import ImportRQMeta
 from cvat.apps.engine.task_validation import HoneypotFrameSelector
 from cvat.apps.engine.utils import av_scan_paths, format_list, get_path_size, take_by
+from cvat.utils import django_database as db_utils
 from cvat.utils.http import PROXIES_FOR_UNTRUSTED_URLS, make_requests_session
 from cvat.utils.paths import join_untrusted_path, problem_with_untrusted_path
 from utils.dataset_manifest import (
@@ -1490,7 +1490,7 @@ def _create_image_task_media_descriptors(
         is_backup_restore=is_backup_restore,
     )
 
-    images = bulk_create(models.Image, images)
+    images = db_utils.bulk_create(models.Image, images)
 
     db_related_files = [
         models.RelatedFile(
@@ -1500,11 +1500,11 @@ def _create_image_task_media_descriptors(
         for related_file_path in set(itertools.chain.from_iterable(related_images.values()))
     ]
 
-    db_related_files = bulk_create(models.RelatedFile, db_related_files)
+    db_related_files = db_utils.bulk_create(models.RelatedFile, db_related_files)
     db_related_files_by_path = {rf.path: rf for rf in db_related_files}
 
     ThroughModel = models.RelatedFile.images.through
-    bulk_create(
+    db_utils.bulk_create(
         ThroughModel,
         (
             ThroughModel(
@@ -1554,15 +1554,31 @@ def _create_audio_task_media_descriptors(
     return audio
 
 
+def ensure_task_is_initialized(task: models.Task) -> None:
+    if not task.media_type:
+        raise ValidationError("This task data has not been initialized yet. Please try again later")
+
+
 @transaction.atomic
-def create_thread(
+def initialize_task(
     db_task: int | models.Task,
     data: dict[str, Any],
     *,
     is_backup_restore: bool = False,
 ) -> None:
     if isinstance(db_task, int):
-        db_task = models.Task.objects.select_for_update().get(pk=db_task)
+        db_task = (
+            models.Task.objects.exclude(data=None)
+            .select_related("data")
+            .select_for_update(of=("self", "data"))
+            .get(pk=db_task)
+        )
+
+    if db_task.data.cloud_storage_id is not None:
+        db_task.data.cloud_storage = db_utils.get_object_by_id_for_share(
+            model=models.CloudStorage,
+            object_id=db_task.data.cloud_storage_id,
+        )
 
     slogger.glob.info("create task #{}".format(db_task.id))
 
@@ -1918,7 +1934,7 @@ def create_thread(
 
         # validate the sorting
         for file_path in sorted_media_files:
-            if not file_path in extractor:
+            if file_path not in extractor:
                 raise ValidationError(f"Can't find file '{file_path.name}' in the input files")
 
         media_files = sorted_media_files.copy()

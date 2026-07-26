@@ -235,6 +235,10 @@ function FiltersModalComponent(): JSX.Element {
                     type: 'number',
                     fieldSettings: { min: 0 },
                 },
+                zOrder: {
+                    label: 'Z order',
+                    type: 'number',
+                },
                 attr: {
                     label: 'Attributes',
                     type: '!struct',

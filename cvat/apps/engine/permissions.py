@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from collections import namedtuple
 from collections.abc import Sequence
+from enum import StrEnum
 from typing import TYPE_CHECKING, Any, cast
 
 from django.conf import settings
@@ -18,7 +19,6 @@ from cvat.apps.engine.types import ExtendedRequest
 from cvat.apps.engine.utils import is_dataset_export
 from cvat.apps.iam.permissions import (
     OpenPolicyAgentPermission,
-    StrEnum,
     build_iam_context,
     get_iam_context,
     get_membership,
@@ -74,12 +74,12 @@ class DownloadExportedExtension:
         *, request: ExtendedRequest, params: dict[str, Any]
     ) -> None:
         # prevent importing from partially initialized module
-        from cvat.apps.redis_handler.background import AbstractExporter
+        from cvat.apps.engine.background import BaseResourceExporter
 
         if rq_id := request.query_params.get("rq_id"):
             try:
                 params["rq_job_id"] = ExportRequestId.parse_and_validate_queue(
-                    rq_id, expected_queue=AbstractExporter.QUEUE_NAME, try_legacy_format=True
+                    rq_id, expected_queue=BaseResourceExporter.QUEUE_NAME, try_legacy_format=True
                 )
                 return
             except Exception:

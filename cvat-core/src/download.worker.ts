@@ -245,11 +245,13 @@ onmessage = (e) => {
             });
         })
         .catch((error) => {
-            postMessage({
+            const message = {
                 id: e.data.id,
                 message: error.message,
-                code: error.code || 0,
                 isSuccess: false,
-            });
+                ...(typeof error.code === 'number' ? { code: error.code } : {}),
+            };
+
+            postMessage(message);
         });
 };

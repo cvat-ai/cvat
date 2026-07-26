@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: MIT
 
 import './styles.scss';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useHistory, useParams } from 'react-router';
 import { useDispatch, useSelector } from 'react-redux';
 import { shallowEqual } from 'utils/redux';
@@ -15,7 +15,7 @@ import notification from 'antd/lib/notification';
 import { getInferenceStatusAsync } from 'actions/models-actions';
 import { updateJobAsync, jobsActions } from 'actions/jobs-actions';
 import {
-    getCore, Task, Job, FramesMetaData,
+    getCore, Task, Job, FramesMetaData, MediaType,
 } from 'cvat-core-wrapper';
 import { TaskNotFoundComponent } from 'components/common/not-found';
 import JobListComponent from 'components/task-page/job-list';
@@ -93,6 +93,13 @@ function TaskPageComponent(): JSX.Element {
         }
     }, [deletes]);
 
+    const isAudioTask = taskInstance && taskInstance.mediaType === MediaType.AUDIO;
+    const labelsEditorProps = useMemo(() => (isAudioTask ? {
+        enableSkeletonCreator: false,
+        enableFromModelCreator: false,
+        showLabelType: false,
+    } : undefined), [isAudioTask]);
+
     if (fetchingTask) {
         return <Spin size='large' className='cvat-spinner' />;
     }
@@ -141,6 +148,7 @@ function TaskPageComponent(): JSX.Element {
                         taskMeta={taskMeta}
                         cloudStorageInstance={cloudStorageInstance}
                         onUpdateTaskMeta={onUpdateTaskMeta}
+                        labelsEditorProps={labelsEditorProps}
                     />
                     <JobListComponent task={taskInstance} onJobUpdate={onJobUpdate} />
                 </Col>

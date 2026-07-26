@@ -145,6 +145,8 @@ export interface InteractionData {
         points_type?: 'any' | 'positive' | 'negative'; // default is any
         removalStrategy?: 'any' | 'last'; // default is any
         appendCursorPositionAsPoint?: boolean; // default is false
+        hint?: string;
+        regionOfInterest?: [number, number, number, number];
     };
 }
 
@@ -253,7 +255,6 @@ export interface CanvasModel {
     readonly issueRegions: Record<number, { hidden: boolean; points: number[] }>;
     readonly objects: any[];
     readonly renderData: RenderData;
-    readonly zLayer: number | null;
     readonly gridSize: Size;
     readonly focusData: FocusData;
     readonly activeElement: ActiveElement;
@@ -275,7 +276,7 @@ export interface CanvasModel {
     zoom(x: number, y: number, deltaY: number): void;
     move(topOffset: number, leftOffset: number): void;
 
-    setup(frameData: any, objectStates: any[], zLayer: number, renderData?: RenderData): void;
+    setup(frameData: any, objectStates: any[], renderData?: RenderData): void;
     setupIssueRegions(issueRegions: Record<number, { hidden: boolean; points: number[] }>): void;
     activate(clientID: number | null, attributeID: number | null): void;
     highlight(clientIDs: number[], severity: HighlightSeverity): void;
@@ -378,7 +379,6 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         top: number;
         left: number;
         fittedScale: number;
-        zLayer: number | null;
         drawData: DrawData;
         editData: MasksEditData | PolyEditData;
         interactionData: InteractionData;
@@ -460,7 +460,6 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
             top: 0,
             left: 0,
             fittedScale: 0,
-            zLayer: null,
             selected: null,
             mode: Mode.IDLE,
             exception: null,
@@ -565,7 +564,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         this.notify(UpdateReasons.ZOOM_CANVAS);
     }
 
-    public setup(frameData: any, objectStates: any[], zLayer: number, renderData: RenderData = {
+    public setup(frameData: any, objectStates: any[], renderData: RenderData = {
         visibleSkeletonElements: {},
     }): void {
         if (this.data.imageID !== frameData.number) {
@@ -577,7 +576,6 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
             frameData.deleted === this.data.imageIsDeleted &&
             !this.data.configuration.forceFrameUpdate
         ) {
-            this.data.zLayer = zLayer;
             this.data.objects = objectStates;
             this.data.renderData = renderData;
             if (this.data.image) {
@@ -597,7 +595,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
             this.data.angle = 0;
         }
 
-        const { zLayer: prevZLayer, objects: prevObjects, renderData: prevRenderData } = this.data;
+        const { objects: prevObjects, renderData: prevRenderData } = this.data;
         frameData
             .data((): void => {
                 this.data.image = null;
@@ -637,12 +635,10 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
                 this.notify(UpdateReasons.IMAGE_CHANGED);
 
                 if (
-                    prevZLayer === this.data.zLayer &&
                     prevObjects === this.data.objects &&
                     prevRenderData === this.data.renderData
                 ) {
                     // check the request is relevant, other setup() may have been called while promise resolving
-                    this.data.zLayer = zLayer;
                     this.data.objects = objectStates;
                     this.data.renderData = renderData;
                 }
@@ -971,7 +967,9 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
 
         if (typeof configuration.textContent === 'string') {
             const splitted = configuration.textContent.split(',').filter((entry: string) => !!entry);
-            if (splitted.every((entry: string) => ['id', 'label', 'attributes', 'source', 'descriptions', 'dimensions'].includes(entry))) {
+            if (splitted.every((entry: string) => (
+                ['id', 'label', 'attributes', 'source', 'descriptions', 'dimensions', 'layer', 'zOrder'].includes(entry)
+            ))) {
                 this.data.configuration.textContent = configuration.textContent;
             }
         }
@@ -1094,10 +1092,6 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         );
     }
 
-    public get zLayer(): number | null {
-        return this.data.zLayer;
-    }
-
     public get imageBitmap(): boolean {
         return this.data.imageBitmap;
     }
@@ -1115,10 +1109,6 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
     }
 
     public get objects(): any[] {
-        if (this.data.zLayer !== null) {
-            return this.data.objects.filter((object: any): boolean => object.zOrder <= this.data.zLayer);
-        }
-
         return this.data.objects;
     }
 
