@@ -56,13 +56,13 @@ context('Rename a label via raw editor.', () => {
     });
 
     describe(`Testing case "${caseId}"`, () => {
-        it('Change label name, color by raw editor. Press "Reset". The values returned to their original values.', () => {
+        it('Change label name, color by raw editor. Press "Cancel". The values returned to their original values.', () => {
             cy.contains('[role="tab"]', 'Raw').click();
             cy.get('.cvat-raw-labels-viewer').then(($rawLabelsTextarea) => {
                 rawLabelsValue = $rawLabelsTextarea.text();
                 testChangingRawLabelsViewerText($rawLabelsTextarea);
             });
-            cy.contains('[type="button"]', 'Reset').click();
+            cy.contains('[type="button"]', 'Cancel').click();
         });
 
         it('After reset, the text of the element returned to its original value.', () => {
@@ -71,11 +71,11 @@ context('Rename a label via raw editor.', () => {
             });
         });
 
-        it('Change label name, color by raw editor. Press "Done". The label parameters have taken on new values.', () => {
+        it('Change label name, color by raw editor. Press "Save". The label parameters have taken on new values.', () => {
             cy.get('.cvat-raw-labels-viewer').then(($rawLabelsTextarea) => {
                 testChangingRawLabelsViewerText($rawLabelsTextarea);
             });
-            cy.contains('[type="submit"]', 'Done').click();
+            cy.contains('[type="submit"]', 'Save').click();
             cy.contains('[role="tab"]', 'Constructor').click();
             cy.get('.cvat-constructor-viewer-item')
                 .should('have.text', newlabelName)
