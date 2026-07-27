@@ -213,8 +213,7 @@ When you run `cvat-cli task ls` without `--profile`, `--server-host`, or
 
 If `--server-host` is passed without `--profile`, the CLI **does not** borrow
 the default profile's PAT: you must supply a credential (`--auth`,
-`CVAT_ACCESS_TOKEN`, or the prompt). This keeps the "one PAT belongs to one
-server" invariant of the store.
+`CVAT_ACCESS_TOKEN`, or the prompt).
 
 ## Examples - tasks
 
