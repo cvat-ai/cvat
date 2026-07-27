@@ -7,7 +7,7 @@ import { connect } from 'react-redux';
 
 import AudioRegionsList from 'audio/components/annotation-page/audio-workspace/audio-regions-list';
 import { intervalID } from 'audio/components/annotation-page/audio-workspace/utils/audio-interval';
-import { ActiveControl, CombinedState } from 'reducers';
+import { ActiveControl, ColorBy, CombinedState } from 'reducers';
 import {
     audioActions,
     copyAudioIntervalAsync,
@@ -61,7 +61,7 @@ interface StateToProps {
     filtersActive: boolean;
     activeIntervalID: number | null;
     labels: Label[];
-    colorBy: CombinedState['settings']['shapes']['colorBy'];
+    colorBy: ColorBy;
     activeControl: ActiveControl;
     keyMap: KeyMap;
     normalizedKeyMap: Record<string, string>;

@@ -10,6 +10,7 @@ import Minimap from 'wavesurfer.js/dist/plugins/minimap';
 import RegionsPlugin from 'wavesurfer.js/dist/plugins/regions';
 import HoverPlugin from 'wavesurfer.js/dist/plugins/hover';
 
+import { formatSeconds } from 'audio/utils/format-audio-time';
 import { ZOOM_MIN } from '../utils/zoom-bounds';
 
 type MinimapInstance = InstanceType<typeof Minimap>;
@@ -50,6 +51,7 @@ export function useAudioWaveform(
                 lineWidth: 1,
                 labelColor: '#4B5563',
                 labelBackground: '#ffffff',
+                formatTimeCallback: formatSeconds,
             }),
             (() => {
                 const plugin = RegionsPlugin.create();

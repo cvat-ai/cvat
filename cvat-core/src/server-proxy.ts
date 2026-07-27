@@ -1935,7 +1935,9 @@ async function getLambdaFunctions(): Promise<SerializedModel[]> {
         const response = await Axios.get(url);
         return response.data;
     } catch (errorData) {
-        if (errorData.response.status === 503) {
+        // 503 => the serverless (Nuclio) backend is not deployed/available,
+        // so there are no lambda functions to list.
+        if (errorData.response?.status === 503) {
             return [];
         }
         throw generateError(errorData);

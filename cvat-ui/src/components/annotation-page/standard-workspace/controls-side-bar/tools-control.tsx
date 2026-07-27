@@ -624,7 +624,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             isActivated, jobInstance, frame, curZOrder, fetchAnnotations,
         } = this.props;
 
-        if (!isActivated || !activeLabelID) {
+        if (!isActivated || !activeLabelID || !activeTracker) {
             return;
         }
 
@@ -635,34 +635,37 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             return;
         }
 
-        // TODO: support more rectangles at the same time
-        // OR: drop this tracking method
+        const { shapes } = (e as CustomEvent<{ shapes: InteractionResult[] | null }>).detail;
+        if (!Array.isArray(shapes) || !shapes.length) {
+            return;
+        }
 
         try {
-            const { points } = (e as CustomEvent).detail.shapes[0];
-            const state = new core.classes.ObjectState({
-                shapeType: ShapeType.RECTANGLE,
-                objectType: ObjectType.TRACK,
-                source: core.enums.Source.SEMI_AUTO,
-                zOrder: curZOrder,
-                label,
-                points,
-                frame,
-                occluded: false,
-                attributes: {},
-                descriptions: [`Trackable (${activeTracker?.name})`],
-            });
+            const states = shapes.map(({ points }) => (
+                new core.classes.ObjectState({
+                    shapeType: ShapeType.RECTANGLE,
+                    objectType: ObjectType.TRACK,
+                    source: core.enums.Source.SEMI_AUTO,
+                    zOrder: curZOrder,
+                    label,
+                    points,
+                    frame,
+                    occluded: false,
+                    attributes: {},
+                    descriptions: [`Trackable (${activeTracker.name})`],
+                })
+            ));
 
-            const [clientID] = await jobInstance.annotations.put([state]);
+            const clientIDs = await jobInstance.annotations.put(states);
             this.setState({
                 trackedShapes: [
                     ...trackedShapes,
-                    {
+                    ...clientIDs.map((clientID: number, index: number): TrackedShape => ({
                         clientID,
                         serverlessState: null,
-                        shapePoints: points,
-                        trackerModel: activeTracker as MLModel,
-                    },
+                        shapePoints: states[index].points!,
+                        trackerModel: activeTracker,
+                    })),
                 ],
             });
 
@@ -685,11 +688,11 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             return;
         }
 
-        if (!activeInteractor) {
-            return;
-        }
-
         if (mode === 'interaction') {
+            if (!activeInteractor) {
+                return;
+            }
+
             const { shapes, finished } = (e as CustomEvent<{ shapes: InteractionResult[], finished: boolean }>).detail;
 
             if (finished) {

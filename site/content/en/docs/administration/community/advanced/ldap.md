@@ -29,7 +29,7 @@ services:
     environment:
       DJANGO_SETTINGS_MODULE: settings
     volumes:
-      - ./settings.py:/home/django/settings.py:ro
+      - ./settings.py:/opt/cvat/settings.py:ro
 ```
 
 ### Active Directory Example

@@ -20,6 +20,11 @@ const defaultState: AudioState = {
         intervals: [],
         activeIntervalID: null,
         hoveredIntervalID: null,
+        contextMenu: {
+            top: 0,
+            left: 0,
+            clientID: null,
+        },
         audioUrl: null,
         audioLoading: false,
         audioError: null,
@@ -122,6 +127,23 @@ export default function audioReducer(state: AudioState = defaultState, action: A
                 },
             };
         }
+        case AudioActionTypes.UPDATE_AUDIO_CONTEXT_MENU: {
+            const {
+                left, top, clientID,
+            } = action.payload;
+
+            return {
+                ...state,
+                player: {
+                    ...state.player,
+                    contextMenu: {
+                        left,
+                        top,
+                        clientID,
+                    },
+                },
+            };
+        }
         case AudioActionTypes.LOAD_AUDIO_DATA: {
             return {
                 ...state,
@@ -131,6 +153,7 @@ export default function audioReducer(state: AudioState = defaultState, action: A
                     audioError: null,
                     waveformReady: false,
                     audioUrl: null,
+                    contextMenu: defaultState.player.contextMenu,
                 },
             };
         }
@@ -188,6 +211,7 @@ export default function audioReducer(state: AudioState = defaultState, action: A
                     ...state.player,
                     activeIntervalID: null,
                     hoveredIntervalID: null,
+                    contextMenu: defaultState.player.contextMenu,
                 },
             };
         }
@@ -199,6 +223,10 @@ export default function audioReducer(state: AudioState = defaultState, action: A
                 (interval) => interval.clientID === state.player.hoveredIntervalID,
             ) ?
                 state.player.hoveredIntervalID : null;
+            const contextMenuClientID = intervals.some(
+                (interval) => interval.clientID === state.player.contextMenu.clientID,
+            ) ?
+                state.player.contextMenu.clientID : null;
 
             return {
                 ...state,
@@ -207,6 +235,10 @@ export default function audioReducer(state: AudioState = defaultState, action: A
                     intervals,
                     activeIntervalID,
                     hoveredIntervalID,
+                    contextMenu: {
+                        ...state.player.contextMenu,
+                        clientID: contextMenuClientID,
+                    },
                 },
             };
         }
