@@ -35,8 +35,11 @@ context('Quality requirements UI', () => {
     // expanded on a later visit. Expand only when it is currently collapsed.
     function ensureRowExpanded(name) {
         requirementRow(name).then(($row) => {
-            if ($row.find('.ant-table-row-expand-icon-collapsed').length) {
-                cy.wrap($row).find('.ant-table-row-expand-icon-collapsed').click();
+            const expandIcon = $row.find('.anticon-caret-down');
+            const iconIsCollapsed = expandIcon.find('svg').attr('style')?.includes('rotate(-90deg)');
+
+            if (iconIsCollapsed) {
+                cy.wrap(expandIcon).click();
             }
         });
     }

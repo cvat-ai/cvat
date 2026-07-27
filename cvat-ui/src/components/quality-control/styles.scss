@@ -120,6 +120,10 @@
         .ant-form-item {
             margin-bottom: $grid-unit-size * 2;
         }
+
+        .ant-checkbox-wrapper > .ant-checkbox + span {
+            padding-inline-end: calc($grid-unit-size / 2) !important;
+        }
     }
 
     .cvat-quality-requirement-form-header {
@@ -139,6 +143,16 @@
 
     .cvat-quality-requirement-checkbox-tooltip {
         color: $text-color-secondary;
+    }
+
+    .ant-form-item .ant-form-item-label > label .ant-form-item-tooltip,
+    .cvat-quality-requirement-checkbox-tooltip,
+    .cvat-quality-settings-tooltip-icon {
+        cursor: default;
+    }
+
+    .ant-form-item .ant-form-item-label > label .ant-form-item-tooltip {
+        margin-inline-start: $grid-unit-size;
     }
 
     .cvat-quality-requirement-overridden-label {
@@ -194,6 +208,8 @@
 
     .cvat-table-wrapper:has(.cvat-quality-requirement-attribute-rules-table) {
         @include cvat-table-dynamic-size;
+
+        padding-bottom: $grid-unit-size * 3;
 
         .ant-form-item {
             margin-bottom: 0;

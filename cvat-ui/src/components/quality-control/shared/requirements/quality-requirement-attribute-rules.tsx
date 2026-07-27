@@ -165,7 +165,6 @@ export default function QualityRequirementAttributeRules(props: Readonly<Props>)
                 {renderAttributeComparisonTitle()}
                 <CVATTooltip
                     title={formatDescription(attributeComparisonDescription)}
-                    className='cvat-settings-tooltip'
                 >
                     <QuestionCircleOutlined className='cvat-quality-settings-tooltip-icon' />
                 </CVATTooltip>

@@ -365,18 +365,14 @@ export default function QualityRequirementForm(props: Readonly<QualityRequiremen
         const tooltip = getTooltipDescription(description);
         return (
             <Form.Item name={name} valuePropName='checked'>
-                <Checkbox>
-                    <Space size={4}>
-                        {renderOverrideControl(name, label)}
-                        {tooltip && (
-                            <CVATTooltip title={tooltip}>
-                                <span onClick={(event) => event.preventDefault()}>
-                                    <QuestionCircleOutlined className='cvat-quality-requirement-checkbox-tooltip' />
-                                </span>
-                            </CVATTooltip>
-                        )}
-                    </Space>
-                </Checkbox>
+                <Space size={4}>
+                    <Checkbox>{renderOverrideControl(name, label)}</Checkbox>
+                    {tooltip && (
+                        <CVATTooltip title={tooltip}>
+                            <QuestionCircleOutlined className='cvat-quality-requirement-checkbox-tooltip' />
+                        </CVATTooltip>
+                    )}
+                </Space>
             </Form.Item>
         );
     };
