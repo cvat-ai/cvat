@@ -10,8 +10,14 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Check GitHub Actions pinning
-        run: go run github.com/suzuki-shunsuke/pinact/v3/cmd/pinact@v3.10.1 run --check
+      - name: Run checks
+        uses: zizmorcore/zizmor-action@6fc4b006235f201fdab3722e17240ab420d580e5 # v0.6.1
+        with:
+          advanced-security: false
+          annotations: true
+          config: .zizmor.yml
+          online-audits: false
+          version: 1.28.0
 
   bandit:
     runs-on: ubuntu-latest
