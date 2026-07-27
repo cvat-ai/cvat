@@ -405,7 +405,8 @@ Please see the [Docker documentation](https://docs.docker.com/network/proxy/) fo
 
 ### Connecting to private cloud storage endpoints
 
-CVAT uses Smokescreen as an outbound request proxy for backend requests.
+CVAT uses [Smokescreen](https://github.com/stripe/smokescreen) as an
+outbound request proxy for backend requests.
 If you attach an S3-compatible cloud storage, such as MinIO, and its endpoint
 resolves to a private or otherwise restricted IP address, CVAT can fail to
 connect with an error similar to:

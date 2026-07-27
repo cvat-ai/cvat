@@ -154,7 +154,7 @@ Failed to connect to proxy URL: "http://localhost:4750"
 ```
 
 Ask your CVAT administrator to allow the trusted storage IP address with
-Smokescreen. See the Docker Compose
+[Smokescreen](https://github.com/stripe/smokescreen). See the Docker Compose
 {{< ilink "/docs/administration/community/basics/installation#connecting-to-private-cloud-storage-endpoints"
      "installation guide" >}}
 or the Kubernetes
