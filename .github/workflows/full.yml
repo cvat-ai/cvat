@@ -221,7 +221,7 @@ jobs:
 
           docker compose -f docker-compose.yml -f docker-compose.dev.yml -f docker-compose.ci.yml \
             run --env PYTHONDEVMODE=1 cvat_ci /bin/bash \
-            -c 'python manage.py test cvat/apps -v 2'
+            -c 'python manage.py test cvat.apps -v 2'
 
       - name: Creating a log file from cvat containers
         if: failure()
