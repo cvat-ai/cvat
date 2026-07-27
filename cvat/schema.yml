@@ -7922,6 +7922,22 @@ components:
       required:
       - scope
       - timestamp
+    EventDTO:
+      type: object
+      properties:
+        key:
+          type: string
+          readOnly: true
+        group:
+          allOf:
+          - $ref: '#/components/schemas/EventGroup'
+          readOnly: true
+    EventGroup:
+      type: object
+      properties:
+        display_name:
+          type: string
+          readOnly: true
     EventRequest:
       type: object
       properties:
@@ -7994,15 +8010,13 @@ components:
         events:
           type: array
           items:
-            $ref: '#/components/schemas/EventsEnum'
+            $ref: '#/components/schemas/EventDTO'
+          readOnly: true
       required:
-      - events
       - webhook_type
     EventsEnum:
       enum:
-      - create:backup
       - create:comment
-      - create:export
       - create:invitation
       - create:issue
       - create:job
@@ -8026,9 +8040,7 @@ components:
       - update:task
       type: string
       description: |-
-        * `create:backup` - CREATE:BACKUP
         * `create:comment` - CREATE:COMMENT
-        * `create:export` - CREATE:EXPORT
         * `create:invitation` - CREATE:INVITATION
         * `create:issue` - CREATE:ISSUE
         * `create:job` - CREATE:JOB
