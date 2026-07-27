@@ -53,12 +53,13 @@ def format_exception_chain(ex: Exception) -> str:
     or directory: '/tmp/xxx/obj.names'".
 
     Messages already included in a previous link (some exceptions embed their
-    cause's text) are skipped.
+    cause's text) are skipped. Only Exception descendants are included:
+    the iteration stops at the first link that is not one.
     """
     messages: list[str] = []
     seen: set[int] = set()
     current: BaseException | None = ex
-    while current is not None and id(current) not in seen:
+    while isinstance(current, Exception) and id(current) not in seen:
         seen.add(id(current))
         message = str(current).strip()
         if message and all(message not in m for m in messages):

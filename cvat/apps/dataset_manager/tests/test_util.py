@@ -50,6 +50,17 @@ class FormatExceptionChainTest(SimpleTestCase):
     def test_empty_message_falls_back_to_type_name(self):
         self.assertEqual(format_exception_chain(ValueError()), "ValueError")
 
+    def test_stops_at_non_exception_links(self):
+        try:
+            try:
+                raise KeyboardInterrupt("internal detail")
+            except BaseException as inner:
+                raise RuntimeError("outer error") from inner
+        except RuntimeError as ex:
+            message = format_exception_chain(ex)
+
+        self.assertEqual(message, "outer error")
+
     def test_dataset_import_error_reports_underlying_reason(self):
         # A dataset that looks like YOLO 1.1 but is missing obj.names:
         # datumaro reports a generic "Failed to import dataset" error, and only
