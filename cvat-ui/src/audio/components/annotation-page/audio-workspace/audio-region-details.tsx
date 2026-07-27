@@ -3,14 +3,14 @@
 // SPDX-License-Identifier: MIT
 
 import React, {
-    useCallback, useEffect, useRef, useState,
+    useCallback, useEffect, useState,
 } from 'react';
 import Select from 'antd/lib/select';
 import Collapse from 'antd/lib/collapse';
 import Radio from 'antd/lib/radio';
 import Checkbox from 'antd/lib/checkbox';
 import InputNumber from 'antd/lib/input-number';
-import TextArea, { TextAreaRef } from 'antd/lib/input/TextArea';
+import TextArea from 'antd/lib/input/TextArea';
 import Popover from 'antd/lib/popover';
 import { EditOutlined } from '@ant-design/icons';
 
@@ -35,7 +35,6 @@ function TextAttributeInput({
     disabled: boolean;
     onChange(attrID: number, value: string): void;
 }): JSX.Element {
-    const ref = useRef<TextAreaRef>(null);
     // Using local value prevents the value to be replaced in the text area on every keystroke
     // It helps keeping the caret position as well as working system shortcuts like undo/redo
     const [localValue, setLocalValue] = useState(value);
@@ -57,7 +56,6 @@ function TextAttributeInput({
 
     return (
         <TextArea
-            ref={ref}
             rows={4}
             size='small'
             value={localValue}
