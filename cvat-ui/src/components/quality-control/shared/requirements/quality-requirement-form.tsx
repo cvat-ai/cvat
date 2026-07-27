@@ -148,79 +148,6 @@ export default function QualityRequirementForm(props: Readonly<QualityRequiremen
         (!!requirement && hasLocalInheritedField(requirement, 'attributeComparison'))
     );
 
-    const makeTooltipFragment = (metric: string, description: string): JSX.Element | null => {
-        const formattedDescription = formatDescription(description);
-        if (!formattedDescription) {
-            return null;
-        }
-
-        return (
-            <div>
-                <Text strong>{`${metric}:`}</Text>
-                <Text>
-                    {formattedDescription}
-                </Text>
-            </div>
-        );
-    };
-
-    const makeTooltip = (fragments: (JSX.Element | null)[]): JSX.Element => (
-        <div className='cvat-settings-tooltip-inner'>
-            {fragments}
-        </div>
-    );
-
-    const shapeComparisonTooltip = makeTooltip([
-        IOU_ANNOTATION_TYPES.has(annotationType) && makeTooltipFragment(
-            'Min overlap threshold (IoU)',
-            requirementDescriptions.iouThreshold,
-        ),
-        POINT_ANNOTATION_TYPES.has(annotationType) && makeTooltipFragment(
-            'Object Keypoint Similarity (OKS)',
-            requirementDescriptions.pointSize,
-        ),
-        POINT_ANNOTATION_TYPES.has(annotationType) && makeTooltipFragment(
-            'Point size base',
-            getPointSizeBaseDescription(requirementDescriptions.pointSizeBase),
-        ),
-        annotationType === 'polyline' && makeTooltipFragment(
-            'Line thickness',
-            requirementDescriptions.lineThickness,
-        ),
-        annotationType === 'polyline' && makeTooltipFragment(
-            'Check orientation',
-            requirementDescriptions.matchOrientation,
-        ),
-        annotationType === 'polyline' && makeTooltipFragment(
-            'Min similarity gain',
-            requirementDescriptions.lineOrientationThreshold,
-        ),
-        SEGMENTATION_ANNOTATION_TYPES.has(annotationType) && makeTooltipFragment(
-            'Check object visibility',
-            requirementDescriptions.checkCoveredAnnotations,
-        ),
-        SEGMENTATION_ANNOTATION_TYPES.has(annotationType) && makeTooltipFragment(
-            'Min visibility threshold',
-            requirementDescriptions.objectVisibilityThreshold,
-        ),
-        SEGMENTATION_ANNOTATION_TYPES.has(annotationType) && makeTooltipFragment(
-            'Match only visible parts',
-            requirementDescriptions.panopticComparison,
-        ),
-        makeTooltipFragment(
-            'Compare groups',
-            requirementDescriptions.matchGroups,
-        ),
-        makeTooltipFragment(
-            'Min group match threshold',
-            requirementDescriptions.groupMatchThreshold,
-        ),
-        makeTooltipFragment(
-            'Empty frames are annotated',
-            requirementDescriptions.emptyIsAnnotated,
-        ),
-    ]);
-
     const markTouchedFields = (changedValues: Partial<RequirementFormValues>): void => {
         const changedFieldNames = getChangedFieldNames(changedValues);
         setTouchedFields((prev) => {
@@ -426,24 +353,43 @@ export default function QualityRequirementForm(props: Readonly<QualityRequiremen
         );
     };
 
+    const getTooltipDescription = (description?: string): string | undefined => (
+        formatDescription(description) || undefined
+    );
+
     const renderCheckbox = (
         name: OverridableFormFieldName,
         label: string,
-    ): JSX.Element => (
-        <Form.Item name={name} valuePropName='checked'>
-            <Checkbox>
-                {renderOverrideControl(name, label)}
-            </Checkbox>
-        </Form.Item>
-    );
+        description?: string,
+    ): JSX.Element => {
+        const tooltip = getTooltipDescription(description);
+        return (
+            <Form.Item name={name} valuePropName='checked'>
+                <Checkbox>
+                    <Space size={4}>
+                        {renderOverrideControl(name, label)}
+                        {tooltip && (
+                            <CVATTooltip title={tooltip}>
+                                <span onClick={(event) => event.preventDefault()}>
+                                    <QuestionCircleOutlined className='cvat-quality-requirement-checkbox-tooltip' />
+                                </span>
+                            </CVATTooltip>
+                        )}
+                    </Space>
+                </Checkbox>
+            </Form.Item>
+        );
+    };
 
     const renderPercentInput = (
         name: OverridableFormFieldName,
         label: string,
+        description?: string,
     ): JSX.Element => (
         <Form.Item
             name={name}
             label={renderOverrideControl(name, label)}
+            tooltip={getTooltipDescription(description)}
             rules={[
                 { required: true, message: 'This field is required' },
                 {
@@ -478,29 +424,29 @@ export default function QualityRequirementForm(props: Readonly<QualityRequiremen
                 <Divider />
                 <Row className='cvat-quality-requirement-form-section-title'>
                     <Text strong>Shape comparison</Text>
-                    <CVATTooltip
-                        title={shapeComparisonTooltip}
-                        className='cvat-settings-tooltip'
-                        overlayStyle={{ maxWidth: '500px' }}
-                    >
-                        <QuestionCircleOutlined className='cvat-quality-settings-tooltip-icon' />
-                    </CVATTooltip>
                 </Row>
                 <Row gutter={16}>
                     {IOU_ANNOTATION_TYPES.has(annotationType) && (
                         <Col span={12}>
-                            {renderPercentInput('iouThreshold', 'IoU threshold (%)')}
+                            {renderPercentInput(
+                                'iouThreshold', 'IoU threshold (%)', requirementDescriptions.iouThreshold,
+                            )}
                         </Col>
                     )}
                     {POINT_ANNOTATION_TYPES.has(annotationType) && (
                         <>
                             <Col span={12}>
-                                {renderPercentInput('pointSize', 'Point size (%)')}
+                                {renderPercentInput(
+                                    'pointSize', 'Point size (%)', requirementDescriptions.pointSize,
+                                )}
                             </Col>
                             <Col span={12}>
                                 <Form.Item
                                     name='pointSizeBase'
                                     label={renderOverrideControl('pointSizeBase', 'Point size base')}
+                                    tooltip={getTooltipDescription(
+                                        getPointSizeBaseDescription(requirementDescriptions.pointSizeBase),
+                                    )}
                                 >
                                     <Select>
                                         {POINT_SIZE_BASE_OPTIONS.map((value) => (
@@ -520,16 +466,21 @@ export default function QualityRequirementForm(props: Readonly<QualityRequiremen
                     {annotationType === 'polyline' && (
                         <>
                             <Col span={12}>
-                                {renderPercentInput('lineThickness', 'Line thickness (%)')}
+                                {renderPercentInput(
+                                    'lineThickness', 'Line thickness (%)', requirementDescriptions.lineThickness,
+                                )}
                             </Col>
                             <Col span={12}>
                                 {renderPercentInput(
                                     'lineOrientationThreshold',
                                     'Line orientation threshold (%)',
+                                    requirementDescriptions.lineOrientationThreshold,
                                 )}
                             </Col>
                             <Col span={12}>
-                                {renderCheckbox('matchOrientation', 'Match orientation')}
+                                {renderCheckbox(
+                                    'matchOrientation', 'Match orientation', requirementDescriptions.matchOrientation,
+                                )}
                             </Col>
                         </>
                     )}
@@ -539,13 +490,20 @@ export default function QualityRequirementForm(props: Readonly<QualityRequiremen
                                 {renderPercentInput(
                                     'objectVisibilityThreshold',
                                     'Object visibility threshold (%)',
+                                    requirementDescriptions.objectVisibilityThreshold,
                                 )}
                             </Col>
                             <Col span={12}>
-                                {renderCheckbox('checkCoveredAnnotations', 'Check covered annotations')}
+                                {renderCheckbox(
+                                    'checkCoveredAnnotations',
+                                    'Check covered annotations',
+                                    requirementDescriptions.checkCoveredAnnotations,
+                                )}
                             </Col>
                             <Col span={12}>
-                                {renderCheckbox('panopticComparison', 'Panoptic comparison')}
+                                {renderCheckbox(
+                                    'panopticComparison', 'Panoptic comparison', requirementDescriptions.panopticComparison,
+                                )}
                             </Col>
                         </>
                     )}
@@ -553,13 +511,16 @@ export default function QualityRequirementForm(props: Readonly<QualityRequiremen
                         {renderPercentInput(
                             'groupMatchThreshold',
                             'Min group match threshold (%)',
+                            requirementDescriptions.groupMatchThreshold,
                         )}
                     </Col>
                     <Col span={12}>
-                        {renderCheckbox('matchGroups', 'Match groups')}
+                        {renderCheckbox('matchGroups', 'Match groups', requirementDescriptions.matchGroups)}
                     </Col>
                     <Col span={12}>
-                        {renderCheckbox('emptyIsAnnotated', 'Empty frames are annotated')}
+                        {renderCheckbox(
+                            'emptyIsAnnotated', 'Empty frames are annotated', requirementDescriptions.emptyIsAnnotated,
+                        )}
                     </Col>
                 </Row>
             </>

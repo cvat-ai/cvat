@@ -62,6 +62,11 @@
     overflow-y: auto;
 }
 
+.cvat-table-columns-settings-hint {
+    align-self: stretch;
+    text-align: center;
+}
+
 .cvat-menu-edit-label {
     display: flex;
     justify-content: space-between;

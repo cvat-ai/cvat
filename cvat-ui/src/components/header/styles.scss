@@ -24,6 +24,107 @@
     }
 }
 
+.cvat-header-help-popover {
+    margin-left: -$grid-unit-size * 2;
+
+    .ant-popover-inner {
+        overflow: hidden;
+        padding: 0;
+        border-radius: $border-radius-base;
+        box-shadow: 0 12px 32px rgba(0, 0, 0, 16%);
+    }
+
+    .ant-popover-inner-content {
+        padding: 0;
+    }
+
+    .ant-popover-arrow::before {
+        background: $background-color-1;
+    }
+}
+
+.cvat-header-help-menu {
+    width: $grid-unit-size * 35;
+    color: $text-color;
+    line-height: 1.3;
+
+    .cvat-header-help-menu-brand {
+        display: flex;
+        align-items: center;
+        gap: $grid-unit-size * 2;
+        padding: $grid-unit-size * 1.5 $grid-unit-size * 2;
+        border-bottom: 1px solid $border-color-1;
+        font-size: 18px;
+        white-space: nowrap;
+
+        .cvat-header-help-menu-logo {
+            display: inline-flex;
+            width: $grid-unit-size * 5;
+            height: $grid-unit-size * 5;
+            align-items: center;
+            justify-content: center;
+            border-radius: $border-radius-base;
+            background: #1677ff;
+            color: $background-color-1;
+            font-size: 14px;
+            font-weight: 600;
+        }
+    }
+
+    .cvat-header-help-menu-links {
+        padding: calc($grid-unit-size / 2) 0;
+
+        a {
+            display: grid;
+            min-height: $grid-unit-size * 5;
+            grid-template-columns: $grid-unit-size * 4 1fr $grid-unit-size * 2;
+            align-items: center;
+            padding: 0 $grid-unit-size * 2.5;
+            color: $text-color;
+            font-size: 13px;
+
+            &:hover {
+                background: $background-color-2;
+                color: #1677ff;
+            }
+
+            .anticon:first-child {
+                font-size: 16px;
+            }
+
+            .anticon:last-child {
+                color: $text-color-secondary;
+                font-size: 14px;
+                justify-self: end;
+            }
+        }
+    }
+
+    .cvat-header-help-menu-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: $grid-unit-size;
+        padding: $grid-unit-size * 1.5 $grid-unit-size * 2;
+        border-top: 1px solid $border-color-1;
+        color: $text-color-secondary;
+        font-size: 12px;
+
+        > div {
+            display: flex;
+            gap: $grid-unit-size * 1.5;
+        }
+
+        a {
+            color: $text-color-secondary;
+
+            &:hover {
+                color: #1677ff;
+            }
+        }
+    }
+}
+
 .cvat-logo-icon {
     width: max-content;
     height: $grid-unit-size * 4;

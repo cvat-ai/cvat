@@ -4,18 +4,20 @@
 // SPDX-License-Identifier: MIT
 
 import './styles.scss';
-import React, { useCallback, useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { connect } from 'react-redux';
 import { useHistory, useLocation } from 'react-router';
 import { Row, Col } from 'antd/lib/grid';
 import { MenuProps } from 'antd/lib/menu';
 import {
     SettingOutlined,
-    InfoCircleOutlined,
     LoadingOutlined,
     LogoutOutlined,
     GithubOutlined,
     QuestionCircleOutlined,
+    FileTextOutlined,
+    CustomerServiceOutlined,
+    ExportOutlined,
     CaretDownOutlined,
     ControlOutlined,
     UserOutlined,
@@ -26,13 +28,12 @@ import {
 import Layout from 'antd/lib/layout';
 import Button from 'antd/lib/button';
 import Dropdown from 'antd/lib/dropdown';
-import Modal from 'antd/lib/modal';
+import Popover from 'antd/lib/popover';
 import Text from 'antd/lib/typography/Text';
 
 import config from 'config';
 
 import { Organization } from 'cvat-core-wrapper';
-import CVATTooltip from 'components/common/cvat-tooltip';
 import CVATLogo from 'components/common/cvat-logo';
 import { switchSettingsModalVisible as switchSettingsModalVisibleAction } from 'actions/settings-actions';
 import { logoutAsync } from 'actions/auth-actions';
@@ -175,8 +176,12 @@ function HeaderComponent(props: Props): JSX.Element {
     } = props;
 
     const {
-        CHANGELOG_URL, LICENSE_URL, GITHUB_URL, GUIDE_URL, DISCORD_URL,
+        GITHUB_URL,
+        GUIDE_URL,
+        DISCORD_URL,
+        LICENSE_URL,
     } = config;
+    const [helpMenuVisible, setHelpMenuVisible] = useState(false);
 
     const isMounted = useIsMounted();
 
@@ -203,63 +208,6 @@ function HeaderComponent(props: Props): JSX.Element {
             }
         },
     };
-
-    const aboutPlugins = usePlugins((state: CombinedState) => state.plugins.components.about.links.items, props);
-    const aboutLinks: [JSX.Element, number][] = [];
-    aboutLinks.push([(
-        <Col key='changelog'>
-            <a href={CHANGELOG_URL} target='_blank' rel='noopener noreferrer'>
-                What&apos;s new?
-            </a>
-        </Col>
-    ), 0]);
-    aboutLinks.push([(
-        <Col key='license'>
-            <a href={LICENSE_URL} target='_blank' rel='noopener noreferrer'>
-                MIT License
-            </a>
-        </Col>
-    ), 10]);
-    aboutLinks.push([(
-        <Col key='discord'>
-            <a href={DISCORD_URL} target='_blank' rel='noopener noreferrer'>
-                Find us on Discord
-            </a>
-        </Col>
-    ), 20]);
-
-    aboutLinks.push(...aboutPlugins.map(({ component: Component, weight }, index: number) => (
-        [<Component key={index} targetProps={props} />, weight] as [JSX.Element, number]
-    )));
-
-    const showAboutModal = useCallback((): void => {
-        Modal.info({
-            title: `${about.server.name}`,
-            content: (
-                <div>
-                    <p>{`${about.server.description}`}</p>
-                    <p>
-                        <Text strong>Server version:</Text>
-                        <Text type='secondary'>{` ${about.server.version}`}</Text>
-                    </p>
-                    <p>
-                        <Text strong>UI version:</Text>
-                        <Text type='secondary'>{` ${about.packageVersion.ui}`}</Text>
-                    </p>
-                    <Row justify='space-around'>
-                        { aboutLinks.sort((item1, item2) => item1[1] - item2[1])
-                            .map((item) => item[0]) }
-                    </Row>
-                </div>
-            ),
-            width: 800,
-            okButtonProps: {
-                style: {
-                    width: '100px',
-                },
-            },
-        });
-    }, [about]);
 
     const closeSettings = useCallback(() => {
         switchSettingsModalVisible(false);
@@ -370,13 +318,6 @@ function HeaderComponent(props: Props): JSX.Element {
     }, 30]);
 
     menuItems.push([{
-        key: 'about',
-        icon: <InfoCircleOutlined />,
-        onClick: () => showAboutModal(),
-        label: 'About',
-    }, 40]);
-
-    menuItems.push([{
         key: 'logout',
         icon: logoutFetching ? <LoadingOutlined /> : <LogoutOutlined />,
         onClick: () => history.push('/auth/logout'),
@@ -398,6 +339,40 @@ function HeaderComponent(props: Props): JSX.Element {
         return highlightable && location.pathname.match(regex) ?
             `${baseClass} cvat-active-header-button` : baseClass;
     };
+
+    const helpMenuContent = (
+        <div className='cvat-header-help-menu'>
+            <div className='cvat-header-help-menu-brand'>
+                <span className='cvat-header-help-menu-logo'>CVAT</span>
+                <Text strong>CVAT Online</Text>
+            </div>
+            <div className='cvat-header-help-menu-links'>
+                <a href={GUIDE_URL} target='_blank' rel='noopener noreferrer'>
+                    <FileTextOutlined />
+                    <span>Documentation</span>
+                    <ExportOutlined />
+                </a>
+                <a href={GITHUB_URL} target='_blank' rel='noopener noreferrer'>
+                    <GithubOutlined />
+                    <span>GitHub</span>
+                    <ExportOutlined />
+                </a>
+                <a href={DISCORD_URL} target='_blank' rel='noopener noreferrer'>
+                    <CustomerServiceOutlined />
+                    <span>Support</span>
+                    <ExportOutlined />
+                </a>
+            </div>
+            <div className='cvat-header-help-menu-footer'>
+                <span>{`Version ${about.packageVersion.ui}`}</span>
+                <div>
+                    <a href='https://www.cvat.ai/privacy' target='_blank' rel='noopener noreferrer'>Privacy</a>
+                    <a href='https://www.cvat.ai/terms-of-use' target='_blank' rel='noopener noreferrer'>Terms</a>
+                    <a href={LICENSE_URL} target='_blank' rel='noopener noreferrer'>License</a>
+                </div>
+            </div>
+        </div>
+    );
 
     return (
         <Layout.Header className='cvat-header'>
@@ -491,32 +466,21 @@ function HeaderComponent(props: Props): JSX.Element {
                 ) : null}
             </div>
             <div className='cvat-right-header'>
-                <CVATTooltip overlay='Click to open repository'>
-                    <Button
-                        icon={<GithubOutlined />}
-                        size='large'
-                        className='cvat-open-repository-button cvat-header-button'
-                        type='link'
-                        href={GITHUB_URL}
-                        onClick={(event: React.MouseEvent): void => {
-                            event.preventDefault();
-                            window.open(GITHUB_URL, '_blank');
-                        }}
-                    />
-                </CVATTooltip>
-                <CVATTooltip overlay='Click to open guide'>
+                <Popover
+                    content={helpMenuContent}
+                    trigger='click'
+                    placement='bottom'
+                    open={helpMenuVisible}
+                    onOpenChange={setHelpMenuVisible}
+                    overlayClassName='cvat-header-help-popover'
+                >
                     <Button
                         icon={<QuestionCircleOutlined />}
                         size='large'
                         className='cvat-open-guide-button cvat-header-button'
                         type='link'
-                        href={GUIDE_URL}
-                        onClick={(event: React.MouseEvent): void => {
-                            event.preventDefault();
-                            window.open(GUIDE_URL, '_blank');
-                        }}
                     />
-                </CVATTooltip>
+                </Popover>
                 <Dropdown
                     trigger={['click']}
                     destroyPopupOnHide

@@ -137,6 +137,10 @@
         width: $grid-unit-size * 12;
     }
 
+    .cvat-quality-requirement-checkbox-tooltip {
+        color: $text-color-secondary;
+    }
+
     .cvat-quality-requirement-overridden-label {
         color: $validation-progress-color;
 
@@ -191,8 +195,6 @@
     .cvat-table-wrapper:has(.cvat-quality-requirement-attribute-rules-table) {
         @include cvat-table-dynamic-size;
 
-        padding-bottom: $grid-unit-size * 18;
-
         .ant-form-item {
             margin-bottom: 0;
         }
@@ -237,8 +239,7 @@
 
         .cvat-quality-requirements-disabled-row {
             .ant-table-cell,
-            .ant-typography,
-            .cvat-quality-requirements-action-button {
+            .ant-typography {
                 color: $text-color-secondary;
             }
         }

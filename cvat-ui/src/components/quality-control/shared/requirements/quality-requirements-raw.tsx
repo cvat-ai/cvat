@@ -54,6 +54,57 @@ export default function QualityRequirementsRaw(props: Readonly<Props>): JSX.Elem
         return Promise.resolve();
     };
 
+    const onPaste = (event: React.ClipboardEvent<HTMLTextAreaElement>): void => {
+        try {
+            const pastedRequirements = parseRawRequirements(event.clipboardData.getData('text'));
+            const baseRequirementIDs = new Map<number, number>();
+
+            for (const requirement of pastedRequirements) {
+                if (!requirement.is_base || typeof requirement.id !== 'number') {
+                    continue;
+                }
+
+                const targetBaseRequirement = currentRequirements.find((currentRequirement) => (
+                    currentRequirement.isBase && currentRequirement.annotationType === requirement.annotation_type
+                ));
+                if (targetBaseRequirement) {
+                    baseRequirementIDs.set(requirement.id, targetBaseRequirement.id);
+                }
+            }
+
+            const transformedRequirements = pastedRequirements.map((requirement) => {
+                if (requirement.is_base) {
+                    return {
+                        ...requirement,
+                        id: typeof requirement.id === 'number' ?
+                            baseRequirementIDs.get(requirement.id) :
+                            undefined,
+                    };
+                }
+
+                return {
+                    ...requirement,
+                    id: undefined,
+                    parent_requirement: typeof requirement.parent_requirement === 'number' ?
+                        baseRequirementIDs.get(requirement.parent_requirement) ?? requirement.parent_requirement :
+                        requirement.parent_requirement,
+                };
+            });
+            const pastedValue = JSON.stringify(transformedRequirements, null, 2);
+            const { selectionStart, selectionEnd } = event.currentTarget;
+            const currentValue = form.getFieldValue(QUALITY_REQUIREMENTS_RAW_FIELD) as string ?? '';
+
+            form.setFieldsValue({
+                [QUALITY_REQUIREMENTS_RAW_FIELD]: (
+                    currentValue.slice(0, selectionStart) + pastedValue + currentValue.slice(selectionEnd)
+                ),
+            });
+            event.preventDefault();
+        } catch (_error: unknown) {
+            // Keep the original pasted text so the form validator can report its syntax error.
+        }
+    };
+
     return (
         <>
             <Form.Item
@@ -61,12 +112,12 @@ export default function QualityRequirementsRaw(props: Readonly<Props>): JSX.Elem
                 initialValue={initialValue}
                 rules={[{ validator: validateRawRequirements }]}
                 preserve
-                noStyle
             >
                 <Input.TextArea
                     rows={28}
                     className='cvat-quality-requirements-raw-viewer'
                     disabled={disabled}
+                    onPaste={onPaste}
                 />
             </Form.Item>
             <div className='cvat-quality-requirements-raw-actions'>

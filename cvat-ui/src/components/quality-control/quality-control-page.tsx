@@ -344,7 +344,7 @@ function QualityControlPage(): JSX.Element {
         } catch (error: unknown) {
             notification.error({
                 message: 'Could not save quality settings',
-                description: typeof Error === 'object' ? (error as object).toString() : '',
+                description: error instanceof Error ? error.message : 'Unknown error',
             });
             throw error;
         } finally {
@@ -400,6 +400,8 @@ function QualityControlPage(): JSX.Element {
                     message: 'Could not update job',
                     description: error instanceof Error ? error.message : '',
                 });
+            }).finally(() => {
+                dispatch(reducerActions.setFetching(false));
             });
     }, [reduxDispatch, requestedInstanceType, requestedInstanceID]);
 

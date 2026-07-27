@@ -11,7 +11,7 @@ import Button from 'antd/lib/button';
 import Space from 'antd/lib/space';
 import Popover from 'antd/lib/popover';
 import Checkbox, { CheckboxChangeEvent } from 'antd/lib/checkbox';
-import { DownloadOutlined, MoreOutlined } from '@ant-design/icons';
+import { DownloadOutlined, MoreOutlined, SearchOutlined } from '@ant-design/icons';
 import { Config } from '@react-awesome-query-builder/antd';
 import jsonLogic from 'json-logic-js';
 
@@ -241,7 +241,7 @@ function CVATTable(props: Props): JSX.Element {
                                     }).length;
 
                                     return (
-                                        <Text key={group} type='secondary'>
+                                        <Text key={group} type='secondary' className='cvat-table-columns-settings-hint'>
                                             {params.hint ?? `You can select up to ${params.maxVisible} columns`}
                                             {` (${visibleCount} of ${params.maxVisible})`}
                                         </Text>
@@ -292,9 +292,10 @@ function CVATTable(props: Props): JSX.Element {
 
                                 return (
                                     <div className='cvat-table-columns-settings-menu'>
-                                        <Input.Search
+                                        <Input
                                             size='small'
                                             placeholder='Search'
+                                            prefix={<SearchOutlined />}
                                             onChange={(event) => setColumnSearchPhrase(event.target.value)}
                                             value={columnSearchPhrase}
                                         />
