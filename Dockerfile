@@ -1,3 +1,5 @@
+# syntax=docker/dockerfile:1
+
 ARG BASE_IMAGE=ubuntu:24.04
 
 FROM ${BASE_IMAGE} AS build-image-base
@@ -83,7 +85,7 @@ RUN --mount=type=cache,target=/root/.cache/pip/http-v2 \
     -r /tmp/cvat/requirements/${CVAT_CONFIGURATION}.txt \
     -w /tmp/wheelhouse
 
-FROM golang:1.26.4 AS build-smokescreen
+FROM golang:1.26.5 AS build-smokescreen
 
 RUN git clone --filter=blob:none --no-checkout https://github.com/stripe/smokescreen.git
 RUN cd smokescreen && git checkout eb1ac09 && go build -o /tmp/smokescreen
@@ -144,9 +146,9 @@ COPY --from=build-smokescreen /tmp/smokescreen /usr/local/bin/smokescreen
 
 # Add a non-root user
 ENV USER=${USER}
-ENV HOME /home/${USER}
 RUN deluser --remove-home ubuntu && \
     adduser --uid=1000 --shell /bin/bash --disabled-password --gecos "" ${USER}
+ENV CVAT_BASE_DIR=/home/${USER}
 
 ARG CLAM_AV="no"
 RUN if [ "$CLAM_AV" = "yes" ]; then \
@@ -186,12 +188,21 @@ RUN python -m pip uninstall -y pip
 
 # Install and initialize CVAT, copy all necessary files
 COPY cvat/nginx.conf /etc/nginx/nginx.conf
-COPY --chown=${USER} supervisord/ ${HOME}/supervisord
-COPY --chown=${USER} backend_entrypoint.d/ ${HOME}/backend_entrypoint.d
-COPY --chown=${USER} manage.py rqscheduler.py backend_entrypoint.sh wait_for_deps.sh ${HOME}/
-COPY --chown=${USER} utils/ ${HOME}/utils
-COPY --chown=${USER} cvat/ ${HOME}/cvat
-COPY --chown=${USER} components/analytics/clickhouse/init.py ${HOME}/components/analytics/clickhouse/init.py
+COPY --parents \
+    backend_entrypoint.d cvat supervisord utils \
+    backend_entrypoint.sh \
+    components/analytics/clickhouse/init.py \
+    manage.py \
+    rqscheduler.py \
+    wait_for_deps.sh \
+    /opt/cvat/
+
+RUN python -m compileall -q /opt/cvat
+
+# Link manage.py to the home directory for backwards compatibility.
+RUN ln -s /opt/cvat/manage.py ${CVAT_BASE_DIR}/manage.py
+
+RUN echo "/opt/cvat" > /opt/venv/lib/python3.12/site-packages/cvat.pth
 
 ARG COVERAGE_PROCESS_START
 RUN if [ "${COVERAGE_PROCESS_START}" ]; then \
@@ -201,9 +212,9 @@ RUN if [ "${COVERAGE_PROCESS_START}" ]; then \
 # RUN all commands below as 'django' user.
 # Use numeric UID/GID so that the image is compatible with the Kubernetes runAsNonRoot setting.
 USER 1000:1000
-WORKDIR ${HOME}
+WORKDIR ${CVAT_BASE_DIR}
 
 RUN mkdir -p data share keys logs /tmp/supervisord /tmp/cvat static
 
 EXPOSE 8080
-ENTRYPOINT ["./backend_entrypoint.sh"]
+ENTRYPOINT ["/opt/cvat/backend_entrypoint.sh"]

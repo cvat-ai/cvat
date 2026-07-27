@@ -18,3 +18,7 @@ export function formatMilliseconds(value: number): string {
 
     return `${minutes}:${seconds.toString().padStart(2, '0')}.${milliseconds.toString().padStart(3, '0')}`;
 }
+
+export function formatSeconds(value: number): string {
+    return formatMilliseconds(value * 1000);
+}

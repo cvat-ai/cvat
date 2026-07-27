@@ -14,7 +14,6 @@ import {
 } from '@ant-design/icons';
 import { ActiveControl, ColorBy } from 'reducers';
 import { AudioIntervalState, Label } from 'cvat-core-wrapper';
-import { toClipboard } from 'utils/to-clipboard';
 import { formatTimeShort } from 'audio/utils/format-audio-time';
 import { hexToRgbComponents } from 'audio/utils/hex-color';
 import ColorPicker from 'components/annotation-page/standard-workspace/objects-side-bar/color-picker';
@@ -23,6 +22,7 @@ import AudioRegionItemMenu from './audio-region-item-menu';
 import AudioRegionsListHeader, { AudioRegionsOrdering } from './audio-regions-list-header';
 import { setPlayOnceRegionId } from './utils/play-once-region';
 import {
+    copyAudioIntervalURL,
     intervalDurationSeconds,
     intervalEndSeconds,
     intervalID,
@@ -106,13 +106,7 @@ function AudioRegionItem(props: ItemProps): JSX.Element {
         serverID: interval.serverID ?? undefined,
         locked: isLocked,
         colorBy,
-        onCreateURL: () => {
-            if (interval.serverID) {
-                const { origin, pathname } = window.location;
-                const url = `${origin}${pathname}?type=interval&serverID=${interval.serverID}`;
-                toClipboard(url);
-            }
-        },
+        onCreateURL: () => copyAudioIntervalURL(interval.serverID),
         onCopy: () => onCopyInterval(id),
         onChangeColorClick: () => setColorPickerVisible(true),
         onRemove: () => onDeleteInterval(id),

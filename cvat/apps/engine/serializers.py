@@ -3893,7 +3893,11 @@ class AnnotationSerializer(serializers.Serializer):
         default=0,
         allow_null=True,  # backward compatibility; TODO: disallow on the DB level
     )
-    source = serializers.CharField(default=models.SourceType.MANUAL)
+    source = serializers.CharField(
+        # TODO: change the field type to ChoiceField,
+        # when SDK can compare string enum values without explicit .value access
+        default=models.SourceType.MANUAL
+    )
 
     def _validate_id_absent(self, value):
         if value is not None:
@@ -3931,6 +3935,33 @@ class AnnotationSerializer(serializers.Serializer):
                 assert False, f"Unknown action {action!r}"
 
         return None
+
+    def validate(self, attrs):
+        attrs = super().validate(attrs)
+
+        source = attrs.get("source")
+        try:
+            models.SourceType(source)
+        except ValueError:
+            if attrs.get("id"):
+                # Workaround for the DB records that could have been introduced by the UI before
+                # https://github.com/cvat-ai/cvat/issues/8874 was fixed.
+                # We allow the DB to store the old invalid annotations and return them from
+                # the server API, but disallow saving new ones. If the annotations were used
+                # for updating the existing annotations, we silently fix the input annotations.
+                # This is done this way to avoid heavy DB migrations.
+                source = str(models.SourceType.MANUAL)
+            else:
+                raise serializers.ValidationError(
+                    {
+                        "source": "must be one of {}, got '{}'".format(
+                            format_list([f"'{v[0]}'" for v in models.SourceType.choices()]), source
+                        )
+                    }
+                )
+        attrs["source"] = source
+
+        return attrs
 
 
 class LabeledImageSerializer(
@@ -3972,6 +4003,8 @@ class ShapeSerializer(serializers.Serializer):
     points = OptimizedFloatListField(allow_empty=True, required=False)
 
     def validate(self, attrs):
+        attrs = super().validate(attrs)
+
         shape_type = attrs["type"]
 
         num_points = len(attrs.get("points", ()))

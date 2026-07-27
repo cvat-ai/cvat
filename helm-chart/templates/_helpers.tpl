@@ -218,8 +218,7 @@ The name of the service account to use for backend pods
 livenessProbe:
   exec:
     command:
-    - python
-    - manage.py
+    - django-admin
     - workerprobe
     {{- range .args }}
     - {{ . | quote }}

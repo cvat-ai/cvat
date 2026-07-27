@@ -126,6 +126,13 @@ function AudioCanvasWrapper(): JSX.Element {
             stop: Math.round(stop * 1000),
         }));
     }, [dispatch]);
+    const onIntervalContextMenuOpen =
+        useCallback((clientID: number | null, event: MouseEvent): void => {
+            if (clientID === null) return;
+
+            dispatch(audioActions.setAudioActiveInterval(clientID));
+            dispatch(audioActions.updateAudioContextMenu(event.clientX, event.clientY, clientID));
+        }, [dispatch]);
     const onUpdateIntervalAttribute = useCallback((clientID: number, attrID: number, value: string): void => {
         dispatch(updateAudioIntervalAsync(clientID, {
             attributes: { [attrID]: value },
@@ -291,6 +298,7 @@ function AudioCanvasWrapper(): JSX.Element {
         onUpdateIntervalPosition,
         onSetActiveInterval,
         onSetHoveredInterval,
+        onIntervalContextMenuOpen,
         onWaveformReady,
         onWavesurferReady: setWavesurfer,
     });
@@ -411,6 +419,7 @@ function AudioCanvasWrapper(): JSX.Element {
                     interval={activeInterval}
                     intervalIndex={intervals.indexOf(activeInterval)}
                     labels={labels}
+                    trackDurationSeconds={duration}
                     onChangeLabel={changeLabel}
                     onChangeAttribute={changeAttribute}
                 />
