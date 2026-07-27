@@ -21,6 +21,7 @@ import { ThunkDispatch } from 'utils/redux';
 import { injectScrollbarStyle } from '../utils/inject-scrollbar-style';
 import { useWaveformViewport, WaveformViewport } from './use-waveform-viewport';
 import { useWaveformPlayback, WaveformPlayback } from './use-waveform-playback';
+import { useAdaptiveTimeline } from './use-adaptive-timeline';
 
 export interface WaveformPlayerBindings {
     plugins: GenericPlugin[];
@@ -50,6 +51,8 @@ export interface WaveSurferRuntime {
     durationRef: React.MutableRefObject<number>;
     /** Stable ref */
     minimap: MinimapPlugin;
+    /** Stable ref */
+    timelineRef: React.MutableRefObject<TimelinePlugin | null>;
     /** Stable ref */
     playerBindings: WaveformPlayerBindings;
     regionRuntime: WaveformRegionRuntime;
@@ -87,6 +90,7 @@ function useWaveSurferRuntime({
     instanceRef.current = instance;
     const durationRef = useRef(0);
     const readyRef = useRef(false);
+    const timelineRef = useRef<TimelinePlugin | null>(null);
 
     const createSourceScope = (): WaveSurferSourceScope => {
         const minimap = MinimapPlugin.create({
@@ -98,9 +102,11 @@ function useWaveSurferRuntime({
             height: 50,
             overlayColor: 'rgba(0, 85, 255, 0.3)',
         });
+        const timeline = TimelinePlugin.create();
+        timelineRef.current = timeline;
         const regions = RegionsPlugin.create();
         const plugins: GenericPlugin[] = [
-            TimelinePlugin.create(),
+            timeline,
             minimap,
             HoverPlugin.create({
                 lineColor: '#C084FC',
@@ -149,6 +155,7 @@ function useWaveSurferRuntime({
         instanceRef,
         durationRef,
         minimap: sourceScope.minimap,
+        timelineRef,
         playerBindings: sourceScope.playerBindings,
         regionRuntime,
         ready: instance !== null,
@@ -162,6 +169,7 @@ function useWaveSurferRuntime({
 export function useAudioWaveform(params: Params): AudioWaveform {
     const runtime = useWaveSurferRuntime(params);
     const viewport = useWaveformViewport(runtime);
+    useAdaptiveTimeline(runtime, viewport.pixelsPerSecond);
     const playback = useWaveformPlayback(runtime);
 
     return {
