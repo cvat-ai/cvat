@@ -199,7 +199,7 @@ cvat-cli --profile mycvat task ls
 cvat-cli --profile staging task create "task 1" --labels labels.json local file.jpg
 ```
 
-#### Resolution order (zero-flag command)
+#### Resolution order
 
 When you run `cvat-cli task ls` without `--profile`, `--server-host`, or
 `--auth`, the CLI picks a server _and_ credential together, in this order:
