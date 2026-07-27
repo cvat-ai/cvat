@@ -12,7 +12,7 @@ import { Handlers, KeyMap } from 'utils/mousetrap-react';
 import { subKeyMap } from 'utils/component-subkeymap';
 import { shallowEqual, ThunkDispatch } from 'utils/redux';
 
-import { intervalEndSeconds, intervalStartSeconds } from '../utils/audio-interval';
+import { intervalToTimeRange, selectAudioIntervals } from '../utils/audio-interval';
 import { WaveformViewport } from './use-waveform-viewport';
 
 const componentShortcuts = {
@@ -54,7 +54,7 @@ export function useIntervalNavigation({ viewport }: Params): IntervalNavigation 
     const {
         intervals, activeIntervalID, activeControl, keyMap,
     } = useSelector((state: CombinedState) => ({
-        intervals: state.audio.player.intervals,
+        intervals: selectAudioIntervals(state),
         activeIntervalID: state.audio.player.activeIntervalID,
         activeControl: state.annotation.canvas.activeControl,
         keyMap: state.shortcuts.keyMap,
@@ -78,10 +78,7 @@ export function useIntervalNavigation({ viewport }: Params): IntervalNavigation 
         if (interval.clientID === activeIntervalID) return;
 
         dispatch(audioActions.setAudioActiveInterval(interval.clientID));
-        centerTimeRange({
-            start: intervalStartSeconds(interval),
-            end: intervalEndSeconds(interval),
-        });
+        centerTimeRange(intervalToTimeRange(interval));
     };
     const handlers: Handlers = {
         NEXT_OBJECT: (event?: KeyboardEvent) => {

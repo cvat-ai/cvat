@@ -9,6 +9,10 @@ import {
     AudioIntervalState, FramesMetaData, Job, Source, fetchAndAssembleAudio,
 } from 'cvat-core-wrapper';
 import { clamp } from 'utils/math';
+import {
+    AudioTimeRange, intervalToTimeRange, timeRangeToInterval,
+} from 'audio/utils/audio-interval';
+import { selectAudioIntervals } from 'audio/components/annotation-page/audio-workspace/utils/audio-interval';
 
 export enum AudioActionTypes {
     SWITCH_AUDIO_PLAY = 'SWITCH_AUDIO_PLAY',
@@ -102,6 +106,17 @@ export const audioActions = {
 };
 
 export type AudioActions = ActionUnion<typeof audioActions>;
+
+export function selectAudioIntervalAt(frame: number): ThunkAction<Promise<number | null>> {
+    return async (_dispatch: ThunkDispatch, getState): Promise<number | null> => {
+        const job = getState().annotation.job.instance;
+        if (!job) return null;
+
+        const { intervals } = getState().audio.player;
+        const { state } = await job.annotations.selectInterval(intervals, frame);
+        return state?.clientID ?? null;
+    };
+}
 
 export function toggleAudioPlayback(): ThunkAction {
     return async (dispatch: ThunkDispatch, getState): Promise<void> => {
@@ -206,16 +221,25 @@ export function requestPlayAudioIntervalOnce(clientID: number): ThunkAction {
     };
 }
 
-export function createAudioIntervalAsync(start: number, stop: number, labelID: number | null): ThunkAction {
+export function createAudioIntervalAsync(
+    startSeconds: number,
+    endSeconds: number,
+    labelID: number | null,
+): ThunkAction {
     return async (dispatch: ThunkDispatch, getState): Promise<void> => {
-        const { labels } = getState().annotation.job;
+        const { labels, meta } = getState().annotation.job;
         const label = labelID !== null ? labels.find((_label) => _label.id === labelID) : null;
-        if (!label) return;
+        if (!label || !meta || meta.size <= 0) return;
+
+        const { start, stop } = timeRangeToInterval(
+            { start: startSeconds, end: endSeconds },
+            meta.size - 1,
+        );
 
         const state = AudioIntervalState.create({
             label,
-            start: Math.round(start * 1000),
-            stop: Math.round(stop * 1000),
+            start,
+            stop,
             source: Source.MANUAL,
         });
         state.attributes = Object.fromEntries(label.attributes.map((attribute) => [
@@ -241,6 +265,24 @@ export function updateAudioIntervalAsync(
         applyIntervalPatch(interval, patch);
         await interval.save();
         await dispatchFetchAnnotations(dispatch);
+    };
+}
+
+export function updateAudioIntervalTimeRangeAsync(
+    clientID: number,
+    range: AudioTimeRange,
+): ThunkAction {
+    return async (dispatch: ThunkDispatch, getState): Promise<void> => {
+        const { meta } = getState().annotation.job;
+        if (!meta || meta.size <= 0) return;
+
+        const interval = getState().audio.player.intervals.find((item) => item.clientID === clientID);
+        if (!interval) return;
+        const { start, stop } = timeRangeToInterval(range, meta.size - 1);
+        await dispatch(updateAudioIntervalAsync(clientID, {
+            start,
+            stop: interval.stop === null && stop === meta.size - 1 ? null : stop,
+        }));
     };
 }
 
@@ -309,18 +351,20 @@ export function copyAudioIntervalAsync(clientID: number): ThunkAction {
 
 export function extendAudioIntervalFromLastAsync(labelID: number | null): ThunkAction {
     return async (dispatch: ThunkDispatch, getState): Promise<void> => {
-        const { intervals, currentTime, duration } = getState().audio.player;
-        const { labels } = getState().annotation.job;
+        const { currentTime, duration } = getState().audio.player;
+        const { labels, meta } = getState().annotation.job;
         const label = labelID !== null ? labels.find((_label) => _label.id === labelID) : null;
-        if (!label) return;
+        if (!label || !meta || meta.size <= 0) return;
 
-        const end = Math.min(currentTime, duration || currentTime);
-        const leftIntervals = intervals.filter((interval) => ((interval.stop ?? interval.start) / 1000) <= end);
+        // `size / 1000` is the exclusive boundary after the final backend frame
+        const end = Math.min(currentTime, duration || currentTime, meta.size / 1000);
+        const closedIntervals = selectAudioIntervals(getState());
+        const leftIntervals = closedIntervals.filter((interval) => intervalToTimeRange(interval).end <= end);
         const nearestLeft = leftIntervals.length > 0 ?
             leftIntervals.reduce((best, interval) => (
                 (interval.stop ?? interval.start) > (best.stop ?? best.start) ? interval : best
             )) : null;
-        const start = nearestLeft ? (nearestLeft.stop ?? nearestLeft.start) / 1000 : 0;
+        const start = nearestLeft ? intervalToTimeRange(nearestLeft).end : 0;
         if (end - start <= 0.001) return;
 
         await dispatch(createAudioIntervalAsync(start, end, label.id ?? null));
