@@ -144,10 +144,15 @@ export default class RawViewer extends React.PureComponent<Props> {
     public componentDidUpdate(prevProps: Props): void {
         const { labels } = this.props;
         if (JSON.stringify(prevProps.labels) !== JSON.stringify(labels) && this.formRef.current) {
-            const convertedLabels = convertLabels(labels);
-            const textLabels = JSON.stringify(convertedLabels, null, 2);
+            const textLabels = this.getTextLabels();
             this.formRef.current.setFieldsValue({ labels: textLabels });
         }
+    }
+
+    private getTextLabels(): string {
+        const { labels } = this.props;
+        const convertedLabels = convertLabels(labels);
+        return JSON.stringify(convertedLabels, null, 2);
     }
 
     private handleSubmit = (values: Store): void => {
@@ -226,11 +231,13 @@ export default class RawViewer extends React.PureComponent<Props> {
     };
 
     public render(): JSX.Element {
-        const { labels } = this.props;
-        const convertedLabels = convertLabels(labels);
-        const textLabels = JSON.stringify(convertedLabels, null, 2);
+        const textLabels = this.getTextLabels();
         return (
-            <Form layout='vertical' onFinish={this.handleSubmit} ref={this.formRef}>
+            <Form
+                layout='vertical'
+                onFinish={this.handleSubmit}
+                ref={this.formRef}
+            >
                 <Form.Item name='labels' initialValue={textLabels} rules={[{ validator: validateLabels }]}>
                     <Input.TextArea
                         onPaste={(e: React.ClipboardEvent) => {
@@ -247,6 +254,7 @@ export default class RawViewer extends React.PureComponent<Props> {
                                     const updatedValue = value
                                         .substr(0, selectionStart) + replaced + value.substr(selectionEnd);
                                     this.formRef.current.setFieldsValue({ labels: updatedValue });
+                                    this.formRef.current.validateFields(['labels']).catch(() => {});
                                     setTimeout(() => {
                                         element.setSelectionRange(selectionEnd, selectionEnd);
                                     });
@@ -258,37 +266,46 @@ export default class RawViewer extends React.PureComponent<Props> {
                         className='cvat-raw-labels-viewer'
                     />
                 </Form.Item>
-                <Row justify='start' align='middle'>
-                    <Col>
-                        <CVATTooltip title='Save labels'>
-                            <Button
-                                className='cvat-submit-raw-labels-conf-button'
-                                style={{ width: '150px' }}
-                                type='primary'
-                                htmlType='submit'
-                            >
-                                Done
-                            </Button>
-                        </CVATTooltip>
-                    </Col>
-                    <Col offset={1}>
-                        <CVATTooltip title='Reset all changes'>
-                            <Button
-                                className='cvat-reset-raw-labels-conf-button'
-                                type='primary'
-                                danger
-                                style={{ width: '150px' }}
-                                onClick={(): void => {
-                                    if (this.formRef.current) {
-                                        this.formRef.current.resetFields();
-                                    }
-                                }}
-                            >
-                                Reset
-                            </Button>
-                        </CVATTooltip>
-                    </Col>
-                </Row>
+                <Form.Item shouldUpdate noStyle>
+                    {({ getFieldError, getFieldValue, resetFields }) => {
+                        const disableButtons = getFieldValue('labels') === textLabels ||
+                            !!getFieldError('labels').length;
+
+                        return (
+                            <Row justify='start' align='middle'>
+                                <Col>
+                                    <CVATTooltip title='Save labels'>
+                                        <Button
+                                            className='cvat-submit-raw-labels-conf-button'
+                                            style={{ width: '150px' }}
+                                            type='primary'
+                                            htmlType='submit'
+                                            disabled={disableButtons}
+                                        >
+                                            Save
+                                        </Button>
+                                    </CVATTooltip>
+                                </Col>
+                                <Col offset={1}>
+                                    <CVATTooltip title='Reset all changes'>
+                                        <Button
+                                            className='cvat-reset-raw-labels-conf-button'
+                                            type='primary'
+                                            danger
+                                            style={{ width: '150px' }}
+                                            disabled={disableButtons}
+                                            onClick={(): void => {
+                                                resetFields();
+                                            }}
+                                        >
+                                            Cancel
+                                        </Button>
+                                    </CVATTooltip>
+                                </Col>
+                            </Row>
+                        );
+                    }}
+                </Form.Item>
             </Form>
         );
     }
