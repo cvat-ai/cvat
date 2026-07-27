@@ -19,6 +19,7 @@ dependencies = [
     "cvat-sdk==2.71.1",
 
     "attrs>=24.2.0",
+    "json-with-comments>=1.2.10",
     "Pillow>=10.3.0",
 ]
 

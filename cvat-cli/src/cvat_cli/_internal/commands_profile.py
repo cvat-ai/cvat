@@ -113,7 +113,10 @@ class ProfileCreate:
             "--file",
             type=Path,
             default=None,
-            help="read the PAT from a file (plain token or JSON envelope)",
+            help=(
+                "read the PAT from a file; accepts plain tokens and JSONC envelopes. "
+                "'--server-host' overrides the envelope server"
+            ),
         )
 
     def execute(self, args: argparse.Namespace) -> None:
@@ -130,9 +133,7 @@ class ProfileCreate:
         elif args.token is not None:
             token = args.token
         else:
-            token = getpass.getpass("Personal Access Token (PAT): ")
-        if not token:
-            raise CriticalError("A non-empty PAT is required.")
+            token = None
 
         server = (
             args.server_host or envelope_server or store.get_default_server() or DEFAULT_SERVER
@@ -146,6 +147,11 @@ class ProfileCreate:
                 )
             server = f"{server}:{args.server_port}"
         server = normalize_server_url(server)
+
+        if token is None:
+            token = getpass.getpass(f"Personal Access Token (PAT) for '{server}': ")
+        if not token:
+            raise CriticalError("A non-empty PAT is required.")
 
         name = args.name or envelope_name
         if name is None:

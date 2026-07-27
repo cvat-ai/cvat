@@ -146,7 +146,10 @@ class TestProfileCreate:
         assert "mycvat" in capsys.readouterr().out
 
     def test_create_prompts_for_token_without_echo(self, store_path, monkeypatch):
-        monkeypatch.setattr("getpass.getpass", lambda *a, **k: "prompted-pat")
+        prompts = []
+        monkeypatch.setattr(
+            "getpass.getpass", lambda prompt: prompts.append(prompt) or "prompted-pat"
+        )
         run_cli(
             self,
             "--server-host",
@@ -157,6 +160,7 @@ class TestProfileCreate:
             "p",
         )
         assert AuthStore(path=store_path).get_profile("p").token == "prompted-pat"
+        assert prompts == ["Personal Access Token (PAT) for 'https://app.cvat.ai': "]
 
     def test_create_existing_requires_force(self, store_path):
         _seed(store_path, "p", "https://app.cvat.ai", "old")
@@ -290,6 +294,19 @@ class TestProfileCreateFromFile:
                 }
             )
         )
+        run_cli(self, "profile", "create", "--file", str(f))
+        entry = AuthStore(path=store_path).get_profile("my-laptop")
+        assert entry.server == "https://app.cvat.ai"
+        assert entry.token == "envelope-pat"
+
+    def test_jsonc_envelope_supports_comments_and_trailing_commas(self, store_path, tmp_path):
+        f = tmp_path / "cvat-token.jsonc"
+        f.write_text("""{
+                // The server where this token was created.
+                "server": "https://app.cvat.ai",
+                "name": "my-laptop",
+                "token": "envelope-pat",
+            }""")
         run_cli(self, "profile", "create", "--file", str(f))
         entry = AuthStore(path=store_path).get_profile("my-laptop")
         assert entry.server == "https://app.cvat.ai"

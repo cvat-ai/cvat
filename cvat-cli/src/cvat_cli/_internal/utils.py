@@ -4,10 +4,11 @@
 
 from __future__ import annotations
 
-import json
 from datetime import datetime, timezone
+from json import JSONDecodeError
 from pathlib import Path
 
+import jsonc
 from cvat_sdk import Client
 
 
@@ -27,14 +28,14 @@ def fetch_current_access_token_name(client: Client) -> str:
 
 
 def read_token_file(path: Path) -> tuple[str, str | None, str | None]:
-    """Read a PAT from a plain-text token file or a JSON envelope."""
+    """Read a PAT from a plain-text token file or a JSONC envelope."""
     if not path.is_file():
         raise ValueError("path must be a regular file")
 
     text = path.read_text(encoding="utf-8")
     try:
-        doc = json.loads(text)
-    except json.JSONDecodeError:
+        doc = jsonc.loads(text)
+    except JSONDecodeError:
         return text.strip(), None, None
 
     if not isinstance(doc, dict):

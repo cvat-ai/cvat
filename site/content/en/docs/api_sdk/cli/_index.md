@@ -168,7 +168,7 @@ cvat-cli --server-host https://app.cvat.ai profile create --name mycvat "<paste-
 # Import a plain-text token:
 cvat-cli --server-host https://app.cvat.ai profile create --name mycvat --file ~/Downloads/cvat-token.txt
 
-# A JSON envelope containing the token, server, and profile name needs no extra arguments:
+# A JSONC envelope containing the token, server, and profile name needs no extra arguments:
 cvat-cli profile create --file ~/Downloads/cvat-token-my-laptop.json
 
 # Inspect and manage the store:
@@ -183,6 +183,15 @@ cvat-cli profile delete staging      # remove the profile (does not revoke the t
 cvat-cli config default-server https://app.cvat.ai
 cvat-cli config default-server        # print the current default server
 cvat-cli config default-server --unset
+```
+
+Token envelope files accept JSONC syntax, including comments and trailing
+commas. If the server has moved since the envelope was downloaded, pass
+`--server-host` to override the embedded server URL:
+
+```bash
+cvat-cli --server-host https://new.example.com profile create \
+  --file ~/Downloads/cvat-token-my-laptop.json
 ```
 
 The server-side token is **not** revoked when a profile is deleted; use the
@@ -201,19 +210,36 @@ cvat-cli --profile staging task create "task 1" --labels labels.json local file.
 
 #### Resolution order
 
-When you run `cvat-cli task ls` without `--profile`, `--server-host`, or
-`--auth`, the CLI picks a server _and_ credential together, in this order:
+The CLI first tries to select a profile:
 
-1. `--profile NAME` (must supply both);
-2. otherwise the default profile, if one is set (supplies both);
-3. otherwise the credential falls back to `CVAT_ACCESS_TOKEN` if set,
-   then to a username/password prompt; and the server falls back to the
-   configured `default_server`, then to the built-in default
-   `http://localhost`.
+1. An explicit `--profile NAME`, if provided. It supplies both the server and
+   PAT, and cannot be combined with `--server-host`, `--server-port`, or
+   `--auth`.
+2. Otherwise, the default profile, if one is configured and no explicit
+   server or credential was provided. `CVAT_ACCESS_TOKEN` counts as an
+   explicit credential.
 
-If `--server-host` is passed without `--profile`, the CLI **does not** borrow
-the default profile's PAT: you must supply a credential (`--auth`,
-`CVAT_ACCESS_TOKEN`, or the prompt).
+If a profile is selected, it supplies both values and resolution stops.
+Otherwise, the credential and server are resolved independently.
+
+Credential resolution order:
+
+1. `--auth USER[:PASS]`, if provided. When `PASS` is omitted, the CLI uses
+   the `PASS` environment variable or prompts for the password.
+2. `CVAT_ACCESS_TOKEN`, if set.
+3. The current OS username, with the `PASS` environment variable or a
+   password prompt.
+
+Server resolution order:
+
+1. `--server-host`, if provided. `--server-port` is applied to the selected
+   host; if only `--server-port` is provided, the host comes from the next
+   available source below.
+2. The server configured by `cvat-cli config default-server`, if set.
+3. The built-in default, `http://localhost`.
+
+Supplying an explicit credential or server prevents the CLI from borrowing
+the other value from the default profile.
 
 ## Examples - tasks
 
