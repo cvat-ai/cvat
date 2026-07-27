@@ -66,9 +66,12 @@ def format_exception_chain(ex: Exception) -> str:
         current = current.__cause__ or (
             None if current.__suppress_context__ else current.__context__
         )
-    return ": ".join(
-        m.removesuffix(".") if i + 1 < len(messages) else m for i, m in enumerate(messages)
-    ) or type(ex).__name__
+    return (
+        ": ".join(
+            m.removesuffix(".") if i + 1 < len(messages) else m for i, m in enumerate(messages)
+        )
+        or type(ex).__name__
+    )
 
 
 def faster_deepcopy(v):

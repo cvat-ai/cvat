@@ -52,9 +52,8 @@ class FormatExceptionChainTest(SimpleTestCase):
 
     def test_dataset_import_error_reports_underlying_reason(self):
         # A dataset that looks like YOLO 1.1 but is missing obj.names:
-        # datumaro reports a generic "Failed to import dataset" error, and the
-        # underlying FileNotFoundError holds the actual reason (the scenario of
-        # https://github.com/cvat-ai/cvat/issues/10313)
+        # datumaro reports a generic "Failed to import dataset" error, and only
+        # the underlying FileNotFoundError holds the actual reason
         with TemporaryDirectory() as tmp_dir:
             with open(osp.join(tmp_dir, "obj.data"), "w") as f:
                 f.write("classes = 1\ntrain = train.txt\nnames = obj.names\nbackup = backup/\n")
