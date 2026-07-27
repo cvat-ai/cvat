@@ -335,10 +335,21 @@ jobs:
             # https://nodejs.org/docs/v22.18.0/api/corepack.html#corepack
 
       - name: Download CVAT server image
+        id: download
+        continue-on-error: true
         uses: actions/download-artifact@v8
+        with:
+          name: cvat_server_nonexistent # should fail
+          path: /tmp/cvat_server/
+        timeout-minutes: 5
+
+      - name: Download CVAT server image (retry)
+        if: steps.download.outcome == 'failure'
+        uses: actions/download-artifact@v4
         with:
           name: cvat_server
           path: /tmp/cvat_server/
+        timeout-minutes: 5
 
       - name: Download CVAT UI image
         uses: actions/download-artifact@v8
