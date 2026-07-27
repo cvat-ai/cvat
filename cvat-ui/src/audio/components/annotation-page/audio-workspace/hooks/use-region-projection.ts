@@ -63,7 +63,11 @@ export function useRegionProjection({ regionRuntime, ready }: Params): void {
                 element.style.pointerEvents = selectionDisabled ? 'none' : 'all';
                 const highlighted = isActive || interval.clientID === hoveredIntervalID;
                 const borderColor = getRegionItemColor(interval, labels, colorBy);
-                element.style.border = highlighted ? `2px solid ${borderColor}` : '';
+                // A border changes the region's padding box. WaveSurfer anchors resize handles
+                // to that box, which shifts their hit areas inward from the displayed boundaries.
+                // An inset shadow provides the same visual selection outline without changing
+                // the coordinate system used by the handles.
+                element.style.boxShadow = highlighted ? `inset 0 0 0 2px ${borderColor}` : '';
             }
         };
 
