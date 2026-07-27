@@ -157,6 +157,9 @@ A detection function can be used in the following ways:
 
 - In agent mode, the AA function can be used from the CVAT UI to either annotate a complete task
   (similar to immediate mode) or a single frame in a task.
+  After being registered with CVAT, a detection function will appear on the job page
+  under "AI Tools" (in the "Detectors" tab),
+  as well as on the task page under "Actions -> Automatic annotation".
 
 A detection function must have two attributes, `spec` and `detect`.
 
@@ -280,14 +283,119 @@ cvataa.rectangle(
 )
 ```
 
+### Interaction function protocol
+
+An interaction function is a type of AA function that accepts an image
+and a set of prompts describing an object (or objects) in that image,
+and returns the shapes of those objects.
+
+An interaction function can only be used in agent mode.
+After being registered with CVAT, an interaction function will appear on the job page
+in "AI Tools" under the "Interactors" tab.
+
+An interaction function must have two attributes, `spec` and `detect`.
+It may also optionally have a `preprocess_image` attribute.
+
+`spec` must contain the AA function's specification,
+which is an instance of `InteractionFunctionSpec`.
+This specification defines restrictions on prompts that the AA function will accept.
+Interaction functions may support one or more of the following types of prompts:
+
+- Positive points (points located inside the object(s) of interest).
+  An interaction function must support this type of prompt.
+  You must pass a `min_pos_points` parameter to the `InteractionFunctionSpec` constructor
+  specifying the minimum number of positive points the user must include in the prompt
+  (possibly 0).
+
+- Negative points (points located outside the object(s) of interest).
+  Support for this type of prompt is optional.
+  To declare support, pass a `min_neg_points` parameter to the `InteractionFunctionSpec` constructor
+  specifying the minimum number of negative points the user must include in the prompt
+  (possibly 0).
+
+- A bounding box.
+  Support for this type of prompt is optional.
+  To declare support, pass a `min_bounding_boxes` parameter
+  to the `InteractionFunctionSpec` constructor
+  with the value of either 0 (if the bounding box prompt is optional) or 1 (if it is required).
+
+Here is an example of a spec for an interaction function
+that requires at least two positive points and an optional bounding box:
+
+```python
+spec = cvataa.InteractionFunctionSpec(min_pos_points=2, min_bounding_boxes=0)
+```
+
+`detect` must be a function accepting the following parameters:
+
+- `context` (`InteractionFunctionContext`).
+  This is currently a dummy object and should be ignored.
+  In future versions, this may contain additional information.
+
+- `pp_image` (type varies).
+  A preprocessed image.
+  Consult the description of `preprocess_image` for more details.
+
+- `prompts` (`InteractionPrompts`).
+  The prompts describing the object(s) of interest.
+  This object will have fields corresponding to the possible types of prompts:
+
+  - `pos_points` - the positive points as a sequence of (x, y) tuples.
+  - `neg_points` - the negative points as a sequence of (x, y) tuples.
+  - `bounding_box` - the bounding box as a pair of (x, y) tuples representing
+    the top-left and bottom right corners of the box.
+    If no bounding box prompt was passed, this will be `None`.
+
+`detect` must detect the object(s) corresponding to the prompt
+and return them as a (possibly empty) list of `InteractionResultShape` objects.
+
+`InteractionResultShape` is a minimal version of the `LabeledShape` SDK model,
+containing only the `type`, `points`, and `attributes` fields.
+
+{{% alert title="Note" color="primary" %}}
+The CVAT UI can currently only process returned shapes of type `mask`.
+{{% /alert %}}
+
+The `attributes` field may only contain attributes with `spec_id` equal to
+one of the members of the `InteractionResultAttributes` enum.
+Currently, only one such member is defined:
+
+- `CONFIDENCE`: the confidence level for the object as a number in the range \[0, 1\].
+
+It's recommended to use the `cvat_sdk.attributes.attribute_vals_from_dict` function
+to create the attribute list if one is needed.
+
+`preprocess_image`, if implemented, must accept the following parameters:
+
+- `context` (`InteractionFunctionContext`).
+  This is currently a dummy object and should be ignored.
+  In future versions, this may contain additional information.
+
+- `image` (`PIL.Image.Image`).
+  An image that objects must be detected in.
+
+`preprocess_image` must perform any analysis on the image that the function can perform
+independently of the prompt
+and return an object representing the results of that analysis.
+This object will be passed as `pp_image` to `detect`.
+
+If `preprocess_image` is not implemented, then the `pp_image` object will be the original image.
+In other words, the default implementation is:
+
+```python
+def preprocess_image(context, image):
+    return image
+```
+
 ### Tracking function protocol
 
 A tracking function is a type of AA function that analyzes an image with one or more shapes on it,
 and then predicts the positions of those shapes on subsequent images.
 
 A tracking function can only be used in agent mode.
-When used with a tracking function, an agent will use it
-to process requests from the AI tracking tools in the CVAT UI.
+After being registered with CVAT, a tracking function will appear on the job page,
+either in "AI Tools" under the "Trackers" tab, or in the "Run annotation actions" dialog,
+depending on the supported shape types.
 
 {{% alert title="Warning" color="warning" %}}
 Currently, only one agent should be run for each tracking function.
