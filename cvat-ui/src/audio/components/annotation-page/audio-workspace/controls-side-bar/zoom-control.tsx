@@ -5,7 +5,7 @@
 import React from 'react';
 import { ZoomInOutlined } from '@ant-design/icons';
 
-import { ZOOM_MAX, ZOOM_MIN } from '../utils/zoom-bounds';
+import { limitZoom, ZOOM_MAX, ZOOM_MIN } from '../../../../utils/waveform-geometry';
 import AudioSliderControl from './audio-slider-control';
 
 export interface Props {
@@ -19,7 +19,7 @@ function formatZoom(zoom: number): string {
 
 function ZoomControl(props: Props): JSX.Element {
     const { zoom, onZoomChange } = props;
-    const currentZoom = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, zoom));
+    const currentZoom = limitZoom(zoom);
 
     return (
         <AudioSliderControl
