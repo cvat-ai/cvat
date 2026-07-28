@@ -20,14 +20,36 @@ interface TimelineDensityBand {
 // getting merged with custom spacing settings otherwise
 const DENSITY_BANDS: TimelineDensityBand[] = [
     {
+        minPixelsPerSecond: 25000,
+        options: {
+            timeInterval: 0.001953125,
+            primaryLabelInterval: 0,
+            secondaryLabelInterval: 0,
+            primaryLabelSpacing: 8,
+            secondaryLabelSpacing: 2,
+            formatTimeCallback: formatSecondsWithPrecision(3),
+        },
+    },
+    {
+        minPixelsPerSecond: 7000,
+        options: {
+            timeInterval: 0.0078125,
+            primaryLabelInterval: 0,
+            secondaryLabelInterval: 0,
+            primaryLabelSpacing: 8,
+            secondaryLabelSpacing: 2,
+            formatTimeCallback: formatSecondsWithPrecision(3),
+        },
+    },
+    {
         minPixelsPerSecond: 1500,
         options: {
             timeInterval: 0.03125,
             primaryLabelInterval: 0,
             secondaryLabelInterval: 0,
             primaryLabelSpacing: 8,
-            secondaryLabelSpacing: 4,
-            formatTimeCallback: (seconds: number): string => formatSecondsWithPrecision(seconds, 3),
+            secondaryLabelSpacing: 2,
+            formatTimeCallback: formatSecondsWithPrecision(3),
         },
     },
     {
@@ -37,19 +59,19 @@ const DENSITY_BANDS: TimelineDensityBand[] = [
             primaryLabelInterval: 0,
             secondaryLabelInterval: 0,
             primaryLabelSpacing: 8,
-            secondaryLabelSpacing: 4,
-            formatTimeCallback: (seconds: number): string => formatSecondsWithPrecision(seconds, 2),
+            secondaryLabelSpacing: 2,
+            formatTimeCallback: formatSecondsWithPrecision(2),
         },
     },
     {
-        minPixelsPerSecond: 70,
+        minPixelsPerSecond: 75,
         options: {
             timeInterval: 0.5,
             primaryLabelInterval: 0,
             secondaryLabelInterval: 0,
             primaryLabelSpacing: 10,
-            secondaryLabelSpacing: 5,
-            formatTimeCallback: (seconds: number): string => formatSecondsWithPrecision(seconds, 1),
+            secondaryLabelSpacing: 2,
+            formatTimeCallback: formatSecondsWithPrecision(1),
         },
     },
     {
@@ -59,7 +81,7 @@ const DENSITY_BANDS: TimelineDensityBand[] = [
             primaryLabelInterval: 0,
             secondaryLabelInterval: 0,
             primaryLabelSpacing: 10,
-            secondaryLabelSpacing: 5,
+            secondaryLabelSpacing: 2,
         },
     },
     {
@@ -69,7 +91,7 @@ const DENSITY_BANDS: TimelineDensityBand[] = [
             primaryLabelInterval: 0,
             secondaryLabelInterval: 0,
             primaryLabelSpacing: 6,
-            secondaryLabelSpacing: 3,
+            secondaryLabelSpacing: 2,
         },
     },
     {
@@ -79,7 +101,7 @@ const DENSITY_BANDS: TimelineDensityBand[] = [
             primaryLabelInterval: 0,
             secondaryLabelInterval: 0,
             primaryLabelSpacing: 6,
-            secondaryLabelSpacing: 3,
+            secondaryLabelSpacing: 2,
         },
     },
     {
@@ -89,7 +111,7 @@ const DENSITY_BANDS: TimelineDensityBand[] = [
             primaryLabelInterval: 0,
             secondaryLabelInterval: 0,
             primaryLabelSpacing: 10,
-            secondaryLabelSpacing: 5,
+            secondaryLabelSpacing: 2,
         },
     },
     {
@@ -99,14 +121,24 @@ const DENSITY_BANDS: TimelineDensityBand[] = [
             primaryLabelInterval: 0,
             secondaryLabelInterval: 0,
             primaryLabelSpacing: 10,
-            secondaryLabelSpacing: 5,
+            secondaryLabelSpacing: 2,
         },
     },
 ];
 
+// Enforce sorted nature of the array
+let prevMPPS = Number.MAX_SAFE_INTEGER;
+for (const band of DENSITY_BANDS) {
+    const currMpps = band.minPixelsPerSecond;
+    if (currMpps > prevMPPS) {
+        throw new Error(`DENSITY_BANDS must be sorted by MPPS descending. Conflicting band: ${JSON.stringify(band)}`);
+    }
+    prevMPPS = currMpps;
+}
+
 function getTimelineDensityBand(pixelsPerSecond: number): TimelineDensityBand {
     const band = DENSITY_BANDS.find(({ minPixelsPerSecond }) => pixelsPerSecond >= minPixelsPerSecond);
-    return band || DENSITY_BANDS[DENSITY_BANDS.length - 1];
+    return band ?? DENSITY_BANDS[DENSITY_BANDS.length - 1];
 }
 
 /**
