@@ -81,7 +81,7 @@ export default class LabelsEditor extends React.PureComponent<LabelsEditorProps,
 
         const { labels } = this.props;
 
-        if (!prevProps || prevProps.labels !== labels) {
+        if (!prevProps || JSON.stringify(prevProps.labels) !== JSON.stringify(labels)) {
             const transformedLabels = labels.map(transformLabel);
             this.setState({
                 savedLabels: transformedLabels.filter((label: LabelOptColor) => (label.id as number) >= 0),
@@ -91,8 +91,8 @@ export default class LabelsEditor extends React.PureComponent<LabelsEditorProps,
     }
 
     private handleRawSubmit = (labels: LabelOptColor[]): void => {
-        const unsavedLabels = [];
-        const savedLabels = [];
+        const unsavedLabels: LabelOptColor[] = [];
+        const savedLabels: LabelOptColor[] = [];
 
         for (const label of labels) {
             if (label.id as number >= 0) {
@@ -102,8 +102,9 @@ export default class LabelsEditor extends React.PureComponent<LabelsEditorProps,
             }
         }
 
-        this.setState({ unsavedLabels, savedLabels });
-        this.handleSubmit(savedLabels, unsavedLabels);
+        this.setState({ unsavedLabels, savedLabels }, () => {
+            this.handleSubmit(savedLabels, unsavedLabels);
+        });
     };
 
     private handleCreate = (label: LabelOptColor): void => {
