@@ -7,20 +7,19 @@
 
 context('Review pipeline feature', () => {
     const serverFiles = ['archive.zip'];
-    const randomSuffix = Math.floor(100000 + Math.random() * 900000);
     const additionalUsers = {
         annotator: {
-            username: `annotator${randomSuffix}`,
+            username: 'annotator',
             firstName: 'Firstname',
             lastName: 'Lastname',
-            email: `annotator${randomSuffix}@local.local`,
+            email: 'annotator@local.local',
             password: 'UfdU21!dds',
         },
         reviewer: {
-            username: `reviewer${randomSuffix}`,
+            username: 'reviewer',
             firstName: 'Firstname',
             lastName: 'Lastname',
-            email: `reviewer${randomSuffix}@local.local`,
+            email: 'reviewer@local.local',
             password: 'Fv5Df3#f55g',
         },
     };
