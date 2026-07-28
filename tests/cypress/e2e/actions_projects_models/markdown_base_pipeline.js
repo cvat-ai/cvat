@@ -89,7 +89,7 @@ context('Basic markdown pipeline', () => {
         });
     });
 
-    describe('Markdown text can be bounded to the project', () => {
+    describe('Markdown text can be bound to the project', () => {
         function openGuide() {
             cy.get('.cvat-md-guide-control-wrapper button').click();
             cy.url().should('to.match', /\/projects\/\d+\/guide/);
@@ -107,11 +107,32 @@ context('Basic markdown pipeline', () => {
             });
         }
 
+        function guideTextarea() {
+            return cy.get('.cvat-guide-page-editor-wrapper textarea');
+        }
+
+        function submitButton() {
+            return cy.get('.cvat-guide-page-bottom button');
+        }
+
+        function expectBeforeUnloadBlocked(shouldBlock) {
+            cy.window().then(($win) => {
+                const event = new $win.Event('beforeunload', { cancelable: true });
+                $win.dispatchEvent(event);
+
+                expect(event.defaultPrevented).to.equal(shouldBlock);
+            });
+        }
+
+        function replaceMarkdown(value) {
+            guideTextarea().clear();
+            guideTextarea().type(value);
+        }
+
         function updatePlainText(value) {
-            cy.get('.cvat-guide-page-editor-wrapper textarea').clear();
-            cy.get('.cvat-guide-page-editor-wrapper textarea').type(value);
+            replaceMarkdown(value);
             cy.intercept('PATCH', '/api/guides/**').as('patchGuide');
-            cy.get('.cvat-guide-page-bottom button').should('exist').and('be.visible').and('not.be.disabled').click();
+            submitButton().should('exist').and('be.visible').and('not.be.disabled').click();
             cy.get('.cvat-spinner-container').should('not.exist');
             cy.wait('@patchGuide').its('response.statusCode').should('equal', 200);
         }
@@ -146,6 +167,74 @@ context('Basic markdown pipeline', () => {
                 )).then(({ uuid }) => {
                     assetId = uuid;
                     setupGuide(`Plain text with a picture\n![image](/api/assets/${uuid})`);
+                });
+            });
+        });
+
+        it('enables submit only when markdown has unsaved changes', () => {
+            cy.openProjectById(projectId);
+            openGuide();
+            guideTextarea().invoke('val').then((value) => {
+                const savedValue = value || '';
+                submitButton().should('be.disabled');
+
+                guideTextarea().type('Unsaved markdown text');
+                submitButton().should('not.be.disabled');
+
+                replaceMarkdown(savedValue);
+                submitButton().should('be.disabled');
+            });
+        });
+
+        it('blocks browser unload only when markdown has unsaved changes', () => {
+            cy.openProjectById(projectId);
+
+            openGuide();
+            guideTextarea().invoke('val').then((value) => {
+                const savedValue = value || '';
+                expectBeforeUnloadBlocked(false);
+
+                guideTextarea().type('Unsaved markdown text');
+                expectBeforeUnloadBlocked(true);
+
+                replaceMarkdown(savedValue);
+                expectBeforeUnloadBlocked(false);
+            });
+        });
+
+        it('blocks route navigation only when markdown has unsaved changes', () => {
+            const confirmationMessage = 'You have unsaved changes, please confirm leaving this page.';
+
+            cy.openProjectById(projectId);
+            openGuide();
+            guideTextarea().invoke('val').then((value) => {
+                const savedValue = value || '';
+                cy.window().then(($win) => {
+                    cy.stub($win, 'confirm').returns(false).as('confirm');
+                });
+
+                cy.go('back');
+                cy.location('pathname').should('equal', `/projects/${projectId}`);
+                cy.get('@confirm').then((confirm) => {
+                    expect(confirm.callCount).to.equal(0);
+                });
+
+                openGuide();
+                guideTextarea().type('Unsaved markdown text');
+
+                cy.go('back');
+                cy.get('@confirm').then((confirm) => {
+                    expect(confirm.callCount).to.equal(1);
+                    expect(confirm.firstCall.args[0]).to.equal(confirmationMessage);
+                });
+                cy.location('pathname').should('equal', `/projects/${projectId}/guide`);
+                guideTextarea().should('be.visible').and('contain.value', 'Unsaved markdown text');
+
+                updatePlainText(`${savedValue}\nSaved markdown text after route navigation test`);
+                cy.go('back');
+                cy.location('pathname').should('equal', `/projects/${projectId}`);
+                cy.get('@confirm').then((confirm) => {
+                    expect(confirm.callCount).to.equal(1);
                 });
             });
         });

@@ -92,7 +92,7 @@ export default function Preview(props: Readonly<Props>): JSX.Element {
 
     if (!preview || preview?.fetching) {
         return (
-            <div ref={ref} className={loadingClassName || ''} aria-hidden>
+            <div ref={ref} className={loadingClassName || ''} onClick={onClick} aria-hidden>
                 <Spin size='default' />
             </div>
         );

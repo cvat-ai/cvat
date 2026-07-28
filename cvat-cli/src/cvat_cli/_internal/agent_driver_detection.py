@@ -30,9 +30,45 @@ def _worker_job_detect(
     return current_function.detect(context, image)
 
 
-class AgentDetectionFunctionDriver(AgentFunctionDriver):
+class AgentDetectionFunctionDriver(AgentFunctionDriver[cvataa.DetectionFunctionSpec]):
     FUNCTION_KIND = "detector"
-    _function_spec: cvataa.DetectionFunctionSpec
+
+    @staticmethod
+    def _dump_sublabel_spec(
+        sl_spec: models.SublabelRequest | models.PatchedLabelRequest,
+    ) -> dict:
+        result = {
+            "name": sl_spec.name,
+            "attributes": [
+                {
+                    "name": attribute_spec.name,
+                    "input_type": attribute_spec.input_type,
+                    "values": attribute_spec.values,
+                }
+                for attribute_spec in getattr(sl_spec, "attributes", [])
+            ],
+        }
+
+        if getattr(sl_spec, "type", "any") != "any":
+            # Add the type conditionally, to stay compatible with older
+            # CVAT versions when the function doesn't define label types.
+            result["type"] = sl_spec.type
+
+        return result
+
+    @classmethod
+    def get_remote_function_fields(cls, spec: cvataa.DetectionFunctionSpec) -> dict[str, Any]:
+        labels_v2 = []
+
+        for label_spec in spec.labels:
+            labels_v2.append(cls._dump_sublabel_spec(label_spec))
+
+            if sublabels := getattr(label_spec, "sublabels", None):
+                labels_v2[-1]["sublabels"] = [
+                    cls._dump_sublabel_spec(sublabel) for sublabel in sublabels
+                ]
+
+        return {"labels_v2": labels_v2}
 
     def _validate_sublabel_compatibility(
         self, remote_sl: dict, sl: models.Sublabel | None, sl_desc: str

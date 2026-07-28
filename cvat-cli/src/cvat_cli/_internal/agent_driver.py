@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Any, ClassVar, Protocol
+from typing import TYPE_CHECKING, Any, ClassVar, Generic, Protocol, TypeVar
 
 import cvat_sdk.auto_annotation as cvataa
 import cvat_sdk.datasets as cvatds
@@ -47,10 +47,13 @@ class CheckInCallback(Protocol):
         """
 
 
-class AgentFunctionDriver:
+SpecT = TypeVar("SpecT")
+
+
+class AgentFunctionDriver(Generic[SpecT]):
     FUNCTION_KIND: ClassVar[str]
 
-    def __init__(self, client: Client, executor: RecoverableExecutor, function_spec: object):
+    def __init__(self, client: Client, executor: RecoverableExecutor, function_spec: SpecT) -> None:
         self._client = client
         self._executor = executor
         self._function_spec = function_spec
@@ -58,6 +61,10 @@ class AgentFunctionDriver:
     @classmethod
     def init_worker(cls, state_id_generator: TrackingStateIdGenerator) -> None:
         pass
+
+    @classmethod
+    def get_remote_function_fields(cls, spec: SpecT) -> dict[str, Any]:
+        raise NotImplementedError
 
     def validate_function_compatibility(self, remote_function: dict) -> None:
         raise NotImplementedError

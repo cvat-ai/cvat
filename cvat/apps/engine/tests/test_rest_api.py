@@ -1895,7 +1895,7 @@ class _CloudStorageTestBase(ApiTestBase):
                 return Status.AVAILABLE if key in self._files else Status.NOT_FOUND
 
             def _download_range_of_bytes(self, key: str, /, *, stop_byte: int, start_byte: int):
-                return self._files[key][start_byte:stop_byte]
+                return self._files[key][start_byte : stop_byte + 1]
 
             def _download_fileobj_to_stream(self, key: str, stream: BinaryIO, /):
                 stream.write(self._files[key])
