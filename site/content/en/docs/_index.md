@@ -1,67 +1,50 @@
 ---
-title: 'Documentation'
-linkTitle: 'Documentation'
-description: 'Welcome to the documentation of Computer Vision Annotation Tool.'
+title: 'CVAT Documentation'
+linkTitle: 'Home'
+description: 'Everything you need to know about CVAT, from basic data annotation tips to advanced and AI-assisted labeling guides.'
 no_list: true
-menu:
-  main:
-    weight: 20
 ---
-
-CVAT is a free, online, interactive video and image annotation tool for computer vision.
-It is being developed and used by CVAT.ai to annotate millions of objects with different properties.
-Many UI and UX decisions are based on feedbacks from professional data annotation team.
-Try it online [app.cvat.ai](https://app.cvat.ai).
-
-Our documentation provides information for annotators, AI researchers, system administrators,
-and developers.
-The documentation is divided into three sections, and each section is divided into
-subsections `basic` and `advanced`.
 
 <section id="docs">
 
-{{< blocks/section color="docs" type="row" >}}
+<div class="docs-card-grid">
 
-{{% blocks/feature icon="fa-sign-in-alt" title="[Getting started](/docs/getting_started/)" %}}
+{{< card icon="fas fa-rocket" title="Getting Started" url="getting_started/" >}}
+Overview, vocabulary, shortcuts.
+{{< /card >}}
 
-Basic information and sections needed for a quick start.
+{{< card icon="fa-solid fa-diagram-project" title="Workspace" url="workspace/" >}}
+Projects, tasks, jobs, cloud storages, models.
+{{< /card >}}
 
-{{% /blocks/feature %}}
+{{< card icon="fa-solid fa-user-gear" title="Account Management" url="account_management/" >}}
+Access, roles, organizations, SSO, subscriptions.
+{{< /card >}}
 
-{{% blocks/feature icon="fa-question" title="[FAQ](/docs/faq/)" %}}
+{{< card icon="fa-solid fa-database" title="Dataset Management" url="dataset_management/" >}}
+Formats, import/export, annotation spec.
+{{< /card >}}
 
-Answers to frequently asked questions.
+{{< card icon="fa-solid fa-pencil-ruler" title="Annotation" url="annotation/" >}}
+Editor, tools, automated labeling.
+{{< /card >}}
 
-{{% /blocks/feature %}}
+{{< card icon="fa-solid fa-chart-line" title="QA & Analytics" url="qa-analytics//" >}}
+Quality control, consensus, analytics.
+{{< /card >}}
 
-{{% blocks/feature icon="fab fa-github" title="[GitHub Repository](https://github.com/cvat-ai/cvat)" %}}
+{{< card icon="fa-solid fa-plug-circle-bolt" title="Integrations" url="integration/" >}}
+FiftyOne, Human Protocol.
+{{< /card >}}
 
-Computer Vision Annotation Tool GitHub repository.
+{{< card icon="fa-solid fa-server" title="System Administration" url="administration/" >}}
+Installation, AWS, superuser, advanced config.
+{{< /card >}}
 
-{{% /blocks/feature %}}
+{{< card icon="fa-solid fa-code" title="Developers" url="api_sdk/" >}}
+API, SDK, CLI, tokens.
+{{< /card >}}
 
-
-<!--lint disable maximum-line-length-->
-
-{{% blocks/feature icon="fa-book" title="[Manual](/docs/manual/)" %}}
-
-This section contains documents for CVAT simple and advanced users.
-
-{{% /blocks/feature %}}
-
-{{% blocks/feature icon="fa-server" title="[Administration](/docs/administration/)" %}}
-
-This section contains documents for system administrators.
-
-{{% /blocks/feature %}}
-
-{{% blocks/feature icon="fa-terminal" title="[Contributing](/docs/contributing/)" %}}
-
-This section contains documents for developers.
-
-{{% /blocks/feature %}}
-
-
-{{< /blocks/section >}}
+</div>
 
 </section>

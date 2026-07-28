@@ -4,11 +4,13 @@
 
 /// <reference types="cypress" />
 
-import { projectName, labelName } from '../../support/const_project';
+import { projectNameDeleteLabel, labelDelete } from '../../support/const_project';
 
 context('Delete a label from a project.', () => {
-    const caseID = 57;
-    const taskName = `Task case ${caseID}`;
+    const caseId = 57;
+    const projectName = projectNameDeleteLabel;
+    const taskName = `Task case ${caseId}`;
+    const labelName = labelDelete.name;
     const attrName = `Attr for ${labelName}`;
     const textDefaultValue = 'Some value for type Text';
     const imagesCount = 1;
@@ -26,29 +28,36 @@ context('Delete a label from a project.', () => {
     const forProject = true;
     const attachToProject = false;
     const multiAttrParams = false;
-    let projectID = '';
+    let projectId = '';
 
-    function getProjectID() {
+    function getProjectId() {
         cy.contains('.cvat-project-name', projectName)
             .parents('.cvat-project-details')
             .should('have.attr', 'data-cvat-project-id')
-            .then(($projectID) => {
-                projectID = $projectID;
+            .then(($projectId) => {
+                projectId = $projectId;
             });
     }
 
     before(() => {
         cy.imageGenerator(imagesFolder, imageFileName, width, height, color, posX, posY, labelName, imagesCount);
         cy.createZipArchive(directoryToArchive, archivePath);
+        cy.prepareUserSession('/projects');
         cy.openProject(projectName);
     });
 
     after(() => {
-        cy.goToProjectsList();
-        cy.deleteProject(projectName, projectID);
+        // restore label with different color to mark deletion
+        cy.window().then(async ($win) => {
+            await $win.cvat.server.request(
+                `/api/projects/${projectId}`, {
+                    method: 'PATCH',
+                    data: { labels: [{ ...labelDelete, color: 'green' }] },
+                });
+        });
     });
 
-    describe(`Testing "Case ${caseID}"`, () => {
+    describe(`Testing "Case ${caseId}"`, () => {
         it('Create a task from project.', () => {
             cy.createAnnotationTask(
                 taskName,
@@ -66,14 +75,14 @@ context('Delete a label from a project.', () => {
 
         it('Delete a label from project.', () => {
             cy.openProject(projectName);
-            getProjectID(projectName);
+            getProjectId(projectName);
             cy.deleteLabel(labelName);
         });
 
-        it('Try to open job with no labels in the project. Successful.', () => {
+        it('Open a job with no labels in the project. "No labels" notification is shown.', () => {
             cy.openTaskJob(taskName);
             cy.get('.cvat-disabled-canvas-control').should('exist');
-            cy.contains('.cvat-notification-no-labels', 'does not contain any label').should('exist').and('be.visible');
+            cy.contains('.cvat-notification-no-labels', 'does not contain any labels').should('exist').and('be.visible');
         });
     });
 });

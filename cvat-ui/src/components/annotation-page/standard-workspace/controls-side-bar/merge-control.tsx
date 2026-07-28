@@ -43,4 +43,5 @@ function MergeControl(props: Props): JSX.Element {
     );
 }
 
+Object.assign(MergeControl, { displayName: 'MergeControl' });
 export default React.memo(MergeControl);

@@ -6,7 +6,8 @@
 import functools
 
 from allauth.account import app_settings as allauth_settings
-from allauth.account.utils import complete_signup, has_verified_email, send_email_confirmation
+from allauth.account.internal.flows.email_verification import send_verification_email_for_user
+from allauth.account.utils import complete_signup, has_verified_email
 from allauth.account.views import ConfirmEmailView
 from dj_rest_auth.app_settings import api_settings as dj_rest_auth_settings
 from dj_rest_auth.registration.views import RegisterView
@@ -16,51 +17,16 @@ from django.conf import settings
 from django.http import Http404, HttpResponse, HttpResponseBadRequest, HttpResponseRedirect
 from django.views.decorators.http import etag as django_etag
 from drf_spectacular.contrib.rest_auth import get_token_serializer_class
-from drf_spectacular.types import OpenApiTypes
-from drf_spectacular.utils import (
-    OpenApiResponse,
-    extend_schema,
-    extend_schema_view,
-    inline_serializer,
-)
-from furl import furl
-from rest_framework import serializers, views
+from drf_spectacular.utils import extend_schema
+from rest_framework import views
 from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import AllowAny
-from rest_framework.response import Response
 
-from .authentication import Signer
+from cvat.apps.engine.log import ServerLogManager
+
 from .utils import get_opa_bundle
 
-
-@extend_schema(tags=["auth"])
-@extend_schema_view(
-    post=extend_schema(
-        summary="This method signs URL for access to the server",
-        description="Signed URL contains a token which authenticates a user on the server."
-        "Signed URL is valid during 30 seconds since signing.",
-        request=inline_serializer(
-            name="Signing",
-            fields={
-                "url": serializers.CharField(),
-            },
-        ),
-        responses={"200": OpenApiResponse(response=OpenApiTypes.STR, description="text URL")},
-    )
-)
-class SigningView(views.APIView):
-
-    def post(self, request):
-        url = request.data.get("url")
-        if not url:
-            raise ValidationError("Please provide `url` parameter")
-
-        signer = Signer()
-        url = self.request.build_absolute_uri(url)
-        sign = signer.sign(self.request.user, url)
-
-        url = furl(url).add({Signer.QUERY_PARAM: sign}).url
-        return Response(url)
+slogger = ServerLogManager(__name__)
 
 
 class LoginViewEx(LoginView):
@@ -93,14 +59,17 @@ class LoginViewEx(LoginView):
 
             # Check that user's email is verified.
             # If not, send a verification email.
-            if not has_verified_email(user):
-                send_email_confirmation(request, user)
-                # we cannot use redirect to ACCOUNT_EMAIL_VERIFICATION_SENT_REDIRECT_URL here
-                # because redirect will make a POST request and we'll get a 404 code
-                # (although in the browser request method will be displayed like GET)
-                return HttpResponseBadRequest("Unverified email")
-        except Exception:  # nosec
-            pass
+            if has_verified_email(user):
+                raise
+
+            send_verification_email_for_user(request, user)
+            # we cannot use redirect to ACCOUNT_EMAIL_VERIFICATION_SENT_REDIRECT_URL here
+            # because redirect will make a POST request and we'll get a 404 code
+            # (although in the browser request method will be displayed like GET)
+            return HttpResponseBadRequest("Unverified email")
+        # FUTURE-TODO: check why we need to handle exceptions here
+        except Exception as ex:
+            slogger.glob.warning(str(ex), exc_info=True)
 
         self.login()
         return self.get_response()
@@ -174,7 +143,6 @@ class RulesView(views.APIView):
     serializer_class = None
     permission_classes = [AllowAny]
     authentication_classes = []
-    iam_organization_field = None
 
     @_etag(lambda request: get_opa_bundle()[1])
     def get(self, request):

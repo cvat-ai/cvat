@@ -14,3 +14,10 @@ Cypress.Commands.add('imageGenerator', (directory, fileName, width, height, colo
     count,
     extension,
 }));
+
+Cypress.Commands.add('bufferToImage', (directory, fileName, extension = 'png', buffer = null) => cy.task('bufferToImage', {
+    directory,
+    fileName,
+    extension,
+    buffer,
+}));

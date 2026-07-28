@@ -4,8 +4,12 @@
 // SPDX-License-Identifier: MIT
 
 import { Action, ActionCreatorsMapObject, AnyAction } from 'redux';
+import { shallowEqual } from 'react-redux';
 import { ThunkAction as _ThunkAction, ThunkDispatch as _ThunkDispatch } from 'redux-thunk';
 import { CombinedState } from '../reducers';
+
+const typedShallowEqual = shallowEqual as <T>(left: T, right: T) => boolean;
+export { typedShallowEqual as shallowEqual };
 
 export interface ActionWithPayload<T, P> extends Action<T> {
     payload: P;

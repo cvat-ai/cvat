@@ -17,7 +17,7 @@ export function readLatestFrameStorage(): Map<number, number> {
         ) {
             throw new Error('Incorrect format from local storage');
         }
-    } catch (error: unknown) {
+    } catch (_error: unknown) {
         return new Map([]);
     }
 

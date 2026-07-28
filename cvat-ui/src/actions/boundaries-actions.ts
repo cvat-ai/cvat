@@ -61,7 +61,7 @@ export function resetAfterErrorAsync(): ThunkAction {
 
                 dispatch(fetchAnnotationsAsync());
             }
-        } catch (error) {
+        } catch (_error) {
             dispatch(boundariesActions.throwResetError());
         }
     };

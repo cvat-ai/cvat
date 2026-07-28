@@ -2,9 +2,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-from collections.abc import Iterable
-
-from django.db.models import Q
 from drf_spectacular.utils import OpenApiParameter
 from rest_framework.filters import BaseFilterBackend
 
@@ -34,75 +31,17 @@ ORGANIZATION_OPEN_API_PARAMETERS = [
 
 
 class OrganizationFilterBackend(BaseFilterBackend):
-
-    def _parameter_is_provided(self, request):
-        for parameter in ORGANIZATION_OPEN_API_PARAMETERS:
-            if parameter.location == "header" and parameter.name in request.headers:
-                return True
-            elif parameter.location == "query" and parameter.name in request.query_params:
-                return True
-        return False
-
-    def _construct_filter_query(self, organization_fields, org_id):
-        if isinstance(organization_fields, str):
-            return Q(**{organization_fields: org_id})
-
-        if isinstance(organization_fields, Iterable):
-            # we select all db records where AT LEAST ONE organization field is equal org_id
-            operation = Q.OR
-
-            if org_id is None:
-                # but to get all non-org objects we need select db records where ALL organization fields are None
-                operation = Q.AND
-
-            filter_query = Q()
-            for org_field in organization_fields:
-                filter_query.add(Q(**{org_field: org_id}), operation)
-
-            return filter_query
-
-        return Q()
-
     def filter_queryset(self, request, queryset, view):
-        # Filter works only for "list" requests and allows to return
-        # only non-organization objects if org isn't specified
-
-        if (
-            view.detail
-            or not view.iam_organization_field
-            or
-            # FIXME:  It should be handled in another way. For example, if we try to get information for a specific job
-            # and org isn't specified, we need to return the full list of labels, issues, comments.
-            # Allow crowdsourcing users to get labels/issues/comments related to specific job.
-            # Crowdsourcing user always has worker group and isn't a member of an organization.
-            (
-                view.__class__.__name__ in ("LabelViewSet", "IssueViewSet", "CommentViewSet")
-                and request.query_params.get("job_id")
-                and request.iam_context.get("organization") is None
-                and request.iam_context.get("privilege") == "worker"
-            )
-        ):
+        if view.detail or not view.iam_supports_organization_params:
             return queryset
 
-        visibility = None
-        org = request.iam_context["organization"]
-
-        if org:
-            visibility = {"organization": org.id}
-
-        elif not org and self._parameter_is_provided(request):
-            visibility = {"organization": None}
-
-        if visibility:
-            org_id = visibility.pop("organization")
-            query = self._construct_filter_query(view.iam_organization_field, org_id)
-
-            return queryset.filter(query).distinct()
-
-        return queryset
+        # The actual filtering logic must be implemented in the Rego policy files for each endpoint
+        # using the add_organization_filter function. Here we just verify that this was done
+        # by adding a no-op filter that will crash if add_organization_filter wasn't used.
+        return queryset.filter(org_filter_proof=True)
 
     def get_schema_operation_parameters(self, view):
-        if not view.iam_organization_field or view.detail:
+        if not view.iam_supports_organization_params or view.detail:
             return []
 
         parameters = []

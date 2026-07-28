@@ -20,10 +20,9 @@ import cvat.apps.dataset_manager.project as project
 import cvat.apps.dataset_manager.task as task
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.models import Job, Project, Task
-from cvat.apps.engine.rq_job_handler import RQMeta
+from cvat.apps.engine.rq import ExportRQMeta
 from cvat.apps.engine.utils import get_rq_lock_by_user
 
-from .formats.registry import EXPORT_FORMATS, IMPORT_FORMATS
 from .util import (
     ExportCacheManager,
     LockNotAvailableError,
@@ -35,35 +34,46 @@ from .util import (
 
 slogger = ServerLogManager(__name__)
 
-_MODULE_NAME = __package__ + '.' + osp.splitext(osp.basename(__file__))[0]
+_MODULE_NAME = __package__ + "." + osp.splitext(osp.basename(__file__))[0]
+
 
 def log_exception(logger: logging.Logger | None = None, exc_info: bool = True):
     if logger is None:
         logger = slogger.glob
-    logger.exception("[%s @ %s]: exception occurred" % \
-            (_MODULE_NAME, current_function_name(2)),
-        exc_info=exc_info)
+    logger.exception(
+        "[%s @ %s]: exception occurred" % (_MODULE_NAME, current_function_name(2)),
+        exc_info=exc_info,
+    )
+
 
 DEFAULT_CACHE_TTL = timedelta(seconds=settings.EXPORT_CACHE_TTL)
 PROJECT_CACHE_TTL = DEFAULT_CACHE_TTL
 TASK_CACHE_TTL = DEFAULT_CACHE_TTL
 JOB_CACHE_TTL = DEFAULT_CACHE_TTL
 TTL_CONSTS = {
-    'project': PROJECT_CACHE_TTL,
-    'task': TASK_CACHE_TTL,
-    'job': JOB_CACHE_TTL,
+    "project": PROJECT_CACHE_TTL,
+    "task": TASK_CACHE_TTL,
+    "job": JOB_CACHE_TTL,
 }
 
-EXPORT_CACHE_LOCK_ACQUISITION_TIMEOUT = timedelta(seconds=settings.EXPORT_CACHE_LOCK_ACQUISITION_TIMEOUT)
+EXPORT_CACHE_LOCK_ACQUISITION_TIMEOUT = timedelta(
+    seconds=settings.EXPORT_CACHE_LOCK_ACQUISITION_TIMEOUT
+)
 EXPORT_CACHE_LOCK_TTL = timedelta(seconds=settings.EXPORT_CACHE_LOCK_TTL)
 EXPORT_LOCKED_RETRY_INTERVAL = timedelta(seconds=settings.EXPORT_LOCKED_RETRY_INTERVAL)
 
 
-def get_export_cache_ttl(db_instance: str | Project | Task | Job) -> timedelta:
+def get_export_cache_ttl(
+    db_instance: str | Project | Task | Job | None = None,
+) -> timedelta:
+    if not db_instance:
+        return DEFAULT_CACHE_TTL
+
     if isinstance(db_instance, (Project, Task, Job)):
         db_instance = db_instance.__class__.__name__
 
     return TTL_CONSTS[db_instance.lower()]
+
 
 def _patch_scheduled_job_status(job: rq.job.Job):
     # NOTE: rq scheduler < 0.14 does not set the appropriate
@@ -72,6 +82,7 @@ def _patch_scheduled_job_status(job: rq.job.Job):
     # FUTURE-TODO: delete manual status setting after upgrading to 0.14
     if job.get_status(refresh=False) != rq.job.JobStatus.SCHEDULED:
         job.set_status(rq.job.JobStatus.SCHEDULED)
+
 
 def retry_current_rq_job(time_delta: timedelta) -> rq.job.Job:
     # TODO: implement using retries once we move from rq_scheduler to builtin RQ scheduler
@@ -84,11 +95,10 @@ def retry_current_rq_job(time_delta: timedelta) -> rq.job.Job:
     current_rq_job = rq.get_current_job()
 
     def _patched_retry(*_1, **_2):
-        scheduler: Scheduler = django_rq.get_scheduler(
-            settings.CVAT_QUEUES.EXPORT_DATA.value
-        )
+        scheduler: Scheduler = django_rq.get_scheduler(settings.CVAT_QUEUES.EXPORT_DATA.value)
 
-        user_id = current_rq_job.meta.get('user', {}).get('id') or -1
+        rq_job_meta = ExportRQMeta.for_job(current_rq_job)
+        user_id = rq_job_meta.user.id or -1
 
         with get_rq_lock_by_user(settings.CVAT_QUEUES.EXPORT_DATA.value, user_id):
             scheduled_rq_job: rq.job.Job = scheduler.enqueue_in(
@@ -97,7 +107,7 @@ def retry_current_rq_job(time_delta: timedelta) -> rq.job.Job:
                 *current_rq_job.args,
                 **current_rq_job.kwargs,
                 job_id=current_rq_job.id,
-                meta=RQMeta.reset_meta_on_retry(current_rq_job.meta),
+                meta=rq_job_meta.get_meta_on_retry(),
                 job_ttl=current_rq_job.ttl,
                 job_result_ttl=current_rq_job.result_ttl,
                 job_description=current_rq_job.description,
@@ -107,8 +117,9 @@ def retry_current_rq_job(time_delta: timedelta) -> rq.job.Job:
             _patch_scheduled_job_status(scheduled_rq_job)
 
     current_rq_job.retries_left = 1
-    setattr(current_rq_job, 'retry', _patched_retry)
+    setattr(current_rq_job, "retry", _patched_retry)
     return current_rq_job
+
 
 def export(
     *,
@@ -119,20 +130,20 @@ def export(
     server_url: str | None = None,
     save_images: bool = False,
 ):
-    try:
-        if task_id is not None:
-            logger = slogger.task[task_id]
-            export_fn = task.export_task
-            db_instance = Task.objects.get(pk=task_id)
-        elif project_id is not None:
-            logger = slogger.project[project_id]
-            export_fn = project.export_project
-            db_instance = Project.objects.get(pk=project_id)
-        else:
-            logger = slogger.job[job_id]
-            export_fn = task.export_job
-            db_instance = Job.objects.get(pk=job_id)
+    if task_id is not None:
+        logger = slogger.task[task_id]
+        export_fn = task.export_task
+        db_instance = Task.objects.get(pk=task_id)
+    elif project_id is not None:
+        logger = slogger.project[project_id]
+        export_fn = project.export_project
+        db_instance = Project.objects.get(pk=project_id)
+    else:
+        logger = slogger.job[job_id]
+        export_fn = task.export_job
+        db_instance = Job.objects.get(pk=job_id)
 
+    try:
         cache_ttl = get_export_cache_ttl(db_instance)
         instance_type = db_instance.__class__.__name__
 
@@ -142,10 +153,9 @@ def export(
         # The situation is considered rare, so no locking is used.
         instance_update_time = timezone.localtime(db_instance.updated_date)
         if isinstance(db_instance, Project):
-            tasks_update = list(map(
-                lambda db_task: timezone.localtime(db_task.updated_date),
-                db_instance.tasks.all()
-            ))
+            tasks_update = [
+                timezone.localtime(db_task.updated_date) for db_task in db_instance.tasks.all()
+            ]
             instance_update_time = max(tasks_update + [instance_update_time])
 
         output_path = ExportCacheManager.make_dataset_file_path(
@@ -153,7 +163,7 @@ def export(
             instance_type=instance_type,
             instance_timestamp=instance_update_time.timestamp(),
             save_images=save_images,
-            format_name=dst_format
+            format_name=dst_format,
         )
 
         # acquire a lock 2 times instead of using one long lock:
@@ -169,14 +179,20 @@ def export(
                 return output_path
 
         with TmpDirManager.get_tmp_directory_for_export(instance_type=instance_type) as temp_dir:
-            temp_file = osp.join(temp_dir, 'result')
+            temp_file = osp.join(temp_dir, "result")
             # create a subdirectory to store export-related files,
             # which will be fully included in the resulting archive
-            temp_subdir = osp.join(temp_dir, 'subdir')
+            temp_subdir = osp.join(temp_dir, "subdir")
             os.makedirs(temp_subdir, exist_ok=True)
 
-            export_fn(db_instance.id, temp_file, format_name=dst_format,
-                server_url=server_url, save_images=save_images, temp_dir=temp_subdir)
+            export_fn(
+                db_instance.id,
+                temp_file,
+                format_name=dst_format,
+                server_url=server_url,
+                save_images=save_images,
+                temp_dir=temp_subdir,
+            )
 
             with get_export_cache_lock(
                 output_path,
@@ -190,8 +206,6 @@ def export(
             f"as {dst_format!r} at {output_path!r} and available for downloading for the next "
             f"{cache_ttl.total_seconds()} seconds. "
         )
-
-        return output_path
     except LockNotAvailableError:
         # Need to retry later if the lock was not available
         retry_current_rq_job(EXPORT_LOCKED_RETRY_INTERVAL)
@@ -201,36 +215,68 @@ def export(
             )
         )
         raise
-    except Exception:
-        log_exception(logger)
-        raise
+
+    return output_path
+
 
 def export_job_annotations(job_id: int, dst_format: str, *, server_url: str | None = None):
     return export(dst_format=dst_format, job_id=job_id, server_url=server_url, save_images=False)
 
+
 def export_job_as_dataset(job_id: int, dst_format: str, *, server_url: str | None = None):
     return export(dst_format=dst_format, job_id=job_id, server_url=server_url, save_images=True)
+
 
 def export_task_as_dataset(task_id: int, dst_format: str, *, server_url: str | None = None):
     return export(dst_format=dst_format, task_id=task_id, server_url=server_url, save_images=True)
 
+
 def export_task_annotations(task_id: int, dst_format: str, *, server_url: str | None = None):
     return export(dst_format=dst_format, task_id=task_id, server_url=server_url, save_images=False)
 
+
 def export_project_as_dataset(project_id: int, dst_format: str, *, server_url: str | None = None):
-    return export(dst_format=dst_format, project_id=project_id, server_url=server_url, save_images=True)
+    return export(
+        dst_format=dst_format,
+        project_id=project_id,
+        server_url=server_url,
+        save_images=True,
+    )
+
 
 def export_project_annotations(project_id: int, dst_format: str, *, server_url: str | None = None):
-    return export(dst_format=dst_format, project_id=project_id, server_url=server_url, save_images=False)
+    return export(
+        dst_format=dst_format,
+        project_id=project_id,
+        server_url=server_url,
+        save_images=False,
+    )
+
 
 def get_export_formats():
+    from .formats.registry import EXPORT_FORMATS
+
     return list(EXPORT_FORMATS.values())
 
+
 def get_import_formats():
+    from .formats.registry import IMPORT_FORMATS
+
     return list(IMPORT_FORMATS.values())
+
 
 def get_all_formats():
     return {
-        'importers': get_import_formats(),
-        'exporters': get_export_formats(),
+        "importers": get_import_formats(),
+        "exporters": get_export_formats(),
     }
+
+
+def get_export_callback(db_instance: Project | Task | Job, save_images: bool):
+    if isinstance(db_instance, Project):
+        return export_project_as_dataset if save_images else export_project_annotations
+    elif isinstance(db_instance, Task):
+        return export_task_as_dataset if save_images else export_task_annotations
+
+    assert isinstance(db_instance, Job)
+    return export_job_as_dataset if save_images else export_job_annotations

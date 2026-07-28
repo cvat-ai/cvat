@@ -61,6 +61,7 @@ context('Call HOC component each render.', () => {
     }
 
     before(() => {
+        cy.prepareUserSession();
         cy.openTaskJob(taskName);
     });
 

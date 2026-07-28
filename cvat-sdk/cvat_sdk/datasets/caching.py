@@ -6,10 +6,10 @@ import base64
 import json
 import shutil
 from abc import ABCMeta, abstractmethod
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from enum import Enum, auto
 from pathlib import Path
-from typing import Any, Callable, TypeVar, Union, cast
+from typing import Any, TypeVar, cast
 
 from attrs import define
 
@@ -52,7 +52,7 @@ class _CacheObjectModel(metaclass=ABCMeta):
     def load(cls, obj: _CacheObject): ...
 
 
-_ModelType = TypeVar("_ModelType", bound=Union[OpenApiModel, _CacheObjectModel])
+_ModelType = TypeVar("_ModelType", bound=OpenApiModel | _CacheObjectModel)
 
 
 class CacheManager(metaclass=ABCMeta):

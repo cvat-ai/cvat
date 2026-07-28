@@ -3,9 +3,11 @@
 #
 # SPDX-License-Identifier: MIT
 
+from enum import StrEnum
+
 from django.conf import settings
 
-from cvat.apps.iam.permissions import OpenPolicyAgentPermission, StrEnum
+from cvat.apps.iam.permissions import OpenPolicyAgentPermission
 
 from .models import Membership
 
@@ -21,10 +23,9 @@ class OrganizationPermission(OpenPolicyAgentPermission):
     @classmethod
     def create(cls, request, view, obj, iam_context):
         permissions = []
-        if view.basename == "organization":
-            for scope in cls.get_scopes(request, view, obj):
-                self = cls.create_base_perm(request, view, scope, iam_context, obj)
-                permissions.append(self)
+        for scope in cls.get_scopes(request, view, obj):
+            self = cls.create_base_perm(request, view, scope, iam_context, obj)
+            permissions.append(self)
 
         return permissions
 
@@ -32,9 +33,9 @@ class OrganizationPermission(OpenPolicyAgentPermission):
         super().__init__(**kwargs)
         self.url = settings.IAM_OPA_DATA_URL + "/organizations/allow"
 
-    @staticmethod
-    def get_scopes(request, view, obj):
-        Scopes = __class__.Scopes
+    @classmethod
+    def _get_scopes(cls, request, view, obj):
+        Scopes = cls.Scopes
         return [
             {
                 "list": Scopes.LIST,
@@ -53,10 +54,16 @@ class OrganizationPermission(OpenPolicyAgentPermission):
                 "owner": {"id": self.obj.owner_id},
                 "user": {"role": membership.role if membership else None},
             }
-        elif self.scope.startswith(__class__.Scopes.CREATE.value):
+        elif self.scope.startswith(self.Scopes.CREATE.value):
             return {"id": None, "owner": {"id": self.user_id}, "user": {"role": "owner"}}
         else:
             return None
+
+    def get_opa_settings_payload(self):
+        return {
+            **super().get_opa_settings_payload(),
+            "organizations_min_role_to_create": settings.ORGANIZATIONS_MIN_ROLE_TO_CREATE,
+        }
 
 
 class InvitationPermission(OpenPolicyAgentPermission):
@@ -72,12 +79,11 @@ class InvitationPermission(OpenPolicyAgentPermission):
     @classmethod
     def create(cls, request, view, obj, iam_context):
         permissions = []
-        if view.basename == "invitation":
-            for scope in cls.get_scopes(request, view, obj):
-                self = cls.create_base_perm(
-                    request, view, scope, iam_context, obj, role=request.data.get("role")
-                )
-                permissions.append(self)
+        for scope in cls.get_scopes(request, view, obj):
+            self = cls.create_base_perm(
+                request, view, scope, iam_context, obj, role=request.data.get("role")
+            )
+            permissions.append(self)
 
         return permissions
 
@@ -86,17 +92,14 @@ class InvitationPermission(OpenPolicyAgentPermission):
         self.role = kwargs.get("role")
         self.url = settings.IAM_OPA_DATA_URL + "/invitations/allow"
 
-    @staticmethod
-    def get_scopes(request, view, obj):
-        Scopes = __class__.Scopes
+    @classmethod
+    def _get_scopes(cls, request, view, obj):
+        Scopes = cls.Scopes
         return [
             {
                 "list": Scopes.LIST,
                 "create": Scopes.CREATE,
                 "destroy": Scopes.DELETE,
-                "partial_update": (
-                    Scopes.ACCEPT if "accepted" in request.query_params else Scopes.RESEND
-                ),
                 "retrieve": Scopes.VIEW,
                 "accept": Scopes.ACCEPT,
                 "decline": Scopes.DECLINE,
@@ -113,7 +116,7 @@ class InvitationPermission(OpenPolicyAgentPermission):
                 "role": self.obj.membership.role,
                 "organization": {"id": self.obj.membership.organization_id},
             }
-        elif self.scope.startswith(__class__.Scopes.CREATE.value):
+        elif self.scope.startswith(self.Scopes.CREATE.value):
             data = {
                 "owner": {"id": self.user_id},
                 "invitee": {"id": None},  # unknown yet
@@ -135,14 +138,13 @@ class MembershipPermission(OpenPolicyAgentPermission):
     @classmethod
     def create(cls, request, view, obj, iam_context):
         permissions = []
-        if view.basename == "membership":
-            for scope in cls.get_scopes(request, view, obj):
-                params = {}
-                if scope == "change:role":
-                    params["role"] = request.data.get("role")
+        for scope in cls.get_scopes(request, view, obj):
+            params = {}
+            if scope == "change:role":
+                params["role"] = request.data.get("role")
 
-                self = cls.create_base_perm(request, view, scope, iam_context, obj, **params)
-                permissions.append(self)
+            self = cls.create_base_perm(request, view, scope, iam_context, obj, **params)
+            permissions.append(self)
 
         return permissions
 
@@ -150,9 +152,9 @@ class MembershipPermission(OpenPolicyAgentPermission):
         super().__init__(**kwargs)
         self.url = settings.IAM_OPA_DATA_URL + "/memberships/allow"
 
-    @staticmethod
-    def get_scopes(request, view, obj):
-        Scopes = __class__.Scopes
+    @classmethod
+    def _get_scopes(cls, request, view, obj):
+        Scopes = cls.Scopes
         scopes = []
 
         scope = {
@@ -164,7 +166,7 @@ class MembershipPermission(OpenPolicyAgentPermission):
 
         if scope == Scopes.UPDATE:
             scopes.extend(
-                __class__.get_per_field_update_scopes(
+                cls.get_per_field_update_scopes(
                     request,
                     {
                         "role": Scopes.UPDATE_ROLE,

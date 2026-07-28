@@ -6,11 +6,11 @@ import argparse
 import json
 import textwrap
 from collections.abc import Sequence
+from typing import Any
 
-import cvat_sdk.auto_annotation as cvataa
 from cvat_sdk import Client
 
-from .agent import FUNCTION_KIND_DETECTOR, FUNCTION_PROVIDER_NATIVE, run_agent
+from .agent import FUNCTION_PROVIDER_NATIVE, get_function_driver_class, run_agent
 from .command_base import CommandGroup
 from .common import FunctionLoader, configure_function_implementation_arguments
 
@@ -19,16 +19,20 @@ COMMANDS = CommandGroup(description="Perform operations on CVAT lambda functions
 
 @COMMANDS.command_class("create-native")
 class FunctionCreateNative:
-    description = textwrap.dedent(
-        """\
+    description = textwrap.dedent("""\
         Create a CVAT function that can be powered by an agent running the given local function.
-        """
-    )
+        """)
 
     def configure_parser(self, parser: argparse.ArgumentParser) -> None:
         parser.add_argument(
             "name",
             help="a human-readable name for the function",
+        )
+        parser.add_argument(
+            "--visibility",
+            choices=("private", "public"),
+            default="private",
+            help="visibility setting for the function",
         )
 
         configure_function_implementation_arguments(parser)
@@ -38,34 +42,19 @@ class FunctionCreateNative:
         client: Client,
         *,
         name: str,
+        visibility: str,
         function_loader: FunctionLoader,
     ) -> None:
         function = function_loader.load()
+        driver_class = get_function_driver_class(function.spec)
 
-        remote_function = {
+        remote_function: dict[str, Any] = {
             "provider": FUNCTION_PROVIDER_NATIVE,
             "name": name,
+            "visibility": visibility,
+            "kind": driver_class.FUNCTION_KIND,
+            **driver_class.get_remote_function_fields(function.spec),
         }
-
-        if isinstance(function.spec, cvataa.DetectionFunctionSpec):
-            remote_function["kind"] = FUNCTION_KIND_DETECTOR
-            remote_function["labels_v2"] = []
-
-            for label_spec in function.spec.labels:
-                if getattr(label_spec, "sublabels", None):
-                    raise cvataa.BadFunctionError(
-                        f"Function label {label_spec.name!r} has sublabels. This is currently not supported."
-                    )
-
-                remote_function["labels_v2"].append(
-                    {
-                        "name": label_spec.name,
-                    }
-                )
-        else:
-            raise cvataa.BadFunctionError(
-                f"Unsupported function spec type: {type(function.spec).__name__}"
-            )
 
         _, response = client.api_client.call_api(
             "/api/functions",

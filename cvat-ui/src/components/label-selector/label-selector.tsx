@@ -1,17 +1,29 @@
+// Copyright (C) CVAT.ai Corporation
 // Copyright (C) 2020-2022 Intel Corporation
 //
 // SPDX-License-Identifier: MIT
 
 import React, { useEffect, useState } from 'react';
 import Select, { SelectProps } from 'antd/lib/select';
-// eslint-disable-next-line import/no-extraneous-dependencies
-import { OptionData, OptionGroupData } from 'rc-select/lib/interface';
 
 interface Props extends SelectProps<string> {
     labels: any[];
     value: any | number | null;
     onChange: (label: any) => void;
     onEnterPress?: (labelID: number) => void;
+}
+
+function LabelColorDot({ color }: { color?: string }): JSX.Element | null {
+    if (!color) {
+        return null;
+    }
+
+    return (
+        <span
+            className='cvat-label-color-dot'
+            style={{ background: color }}
+        />
+    );
 }
 
 export default function LabelSelector(props: Props): JSX.Element {
@@ -39,11 +51,11 @@ export default function LabelSelector(props: Props): JSX.Element {
             {...rest}
             {...dynamicProps}
             showSearch
-            filterOption={(input: string, option?: OptionData | OptionGroupData) => {
+            filterOption={(input: string, option) => {
                 if (option) {
-                    const { children } = option.props;
-                    if (typeof children === 'string') {
-                        return children.toLowerCase().includes(input.toLowerCase());
+                    const { title } = option.props;
+                    if (typeof title === 'string') {
+                        return title.toLowerCase().includes(input.toLowerCase());
                     }
                 }
 
@@ -66,7 +78,10 @@ export default function LabelSelector(props: Props): JSX.Element {
         >
             {labels.map((label: any) => (
                 <Select.Option title={label.name} key={label.id} value={label.id}>
-                    {label.name}
+                    <span className='cvat-label-selector-option'>
+                        <LabelColorDot color={label.color} />
+                        {label.name}
+                    </span>
                 </Select.Option>
             ))}
         </Select>

@@ -14,14 +14,14 @@ import Text from 'antd/lib/typography/Text';
 import Alert from 'antd/lib/alert';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { ValidateErrorEntity } from 'rc-field-form/lib/interface';
-import { StorageLocation } from 'reducers';
-import { getCore, Storage } from 'cvat-core-wrapper';
+import { getCore, Storage, StorageLocation } from 'cvat-core-wrapper';
 import LabelsEditor from 'components/labels-editor/labels-editor';
 import FileManagerComponent, { Files } from 'components/file-manager/file-manager';
 import { RemoteFile } from 'components/file-manager/remote-browser';
 import { getFileContentType, getContentTypeRemoteFile, getFileNameFromPath } from 'utils/files';
 
 import { FrameSelectionMethod } from 'components/create-job-page/job-form';
+import { formFieldsError } from 'utils/validation';
 import BasicConfigurationForm, { BaseConfiguration } from './basic-configuration-form';
 import ProjectSearchField from './project-search-field';
 import ProjectSubsetField from './project-subset-field';
@@ -85,6 +85,7 @@ const defaultState: State = {
         },
         useProjectSourceStorage: true,
         useProjectTargetStorage: true,
+        consensusReplicas: 0,
     },
     quality: {
         validationMode: ValidationMode.NONE,
@@ -110,6 +111,11 @@ const defaultState: State = {
 const UploadFileErrorMessages = {
     one: 'Wrong list of files. You can upload an archive with images, a video, a pdf file or multiple images. ',
     multi: 'Wrong list of files. You can upload one or more videos. ',
+};
+
+const UploadFileHints = {
+    one: 'You can upload an archive with images, a video, or multiple images',
+    multi: 'You can upload one or more videos',
 };
 
 function receiveExtensions(files: RemoteFile[]): string[] {
@@ -203,11 +209,6 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
             ...defaultState,
             projectId: state.projectId,
         }));
-    };
-
-    private validateLabelsOrProject = (): boolean => {
-        const { projectId, labels } = this.state;
-        return !!labels.length || !!projectId;
     };
 
     private validateFiles = (): boolean => {
@@ -441,15 +442,6 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
 
     private validateBlocks = (): Promise<any> => new Promise((resolve, reject) => {
         const { projectId } = this.state;
-        if (!this.validateLabelsOrProject()) {
-            notification.error({
-                message: 'Could not create a task',
-                description: 'A task must contain at least one label or belong to some project',
-                className: 'cvat-notification-create-task-fail',
-            });
-            reject();
-            return;
-        }
 
         if (!this.validateFiles()) {
             notification.error({
@@ -530,11 +522,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
             .catch((error: Error | ValidateErrorEntity): void => {
                 notification.error({
                     message: 'Could not create a task',
-                    description: (error as ValidateErrorEntity).errorFields ?
-                        (error as ValidateErrorEntity).errorFields
-                            .map((field) => `${field.name} : ${field.errors.join(';')}`)
-                            .map((text: string): JSX.Element => <div>{text}</div>) :
-                        error.toString(),
+                    description: formFieldsError(error).map((text: string): JSX.Element => <div>{text}</div>),
                     className: 'cvat-notification-create-task-fail',
                 });
                 reject(error);
@@ -619,7 +607,6 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         const promises = Array(queueSize)
             .fill(undefined)
             .map(async (): Promise<void> => {
-                // eslint-disable-next-line no-constant-condition
                 while (true) {
                     index++; // preliminary increase is needed to avoid using the same index when queueSize > 1
                     if (index > length) break;
@@ -862,7 +849,6 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
 
         return (
             <Col span={24}>
-                <Text type='danger'>* </Text>
                 <Text className='cvat-text-color'>Labels</Text>
                 <LabelsEditor
                     labels={labels}
@@ -886,7 +872,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
                     <Text type='danger'>* </Text>
                     <Text className='cvat-text-color'>Select files</Text>
                     <FileManagerComponent
-                        many={many}
+                        localFilesHint={many ? UploadFileHints.multi : UploadFileHints.one}
                         onChangeActiveKey={this.changeFileManagerTab}
                         onUploadLocalFiles={this.handleUploadLocalFiles}
                         onUploadRemoteFiles={this.handleUploadRemoteFiles}

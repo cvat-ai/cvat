@@ -2,7 +2,10 @@
 #
 # SPDX-License-Identifier: MIT
 
+from __future__ import annotations
+
 from enum import Enum
+from functools import cached_property
 
 from django.contrib.auth.models import User
 from django.db import models
@@ -58,12 +61,14 @@ class Webhook(TimestampedModel):
         Organization, null=True, on_delete=models.CASCADE, related_name="+"
     )
 
+    deliveries: models.manager.RelatedManager[WebhookDelivery]
+
     class Meta:
         default_permissions = ()
         constraints = [
             models.CheckConstraint(
                 name="webhooks_project_or_organization",
-                check=(
+                condition=(
                     models.Q(type=WebhookTypeChoice.PROJECT.value, project_id__isnull=False)
                     | models.Q(
                         type=WebhookTypeChoice.ORGANIZATION.value,
@@ -74,6 +79,10 @@ class Webhook(TimestampedModel):
             )
         ]
 
+    @cached_property
+    def last_delivery(self) -> WebhookDelivery:
+        return self.deliveries.last
+
 
 class WebhookDelivery(TimestampedModel):
     webhook = models.ForeignKey(Webhook, on_delete=models.CASCADE, related_name="deliveries")
@@ -81,6 +90,9 @@ class WebhookDelivery(TimestampedModel):
 
     status_code = models.PositiveIntegerField(null=True, default=None)
     redelivery = models.BooleanField(default=False)
+
+    attempt = models.PositiveIntegerField(null=True)
+    request_duration = models.PositiveIntegerField(null=True)
 
     changed_fields = models.CharField(max_length=4096, default="")
 

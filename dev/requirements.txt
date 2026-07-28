@@ -1,5 +1,7 @@
-black==24.*
-isort==5.*
-pylint-django==2.5.3
-pylint-plugin-utils==0.7
-pylint==2.14.5
+bandit==1.8.6
+black==26.*
+isort==7.*
+pylint-django==2.7.0
+pylint-plugin-utils==0.9.0
+pylint==4.0.4
+typos==1.40.0

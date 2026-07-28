@@ -35,7 +35,7 @@ for (const key of Object.keys(originalDraw)) {
     SVG.Element.prototype.draw[key] = originalDraw[key];
 }
 
-// Create undo for polygones and polylines
+// Create undo for polygons and polylines
 function undo(): void {
     if (this.set && this.set.length()) {
         this.set.members.splice(-1, 1)[0].remove();
@@ -56,33 +56,6 @@ SVG.Element.prototype.draw.extend(
     'polygon',
     Object.assign({}, SVG.Element.prototype.draw.plugins.polygon, {
         undo: undo,
-    }),
-);
-
-// Create transform for rect, polyline and polygon
-function transform(): void {
-    this.m = this.el.node.getScreenCTM().inverse();
-    this.offset = { x: window.pageXOffset, y: window.pageYOffset };
-}
-
-SVG.Element.prototype.draw.extend(
-    'rect',
-    Object.assign({}, SVG.Element.prototype.draw.plugins.rect, {
-        transform: transform,
-    }),
-);
-
-SVG.Element.prototype.draw.extend(
-    'polyline',
-    Object.assign({}, SVG.Element.prototype.draw.plugins.polyline, {
-        transform: transform,
-    }),
-);
-
-SVG.Element.prototype.draw.extend(
-    'polygon',
-    Object.assign({}, SVG.Element.prototype.draw.plugins.polygon, {
-        transform: transform,
     }),
 );
 

@@ -1,0 +1,111 @@
+// Copyright (C) CVAT.ai Corporation
+//
+// SPDX-License-Identifier: MIT
+
+/* doesn't work in hugo */
+/* stylelint-disable media-feature-range-notation */
+
+/* Cookie Consent Banner Styles */
+
+#cookie-consent-banner {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background: #222;
+  color: #fff;
+  padding: 1em 2em;
+  z-index: 9999;
+  justify-content: space-between;
+  align-items: center;
+  flex-flow: row wrap;
+
+  p {
+    flex: 1 1 300px;
+    min-width: 200px;
+    margin-right: 1em;
+    display: flex;
+    align-items: center;
+    word-break: break-word;
+  }
+
+  .button-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5em;
+    margin-left: 1em;
+  }
+
+  button {
+    background: #4caf50;
+    color: #fff;
+    border: none;
+    padding: 0.5em 1.5em;
+    cursor: pointer;
+    border-radius: 4px;
+    margin: 0;
+    min-width: 100px;
+    font-size: 1em;
+    transition: background 0.2s;
+
+    &.reject {
+      background: #f44336;
+    }
+  }
+
+  // Tablet responsive styles
+  @media (max-width: 900px) {
+    p {
+      flex-direction: column;
+      margin-bottom: 0;
+      margin-right: 0;
+      justify-content: flex-start;
+    }
+  }
+
+  // Mobile responsive styles
+  @media (max-width: 600px) {
+    display: flex !important;
+    flex-direction: column !important;
+    padding: 0.75em;
+    font-size: 0.9em;
+    height: auto;
+    box-sizing: border-box;
+    gap: 0;
+
+    p {
+      display: block !important;
+      width: auto !important;
+      max-width: 100%;
+      inline-size: auto !important;
+      block-size: auto !important;
+      margin: 0 !important;
+      margin-bottom: 0.5em;
+      margin-top: 0;
+      text-align: left;
+      line-height: 1.2;
+      padding: 0 !important;
+      font-size: 0.95em;
+      min-height: unset;
+      height: auto;
+      flex: none !important;
+      min-width: unset !important;
+    }
+
+    .button-group {
+      display: flex;
+      width: 100%;
+      justify-content: space-between;
+      margin: 0;
+      margin-top: 0;
+      gap: 0.5em;
+    }
+
+    button {
+      flex: 1 1 48%;
+      margin: 0;
+      padding: 0.6em 1em;
+    }
+  }
+}

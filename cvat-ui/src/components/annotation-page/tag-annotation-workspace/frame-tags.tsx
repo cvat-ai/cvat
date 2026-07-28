@@ -7,13 +7,14 @@ import './styles.scss';
 
 import React, { useState, useEffect, useCallback } from 'react';
 import Tag from 'antd/lib/tag';
-import { shallowEqual, useDispatch, useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
+import { shallowEqual } from 'utils/redux';
 
 import {
     removeObject as removeObjectAction,
 } from 'actions/annotation-actions';
-import { CombinedState, ObjectType } from 'reducers';
-import { ObjectState, AnnotationConflict } from 'cvat-core-wrapper';
+import { CombinedState } from 'reducers';
+import { AnnotationConflict, ObjectState, ObjectType } from 'cvat-core-wrapper';
 import { filterAnnotations } from 'utils/filter-annotations';
 
 function FrameTags(): JSX.Element {

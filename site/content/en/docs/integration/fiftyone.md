@@ -4,7 +4,7 @@ linkTitle: 'FiftyOne'
 weight: 1
 ---
 
-![](/images/fiftyone_logo.png)
+![FiftyOne Logo](/images/fiftyone_logo.png)
 
 [FiftyOne](https://github.com/voxel51/fiftyone) is an open-source tool for building high-quality datasets
 and computer vision models.
@@ -23,4 +23,4 @@ All of the following label types are supported, for both image and video dataset
 - Scalar fields
 - Semantic segmentation
 
-![](/images/image264.jpg)
+![FiftyOne user interface with images for annotation and labels](/images/image264.jpg)

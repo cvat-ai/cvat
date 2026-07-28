@@ -3,10 +3,11 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import jsonLogic from 'json-logic-js';
 import _ from 'lodash';
-import { Indexable, JobsQuery } from 'reducers';
+import { CombinedState, JobsQuery, SelectedResourceType } from 'reducers';
 import { useHistory } from 'react-router';
 import { Row, Col } from 'antd/lib/grid';
 import Text from 'antd/lib/typography/Text';
@@ -17,8 +18,12 @@ import { PlusOutlined } from '@ant-design/icons';
 import { Task, Job } from 'cvat-core-wrapper';
 import JobItem from 'components/job-item/job-item';
 import {
-    SortingComponent, ResourceFilterHOC, defaultVisibility, updateHistoryFromQuery,
+    SortingComponent, ResourceFilterHOC, defaultVisibility, updateHistoryFromQuery, ResourceSelectionInfo,
 } from 'components/resource-sorting-filtering';
+import { useResourceQuery } from 'utils/hooks';
+import BulkWrapper from 'components/bulk-wrapper';
+import { selectionActions } from 'actions/selection-actions';
+import JobsCSVExportButton from 'components/jobs-page/jobs-csv-export-button';
 import {
     localStorageRecentKeyword, localStorageRecentCapacity, predefinedFilterValues, config,
 } from './jobs-filter-configuration';
@@ -32,9 +37,9 @@ interface Props {
     onJobUpdate(job: Job, data: Parameters<Job['save']>[0]): void;
 }
 
-const PAGE_SIZE = 10;
-function setUpJobsList(jobs: Job[], query: JobsQuery): Job[] {
+function filterJobs(jobs: Job[], query: JobsQuery): Job[] {
     let result = jobs;
+
     if (query.sort) {
         let sort = query.sort.split(',');
         const orders = sort.map((elem: string) => (elem.startsWith('-') ? 'desc' : 'asc'));
@@ -54,6 +59,7 @@ function setUpJobsList(jobs: Job[], query: JobsQuery): Job[] {
             updatedDate: job.updatedDate,
             type: job.type,
             id: job.id,
+            parent_job_id: job.parentJobId,
         }));
         const filter = JSON.parse(query.filter);
         result = result.filter((job, index) => jsonLogic.apply(filter, converted[index]));
@@ -62,7 +68,11 @@ function setUpJobsList(jobs: Job[], query: JobsQuery): Job[] {
     return result;
 }
 
-function JobListComponent(props: Props): JSX.Element {
+function setUpJobsList(jobs: Job[], newPage: number, pageSize: number): Job[] {
+    return jobs.slice((newPage - 1) * pageSize, newPage * pageSize);
+}
+
+function JobListComponent(props: Readonly<Props>): JSX.Element {
     const { task: taskInstance, onJobUpdate } = props;
     const [visibility, setVisibility] = useState(defaultVisibility);
 
@@ -70,122 +80,148 @@ function JobListComponent(props: Props): JSX.Element {
     const { id: taskId } = taskInstance;
     const { jobs } = taskInstance;
 
-    const queryParams = new URLSearchParams(history.location.search);
-    const updatedQuery: JobsQuery = {
+    const defaultQuery: JobsQuery = {
         page: 1,
+        pageSize: 10,
         sort: null,
         search: null,
-        filter: null,
+        filter: '{"and":[{"!":{"var":"parent_job_id"}}]}',
     };
-    for (const key of Object.keys(updatedQuery)) {
-        (updatedQuery as Indexable)[key] = queryParams.get(key) || null;
-        if (key === 'page') {
-            updatedQuery.page = updatedQuery.page ? +updatedQuery.page : 1;
+    const query = useResourceQuery<JobsQuery>(defaultQuery, defaultQuery);
+
+    const filteredJobs = filterJobs(jobs, query);
+    const jobIds = filteredJobs.map((job) => job.id);
+    const viewedJobs = setUpJobsList(filteredJobs, query.page, query.pageSize);
+
+    const setQuery = useCallback((nextQuery: JobsQuery) => {
+        const nextSearch = updateHistoryFromQuery(nextQuery);
+
+        if (nextSearch === (history.location.search || '')) return;
+
+        if (query.filter === nextQuery.filter && query.sort === nextQuery.sort) {
+            history.replace({ search: nextSearch });
+        } else {
+            history.push({ ...history.location, search: nextSearch });
         }
-    }
-    const [query, setQuery] = useState<JobsQuery>(updatedQuery);
-    const filteredJobs = setUpJobsList(jobs, query);
-    const jobViews = filteredJobs
-        .slice((query.page - 1) * PAGE_SIZE, query.page * PAGE_SIZE)
-        .map((job: Job) => (
-            <JobItem
-                key={job.id}
-                job={job}
-                task={taskInstance}
-                onJobUpdate={onJobUpdate}
-            />
-        ));
-    useEffect(() => {
-        history.replace({
-            search: updateHistoryFromQuery(query),
-        });
-    }, [query]);
+    }, [history.location, query]);
 
     const onCreateJob = useCallback(() => {
         history.push(`/tasks/${taskId}/jobs/create`);
     }, []);
 
+    const dispatch = useDispatch();
+    const selectedCount = useSelector((state: CombinedState) => state.jobs.selected.length);
+    const onSelectAll = useCallback(() => {
+        const allJobIds = viewedJobs.flatMap((job) => [
+            job.id,
+        ]);
+        dispatch(selectionActions.selectResources(allJobIds, SelectedResourceType.JOBS));
+    }, [dispatch, filteredJobs]);
+
+    const onApplyFilter = useCallback((filter: string | null) => {
+        setQuery({
+            ...query,
+            filter: filter || '{}',
+        });
+    }, [query]);
+
     return (
         <>
-            <div className='cvat-jobs-list-filters-wrapper'>
+            <div className='cvat-jobs-list-wrapper'>
                 <Row>
                     <Col>
                         <Text className='cvat-text-color cvat-jobs-header'> Jobs </Text>
+                        <ResourceSelectionInfo selectedCount={selectedCount} onSelectAll={onSelectAll} />
                     </Col>
                 </Row>
                 <Row>
-                    <SortingComponent
-                        visible={visibility.sorting}
-                        onVisibleChange={(visible: boolean) => (
-                            setVisibility({ ...defaultVisibility, sorting: visible })
-                        )}
-                        defaultFields={query.sort?.split(',') || ['-ID']}
-                        sortingFields={['ID', 'Assignee', 'State', 'Stage']}
-                        onApplySorting={(sort: string | null) => {
-                            setQuery({
-                                ...query,
-                                sort,
-                            });
-                        }}
-                    />
-                    <FilteringComponent
-                        value={query.filter}
-                        predefinedVisible={visibility.predefined}
-                        builderVisible={visibility.builder}
-                        recentVisible={visibility.recent}
-                        onPredefinedVisibleChange={(visible: boolean) => (
-                            setVisibility({ ...defaultVisibility, predefined: visible })
-                        )}
-                        onBuilderVisibleChange={(visible: boolean) => (
-                            setVisibility({ ...defaultVisibility, builder: visible })
-                        )}
-                        onRecentVisibleChange={(visible: boolean) => (
-                            setVisibility({ ...defaultVisibility, builder: visibility.builder, recent: visible })
-                        )}
-                        onApplyFilter={(filter: string | null) => {
-                            setQuery({
-                                ...query,
-                                filter,
-                            });
-                        }}
-                    />
+                    <div className='cvat-jobs-list-filters-wrapper'>
+                        <SortingComponent
+                            visible={visibility.sorting}
+                            onVisibleChange={(visible: boolean) => (
+                                setVisibility({ ...defaultVisibility, sorting: visible })
+                            )}
+                            defaultFields={query.sort?.split(',') || ['-ID']}
+                            sortingFields={['ID', 'Assignee', 'State', 'Stage']}
+                            onApplySorting={(sort: string | null) => {
+                                setQuery({
+                                    ...query,
+                                    sort,
+                                });
+                            }}
+                        />
+                        <FilteringComponent
+                            value={query.filter}
+                            predefinedVisible={visibility.predefined}
+                            builderVisible={visibility.builder}
+                            recentVisible={visibility.recent}
+                            onPredefinedVisibleChange={(visible: boolean) => (
+                                setVisibility({ ...defaultVisibility, predefined: visible })
+                            )}
+                            onBuilderVisibleChange={(visible: boolean) => (
+                                setVisibility({ ...defaultVisibility, builder: visible })
+                            )}
+                            onRecentVisibleChange={(visible: boolean) => (
+                                setVisibility({ ...defaultVisibility, builder: visibility.builder, recent: visible })
+                            )}
+                            onApplyFilter={onApplyFilter}
+                        />
+                        <JobsCSVExportButton predefinedData={filteredJobs} />
+                    </div>
                     <div className='cvat-job-add-wrapper'>
                         <Button onClick={onCreateJob} type='primary' className='cvat-create-job' icon={<PlusOutlined />} />
                     </div>
                 </Row>
             </div>
-
-            {
-                jobViews.length ? (
-                    <>
-                        <div className='cvat-task-job-list'>
-                            <Col className='cvat-jobs-list'>
-                                {jobViews}
-                            </Col>
-                        </div>
-                        <Row justify='center' align='middle'>
-                            <Col>
-                                <Pagination
-                                    className='cvat-tasks-pagination'
-                                    onChange={(page: number) => {
-                                        setQuery({
-                                            ...query,
-                                            page,
-                                        });
-                                    }}
-                                    showSizeChanger={false}
-                                    total={filteredJobs.length}
-                                    pageSize={PAGE_SIZE}
-                                    current={query.page}
-                                    showQuickJumper
-                                />
-                            </Col>
-                        </Row>
-                    </>
-                ) : (
-                    <Empty description='No jobs found' />
-                )
-            }
+            {jobIds.length ? (
+                <div className='cvat-task-job-list'>
+                    <Col className='cvat-jobs-list'>
+                        <BulkWrapper
+                            currentResourceIds={jobIds}
+                            resourceType={SelectedResourceType.JOBS}
+                        >
+                            {(selectProps) => (
+                                viewedJobs
+                                    .map((job: Job, idx: number) => {
+                                        const { selected, onClick } = selectProps(job.id, idx);
+                                        return (
+                                            <JobItem
+                                                key={job.id}
+                                                job={job}
+                                                task={taskInstance}
+                                                onJobUpdate={onJobUpdate}
+                                                selected={selected}
+                                                onClick={onClick}
+                                                onApplyFilter={onApplyFilter}
+                                            />
+                                        );
+                                    })
+                            )}
+                        </BulkWrapper>
+                    </Col>
+                </div>
+            ) : (
+                <Empty description='No jobs found' />
+            )}
+            <Row justify='center' align='middle'>
+                <Col>
+                    <Pagination
+                        className='cvat-tasks-pagination'
+                        onChange={(page: number, pageSize: number) => {
+                            setQuery({
+                                ...query,
+                                page,
+                                pageSize,
+                            });
+                        }}
+                        total={filteredJobs.length}
+                        pageSize={query.pageSize}
+                        current={query.page}
+                        showQuickJumper
+                        showSizeChanger
+                    />
+                </Col>
+            </Row>
         </>
     );
 }

@@ -156,7 +156,7 @@ function SetupWebhookContent(props: Props): JSX.Element {
             setShowDetailedEvents(false);
             notification.info(notificationConfig);
             return webhook;
-        } catch (error) {
+        } catch (_error) {
             return null;
         }
     }, [webhook, webhookEvents]);

@@ -53,12 +53,12 @@ function SliceControl(props: Props): JSX.Element {
             {
                 className: 'cvat-slice-control',
                 onClick: (event?: React.MouseEvent): void => {
-                    const triggeredByShorcut = !event;
+                    const triggeredByShortcut = !event;
                     canvasInstance.cancel();
                     canvasInstance.slice({
                         enabled: true,
                         getContour: opencvWrapper.getContourFromState,
-                        ...(triggeredByShorcut ? {
+                        ...(triggeredByShortcut ? {
                             clientID: getCVATStore().getState().annotation.annotations.activatedStateID || undefined,
                         } : {}),
                     });
@@ -88,4 +88,5 @@ function SliceControl(props: Props): JSX.Element {
     );
 }
 
+Object.assign(SliceControl, { displayName: 'SliceControl' });
 export default React.memo(SliceControl);

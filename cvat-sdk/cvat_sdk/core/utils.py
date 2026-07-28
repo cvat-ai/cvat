@@ -8,7 +8,30 @@ import contextlib
 import itertools
 import os
 from collections.abc import Generator, Sequence
-from typing import IO, Any, BinaryIO, Literal, TextIO, Union, overload
+from typing import IO, Any, BinaryIO, Literal, TextIO, overload
+
+from cvat_sdk.core.exceptions import InvalidHostException
+
+ALLOWED_SERVER_SCHEMAS = ("https", "http")
+
+
+def normalize_server_url(url: str) -> str:
+    """Add the default scheme and remove a trailing slash from a server URL."""
+    match url.split("://", maxsplit=1):
+        case [schema, _]:
+            if schema not in ALLOWED_SERVER_SCHEMAS:
+                raise InvalidHostException(
+                    f"Invalid url schema '{schema}', expected "
+                    f"one of <none>, {', '.join(ALLOWED_SERVER_SCHEMAS)}"
+                )
+        case _:
+            url = "https://" + url
+
+    return url.rstrip("/")
+
+
+def is_posix() -> bool:
+    return os.name == "posix"
 
 
 def filter_dict(
@@ -19,19 +42,19 @@ def filter_dict(
 
 @overload
 def atomic_writer(
-    path: Union[os.PathLike, str], mode: Literal["wb"]
+    path: os.PathLike | str, mode: Literal["wb"]
 ) -> contextlib.AbstractContextManager[BinaryIO]: ...
 
 
 @overload
 def atomic_writer(
-    path: Union[os.PathLike, str], mode: Literal["w"], encoding: str = "UTF-8"
+    path: os.PathLike | str, mode: Literal["w"], encoding: str = "UTF-8"
 ) -> contextlib.AbstractContextManager[TextIO]: ...
 
 
 @contextlib.contextmanager
 def atomic_writer(
-    path: Union[os.PathLike, str], mode: Literal["w", "wb"], encoding: str = "UTF-8"
+    path: os.PathLike | str, mode: Literal["w", "wb"], encoding: str = "UTF-8"
 ) -> Generator[IO, None, None]:
     """
     Returns a context manager that, when entered, returns a handle to a temporary
@@ -65,6 +88,6 @@ def atomic_writer(
         with tmp_file:
             yield tmp_file
         os.replace(tmp_path, path)
-    except:
+    except BaseException:
         os.unlink(tmp_path)
         raise

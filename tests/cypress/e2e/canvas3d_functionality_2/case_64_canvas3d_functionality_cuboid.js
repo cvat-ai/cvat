@@ -19,6 +19,7 @@ context('Canvas 3D functionality. Add cuboid.', () => {
     };
 
     before(() => {
+        cy.prepareUserSession();
         cy.openTaskJob(taskName);
         // Prepare screenshots to compare
         cy.customScreenshot('.cvat-canvas3d-perspective', 'canvas3d_perspective_before_all');
@@ -61,6 +62,7 @@ context('Canvas 3D functionality. Add cuboid.', () => {
             });
             cy.get('.cvat-canvas3d-perspective').trigger('mousemove', 300, 200); // Interacting with the canvas before interacting with the cuboid.
             cy.get('.cvat-canvas3d-perspective').trigger('mousemove'); // Move cursor to cuboid
+            // eslint-disable-next-line cypress/no-unnecessary-waiting
             cy.wait(1000); // Waiting for the reaction of the cuboid to interact with the mouse cursor
             cy.customScreenshot('.cvat-canvas3d-perspective', 'canvas3d_perspective_after_cursor_movements_to_cuboid');
             cy.compareImagesAndCheckResult(

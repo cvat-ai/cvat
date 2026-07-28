@@ -11,6 +11,7 @@ context('Settings. "Smooth image" option.', () => {
     const caseId = '110';
 
     before(() => {
+        cy.prepareUserSession();
         cy.openTaskJob(taskName);
     });
 

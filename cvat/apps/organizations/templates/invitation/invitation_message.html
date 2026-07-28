@@ -103,6 +103,17 @@
     border: 0;
     outline: none;
   }
+
+  .confirmation-button {
+    font-weight: bold !important;
+    display: inline-block !important;
+    padding: 16px 36px !important;
+    font-family: 'Source Sans Pro', Helvetica, Arial, sans-serif !important;
+    font-size: 16px !important;
+    color: #ffffff !important;
+    text-decoration: none !important;
+    border-radius: 6px !important;
+  }
   </style>
 
 </head>
@@ -122,10 +133,12 @@
         <table border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px;">
           <tr>
             <td align="center" valign="bottom">
-              <a href="https://www.cvat.ai/" target="_blank">
-                <img src="https://raw.githubusercontent.com/cvat-ai/cvat/v2.18.0/cvat-ui/src/assets/cvat-logo.svg" alt="Logo"
-                  style="width: 25%; margin: 10px;">
-              </a>
+              <img
+                style="margin: 24px;"
+                src="https://raw.githubusercontent.com/cvat-ai/cvat/v2.40.0/cvat/apps/engine/static/logo.png"
+                alt="CVAT Logo"
+                width="128px"
+              ></img>
             </td>
           </tr>
         </table>
@@ -197,14 +210,12 @@
                   <td align="center" bgcolor="#ffffff" style="padding: 12px;">
                     <table border="0" cellpadding="0" cellspacing="0">
                       <tr>
-                        <td align="center" bgcolor="#FCA836" style="border-radius: 6px;">
+                        <td align="center" bgcolor="#FF7200" style="border-radius: 6px;">
                           {% blocktrans %}
                           <a
                             href="{{ protocol }}://{{ domain }}/auth/login?email={{ email }}&invitation={{ invitation_key }}"
                             target="_blank"
-                            style="display: inline-block; padding: 16px 36px;"
-                                  "font-family: 'Source Sans Pro', Helvetica, Arial, sans-serif;"
-                                  "font-size: 16px; color: #ffffff; text-decoration: none; border-radius: 6px;"
+                            class="confirmation-button"
                             rel="noopener noreferrer"
                           >
                             Setup your account

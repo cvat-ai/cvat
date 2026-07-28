@@ -21,6 +21,7 @@ context('Export task dataset.', () => {
     };
 
     before(() => {
+        cy.prepareUserSession();
         cy.openTaskJob(taskName);
         cy.createRectangle(rectangleShape2Points);
         cy.saveJob('PATCH', 200, 'saveJobExportDataset');
@@ -45,7 +46,7 @@ context('Export task dataset.', () => {
                 as: 'exportDatasetRenameArchive',
                 type: 'dataset',
                 format: exportFormat,
-                archiveCustomName: 'job_export_dataset_custome_name',
+                archiveCustomName: 'job_export_dataset_custom_name',
             };
             cy.exportJob(exportDataset);
             cy.downloadExport().then((file) => {

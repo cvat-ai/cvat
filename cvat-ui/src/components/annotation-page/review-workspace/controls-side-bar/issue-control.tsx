@@ -84,4 +84,5 @@ function CreateIssueControl(props: Props): JSX.Element {
     );
 }
 
+Object.assign(CreateIssueControl, { displayName: 'CreateIssueControl' });
 export default React.memo(CreateIssueControl);

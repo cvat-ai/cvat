@@ -3,483 +3,629 @@
 //
 // SPDX-License-Identifier: MIT
 
+import _ from 'lodash';
 import * as SVG from 'svg.js';
 import consts from './consts';
 import Crosshair from './crosshair';
 import {
-    translateToSVG, PropType, stringifyPoints, translateToCanvas, expandChannels, imageDataToDataURL,
+    stringifyPoints, translateToCanvas, RLEToImageData,
+    imageDataToDataURL, translateFromCanvas, translateToSVG,
+    clamp,
 } from './shared';
-
 import {
-    InteractionData, InteractionResult, Geometry, Configuration,
+    InteractionData, InteractionResult, Geometry,
+    Configuration, CanvasHint,
 } from './canvasModel';
 
 export interface InteractionHandler {
     transform(geometry: Geometry): void;
     interact(interactData: InteractionData): void;
-    configurate(config: Configuration): void;
+    configure(config: Configuration): void;
     destroy(): void;
     cancel(): void;
 }
 
+type SupportedShapes = SVG.Rect | SVG.Circle;
+
+const DELETE_BUTTON_OFFSET = 8;
+
+function getTopRightPosition(shape: SVG.Rect | SVG.Circle): { x: number; y: number } {
+    if (shape instanceof SVG.Rect) {
+        return {
+            x: shape.x() + shape.width(),
+            y: shape.y(),
+        };
+    }
+
+    if (shape instanceof SVG.Circle) {
+        return {
+            x: shape.cx() + shape.attr('r'),
+            y: shape.cy() - shape.attr('r'),
+        };
+    }
+
+    throw new Error('Unsupported shape type');
+}
+
+function deleteButtonPath(r: number): string {
+    const p = [3, 7].map((val) => (val / 10) * r * 2);
+    return `M ${p[0]} ${p[0]} L ${p[1]} ${p[1]} M ${p[1]} ${p[0]} L ${p[0]} ${p[1]}`;
+}
+
 export class InteractionHandlerImpl implements InteractionHandler {
-    private onInteraction: (shapes: InteractionResult[] | null, shapesUpdated?: boolean, isDone?: boolean) => void;
+    private settings: Omit<Required<InteractionData['settings']>, 'hint' | 'regionOfInterest'>;
+    private enabled: boolean;
+    private command: 'draw_box' | 'draw_points' | 'put_shapes' | 'refine' | 'idle';
+    private currentRectangle: SVG.Rect | null;
+    private rectanglePrompts: SVG.Rect[];
+    private pointPrompts: SVG.Circle[];
+    private allPrompts: SupportedShapes[];
+    private deletionButtons: Map<SupportedShapes, SVG.G>;
+    private intermediateShapes: (SVG.Image | SVG.Polygon)[];
+    private onInteraction: (interactionResult: InteractionResult[], finished?: boolean) => void;
+    private onMessage: (messages: CanvasHint[] | null, topic: string) => void;
     private geometry: Geometry;
-    private canvas: SVG.Container;
-    private interactionData: InteractionData;
-    private cursorPosition: { x: number; y: number };
-    private shapesWereUpdated: boolean;
-    private interactionShapes: SVG.Shape[];
-    private currentInteractionShape: SVG.Shape | null;
+    private container: SVG.Container;
+    private configuration: Configuration;
+    private effectiveStrokeWidth: number;
+    private effectivePointSize: number;
+    private effectiveShapeOpacity: number;
+    private lastMousePosition: { x: number; y: number };
+    private regionOfInterest: InteractionData['settings']['regionOfInterest'] | null;
     private crosshair: Crosshair;
-    private intermediateShape: PropType<InteractionData, 'intermediateShape'>;
-    private drawnIntermediateShape: SVG.Shape;
-    private controlPointsSize: number;
-    private selectedShapeOpacity: number;
-    private cancelled: boolean;
-
-    private prepareResult(): InteractionResult[] {
-        return this.interactionShapes.map(
-            (shape: SVG.Shape): InteractionResult => {
-                if (shape.type === 'circle') {
-                    const points = [(shape as SVG.Circle).cx(), (shape as SVG.Circle).cy()];
-                    return {
-                        points: points.map((coord: number): number => coord - this.geometry.offset),
-                        shapeType: 'points',
-                        button: shape.attr('stroke') === 'green' ? 0 : 2,
-                    };
-                }
-
-                const bbox = ((shape.node as any) as SVGRectElement).getBBox();
-                const points = [bbox.x, bbox.y, bbox.x + bbox.width, bbox.y + bbox.height];
-                return {
-                    points: points.map((coord: number): number => coord - this.geometry.offset),
-                    shapeType: 'rectangle',
-                    button: 0,
-                };
-            },
-        );
-    }
-
-    private shouldRaiseEvent(): boolean {
-        const { interactionData, interactionShapes, shapesWereUpdated } = this;
-        const { minPosVertices, minNegVertices, enabled } = interactionData;
-
-        const positiveShapes = interactionShapes.filter(
-            (shape: SVG.Shape): boolean => (shape as any).attr('stroke') === 'green',
-        );
-        const negativeShapes = interactionShapes.filter(
-            (shape: SVG.Shape): boolean => (shape as any).attr('stroke') !== 'green',
-        );
-
-        const somethingWasDrawn = interactionShapes.some((shape) => shape.type === 'rect') || positiveShapes.length;
-        if (interactionData.shapeType === 'rectangle') {
-            return enabled && !!interactionShapes.length;
-        }
-
-        const minPosVerticesDefined = Number.isInteger(minPosVertices);
-        const minNegVerticesDefined = Number.isInteger(minNegVertices) && minNegVertices >= 0;
-        const minPosVerticesAchieved = !minPosVerticesDefined || minPosVertices <= positiveShapes.length;
-        const minNegVerticesAchieved = !minNegVerticesDefined || minNegVertices <= negativeShapes.length;
-        const minimumVerticesAchieved = minPosVerticesAchieved && minNegVerticesAchieved;
-        return enabled && somethingWasDrawn && minimumVerticesAchieved && shapesWereUpdated;
-    }
-
-    private addCrosshair(): void {
-        const { x, y } = this.cursorPosition;
-        this.crosshair.show(this.canvas, x, y, this.geometry.scale);
-    }
-
-    private removeCrosshair(): void {
-        this.crosshair.hide();
-    }
-
-    private interactPoints(): void {
-        const eventListener = (e: MouseEvent): void => {
-            if ((e.button === 0 || (e.button === 2 && this.interactionData.minNegVertices >= 0)) && !e.altKey) {
-                e.preventDefault();
-                const [cx, cy] = translateToSVG((this.canvas.node as any) as SVGSVGElement, [e.clientX, e.clientY]);
-                if (!this.isWithinFrame(cx, cy)) return;
-
-                this.currentInteractionShape = this.canvas
-                    .circle((this.controlPointsSize * 2) / this.geometry.scale)
-                    .center(cx, cy)
-                    .fill('white')
-                    .stroke(e.button === 0 ? 'green' : 'red')
-                    .addClass('cvat_interaction_point')
-                    .attr({
-                        'stroke-width': consts.POINTS_STROKE_WIDTH / this.geometry.scale,
-                    });
-
-                this.interactionShapes.push(this.currentInteractionShape);
-                this.shapesWereUpdated = true;
-                if (this.shouldRaiseEvent()) {
-                    this.onInteraction(this.prepareResult(), true, false);
-                }
-
-                const self = this.currentInteractionShape;
-                self.on('mouseenter', (): void => {
-                    if (this.interactionData.allowRemoveOnlyLast) {
-                        if (this.interactionShapes.indexOf(self) !== this.interactionShapes.length - 1) {
-                            return;
-                        }
-                    }
-
-                    self.addClass('cvat_canvas_removable_interaction_point');
-                    self.attr({
-                        'stroke-width': consts.POINTS_SELECTED_STROKE_WIDTH / this.geometry.scale,
-                        r: (this.controlPointsSize * 1.5) / this.geometry.scale,
-                    });
-
-                    self.on('mousedown', (_e: MouseEvent): void => {
-                        _e.preventDefault();
-                        _e.stopPropagation();
-                        self.remove();
-                        this.shapesWereUpdated = true;
-                        this.interactionShapes = this.interactionShapes.filter(
-                            (shape: SVG.Shape): boolean => shape !== self,
-                        );
-                        if (this.interactionData.startWithBox && this.interactionShapes.length === 1) {
-                            this.interactionShapes[0].style({ visibility: '' });
-                        }
-                        const shouldRaiseEvent = this.shouldRaiseEvent();
-                        if (shouldRaiseEvent) {
-                            this.onInteraction(this.prepareResult(), true, false);
-                        }
-                    });
-                });
-
-                self.on('mouseleave', (): void => {
-                    self.removeClass('cvat_canvas_removable_interaction_point');
-                    self.attr({
-                        'stroke-width': consts.POINTS_STROKE_WIDTH / this.geometry.scale,
-                        r: this.controlPointsSize / this.geometry.scale,
-                    });
-
-                    self.off('mousedown');
-                });
-            }
-        };
-
-        // clear this listener in release()
-        this.canvas.on('mousedown.interaction', eventListener);
-    }
-
-    private interactRectangle(shouldFinish: boolean, onContinue?: () => void): void {
-        let initialized = false;
-        const eventListener = (e: MouseEvent): void => {
-            if (e.button === 0 && !e.altKey) {
-                if (!initialized) {
-                    (this.currentInteractionShape as any).draw(e, { snapToGrid: 0.1 });
-                    initialized = true;
-                } else {
-                    (this.currentInteractionShape as any).draw(e);
-                }
-            }
-        };
-
-        this.currentInteractionShape = this.canvas.rect();
-        this.canvas.on('mousedown.interaction', eventListener);
-        this.currentInteractionShape
-            .on('drawstop', (): void => {
-                if (this.cancelled) {
-                    return;
-                }
-
-                this.canvas.off('mousedown.interaction', eventListener);
-                this.interactionShapes.push(this.currentInteractionShape);
-                this.shapesWereUpdated = true;
-
-                if (shouldFinish) {
-                    this.interact({ enabled: false });
-                } else if (this.shouldRaiseEvent()) {
-                    this.onInteraction(this.prepareResult(), true, false);
-                }
-
-                if (onContinue) {
-                    onContinue();
-                }
-            })
-            .addClass('cvat_canvas_shape_drawing')
-            .attr({
-                'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
-            })
-            .fill({ opacity: this.selectedShapeOpacity, color: 'white' });
-    }
-
-    private initInteraction(): void {
-        if (this.interactionData.crosshair) {
-            this.addCrosshair();
-        } else if (this.crosshair) {
-            this.removeCrosshair();
-        }
-    }
-
-    private startInteraction(): void {
-        if (this.interactionData.shapeType === 'rectangle') {
-            this.interactRectangle(true);
-        } else if (this.interactionData.shapeType === 'points') {
-            if (this.interactionData.startWithBox) {
-                this.interactRectangle(false, (): void => this.interactPoints());
-            } else {
-                this.interactPoints();
-            }
-        } else {
-            throw new Error('Interactor implementation supports only rectangle and points');
-        }
-    }
-
-    private release(): void {
-        if (this.currentInteractionShape && this.currentInteractionShape.remember('_paintHandler')) {
-            // Cancel active drawing first
-            (this.currentInteractionShape as any).draw('cancel');
-        }
-
-        if (this.drawnIntermediateShape) {
-            this.drawnIntermediateShape.remove();
-            this.drawnIntermediateShape = null;
-        }
-
-        if (this.crosshair) {
-            this.removeCrosshair();
-        }
-
-        this.canvas.off('mousedown.interaction');
-        this.interactionShapes.forEach((shape: SVG.Shape): SVG.Shape => shape.remove());
-        this.interactionShapes = [];
-        if (this.currentInteractionShape) {
-            this.currentInteractionShape.remove();
-            this.currentInteractionShape = null;
-        }
-    }
-
-    private isWithinFrame(x: number, y: number): boolean {
-        const { offset, image } = this.geometry;
-        const { width, height } = image;
-        const [imageX, imageY] = [Math.round(x - offset), Math.round(y - offset)];
-        return imageX >= 0 && imageX < width && imageY >= 0 && imageY < height;
-    }
-
-    private updateIntermediateShape(): void {
-        const { intermediateShape, geometry } = this;
-        if (!intermediateShape) {
-            if (this.drawnIntermediateShape) {
-                this.drawnIntermediateShape.remove();
-            }
-
-            return;
-        }
-
-        const { shapeType, points } = intermediateShape;
-        if (this.drawnIntermediateShape?.type === 'polygon' && shapeType === 'polygon') {
-            const isInvalidShape = shapeType === 'polygon' && points.length < 3 * 2;
-            this.drawnIntermediateShape.attr('points', stringifyPoints(translateToCanvas(geometry.offset, points)));
-            this.drawnIntermediateShape.stroke(isInvalidShape ? 'red' : 'black');
-            return;
-        }
-
-        this.drawnIntermediateShape?.remove();
-        if (shapeType === 'polygon') {
-            const isInvalidShape = shapeType === 'polygon' && points.length < 3 * 2;
-            this.drawnIntermediateShape = this.canvas
-                .polygon(stringifyPoints(translateToCanvas(geometry.offset, points)))
-                .attr({
-                    'color-rendering': 'optimizeQuality',
-                    'shape-rendering': 'geometricprecision',
-                    'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
-                    stroke: isInvalidShape ? 'red' : 'black',
-                })
-                .fill({ opacity: this.selectedShapeOpacity, color: 'white' })
-                .addClass('cvat_canvas_interact_intermediate_shape');
-            this.canvas.node.prepend(this.drawnIntermediateShape.node);
-        } else if (shapeType === 'mask') {
-            const [left, top, right, bottom] = points.slice(-4);
-            const imageBitmap = expandChannels(255, 255, 255, points);
-
-            const image = this.canvas.image().attr({
-                'color-rendering': 'optimizeQuality',
-                'shape-rendering': 'geometricprecision',
-                'pointer-events': 'none',
-                opacity: 0.5,
-            }).addClass('cvat_canvas_interact_intermediate_shape');
-            image.move(this.geometry.offset + left, this.geometry.offset + top);
-            this.drawnIntermediateShape = image;
-            this.canvas.node.prepend(this.drawnIntermediateShape.node);
-
-            imageDataToDataURL(
-                imageBitmap,
-                right - left + 1,
-                bottom - top + 1,
-                (dataURL: string) => new Promise((resolve, reject) => {
-                    image.loaded(() => {
-                        resolve();
-                    });
-                    image.error(() => {
-                        reject();
-                    });
-                    image.load(dataURL);
-                }),
-            );
-        } else {
-            throw new Error(
-                `Shape type "${shapeType}" was not implemented at interactionHandler::updateIntermediateShape`,
-            );
-        }
-    }
-
-    private visualComponentsChanged(interactionData: InteractionData): boolean {
-        const allowedKeys = ['enabled', 'crosshair'];
-        if (Object.keys(interactionData).every((key: string): boolean => allowedKeys.includes(key))) {
-            if (this.interactionData.crosshair !== undefined && interactionData.crosshair !== undefined &&
-                this.interactionData.crosshair !== interactionData.crosshair) {
-                return true;
-            }
-        }
-        return false;
-    }
 
     public constructor(
-        onInteraction: (
-            shapes: InteractionResult[] | null,
-            shapesUpdated?: boolean,
-            isDone?: boolean,
-        ) => void,
-        canvas: SVG.Container,
+        onInteraction: InteractionHandlerImpl['onInteraction'],
+        onMessage: InteractionHandlerImpl['onMessage'],
+        adoptedContent: SVG.Container,
         geometry: Geometry,
         configuration: Configuration,
     ) {
-        this.onInteraction = (shapes: InteractionResult[] | null, shapesUpdated?: boolean, isDone?: boolean): void => {
-            this.shapesWereUpdated = false;
-            onInteraction(shapes, shapesUpdated, isDone);
-        };
-        this.canvas = canvas;
-        this.geometry = geometry;
-        this.shapesWereUpdated = false;
-        this.interactionShapes = [];
-        this.interactionData = { enabled: false };
-        this.currentInteractionShape = null;
+        this.onInteraction = onInteraction;
+        this.onMessage = onMessage;
+        this.enabled = false;
+        this.command = 'idle';
         this.crosshair = new Crosshair();
-        this.intermediateShape = null;
-        this.drawnIntermediateShape = null;
-        this.controlPointsSize = configuration.controlPointsSize;
-        this.selectedShapeOpacity = configuration.selectedShapeOpacity;
-        this.cursorPosition = {
-            x: 0,
-            y: 0,
+        this.regionOfInterest = null;
+        this.settings = {
+            crosshair: false,
+            points_type: 'any',
+            removalStrategy: 'any',
+            appendCursorPositionAsPoint: false,
+        };
+        this.container = adoptedContent;
+        this.geometry = geometry;
+        this.configuration = configuration;
+        this.currentRectangle = null;
+        this.rectanglePrompts = [];
+        this.pointPrompts = [];
+        this.allPrompts = [];
+        this.intermediateShapes = [];
+        this.deletionButtons = new Map();
+        this.effectiveStrokeWidth = consts.BASE_STROKE_WIDTH / this.geometry.scale;
+        this.effectivePointSize = (configuration.controlPointsSize ?? consts.BASE_POINT_SIZE) / this.geometry.scale;
+        this.effectiveShapeOpacity = configuration.selectedShapeOpacity ?? 0.5;
+        this.lastMousePosition = { x: 0, y: 0 };
+        this.container.on('mousedown.interaction', this.onMouseDown);
+        this.container.on('mousemove.interaction', this.onMouseMove);
+    }
+
+    private clearCurrentRectangle(): void {
+        if (this.currentRectangle) {
+            this.currentRectangle.off('drawstop.interaction');
+            this.currentRectangle.remove();
+            this.currentRectangle = null;
+        }
+    }
+
+    private clearPromptsAndButtons(): void {
+        this.rectanglePrompts.forEach((rect) => {
+            rect.remove();
+        });
+
+        this.pointPrompts.forEach((point) => {
+            point.off('mouseenter.interaction');
+            point.off('mouseleave.interaction');
+            point.off('mousedown.interaction');
+            point.remove();
+        });
+
+        this.deletionButtons.forEach((deleteBtn) => {
+            deleteBtn.off('mouseover.interaction');
+            deleteBtn.off('mouseout.interaction');
+            deleteBtn.off('mousedown.interaction');
+            deleteBtn.remove();
+        });
+
+        this.deletionButtons.clear();
+        this.rectanglePrompts = [];
+        this.pointPrompts = [];
+        this.allPrompts = [];
+    }
+
+    private clearIntermediateShapes(): void {
+        this.intermediateShapes.forEach((shape) => {
+            if (shape.node instanceof SVGImageElement) {
+                URL.revokeObjectURL(shape.node.href.baseVal);
+            }
+            shape.remove();
+        });
+        this.intermediateShapes = [];
+    }
+
+    private release(): void {
+        this.enabled = false;
+        this.command = 'idle';
+        this.regionOfInterest = null;
+        this.onMessage(null, 'interaction');
+        this.clearCurrentRectangle();
+        this.clearPromptsAndButtons();
+        this.clearIntermediateShapes();
+        this.crosshair.hide();
+    }
+
+    private isWithinInteractionBounds(x: number, y: number): boolean {
+        const { offset, image } = this.geometry;
+        const { regionOfInterest } = this;
+        const [imageX, imageY] = [x - offset, y - offset];
+
+        if (regionOfInterest) {
+            return (
+                imageX >= regionOfInterest[0] &&
+                imageX <= regionOfInterest[2] &&
+                imageY >= regionOfInterest[1] &&
+                imageY <= regionOfInterest[3]
+            );
+        }
+
+        return imageX >= 0 && imageX < image.width && imageY >= 0 && imageY < image.height;
+    }
+
+    private drawBox(hint?: string): void {
+        if (this.command === 'draw_box') {
+            return;
+        }
+
+        this.command = 'draw_box';
+        const initNewDrawingBox = (): void => {
+            this.currentRectangle = this.container.rect()
+                .fill('rgba(0, 0, 0, 0)')
+                .stroke({ color: '#000000', width: this.effectiveStrokeWidth })
+                .opacity(this.effectiveShapeOpacity)
+                .addClass('cvat_interaction_rectangle');
+
+            this.currentRectangle.on('drawstop.interaction', () => {
+                const rectangle = this.currentRectangle.clone() as SVG.Rect;
+                this.clearCurrentRectangle();
+
+                const { offset, image: { width: imWidth, height: imHeight } } = this.geometry;
+                const [x, y, width, height] = [rectangle.x(), rectangle.y(), rectangle.width(), rectangle.height()];
+                const right = offset + imWidth;
+                const bottom = offset + imHeight;
+
+                const { regionOfInterest } = this;
+                const minX = regionOfInterest ? offset + regionOfInterest[0] : offset;
+                const minY = regionOfInterest ? offset + regionOfInterest[1] : offset;
+                const maxX = regionOfInterest ? offset + regionOfInterest[2] : right;
+                const maxY = regionOfInterest ? offset + regionOfInterest[3] : bottom;
+                const xtl = clamp(x, minX, maxX);
+                const ytl = clamp(y, minY, maxY);
+                const xbr = clamp(x + width, minX, maxX);
+                const ybr = clamp(y + height, minY, maxY);
+
+                if (xbr - xtl < 1 || ybr - ytl < 1) {
+                    rectangle.remove();
+                    initNewDrawingBox();
+                    return;
+                }
+
+                rectangle.x(xtl);
+                rectangle.y(ytl);
+                rectangle.width(xbr - xtl);
+                rectangle.height(ybr - ytl);
+
+                this.rectanglePrompts.push(rectangle);
+                this.allPrompts.push(rectangle);
+                this.drawDeleteButton(rectangle);
+
+                initNewDrawingBox();
+                this.notify();
+            });
         };
 
-        this.canvas.on('mousemove.interaction', (e: MouseEvent): void => {
-            const [x, y] = translateToSVG((this.canvas.node as any) as SVGSVGElement, [e.clientX, e.clientY]);
-            this.cursorPosition = { x, y };
-            if (this.crosshair) {
-                this.crosshair.move(x, y);
+        this.onMessage([{
+            type: 'text',
+            icon: 'info',
+            content: hint ?? 'Draw rectangle prompts',
+        }, {
+            type: 'list',
+            content: [
+                'Hold <Mouse Wheel> to drag the image',
+            ],
+            className: 'cvat-canvas-notification-list-shortcuts',
+        }], 'interaction');
+
+        initNewDrawingBox();
+    }
+
+    private drawPoints(hint?: string): void {
+        const { points_type: pointsType } = this.settings;
+
+        this.command = 'draw_points';
+        const textPrompts = [];
+        if (pointsType === 'any') {
+            textPrompts.push(
+                'Click <Left Button> to add a positive point',
+                'Click <Right Button> to add a negative point',
+            );
+        }
+
+        this.onMessage([{
+            type: 'text',
+            icon: 'info',
+            content: hint ?? 'Draw point prompts',
+        }, {
+            type: 'list',
+            content: [
+                ...textPrompts,
+                'Hold <Mouse Wheel> to drag the image',
+            ],
+            className: 'cvat-canvas-notification-list-shortcuts',
+        }], 'interaction');
+    }
+
+    private putShapes(shapes: InteractionData['payload']['shapes']): void {
+        this.clearIntermediateShapes();
+
+        for (const shape of shapes) {
+            const { points, shapeType } = shape;
+            if (shapeType === 'polygon') {
+                const isInvalidShape = points.length < 3 * 2;
+                const polygon = this.container
+                    .polygon(stringifyPoints(translateToCanvas(this.geometry.offset, points)))
+                    .attr({
+                        'color-rendering': 'optimizeQuality',
+                        'shape-rendering': 'geometricprecision',
+                        'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
+                        stroke: isInvalidShape ? 'red' : 'black',
+                    })
+                    .fill({ opacity: this.effectiveShapeOpacity, color: 'white' })
+                    .addClass('cvat_canvas_interact_intermediate_shape');
+                this.container.node.prepend(polygon.node);
+                this.intermediateShapes.push(polygon);
+            } else if (shapeType === 'mask') {
+                const left = points[points.length - 4];
+                const top = points[points.length - 3];
+                const right = points[points.length - 2];
+                const bottom = points[points.length - 1];
+                const imageBitmap = RLEToImageData(255, 255, 255, points);
+                const image = this.container.image().attr({
+                    'color-rendering': 'optimizeQuality',
+                    'shape-rendering': 'geometricprecision',
+                    'pointer-events': 'none',
+                    opacity: 0.5,
+                }).addClass('cvat_canvas_interact_intermediate_shape');
+                image.move(this.geometry.offset + left, this.geometry.offset + top);
+                this.container.node.prepend(image.node);
+                this.intermediateShapes.push(image);
+
+                imageDataToDataURL(
+                    imageBitmap,
+                    right - left + 1,
+                    bottom - top + 1,
+                    (dataURL: string) => {
+                        const destroy = (): void => URL.revokeObjectURL(dataURL);
+                        if (image.parent() !== null) {
+                            // still in DOM
+                            image.loaded(destroy);
+                            image.error(destroy);
+                            image.load(dataURL);
+                        } else {
+                            destroy();
+                        }
+                    },
+                );
+            }
+        }
+    }
+
+    private refine(): void {
+        // TODO: implement
+    }
+
+    private notify(finished = false, extras: InteractionResult[] = []): void {
+        const transformed = this.allPrompts.map((shape) => {
+            if (shape instanceof SVG.Rect) {
+                const [x, y] = [shape.x(), shape.y()];
+                const [width, height] = [shape.width(), shape.height()];
+                return {
+                    points: translateFromCanvas(this.geometry.offset, [x, y, x + width, y + height]),
+                    shapeType: 'rectangle',
+                    type: 'positive' as const,
+                };
             }
 
-            if (this.interactionData.enableSliding && this.interactionShapes.length) {
-                if (this.isWithinFrame(x, y)) {
-                    this.onInteraction(
-                        [
-                            ...this.prepareResult(),
-                            {
-                                points: [x - this.geometry.offset, y - this.geometry.offset],
-                                shapeType: 'points',
-                                button: 0,
-                            },
-                        ],
-                        true,
-                        false,
-                    );
-                }
+            if (shape instanceof SVG.Circle) {
+                return {
+                    points: translateFromCanvas(this.geometry.offset, [shape.cx(), shape.cy()]),
+                    shapeType: 'points',
+                    type: shape.attr('stroke') === 'green' ? 'positive' as const : 'negative' as const,
+                };
             }
+
+            throw new Error('Unknown shape type');
         });
+
+        this.onInteraction(transformed.concat(extras), finished);
     }
+
+    private deleteShape(shape: SupportedShapes): void {
+        const shapeIndex = this.allPrompts.indexOf(shape);
+        if (shapeIndex > -1) {
+            this.allPrompts.splice(shapeIndex, 1);
+        }
+
+        if (shape instanceof SVG.Circle) {
+            const pointIndex = this.pointPrompts.findIndex((p) => p === shape);
+            if (pointIndex !== -1) {
+                this.pointPrompts.splice(pointIndex, 1);
+            }
+        } else if (shape instanceof SVG.Rect) {
+            const rectIndex = this.rectanglePrompts.findIndex((r) => r === shape);
+            if (rectIndex !== -1) {
+                this.rectanglePrompts.splice(rectIndex, 1);
+            }
+        }
+
+        // Remove delete button from map and canvas
+        const deleteBtn = this.deletionButtons.get(shape);
+        if (deleteBtn) {
+            deleteBtn.remove();
+            this.deletionButtons.delete(shape);
+        }
+
+        shape.remove();
+        this.notify();
+    }
+
+    private drawDeleteButton(shape: SVG.Rect | SVG.Circle): void {
+        const { scale } = this.geometry;
+        const r = consts.BASE_POINT_SIZE / scale;
+        const { x, y } = getTopRightPosition(shape);
+
+        const deleteButtonGroup = this.container.group().addClass('cvat_interaction_delete_button') as SVG.G;
+        const circleBg = deleteButtonGroup.circle(r * 2)
+            .fill('#ff3333')
+            .stroke({ color: '#ffffff', width: this.effectiveStrokeWidth })
+            .center(x + DELETE_BUTTON_OFFSET / scale, y - DELETE_BUTTON_OFFSET / scale);
+
+        const p = [3, 7].map((val) => (val / 10) * r * 2);
+        deleteButtonGroup.path(`M ${p[0]} ${p[0]} L ${p[1]} ${p[1]} M ${p[1]} ${p[0]} L ${p[0]} ${p[1]}`)
+            .stroke({ color: '#ffffff', width: this.effectiveStrokeWidth })
+            .center(x + DELETE_BUTTON_OFFSET / scale, y - DELETE_BUTTON_OFFSET / scale).fill('none');
+
+        deleteButtonGroup.on('mouseover.interaction', () => {
+            circleBg.stroke({ color: '#ffffff', width: this.effectiveStrokeWidth * 1.5 });
+        });
+
+        deleteButtonGroup.on('mouseout.interaction', () => {
+            circleBg.stroke({ color: '#ffffff', width: this.effectiveStrokeWidth });
+        });
+
+        deleteButtonGroup.on('mousedown.interaction', (e: any) => {
+            e.stopPropagation();
+            this.deleteShape(shape);
+        });
+
+        this.deletionButtons.set(shape, deleteButtonGroup);
+    }
+
+    private onMouseMove = (e: MouseEvent): void => {
+        const [x, y] = translateToSVG(
+            this.container.node as unknown as SVGSVGElement,
+            [e.clientX, e.clientY],
+        );
+        this.lastMousePosition = { x, y };
+        this.crosshair.move(x, y);
+
+        if (
+            this.command === 'draw_points' &&
+            this.settings.appendCursorPositionAsPoint &&
+            this.pointPrompts.length &&
+            this.isWithinInteractionBounds(x, y)
+        ) {
+            const lastPoint = this.pointPrompts[this.pointPrompts.length - 1];
+            const [cx, cy] = [lastPoint.cx(), lastPoint.cy()];
+            const threshold = 5;
+            if (Math.hypot(cx - x, cy - y) > threshold) {
+                this.notify(false, [{
+                    points: translateFromCanvas(this.geometry.offset, [x, y]),
+                    shapeType: 'points',
+                    type: 'positive' as const,
+                }]);
+            }
+        }
+    };
+
+    private onMouseDown = (e: MouseEvent): void => {
+        if (!(this.enabled && [0, 2].includes(e.button))) {
+            return;
+        }
+
+        const [x, y] = translateToSVG(
+            this.container.node as unknown as SVGSVGElement,
+            [e.clientX, e.clientY],
+        );
+        if (this.command === 'draw_box') {
+            (this.currentRectangle as any).draw(e);
+        } else if (this.command === 'draw_points') {
+            if (!this.isWithinInteractionBounds(x, y)) {
+                return;
+            }
+
+            let color = 'green';
+            if (this.settings.points_type === 'any') {
+                color = e.button === 0 ? 'green' : 'red';
+            } else if (this.settings.points_type === 'positive') {
+                color = 'green';
+            } else if (this.settings.points_type === 'negative') {
+                color = 'red';
+            }
+
+            const point = this.container.circle(this.effectivePointSize * 2)
+                .fill('white')
+                .stroke(color)
+                .addClass('cvat_interaction_point')
+                .center(x, y);
+
+            const pointCanBeRemoved = (): boolean => (
+                this.settings.removalStrategy === 'any' || (
+                    this.settings.removalStrategy === 'last' &&
+                    this.allPrompts.indexOf(point) === this.allPrompts.length - 1
+                )
+            );
+
+            point.on('mouseenter.interaction', () => {
+                if (pointCanBeRemoved()) {
+                    point.addClass('cvat_canvas_removable_interaction_point');
+                    point.attr({ 'stroke-width': this.effectiveStrokeWidth * 1.5, r: this.effectivePointSize * 1.1 });
+                }
+            });
+
+            point.on('mouseleave.interaction', (): void => {
+                point.removeClass('cvat_canvas_removable_interaction_point');
+                point.attr({ 'stroke-width': this.effectiveStrokeWidth, r: this.effectivePointSize });
+            });
+
+            point.on('mousedown.interaction', (_e: MouseEvent): void => {
+                _e.preventDefault();
+                _e.stopPropagation();
+                if (pointCanBeRemoved()) {
+                    this.deleteShape(point);
+                }
+            });
+
+            this.pointPrompts.push(point);
+            this.allPrompts.push(point);
+            this.drawDeleteButton(point);
+            this.notify();
+        }
+    };
 
     public transform(geometry: Geometry): void {
         this.geometry = geometry;
+        this.effectiveStrokeWidth = consts.BASE_STROKE_WIDTH / this.geometry.scale;
+        this.effectivePointSize = (
+            this.configuration.controlPointsSize ?? consts.BASE_POINT_SIZE
+        ) / this.geometry.scale;
 
-        if (this.crosshair) {
-            this.crosshair.scale(this.geometry.scale);
+        if (this.currentRectangle) {
+            this.currentRectangle.stroke({ width: this.effectiveStrokeWidth });
+            this.currentRectangle.opacity(this.effectiveShapeOpacity);
         }
 
-        const shapesToBeScaled = this.currentInteractionShape ?
-            [...this.interactionShapes, this.currentInteractionShape] :
-            [...this.interactionShapes];
-        for (const shape of shapesToBeScaled) {
-            if (shape.type === 'circle') {
-                if (shape.hasClass('cvat_canvas_removable_interaction_point')) {
-                    (shape as SVG.Circle).radius((this.controlPointsSize * 1.5) / this.geometry.scale);
-                    shape.attr('stroke-width', consts.POINTS_SELECTED_STROKE_WIDTH / this.geometry.scale);
-                } else {
-                    (shape as SVG.Circle).radius(this.controlPointsSize / this.geometry.scale);
-                    shape.attr('stroke-width', consts.POINTS_STROKE_WIDTH / this.geometry.scale);
+        this.allPrompts.forEach((shape) => {
+            shape.stroke({ width: this.effectiveStrokeWidth });
+            if (shape instanceof SVG.Rect) {
+                shape.opacity(this.effectiveShapeOpacity);
+            } else if (shape instanceof SVG.Circle) {
+                shape.attr('r', this.effectivePointSize);
+            }
+        });
+
+        this.deletionButtons.forEach((deleteButtonGroup, shape) => {
+            const { scale } = this.geometry;
+            const group = deleteButtonGroup;
+
+            const { x, y } = getTopRightPosition(shape);
+            const r = consts.BASE_POINT_SIZE / scale;
+            group.children().forEach((child) => {
+                if (child instanceof SVG.Circle) {
+                    child.attr('r', r);
+                    child.stroke({ color: '#ffffff', width: this.effectiveStrokeWidth });
+                } else if (child instanceof SVG.Path) {
+                    (child as SVG.Path).plot(deleteButtonPath(r));
+                    child.stroke({ color: '#ffffff', width: this.effectiveStrokeWidth });
+                }
+                child.center(x + DELETE_BUTTON_OFFSET / scale, y - DELETE_BUTTON_OFFSET / scale);
+            });
+        });
+
+        this.intermediateShapes.forEach((shape) => {
+            shape.fill({ opacity: this.effectiveShapeOpacity });
+        });
+    }
+
+    public interact(interactData: InteractionData): void {
+        if (Object.hasOwn(interactData, 'settings')) {
+            this.settings = {
+                ...this.settings,
+                ..._.omit(interactData.settings, ['hint', 'regionOfInterest']),
+            };
+        }
+
+        if (interactData.enabled) {
+            this.enabled = true;
+        } else if (this.enabled) {
+            this.notify(true);
+            this.onInteraction(null);
+            this.release();
+        }
+
+        if (this.enabled) {
+            if (this.settings.crosshair) {
+                this.crosshair.show(
+                    this.container,
+                    this.lastMousePosition.x,
+                    this.lastMousePosition.y,
+                    this.geometry.scale,
+                );
+            } else {
+                this.crosshair.hide();
+            }
+
+            if (this.settings.removalStrategy === 'last') {
+                this.deletionButtons.forEach((deleteBtn) => deleteBtn.hide());
+                const lastShape = this.allPrompts?.[this.allPrompts.length - 1];
+                if (lastShape) {
+                    this.deletionButtons.get(lastShape)?.show();
                 }
             } else {
-                shape.attr('stroke-width', consts.BASE_STROKE_WIDTH / this.geometry.scale);
+                this.deletionButtons.forEach((deleteBtn) => deleteBtn.show());
             }
-        }
 
-        if (this.drawnIntermediateShape) {
-            this.drawnIntermediateShape.stroke({ width: consts.BASE_STROKE_WIDTH / this.geometry.scale });
-        }
-    }
-
-    public interact(interactionData: InteractionData): void {
-        if (interactionData.enabled) {
-            this.cancelled = false;
-            if (interactionData.intermediateShape) {
-                this.intermediateShape = interactionData.intermediateShape;
-                this.updateIntermediateShape();
-                if (this.interactionData.startWithBox) {
-                    this.interactionShapes[0].style({ visibility: 'hidden' });
+            const { command } = interactData;
+            if (['draw_box', 'draw_points'].includes(command)) {
+                const regionOfInterest = interactData.settings?.regionOfInterest;
+                this.regionOfInterest = regionOfInterest ? [...regionOfInterest] : null;
+                if (command === 'draw_box') {
+                    this.drawBox(interactData.settings?.hint);
+                } else {
+                    this.clearCurrentRectangle();
+                    this.drawPoints(interactData.settings?.hint);
                 }
-            } else if (this.visualComponentsChanged(interactionData)) {
-                this.interactionData = { ...this.interactionData, ...interactionData };
-                this.initInteraction();
-            } else if (interactionData.enabled) {
-                this.interactionData = interactionData;
-                this.initInteraction();
-                this.startInteraction();
+            } else if (command === 'put_shapes') {
+                this.putShapes(interactData.payload.shapes);
+            } else if (command === 'refine') {
+                this.refine();
             }
-        } else {
-            if (this.currentInteractionShape && this.currentInteractionShape.remember('_paintHandler')) {
-                // Finish active drawing first if possible
-                (this.currentInteractionShape as any).draw('stop');
-            }
-
-            this.onInteraction(this.prepareResult(), this.shouldRaiseEvent(), true);
-            this.release();
-            this.interactionData = interactionData;
         }
     }
 
-    public configurate(configuration: Configuration): void {
-        this.controlPointsSize = configuration.controlPointsSize;
-        this.selectedShapeOpacity = configuration.selectedShapeOpacity;
-
-        if (this.drawnIntermediateShape) {
-            this.drawnIntermediateShape.fill({
-                opacity: configuration.selectedShapeOpacity,
-            });
-        }
-
-        // when interactRectangle
-        if (this.currentInteractionShape && this.currentInteractionShape.type === 'rect') {
-            this.currentInteractionShape.fill({ opacity: configuration.selectedShapeOpacity });
-        }
-
-        // when interactPoints with startwithbbox
-        if (this.interactionShapes[0] && this.interactionShapes[0].type === 'rect') {
-            this.interactionShapes[0].fill({ opacity: configuration.selectedShapeOpacity });
-        }
-    }
-
-    public cancel(): void {
-        this.cancelled = true;
-        this.release();
-        this.onInteraction(null);
+    public configure(config: Configuration): void {
+        this.configuration = config;
+        this.effectivePointSize = (config.controlPointsSize ?? consts.BASE_POINT_SIZE) / this.geometry.scale;
+        this.effectiveShapeOpacity = config.selectedShapeOpacity ?? 0.5;
     }
 
     public destroy(): void {
-        // nothing to release
+        this.container.off('mousedown.interaction', this.onMouseDown);
+        this.container.off('mousemove.interaction', this.onMouseMove);
+        this.release();
+    }
+
+    public cancel(): void {
+        this.onInteraction(null);
+        this.release();
     }
 }

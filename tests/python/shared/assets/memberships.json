@@ -1,8 +1,23 @@
 {
-  "count": 15,
+  "count": 16,
   "next": null,
   "previous": null,
   "results": [
+    {
+      "id": 16,
+      "invitation": null,
+      "is_active": true,
+      "joined_date": "2021-12-14T18:45:40.172000Z",
+      "organization": 3,
+      "role": "owner",
+      "user": {
+        "first_name": "User",
+        "id": 2,
+        "last_name": "First",
+        "url": "http://localhost:8080/api/users/2",
+        "username": "user1"
+      }
+    },
     {
       "id": 15,
       "invitation": "q8GWTPiR1Vz9DDO6MQo1B6pUBzW9GjDb6AUQPziAV62jD7OpCLZji0GS66C48wRX",

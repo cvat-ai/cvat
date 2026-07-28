@@ -5,7 +5,11 @@
 
 /// <reference types="cypress" />
 
+import * as allure from 'allure-js-commons';
+import { AllureTag } from '../../support/const_allure';
+
 context('Export, import an annotation task.', { browser: '!firefox' }, () => {
+    allure.tags(AllureTag.HEAVY, AllureTag.SETTINGS);
     const caseId = '97';
     const labelName = 'car';
     const taskName = `Case ${caseId}`;
@@ -79,7 +83,7 @@ context('Export, import an annotation task.', { browser: '!firefox' }, () => {
         it('Export a task.', () => {
             cy.contains('.cvat-item-task-name', taskName)
                 .parents('.cvat-tasks-list-item')
-                .find('.cvat-item-open-task-actions > .cvat-menu-icon')
+                .find('.cvat-item-open-task-actions')
                 .click();
             cy.get('.ant-dropdown')
                 .not('.ant-dropdown-hidden')

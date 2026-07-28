@@ -21,6 +21,9 @@ rules:
       # Mainly a style preference
       # https://docs.styra.com/regal/rules/style/avoid-get-and-list-prefix
       level: ignore
+    external-reference:
+      # https://docs.styra.com/regal/rules/style/external-reference
+      level: ignore
     opa-fmt:
       # https://docs.styra.com/regal/rules/style/opa-fmt
       level: ignore
@@ -31,3 +34,7 @@ rules:
       # Many rules longer than the default limit of 30 lines
       level: error
       max-rule-length: 60
+  imports:
+    unresolved-import:
+      # one of "error", "warning", "ignore"
+      level: error

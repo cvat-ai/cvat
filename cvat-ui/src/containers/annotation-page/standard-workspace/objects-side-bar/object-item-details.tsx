@@ -3,9 +3,9 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-import { ObjectState } from 'cvat-core-wrapper';
-import { CombinedState } from 'reducers';
-import ObjectItemDetails from 'components/annotation-page/standard-workspace/objects-side-bar/object-item-details';
+import { ObjectState, ShapeType } from 'cvat-core-wrapper';
+import { CombinedState, Workspace } from 'reducers';
+import ObjectItemDetails, { SizeType } from 'components/annotation-page/standard-workspace/objects-side-bar/object-item-details';
 import { updateAnnotationsAsync, collapseObjectItems } from 'actions/annotation-actions';
 import { connect } from 'react-redux';
 import { ThunkDispatch } from 'utils/redux';
@@ -19,6 +19,8 @@ interface OwnProps {
 interface StateToProps {
     collapsed: boolean;
     state: ObjectState | null;
+    workspace: Workspace;
+    textContent: string;
 }
 
 interface DispatchToProps {
@@ -46,6 +48,12 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
                 collapsedAll,
                 collapsed: statesCollapsed,
             },
+            workspace,
+        },
+        settings: {
+            workspace: {
+                textContent,
+            },
         },
     } = state;
 
@@ -54,6 +62,8 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
     return {
         collapsed,
         state: objectState,
+        workspace,
+        textContent,
     };
 }
 
@@ -69,6 +79,7 @@ function mapDispatchToProps(dispatch: ThunkDispatch): DispatchToProps {
 }
 
 type Props = StateToProps & DispatchToProps & OwnProps;
+
 class ObjectItemDetailsContainer extends React.PureComponent<Props> {
     private changeAttribute = (id: number, value: string): void => {
         const { state, readonly, updateState } = this.props;
@@ -80,15 +91,50 @@ class ObjectItemDetailsContainer extends React.PureComponent<Props> {
         }
     };
 
+    private changeSize = (type: SizeType, value: number): void => {
+        const { state, readonly, updateState } = this.props;
+        if (!readonly && state) {
+            if (state.shapeType === ShapeType.CUBOID && state.points) {
+                const points = state.points.slice();
+                switch (type) {
+                    case SizeType.LENGTH:
+                        points[6] = value;
+                        break;
+                    case SizeType.WIDTH:
+                        points[7] = value;
+                        break;
+                    case SizeType.HEIGHT:
+                        points[8] = value;
+                        break;
+                    default:
+                        break;
+                }
+                state.points = points;
+            }
+            updateState(state);
+        }
+    };
+
     private collapse = (): void => {
         const { state, collapseOrExpand, collapsed } = this.props;
         collapseOrExpand(state, !collapsed);
     };
 
     public render(): JSX.Element | null {
-        const { readonly, collapsed, state } = this.props;
+        const {
+            readonly, collapsed, state, workspace, textContent,
+        } = this.props;
 
         if (state) {
+            let sizeParams = null;
+
+            if (state.shapeType === ShapeType.CUBOID && workspace === Workspace.STANDARD3D && state.points) {
+                sizeParams = {
+                    length: parseFloat(state.points[6].toFixed(2)), // X
+                    width: parseFloat(state.points[7].toFixed(2)), // Y
+                    height: parseFloat(state.points[8].toFixed(2)), // Z
+                };
+            }
             return (
                 <ObjectItemDetails
                     readonly={readonly}
@@ -97,6 +143,12 @@ class ObjectItemDetailsContainer extends React.PureComponent<Props> {
                     changeAttribute={this.changeAttribute}
                     values={{ ...state.attributes }}
                     attributes={[...state.label.attributes]}
+                    changeSize={this.changeSize}
+                    sizeParams={sizeParams}
+                    source={state.source}
+                    score={state.score}
+                    votes={state.votes}
+                    textContent={textContent}
                 />
             );
         }

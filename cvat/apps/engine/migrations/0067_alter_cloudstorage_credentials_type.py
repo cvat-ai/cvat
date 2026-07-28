@@ -6,13 +6,22 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('engine', '0066_auto_20230319_1252'),
+        ("engine", "0066_auto_20230319_1252"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='cloudstorage',
-            name='credentials_type',
-            field=models.CharField(choices=[('KEY_SECRET_KEY_PAIR', 'KEY_SECRET_KEY_PAIR'), ('ACCOUNT_NAME_TOKEN_PAIR', 'ACCOUNT_NAME_TOKEN_PAIR'), ('KEY_FILE_PATH', 'KEY_FILE_PATH'), ('ANONYMOUS_ACCESS', 'ANONYMOUS_ACCESS'), ('CONNECTION_STRING', 'CONNECTION_STRING')], max_length=29),
+            model_name="cloudstorage",
+            name="credentials_type",
+            field=models.CharField(
+                choices=[
+                    ("KEY_SECRET_KEY_PAIR", "KEY_SECRET_KEY_PAIR"),
+                    ("ACCOUNT_NAME_TOKEN_PAIR", "ACCOUNT_NAME_TOKEN_PAIR"),
+                    ("KEY_FILE_PATH", "KEY_FILE_PATH"),
+                    ("ANONYMOUS_ACCESS", "ANONYMOUS_ACCESS"),
+                    ("CONNECTION_STRING", "CONNECTION_STRING"),
+                ],
+                max_length=29,
+            ),
         ),
     ]

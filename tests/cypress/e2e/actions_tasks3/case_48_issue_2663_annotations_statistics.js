@@ -123,6 +123,7 @@ context('Annotations statistics.', () => {
     };
 
     before(() => {
+        cy.prepareUserSession();
         cy.openTaskJob(taskName);
         cy.createRectangle(createRectangleShape2Points);
         cy.createRectangle(createRectangleTrack2Points);
@@ -180,8 +181,8 @@ context('Annotations statistics.', () => {
                     cy.contains(labelName)
                         .parents('tr')
                         .find('td')
-                        .then((tableBodyFirstRowThs) => {
-                            const elTextContent = Array.from(tableBodyFirstRowThs).map((el) => el.textContent);
+                        .then((tableBodyFirstRowTds) => {
+                            const elTextContent = Array.from(tableBodyFirstRowTds).map((el) => el.textContent);
                             expect(elTextContent[0]).to.be.equal(labelName);
                             for (let i = 1; i < 7; i++) {
                                 expect(elTextContent[i]).to.be.equal('1 / 1'); // Rectangle, Polygon, Polyline, Points, Cuboids, Ellipses

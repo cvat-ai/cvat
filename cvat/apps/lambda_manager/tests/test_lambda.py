@@ -3,21 +3,25 @@
 #
 # SPDX-License-Identifier: MIT
 
+import base64
+import io
 import json
 import os
-from collections import Counter, OrderedDict
+from collections import Counter
 from itertools import groupby
-from typing import Optional
 from unittest import mock, skip
 
 import requests
 from django.contrib.auth.models import Group, User
+from django.core.signing import TimestampSigner
 from django.http import HttpResponseNotFound, HttpResponseServerError
+from PIL import Image
 from rest_framework import status
 
 from cvat.apps.engine.tests.utils import (
     ApiTestBase,
     ForceLogin,
+    check_annotation_response,
     filter_dict,
     generate_image_file,
     get_paginated_collection,
@@ -34,6 +38,7 @@ id_function_reid_with_no_response_data = (
 )
 id_function_interactor = "test-openvino-dextr"
 id_function_tracker = "test-pth-foolwood-siammask"
+id_function_tracker_with_supported_shape_types = "test-tracker-with-supported-shape-types"
 id_function_non_type = "test-model-has-non-type"
 id_function_wrong_type = "test-model-has-wrong-type"
 id_function_unknown_type = "test-model-has-unknown-type"
@@ -42,10 +47,8 @@ id_function_state_building = "test-model-has-state-building"
 id_function_state_error = "test-model-has-state-error"
 
 expected_keys_in_response_all_functions = ["id", "kind", "labels_v2", "description", "name"]
-expected_keys_in_response_function_interactor = expected_keys_in_response_all_functions + [
-    "min_pos_points",
-    "startswith_box",
-]
+expected_keys_in_response_function_interactor = ["min_pos_points", "startswith_box"]
+expected_keys_in_response_function_tracker = ["supported_shape_types"]
 expected_keys_in_response_requests = [
     "id",
     "function",
@@ -107,17 +110,32 @@ class _LambdaTestCaseBase(ApiTestBase):
     def _invoke_function(self, func, payload):
         data = []
         func_id = func.id
-        type_function = functions["positive"][func_id]["metadata"]["annotations"]["type"]
+        annotations = functions["positive"][func_id]["metadata"]["annotations"]
+        type_function = annotations["type"]
         if type_function == "reid":
             if func_id == id_function_reid_with_response_data:
                 data = [0, 1]
             else:
                 data = []
         elif type_function == "tracker":
-            data = {
-                "shape": [12.34, 34.0, 35.01, 41.99],
-                "state": {"key": "value"},
-            }
+            if "supported_shape_types" in annotations:
+                for shape in payload["shapes"]:
+                    self.assertIsInstance(shape, dict)
+                    self.assertIn("type", shape)
+                    self.assertIn("points", shape)
+
+                data = {
+                    "shapes": [{"type": "rectangle", "points": [12.34, 34.0, 35.01, 41.99]}],
+                    "states": [{"key": "value"}],
+                }
+            else:
+                for shape in payload["shapes"]:
+                    self.assertIsInstance(shape, list)
+
+                data = {
+                    "shapes": [[12.34, 34.0, 35.01, 41.99]],
+                    "states": [{"key": "value"}],
+                }
         elif type_function == "interactor":
             data = [
                 [8, 12],
@@ -141,7 +159,7 @@ class _LambdaTestCaseBase(ApiTestBase):
                 {
                     "confidence": "0.59464583",
                     "label": "car",
-                    "points": [12.17, 45.0, 69.80, 18.99],
+                    "points": [10, 10, 10, 20, 20, 10],
                     "type": "polygon",
                 },
                 {
@@ -156,8 +174,8 @@ class _LambdaTestCaseBase(ApiTestBase):
 
     @classmethod
     def _create_db_users(cls):
-        (group_admin, _) = Group.objects.get_or_create(name="admin")
-        (group_user, _) = Group.objects.get_or_create(name="user")
+        group_admin, _ = Group.objects.get_or_create(name="admin")
+        group_user, _ = Group.objects.get_or_create(name="user")
 
         user_admin = User.objects.create_superuser(username="admin", email="", password="admin")
         user_admin.groups.add(group_admin)
@@ -173,17 +191,17 @@ class _LambdaTestCaseBase(ApiTestBase):
         with ForceLogin(owner or self.admin, self.client):
             response = self.client.post(
                 "/api/tasks",
+                query_params={"org_id": org_id} if org_id is not None else None,
                 data=task_spec,
                 format="json",
-                QUERY_STRING=f"org_id={org_id}" if org_id is not None else None,
             )
             assert response.status_code == status.HTTP_201_CREATED, response.status_code
             tid = response.data["id"]
 
             response = self.client.post(
-                "/api/tasks/%s/data" % tid,
+                f"/api/tasks/{tid}/data",
+                query_params={"org_id": org_id} if org_id is not None else None,
                 data=data,
-                QUERY_STRING=f"org_id={org_id}" if org_id is not None else None,
             )
             assert response.status_code == status.HTTP_202_ACCEPTED, response.status_code
             rq_id = response.json()["rq_id"]
@@ -193,17 +211,15 @@ class _LambdaTestCaseBase(ApiTestBase):
             assert response.json()["status"] == "finished", response.json().get("status")
 
             response = self.client.get(
-                "/api/tasks/%s" % tid,
-                QUERY_STRING=f"org_id={org_id}" if org_id is not None else None,
+                f"/api/tasks/{tid}",
+                query_params={"org_id": org_id} if org_id is not None else None,
             )
             task = response.data
 
         return task
 
     def _generate_task_images(self, count):  # pylint: disable=no-self-use
-        images = {
-            "client_files[%d]" % i: generate_image_file("image_%d.jpg" % i) for i in range(count)
-        }
+        images = {f"client_files[{i}]": generate_image_file(f"image_{i}.jpg") for i in range(count)}
         images["image_quality"] = 75
         return images
 
@@ -211,65 +227,35 @@ class _LambdaTestCaseBase(ApiTestBase):
     def setUpTestData(cls):
         cls._create_db_users()
 
-    def _get_request(self, path, user, *, org_id=None):
-        with ForceLogin(user, self.client):
-            response = self.client.get(
-                path, QUERY_STRING=f"org_id={org_id}" if org_id is not None else ""
-            )
-        return response
-
-    def _delete_request(self, path, user, *, org_id=None):
-        with ForceLogin(user, self.client):
-            response = self.client.delete(
-                path, QUERY_STRING=f"org_id={org_id}" if org_id is not None else ""
-            )
-        return response
-
-    def _post_request(self, path, user, data, *, org_id=None):
-        data = json.dumps(data)
-        with ForceLogin(user, self.client):
-            response = self.client.post(
-                path,
-                data=data,
-                content_type="application/json",
-                QUERY_STRING=f"org_id={org_id}" if org_id is not None else "",
-            )
-        return response
-
-    def _patch_request(self, path, user, data, *, org_id=None):
-        data = json.dumps(data)
-        with ForceLogin(user, self.client):
-            response = self.client.patch(
-                path,
-                data=data,
-                content_type="application/json",
-                QUERY_STRING=f"org_id={org_id}" if org_id is not None else "",
-            )
-        return response
-
-    def _put_request(self, path, user, data, *, org_id=None):
-        data = json.dumps(data)
-        with ForceLogin(user, self.client):
-            response = self.client.put(
-                path,
-                data=data,
-                content_type="application/json",
-                QUERY_STRING=f"org_id={org_id}" if org_id is not None else "",
-            )
-        return response
-
     def _check_expected_keys_in_response_function(self, data):
         kind = data["kind"]
         if kind == "interactor":
             for key in expected_keys_in_response_function_interactor:
                 self.assertIn(key, data)
-        else:
-            for key in expected_keys_in_response_all_functions:
+        elif kind == "tracker":
+            for key in expected_keys_in_response_function_tracker:
                 self.assertIn(key, data)
 
-    def _delete_lambda_request(self, request_id: str, user: Optional[User] = None) -> None:
+        for key in expected_keys_in_response_all_functions:
+            self.assertIn(key, data)
+
+    def _delete_lambda_request(self, request_id: str, user: User | None = None) -> None:
         response = self._delete_request(f"{LAMBDA_REQUESTS_PATH}/{request_id}", user or self.admin)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+
+    def _wait_lambda_request(self, request_id: str, user: User | None = None) -> str:
+        request_status = "started"
+        while request_status != "finished" and request_status != "failed":
+            response = self._get_request(f"{LAMBDA_REQUESTS_PATH}/{request_id}", user or self.admin)
+            self.assertEqual(response.status_code, status.HTTP_200_OK)
+            request_status = response.json().get("status")
+
+        return request_status
+
+    def _get_payload_image_size(self, payload: dict) -> tuple[int, int]:
+        image_data = base64.b64decode(payload["image"])
+        with Image.open(io.BytesIO(image_data)) as image:
+            return image.size
 
 
 class LambdaTestCases(_LambdaTestCaseBase):
@@ -330,6 +316,7 @@ class LambdaTestCases(_LambdaTestCaseBase):
             id_function_detector,
             id_function_interactor,
             id_function_tracker,
+            id_function_tracker_with_supported_shape_types,
             id_function_reid_with_response_data,
         ]
 
@@ -410,7 +397,7 @@ class LambdaTestCases(_LambdaTestCaseBase):
                 "car": {"name": "car"},
             },
         }
-        response = self._post_request(LAMBDA_REQUESTS_PATH, self.admin, data_main_task)
+        response = self._post_request(LAMBDA_REQUESTS_PATH, self.admin, data=data_main_task)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         id_request = response.data["id"]
 
@@ -448,7 +435,7 @@ class LambdaTestCases(_LambdaTestCaseBase):
                 "car": {"name": "car"},
             },
         }
-        response = self._post_request(LAMBDA_REQUESTS_PATH, self.admin, data)
+        response = self._post_request(LAMBDA_REQUESTS_PATH, self.admin, data=data)
         id_request = response.data["id"]
 
         response = self._delete_request(f"{LAMBDA_REQUESTS_PATH}/{id_request}", None)
@@ -459,7 +446,7 @@ class LambdaTestCases(_LambdaTestCaseBase):
         response = self._get_request(f"{LAMBDA_REQUESTS_PATH}/{id_request}", self.admin)
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
-        response = self._post_request(LAMBDA_REQUESTS_PATH, self.admin, data)
+        response = self._post_request(LAMBDA_REQUESTS_PATH, self.admin, data=data)
         id_request = response.data["id"]
         response = self._delete_request(f"{LAMBDA_REQUESTS_PATH}/{id_request}", self.user)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
@@ -500,7 +487,7 @@ class LambdaTestCases(_LambdaTestCaseBase):
                 },
             }
 
-            response = self._post_request(LAMBDA_REQUESTS_PATH, self.admin, data_main_task)
+            response = self._post_request(LAMBDA_REQUESTS_PATH, self.admin, data=data_main_task)
             self.assertEqual(response.status_code, status.HTTP_200_OK)
             for key in expected_keys_in_response_requests:
                 self.assertIn(key, response.data)
@@ -508,7 +495,7 @@ class LambdaTestCases(_LambdaTestCaseBase):
             self._delete_lambda_request(response.data["id"])
 
             response = self._post_request(
-                LAMBDA_REQUESTS_PATH, self.user, data_assigneed_to_user_task
+                LAMBDA_REQUESTS_PATH, self.user, data=data_assigneed_to_user_task
             )
             self.assertEqual(response.status_code, status.HTTP_200_OK)
             for key in expected_keys_in_response_requests:
@@ -516,10 +503,10 @@ class LambdaTestCases(_LambdaTestCaseBase):
 
             self._delete_lambda_request(response.data["id"], self.user)
 
-            response = self._post_request(LAMBDA_REQUESTS_PATH, self.user, data_main_task)
+            response = self._post_request(LAMBDA_REQUESTS_PATH, self.user, data=data_main_task)
             self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
-            response = self._post_request(LAMBDA_REQUESTS_PATH, None, data_main_task)
+            response = self._post_request(LAMBDA_REQUESTS_PATH, None, data=data_main_task)
             self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_api_v2_lambda_requests_create_negative(self):
@@ -542,12 +529,12 @@ class LambdaTestCases(_LambdaTestCaseBase):
                 "cvat.apps.lambda_manager.views.LambdaGateway._http",
                 return_value=functions["negative"][id_func],
             ):
-                response = self._post_request(LAMBDA_REQUESTS_PATH, self.admin, data)
+                response = self._post_request(LAMBDA_REQUESTS_PATH, self.admin, data=data)
                 self.assertEqual(response.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     def test_api_v2_lambda_requests_create_empty_data(self):
         data = {}
-        response = self._post_request(LAMBDA_REQUESTS_PATH, self.admin, data)
+        response = self._post_request(LAMBDA_REQUESTS_PATH, self.admin, data=data)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_api_v2_lambda_requests_create_without_function(self):
@@ -558,7 +545,7 @@ class LambdaTestCases(_LambdaTestCaseBase):
                 "car": {"name": "car"},
             },
         }
-        response = self._post_request(LAMBDA_REQUESTS_PATH, self.admin, data)
+        response = self._post_request(LAMBDA_REQUESTS_PATH, self.admin, data=data)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_api_v2_lambda_requests_create_wrong_id_function(self):
@@ -570,7 +557,7 @@ class LambdaTestCases(_LambdaTestCaseBase):
                 "car": {"name": "car"},
             },
         }
-        response = self._post_request(LAMBDA_REQUESTS_PATH, self.admin, data)
+        response = self._post_request(LAMBDA_REQUESTS_PATH, self.admin, data=data)
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     @skip("Fail: add mock")
@@ -583,8 +570,8 @@ class LambdaTestCases(_LambdaTestCaseBase):
                 "car": {"name": "car"},
             },
         }
-        request_id = self._post_request(LAMBDA_REQUESTS_PATH, self.admin, data).data["id"]
-        response = self._post_request(LAMBDA_REQUESTS_PATH, self.admin, data)
+        request_id = self._post_request(LAMBDA_REQUESTS_PATH, self.admin, data=data).data["id"]
+        response = self._post_request(LAMBDA_REQUESTS_PATH, self.admin, data=data)
         self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
 
         self._delete_lambda_request(request_id)
@@ -596,7 +583,7 @@ class LambdaTestCases(_LambdaTestCaseBase):
             "cleanup": True,
             "mapping": {},
         }
-        response = self._post_request(LAMBDA_REQUESTS_PATH, self.admin, data)
+        response = self._post_request(LAMBDA_REQUESTS_PATH, self.admin, data=data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         for key in expected_keys_in_response_requests:
             self.assertIn(key, response.data)
@@ -611,7 +598,7 @@ class LambdaTestCases(_LambdaTestCaseBase):
                 "car": {"name": "car"},
             },
         }
-        response = self._post_request(LAMBDA_REQUESTS_PATH, self.admin, data)
+        response = self._post_request(LAMBDA_REQUESTS_PATH, self.admin, data=data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         for key in expected_keys_in_response_requests:
             self.assertIn(key, response.data)
@@ -624,7 +611,7 @@ class LambdaTestCases(_LambdaTestCaseBase):
             "task": self.main_task["id"],
             "cleanup": True,
         }
-        response = self._post_request(LAMBDA_REQUESTS_PATH, self.admin, data)
+        response = self._post_request(LAMBDA_REQUESTS_PATH, self.admin, data=data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         for key in expected_keys_in_response_requests:
             self.assertIn(key, response.data)
@@ -639,7 +626,7 @@ class LambdaTestCases(_LambdaTestCaseBase):
                 "car": {"name": "car"},
             },
         }
-        response = self._post_request(LAMBDA_REQUESTS_PATH, self.admin, data)
+        response = self._post_request(LAMBDA_REQUESTS_PATH, self.admin, data=data)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_api_v2_lambda_requests_create_wrong_id_task(self):
@@ -651,7 +638,7 @@ class LambdaTestCases(_LambdaTestCaseBase):
                 "car": {"name": "car"},
             },
         }
-        response = self._post_request(LAMBDA_REQUESTS_PATH, self.admin, data)
+        response = self._post_request(LAMBDA_REQUESTS_PATH, self.admin, data=data)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_api_v2_lambda_requests_create_is_not_ready(self):
@@ -667,7 +654,7 @@ class LambdaTestCases(_LambdaTestCaseBase):
                 },
             }
 
-            response = self._post_request(LAMBDA_REQUESTS_PATH, self.admin, data)
+            response = self._post_request(LAMBDA_REQUESTS_PATH, self.admin, data=data)
             self.assertEqual(response.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     def test_api_v2_lambda_functions_create_detector(self):
@@ -690,21 +677,147 @@ class LambdaTestCases(_LambdaTestCaseBase):
         }
 
         response = self._post_request(
-            f"{LAMBDA_FUNCTIONS_PATH}/{id_function_detector}", self.admin, data_main_task
+            f"{LAMBDA_FUNCTIONS_PATH}/{id_function_detector}", self.admin, data=data_main_task
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
         response = self._post_request(
             f"{LAMBDA_FUNCTIONS_PATH}/{id_function_detector}",
             self.user,
-            data_assigneed_to_user_task,
+            data=data_assigneed_to_user_task,
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
         response = self._post_request(
-            f"{LAMBDA_FUNCTIONS_PATH}/{id_function_detector}", None, data_main_task
+            f"{LAMBDA_FUNCTIONS_PATH}/{id_function_detector}", None, data=data_main_task
         )
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_api_v2_lambda_functions_create_detector_with_roi(self):
+        roi = [11, 13, 31, 43]
+
+        def invoke_detector_with_roi(func, payload):
+            self.assertEqual(func.id, id_function_detector)
+            self.assertEqual(self._get_payload_image_size(payload), (20, 30))
+            return [
+                {
+                    "confidence": "0.9959098",
+                    "label": "car",
+                    "points": [1, 2, 5, 6],
+                    "type": "rectangle",
+                },
+            ]
+
+        data = {
+            "task": self.main_task["id"],
+            "frame": 0,
+            "mapping": {
+                "car": {"name": "car"},
+            },
+            "roi": roi,
+        }
+
+        with mock.patch(
+            "cvat.apps.lambda_manager.views.LambdaGateway.invoke",
+            side_effect=invoke_detector_with_roi,
+        ):
+            response = self._post_request(
+                f"{LAMBDA_FUNCTIONS_PATH}/{id_function_detector}", self.admin, data=data
+            )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK, response.content)
+        self.assertEqual(response.json()["shapes"][0]["points"], [12.0, 15.0, 16.0, 19.0])
+
+    def test_api_v2_lambda_requests_create_detector_with_roi(self):
+        roi = [10, 20, 30, 50]
+
+        def invoke_detector_with_roi(func, payload):
+            self.assertEqual(func.id, id_function_detector)
+            self.assertEqual(self._get_payload_image_size(payload), (20, 30))
+            return [
+                {
+                    "confidence": "0.9959098",
+                    "label": "car",
+                    "points": [3, 4, 15, 16],
+                    "type": "rectangle",
+                },
+            ]
+
+        data = {
+            "function": id_function_detector,
+            "task": self.main_task["id"],
+            "cleanup": True,
+            "mapping": {
+                "car": {"name": "car"},
+            },
+            "roi": roi,
+        }
+
+        with mock.patch(
+            "cvat.apps.lambda_manager.views.LambdaGateway.invoke",
+            side_effect=invoke_detector_with_roi,
+        ) as mock_invoke:
+            response = self._post_request(LAMBDA_REQUESTS_PATH, self.admin, data=data)
+            self.assertEqual(response.status_code, status.HTTP_200_OK, response.content)
+            request_id = response.data["id"]
+
+            request_status = self._wait_lambda_request(request_id)
+            self.assertEqual(request_status, "finished")
+
+        self.assertEqual(mock_invoke.call_count, 3)
+        self._delete_lambda_request(request_id)
+
+        response = self._get_request(f'/api/tasks/{self.main_task["id"]}/annotations', self.admin)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        shapes = response.json()["shapes"]
+        self.assertEqual(len(shapes), 3)
+        for shape in shapes:
+            self.assertEqual(shape["points"], [13.0, 24.0, 25.0, 36.0])
+
+    def test_api_v2_lambda_functions_detector_invalid_roi(self):
+        invalid_rois = {
+            "too_few_coordinates": [0, 0, 10],
+            "too_many_coordinates": [0, 0, 10, 10, 10],
+            "negative_coordinate": [-1, 0, 10, 10],
+            "zero_width": [10, 10, 10, 20],
+            "zero_height": [10, 10, 20, 10],
+            "outside_image": [0, 0, 101, 100],
+        }
+
+        with mock.patch("cvat.apps.lambda_manager.views.LambdaGateway.invoke") as mock_invoke:
+            for name, roi in invalid_rois.items():
+                with self.subTest(path="request", roi=name):
+                    response = self._post_request(
+                        LAMBDA_REQUESTS_PATH,
+                        self.admin,
+                        data={
+                            "function": id_function_detector,
+                            "task": self.main_task["id"],
+                            "mapping": {
+                                "car": {"name": "car"},
+                            },
+                            "roi": roi,
+                        },
+                    )
+                    self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+                with self.subTest(path="call", roi=name):
+                    response = self._post_request(
+                        f"{LAMBDA_FUNCTIONS_PATH}/{id_function_detector}",
+                        self.admin,
+                        data={
+                            "task": self.main_task["id"],
+                            "frame": 0,
+                            "mapping": {
+                                "car": {"name": "car"},
+                            },
+                            "roi": roi,
+                        },
+                    )
+                    self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+            mock_invoke.assert_not_called()
 
     @skip(
         "Fail: expected result != actual result"
@@ -719,7 +832,7 @@ class LambdaTestCases(_LambdaTestCaseBase):
             },
         }
         response = self._post_request(
-            f"{LAMBDA_FUNCTIONS_PATH}/{id_function_detector}", self.user, data
+            f"{LAMBDA_FUNCTIONS_PATH}/{id_function_detector}", self.user, data=data
         )
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
@@ -759,58 +872,124 @@ class LambdaTestCases(_LambdaTestCaseBase):
         }
 
         response = self._post_request(
-            f"{LAMBDA_FUNCTIONS_PATH}/{id_function_interactor}", self.admin, data_main_task
+            f"{LAMBDA_FUNCTIONS_PATH}/{id_function_interactor}", self.admin, data=data_main_task
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
         response = self._post_request(
             f"{LAMBDA_FUNCTIONS_PATH}/{id_function_interactor}",
             self.user,
-            data_assigneed_to_user_task,
+            data=data_assigneed_to_user_task,
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
         response = self._post_request(
-            f"{LAMBDA_FUNCTIONS_PATH}/{id_function_interactor}", None, data_main_task
+            f"{LAMBDA_FUNCTIONS_PATH}/{id_function_interactor}", None, data=data_main_task
         )
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
-    def test_api_v2_lambda_functions_create_tracker(self):
-        data_main_task = {
+    def test_api_v2_lambda_functions_create_interactor_with_roi(self):
+        roi = [10, 20, 30, 50]
+
+        def invoke_interactor_with_roi(func, payload):
+            self.assertEqual(func.id, id_function_interactor)
+            self.assertEqual(self._get_payload_image_size(payload), (20, 30))
+            self.assertEqual(payload["pos_points"], [[2, 3], [19, 29]])
+            self.assertEqual(payload["neg_points"], [[1, 2]])
+            self.assertEqual(payload["obj_bbox"], [[0, 0], [20, 30]])
+            return {
+                "shapes": [
+                    {
+                        "type": "polygon",
+                        "points": [1, 2, 3, 4, 5, 6],
+                    },
+                ],
+            }
+
+        data = {
             "task": self.main_task["id"],
             "frame": 0,
-            "shape": [
-                12.12,
-                34.45,
-                54.0,
-                76.12,
-            ],
+            "pos_points": [[12, 23], [29, 49]],
+            "neg_points": [[11, 22]],
+            "obj_bbox": [[10, 20], [30, 50]],
+            "roi": roi,
         }
-        data_assigneed_to_user_task = {
-            "task": self.assigneed_to_user_task["id"],
+
+        with mock.patch(
+            "cvat.apps.lambda_manager.views.LambdaGateway.invoke",
+            side_effect=invoke_interactor_with_roi,
+        ):
+            response = self._post_request(
+                f"{LAMBDA_FUNCTIONS_PATH}/{id_function_interactor}", self.admin, data=data
+            )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK, response.content)
+        self.assertEqual(response.json()["shapes"][0]["points"], [11, 22, 13, 24, 15, 26])
+
+    def test_api_v2_lambda_functions_create_tracker(self):
+        for id_func in [
+            id_function_tracker,
+            id_function_tracker_with_supported_shape_types,
+        ]:
+            data_main_task = {
+                "task": self.main_task["id"],
+                "frame": 0,
+                "shapes": [{"type": "rectangle", "points": [12.12, 34.45, 54.0, 76.12]}],
+            }
+            data_assigneed_to_user_task = {
+                "task": self.assigneed_to_user_task["id"],
+                "frame": 0,
+                "shapes": [{"type": "rectangle", "points": [12.12, 34.45, 54.0, 76.12]}],
+            }
+
+            response = self._post_request(
+                f"{LAMBDA_FUNCTIONS_PATH}/{id_func}", self.admin, data=data_main_task
+            )
+            self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+            response = self._post_request(
+                f"{LAMBDA_FUNCTIONS_PATH}/{id_func}",
+                self.user,
+                data=data_assigneed_to_user_task,
+            )
+            self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+            response = self._post_request(
+                f"{LAMBDA_FUNCTIONS_PATH}/{id_func}", None, data=data_main_task
+            )
+            self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_api_v2_lambda_functions_create_tracker_bad_signature(self):
+        signer = TimestampSigner(key="bad key")
+
+        data = {
+            "task": self.main_task["id"],
             "frame": 0,
-            "shape": [
-                12.12,
-                34.45,
-                54.0,
-                76.12,
-            ],
+            "states": [signer.sign("{}")],
         }
 
         response = self._post_request(
-            f"{LAMBDA_FUNCTIONS_PATH}/{id_function_tracker}", self.admin, data_main_task
+            f"{LAMBDA_FUNCTIONS_PATH}/{id_function_tracker}", self.admin, data=data
         )
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("Invalid or expired tracker state", response.content.decode("UTF-8"))
 
-        response = self._post_request(
-            f"{LAMBDA_FUNCTIONS_PATH}/{id_function_tracker}", self.user, data_assigneed_to_user_task
-        )
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+    def test_api_v2_lambda_functions_create_tracker_unsupported_shape_type(self):
+        for id_func in [
+            id_function_tracker,
+            id_function_tracker_with_supported_shape_types,
+        ]:
+            data = {
+                "task": self.main_task["id"],
+                "frame": 0,
+                "shapes": [{"type": "points", "points": [1, 2, 3, 4]}],
+            }
 
-        response = self._post_request(
-            f"{LAMBDA_FUNCTIONS_PATH}/{id_function_tracker}", None, data_main_task
-        )
-        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+            response = self._post_request(
+                f"{LAMBDA_FUNCTIONS_PATH}/{id_func}", self.admin, data=data
+            )
+            self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+            self.assertIn("This function does not support shapes", response.content.decode("UTF-8"))
 
     def test_api_v2_lambda_functions_create_reid(self):
         data_main_task = {
@@ -818,66 +997,58 @@ class LambdaTestCases(_LambdaTestCaseBase):
             "frame0": 0,
             "frame1": 1,
             "boxes0": [
-                OrderedDict(
-                    [
-                        ("attributes", []),
-                        ("frame", 0),
-                        ("group", None),
-                        ("id", 11258),
-                        ("label_id", 8),
-                        ("occluded", False),
-                        ("path_id", 0),
-                        ("points", [137.0, 129.0, 457.0, 676.0]),
-                        ("source", "auto"),
-                        ("type", "rectangle"),
-                        ("z_order", 0),
-                    ]
-                ),
-                OrderedDict(
-                    [
-                        ("attributes", []),
-                        ("frame", 0),
-                        ("group", None),
-                        ("id", 11259),
-                        ("label_id", 8),
-                        ("occluded", False),
-                        ("path_id", 1),
-                        ("points", [1511.0, 224.0, 1537.0, 437.0]),
-                        ("source", "auto"),
-                        ("type", "rectangle"),
-                        ("z_order", 0),
-                    ]
-                ),
+                {
+                    "attributes": [],
+                    "frame": 0,
+                    "group": None,
+                    "id": 11258,
+                    "label_id": 8,
+                    "occluded": False,
+                    "path_id": 0,
+                    "points": [137.0, 129.0, 457.0, 676.0],
+                    "source": "auto",
+                    "type": "rectangle",
+                    "z_order": 0,
+                },
+                {
+                    "attributes": [],
+                    "frame": 0,
+                    "group": None,
+                    "id": 11259,
+                    "label_id": 8,
+                    "occluded": False,
+                    "path_id": 1,
+                    "points": [1511.0, 224.0, 1537.0, 437.0],
+                    "source": "auto",
+                    "type": "rectangle",
+                    "z_order": 0,
+                },
             ],
             "boxes1": [
-                OrderedDict(
-                    [
-                        ("attributes", []),
-                        ("frame", 1),
-                        ("group", None),
-                        ("id", 11260),
-                        ("label_id", 8),
-                        ("occluded", False),
-                        ("points", [1076.0, 199.0, 1218.0, 593.0]),
-                        ("source", "auto"),
-                        ("type", "rectangle"),
-                        ("z_order", 0),
-                    ]
-                ),
-                OrderedDict(
-                    [
-                        ("attributes", []),
-                        ("frame", 1),
-                        ("group", None),
-                        ("id", 11261),
-                        ("label_id", 8),
-                        ("occluded", False),
-                        ("points", [924.0, 177.0, 1090.0, 615.0]),
-                        ("source", "auto"),
-                        ("type", "rectangle"),
-                        ("z_order", 0),
-                    ]
-                ),
+                {
+                    "attributes": [],
+                    "frame": 1,
+                    "group": None,
+                    "id": 11260,
+                    "label_id": 8,
+                    "occluded": False,
+                    "points": [1076.0, 199.0, 1218.0, 593.0],
+                    "source": "auto",
+                    "type": "rectangle",
+                    "z_order": 0,
+                },
+                {
+                    "attributes": [],
+                    "frame": 1,
+                    "group": None,
+                    "id": 11261,
+                    "label_id": 8,
+                    "occluded": False,
+                    "points": [924.0, 177.0, 1090.0, 615.0],
+                    "source": "auto",
+                    "type": "rectangle",
+                    "z_order": 0,
+                },
             ],
             "threshold": 0.5,
             "max_distance": 55,
@@ -887,119 +1058,110 @@ class LambdaTestCases(_LambdaTestCaseBase):
             "frame0": 0,
             "frame1": 1,
             "boxes0": [
-                OrderedDict(
-                    [
-                        ("attributes", []),
-                        ("frame", 0),
-                        ("group", None),
-                        ("id", 11258),
-                        ("label_id", 8),
-                        ("occluded", False),
-                        ("path_id", 0),
-                        ("points", [137.0, 129.0, 457.0, 676.0]),
-                        ("source", "auto"),
-                        ("type", "rectangle"),
-                        ("z_order", 0),
-                    ]
-                ),
-                OrderedDict(
-                    [
-                        ("attributes", []),
-                        ("frame", 0),
-                        ("group", None),
-                        ("id", 11259),
-                        ("label_id", 8),
-                        ("occluded", False),
-                        ("path_id", 1),
-                        ("points", [1511.0, 224.0, 1537.0, 437.0]),
-                        ("source", "auto"),
-                        ("type", "rectangle"),
-                        ("z_order", 0),
-                    ]
-                ),
+                {
+                    "attributes": [],
+                    "frame": 0,
+                    "group": None,
+                    "id": 11258,
+                    "label_id": 8,
+                    "occluded": False,
+                    "path_id": 0,
+                    "points": [137.0, 129.0, 457.0, 676.0],
+                    "source": "auto",
+                    "type": "rectangle",
+                    "z_order": 0,
+                },
+                {
+                    "attributes": [],
+                    "frame": 0,
+                    "group": None,
+                    "id": 11259,
+                    "label_id": 8,
+                    "occluded": False,
+                    "path_id": 1,
+                    "points": [1511.0, 224.0, 1537.0, 437.0],
+                    "source": "auto",
+                    "type": "rectangle",
+                    "z_order": 0,
+                },
             ],
             "boxes1": [
-                OrderedDict(
-                    [
-                        ("attributes", []),
-                        ("frame", 1),
-                        ("group", None),
-                        ("id", 11260),
-                        ("label_id", 8),
-                        ("occluded", False),
-                        ("points", [1076.0, 199.0, 1218.0, 593.0]),
-                        ("source", "auto"),
-                        ("type", "rectangle"),
-                        ("z_order", 0),
-                    ]
-                ),
-                OrderedDict(
-                    [
-                        ("attributes", []),
-                        ("frame", 1),
-                        ("group", 0),
-                        ("id", 11398),
-                        ("label_id", 8),
-                        ("occluded", False),
-                        (
-                            "points",
-                            [
-                                184.3935546875,
-                                211.5048828125,
-                                331.64968722073354,
-                                97.27792672028772,
-                                445.87667560321825,
-                                126.17873100983161,
-                                454.13404825737416,
-                                691.8087578194827,
-                                180.26452189455085,
-                            ],
-                        ),
-                        ("source", "manual"),
-                        ("type", "polygon"),
-                        ("z_order", 0),
-                    ]
-                ),
+                {
+                    "attributes": [],
+                    "frame": 1,
+                    "group": None,
+                    "id": 11260,
+                    "label_id": 8,
+                    "occluded": False,
+                    "points": [1076.0, 199.0, 1218.0, 593.0],
+                    "source": "auto",
+                    "type": "rectangle",
+                    "z_order": 0,
+                },
+                {
+                    "attributes": [],
+                    "frame": 1,
+                    "group": 0,
+                    "id": 11398,
+                    "label_id": 8,
+                    "occluded": False,
+                    "points": [
+                        184.3935546875,
+                        211.5048828125,
+                        331.64968722073354,
+                        97.27792672028772,
+                        445.87667560321825,
+                        126.17873100983161,
+                        454.13404825737416,
+                        691.8087578194827,
+                        180.26452189455085,
+                    ],
+                    "source": "manual",
+                    "type": "polygon",
+                    "z_order": 0,
+                },
             ],
         }
 
         response = self._post_request(
             f"{LAMBDA_FUNCTIONS_PATH}/{id_function_reid_with_response_data}",
             self.admin,
-            data_main_task,
+            data=data_main_task,
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
         response = self._post_request(
             f"{LAMBDA_FUNCTIONS_PATH}/{id_function_reid_with_response_data}",
             self.user,
-            data_assigneed_to_user_task,
+            data=data_assigneed_to_user_task,
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
         response = self._post_request(
-            f"{LAMBDA_FUNCTIONS_PATH}/{id_function_reid_with_response_data}", None, data_main_task
+            f"{LAMBDA_FUNCTIONS_PATH}/{id_function_reid_with_response_data}",
+            None,
+            data=data_main_task,
         )
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
         response = self._post_request(
             f"{LAMBDA_FUNCTIONS_PATH}/{id_function_reid_with_no_response_data}",
             self.admin,
-            data_main_task,
+            data=data_main_task,
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
         response = self._post_request(
             f"{LAMBDA_FUNCTIONS_PATH}/{id_function_reid_with_no_response_data}",
             self.user,
-            data_assigneed_to_user_task,
+            data=data_assigneed_to_user_task,
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
         response = self._post_request(
             f"{LAMBDA_FUNCTIONS_PATH}/{id_function_reid_with_no_response_data}",
             None,
-            data_main_task,
+            data=data_main_task,
         )
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
@@ -1024,7 +1186,7 @@ class LambdaTestCases(_LambdaTestCaseBase):
                 return_value=functions["negative"][id_func],
             ):
                 response = self._post_request(
-                    f"{LAMBDA_FUNCTIONS_PATH}/{id_func}", self.admin, data
+                    f"{LAMBDA_FUNCTIONS_PATH}/{id_func}", self.admin, data=data
                 )
                 self.assertEqual(response.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
 
@@ -1037,7 +1199,7 @@ class LambdaTestCases(_LambdaTestCaseBase):
                 "car": {"name": "car"},
             },
         }
-        response = self._post_request(LAMBDA_REQUESTS_PATH, self.admin, data_main_task)
+        response = self._post_request(LAMBDA_REQUESTS_PATH, self.admin, data=data_main_task)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         id_request = response.data["id"]
 
@@ -1061,7 +1223,7 @@ class LambdaTestCases(_LambdaTestCaseBase):
     def test_api_v2_lambda_functions_create_empty_data(self):
         data = {}
         response = self._post_request(
-            f"{LAMBDA_FUNCTIONS_PATH}/{id_function_detector}", self.admin, data
+            f"{LAMBDA_FUNCTIONS_PATH}/{id_function_detector}", self.admin, data=data
         )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
@@ -1073,7 +1235,7 @@ class LambdaTestCases(_LambdaTestCaseBase):
             "mapping": {},
         }
         response = self._post_request(
-            f"{LAMBDA_FUNCTIONS_PATH}/{id_function_detector}", self.admin, data
+            f"{LAMBDA_FUNCTIONS_PATH}/{id_function_detector}", self.admin, data=data
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
@@ -1086,7 +1248,7 @@ class LambdaTestCases(_LambdaTestCaseBase):
             },
         }
         response = self._post_request(
-            f"{LAMBDA_FUNCTIONS_PATH}/{id_function_detector}", self.admin, data
+            f"{LAMBDA_FUNCTIONS_PATH}/{id_function_detector}", self.admin, data=data
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
@@ -1097,7 +1259,7 @@ class LambdaTestCases(_LambdaTestCaseBase):
             "cleanup": True,
         }
         response = self._post_request(
-            f"{LAMBDA_FUNCTIONS_PATH}/{id_function_detector}", self.admin, data
+            f"{LAMBDA_FUNCTIONS_PATH}/{id_function_detector}", self.admin, data=data
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
@@ -1108,10 +1270,12 @@ class LambdaTestCases(_LambdaTestCaseBase):
             "mapping": {"person": {"name": "person"}},
         }
         response = self._post_request(
-            f"{LAMBDA_FUNCTIONS_PATH}/{id_function_detector}", self.admin, data
+            f"{LAMBDA_FUNCTIONS_PATH}/{id_function_detector}", self.admin, data=data
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.json(), [])
+
+        annotations = response.json()
+        self.assertEqual(annotations["shapes"], [])
 
     def test_api_v2_lambda_functions_create_detector_without_task(self):
         data = {
@@ -1122,7 +1286,7 @@ class LambdaTestCases(_LambdaTestCaseBase):
             },
         }
         response = self._post_request(
-            f"{LAMBDA_FUNCTIONS_PATH}/{id_function_detector}", self.admin, data
+            f"{LAMBDA_FUNCTIONS_PATH}/{id_function_detector}", self.admin, data=data
         )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
@@ -1135,7 +1299,7 @@ class LambdaTestCases(_LambdaTestCaseBase):
             },
         }
         response = self._post_request(
-            f"{LAMBDA_FUNCTIONS_PATH}/{id_function_detector}", self.admin, data
+            f"{LAMBDA_FUNCTIONS_PATH}/{id_function_detector}", self.admin, data=data
         )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
@@ -1149,7 +1313,7 @@ class LambdaTestCases(_LambdaTestCaseBase):
             },
         }
         response = self._post_request(
-            f"{LAMBDA_FUNCTIONS_PATH}/test-functions-wrong-id", self.admin, data
+            f"{LAMBDA_FUNCTIONS_PATH}/test-functions-wrong-id", self.admin, data=data
         )
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
@@ -1163,7 +1327,7 @@ class LambdaTestCases(_LambdaTestCaseBase):
             },
         }
         response = self._post_request(
-            f"{LAMBDA_FUNCTIONS_PATH}/{id_function_detector}", self.admin, data
+            f"{LAMBDA_FUNCTIONS_PATH}/{id_function_detector}", self.admin, data=data
         )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
@@ -1178,7 +1342,7 @@ class LambdaTestCases(_LambdaTestCaseBase):
             },
         }
         response = self._post_request(
-            f"{LAMBDA_FUNCTIONS_PATH}/{id_function_detector}", self.admin, data
+            f"{LAMBDA_FUNCTIONS_PATH}/{id_function_detector}", self.admin, data=data
         )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
@@ -1192,9 +1356,9 @@ class LambdaTestCases(_LambdaTestCaseBase):
                 "car": {"name": "car"},
             },
         }
-        self._post_request(f"{LAMBDA_FUNCTIONS_PATH}/{id_function_detector}", self.admin, data)
+        self._post_request(f"{LAMBDA_FUNCTIONS_PATH}/{id_function_detector}", self.admin, data=data)
         response = self._post_request(
-            f"{LAMBDA_FUNCTIONS_PATH}/{id_function_detector}", self.admin, data
+            f"{LAMBDA_FUNCTIONS_PATH}/{id_function_detector}", self.admin, data=data
         )
         self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
 
@@ -1208,12 +1372,12 @@ class LambdaTestCases(_LambdaTestCaseBase):
             },
         }
         response = self._post_request(
-            f"{LAMBDA_FUNCTIONS_PATH}/{id_function_state_building}", self.admin, data
+            f"{LAMBDA_FUNCTIONS_PATH}/{id_function_state_building}", self.admin, data=data
         )
         self.assertEqual(response.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         response = self._post_request(
-            f"{LAMBDA_FUNCTIONS_PATH}/{id_function_state_error}", self.admin, data
+            f"{LAMBDA_FUNCTIONS_PATH}/{id_function_state_error}", self.admin, data=data
         )
         self.assertEqual(response.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
 
@@ -1281,13 +1445,17 @@ class TestComplexFrameSetupCases(_LambdaTestCaseBase):
 
         self.labels = get_paginated_collection(
             lambda page: self._get_request(
-                f"/api/labels?task_id={self.task['id']}&page={page}&sort=id", self.admin
+                "/api/labels",
+                self.admin,
+                query_params={"task_id": self.task["id"], "page": page, "sort": "id"},
             )
         )
 
         self.jobs = get_paginated_collection(
             lambda page: self._get_request(
-                f"/api/jobs?task_id={self.task['id']}&page={page}", self.admin
+                "/api/jobs",
+                self.admin,
+                query_params={"task_id": self.task["id"], "page": page},
             )
         )
 
@@ -1301,7 +1469,7 @@ class TestComplexFrameSetupCases(_LambdaTestCaseBase):
 
     def _run_offline_function(self, function_id, data, user):
         data["function"] = function_id
-        response = self._post_request(LAMBDA_REQUESTS_PATH, user, data)
+        response = self._post_request(LAMBDA_REQUESTS_PATH, user, data=data)
         self.assertEqual(response.status_code, status.HTTP_200_OK, response.content)
         request_id = response.json()["id"]
 
@@ -1319,7 +1487,7 @@ class TestComplexFrameSetupCases(_LambdaTestCaseBase):
         return request_status
 
     def _run_online_function(self, function_id, data, user):
-        response = self._post_request(f"{LAMBDA_FUNCTIONS_PATH}/{function_id}", user, data)
+        response = self._post_request(f"{LAMBDA_FUNCTIONS_PATH}/{function_id}", user, data=data)
         return response
 
     def test_can_run_offline_detector_function_on_whole_task(self):
@@ -1514,8 +1682,7 @@ class TestComplexFrameSetupCases(_LambdaTestCaseBase):
 
         response = self._get_request(f'/api/tasks/{self.task["id"]}/annotations', self.admin)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        annotations = response.json()
-        self.assertEqual(annotations, {"version": 0, "tags": [], "shapes": [], "tracks": []})
+        check_annotation_response(self, response, {})
 
     def test_can_run_offline_reid_function_on_whole_gt_job(self):
         requested_frame_range = self.task_rel_frame_range[::3]
@@ -1589,8 +1756,7 @@ class TestComplexFrameSetupCases(_LambdaTestCaseBase):
 
         response = self._get_request(f'/api/tasks/{self.task["id"]}/annotations', self.admin)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        annotations = response.json()
-        self.assertEqual(annotations, {"version": 0, "tags": [], "shapes": [], "tracks": []})
+        check_annotation_response(self, response, {})
 
     def test_offline_function_run_on_task_does_not_affect_gt_job(self):
         response = self._post_request(
@@ -1624,8 +1790,7 @@ class TestComplexFrameSetupCases(_LambdaTestCaseBase):
 
         response = self._get_request(f'/api/jobs/{job["id"]}/annotations', self.admin)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        annotations = response.json()
-        self.assertEqual(annotations, {"version": 0, "tags": [], "shapes": [], "tracks": []})
+        check_annotation_response(self, response, {})
 
     def test_can_run_online_function_on_valid_task_frame(self):
         data = self.common_request_data.copy()
@@ -1636,7 +1801,7 @@ class TestComplexFrameSetupCases(_LambdaTestCaseBase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
         annotations = response.json()
-        self.assertEqual(1, len(annotations))
+        self.assertEqual(1, len(annotations["shapes"]))
 
     def test_can_run_online_function_on_invalid_task_frame(self):
         data = self.common_request_data.copy()
@@ -1657,7 +1822,7 @@ class TestComplexFrameSetupCases(_LambdaTestCaseBase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
         annotations = response.json()
-        self.assertEqual(1, len(annotations))
+        self.assertEqual(1, len(annotations["shapes"]))
 
     def test_can_run_online_function_on_invalid_job_frame(self):
         data = self.common_request_data.copy()
@@ -1699,33 +1864,29 @@ class Issue4996_Cases(_LambdaTestCaseBase):
                     "email": user["email"],
                     "role": role,
                 },
-                org_id=org["id"],
+                query_params={"org_id": org["id"]},
             )
             assert invitation.status_code == status.HTTP_201_CREATED
 
         return org
 
-    def _set_task_assignee(
-        self, task: int, assignee: Optional[int], *, org_id: Optional[int] = None
-    ):
+    def _set_task_assignee(self, task: int, assignee: int | None):
         response = self._patch_request(
             f"/api/tasks/{task}",
             user=self.admin,
             data={
                 "assignee_id": assignee,
             },
-            org_id=org_id,
         )
         assert response.status_code == status.HTTP_200_OK
 
-    def _set_job_assignee(self, job: int, assignee: Optional[int], *, org_id: Optional[int] = None):
+    def _set_job_assignee(self, job: int, assignee: int | None):
         response = self._patch_request(
             f"/api/jobs/{job}",
             user=self.admin,
             data={
                 "assignee": assignee,
             },
-            org_id=org_id,
         )
         assert response.status_code == status.HTTP_200_OK
 
@@ -1744,9 +1905,9 @@ class Issue4996_Cases(_LambdaTestCaseBase):
 
         jobs = get_paginated_collection(
             lambda page: self._get_request(
-                f"/api/jobs?task_id={self.task['id']}&page={page}",
+                "/api/jobs",
                 self.admin,
-                org_id=self.org["id"],
+                query_params={"task_id": self.task["id"], "page": page, "org_id": self.org["id"]},
             )
         )
         self.job = jobs[1]
@@ -1777,57 +1938,71 @@ class Issue4996_Cases(_LambdaTestCaseBase):
     ):
         data = self.common_request_data.copy()
         with self.subTest(job=None, assignee=None):
-            response = self._post_request(self.function_url, self.user, data, org_id=self.org["id"])
+            response = self._post_request(
+                self.function_url, self.user, data=data, query_params={"org_id": self.org["id"]}
+            )
             self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_can_call_function_for_job_worker_in_org__deny_unassigned_worker_with_job_request(self):
         data = self._get_valid_job_request_data()
         with self.subTest(job="defined", assignee=None):
-            response = self._post_request(self.function_url, self.user, data, org_id=self.org["id"])
+            response = self._post_request(
+                self.function_url, self.user, data=data, query_params={"org_id": self.org["id"]}
+            )
             self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_can_call_function_for_job_worker_in_org__allow_task_assigned_worker_with_task_request(
         self,
     ):
-        self._set_task_assignee(self.task["id"], self.user.id, org_id=self.org["id"])
+        self._set_task_assignee(self.task["id"], self.user.id)
 
         data = self.common_request_data.copy()
         with self.subTest(job=None, assignee="task"):
-            response = self._post_request(self.function_url, self.user, data, org_id=self.org["id"])
+            response = self._post_request(
+                self.function_url, self.user, data=data, query_params={"org_id": self.org["id"]}
+            )
             self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_can_call_function_for_job_worker_in_org__deny_job_assigned_worker_with_task_request(
         self,
     ):
-        self._set_job_assignee(self.job["id"], self.user.id, org_id=self.org["id"])
+        self._set_job_assignee(self.job["id"], self.user.id)
 
         data = self.common_request_data.copy()
         with self.subTest(job=None, assignee="job"):
-            response = self._post_request(self.function_url, self.user, data, org_id=self.org["id"])
+            response = self._post_request(
+                self.function_url, self.user, data=data, query_params={"org_id": self.org["id"]}
+            )
             self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_can_call_function_for_job_worker_in_org__allow_job_assigned_worker_with_job_request(
         self,
     ):
-        self._set_job_assignee(self.job["id"], self.user.id, org_id=self.org["id"])
+        self._set_job_assignee(self.job["id"], self.user.id)
 
         data = self._get_valid_job_request_data()
         with self.subTest(job="defined", assignee="job"):
-            response = self._post_request(self.function_url, self.user, data, org_id=self.org["id"])
+            response = self._post_request(
+                self.function_url, self.user, data=data, query_params={"org_id": self.org["id"]}
+            )
             self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_can_check_job_boundaries_in_function_call__fail_for_frame_outside_job(self):
-        self._set_job_assignee(self.job["id"], self.user.id, org_id=self.org["id"])
+        self._set_job_assignee(self.job["id"], self.user.id)
 
         data = self._get_invalid_job_request_data()
         with self.subTest(job="defined", frame="outside"):
-            response = self._post_request(self.function_url, self.user, data, org_id=self.org["id"])
+            response = self._post_request(
+                self.function_url, self.user, data=data, query_params={"org_id": self.org["id"]}
+            )
             self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_can_check_job_boundaries_in_function_call__ok_for_frame_inside_job(self):
-        self._set_job_assignee(self.job["id"], self.user.id, org_id=self.org["id"])
+        self._set_job_assignee(self.job["id"], self.user.id)
 
         data = self._get_valid_job_request_data()
         with self.subTest(job="defined", frame="inside"):
-            response = self._post_request(self.function_url, self.user, data, org_id=self.org["id"])
+            response = self._post_request(
+                self.function_url, self.user, data=data, query_params={"org_id": self.org["id"]}
+            )
             self.assertEqual(response.status_code, status.HTTP_200_OK)

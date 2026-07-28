@@ -4,28 +4,28 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
+import dayjs from 'dayjs';
 
 import { Row, Col } from 'antd/lib/grid';
-import { useDispatch } from 'react-redux';
-
 import Card from 'antd/lib/card';
 import Text from 'antd/lib/typography/Text';
 import Progress from 'antd/lib/progress';
 import { MoreOutlined } from '@ant-design/icons';
-import Dropdown from 'antd/lib/dropdown';
 import Button from 'antd/lib/button';
 import { MenuProps } from 'antd/lib/menu';
+import { BaseType } from 'antd/lib/typography/Base';
 
 import { RQStatus, Request } from 'cvat-core-wrapper';
+import { useContextMenuClick } from 'utils/hooks';
 
-import moment from 'moment';
-import { cancelRequestAsync } from 'actions/requests-async-actions';
-import { requestsActions } from 'actions/requests-actions';
 import StatusMessage from './request-status';
+import RequestActionsComponent from './actions-menu';
 
 export interface Props {
     request: Request;
-    disabled: boolean;
+    cancelled: boolean;
+    selected?: boolean;
+    onClick?: (event?: React.MouseEvent) => void;
 }
 
 function constructLink(request: Request): string | null {
@@ -49,7 +49,7 @@ function constructLink(request: Request): string | null {
     return null;
 }
 
-function constructName(operation: typeof Request['operation']): string | null {
+function constructName(operation: Request['operation']): string | null {
     const {
         target, jobID, taskID, projectID,
     } = operation;
@@ -66,11 +66,23 @@ function constructName(operation: typeof Request['operation']): string | null {
     return null;
 }
 
+function constructTypeText(type: string): string {
+    return type.split(':').map((word) => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+}
+
+function renderEllipsisText(text: string, type?: BaseType): JSX.Element {
+    return (
+        <Text ellipsis={{ tooltip: text }} type={type}>
+            {text}
+        </Text>
+    );
+}
+
 function constructTimestamps(request: Request): JSX.Element {
-    const started = moment(request.startedDate).format('MMM Do YY, H:mm');
-    const finished = moment(request.finishedDate).format('MMM Do YY, H:mm');
-    const created = moment(request.createdDate).format('MMM Do YY, H:mm');
-    const expired = moment(request.expiryDate).format('MMM Do YY, H:mm');
+    const started = dayjs(request.startedDate).format('MMM Do YY, H:mm');
+    const finished = dayjs(request.finishedDate).format('MMM Do YY, H:mm');
+    const created = dayjs(request.createdDate).format('MMM Do YY, H:mm');
+    const expired = dayjs(request.expiryDate).format('MMM Do YY, H:mm');
     const { operation: { type }, url } = request;
 
     switch (request.status) {
@@ -80,7 +92,7 @@ function constructTimestamps(request: Request): JSX.Element {
                 return (
                     <>
                         <Row>
-                            <Text type='secondary'>{`Started by ${request.owner.username} on ${started}`}</Text>
+                            {renderEllipsisText(`Started by ${request.owner.username} on ${started}`, 'secondary')}
                         </Row>
                         <Row>
                             <Text type='secondary'>{`Expires on ${expired}`}</Text>
@@ -91,7 +103,7 @@ function constructTimestamps(request: Request): JSX.Element {
             return (
                 <>
                     <Row>
-                        <Text type='secondary'>{`Started by ${request.owner.username} on ${started}`}</Text>
+                        {renderEllipsisText(`Started by ${request.owner.username} on ${started}`, 'secondary')}
                     </Row>
                     <Row>
                         <Text type='secondary'>{`Finished on ${finished}`}</Text>
@@ -102,11 +114,11 @@ function constructTimestamps(request: Request): JSX.Element {
         case RQStatus.FAILED: {
             return (request.startedDate ? (
                 <Row>
-                    <Text type='secondary'>{`Started by ${request.owner.username} on ${started}`}</Text>
+                    {renderEllipsisText(`Started by ${request.owner.username} on ${started}`, 'secondary')}
                 </Row>
             ) : (
                 <Row>
-                    <Text type='secondary'>{`Enqueued by ${request.owner.username} on ${created}`}</Text>
+                    {renderEllipsisText(`Enqueued by ${request.owner.username} on ${created}`, 'secondary')}
                 </Row>
             ));
         }
@@ -114,7 +126,7 @@ function constructTimestamps(request: Request): JSX.Element {
             return (
                 <>
                     <Row>
-                        <Text type='secondary'>{`Enqueued by ${request.owner.username} on ${created}`}</Text>
+                        {renderEllipsisText(`Enqueued by ${request.owner.username} on ${created}`, 'secondary')}
                     </Row>
                     <Row>
                         <Text type='secondary'>{`Started on ${started}`}</Text>
@@ -125,7 +137,7 @@ function constructTimestamps(request: Request): JSX.Element {
         default: {
             return (
                 <Row>
-                    <Text type='secondary'>{`Enqueued by ${request.owner.username} on ${created}`}</Text>
+                    {renderEllipsisText(`Enqueued by ${request.owner.username} on ${created}`, 'secondary')}
                 </Row>
             );
         }
@@ -138,67 +150,45 @@ const dimensions = {
     md: 8,
     lg: 8,
     xl: 8,
-    xxl: 6,
+    xxl: 7,
 };
 
-function RequestCard(props: Props): JSX.Element {
-    const { request, disabled } = props;
+function RequestCard(props: Readonly<Props>): JSX.Element {
+    const {
+        request, cancelled, selected, onClick,
+    } = props;
     const { operation } = request;
+    const { itemRef, handleContextMenuClick, handleContextMenuCapture } = useContextMenuClick<HTMLDivElement>();
     const { type } = operation;
-
-    const dispatch = useDispatch();
 
     const linkToEntity = constructLink(request);
     const percent = request.status === RQStatus.FINISHED ? 100 : (request.progress ?? 0) * 100;
     const timestamps = constructTimestamps(request);
+    const typeText = constructTypeText(type);
 
     const name = constructName(operation);
 
     const percentProgress = (request.status === RQStatus.FAILED || !percent) ? '' : `${percent.toFixed(2)}%`;
 
     const style: React.CSSProperties = {};
-    if (disabled) {
+    if (cancelled) {
         style.pointerEvents = 'none';
         style.opacity = 0.5;
     }
 
-    const menuItems: NonNullable<MenuProps['items']> = [];
-    if (request?.url) {
-        menuItems.push({
-            key: 'download',
-            label: 'Download',
-            onClick: () => {
-                const downloadAnchor = window.document.getElementById('downloadAnchor') as HTMLAnchorElement;
-                downloadAnchor.href = request.url;
-                downloadAnchor.click();
-                dispatch(requestsActions.disableRequest(request));
-            },
-        });
-    }
-
-    // only queued requests can be canceled now
-    if (request.status === RQStatus.QUEUED) {
-        menuItems.push({
-            key: 'cancel',
-            label: 'Cancel',
-            onClick: () => {
-                dispatch(cancelRequestAsync(request, () => {
-                    dispatch(requestsActions.disableRequest(request));
-                }));
-            },
-        });
-    }
-
-    return (
-        <Card className='cvat-requests-card' style={style}>
+    const card = (menuItems: NonNullable<MenuProps['items']>): JSX.Element => (
+        <Card
+            ref={itemRef}
+            className={`cvat-requests-card${selected ? ' cvat-item-selected' : ''}`}
+            style={style}
+            onClick={onClick}
+            onContextMenuCapture={handleContextMenuCapture}
+        >
             <Row justify='space-between'>
                 <Col span={12}>
-                    <Row style={{ paddingBottom: [RQStatus.FAILED].includes(request.status) ? '10px' : '0' }}>
+                    <Row style={{ paddingBottom: [RQStatus.FAILED].includes(request.status) ? '10px' : '0' }} gutter={8}>
                         <Col className='cvat-requests-type' {...dimensions}>
-                            <Text>
-                                {type.split(':').map((word) => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
-                                {' '}
-                            </Text>
+                            {renderEllipsisText(typeText)}
                         </Col>
                         {name && (
                             <Col className='cvat-requests-name'>
@@ -214,59 +204,68 @@ function RequestCard(props: Props): JSX.Element {
                     <Row>
                         <Col span={21}>
                             <Row />
-                            <StatusMessage message={request.message} status={request.status} />
+                            <StatusMessage
+                                message={request.message}
+                                status={request.status}
+                                cancelled={cancelled}
+                            />
                             <Row>
                                 <Col span={18} className='cvat-requests-progress'>
-                                    {
-                                        request.status !== RQStatus.FAILED ? (
-                                            <Progress
-                                                percent={percent}
-                                                strokeColor={{
-                                                    from: '#108ee9',
-                                                    to: '#87d068',
-                                                }}
-                                                showInfo={false}
-                                                strokeWidth={5}
-                                                size='small'
-                                            />
-                                        ) : null
-                                    }
+                                    {request.status !== RQStatus.FAILED && (
+                                        <Progress
+                                            percent={percent}
+                                            strokeColor={{
+                                                from: '#108ee9',
+                                                to: '#87d068',
+                                            }}
+                                            showInfo={false}
+                                            strokeWidth={5}
+                                            size='small'
+                                        />
+                                    )}
                                 </Col>
                                 <Col span={2} className='cvat-requests-percent'>
                                     {percentProgress}
                                 </Col>
                             </Row>
-                            {
-                                operation?.format ? (
-                                    <Row>
-                                        <Col className='cvat-format-name'>
-                                            <Text type='secondary'>{operation.format}</Text>
-                                        </Col>
-                                    </Row>
-                                ) : null
-                            }
+                            {operation?.format && (
+                                <Row>
+                                    <Col className='cvat-format-name'>
+                                        {renderEllipsisText(operation.format, 'secondary')}
+                                    </Col>
+                                </Row>
+                            )}
+                            {operation?.lightweight && (
+                                <Row>
+                                    <Col className='cvat-lightweight-label'>
+                                        <Text type='secondary'>Lightweight backup</Text>
+                                    </Col>
+                                </Row>
+                            )}
                         </Col>
                         <Col span={3} style={{ display: 'flex', justifyContent: 'end' }}>
-                            {
-                                menuItems.length !== 0 ? (
-                                    <Dropdown
-                                        destroyPopupOnHide
-                                        trigger={['click']}
-                                        menu={{
-                                            items: menuItems,
-                                            triggerSubMenuAction: 'click',
-                                            className: 'cvat-request-menu',
-                                        }}
-                                    >
-                                        <Button type='link' size='middle' className='cvat-requests-page-actions-button' icon={<MoreOutlined className='cvat-menu-icon' />} />
-                                    </Dropdown>
-                                ) : null
-                            }
+                            {menuItems.length > 0 && (
+                                <Button
+                                    type='link'
+                                    size='middle'
+                                    className='cvat-requests-page-actions-button cvat-actions-menu-button'
+                                    icon={<MoreOutlined className='cvat-menu-icon' />}
+                                    onClick={handleContextMenuClick}
+                                />
+                            )}
                         </Col>
                     </Row>
                 </Col>
             </Row>
         </Card>
+    );
+
+    return (
+        <RequestActionsComponent
+            requestInstance={request}
+            dropdownTrigger={['contextMenu']}
+            triggerElement={card}
+        />
     );
 }
 

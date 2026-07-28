@@ -4,7 +4,7 @@
 
 import { ActionUnion, createAction } from 'utils/redux';
 import { CombinedState, RequestsQuery } from 'reducers';
-import { Request, ProjectOrTaskOrJob, getCore } from 'cvat-core-wrapper';
+import { Request, getCore } from 'cvat-core-wrapper';
 import { Store } from 'redux';
 import { getCVATStore } from 'cvat-store';
 
@@ -25,6 +25,7 @@ export enum RequestsActionsTypes {
     REQUEST_FINISHED = 'REQUEST_FINISHED',
     REQUEST_FAILED = 'REQUEST_FAILED',
     CANCEL_REQUEST = 'CANCEL_REQUEST',
+    CANCEL_REQUEST_SUCCESS = 'CANCEL_REQUEST_SUCCESS',
     CANCEL_REQUEST_FAILED = 'CANCEL_REQUEST_FAILED',
     DELETE_REQUEST = 'DELETE_REQUEST',
     DELETE_REQUEST_FAILED = 'DELETE_REQUEST_FAILED',
@@ -32,7 +33,7 @@ export enum RequestsActionsTypes {
 }
 
 export const requestsActions = {
-    getRequests: (query: RequestsQuery, fetching = true) => (
+    getRequests: (query: Partial<RequestsQuery>, fetching = true) => (
         createAction(RequestsActionsTypes.GET_REQUESTS, { query, fetching })
     ),
     requestFinished: (request: Request) => createAction(RequestsActionsTypes.REQUEST_FINISHED, { request }),
@@ -48,12 +49,12 @@ export const requestsActions = {
             request,
         })
     ),
-    cancelRequest: (request: Request) => createAction(RequestsActionsTypes.CANCEL_REQUEST, { request }),
+    cancelRequest: () => createAction(RequestsActionsTypes.CANCEL_REQUEST, { }),
+    cancelRequestSuccess: (request: Request) => createAction(
+        RequestsActionsTypes.CANCEL_REQUEST_SUCCESS, { request },
+    ),
     cancelRequestFailed: (request: Request, error: any) => createAction(
         RequestsActionsTypes.CANCEL_REQUEST_FAILED, { request, error },
-    ),
-    disableRequest: (request: Request) => createAction(
-        RequestsActionsTypes.DISABLE_REQUEST, { request },
     ),
 };
 
@@ -62,22 +63,6 @@ export type RequestsActions = ActionUnion<typeof requestsActions>;
 export interface RequestInstanceType {
     id: number;
     type: 'project' | 'task' | 'job';
-}
-
-export function getInstanceType(instance: ProjectOrTaskOrJob | RequestInstanceType): 'project' | 'task' | 'job' {
-    if (instance instanceof core.classes.Project) {
-        return 'project';
-    }
-
-    if (instance instanceof core.classes.Task) {
-        return 'task';
-    }
-
-    if (instance instanceof core.classes.Job) {
-        return 'job';
-    }
-
-    return instance.type;
 }
 
 export function updateRequestProgress(request: Request, dispatch: (action: RequestsActions) => void): void {

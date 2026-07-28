@@ -24,6 +24,11 @@ export default class Crosshair {
             this.y = null;
         }
 
+        if (this.x && this.y) {
+            this.move(x, y);
+            return;
+        }
+
         this.canvas = canvas;
         this.x = this.canvas
             .line(0, y, this.canvas.node.clientWidth, y)

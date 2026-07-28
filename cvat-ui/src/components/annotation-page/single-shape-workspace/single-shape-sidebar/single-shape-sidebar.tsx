@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import {
-    shallowEqual, useDispatch, useSelector, useStore,
+    useDispatch, useSelector, useStore,
 } from 'react-redux';
 import React, {
     useCallback, useEffect, useReducer, useRef,
@@ -17,16 +17,16 @@ import Select from 'antd/lib/select';
 import Alert from 'antd/lib/alert';
 import Button from 'antd/lib/button';
 import message from 'antd/lib/message';
+import { shallowEqual, ActionUnion, createAction } from 'utils/redux';
 
 import {
-    ActiveControl, CombinedState, NavigationType, ObjectType,
+    ActiveControl, CombinedState, NavigationType,
 } from 'reducers';
 import { labelShapeType } from 'reducers/annotation-reducer';
 import { Canvas, CanvasMode } from 'cvat-canvas-wrapper';
 import {
-    Job, Label, LabelType, ShapeType,
+    Job, Label, LabelType, ObjectType, ShapeType,
 } from 'cvat-core-wrapper';
-import { ActionUnion, createAction } from 'utils/redux';
 import {
     rememberObject, changeFrameAsync, setNavigationType,
     removeObjectAsync, finishCurrentJobAsync,
@@ -37,6 +37,7 @@ import GlobalHotKeys from 'utils/mousetrap-react';
 import { ShortcutScope } from 'utils/enums';
 import { registerComponentShortcuts } from 'actions/shortcuts-actions';
 import { subKeyMap } from 'utils/component-subkeymap';
+import { finishDraw, finishDrawAvailable } from 'utils/drawing';
 
 enum ReducerActionType {
     SWITCH_AUTO_NEXT_FRAME = 'SWITCH_AUTO_NEXT_FRAME',
@@ -260,7 +261,7 @@ function SingleShapeSidebar(): JSX.Element {
             appDispatch(rememberObject({
                 activeObjectType: ObjectType.SHAPE,
                 activeLabelID: state.label.id,
-                activeShapeType: labelShapeType(state.label),
+                activeShapeType: labelShapeType(state.labelType),
             }));
 
             canvas.draw({
@@ -295,22 +296,28 @@ function SingleShapeSidebar(): JSX.Element {
         if (typeof state.nextFrame === 'number') {
             appDispatch(changeFrameAsync(state.nextFrame));
         } else if ((forceSave || state.saveOnFinish) && !savingRef.current) {
+            const finishDrawing = finishDrawAvailable(activeControl);
+            if (finishDrawing) {
+                const canvas = store.getState().annotation.canvas.instance as Canvas;
+                finishDraw(canvas, activeControl);
+            }
+
             savingRef.current = true;
 
-            appDispatch(finishCurrentJobAsync()).then(() => {
+            appDispatch(finishCurrentJobAsync(() => {
                 message.open({
                     duration: 1,
                     type: 'success',
                     content: 'You tagged the job as completed',
                     className: 'cvat-annotation-job-finished-success',
                 });
-            }).finally(() => {
+            })).finally(() => {
                 appDispatch(setNavigationType(NavigationType.REGULAR));
                 dispatch(actionCreators.switchAutoNextFrame(false));
                 savingRef.current = false;
             });
         }
-    }, [state.saveOnFinish, state.nextFrame, jobInstance]);
+    }, [state.saveOnFinish, state.nextFrame, jobInstance, activeControl]);
 
     useEffect(() => {
         const defaultLabelInstance = defaultLabel ? state.labels
@@ -386,7 +393,7 @@ function SingleShapeSidebar(): JSX.Element {
     const siderProps: SiderProps = {
         className: 'cvat-single-shape-annotation-sidebar',
         theme: 'light',
-        width: 300,
+        width: 320,
         collapsedWidth: 0,
         reverseArrow: true,
         collapsible: true,
@@ -628,7 +635,7 @@ function SingleShapeSidebar(): JSX.Element {
                 </Col>
             </Row>
             { isPolylabel && (
-                <Row className='cvat-single-shape-annotation-sidebar-predefined-pounts-count-checkbox'>
+                <Row className='cvat-single-shape-annotation-sidebar-predefined-points-count-checkbox'>
                     <Col>
                         <Checkbox
                             checked={state.pointsCountIsPredefined}

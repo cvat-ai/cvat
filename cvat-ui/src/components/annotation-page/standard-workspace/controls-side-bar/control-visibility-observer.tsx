@@ -3,90 +3,86 @@
 //
 // SPDX-License-Identifier: MIT
 
-/// <reference types="resize-observer-browser" />
-
 import { SmallDashOutlined } from '@ant-design/icons';
 import Popover from 'antd/lib/popover';
-import React, { useEffect, useRef, useState } from 'react';
+import React, {
+    FunctionComponent, useEffect, useRef, useState,
+} from 'react';
 import ReactDOM from 'react-dom';
 import withVisibilityHandling from './handle-popover-visibility';
 
 const extraControlsContentClassName = 'cvat-extra-controls-control-content';
-
-let onUpdateChildren: Function | null = null;
 const CustomPopover = withVisibilityHandling(Popover, 'extra-controls');
+
+export const ContainerHeightContext = React.createContext(Number.MAX_SAFE_INTEGER);
 export function ExtraControlsControl(): JSX.Element {
     const [hasChildren, setHasChildren] = useState(false);
     const [initialized, setInitialized] = useState(false);
-    const [visible, setVisible] = useState(true);
+    const [popoverOpen, setPopoverOpen] = useState(true);
+    const [containerNode, setContainerNode] = React.useState<HTMLDivElement | null>(null);
+
+    const containerRef = React.useCallback((node: HTMLDivElement | null) => {
+        setContainerNode(node);
+    }, []);
 
     useEffect(() => {
         if (!initialized) {
             setInitialized(true);
+            setPopoverOpen(false);
         }
 
-        setVisible(false);
-    }, []);
+        const observer = new MutationObserver(() => {
+            if (containerNode) {
+                setHasChildren(containerNode.children.length > 0);
+            }
+        });
 
-    onUpdateChildren = () => {
-        const contentElement = window.document.getElementsByClassName(extraControlsContentClassName)[0];
-        if (contentElement) {
-            setHasChildren(contentElement.children.length > 0);
+        if (containerNode) {
+            observer.observe(containerNode, { childList: true });
+            return () => observer.disconnect();
         }
-    };
+
+        return () => {};
+    }, [containerNode]);
 
     return (
         <CustomPopover
-            open={visible}
-            onOpenChange={setVisible}
+            open={popoverOpen}
+            onOpenChange={setPopoverOpen}
             trigger={initialized ? 'hover' : 'click'} // trigger='hover' allows to close the popover by body click
             placement='right'
             overlayStyle={{ display: initialized ? '' : 'none' }}
-            content={<div className={extraControlsContentClassName} />}
+            content={<div className={extraControlsContentClassName} ref={containerRef} />}
         >
             <SmallDashOutlined
                 style={{ visibility: hasChildren ? 'visible' : 'hidden' }}
-                className='cvat-extra-controls-control cvat-antd-icon-control'
+                className='cvat-extra-controls-control'
             />
         </CustomPopover>
     );
 }
 
-export default function ControlVisibilityObserver<P = {}>(
-    ControlComponent: React.FunctionComponent<P>,
+const renderedControls: Record<string, number> = Object.create(null);
+export default function ControlVisibilityObserver<P extends {} = {}>(
+    ControlComponent: FunctionComponent<P>,
+    componentName: string,
 ): React.FunctionComponent<P> {
-    let visibilityHeightThreshold = 0; // minimum value of height when element can be pushed to main panel
-
     return function (props: P): JSX.Element | null {
         const ref = useRef<HTMLDivElement>(null);
+        const availableHeight = React.useContext(ContainerHeightContext);
         const [visible, setVisible] = useState(true);
 
         useEffect(() => {
-            if (ref && ref.current) {
+            // on initial mount all will be rendered in side panel
+            // so, we can calculate the position of the component
+            // relatively the top of the side panel and save it in map
+            if (ref.current) {
                 const wrapper = ref.current;
-                const parentElement = ref.current.parentElement as HTMLElement;
-
-                const reservedHeight = 45; // for itself
-                const observer = new ResizeObserver(() => {
-                    // when parent size was changed, check again can we put the control
-                    // into the side panel or not
-                    const availableHeight = parentElement.offsetHeight;
-                    setVisible(availableHeight - reservedHeight >= visibilityHeightThreshold);
-                });
-
-                if (ref && ref.current) {
-                    const availableHeight = parentElement.offsetHeight;
-                    // when first mount, remember bottom coordinate which equal to minimum parent width
-                    // to put the control into side panel
-                    visibilityHeightThreshold = wrapper.offsetTop + wrapper.offsetHeight;
-                    // start observing parent size
-                    observer.observe(ref.current.parentElement as HTMLElement);
-                    // then put it to extra controls if parent height is not enough
-                    setVisible(availableHeight - reservedHeight >= visibilityHeightThreshold);
-                }
+                const wrapperBottom = wrapper.offsetTop + wrapper.offsetHeight;
+                renderedControls[componentName] = wrapperBottom;
 
                 return () => {
-                    observer.disconnect();
+                    delete renderedControls[componentName];
                 };
             }
 
@@ -94,11 +90,18 @@ export default function ControlVisibilityObserver<P = {}>(
         }, []);
 
         useEffect(() => {
-            // when visibility changed, we notify extra content element because now its children changed
-            if (onUpdateChildren) {
-                onUpdateChildren();
+            let reservedHeight = 0;
+            if (ref.current) {
+                // we need to look at all controls to understand if we need to reserve some
+                // space for extra controls or not. If we reserve always 45pixels for extra controls
+                // we may get a useless wrap of control to the popover when there is enough space to render it as is
+                const maximumBottom = Math.max(...Object.values(renderedControls), 0);
+                reservedHeight = maximumBottom > availableHeight ? 45 : 0;
             }
-        }, [visible]);
+            const wrapperBottom = renderedControls[componentName];
+            const isVisible = wrapperBottom + reservedHeight <= availableHeight;
+            setVisible(isVisible);
+        }, [availableHeight]);
 
         if (!visible) {
             const extraControlsContent = window.document.getElementsByClassName(extraControlsContentClassName)[0];
@@ -109,7 +112,7 @@ export default function ControlVisibilityObserver<P = {}>(
             return null;
         }
 
-        // first mount always to side panel
+        // first mount always to the side panel
         return (
             <div ref={ref}>
                 <ControlComponent {...props} />

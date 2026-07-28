@@ -17,7 +17,7 @@ jobs:
       contents: write
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           submodules: recursive
           fetch-depth: 0
@@ -32,17 +32,13 @@ jobs:
           wget https://github.com/gohugoio/hugo/releases/download/v0.110.0/hugo_extended_0.110.0_Linux-64bit.tar.gz
           (mkdir hugo_extended_0.110.0_Linux-64bit && tar -xf hugo_extended_0.110.0_Linux-64bit.tar.gz -C hugo_extended_0.110.0_Linux-64bit)
 
-          wget https://github.com/gohugoio/hugo/releases/download/v0.83.0/hugo_extended_0.83.0_Linux-64bit.tar.gz
-          (mkdir hugo_extended_0.83.0_Linux-64bit && tar -xf hugo_extended_0.83.0_Linux-64bit.tar.gz -C hugo_extended_0.83.0_Linux-64bit)
-
           mkdir hugo
           cp hugo_extended_0.110.0_Linux-64bit/hugo hugo/hugo-0.110
-          cp hugo_extended_0.83.0_Linux-64bit/hugo hugo/hugo-0.83
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          node-version: '18.x'
+          node-version: '22.x'
 
       - name: Install npm packages
         working-directory: ./site
@@ -55,11 +51,13 @@ jobs:
           python site/process_sdk_docs.py
           PATH="$PWD/hugo:$PATH" python site/build_docs.py
         env:
+          BASE_URL: https://docs.cvat.ai
           HUGO_ENV: production
+          GOOGLE_TAG_ID: G-GVSBK1DNK5
 
       - name: Deploy
         if: github.ref == 'refs/heads/develop'
-        uses: peaceiris/actions-gh-pages@v4
+        uses: peaceiris/actions-gh-pages@84c30a85c19949d7eee79c4ff27748b70285e453 # v4.1.0
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./public

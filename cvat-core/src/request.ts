@@ -14,6 +14,7 @@ export type RequestOperation = {
     taskID: number | null;
     projectID: number | null;
     functionID: string | null;
+    lightweight: boolean | null;
 };
 
 export class Request {
@@ -73,6 +74,7 @@ export class Request {
             taskID: this.#operation.task_id,
             projectID: this.#operation.project_id,
             functionID: this.#operation.function_id,
+            lightweight: this.#operation.lightweight,
         };
     }
 
@@ -116,6 +118,7 @@ export class Request {
                 task_id: this.#operation.task_id,
                 project_id: this.#operation.project_id,
                 function_id: this.#operation.function_id,
+                lightweight: this.#operation.lightweight,
             },
             progress: this.#progress,
             message: this.#message,

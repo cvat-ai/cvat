@@ -1,0 +1,36 @@
+{{- /* site/layouts/partials/product-tags.html */ -}}
+{{- $ctx := . -}}
+
+{{- /* Find products list: prefer .Params.products, then .Page.Params.products, then .Params.product(s) */ -}}
+{{- $products := $ctx.Params.products -}}
+{{- if not $products -}}
+  {{- with $ctx.Page -}}
+    {{- $products = .Params.products -}}
+  {{- end -}}
+{{- end -}}
+
+{{- if not $products -}}
+  {{- $products = $ctx.Params.product -}}
+{{- end -}}
+
+{{- if not $products -}}
+  {{- $products = $ctx.Params.products_list -}}
+{{- end -}}
+
+{{- if $products }}
+  <div class="product-tags-box">
+    <span class="product-tags-label">Relevant for:</span>
+    {{- range $products }}
+      {{- $p := trim (lower .) " \t\n\r" -}}
+      {{- if eq $p "online" -}}
+        <a href="{{ "/docs/products/online/" | relURL }}" class="product-tag">CVAT Online</a>
+      {{- else if eq $p "enterprise" -}}
+        <a href="{{ "/docs/products/enterprise/" | relURL }}" class="product-tag">CVAT Enterprise</a>
+      {{- else if eq $p "community" -}}
+        <a href="{{ "/docs/products/community/" | relURL }}" class="product-tag">CVAT Community</a>
+      {{- else -}}
+        <span class="product-tag">{{ . }}</span>
+      {{- end -}}
+    {{- end }}
+  </div>
+{{- end }}

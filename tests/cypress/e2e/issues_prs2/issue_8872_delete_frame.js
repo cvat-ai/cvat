@@ -8,12 +8,14 @@ import { taskName } from '../../support/const';
 
 context('UI and job metadata work correctly when deleting frames', () => {
     const chunkReloadPeriod = 100; // 100 ms
-    let defaultJobMetadataReloadPreiod;
+    let defaultJobMetadataReloadPeriod;
 
     describe('Attempt to delete any frame after repeated request to /data/meta/', () => {
         before(() => {
+            cy.prepareUserSession();
             cy.window().then((window) => {
-                defaultJobMetadataReloadPreiod = window.cvat.config.jobMetaDataReloadPeriod;
+                defaultJobMetadataReloadPeriod = window.cvat.config.jobMetaDataReloadPeriod;
+                // eslint-disable-next-line no-param-reassign
                 window.cvat.config.jobMetaDataReloadPeriod = chunkReloadPeriod;
             });
         });
@@ -63,7 +65,8 @@ context('UI and job metadata work correctly when deleting frames', () => {
         });
         after(() => {
             cy.window().then((window) => {
-                window.cvat.config.jobMetaDataReloadPeriod = defaultJobMetadataReloadPreiod;
+                // eslint-disable-next-line no-param-reassign
+                window.cvat.config.jobMetaDataReloadPeriod = defaultJobMetadataReloadPeriod;
             });
         });
     });

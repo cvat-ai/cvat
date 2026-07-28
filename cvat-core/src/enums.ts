@@ -37,9 +37,11 @@ export enum JobState {
 export enum JobType {
     ANNOTATION = 'annotation',
     GROUND_TRUTH = 'ground_truth',
+    CONSENSUS_REPLICA = 'consensus_replica',
 }
 
 export enum DimensionType {
+    DIMENSION_1D = '1d',
     DIMENSION_2D = '2d',
     DIMENSION_3D = '3d',
 }
@@ -48,6 +50,7 @@ export enum RQStatus {
     QUEUED = 'queued',
     STARTED = 'started',
     FINISHED = 'finished',
+    CANCELED = 'canceled',
     FAILED = 'failed',
     UNKNOWN = 'unknown',
 }
@@ -55,6 +58,12 @@ export enum RQStatus {
 export enum TaskMode {
     ANNOTATION = 'annotation',
     INTERPOLATION = 'interpolation',
+}
+
+export enum MediaType {
+    IMAGE = 'image',
+    POINT_CLOUD = 'point_cloud',
+    AUDIO = 'audio',
 }
 
 export enum AttributeType {
@@ -69,6 +78,7 @@ export enum ObjectType {
     TAG = 'tag',
     SHAPE = 'shape',
     TRACK = 'track',
+    INTERVAL = 'interval',
 }
 
 export enum ShapeType {
@@ -88,6 +98,7 @@ export enum Source {
     AUTO = 'auto',
     FILE = 'file',
     GT = 'Ground truth',
+    CONSENSUS = 'consensus',
 }
 
 export enum EventScope {
@@ -123,6 +134,7 @@ export enum EventScope {
 
     annotationsAction = 'run:annotations_action',
     clickElement = 'click:element',
+    userActivity = 'user:activity',
 }
 
 export enum HistoryActions {
@@ -139,6 +151,7 @@ export enum HistoryActions {
     CHANGED_COLOR = 'Changed color',
     CHANGED_HIDDEN = 'Changed hidden',
     CHANGED_SOURCE = 'Changed source',
+    CHANGED_AUDIO_POSITION = 'Changed audio position',
     MERGED_OBJECTS = 'Merged objects',
     JOINED_OBJECTS = 'Joined objects',
     SLICED_OBJECT = 'Sliced object',
@@ -160,13 +173,6 @@ export enum ModelKind {
 
 export enum ModelProviders {
     CVAT = 'cvat',
-}
-
-export enum ModelReturnType {
-    RECTANGLE = 'rectangle',
-    TAG = 'tag',
-    POLYGON = 'polygon',
-    MASK = 'mask',
 }
 
 export const colors = [
@@ -212,6 +218,7 @@ export enum CloudStorageCredentialsType {
     KEY_SECRET_KEY_PAIR = 'KEY_SECRET_KEY_PAIR',
     ACCOUNT_NAME_TOKEN_PAIR = 'ACCOUNT_NAME_TOKEN_PAIR',
     ANONYMOUS_ACCESS = 'ANONYMOUS_ACCESS',
+    CONNECTION_STRING = 'CONNECTION_STRING',
     KEY_FILE_PATH = 'KEY_FILE_PATH',
 }
 
@@ -238,6 +245,12 @@ export enum SortingMethod {
 export enum StorageLocation {
     LOCAL = 'local',
     CLOUD_STORAGE = 'cloud_storage',
+}
+
+export enum DataStorageLocation {
+    LOCAL = StorageLocation.LOCAL,
+    CLOUD_STORAGE = StorageLocation.CLOUD_STORAGE,
+    SHARE = 'share',
 }
 
 export enum WebhookSourceType {

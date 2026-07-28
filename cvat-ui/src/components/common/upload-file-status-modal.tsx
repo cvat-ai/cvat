@@ -5,11 +5,12 @@
 
 import './styles.scss';
 import React from 'react';
-import { shallowEqual, useSelector } from 'react-redux';
+import { useSelector } from 'react-redux';
 import Modal from 'antd/lib/modal';
 import Alert from 'antd/lib/alert';
 import Progress from 'antd/lib/progress';
 
+import { shallowEqual } from 'utils/redux';
 import { CombinedState } from 'reducers';
 
 function UploadFileStatusModal(): JSX.Element {

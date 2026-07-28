@@ -41,28 +41,31 @@ def get_segment_rel_frame_set(db_segment) -> Collection[int]:
 
     return sorted(get_rel_frame(abs_frame, db_data) for abs_frame in frame_set)
 
+
 def delete_duplicate_ground_truth_jobs(apps, schema_editor):
     Task = apps.get_model("engine", "Task")
     Job = apps.get_model("engine", "Job")
 
     broken_tasks = Task.objects.annotate(
-        ground_truth_jobs_count=Count(
-            'segment__job', filter=Q(segment__job__type='ground_truth')
-        )
+        ground_truth_jobs_count=Count("segment__job", filter=Q(segment__job__type="ground_truth"))
     ).filter(ground_truth_jobs_count__gt=1)
 
-    gt_jobs = Job.objects.filter(
-        segment__task__in=broken_tasks
-    ).filter(type='ground_truth').order_by('-updated_date').iterator(1000)
+    gt_jobs = (
+        Job.objects.filter(segment__task__in=broken_tasks)
+        .filter(type="ground_truth")
+        .order_by("-updated_date")
+        .iterator(1000)
+    )
 
     groups = defaultdict(list)
     for gt_job in gt_jobs:
-        assert gt_job.type == 'ground_truth'
+        assert gt_job.type == "ground_truth"
         groups[gt_job.segment.task.id].append(gt_job)
 
     for gt_jobs in groups.values():
         for gt_job in gt_jobs[1:]:
             gt_job.delete()
+
 
 def init_validation_layout_in_tasks_with_gt_job(apps, schema_editor):
     Job = apps.get_model("engine", "Job")
@@ -107,11 +110,11 @@ def revert_m2m_for_related_files(apps, schema_editor):
     RelatedFile = apps.get_model("engine", "RelatedFile")
 
     if top_related_file_uses := (
-        RelatedFile.objects
-        .annotate(images_count=models.aggregates.Count(
-            "images",
-            filter=models.Q(images__is_placeholder=False)
-        ))
+        RelatedFile.objects.annotate(
+            images_count=models.aggregates.Count(
+                "images", filter=models.Q(images__is_placeholder=False)
+            )
+        )
         .order_by("-images_count")
         .filter(images_count__gt=1)
         .values_list("id", "images_count")[:10]
@@ -127,20 +130,21 @@ def revert_m2m_for_related_files(apps, schema_editor):
     ThroughModel = RelatedFile.images.through
 
     (
-        RelatedFile.objects
-        .annotate(images_count=models.aggregates.Count(
-            "images",
-            filter=models.Q(images__is_placeholder=False)
-        ))
+        RelatedFile.objects.annotate(
+            images_count=models.aggregates.Count(
+                "images", filter=models.Q(images__is_placeholder=False)
+            )
+        )
         .filter(images_count__gt=0)
         .update(
             primary_image_id=models.Subquery(
-                ThroughModel.objects
-                .filter(relatedfile_id=models.OuterRef("id"))
-                .values_list("image_id", flat=True)[:1]
+                ThroughModel.objects.filter(relatedfile_id=models.OuterRef("id")).values_list(
+                    "image_id", flat=True
+                )[:1]
             )
         )
     )
+
 
 class Migration(migrations.Migration):
 

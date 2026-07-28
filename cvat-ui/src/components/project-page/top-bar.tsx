@@ -8,7 +8,6 @@ import { useHistory } from 'react-router';
 import { Row, Col } from 'antd/lib/grid';
 import { LeftOutlined, MoreOutlined } from '@ant-design/icons';
 import Button from 'antd/lib/button';
-import Dropdown from 'antd/lib/dropdown';
 import Text from 'antd/lib/typography/Text';
 
 import { Project } from 'cvat-core-wrapper';
@@ -16,10 +15,11 @@ import ActionsMenu from 'components/projects-page/actions-menu';
 
 interface DetailsComponentProps {
     projectInstance: Project;
+    onUpdateProject: (project: Project) => Promise<Project>;
 }
 
 export default function ProjectTopBar(props: DetailsComponentProps): JSX.Element {
-    const { projectInstance } = props;
+    const { projectInstance, onUpdateProject } = props;
 
     const history = useHistory();
 
@@ -37,16 +37,16 @@ export default function ProjectTopBar(props: DetailsComponentProps): JSX.Element
                 </Button>
             </Col>
             <Col className='cvat-project-top-bar-actions'>
-                <Dropdown
-                    destroyPopupOnHide
-                    trigger={['click']}
-                    overlay={<ActionsMenu projectInstance={projectInstance} />}
-                >
-                    <Button size='middle' className='cvat-project-page-actions-button'>
-                        <Text className='cvat-text-color'>Actions</Text>
-                        <MoreOutlined className='cvat-menu-icon' />
-                    </Button>
-                </Dropdown>
+                <ActionsMenu
+                    projectInstance={projectInstance}
+                    onUpdateProject={onUpdateProject}
+                    triggerElement={(
+                        <Button size='middle' className='cvat-project-page-actions-button'>
+                            <Text className='cvat-text-color'>Actions</Text>
+                            <MoreOutlined className='cvat-menu-icon' />
+                        </Button>
+                    )}
+                />
             </Col>
         </Row>
     );

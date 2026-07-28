@@ -72,5 +72,3 @@ target/
 /cvat_sdk/api_client/
 /cvat_sdk/version.py
 /docs/
-/requirements/api_client.txt
-/setup.py

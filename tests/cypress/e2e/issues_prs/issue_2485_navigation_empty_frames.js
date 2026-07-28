@@ -20,6 +20,7 @@ context('Navigation to empty frames', () => {
     };
 
     before(() => {
+        cy.prepareUserSession();
         cy.openTaskJob(taskName);
         cy.goCheckFrameNumber(2);
         cy.createRectangle(createRectangleShape2Points);
@@ -42,7 +43,7 @@ context('Navigation to empty frames', () => {
     });
 
     describe(`Testing issue "${issueId}"`, () => {
-        it('Check navigation is corrent for filtered and empty frames', () => {
+        it('Check navigation is correct for filtered and empty frames', () => {
             // set mode to only filtered
             cy.get('.cvat-player-previous-button').rightclick();
             cy.get('.cvat-player-previous-filtered-inlined-button').click();

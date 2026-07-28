@@ -13,3 +13,13 @@ class InvalidHostException(CvatSdkException):
 
 class IncompatibleVersionException(CvatSdkException):
     """Indicates server and SDK version mismatch"""
+
+
+class BackgroundRequestException(CvatSdkException):
+    """
+    Exception is raised when a background request fails
+    """
+
+
+class AuthStoreError(CvatSdkException):
+    """Raised when auth store operations fail."""

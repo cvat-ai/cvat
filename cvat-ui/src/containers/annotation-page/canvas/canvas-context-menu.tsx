@@ -4,11 +4,10 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-import PropTypes from 'prop-types';
 
 import { connect } from 'react-redux';
 import {
-    CombinedState, ContextMenuType, NewIssueSource, ShapeType, Workspace,
+    CombinedState, ContextMenuType, NewIssueSource, Workspace,
 } from 'reducers';
 
 import CanvasContextMenuComponent from 'components/annotation-page/canvas/views/canvas2d/canvas-context-menu';
@@ -16,11 +15,7 @@ import { copyShape, pasteShapeAsync, updateCanvasContextMenu } from 'actions/ann
 import { reviewActions, finishIssueAsync } from 'actions/review-actions';
 import { ThunkDispatch } from 'utils/redux';
 import { Canvas } from 'cvat-canvas-wrapper';
-import { ObjectState, QualityConflict } from 'cvat-core-wrapper';
-
-interface OwnProps {
-    readonly?: boolean;
-}
+import { ObjectState, ShapeType, QualityConflict } from 'cvat-core-wrapper';
 
 interface StateToProps {
     contextMenuParentID: number | null;
@@ -117,7 +112,7 @@ function mapDispatchToProps(dispatch: ThunkDispatch): DispatchToProps {
     };
 }
 
-type Props = StateToProps & DispatchToProps & OwnProps;
+type Props = StateToProps & DispatchToProps;
 
 interface State {
     latestLeft: number;
@@ -127,14 +122,6 @@ interface State {
 }
 
 class CanvasContextMenuContainer extends React.PureComponent<Props, State> {
-    static propTypes = {
-        readonly: PropTypes.bool,
-    };
-
-    static defaultProps = {
-        readonly: false,
-    };
-
     private initialized: HTMLDivElement | null;
     private dragging: boolean;
     private dragInitPosX: number;
@@ -298,7 +285,6 @@ class CanvasContextMenuContainer extends React.PureComponent<Props, State> {
             objectStates,
             frameConflicts,
             type,
-            readonly,
             workspace,
             latestComments,
             onStartIssue,
@@ -311,7 +297,6 @@ class CanvasContextMenuContainer extends React.PureComponent<Props, State> {
                 <CanvasContextMenuComponent
                     contextMenuClientID={contextMenuClientID}
                     contextMenuParentID={contextMenuParentID}
-                    readonly={readonly}
                     left={left}
                     top={top}
                     visible={visible}

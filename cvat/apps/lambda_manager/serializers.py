@@ -48,6 +48,13 @@ class FunctionCallRequestSerializer(serializers.Serializer):
         required=False,
         help_text="Label mapping from the model to the task labels",
     )
+    roi = serializers.ListField(
+        child=serializers.IntegerField(),
+        min_length=4,
+        max_length=4,
+        required=False,
+        help_text="Region of interest as [xtl, ytl, xbr, ybr]",
+    )
 
 
 class FunctionCallParamsSerializer(serializers.Serializer):

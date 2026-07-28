@@ -8,20 +8,25 @@ import React, {
 } from 'react';
 
 import { Row, Col } from 'antd/lib/grid';
-import Icon, { LinkOutlined, DeleteOutlined } from '@ant-design/icons';
-import Slider from 'antd/lib/slider';
+import Icon, {
+    LinkOutlined, DeleteOutlined, CopyOutlined, SearchOutlined,
+} from '@ant-design/icons';
+import Slider, { SliderMarks } from 'antd/lib/slider';
 import InputNumber from 'antd/lib/input-number';
 import Text from 'antd/lib/typography/Text';
 import Modal from 'antd/lib/modal';
+import Tooltip from 'antd/lib/tooltip';
 
+import { Workspace, CombinedState } from 'reducers';
 import { RestoreIcon } from 'icons';
+import { registerComponentShortcuts } from 'actions/shortcuts-actions';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { clamp } from 'utils/math';
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
-import { Workspace } from 'reducers';
 import { ShortcutScope } from 'utils/enums';
-import { registerComponentShortcuts } from 'actions/shortcuts-actions';
 import { subKeyMap } from 'utils/component-subkeymap';
+import { Chapter } from 'cvat-core/src/frames';
+import { usePlugins } from 'utils/hooks';
 
 interface Props {
     startFrame: number;
@@ -29,19 +34,25 @@ interface Props {
     playing: boolean;
     ranges: string;
     frameNumber: number;
+    chapters: Chapter[] | null;
+    hoveredChapter: number | null;
     frameFilename: string;
     frameDeleted: boolean;
     deleteFrameShortcut: string;
     focusFrameInputShortcut: string;
+    searchFrameByNameShortcut: string;
+    showSearchFrameByName: boolean;
     inputFrameRef: React.RefObject<HTMLInputElement>;
     keyMap: KeyMap;
     workspace: Workspace;
     onSliderChange(value: number): void;
     onInputChange(value: number): void;
     onURLIconClick(): void;
+    onCopyFilenameIconClick(): void;
     onDeleteFrame(): void;
     onRestoreFrame(): void;
     switchNavigationBlocked(blocked: boolean): void;
+    switchShowSearchPallet(visible: boolean): void;
 }
 
 const componentShortcuts = {
@@ -58,6 +69,12 @@ const componentShortcuts = {
         displayedSequences: ['~'],
         scope: ShortcutScope.ANNOTATION_PAGE,
     },
+    SEARCH_FRAME_BY_NAME: {
+        name: 'Search frame by name',
+        description: 'Open search frame by name dialog',
+        sequences: [],
+        scope: ShortcutScope.ANNOTATION_PAGE,
+    },
 };
 
 registerComponentShortcuts(componentShortcuts);
@@ -66,12 +83,15 @@ function PlayerNavigation(props: Props): JSX.Element {
     const {
         startFrame,
         stopFrame,
+        chapters,
+        hoveredChapter,
         playing,
         frameNumber,
         frameFilename,
         frameDeleted,
         deleteFrameShortcut,
         focusFrameInputShortcut,
+        searchFrameByNameShortcut,
         inputFrameRef,
         ranges,
         keyMap,
@@ -79,12 +99,20 @@ function PlayerNavigation(props: Props): JSX.Element {
         onSliderChange,
         onInputChange,
         onURLIconClick,
+        onCopyFilenameIconClick,
         onDeleteFrame,
         onRestoreFrame,
         switchNavigationBlocked,
+        switchShowSearchPallet,
+        showSearchFrameByName,
     } = props;
 
     const [frameInputValue, setFrameInputValue] = useState<number>(frameNumber);
+
+    const playerSliderPlugins = usePlugins(
+        (state: CombinedState) => state.plugins.components.annotationPage.player.slider,
+        props,
+    );
 
     useEffect(() => {
         if (frameNumber !== frameInputValue) {
@@ -123,12 +151,34 @@ function PlayerNavigation(props: Props): JSX.Element {
                 inputFrameRef.current.focus();
             }
         },
+        SEARCH_FRAME_BY_NAME: (event: KeyboardEvent | undefined) => {
+            if (showSearchFrameByName) {
+                event?.preventDefault();
+                switchShowSearchPallet(true);
+            }
+        },
     };
+
+    const onSearchIconClick = useCallback(() => {
+        switchShowSearchPallet(true);
+    }, [switchShowSearchPallet]);
 
     const deleteFrameIconStyle: CSSProperties = workspace === Workspace.SINGLE_SHAPE ? {
         pointerEvents: 'none',
         opacity: 0.5,
     } : {};
+
+    const marks: SliderMarks = (chapters ?? []).reduce<SliderMarks>((acc, chapter) => {
+        const active = hoveredChapter === chapter.id;
+        const innerAcc = acc ?? {};
+        innerAcc[chapter.start] = {
+            label:
+                    <Tooltip title={`${chapter.metadata.title}`}>
+                        <span className={`ant-slider-mark-chapter ${active ? 'active' : ''}`} />
+                    </Tooltip>,
+        };
+        return innerAcc;
+    }, {});
 
     const deleteFrameIcon = !frameDeleted ? (
         <CVATTooltip title={`Delete the frame ${deleteFrameShortcut}`}>
@@ -156,11 +206,12 @@ function PlayerNavigation(props: Props): JSX.Element {
             )}
             <Col className='cvat-player-controls'>
                 <Row align='bottom'>
-                    <Col>
+                    <Col style={{ position: 'relative' }}>
                         <Slider
                             className='cvat-player-slider'
                             min={startFrame}
                             max={stopFrame}
+                            marks={marks}
                             value={frameNumber || 0}
                             onChange={workspace !== Workspace.SINGLE_SHAPE ? onSliderChange : undefined}
                         />
@@ -178,6 +229,12 @@ function PlayerNavigation(props: Props): JSX.Element {
                                 })}
                             </svg>
                         )}
+                        {playerSliderPlugins
+                            .sort((a, b) => a.weight - b.weight)
+                            .map(({ component: Component }, index) => {
+                                const ComponentToRender = Component as React.ComponentType<any>;
+                                return <ComponentToRender key={index} targetProps={props} />;
+                            })}
                     </Col>
                 </Row>
                 <Row justify='center'>
@@ -186,7 +243,10 @@ function PlayerNavigation(props: Props): JSX.Element {
                             <Text type='secondary'>{frameFilename}</Text>
                         </CVATTooltip>
                     </Col>
-                    <Col offset={1}>
+                    <Col className='cvat-player-frame-actions' offset={1}>
+                        <CVATTooltip title='Copy frame filename'>
+                            <CopyOutlined className='cvat-player-copy-frame-name-icon' onClick={onCopyFilenameIconClick} />
+                        </CVATTooltip>
                         <CVATTooltip title='Create frame URL'>
                             <LinkOutlined className='cvat-player-frame-url-icon' onClick={onURLIconClick} />
                         </CVATTooltip>
@@ -202,6 +262,9 @@ function PlayerNavigation(props: Props): JSX.Element {
                         type='number'
                         disabled={workspace === Workspace.SINGLE_SHAPE}
                         value={frameInputValue}
+                        min={startFrame}
+                        max={stopFrame}
+                        style={{ ['--frame-input-width' as string]: `${stopFrame.toString().length + 2}ch` }}
                         onChange={(value: number | undefined | string | null) => {
                             if (typeof value !== 'undefined' && value !== null) {
                                 setFrameInputValue(Math.floor(clamp(+value, startFrame, stopFrame)));
@@ -216,6 +279,18 @@ function PlayerNavigation(props: Props): JSX.Element {
                         }}
                     />
                 </CVATTooltip>
+            </Col>
+            <Col className='cvat-player-actions'>
+                {
+                    showSearchFrameByName && (
+                        <CVATTooltip title={`Search frame by name ${searchFrameByNameShortcut}`}>
+                            <SearchOutlined
+                                className='cvat-player-search-frame-name-icon'
+                                onClick={onSearchIconClick}
+                            />
+                        </CVATTooltip>
+                    )
+                }
             </Col>
         </>
     );

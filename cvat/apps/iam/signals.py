@@ -15,16 +15,20 @@ def register_groups(sender, **kwargs):
 
 if settings.IAM_TYPE == "BASIC":
 
-    def create_user(sender, instance, created, **kwargs):
-        from allauth.account import app_settings as allauth_settings
+    def create_user(sender, instance, created: bool, raw: bool, **kwargs):
+        if created and raw:
+            return
+
         from allauth.account.models import EmailAddress
+
+        from cvat.apps.iam.utils import is_signup_email_required
 
         if instance.is_superuser and instance.is_staff:
             db_group = Group.objects.get(name=settings.IAM_ADMIN_ROLE)
             instance.groups.add(db_group)
 
             # create and verify EmailAddress for superuser accounts
-            if allauth_settings.EMAIL_REQUIRED:
+            if is_signup_email_required():
                 EmailAddress.objects.get_or_create(
                     user=instance, email=instance.email, primary=True, verified=True
                 )
@@ -59,13 +63,15 @@ elif settings.IAM_TYPE == "LDAP":
 
 
 def register_signals(app_config):
-    post_migrate.connect(register_groups, app_config)
+    post_migrate.connect(register_groups, app_config, dispatch_uid=__name__ + ".register_groups")
     if settings.IAM_TYPE == "BASIC":
         # Add default groups and add admin rights to super users.
-        post_save.connect(create_user, sender=User)
+        post_save.connect(create_user, sender=User, dispatch_uid=__name__ + ".create_user")
     elif settings.IAM_TYPE == "LDAP":
         import django_auth_ldap.backend
 
         # Map groups from LDAP to roles, convert a user to super user if he/she
         # has an admin group.
-        django_auth_ldap.backend.populate_user.connect(create_user)
+        django_auth_ldap.backend.populate_user.connect(
+            create_user, dispatch_uid=__name__ + ".create_user"
+        )

@@ -46,4 +46,5 @@ function GroupControl(props: Props): JSX.Element {
     );
 }
 
+Object.assign(GroupControl, { displayName: 'GroupControl' });
 export default React.memo(GroupControl);

@@ -10,13 +10,14 @@
   "author": "CVAT.ai",
   "license": "MIT",
   "browserslist": [
-    "Chrome >= 63",
-    "Firefox > 102",
+    "Chrome >= 99",
+    "Firefox >= 110",
     "not IE 11",
     "> 2%"
   ],
   "dependencies": {
     "@types/polylabel": "^1.0.5",
+    "martinez-polygon-clipping": "^0.8.1",
     "polylabel": "^1.1.0",
     "svg.draggable.js": "2.2.2",
     "svg.draw.js": "^2.0.4",

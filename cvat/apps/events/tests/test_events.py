@@ -4,7 +4,6 @@
 
 import unittest
 from datetime import datetime, timedelta, timezone
-from typing import Optional
 
 from django.contrib.auth import get_user_model
 from django.test import RequestFactory
@@ -46,14 +45,14 @@ class WorkingTimeTestCase(unittest.TestCase):
             data_copy["events"] = [event]
             event_working_time = compute_working_time_per_ids(data_copy)
             for working_time in event_working_time.values():
-                working_times.append((working_time["value"] // WORKING_TIME_RESOLUTION))
+                working_times.append(working_time["value"] // WORKING_TIME_RESOLUTION)
             if data_copy["previous_event"] and is_contained(event, data_copy["previous_event"]):
                 continue
             data_copy["previous_event"] = event
         return working_times
 
     @staticmethod
-    def _deserialize(events: list[dict], previous_event: Optional[dict] = None) -> dict:
+    def _deserialize(events: list[dict], previous_event: dict | None = None) -> dict:
         request = RequestFactory().post("/api/events")
         request.user = get_user_model()(id=100, username="testuser", email="testuser@example.org")
         request.iam_context = {

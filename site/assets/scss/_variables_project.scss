@@ -1,17 +1,52 @@
 // Copyright (C) 2021-2022 Intel Corporation
-//
 // SPDX-License-Identifier: MIT
 
-/*
+/* Add styles or override variables from the theme here. */
 
-Add styles or override variables from the theme here.
+/* --- Link & brand colors (must come before any imports) --- */
+$primary: #000;                 // pick your brand color (optional)
+$link-color: #f97526;              // link color (content, default links)
+$link-hover-color: shade-color($link-color, 0%);
+$link-decoration: none;
+$link-hover-decoration: underline;
 
-*/
+/* --- Docsy Google Fonts integration --- */
+$td-enable-google-fonts: true;
+$td-google-font-name: 'Sora';
+$td-google-font-family: 'Sora:300,400,600,700';
 
-@import 'custom';
+/* --- Default font family --- */
+$font-family-sans-serif: 'Sora', system-ui, -apple-system, 'Segoe UI', Roboto,
+  'Helvetica Neue', Arial, 'Noto Sans', 'Liberation Sans', sans-serif !default;
 
+/* Other toggles */
 $enable-gradients: false;
 $enable-rounded: true;
 $enable-shadows: true;
-
 $info: #f1f1f1;
+
+/* Keep any custom partial import LAST so it uses these overrides */
+@import 'custom';
+
+/* Site-wide link colors via Bootstrap CSS variables */
+:root {
+  /* normal link */
+  --bs-link-color: #000;
+  --bs-link-color-rgb: 0, 0, 0;
+
+  /* hover link */
+  --bs-link-hover-color: #f97526;
+  --bs-link-hover-color-rgb: 249, 117, 38;
+}
+
+/* Ensure section index tiles use our link colors */
+.td-box-docs h4 a {
+  color: var(--bs-link-color) !important;
+  text-decoration: none;
+}
+
+.td-box-docs h4 a:hover,
+.td-box-docs h4 a:focus {
+  color: var(--bs-link-hover-color) !important;
+  text-decoration: underline;
+}

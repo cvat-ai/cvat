@@ -6,10 +6,35 @@ import data.utils
 import data.organizations
 
 # input: {
-#     "scope": <"create"|"create@project"|"view"|"list"|"update:desc"|
-#         "update:owner"|"update:assignee"|"update:project"|"update:associated_storage"|
-#         "delete"|"view:annotations"|"update:annotations"|"delete:annotations"|
-#         "export:dataset"|"view:data"|"upload:data"|"export:annotations"> or null,
+#     "scope": <
+#              "create"|
+#              "create@project"|
+#              "delete:annotations"|
+#              "delete"|
+#              "download:exported_file"|
+#              "export:annotations"|
+#              "export:backup"|
+#              "export:dataset"|
+#              "import:annotations"|
+#              "import:backup"|
+#              "list"|
+#              "update:annotations"|
+#              "update:assignee"|
+#              "update:associated_storage"|
+#              "update:desc"|
+#              "update:metadata"|
+#              "update:organization"|
+#              "update:owner"|
+#              "update:project"|
+#              "update:validation_layout"|
+#              "update"|
+#              "upload:data"|
+#              "view:annotations"|
+#              "view:data"|
+#              "view:metadata"|
+#              "view:validation_layout"|
+#              "view"|
+#          > or null,
 #     "auth": {
 #         "user": {
 #             "id": <num>,
@@ -35,6 +60,8 @@ import data.organizations
 #             "assignee": { "id": <num> },
 #             "organization": { "id": <num> } or null,
 #         } or null,
+#         "rq_job": { "owner": { "id": <num> } } or null,
+#         "destination": <"local" | "cloud_storage"> or undefined,
 #     }
 # }
 
@@ -72,6 +99,14 @@ is_task_staff if {
 
 is_task_staff if {
     is_task_assignee
+}
+
+is_task_or_project_owner if {
+    is_task_owner
+}
+
+is_task_or_project_owner if {
+    is_project_owner
 }
 
 default allow := false
@@ -125,33 +160,32 @@ allow if {
     organizations.is_member
 }
 
-filter := [] if { # Django Q object to filter list of entries
+base_filter := {} if { # Django Q object to filter list of entries
     utils.is_admin
-    utils.is_sandbox
-} else := qobject if {
-    utils.is_admin
-    utils.is_organization
-    qobject := [ {"organization": input.auth.organization.id},
-        {"project__organization": input.auth.organization.id}, "|"]
 } else := qobject if {
     utils.is_sandbox
     user := input.auth.user
-    qobject := [ {"owner_id": user.id}, {"assignee_id": user.id}, "|",
-        {"project__owner_id": user.id}, "|", {"project__assignee_id": user.id}, "|"]
-} else := qobject if {
-    utils.is_organization
-    utils.has_perm(utils.USER)
+    qobject := ["|",
+        {"owner_id": user.id},
+        {"assignee_id": user.id},
+        {"project__owner_id": user.id},
+        {"project__assignee_id": user.id},
+    ]
+} else := {} if {
     organizations.has_perm(organizations.MAINTAINER)
-    qobject := [ {"organization": input.auth.organization.id},
-        {"project__organization": input.auth.organization.id}, "|"]
+    utils.has_perm(utils.USER)
 } else := qobject if {
     organizations.has_perm(organizations.WORKER)
     user := input.auth.user
-    qobject := [ {"owner_id": user.id}, {"assignee_id": user.id}, "|",
-        {"project__owner_id": user.id}, "|", {"project__assignee_id": user.id}, "|",
-        {"organization": input.auth.organization.id},
-        {"project__organization": input.auth.organization.id}, "|", "&"]
+    qobject := ["|",
+        {"owner_id": user.id},
+        {"assignee_id": user.id},
+        {"project__owner_id": user.id},
+        {"project__assignee_id": user.id},
+    ]
 }
+
+filter := utils.add_organization_filter(base_filter, ["organization", "project__organization"])
 
 allow if {
     input.scope in {
@@ -176,13 +210,26 @@ allow if {
 
 allow if {
     input.scope in {
-        utils.VIEW, utils.VIEW_ANNOTATIONS, utils.EXPORT_DATASET, utils.VIEW_METADATA,
-        utils.VIEW_DATA, utils.EXPORT_ANNOTATIONS, utils.EXPORT_BACKUP,
+        utils.VIEW, utils.VIEW_ANNOTATIONS, utils.VIEW_METADATA, utils.VIEW_DATA,
         utils.VIEW_VALIDATION_LAYOUT
     }
     input.auth.organization.id == input.resource.organization.id
     organizations.has_perm(organizations.WORKER)
     is_task_staff
+}
+
+allow if {
+    input.scope in {utils.EXPORT_DATASET, utils.EXPORT_ANNOTATIONS, utils.EXPORT_BACKUP}
+    input.auth.organization.id == input.resource.organization.id
+    organizations.has_perm(organizations.SUPERVISOR)
+    is_task_staff
+}
+
+allow if {
+    input.scope in {utils.EXPORT_DATASET, utils.EXPORT_ANNOTATIONS, utils.EXPORT_BACKUP}
+    input.auth.organization.id == input.resource.organization.id
+    organizations.has_perm(organizations.WORKER)
+    is_task_or_project_owner
 }
 
 allow if {
@@ -222,7 +269,7 @@ allow if {
 allow if {
     input.scope in {
         utils.UPDATE_OWNER, utils.UPDATE_ASSIGNEE, utils.UPDATE_PROJECT,
-        utils.DELETE, utils.UPDATE_ORG
+        utils.DELETE
     }
     utils.is_sandbox
     is_project_staff
@@ -239,7 +286,7 @@ allow if {
 allow if {
     input.scope in {
         utils.UPDATE_OWNER, utils.UPDATE_ASSIGNEE, utils.UPDATE_PROJECT,
-        utils.DELETE, utils.UPDATE_ORG, utils.UPDATE_ASSOCIATED_STORAGE
+        utils.DELETE, utils.UPDATE_ASSOCIATED_STORAGE
     }
     utils.is_sandbox
     is_task_owner
@@ -249,7 +296,7 @@ allow if {
 allow if {
     input.scope in {
         utils.UPDATE_OWNER, utils.UPDATE_ASSIGNEE, utils.UPDATE_PROJECT,
-        utils.DELETE, utils.UPDATE_ORG, utils.UPDATE_ASSOCIATED_STORAGE
+        utils.DELETE, utils.UPDATE_ASSOCIATED_STORAGE
     }
     input.auth.organization.id == input.resource.organization.id
     utils.has_perm(utils.USER)
@@ -259,7 +306,7 @@ allow if {
 allow if {
     input.scope in {
         utils.UPDATE_OWNER, utils.UPDATE_ASSIGNEE, utils.UPDATE_PROJECT,
-        utils.DELETE, utils.UPDATE_ORG, utils.UPDATE_ASSOCIATED_STORAGE
+        utils.DELETE, utils.UPDATE_ASSOCIATED_STORAGE
     }
     input.auth.organization.id == input.resource.organization.id
     utils.has_perm(utils.WORKER)
@@ -277,10 +324,15 @@ allow if {
 allow if {
     input.scope in {
         utils.UPDATE_OWNER, utils.UPDATE_ASSIGNEE, utils.UPDATE_PROJECT,
-        utils.DELETE, utils.UPDATE_ORG
+        utils.DELETE
     }
     input.auth.organization.id == input.resource.organization.id
     utils.has_perm(utils.WORKER)
     organizations.has_perm(organizations.WORKER)
     is_project_staff
+}
+
+allow if {
+    input.scope == utils.DOWNLOAD_EXPORTED_FILE
+    input.auth.user.id == input.resource.rq_job.owner.id
 }

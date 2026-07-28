@@ -6,6 +6,7 @@ import './styles.scss';
 import { Indexable } from 'reducers';
 import SortingComponent from './sorting';
 import ResourceFilterHOC from './filtering';
+import { ResourceSelectionInfo } from './resource-selection-info';
 
 const defaultVisibility = {
     predefined: false,
@@ -20,14 +21,16 @@ function updateHistoryFromQuery(query: Indexable): string {
         ...(query.search ? { search: query.search } : {}),
         ...(query.sort ? { sort: query.sort } : {}),
         ...(query.page ? { page: `${query.page}` } : {}),
-    });
+        ...(query.pageSize ? { pageSize: `${query.pageSize}` } : {}),
+    }).toString();
 
-    return search.toString();
+    return search ? `?${search}` : '';
 }
 
 export {
     SortingComponent,
     ResourceFilterHOC,
+    ResourceSelectionInfo,
     defaultVisibility,
     updateHistoryFromQuery,
 };

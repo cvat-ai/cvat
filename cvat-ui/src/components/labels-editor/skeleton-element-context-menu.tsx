@@ -16,6 +16,7 @@ interface ContextMenuProps {
     elementID: number;
     labels: Record<number, LabelOptColor>;
     container: SVGSVGElement;
+    disabled?: boolean;
     onConfigureLabel(elementID: number, data: LabelOptColor | null): void;
     onDelete(element: SVGElement): void;
 }
@@ -29,12 +30,11 @@ function WrappedSkeletonElementLabelForm(props: ContextMenuProps & { hideConfigu
 
     return (
         <Modal
-            visible
+            open
             width={700}
-            cancelButtonProps={{ hidden: true }}
-            okButtonProps={{ hidden: true }}
             closable={false}
             destroyOnClose
+            footer={null}
         >
             <LabelForm
                 label={elementLabel}
@@ -56,7 +56,7 @@ function WrappedSkeletonElementLabelForm(props: ContextMenuProps & { hideConfigu
 
 function SkeletonElementContextMenu(props: ContextMenuProps): JSX.Element {
     const {
-        container, elementID, onDelete,
+        container, disabled, elementID, onDelete,
     } = props;
     const [configuratorVisible, setConfiguratorVisible] = useState(false);
 
@@ -103,6 +103,7 @@ function SkeletonElementContextMenu(props: ContextMenuProps): JSX.Element {
                         onClick={() => {
                             onDelete(targetPoint as SVGElement);
                         }}
+                        disabled={disabled}
                         icon={<DeleteOutlined />}
                         key='delete'
                     >

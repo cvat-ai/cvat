@@ -1,14 +1,14 @@
 {
-    "compilerOptions": {
-      "target": "ESNext",
-      "allowJs": true,
-      "module": "esnext",
-      "moduleResolution": "node",
-      "esModuleInterop": true,
-      "isolatedModules": true,
-      "noEmit": true,
-      "baseUrl": "src",
-      "resolveJsonModule": true,
-    },
-    "include": ["src/*.ts"]
+  "compilerOptions": {
+    "target": "ESNext",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "skipLibCheck": true,
+    "strict": false,
+    "forceConsistentCasingInFileNames": true,
+    "module": "esnext",
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "noEmit": true
+  },
+  "include": ["src/**/*.ts"]
 }

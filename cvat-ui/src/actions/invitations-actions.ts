@@ -24,7 +24,9 @@ export enum InvitationsActionTypes {
 }
 
 const invitationActions = {
-    getInvitations: (query: InvitationsQuery) => createAction(InvitationsActionTypes.GET_INVITATIONS, { query }),
+    getInvitations: (query: Partial<InvitationsQuery>) => createAction(
+        InvitationsActionTypes.GET_INVITATIONS, { query },
+    ),
     getInvitationsSuccess: (invitations: Invitation[], showNotification: boolean) => (
         createAction(InvitationsActionTypes.GET_INVITATIONS_SUCCESS, { invitations, showNotification })
     ),
@@ -48,7 +50,7 @@ const invitationActions = {
 
 export type InvitationActions = ActionUnion<typeof invitationActions>;
 
-export function getInvitationsAsync(query: InvitationsQuery, showNotification = false): ThunkAction {
+export function getInvitationsAsync(query: Partial<InvitationsQuery>, showNotification = false): ThunkAction {
     return async function (dispatch, getState) {
         const state: CombinedState = getState();
         const userID = state.auth.user.id;

@@ -1,0 +1,223 @@
+// Copyright (C) CVAT.ai Corporation
+//
+// SPDX-License-Identifier: MIT
+
+@import 'cookie-consent';
+
+/* === Top navbar recolor (Docsy uses .td-navbar.navbar-dark) === */
+.td-navbar.navbar-dark {
+    /* Pick your palette */
+    --bs-navbar-bg: #0B1020;                 /* background */
+    --bs-navbar-color: #fff;              /* link text */
+    --bs-navbar-hover-color: #f97526;        /* hover */
+    --bs-navbar-active-color: #fff;       /* active/current */
+    --bs-navbar-brand-color: #fff;        /* brand link */
+    --bs-navbar-brand-hover-color: #f97526;  /* brand hover */
+    --bs-navbar-toggler-border-color: rgba(255,255,255,25%);
+
+    /* Ensure background applies (Docsy sometimes sets one) */
+    background-color: var(--bs-navbar-bg) !important;
+  }
+
+  /* Optional: stronger visual for the active nav item */
+  .navbar-dark .navbar-nav .nav-link.active,
+  .navbar-dark .navbar-nav .nav-link[aria-current="page"] {
+    color: var(--bs-navbar-active-color) !important;
+    border-bottom: 2px solid #f97526; /* change accent if you want */
+  }
+
+  /* Optional: make the inline SVG logo white on dark bg */
+  .navbar-dark .navbar-brand svg path {
+    fill: #fff;
+  }
+
+/* === Footer recolor === */
+
+/* Your palette */
+:root {
+    --cvat-footer-bg: #1a1a1a;        /* footer background */
+    --cvat-footer-text: #bababa;      /* normal text/links */
+    --cvat-footer-hover: #f97526;     /* hover/active links */
+    --cvat-footer-border: rgba(255,255,255,15%);
+  }
+
+/* === Footer recolor === */
+footer.bg-dark {
+  /* Palette */
+  background-color: var(--cvat-footer-bg) !important;
+  color: var(--cvat-footer-text) !important;
+
+  /* Typography & layout */
+  font-size: 0.75rem;
+  line-height: 1.35;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+  /* Links and icons */
+  footer.bg-dark a,
+  footer.bg-dark .list-inline-item a,
+  footer.bg-dark i,
+  footer.bg-dark .h3 {
+    color: var(--cvat-footer-text) !important;
+  }
+
+  footer.bg-dark a:hover,
+  footer.bg-dark a:focus {
+    color: var(--cvat-footer-hover) !important;
+    text-decoration: none;
+  }
+
+  footer.bg-dark .col-12.col-lg-4 .list-inline-item a:hover i,
+footer.bg-dark .col-12.col-lg-4 .list-inline-item a:focus i {
+  color: #fff !important;
+}
+
+  /* Optional: tweak borders (e.g., nav separators, buttons if any) */
+  footer.bg-dark .navbar-toggler,
+  footer.bg-dark .btn-link {
+    border-color: var(--cvat-footer-border) !important;
+    color: var(--cvat-footer-text) !important;
+  }
+
+/* Align list items */
+footer.bg-dark .list-inline {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1.1rem;
+  margin: 0;
+}
+
+footer.bg-dark .list-inline-item {
+  margin: 0 !important;
+  display: inline-flex;
+  align-items: center;
+  line-height: 1.35;
+}
+
+footer.bg-dark .list-inline-item.h3 {
+  font-size: inherit !important;
+  line-height: 1.35 !important;
+}
+
+footer.bg-dark .list-inline-item i {
+  font-size: 1.6rem;
+  line-height: 1;
+  vertical-align: middle;
+}
+
+/* --- FOOTER LAYOUT ADJUSTMENTS --- */
+footer.bg-dark > .container-fluid {
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+
+footer.bg-dark > .container-fluid > .row.align-items-center {
+  min-height: 56px;
+}
+
+footer.bg-dark .col-12.col-lg-8,
+footer.bg-dark .col-12.col-lg-4 {
+  display: flex;
+  align-items: center;
+}
+footer.bg-dark .col-12.col-lg-8 { justify-content: flex-start; }
+footer.bg-dark .col-12.col-lg-4 { justify-content: flex-end; }
+
+/* stylelint-disable media-feature-range-notation */
+@media (max-width: 991.98px) {
+  footer.bg-dark .col-12.col-lg-4 { justify-content: center; }
+}
+
+/* Outline “button” look for a single nav item */
+.td-navbar.navbar-dark .nav-cta {
+  border: 1px solid rgba(255, 255, 255, 85%);
+  border-radius: 9999px;          /* pill */
+  padding: 0.375rem 0.75rem;      /* similar to btn-sm */
+  line-height: 1.2;
+  background: transparent;
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none !important;
+  color: #fff !important;
+}
+
+.td-navbar.navbar-dark .nav-cta:hover,
+.td-navbar.navbar-dark .nav-cta:focus {
+  color: #f97526 !important;
+  border-color: #f97526;
+  background: transparent;
+}
+
+/* Keep “active” state consistent with hover */
+.td-navbar.navbar-dark .nav-cta.active {
+  color: #f97526 !important;
+  border-color: #f97526;
+}
+
+/* Optional: tiny horizontal spacing so the pill doesn’t crowd neighbors */
+.navbar-nav .nav-item .nav-cta {
+  margin-left: 0.25rem;
+  margin-right: 0.25rem;
+}
+
+/* --- Hide last (active) breadcrumb item --- */
+.breadcrumb-item.active {
+  display: none !important;
+}
+
+/* Modern CVAT Docs card */
+
+.cvat-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 12px;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.06%);
+  transition: transform .15s ease, box-shadow .15s ease;
+  height: auto !important;
+}
+
+.cvat-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 24px rgba(0,0,0,0.1%);
+}
+
+.cvat-card-link {
+  text-decoration: none !important;
+  color: inherit !important;
+  display: block;
+  height: 100%;
+}
+
+.cvat-card-icon {
+  font-size: 32px;
+  margin-bottom: 16px;
+  color: #f97526;
+}
+
+.cvat-card-title {
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.cvat-card-desc {
+  font-size: 15px;
+  color: #555;
+}
+
+/* Grid layout for docs cards */
+.docs-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  grid-gap: 20px;       /* distance between cards */
+  margin-top: 24px;
+}
+
+.navbar-nav .nav-link[href="/docs/getting_started/overview/"] span,
+.navbar-nav .nav-link[href="/docs/guides/"] span,
+.navbar-nav .nav-link[href="/docs/"] span,
+.navbar-nav .nav-link[href*="auth/login"] span {
+  font-weight: 400 !important;
+}

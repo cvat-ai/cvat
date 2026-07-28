@@ -5,8 +5,8 @@
 /// <reference types="cypress" />
 
 context('Regression tests', () => {
-    let taskID = null;
-    let jobID = null;
+    let taskId = null;
+    let jobId = null;
 
     const taskPayload = {
         name: 'Regression tests',
@@ -29,33 +29,40 @@ context('Regression tests', () => {
     };
 
     const rectanglePayload = {
-        shapeType: 'rectangle',
+        type: 'rectangle',
         occluded: false,
         labelName: taskPayload.labels[0].name,
     };
 
     before(() => {
-        cy.visit('/auth/login');
-        cy.login();
+        cy.prepareUserSession();
 
         cy.headlessCreateTask(taskPayload, dataPayload).then((response) => {
-            taskID = response.taskID;
-            [jobID] = response.jobIDs;
+            taskId = response.taskId;
+            [jobId] = response.jobIds;
 
-            cy.headlessCreateObjects([
-                {
-                    ...rectanglePayload, frame: 99, points: [250, 64, 491, 228], objectType: 'shape',
-                },
-                {
-                    ...rectanglePayload, frame: 0, points: [10, 10, 30, 30], objectType: 'track',
-                },
-            ], jobID);
+            cy.headlessCreateObjects([{
+                ...rectanglePayload,
+                frame: 99,
+                points: [250, 64, 491, 228],
+                objectType: 'shape',
+            }, {
+                labelName: rectanglePayload.labelName,
+                objectType: 'track',
+                frame: 0,
+                shapes: [{
+                    type: rectanglePayload.type,
+                    frame: 0,
+                    occluded: rectanglePayload.occluded,
+                    points: [10, 10, 30, 30],
+                }],
+            }], jobId);
         });
     });
 
     describe('UI does not crash', () => {
         beforeEach(() => {
-            cy.visit(`/tasks/${taskID}/jobs/${jobID}`);
+            cy.visit(`/tasks/${taskId}/jobs/${jobId}`);
             cy.get('.cvat-canvas-container').should('not.exist');
             cy.get('.cvat-canvas-container').should('exist').and('be.visible');
         });
@@ -98,8 +105,8 @@ context('Regression tests', () => {
     });
 
     after(() => {
-        if (taskID !== null) {
-            cy.headlessDeleteTask(taskID);
+        if (taskId !== null) {
+            cy.headlessDeleteTask(taskId);
         }
         cy.logout();
     });

@@ -4,10 +4,11 @@
 
 # NOTE: importing in the utils.py header leads to circular importing
 
-from typing import Optional
+import textwrap
+from datetime import datetime
 
-from django.db.models.query import QuerySet
-from django.http.request import HttpRequest
+from django.db.models import QuerySet
+from django.http import HttpResponseGone
 from django.http.response import HttpResponse
 from drf_spectacular.utils import extend_schema
 from rest_framework.decorators import action
@@ -15,32 +16,33 @@ from rest_framework.response import Response
 from rest_framework.serializers import Serializer
 from rest_framework.viewsets import GenericViewSet
 
-from cvat.apps.engine.mixins import UploadMixin
 from cvat.apps.engine.parsers import TusUploadParser
+from cvat.apps.engine.tus import TusFile
+from cvat.apps.engine.types import ExtendedRequest
 
 
 def make_paginated_response(
     queryset: QuerySet,
     *,
     viewset: GenericViewSet,
-    response_type: Optional[type[HttpResponse]] = None,
-    serializer_type: Optional[type[Serializer]] = None,
-    request: Optional[type[HttpRequest]] = None,
-    **serializer_params
+    response_type: type[HttpResponse] | None = None,
+    serializer_type: type[Serializer] | None = None,
+    request: type[ExtendedRequest] | None = None,
+    **serializer_params,
 ):
     # Adapted from the mixins.ListModelMixin.list()
 
-    serializer_params.setdefault('many', True)
+    serializer_params.setdefault("many", True)
 
     if response_type is None:
         response_type = Response
 
     if request is None:
-        request = getattr(viewset, 'request', None)
+        request = getattr(viewset, "request", None)
 
     if request is not None:
-        context = serializer_params.setdefault('context', {})
-        context.setdefault('request', request)
+        context = serializer_params.setdefault("context", {})
+        context.setdefault("request", request)
 
     if serializer_type is None:
         serializer_type = viewset.get_serializer
@@ -54,19 +56,21 @@ def make_paginated_response(
 
     return response_type(serializer.data)
 
+
 def list_action(serializer_class: type[Serializer], **kwargs):
     params = dict(
         detail=True,
         methods=["GET"],
         serializer_class=serializer_class,
-
         # Restore the default pagination
         pagination_class=GenericViewSet.pagination_class,
-
         # Remove the regular list() parameters from the swagger schema.
         # Unset, they would be taken from the enclosing class, which is wrong.
         # https://drf-spectacular.readthedocs.io/en/latest/faq.html#my-action-is-erroneously-paginated-or-has-filter-parameters-that-i-do-not-want
-        filter_fields=None, search_fields=None, ordering_fields=None, simple_filters=None
+        filter_fields=None,
+        search_fields=None,
+        ordering_fields=None,
+        simple_filters=None,
     )
     params.update(kwargs)
 
@@ -75,8 +79,10 @@ def list_action(serializer_class: type[Serializer], **kwargs):
 
 def tus_chunk_action(*, detail: bool, suffix_base: str):
     def decorator(f):
-        f = action(detail=detail, methods=['HEAD', 'PATCH'],
-            url_path=f'{suffix_base}/{UploadMixin.file_id_regex}',
+        f = action(
+            detail=detail,
+            methods=["HEAD", "PATCH"],
+            url_path=f"{suffix_base}/{TusFile.FileID.REGEX}",
             parser_classes=[TusUploadParser],
             serializer_class=None,
         )(f)
@@ -92,3 +98,27 @@ def tus_chunk_action(*, detail: bool, suffix_base: str):
         return f
 
     return decorator
+
+
+def get_410_response_for_export_api(path: str) -> HttpResponseGone:
+    return HttpResponseGone(textwrap.dedent(f"""\
+        This endpoint is no longer supported.
+        To initiate the export process, use POST {path}.
+        To check the process status, use GET /api/requests/rq_id,
+        where rq_id is obtained from the response of the previous request.
+        To download the prepared file, use the result_url obtained from the response of the previous request.
+        """))
+
+
+def get_410_response_when_checking_process_status(process_type: str, /) -> HttpResponseGone:
+    return HttpResponseGone(textwrap.dedent(f"""\
+        This endpoint no longer supports checking the status of the {process_type} process.
+        The common requests API should be used instead: GET /api/requests/rq_id,
+        where rq_id is obtained from the response of the initializing request.
+        """))
+
+
+def deprecate_response(response: Response, *, deprecation_date: datetime) -> None:
+    # https://www.rfc-editor.org/rfc/rfc9745
+    deprecation_timestamp = int(deprecation_date.timestamp())
+    response.headers["Deprecation"] = f"@{deprecation_timestamp}"

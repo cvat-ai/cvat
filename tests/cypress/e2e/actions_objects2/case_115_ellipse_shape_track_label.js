@@ -47,17 +47,18 @@ context('Actions on ellipse.', () => {
     function testCompareRotate(shape, toFrame) {
         for (let frame = 8; frame >= toFrame; frame--) {
             cy.document().then((doc) => {
-                const shapeTranformMatrix = decomposeMatrix(doc.getElementById(shape).getCTM());
+                const shapeTransformMatrix = decomposeMatrix(doc.getElementById(shape).getCTM());
                 cy.goToPreviousFrame(frame);
                 cy.document().then((doc2) => {
-                    const shapeTranformMatrix2 = decomposeMatrix(doc2.getElementById(shape).getCTM());
-                    expect(shapeTranformMatrix).not.deep.eq(shapeTranformMatrix2);
+                    const shapeTransformMatrix2 = decomposeMatrix(doc2.getElementById(shape).getCTM());
+                    expect(shapeTransformMatrix).not.deep.eq(shapeTransformMatrix2);
                 });
             });
         }
     }
 
     before(() => {
+        cy.prepareUserSession();
         cy.openTask(taskName);
         cy.addNewLabel({ name: newLabelName });
         cy.openJob();
@@ -74,7 +75,7 @@ context('Actions on ellipse.', () => {
         it('Ellipse rotation/interpolation.', () => {
             Cypress.config('scrollBehavior', false);
             cy.get('.cvat-player-last-button').click();
-            cy.shapeRotate('#cvat_canvas_shape_4', '19.7');
+            cy.shapeRotate('#cvat_canvas_shape_4', '21.8');
             testCompareRotate('cvat_canvas_shape_4', 0);
             // Rotation with shift
             cy.shapeRotate('#cvat_canvas_shape_4', '15.0', true);

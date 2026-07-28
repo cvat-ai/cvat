@@ -35,6 +35,9 @@ const prettify = (key: string): string => {
 
 function formatShortcuts(shortcuts: KeyMapItem): string {
     const list: string[] = shortcuts.displayedSequences || (shortcuts.sequences as string[]);
+    if (!list?.length) {
+        return '';
+    }
     return `[${list
         .map((shortcut: string): string => {
             let keys = shortcut.toLowerCase().split('+');

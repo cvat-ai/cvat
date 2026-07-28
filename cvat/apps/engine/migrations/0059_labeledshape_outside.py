@@ -6,13 +6,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('engine', '0058_auto_20220809_1236'),
+        ("engine", "0058_auto_20220809_1236"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='labeledshape',
-            name='outside',
+            model_name="labeledshape",
+            name="outside",
             field=models.BooleanField(default=False),
         ),
     ]

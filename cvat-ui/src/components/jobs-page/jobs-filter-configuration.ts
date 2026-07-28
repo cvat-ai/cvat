@@ -96,6 +96,26 @@ export const config: Partial<Config> = {
             valueSources: ['value'],
             operators: ['like'],
         },
+        type: {
+            label: 'Job Type',
+            type: 'select',
+            operators: ['select_equals'],
+            valueSources: ['value'],
+            fieldSettings: {
+                listValues: [
+                    { value: 'annotation', title: 'Annotation' },
+                    { value: 'ground_truth', title: 'Ground truth' },
+                    { value: 'consensus_replica', title: 'Consensus replica' },
+                ],
+            },
+        },
+        parent_job_id: {
+            label: 'Parent ID',
+            type: 'number',
+            operators: ['is_empty', 'is_not_empty', 'equal', 'between', 'greater', 'greater_or_equal', 'less', 'less_or_equal'],
+            fieldSettings: { min: 0 },
+            valueSources: ['value'],
+        },
     },
 };
 

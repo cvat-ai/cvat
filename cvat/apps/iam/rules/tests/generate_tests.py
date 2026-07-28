@@ -11,7 +11,6 @@ from collections.abc import Sequence
 from concurrent.futures import ThreadPoolExecutor
 from functools import partial
 from pathlib import Path
-from typing import Optional
 
 REPO_ROOT = Path(__file__).resolve().parents[5]
 
@@ -28,7 +27,7 @@ def create_arg_parser() -> ArgumentParser:
     return parser
 
 
-def parse_args(args: Optional[Sequence[str]] = None) -> Namespace:
+def parse_args(args: Sequence[str] | None = None) -> Namespace:
     parser = create_arg_parser()
     parsed_args = parser.parse_args(args)
     return parsed_args
@@ -41,7 +40,7 @@ def call_generator(generator_path: Path, gen_params: Namespace) -> None:
     )
 
 
-def main(args: Optional[Sequence[str]] = None) -> int:
+def main(args: Sequence[str] | None = None) -> int:
     args = parse_args(args)
 
     generator_paths = list(args.apps_dir.glob("*/rules/tests/generators/*_test.gen.rego.py"))

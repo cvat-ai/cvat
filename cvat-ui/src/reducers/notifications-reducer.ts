@@ -23,16 +23,31 @@ import { JobsActionTypes } from 'actions/jobs-actions';
 import { WebhooksActionsTypes } from 'actions/webhooks-actions';
 import { InvitationsActionTypes } from 'actions/invitations-actions';
 import { ServerAPIActionTypes } from 'actions/server-actions';
-import { RequestsActionsTypes, getInstanceType } from 'actions/requests-actions';
+import { RequestsActionsTypes } from 'actions/requests-actions';
 import { ImportActionTypes } from 'actions/import-actions';
 import { ExportActionTypes } from 'actions/export-actions';
+import { ConsensusActionTypes } from 'actions/consensus-actions';
+import { BulkActionsTypes } from 'actions/bulk-actions';
+import { getInstanceType } from 'actions/common';
+import { ResourceUpdateTypes } from 'utils/enums';
 
 import config from 'config';
 import { NotificationsState } from '.';
 
 const shouldLog = (error: Error): boolean => {
     if (error instanceof ServerError) {
-        const ignoredCodes = [0, 400, 401, 403, 404, 429, 500];
+        const ignoredCodes = [
+            // 0, Network Error: may not to be logged on server. Log it here.
+            400, // client error: not interested
+            401, // client error: not interested
+            403, // client error: not interested
+            404, // client error: not interested
+            429, // client error: not interested
+            500, // usually logged by server
+            // 502, Bad Gateway: may not to be logged on server. Log it here.
+            // 503, Service Unavailable: may not to be logged on server. Log it here.
+            // 504, Gateway Timeout: may not to be logged on server. Log it here.
+        ];
         return !ignoredCodes.includes(error.code);
     }
 
@@ -49,6 +64,11 @@ const defaultState: NotificationsState = {
             changePassword: null,
             requestPasswordReset: null,
             resetPassword: null,
+            updateUser: null,
+            getApiTokens: null,
+            createApiToken: null,
+            updateApiToken: null,
+            revokeApiToken: null,
         },
         serverAPI: {
             fetching: null,
@@ -72,6 +92,7 @@ const defaultState: NotificationsState = {
             exporting: null,
             importing: null,
             moving: null,
+            mergingConsensus: null,
         },
         jobs: {
             updating: null,
@@ -189,12 +210,16 @@ const defaultState: NotificationsState = {
             canceling: null,
             deleting: null,
         },
+        bulkOperation: {
+            processing: null,
+        },
     },
     messages: {
         tasks: {
             loadingDone: null,
             importingDone: null,
             movingDone: null,
+            mergingConsensusDone: null,
         },
         models: {
             inferenceDone: null,
@@ -295,7 +320,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
             };
         }
         case AuthActionTypes.REGISTER_SUCCESS: {
-            if (!action.payload.user.isVerified) {
+            if (!action.payload.isVerified) {
                 return {
                     ...state,
                     messages: {
@@ -304,7 +329,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                             ...state.messages.auth,
                             registerDone: {
                                 message: `To use your account, you need to confirm the email address. \
-                                We have sent an email with a confirmation link to ${action.payload.user.email}.`,
+                                We have sent an email with a confirmation link to ${action.payload.userEmail}.`,
                             },
                         },
                     },
@@ -324,6 +349,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         ...state.messages.auth,
                         changePasswordDone: {
                             message: 'New password has been saved.',
+                            className: 'cvat-notification-notice-change-password-success',
                         },
                     },
                 },
@@ -400,6 +426,22 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         ...state.errors.auth,
                         resetPassword: {
                             message: 'Could not set new password on the server.',
+                            reason: action.payload.error,
+                            shouldLog: shouldLog(action.payload.error),
+                        },
+                    },
+                },
+            };
+        }
+        case AuthActionTypes.UPDATE_USER_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    auth: {
+                        ...state.errors.auth,
+                        updateUser: {
+                            message: 'Could not update user information.',
                             reason: action.payload.error,
                             shouldLog: shouldLog(action.payload.error),
                         },
@@ -561,6 +603,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                         dataset: {
                             message: 'Export is finished',
                             duration: config.REQUEST_SUCCESS_NOTIFICATION_DURATION,
+                            className: `cvat-notification-notice-export-${instanceType.split(' ')[0]}-finished`,
                             description,
                         },
                     },
@@ -618,11 +661,11 @@ export default function (state = defaultState, action: AnyAction): Notifications
                 'Dataset was imported to the ';
             const instanceType = getInstanceType(instance);
             if (instanceType === 'project') {
-                description += `[Project ${instance.id}](/projects/${instance.id})`;
+                description += `[Project #${instance.id}](/projects/${instance.id})`;
             } else if (instanceType === 'task') {
-                description += `[Task ${instance.id}](/tasks/${instance.id})`;
+                description += `[Task #${instance.id}](/tasks/${instance.id})`;
             } else {
-                description += `[Job ${instance.id}](/jobs/${instance.id})`;
+                description += `[Job #${instance.id}](/tasks/${instance.taskId}/jobs/${instance.id})`;
             }
 
             return {
@@ -644,8 +687,8 @@ export default function (state = defaultState, action: AnyAction): Notifications
             const { instance, resource } = action.payload;
             const message = resource === 'annotation' ?
                 'Could not upload annotation for the ' +
-                `[task ${instance?.taskId || instance.id}](/tasks/${instance?.taskId || instance.id})` :
-                `Could not import dataset to the [project ${instance.id}](/projects/${instance.id})`;
+                `[task #${instance?.taskId || instance.id}](/tasks/${instance?.taskId || instance.id})` :
+                `Could not import dataset to the [project #${instance.id}](/projects/${instance.id})`;
             return {
                 ...state,
                 errors: {
@@ -725,10 +768,83 @@ export default function (state = defaultState, action: AnyAction): Notifications
                     tasks: {
                         ...state.errors.tasks,
                         deleting: {
-                            message: `Could not delete the [task ${taskID}](/tasks/${taskID})`,
+                            message: `Could not delete the [task #${taskID}](/tasks/${taskID})`,
                             reason: action.payload.error,
                             shouldLog: shouldLog(action.payload.error),
                             className: 'cvat-notification-notice-delete-task-failed',
+                        },
+                    },
+                },
+            };
+        }
+        case TasksActionTypes.UPDATE_TASK_FAILED: {
+            const { taskId, error, updateType } = action.payload;
+            let message = `Could not update the [task #${taskId}](/tasks/${taskId})`;
+
+            if (updateType === ResourceUpdateTypes.UPDATE_ORGANIZATION) {
+                message = `Could not transfer the [task #${taskId}](/tasks/${taskId}) to the new workspace`;
+            }
+
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    tasks: {
+                        ...state.errors.tasks,
+                        updating: {
+                            message,
+                            reason: error.toString(),
+                            shouldLog: shouldLog(error),
+                            className: 'cvat-notification-notice-update-task-failed',
+                        },
+                    },
+                },
+            };
+        }
+        case ConsensusActionTypes.MERGE_CONSENSUS_JOBS_SUCCESS: {
+            const { instance } = action.payload;
+            let message = '';
+            const instanceType = getInstanceType(instance);
+            if (instanceType === 'job') {
+                message =
+                    `Consensus [job #${instance.id}](/tasks/${instance.taskId}/jobs/${instance.id}) has been merged`;
+            } else if (instanceType === 'task') {
+                message = `Consensus jobs in the [task #${instance.id}](/tasks/${instance.id}) have been merged`;
+            }
+            return {
+                ...state,
+                messages: {
+                    ...state.messages,
+                    tasks: {
+                        ...state.messages.tasks,
+                        mergingConsensusDone: {
+                            message,
+                        },
+                    },
+                },
+            };
+        }
+        case ConsensusActionTypes.MERGE_CONSENSUS_JOBS_FAILED: {
+            const { instance } = action.payload;
+            let message = '';
+            const instanceType = getInstanceType(instance);
+            if (instanceType === 'job') {
+                message =
+                    `Could not merge the [job #${instance.id}](/tasks/${instance.taskId}/jobs/${instance.id})`;
+            } else if (instanceType === 'task') {
+                message = `Could not merge the [task #${instance.id}](/tasks/${instance.id})`;
+            }
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    tasks: {
+                        ...state.errors.tasks,
+                        mergingConsensus: {
+                            message,
+                            reason: action.payload.error,
+                            shouldLog: !(action.payload.error instanceof ServerError),
+                            className: 'cvat-notification-notice-consensus-merge-task-failed',
                         },
                     },
                 },
@@ -793,10 +909,34 @@ export default function (state = defaultState, action: AnyAction): Notifications
                     projects: {
                         ...state.errors.projects,
                         updating: {
-                            message: `Could not delete [project ${projectId}](/project/${projectId})`,
+                            message: `Could not delete [project #${projectId}](/project/${projectId})`,
                             reason: action.payload.error,
                             shouldLog: shouldLog(action.payload.error),
                             className: 'cvat-notification-notice-delete-project-failed',
+                        },
+                    },
+                },
+            };
+        }
+        case ProjectsActionTypes.UPDATE_PROJECT_FAILED: {
+            const { projectId, error, updateType } = action.payload;
+            let message = `Could not update the [project #${projectId}](/projects/${projectId})`;
+
+            if (updateType === ResourceUpdateTypes.UPDATE_ORGANIZATION) {
+                message = `Could not transfer the [project #${projectId}](/projects/${projectId}) to the new workspace`;
+            }
+
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    projects: {
+                        ...state.errors.projects,
+                        creating: {
+                            message,
+                            reason: error.toString(),
+                            className: 'cvat-notification-notice-update-project-failed',
+                            shouldLog: shouldLog(error),
                         },
                     },
                 },
@@ -845,7 +985,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                             ...state.messages.models,
                             inferenceDone: {
                                 message: 'Automatic annotation accomplished for the ' +
-                                `[task ${taskID}](/tasks/${taskID})`,
+                                `[task #${taskID}](/tasks/${taskID})`,
                             },
                         },
                     },
@@ -885,7 +1025,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                     models: {
                         ...state.errors.models,
                         inferenceStatusFetching: {
-                            message: `Fetching inference status for the [task ${taskID}](/tasks/${taskID})`,
+                            message: `Fetching inference status for the [task #${taskID}](/tasks/${taskID})`,
                             reason: action.payload.error,
                             shouldLog: shouldLog(action.payload.error),
                         },
@@ -918,7 +1058,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                     models: {
                         ...state.errors.models,
                         starting: {
-                            message: `Could not infer model for the [task ${taskID}](/tasks/${taskID})`,
+                            message: `Could not infer model for the [task #${taskID}](/tasks/${taskID})`,
                             reason: action.payload.error,
                             shouldLog: shouldLog(action.payload.error),
                         },
@@ -935,7 +1075,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                     models: {
                         ...state.errors.models,
                         canceling: {
-                            message: `Could not cancel model inference for the [task ${taskID}](/tasks/${taskID})`,
+                            message: `Could not cancel model inference for the [task #${taskID}](/tasks/${taskID})`,
                             reason: action.payload.error,
                             shouldLog: shouldLog(action.payload.error),
                         },
@@ -988,23 +1128,6 @@ export default function (state = defaultState, action: AnyAction): Notifications
                             reason: action.payload.error,
                             shouldLog: shouldLog(action.payload.error),
                             className: 'cvat-notification-notice-save-annotations-failed',
-                        },
-                    },
-                },
-            };
-        }
-        case AnnotationActionTypes.UPDATE_CURRENT_JOB_FAILED: {
-            return {
-                ...state,
-                errors: {
-                    ...state.errors,
-                    annotation: {
-                        ...state.errors.annotation,
-                        saving: {
-                            message: 'Could not update annotation job',
-                            reason: action.payload.error,
-                            shouldLog: !(action.payload.error instanceof ServerError),
-                            className: 'cvat-notification-notice-update-current-job-failed',
                         },
                     },
                 },
@@ -1091,7 +1214,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                 },
             };
         }
-        case AnnotationActionTypes.SLICE_ANNOTATIONS_FAILED:
+        case AnnotationActionTypes.SLICE_ANNOTATIONS_FAILED: {
             return {
                 ...state,
                 errors: {
@@ -1106,6 +1229,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                     },
                 },
             };
+        }
         case AnnotationActionTypes.SPLIT_ANNOTATIONS_FAILED: {
             return {
                 ...state,
@@ -1511,7 +1635,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                             message: 'Canvas error occurred',
                             reason: action.payload.error,
                             shouldLog: true,
-                            className: 'cvat-notification-notice-canvas-error-occurreed',
+                            className: 'cvat-notification-notice-canvas-error-occurred',
                         },
                     },
                 },
@@ -1828,6 +1952,23 @@ export default function (state = defaultState, action: AnyAction): Notifications
                 },
             };
         }
+        case OrganizationActionsTypes.GET_ORGANIZATIONS_FAILED: {
+            const { error } = action.payload;
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    organizations: {
+                        ...state.errors.organizations,
+                        fetching: {
+                            message: 'Could not fetch the list of organizations',
+                            reason: error,
+                            shouldLog: shouldLog(error),
+                        },
+                    },
+                },
+            };
+        }
         case JobsActionTypes.GET_JOBS_FAILED: {
             return {
                 ...state,
@@ -1959,6 +2100,94 @@ export default function (state = defaultState, action: AnyAction): Notifications
                             reason: action.payload.error,
                             shouldLog: shouldLog(action.payload.error),
                             className: 'cvat-notification-notice-delete-webhook-failed',
+                        },
+                    },
+                },
+            };
+        }
+        case BulkActionsTypes.BULK_OPERATION_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    bulkOperation: {
+                        ...state.errors.bulkOperation,
+                        processing: {
+                            message: 'Bulk operation failed.',
+                            reason: action.payload.error,
+                            shouldLog: shouldLog(action.payload.error),
+                            className: 'cvat-notification-notice-bulk-operation-failed',
+                            remainingItemsCount: action.payload.remainingItemsCount,
+                            retryPayload: action.payload.retryPayload,
+                            ignore: true,
+                        },
+                    },
+                },
+            };
+        }
+        case AuthActionTypes.GET_API_TOKENS_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    auth: {
+                        ...state.errors.auth,
+                        getApiTokens: {
+                            message: 'Could not get API tokens',
+                            reason: action.payload.error,
+                            shouldLog: shouldLog(action.payload.error),
+                            className: 'cvat-notification-notice-get-api-tokens-failed',
+                        },
+                    },
+                },
+            };
+        }
+        case AuthActionTypes.CREATE_API_TOKEN_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    auth: {
+                        ...state.errors.auth,
+                        createApiToken: {
+                            message: 'Could not create API token',
+                            reason: action.payload.error,
+                            shouldLog: shouldLog(action.payload.error),
+                            className: 'cvat-notification-notice-create-api-token-failed',
+                        },
+                    },
+                },
+            };
+        }
+        case AuthActionTypes.UPDATE_API_TOKEN_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    auth: {
+                        ...state.errors.auth,
+                        updateApiToken: {
+                            message: 'Could not update API token',
+                            reason: action.payload.error,
+                            shouldLog: shouldLog(action.payload.error),
+                            className: 'cvat-notification-notice-update-api-token-failed',
+                        },
+                    },
+                },
+            };
+        }
+        case AuthActionTypes.REVOKE_API_TOKEN_FAILED: {
+            return {
+                ...state,
+                errors: {
+                    ...state.errors,
+                    auth: {
+                        ...state.errors.auth,
+                        revokeApiToken: {
+                            message: 'Could not revoke API token',
+                            reason: action.payload.error,
+                            shouldLog: shouldLog(action.payload.error),
+                            className: 'cvat-notification-notice-revoke-api-token-failed',
                         },
                     },
                 },

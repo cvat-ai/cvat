@@ -1,6 +1,6 @@
 baseURL = "/"
 title = "CVAT"
-relativeURLs = true
+relativeURLs = false
 
 enableRobotsTXT = true
 
@@ -46,18 +46,49 @@ quality = 75
 anchor = "smart"
 
 [[menu.main]]
-    name = "Try it now"
-    weight = 50
-    url = "https://app.cvat.ai"
+    name = "Docs"
+    weight = 10
+    url = "/docs/"
 [[menu.main]]
-    name = "GitHub"
+    name = "Quickstart"
+    weight = 30
+    url = "/docs/getting_started/overview/"
+[[menu.main]]
+    name = "Guides"
+    weight = 40
+    url = "/docs/guides/"
+[[menu.main]]
+    name = "Sign in"
+    weight = 50
+    url = "https://app.cvat.ai/auth/login"
+[[menu.main]]
+    name = "Get started"
     weight = 60
-    url = "https://github.com/cvat-ai/cvat"
-    pre = "<i class='fab fa-github'></i>"
+    url = "#"
+[[menu.main]]
+    name = "CVAT Сommunity"
+    url = "/docs/administration/community/basics/installation"
+    parent = "Get started"
+    weight = 1
+[[menu.main]]
+    name = "CVAT Online"
+    url = "https://app.cvat.ai/auth/register"
+    parent = "Get started"
+    weight = 2
+[[menu.main]]
+    name = "CVAT Enterprise"
+    url = "https://www.cvat.ai/sales#enterprise"
+    parent = "Get started"
+    weight = 3
+[[menu.main]]
+    name = "Contact us"
+    weight = 70
+    url = "/docs/getting_started/overview/#get-in-touch"
 
 [services]
 [services.googleAnalytics]
 # Comment out the next line to disable GA tracking. Also disables the feature described in [params.ui.feedback].
+# GOOGLE_TAG_ID environment variable takes precedence over this setting
 # id = "UA-00000000-0"
 
 # Language configuration
@@ -81,6 +112,11 @@ weight = 1
       # guessSyntax = "true"
 
 # Everything below this are Site Params
+
+# Hugo security configuration
+[security]
+  [security.funcs]
+    getenv = ["^HUGO_", "^GOOGLE_TAG_ID$"]
 
 # Comment out if you don't want the "print entire section" link enabled.
 [outputs]
@@ -147,7 +183,7 @@ sidebar_search_disable = true
 #  Set to false if you don't want to display a logo (/assets/icons/logo.svg) in the top nav bar
 navbar_logo = true
 # Set to true to disable the About link in the site footer
-footer_about_disable = false
+footer_about_disable = true
 
 # Adds a H2 section titled "Feedback" to the bottom of each doc. The responses are sent to Google Analytics as events.
 # This feature depends on [services.googleAnalytics] and will be disabled if "services.googleAnalytics.id" is not set.
@@ -167,21 +203,6 @@ enable = false
 
 [params.links]
 # End user relevant links. These will show up on left side of footer and in the community page if you have one.
-[[params.links.user]]
-	name ="Gitter public chat"
-	url = "https://gitter.im/opencv-cvat/public"
-	icon = "fab fa-gitter"
-	desc = "Join our Gitter channel for community support."
-[[params.links.user]]
-	name = "Stack Overflow"
-	url = "https://stackoverflow.com/search?q=%23cvat"
-	icon = "fab fa-stack-overflow"
-	desc = "Practical questions and curated answers"
-[[params.links.user]]
-	name = "YouTube"
-	url = "https://www.youtube.com/@cvat-ai"
-	icon = "fab fa-youtube"
-	desc = "YouTube channel of CVAT.ai"
 
 # Developer relevant links. These will show up on right side of footer and in the community page if you have one.
 [[params.links.developer]]
@@ -190,12 +211,17 @@ enable = false
 	icon = "fab fa-github"
 	desc = "Development takes place here!"
 [[params.links.developer]]
-	name ="Gitter developers chat"
-	url = "https://gitter.im/opencv-cvat/dev"
-	icon = "fab fa-gitter"
-	desc = "Join our Gitter channel for community support."
+	name ="LinkedIn"
+	url = "https://www.linkedin.com/company/cvat-ai/"
+	icon = "fab fa-linkedin"
+	desc = "Join our LinkedIn channel for CVAT updates and company news."
 [[params.links.developer]]
-	name = "Discord chat"
+	name = "Discord"
 	url = "https://discord.gg/fNR3eXfk6C"
 	icon = "fab fa-discord"
 	desc = "Join our Discord server for community support."
+[[params.links.developer]]
+	name = "YouTube"
+	url = "https://www.youtube.com/@cvat-ai"
+	icon = "fab fa-youtube"
+	desc = "YouTube channel of CVAT.ai"

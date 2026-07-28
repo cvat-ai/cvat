@@ -5,7 +5,12 @@
 import React, { useState } from 'react';
 import { Row, Col } from 'antd/lib/grid';
 import Input from 'antd/lib/input';
-import { SortingComponent, ResourceFilterHOC, defaultVisibility } from 'components/resource-sorting-filtering';
+import {
+    SortingComponent,
+    ResourceFilterHOC,
+    defaultVisibility,
+    ResourceSelectionInfo,
+} from 'components/resource-sorting-filtering';
 import { CombinedState, ModelsQuery } from 'reducers';
 import { usePlugins } from 'utils/hooks';
 import dimensions from 'utils/dimensions';
@@ -23,11 +28,13 @@ interface VisibleTopBarProps {
     onApplySearch(search: string | null): void;
     query: ModelsQuery;
     disabled?: boolean;
+    selectedCount: number;
+    onSelectAll: () => void;
 }
 
-export default function TopBarComponent(props: VisibleTopBarProps): JSX.Element {
+export default function TopBarComponent(props: Readonly<VisibleTopBarProps>): JSX.Element {
     const {
-        query, onApplyFilter, onApplySorting, onApplySearch, disabled,
+        query, onApplyFilter, onApplySorting, onApplySearch, disabled, selectedCount, onSelectAll,
     } = props;
     const [visibility, setVisibility] = useState(defaultVisibility);
     const plugins = usePlugins((state: CombinedState) => state.plugins.components.modelsPage.topBar.items, props);
@@ -44,16 +51,19 @@ export default function TopBarComponent(props: VisibleTopBarProps): JSX.Element 
         <Row className='cvat-models-page-top-bar' justify='center' align='middle'>
             <Col {...dimensions}>
                 <div className='cvat-models-page-filters-wrapper'>
-                    <Input.Search
-                        disabled={disabled}
-                        enterButton
-                        onSearch={(phrase: string) => {
-                            onApplySearch(phrase);
-                        }}
-                        defaultValue={query.search || ''}
-                        className='cvat-models-page-search-bar'
-                        placeholder='Search ...'
-                    />
+                    <div>
+                        <Input.Search
+                            disabled={disabled}
+                            enterButton
+                            onSearch={(phrase: string) => {
+                                onApplySearch(phrase);
+                            }}
+                            defaultValue={query.search || ''}
+                            className='cvat-models-page-search-bar'
+                            placeholder='Search ...'
+                        />
+                        <ResourceSelectionInfo selectedCount={selectedCount} onSelectAll={onSelectAll} />
+                    </div>
                     <div>
                         <SortingComponent
                             disabled={disabled}

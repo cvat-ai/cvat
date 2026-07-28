@@ -1,59 +1,55 @@
 -r ../../utils/dataset_manifest/requirements.in
 
-attrs==21.4.0
+attrs>=22.1.0
 
-# This is the last version of av that supports ffmpeg we depend on.
-# Changing ffmpeg is undesirable, as there might be video decoding differences
-# between versions.
-# TODO: try to move to the newer version
-av==9.2.0
+av==16.0.1
 
 azure-storage-blob==12.13.0
-boto3==1.17.61
-clickhouse-connect==0.6.8
-coreapi==2.3.3
-datumaro @ git+https://github.com/cvat-ai/datumaro.git@ebcc2d4254e5b5c19b51ad6062dc882366871703
+boto3~=1.37
+clickhouse-connect~=1.3
+datumaro @ https://github.com/cvat-ai/datumaro/archive/6ade96fa82043fc5bccd59a27218892899fe10ce.zip
 dj-pagination==2.5.0
 # Despite direct indication allauth in requirements we should keep 'with_social' for dj-rest-auth
 # to avoid possible further versions conflicts (we use registration functionality)
 # https://dj-rest-auth.readthedocs.io/en/latest/installation.html#registration-optional
-dj-rest-auth[with_social]==5.0.2
-django-allauth[saml]==0.57.2
+dj-rest-auth[with_social]==7.2.0
+django-allauth[saml]==65.18.0
 
 django-auth-ldap==2.2.0
-django-compressor==4.3.1
 django-cors-headers==3.5.0
 django-crum==0.7.9
-django-filter==2.4.0
+django-filter>=25.2
 django-health-check>=3.18.1,<4
-django-rq==2.8.1
-django-sendfile2==0.7.0
-Django~=4.2.7
-djangorestframework>=3.15.2,<4
-drf-spectacular==0.26.2
-furl==2.1.0
-google-cloud-storage==1.42.0
+django-rq>=2.10.1,<3
+django-sendfile2~=0.7.2
+Django~=5.2.0
+djangorestframework~=3.17
+djangorestframework-api-key~=3.1
+drf-spectacular==0.29.0
+google-cloud-storage~=3.0
 lxml>=5.2.1,<6
-natsort==8.0.0
-numpy~=1.22.2
+natsort~=8.0
+numpy~=2.0
 opencv-python-headless~=4.8
 
-# The package is used by pyunpack as a command line tool to support multiple
+# Partial json reading
+json-stream>=2.0,<3
+
+# The package is used as a command line tool to support multiple
 # archives. Don't use as a python module because it has GPL license.
-patool==1.12
+patool~=4.0
 
 pdf2image==1.14.0
-Pillow>=10.3.0
+Pillow>=12.3.0
 pottery~=3.0
 psutil==5.9.4
-psycopg2-binary==2.9.5
-python-ldap==3.4.3
+psycopg2-binary~=2.9
+python-ldap==3.4.7
 python-logstash-async==2.5.0
-pyunpack==0.2.1
-redis==4.6.0
+python-rapidjson>=1.20
+redis~=8.0
 requests~=2.26
 rq-scheduler==0.13.1
 rq==1.16.0
-rules>=3.3
-Shapely==1.7.1
+Shapely~=2.1
 xmlsec>=1.3.14,<2

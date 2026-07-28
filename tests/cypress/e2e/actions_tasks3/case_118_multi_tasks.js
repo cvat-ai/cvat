@@ -5,7 +5,7 @@
 
 /// <reference types="cypress" />
 
-context('Create mutli tasks.', () => {
+context('Create multi tasks.', () => {
     const caseId = '118';
     const taskName = `Case ${caseId}`;
     const labelName = taskName;
@@ -129,8 +129,8 @@ context('Create mutli tasks.', () => {
 
     after(() => {
         cy.logout();
-        cy.getAuthKey().then((authKey) => {
-            cy.deleteTasks(authKey, videoFiles.videos);
+        cy.task('getAuthHeaders').then((authHeaders) => {
+            cy.deleteTasks(authHeaders, videoFiles.videos);
         });
     });
 });

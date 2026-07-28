@@ -3,7 +3,8 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-import { shallowEqual, useSelector, useDispatch } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
+import { shallowEqual } from 'utils/redux';
 import Icon from '@ant-design/icons';
 import Button from 'antd/lib/button';
 

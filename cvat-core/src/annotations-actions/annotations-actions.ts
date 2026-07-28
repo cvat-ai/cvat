@@ -15,6 +15,7 @@ import {
 
 import { RemoveFilteredShapes } from './remove-filtered-shapes';
 import { PropagateShapes } from './propagate-shapes';
+import { PolySimplify } from './poly-simplify';
 
 const registeredActions: BaseAction[] = [];
 
@@ -35,8 +36,18 @@ export async function registerAction(action: BaseAction): Promise<void> {
     registeredActions.push(action);
 }
 
+export async function unregisterAction(action: BaseAction): Promise<void> {
+    const index = registeredActions.indexOf(action);
+    if (index === -1) {
+        throw new ArgumentError(`Action "${action.name}" was not registered`);
+    } else {
+        registeredActions.splice(index, 1);
+    }
+}
+
 registerAction(new RemoveFilteredShapes());
 registerAction(new PropagateShapes());
+registerAction(new PolySimplify());
 
 export async function runAction(
     instance: Job | Task,

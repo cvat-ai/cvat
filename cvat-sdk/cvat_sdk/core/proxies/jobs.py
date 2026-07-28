@@ -8,7 +8,7 @@ import io
 import mimetypes
 from collections.abc import Sequence
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from PIL import Image
 
@@ -42,15 +42,16 @@ class Job(
     ExportDatasetMixin,
 ):
     _model_partial_update_arg = "patched_job_write_request"
-    _put_annotations_data_param = "job_annotations_update_request"
 
     def import_annotations(
         self,
         format_name: str,
         filename: StrPath,
         *,
-        status_check_period: Optional[int] = None,
-        pbar: Optional[ProgressReporter] = None,
+        conv_mask_to_poly: bool | None = None,
+        import_mode: str | None = None,
+        status_check_period: int | None = None,
+        pbar: ProgressReporter | None = None,
     ):
         """
         Upload annotations for a job in the specified format (e.g. 'YOLO 1.1').
@@ -62,6 +63,8 @@ class Job(
             self.api.create_annotations_endpoint,
             filename,
             format_name,
+            conv_mask_to_poly=conv_mask_to_poly,
+            import_mode=import_mode,
             url_params={"id": self.id},
             pbar=pbar,
             status_check_period=status_check_period,
@@ -73,9 +76,9 @@ class Job(
         self,
         frame_id: int,
         *,
-        quality: Optional[str] = None,
+        quality: str | None = None,
     ) -> io.RawIOBase:
-        (_, response) = self.api.retrieve_data(
+        _, response = self.api.retrieve_data(
             self.id, number=frame_id, quality=quality, type="frame"
         )
         return io.BytesIO(response.data)
@@ -83,18 +86,18 @@ class Job(
     def get_preview(
         self,
     ) -> io.RawIOBase:
-        (_, response) = self.api.retrieve_preview(self.id)
+        _, response = self.api.retrieve_preview(self.id)
         return io.BytesIO(response.data)
 
     def download_frames(
         self,
         frame_ids: Sequence[int],
         *,
-        image_extension: Optional[str] = None,
+        image_extension: str | None = None,
         outdir: StrPath = ".",
         quality: str = "original",
         filename_pattern: str = "frame_{frame_id:06d}{frame_ext}",
-    ) -> Optional[list[Image.Image]]:
+    ) -> list[Image.Image] | None:
         """
         Download the requested frame numbers for a job and save images as outdir/filename_pattern
         """
@@ -123,12 +126,14 @@ class Job(
             im.save(outdir / outfile)
 
     def get_meta(self) -> models.IDataMetaRead:
-        (meta, _) = self.api.retrieve_data_meta(self.id)
+        meta, _ = self.api.retrieve_data_meta(self.id)
         return meta
 
     def get_labels(self) -> list[models.ILabel]:
         return get_paginated_collection(
-            self._client.api_client.labels_api.list_endpoint, job_id=self.id
+            self._client.api_client.labels_api.list_endpoint,
+            org_id=self.organization,
+            job_id=self.id,
         )
 
     def get_frames_info(self) -> list[models.IFrameMeta]:
@@ -146,7 +151,9 @@ class Job(
         return [
             Issue(self._client, m)
             for m in get_paginated_collection(
-                self._client.api_client.issues_api.list_endpoint, job_id=self.id
+                self._client.api_client.issues_api.list_endpoint,
+                org_id=self.organization,
+                job_id=self.id,
             )
         ]
 

@@ -6,11 +6,11 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('engine', '0062_delete_previews'),
+        ("engine", "0062_delete_previews"),
     ]
 
     operations = [
         migrations.DeleteModel(
-            name='JobCommit',
+            name="JobCommit",
         ),
     ]

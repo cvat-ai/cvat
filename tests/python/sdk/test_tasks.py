@@ -3,22 +3,26 @@
 # SPDX-License-Identifier: MIT
 
 import io
+import json
 import os.path as osp
 import zipfile
 from logging import Logger
 from pathlib import Path
-from typing import Optional
+from unittest import mock
 
 import pytest
 from cvat_sdk import Client, models
 from cvat_sdk.api_client import exceptions
+from cvat_sdk.api_client.rest import RESTClientObject
+from cvat_sdk.core.exceptions import BackgroundRequestException
+from cvat_sdk.core.filters import F
 from cvat_sdk.core.proxies.tasks import ResourceType, Task
 from cvat_sdk.core.proxies.types import Location
-from cvat_sdk.core.uploading import Uploader, _MyTusUploader
 from PIL import Image
 from pytest_cases import fixture_ref, parametrize
 
 from shared.fixtures.data import CloudStorageAssets
+from shared.utils.config import make_sdk_client
 from shared.utils.helpers import generate_image_files
 
 from .common import TestDatasetExport
@@ -58,12 +62,7 @@ class TestTaskUsecases(TestDatasetExport):
 
     @pytest.fixture
     def fxt_new_task_without_data(self):
-        task = self.client.tasks.create(
-            spec={
-                "name": "test_task",
-                "labels": [{"name": "car"}, {"name": "person"}],
-            },
-        )
+        task = self.client.tasks.create(spec={"name": "test_task"})
 
         return task
 
@@ -91,21 +90,6 @@ class TestTaskUsecases(TestDatasetExport):
 
         task_spec = {
             "name": f"test {self.user} to create a task with local data",
-            "labels": [
-                {
-                    "name": "car",
-                    "color": "#ff00ff",
-                    "attributes": [
-                        {
-                            "name": "a",
-                            "mutable": True,
-                            "input_type": "number",
-                            "default_value": "5",
-                            "values": ["4", "5", "6"],
-                        }
-                    ],
-                }
-            ],
         }
 
         data_params = {
@@ -152,10 +136,7 @@ class TestTaskUsecases(TestDatasetExport):
 
     def test_can_create_task_with_remote_data(self):
         task = self.client.tasks.create_from_data(
-            spec={
-                "name": "test_task",
-                "labels": [{"name": "car"}, {"name": "person"}],
-            },
+            spec={"name": "test_task"},
             resource_type=ResourceType.SHARE,
             resources=["images/image_1.jpg", "images/image_2.jpg"],
             # make sure string fields are transferred correctly;
@@ -173,14 +154,9 @@ class TestTaskUsecases(TestDatasetExport):
 
         task_spec = {
             "name": f"test {self.user} to create a task with no data",
-            "labels": [
-                {
-                    "name": "car",
-                }
-            ],
         }
 
-        with pytest.raises(exceptions.ApiException) as capture:
+        with pytest.raises(BackgroundRequestException) as capture:
             self.client.tasks.create_from_data(
                 spec=task_spec,
                 resource_type=ResourceType.LOCAL,
@@ -197,8 +173,7 @@ class TestTaskUsecases(TestDatasetExport):
 
         task = self.client.tasks.create(
             {
-                "name": f"test task",
-                "labels": [{"name": "car"}],
+                "name": "test task",
             }
         )
 
@@ -238,6 +213,72 @@ class TestTaskUsecases(TestDatasetExport):
 
         assert any(t.id == task_id for t in tasks)
         assert self.stdout.getvalue() == ""
+
+    def test_can_list_tasks_with_simple_filter(self, fxt_new_task: Task):
+        from cvat_sdk.core.proxies import model_proxy
+
+        task_name = f"test_task_filter_{fxt_new_task.id}"
+        fxt_new_task.update(models.PatchedTaskWriteRequest(name=task_name))
+
+        with mock.patch.object(
+            model_proxy,
+            "get_paginated_collection",
+            wraps=model_proxy.get_paginated_collection,
+        ) as spy:
+            tasks = self.client.tasks.list(name=task_name)
+
+        # a plain field lookup is forwarded as-is and must not be turned into a complex `filter`
+        assert spy.call_args.kwargs["name"] == task_name
+        assert "filter" not in spy.call_args.kwargs
+
+        assert [t.id for t in tasks] == [fxt_new_task.id]
+        assert self.stdout.getvalue() == ""
+
+    def test_can_list_tasks_with_json_logic_filter(self, fxt_new_task: Task):
+        tasks = self.client.tasks.list(filter={"==": [{"var": "id"}, fxt_new_task.id]})
+
+        assert [t.id for t in tasks] == [fxt_new_task.id]
+        assert self.stdout.getvalue() == ""
+
+    def test_can_list_tasks_with_json_logic_filter_string(self, fxt_new_task: Task):
+        filter_value = json.dumps({"==": [{"var": "id"}, fxt_new_task.id]})
+
+        tasks = self.client.tasks.list(filter=filter_value)
+
+        assert [t.id for t in tasks] == [fxt_new_task.id]
+        assert self.stdout.getvalue() == ""
+
+    def test_can_list_tasks_with_dsl_filter(self, fxt_new_task: Task):
+        tasks = self.client.tasks.list(filter=F.id == fxt_new_task.id)
+
+        assert [t.id for t in tasks] == [fxt_new_task.id]
+        assert self.stdout.getvalue() == ""
+
+    def test_can_list_tasks_with_keyword_lookup(self, fxt_new_task: Task):
+        tasks = self.client.tasks.list(id__in=[fxt_new_task.id])
+
+        assert [t.id for t in tasks] == [fxt_new_task.id]
+        assert self.stdout.getvalue() == ""
+
+    def test_dsl_filter_matches_raw_filter(self, fxt_new_task: Task):
+        dsl = self.client.tasks.list(filter=F.id == fxt_new_task.id)
+        raw = self.client.tasks.list(filter={"==": [{"var": "id"}, fxt_new_task.id]})
+
+        assert [t.id for t in dsl] == [t.id for t in raw] == [fxt_new_task.id]
+        assert self.stdout.getvalue() == ""
+
+    def test_can_combine_keyword_lookup_and_dsl_filter(self, fxt_new_task: Task):
+        task_name = f"test_combined_filter_{fxt_new_task.id}"
+        fxt_new_task.update(models.PatchedTaskWriteRequest(name=task_name))
+
+        tasks = self.client.tasks.list(id__in=[fxt_new_task.id], filter=F.name == task_name)
+
+        assert [t.id for t in tasks] == [fxt_new_task.id]
+        assert self.stdout.getvalue() == ""
+
+    def test_list_tasks_rejects_unknown_filter_parameter(self):
+        with pytest.raises(exceptions.ApiTypeError):
+            self.client.tasks.list(unknown_filter=True)
 
     def test_can_update_task(self, fxt_new_task: Task):
         fxt_new_task.update(models.PatchedTaskWriteRequest(name="foo"))
@@ -302,7 +343,7 @@ class TestTaskUsecases(TestDatasetExport):
         format_name: str,
         include_images: bool,
         task: Task,
-        location: Optional[Location],
+        location: Location | None,
         request: pytest.FixtureRequest,
         cloud_storages: CloudStorageAssets,
     ):
@@ -325,13 +366,29 @@ class TestTaskUsecases(TestDatasetExport):
             path = self.tmp_path / f"dataset-{i}.zip"
             fxt_new_task.export_dataset(
                 format_name="CVAT for images 1.1",
-                filename=self.tmp_path / f"dataset-{i}.zip",
+                filename=path,
                 include_images=False,
                 pbar=pbar,
             )
             assert self.stdout.getvalue() == ""
             assert "100%" in pbar_out.getvalue().strip("\r").split("\r")[-1]
             assert path.is_file()
+
+    def test_can_download_dataset_with_server_filename(self, fxt_new_task: Task):
+        pbar_out = io.StringIO()
+        pbar = make_pbar(file=pbar_out)
+
+        output_dir = self.tmp_path
+        output_path = fxt_new_task.export_dataset(
+            format_name="CVAT for images 1.1",
+            filename=output_dir,
+            include_images=False,
+            pbar=pbar,
+        )
+        assert "100%" in pbar_out.getvalue().strip("\r").split("\r")[-1]
+        assert output_path.is_relative_to(output_dir)
+        assert output_path.is_file()
+        assert self.stdout.getvalue() == ""
 
     def test_can_download_backup(self, fxt_new_task: Task):
         pbar_out = io.StringIO()
@@ -346,9 +403,23 @@ class TestTaskUsecases(TestDatasetExport):
         assert path.is_file()
         assert self.stdout.getvalue() == ""
 
+    def test_can_download_backup_with_server_filename(self, fxt_new_task: Task):
+        pbar_out = io.StringIO()
+        pbar = make_pbar(file=pbar_out)
+
+        task_id = fxt_new_task.id
+        output_dir = self.tmp_path
+        task = self.client.tasks.retrieve(task_id)
+        output_path = task.download_backup(filename=output_dir, pbar=pbar)
+
+        assert "100%" in pbar_out.getvalue().strip("\r").split("\r")[-1]
+        assert output_path.is_relative_to(output_dir)
+        assert output_path.is_file()
+        assert self.stdout.getvalue() == ""
+
     def test_can_download_preview(self, fxt_new_task: Task):
         frame_encoded = fxt_new_task.get_preview()
-        (width, height) = Image.open(frame_encoded).size
+        width, height = Image.open(frame_encoded).size
 
         assert width > 0 and height > 0
         assert self.stdout.getvalue() == ""
@@ -356,7 +427,7 @@ class TestTaskUsecases(TestDatasetExport):
     @pytest.mark.parametrize("quality", ("compressed", "original"))
     def test_can_download_frame(self, fxt_new_task: Task, quality: str):
         frame_encoded = fxt_new_task.get_frame(0, quality=quality)
-        (width, height) = Image.open(frame_encoded).size
+        width, height = Image.open(frame_encoded).size
 
         assert width > 0 and height > 0
         assert self.stdout.getvalue() == ""
@@ -364,7 +435,7 @@ class TestTaskUsecases(TestDatasetExport):
     @pytest.mark.parametrize("quality", ("compressed", "original"))
     @pytest.mark.parametrize("image_extension", (None, "bmp"))
     def test_can_download_frames(
-        self, fxt_new_task: Task, quality: str, image_extension: Optional[str]
+        self, fxt_new_task: Task, quality: str, image_extension: str | None
     ):
         fxt_new_task.download_frames(
             [0],
@@ -397,15 +468,28 @@ class TestTaskUsecases(TestDatasetExport):
             assert len(chunk_zip.infolist()) == 1
         assert self.stdout.getvalue() == ""
 
-    def test_can_upload_annotations(self, fxt_new_task: Task, fxt_coco_file: Path):
+    @pytest.mark.parametrize("convert", [True, False])
+    def test_can_upload_annotations(
+        self, fxt_new_task: Task, fxt_camvid_dataset: Path, convert: bool
+    ):
         pbar_out = io.StringIO()
         pbar = make_pbar(file=pbar_out)
 
-        fxt_new_task.import_annotations(format_name="COCO 1.0", filename=fxt_coco_file, pbar=pbar)
+        fxt_new_task.import_annotations(
+            format_name="CamVid 1.0",
+            filename=fxt_camvid_dataset,
+            conv_mask_to_poly=convert,
+            pbar=pbar,
+        )
 
         assert "uploaded" in self.logger_stream.getvalue()
         assert "100%" in pbar_out.getvalue().strip("\r").split("\r")[-1]
         assert self.stdout.getvalue() == ""
+
+        imported_annotations = fxt_new_task.get_jobs()[0].get_annotations()
+        assert all(
+            s.type.value == "polygon" if convert else "mask" for s in imported_annotations.shapes
+        )
 
     def _test_can_create_from_backup(self, fxt_new_task: Task, fxt_backup_file: Path):
         pbar_out = io.StringIO()
@@ -426,17 +510,18 @@ class TestTaskUsecases(TestDatasetExport):
     def test_can_create_from_backup_in_chunks(
         self, monkeypatch: pytest.MonkeyPatch, fxt_new_task: Task, fxt_backup_file: Path
     ):
-        monkeypatch.setattr(Uploader, "_CHUNK_SIZE", 100)
+        monkeypatch.setattr("cvat_sdk.core.uploading.TUS_CHUNK_SIZE", 100)
 
         num_requests = 0
-        original_do_request = _MyTusUploader._do_request
+        original_request = RESTClientObject.request
 
-        def counting_do_request(uploader):
+        def counting_request(self, method, *args, headers, **kwargs):
             nonlocal num_requests
-            num_requests += 1
-            original_do_request(uploader)
+            if method.upper() == "PATCH" and "Upload-Offset" in headers:
+                num_requests += 1
+            return original_request(self, method, *args, headers=headers, **kwargs)
 
-        monkeypatch.setattr(_MyTusUploader, "_do_request", counting_do_request)
+        monkeypatch.setattr(RESTClientObject, "request", counting_request)
 
         self._test_can_create_from_backup(fxt_new_task, fxt_backup_file)
 
@@ -573,3 +658,20 @@ class TestTaskUsecases(TestDatasetExport):
         assert len(anns.tracks) == 1
         assert len(anns.tags) == 1
         assert self.stdout.getvalue() == ""
+
+
+@pytest.mark.usefixtures("restore_db_per_function")
+def test_org_maintainer_can_get_task_resources_without_explicit_org_context(
+    fxt_org_resource_hierarchy,
+):
+    resources = fxt_org_resource_hierarchy()
+
+    with make_sdk_client(resources.maintainer_username) as maintainer_client:
+        task = maintainer_client.tasks.retrieve(resources.task_id)
+        jobs = task.get_jobs()
+        labels = task.get_labels()
+
+        assert maintainer_client.organization_slug is None
+        assert len(jobs) == 1
+        assert jobs[0].id == resources.job_id
+        assert {label.name for label in labels} == {"car"}

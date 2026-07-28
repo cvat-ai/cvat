@@ -7,13 +7,19 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('engine', '0059_labeledshape_outside'),
+        ("engine", "0059_labeledshape_outside"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='label',
-            name='parent',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='sublabels', to='engine.label'),
+            model_name="label",
+            name="parent",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="sublabels",
+                to="engine.label",
+            ),
         ),
     ]

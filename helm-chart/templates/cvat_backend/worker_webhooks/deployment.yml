@@ -23,10 +23,7 @@ spec:
     type: Recreate
   selector:
     matchLabels:
-      {{- include "cvat.labels" . | nindent 6 }}
-      {{- with merge $localValues.labels .Values.cvat.backend.labels }}
-      {{- toYaml . | nindent 6 }}
-      {{- end }}
+      {{- include "cvat.selectorLabels" . | nindent 6 }}
       app: cvat-app
       tier: backend
       component: worker-webhooks
@@ -54,19 +51,37 @@ spec:
           resources:
           {{- toYaml . | nindent 12 }}
           {{- end }}
-          args: ["run", "worker.webhooks"]
+          args:
+          {{- with $localValues.args }}
+          {{- toYaml . | nindent 10 }}
+          {{- else }}
+          - "run"
+          - "worker"
+          - "webhooks"
+          - "--with-scheduler"
+          {{- end }}
           env:
           {{ include "cvat.sharedBackendEnv" . | indent 10 }}
           {{- with concat .Values.cvat.backend.additionalEnv $localValues.additionalEnv }}
           {{- toYaml . | nindent 10 }}
           {{- end }}
-          {{- $probeArgs := list "webhooks" -}}
+          - name: NUMPROCS
+            value: {{ $localValues.numProcs | quote }}
+          {{- with $localValues.numWorkers }}
+          - name: NUMWORKERS
+            value: {{ . | quote }}
+          {{- end }}
+          {{- $expectedWorkers := include "cvat.backend.worker.livenessProbe.workers" $localValues -}}
+          {{- $probeArgs := list "webhooks" "--expected-num-workers" $expectedWorkers -}}
           {{- $probeConfig := dict "args" $probeArgs "livenessProbe" $.Values.cvat.backend.worker.livenessProbe -}}
           {{ include "cvat.backend.worker.livenessProbe" $probeConfig | indent 10 }}
           {{- with concat .Values.cvat.backend.additionalVolumeMounts $localValues.additionalVolumeMounts }}
           volumeMounts:
           {{- toYaml . | nindent 10 }}
           {{- end }}
+          securityContext:
+            runAsNonRoot: true
+      terminationGracePeriodSeconds: {{ .Values.cvat.backend.worker.webhooks.terminationGracePeriodSeconds | default 30 }}
       {{- with merge $localValues.affinity .Values.cvat.backend.affinity }}
       affinity:
       {{- toYaml . | nindent 8 }}

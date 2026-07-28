@@ -5,7 +5,7 @@
 
 import PluginRegistry from './plugins';
 import {
-    ModelProviders, ModelKind, ModelReturnType,
+    LabelType, ModelProviders, ModelKind, ShapeType,
 } from './enums';
 import {
     SerializedModel, ModelParams, MLModelTip, MLModelLabel,
@@ -30,6 +30,10 @@ export default class MLModel {
         return Array.isArray(this.serialized.labels_v2) ? [...this.serialized.labels_v2] : [];
     }
 
+    public get supportedShapeTypes(): ShapeType[] | undefined {
+        return this.serialized.supported_shape_types;
+    }
+
     public get version(): number {
         return this.serialized.version;
     }
@@ -44,8 +48,11 @@ export default class MLModel {
 
     public get displayKind(): string {
         if (this.kind === ModelKind.DETECTOR) {
-            if (this.returnType === ModelReturnType.TAG) return 'classifier';
-            if (this.returnType === ModelReturnType.MASK) return 'segmenter';
+            switch (this.returnType) {
+                case LabelType.TAG: return 'classifier';
+                case LabelType.MASK: return 'segmenter';
+                default: // fall back on the original kind
+            }
         }
         return this.kind;
     }
@@ -94,8 +101,13 @@ export default class MLModel {
         return this.serialized?.url;
     }
 
-    public get returnType(): ModelReturnType | undefined {
-        return this.serialized?.return_type;
+    public get returnType(): LabelType {
+        const uniqueLabelTypes = new Set(this.labels.map((label) => label.type));
+
+        if (uniqueLabelTypes.size !== 1) return LabelType.ANY;
+
+        const [labelType] = uniqueLabelTypes;
+        return labelType;
     }
 
     public async preview(): Promise<string> {
@@ -108,8 +120,8 @@ Object.defineProperties(MLModel.prototype.preview, {
     implementation: {
         writable: false,
         enumerable: false,
-        value: async function implementation(): Promise<string | null> {
-            return null;
+        value: async function implementation(): Promise<string> {
+            return '';
         },
     },
 });

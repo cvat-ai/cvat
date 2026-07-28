@@ -11,6 +11,8 @@ from ._torchvision import TorchvisionFunction
 
 
 class _TorchvisionDetectionFunction(TorchvisionFunction):
+    _label_type = "rectangle"
+
     def detect(
         self, context: cvataa.DetectionFunctionContext, image: PIL.Image.Image
     ) -> list[models.LabeledShapeRequest]:

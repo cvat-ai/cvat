@@ -3,9 +3,22 @@
 # SPDX-License-Identifier: MIT
 
 import datetime
+from contextlib import suppress
+
+import rq
+from django.db.models import Min
+
+from cvat.apps.webhooks.exceptions import WebhookDeliveryError
 
 from .cache import clear_cache
 from .const import COMPRESSED_EVENT_SCOPES, MAX_EVENT_DURATION
+
+
+def should_skip_rq_exception_event_recording(rq_job: rq.job.Job, exc_value: Exception) -> bool:
+    if isinstance(exc_value, WebhookDeliveryError):
+        return rq_job.get_status(refresh=False) != rq.job.JobStatus.FAILED
+
+    return False
 
 
 def _prepare_objects_to_delete(object_to_delete):
@@ -116,3 +129,36 @@ def compute_working_time_per_ids(data: dict) -> dict:
         previous_ids = read_ids(event)
 
     return working_time_per_ids
+
+
+def find_minimal_date_for_filter(
+    job_id: str | int | None = None,
+    task_id: str | int | None = None,
+    project_id: str | int | None = None,
+    org_id: str | int | None = None,
+) -> datetime.datetime:
+    from cvat.apps.engine.models import Job, Project, Task
+    from cvat.apps.organizations.models import Organization
+
+    for resource_id, Class in ((job_id, Job), (task_id, Task), (project_id, Project)):
+        if resource_id:
+            with suppress(Class.DoesNotExist):
+                return Class.objects.get(pk=int(resource_id)).created_date
+
+    if org_id:
+        with suppress(Organization.DoesNotExist):
+            # support cases when older resources have been transferred to the organization
+            created_date = Organization.objects.get(pk=int(org_id)).created_date
+            project_created_date = Project.objects.filter(organization_id=int(org_id)).aggregate(
+                min_created_date=Min("created_date")
+            )["min_created_date"]
+            task_created_date = Task.objects.filter(organization_id=int(org_id)).aggregate(
+                min_created_date=Min("created_date")
+            )["min_created_date"]
+
+            return min(
+                date
+                for date in (created_date, project_created_date, task_created_date)
+                if date is not None
+            )
+    return datetime.datetime.fromtimestamp(0, datetime.timezone.utc)

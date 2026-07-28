@@ -12,14 +12,15 @@ from detectron2.data.datasets.builtin_meta import COCO_CATEGORIES
 CONFIG_OPTS = ["MODEL.WEIGHTS", "model_final_971ab9.pkl"]
 CONFIDENCE_THRESHOLD = 0.5
 
+
 def init_context(context):
     context.logger.info("Init context...  0%")
 
-    cfg = get_config('COCO-Detection/retinanet_R_101_FPN_3x.yaml')
+    cfg = get_config("COCO-Detection/retinanet_R_101_FPN_3x.yaml")
     if torch.cuda.is_available():
-        CONFIG_OPTS.extend(['MODEL.DEVICE', 'cuda'])
+        CONFIG_OPTS.extend(["MODEL.DEVICE", "cuda"])
     else:
-        CONFIG_OPTS.extend(['MODEL.DEVICE', 'cpu'])
+        CONFIG_OPTS.extend(["MODEL.DEVICE", "cpu"])
 
     cfg.merge_from_list(CONFIG_OPTS)
     cfg.MODEL.RETINANET.SCORE_THRESH_TEST = CONFIDENCE_THRESHOLD
@@ -32,6 +33,7 @@ def init_context(context):
 
     context.logger.info("Init context...100%")
 
+
 def handler(context, event):
     context.logger.info("Run retinanet-R101 model")
     data = event.body
@@ -41,7 +43,7 @@ def handler(context, event):
 
     predictions = context.user_data.model_handler(image)
 
-    instances = predictions['instances']
+    instances = predictions["instances"]
     pred_boxes = instances.pred_boxes
     scores = instances.scores
     pred_classes = instances.pred_classes
@@ -49,12 +51,15 @@ def handler(context, event):
     for box, score, label in zip(pred_boxes, scores, pred_classes):
         label = COCO_CATEGORIES[int(label)]["name"]
         if score >= threshold:
-            results.append({
-                "confidence": str(float(score)),
-                "label": label,
-                "points": box.tolist(),
-                "type": "rectangle",
-            })
+            results.append(
+                {
+                    "confidence": str(float(score)),
+                    "label": label,
+                    "points": box.tolist(),
+                    "type": "rectangle",
+                }
+            )
 
-    return context.Response(body=json.dumps(results), headers={},
-        content_type='application/json', status_code=200)
+    return context.Response(
+        body=json.dumps(results), headers={}, content_type="application/json", status_code=200
+    )

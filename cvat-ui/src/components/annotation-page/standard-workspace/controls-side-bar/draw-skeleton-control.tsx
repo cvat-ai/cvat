@@ -4,10 +4,11 @@ import Icon from '@ant-design/icons';
 
 import { Canvas } from 'cvat-canvas-wrapper';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
-import { ShapeType } from 'reducers';
+import { ShapeType } from 'cvat-core-wrapper';
 
 import { SkeletonIcon } from 'icons';
 
+import CVATTooltip from 'components/common/cvat-tooltip';
 import DrawShapePopoverContainer from 'containers/annotation-page/standard-workspace/controls-side-bar/draw-shape-popover';
 import withVisibilityHandling from './handle-popover-visibility';
 
@@ -44,9 +45,12 @@ function DrawSkeletonControl(props: Props): JSX.Element {
             placement='right'
             content={<DrawShapePopoverContainer shapeType={ShapeType.SKELETON} />}
         >
-            <Icon {...dynamicIconProps} component={SkeletonIcon} />
+            <CVATTooltip title='Draw a skeleton' placement='right'>
+                <Icon {...dynamicIconProps} component={SkeletonIcon} />
+            </CVATTooltip>
         </CustomPopover>
     );
 }
 
+Object.assign(DrawSkeletonControl, { displayName: 'DrawSkeletonControl' });
 export default React.memo(DrawSkeletonControl);

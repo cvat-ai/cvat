@@ -90,7 +90,7 @@ metadata:
 
 spec:
   description: Faster RCNN from Tensorflow Object Detection API optimized for GPU
-  runtime: 'python:3.9'
+  runtime: 'python:3.11'
   handler: main:handler
   eventTimeout: 30s
 
@@ -113,11 +113,11 @@ spec:
         - kind: RUN
           value: ln -s faster_rcnn_inception_v2_coco_2018_01_28 faster_rcnn
         - kind: RUN
-          value: pip install pillow pyyaml
+          value: pip install pillow pyyaml  --no-cache-dir
 
   triggers:
     myHttpTrigger:
-      maxWorkers: 1
+      numWorkers: 1
       kind: 'http'
       workerAvailabilityTimeoutMilliseconds: 10000
       attributes:

@@ -11,7 +11,6 @@ const defaultState: PluginsState = {
     initialized: false,
     list: {
         ANALYTICS: false,
-        MODELS: false,
     },
     current: {},
     callbacks: {
@@ -24,6 +23,9 @@ const defaultState: PluginsState = {
         },
     },
     overridableComponents: {
+        app: {
+            serverUnavailable: [],
+        },
         annotationPage: {
             header: {
                 // not used
@@ -31,8 +33,16 @@ const defaultState: PluginsState = {
             },
         },
         qualityControlPage: {
-            overviewTab: [],
-            allocationTable: [],
+            task: {
+                overviewTab: [],
+                allocationTable: [],
+            },
+            project: {
+                overviewTab: [],
+            },
+        },
+        analyticsReportPage: {
+            content: [],
         },
     },
     components: {
@@ -43,6 +53,14 @@ const defaultState: PluginsState = {
         },
         loginPage: {
             loginForm: [],
+        },
+        annotationPage: {
+            player: {
+                slider: [],
+            },
+            menuActions: {
+                items: [],
+            },
         },
         modelsPage: {
             topBar: {
@@ -60,11 +78,12 @@ const defaultState: PluginsState = {
             },
         },
         projectActions: {
-            // not used
             items: [],
         },
         taskActions: {
-            // not used
+            items: [],
+        },
+        jobActions: {
             items: [],
         },
         taskItem: {
@@ -82,6 +101,11 @@ const defaultState: PluginsState = {
         about: {
             links: {
                 items: [],
+            },
+        },
+        aiTools: {
+            interactors: {
+                extras: [],
             },
         },
     },

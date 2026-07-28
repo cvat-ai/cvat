@@ -57,11 +57,12 @@ context('Dump/Upload annotation.', { browser: '!firefox' }, () => {
         cy.get(modalWindowClassName)
             .should('be.visible')
             .within(() => {
-                cy.contains('button', 'Update').click();
+                cy.contains('button', 'Replace annotations').click();
             });
     }
 
     before(() => {
+        cy.prepareUserSession();
         cy.openTaskJob(taskName);
         cy.createRectangle(createRectangleTrack2Points);
     });
@@ -73,7 +74,7 @@ context('Dump/Upload annotation.', { browser: '!firefox' }, () => {
                 as: 'exportAnnotationsRenameArchive',
                 type: 'annotations',
                 format: exportFormat,
-                archiveCustomName: 'task_export_annotation_custome_name',
+                archiveCustomName: 'task_export_annotation_custom_name',
             };
             cy.exportJob(exportAnnotationRenameArchive);
             cy.downloadExport().then((file) => {

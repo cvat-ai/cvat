@@ -18,8 +18,15 @@ class TestGetResources:
     def test_check_objects_integrity(self, path: Path):
         with open(path) as f:
             endpoint = path.stem
-            if endpoint in ["quality_settings", "quality_reports", "quality_conflicts"]:
+            if endpoint in [
+                "quality_settings",
+                "quality_reports",
+                "quality_conflicts",
+                "consensus_settings",
+            ]:
                 endpoint = "/".join(endpoint.split("_"))
+            elif endpoint == "access_tokens":
+                endpoint = "auth/access_tokens"
 
             if endpoint == "annotations":
                 objects = json.load(f)
@@ -31,6 +38,22 @@ class TestGetResources:
                             response,
                             ignore_order=True,
                             exclude_paths="root['version']",
+                        )
+                        == {}
+                    )
+            elif endpoint == "auth/access_tokens":
+                objects = json.load(f)
+                assert set(objects) == {"user"}
+
+                for username, tokens in objects["user"].items():
+                    response = config.get_method(
+                        username, "auth/access_tokens", page_size=100, sort="id"
+                    ).json()["results"]
+                    assert (
+                        DeepDiff(
+                            tokens,
+                            response,
+                            ignore_order=True,
                         )
                         == {}
                     )

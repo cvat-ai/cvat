@@ -30,6 +30,7 @@
 
     .cvat-canvas-hints-block {
         font-weight: normal;
+        font-size: smaller;
 
         > ul {
             padding-inline-start: $grid-unit-size * 2;
@@ -42,7 +43,7 @@
         }
 
         > span[role="img"] {
-            margin-right: $grid-unit-size * 2;
+            margin-right: $grid-unit-size;
         }
 
         > .ant-typography {
@@ -53,6 +54,7 @@
     .cvat-canvas-hints-hide-button {
         float: right;
         pointer-events: all;
+        margin-top: $grid-unit-size * 2;
 
         &:hover {
             transform: scale(1.1);

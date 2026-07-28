@@ -33,6 +33,7 @@ context('Rotate all images feature.', () => {
     }
 
     before(() => {
+        cy.prepareUserSession();
         cy.openTaskJob(taskName);
     });
 

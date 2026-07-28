@@ -24,6 +24,7 @@ context(
         };
 
         before(() => {
+            cy.prepareUserSession();
             cy.openTaskJob(taskName);
         });
 

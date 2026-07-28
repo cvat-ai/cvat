@@ -7,7 +7,7 @@ import './styles.scss';
 import React, { useEffect, useState } from 'react';
 import Form from 'antd/lib/form';
 import Select from 'antd/lib/select';
-import { CloudStorage } from 'reducers';
+import { CloudStorage } from 'cvat-core-wrapper';
 import SelectCloudStorage from 'components/select-cloud-storage/select-cloud-storage';
 import config from 'config';
 import CloudStorageBrowser, { RemoteFile } from './remote-browser';
@@ -18,7 +18,7 @@ interface Props {
     searchPhrase: string;
     setSearchPhrase: (searchPhrase: string) => void;
     onSelectFiles: (files: RemoteFile[]) => void;
-    onSelectCloudStorage: (cloudStorageId: number | null) => void;
+    onSelectCloudStorage: (cloudStorage: CloudStorage | null) => void;
 }
 
 const { Option } = Select;

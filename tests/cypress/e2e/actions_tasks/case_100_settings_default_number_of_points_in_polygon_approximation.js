@@ -29,6 +29,7 @@ context('Settings. Default number of points in polygon approximation.', () => {
     }
 
     before(() => {
+        cy.prepareUserSession();
         cy.openTaskJob(taskName);
     });
 
@@ -44,13 +45,14 @@ context('Settings. Default number of points in polygon approximation.', () => {
                     const sliderAttrValueNow = slider.attr('aria-valuenow');
                     const sliderAttrValuemin = slider.attr('aria-valuemin');
                     const sliderAttrValuemax = slider.attr('aria-valuemax');
-                    cy.saveSettings();
-                    cy.closeNotification('.cvat-notification-notice-save-settings-success');
+                    cy.closeSettings();
                     cy.reload();
                     testCheckSliderAttrValuenow(sliderAttrValueNow);
-                    cy.contains('strong', 'less').click();
+                    // Set slider to minimum value
+                    cy.get('.cvat-workspace-settings-approx-poly-threshold').find('[role="slider"]').type('{home}');
                     testCheckSliderAttrValuenow(sliderAttrValuemin);
-                    cy.contains('strong', 'more').click();
+                    // Set slider to maximum value
+                    cy.get('.cvat-workspace-settings-approx-poly-threshold').find('[role="slider"]').type('{end}');
                     testCheckSliderAttrValuenow(sliderAttrValuemax);
                 });
         });

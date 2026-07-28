@@ -4,7 +4,7 @@
 
 import React, { useCallback, useRef } from 'react';
 
-import { ShapeType } from 'cvat-core-wrapper';
+import { LabelType } from 'cvat-core-wrapper';
 import LabelForm from './label-form';
 import { LabelOptColor, SkeletonConfiguration } from './common';
 import SkeletonConfigurator from './skeleton-configurator';
@@ -14,11 +14,12 @@ interface Props {
     labelNames: string[];
     onUpdate: (label: LabelOptColor) => void;
     onCancel: () => void;
+    showLabelType?: boolean;
 }
 
 function ConstructorUpdater(props: Props): JSX.Element {
     const {
-        label, labelNames, onUpdate, onCancel,
+        label, labelNames, onUpdate, onCancel, showLabelType,
     } = props;
     const { type } = label;
     const skeletonConfiguratorRef = useRef<SkeletonConfigurator>(null);
@@ -43,12 +44,13 @@ function ConstructorUpdater(props: Props): JSX.Element {
                 label={label}
                 labelNames={labelNames}
                 onSubmit={onUpdate}
-                resetSkeleton={type === 'skeleton' ? resetSkeleton : undefined}
-                onSkeletonSubmit={type === 'skeleton' ? onSkeletonSubmit : undefined}
+                resetSkeleton={type === LabelType.SKELETON ? resetSkeleton : undefined}
+                onSkeletonSubmit={type === LabelType.SKELETON ? onSkeletonSubmit : undefined}
                 onCancel={onCancel}
+                showLabelType={showLabelType}
             />
             {
-                type === ShapeType.SKELETON && (
+                type === LabelType.SKELETON && (
                     <SkeletonConfigurator
                         ref={skeletonConfiguratorRef}
                         label={label}

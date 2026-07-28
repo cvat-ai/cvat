@@ -5,7 +5,7 @@ from django.db import migrations, models
 
 
 def set_has_analytics_access(apps, schema_editor):
-    User = apps.get_model('auth', 'User')
+    User = apps.get_model("auth", "User")
     for user in User.objects.all():
         is_admin = user.groups.filter(name=settings.IAM_ADMIN_ROLE).exists()
         user.profile.has_analytics_access = user.is_superuser or is_admin

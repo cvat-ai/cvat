@@ -14,12 +14,14 @@ import pluginsReducer from './plugins-reducer';
 import modelsReducer from './models-reducer';
 import notificationsReducer from './notifications-reducer';
 import annotationReducer from './annotation-reducer';
+import audioReducer from './audio-reducer';
 import settingsReducer from './settings-reducer';
 import shortcutsReducer from './shortcuts-reducer';
 import userAgreementsReducer from './useragreements-reducer';
 import reviewReducer from './review-reducer';
 import exportReducer from './export-reducer';
 import importReducer from './import-reducer';
+import consensusReducer from './consensus-reducer';
 import cloudStoragesReducer from './cloud-storages-reducer';
 import organizationsReducer from './organizations-reducer';
 import webhooksReducer from './webhooks-reducer';
@@ -27,6 +29,7 @@ import invitationsReducer from './invitations-reducer';
 import requestsReducer from './requests-reducer';
 import serverAPIReducer from './server-api-reducer';
 import navigationReducer from './navigation-reducer';
+import bulkActionsReducer from './bulk-actions-reducer';
 
 export default function createRootReducer(): Reducer {
     return combineReducers({
@@ -40,12 +43,14 @@ export default function createRootReducer(): Reducer {
         models: modelsReducer,
         notifications: notificationsReducer,
         annotation: annotationReducer,
+        audio: audioReducer,
         settings: settingsReducer,
         shortcuts: shortcutsReducer,
         userAgreements: userAgreementsReducer,
         review: reviewReducer,
         export: exportReducer,
         import: importReducer,
+        consensus: consensusReducer,
         cloudStorages: cloudStoragesReducer,
         organizations: organizationsReducer,
         webhooks: webhooksReducer,
@@ -53,5 +58,6 @@ export default function createRootReducer(): Reducer {
         requests: requestsReducer,
         serverAPI: serverAPIReducer,
         navigation: navigationReducer,
+        bulkActions: bulkActionsReducer,
     });
 }

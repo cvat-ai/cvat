@@ -25,9 +25,11 @@ context('Canvas 3D functionality. Filters.', () => {
     };
 
     before(() => {
+        cy.prepareUserSession();
         cy.openTask(taskName);
         cy.addNewLabel({ name: secondLabel });
         cy.openJob();
+        // eslint-disable-next-line cypress/no-unnecessary-waiting
         cy.wait(1000); // Waiting for the point cloud to display
         cy.create3DCuboid(firstCuboidCreationParams);
         cy.create3DCuboid(secondCuboidCreationParams);

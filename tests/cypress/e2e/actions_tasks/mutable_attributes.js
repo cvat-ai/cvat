@@ -43,6 +43,7 @@ context('Mutable attribute.', () => {
     }
 
     before(() => {
+        cy.prepareUserSession();
         cy.openTask(taskName);
         cy.addNewLabel({ name: labelName }, additionalAttrsLabelShape);
         cy.openJob();

@@ -2,22 +2,13 @@
   "compilerOptions": {
     "target": "ESNext",
     "lib": ["dom", "dom.iterable", "esnext"],
-    "allowJs": true,
     "skipLibCheck": true,
-    "allowSyntheticDefaultImports": true,
     "strict": false,
     "forceConsistentCasingInFileNames": true,
     "module": "esnext",
     "moduleResolution": "node",
-    "resolveJsonModule": true,
     "esModuleInterop": true,
-    "noEmit": true,
-    "declaration": true,
-    "declarationDir": "dist/declaration",
-    "paths": {
-      "cvat-canvas.node": ["dist/cvat-canvas.node"]
-    },
-    "baseUrl": "."
+    "noEmit": true
   },
   "include": ["src/typescript/canvas.ts"]
 }

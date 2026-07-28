@@ -56,6 +56,8 @@ spec:
           volumeMounts:
           {{- toYaml . | nindent 10 }}
           {{- end }}
+          securityContext:
+            runAsNonRoot: true
       restartPolicy: OnFailure
       {{- with merge $localValues.affinity .Values.cvat.backend.affinity }}
       affinity:

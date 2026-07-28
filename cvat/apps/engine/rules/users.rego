@@ -6,7 +6,7 @@ import data.utils
 import data.organizations
 
 # input: {
-#     "scope": <"list"|"view"|"delete"|"update"> or null,
+#     "scope": <"list"|"view"|"delete"|"update:email"|"update:personal_data"|"update:permissions"> or null,
 #     "auth": {
 #         "user": {
 #             "id": <num>,
@@ -46,16 +46,16 @@ allow if {
     organizations.is_member
 }
 
-filter := [] if { # Django Q object to filter list of entries
+base_filter := {} if { # Django Q object to filter list of entries
     utils.is_admin
-    utils.is_sandbox
 } else := qobject if {
     utils.is_sandbox
-    qobject := [ {"id": input.auth.user.id} ]
-} else := qobject if {
-    org_id := input.auth.organization.id
-    qobject := [ {"memberships__organization": org_id} ]
+    qobject := {"id": input.auth.user.id}
+} else := {} if {
+    utils.is_organization
 }
+
+filter := utils.add_organization_filter(base_filter, ["memberships__organization"])
 
 allow if {
     input.scope == utils.VIEW
@@ -68,6 +68,6 @@ allow if {
 }
 
 allow if {
-    input.scope in {utils.UPDATE, utils.DELETE}
+    input.scope in {utils.UPDATE_PERSONAL_DATA, utils.DELETE}
     input.auth.user.id == input.resource.id
 }

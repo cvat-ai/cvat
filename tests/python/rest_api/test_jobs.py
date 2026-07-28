@@ -15,7 +15,7 @@ from datetime import datetime
 from http import HTTPStatus
 from io import BytesIO
 from itertools import groupby, product
-from typing import Any, Optional, Union
+from typing import Any
 
 import numpy as np
 import pytest
@@ -27,7 +27,8 @@ from deepdiff import DeepDiff
 from PIL import Image
 from pytest_cases import parametrize
 
-from shared.utils.config import make_api_client
+from shared.tasks.utils import parse_frame_step
+from shared.utils.config import get_method, make_api_client, patch_method
 from shared.utils.helpers import generate_image_files
 
 from .utils import (
@@ -35,7 +36,6 @@ from .utils import (
     compare_annotations,
     create_task,
     export_job_dataset,
-    parse_frame_step,
 )
 
 
@@ -73,7 +73,7 @@ def filter_jobs(jobs, tasks, org):
 class TestPostJobs:
     def _test_create_job_ok(self, user: str, data: dict[str, Any], **kwargs):
         with make_api_client(user) as api_client:
-            (_, response) = api_client.jobs_api.create(
+            _, response = api_client.jobs_api.create(
                 models.JobWriteRequest(**deepcopy(data)), **kwargs
             )
             assert response.status == HTTPStatus.CREATED
@@ -83,7 +83,7 @@ class TestPostJobs:
         self, user: str, data: dict[str, Any], *, expected_status: int, **kwargs
     ):
         with make_api_client(user) as api_client:
-            (_, response) = api_client.jobs_api.create(
+            _, response = api_client.jobs_api.create(
                 models.JobWriteRequest(**deepcopy(data)),
                 **kwargs,
                 _check_status=False,
@@ -169,7 +169,7 @@ class TestPostJobs:
             assert False
 
         with make_api_client(admin_user) as api_client:
-            (gt_job, _) = api_client.jobs_api.create(job_write_request=job_params)
+            gt_job, _ = api_client.jobs_api.create(job_write_request=job_params)
 
             # GT jobs occupy the whole task frame range
             assert gt_job.start_frame == 0
@@ -222,8 +222,8 @@ class TestPostJobs:
         [
             # The results have to be the same in different CVAT revisions,
             # so the task ids are fixed
-            (21, [3, 5, 7]),  # annotation task
-            (5, [11, 14, 20]),  # interpolation task
+            (21, [4, 6, 8]),  # annotation task
+            (5, [12, 15, 21]),  # interpolation task
         ],
     )
     def test_can_create_gt_job_with_random_frames_and_seed(self, admin_user, task_id, frame_ids):
@@ -233,14 +233,14 @@ class TestPostJobs:
             "type": "ground_truth",
             "frame_selection_method": "random_uniform",
             "frame_count": 3,
-            "seed": 42,
+            "random_seed": 42,
         }
 
         response = self._test_create_job_ok(user, job_spec)
         job_id = json.loads(response.data)["id"]
 
         with make_api_client(user) as api_client:
-            (gt_job_meta, _) = api_client.jobs_api.retrieve_data_meta(job_id)
+            gt_job_meta, _ = api_client.jobs_api.retrieve_data_meta(job_id)
 
         assert frame_ids == gt_job_meta.included_frames
 
@@ -267,7 +267,7 @@ class TestPostJobs:
         job_id = json.loads(response.data)["id"]
 
         with make_api_client(user) as api_client:
-            (gt_job_meta, _) = api_client.jobs_api.retrieve_data_meta(job_id)
+            gt_job_meta, _ = api_client.jobs_api.retrieve_data_meta(job_id)
 
         assert task["size"] == gt_job_meta.size
 
@@ -387,7 +387,7 @@ class TestPostJobs:
         job = json.loads(response.data)
 
         with make_api_client(user) as api_client:
-            (_, response) = api_client.jobs_api.retrieve(job["id"])
+            _, response = api_client.jobs_api.retrieve(job["id"])
             assert DeepDiff(job, json.loads(response.data), ignore_order=True) == {}
 
     @pytest.mark.parametrize("assignee", [None, "admin1"])
@@ -408,7 +408,7 @@ class TestPostJobs:
         }
 
         with make_api_client(admin_user) as api_client:
-            (job, _) = api_client.jobs_api.create(job_write_request=spec)
+            job, _ = api_client.jobs_api.create(job_write_request=spec)
 
             if assignee:
                 assert job.assignee.username == assignee
@@ -422,12 +422,12 @@ class TestPostJobs:
 class TestDeleteJobs:
     def _test_destroy_job_ok(self, user, job_id, **kwargs):
         with make_api_client(user) as api_client:
-            (_, response) = api_client.jobs_api.destroy(job_id, **kwargs)
+            _, response = api_client.jobs_api.destroy(job_id, **kwargs)
             assert response.status == HTTPStatus.NO_CONTENT
 
     def _test_destroy_job_fails(self, user, job_id, *, expected_status: int, **kwargs):
         with make_api_client(user) as api_client:
-            (_, response) = api_client.jobs_api.destroy(
+            _, response = api_client.jobs_api.destroy(
                 job_id, **kwargs, _check_status=False, _parse_response=False
             )
             assert response.status == expected_status
@@ -477,7 +477,7 @@ class TestDeleteJobs:
         }
 
         with make_api_client(admin_user) as api_client:
-            (job, _) = api_client.jobs_api.create(job_spec)
+            job, _ = api_client.jobs_api.create(job_spec)
 
         self._test_destroy_job_ok(user, job.id)
 
@@ -531,7 +531,7 @@ class TestDeleteJobs:
         }
 
         with make_api_client(admin_user) as api_client:
-            (job, _) = api_client.jobs_api.create(job_spec)
+            job, _ = api_client.jobs_api.create(job_spec)
 
         if allow:
             self._test_destroy_job_ok(user["username"], job.id)
@@ -543,19 +543,53 @@ class TestDeleteJobs:
 
 @pytest.mark.usefixtures("restore_db_per_class")
 class TestGetJobs:
+    def _compute_expected_task_project_names(
+        self, user_id, job, tasks, projects, is_task_staff, is_project_staff, org_staff
+    ):
+        task = tasks[job["task_id"]]
+        task_org = task.get("organization")
+        task_org_staff = org_staff(task_org) if task_org else set()
+
+        can_view_task = user_id in task_org_staff or is_task_staff(user_id, task["id"])
+
+        result = {"task_name": task["name"] if can_view_task else None}
+
+        project_id = job.get("project_id")
+        if project_id:
+            project = projects[project_id]
+            project_org = project.get("organization")
+            project_org_staff = org_staff(project_org) if project_org else set()
+
+            can_view_project = user_id in project_org_staff or is_project_staff(user_id, project_id)
+            result["project_name"] = project["name"] if can_view_project else None
+        else:
+            result["project_name"] = None
+
+        return result
+
+    def _get_expected_job_data(
+        self, user_id, job, tasks, projects, is_task_staff, is_project_staff, org_staff
+    ):
+        expected_job = deepcopy(job)
+        names = self._compute_expected_task_project_names(
+            user_id, job, tasks, projects, is_task_staff, is_project_staff, org_staff
+        )
+        expected_job.update(names)
+        return expected_job
+
     def _test_get_job_200(
-        self, user, jid, *, expected_data: Optional[dict[str, Any]] = None, **kwargs
+        self, user, jid, *, expected_data: dict[str, Any] | None = None, **kwargs
     ):
         with make_api_client(user) as client:
-            (_, response) = client.jobs_api.retrieve(jid, **kwargs)
+            _, response = client.jobs_api.retrieve(jid, **kwargs)
             assert response.status == HTTPStatus.OK
 
             if expected_data is not None:
-                assert compare_annotations(expected_data, json.loads(response.data)) == {}
+                assert DeepDiff(expected_data, json.loads(response.data), ignore_order=True) == {}
 
     def _test_get_job_403(self, user, jid, **kwargs):
         with make_api_client(user) as client:
-            (_, response) = client.jobs_api.retrieve(
+            _, response = client.jobs_api.retrieve(
                 jid, **kwargs, _check_status=False, _parse_response=False
             )
             assert response.status == HTTPStatus.FORBIDDEN
@@ -570,7 +604,16 @@ class TestGetJobs:
 
     @pytest.mark.parametrize("groups", [["user"]])
     def test_non_admin_org_staff_can_get_job(
-        self, groups, users, organizations, org_staff, jobs_by_org
+        self,
+        groups,
+        users,
+        organizations,
+        org_staff,
+        jobs_by_org,
+        tasks,
+        projects,
+        is_task_staff,
+        is_project_staff,
     ):
         user, org_id = next(
             (user, org["id"])
@@ -579,17 +622,38 @@ class TestGetJobs:
             if user["groups"] == groups and user["id"] in org_staff(org["id"])
         )
         job = jobs_by_org[org_id][0]
-        self._test_get_job_200(user["username"], job["id"], expected_data=job)
+
+        expected_job = self._get_expected_job_data(
+            user["id"], job, tasks, projects, is_task_staff, is_project_staff, org_staff
+        )
+
+        self._test_get_job_200(user["username"], job["id"], expected_data=expected_job)
 
     @pytest.mark.parametrize("groups", [["user"], ["worker"]])
-    def test_non_admin_job_staff_can_get_job(self, groups, users, jobs, is_job_staff):
+    def test_non_admin_job_staff_can_get_job(
+        self,
+        groups,
+        users,
+        jobs,
+        tasks,
+        projects,
+        is_job_staff,
+        is_task_staff,
+        is_project_staff,
+        org_staff,
+    ):
         user, job = next(
             (user, job)
             for user in users
             for job in jobs
             if user["groups"] == groups and is_job_staff(user["id"], job["id"])
         )
-        self._test_get_job_200(user["username"], job["id"], expected_data=job)
+
+        expected_job = self._get_expected_job_data(
+            user["id"], job, tasks, projects, is_task_staff, is_project_staff, org_staff
+        )
+
+        self._test_get_job_200(user["username"], job["id"], expected_data=expected_job)
 
     @pytest.mark.parametrize("groups", [["user"], ["worker"]])
     def test_non_admin_non_job_staff_non_org_staff_cannot_get_job(
@@ -607,7 +671,9 @@ class TestGetJobs:
         self._test_get_job_403(user["username"], job_id)
 
     @pytest.mark.usefixtures("restore_db_per_function")
-    def test_can_get_gt_job_in_sandbox_task(self, tasks, jobs, users, admin_user):
+    def test_can_get_gt_job_in_sandbox_task(
+        self, tasks, jobs, users, projects, admin_user, is_task_staff, is_project_staff, org_staff
+    ):
         task = next(
             t
             for t in tasks
@@ -616,6 +682,7 @@ class TestGetJobs:
             and not users[t["owner"]["id"]]["is_superuser"]
         )
         user = task["owner"]["username"]
+        user_id = task["owner"]["id"]
 
         job_spec = {
             "task_id": task["id"],
@@ -625,9 +692,14 @@ class TestGetJobs:
         }
 
         with make_api_client(admin_user) as api_client:
-            (job, _) = api_client.jobs_api.create(job_spec)
+            _, response = api_client.jobs_api.create(job_spec)
+            job = json.loads(response.data)
 
-        self._test_get_job_200(user, job.id)
+        expected_job = self._get_expected_job_data(
+            user_id, job, tasks, projects, is_task_staff, is_project_staff, org_staff
+        )
+
+        self._test_get_job_200(user, job["id"], expected_data=expected_job)
 
     @pytest.mark.usefixtures("restore_db_per_function")
     @pytest.mark.parametrize(
@@ -648,8 +720,11 @@ class TestGetJobs:
         tasks,
         jobs,
         users,
+        projects,
         is_org_member,
         is_task_staff,
+        is_project_staff,
+        org_staff,
         org_role,
         is_staff,
         allow,
@@ -680,11 +755,15 @@ class TestGetJobs:
         }
 
         with make_api_client(admin_user) as api_client:
-            (_, response) = api_client.jobs_api.create(job_spec)
+            _, response = api_client.jobs_api.create(job_spec)
             job = json.loads(response.data)
 
         if allow:
-            self._test_get_job_200(user["username"], job["id"], expected_data=job)
+            expected_job = self._get_expected_job_data(
+                user["id"], job, tasks, projects, is_task_staff, is_project_staff, org_staff
+            )
+
+            self._test_get_job_200(user["username"], job["id"], expected_data=expected_job)
         else:
             self._test_get_job_403(user["username"], job["id"])
 
@@ -712,8 +791,8 @@ class TestGetGtJobData:
         )
         task_id = task["id"]
         with make_api_client(user) as api_client:
-            (task_meta, _) = api_client.tasks_api.retrieve_data_meta(task_id)
-            frame_step = parse_frame_step(task_meta.frame_filter.split("=")[-1])
+            task_meta, _ = api_client.tasks_api.retrieve_data_meta(task_id)
+            frame_step = parse_frame_step(task_meta.frame_filter)
 
         job_frame_ids = list(range(task_meta.start_frame, task_meta.stop_frame, frame_step))[
             :job_frame_count
@@ -722,7 +801,7 @@ class TestGetGtJobData:
         request.addfinalizer(lambda: self._delete_gt_job(user, gt_job.id))
 
         with make_api_client(user) as api_client:
-            (gt_job_meta, _) = api_client.jobs_api.retrieve_data_meta(gt_job.id)
+            gt_job_meta, _ = api_client.jobs_api.retrieve_data_meta(gt_job.id)
 
         # These values are relative to the resulting task frames, unlike meta values
         assert 0 == gt_job.start_frame
@@ -758,7 +837,6 @@ class TestGetGtJobData:
             admin_user,
             spec={
                 "name": "test complex frame setup",
-                "labels": [{"name": "cat"}],
             },
             data={
                 "image_quality": 75,
@@ -776,7 +854,7 @@ class TestGetGtJobData:
         request.addfinalizer(lambda: self._delete_gt_job(admin_user, gt_job.id))
 
         with make_api_client(admin_user) as api_client:
-            (gt_job_meta, _) = api_client.jobs_api.retrieve_data_meta(gt_job.id)
+            gt_job_meta, _ = api_client.jobs_api.retrieve_data_meta(gt_job.id)
 
         # These values are relative to the resulting task frames, unlike meta values
         assert 0 == gt_job.start_frame
@@ -818,8 +896,8 @@ class TestGetGtJobData:
         )
         task_id = task["id"]
         with make_api_client(user) as api_client:
-            (task_meta, _) = api_client.tasks_api.retrieve_data_meta(task_id)
-            frame_step = parse_frame_step(task_meta.frame_filter.split("=")[-1])
+            task_meta, _ = api_client.tasks_api.retrieve_data_meta(task_id)
+            frame_step = parse_frame_step(task_meta.frame_filter)
 
         task_frame_ids = range(task_meta.start_frame, task_meta.stop_frame + 1, frame_step)
         rng = np.random.Generator(np.random.MT19937(42))
@@ -842,7 +920,7 @@ class TestGetGtJobData:
                 kwargs = {"index": chunk_id}
 
             with make_api_client(admin_user) as api_client:
-                (chunk_file, response) = api_client.jobs_api.retrieve_data(
+                chunk_file, response = api_client.jobs_api.retrieve_data(
                     gt_job.id, **kwargs, quality=quality, type="chunk"
                 )
                 assert response.status == HTTPStatus.OK
@@ -874,13 +952,13 @@ class TestGetGtJobData:
                 "frames": frames,
             }
 
-            (gt_job, _) = api_client.jobs_api.create(job_spec)
+            gt_job, _ = api_client.jobs_api.create(job_spec)
 
         return gt_job
 
     def _get_gt_job(self, user, task_id):
         with make_api_client(user) as api_client:
-            (task_jobs, _) = api_client.jobs_api.list(task_id=task_id, type="ground_truth")
+            task_jobs, _ = api_client.jobs_api.list(task_id=task_id, type="ground_truth")
             gt_job = task_jobs.results[0]
 
         return gt_job
@@ -901,8 +979,8 @@ class TestGetGtJobData:
         )
         task_id = task["id"]
         with make_api_client(user) as api_client:
-            (task_meta, _) = api_client.tasks_api.retrieve_data_meta(task_id)
-            frame_step = parse_frame_step(task_meta.frame_filter.split("=")[-1])
+            task_meta, _ = api_client.tasks_api.retrieve_data_meta(task_id)
+            frame_step = parse_frame_step(task_meta.frame_filter)
 
         job_frame_ids = list(range(task_meta.start_frame, task_meta.stop_frame, frame_step))[
             :job_frame_count
@@ -917,7 +995,7 @@ class TestGetGtJobData:
         excluded_frames = list(set(frame_range).difference(included_frames))
 
         with make_api_client(admin_user) as api_client:
-            (_, response) = api_client.jobs_api.retrieve_data(
+            _, response = api_client.jobs_api.retrieve_data(
                 gt_job.id,
                 number=excluded_frames[0],
                 quality=quality,
@@ -928,7 +1006,7 @@ class TestGetGtJobData:
             assert response.status == HTTPStatus.BAD_REQUEST
             assert b"Incorrect requested frame number" in response.data
 
-            (_, response) = api_client.jobs_api.retrieve_data(
+            _, response = api_client.jobs_api.retrieve_data(
                 gt_job.id, number=included_frames[0], quality=quality, type="frame"
             )
             assert response.status == HTTPStatus.OK
@@ -941,13 +1019,22 @@ class TestListJobs:
             results = get_paginated_collection(
                 client.jobs_api.list_endpoint, return_json=True, **kwargs
             )
-            assert compare_annotations(data, results) == {}
+            assert (
+                DeepDiff(
+                    data,
+                    results,
+                    ignore_order=True,
+                    exclude_regex_paths=[
+                        r"root\[\d+\]\['task_name'\]",
+                        r"root\[\d+\]\['project_name'\]",
+                    ],
+                )
+                == {}
+            )
 
     def _test_list_jobs_403(self, user, **kwargs):
         with make_api_client(user) as client:
-            (_, response) = client.jobs_api.list(
-                **kwargs, _check_status=False, _parse_response=False
-            )
+            _, response = client.jobs_api.list(**kwargs, _check_status=False, _parse_response=False)
             assert response.status == HTTPStatus.FORBIDDEN
 
     @pytest.mark.parametrize("org", [None, "", 1, 2])
@@ -993,10 +1080,16 @@ class TestJobsListFilters(CollectionSimpleFilterTestBase):
         "field",
         (
             "assignee",
-            "state",
-            "stage",
-            "task_id",
+            "dimension",
+            "media_type",
+            "mode",
+            "parent_job_id",
             "project_id",
+            "project_name",
+            "stage",
+            "state",
+            "task_id",
+            "task_name",
             "type",
         ),
     )
@@ -1008,13 +1101,13 @@ class TestJobsListFilters(CollectionSimpleFilterTestBase):
 class TestGetAnnotations:
     def _test_get_job_annotations_200(self, user, jid, data):
         with make_api_client(user) as client:
-            (_, response) = client.jobs_api.retrieve_annotations(jid)
+            _, response = client.jobs_api.retrieve_annotations(jid)
             assert response.status == HTTPStatus.OK
             assert compare_annotations(data, json.loads(response.data)) == {}
 
     def _test_get_job_annotations_403(self, user, jid):
         with make_api_client(user) as client:
-            (_, response) = client.jobs_api.retrieve_annotations(
+            _, response = client.jobs_api.retrieve_annotations(
                 jid, _check_status=False, _parse_response=False
             )
             assert response.status == HTTPStatus.FORBIDDEN
@@ -1126,7 +1219,7 @@ class TestGetAnnotations:
 class TestPatchJobAnnotations:
     def _check_response(self, username, jid, expect_success, data=None):
         with make_api_client(username) as client:
-            (_, response) = client.jobs_api.partial_update_annotations(
+            _, response = client.jobs_api.partial_update_annotations(
                 id=jid,
                 patched_labeled_data_request=deepcopy(data),
                 action="update",
@@ -1136,7 +1229,9 @@ class TestPatchJobAnnotations:
 
             if expect_success:
                 assert response.status == HTTPStatus.OK
-                assert compare_annotations(data, json.loads(response.data)) == {}
+                assert (
+                    compare_annotations(data, json.loads(response.data), ignore_source=True) == {}
+                )
             else:
                 assert response.status == HTTPStatus.FORBIDDEN
 
@@ -1144,10 +1239,14 @@ class TestPatchJobAnnotations:
     def request_data(self, annotations):
         def get_data(jid):
             data = deepcopy(annotations["job"][str(jid)])
-            if data["shapes"][0]["type"] == "skeleton":
-                data["shapes"][0]["elements"][0].update({"points": [2.0, 3.0, 4.0, 5.0]})
-            else:
-                data["shapes"][0].update({"points": [2.0, 3.0, 4.0, 5.0, 6.0, 7.0]})
+
+            def mutate(shape):
+                shape["points"] = [p + 1.0 for p in shape["points"]]
+
+            mutate(data["shapes"][0])
+            if elements := data["shapes"][0]["elements"]:
+                mutate(elements[0])
+
             data["version"] += 1
             return data
 
@@ -1249,6 +1348,52 @@ class TestPatchJobAnnotations:
         data = request_data(job["id"])
         self._check_response(admin_user, job["id"], True, data)
 
+    def test_can_autofix_annotation_source_for_updated_annotations(self, admin_user):
+        # Backward compatibility test for https://github.com/cvat-ai/cvat/issues/8874
+
+        jid = 19
+
+        response = get_method(admin_user, f"jobs/{jid}/annotations")
+        response.raise_for_status()
+        response = response.json()
+
+        modified_shape = next(s for s in response["shapes"] if s["type"] == "rectangle")
+        modified_shape["points"] = [1, 2, 3, 4]
+        modified_shape["source"] = "Ground truth"
+
+        payload = {"shapes": [s for s in response["shapes"] if s["id"] != modified_shape["id"]]}
+        response = patch_method(admin_user, f"jobs/{jid}/annotations", payload, action="delete")
+        response.raise_for_status()
+        response = response.json()
+        assert len(response["shapes"]) == 1
+
+        payload = {"shapes": [modified_shape]}
+        response = patch_method(admin_user, f"jobs/{jid}/annotations", payload, action="update")
+        response.raise_for_status()
+        response = response.json()
+        assert len(response["shapes"]) == 1
+        assert response["shapes"][0]["source"] == "manual"
+        assert response["shapes"][0]["points"] == modified_shape["points"]
+
+    def test_can_check_annotation_source(self, admin_user):
+        # Regression test for https://github.com/cvat-ai/cvat/issues/8874
+
+        jid = 19
+
+        response = get_method(admin_user, f"jobs/{jid}/annotations")
+        response.raise_for_status()
+        response = response.json()
+
+        new_shape = next(s for s in response["shapes"] if s["type"] == "rectangle")
+        del new_shape["id"]
+        new_shape["points"] = [1, 2, 3, 4]
+        new_shape["source"] = "Ground truth"
+
+        payload = {"shapes": [new_shape]}
+        response = patch_method(admin_user, f"jobs/{jid}/annotations", payload, action="update")
+        assert response.status_code == HTTPStatus.BAD_REQUEST
+        assert b"must be one of" in response.content
+
 
 @pytest.mark.usefixtures("restore_db_per_function")
 class TestPatchJob:
@@ -1314,7 +1459,7 @@ class TestPatchJob:
 
         assignee = new_assignee(jid, user["id"])
         with make_api_client(user["username"]) as client:
-            (_, response) = client.jobs_api.partial_update(
+            _, response = client.jobs_api.partial_update(
                 id=jid,
                 patched_job_write_request={"assignee": assignee},
                 _parse_response=expect_success,
@@ -1351,7 +1496,7 @@ class TestPatchJob:
             new_assignee_id = next(u for u in users if u["id"] != old_assignee_id)["id"]
 
         with make_api_client(admin_user) as api_client:
-            (updated_job, _) = api_client.jobs_api.partial_update(
+            updated_job, _ = api_client.jobs_api.partial_update(
                 job["id"], patched_job_write_request={"assignee": new_assignee_id}
             )
 
@@ -1443,11 +1588,10 @@ class TestJobDataset:
         username: str,
         jid: int,
         *,
-        api_version: Union[int, tuple[int]],
         local_download: bool = True,
         **kwargs,
-    ) -> Optional[bytes]:
-        dataset = export_job_dataset(username, api_version, save_images=True, id=jid, **kwargs)
+    ) -> bytes | None:
+        dataset = export_job_dataset(username, save_images=True, id=jid, **kwargs)
         if local_download:
             assert zipfile.is_zipfile(io.BytesIO(dataset))
         else:
@@ -1457,9 +1601,9 @@ class TestJobDataset:
 
     @staticmethod
     def _test_export_annotations(
-        username: str, jid: int, *, api_version: int, local_download: bool = True, **kwargs
-    ) -> Optional[bytes]:
-        dataset = export_job_dataset(username, api_version, save_images=False, id=jid, **kwargs)
+        username: str, jid: int, *, local_download: bool = True, **kwargs
+    ) -> bytes | None:
+        dataset = export_job_dataset(username, save_images=False, id=jid, **kwargs)
         if local_download:
             assert zipfile.is_zipfile(io.BytesIO(dataset))
         else:
@@ -1467,60 +1611,27 @@ class TestJobDataset:
 
         return dataset
 
-    @pytest.mark.parametrize("api_version", product((1, 2), repeat=2))
-    @pytest.mark.parametrize(
-        "local_download", (True, pytest.param(False, marks=pytest.mark.with_external_services))
-    )
-    def test_can_export_dataset_locally_and_to_cloud_with_both_api_versions(
-        self,
-        admin_user: str,
-        jobs_with_shapes: list,
-        filter_tasks,
-        api_version: tuple[int],
-        local_download: bool,
-    ):
-        filter_ = "target_storage__location"
-        if local_download:
-            filter_ = "exclude_" + filter_
-
-        task_ids = [t["id"] for t in filter_tasks(**{filter_: "cloud_storage"})]
-
-        job = next(j for j in jobs_with_shapes if j["task_id"] in task_ids)
-        self._test_export_dataset(
-            admin_user,
-            job["id"],
-            api_version=api_version,
-            local_download=local_download,
-        )
-
-    @pytest.mark.parametrize("api_version", (1, 2))
-    def test_non_admin_can_export_dataset(self, users, jobs_with_shapes, api_version: int):
+    def test_non_admin_can_export_dataset(self, users, jobs_with_shapes):
         job, username = next(
-            (
-                (job, self.tasks[job["task_id"]]["owner"]["username"])
-                for job in jobs_with_shapes
-                if "admin" not in users[self.tasks[job["task_id"]]["owner"]["id"]]["groups"]
-                and self.tasks[job["task_id"]]["target_storage"] is None
-                and self.tasks[job["task_id"]]["organization"] is None
-            )
+            (job, self.tasks[job["task_id"]]["owner"]["username"])
+            for job in jobs_with_shapes
+            if "admin" not in users[self.tasks[job["task_id"]]["owner"]["id"]]["groups"]
+            and self.tasks[job["task_id"]]["target_storage"] is None
+            and self.tasks[job["task_id"]]["organization"] is None
         )
-        self._test_export_dataset(username, job["id"], api_version=api_version)
+        self._test_export_dataset(username, job["id"])
 
-    @pytest.mark.parametrize("api_version", (1, 2))
-    def test_non_admin_can_export_annotations(self, users, jobs_with_shapes, api_version: int):
+    def test_non_admin_can_export_annotations(self, users, jobs_with_shapes):
         job, username = next(
-            (
-                (job, self.tasks[job["task_id"]]["owner"]["username"])
-                for job in jobs_with_shapes
-                if "admin" not in users[self.tasks[job["task_id"]]["owner"]["id"]]["groups"]
-                and self.tasks[job["task_id"]]["target_storage"] is None
-                and self.tasks[job["task_id"]]["organization"] is None
-            )
+            (job, self.tasks[job["task_id"]]["owner"]["username"])
+            for job in jobs_with_shapes
+            if "admin" not in users[self.tasks[job["task_id"]]["owner"]["id"]]["groups"]
+            and self.tasks[job["task_id"]]["target_storage"] is None
+            and self.tasks[job["task_id"]]["organization"] is None
         )
 
-        self._test_export_annotations(username, job["id"], api_version=api_version)
+        self._test_export_annotations(username, job["id"])
 
-    @pytest.mark.parametrize("api_version", (1, 2))
     @pytest.mark.parametrize("username, jid", [("admin1", 14)])
     @pytest.mark.parametrize(
         "anno_format, anno_file_name, check_func",
@@ -1538,7 +1649,6 @@ class TestJobDataset:
         check_func,
         jobs,
         annotations,
-        api_version: int,
     ):
         job_data = jobs[jid]
         annotations_before = annotations["job"][str(jid)]
@@ -1557,7 +1667,6 @@ class TestJobDataset:
         dataset = self._test_export_dataset(
             username,
             jid,
-            api_version=api_version,
             format=anno_format,
         )
 
@@ -1568,7 +1677,6 @@ class TestJobDataset:
             content = zip_file.read(anno_file_name)
         check_func(content, values_to_be_checked)
 
-    @pytest.mark.parametrize("api_version", (1, 2))
     @pytest.mark.parametrize("username", ["admin1"])
     @pytest.mark.parametrize("jid", [25, 26])
     @pytest.mark.parametrize(
@@ -1592,7 +1700,6 @@ class TestJobDataset:
         check_func,
         jobs,
         annotations,
-        api_version: int,
     ):
         job_data = jobs[jid]
         annotations_before = annotations["job"][str(jid)]
@@ -1611,7 +1718,6 @@ class TestJobDataset:
         dataset = self._test_export_dataset(
             username,
             jid,
-            api_version=api_version,
             format=anno_format,
         )
 
@@ -1627,15 +1733,15 @@ class TestJobDataset:
 class TestGetJobPreview:
     def _test_get_job_preview_200(self, username, jid, **kwargs):
         with make_api_client(username) as client:
-            (_, response) = client.jobs_api.retrieve_preview(jid, **kwargs)
+            _, response = client.jobs_api.retrieve_preview(jid, **kwargs)
 
             assert response.status == HTTPStatus.OK
-            (width, height) = Image.open(BytesIO(response.data)).size
+            width, height = Image.open(BytesIO(response.data)).size
             assert width > 0 and height > 0
 
     def _test_get_job_preview_403(self, username, jid, **kwargs):
         with make_api_client(username) as client:
-            (_, response) = client.jobs_api.retrieve_preview(
+            _, response = client.jobs_api.retrieve_preview(
                 jid, **kwargs, _check_status=False, _parse_response=False
             )
             assert response.status == HTTPStatus.FORBIDDEN
@@ -1684,7 +1790,9 @@ class TestGetJobPreview:
             (user["username"], job["id"])
             for user in users
             for org in organizations
-            for job in jobs_by_org[org["id"]]
+            for job in jobs_by_org.get(
+                org["id"], []
+            )  # jobs_by_org does not include orgs without jobs
             if is_job_staff(user["id"], job["id"])
         )
         self._test_get_job_preview_200(username, job_id)
@@ -1705,7 +1813,9 @@ class TestGetJobPreview:
             (user["username"], job["id"])
             for user in users
             for org in organizations
-            for job in jobs_by_org[org["id"]]
+            for job in jobs_by_org.get(
+                org["id"], []
+            )  # jobs_by_org does not include orgs without jobs
             if user["id"] not in org_staff(org["id"]) and not is_job_staff(user["id"], job["id"])
         )
         self._test_get_job_preview_403(username, job_id)

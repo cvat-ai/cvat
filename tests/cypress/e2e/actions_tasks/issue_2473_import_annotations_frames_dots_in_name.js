@@ -38,7 +38,7 @@ context('Import annotations for frames with dots in name.', { browser: '!firefox
 
     function confirmUpdate(modalWindowClassName) {
         cy.get(modalWindowClassName).should('be.visible').within(() => {
-            cy.contains('button', 'Update').click();
+            cy.contains('button', 'Replace annotations').click();
         });
     }
 

@@ -7,15 +7,22 @@ from __future__ import annotations
 import argparse
 import textwrap
 from collections.abc import Sequence
-from typing import Optional
 
 import cvat_sdk.auto_annotation as cvataa
-from attr.converters import to_bool
 from cvat_sdk import Client, models
 from cvat_sdk.core.helpers import DeferredTqdmProgressReporter
 from cvat_sdk.core.proxies.tasks import ResourceType
 
-from .command_base import CommandGroup, GenericCommand, GenericDeleteCommand, GenericListCommand
+from .command_base import (
+    CommandGroup,
+    GenericCommand,
+    GenericCreateFromBackupCommand,
+    GenericDeleteCommand,
+    GenericDownloadBackupCommand,
+    GenericExportDatasetCommand,
+    GenericImportDatasetCommand,
+    GenericListCommand,
+)
 from .common import FunctionLoader, configure_function_implementation_arguments
 from .parsers import parse_label_arg, parse_resource_type, parse_threshold
 
@@ -36,14 +43,12 @@ class TaskList(GenericListCommand, GenericTaskCommand):
 
 @COMMANDS.command_class("create")
 class TaskCreate:
-    description = textwrap.dedent(
-        """\
+    description = textwrap.dedent("""\
         Create a new CVAT task. To create a task, you need
         to specify labels using the --labels argument or
         attach the task to an existing project using the
         --project_id argument.
-        """
-    )
+        """)
 
     def configure_parser(self, parser: argparse.ArgumentParser) -> None:
         parser.add_argument("name", type=str, help="name of the task")
@@ -78,45 +83,37 @@ class TaskCreate:
             dest="status_check_period",
             default=2,
             type=float,
-            help=textwrap.dedent(
-                """\
+            help=textwrap.dedent("""\
                 number of seconds to wait until checking
                 if data compression finished (necessary before uploading annotations)
-                """
-            ),
+                """),
         )
         parser.add_argument(
             "--copy_data",
             default=False,
             action="store_true",
-            help=textwrap.dedent(
-                """\
+            help=textwrap.dedent("""\
                 set the option to copy the data, only used when resource type is
                 share (default: %(default)s)
-                """
-            ),
+                """),
         )
         parser.add_argument(
             "--frame_step",
             default=argparse.SUPPRESS,
             type=int,
-            help=textwrap.dedent(
-                """\
+            help=textwrap.dedent("""\
                 set the frame step option in the advanced configuration
                 when uploading image series or videos
-                """
-            ),
+                """),
         )
         parser.add_argument(
             "--image_quality",
             default=70,
             type=int,
-            help=textwrap.dedent(
-                """\
+            help=textwrap.dedent("""\
                 set the image quality option in the advanced configuration
                 when creating tasks.(default: %(default)s)
-                """
-            ),
+                """),
         )
         parser.add_argument(
             "--labels",
@@ -143,7 +140,7 @@ class TaskCreate:
             "--sorting-method",
             default="lexicographical",
             choices=["lexicographical", "natural", "predefined", "random"],
-            help="""data soring method (default: %(default)s)""",
+            help="""data sorting method (default: %(default)s)""",
         )
         parser.add_argument(
             "--start_frame",
@@ -174,16 +171,14 @@ class TaskCreate:
             "--filename_pattern",
             default=argparse.SUPPRESS,
             type=str,
-            help=textwrap.dedent(
-                """\
+            help=textwrap.dedent("""\
                 pattern for filtering data from the manifest file for the upload.
                 Only shell-style wildcards are supported:
                 * - matches everything;
                 ? - matches any single character;
                 [seq] - matches any character in 'seq';
                 [!seq] - matches any character not in seq
-                """
-            ),
+                """),
         )
 
     def execute(
@@ -228,12 +223,10 @@ class TaskDelete(GenericDeleteCommand, GenericTaskCommand):
 
 @COMMANDS.command_class("frames")
 class TaskFrames:
-    description = textwrap.dedent(
-        """\
+    description = textwrap.dedent("""\
         Download the requested frame numbers for a task and save images as
         task_<ID>_frame_<FRAME>.jpg.
-        """
-    )
+        """)
 
     def configure_parser(self, parser: argparse.ArgumentParser) -> None:
         parser.add_argument("task_id", type=int, help="task ID")
@@ -267,138 +260,27 @@ class TaskFrames:
 
 
 @COMMANDS.command_class("export-dataset")
-class TaskExportDataset:
-    description = textwrap.dedent(
-        """\
-        Export a task as a dataset in the specified format (e.g. 'YOLO 1.1').
-        """
-    )
-
-    def configure_parser(self, parser: argparse.ArgumentParser) -> None:
-        parser.add_argument("task_id", type=int, help="task ID")
-        parser.add_argument("filename", type=str, help="output file")
-        parser.add_argument(
-            "--format",
-            dest="fileformat",
-            type=str,
-            default="CVAT for images 1.1",
-            help="annotation format (default: %(default)s)",
-        )
-        parser.add_argument(
-            "--completion_verification_period",
-            dest="status_check_period",
-            default=2,
-            type=float,
-            help="number of seconds to wait until checking if dataset building finished",
-        )
-        parser.add_argument(
-            "--with-images",
-            type=to_bool,
-            default=False,
-            dest="include_images",
-            help="Whether to include images or not (default: %(default)s)",
-        )
-
-    def execute(
-        self,
-        client: Client,
-        *,
-        task_id: int,
-        fileformat: str,
-        filename: str,
-        status_check_period: int,
-        include_images: bool,
-    ) -> None:
-        client.tasks.retrieve(obj_id=task_id).export_dataset(
-            format_name=fileformat,
-            filename=filename,
-            pbar=DeferredTqdmProgressReporter(),
-            status_check_period=status_check_period,
-            include_images=include_images,
-        )
+class TaskExportDataset(GenericExportDatasetCommand, GenericTaskCommand):
+    pass
 
 
 @COMMANDS.command_class("import-dataset")
-class TaskImportDataset:
-    description = textwrap.dedent(
-        """\
+class TaskImportDataset(GenericImportDatasetCommand, GenericTaskCommand):
+    description = textwrap.dedent("""\
         Import annotations into a task from a dataset in the specified format
         (e.g. 'YOLO 1.1').
-        """
-    )
-
-    def configure_parser(self, parser: argparse.ArgumentParser) -> None:
-        parser.add_argument("task_id", type=int, help="task ID")
-        parser.add_argument("filename", type=str, help="upload file")
-        parser.add_argument(
-            "--format",
-            dest="fileformat",
-            type=str,
-            default="CVAT 1.1",
-            help="annotation format (default: %(default)s)",
-        )
-
-    def execute(
-        self,
-        client: Client,
-        *,
-        task_id: int,
-        fileformat: str,
-        filename: str,
-    ) -> None:
-        client.tasks.retrieve(obj_id=task_id).import_annotations(
-            format_name=fileformat,
-            filename=filename,
-            pbar=DeferredTqdmProgressReporter(),
-        )
+        """)
+    import_method_name = "import_annotations"
 
 
 @COMMANDS.command_class("backup")
-class TaskBackup:
-    description = """Download a task backup."""
-
-    def configure_parser(self, parser: argparse.ArgumentParser) -> None:
-        parser.add_argument("task_id", type=int, help="task ID")
-        parser.add_argument("filename", type=str, help="output file")
-        parser.add_argument(
-            "--completion_verification_period",
-            dest="status_check_period",
-            default=2,
-            type=float,
-            help="time interval between checks if archive building has been finished, in seconds",
-        )
-
-    def execute(
-        self, client: Client, *, task_id: int, filename: str, status_check_period: int
-    ) -> None:
-        client.tasks.retrieve(obj_id=task_id).download_backup(
-            filename=filename,
-            status_check_period=status_check_period,
-            pbar=DeferredTqdmProgressReporter(),
-        )
+class TaskBackup(GenericDownloadBackupCommand, GenericTaskCommand):
+    pass
 
 
 @COMMANDS.command_class("create-from-backup")
-class TaskCreateFromBackup:
-    description = """Create a task from a backup file."""
-
-    def configure_parser(self, parser: argparse.ArgumentParser) -> None:
-        parser.add_argument("filename", type=str, help="upload file")
-        parser.add_argument(
-            "--completion_verification_period",
-            dest="status_check_period",
-            default=2,
-            type=float,
-            help="time interval between checks if archive processing was finished, in seconds",
-        )
-
-    def execute(self, client: Client, *, filename: str, status_check_period: int) -> None:
-        task = client.tasks.create_from_backup(
-            filename=filename,
-            status_check_period=status_check_period,
-            pbar=DeferredTqdmProgressReporter(),
-        )
-        print(task.id)
+class TaskCreateFromBackup(GenericCreateFromBackupCommand, GenericTaskCommand):
+    pass
 
 
 @COMMANDS.command_class("auto-annotate")
@@ -419,7 +301,7 @@ class TaskAutoAnnotate:
         parser.add_argument(
             "--allow-unmatched-labels",
             action="store_true",
-            help="Allow the function to declare labels not configured in the task",
+            help="Allow the function to declare labels/sublabels/attributes not configured in the task",
         )
 
         parser.add_argument(
@@ -443,7 +325,7 @@ class TaskAutoAnnotate:
         function_loader: FunctionLoader,
         clear_existing: bool = False,
         allow_unmatched_labels: bool = False,
-        conf_threshold: Optional[float],
+        conf_threshold: float | None,
         conv_mask_to_poly: bool,
     ) -> None:
         function = function_loader.load()

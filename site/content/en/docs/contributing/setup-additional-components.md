@@ -7,7 +7,8 @@ description: 'Deploying a DL model as a serverless function and Cypress tests.'
 
 ## DL models as serverless functions
 
-Follow this {{< ilink "/docs/administration/advanced/installation_automatic_annotation" "guide" >}} to install Nuclio:
+Follow this {{< ilink "/docs/administration/community/advanced/installation_automatic_annotation" "guide" >}}
+to install Nuclio:
 
 - You have to install `nuctl` command line tool to build and deploy serverless
   functions.
@@ -19,8 +20,8 @@ Follow this {{< ilink "/docs/administration/advanced/installation_automatic_anno
   This will automatically create a `cvat` Nuclio project to contain the functions.
 
 ```bash
-./serverless/deploy_cpu.sh serverless/openvino/dextr
-./serverless/deploy_cpu.sh serverless/openvino/omz/public/yolo-v3-tf
+./serverless/deploy_cpu.sh serverless/pytorch/facebookresearch/sam/nuclio
+./serverless/deploy_cpu.sh serverless/onnx/WongKinYiu/yolov7/nuclio
 ```
 
 - Display a list of running serverless functions using `nuctl` command or see them
@@ -34,8 +35,8 @@ nuctl get function
 
 ```
   NAMESPACE |                             NAME                              | PROJECT | STATE | NODE PORT | REPLICAS
-  nuclio    | openvino-dextr                                                | cvat    | ready |     55274 | 1/1
-  nuclio    | openvino-omz-public-yolo-v3-tf                                | cvat    | ready |     57308 | 1/1
+  nuclio    | pth-facebookresearch-sam-vit-h                                | cvat    | ready |     55274 | 1/1
+  nuclio    | onnx-wongkinyiu-yolov7                                        | cvat    | ready |     57308 | 1/1
 ```
 
 </details>

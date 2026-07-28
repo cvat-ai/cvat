@@ -75,4 +75,5 @@ function CursorControl(props: Props): JSX.Element {
     );
 }
 
+Object.assign(CursorControl, { displayName: 'CursorControl' });
 export default React.memo(CursorControl);

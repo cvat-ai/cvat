@@ -74,7 +74,7 @@ context('Create a task with set an issue tracker.', () => {
                 .click(); // Close modal window
         });
 
-        it('Remove issue trasker URL.', () => {
+        it('Remove issue tracker URL.', () => {
             cy.get('.cvat-issue-tracker-value').should('have.text', dummyBugTrackerUrl);
             cy.get('.cvat-issue-tracker').find('[aria-label="Edit"]').click();
             cy.get('.cvat-issue-tracker-value').find('textarea').clear();

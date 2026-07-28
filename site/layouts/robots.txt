@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /docs/
+Disallow: /v*/docs/
+Sitemap: {{ absURL "sitemap.xml" }}

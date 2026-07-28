@@ -5,7 +5,6 @@
 import io
 from logging import Logger
 from pathlib import Path
-from typing import Optional
 
 import pytest
 from cvat_sdk import Client, models
@@ -18,7 +17,7 @@ from PIL import Image
 from pytest_cases import fixture_ref, parametrize
 
 from shared.fixtures.data import CloudStorageAssets
-from shared.utils.config import IMPORT_EXPORT_BUCKET_ID
+from shared.utils.config import IMPORT_EXPORT_BUCKET_ID, make_sdk_client
 
 from .common import TestDatasetExport
 from .util import make_pbar
@@ -162,6 +161,30 @@ class TestProjectUsecases(TestDatasetExport):
         assert "100%" in pbar_out.getvalue().strip("\r").split("\r")[-1]
         assert self.stdout.getvalue() == ""
 
+    @pytest.mark.parametrize("convert", [True, False])
+    def test_can_create_project_from_dataset_with_polygons_to_masks_param(
+        self, fxt_camvid_dataset: Path, convert: bool
+    ):
+        pbar_out = io.StringIO()
+        pbar = make_pbar(file=pbar_out)
+        project = self.client.projects.create_from_dataset(
+            spec=models.ProjectWriteRequest(name="project with data"),
+            dataset_path=fxt_camvid_dataset,
+            dataset_format="CamVid 1.0",
+            conv_mask_to_poly=convert,
+            pbar=pbar,
+        )
+
+        assert project.get_tasks()[0].size == 1
+        assert "100%" in pbar_out.getvalue().strip("\r").split("\r")[-1]
+        assert self.stdout.getvalue() == ""
+
+        task = project.get_tasks()[0]
+        imported_annotations = task.get_annotations()
+        assert all(
+            [s.type.value == "polygon" if convert else "mask" for s in imported_annotations.shapes]
+        )
+
     def test_can_retrieve_project(self, fxt_new_project: Project):
         project_id = fxt_new_project.id
 
@@ -264,7 +287,7 @@ class TestProjectUsecases(TestDatasetExport):
         format_name: str,
         include_images: bool,
         project: Project,
-        location: Optional[Location],
+        location: Location | None,
         request: pytest.FixtureRequest,
         cloud_storages: CloudStorageAssets,
     ):
@@ -281,7 +304,79 @@ class TestProjectUsecases(TestDatasetExport):
 
     def test_can_download_preview(self, fxt_project_with_shapes: Project):
         frame_encoded = fxt_project_with_shapes.get_preview()
-        (width, height) = Image.open(frame_encoded).size
+        width, height = Image.open(frame_encoded).size
 
         assert width > 0 and height > 0
         assert self.stdout.getvalue() == ""
+
+
+@pytest.mark.usefixtures("restore_db_per_function")
+def test_can_get_personal_project_resources_while_client_is_scoped_to_org(
+    admin_user: str,
+    fxt_image_file: Path,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    with make_sdk_client(admin_user) as client:
+        org = client.organizations.create(models.OrganizationWriteRequest(slug="testorg"))
+
+        client.organization_slug = ""
+        project = client.projects.create(
+            spec=models.ProjectWriteRequest(
+                name="personal project",
+                labels=[models.PatchedLabelRequest(name="car")],
+            )
+        )
+        client.tasks.create_from_data(
+            spec=models.TaskWriteRequest(name="personal task", project_id=project.id),
+            resources=[fxt_image_file],
+            data_params={"image_quality": 80},
+        )
+
+        client.organization_slug = org.slug
+        project = client.projects.retrieve(project.id)
+
+        monkeypatch.setattr(
+            client,
+            "organization_context",
+            lambda *_args, **_kwargs: pytest.fail(
+                "organization_context should not be used for project resource listing"
+            ),
+        )
+
+        tasks = project.get_tasks()
+        labels = project.get_labels()
+
+        assert client.organization_slug == org.slug
+        assert len(tasks) == 1
+        assert tasks[0].project_id == project.id
+        assert {label.name for label in labels} == {"car"}
+
+
+@pytest.mark.usefixtures("restore_db_per_function")
+def test_org_maintainer_can_get_project_resources_without_explicit_org_context(
+    fxt_org_resource_hierarchy,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    resources = fxt_org_resource_hierarchy()
+
+    with make_sdk_client(resources.maintainer_username) as maintainer_client:
+        monkeypatch.setattr(
+            maintainer_client.organizations,
+            "retrieve",
+            lambda *_args, **_kwargs: pytest.fail("organization lookup is not expected here"),
+        )
+        monkeypatch.setattr(
+            maintainer_client,
+            "organization_context",
+            lambda *_args, **_kwargs: pytest.fail(
+                "organization_context is not expected for project resource listing"
+            ),
+        )
+        project = maintainer_client.projects.retrieve(resources.project_id)
+        tasks = project.get_tasks()
+        labels = project.get_labels()
+
+        assert maintainer_client.organization_slug is None
+        assert len(tasks) == 1
+        assert tasks[0].project_id == resources.project_id
+        assert {label.name for label in labels} == {"car"}

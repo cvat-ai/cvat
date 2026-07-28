@@ -12,11 +12,20 @@ logger = log.getLogger("cvat")
 
 MEDIA_CACHE_ALLOW_STATIC_CACHE = to_bool(os.getenv("CVAT_ALLOW_STATIC_CACHE", False))
 """
-Allow or disallow static media cache.
-If disabled, CVAT will only use the dynamic media cache. New tasks requesting static media cache
-will be automatically switched to the dynamic cache.
-When enabled, this option can increase data access speed and reduce server load,
+Allow or disallow static media cache for new tasks.
+If disabled, CVAT will not allow task creation with static media cache.
+New tasks requesting static media cache will be automatically switched to the dynamic cache.
+When enabled, CVAT will allow task creation with static media chunks.
+
+Static media cache can increase data access speed and reduce server load,
 but significantly increase disk space occupied by tasks.
+"""
+
+CVAT_CACHE_ITEM_MAX_SIZE = 500 * 1024 * 1024
+"""
+Kvrocks limits the item size to 512 MB, which results “Connection reset” exception.
+Let's check the data size and raise an understandable exception instead of the redis-py exception
+Sets the maximum size in bytes of a data chunk item stored on redis_ondisk
 """
 
 CVAT_CHUNK_CREATE_TIMEOUT = 50
@@ -91,3 +100,21 @@ else:
     EXPORT_LOCKED_RETRY_INTERVAL = int(
         os.getenv("CVAT_EXPORT_LOCKED_RETRY_INTERVAL", default_export_locked_retry_interval)
     )
+
+MAX_CONSENSUS_REPLICAS = int(os.getenv("CVAT_MAX_CONSENSUS_REPLICAS", 11))
+if MAX_CONSENSUS_REPLICAS < 1:
+    raise ImproperlyConfigured(f"MAX_CONSENSUS_REPLICAS must be >= 1, got {MAX_CONSENSUS_REPLICAS}")
+
+DEFAULT_DB_ANNO_CHUNK_SIZE = int(os.getenv("CVAT_DEFAULT_DB_ANNO_CHUNK_SIZE", 2000))
+
+MAX_JOBS_PER_TASK = int(os.getenv("CVAT_MAX_JOBS_PER_TASK", 5_000))
+
+DEFAULT_BACKING_CS_ID = os.getenv("CVAT_DEFAULT_BACKING_CS_ID")
+"""
+ID of the default backing cloud storage for local tasks.
+If not set or blank, tasks will be stored on the filesystem.
+"""
+if DEFAULT_BACKING_CS_ID:
+    DEFAULT_BACKING_CS_ID = int(DEFAULT_BACKING_CS_ID)
+else:
+    DEFAULT_BACKING_CS_ID = None

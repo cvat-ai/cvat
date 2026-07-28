@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { SerializedCollection } from 'server-response-types';
+import { SerializedCollection } from '../server-response-types';
 import ObjectState from '../object-state';
 import { Job, Task } from '../session';
 
@@ -19,6 +19,13 @@ export type ActionParameters = Record<string, {
     type: ActionParameterType;
     values: string[] | (({ instance }: { instance: Job | Task }) => string[]);
     defaultValue: string | (({ instance }: { instance: Job | Task }) => string);
+    tooltip?: {
+        type: string,
+        content: string | {
+            columns: Record<string, string>[];
+            data: Record<string, string>[];
+        }
+    };
 }>;
 
 export abstract class BaseAction {
@@ -47,7 +54,7 @@ export function prepareActionParameters(declared: ActionParameters, defined: obj
     }, {} as Record<string, string | number>);
 }
 
-export function validateClientIDs(collection: Partial<SerializedCollection>) {
+export function validateClientIDs(collection: Partial<SerializedCollection>): void {
     [].concat(
         collection.shapes ?? [],
         collection.tracks ?? [],

@@ -26,7 +26,7 @@ export default function createCVATStore(rootReducerCreator: () => Reducer): void
 
     if (!store) {
         if (isDev()) {
-            // eslint-disable-next-line @typescript-eslint/no-var-requires, global-require
+            // eslint-disable-next-line @typescript-eslint/no-require-imports
             const { composeWithDevTools } = require('redux-devtools-extension');
 
             appliedMiddlewares = composeWithDevTools(appliedMiddlewares);

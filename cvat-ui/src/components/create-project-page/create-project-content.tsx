@@ -15,9 +15,8 @@ import Collapse from 'antd/lib/collapse';
 import Button from 'antd/lib/button';
 import Input from 'antd/lib/input';
 import notification from 'antd/lib/notification';
-import { StorageLocation } from 'reducers';
 import { createProjectAsync } from 'actions/projects-actions';
-import { Storage, StorageData } from 'cvat-core-wrapper';
+import { Storage, StorageData, StorageLocation } from 'cvat-core-wrapper';
 import patterns from 'utils/validation-patterns';
 import LabelsEditor from 'components/labels-editor/labels-editor';
 import SourceStorageField from 'components/storage/source-storage-field';
@@ -49,9 +48,11 @@ interface AdvancedConfigurationProps {
     onChangeTargetStorageLocation?: (value: StorageLocation) => void;
 }
 
+type InputRef = React.ComponentRef<typeof Input>;
+
 function NameConfigurationForm(
     { formRef, inputRef }:
-    { formRef: RefObject<FormInstance>, inputRef: RefObject<Input> },
+    { formRef: RefObject<FormInstance>, inputRef: RefObject<InputRef> },
 ):JSX.Element {
     return (
         <Form layout='vertical' ref={formRef}>
@@ -128,7 +129,7 @@ export default function CreateProjectContent(): JSX.Element {
     const [sourceStorageLocation, setSourceStorageLocation] = useState(StorageLocation.LOCAL);
     const [targetStorageLocation, setTargetStorageLocation] = useState(StorageLocation.LOCAL);
     const nameFormRef = useRef<FormInstance>(null);
-    const nameInputRef = useRef<Input>(null);
+    const nameInputRef = useRef<InputRef>(null);
     const advancedFormRef = useRef<FormInstance>(null);
     const dispatch = useDispatch();
     const history = useHistory();

@@ -2,8 +2,8 @@
 //
 // SPDX-License-Identifier: MIT
 
-Cypress.Commands.add('createZipArchive', (directoryToArchive, arhivePath, level = 9) => cy.task('createZipArchive', {
+Cypress.Commands.add('createZipArchive', (directoryToArchive, archivePath, level = 9) => cy.task('createZipArchive', {
     directoryToArchive,
-    arhivePath,
+    archivePath,
     level,
 }));

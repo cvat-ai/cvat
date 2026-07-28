@@ -32,11 +32,11 @@ context('Rotated bounding boxes.', () => {
     function testCompareRotate(shape, toFrame) {
         for (let frame = 8; frame >= toFrame; frame--) {
             cy.document().then((doc) => {
-                const shapeTranformMatrix = decomposeMatrix(doc.getElementById(shape).getCTM());
+                const shapeTransformMatrix = decomposeMatrix(doc.getElementById(shape).getCTM());
                 cy.goToPreviousFrame(frame);
                 cy.document().then((doc2) => {
-                    const shapeTranformMatrix2 = decomposeMatrix(doc2.getElementById(shape).getCTM());
-                    expect(shapeTranformMatrix).not.deep.eq(shapeTranformMatrix2);
+                    const shapeTransformMatrix2 = decomposeMatrix(doc2.getElementById(shape).getCTM());
+                    expect(shapeTransformMatrix).not.deep.eq(shapeTransformMatrix2);
                 });
             });
         }
@@ -55,6 +55,7 @@ context('Rotated bounding boxes.', () => {
     }
 
     before(() => {
+        cy.prepareUserSession();
         cy.openTask(taskName);
         cy.openJob();
         Cypress.config('scrollBehavior', false);
@@ -67,26 +68,26 @@ context('Rotated bounding boxes.', () => {
 
     describe(`Testing case "${caseId}"`, () => {
         it('Check that bounding boxes can be rotated.', () => {
-            cy.shapeRotate('#cvat_canvas_shape_1', '15.7');
-            cy.shapeRotate('#cvat_canvas_shape_2', '15.7');
+            cy.shapeRotate('#cvat_canvas_shape_1', '17.3');
+            cy.shapeRotate('#cvat_canvas_shape_2', '17.3');
         });
 
         it('Check interpolation, merging/splitting rotated shapes.', () => {
-            // Check track roration on all frames
+            // Check track rotation on all frames
             cy.document().then((doc) => {
-                const shapeTranformMatrix = decomposeMatrix(doc.getElementById('cvat_canvas_shape_2').getCTM());
+                const shapeTransformMatrix = decomposeMatrix(doc.getElementById('cvat_canvas_shape_2').getCTM());
                 for (let frame = 1; frame < 10; frame++) {
                     cy.goToNextFrame(frame);
                     cy.document().then((docNext) => {
-                        const nextShapeTranformMatrix = (
+                        const nextShapeTransformMatrix = (
                             decomposeMatrix(docNext.getElementById('cvat_canvas_shape_2').getCTM())
                         );
-                        expect(nextShapeTranformMatrix).to.deep.eq(shapeTranformMatrix);
+                        expect(nextShapeTransformMatrix).to.deep.eq(shapeTransformMatrix);
                     });
                 }
             });
 
-            cy.shapeRotate('#cvat_canvas_shape_2', '29.8');
+            cy.shapeRotate('#cvat_canvas_shape_2', '32.2');
 
             // Comparison of the values of the shape attribute of the current frame with the previous frame
             testCompareRotate('cvat_canvas_shape_2', 0);
@@ -111,7 +112,7 @@ context('Rotated bounding boxes.', () => {
             cy.get('#cvat_canvas_shape_4').should('be.visible');
             cy.goCheckFrameNumber(9);
 
-            cy.shapeRotate('#cvat_canvas_shape_4', '15.7');
+            cy.shapeRotate('#cvat_canvas_shape_4', '17.3');
 
             // Comparison of the values of the shape attribute of the current frame with the previous frame
             testCompareRotate('cvat_canvas_shape_4', 2);

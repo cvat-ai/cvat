@@ -14,7 +14,7 @@ metadata:
 
 spec:
   description: Interactive Object Segmentation with Inside-Outside Guidance
-  runtime: 'python:3.9'
+  runtime: 'python:3.10'
   handler: main:handler
   eventTimeout: 30s
   env:
@@ -23,44 +23,26 @@ spec:
 
   build:
     image: cvat.pth.shiyinzhang.iog
-    baseImage: continuumio/miniconda3
+    baseImage: ubuntu:22.04
 
     directives:
       preCopy:
+        - kind: RUN
+          value: apt update && apt install -y python-is-python3 python3-pip git && rm -rf /var/lib/apt/lists/*
+        - kind: RUN
+          value: pip install torch==2.9.0 torchvision==0.24.0 opencv-python-headless gdown pycocotools scipy --extra-index-url https://download.pytorch.org/whl/cpu --no-cache-dir
         - kind: WORKDIR
           value: /opt/nuclio
-        - kind: RUN
-          value: conda create -y -n iog python=3.9
-        - kind: SHELL
-          value: '["conda", "run", "-n", "iog", "/bin/bash", "-c"]'
-        - kind: RUN
-          value: conda install -y -c anaconda curl
-        - kind: RUN
-          value: conda install -y pytorch torchvision -c pytorch
-        - kind: RUN
-          value: apt update && apt install -y libgl1-mesa-glx
-        - kind: RUN
-          value: conda install -y -c conda-forge pycocotools scipy
-        - kind: RUN
-          value: pip install opencv-python gdown
         - kind: RUN
           value: git clone https://github.com/shiyinzhang/Inside-Outside-Guidance.git iog
-        - kind: WORKDIR
-          value: /opt/nuclio/iog
         - kind: ENV
-          value: fileid=1Lm1hhMhhjjnNwO4Pf7SC6tXLayH2iH0l
-        - kind: ENV
-          value: filename=IOG_PASCAL_SBD.pth
+          value: fileid=1Lm1hhMhhjjnNwO4Pf7SC6tXLayH2iH0l filename=IOG_PASCAL_SBD.pth
         - kind: RUN
-          value: gdown https://drive.google.com/uc?id=${fileid} -O ${filename}
-        - kind: WORKDIR
-          value: /opt/nuclio
-        - kind: ENTRYPOINT
-          value: '["conda", "run", "-n", "iog"]'
+          value: gdown https://drive.google.com/uc?id=${fileid} -O iog/${filename}
 
   triggers:
     myHttpTrigger:
-      maxWorkers: 2
+      numWorkers: 2
       kind: 'http'
       workerAvailabilityTimeoutMilliseconds: 10000
       attributes:

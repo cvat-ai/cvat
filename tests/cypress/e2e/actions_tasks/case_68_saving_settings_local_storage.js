@@ -1,13 +1,35 @@
 // Copyright (C) 2021-2022 Intel Corporation
+// Copyright (C) CVAT.ai Corporation
 //
 // SPDX-License-Identifier: MIT
 
 /// <reference types="cypress" />
 
 import { taskName } from '../../support/const';
+import { generateString } from '../../support/utils';
 
 context('Saving setting to local storage.', () => {
     const caseId = '68';
+    const defaultGammaValue = 1;
+    const nbumps = 5;
+    const step = 0.01;
+    function bumpGamma(nsteps) {
+        const gammaFilterClass = '.cvat-image-setups-gamma';
+        const wrapper = '.cvat-image-setups-filters';
+        const action = generateString(nsteps, 'rightarrow');
+        cy.applyActionToSliders(wrapper, [gammaFilterClass], action);
+    }
+    function setUpGamma(nsteps) {
+        cy.get('.cvat-canvas-image-setups-trigger').click();
+        cy.contains('Reset color settings').click();
+        bumpGamma(nsteps);
+        cy.get('.cvat-canvas-image-setups-trigger').click();
+    }
+    function resetColorSettings() {
+        cy.get('.cvat-canvas-image-setups-trigger').click();
+        cy.contains('Reset color settings').click();
+        cy.get('.cvat-canvas-image-setups-trigger').click();
+    }
 
     function setupAndSaveSettings(check) {
         cy.openSettings();
@@ -17,12 +39,11 @@ context('Saving setting to local storage.', () => {
         cy.contains('[role="tab"]', 'Workspace').click();
         cy.get('.cvat-workspace-settings-show-interpolated').find('[type="checkbox"]')[method]();
         cy.get('.cvat-workspace-settings-show-text-always').find('[type="checkbox"]')[method]();
-        cy.get('.cvat-workspace-settings-autoborders').find('[type="checkbox"]')[method]();
-        cy.saveSettings();
-        cy.get('.cvat-notification-notice-save-settings-success')
-            .should('exist')
-            .find('[data-icon="close"]')
-            .click();
+        cy.closeSettings();
+        cy.window().then((window) => {
+            const { localStorage } = window;
+            cy.wrap(localStorage.getItem('clientSettings')).should('exist').and('not.be.null');
+        });
     }
 
     function testCheckedSettings(checked = false) {
@@ -42,7 +63,6 @@ context('Saving setting to local storage.', () => {
         for (const ws of [
             '.cvat-workspace-settings-show-interpolated',
             '.cvat-workspace-settings-show-text-always',
-            '.cvat-workspace-settings-autoborders',
         ]) {
             if (checked) {
                 cy.get(ws).find('[type="checkbox"]').should('be.checked');
@@ -53,16 +73,29 @@ context('Saving setting to local storage.', () => {
 
         cy.closeSettings();
     }
+    function testGammaSetting() {
+        const expValue = defaultGammaValue + nbumps * step;
+        cy.get('.cvat-canvas-image-setups-trigger').click();
+        cy.get('.cvat-image-setups-gamma').within(() => {
+            cy.get('[role=slider]').should('have.attr', 'aria-valuenow', expValue);
+        });
+        cy.get('.cvat-canvas-image-setups-trigger').click();
+    }
 
     before(() => {
+        cy.prepareUserSession();
         cy.openTaskJob(taskName);
     });
 
     describe(`Testing case "${caseId}"`, () => {
         it('Check some settings. Reload a page. The settings are saved.', () => {
+            setUpGamma(nbumps);
             setupAndSaveSettings(true);
             cy.reload();
             testCheckedSettings(true);
+            testGammaSetting();
+            resetColorSettings();
+
             setupAndSaveSettings(false);
             cy.reload();
             testCheckedSettings(false);

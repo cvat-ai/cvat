@@ -4,10 +4,11 @@
 # SPDX-License-Identifier: MIT
 
 import json
-import typing
 from http import HTTPStatus
+from typing import Literal
 
 import pytest
+from cvat_sdk.api_client import models
 from cvat_sdk.api_client.api_client import ApiClient, Endpoint
 from cvat_sdk.core.helpers import get_paginated_collection
 from deepdiff import DeepDiff
@@ -23,7 +24,7 @@ class TestGetUsers:
         self,
         user,
         data,
-        id_: typing.Union[typing.Literal["self"], int, None] = None,
+        id_: Literal["self"] | int | None = None,
         *,
         exclude_paths="",
         **kwargs,
@@ -31,7 +32,7 @@ class TestGetUsers:
         with make_api_client(user) as api_client:
             # TODO: refactor into several functions
             if id_ == "self":
-                (_, response) = api_client.users_api.retrieve_self(**kwargs, _parse_response=False)
+                _, response = api_client.users_api.retrieve_self(**kwargs, _parse_response=False)
                 assert response.status == HTTPStatus.OK
                 response_data = json.loads(response.data)
             elif id_ is None:
@@ -39,27 +40,25 @@ class TestGetUsers:
                     api_client.users_api.list_endpoint, return_json=True, **kwargs
                 )
             else:
-                (_, response) = api_client.users_api.retrieve(id_, **kwargs, _parse_response=False)
+                _, response = api_client.users_api.retrieve(id_, **kwargs, _parse_response=False)
                 assert response.status == HTTPStatus.OK
                 response_data = json.loads(response.data)
 
         assert DeepDiff(data, response_data, ignore_order=True, exclude_paths=exclude_paths) == {}
 
-    def _test_cannot_see(
-        self, user, id_: typing.Union[typing.Literal["self"], int, None] = None, **kwargs
-    ):
+    def _test_cannot_see(self, user, id_: Literal["self"] | int | None = None, **kwargs):
         with make_api_client(user) as api_client:
             # TODO: refactor into several functions
             if id_ == "self":
-                (_, response) = api_client.users_api.retrieve_self(
+                _, response = api_client.users_api.retrieve_self(
                     **kwargs, _parse_response=False, _check_status=False
                 )
             elif id_ is None:
-                (_, response) = api_client.users_api.list(
+                _, response = api_client.users_api.list(
                     **kwargs, _parse_response=False, _check_status=False
                 )
             else:
-                (_, response) = api_client.users_api.retrieve(
+                _, response = api_client.users_api.retrieve(
                     id_, **kwargs, _parse_response=False, _check_status=False
                 )
             assert response.status == HTTPStatus.FORBIDDEN
@@ -113,3 +112,61 @@ class TestUsersListFilters(CollectionSimpleFilterTestBase):
     )
     def test_can_use_simple_filter_for_object_list(self, field):
         return super()._test_can_use_simple_filter_for_object_list(field)
+
+
+@pytest.mark.usefixtures("restore_db_per_function")
+class TestPatchUsers:
+    def test_can_update_own_username(self, find_users, admin_user):
+        db_user = find_users(privilege="user")[0]
+        old_username = db_user["username"]
+        new_username = f"{old_username}_renamed"
+
+        with make_api_client(old_username) as api_client:
+            updated_user, response = api_client.users_api.partial_update(
+                db_user["id"],
+                patched_user_request=models.PatchedUserRequest(username=new_username),
+            )
+
+        assert response.status == HTTPStatus.OK
+        assert updated_user.username == new_username
+
+        with make_api_client(admin_user) as api_client:
+            user, response = api_client.users_api.retrieve(db_user["id"])
+
+        assert response.status == HTTPStatus.OK
+        assert user.id == db_user["id"]
+        assert user.username == new_username
+
+    def test_cannot_update_username_to_invalid_value(self, find_users):
+        user = find_users(privilege="user")[0]
+
+        with make_api_client(user["username"]) as api_client:
+            # Use a raw API call because the generated SDK model validates username
+            # format client-side and would reject this value before the server sees it.
+            _, response = api_client.call_api(
+                f"/api/users/{user['id']}",
+                method="PATCH",
+                body={"username": "bad user"},
+                header_params={"Content-Type": "application/json"},
+                _parse_response=False,
+                _check_status=False,
+            )
+
+        assert response.status == HTTPStatus.BAD_REQUEST
+        assert "username" in json.loads(response.data)
+
+    def test_non_admin_cannot_update_another_user_username(self, find_users):
+        user = find_users(privilege="user")[0]
+        another_user = find_users(privilege="user", exclude_username=user["username"])[0]
+
+        with make_api_client(user["username"]) as api_client:
+            _, response = api_client.users_api.partial_update(
+                another_user["id"],
+                patched_user_request=models.PatchedUserRequest(
+                    username=f'{another_user["username"]}_renamed',
+                ),
+                _parse_response=False,
+                _check_status=False,
+            )
+
+        assert response.status == HTTPStatus.FORBIDDEN

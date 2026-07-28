@@ -7,7 +7,7 @@ from django.apps import AppConfig
 
 
 class EngineConfig(AppConfig):
-    name = 'cvat.apps.engine'
+    name = "cvat.apps.engine"
 
     def ready(self):
         from django.conf import settings
@@ -24,5 +24,6 @@ class EngineConfig(AppConfig):
         # Required in order to silent "unused-import" in pyflake
         assert cvat.apps.engine.signals
 
-        from cvat.apps.iam.permissions import load_app_permissions
-        load_app_permissions(self)
+        from cvat.apps.iam.permissions import load_app_iam_rules
+
+        load_app_iam_rules(self)

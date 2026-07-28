@@ -41,7 +41,7 @@
         "username": "admin1"
       },
       "project_id": null,
-      "target_url": "http://example.com/",
+      "target_url": "http://webhooks.internal/",
       "type": "organization",
       "updated_date": "2022-09-29T08:00:48.441000Z",
       "url": "http://localhost:8080/api/webhooks/6"
@@ -68,7 +68,7 @@
         "username": "user2"
       },
       "project_id": 3,
-      "target_url": "http://example.com",
+      "target_url": "http://webhooks.internal",
       "type": "project",
       "updated_date": "2022-09-28T12:19:49.744000Z",
       "url": "http://localhost:8080/api/webhooks/3"
@@ -102,7 +102,7 @@
         "username": "user7"
       },
       "project_id": 1,
-      "target_url": "http://example.com/",
+      "target_url": "http://webhooks.internal/",
       "type": "project",
       "updated_date": "2022-09-28T12:18:12.412000Z",
       "url": "http://localhost:8080/api/webhooks/2"
@@ -129,7 +129,7 @@
         "username": "user1"
       },
       "project_id": 6,
-      "target_url": "http://example.com/",
+      "target_url": "http://webhooks.internal/",
       "type": "project",
       "updated_date": "2022-09-28T12:16:28.311000Z",
       "url": "http://localhost:8080/api/webhooks/1"

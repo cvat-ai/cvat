@@ -11,6 +11,7 @@ from cvat.apps.engine.log import ServerLogManager
 
 slogger = ServerLogManager(__name__)
 
+
 def clear_import_cache(path: Path, creation_time: float) -> None:
     """
     This function checks and removes the import files if they have not been removed from rq import jobs.
@@ -20,6 +21,9 @@ def clear_import_cache(path: Path, creation_time: float) -> None:
         path (Path): path to file
         creation_time (float): file creation time
     """
-    if path.is_file() and (time() - creation_time + 1) >= settings.IMPORT_CACHE_CLEAN_DELAY.total_seconds():
+    if (
+        path.is_file()
+        and (time() - creation_time + 1) >= settings.IMPORT_CACHE_CLEAN_DELAY.total_seconds()
+    ):
         path.unlink()
         slogger.glob.warning(f"The file {str(path)} was removed from cleaning job.")

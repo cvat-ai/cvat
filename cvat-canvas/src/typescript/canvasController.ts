@@ -21,12 +21,13 @@ import {
     MasksEditData,
     HighlightedElements,
     PolyEditData,
+    RenderData,
 } from './canvasModel';
 
 export interface CanvasController {
     readonly objects: any[];
+    readonly renderData: RenderData;
     readonly issueRegions: Record<number, { hidden: boolean; points: number[] }>;
-    readonly zLayer: number | null;
     readonly focusData: FocusData;
     readonly activeElement: ActiveElement;
     readonly highlightedElements: HighlightedElements;
@@ -43,13 +44,14 @@ export interface CanvasController {
     mode: Mode;
     geometry: Geometry;
 
-    zoom(x: number, y: number, direction: number): void;
+    zoom(x: number, y: number, deltaY: number): void;
     draw(drawData: DrawData): void;
     edit(editData: MasksEditData | PolyEditData): void;
     enableDrag(x: number, y: number): void;
     drag(x: number, y: number): void;
     disableDrag(): void;
     fit(): void;
+    focus(clientId: number, padding: number): void;
 }
 
 export class CanvasControllerImpl implements CanvasController {
@@ -61,8 +63,8 @@ export class CanvasControllerImpl implements CanvasController {
         this.model = model;
     }
 
-    public zoom(x: number, y: number, direction: number): void {
-        this.model.zoom(x, y, direction);
+    public zoom(x: number, y: number, deltaY: number): void {
+        this.model.zoom(x, y, deltaY);
     }
 
     public fit(): void {
@@ -101,6 +103,10 @@ export class CanvasControllerImpl implements CanvasController {
         this.model.edit(editData);
     }
 
+    public focus(clientID: number, padding: number): void {
+        this.model.focus(clientID, padding);
+    }
+
     public get geometry(): Geometry {
         return this.model.geometry;
     }
@@ -109,16 +115,16 @@ export class CanvasControllerImpl implements CanvasController {
         this.model.geometry = geometry;
     }
 
-    public get zLayer(): number | null {
-        return this.model.zLayer;
-    }
-
     public get issueRegions(): Record<number, { hidden: boolean; points: number[] }> {
         return this.model.issueRegions;
     }
 
     public get objects(): any[] {
         return this.model.objects;
+    }
+
+    public get renderData(): RenderData {
+        return this.model.renderData;
     }
 
     public get focusData(): FocusData {

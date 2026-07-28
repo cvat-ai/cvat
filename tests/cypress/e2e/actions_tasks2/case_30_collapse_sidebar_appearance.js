@@ -30,6 +30,7 @@ context('Collapse sidebar/appearance. Check issue 3250 (empty sidebar after resi
     }
 
     before(() => {
+        cy.prepareUserSession();
         cy.openTaskJob(taskName);
         cy.createRectangle(createRectangleShape2Points);
 
@@ -41,7 +42,7 @@ context('Collapse sidebar/appearance. Check issue 3250 (empty sidebar after resi
     });
 
     describe(`Testing case "${caseId}"`, () => {
-        it('Collapse sidebar. Cheeck issue 3250.', () => {
+        it('Collapse sidebar. Check issue 3250.', () => {
             // hide sidebar
             cy.get('.cvat-objects-sidebar-sider').click();
             cy.get('.cvat-objects-sidebar').should('not.be.visible');

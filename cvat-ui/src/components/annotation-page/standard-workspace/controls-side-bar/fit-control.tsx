@@ -23,4 +23,5 @@ function FitControl(props: Props): JSX.Element {
     );
 }
 
+Object.assign(FitControl, { displayName: 'FitControl' });
 export default React.memo(FitControl);

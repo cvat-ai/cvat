@@ -2,8 +2,9 @@
 #
 # SPDX-License-Identifier: MIT
 
+from collections.abc import Callable
 from datetime import timedelta
-from typing import Callable
+from typing import Any, Protocol
 
 from django.conf import settings
 from django.http import HttpRequest, HttpResponse
@@ -11,7 +12,11 @@ from django.utils.functional import SimpleLazyObject
 from rest_framework.exceptions import NotFound, ValidationError
 
 
-def get_organization(request):
+class WithIAMContext(Protocol):
+    iam_context: dict[str, Any]
+
+
+def get_organization(request: HttpRequest):
     from cvat.apps.organizations.models import Organization
 
     IAM_ROLES = {role: priority for priority, role in enumerate(settings.IAM_ROLES)}
@@ -20,6 +25,7 @@ def get_organization(request):
     privilege = groups[0] if groups else None
 
     organization = None
+    organization_specified = False
 
     try:
         org_slug = request.GET.get("org")
@@ -40,6 +46,9 @@ def get_organization(request):
 
         org_slug = org_slug if org_slug is not None else org_header
 
+        if org_slug is not None or org_id is not None:
+            organization_specified = True
+
         if org_slug:
             organization = Organization.objects.select_related("owner").get(slug=org_slug)
         elif org_id:
@@ -47,7 +56,11 @@ def get_organization(request):
     except Organization.DoesNotExist:
         raise NotFound(f"{org_slug or org_id} organization does not exist.")
 
-    context = {"organization": organization, "privilege": getattr(privilege, "name", None)}
+    context = {
+        "organization": organization,
+        "organization_specified": organization_specified,
+        "privilege": getattr(privilege, "name", None),
+    }
 
     return context
 
@@ -56,7 +69,7 @@ class ContextMiddleware:
     def __init__(self, get_response):
         self.get_response = get_response
 
-    def __call__(self, request):
+    def __call__(self, request: HttpRequest):
 
         # https://stackoverflow.com/questions/26240832/django-and-middleware-which-uses-request-user-is-always-anonymous
         request.iam_context = SimpleLazyObject(lambda: get_organization(request))

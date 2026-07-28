@@ -10,9 +10,10 @@ import {
 import { getProjectsAsync } from './projects-actions';
 import { AnnotationActionTypes, fetchAnnotationsAsync } from './annotation-actions';
 import {
-    getInstanceType, listen, RequestInstanceType,
+    listen, RequestInstanceType,
     RequestsActions, updateRequestProgress,
 } from './requests-actions';
+import { getInstanceType } from './common';
 
 const core = getCore();
 
@@ -78,6 +79,7 @@ export const importDatasetAsync = (
     sourceStorage: Storage,
     file: File | string,
     convMaskToPoly: boolean,
+    importMode: 'replace' | 'append',
 ): ThunkAction => (
     async (dispatch, getState) => {
         const instanceType = getInstanceType(instance);
@@ -113,7 +115,7 @@ export const importDatasetAsync = (
                     useDefaultSettings,
                     sourceStorage,
                     file,
-                    { convMaskToPoly },
+                    { convMaskToPoly, importMode },
                 );
                 await listenForImport(rqID);
             } else { // job
@@ -123,7 +125,7 @@ export const importDatasetAsync = (
                     useDefaultSettings,
                     sourceStorage,
                     file,
-                    { convMaskToPoly },
+                    { convMaskToPoly, importMode },
                 );
 
                 await listenForImport(rqID);

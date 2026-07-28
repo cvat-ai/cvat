@@ -20,6 +20,7 @@ context('First part of a split track is visible', () => {
     };
 
     before(() => {
+        cy.prepareUserSession();
         cy.openTaskJob(taskName);
     });
 

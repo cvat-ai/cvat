@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { SerializedJobValidationLayout, SerializedTaskValidationLayout } from 'server-response-types';
+import { SerializedJobValidationLayout, SerializedTaskValidationLayout } from './server-response-types';
 import PluginRegistry from './plugins';
 
 export class JobValidationLayout {

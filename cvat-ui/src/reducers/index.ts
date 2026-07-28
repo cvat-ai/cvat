@@ -4,16 +4,49 @@
 // SPDX-License-Identifier: MIT
 
 import { Canvas3d } from 'cvat-canvas3d/src/typescript/canvas3d';
-import { Canvas, RectDrawingMethod, CuboidDrawingMethod } from 'cvat-canvas-wrapper';
+import {
+    Canvas, RectDrawingMethod, CuboidDrawingMethod, RenderData,
+} from 'cvat-canvas-wrapper';
+import { OrientationVisibility } from 'cvat-canvas3d-wrapper';
 import {
     Webhook, MLModel, Organization, Job, Task, Project, Label, User,
     QualityConflict, FramesMetaData, RQStatus, Event, Invitation, SerializedAPISchema,
     Request, JobValidationLayout, QualitySettings, TaskValidationLayout, ObjectState,
+    ConsensusSettings, AboutData, ShapeType, ObjectType, ApiToken, AudioIntervalState,
+    Membership, AnnotationFormats, CloudStorage,
 } from 'cvat-core-wrapper';
-import { IntelligentScissors } from 'utils/opencv-wrapper/intelligent-scissors';
+
+import type { IntelligentScissors, OpenCVTracker } from 'utils/opencv-wrapper/opencv-wrapper';
 import { KeyMap, KeyMapItem } from 'utils/mousetrap-react';
-import { OpenCVTracker } from 'utils/opencv-wrapper/opencv-interfaces';
 import { ImageFilter } from 'utils/image-processing';
+
+export interface AudioState {
+    player: {
+        playing: boolean;
+        currentTime: number;
+        duration: number;
+        playbackRate: number;
+        zoom: number;
+        volume: number;
+        loop: boolean;
+        intervals: AudioIntervalState[];
+        activeIntervalID: number | null;
+        hoveredIntervalID: number | null;
+        contextMenu: {
+            top: number;
+            left: number;
+            clientID: number | null;
+        };
+        audioUrl: string | null;
+        audioLoading: boolean;
+        audioError: string | null;
+        waveformReady: boolean;
+        activeLabelId: number | null;
+        audioLoadRequest: object | null;
+        seekRequest: { time: number } | null;
+        playIntervalOnceRequest: { intervalID: number } | null;
+    };
+}
 
 export interface AuthState {
     initialized: boolean;
@@ -21,10 +54,22 @@ export interface AuthState {
     user: User | null;
     showChangePasswordDialog: boolean;
     hasEmailVerificationBeenSent: boolean;
+    apiTokens: {
+        fetching: boolean;
+        current: ApiToken[];
+        count: number;
+    };
+}
+
+export interface ChangePasswordData {
+    oldPassword: string;
+    newPassword1: string;
+    newPassword2: string;
 }
 
 export interface ProjectsQuery {
     page: number;
+    pageSize: number;
     id: number | null;
     search: string | null;
     filter: string | null;
@@ -37,12 +82,19 @@ interface Preview {
     preview: string;
 }
 
+export enum InstanceType {
+    PROJECT = 'project',
+    TASK = 'task',
+    JOB = 'job',
+}
+
 export interface ProjectsState {
     fetchingTimestamp: number;
     initialized: boolean;
     fetching: boolean;
     count: number;
     current: Project[];
+    selected: number[];
     previews: {
         [index: number]: Preview;
     };
@@ -56,11 +108,15 @@ export interface ProjectsState {
         deletes: {
             [projectId: number]: boolean; // deleted (deleting if in dictionary)
         };
+        updates: {
+            [projectId: number]: boolean; // updated (updating if in dictionary)
+        };
     };
 }
 
 export interface TasksQuery {
     page: number;
+    pageSize: number;
     id: number | null;
     search: string | null;
     filter: string | null;
@@ -70,6 +126,7 @@ export interface TasksQuery {
 
 export interface JobsQuery {
     page: number;
+    pageSize: number;
     sort: string | null;
     search: string | null;
     filter: string | null;
@@ -81,6 +138,7 @@ export interface JobsState {
     fetching: boolean;
     count: number;
     current: Job[];
+    selected: number[];
     previews: {
         [index: number]: Preview;
     };
@@ -102,12 +160,16 @@ export interface TasksState {
     gettingQuery: TasksQuery;
     count: number;
     current: Task[];
+    selected: number[];
     previews: {
         [index: number]: Preview;
     };
     activities: {
         deletes: {
             [tid: number]: boolean; // deleted (deleting if in dictionary)
+        };
+        updates: {
+            [taskId: number]: boolean;
         };
     };
 }
@@ -170,14 +232,27 @@ export interface ImportState {
     instanceType: 'project' | 'task' | 'job' | null;
 }
 
+export interface ConsensusState {
+    fetching: boolean;
+    consensusSettings: ConsensusSettings | null;
+    taskInstance: Task | null;
+    jobInstance: Job | null;
+    actions: {
+        merging: {
+            [instanceKey: string]: boolean;
+        };
+    }
+}
+
 export interface FormatsState {
-    annotationFormats: any;
+    annotationFormats: AnnotationFormats | null;
     fetching: boolean;
     initialized: boolean;
 }
 
 export interface CloudStoragesQuery {
     page: number;
+    pageSize: number;
     id: number | null;
     search: string | null;
     sort: string | null;
@@ -189,8 +264,6 @@ interface CloudStorageStatus {
     initialized: boolean;
     status: string | null;
 }
-
-export type CloudStorage = any;
 
 export interface CloudStoragesState {
     initialized: boolean;
@@ -225,19 +298,47 @@ export interface CloudStoragesState {
             error: string;
         };
     };
+    updateWorkspace: {
+        instances: Task[] | Project[] | null,
+        onUpdate: (() => void) | null;
+    }
+    selected: number[];
+}
+
+export interface BulkActionStatus {
+    message: string;
+    percent: number;
+}
+
+export enum SelectedResourceType {
+    PROJECTS = 'projects',
+    TASKS = 'tasks',
+    JOBS = 'jobs',
+    REQUESTS = 'requests',
+    MEMBERS = 'members',
+    WEBHOOKS = 'webhooks',
+    CLOUD_STORAGES = 'cloudStorages',
+    MODELS = 'models',
+}
+
+export interface BulkActionsState {
+    fetching: boolean;
+    status: BulkActionStatus | null;
+    cancelled: boolean;
 }
 
 export enum SupportedPlugins {
     ANALYTICS = 'ANALYTICS',
-    MODELS = 'MODELS',
 }
 
 export type PluginsList = {
     [name in SupportedPlugins]: boolean;
 };
 
+export type CallbackReturnType = Promise<undefined | { preventJobStatusChange: boolean }>;
+
 export interface PluginComponent {
-    component: any;
+    component: any; // TODO: research correct plugin component type
     data: {
         weight: number;
         shouldBeRendered: (props?: object, state?: object) => boolean;
@@ -258,33 +359,60 @@ export interface PluginsState {
         annotationPage: {
             header: {
                 menu: {
-                    beforeJobFinish: (() => Promise<void>)[];
+                    beforeJobFinish: (() => CallbackReturnType)[];
                 };
             };
         };
     };
     overridableComponents: {
+        app: {
+            serverUnavailable: ((props: {
+                details: string | null;
+            }) => JSX.Element)[];
+        };
         annotationPage: {
             header: {
                 saveAnnotationButton: (() => JSX.Element)[];
             };
         };
         qualityControlPage: {
-            overviewTab: ((props: {
-                task: Task;
-                qualitySettings: QualitySettings;
-            }) => JSX.Element)[];
-
-            allocationTable: ((
-                props: {
-                    task: Task;
-                    gtJobId: number;
-                    gtJobMeta: FramesMetaData;
-                    qualitySettings: QualitySettings;
-                    validationLayout: TaskValidationLayout;
-                    onDeleteFrames: (frames: number[]) => void;
-                    onRestoreFrames: (frames: number[]) => void;
+            task: {
+                overviewTab: ((props: {
+                    instance: Task;
+                    qualitySettings: {
+                        settings: QualitySettings | null;
+                        childrenSettings: QualitySettings[] | null;
+                    };
                 }) => JSX.Element)[];
+
+                allocationTable: ((
+                    props: {
+                        task: Task;
+                        gtJobId: number;
+                        gtJobMeta: FramesMetaData;
+                        qualitySettings: QualitySettings;
+                        validationLayout: TaskValidationLayout;
+                        onDeleteFrames: (frames: number[]) => void;
+                        onRestoreFrames: (frames: number[]) => void;
+                    }) => JSX.Element)[];
+            }
+            project : {
+                overviewTab: ((props: {
+                    instance: Project;
+                    qualitySettings: {
+                        settings: QualitySettings | null;
+                        childrenSettings: QualitySettings[] | null;
+                    };
+                }) => JSX.Element)[];
+            }
+        };
+        analyticsReportPage: {
+            content: ((
+                props: {
+                    resource: Project | Task | Job;
+                    timePeriod: { startDate: string; endDate: string; } | null;
+                },
+            ) => JSX.Element)[];
         };
     },
     components: {
@@ -296,6 +424,14 @@ export interface PluginsState {
         loginPage: {
             loginForm: PluginComponent[];
         };
+        annotationPage: {
+            player: {
+                slider: PluginComponent[];
+            };
+            menuActions: {
+                items: PluginComponent[];
+            };
+        }
         modelsPage: {
             topBar: {
                 items: PluginComponent[];
@@ -317,6 +453,9 @@ export interface PluginsState {
         taskActions: {
             items: PluginComponent[];
         };
+        jobActions: {
+            items: PluginComponent[];
+        };
         taskItem: {
             ribbon: PluginComponent[];
         };
@@ -331,12 +470,17 @@ export interface PluginsState {
                 items: PluginComponent[];
             };
         };
+        aiTools: {
+            interactors: {
+                extras: PluginComponent[];
+            };
+        };
         router: PluginComponent[];
     }
 }
 
 export interface AboutState {
-    server: any;
+    server: AboutData | null;
     packageVersion: {
         ui: string;
     };
@@ -380,6 +524,7 @@ export interface ModelAttribute {
 
 export interface ModelsQuery {
     page: number;
+    pageSize: number;
     id: number | null;
     search: string | null;
     filter: string | null;
@@ -391,12 +536,6 @@ export type OpenCVTool = IntelligentScissors | OpenCVTracker;
 export interface ToolsBlockerState {
     algorithmsLocked?: boolean;
     buttonVisible?: boolean;
-}
-
-export enum TaskStatus {
-    ANNOTATION = 'annotation',
-    REVIEW = 'validation',
-    COMPLETED = 'completed',
 }
 
 export interface ActiveInference {
@@ -428,6 +567,7 @@ export interface ModelsState {
     previews: {
         [index: string]: Preview;
     };
+    selected: (number | string)[];
 }
 
 export interface ErrorState {
@@ -435,12 +575,23 @@ export interface ErrorState {
     reason: Error;
     shouldLog?: boolean;
     className?: string;
+    ignore?: boolean;
 }
 
 export interface NotificationState {
     message: string;
     description?: string;
     duration?: number;
+    className?: string;
+}
+
+export interface BulkOperationsErrorState extends ErrorState {
+    remainingItemsCount: number;
+    retryPayload: {
+        items: any[];
+        operation: (item: any, idx: number, total: number) => Promise<void>;
+        statusMessage: (item: any, idx: number, total: number) => string;
+    };
 }
 
 export interface NotificationsState {
@@ -453,6 +604,11 @@ export interface NotificationsState {
             changePassword: null | ErrorState;
             requestPasswordReset: null | ErrorState;
             resetPassword: null | ErrorState;
+            updateUser: null | ErrorState;
+            getApiTokens: null | ErrorState;
+            createApiToken: null | ErrorState;
+            updateApiToken: null | ErrorState;
+            revokeApiToken: null | ErrorState;
         };
         serverAPI: {
             fetching: null | ErrorState;
@@ -476,6 +632,7 @@ export interface NotificationsState {
             exporting: null | ErrorState;
             importing: null | ErrorState;
             moving: null | ErrorState;
+            mergingConsensus: null | ErrorState;
         };
         jobs: {
             updating: null | ErrorState;
@@ -592,6 +749,9 @@ export interface NotificationsState {
             fetching: null | ErrorState;
             canceling: null | ErrorState;
             deleting: null | ErrorState;
+        };
+        bulkOperation: {
+            processing: BulkOperationsErrorState | null;
         }
     };
     messages: {
@@ -599,6 +759,7 @@ export interface NotificationsState {
             loadingDone: null | NotificationState;
             importingDone: null | NotificationState;
             movingDone: null | NotificationState;
+            mergingConsensusDone: null | NotificationState;
         };
         models: {
             inferenceDone: null | NotificationState;
@@ -643,40 +804,26 @@ export enum ActiveControl {
     DRAW_MASK = 'draw_mask',
     DRAW_CUBOID = 'draw_cuboid',
     DRAW_SKELETON = 'draw_skeleton',
-    MERGE = 'merge',
     GROUP = 'group',
+    MERGE = 'merge',
     JOIN = 'join',
     SPLIT = 'split',
     SLICE = 'slice',
     EDIT = 'edit',
     OPEN_ISSUE = 'open_issue',
     AI_TOOLS = 'ai_tools',
-    PHOTO_CONTEXT = 'PHOTO_CONTEXT',
     OPENCV_TOOLS = 'opencv_tools',
-}
-
-export enum ShapeType {
-    RECTANGLE = 'rectangle',
-    POLYGON = 'polygon',
-    POLYLINE = 'polyline',
-    POINTS = 'points',
-    ELLIPSE = 'ellipse',
-    CUBOID = 'cuboid',
-    MASK = 'mask',
-    SKELETON = 'skeleton',
-}
-
-export enum ObjectType {
-    SHAPE = 'shape',
-    TRACK = 'track',
-    TAG = 'tag',
+    AUDIO_REGION_CREATE = 'audio_region_create',
+    AUDIO_REGION_EDIT = 'audio_region_edit',
+    AUDIO_REGION_RECORD = 'audio_region_record',
 }
 
 export enum StatesOrdering {
     ID_DESCENT = 'ID - descent',
     ID_ASCENT = 'ID - ascent',
     UPDATED = 'Updated time',
-    Z_ORDER = 'Z Order',
+    LAYER = 'Layer',
+    LABEL_NAME = 'Label name',
 }
 
 export enum ContextMenuType {
@@ -693,6 +840,7 @@ export enum NavigationType {
     REGULAR = 'regular',
     FILTERED = 'filtered',
     EMPTY = 'empty',
+    CHAPTER = 'chapter',
 }
 
 export interface EditingState {
@@ -763,10 +911,14 @@ export interface AnnotationState {
         navigationBlocked: boolean;
         playing: boolean;
         frameAngles: number[];
+        hoveredChapter: number | null;
     };
     drawing: {
         activeInteractor?: MLModel | OpenCVTool;
-        activeInteractorParameters?: MLModel['params']['canvas'];
+        activeInteractorParameters: Partial<{
+            command: Parameters<Canvas['interact']>[0]['command'];
+            settings: Parameters<Canvas['interact']>[0]['settings'];
+        }>;
         activeShapeType: ShapeType | null;
         activeRectDrawingMethod?: RectDrawingMethod;
         activeCuboidDrawingMethod?: CuboidDrawingMethod;
@@ -774,6 +926,7 @@ export interface AnnotationState {
         activeLabelID: number | null;
         activeObjectType: ObjectType;
         activeInitialState?: any;
+        activeSimplifyPoly?: boolean;
     };
     editing: EditingState;
     annotations: {
@@ -785,11 +938,12 @@ export interface AnnotationState {
         collapsedAll: boolean;
         states: any[];
         filters: object[];
+        renderData: RenderData;
         resetGroupFlag: boolean;
         initialized: boolean;
         history: {
-            undo: [string, number][];
-            redo: [string, number][];
+            undo: [string, number | null][];
+            redo: [string, number | null][];
         };
         saving: {
             forceExit: boolean;
@@ -810,8 +964,15 @@ export interface AnnotationState {
         visible: boolean;
         data: any;
     };
+    search: {
+        visible: boolean;
+    }
     propagate: {
         visible: boolean;
+    };
+    simplify: {
+        objectState: ObjectState | null;
+        originalPoints: number[] | null;
     };
     colors: any[];
     filtersPanelVisible: boolean;
@@ -827,6 +988,7 @@ export enum Workspace {
     SINGLE_SHAPE = 'Single shape',
     TAGS = 'Tag annotation',
     REVIEW = 'Review',
+    AUDIO = 'Audio annotation',
 }
 
 export enum GridColor {
@@ -872,8 +1034,10 @@ export interface PlayerSettingsState {
 export interface WorkspaceSettingsState {
     autoSave: boolean;
     autoSaveInterval: number; // in ms
-    aamZoomMargin: number;
+    focusedObjectPadding: number;
     automaticBordering: boolean;
+    snapToPoint: boolean;
+    adaptiveZoom: boolean;
     showObjectsTextAlways: boolean;
     showAllInterpolationTracks: boolean;
     intelligentPolygonCrop: boolean;
@@ -895,6 +1059,7 @@ export interface ShapesSettingsState {
     showBitmap: boolean;
     showProjections: boolean;
     showGroundTruth: boolean;
+    orientationVisibility: OrientationVisibility;
 }
 
 export interface SettingsState {
@@ -910,11 +1075,6 @@ export interface ShortcutsState {
     keyMap: KeyMap;
     normalizedKeyMap: Record<string, string>;
     defaultState: Record<string, KeyMapItem>
-}
-
-export enum StorageLocation {
-    LOCAL = 'local',
-    CLOUD_STORAGE = 'cloud_storage',
 }
 
 export enum ReviewStatus {
@@ -946,6 +1106,19 @@ export interface ReviewState {
     };
 }
 
+export interface OrganizationMembersQuery {
+    search: string | null;
+    filter: string | null;
+    sort: string | null;
+    page: number;
+    pageSize: number;
+}
+
+export interface OrganizationsQuery {
+    page: number;
+    search: string;
+}
+
 export interface OrganizationState {
     current?: Organization | null;
     initialized: boolean;
@@ -955,10 +1128,27 @@ export interface OrganizationState {
     leaving: boolean;
     removingMember: boolean;
     updatingMember: boolean;
+    fetchingMembers: boolean;
+
+    gettingQuery: OrganizationsQuery;
+    currentArray: Organization[];
+    currentArrayFetching: boolean;
+    count: number;
+    nextPageUrl: string | null;
+
+    selectModal: {
+        visible: boolean;
+        onSelectCallback: ((org: Organization | null) => void) | null;
+    };
+
+    members: Membership[];
+    selectedMembers: number[];
+    membersQuery: OrganizationMembersQuery;
 }
 
 export interface WebhooksQuery {
     page: number;
+    pageSize: number;
     id: number | null;
     search: string | null;
     filter: string | null;
@@ -968,13 +1158,20 @@ export interface WebhooksQuery {
 
 export interface WebhooksState {
     current: Webhook[],
+    selected: number[];
     totalCount: number;
     fetching: boolean;
     query: WebhooksQuery;
+    activities: {
+        deletes: {
+            [webhookId: number]: boolean; // deleted (deleting if in dictionary)
+        };
+    }
 }
 
 export interface InvitationsQuery {
     page: number;
+    pageSize: number;
 }
 
 export interface InvitationsState {
@@ -987,13 +1184,15 @@ export interface InvitationsState {
 
 export interface RequestsQuery {
     page: number;
+    pageSize: number;
 }
 
 export interface RequestsState {
     fetching: boolean;
     initialized: boolean;
     requests: Record<string, Request>;
-    disabled: Record<string, boolean>;
+    cancelled: Record<string, boolean>;
+    selected: string[];
     query: RequestsQuery;
 }
 
@@ -1013,16 +1212,19 @@ export interface CombinedState {
     models: ModelsState;
     notifications: NotificationsState;
     annotation: AnnotationState;
+    audio: AudioState;
     settings: SettingsState;
     shortcuts: ShortcutsState;
     review: ReviewState;
     export: ExportState;
     import: ImportState;
+    consensus: ConsensusState;
     cloudStorages: CloudStoragesState;
     organizations: OrganizationState;
     invitations: InvitationsState;
     webhooks: WebhooksState;
     requests: RequestsState;
+    bulkActions: BulkActionsState;
     serverAPI: ServerAPIState;
     navigation: NavigationState;
 }

@@ -21,11 +21,13 @@ import FiltersModalComponent from 'components/annotation-page/top-bar/filters-mo
 import { JobNotFoundComponent } from 'components/common/not-found';
 import StatisticsModalComponent from 'components/annotation-page/top-bar/statistics-modal';
 import AnnotationTopBarContainer from 'containers/annotation-page/top-bar/top-bar';
+import AudioAnnotationPage from 'audio/components/annotation-page/audio-annotation-page';
 import { Workspace } from 'reducers';
 import { usePrevious } from 'utils/hooks';
 import EventRecorder from 'utils/event-recorder';
 import { readLatestFrame } from 'utils/remember-latest-frame';
 import { EventScope } from 'cvat-core/src/enums';
+import SearchFramesModal from './top-bar/search-modal';
 
 interface Props {
     job: Job | null | undefined;
@@ -114,7 +116,7 @@ export default function AnnotationPageComponent(props: Props): JSX.Element {
                         <span>
                             {`${job.projectId ? 'Project' : 'Task'} ${
                                 job.projectId || job.taskId
-                            } does not contain any label. `}
+                            } does not contain any labels. `}
                             <a href={`/${job.projectId ? 'projects' : 'tasks'}/${job.projectId || job.taskId}/`}>
                                 Add
                             </a>
@@ -142,6 +144,10 @@ export default function AnnotationPageComponent(props: Props): JSX.Element {
         return <JobNotFoundComponent />;
     }
 
+    if (workspace === Workspace.AUDIO) {
+        return <AudioAnnotationPage />;
+    }
+
     return (
         <Layout className='cvat-annotation-page'>
             <Layout.Header className='cvat-annotation-header'>
@@ -157,6 +163,7 @@ export default function AnnotationPageComponent(props: Props): JSX.Element {
             </Layout.Content>
             <FiltersModalComponent />
             <StatisticsModalComponent />
+            <SearchFramesModal />
         </Layout>
     );
 }

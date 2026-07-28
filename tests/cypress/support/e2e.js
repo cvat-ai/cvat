@@ -3,10 +3,12 @@
 //
 // SPDX-License-Identifier: MIT
 
+require('allure-cypress');
 require('./commands');
 require('./commands_projects');
 require('./commands_review_pipeline');
 require('./commands_canvas3d');
+require('./commands_audio');
 require('./commands_filters_feature');
 require('./commands_models');
 require('./commands_opencv');

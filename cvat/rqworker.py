@@ -30,6 +30,13 @@ class SimpleWorker(Worker):
 
     death_penalty_class = BaseDeathPenalty
 
+    def register_birth(self):
+        super().register_birth()
+        # The server process uses this flag to reject started-job cancellation in debug mode:
+        # SimpleWorker runs jobs in-process, so there is no forked work horse to stop.
+        # As we do not want just kill debug process
+        self.connection.hset(self.key, "cvat_can_stop_started_jobs", 0)
+
     def main_work_horse(self, *args, **kwargs):
         raise NotImplementedError("Test worker does not implement this method")
 

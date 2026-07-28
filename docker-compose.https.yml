@@ -5,17 +5,15 @@
 services:
   cvat_server:
     labels:
-      - traefik.http.routers.cvat.entrypoints=websecure
-      - traefik.http.routers.cvat.tls.certresolver=lets-encrypt
+      traefik.http.routers.cvat.entrypoints: websecure
+      traefik.http.routers.cvat.tls.certresolver: lets-encrypt
 
   cvat_ui:
     labels:
-      - traefik.http.routers.cvat-ui.entrypoints=websecure
-      - traefik.http.routers.cvat-ui.tls.certresolver=lets-encrypt
+      traefik.http.routers.cvat-ui.entrypoints: websecure
+      traefik.http.routers.cvat-ui.tls.certresolver: lets-encrypt
 
   traefik:
-    image: traefik:v2.9
-    container_name: traefik
     environment:
       TRAEFIK_ENTRYPOINTS_web_ADDRESS: :80
       TRAEFIK_ENTRYPOINTS_web_HTTP_REDIRECTIONS_ENTRYPOINT_TO: websecure

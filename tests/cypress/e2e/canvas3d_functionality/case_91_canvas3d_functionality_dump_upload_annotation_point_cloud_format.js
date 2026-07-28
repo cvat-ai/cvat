@@ -21,7 +21,7 @@ context('Canvas 3D functionality. Dump/upload annotation. "Point Cloud" format',
 
     function confirmUpdate(modalWindowClassName) {
         cy.get(modalWindowClassName).should('be.visible').within(() => {
-            cy.contains('button', 'Update').click();
+            cy.contains('button', 'Replace annotations').click();
         });
     }
 
@@ -39,6 +39,7 @@ context('Canvas 3D functionality. Dump/upload annotation. "Point Cloud" format',
     }
 
     before(() => {
+        cy.prepareUserSession();
         cy.openTask(taskName);
         cy.openJob();
         // eslint-disable-next-line cypress/no-unnecessary-waiting
@@ -67,7 +68,7 @@ context('Canvas 3D functionality. Dump/upload annotation. "Point Cloud" format',
                 as: 'exportAnnotationsRenameArchive',
                 type: 'annotations',
                 format: dumpTypePC,
-                archiveCustomName: 'job_export_3d_annotation_custome_name_pc_format',
+                archiveCustomName: 'job_export_3d_annotation_custom_name_pc_format',
             };
             cy.exportJob(exportAnnotationRenameArchive);
             cy.downloadExport().then((file) => {

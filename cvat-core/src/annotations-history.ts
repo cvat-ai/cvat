@@ -9,10 +9,10 @@ const MAX_HISTORY_LENGTH = 32;
 
 interface ActionItem {
     action: HistoryActions;
-    undo: Function;
-    redo: Function;
-    clientIDs: number[];
+    clientIds: number[];
     frame: number;
+    undo: () => void;
+    redo: () => void;
 }
 
 export default class AnnotationHistory {
@@ -29,17 +29,27 @@ export default class AnnotationHistory {
         this.frozen = frozen;
     }
 
-    public get(): { undo: [HistoryActions, number][], redo: [HistoryActions, number][] } {
+    public get(): {
+        undo: [HistoryActions, number | null][],
+        redo: [HistoryActions, number | null][],
+    } {
         return {
             undo: this._undo.map((undo) => [undo.action, undo.frame]),
             redo: this._redo.map((redo) => [redo.action, redo.frame]),
         };
     }
 
-    public do(action: HistoryActions, undo: Function, redo: Function, clientIDs: number[], frame: number): void {
+    public do(
+        action: HistoryActions,
+        undo: () => void,
+        redo: () => void,
+        clientIds: number[],
+        frame: number | null,
+    ): void {
         if (this.frozen) return;
-        const actionItem = {
-            clientIDs,
+
+        const actionItem: ActionItem = {
+            clientIds,
             action,
             undo,
             redo,
@@ -58,7 +68,7 @@ export default class AnnotationHistory {
             if (action) {
                 await action.undo();
                 this._redo.push(action);
-                affectedObjects.push(...action.clientIDs);
+                affectedObjects.push(...action.clientIds);
             } else {
                 break;
             }
@@ -74,7 +84,7 @@ export default class AnnotationHistory {
             if (action) {
                 await action.redo();
                 this._undo.push(action);
-                affectedObjects.push(...action.clientIDs);
+                affectedObjects.push(...action.clientIds);
             } else {
                 break;
             }

@@ -8,25 +8,10 @@ import PluginRegistry from './plugins';
 import { ArgumentError } from './exceptions';
 import { Label } from './labels';
 import { isEnum } from './common';
-import { SerializedShape, SerializedTag, SerializedTrack } from './server-response-types';
-
-interface UpdateFlags {
-    label: boolean;
-    attributes: boolean;
-    description: boolean;
-    points: boolean;
-    rotation: boolean;
-    outside: boolean;
-    occluded: boolean;
-    keyframe: boolean;
-    zOrder: boolean;
-    pinned: boolean;
-    lock: boolean;
-    color: boolean;
-    hidden: boolean;
-    descriptions: boolean;
-    reset: () => void;
-}
+import {
+    SerializedShape, SerializedTag, SerializedTrack,
+} from './server-response-types';
+import type { UpdateFlags } from './annotations-objects/types';
 
 export interface SerializedData {
     objectType: ObjectType;
@@ -45,6 +30,8 @@ export interface SerializedData {
     color?: string;
     updated?: number;
     source?: Source;
+    score?: number;
+    votes?: number;
     zOrder?: number;
     points?: number[];
     occluded?: boolean;
@@ -88,6 +75,8 @@ export default class ObjectState {
         next: number | null;
         last: number | null;
     } | null;
+    public readonly score: number | undefined;
+    public readonly votes: number | undefined;
     public label: Label;
     public color: string;
     public hidden: boolean;
@@ -122,29 +111,28 @@ export default class ObjectState {
             );
         }
 
-        const updateFlags: UpdateFlags = {} as UpdateFlags;
-        // Shows whether any properties updated since the object initialization
-        Object.defineProperty(updateFlags, 'reset', {
-            value: function reset() {
-                this.label = false;
-                this.attributes = false;
-                this.descriptions = false;
+        const updateFlags: UpdateFlags = {
+            reset() {
+                delete this.label;
+                delete this.attributes;
+                delete this.descriptions;
 
-                this.points = false;
-                this.rotation = false;
-                this.outside = false;
-                this.occluded = false;
-                this.keyframe = false;
+                delete this.points;
+                delete this.rotation;
+                delete this.outside;
+                delete this.occluded;
+                delete this.keyframe;
 
-                this.zOrder = false;
-                this.pinned = false;
-                this.lock = false;
-                this.color = false;
-                this.hidden = false;
-                this.descriptions = false;
-
-                return reset;
+                delete this.zOrder;
+                delete this.pinned;
+                delete this.lock;
+                delete this.color;
+                delete this.hidden;
+                delete this.descriptions;
             },
+        };
+
+        Object.defineProperty(updateFlags, 'reset', {
             writable: false,
             enumerable: false,
         });
@@ -180,6 +168,8 @@ export default class ObjectState {
             objectType: serialized.objectType,
             shapeType: serialized.shapeType || null,
             updateFlags,
+            score: serialized.objectType === ObjectType.SHAPE ? (serialized.score ?? 1.0) : undefined,
+            votes: serialized.objectType === ObjectType.SHAPE ? (serialized.votes ?? 0) : undefined,
         };
 
         Object.defineProperties(
@@ -203,6 +193,12 @@ export default class ObjectState {
                 },
                 isGroundTruth: {
                     get: () => data.source === Source.GT,
+                },
+                score: {
+                    get: () => data.score,
+                },
+                votes: {
+                    get: () => data.votes,
                 },
                 clientID: {
                     get: () => data.clientID,
@@ -260,12 +256,7 @@ export default class ObjectState {
                     },
                     set: (points) => {
                         if (!Array.isArray(points) || points.some((coord) => typeof coord !== 'number')) {
-                            throw new ArgumentError(
-                                'Points are expected to be an array of numbers ' +
-                                    `but got ${
-                                        typeof points === 'object' ? points.constructor.name : typeof points
-                                    }`,
-                            );
+                            throw new ArgumentError('Points are expected to be an array of numbers.');
                         }
 
                         if (data.shapeType === ShapeType.SKELETON) {
@@ -296,11 +287,7 @@ export default class ObjectState {
                             data.updateFlags.rotation = true;
                             data.rotation = rotation;
                         } else {
-                            throw new ArgumentError(
-                                `Rotation is expected to be a number, but got ${
-                                    typeof rotation === 'object' ? rotation.constructor.name : typeof rotation
-                                }`,
-                            );
+                            throw new ArgumentError('Rotation is expected to be a number.');
                         }
                     },
                 },
@@ -508,6 +495,56 @@ export default class ObjectState {
         }
     }
 
+    public serialize(): SerializedData {
+        const serialized: SerializedData = {
+            objectType: this.objectType,
+            label: this.label,
+            frame: this.frame,
+            lock: this.lock,
+            hidden: this.hidden,
+            pinned: this.pinned,
+            attributes: this.attributes,
+            color: this.color,
+            updated: this.updated,
+            source: this.source,
+            score: this.score,
+            votes: this.votes,
+            zOrder: this.zOrder,
+            occluded: this.occluded,
+            outside: this.outside,
+            keyframe: this.keyframe,
+            descriptions: this.descriptions,
+            elements: this.elements.map((element: ObjectState): SerializedData => element.serialize()),
+        };
+
+        if (this.shapeType) {
+            serialized.shapeType = this.shapeType;
+        }
+        if (typeof this.clientID === 'number') {
+            serialized.clientID = this.clientID;
+        }
+        if (typeof this.serverID === 'number') {
+            serialized.serverID = this.serverID;
+        }
+        if (typeof this.parentID === 'number') {
+            serialized.parentID = this.parentID;
+        }
+        if (this.group) {
+            serialized.group = this.group;
+        }
+        if (this.points) {
+            serialized.points = this.points;
+        }
+        if (typeof this.rotation === 'number') {
+            serialized.rotation = this.rotation;
+        }
+        if (this.keyframes) {
+            serialized.keyframes = this.keyframes;
+        }
+
+        return serialized;
+    }
+
     async save(): Promise<ObjectState> {
         const result = await PluginRegistry.apiWrapper.call(this, ObjectState.prototype.save);
         return result;
@@ -527,10 +564,10 @@ export default class ObjectState {
 Object.defineProperty(ObjectState.prototype.save, 'implementation', {
     value: function saveImplementation(): ObjectState {
         if (this.__internal && this.__internal.save) {
-            return this.__internal.save(this);
+            return this.__internal.save(this.frame, this);
         }
 
-        return this;
+        throw new Error('Could not save object state. Context is not provided.');
     },
     writable: false,
 });
@@ -541,7 +578,7 @@ Object.defineProperty(ObjectState.prototype.export, 'implementation', {
             return this.__internal.export(this);
         }
 
-        return this;
+        throw new Error('Could not export object state. Context is not provided.');
     },
     writable: false,
 });
@@ -556,7 +593,7 @@ Object.defineProperty(ObjectState.prototype.delete, 'implementation', {
             return this.__internal.delete(frame, force);
         }
 
-        return false;
+        throw new Error('Could not delete object state. Context is not provided.');
     },
     writable: false,
 });

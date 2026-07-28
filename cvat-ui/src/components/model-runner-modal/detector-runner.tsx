@@ -11,23 +11,30 @@ import Text from 'antd/lib/typography/Text';
 import InputNumber from 'antd/lib/input-number';
 import Button from 'antd/lib/button';
 import Switch from 'antd/lib/switch';
-import Tag from 'antd/lib/tag';
 import notification from 'antd/lib/notification';
-import { ArrowRightOutlined } from '@ant-design/icons';
+import { QuestionCircleOutlined } from '@ant-design/icons';
 
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { clamp } from 'utils/math';
 import {
-    MLModel, ModelKind, ModelReturnType, DimensionType, Label,
+    MLModel, ModelKind, DimensionType, Label, LabelType,
 } from 'cvat-core-wrapper';
+import { type Canvas } from 'cvat-canvas-wrapper';
 
 import LabelsMapperComponent, { LabelInterface, FullMapping } from './labels-mapper';
+import RegionOfInterestInputComponent from './region-of-interest-input';
+
+export type RegionOfInterest = NonNullable<AnnotateTaskRequestBody['roi']> | null;
 
 interface Props {
     withCleanup: boolean;
     models: MLModel[];
     labels: Label[];
     dimension: DimensionType;
+    frameWidth?: number;
+    frameHeight?: number;
+    canvasInstance?: Canvas;
+    onRegionOfInterestChange?: (regionOfInterest: RegionOfInterest) => void;
     runInference(model: MLModel, body: object): void;
 }
 
@@ -37,10 +44,13 @@ type ServerMapping = Record<string, {
     sublabels?: ServerMapping;
 }>;
 
-export interface DetectorRequestBody {
+export interface AnnotateTaskRequestBody {
+    type: 'annotate_task';
     mapping: ServerMapping;
     cleanup: boolean;
     conv_mask_to_poly: boolean;
+    threshold?: number;
+    roi?: [number, number, number, number];
 }
 
 function convertMappingToServer(mapping: FullMapping): ServerMapping {
@@ -51,6 +61,7 @@ function convertMappingToServer(mapping: FullMapping): ServerMapping {
                 name: taskLabel.name,
                 attributes: attributesMapping.reduce<Record<string, string>>((attrAcc, val) => {
                     if (val[0]?.name && val[1]?.name) {
+                        // eslint-disable-next-line no-param-reassign
                         attrAcc[val[0].name] = val[1].name;
                     }
                     return attrAcc;
@@ -64,6 +75,7 @@ function convertMappingToServer(mapping: FullMapping): ServerMapping {
 function DetectorRunner(props: Props): JSX.Element {
     const {
         models, withCleanup, labels, dimension, runInference,
+        frameWidth, frameHeight, canvasInstance, onRegionOfInterestChange,
     } = props;
 
     const [modelID, setModelID] = useState<string | null>(null);
@@ -72,14 +84,17 @@ function DetectorRunner(props: Props): JSX.Element {
     const [cleanup, setCleanup] = useState<boolean>(false);
     const [mapping, setMapping] = useState<FullMapping>([]);
     const [convertMasksToPolygons, setConvertMasksToPolygons] = useState<boolean>(false);
+    const [detectorThreshold, setDetectorThreshold] = useState<number | null>(null);
     const [modelLabels, setModelLabels] = useState<LabelInterface[]>([]);
     const [taskLabels, setTaskLabels] = useState<LabelInterface[]>([]);
+    const [regionOfInterest, setRegionOfInterest] = useState<RegionOfInterest>(null);
 
     const model = models.find((_model): boolean => _model.id === modelID);
     const isDetector = model?.kind === ModelKind.DETECTOR;
     const isReId = model?.kind === ModelKind.REID;
+    const showROI = isDetector && dimension === DimensionType.DIMENSION_2D;
     const convertMasks2PolygonVisible = isDetector &&
-        (!model.returnType || model.returnType === ModelReturnType.MASK);
+        [LabelType.ANY, LabelType.MASK].includes(model.returnType);
 
     const buttonEnabled = model && (isReId || (isDetector && mapping.length));
 
@@ -116,6 +131,18 @@ function DetectorRunner(props: Props): JSX.Element {
         }
     }, [labels, model]);
 
+    useEffect(() => {
+        if (!showROI) {
+            setRegionOfInterest(null);
+        }
+    }, [showROI]);
+
+    useEffect(() => {
+        if (onRegionOfInterestChange) {
+            onRegionOfInterestChange(regionOfInterest);
+        }
+    }, [regionOfInterest]);
+
     return (
         <div className='cvat-run-model-content'>
             <Row align='middle'>
@@ -142,14 +169,10 @@ function DetectorRunner(props: Props): JSX.Element {
             {isDetector && (
                 <div>
                     <div className='cvat-detector-runner-mapping-header'>
-                        <div>
-                            <Text strong>Setup mapping between labels and attributes</Text>
-                        </div>
-                        <div>
-                            <Tag>Model Spec</Tag>
-                            <ArrowRightOutlined />
-                            <Tag>CVAT Spec</Tag>
-                        </div>
+                        <Text>Setup mapping between labels and attributes</Text>
+                        <CVATTooltip title='Each class, or attribute that model may predict, may be mapped to a label or attribute of the current specification'>
+                            <QuestionCircleOutlined className='cvat-info-circle-icon' />
+                        </CVATTooltip>
                     </div>
                     <LabelsMapperComponent
                         key={modelID} // rerender when model switched
@@ -158,6 +181,37 @@ function DetectorRunner(props: Props): JSX.Element {
                         taskLabels={taskLabels}
                     />
                 </div>
+            )}
+            {isDetector && (
+                <div className='cvat-detector-runner-threshold-wrapper'>
+                    <div>
+                        <Text>Threshold</Text>
+                        <CVATTooltip title='Minimum confidence threshold for detections. Leave empty to use the default value specified in the model settings'>
+                            <QuestionCircleOutlined className='cvat-info-circle-icon' />
+                        </CVATTooltip>
+                    </div>
+                    <Row align='middle' justify='start'>
+                        <Col>
+                            <InputNumber
+                                min={0.01}
+                                step={0.01}
+                                max={1}
+                                value={detectorThreshold}
+                                onChange={(value: number | null) => {
+                                    setDetectorThreshold(value);
+                                }}
+                            />
+                        </Col>
+                    </Row>
+                </div>
+            )}
+            {showROI && (
+                <RegionOfInterestInputComponent
+                    frameWidth={frameWidth}
+                    frameHeight={frameHeight}
+                    canvasInstance={canvasInstance}
+                    onSubmit={setRegionOfInterest}
+                />
             )}
             {convertMasks2PolygonVisible && (
                 <div className='cvat-detector-runner-convert-masks-to-polygons-wrapper'>
@@ -232,11 +286,16 @@ function DetectorRunner(props: Props): JSX.Element {
                             if (!model) return;
                             const serverMapping = convertMappingToServer(mapping);
                             if (model.kind === ModelKind.DETECTOR) {
-                                runInference(model, {
+                                const body: AnnotateTaskRequestBody = {
+                                    type: 'annotate_task',
                                     mapping: serverMapping,
                                     cleanup,
                                     conv_mask_to_poly: convertMasksToPolygons,
-                                });
+                                    ...(detectorThreshold !== null ? { threshold: detectorThreshold } : {}),
+                                    ...(regionOfInterest ? { roi: regionOfInterest } : {}),
+                                };
+
+                                runInference(model, body);
                             } else if (model.kind === ModelKind.REID) {
                                 runInference(model, { threshold, max_distance: distance });
                             }

@@ -7,14 +7,9 @@
 @import '../../styles';
 
 .cvat-tasks-page {
-    padding-top: $grid-unit-size * 2;
-    padding-bottom: $grid-unit-size;
-    height: 100%;
-    width: 100%;
+    @include cvat-resource-page;
 
     .cvat-tasks-page-top-bar {
-        margin-right: $grid-unit-size;
-
         > div {
             display: flex;
             justify-content: space-between;
@@ -36,31 +31,9 @@
 
                 .cvat-tasks-page-search-bar {
                     width: $grid-unit-size * 32;
-                    padding-left: $grid-unit-size;
                 }
             }
         }
-    }
-
-    > div:nth-child(2) {
-        height: 83%;
-        padding-top: 10px;
-    }
-
-    @media screen and (height >= 900px) {
-        > div:nth-child(2) {
-            height: 88%;
-        }
-    }
-
-    @media screen and (height >= 1200px) {
-        > div:nth-child(2) {
-            height: 93%;
-        }
-    }
-
-    > div:nth-child(3) {
-        padding-top: 10px;
     }
 }
 
@@ -79,11 +52,10 @@
 }
 
 .cvat-tasks-list {
-    height: 100%;
     overflow-y: auto;
 
     .ant-ribbon-wrapper {
-        margin: $grid-unit-size;
+        margin: $grid-unit-size * 0.5;
     }
 }
 
@@ -193,6 +165,10 @@
     align-items: center;
     padding: $grid-unit-size;
     line-height: 14px;
+
+    > div {
+        display: flex;
+    }
 }
 
 .cvat-item-open-task-button {

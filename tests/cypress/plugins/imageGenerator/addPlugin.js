@@ -2,10 +2,12 @@
 //
 // SPDX-License-Identifier: MIT
 
-// eslint-disable-next-line no-use-before-define
+/* eslint no-use-before-define: 0 */
 exports.imageGenerator = imageGenerator;
+exports.bufferToImage = bufferToImage;
 
 const path = require('path');
+const fs = require('fs-extra');
 const jimp = require('jimp');
 
 function createImage(width, height, color) {
@@ -15,6 +17,15 @@ function createImage(width, height, color) {
             if (err) reject(err);
             resolve(img);
         }));
+    });
+}
+function createImageFromBuffer(bitmapObj) {
+    return new Promise((resolve, reject) => {
+        // eslint-disable-next-line new-cap, no-new
+        new jimp(bitmapObj, (err, image) => {
+            if (err) reject(err);
+            resolve(image);
+        });
     });
 }
 
@@ -33,13 +44,22 @@ async function imageGenerator(args) {
         directory, fileName, width, height, color, posX, posY, message, count, extension,
     } = args;
     const file = path.join(directory, fileName);
-    try {
-        for (let i = 1; i <= count; i++) {
-            let image = await createImage(width, height, color);
-            image = await appendText(image, posX, posY, message, i);
-            image.write(`${file}_${i}.${extension}`);
-        }
-    // eslint-disable-next-line no-empty
-    } catch (e) {}
+    for (let i = 1; i <= count; i++) {
+        let image = await createImage(width, height, color);
+        image = await appendText(image, posX, posY, message, i);
+        image.write(`${file}_${i}.${extension}`);
+    }
     return null;
+}
+
+async function bufferToImage(args) {
+    const {
+        directory, fileName, extension, buffer,
+    } = args;
+    let file = null;
+    fs.mkdirp(directory);
+    file = path.join(directory, `${fileName}.${extension}`);
+    const image = await createImageFromBuffer(Buffer.from(buffer.data));
+    image.write(file);
+    return fs.pathExists(file);
 }

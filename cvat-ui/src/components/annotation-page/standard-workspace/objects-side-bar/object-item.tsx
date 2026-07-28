@@ -9,13 +9,13 @@ import Collapse from 'antd/lib/collapse';
 
 import ObjectButtonsContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/object-buttons';
 import ItemDetailsContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/object-item-details';
-import { ObjectType, ShapeType, ColorBy } from 'reducers';
+import { ColorBy } from 'reducers';
+import { ObjectType, ShapeType } from 'cvat-core-wrapper';
 import ObjectItemElementComponent from './object-item-element';
 import ItemBasics from './object-item-basics';
 
 interface Props {
     normalizedKeyMap: Record<string, string>;
-    readonly: boolean;
     activated: boolean;
     objectType: ObjectType;
     shapeType: ShapeType;
@@ -30,13 +30,20 @@ interface Props {
     labels: any[];
     attributes: any[];
     jobInstance: any;
+    zLayerDragProps?: React.HTMLAttributes<HTMLElement>;
+    zLayerDragging?: boolean;
+    zOrder: number;
     activate(activeElementID?: number): void;
+    focusAndExpand(): void;
     copy(): void;
     propagate(): void;
     switchOrientation(): void;
     createURL(): void;
     toBackground(): void;
     toForeground(): void;
+    toOneLayerBackward(): void;
+    toOneLayerForward(): void;
+    toSpecificLayer(zOrder: number): void;
     remove(): void;
     changeLabel(label: any): void;
     changeColor(color: string): void;
@@ -44,12 +51,12 @@ interface Props {
     runAnnotationAction(): void;
     edit(): void;
     slice(): void;
+    simplify(): void;
 }
 
 function ObjectItemComponent(props: Props): JSX.Element {
     const {
         activated,
-        readonly,
         objectType,
         shapeType,
         clientID,
@@ -59,17 +66,23 @@ function ObjectItemComponent(props: Props): JSX.Element {
         color,
         colorBy,
         elements,
-        attributes,
         labels,
+        zLayerDragProps,
+        zLayerDragging,
+        zOrder,
         normalizedKeyMap,
         isGroundTruth,
         activate,
+        focusAndExpand,
         copy,
         propagate,
         createURL,
         switchOrientation,
         toBackground,
         toForeground,
+        toOneLayerForward,
+        toOneLayerBackward,
+        toSpecificLayer,
         remove,
         changeLabel,
         changeColor,
@@ -77,6 +90,7 @@ function ObjectItemComponent(props: Props): JSX.Element {
         runAnnotationAction,
         edit,
         slice,
+        simplify,
         jobInstance,
     } = props;
 
@@ -86,8 +100,10 @@ function ObjectItemComponent(props: Props): JSX.Element {
             `${shapeType.toUpperCase()} ${objectType.toUpperCase()}`;
 
     const className = !activated ?
-        'cvat-objects-sidebar-state-item' :
-        'cvat-objects-sidebar-state-item cvat-objects-sidebar-state-active-item';
+        `cvat-objects-sidebar-state-item${zLayerDragging ? ' cvat-objects-sidebar-state-item-dragging' : ''}` :
+        `cvat-objects-sidebar-state-item cvat-objects-sidebar-state-active-item${
+            zLayerDragging ? ' cvat-objects-sidebar-state-item-dragging' : ''
+        }`;
 
     const activateState = useCallback(() => {
         activate();
@@ -96,14 +112,15 @@ function ObjectItemComponent(props: Props): JSX.Element {
     return (
         <div style={{ display: 'flex', marginBottom: '1px' }}>
             <div
+                {...zLayerDragProps}
                 onMouseEnter={activateState}
+                onDoubleClick={focusAndExpand}
                 id={`cvat-objects-sidebar-state-item-${clientID}`}
-                className={className}
-                style={{ backgroundColor: `${color}88` }}
+                className={`${className}${zLayerDragProps ? ' cvat-objects-sidebar-state-item-draggable' : ''}`}
+                style={{ '--state-item-background': `${color}` } as React.CSSProperties}
             >
                 <ItemBasics
                     jobInstance={jobInstance}
-                    readonly={readonly}
                     serverID={serverID}
                     clientID={clientID}
                     labelID={labelID}
@@ -120,6 +137,9 @@ function ObjectItemComponent(props: Props): JSX.Element {
                     propagateShortcut={normalizedKeyMap.PROPAGATE_OBJECT}
                     toBackgroundShortcut={normalizedKeyMap.TO_BACKGROUND}
                     toForegroundShortcut={normalizedKeyMap.TO_FOREGROUND}
+                    toOneLayerBackwardShortcut={normalizedKeyMap.TO_ONE_LAYER_BACKWARD}
+                    toOneLayerForwardShortcut={normalizedKeyMap.TO_ONE_LAYER_FORWARD}
+                    zOrder={zOrder}
                     removeShortcut={normalizedKeyMap.DELETE_OBJECT_STANDARD_WORKSPACE}
                     changeColorShortcut={normalizedKeyMap.CHANGE_OBJECT_COLOR}
                     sliceShortcut={normalizedKeyMap.SWITCH_SLICE_MODE}
@@ -133,19 +153,21 @@ function ObjectItemComponent(props: Props): JSX.Element {
                     switchOrientation={switchOrientation}
                     toBackground={toBackground}
                     toForeground={toForeground}
+                    toOneLayerBackward={toOneLayerBackward}
+                    toOneLayerForward={toOneLayerForward}
+                    toSpecificLayer={toSpecificLayer}
                     resetCuboidPerspective={resetCuboidPerspective}
                     edit={edit}
                     slice={slice}
+                    simplify={simplify}
                     runAnnotationAction={runAnnotationAction}
                 />
-                <ObjectButtonsContainer readonly={readonly} clientID={clientID} />
-                {!!attributes.length && (
-                    <ItemDetailsContainer
-                        readonly={readonly}
-                        clientID={clientID}
-                        parentID={null}
-                    />
-                )}
+                <ObjectButtonsContainer clientID={clientID} />
+                <ItemDetailsContainer
+                    readonly={locked}
+                    clientID={clientID}
+                    parentID={null}
+                />
                 {!!elements.length && (
                     <Collapse
                         className='cvat-objects-sidebar-state-item-elements-collapse'
@@ -155,7 +177,6 @@ function ObjectItemComponent(props: Props): JSX.Element {
                             children: elements.map((element: number) => (
                                 <ObjectItemElementComponent
                                     key={element}
-                                    readonly={readonly}
                                     parentID={clientID}
                                     clientID={element}
                                     onMouseLeave={activateState}

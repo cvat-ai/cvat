@@ -41,4 +41,5 @@ function MoveControl(props: Props): JSX.Element {
     );
 }
 
+Object.assign(MoveControl, { displayName: 'MoveControl' });
 export default React.memo(MoveControl);

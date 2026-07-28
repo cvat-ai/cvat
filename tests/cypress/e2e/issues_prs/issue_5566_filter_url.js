@@ -10,18 +10,18 @@ const project = {
     name: 'A & B',
     label: 'Tree',
     attrName: 'Kind',
-    attrVaue: 'Oak',
+    attrValue: 'Oak',
 };
 
 context('The filter in the URL is correctly escaped', () => {
-    let projectID;
+    let projectId;
 
-    function getProjectID() {
+    function getProjectId() {
         cy.contains('.cvat-project-name', project.name)
             .parents('.cvat-project-details')
             .should('have.attr', 'data-cvat-project-id')
-            .then(($projectID) => {
-                projectID = $projectID;
+            .then(($projectId) => {
+                projectId = $projectId;
             });
     }
 
@@ -30,14 +30,14 @@ context('The filter in the URL is correctly escaped', () => {
         cy.login();
 
         cy.goToProjectsList();
-        cy.createProjects(project.name, project.label, project.attrName, project.attrVaue);
+        cy.createProjects(project.name, project.label, project.attrName, project.attrValue);
         cy.openProject(project.name);
-        getProjectID();
+        getProjectId();
         cy.goToProjectsList();
     });
 
     after(() => {
-        cy.deleteProject(project.name, projectID);
+        cy.deleteProject(project.name, projectId);
     });
 
     describe(`Testing issue "${issueId}"`, () => {

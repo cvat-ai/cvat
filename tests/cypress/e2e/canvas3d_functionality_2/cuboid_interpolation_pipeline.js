@@ -17,6 +17,7 @@ context('3D cuboids interpolation pipeline', () => {
     };
 
     before(() => {
+        cy.prepareUserSession();
         cy.openTaskJob(taskName);
         cy.wait(2000); // waiting for the point cloud to display
     });

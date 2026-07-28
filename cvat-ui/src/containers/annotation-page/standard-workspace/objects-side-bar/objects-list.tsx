@@ -4,7 +4,6 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-import PropTypes from 'prop-types';
 
 import { connect } from 'react-redux';
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
@@ -17,28 +16,35 @@ import {
     changeGroupColorAsync,
     copyShape as copyShapeAction,
     switchPropagateVisibility as switchPropagateVisibilityAction,
+    switchSimplifyVisibility as switchSimplifyVisibilityAction,
     removeObject as removeObjectAction,
     fetchAnnotationsAsync,
     changeHideActiveObjectAsync,
+    updateLayerAsync,
+    compactLayersAsync,
+    switchZLayer,
 } from 'actions/annotation-actions';
 import {
     changeShowGroundTruth as changeShowGroundTruthAction,
 } from 'actions/settings-actions';
 import isAbleToChangeFrame from 'utils/is-able-to-change-frame';
 import {
-    CombinedState, StatesOrdering, ObjectType, ColorBy, Workspace,
+    CombinedState, StatesOrdering, ColorBy, Workspace,
     ActiveControl,
 } from 'reducers';
-import { ObjectState, ShapeType } from 'cvat-core-wrapper';
+import { ObjectState, ObjectType, ShapeType } from 'cvat-core-wrapper';
+import { RenderData } from 'cvat-canvas-wrapper';
 import { filterAnnotations } from 'utils/filter-annotations';
 import { registerComponentShortcuts } from 'actions/shortcuts-actions';
 import { ShortcutScope } from 'utils/enums';
 import { subKeyMap } from 'utils/component-subkeymap';
+import {
+    type LayerPlacement,
+    type LayerMoveSource,
+    isLayerState,
+} from 'components/annotation-page/standard-workspace/objects-side-bar/drag-and-drop';
 import { openAnnotationsActionModal } from 'components/annotation-page/annotations-actions/annotations-actions-modal';
-
-interface OwnProps {
-    readonly: boolean;
-}
+import { OBJECTS_SIDEBAR_OPEN_Z_LAYER_EVENT } from 'utils/objects-sidebar';
 
 interface StateToProps {
     jobInstance: any;
@@ -49,12 +55,14 @@ interface StateToProps {
     collapsedStates: Record<number, boolean>;
     objectStates: ObjectState[];
     annotationsFilters: any[];
+    renderData: RenderData;
     colors: string[];
     colorBy: ColorBy;
     activatedStateID: number | null;
     activatedElementID: number | null;
     minZLayer: number;
     maxZLayer: number;
+    curZLayer: number;
     keyMap: KeyMap;
     normalizedKeyMap: Record<string, string>;
     showGroundTruth: boolean;
@@ -65,15 +73,19 @@ interface StateToProps {
 }
 
 interface DispatchToProps {
-    updateAnnotations(states: any[]): void;
-    collapseStates(states: any[], value: boolean): void;
-    removeObject: (objectState: any, force: boolean) => void;
-    copyShape: (objectState: any) => void;
-    switchPropagateVisibility: (visible: boolean) => void;
-    changeFrame(frame: number): void;
-    changeGroupColor(group: number, color: string): void;
-    changeShowGroundTruth(value: boolean): void;
-    changeHideEditedState(value: boolean): void;
+    updateAnnotations(...args: Parameters<typeof updateAnnotationsAsync>): void;
+    collapseStates(...args: Parameters<typeof collapseObjectItems>): void;
+    removeObject(...args: Parameters<typeof removeObjectAction>): void;
+    copyShape(...args: Parameters<typeof copyShapeAction>): void;
+    switchPropagateVisibility(...args: Parameters<typeof switchPropagateVisibilityAction>): void;
+    switchSimplifyVisibility(...args: Parameters<typeof switchSimplifyVisibilityAction>): void;
+    changeFrame(...args: Parameters<typeof changeFrameAsync>): void;
+    changeGroupColor(...args: Parameters<typeof changeGroupColorAsync>): void;
+    changeShowGroundTruth(...args: Parameters<typeof changeShowGroundTruthAction>): void;
+    changeHideEditedState(...args: Parameters<typeof changeHideActiveObjectAsync>): void;
+    updateLayer(...args: Parameters<typeof updateLayerAsync>): void;
+    compactLayers(...args: Parameters<typeof compactLayersAsync>): void;
+    selectLayer(...args: Parameters<typeof switchZLayer>): void;
 }
 
 const componentShortcuts = {
@@ -129,18 +141,30 @@ const componentShortcuts = {
         name: 'Delete object',
         description: 'Delete an active object. Use shift to force delete of locked objects',
         sequences: ['del', 'shift+del'],
-        scope: ShortcutScope.STANDARD_WORKSPACE,
+        scope: ShortcutScope.OBJECTS_SIDEBAR,
     },
     TO_BACKGROUND: {
-        name: 'To background',
-        description: 'Put an active object "farther" from the user (decrease z axis value)',
+        name: 'Move to background',
+        description: 'Move an active object to the newly created background layer (decrease z-order value)',
         sequences: ['-', '_'],
         scope: ShortcutScope.OBJECTS_SIDEBAR,
     },
     TO_FOREGROUND: {
-        name: 'To foreground',
-        description: 'Put an active object "closer" to the user (increase z axis value)',
+        name: 'Move to foreground',
+        description: 'Move an active object to the newly created foreground layer (increase z-order value)',
         sequences: ['+', '='],
+        scope: ShortcutScope.OBJECTS_SIDEBAR,
+    },
+    TO_ONE_LAYER_BACKWARD: {
+        name: 'Move one layer backward',
+        description: 'Move an active object one layer backward (decrease z-order value)',
+        sequences: [],
+        scope: ShortcutScope.OBJECTS_SIDEBAR,
+    },
+    TO_ONE_LAYER_FORWARD: {
+        name: 'Move one layer forward',
+        description: 'Move an active object one layer forward (increase z-order value)',
+        sequences: [],
         scope: ShortcutScope.OBJECTS_SIDEBAR,
     },
     COPY_SHAPE: {
@@ -179,6 +203,12 @@ const componentShortcuts = {
         sequences: ['enter'],
         scope: ShortcutScope.OBJECTS_SIDEBAR,
     },
+    SIMPLIFY_POLYGON: {
+        name: 'Simplify polygon',
+        description: 'Activate simplification mode for the selected polygon or polyline',
+        sequences: [],
+        scope: ShortcutScope.OBJECTS_SIDEBAR,
+    },
 };
 
 registerComponentShortcuts(componentShortcuts);
@@ -189,11 +219,12 @@ function mapStateToProps(state: CombinedState): StateToProps {
             annotations: {
                 states: objectStates,
                 filters: annotationsFilters,
+                renderData,
                 collapsed,
                 collapsedAll,
                 activatedStateID,
                 activatedElementID,
-                zLayer: { min: minZLayer, max: maxZLayer },
+                zLayer: { cur: curZLayer, min: minZLayer, max: maxZLayer },
             },
             job: { instance: jobInstance },
             player: {
@@ -218,7 +249,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
     objectStates.forEach((objectState: ObjectState) => {
         const { lock } = objectState;
         if (!lock) {
-            if (objectState.objectType !== ObjectType.TAG) {
+            if (objectState.objectType === ObjectType.SHAPE || objectState.objectType === ObjectType.TRACK) {
                 if (objectState.shapeType === ShapeType.SKELETON) {
                     objectState.elements.forEach((element: ObjectState) => {
                         statesHidden = statesHidden && (element.lock || element.hidden);
@@ -240,12 +271,14 @@ function mapStateToProps(state: CombinedState): StateToProps {
         frameNumber,
         jobInstance,
         annotationsFilters,
+        renderData,
         colors,
         colorBy,
         activatedStateID,
         activatedElementID,
         minZLayer,
         maxZLayer,
+        curZLayer,
         keyMap,
         normalizedKeyMap,
         showGroundTruth,
@@ -258,53 +291,79 @@ function mapStateToProps(state: CombinedState): StateToProps {
 
 function mapDispatchToProps(dispatch: any): DispatchToProps {
     return {
-        updateAnnotations(states: ObjectState[]): void {
-            dispatch(updateAnnotationsAsync(states));
+        updateAnnotations(...args: Parameters<typeof updateAnnotationsAsync>): void {
+            dispatch(updateAnnotationsAsync(...args));
         },
-        collapseStates(states: ObjectState[], collapsed: boolean): void {
-            dispatch(collapseObjectItems(states, collapsed));
+        collapseStates(...args: Parameters<typeof collapseObjectItems>): void {
+            dispatch(collapseObjectItems(...args));
         },
-        removeObject(objectState: ObjectState, force: boolean): void {
-            dispatch(removeObjectAction(objectState, force));
+        removeObject(...args: Parameters<typeof removeObjectAction>): void {
+            dispatch(removeObjectAction(...args));
         },
-        copyShape(objectState: ObjectState): void {
-            dispatch(copyShapeAction(objectState));
+        copyShape(...args: Parameters<typeof copyShapeAction>): void {
+            dispatch(copyShapeAction(...args));
         },
-        switchPropagateVisibility(visible: boolean): void {
-            dispatch(switchPropagateVisibilityAction(visible));
+        switchPropagateVisibility(...args: Parameters<typeof switchPropagateVisibilityAction>): void {
+            dispatch(switchPropagateVisibilityAction(...args));
         },
-        changeFrame(frame: number): void {
-            dispatch(changeFrameAsync(frame));
+        switchSimplifyVisibility(...args: Parameters<typeof switchSimplifyVisibilityAction>): void {
+            dispatch(switchSimplifyVisibilityAction(...args));
         },
-        changeGroupColor(group: number, color: string): void {
-            dispatch(changeGroupColorAsync(group, color));
+        changeFrame(...args: Parameters<typeof changeFrameAsync>): void {
+            dispatch(changeFrameAsync(...args));
         },
-        changeShowGroundTruth(value: boolean): void {
-            dispatch(changeShowGroundTruthAction(value));
+        changeGroupColor(...args: Parameters<typeof changeGroupColorAsync>): void {
+            dispatch(changeGroupColorAsync(...args));
+        },
+        changeShowGroundTruth(...args: Parameters<typeof changeShowGroundTruthAction>): void {
+            dispatch(changeShowGroundTruthAction(...args));
             dispatch(fetchAnnotationsAsync());
         },
-        changeHideEditedState(value: boolean): void {
-            dispatch(changeHideActiveObjectAsync(value));
+        changeHideEditedState(...args: Parameters<typeof changeHideActiveObjectAsync>): void {
+            dispatch(changeHideActiveObjectAsync(...args));
+        },
+        updateLayer(...args: Parameters<typeof updateLayerAsync>): void {
+            dispatch(updateLayerAsync(...args));
+        },
+        compactLayers(...args: Parameters<typeof compactLayersAsync>): void {
+            dispatch(compactLayersAsync(...args));
+        },
+        selectLayer(...args: Parameters<typeof switchZLayer>): void {
+            dispatch(switchZLayer(...args));
         },
     };
 }
 
 function sortAndMap(objectStates: ObjectState[], ordering: StatesOrdering): number[] {
-    let sorted = [];
+    let sorted: ObjectState[] = [];
     if (ordering === StatesOrdering.ID_ASCENT) {
-        sorted = [...objectStates].sort((a: any, b: any): number => a.clientID - b.clientID);
+        sorted = [...objectStates].sort((a: ObjectState, b: ObjectState): number => (
+            (a.clientID ?? 0) - (b.clientID ?? 0)
+        ));
     } else if (ordering === StatesOrdering.ID_DESCENT) {
-        sorted = [...objectStates].sort((a: any, b: any): number => b.clientID - a.clientID);
+        sorted = [...objectStates].sort((a: ObjectState, b: ObjectState): number => (
+            (b.clientID ?? 0) - (a.clientID ?? 0)
+        ));
     } else if (ordering === StatesOrdering.UPDATED) {
-        sorted = [...objectStates].sort((a: any, b: any): number => b.updated - a.updated);
+        sorted = [...objectStates].sort((a: ObjectState, b: ObjectState): number => b.updated - a.updated);
+    } else if (ordering === StatesOrdering.LAYER) {
+        sorted = [...objectStates].sort((a: ObjectState, b: ObjectState): number => a.zOrder - b.zOrder);
+    } else if (ordering === StatesOrdering.LABEL_NAME) {
+        sorted = [...objectStates].sort((a: ObjectState, b: ObjectState): number => {
+            const labelComparison = a.label.name.localeCompare(b.label.name);
+            if (labelComparison !== 0) {
+                return labelComparison;
+            }
+            return (a.clientID ?? 0) - (b.clientID ?? 0);
+        });
     } else {
-        sorted = [...objectStates].sort((a: any, b: any): number => a.zOrder - b.zOrder);
+        sorted = [...objectStates];
     }
 
-    return sorted.map((state: any) => state.clientID);
+    return sorted.map((state: ObjectState) => state.clientID).filter((id): id is number => id !== null);
 }
 
-type Props = StateToProps & DispatchToProps & OwnProps;
+type Props = StateToProps & DispatchToProps;
 
 interface State {
     statesOrdering: StatesOrdering;
@@ -314,14 +373,6 @@ interface State {
 }
 
 class ObjectsListContainer extends React.PureComponent<Props, State> {
-    static propTypes = {
-        readonly: PropTypes.bool,
-    };
-
-    static defaultProps = {
-        readonly: false,
-    };
-
     public constructor(props: Props) {
         super(props);
         this.state = {
@@ -334,6 +385,11 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
 
     public componentDidMount(): void {
         this.updateObjects();
+        window.addEventListener(OBJECTS_SIDEBAR_OPEN_Z_LAYER_EVENT, this.onOpenZLayerInSidebar);
+    }
+
+    public componentWillUnmount(): void {
+        window.removeEventListener(OBJECTS_SIDEBAR_OPEN_Z_LAYER_EVENT, this.onOpenZLayerInSidebar);
     }
 
     public componentDidUpdate(): void {
@@ -361,11 +417,24 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
     };
 
     private onChangeStatesOrdering = (statesOrdering: StatesOrdering): void => {
-        const { filteredStates } = this.state;
+        const { filteredStates, statesOrdering: currentStatesOrdering } = this.state;
+        const { maxZLayer, selectLayer } = this.props;
+
+        if (statesOrdering === currentStatesOrdering) {
+            return;
+        }
+
+        // whenever open or close layer ordering mode
+        // set maximum z layer as current to show everything
+        selectLayer(maxZLayer);
         this.setState({
             statesOrdering,
             sortedStatesID: sortAndMap(filteredStates, statesOrdering),
         });
+    };
+
+    private onOpenZLayerInSidebar = (): void => {
+        this.onChangeStatesOrdering(StatesOrdering.LAYER);
     };
 
     private onLockAllStates = (): void => {
@@ -397,17 +466,57 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
         changeShowGroundTruth(!showGroundTruth);
     };
 
-    private lockAllStates(locked: boolean): void {
-        const { updateAnnotations, readonly } = this.props;
+    private statesFromMoveSource(source: LayerMoveSource): ObjectState[] {
         const { filteredStates } = this.state;
 
-        if (!readonly) {
-            for (const objectState of filteredStates) {
-                objectState.lock = locked;
-            }
-
-            updateAnnotations(filteredStates);
+        if ('clientID' in source) {
+            const objectState = filteredStates.find((state: ObjectState): boolean => (
+                state.clientID === source.clientID
+            ));
+            return objectState && isLayerState(objectState) ? [objectState] : [];
         }
+
+        return filteredStates.filter((state: ObjectState): boolean => (
+            isLayerState(state) && state.zOrder === source.zOrder
+        ));
+    }
+
+    private moveObjectsToLayer = (source: LayerMoveSource, targetZOrder: number): void => {
+        const { frameNumber, updateLayer } = this.props;
+        const statesToMove = this.statesFromMoveSource(source);
+
+        if (!statesToMove.length) {
+            return;
+        }
+
+        updateLayer(frameNumber, { exact: targetZOrder }, statesToMove);
+    };
+
+    private moveObjectsOnNewLayer = (source: LayerMoveSource, placement: LayerPlacement): void => {
+        const { frameNumber, updateLayer } = this.props;
+        const statesToMove = this.statesFromMoveSource(source);
+
+        if (!statesToMove.length) {
+            return;
+        }
+
+        updateLayer(frameNumber, placement, statesToMove);
+    };
+
+    private compactLayers = (): void => {
+        const { frameNumber, compactLayers } = this.props;
+        compactLayers(frameNumber);
+    };
+
+    private lockAllStates(locked: boolean): void {
+        const { updateAnnotations } = this.props;
+        const { filteredStates } = this.state;
+
+        for (const objectState of filteredStates) {
+            objectState.lock = locked;
+        }
+
+        updateAnnotations(filteredStates);
     }
 
     private hideAllStates(hidden: boolean): void {
@@ -440,11 +549,11 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             activatedElementID,
             maxZLayer,
             minZLayer,
+            curZLayer,
             keyMap,
             normalizedKeyMap,
             colors,
             colorBy,
-            readonly,
             statesCollapsedAll,
             showGroundTruth,
             updateAnnotations,
@@ -452,14 +561,16 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             removeObject,
             copyShape,
             switchPropagateVisibility,
+            switchSimplifyVisibility,
             changeFrame,
             workspace,
+            renderData,
         } = this.props;
         const {
             objectStates, sortedStatesID, statesOrdering, filteredStates,
         } = this.state;
 
-        const preventDefault = (event: KeyboardEvent | undefined): void => {
+        const preventDefault = (event?: KeyboardEvent): void => {
             if (event) {
                 event.preventDefault();
             }
@@ -483,23 +594,23 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
         };
 
         const handlers: Record<keyof typeof componentShortcuts, (event?: KeyboardEvent) => void> = {
-            SWITCH_ALL_LOCK: (event: KeyboardEvent | undefined) => {
+            SWITCH_ALL_LOCK: (event?: KeyboardEvent) => {
                 preventDefault(event);
                 this.lockAllStates(!statesLocked);
             },
-            SWITCH_LOCK: (event: KeyboardEvent | undefined) => {
+            SWITCH_LOCK: (event?: KeyboardEvent) => {
                 preventDefault(event);
                 const state = activatedState();
-                if (state && !readonly) {
+                if (state) {
                     state.lock = !state.lock;
                     updateAnnotations([state]);
                 }
             },
-            SWITCH_ALL_HIDDEN: (event: KeyboardEvent | undefined) => {
+            SWITCH_ALL_HIDDEN: (event?: KeyboardEvent) => {
                 preventDefault(event);
                 this.hideAllStates(!statesHidden);
             },
-            SWITCH_HIDDEN: (event: KeyboardEvent | undefined) => {
+            SWITCH_HIDDEN: (event?: KeyboardEvent) => {
                 preventDefault(event);
                 const state = activatedState();
                 const {
@@ -514,26 +625,26 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                     updateAnnotations([state]);
                 }
             },
-            SWITCH_OCCLUDED: (event: KeyboardEvent | undefined) => {
+            SWITCH_OCCLUDED: (event?: KeyboardEvent) => {
                 preventDefault(event);
                 const state = activatedState();
-                if (state && !readonly && state.objectType !== ObjectType.TAG) {
+                if (state && isLayerState(state)) {
                     state.occluded = !state.occluded;
                     updateAnnotations([state]);
                 }
             },
-            SWITCH_PINNED: (event: KeyboardEvent | undefined) => {
+            SWITCH_PINNED: (event?: KeyboardEvent) => {
                 preventDefault(event);
                 const state = activatedState(true);
-                if (state && !readonly) {
+                if (state) {
                     state.pinned = !state.pinned;
                     updateAnnotations([state]);
                 }
             },
-            SWITCH_KEYFRAME: (event: KeyboardEvent | undefined) => {
+            SWITCH_KEYFRAME: (event?: KeyboardEvent) => {
                 preventDefault(event);
                 const state = activatedState();
-                if (state && !readonly && state.objectType === ObjectType.TRACK) {
+                if (state && state.objectType === ObjectType.TRACK) {
                     const { first, last } = state.keyframes as NonNullable<typeof state.keyframes>;
                     if (first !== last || !state.keyframe) {
                         state.keyframe = !state.keyframe;
@@ -541,22 +652,22 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                     }
                 }
             },
-            SWITCH_OUTSIDE: (event: KeyboardEvent | undefined) => {
+            SWITCH_OUTSIDE: (event?: KeyboardEvent) => {
                 preventDefault(event);
                 const state = activatedState();
-                if (state && !readonly && (state.objectType === ObjectType.TRACK || state.parentID)) {
+                if (state && (state.objectType === ObjectType.TRACK || state.parentID)) {
                     state.outside = !state.outside;
                     updateAnnotations([state]);
                 }
             },
-            DELETE_OBJECT_STANDARD_WORKSPACE: (event: KeyboardEvent | undefined) => {
+            DELETE_OBJECT_STANDARD_WORKSPACE: (event?: KeyboardEvent) => {
                 preventDefault(event);
                 const state = activatedState(true);
-                if (state && !readonly) {
+                if (state) {
                     removeObject(state, event ? event.shiftKey : false);
                 }
             },
-            CHANGE_OBJECT_COLOR: (event: KeyboardEvent | undefined) => {
+            CHANGE_OBJECT_COLOR: (event?: KeyboardEvent) => {
                 preventDefault(event);
                 const state = activatedState();
                 if (state) {
@@ -573,46 +684,60 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                     }
                 }
             },
-            TO_BACKGROUND: (event: KeyboardEvent | undefined) => {
+            TO_BACKGROUND: (event?: KeyboardEvent) => {
                 preventDefault(event);
                 const state = activatedState(true);
-                if (state && !readonly && state.objectType !== ObjectType.TAG) {
+                if (state && isLayerState(state)) {
                     state.zOrder = minZLayer - 1;
                     updateAnnotations([state]);
                 }
             },
-            TO_FOREGROUND: (event: KeyboardEvent | undefined) => {
+            TO_FOREGROUND: (event?: KeyboardEvent) => {
                 preventDefault(event);
                 const state = activatedState(true);
-                if (state && !readonly && state.objectType !== ObjectType.TAG) {
+                if (state && isLayerState(state)) {
                     state.zOrder = maxZLayer + 1;
+                    updateAnnotations([state]);
+                }
+            },
+            TO_ONE_LAYER_BACKWARD: (event?: KeyboardEvent) => {
+                preventDefault(event);
+                const state = activatedState(true);
+                if (state && isLayerState(state)) {
+                    state.zOrder -= 1;
+                    updateAnnotations([state]);
+                }
+            },
+            TO_ONE_LAYER_FORWARD: (event?: KeyboardEvent) => {
+                preventDefault(event);
+                const state = activatedState(true);
+                if (state && isLayerState(state)) {
+                    state.zOrder += 1;
                     updateAnnotations([state]);
                 }
             },
             COPY_SHAPE: () => {
                 const state = activatedState(true);
-                if (state && !readonly) {
+                if (state) {
                     copyShape(state);
                 }
             },
             RUN_ANNOTATIONS_ACTION: () => {
                 const state = activatedState(true);
-                if (!readonly) {
-                    if (state) {
-                        openAnnotationsActionModal({ defaultObjectState: state });
-                    } else {
-                        openAnnotationsActionModal();
-                    }
+                if (state) {
+                    openAnnotationsActionModal({ defaultObjectState: state });
+                } else {
+                    openAnnotationsActionModal();
                 }
             },
-            PROPAGATE_OBJECT: (event: KeyboardEvent | undefined) => {
+            PROPAGATE_OBJECT: (event?: KeyboardEvent) => {
                 preventDefault(event);
                 const state = activatedState();
-                if (state && !readonly) {
+                if (state) {
                     switchPropagateVisibility(true);
                 }
             },
-            NEXT_KEY_FRAME: (event: KeyboardEvent | undefined) => {
+            NEXT_KEY_FRAME: (event?: KeyboardEvent) => {
                 preventDefault(event);
                 const state = activatedState();
                 if (state && state.keyframes) {
@@ -622,7 +747,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                     }
                 }
             },
-            PREV_KEY_FRAME: (event: KeyboardEvent | undefined) => {
+            PREV_KEY_FRAME: (event?: KeyboardEvent) => {
                 preventDefault(event);
                 const state = activatedState();
                 if (state && state.keyframes) {
@@ -630,6 +755,13 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                     if (frame !== null && isAbleToChangeFrame(frame)) {
                         changeFrame(frame);
                     }
+                }
+            },
+            SIMPLIFY_POLYGON: (event?: KeyboardEvent) => {
+                preventDefault(event);
+                const state = activatedState(true);
+                if (state && [ShapeType.POLYGON, ShapeType.POLYLINE].includes(state.shapeType)) {
+                    switchSimplifyVisibility(state.clientID);
                 }
             },
         };
@@ -641,15 +773,20 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                     statesHidden={statesHidden}
                     statesLocked={statesLocked}
                     statesCollapsedAll={statesCollapsedAll}
-                    readonly={readonly || false}
                     workspace={workspace}
                     statesOrdering={statesOrdering}
+                    currentLayer={curZLayer}
                     sortedStatesID={sortedStatesID}
                     showGroundTruth={showGroundTruth}
                     objectStates={filteredStates}
+                    visibleSkeletonElements={renderData.visibleSkeletonElements}
                     switchHiddenAllShortcut={normalizedKeyMap.SWITCH_ALL_HIDDEN}
                     switchLockAllShortcut={normalizedKeyMap.SWITCH_ALL_LOCK}
                     changeStatesOrdering={this.onChangeStatesOrdering}
+                    selectLayer={this.props.selectLayer}
+                    moveObjectsToLayer={this.moveObjectsToLayer}
+                    moveObjectsOnNewLayer={this.moveObjectsOnNewLayer}
+                    compactLayers={this.compactLayers}
                     lockAllStates={this.onLockAllStates}
                     unlockAllStates={this.onUnlockAllStates}
                     collapseAllStates={this.onCollapseAllStates}
@@ -663,6 +800,6 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
     }
 }
 
-export default connect<StateToProps, DispatchToProps, OwnProps, CombinedState>(
+export default connect(
     mapStateToProps, mapDispatchToProps,
 )(ObjectsListContainer);

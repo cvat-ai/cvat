@@ -51,7 +51,7 @@ Standard JS events are used.
     - canvas.editstart
     - canvas.edited => {state: ObjectState, points: number[], rotation?: number}
     - canvas.splitted => {state: ObjectState, frame: number, duration: number}
-    - canvas.groupped => {states: ObjectState[], duration: number}
+    - canvas.grouped => {states: ObjectState[], duration: number}
     - canvas.joined => {states: ObjectState[], points: number[], duration: number}
     - canvas.sliced => {state: ObjectState, results: number[][], duration: number}
     - canvas.merged => {states: ObjectState[], duration: number}

@@ -6,47 +6,46 @@
 import serverProxy from './server-proxy';
 import { ArgumentError } from './exceptions';
 import MLModel from './ml-model';
-import { RQStatus, ShapeType } from './enums';
+import { ModelKind, RQStatus, ShapeType } from './enums';
+import { SerializedCollection, SerializedFunctionRequest } from './server-response-types';
+import { mask2Rle } from './rle-utils';
 
-export interface InteractorResults {
-    mask: number[][];
-    points?: [number, number][];
-    bounds?: [number, number, number, number]
+export interface MinimalShape {
+    type: ShapeType;
+    points: number[];
 }
 
-export interface DetectedShape {
-    type: ShapeType | 'tag';
-    rotation?: number;
-    attributes: { name: string; value: string }[];
-    label: string;
-    outside?: boolean;
-    points?: number[];
-    mask?: number[];
-    elements: DetectedShape[];
+interface InteractorShape extends MinimalShape {
+    attributes: { spec_id: number; value: string }[]
 }
+
+// This type is compatible with our SerializedCollection, however the client only supports it partly
+// The idea behind is to let us extend it in the future by necessary
+// And at the same type to keep compatibility with existing interactors by converting old type in runtime
+// Also supported service "confidence" attribute in attributes list with "spec_id" equal to 0
+export type InteractorResults = {
+    shapes: InteractorShape[];
+};
 
 export interface TrackerResults {
     states: any[];
-    shapes: number[][];
+    shapes: MinimalShape[];
 }
 
 class LambdaManager {
-    private cachedList: MLModel[];
     private listening: Record<number, {
         onUpdate: ((status: RQStatus, progress: number, message?: string) => void)[];
-        functionID: string;
         timeout: number | null;
     }>;
 
     constructor() {
         this.listening = {};
-        this.cachedList = [];
     }
 
     async list(): Promise<{ models: MLModel[], count: number }> {
         const lambdaFunctions = await serverProxy.lambda.list();
-
         const models = [];
+
         for (const model of lambdaFunctions) {
             models.push(
                 new MLModel({
@@ -55,11 +54,10 @@ class LambdaManager {
             );
         }
 
-        this.cachedList = models;
         return { models, count: lambdaFunctions.length };
     }
 
-    async run(taskID: number, model: MLModel, args: any): Promise<string> {
+    async run(taskID: number, model: MLModel, args: any): Promise<SerializedFunctionRequest> {
         if (!Number.isInteger(taskID) || taskID < 0) {
             throw new ArgumentError(`Argument taskID must be a positive integer. Got "${taskID}"`);
         }
@@ -80,61 +78,77 @@ class LambdaManager {
             function: model.id,
         };
 
-        const result = await serverProxy.lambda.run(body);
-        return result.id;
+        return serverProxy.lambda.run(body);
     }
 
-    async call(taskID, model, args): Promise<TrackerResults | InteractorResults | DetectedShape[]> {
+    async call(taskID, model, args): Promise<TrackerResults | InteractorResults | SerializedCollection> {
         if (!Number.isInteger(taskID) || taskID < 0) {
             throw new ArgumentError(`Argument taskID must be a positive integer. Got "${taskID}"`);
         }
 
-        const body = {
-            ...args,
-            task: taskID,
-        };
+        const body = { ...args, task: taskID };
         const result = await serverProxy.lambda.call(model.id, body);
+
+        if (model.kind === ModelKind.INTERACTOR && typeof result === 'object') {
+            if ('mask' in result) {
+                // wrap old interactor interfaces for backward compatibility
+                const maskHeight = result.mask.length;
+                const maskWidth = result.mask[0].length;
+                let rle = mask2Rle(result.mask.flat());
+                if (rle.length < 2) {
+                    rle = [0, 0, 0, 0, 0];
+                } else {
+                    rle.push(0, 0, maskWidth - 1, maskHeight - 1);
+                }
+                return { shapes: [{ points: rle, type: ShapeType.MASK, attributes: [] }] };
+            }
+
+            if (Array.isArray(result.shapes)) {
+                return {
+                    shapes: (result as InteractorResults).shapes.map((item) => ({
+                        points: item.points,
+                        attributes: Array.isArray(item.attributes) && item.attributes.every(
+                            (attr) => typeof attr === 'object' &&
+                                typeof attr.spec_id === 'number' &&
+                                typeof attr.value === 'string',
+                        ) ? item.attributes : [],
+                        type: item.type ?? ShapeType.MASK,
+                    })),
+                };
+            }
+        }
+
         return result;
     }
 
-    async requests(): Promise<any[]> {
+    async requests(): Promise<SerializedFunctionRequest[]> {
         const lambdaRequests = await serverProxy.lambda.requests();
         return lambdaRequests
             .filter((request) => [RQStatus.QUEUED, RQStatus.STARTED].includes(request.status));
     }
 
-    async cancel(requestID, functionID): Promise<void> {
+    async cancel(requestID): Promise<void> {
         if (typeof requestID !== 'string') {
             throw new ArgumentError(`Request id argument is required to be a string. But got ${requestID}`);
         }
-        const model = this.cachedList.find((_model) => _model.id === functionID);
-        if (!model) {
-            throw new ArgumentError('Incorrect Function Id provided');
-        }
 
+        await serverProxy.lambda.cancel(requestID);
         if (this.listening[requestID]) {
             clearTimeout(this.listening[requestID].timeout);
             delete this.listening[requestID];
         }
-
-        await serverProxy.lambda.cancel(requestID);
     }
 
     async listen(
         requestID: string,
-        functionID: string | number,
         callback: (status: RQStatus, progress: number, message?: string) => void,
     ): Promise<void> {
-        const model = this.cachedList.find((_model) => _model.id === functionID);
-        if (!model) {
-            throw new ArgumentError('Incorrect function Id provided');
-        }
-
         if (requestID in this.listening) {
             this.listening[requestID].onUpdate.push(callback);
             // already listening, avoid sending extra requests
             return;
         }
+
         const timeoutCallback = (): void => {
             serverProxy.lambda.status(requestID).then((response) => {
                 const { status } = response;
@@ -149,10 +163,10 @@ class LambdaManager {
                         delete this.listening[requestID];
                         if (status === RQStatus.FINISHED) {
                             onUpdate
-                                .forEach((update) => update(status, response.progress || 100));
+                                .forEach((update) => update(status, response.progress ?? 100));
                         } else {
                             onUpdate
-                                .forEach((update) => update(status, response.progress || 0, response.exc_info || ''));
+                                .forEach((update) => update(status, response.progress ?? 0, response.exc_info ?? ''));
                         }
                     }
                 }
@@ -176,7 +190,6 @@ class LambdaManager {
 
         this.listening[requestID] = {
             onUpdate: [callback],
-            functionID,
             timeout: window.setTimeout(timeoutCallback),
         };
     }
