@@ -16,6 +16,50 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.71.0'></a>
+## \[2.71.0\] - 2026-07-22
+
+### Added
+
+- \[CLI\] New `--profile NAME` option selects a saved server/credential profile.
+  Replaces `--server-host`/`--server-port`/`--auth` (<https://github.com/cvat-ai/cvat/pull/10845>)
+
+- \[CLI\] New `cvat-cli config default-server` command prints, sets, or clears the default server URL.
+  (<https://github.com/cvat-ai/cvat/pull/10845>)
+
+- \[SDK, CLI\] Added an interface and agent support for interaction
+  auto-annotation functions
+  (<https://github.com/cvat-ai/cvat/pull/10874>)
+
+### Changed
+
+- CVAT will now refuse to start if `keys/secret_key.py` contains arbitrary
+  code
+  (<https://github.com/cvat-ai/cvat/pull/10670>)
+
+- \[CLI\] `--auth` no longer defaults to the OS user; absent auth/profile/token, it uses profile credentials or prompts.
+  `--server-host` falls back to profile/default server/`http://localhost` (<https://github.com/cvat-ai/cvat/pull/10845>)
+
+- Change skeleton control points display to be visually distinguishable from the annotation points
+  (<https://github.com/cvat-ai/cvat/pull/10879>)
+
+### Fixed
+
+- \[SDK, CLI\] Changed the default server URL from `http://localhost:8080` to
+  `http://localhost`, fixed server URL construction when `--server-port` is used
+  with the default server, and report a clear error if a server URL already
+  contains a port
+  (<https://github.com/cvat-ai/cvat/pull/10895>)
+
+- \[Server API\] Prevented `/api/requests` from failing while cleaning up
+  abandoned jobs
+  (<https://github.com/cvat-ai/cvat/pull/10904>)
+
+- Reduced misleading event log entries for webhook delivery failures by recording
+  an exception only after all retries are exhausted, and shortened the connection
+  timeout for unreachable webhook consumers
+  (<https://github.com/cvat-ai/cvat/pull/10921>)
+
 <a id='changelog-2.70.0'></a>
 ## \[2.70.0\] - 2026-07-13
 
