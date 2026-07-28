@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import React, {
-    useCallback, useEffect, useState,
+    useCallback, useEffect, useRef, useState,
 } from 'react';
 import Select from 'antd/lib/select';
 import Collapse from 'antd/lib/collapse';
@@ -12,28 +12,39 @@ import Checkbox from 'antd/lib/checkbox';
 import InputNumber from 'antd/lib/input-number';
 import TextArea from 'antd/lib/input/TextArea';
 import Popover from 'antd/lib/popover';
+import Tooltip from 'antd/lib/tooltip';
 import { EditOutlined } from '@ant-design/icons';
 
 import { AudioIntervalState, Label, Attribute } from 'cvat-core-wrapper';
+import { ActiveControl } from 'reducers';
 import { clamp } from 'utils/math';
 import { formatTimeShort, formatMilliseconds } from 'audio/utils/format-audio-time';
+import { type TextareaFocusBookmark, useTextareaFocusBookmark } from 'audio/hooks/use-textarea-focus-bookmark';
 
 interface AudioRegionDetailsProps {
     interval: AudioIntervalState;
     intervalIndex: number;
     labels: Label[];
+    activeControl: ActiveControl;
     trackDurationSeconds: number;
     onChangeLabel(labelId: number): void;
     onChangeAttribute(attrID: number, value: string): void;
 }
 
+function canRestoreOutsideOverlay(event: KeyboardEvent): boolean {
+    return !(event.target instanceof Element && event.target.closest(
+        '.ant-modal, .ant-popover, .ant-dropdown, .ant-select-dropdown',
+    ));
+}
+
 function TextAttributeInput({
-    attributeID, value, disabled, onChange,
+    attributeID, value, disabled, onChange, textareaFocusBookmark,
 }: {
     attributeID: number;
     value: string;
     disabled: boolean;
     onChange(attrID: number, value: string): void;
+    textareaFocusBookmark: TextareaFocusBookmark | null;
 }): JSX.Element {
     // Using local value prevents the value to be replaced in the text area on every keystroke
     // It helps keeping the caret position as well as working system shortcuts like undo/redo
@@ -54,26 +65,44 @@ function TextAttributeInput({
         }
     }, [localValue]);
 
+    const hasFocusBookmark = textareaFocusBookmark?.element.getAttribute('data-cvat-attribute-id') === String(attributeID);
+
     return (
-        <TextArea
-            rows={4}
-            size='small'
-            value={localValue}
-            disabled={disabled}
-            onChange={(event) => {
-                setLocalValue(event.target.value);
-            }}
-        />
+        <div className='cvat-audio-region-textarea'>
+            <TextArea
+                rows={4}
+                size='small'
+                value={localValue}
+                disabled={disabled}
+                data-cvat-attribute-id={attributeID}
+                onChange={(event) => {
+                    setLocalValue(event.target.value);
+                }}
+            />
+            {hasFocusBookmark ? (
+                <Tooltip title='Shortcuts are active. Press Esc in Cursor mode to resume editing here.'>
+                    <span
+                        className='cvat-audio-region-textarea-bookmark-caret'
+                        style={{
+                            left: textareaFocusBookmark.marker.left,
+                            top: textareaFocusBookmark.marker.top,
+                            height: textareaFocusBookmark.marker.height,
+                        }}
+                    />
+                </Tooltip>
+            ) : null}
+        </div>
     );
 }
 
 function AttributeInput({
-    attribute, value, disabled, onChange,
+    attribute, value, disabled, onChange, textareaFocusBookmark,
 }: {
     attribute: Attribute;
     value: string;
     disabled: boolean;
     onChange(attrID: number, val: string): void;
+    textareaFocusBookmark: TextareaFocusBookmark | null;
 }): JSX.Element {
     if (attribute.inputType === 'checkbox') {
         return (
@@ -144,6 +173,7 @@ function AttributeInput({
             value={value}
             disabled={disabled}
             onChange={onChange}
+            textareaFocusBookmark={textareaFocusBookmark}
         />
     );
 }
@@ -225,6 +255,7 @@ function AudioRegionDetails(props: AudioRegionDetailsProps): JSX.Element {
         interval,
         intervalIndex,
         labels,
+        activeControl,
         trackDurationSeconds,
         onChangeLabel,
         onChangeAttribute,
@@ -234,6 +265,7 @@ function AudioRegionDetails(props: AudioRegionDetailsProps): JSX.Element {
         labels.find((l) => l.id === interval.label.id) : null;
 
     const isReadonly = !!interval.lock;
+    const bookmarkScope = `${interval.clientID}:${interval.label.id}:${isReadonly}`;
     const startMs = interval.start;
     const endMs = interval.stop ?? (trackDurationSeconds ? trackDurationSeconds * 1000 : interval.start);
     const durationMs = Math.max(0, endMs - startMs);
@@ -247,6 +279,26 @@ function AudioRegionDetails(props: AudioRegionDetailsProps): JSX.Element {
     const attributes: Attribute[] = activeLabel?.attributes ?? [];
 
     const [expandedByRegion, setExpandedByRegion] = useState<Record<string, string[]>>({});
+    const detailsRef = useRef<HTMLDivElement>(null);
+    const canRestoreTextareaFocusBookmark = useCallback((event: KeyboardEvent) => (
+        activeControl === ActiveControl.CURSOR && canRestoreOutsideOverlay(event)
+    ), [activeControl]);
+    const { bookmark: textareaFocusBookmark } = useTextareaFocusBookmark(
+        detailsRef,
+        canRestoreTextareaFocusBookmark,
+        bookmarkScope,
+    );
+
+    const handleEscape = useCallback((event: React.KeyboardEvent<HTMLDivElement>): void => {
+        if (event.key === 'Escape' && !event.nativeEvent.isComposing) {
+            const { activeElement } = window.document;
+            if (activeElement instanceof HTMLElement && detailsRef.current?.contains(activeElement)) {
+                event.preventDefault();
+                event.stopPropagation();
+                activeElement.blur();
+            }
+        }
+    }, []);
     const expandedKey = String(interval.clientID);
     const attributeKeys = attributes.map((attribute) => `attr-${attribute.id}`);
     const expandedKeys = expandedByRegion[expandedKey] ?? attributeKeys;
@@ -257,7 +309,7 @@ function AudioRegionDetails(props: AudioRegionDetailsProps): JSX.Element {
     }, [expandedKey]);
 
     return (
-        <div className='cvat-audio-region-details'>
+        <div ref={detailsRef} className='cvat-audio-region-details' onKeyDownCapture={handleEscape}>
             <div className='cvat-audio-region-details-header'>
                 <span className='cvat-audio-region-details-index'>
                     {intervalIndex + 1}
@@ -307,6 +359,7 @@ function AudioRegionDetails(props: AudioRegionDetailsProps): JSX.Element {
                                     value={interval.attributes[attribute.id!] ?? attribute.defaultValue}
                                     disabled={isReadonly}
                                     onChange={handleChangeAttribute}
+                                    textareaFocusBookmark={textareaFocusBookmark}
                                 />
                             ),
                         }))}

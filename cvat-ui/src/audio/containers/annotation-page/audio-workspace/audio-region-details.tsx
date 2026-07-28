@@ -15,12 +15,13 @@ import { shallowEqual, ThunkDispatch } from 'utils/redux';
 function AudioRegionDetailsWrapper(): JSX.Element | null {
     const dispatch = useDispatch<ThunkDispatch>();
     const {
-        intervals, activeIntervalID, labels, duration,
+        intervals, activeIntervalID, labels, duration, activeControl,
     } = useSelector((state: CombinedState) => ({
         intervals: state.audio.player.intervals,
         activeIntervalID: state.audio.player.activeIntervalID,
         labels: state.annotation.job.labels,
         duration: state.audio.player.duration,
+        activeControl: state.annotation.canvas.activeControl,
     }), shallowEqual);
     const interval = activeIntervalID === null ? null :
         intervals.find((item) => item.clientID === activeIntervalID);
@@ -43,6 +44,7 @@ function AudioRegionDetailsWrapper(): JSX.Element | null {
             interval={interval}
             intervalIndex={intervals.indexOf(interval)}
             labels={labels}
+            activeControl={activeControl}
             trackDurationSeconds={duration}
             onChangeLabel={handleChangeLabel}
             onChangeAttribute={handleChangeAttribute}
