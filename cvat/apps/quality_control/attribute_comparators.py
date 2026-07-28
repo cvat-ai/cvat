@@ -8,27 +8,29 @@ from abc import ABC, abstractmethod
 from collections.abc import Mapping
 from typing import Any, ClassVar
 
+from attrs import frozen
+
 
 class AttributeComparator(ABC):
     name: ClassVar[str]
 
     @abstractmethod
-    def match(self, left: Any, right: Any, *, rule: Mapping[str, Any]) -> bool:
+    def match(self, left: Any, right: Any, *, rule: AttributeComparisonRule) -> bool:
         raise NotImplementedError
 
 
 class ExactAttributeComparator(AttributeComparator):
     name = "exact"
 
-    def match(self, left: Any, right: Any, *, rule: Mapping[str, Any]) -> bool:
+    def match(self, left: Any, right: Any, *, rule: AttributeComparisonRule) -> bool:
         return left == right
 
 
 class LevenshteinAttributeComparator(AttributeComparator):
     name = "levenshtein"
 
-    def match(self, left: Any, right: Any, *, rule: Mapping[str, Any]) -> bool:
-        return self._similarity(left, right) >= rule.get("threshold", 1.0)
+    def match(self, left: Any, right: Any, *, rule: AttributeComparisonRule) -> bool:
+        return self._similarity(left, right) >= rule.threshold
 
     @staticmethod
     def _similarity(left: Any, right: Any) -> float:
@@ -66,6 +68,35 @@ _ATTRIBUTE_COMPARATORS_BY_NAME = {
 DEFAULT_ATTRIBUTE_COMPARATOR = ExactAttributeComparator.name
 
 
+@frozen(kw_only=True)
+class AttributeComparisonRule:
+    enabled: bool
+    comparator: str = DEFAULT_ATTRIBUTE_COMPARATOR
+    threshold: float = 1.0
+    spec_id: int | None = None
+
+    @classmethod
+    def from_mapping(
+        cls,
+        value: Mapping[str, Any],
+        *,
+        defaults: AttributeComparisonRule | None = None,
+    ) -> AttributeComparisonRule:
+        enabled = value.get("enabled", defaults.enabled if defaults else False)
+        comparator = value.get(
+            "comparator",
+            defaults.comparator if defaults else DEFAULT_ATTRIBUTE_COMPARATOR,
+        )
+        threshold = value.get("threshold", defaults.threshold if defaults else 1.0)
+        spec_id = value.get("spec_id")
+        return cls(
+            enabled=bool(enabled),
+            comparator=comparator or DEFAULT_ATTRIBUTE_COMPARATOR,
+            threshold=float(threshold) if threshold is not None else 1.0,
+            spec_id=int(spec_id) if spec_id is not None else None,
+        )
+
+
 def get_attribute_comparator(name: str | None = None) -> AttributeComparator:
     comparator_name = name or DEFAULT_ATTRIBUTE_COMPARATOR
     try:
@@ -86,5 +117,5 @@ def format_attribute_comparator_names() -> str:
     return f"{', '.join(names[:-1])} or {names[-1]}"
 
 
-def match_attribute_values(left: Any, right: Any, *, rule: Mapping[str, Any]) -> bool:
-    return get_attribute_comparator(rule.get("comparator")).match(left, right, rule=rule)
+def match_attribute_values(left: Any, right: Any, *, rule: AttributeComparisonRule) -> bool:
+    return get_attribute_comparator(rule.comparator).match(left, right, rule=rule)

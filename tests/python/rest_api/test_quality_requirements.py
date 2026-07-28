@@ -11,7 +11,6 @@ from zipfile import ZipFile
 import pytest
 from cvat_sdk.core.helpers import get_paginated_collection
 from deepdiff import DeepDiff
-
 from rest_api.utils import create_task
 from shared.utils.config import (
     delete_method,
@@ -110,6 +109,43 @@ class _QualityRequirementsTestBase(_PermissionTestBase):
             "are allowed per task or project."
         )
 
+    def _remember_settings(self, settings: dict[str, Any]) -> None:
+        settings_by_id = self.__dict__.setdefault("_quality_settings_by_id", {})
+        settings_by_id[settings["id"]] = settings
+
+    def _add_default_requirement_parent(
+        self,
+        payload: dict[str, Any],
+        *,
+        settings_id: int,
+    ) -> dict[str, Any]:
+        if "id" in payload or "parent_requirement" in payload:
+            return payload
+
+        annotation_type = payload.get("annotation_type", "rectangle")
+        if annotation_type is None:
+            return payload
+
+        settings = self.__dict__.get("_quality_settings_by_id", {}).get(settings_id)
+        if settings is None:
+            return payload
+
+        base_requirement = next(
+            (
+                requirement
+                for requirement in settings["requirements"]
+                if requirement["is_base"] and requirement["annotation_type"] == annotation_type
+            ),
+            None,
+        )
+        if base_requirement is None:
+            return payload
+
+        return {
+            **payload,
+            "parent_requirement": base_requirement["id"],
+        }
+
     def _get_task_settings(self, user: str, *, task_id: int, **kwargs) -> dict[str, Any]:
         kwargs.setdefault("parent_type", "task")
         response = get_method(user, self._settings_endpoint, task_id=task_id, **kwargs)
@@ -117,7 +153,9 @@ class _QualityRequirementsTestBase(_PermissionTestBase):
 
         results = response.json()["results"]
         assert len(results) == 1
-        return results[0]
+        settings = results[0]
+        self._remember_settings(settings)
+        return settings
 
     def _get_project_settings(self, user: str, *, project_id: int, **kwargs) -> dict[str, Any]:
         kwargs.setdefault("parent_type", "project")
@@ -126,7 +164,9 @@ class _QualityRequirementsTestBase(_PermissionTestBase):
 
         results = response.json()["results"]
         assert len(results) == 1
-        return results[0]
+        settings = results[0]
+        self._remember_settings(settings)
+        return settings
 
     def _list_requirements(self, user: str, **kwargs):
         kwargs.setdefault("page_size", "all")
@@ -134,6 +174,9 @@ class _QualityRequirementsTestBase(_PermissionTestBase):
         return response.json()["results"] if response.ok else None, response
 
     def _create_requirement(self, user: str, data: dict[str, Any], **kwargs):
+        if settings_id := data.get("settings_id"):
+            data = self._add_default_requirement_parent(data, settings_id=settings_id)
+
         response = post_method(user, self._requirements_endpoint, data, **kwargs)
         return response.json() if response.content else None, response
 
@@ -151,8 +194,23 @@ class _QualityRequirementsTestBase(_PermissionTestBase):
         return delete_method(user, f"{self._requirements_endpoint}/{requirement_id}", **kwargs)
 
     def _patch_settings(self, user: str, settings_id: int, data: dict[str, Any], **kwargs):
+        if requirements := data.get("requirements"):
+            data = {
+                **data,
+                "requirements": [
+                    self._add_default_requirement_parent(
+                        requirement,
+                        settings_id=settings_id,
+                    )
+                    for requirement in requirements
+                ],
+            }
+
         response = patch_method(user, f"{self._settings_endpoint}/{settings_id}", data, **kwargs)
-        return response.json() if response.content else None, response
+        response_data = response.json() if response.content else None
+        if response.ok and response_data:
+            self._remember_settings(response_data)
+        return response_data, response
 
     @staticmethod
     def _retained_base_requirement_payloads(
@@ -471,6 +529,21 @@ class TestQualityRequirementsApi(_QualityRequirementsTestBase):
 
         assert response.status_code == HTTPStatus.BAD_REQUEST
         assert "settings_id" in response.json()
+
+    def test_create_custom_requirement_requires_parent(
+        self, admin_user, find_sandbox_task_without_gt
+    ):
+        task, _ = find_sandbox_task_without_gt(True)
+        settings = self._get_task_settings(admin_user, task_id=task["id"])
+        payload = self._build_requirement_payload(
+            f"missing-parent-{task['id']}",
+            settings_id=settings["id"],
+        )
+
+        response = post_method(admin_user, self._requirements_endpoint, payload)
+
+        assert response.status_code == HTTPStatus.BAD_REQUEST
+        assert "parent_requirement" in response.json()
 
     def test_list_requirements_by_project_includes_project_and_task_settings(
         self, admin_user, find_sandbox_project_without_validation, tasks
@@ -798,11 +871,57 @@ class TestQualityRequirementsApi(_QualityRequirementsTestBase):
             requirement["name"] for requirement in listed_requirements if not requirement["is_base"]
         } == {replacement_payload["name"]}
 
+    def test_settings_patch_can_repeat_replacement_with_new_requirement(
+        self, admin_user, find_sandbox_task_without_gt
+    ):
+        task, _ = find_sandbox_task_without_gt(True)
+        settings = self._get_task_settings(admin_user, task_id=task["id"])
+        requirement_name = f"repeat-replacement-{task['id']}"
+        payload = {
+            "requirements": [
+                *self._retained_base_requirement_payloads(settings),
+                self._build_requirement_payload(requirement_name),
+            ]
+        }
+
+        first_result, first_response = self._patch_settings(
+            admin_user,
+            settings["id"],
+            payload,
+        )
+        second_result, second_response = self._patch_settings(
+            admin_user,
+            settings["id"],
+            payload,
+        )
+
+        assert first_response.status_code == HTTPStatus.OK
+        assert second_response.status_code == HTTPStatus.OK
+        assert (
+            sum(
+                requirement["name"] == requirement_name
+                for requirement in first_result["requirements"]
+            )
+            == 1
+        )
+        assert (
+            sum(
+                requirement["name"] == requirement_name
+                for requirement in second_result["requirements"]
+            )
+            == 1
+        )
+
     def test_settings_patch_saves_parent_requirements_before_children(
         self, admin_user, find_sandbox_task_without_gt
     ):
         task, _ = find_sandbox_task_without_gt(True)
         settings = self._get_task_settings(admin_user, task_id=task["id"])
+        skeleton_base = next(
+            requirement
+            for requirement in settings["requirements"]
+            if requirement["annotation_type"] == "skeleton_keypoint"
+        )
 
         parent_requirement, response = self._create_requirement(
             admin_user,
@@ -824,7 +943,6 @@ class TestQualityRequirementsApi(_QualityRequirementsTestBase):
             ),
         )
         assert response.status_code == HTTPStatus.CREATED
-        child_requirement_id = child_requirement["id"]
 
         patched_settings, response = self._patch_settings(
             admin_user,
@@ -833,13 +951,13 @@ class TestQualityRequirementsApi(_QualityRequirementsTestBase):
                 "requirements": [
                     *self._retained_base_requirement_payloads(settings),
                     {
-                        "id": child_requirement_id,
+                        "id": child_requirement["id"],
                         "annotation_type": "skeleton_keypoint",
                         "parent_requirement": parent_requirement["id"],
                     },
                     {
                         "id": parent_requirement["id"],
-                        "annotation_type": "skeleton_keypoint",
+                        "parent_requirement": skeleton_base["id"],
                     },
                 ]
             },
@@ -849,15 +967,49 @@ class TestQualityRequirementsApi(_QualityRequirementsTestBase):
         patched_child_requirement = next(
             requirement
             for requirement in patched_settings["requirements"]
-            if requirement["id"] == child_requirement_id
+            if requirement["id"] == child_requirement["id"]
         )
         assert patched_child_requirement["annotation_type"] is None
 
-        child_requirement, response = self._retrieve_requirement(admin_user, child_requirement_id)
+        child_requirement, response = self._retrieve_requirement(
+            admin_user, child_requirement["id"]
+        )
         assert response.status_code == HTTPStatus.OK
         assert child_requirement["effective"]["annotation_type"] == "skeleton_keypoint"
 
-    def test_patch_requirement_clears_inherited_fields_when_root_becomes_child(
+    def test_cannot_change_base_requirement_parent_or_type(
+        self, admin_user, find_sandbox_task_without_gt
+    ):
+        task, _ = find_sandbox_task_without_gt(True)
+        settings = self._get_task_settings(admin_user, task_id=task["id"])
+        rectangle_base = next(
+            requirement
+            for requirement in settings["requirements"]
+            if requirement["annotation_type"] == "rectangle"
+        )
+        skeleton_base = next(
+            requirement
+            for requirement in settings["requirements"]
+            if requirement["annotation_type"] == "skeleton"
+        )
+
+        _, response = self._patch_requirement(
+            admin_user,
+            rectangle_base["id"],
+            {"parent_requirement": skeleton_base["id"]},
+        )
+        assert response.status_code == HTTPStatus.BAD_REQUEST
+        assert "parent_requirement" in response.json()
+
+        _, response = self._patch_requirement(
+            admin_user,
+            rectangle_base["id"],
+            {"annotation_type": "skeleton"},
+        )
+        assert response.status_code == HTTPStatus.BAD_REQUEST
+        assert "annotation_type" in response.json()
+
+    def test_patch_requirement_preserves_overrides_when_reparenting_child(
         self, admin_user, find_sandbox_task_without_gt
     ):
         task, _ = find_sandbox_task_without_gt(True)
@@ -893,14 +1045,11 @@ class TestQualityRequirementsApi(_QualityRequirementsTestBase):
         assert response.status_code == HTTPStatus.OK
 
         assert patched_requirement["annotation_type"] is None
-        assert patched_requirement["iou_threshold"] is None
-        assert patched_requirement["point_size"] is None
-        assert patched_requirement["match_groups"] is None
-        assert patched_requirement["effective"]["iou_threshold"] == parent_payload["iou_threshold"]
-        assert patched_requirement["effective"]["point_size"] == parent_payload["point_size"]
-        assert patched_requirement["effective"]["match_groups"] is True
+        assert patched_requirement["iou_threshold"] == requirement_payload["iou_threshold"]
+        assert patched_requirement["point_size"] == requirement_payload["point_size"]
+        assert patched_requirement["match_groups"] is False
 
-    def test_patch_requirement_applies_defaults_when_child_becomes_root(
+    def test_cannot_detach_custom_requirement_from_parent(
         self, admin_user, find_sandbox_task_without_gt
     ):
         task, _ = find_sandbox_task_without_gt(True)
@@ -929,7 +1078,7 @@ class TestQualityRequirementsApi(_QualityRequirementsTestBase):
         assert child_requirement["iou_threshold"] is None
         assert child_requirement["point_size"] is None
 
-        patched_requirement, response = self._patch_requirement(
+        _, response = self._patch_requirement(
             admin_user,
             child_requirement["id"],
             {
@@ -937,15 +1086,8 @@ class TestQualityRequirementsApi(_QualityRequirementsTestBase):
                 "annotation_type": "rectangle",
             },
         )
-        assert response.status_code == HTTPStatus.OK
-
-        assert patched_requirement["parent_requirement"] is None
-        assert patched_requirement["annotation_type"] == "rectangle"
-        assert patched_requirement["metric"] == "accuracy"
-        assert patched_requirement["required_score"] == 0.7
-        assert patched_requirement["iou_threshold"] == 0.4
-        assert patched_requirement["point_size"] == 0.09
-        assert patched_requirement["match_groups"] is True
+        assert response.status_code == HTTPStatus.BAD_REQUEST
+        assert "parent_requirement" in response.json()
 
     def test_settings_patch_cannot_delete_base_requirements(
         self, admin_user, find_sandbox_task_without_gt
@@ -1019,7 +1161,9 @@ class TestQualityRequirementsApi(_QualityRequirementsTestBase):
         )
 
         assert response.status_code == HTTPStatus.BAD_REQUEST
-        assert response.json()["requirements"] == self._get_requirement_limit_error_message()
+        assert response.json()["requirements"]["non_field_errors"] == [
+            self._get_requirement_limit_error_message()
+        ]
 
     def test_cannot_delete_base_quality_requirement(self, admin_user, find_sandbox_task_without_gt):
         task, _ = find_sandbox_task_without_gt(True)
@@ -2421,7 +2565,13 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
             enabled_group_csv = archive.read(
                 group_matrices[enabled_requirement_id]["path"]
             ).decode()
-            assert "ds \\ gt" in enabled_group_csv
+            assert "DS (row) \\ GT (col) label" in enabled_group_csv
+            assert "precision" in enabled_group_csv
+            assert "recall" in enabled_group_csv
+            assert "dice coefficient" in enabled_group_csv
+            assert "jaccard index" in enabled_group_csv
+            assert "avg. accuracy (micro)" in enabled_group_csv
+            assert "avg. dice coefficient (macro)" in enabled_group_csv
 
         response = get_method(
             admin_user,

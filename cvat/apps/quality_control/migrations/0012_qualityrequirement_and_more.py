@@ -57,7 +57,6 @@ def _ensure_base_quality_requirements(apps, _schema_editor):
                 yield QualityRequirement(
                     settings_id=settings_id,
                     name=_base_requirement_name(annotation_type),
-                    is_base=True,
                     sort_order=sort_order,
                     filter="",
                     enabled=False,
@@ -130,7 +129,6 @@ class Migration(migrations.Migration):
                 ),
                 ("filter", models.TextField(blank=True)),
                 ("enabled", models.BooleanField(default=True)),
-                ("is_base", models.BooleanField(default=False)),
                 ("sort_order", models.IntegerField(default=0)),
                 ("iou_threshold", models.FloatField(blank=True, null=True)),
                 ("oks_sigma", models.FloatField(blank=True, null=True)),

@@ -7,10 +7,16 @@ from __future__ import annotations
 import unittest
 
 from cvat.apps.quality_control.attribute_comparators import (
+    AttributeComparisonRule,
     format_attribute_comparator_names,
     get_attribute_comparator_names,
+    match_attribute_values,
 )
-from cvat.apps.quality_control.serializers import AttributeComparisonSerializer
+from cvat.apps.quality_control.attribute_comparison import make_default_attribute_rule
+from cvat.apps.quality_control.serializers import (
+    AttributeComparisonSerializer,
+    QualitySettingsRequirementsSerializer,
+)
 
 
 class TestAttributeComparatorPresentation(unittest.TestCase):
@@ -19,6 +25,43 @@ class TestAttributeComparatorPresentation(unittest.TestCase):
 
         self.assertEqual(names, tuple(sorted(names)))
         self.assertEqual(format_attribute_comparator_names(), "'exact' or 'levenshtein'")
+
+
+class TestAttributeComparisonRule(unittest.TestCase):
+    def test_builds_typed_default_and_override_rules(self) -> None:
+        default_rule = make_default_attribute_rule(
+            {
+                "default": {
+                    "enabled": True,
+                    "comparator": "levenshtein",
+                    "threshold": 0.75,
+                }
+            }
+        )
+        override_rule = AttributeComparisonRule.from_mapping(
+            {"spec_id": 7, "enabled": False},
+            defaults=default_rule,
+        )
+
+        self.assertEqual(
+            default_rule,
+            AttributeComparisonRule(
+                enabled=True,
+                comparator="levenshtein",
+                threshold=0.75,
+            ),
+        )
+        self.assertEqual(
+            override_rule,
+            AttributeComparisonRule(
+                enabled=False,
+                comparator="levenshtein",
+                threshold=0.75,
+                spec_id=7,
+            ),
+        )
+        self.assertTrue(match_attribute_values("abcd", "abce", rule=default_rule))
+        self.assertFalse(match_attribute_values("abcd", "abxy", rule=default_rule))
 
 
 class TestAttributeComparisonSerializer(unittest.TestCase):
@@ -59,4 +102,15 @@ class TestAttributeComparisonSerializer(unittest.TestCase):
                     }
                 ],
             },
+        )
+
+
+class TestQualitySettingsRequirementsSerializer(unittest.TestCase):
+    def test_rejects_empty_requirement_list(self) -> None:
+        serializer = QualitySettingsRequirementsSerializer(data=[])
+
+        self.assertFalse(serializer.is_valid())
+        self.assertEqual(
+            [str(error) for error in serializer.errors["non_field_errors"]],
+            ["At least one quality requirement must be specified."],
         )

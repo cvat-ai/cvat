@@ -37,6 +37,7 @@ from cvat.apps.quality_control.comparison_report import (
     ComparisonReportTaskStats,
     deduplicate_annotation_conflicts,
 )
+from cvat.apps.quality_control.data_providers import JobDataProvider, QualitySettingsManager
 from cvat.apps.quality_control.quality_handlers import (
     DatasetQualityEstimator,
     build_requirement_comparison_summary,
@@ -45,7 +46,6 @@ from cvat.apps.quality_control.quality_handlers import (
     merge_frame_summaries,
     resolve_effective_requirements,
 )
-from cvat.apps.quality_control.quality_reports import JobDataProvider, QualitySettingsManager
 from cvat.utils import django_database as db_utils
 
 _DEFAULT_FETCH_CHUNK_SIZE = 1000

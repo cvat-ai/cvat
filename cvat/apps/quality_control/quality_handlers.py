@@ -17,7 +17,10 @@ import numpy as np
 
 from cvat.apps.quality_control import models
 from cvat.apps.quality_control.annotation_matching import Comparator, LineMatcher, MatchingResults
-from cvat.apps.quality_control.attribute_comparators import match_attribute_values
+from cvat.apps.quality_control.attribute_comparators import (
+    AttributeComparisonRule,
+    match_attribute_values,
+)
 from cvat.apps.quality_control.attribute_comparison import (
     CVAT_ATTRIBUTE_SPEC_IDS_ATTR,
     attribute_comparison_may_compare,
@@ -46,7 +49,7 @@ from cvat.apps.quality_control.models import AnnotationConflictSeverity, Annotat
 from cvat.apps.quality_control.utils import array_safe_divide
 
 if TYPE_CHECKING:
-    from cvat.apps.quality_control.quality_reports import JobDataProvider
+    from cvat.apps.quality_control.data_providers import JobDataProvider
 
 
 @attrs.define
@@ -564,7 +567,10 @@ class RequirementHandler(ABC):
         )
         default_rule = make_default_attribute_rule(attribute_comparison)
         rules_by_spec_id = {
-            int(rule["spec_id"]): {**default_rule, **rule}
+            int(rule["spec_id"]): AttributeComparisonRule.from_mapping(
+                rule,
+                defaults=default_rule,
+            )
             for rule in attribute_comparison.get("rules", [])
             if rule.get("spec_id") is not None
         }
@@ -587,7 +593,7 @@ class RequirementHandler(ABC):
             else:
                 rule = default_rule
 
-            if rule.get("enabled") is False:
+            if not rule.enabled:
                 continue
 
             attr_a = attrs_a.get(attr_name, notfound)

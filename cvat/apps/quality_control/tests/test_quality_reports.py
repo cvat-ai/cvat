@@ -10,7 +10,7 @@ import datumaro as dm
 
 from cvat.apps.dataset_manager.bindings import CommonData
 from cvat.apps.engine.models import ShapeType
-from cvat.apps.quality_control.quality_reports import _MemoizingAnnotationConverterFactory
+from cvat.apps.quality_control.data_providers import _MemoizingAnnotationConverterFactory
 
 
 class TestMemoizingAnnotationConverter(unittest.TestCase):
