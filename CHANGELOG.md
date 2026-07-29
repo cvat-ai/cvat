@@ -16,6 +16,58 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.72.0'></a>
+## \[2.72.0\] - 2026-07-29
+
+### Added
+
+- \[CLI\] New `cvat-cli profile` commands to list, create, set the default,
+  and delete saved Personal Access Token profiles.
+  (<https://github.com/cvat-ai/cvat/pull/10875>)
+
+### Changed
+
+- In the backend server image, CVAT source files are now installed in
+  `/opt/cvat` rather than `/home/django`, and owned by root
+  (<https://github.com/cvat-ai/cvat/pull/10575>)
+
+### Removed
+
+- Backend processes no longer write their logs to `logs/cvat_server.log`
+  (<https://github.com/cvat-ai/cvat/pull/10939>)
+
+### Fixed
+
+- Fixed mask bounding box not shrinking after removing underlying pixels
+  when another mask overlaps it with the "Remove underlying pixels" option enabled
+  (<https://github.com/cvat-ai/cvat/pull/10873>)
+
+- Fixed save annotations failure due to “spec_id is invalid” error
+  (<https://github.com/cvat-ai/cvat/pull/10936>)
+
+- Improved audio waveform timeline detail at larger zoom levels
+  (<https://github.com/cvat-ai/cvat/pull/10947>)
+
+- Fixed the caret jumping to the end while editing audio interval text attributes. (<https://github.com/cvat-ai/cvat/pull/10950>)
+- Fixed standard undo/redo shortcuts in the editor of audio interval text attributes.  (<https://github.com/cvat-ai/cvat/pull/10950>)
+
+- Fixed misaligned resize handles for selected audio intervals.
+  (<https://github.com/cvat-ai/cvat/pull/10951>)
+
+- \[Helm\] Fixed backup/export workers using ephemeral storage for backup
+  temporary files.
+  (<https://github.com/cvat-ai/cvat/pull/10958>)
+
+### Security
+
+- Fixed overly lax authorization rules for lambda function requests;
+  viewing a request now requires access to its target task or job,
+  while cancelling a request requires being the user who initiated it
+  (<https://github.com/cvat-ai/cvat/security/advisories/GHSA-m7p7-6w4m-886p>)
+
+- Prevented users from blocking automatic annotation for inaccessible tasks
+  (<https://github.com/cvat-ai/cvat/security/advisories/GHSA-7xhx-3q27-xvcx>)
+
 <a id='changelog-2.71.0'></a>
 ## \[2.71.0\] - 2026-07-22
 
