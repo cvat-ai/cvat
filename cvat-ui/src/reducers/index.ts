@@ -29,6 +29,7 @@ export interface AudioState {
         zoom: number;
         volume: number;
         loop: boolean;
+        autoScroll: boolean;
         intervals: AudioIntervalState[];
         activeIntervalID: number | null;
         hoveredIntervalID: number | null;

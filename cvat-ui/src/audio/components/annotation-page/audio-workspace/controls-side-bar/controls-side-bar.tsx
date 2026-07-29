@@ -22,6 +22,7 @@ import LoopControl, { Props as LoopControlProps } from './loop-control';
 import ZoomControl, { Props as ZoomControlProps } from './zoom-control';
 import SpeedControl, { Props as SpeedControlProps } from './speed-control';
 import VolumeControl, { Props as VolumeControlProps } from './volume-control';
+import AutoScrollControl, { Props as AutoScrollControlProps } from './auto-scroll-control';
 
 const ObservedCursorControl = ControlVisibilityObserver<CursorControlProps>(AudioCursorControl, 'audioCursorControl');
 const ObservedIntervalRegionControl = ControlVisibilityObserver<IntervalRegionControlProps>(IntervalRegionControl, 'audioIntervalRegionControl');
@@ -30,6 +31,7 @@ const ObservedLoopControl = ControlVisibilityObserver<LoopControlProps>(LoopCont
 const ObservedZoomControl = ControlVisibilityObserver<ZoomControlProps>(ZoomControl, 'audioZoomControl');
 const ObservedSpeedControl = ControlVisibilityObserver<SpeedControlProps>(SpeedControl, 'audioSpeedControl');
 const ObservedVolumeControl = ControlVisibilityObserver<VolumeControlProps>(VolumeControl, 'audioVolumeControl');
+const ObservedAutoScrollControl = ControlVisibilityObserver<AutoScrollControlProps>(AutoScrollControl, 'audioAutoScrollControl');
 
 export default function AudioControlsSideBarComponent(): JSX.Element {
     const dispatch = useDispatch<ThunkDispatch>();
@@ -39,6 +41,7 @@ export default function AudioControlsSideBarComponent(): JSX.Element {
         zoom,
         volume,
         loop,
+        autoScroll,
         playbackRate,
         labels,
         activeLabelId,
@@ -48,6 +51,7 @@ export default function AudioControlsSideBarComponent(): JSX.Element {
         zoom: state.audio.player.zoom,
         volume: state.audio.player.volume,
         loop: state.audio.player.loop,
+        autoScroll: state.audio.player.autoScroll,
         playbackRate: state.audio.player.playbackRate,
         labels: state.annotation.job.labels,
         activeLabelId: state.audio.player.activeLabelId,
@@ -67,6 +71,9 @@ export default function AudioControlsSideBarComponent(): JSX.Element {
     }, [dispatch]);
     const onLoopChange = useCallback((nextLoop: boolean): void => {
         dispatch(audioActions.setAudioLoop(nextLoop));
+    }, [dispatch]);
+    const onAutoScrollChange = useCallback((nextAutoScroll: boolean): void => {
+        dispatch(audioActions.setAudioAutoScroll(nextAutoScroll));
     }, [dispatch]);
     const onSetActiveLabel = useCallback((labelId: number | null): void => {
         dispatch(audioActions.setAudioActiveLabel(labelId));
@@ -103,6 +110,10 @@ export default function AudioControlsSideBarComponent(): JSX.Element {
             <ObservedLoopControl
                 loop={loop}
                 onLoopChange={onLoopChange}
+            />
+            <ObservedAutoScrollControl
+                autoScroll={autoScroll}
+                onAutoScrollChange={onAutoScrollChange}
             />
             <hr />
             <ObservedZoomControl

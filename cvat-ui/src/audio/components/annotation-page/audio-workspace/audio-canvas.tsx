@@ -14,6 +14,7 @@ import GlobalHotKeys from 'utils/mousetrap-react';
 import AudioCanvasSkeleton from './skeleton/audio-canvas-skeleton';
 import { useAudioWaveform } from './hooks/use-audio-waveform';
 import { useAudioIntervalAnnotations } from './hooks/use-audio-interval-annotations';
+import AudioWaveformControls from './audio-waveform-controls';
 
 const minimapContainerID = 'minimap';
 
@@ -44,6 +45,8 @@ function AudioCanvas({ sourceURL, waveformReady }: AudioCanvasProps): JSX.Elemen
                 >
                     <WavesurferPlayer
                         url={sourceURL}
+                        autoScroll={true}
+                        autoCenter={false}
                         height={140}
                         waveColor='#4F46E5'
                         progressColor='#818CF8'
@@ -56,6 +59,9 @@ function AudioCanvas({ sourceURL, waveformReady }: AudioCanvasProps): JSX.Elemen
                         onDestroy={playerBindings.onDestroy}
                     />
                 </div>
+                <AudioWaveformControls
+                    centerPlaybackPosition={waveform.viewport.centerPlaybackPosition}
+                />
                 <div className='cvat-audio-minimap-section'>
                     <div id={minimapContainerID} />
                 </div>

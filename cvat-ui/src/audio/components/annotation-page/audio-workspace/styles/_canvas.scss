@@ -49,6 +49,10 @@
 }
 
 .cvat-audio-waveform-wrapper {
+    $control-background: rgb(255, 255, 255, 85%);
+    $control-hover-background: rgb(255, 255, 255, 95%);
+
+    position: relative;
     background-color: white;
     border-radius: 8px;
     margin-bottom: 20px;
@@ -56,6 +60,26 @@
     overflow: hidden;
     min-width: 0;
     width: 100%;
+
+    .cvat-audio-waveform-controls {
+        position: absolute;
+        z-index: 10;
+        top: 8px;
+        right: 8px;
+        display: flex;
+        gap: 4px;
+
+        .ant-btn.cvat-audio-btn {
+            background-color: $control-background;
+            pointer-events: auto;
+
+            &:hover,
+            &:focus {
+                opacity: 1;
+                background-color: $control-hover-background;
+            }
+        }
+    }
 
     > div:first-child {
         display: grid;

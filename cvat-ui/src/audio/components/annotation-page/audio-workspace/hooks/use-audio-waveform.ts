@@ -3,9 +3,9 @@
 // SPDX-License-Identifier: MIT
 
 import {
-    useRef, useState,
+    useEffect, useRef, useState,
 } from 'react';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import type WaveSurfer from 'wavesurfer.js';
 import type { GenericPlugin } from 'wavesurfer.js/dist/base-plugin';
 import type { WavesurferProps } from '@wavesurfer/react';
@@ -15,6 +15,7 @@ import RegionsPlugin from 'wavesurfer.js/dist/plugins/regions';
 import HoverPlugin from 'wavesurfer.js/dist/plugins/hover';
 
 import { audioActions } from 'actions/audio-actions';
+import { CombinedState } from 'reducers';
 import { formatSeconds } from 'audio/utils/format-audio-time';
 import { ThunkDispatch } from 'utils/redux';
 
@@ -85,6 +86,7 @@ function useWaveSurferRuntime({
     }
 
     const dispatch = useDispatch<ThunkDispatch>();
+    const autoScroll = useSelector((state: CombinedState) => state.audio.player.autoScroll);
     const [instance, setInstance] = useState<WaveSurfer | null>(null);
     const instanceRef = useRef(instance);
     instanceRef.current = instance;
@@ -150,6 +152,12 @@ function useWaveSurferRuntime({
     const regionRuntime = {
         regionsPlugin: sourceScope.regionsPlugin,
     };
+
+    useEffect(() => {
+        if (!instance) return;
+
+        instance.setOptions({ autoScroll });
+    }, [autoScroll, instance]);
 
     return {
         instanceRef,

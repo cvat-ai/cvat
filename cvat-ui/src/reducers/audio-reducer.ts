@@ -18,6 +18,7 @@ const defaultState: AudioState = {
         zoom: 1,
         volume: 1,
         loop: false,
+        autoScroll: true,
         intervals: [],
         activeIntervalID: null,
         hoveredIntervalID: null,
@@ -139,6 +140,15 @@ export default function audioReducer(state: AudioState = defaultState, action: A
                 player: {
                     ...state.player,
                     loop: action.payload.loop,
+                },
+            };
+        }
+        case AudioActionTypes.SET_AUDIO_AUTO_SCROLL: {
+            return {
+                ...state,
+                player: {
+                    ...state.player,
+                    autoScroll: action.payload.autoScroll,
                 },
             };
         }
