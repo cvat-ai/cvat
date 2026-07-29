@@ -4994,7 +4994,7 @@ paths:
           content:
             application/vnd.cvat+json:
               schema:
-                $ref: '#/components/schemas/PaginatedQualityRequirementListList'
+                $ref: '#/components/schemas/PaginatedQualityRequirementListItemList'
           description: ''
     post:
       operationId: quality_create_settings_requirements
@@ -10028,7 +10028,7 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/QualityReport'
-    PaginatedQualityRequirementListList:
+    PaginatedQualityRequirementListItemList:
       type: object
       required:
       - count
@@ -10050,7 +10050,7 @@ components:
         results:
           type: array
           items:
-            $ref: '#/components/schemas/QualityRequirementList'
+            $ref: '#/components/schemas/QualityRequirementListItem'
     PaginatedQualitySettingsList:
       type: object
       required:
@@ -10690,7 +10690,7 @@ components:
         requirements:
           type: array
           items:
-            $ref: '#/components/schemas/QualityRequirementListRequest'
+            $ref: '#/components/schemas/QualityRequirementListItemRequest'
     PatchedTaskValidationLayoutWriteRequest:
       type: object
       properties:
@@ -11421,7 +11421,7 @@ components:
           type: string
           format: date-time
           readOnly: true
-    QualityRequirementList:
+    QualityRequirementListItem:
       type: object
       properties:
         id:
@@ -11602,7 +11602,7 @@ components:
           type: string
           format: date-time
           readOnly: true
-    QualityRequirementListRequest:
+    QualityRequirementListItemRequest:
       type: object
       properties:
         settings_id:
@@ -11956,7 +11956,7 @@ components:
         requirements:
           type: array
           items:
-            $ref: '#/components/schemas/QualityRequirementList'
+            $ref: '#/components/schemas/QualityRequirementListItem'
         created_date:
           type: string
           format: date-time
@@ -11990,7 +11990,7 @@ components:
         requirements:
           type: array
           items:
-            $ref: '#/components/schemas/QualityRequirementListRequest'
+            $ref: '#/components/schemas/QualityRequirementListItemRequest'
     QualityTargetMetric:
       enum:
       - accuracy
