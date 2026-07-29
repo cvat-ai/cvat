@@ -25,7 +25,7 @@ enum ConstructorMode {
 
 interface LabelsEditorProps {
     labels: SerializedLabel[];
-    onSubmit: (labels: LabelOptColor[]) => void;
+    onSubmit: (labels: LabelOptColor[]) => void | Promise<unknown>;
     enableSkeletonCreator?: boolean;
     enableFromModelCreator?: boolean;
     showLabelType?: boolean;
@@ -90,7 +90,7 @@ export default class LabelsEditor extends React.PureComponent<LabelsEditorProps,
         }
     }
 
-    private handleRawSubmit = (labels: LabelOptColor[]): void => {
+    private handleRawSubmit = (labels: LabelOptColor[]): void | Promise<unknown> => {
         const unsavedLabels = [];
         const savedLabels = [];
 
@@ -102,7 +102,7 @@ export default class LabelsEditor extends React.PureComponent<LabelsEditorProps,
             }
         }
 
-        this.handleSubmit(savedLabels, unsavedLabels);
+        return this.handleSubmit(savedLabels, unsavedLabels);
     };
 
     private handleCreate = (label: LabelOptColor): void => {
@@ -168,7 +168,10 @@ export default class LabelsEditor extends React.PureComponent<LabelsEditorProps,
         }
     };
 
-    private handleSubmit(savedLabels: LabelOptColor[], unsavedLabels: LabelOptColor[]): void {
+    private handleSubmit(
+        savedLabels: LabelOptColor[],
+        unsavedLabels: LabelOptColor[],
+    ): void | Promise<unknown> {
         function findLabelByID(labels: SerializedLabel[], id?: number): SerializedLabel | null {
             if (typeof id === 'undefined') {
                 return null;
@@ -240,7 +243,7 @@ export default class LabelsEditor extends React.PureComponent<LabelsEditorProps,
                 transformLabel(label, labels)
             ));
 
-        onSubmit(output);
+        return onSubmit(output);
     }
 
     public render(): JSX.Element {
