@@ -2384,6 +2384,7 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
         assert disabled_summary["error_count"] == disabled_summary["conflict_count"] == 0
         assert "annotations" not in disabled_summary
         assert disabled_summary["score"] == 0.0
+        assert disabled_summary["calculation"] == {"status": "computed"}
         assert disabled_summary["score_components"] == {
             "valid_count": 0,
             "missing_count": 0,

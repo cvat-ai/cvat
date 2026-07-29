@@ -56,6 +56,23 @@ class TestRequirementCompletion(unittest.TestCase):
             first.to_dict(),
         )
 
+    def test_disabled_requirement_without_annotations_keeps_zero_score(self) -> None:
+        requirement = models.QualityRequirement(
+            id=1,
+            name="disabled",
+            enabled=False,
+            target_metric=models.QualityTargetMetricType.ACCURACY,
+            target_metric_threshold=1.0,
+        )
+
+        group_report = build_requirement_report(requirement=requirement, frame_results={})
+
+        self.assertEqual(group_report.comparison_summary.score, 0.0)
+        self.assertEqual(
+            group_report.comparison_summary.calculation.to_dict(),
+            {"status": "computed"},
+        )
+
     def test_enabled_requirement_without_annotations_is_completed_without_score(self) -> None:
         requirement = models.QualityRequirement(
             id=1,

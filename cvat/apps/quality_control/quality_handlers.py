@@ -441,7 +441,9 @@ def build_requirement_comparison_summary(
     calculation: ComparisonReportRequirementCalculation | None = None,
 ) -> ComparisonReportRequirementComparisonSummary:
     metric = _get_requirement_metric(requirement)
-    if calculation is None:
+    if not _get_requirement_field(requirement, "enabled", default=True):
+        calculation = ComparisonReportRequirementCalculation.create_computed()
+    elif calculation is None:
         calculation = (
             ComparisonReportRequirementCalculation.create_computed()
             if annotations.total_count
