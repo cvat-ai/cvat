@@ -144,15 +144,10 @@ export default class RawViewer extends React.PureComponent<Props> {
     public componentDidUpdate(prevProps: Props): void {
         const { labels } = this.props;
         if (JSON.stringify(prevProps.labels) !== JSON.stringify(labels) && this.formRef.current) {
-            const textLabels = this.getTextLabels();
+            const convertedLabels = convertLabels(labels);
+            const textLabels = JSON.stringify(convertedLabels, null, 2);
             this.formRef.current.setFieldsValue({ labels: textLabels });
         }
-    }
-
-    private getTextLabels(): string {
-        const { labels } = this.props;
-        const convertedLabels = convertLabels(labels);
-        return JSON.stringify(convertedLabels, null, 2);
     }
 
     private handleSubmit = (values: Store): void => {
@@ -231,13 +226,11 @@ export default class RawViewer extends React.PureComponent<Props> {
     };
 
     public render(): JSX.Element {
-        const textLabels = this.getTextLabels();
+        const { labels } = this.props;
+        const convertedLabels = convertLabels(labels);
+        const textLabels = JSON.stringify(convertedLabels, null, 2);
         return (
-            <Form
-                layout='vertical'
-                onFinish={this.handleSubmit}
-                ref={this.formRef}
-            >
+            <Form layout='vertical' onFinish={this.handleSubmit} ref={this.formRef}>
                 <Form.Item name='labels' initialValue={textLabels} rules={[{ validator: validateLabels }]}>
                     <Input.TextArea
                         onPaste={(e: React.ClipboardEvent) => {
@@ -267,9 +260,8 @@ export default class RawViewer extends React.PureComponent<Props> {
                     />
                 </Form.Item>
                 <Form.Item shouldUpdate noStyle>
-                    {({ getFieldError, getFieldValue, resetFields }) => {
-                        const disableButtons = getFieldValue('labels') === textLabels ||
-                            !!getFieldError('labels').length;
+                    {({ getFieldError, getFieldValue }) => {
+                        const disabled = getFieldValue('labels') === textLabels || getFieldError('labels').length > 0;
 
                         return (
                             <Row justify='start' align='middle'>
@@ -280,7 +272,7 @@ export default class RawViewer extends React.PureComponent<Props> {
                                             style={{ width: '150px' }}
                                             type='primary'
                                             htmlType='submit'
-                                            disabled={disableButtons}
+                                            disabled={disabled}
                                         >
                                             Save
                                         </Button>
@@ -293,9 +285,11 @@ export default class RawViewer extends React.PureComponent<Props> {
                                             type='primary'
                                             danger
                                             style={{ width: '150px' }}
-                                            disabled={disableButtons}
+                                            disabled={disabled}
                                             onClick={(): void => {
-                                                resetFields();
+                                                if (this.formRef.current) {
+                                                    this.formRef.current.resetFields();
+                                                }
                                             }}
                                         >
                                             Cancel
