@@ -83,9 +83,6 @@ function validateLabels(_: RuleObject, value: string): Promise<void> {
 interface Props {
     labels: LabelOptColor[];
     onSubmit: (labels: LabelOptColor[]) => void | Promise<unknown>;
-}
-
-interface State {
     submitting: boolean;
 }
 
@@ -137,15 +134,12 @@ function collectAttributes(labels: SerializedLabel[], parentPath = ''): Attribut
     });
 }
 
-export default class RawViewer extends React.PureComponent<Props, State> {
+export default class RawViewer extends React.PureComponent<Props> {
     private formRef: RefObject<FormInstance>;
 
     public constructor(props: Props) {
         super(props);
         this.formRef = React.createRef<FormInstance>();
-        this.state = {
-            submitting: false,
-        };
     }
 
     public componentDidUpdate(prevProps: Props): void {
@@ -159,11 +153,6 @@ export default class RawViewer extends React.PureComponent<Props, State> {
 
     private handleSubmit = (values: Store): void => {
         const { onSubmit, labels } = this.props;
-        const { submitting } = this.state;
-        if (submitting) {
-            return;
-        }
-
         const parsed = JSON.parse(
             replaceTrailingCommas(values.labels),
         ) as SerializedLabel[];
@@ -193,12 +182,7 @@ export default class RawViewer extends React.PureComponent<Props, State> {
             });
 
         const submit = async (): Promise<void> => {
-            this.setState({ submitting: true });
-            try {
-                await onSubmit(parsed);
-            } finally {
-                this.setState({ submitting: false });
-            }
+            await onSubmit(parsed);
         };
 
         if (deletedLabels.length || deletedAttributes.length) {
@@ -245,8 +229,7 @@ export default class RawViewer extends React.PureComponent<Props, State> {
     };
 
     public render(): JSX.Element {
-        const { labels } = this.props;
-        const { submitting } = this.state;
+        const { labels, submitting } = this.props;
         const convertedLabels = convertLabels(labels);
         const textLabels = JSON.stringify(convertedLabels, null, 2);
         return (
