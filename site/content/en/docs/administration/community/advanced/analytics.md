@@ -5,6 +5,9 @@ weight: 20
 description: 'Instructions for deployment and customization of analytics and monitoring.'
 aliases:
 - /docs/administration/advanced/analytics/
+products:
+  - community
+  - enterprise
 ---
 
 CVAT Analytics suite of tools is designed to track and understand users' behavior, system performance,

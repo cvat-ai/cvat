@@ -10,6 +10,7 @@ import { Workspace } from 'reducers';
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import { ShortcutScope } from 'utils/enums';
 import { registerComponentShortcuts } from 'actions/shortcuts-actions';
+import { AudioSeekIntent } from 'actions/audio-actions';
 import { subKeyMap } from 'utils/component-subkeymap';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import {
@@ -17,18 +18,13 @@ import {
     NextIcon, PauseIcon, PlayIcon, PreviousIcon,
 } from 'icons';
 
-const AUDIO_SHORT_JUMP_FRACTION = 0.005;
-const AUDIO_LONG_JUMP_FRACTION = 0.05;
-
 interface Props {
     playing: boolean;
-    currentTime: number;
     duration: number;
-    zoom: number;
     workspace: Workspace;
     keyMap: KeyMap;
     onPlayPause(): void;
-    onSeek(time: number): void;
+    onSeek(intent: AudioSeekIntent): void;
 }
 
 const componentShortcuts = {
@@ -66,11 +62,20 @@ const componentShortcuts = {
 
 registerComponentShortcuts(componentShortcuts);
 
+const AUDIO_SEEK_INTENTS = {
+    START: { kind: 'boundary', boundary: 'start' },
+    SHORT_BACKWARD: { kind: 'step', direction: -1, size: 'short' },
+    LONG_BACKWARD: { kind: 'step', direction: -1, size: 'long' },
+    SHORT_FORWARD: { kind: 'step', direction: 1, size: 'short' },
+    LONG_FORWARD: { kind: 'step', direction: 1, size: 'long' },
+    END: { kind: 'boundary', boundary: 'end' },
+} as const satisfies Record<string, AudioSeekIntent>;
+
 type SeekButton = {
     title: string;
     className: string;
     icon: React.ComponentType;
-    getTarget(currentTime: number, duration: number, shortJump: number, longJump: number): number;
+    intent: AudioSeekIntent;
 };
 
 const LEFT_BUTTONS: SeekButton[] = [
@@ -78,19 +83,19 @@ const LEFT_BUTTONS: SeekButton[] = [
         title: 'Jump to start',
         className: 'cvat-player-begin-button',
         icon: FirstIcon,
-        getTarget: () => 0,
+        intent: AUDIO_SEEK_INTENTS.START,
     },
     {
         title: 'long-backward',
         className: 'cvat-player-long-jump-backward-button',
         icon: BackJumpIcon,
-        getTarget: (t, _duration, _shortJump, longJump) => t - longJump,
+        intent: AUDIO_SEEK_INTENTS.LONG_BACKWARD,
     },
     {
         title: 'short-backward',
         className: 'cvat-player-short-jump-backward-button',
         icon: PreviousIcon,
-        getTarget: (t, _duration, shortJump) => t - shortJump,
+        intent: AUDIO_SEEK_INTENTS.SHORT_BACKWARD,
     },
 ];
 
@@ -99,34 +104,26 @@ const RIGHT_BUTTONS: SeekButton[] = [
         title: 'short-forward',
         className: 'cvat-player-short-jump-forward-button',
         icon: NextIcon,
-        getTarget: (t, _duration, shortJump) => t + shortJump,
+        intent: AUDIO_SEEK_INTENTS.SHORT_FORWARD,
     },
     {
         title: 'long-forward',
         className: 'cvat-player-long-jump-forward-button',
         icon: ForwardJumpIcon,
-        getTarget: (t, _duration, _shortJump, longJump) => t + longJump,
+        intent: AUDIO_SEEK_INTENTS.LONG_FORWARD,
     },
     {
         title: 'Jump to end',
         className: 'cvat-player-end-button',
         icon: LastIcon,
-        getTarget: (_, d) => d,
+        intent: AUDIO_SEEK_INTENTS.END,
     },
 ];
-
-function computeJumpSize(duration: number, zoom: number, fraction: number): number {
-    if (duration <= 0) return 0;
-    const safeZoom = Number.isFinite(zoom) && zoom > 0 ? zoom : 1;
-    return (duration / safeZoom) * fraction;
-}
 
 function AudioPlayerNavigation(props: Props): JSX.Element {
     const {
         playing,
-        currentTime,
         duration,
-        zoom,
         workspace,
         keyMap,
         onPlayPause,
@@ -134,13 +131,8 @@ function AudioPlayerNavigation(props: Props): JSX.Element {
     } = props;
 
     const isAudioLoaded = duration > 0;
-    const shortJump = computeJumpSize(duration, zoom, AUDIO_SHORT_JUMP_FRACTION);
-    const longJump = computeJumpSize(duration, zoom, AUDIO_LONG_JUMP_FRACTION);
-    const seekTo = (time: number): void => {
-        if (!isAudioLoaded) return;
-
-        const clampedTime = Math.max(0, Math.min(duration, time));
-        onSeek(clampedTime);
+    const seek = (intent: AudioSeekIntent): void => {
+        if (isAudioLoaded) onSeek(intent);
     };
 
     const hotkeyHandlers: { [key: string]: (event: KeyboardEvent) => void } = {
@@ -153,31 +145,31 @@ function AudioPlayerNavigation(props: Props): JSX.Element {
         AUDIO_BACKWARD: (event: KeyboardEvent) => {
             event.preventDefault();
             if (workspace === Workspace.AUDIO) {
-                seekTo(currentTime - shortJump);
+                seek(AUDIO_SEEK_INTENTS.SHORT_BACKWARD);
             }
         },
         AUDIO_FORWARD: (event: KeyboardEvent) => {
             event.preventDefault();
             if (workspace === Workspace.AUDIO) {
-                seekTo(currentTime + shortJump);
+                seek(AUDIO_SEEK_INTENTS.SHORT_FORWARD);
             }
         },
         AUDIO_FAST_BACKWARD: (event: KeyboardEvent) => {
             event.preventDefault();
             if (workspace === Workspace.AUDIO) {
-                seekTo(currentTime - longJump);
+                seek(AUDIO_SEEK_INTENTS.LONG_BACKWARD);
             }
         },
         AUDIO_FAST_FORWARD: (event: KeyboardEvent) => {
             event.preventDefault();
             if (workspace === Workspace.AUDIO) {
-                seekTo(currentTime + longJump);
+                seek(AUDIO_SEEK_INTENTS.LONG_FORWARD);
             }
         },
     };
 
     const renderSeekButton = ({
-        title, icon, getTarget, className,
+        title, icon, intent, className,
     }: SeekButton): JSX.Element => {
         let tooltip = title;
         if (title === 'short-backward') tooltip = 'Short step backward';
@@ -190,7 +182,7 @@ function AudioPlayerNavigation(props: Props): JSX.Element {
                 <Icon
                     className={className}
                     component={icon}
-                    onClick={() => seekTo(getTarget(currentTime, duration, shortJump, longJump))}
+                    onClick={() => seek(intent)}
                     disabled={!isAudioLoaded}
                 />
             </CVATTooltip>
