@@ -6,6 +6,9 @@ weight: 40
 description: 'Allow users to login with credentials from a central source'
 aliases:
 - /docs/administration/advanced/ldap/
+products:
+  - community
+  - enterprise
 ---
 
 ### The creation of `settings.py`

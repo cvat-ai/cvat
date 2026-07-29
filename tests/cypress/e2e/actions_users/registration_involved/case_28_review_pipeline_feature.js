@@ -186,6 +186,11 @@ context('Review pipeline feature', () => {
             // https://github.com/cypress-io/cypress/issues/27415
 
             const countIssuesByFrame = [[0, 1, 'Wrong position'], [1, 1, customIssueDescription], [2, 1, customIssueDescription]];
+            const clickIssueSidebarControl = (selector) => {
+                cy.get(selector).should('be.visible').click();
+                cy.hideTooltips();
+            };
+
             for (const [frame, issues, text] of countIssuesByFrame) {
                 cy.goCheckFrameNumber(frame);
                 cy.get('.cvat_canvas_issue_region').should('have.length', issues);
@@ -277,13 +282,13 @@ context('Review pipeline feature', () => {
             cy.get('.cvat-issues-sidebar-previous-frame')
                 .should('have.attr', 'style')
                 .and('contain', 'opacity: 0.5;'); // the element is not active
-            cy.get('.cvat-issues-sidebar-next-frame').should('be.visible').click();
+            clickIssueSidebarControl('.cvat-issues-sidebar-next-frame');
             cy.checkFrameNum(1);
-            cy.get('.cvat-issues-sidebar-next-frame').should('be.visible').click();
+            clickIssueSidebarControl('.cvat-issues-sidebar-next-frame');
             cy.checkFrameNum(2);
             cy.get('.cvat-issues-sidebar-next-frame').should('have.attr', 'style')
                 .and('contain', 'opacity: 0.5;'); // the element is not active
-            cy.get('.cvat-issues-sidebar-previous-frame').should('be.visible').click();
+            clickIssueSidebarControl('.cvat-issues-sidebar-previous-frame');
             cy.checkFrameNum(1);
 
             cy.goCheckFrameNumber(1);
@@ -293,13 +298,13 @@ context('Review pipeline feature', () => {
                 }
             });
             cy.goCheckFrameNumber(0);
-            cy.get('.cvat-issues-sidebar-hidden-resolved-status').click();
-            cy.get('.cvat-issues-sidebar-next-frame').should('be.visible').click();
+            clickIssueSidebarControl('.cvat-issues-sidebar-hidden-resolved-status');
+            clickIssueSidebarControl('.cvat-issues-sidebar-next-frame');
             cy.checkFrameNum(2);
-            cy.get('.cvat-issues-sidebar-hidden-resolved-status').click();
+            clickIssueSidebarControl('.cvat-issues-sidebar-hidden-resolved-status');
 
             // Hide all issues. All issues are hidden on all frames
-            cy.get('.cvat-issues-sidebar-shown-issues').click();
+            clickIssueSidebarControl('.cvat-issues-sidebar-shown-issues');
             for (const [frame, issues] of countIssuesByFrame) {
                 cy.goCheckFrameNumber(frame);
                 cy.get('.cvat-objects-sidebar-issue-item').should('have.length', issues);
@@ -308,7 +313,7 @@ context('Review pipeline feature', () => {
             }
 
             // Show them back
-            cy.get('.cvat-issues-sidebar-hidden-issues').click();
+            clickIssueSidebarControl('.cvat-issues-sidebar-hidden-issues');
             for (const [frame, issues] of countIssuesByFrame) {
                 cy.goCheckFrameNumber(frame);
                 cy.get('.cvat-objects-sidebar-issue-item').should('have.length', issues);
