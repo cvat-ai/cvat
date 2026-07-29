@@ -5,6 +5,9 @@ weight: 2
 description: 'Accelerating video labeling using SAM2 model'
 aliases:
   - /docs/enterprise/segment-anything-2-tracker/
+products:
+  - online
+  - enterprise
 ---
 
 ## Overview

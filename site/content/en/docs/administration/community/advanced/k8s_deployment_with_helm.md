@@ -6,6 +6,9 @@ weight: 1
 description: 'Instructions for deploying CVAT on a Kubernetes cluster.'
 aliases:
 - /docs/administration/advanced/k8s_deployment_with_helm/
+products:
+  - community
+  - enterprise
 ---
 
 ---
