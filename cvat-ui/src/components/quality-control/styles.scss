@@ -77,29 +77,6 @@
         height: calc(100vh - $grid-unit-size * 30);
     }
 
-    .cvat-quality-requirements-editor {
-        .ant-tabs-nav {
-            margin-bottom: $grid-unit-size * 2;
-        }
-    }
-
-    .cvat-quality-requirements-raw-viewer {
-        font-family: monospace;
-        min-height: $grid-unit-size * 62;
-        display: block;
-    }
-
-    .cvat-quality-requirements-raw-actions {
-        display: flex;
-        gap: $grid-unit-size * 2;
-        margin-top: $grid-unit-size * 2;
-        padding-bottom: $grid-unit-size * 4;
-
-        .ant-btn {
-            min-width: $grid-unit-size * 11;
-        }
-    }
-
     .cvat-quality-requirements-table-actions {
         display: flex;
         justify-content: flex-start;

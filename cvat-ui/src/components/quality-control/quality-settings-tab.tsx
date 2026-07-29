@@ -19,11 +19,7 @@ import CVATLoadingSpinner from 'components/common/loading-spinner';
 import QualitySettingsForm from './shared/settings/quality-settings-form';
 import {
     QUALITY_REQUIREMENTS_ENABLED_FIELD,
-    QUALITY_REQUIREMENTS_RAW_FIELD,
-    parseRawRequirements,
-    requirementToRaw,
-    rawToSaveFields,
-    validateRawRequirements,
+    requirementToSaveFields,
 } from './shared/requirements/quality-requirements-utils';
 
 export type UpdateSettingsData = Record<number, { settings: QualitySettings, fields: QualitySettingsSaveFields }>;
@@ -67,27 +63,12 @@ function QualitySettingsTab(props: Readonly<Props>): JSX.Element | null {
                 typeof enabledValues[requirement.id] === 'boolean' &&
                 enabledValues[requirement.id] !== requirement.enabled
             ));
-            const parsedRequirements = typeof values[QUALITY_REQUIREMENTS_RAW_FIELD] === 'string' ?
-                parseRawRequirements(values[QUALITY_REQUIREMENTS_RAW_FIELD]) :
-                settings.requirements.map(requirementToRaw);
 
-            if (typeof values[QUALITY_REQUIREMENTS_RAW_FIELD] === 'string' || hasEnabledChanges) {
-                const nextRequirements = parsedRequirements.map((requirement) => {
-                    if (
-                        typeof requirement.id === 'number' &&
-                        enabledValues &&
-                        typeof enabledValues[requirement.id] === 'boolean'
-                    ) {
-                        return { ...requirement, enabled: enabledValues[requirement.id] };
-                    }
-
-                    return requirement;
-                });
-
-                validateRawRequirements(settings.requirements, nextRequirements);
-                fields.requirements = nextRequirements.map((requirement) => ({
+            if (hasEnabledChanges) {
+                fields.requirements = settings.requirements.map((requirement) => ({
                     id: requirement.id,
-                    ...rawToSaveFields(requirement),
+                    ...requirementToSaveFields(requirement),
+                    enabled: enabledValues?.[requirement.id] ?? requirement.enabled,
                 })) as QualitySettingsSaveFields['requirements'];
             }
 

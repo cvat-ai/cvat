@@ -4,8 +4,7 @@
 
 import { QualityRequirement } from 'cvat-core-wrapper';
 import {
-    QualityRequirementAnnotationType, QualityRequirementMetric,
-    SerializedQualityRequirementData, SerializedQualityRequirementSaveData,
+    QualityRequirementAnnotationType, QualityRequirementMetric, SerializedQualityRequirementSaveData,
 } from 'cvat-core/src/quality/server-response-types';
 
 export const ANNOTATION_TYPE_LABELS: Record<string, string> = {
@@ -29,35 +28,7 @@ export const METRIC_LABELS: Record<string, string> = {
 
 export const ANNOTATION_TYPES: QualityRequirementAnnotationType[] = Object.values(QualityRequirementAnnotationType);
 export const METRICS: QualityRequirementMetric[] = Object.values(QualityRequirementMetric);
-export const QUALITY_REQUIREMENTS_RAW_FIELD = 'requirementsRaw';
 export const QUALITY_REQUIREMENTS_ENABLED_FIELD = 'requirementsEnabled';
-
-export type RequirementRawData = SerializedQualityRequirementData;
-
-const QUALITY_REQUIREMENT_SAVE_FIELD_NAMES: (keyof SerializedQualityRequirementSaveData)[] = [
-    'settings_id',
-    'name',
-    'sort_order',
-    'filter',
-    'enabled',
-    'annotation_type',
-    'metric',
-    'required_score',
-    'parent_requirement',
-    'iou_threshold',
-    'point_size',
-    'point_size_base',
-    'line_thickness',
-    'match_orientation',
-    'line_orientation_threshold',
-    'match_groups',
-    'group_match_threshold',
-    'check_covered_annotations',
-    'object_visibility_threshold',
-    'panoptic_comparison',
-    'attribute_comparison',
-    'empty_is_annotated',
-];
 
 export function buildRequirementsById(requirements: QualityRequirement[]): Map<number, QualityRequirement> {
     const requirementsById = new Map<number, QualityRequirement>();
@@ -150,14 +121,10 @@ export function formatThreshold(value: number | null): string {
     return typeof value === 'number' ? `${Math.round(value * 100)}%` : 'N/A';
 }
 
-export function requirementToRaw(requirement: QualityRequirement): RequirementRawData {
+export function requirementToSaveFields(requirement: QualityRequirement): SerializedQualityRequirementSaveData {
     return {
-        id: requirement.id,
         settings_id: requirement.settingsId,
-        task_id: requirement.taskId,
-        project_id: requirement.projectId,
         name: requirement.name,
-        is_base: requirement.isBase,
         sort_order: requirement.sortOrder,
         filter: requirement.filter,
         enabled: requirement.enabled,
@@ -178,94 +145,5 @@ export function requirementToRaw(requirement: QualityRequirement): RequirementRa
         panoptic_comparison: requirement.panopticComparison,
         attribute_comparison: requirement.attributeComparison,
         empty_is_annotated: requirement.emptyIsAnnotated,
-        created_date: requirement.createdDate,
-        updated_date: requirement.updatedDate,
     };
-}
-
-export function rawToSaveFields(rawRequirement: RequirementRawData): SerializedQualityRequirementSaveData {
-    const fields: SerializedQualityRequirementSaveData = {};
-    for (const fieldName of QUALITY_REQUIREMENT_SAVE_FIELD_NAMES) {
-        fields[fieldName] = rawRequirement[fieldName] as never;
-    }
-    return fields;
-}
-
-export function requirementToSaveFields(requirement: QualityRequirement): SerializedQualityRequirementSaveData {
-    return rawToSaveFields(requirementToRaw(requirement));
-}
-
-function replaceTrailingCommas(value: string): string {
-    return value.replace(/,{1}[\s]*}/g, '}').replace(/,{1}[\s]*]/g, ']');
-}
-
-export function parseRawRequirements(value: string): RequirementRawData[] {
-    const parsed = JSON.parse(replaceTrailingCommas(value));
-    if (!Array.isArray(parsed)) {
-        throw new Error('Field is expected to be a JSON array');
-    }
-
-    return parsed;
-}
-
-export function validateRequirementNames(requirements: RequirementRawData[]): void {
-    const names = requirements.map((requirement: RequirementRawData): string => (
-        typeof requirement.name === 'string' ? requirement.name.trim() : ''
-    ));
-
-    if (names.some((name: string): boolean => !name)) {
-        throw new Error('Requirement name is required');
-    }
-
-    if (new Set(names).size !== names.length) {
-        throw new Error('Requirement name must be unique');
-    }
-}
-
-export function validateKnownRequirementValues(requirements: RequirementRawData[]): void {
-    for (const requirement of requirements) {
-        if (requirement.annotation_type && !ANNOTATION_TYPES.includes(requirement.annotation_type)) {
-            throw new Error(`Unknown annotation type "${requirement.annotation_type}"`);
-        }
-
-        if (requirement.metric && !METRICS.includes(requirement.metric)) {
-            throw new Error(`Unknown metric "${requirement.metric}"`);
-        }
-
-        if (
-            requirement.required_score !== null &&
-            typeof requirement.required_score !== 'undefined' &&
-            (typeof requirement.required_score !== 'number' ||
-                requirement.required_score < 0 ||
-                requirement.required_score > 1)
-        ) {
-            throw new Error('Required score must be a number from 0 to 1');
-        }
-    }
-}
-
-export function validateBaseRequirementsArePresent(
-    currentRequirements: QualityRequirement[],
-    parsedRequirements: RequirementRawData[],
-): void {
-    const parsedIds = new Set(parsedRequirements
-        .map((requirement: RequirementRawData): number | undefined => requirement.id)
-        .filter((id: number | undefined): id is number => typeof id === 'number'));
-
-    const removedBase = currentRequirements.find((requirement: QualityRequirement): boolean => (
-        requirement.isBase && !parsedIds.has(requirement.id)
-    ));
-
-    if (removedBase) {
-        throw new Error(`Base requirement "${removedBase.name}" cannot be removed`);
-    }
-}
-
-export function validateRawRequirements(
-    currentRequirements: QualityRequirement[],
-    parsedRequirements: RequirementRawData[],
-): void {
-    validateRequirementNames(parsedRequirements);
-    validateKnownRequirementValues(parsedRequirements);
-    validateBaseRequirementsArePresent(currentRequirements, parsedRequirements);
 }

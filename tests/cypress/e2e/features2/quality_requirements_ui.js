@@ -302,31 +302,4 @@ context('Quality requirements UI', () => {
         requirementRow(childRequirementName).should('be.visible');
         requirementRow(grandchildRequirementName).should('be.visible');
     });
-
-    it('Switches between constructor and raw editor tabs', () => {
-        openSettingsTab();
-
-        cy.get('.cvat-quality-requirements-editor').within(() => {
-            cy.contains('.ant-tabs-tab', 'Raw').click();
-        });
-        cy.get('.cvat-quality-requirements-raw-viewer').should('be.visible');
-        cy.get('.cvat-quality-requirements-raw-actions').within(() => {
-            cy.contains('button', 'Apply').should('not.exist');
-            cy.contains('button', 'Cancel').should('exist');
-        });
-
-        cy.get('.cvat-quality-requirements-raw-viewer').then(($textarea) => {
-            const initialValue = $textarea.val();
-
-            cy.wrap($textarea).clear();
-            cy.get('.cvat-quality-requirements-raw-viewer').type('[]', { parseSpecialCharSequences: false });
-            cy.contains('.cvat-quality-requirements-raw-actions button', 'Cancel').click();
-            cy.get('.cvat-quality-requirements-raw-viewer').should('have.value', initialValue);
-        });
-
-        cy.get('.cvat-quality-requirements-editor').within(() => {
-            cy.contains('.ant-tabs-tab', 'Constructor').click();
-        });
-        cy.get('.cvat-quality-requirements-configuration-table').should('be.visible');
-    });
 });

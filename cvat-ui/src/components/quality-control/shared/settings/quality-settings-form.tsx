@@ -15,7 +15,7 @@ import { defaultVisibility, ResourceFilterHOC } from 'components/resource-sortin
 import {
     localStorageRecentKeyword, localStorageRecentCapacity, config,
 } from './jobs-filter-configuration';
-import QualityRequirementsEditor from '../requirements/quality-requirements-editor';
+import QualityRequirementsConstructor from '../requirements/quality-requirements-constructor';
 import QualityRequirementForm from '../requirements/quality-requirement-form';
 
 interface Props {
@@ -190,7 +190,7 @@ export default function QualitySettingsForm(props: Readonly<Props>): JSX.Element
                     />
                 </CVATTooltip>
             </Row>
-            <QualityRequirementsEditor
+            <QualityRequirementsConstructor
                 form={form}
                 settings={settings}
                 disabled={disabled}
