@@ -1074,6 +1074,17 @@ class QualitySettingsSerializer(WriteOnceMixin, serializers.ModelSerializer):
             seen_requirement_ids.add(requirement_id)
             retained_requirement_ids.add(requirement_id)
 
+        obsolete_requirement_ids = set(existing_requirements) - retained_requirement_ids
+        obsolete_base_requirements = [
+            existing_requirements[requirement_id].name
+            for requirement_id in obsolete_requirement_ids
+            if existing_requirements[requirement_id].is_base
+        ]
+        if obsolete_base_requirements:
+            raise serializers.ValidationError(
+                {"requirements": "Base quality requirements cannot be deleted."}
+            )
+
         child_serializers: list[QualityRequirementSerializer] = []
         for index, requirement_data in enumerate(requirements_data):
             requirement_id = requirement_data.get("id")
@@ -1125,18 +1136,7 @@ class QualitySettingsSerializer(WriteOnceMixin, serializers.ModelSerializer):
                 visited_requirement_ids.add(parent_id)
                 parent_id = prospective_parent_ids[parent_id]
 
-        obsolete_requirement_ids = set(existing_requirements) - retained_requirement_ids
         if obsolete_requirement_ids:
-            obsolete_base_requirements = [
-                existing_requirements[requirement_id].name
-                for requirement_id in obsolete_requirement_ids
-                if existing_requirements[requirement_id].is_base
-            ]
-            if obsolete_base_requirements:
-                raise serializers.ValidationError(
-                    {"requirements": "Base quality requirements cannot be deleted."}
-                )
-
             instance.requirements.filter(id__in=obsolete_requirement_ids).delete()
 
         for child_serializer in self._sort_requirement_serializers_for_save(child_serializers):

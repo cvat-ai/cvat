@@ -5,6 +5,10 @@
 from __future__ import annotations
 
 import unittest
+from types import SimpleNamespace
+from unittest.mock import Mock
+
+from rest_framework import serializers
 
 from cvat.apps.quality_control.attribute_comparators import (
     AttributeComparisonRule,
@@ -16,6 +20,7 @@ from cvat.apps.quality_control.attribute_comparison import make_default_attribut
 from cvat.apps.quality_control.serializers import (
     AttributeComparisonSerializer,
     QualitySettingsRequirementsSerializer,
+    QualitySettingsSerializer,
 )
 
 
@@ -113,4 +118,20 @@ class TestQualitySettingsRequirementsSerializer(unittest.TestCase):
         self.assertEqual(
             [str(error) for error in serializer.errors["non_field_errors"]],
             ["At least one quality requirement must be specified."],
+        )
+
+    def test_reports_base_deletion_before_missing_parent(self) -> None:
+        base_requirement = SimpleNamespace(id=1, name="Base rectangle", is_base=True)
+        settings = Mock()
+        settings.requirements.select_related.return_value.all.return_value = [base_requirement]
+
+        with self.assertRaises(serializers.ValidationError) as capture:
+            QualitySettingsSerializer()._sync_requirements(
+                settings,
+                [{"name": "Custom rectangle", "parent_requirement": base_requirement.id}],
+            )
+
+        self.assertEqual(
+            str(capture.exception.detail["requirements"]),
+            "Base quality requirements cannot be deleted.",
         )
