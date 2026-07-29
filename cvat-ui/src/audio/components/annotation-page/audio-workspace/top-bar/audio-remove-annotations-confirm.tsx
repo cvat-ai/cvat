@@ -6,9 +6,14 @@ import React, { useEffect, useState } from 'react';
 import Modal from 'antd/lib/modal';
 import Text from 'antd/lib/typography/Text';
 import InputNumber from 'antd/lib/input-number';
+import Checkbox from 'antd/lib/checkbox';
 import Collapse from 'antd/lib/collapse';
+import { Source } from 'cvat-core-wrapper';
 
-import type { RemoveAnnotationsConfirmProps } from 'components/annotation-page/top-bar/remove-annotations-confirm';
+import {
+    SOURCE_OPTIONS,
+    type RemoveAnnotationsConfirmProps,
+} from 'components/annotation-page/top-bar/remove-annotations-confirm';
 
 type TimeValue = {
     minutes?: number;
@@ -77,11 +82,13 @@ function AudioRemoveAnnotationsConfirm(props: RemoveAnnotationsConfirmProps): JS
     } = props;
     const [removeFrom, setRemoveFrom] = useState<TimeValue>({});
     const [removeUpTo, setRemoveUpTo] = useState<TimeValue>({});
+    const [removeSources, setRemoveSources] = useState<Source[]>(SOURCE_OPTIONS.map((option) => option.value));
 
     useEffect(() => {
         if (open) {
             setRemoveFrom({});
             setRemoveUpTo({});
+            setRemoveSources(SOURCE_OPTIONS.map((option) => option.value));
         }
     }, [open]);
 
@@ -94,16 +101,19 @@ function AudioRemoveAnnotationsConfirm(props: RemoveAnnotationsConfirmProps): JS
             okButtonProps={{
                 type: 'primary',
                 danger: true,
+                disabled: !removeSources.length,
             }}
             okText='Remove'
             onCancel={onClose}
             onOk={() => {
                 const from = timeToMilliseconds(removeFrom);
                 const to = timeToMilliseconds(removeUpTo);
+                const allSourcesSelected = removeSources.length === SOURCE_OPTIONS.length;
                 onRemove(
                     typeof from === 'number' ? Math.min(from, stopFrame) : undefined,
                     typeof to === 'number' ? Math.min(to, stopFrame) : undefined,
                     false,
+                    allSourcesSelected ? undefined : removeSources,
                 );
                 onClose();
             }}
@@ -112,8 +122,17 @@ function AudioRemoveAnnotationsConfirm(props: RemoveAnnotationsConfirmProps): JS
                 <Text>You are about to remove audio intervals from this job. </Text>
                 <Text>Without a range, all audio intervals will be removed. </Text>
                 <Text>To remove intervals only in a time span, set the range below. </Text>
+                <Text>If you want to remove only intervals from a certain source, unselect sources below. </Text>
                 <Text>Changes take effect only when you save the job.</Text>
                 <br />
+                <br />
+                <br />
+                <Checkbox.Group
+                    className='cvat-modal-confirm-remove-annotation-sources'
+                    value={removeSources}
+                    onChange={(values) => setRemoveSources(values as Source[])}
+                    options={SOURCE_OPTIONS.map(({ value, title }) => ({ value, label: title }))}
+                />
                 <br />
                 <br />
                 <Collapse

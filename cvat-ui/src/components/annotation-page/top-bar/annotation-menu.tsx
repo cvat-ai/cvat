@@ -197,8 +197,8 @@ function AnnotationMenuComponent(props: Props): JSX.Element {
                 open={removeAnnotationsConfirmOpen}
                 stopFrame={stopFrame}
                 onClose={() => setRemoveAnnotationsConfirmOpen(false)}
-                onRemove={(removeFrom, removeUpTo, removeOnlyKeyframes) => {
-                    dispatch(removeAnnotationsAsyncAction(removeFrom, removeUpTo, removeOnlyKeyframes));
+                onRemove={(removeFrom, removeUpTo, removeOnlyKeyframes, sources) => {
+                    dispatch(removeAnnotationsAsyncAction(removeFrom, removeUpTo, removeOnlyKeyframes, sources));
                 }}
             />
             <Dropdown

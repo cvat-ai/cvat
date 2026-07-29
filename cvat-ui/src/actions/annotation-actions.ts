@@ -412,7 +412,10 @@ export function updateCanvasBrushTools(config: {
 }
 
 export function removeAnnotationsAsync(
-    startFrame: number | undefined, stopFrame: number | undefined, delTrackKeyframesOnly: boolean,
+    startFrame: number | undefined,
+    stopFrame: number | undefined,
+    delTrackKeyframesOnly: boolean,
+    sources?: Source[],
 ): ThunkAction {
     return async (dispatch: ThunkDispatch, getState: () => CombinedState): Promise<void> => {
         try {
@@ -422,6 +425,7 @@ export function removeAnnotationsAsync(
                 from: startFrame,
                 to: stopFrame,
                 delTrackKeyframesOnly,
+                sources,
             });
             await jobInstance.actions.clear();
             dispatch(fetchAnnotationsAsync());

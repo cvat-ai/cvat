@@ -1029,10 +1029,16 @@ export default class Collection {
         from?: number;
         to?: number;
         delTrackKeyframesOnly?: boolean;
+        sources?: Source[];
     }): void {
-        const { from, to, delTrackKeyframesOnly } = options ?? {};
+        const {
+            from, to, delTrackKeyframesOnly, sources,
+        } = options ?? {};
+        const matchesSource = (object: { source: Source }): boolean => (
+            !sources || sources.includes(object.source)
+        );
 
-        if (typeof from === 'undefined' && typeof to === 'undefined') {
+        if (typeof from === 'undefined' && typeof to === 'undefined' && !sources) {
             this.shapes = {};
             this.tags = {};
             this.tracks = [];
@@ -1047,7 +1053,7 @@ export default class Collection {
             if (this.injection.dimension === DimensionType.DIMENSION_1D) {
                 this.intervals.slice(0).forEach((interval) => {
                     const intervalStop = interval.stop ?? this.stopFrame;
-                    if (interval.start <= stop && intervalStop >= start) {
+                    if (interval.start <= stop && intervalStop >= start && matchesSource(interval)) {
                         this.intervals.splice(this.intervals.indexOf(interval), 1);
                         delete this.objects[interval.clientID];
                     }
@@ -1055,14 +1061,14 @@ export default class Collection {
                 return;
             }
 
-            // If only a range of annotations need to be cleared
+            // If only a range of annotations (optionally filtered by source) need to be cleared
             for (let frame = start; frame <= stop; frame++) {
-                this.shapes[frame] = [];
-                this.tags[frame] = [];
+                this.shapes[frame] = (this.shapes[frame] || []).filter((shape) => !matchesSource(shape));
+                this.tags[frame] = (this.tags[frame] || []).filter((tag) => !matchesSource(tag));
             }
 
             this.tracks.slice(0).forEach((track) => {
-                if (track.frame <= stop) {
+                if (track.frame <= stop && matchesSource(track)) {
                     if (delTrackKeyframesOnly) {
                         for (const keyframe of Object.keys(track.shapes)) {
                             if (+keyframe >= start && +keyframe <= stop) {
@@ -1084,7 +1090,7 @@ export default class Collection {
                         if (Object.keys(track.shapes).length === 0) {
                             this.tracks.splice(this.tracks.indexOf(track), 1);
                         }
-                    } else if (track.frame >= from) {
+                    } else if (track.frame >= start) {
                         this.tracks.splice(this.tracks.indexOf(track), 1);
                     }
                 }
