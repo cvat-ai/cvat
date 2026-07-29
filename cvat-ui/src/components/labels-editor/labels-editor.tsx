@@ -126,16 +126,8 @@ export default class LabelsEditor extends React.PureComponent<LabelsEditorProps,
         const filteredUnsavedLabels = unsavedLabels.filter((_label: LabelOptColor) => _label.id !== label.id);
         if (label.id as number >= 0) {
             filteredSavedLabels.push(label);
-            this.setState({
-                savedLabels: filteredSavedLabels,
-                constructorMode: ConstructorMode.SHOW,
-            });
         } else {
             filteredUnsavedLabels.push(label);
-            this.setState({
-                unsavedLabels: filteredUnsavedLabels,
-                constructorMode: ConstructorMode.SHOW,
-            });
         }
 
         this.handleSubmit(filteredSavedLabels, filteredUnsavedLabels);
