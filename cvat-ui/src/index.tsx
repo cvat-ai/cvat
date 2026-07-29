@@ -34,8 +34,11 @@ import { resetErrors, resetMessages } from 'actions/notification-actions';
 import { getInvitationsAsync } from 'actions/invitations-actions';
 import { getRequestsAsync } from 'actions/requests-async-actions';
 import { getServerAPISchemaAsync } from 'actions/server-actions';
+import { getGrowthDataAsync, updateGrowthDataAsync } from 'actions/growth-actions';
 import { navigationActions } from 'actions/navigation-actions';
-import { CombinedState, NotificationsState, PluginsState } from './reducers';
+import {
+    CombinedState, GrowthState, NotificationsState, PluginsState,
+} from './reducers';
 import './utils/dayjs-wrapper';
 
 createCVATStore(createRootReducer);
@@ -68,6 +71,7 @@ interface StateToProps {
     userAgreementsFetching: boolean;
     notifications: NotificationsState;
     user: any;
+    growth: GrowthState;
     pluginComponents: PluginsState['components'];
     invitationsFetching: boolean;
     invitationsInitialized: boolean;
@@ -92,12 +96,17 @@ interface DispatchToProps {
     initInvitations: () => void;
     initRequests: () => void;
     loadServerAPISchema: () => void;
+    loadGrowthData: () => void;
+    updateGrowthData: (
+        id: number,
+        fields: { githubPromptShown?: boolean; githubPromptSupportClicked?: boolean },
+    ) => void;
     onChangeLocation: (from: string, to: string) => void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
     const {
-        plugins, auth, formats, about, userAgreements, models, organizations, invitations, serverAPI, requests,
+        plugins, auth, formats, about, userAgreements, models, organizations, invitations, serverAPI, requests, growth,
     } = state;
 
     return {
@@ -117,6 +126,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         userAgreementsFetching: userAgreements.fetching,
         notifications: state.notifications,
         user: auth.user,
+        growth,
         pluginComponents: plugins.components,
         invitationsFetching: invitations.fetching,
         invitationsInitialized: invitations.initialized,
@@ -143,6 +153,13 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         initInvitations: (): void => dispatch(getInvitationsAsync({}, true)),
         initRequests: (): void => dispatch(getRequestsAsync()),
         loadServerAPISchema: (): void => dispatch(getServerAPISchemaAsync()),
+        loadGrowthData: (): void => dispatch(getGrowthDataAsync()),
+        updateGrowthData: (
+            id: number,
+            fields: { githubPromptShown?: boolean; githubPromptSupportClicked?: boolean },
+        ): void => (
+            dispatch(updateGrowthDataAsync(id, fields))
+        ),
         onChangeLocation: (from: string, to: string): void => dispatch(navigationActions.changeLocation(from, to)),
     };
 }

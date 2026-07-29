@@ -61,6 +61,43 @@
     }
 }
 
+.cvat-profile-notifications-card {
+    min-height: 294px;
+
+    .ant-card-body {
+        display: flex;
+        min-height: 224px;
+        flex-direction: column;
+    }
+}
+
+.cvat-profile-notifications-item {
+    display: flex;
+    align-items: center;
+    gap: $grid-unit-size * 2;
+}
+
+.cvat-profile-notifications-item-copy {
+    min-width: 0;
+}
+
+.cvat-profile-notifications-item-title {
+    color: $text-color;
+    font-weight: 600;
+    line-height: $grid-unit-size * 2.5;
+}
+
+.cvat-profile-notifications-item-description {
+    color: $text-color-secondary;
+    line-height: $grid-unit-size * 2.5;
+}
+
+.cvat-profile-notifications-actions {
+    display: flex;
+    margin-top: auto;
+    justify-content: flex-end;
+}
+
 .cvat-security-api-tokens-card {
     h5 {
         margin-top: $grid-unit-size;

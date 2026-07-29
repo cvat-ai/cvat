@@ -17,10 +17,12 @@ import {
 } from 'cvat-core/src/labels';
 import {
     SerializedAttribute, SerializedLabel, SerializedAPISchema,
-    OrganizationMembersFilter, AnalyticsEventsFilter, SerializedApiToken,
+    OrganizationMembersFilter, AnalyticsEventsFilter, SerializedApiToken, SerializedUserGrowthData,
     ApiTokensFilter, SerializedInterval,
 } from 'cvat-core/src/server-response-types';
-import { ApiTokenModifiableFields } from 'cvat-core/src/server-request-types';
+import {
+    ApiTokenModifiableFields, UserGrowthDataModifiableFields,
+} from 'cvat-core/src/server-request-types';
 import { UpdateStatusData } from 'cvat-core/src/core-types';
 import { Job, Task } from 'cvat-core/src/session';
 import Project from 'cvat-core/src/project';
@@ -141,6 +143,7 @@ export type {
     SerializedAttribute,
     SerializedLabel,
     SerializedApiToken,
+    SerializedUserGrowthData,
     StorageData,
     APIWrapperEnterOptions,
     QualitySummary,
@@ -157,6 +160,7 @@ export type {
     TrackerResults,
     ApiTokenModifiableFields,
     ApiTokensFilter,
+    UserGrowthDataModifiableFields,
     ImageProcessing,
     SerializedImageFilter,
     SerializedInterval,

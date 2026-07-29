@@ -14,6 +14,7 @@ import {
     Request, JobValidationLayout, QualitySettings, TaskValidationLayout, ObjectState,
     ConsensusSettings, AboutData, ShapeType, ObjectType, ApiToken, AudioIntervalState,
     Membership, AnnotationFormats, CloudStorage,
+    SerializedUserGrowthData,
 } from 'cvat-core-wrapper';
 
 import type { IntelligentScissors, OpenCVTracker } from 'utils/opencv-wrapper/opencv-wrapper';
@@ -59,6 +60,12 @@ export interface AuthState {
         current: ApiToken[];
         count: number;
     };
+}
+
+export interface GrowthState {
+    data: SerializedUserGrowthData | null;
+    fetching: boolean;
+    initialized: boolean;
 }
 
 export interface ChangePasswordData {
@@ -1202,6 +1209,7 @@ export interface NavigationState {
 
 export interface CombinedState {
     auth: AuthState;
+    growth: GrowthState;
     projects: ProjectsState;
     jobs: JobsState;
     tasks: TasksState;

@@ -4,8 +4,9 @@
 
 import {
     AnalyticsEventsFilter, QualityConflictsFilter, QualityReportsFilter,
-    QualitySettingsFilter, ConsensusSettingsFilter, ApiTokensFilter,
+    QualitySettingsFilter, ConsensusSettingsFilter, ApiTokensFilter, SerializedUserGrowthData,
 } from './server-response-types';
+import { UserGrowthDataModifiableFields } from './server-request-types';
 import PluginRegistry from './plugins';
 import serverProxy from './server-proxy';
 import lambdaManager from './lambda-manager';
@@ -98,6 +99,13 @@ export default interface CVATCore {
     };
     users: {
         get: any;
+    };
+    growth: {
+        get: () => Promise<SerializedUserGrowthData[]>;
+        update: (
+            id: number,
+            fields: UserGrowthDataModifiableFields,
+        ) => Promise<SerializedUserGrowthData>;
     };
     apiTokens: {
         get: (filter: ApiTokensFilter) => Promise<PaginatedResource<ApiToken>>;

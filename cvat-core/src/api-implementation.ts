@@ -33,8 +33,9 @@ import Webhook from './webhook';
 import { ArgumentError } from './exceptions';
 import {
     AnalyticsEventsFilter, QualityConflictsFilter,
-    SerializedAsset, ConsensusSettingsFilter, SerializedOrganization,
+    SerializedAsset, ConsensusSettingsFilter, SerializedOrganization, SerializedUserGrowthData,
 } from './server-response-types';
+import { UserGrowthDataModifiableFields } from './server-request-types';
 import QualityReport from './quality-report';
 import AboutData from './about';
 import QualityConflict, { ConflictSeverity } from './quality-conflict';
@@ -184,6 +185,18 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
 
         users = users.map((user) => new User(user));
         return users;
+    });
+
+    implementationMixin(cvat.growth.get, async (): Promise<SerializedUserGrowthData[]> => (
+        serverProxy.growth.get()
+    ));
+
+    implementationMixin(cvat.growth.update, async (
+        id: number,
+        fields: UserGrowthDataModifiableFields,
+    ): Promise<SerializedUserGrowthData> => {
+        const data = fieldsToSnakeCase(fields);
+        return serverProxy.growth.update(id, data);
     });
 
     implementationMixin(cvat.apiTokens.get, async (filter) => {
