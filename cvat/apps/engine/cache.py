@@ -668,13 +668,16 @@ class MediaCache:
         if storage_client := db_data.get_cloud_storage_instance():
             with ExitStack() as es:
                 tmp_dir = Path(es.enter_context(tempfile.TemporaryDirectory(prefix="cvat")))
+                download_dir = tmp_dir / "download"
+                download_dir.mkdir()
+
                 # (storage filename, output filename)
                 files_to_download: list[tuple[str, PurePath]] = []
                 checksums = []
                 media = []
                 if db_data.local_storage_backing_cs_id:
                     for frame_path in requested_db_images():
-                        abs_frame_path = join_untrusted_path(tmp_dir, frame_path)
+                        abs_frame_path = join_untrusted_path(download_dir, frame_path)
 
                         files_to_download.append((frame_path, abs_frame_path))
                         checksums.append(None)
@@ -687,15 +690,19 @@ class MediaCache:
                         frame_path = item.get("meta", {}).get(
                             "original_name", f"{item['name']}{item['extension']}"
                         )
-                        abs_frame_path = join_untrusted_path(tmp_dir, frame_path)
+                        abs_frame_path = join_untrusted_path(download_dir, frame_path)
 
                         files_to_download.append((frame_path, abs_frame_path))
                         checksums.append(item.get("checksum", None))
                         media.append((abs_frame_path, os.fspath(abs_frame_path)))
 
-                storage_client.bulk_download_to_dir(files=files_to_download, upload_dir=tmp_dir)
+                download_iter = es.enter_context(
+                    closing(
+                        storage_client.bulk_download_to_temporary_files(files_to_download, tmp_dir)
+                    )
+                )
 
-                for checksum, media_item in zip(checksums, media):
+                for checksum, media_item, _ in zip(checksums, media, download_iter):
                     frame_path = media_item[1]
                     if checksum and not md5_hash(frame_path) == checksum:
                         slogger.task[db_task.id].warning(
@@ -707,7 +714,7 @@ class MediaCache:
                     ):
                         frame_path = ValidateDimension().convert_bin_to_pcd(
                             frame_path,
-                            # one file can be used several times for honeypots
+                            # the file is owned by the iterator, so we shouldn't delete it ourselves
                             delete_source=False,
                         )
                         media_item = (frame_path, frame_path)
@@ -762,6 +769,7 @@ class MediaCache:
                         abs_ri_path = join_untrusted_path(tmp_dir, ri_path)
                         files_to_download.append((ri_path, abs_ri_path))
 
+                # TODO: to temporary files?
                 storage_client.bulk_download_to_dir(files_to_download, upload_dir=tmp_dir)
                 media_base_dir = tmp_dir
             else:

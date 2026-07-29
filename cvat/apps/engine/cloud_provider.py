@@ -8,8 +8,9 @@ from __future__ import annotations
 import functools
 import json
 import os
+import tempfile
 from abc import ABC, abstractmethod
-from collections.abc import Callable, Iterator, Sequence
+from collections.abc import Callable, Generator, Iterator, Sequence
 from concurrent.futures import Future, ThreadPoolExecutor
 from datetime import datetime
 from enum import Enum
@@ -273,6 +274,34 @@ class AbstractCloudStorage(ABC):
             self.download_file(key, upload_dir / output_path)
 
         self._in_parallel(download_one, files)
+
+    def bulk_download_to_temporary_files(
+        self, files: Sequence[tuple[str, Path]], tmp_dir: Path
+    ) -> Generator[Path, None, None]:
+        """
+        Downloads the specified files into a temporary directory, and provides a generator
+        that yields the full path to each file as soon as it finishes downloading.
+        When the generator is advanced to a new file, the previous file is deleted.
+
+        Make sure to close the generator after using it.
+        """
+        threads_number = get_max_threads_number(len(files))
+
+        def download_one(f: tuple[str, Path]) -> Path:
+            assert f[1].parent != tmp_dir
+            with tempfile.NamedTemporaryFile(dir=tmp_dir, delete=False) as tmp_file:
+                tmpfile_path = Path(tmp_file.name)
+            self.download_file(f[0], tmpfile_path)
+            return tmpfile_path
+
+        with ThreadPoolExecutor(max_workers=threads_number) as executor:
+            for (_, output_path), tmpfile_path in zip(files, executor.map(download_one, files)):
+                output_path.parent.mkdir(parents=True, exist_ok=True)
+                tmpfile_path.rename(output_path)
+                try:
+                    yield output_path
+                finally:
+                    output_path.unlink()
 
     def bulk_upload_from_dir(
         self,
