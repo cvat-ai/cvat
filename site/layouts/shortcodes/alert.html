@@ -1,0 +1,30 @@
+{{- /*
+  site/layouts/shortcodes/alert.html
+
+  Project override of themes/docsy/layouts/shortcodes/alert.html.
+  Same behavior as the theme's version, but prepends a small icon to the
+  title based on the alert color, so "Note", "Warning", etc. are
+  distinguishable by icon + accent color rather than by a large bold
+  heading. See site/assets/scss/_custom.scss for the matching heading size
+  and accent-color overrides.
+
+  Usage (unchanged): {{% alert title="Note" color="primary" %}}...{{% /alert %}}
+*/ -}}
+{{ $_hugo_config := `{ "version": 1 }` }}
+{{ $color := .Get "color" | default "primary" }}
+{{ $icons := dict
+  "primary" "fa-circle-info"
+  "info" "fa-circle-info"
+  "warning" "fa-triangle-exclamation"
+  "danger" "fa-circle-exclamation"
+  "success" "fa-circle-check"
+}}
+{{ $icon := or (index $icons $color) "fa-circle-info" }}
+<div class="alert alert-{{ $color }}" role="alert">
+{{ with .Get "title" }}<h4 class="alert-heading"><i class="fas {{ $icon }}" aria-hidden="true"></i> {{ . | safeHTML }}</h4>{{ end }}
+{{ if eq .Page.File.Ext "md" }}
+    {{ .Inner | markdownify }}
+{{ else }}
+    {{ .Inner | htmlUnescape | safeHTML }}
+{{ end }}
+</div>

@@ -29,14 +29,19 @@ Cypress.Commands.add('cancelAnnotationsAction', () => {
 });
 
 Cypress.Commands.add('selectAnnotationsAction', (name) => {
-    cy.get('.cvat-action-runner-list .ant-select').click();
-    cy.get('.ant-select-dropdown')
-        .not('.ant-select-dropdown-hidden').within(() => {
-            cy.get('.rc-virtual-list-holder')
-                .contains('.ant-select-item-option', name)
-                .click();
-        });
-    cy.get('.cvat-action-runner-list .ant-select-selection-item').should('contain', name);
+    const getOption = () => cy
+        .get('.ant-select-dropdown:visible')
+        .contains('.ant-select-item-option', name);
+
+    cy.get('.cvat-action-runner-list .ant-select')
+        .should('exist').and('be.visible')
+        .click();
+    // Re-query before clicking because Ant Design may re-render the
+    // dropdown and detach the option previously yielded by Cypress.
+    getOption().should('be.visible');
+    getOption().click({ force: true });
+    cy.get('.cvat-action-runner-list .ant-select-selection-item')
+        .should('contain', name);
 });
 
 Cypress.Commands.add('waitAnnotationsAction', () => {

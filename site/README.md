@@ -25,6 +25,52 @@ description: >
 ---
 ```
 
+### How to mark a page as product-specific
+
+CVAT has three products: **Community** (free, self-hosted), **Online** (managed cloud,
+with Solo and Team plans), and **Enterprise** (self-hosted, paid). Most documentation
+applies to all three, since Online and Enterprise both build on top of Community
+functionality — Enterprise in particular is a superset of Community, not a separate
+product, so a page is only Community-only if Enterprise genuinely replaces it with its
+own version (for example, deployment guides). When in doubt, assume a page is shared.
+
+**Default: no tag needed.** A page with no `products` field is treated as relevant to
+every product. Do not add a tag just to say "this applies everywhere" — only tag pages
+that are restricted to a subset of products.
+
+**Whole-page restriction:** if an entire page only applies to one or more products (e.g.
+a paid feature, or a product-specific deployment guide that fully replaces the Community
+version), add a `products` field to the front matter:
+
+```
+---
+title: "Title"
+products:
+  - enterprise
+---
+```
+
+Allowed values: `community`, `online`, `enterprise`. Use as many as apply. This renders a
+"Relevant for" badge at the top of the page and adds the page to the corresponding
+`/docs/products/<name>/` listing (see `layouts/shortcodes/pages-by-product.html` and
+`layouts/partials/product-tags.html`).
+
+**Partial-page restriction:** if a page is mostly shared but just one paragraph, list
+item, or table cell describes a gated feature, don't tag the whole page — use the inline
+badge shortcode instead, right next to the relevant text:
+
+```
+{{< product-badge "online,enterprise" >}}
+```
+
+**Solo vs. Team (within Online):** there's no separate front matter field for this — the
+product-level tags don't distinguish plans within Online. If a feature differs between
+Solo and Team (e.g. only Team can create organizations and invite members), call it out
+with a short inline note near that section instead.
+
+Before tagging, check the actual restriction rather than guessing from folder location
+or a legacy URL alias — verify what the page's text says, and if there's no explicit
+statement, confirm with the team before adding a tag.
 
 ### How to start the site locally
 

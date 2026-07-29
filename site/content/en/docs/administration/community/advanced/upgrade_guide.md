@@ -5,6 +5,8 @@ weight: 60
 description: 'Instructions for upgrading CVAT deployed with docker compose'
 aliases:
 - /docs/administration/advanced/upgrade_guide/
+products:
+  - community
 ---
 
 ## Upgrade guide
