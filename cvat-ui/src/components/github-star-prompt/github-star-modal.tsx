@@ -43,7 +43,6 @@ function GitHubStarModal(props: Props): JSX.Element {
             getContainer={false}
             footer={null}
             width={1024}
-            styles={{ wrapper: { position: 'absolute' } }}
             style={{
                 maxWidth: 'none',
                 margin: 0,

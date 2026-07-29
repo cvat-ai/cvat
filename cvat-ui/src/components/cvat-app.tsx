@@ -106,7 +106,11 @@ interface CVATAppProps {
     loadGrowthData: () => void;
     updateGrowthData: (
         id: number,
-        fields: { githubPromptShown?: boolean; githubPromptSupportClicked?: boolean },
+        fields: {
+            githubPromptShown?: boolean;
+            githubPromptSupportClicked?: boolean;
+            githubPromptAllowed?: boolean;
+        },
     ) => void;
     onChangeLocation: (from: string, to: string) => void;
     userInitialized: boolean;

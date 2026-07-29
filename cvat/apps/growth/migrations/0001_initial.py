@@ -35,7 +35,12 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name="UserGrowthData",
             fields=[
-                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
                 ("github_prompt_shown_at", models.DateTimeField(blank=True, null=True)),
                 ("github_prompt_support_clicked", models.BooleanField(default=False)),
                 ("github_prompt_allowed", models.BooleanField(default=True)),

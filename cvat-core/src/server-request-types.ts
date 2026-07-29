@@ -5,7 +5,7 @@
 import {
     SerializedApiToken, SerializedUser, SerializedUserGrowthData,
 } from './server-response-types';
-import { CamelizedV2 } from './type-utils';
+import { Camelized, CamelizedV2 } from './type-utils';
 
 export type APIApiTokenModifiableFields = Partial<Pick<SerializedApiToken, 'name' | 'expiry_date' | 'read_only'>>;
 export type ApiTokenModifiableFields = CamelizedV2<APIApiTokenModifiableFields>;
@@ -17,4 +17,4 @@ export type APIUserGrowthDataModifiableFields = Partial<Pick<
     SerializedUserGrowthData,
     'github_prompt_shown' | 'github_prompt_support_clicked' | 'github_prompt_allowed'
 >>;
-export type UserGrowthDataModifiableFields = CamelizedV2<APIUserGrowthDataModifiableFields>;
+export type UserGrowthDataModifiableFields = Camelized<APIUserGrowthDataModifiableFields>;

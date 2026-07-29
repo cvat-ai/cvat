@@ -156,7 +156,11 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         loadGrowthData: (): void => dispatch(getGrowthDataAsync()),
         updateGrowthData: (
             id: number,
-            fields: { githubPromptShown?: boolean; githubPromptSupportClicked?: boolean },
+            fields: {
+                githubPromptShown?: boolean;
+                githubPromptSupportClicked?: boolean;
+                githubPromptAllowed?: boolean;
+            },
         ): void => (
             dispatch(updateGrowthDataAsync(id, fields))
         ),
