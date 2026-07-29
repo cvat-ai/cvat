@@ -155,7 +155,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             healthIinitialized: false,
             backendIsHealthy: false,
             healthCheckError: null,
-            githubStarPromptVisible: appConfig.GITHUB_STAR_PROMPT_ALWAYS_SHOW,
+            githubStarPromptVisible: false,
         };
     }
 
@@ -359,7 +359,6 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
         }
 
         if (
-            appConfig.GITHUB_STAR_PROMPT &&
             growth.data?.github_prompt_enabled &&
             !prevProps.growth.data?.github_prompt_enabled &&
             !this.state.githubStarPromptVisible
@@ -499,14 +498,14 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
 
     private markGitHubStarPromptShown = (): void => {
         const { growth, updateGrowthData } = this.props;
-        if (!appConfig.GITHUB_STAR_PROMPT_ALWAYS_SHOW && growth.data) {
+        if (growth.data) {
             updateGrowthData(growth.data.id, { githubPromptShown: true });
         }
     };
 
     private supportCVAT = (): void => {
         const { growth, updateGrowthData } = this.props;
-        if (!appConfig.GITHUB_STAR_PROMPT_ALWAYS_SHOW && growth.data) {
+        if (growth.data) {
             updateGrowthData(growth.data.id, { githubPromptSupportClicked: true });
         }
         window.open(appConfig.GITHUB_URL, '_blank', 'noopener,noreferrer');
@@ -629,9 +628,8 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                                     <SelectCSUpdatingSchemeModal />
                                     <SelectOrganizationModal />
                                     <BulkProgress />
-                                    {appConfig.GITHUB_STAR_PROMPT &&
-                                        this.state.githubStarPromptVisible &&
-                                        (appConfig.GITHUB_STAR_PROMPT_ALWAYS_SHOW || growth.data) ? (
+                                    {this.state.githubStarPromptVisible &&
+                                        growth.data ? (
                                             <GitHubStarModal
                                                 open
                                                 onShown={this.markGitHubStarPromptShown}
