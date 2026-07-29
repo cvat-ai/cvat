@@ -261,7 +261,8 @@ export default class RawViewer extends React.PureComponent<Props> {
                 </Form.Item>
                 <Form.Item shouldUpdate noStyle>
                     {({ getFieldError, getFieldValue }) => {
-                        const disabled = getFieldValue('labels') === textLabels || getFieldError('labels').length > 0;
+                        const hasChanges = getFieldValue('labels') !== textLabels;
+                        const hasErrors = getFieldError('labels').length > 0;
 
                         return (
                             <Row justify='start' align='middle'>
@@ -272,7 +273,7 @@ export default class RawViewer extends React.PureComponent<Props> {
                                             style={{ width: '150px' }}
                                             type='primary'
                                             htmlType='submit'
-                                            disabled={disabled}
+                                            disabled={!hasChanges || hasErrors}
                                         >
                                             Save
                                         </Button>
@@ -285,7 +286,7 @@ export default class RawViewer extends React.PureComponent<Props> {
                                             type='primary'
                                             danger
                                             style={{ width: '150px' }}
-                                            disabled={disabled}
+                                            disabled={!hasChanges}
                                             onClick={(): void => {
                                                 if (this.formRef.current) {
                                                     this.formRef.current.resetFields();

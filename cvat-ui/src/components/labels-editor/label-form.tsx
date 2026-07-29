@@ -542,7 +542,7 @@ export default class LabelForm extends React.Component<Props> {
                     className='cvat-label-type-input'
                     disabled={isSkeleton || locked}
                     showSearch={false}
-                    dropdownMatchSelectWidth={false}
+                    popupMatchSelectWidth={false}
                     dropdownStyle={{ minWidth: '150px' }}
                 >
                     {isSkeleton ? (
