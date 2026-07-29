@@ -6,7 +6,7 @@
 import { ChunkQuality } from 'cvat-data';
 import {
     ChunkType, DimensionType, HistoryActions, JobStage,
-    JobState, JobType, MediaType, StorageLocation, TaskMode, TaskStatus,
+    JobState, JobType, MediaType, Source, StorageLocation, TaskMode, TaskStatus,
 } from './enums';
 import { Storage } from './storage';
 
@@ -411,6 +411,7 @@ export class Session {
             from?: number;
             to?: number;
             delTrackKeyframesOnly?: boolean;
+            sources?: Source[];
         }) => Promise<void>;
         save: (
             onUpdate?: (message: string) => void,
