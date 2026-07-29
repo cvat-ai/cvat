@@ -46,6 +46,7 @@ import DetectorRunner, {
     type RegionOfInterest,
 } from 'components/model-runner-modal/detector-runner';
 import RegionOfInterestInputComponent from 'components/model-runner-modal/region-of-interest-input';
+import ColorPicker from 'components/annotation-page/standard-workspace/objects-side-bar/color-picker';
 import LabelSelector from 'components/label-selector/label-selector';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import CVATMarkdown from 'components/common/cvat-markdown';
@@ -174,6 +175,7 @@ interface State {
     interactorRegionOfInterest: RegionOfInterest;
     detectorRegionOfInterest: RegionOfInterest;
     toolsPopoverVisible: boolean;
+    interactorMaskColor: string;
 }
 
 type DetectorResults = Extract<
@@ -284,6 +286,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             interactorRegionOfInterest: null,
             detectorRegionOfInterest: null,
             toolsPopoverVisible: false,
+            interactorMaskColor: '#ff00ff',
         };
 
         this.interaction = {
@@ -779,13 +782,14 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
     private drawIntermediateShapesOnCanvas(): void {
         const { canvasInstance } = this.props;
-        const { convertMasksToPolygons, thresholdValue } = this.state;
+        const { convertMasksToPolygons, thresholdValue, interactorMaskColor } = this.state;
         const shapesToBeDrawn = this.interaction.latestResponse
             .filter(({ confidence }) => typeof confidence !== 'number' || confidence >= thresholdValue)
             .filter(({ approximatedPoints }) => !convertMasksToPolygons || approximatedPoints.length >= 3)
             .map(({ rle, approximatedPoints }) => ({
                 shapeType: convertMasksToPolygons ? ShapeType.POLYGON : ShapeType.MASK,
                 points: convertMasksToPolygons ? approximatedPoints.flat() : rle,
+                color: interactorMaskColor,
             }));
 
         canvasInstance.interact({
@@ -1275,7 +1279,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         } = this.props;
         const {
             activeInteractor, activeLabelID, fetching, allowROI,
-            startInteractingWithBox, convertMasksToPolygons,
+            startInteractingWithBox, convertMasksToPolygons, interactorMaskColor,
         } = this.state;
 
         if (!interactors.length) {
@@ -1352,6 +1356,29 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                             }}
                         />
                         <Text>Convert masks to polygons</Text>
+                    </div>
+                    <div>
+                        <Text>Mask color</Text>
+                        <ColorPicker
+                            value={interactorMaskColor}
+                            resetVisible={false}
+                            placement='right'
+                            onChange={(color: string) => {
+                                this.setState({ interactorMaskColor: color });
+                            }}
+                        >
+                            <Button
+                                shape='circle'
+                                aria-label='Interactor mask color'
+                                style={{
+                                    width: 24,
+                                    height: 24,
+                                    minWidth: 24,
+                                    marginLeft: 8,
+                                    backgroundColor: interactorMaskColor,
+                                }}
+                            />
+                        </ColorPicker>
                     </div>
 
                     {renderStartWithBox && (
