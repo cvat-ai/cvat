@@ -22,12 +22,10 @@ context('Label constructor. Color label. Label name editing', () => {
         blueRgb: '0, 0, 255',
         yellowRgb: '252, 190, 3',
     };
-    const labelNameSuffix = Date.now();
-    const colorRed = `Color red ${labelNameSuffix}`;
-    const colorGreen = `Color green ${labelNameSuffix}`;
-    const colorBlue = `Color blue ${labelNameSuffix}`;
-    const colorYellow = `Color yellow ${labelNameSuffix}`;
-    const caseLabel = `Case ${caseId} ${labelNameSuffix}`;
+    const colorRed = 'Color red';
+    const colorGreen = 'Color green';
+    const colorBlue = 'Color blue';
+    const colorYellow = 'Color yellow';
     const labelAdditionalAttrs = false;
 
     const createRectangleShape2Points = {
@@ -141,13 +139,13 @@ context('Label constructor. Color label. Label name editing', () => {
             cy.goToTaskList();
             cy.openTask(taskName);
             // Adding a label without setting a color
-            cy.addNewLabel({ name: caseLabel });
+            cy.addNewLabel({ name: `Case ${caseId}` });
             cy.get('.cvat-constructor-viewer').should('be.visible');
-            cy.contains('.cvat-constructor-viewer-item', caseLabel)
+            cy.contains('.cvat-constructor-viewer-item', `Case ${caseId}`)
                 .invoke('css', 'background-color')
                 .then(($labelColor) => {
                     // Change the label color and press "Cancel"
-                    cy.contains('.cvat-constructor-viewer-item', caseLabel).find('[data-icon="edit"]').click();
+                    cy.contains('.cvat-constructor-viewer-item', `Case ${caseId}`).find('[data-icon="edit"]').click();
                     cy.get('.cvat-change-task-label-color-badge')
                         .children()
                         .first()
@@ -189,7 +187,7 @@ context('Label constructor. Color label. Label name editing', () => {
                         .should('have.attr', 'style')
                         .and('contain', 'rgb(179, 179, 179)');
                     cy.get('.cvat-label-constructor-updater').contains('button', 'Done').click();
-                    cy.contains('.cvat-constructor-viewer-item', caseLabel)
+                    cy.contains('.cvat-constructor-viewer-item', `Case ${caseId}`)
                         .should('have.attr', 'style')
                         .and('contain', $labelColor);
                 });
