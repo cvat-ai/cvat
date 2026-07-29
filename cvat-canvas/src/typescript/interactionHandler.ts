@@ -29,6 +29,13 @@ type SupportedShapes = SVG.Rect | SVG.Circle;
 
 const DELETE_BUTTON_OFFSET = 8;
 
+function hexToRGB(color: string): [number, number, number] {
+    const result = /^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(color);
+    return result ?
+        [Number.parseInt(result[1], 16), Number.parseInt(result[2], 16), Number.parseInt(result[3], 16)] :
+        [255, 255, 255];
+}
+
 function getTopRightPosition(shape: SVG.Rect | SVG.Circle): { x: number; y: number } {
     if (shape instanceof SVG.Rect) {
         return {
@@ -278,7 +285,7 @@ export class InteractionHandlerImpl implements InteractionHandler {
         this.clearIntermediateShapes();
 
         for (const shape of shapes) {
-            const { points, shapeType } = shape;
+            const { points, shapeType, color = '#ffffff' } = shape;
             if (shapeType === 'polygon') {
                 const isInvalidShape = points.length < 3 * 2;
                 const polygon = this.container
@@ -289,7 +296,7 @@ export class InteractionHandlerImpl implements InteractionHandler {
                         'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
                         stroke: isInvalidShape ? 'red' : 'black',
                     })
-                    .fill({ opacity: this.effectiveShapeOpacity, color: 'white' })
+                    .fill({ opacity: this.effectiveShapeOpacity, color })
                     .addClass('cvat_canvas_interact_intermediate_shape');
                 this.container.node.prepend(polygon.node);
                 this.intermediateShapes.push(polygon);
@@ -298,7 +305,8 @@ export class InteractionHandlerImpl implements InteractionHandler {
                 const top = points[points.length - 3];
                 const right = points[points.length - 2];
                 const bottom = points[points.length - 1];
-                const imageBitmap = RLEToImageData(255, 255, 255, points);
+                const [red, green, blue] = hexToRGB(color);
+                const imageBitmap = RLEToImageData(red, green, blue, points);
                 const image = this.container.image().attr({
                     'color-rendering': 'optimizeQuality',
                     'shape-rendering': 'geometricprecision',
