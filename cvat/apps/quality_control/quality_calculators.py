@@ -32,6 +32,7 @@ from cvat.apps.quality_control.comparison_report import (
     ComparisonReportFrameComparisonSummary,
     ComparisonReportJobStats,
     ComparisonReportParameters,
+    ComparisonReportRequirementCalculation,
     ComparisonReportRequirementSummary,
     ComparisonReportSummary,
     ComparisonReportTaskStats,
@@ -45,6 +46,7 @@ from cvat.apps.quality_control.quality_handlers import (
     build_requirements_summary,
     merge_frame_summaries,
     resolve_effective_requirements,
+    select_requirement_calculation,
 )
 from cvat.utils import django_database as db_utils
 
@@ -257,6 +259,7 @@ class TaskQualityCalculator:
         task_conflicts: list[AnnotationConflict] = []
         task_group_frame_results: dict[str, dict[int, ComparisonReportFrameComparisonSummary]] = {}
         task_group_parameters: dict[str, dict] = {}
+        task_group_calculations: dict[str, ComparisonReportRequirementCalculation] = {}
         for r in job_reports.values():
             task_validated_frames.update(r.comparison_summary.frames)
             task_validation_frames_count += r.comparison_summary.validation_frames
@@ -265,6 +268,10 @@ class TaskQualityCalculator:
 
             for group_name, group_report in (r.groups or {}).items():
                 task_group_parameters.setdefault(group_name, deepcopy(group_report.parameters))
+                task_group_calculations[group_name] = select_requirement_calculation(
+                    task_group_calculations.get(group_name),
+                    group_report.comparison_summary.calculation,
+                )
                 group_frame_results = task_group_frame_results.setdefault(group_name, {})
 
                 for frame_id, group_frame_result in (group_report.frame_results or {}).items():
@@ -283,6 +290,7 @@ class TaskQualityCalculator:
             group_name: build_requirement_report(
                 requirement=task_group_parameters[group_name],
                 frame_results=group_frame_results,
+                calculation=task_group_calculations[group_name],
             )
             for group_name, group_frame_results in task_group_frame_results.items()
         }
@@ -594,6 +602,7 @@ class ProjectQualityCalculator:
         project_group_parameters: dict[str, dict] = {}
         project_group_annotations: dict[str, ComparisonReportAnnotationsSummary] = {}
         project_group_conflicts: dict[str, list[AnnotationConflict]] = {}
+        project_group_calculations: dict[str, ComparisonReportRequirementCalculation] = {}
         for task_id, r in task_reports.items():
             if task_id not in included_tasks:
                 continue
@@ -605,6 +614,10 @@ class ProjectQualityCalculator:
 
             for group_name, group_report in (r.groups or {}).items():
                 project_group_parameters.setdefault(group_name, deepcopy(group_report.parameters))
+                project_group_calculations[group_name] = select_requirement_calculation(
+                    project_group_calculations.get(group_name),
+                    group_report.comparison_summary.calculation,
+                )
 
                 # NOTE @grigorii: Currently, project reports aggregate only actually observed
                 # annotations, so every task matrix has weight 1. Keep the extrapolation formula
@@ -633,6 +646,7 @@ class ProjectQualityCalculator:
                     requirement=parameters,
                     annotations=project_group_annotations[group_name],
                     conflicts=group_conflicts,
+                    calculation=project_group_calculations[group_name],
                 ),
                 frame_results=None,
             )

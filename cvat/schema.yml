@@ -11123,12 +11123,15 @@ components:
           nullable: true
         score_components:
           $ref: '#/components/schemas/QualityReportScoreComponents'
+        not_computed:
+          type: boolean
         threshold:
           type: number
           format: double
       required:
       - metric
       - name
+      - not_computed
       - requirement_id
       - score
       - score_components
@@ -11142,6 +11145,8 @@ components:
           type: integer
         completed:
           type: integer
+        not_computed:
+          type: integer
         items:
           type: array
           items:
@@ -11150,6 +11155,7 @@ components:
       - completed
       - enabled
       - items
+      - not_computed
       - total
     QualityReportScoreComponents:
       type: object

@@ -1842,18 +1842,37 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
 
         group_summary = report_data["groups"][requirement_name]["comparison_summary"]
         assert "annotations" not in group_summary
-        assert group_summary["score"] == 1.0
+        assert group_summary["score"] is None
         assert group_summary["score_components"] == {
             "valid_count": 1,
             "missing_count": 0,
             "extra_count": 0,
         }
+        expected_calculation = {
+            "status": "not_computed",
+            "reason": "filter_no_matches",
+            "annotations": {
+                "candidate_count": 1,
+                "selected_count": 0,
+                "missing_attributes": [],
+            },
+            "ground_truth": {
+                "candidate_count": 1,
+                "selected_count": 0,
+                "missing_attributes": [],
+            },
+        }
+        assert group_summary["calculation"] == expected_calculation
         requirement_summary_item = next(
             item
             for item in report_data["comparison_summary"]["requirements"]["items"]
             if item["name"] == requirement_name
         )
-        assert requirement_summary_item["score"] == 1.0
+        assert requirement_summary_item["score"] is None
+        assert requirement_summary_item["not_computed"] is True
+        assert "calculation" not in requirement_summary_item
+        assert report_data["comparison_summary"]["requirements"]["completed"] == 1
+        assert report_data["comparison_summary"]["requirements"]["not_computed"] == 1
         assert "annotations" not in report_data["comparison_summary"]
 
     def test_task_report_data_applies_attribute_comparison_rules(self, admin_user):
@@ -2145,6 +2164,7 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
             "total": len(settings["requirements"]) + 2,
             "enabled": 2,
             "completed": 2,
+            "not_computed": 0,
             "items": [
                 {
                     "requirement_id": parent_requirement["id"],
@@ -2156,6 +2176,7 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
                         "missing_count": 0,
                         "extra_count": 0,
                     },
+                    "not_computed": False,
                     "threshold": 1.0,
                 },
                 {
@@ -2168,6 +2189,7 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
                         "missing_count": 0,
                         "extra_count": 0,
                     },
+                    "not_computed": False,
                     "threshold": 1.0,
                 },
             ],
@@ -2285,6 +2307,7 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
             "total": expected_requirements_total,
             "enabled": 1,
             "completed": 1,
+            "not_computed": 0,
             "items": [
                 {
                     "requirement_id": enabled_requirement_id,
@@ -2296,6 +2319,7 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
                         "missing_count": 0,
                         "extra_count": 0,
                     },
+                    "not_computed": False,
                     "threshold": 0.75,
                 }
             ],
@@ -2719,6 +2743,7 @@ class TestProjectQualityRequirementInheritance(_QualityRequirementsTestBase):
             "total": len(source_settings["requirements"]) + 1,
             "enabled": 1,
             "completed": 1,
+            "not_computed": 0,
             "items": [
                 {
                     "requirement_id": expected_requirement["id"],
@@ -2730,6 +2755,7 @@ class TestProjectQualityRequirementInheritance(_QualityRequirementsTestBase):
                         "missing_count": 0,
                         "extra_count": 0,
                     },
+                    "not_computed": False,
                     "threshold": 1.0,
                 }
             ],

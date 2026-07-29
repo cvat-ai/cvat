@@ -103,6 +103,7 @@ class QualityReportRequirementSummaryItemSerializer(serializers.Serializer):
     metric = serializers.CharField()
     score = serializers.FloatField(allow_null=True)
     score_components = QualityReportScoreComponentsSerializer()
+    not_computed = serializers.BooleanField()
     threshold = serializers.FloatField()
 
 
@@ -110,6 +111,7 @@ class QualityReportRequirementsSummarySerializer(serializers.Serializer):
     total = serializers.IntegerField()
     enabled = serializers.IntegerField()
     completed = serializers.IntegerField()
+    not_computed = serializers.IntegerField()
     items = QualityReportRequirementSummaryItemSerializer(many=True)
 
 
