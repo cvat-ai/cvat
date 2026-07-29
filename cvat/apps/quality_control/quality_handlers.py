@@ -372,16 +372,8 @@ def _make_requirement_calculation(
         reason = "no_annotations"
     elif not annotations.selected_count and not ground_truth.selected_count:
         status = "not_computed"
-        reason = (
-            "required_attributes_missing"
-            if common_missing_attributes
-            else "filter_no_matches"
-        )
-    elif (
-        annotations.selected_count
-        and ground_truth.selected_count
-        and common_missing_attributes
-    ):
+        reason = "required_attributes_missing" if common_missing_attributes else "filter_no_matches"
+    elif annotations.selected_count and ground_truth.selected_count and common_missing_attributes:
         status = "not_computed"
         reason = "required_attributes_missing"
     else:
@@ -450,11 +442,7 @@ def build_requirement_comparison_summary(
             else make_empty_requirement_calculation()
         )
 
-    score = (
-        None
-        if calculation.status == "not_computed"
-        else getattr(annotations, metric, None)
-    )
+    score = None if calculation.status == "not_computed" else getattr(annotations, metric, None)
 
     return ComparisonReportRequirementComparisonSummary(
         conflict_count=len(conflicts),
@@ -652,10 +640,7 @@ class RequirementHandler(ABC):
                 if int(spec_id) in required_spec_ids
             )
 
-        return {
-            names_by_spec_id.get(spec_id, f"#{spec_id}")
-            for spec_id in required_spec_ids
-        }
+        return {names_by_spec_id.get(spec_id, f"#{spec_id}") for spec_id in required_spec_ids}
 
     @staticmethod
     def _get_available_attribute_names(
@@ -677,9 +662,7 @@ class RequirementHandler(ABC):
     ) -> ComparisonReportRequirementCalculationSide:
         selected_attributes = self._get_available_attribute_names(selected)
         missing_attributes = (
-            required_comparison_attributes - selected_attributes
-            if selected
-            else set()
+            required_comparison_attributes - selected_attributes if selected else set()
         )
 
         return ComparisonReportRequirementCalculationSide(
@@ -1414,8 +1397,7 @@ class DatasetQualityEstimator:
                 requirement=requirement,
                 frame_results=self._results.get(requirement.name, {}),
                 calculation=(
-                    self._calculations.get(requirement.name)
-                    or make_empty_requirement_calculation()
+                    self._calculations.get(requirement.name) or make_empty_requirement_calculation()
                 ),
             )
             for requirement in self._requirements

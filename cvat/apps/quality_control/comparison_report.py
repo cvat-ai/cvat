@@ -711,9 +711,7 @@ class ComparisonReportRequirementCalculationSide(ReportNode):
     missing_attributes: list[str] = field(factory=list)
 
     @classmethod
-    def from_dict(
-        cls, d: dict[str, Any]
-    ) -> ComparisonReportRequirementCalculationSide:
+    def from_dict(cls, d: dict[str, Any]) -> ComparisonReportRequirementCalculationSide:
         return cls(
             candidate_count=d.get("candidate_count", 0),
             selected_count=d.get("selected_count", 0),
@@ -800,8 +798,7 @@ class ComparisonReportRequirementsSummary(ReportNode):
     @classmethod
     def from_dict(cls, d: dict[str, Any]) -> ComparisonReportRequirementsSummary:
         items = [
-            ComparisonReportRequirementSummaryItem.from_dict(item)
-            for item in d.get("items", [])
+            ComparisonReportRequirementSummaryItem.from_dict(item) for item in d.get("items", [])
         ]
         return cls(
             total=d.get("total", 0),
@@ -903,9 +900,7 @@ class ComparisonReportRequirementComparisonSummary(ReportNode):
 
     @classmethod
     def from_dict(cls, d: dict):
-        score_components = ComparisonReportScoreComponents.from_dict(
-            d.get("score_components", {})
-        )
+        score_components = ComparisonReportScoreComponents.from_dict(d.get("score_components", {}))
         return cls(
             conflict_count=d["conflict_count"],
             error_count=d["error_count"],
