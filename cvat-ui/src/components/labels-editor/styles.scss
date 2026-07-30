@@ -223,6 +223,10 @@ textarea.ant-input.cvat-raw-labels-viewer {
     }
 }
 
+.cvat-label-type-input {
+    min-width: $grid-unit-size * 11;
+}
+
 .cvat-label-constructor-pick-from-model {
     display: block;
     padding-top: $grid-unit-size;
