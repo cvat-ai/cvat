@@ -36,6 +36,7 @@ import { getRequestsAsync } from 'actions/requests-async-actions';
 import { getServerAPISchemaAsync } from 'actions/server-actions';
 import { getGrowthDataAsync, updateGrowthDataAsync } from 'actions/growth-actions';
 import { navigationActions } from 'actions/navigation-actions';
+import { UserGrowthData } from 'cvat-core-wrapper';
 import {
     CombinedState, GrowthState, NotificationsState, PluginsState,
 } from './reducers';
@@ -98,8 +99,12 @@ interface DispatchToProps {
     loadServerAPISchema: () => void;
     loadGrowthData: () => void;
     updateGrowthData: (
-        id: number,
-        fields: { githubPromptShown?: boolean; githubPromptSupportClicked?: boolean },
+        growthData: UserGrowthData,
+        fields: {
+            githubPromptShown?: boolean;
+            githubPromptSupportClicked?: boolean;
+            githubPromptAllowed?: boolean;
+        },
     ) => void;
     onChangeLocation: (from: string, to: string) => void;
 }
@@ -155,14 +160,14 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         loadServerAPISchema: (): void => dispatch(getServerAPISchemaAsync()),
         loadGrowthData: (): void => dispatch(getGrowthDataAsync()),
         updateGrowthData: (
-            id: number,
+            growthData: UserGrowthData,
             fields: {
                 githubPromptShown?: boolean;
                 githubPromptSupportClicked?: boolean;
                 githubPromptAllowed?: boolean;
             },
         ): void => (
-            dispatch(updateGrowthDataAsync(id, fields))
+            dispatch(updateGrowthDataAsync(growthData, fields))
         ),
         onChangeLocation: (from: string, to: string): void => dispatch(navigationActions.changeLocation(from, to)),
     };

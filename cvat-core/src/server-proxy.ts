@@ -1631,11 +1631,12 @@ async function updateUser(id: number, userData: Partial<SerializedUser>): Promis
     return response.data;
 }
 
-async function getGrowthData(): Promise<SerializedUserGrowthData[]> {
+async function getGrowthData(userId: number): Promise<SerializedUserGrowthData[]> {
     const { backendAPI } = config;
-
     try {
-        const response = await Axios.get(`${backendAPI}/growth`);
+        const response = await Axios.get(`${backendAPI}/growth`, {
+            params: { user_id: userId },
+        });
         return response.data.results;
     } catch (errorData) {
         throw generateError(errorData);

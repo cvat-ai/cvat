@@ -62,7 +62,7 @@ import InvitationsPage from 'components/invitations-page/invitations-page';
 import RequestsPage from 'components/requests-page/requests-page';
 
 import AnnotationPageContainer from 'containers/annotation-page/annotation-page';
-import { Organization, getCore } from 'cvat-core-wrapper';
+import { Organization, getCore, UserGrowthData } from 'cvat-core-wrapper';
 import {
     ErrorState, GrowthState, NotificationState, NotificationsState, PluginsState,
 } from 'reducers';
@@ -105,7 +105,7 @@ interface CVATAppProps {
     loadServerAPISchema: () => void;
     loadGrowthData: () => void;
     updateGrowthData: (
-        id: number,
+        growthData: UserGrowthData,
         fields: {
             githubPromptShown?: boolean;
             githubPromptSupportClicked?: boolean;
@@ -353,19 +353,6 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             }
         }
 
-        if (user && user.isVerified && !growth.initialized && !growth.fetching) {
-            loadGrowthData();
-            return;
-        }
-
-        if (
-            growth.data?.github_prompt_enabled &&
-            !prevProps.growth.data?.github_prompt_enabled &&
-            !this.state.githubStarPromptVisible
-        ) {
-            this.setState({ githubStarPromptVisible: true });
-        }
-
         if (!userAgreementsInitialized && !userAgreementsFetching) {
             loadUserAgreements();
             return;
@@ -402,6 +389,19 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
 
         if (!invitationsInitialized && !invitationsFetching && history.location.pathname !== '/invitations') {
             initInvitations();
+        }
+
+        if (user && user.isVerified && !growth.initialized && !growth.fetching) {
+            loadGrowthData();
+            return;
+        }
+
+        if (
+            growth.data?.githubPromptEnabled &&
+            !prevProps.growth.data?.githubPromptEnabled &&
+            !this.state.githubStarPromptVisible
+        ) {
+            this.setState({ githubStarPromptVisible: true });
         }
 
         if (!pluginsInitialized && !pluginsFetching) {
@@ -499,14 +499,14 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
     private markGitHubStarPromptShown = (): void => {
         const { growth, updateGrowthData } = this.props;
         if (growth.data) {
-            updateGrowthData(growth.data.id, { githubPromptShown: true });
+            updateGrowthData(growth.data, { githubPromptShown: true });
         }
     };
 
     private supportCVAT = (): void => {
         const { growth, updateGrowthData } = this.props;
         if (growth.data) {
-            updateGrowthData(growth.data.id, { githubPromptSupportClicked: true });
+            updateGrowthData(growth.data, { githubPromptSupportClicked: true });
         }
         window.open(appConfig.GITHUB_URL, '_blank', 'noopener,noreferrer');
     };

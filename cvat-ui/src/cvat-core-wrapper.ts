@@ -17,7 +17,7 @@ import {
 } from 'cvat-core/src/labels';
 import {
     SerializedAttribute, SerializedLabel, SerializedAPISchema,
-    OrganizationMembersFilter, AnalyticsEventsFilter, SerializedApiToken, SerializedUserGrowthData,
+    OrganizationMembersFilter, AnalyticsEventsFilter, SerializedApiToken,
     ApiTokensFilter, SerializedInterval,
 } from 'cvat-core/src/server-response-types';
 import {
@@ -42,6 +42,7 @@ import { Storage, StorageData } from 'cvat-core/src/storage';
 import Issue from 'cvat-core/src/issue';
 import Comment from 'cvat-core/src/comment';
 import User from 'cvat-core/src/user';
+import UserGrowthData from 'cvat-core/src/growth';
 import Organization, { Membership, Invitation } from 'cvat-core/src/organization';
 import AnnotationGuide from 'cvat-core/src/guide';
 import { JobValidationLayout, TaskValidationLayout } from 'cvat-core/src/validation-layout';
@@ -95,6 +96,7 @@ export {
     Webhook,
     Issue,
     User,
+    UserGrowthData,
     CloudStorage,
     Organization,
     Membership,
@@ -143,7 +145,6 @@ export type {
     SerializedAttribute,
     SerializedLabel,
     SerializedApiToken,
-    SerializedUserGrowthData,
     StorageData,
     APIWrapperEnterOptions,
     QualitySummary,

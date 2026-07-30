@@ -9,15 +9,16 @@ from rest_framework.permissions import IsAuthenticated
 from cvat.apps.engine.mixins import PartialUpdateModelMixin
 
 from .models import UserGrowthData
+from .permissions import UserGrowthDataPermission
 from .serializers import UserGrowthDataSerializer
 
 
 @extend_schema(tags=["growth"])
 @extend_schema_view(
-    list=extend_schema(summary="List growth data for the current user"),
-    retrieve=extend_schema(summary="Get growth data for the current user"),
+    list=extend_schema(summary="List growth data"),
+    retrieve=extend_schema(summary="Get growth data"),
     partial_update=extend_schema(
-        summary="Update growth data for the current user",
+        summary="Update growth data",
         request=UserGrowthDataSerializer(partial=True),
     ),
 )
@@ -30,9 +31,10 @@ class UserGrowthDataViewSet(
     serializer_class = UserGrowthDataSerializer
     permission_classes = (IsAuthenticated,)
     iam_supports_organization_params = False
+    iam_permission_class = UserGrowthDataPermission
     search_fields = ()
-    simple_filters = ()
-    filter_fields = ()
+    simple_filters = ("user_id",)
+    filter_fields = (*simple_filters, "id")
     ordering_fields = ("id",)
     ordering = "id"
 
@@ -41,4 +43,10 @@ class UserGrowthDataViewSet(
             user=self.request.user,
             defaults={"github_prompt_shown_at": self.request.user.date_joined},
         )
-        return UserGrowthData.objects.filter(user=self.request.user).select_related("user")
+        queryset = UserGrowthData.objects.select_related("user")
+
+        if self.action == "list":
+            permission = UserGrowthDataPermission.create_scope_list(self.request)
+            queryset = permission.filter(queryset)
+
+        return queryset

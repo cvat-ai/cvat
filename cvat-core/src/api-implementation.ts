@@ -23,6 +23,7 @@ import {
 } from './common';
 
 import User from './user';
+import UserGrowthData from './growth';
 import AnnotationFormats from './annotation-formats';
 import ApiToken from './api-token';
 import { Task, Job } from './session';
@@ -33,9 +34,8 @@ import Webhook from './webhook';
 import { ArgumentError } from './exceptions';
 import {
     AnalyticsEventsFilter, QualityConflictsFilter,
-    SerializedAsset, ConsensusSettingsFilter, SerializedOrganization, SerializedUserGrowthData,
+    SerializedAsset, ConsensusSettingsFilter, SerializedOrganization,
 } from './server-response-types';
-import { UserGrowthDataModifiableFields } from './server-request-types';
 import QualityReport from './quality-report';
 import AboutData from './about';
 import QualityConflict, { ConflictSeverity } from './quality-conflict';
@@ -187,16 +187,9 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
         return users;
     });
 
-    implementationMixin(cvat.growth.get, async (): Promise<SerializedUserGrowthData[]> => (
-        serverProxy.growth.get()
-    ));
-
-    implementationMixin(cvat.growth.update, async (
-        id: number,
-        fields: UserGrowthDataModifiableFields,
-    ): Promise<SerializedUserGrowthData> => {
-        const data = fieldsToSnakeCase(fields);
-        return serverProxy.growth.update(id, data);
+    implementationMixin(cvat.growth.get, async (userId: number): Promise<UserGrowthData[]> => {
+        const result = await serverProxy.growth.get(userId);
+        return result.map((growthData) => new UserGrowthData(growthData));
     });
 
     implementationMixin(cvat.apiTokens.get, async (filter) => {

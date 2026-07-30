@@ -18,4 +18,8 @@ class GrowthConfig(AppConfig):
             if key.isupper() and not hasattr(settings, key):
                 setattr(settings, key, getattr(default_settings, key))
 
+        from cvat.apps.iam.permissions import load_app_iam_rules
+
+        load_app_iam_rules(self)
+
         from . import signals  # pylint: disable=unused-import

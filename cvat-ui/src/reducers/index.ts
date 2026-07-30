@@ -13,8 +13,7 @@ import {
     QualityConflict, FramesMetaData, RQStatus, Event, Invitation, SerializedAPISchema,
     Request, JobValidationLayout, QualitySettings, TaskValidationLayout, ObjectState,
     ConsensusSettings, AboutData, ShapeType, ObjectType, ApiToken, AudioIntervalState,
-    Membership, AnnotationFormats, CloudStorage,
-    SerializedUserGrowthData,
+    Membership, AnnotationFormats, CloudStorage, UserGrowthData,
 } from 'cvat-core-wrapper';
 
 import type { IntelligentScissors, OpenCVTracker } from 'utils/opencv-wrapper/opencv-wrapper';
@@ -63,7 +62,7 @@ export interface AuthState {
 }
 
 export interface GrowthState {
-    data: SerializedUserGrowthData | null;
+    data: UserGrowthData | null;
     fetching: boolean;
     initialized: boolean;
 }

@@ -17,10 +17,10 @@ function NotificationsCard(): JSX.Element {
     const [githubPromptAllowed, setGitHubPromptAllowed] = useState(false);
 
     useEffect(() => {
-        setGitHubPromptAllowed(data?.github_prompt_allowed ?? false);
-    }, [data?.github_prompt_allowed]);
+        setGitHubPromptAllowed(data?.githubPromptAllowed ?? false);
+    }, [data?.githubPromptAllowed]);
 
-    const isChanged = !!data && githubPromptAllowed !== data.github_prompt_allowed;
+    const isChanged = !!data && githubPromptAllowed !== data.githubPromptAllowed;
 
     return (
         <Card title='Notifications' className='cvat-profile-notifications-card'>
@@ -45,7 +45,7 @@ function NotificationsCard(): JSX.Element {
                     loading={fetching}
                     onClick={() => {
                         if (data) {
-                            dispatch(updateGrowthDataAsync(data.id, { githubPromptAllowed }));
+                            dispatch(updateGrowthDataAsync(data, { githubPromptAllowed }));
                         }
                     }}
                 >

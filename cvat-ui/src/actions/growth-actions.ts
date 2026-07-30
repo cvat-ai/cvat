@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { getCore, SerializedUserGrowthData, UserGrowthDataModifiableFields } from 'cvat-core-wrapper';
+import { getCore, UserGrowthData, UserGrowthDataModifiableFields } from 'cvat-core-wrapper';
 import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
 
 const core = getCore();
@@ -18,12 +18,12 @@ export enum GrowthActionTypes {
 
 const growthActions = {
     getGrowthData: () => createAction(GrowthActionTypes.GET_GROWTH_DATA),
-    getGrowthDataSuccess: (growthData: SerializedUserGrowthData | null) => (
+    getGrowthDataSuccess: (growthData: UserGrowthData | null) => (
         createAction(GrowthActionTypes.GET_GROWTH_DATA_SUCCESS, { growthData })
     ),
     getGrowthDataFailed: (error: unknown) => createAction(GrowthActionTypes.GET_GROWTH_DATA_FAILED, { error }),
     updateGrowthData: () => createAction(GrowthActionTypes.UPDATE_GROWTH_DATA),
-    updateGrowthDataSuccess: (growthData: SerializedUserGrowthData) => (
+    updateGrowthDataSuccess: (growthData: UserGrowthData) => (
         createAction(GrowthActionTypes.UPDATE_GROWTH_DATA_SUCCESS, { growthData })
     ),
     updateGrowthDataFailed: (error: unknown) => createAction(GrowthActionTypes.UPDATE_GROWTH_DATA_FAILED, { error }),
@@ -31,11 +31,16 @@ const growthActions = {
 
 export type GrowthActions = ActionUnion<typeof growthActions>;
 
-export const getGrowthDataAsync = (): ThunkAction => async (dispatch): Promise<void> => {
+export const getGrowthDataAsync = (): ThunkAction => async (dispatch, getState): Promise<void> => {
+    const { user } = getState().auth;
+    if (!user) {
+        return;
+    }
+
     dispatch(growthActions.getGrowthData());
 
     try {
-        const [growthData = null] = await core.growth.get();
+        const [growthData = null] = await core.growth.get(user.id);
         dispatch(growthActions.getGrowthDataSuccess(growthData));
     } catch (error) {
         dispatch(growthActions.getGrowthDataFailed(error));
@@ -43,14 +48,14 @@ export const getGrowthDataAsync = (): ThunkAction => async (dispatch): Promise<v
 };
 
 export const updateGrowthDataAsync = (
-    id: number,
+    growthData: UserGrowthData,
     fields: UserGrowthDataModifiableFields,
 ): ThunkAction => async (dispatch): Promise<void> => {
     dispatch(growthActions.updateGrowthData());
 
     try {
-        const growthData = await core.growth.update(id, fields);
-        dispatch(growthActions.updateGrowthDataSuccess(growthData));
+        const updatedGrowthData = await growthData.save(fields);
+        dispatch(growthActions.updateGrowthDataSuccess(updatedGrowthData));
     } catch (error) {
         dispatch(growthActions.updateGrowthDataFailed(error));
     }

@@ -4,9 +4,8 @@
 
 import {
     AnalyticsEventsFilter, QualityConflictsFilter, QualityReportsFilter,
-    QualitySettingsFilter, ConsensusSettingsFilter, ApiTokensFilter, SerializedUserGrowthData,
+    QualitySettingsFilter, ConsensusSettingsFilter, ApiTokensFilter,
 } from './server-response-types';
-import { UserGrowthDataModifiableFields } from './server-request-types';
 import PluginRegistry from './plugins';
 import serverProxy from './server-proxy';
 import lambdaManager from './lambda-manager';
@@ -37,6 +36,7 @@ import QualitySettings from './quality-settings';
 import ConsensusSettings from './consensus-settings';
 import AnnotationGuide from './guide';
 import ApiToken from './api-token';
+import UserGrowthData from './growth';
 import { JobValidationLayout, TaskValidationLayout } from './validation-layout';
 import { Request } from './request';
 import AboutData from './about';
@@ -101,11 +101,7 @@ export default interface CVATCore {
         get: any;
     };
     growth: {
-        get: () => Promise<SerializedUserGrowthData[]>;
-        update: (
-            id: number,
-            fields: UserGrowthDataModifiableFields,
-        ) => Promise<SerializedUserGrowthData>;
+        get: (userId: number) => Promise<UserGrowthData[]>;
     };
     apiTokens: {
         get: (filter: ApiTokensFilter) => Promise<PaginatedResource<ApiToken>>;
