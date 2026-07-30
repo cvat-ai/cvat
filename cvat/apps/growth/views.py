@@ -4,7 +4,6 @@
 
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import mixins, viewsets
-from rest_framework.permissions import IsAuthenticated
 
 from cvat.apps.engine.mixins import PartialUpdateModelMixin
 
@@ -29,7 +28,6 @@ class UserGrowthDataViewSet(
     PartialUpdateModelMixin,
 ):
     serializer_class = UserGrowthDataSerializer
-    permission_classes = (IsAuthenticated,)
     iam_supports_organization_params = False
     iam_permission_class = UserGrowthDataPermission
     search_fields = ()

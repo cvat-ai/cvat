@@ -2077,6 +2077,7 @@
       "deleted_frames": "[]",
       "frame_filter": "",
       "image_quality": 70,
+      "local_storage_backing_cs": null,
       "original_chunk_type": "imageset",
       "size": 23,
       "sorting_method": "lexicographical",
@@ -2097,6 +2098,7 @@
       "deleted_frames": "[]",
       "frame_filter": "",
       "image_quality": 70,
+      "local_storage_backing_cs": null,
       "original_chunk_type": "video",
       "size": 25,
       "sorting_method": "lexicographical",
@@ -2117,6 +2119,7 @@
       "deleted_frames": "[]",
       "frame_filter": "",
       "image_quality": 70,
+      "local_storage_backing_cs": null,
       "original_chunk_type": "imageset",
       "size": 1,
       "sorting_method": "lexicographical",
@@ -2137,6 +2140,7 @@
       "deleted_frames": "[]",
       "frame_filter": "",
       "image_quality": 70,
+      "local_storage_backing_cs": null,
       "original_chunk_type": "imageset",
       "size": 11,
       "sorting_method": "lexicographical",
@@ -2157,6 +2161,7 @@
       "deleted_frames": "[]",
       "frame_filter": "",
       "image_quality": 70,
+      "local_storage_backing_cs": null,
       "original_chunk_type": "imageset",
       "size": 14,
       "sorting_method": "lexicographical",
@@ -2177,6 +2182,7 @@
       "deleted_frames": "[]",
       "frame_filter": "",
       "image_quality": 70,
+      "local_storage_backing_cs": null,
       "original_chunk_type": "imageset",
       "size": 20,
       "sorting_method": "lexicographical",
@@ -2197,6 +2203,7 @@
       "deleted_frames": "[]",
       "frame_filter": "",
       "image_quality": 70,
+      "local_storage_backing_cs": null,
       "original_chunk_type": "imageset",
       "size": 11,
       "sorting_method": "lexicographical",
@@ -2217,6 +2224,7 @@
       "deleted_frames": "[]",
       "frame_filter": "",
       "image_quality": 70,
+      "local_storage_backing_cs": null,
       "original_chunk_type": "imageset",
       "size": 5,
       "sorting_method": "lexicographical",
@@ -2237,6 +2245,7 @@
       "deleted_frames": "[]",
       "frame_filter": "",
       "image_quality": 70,
+      "local_storage_backing_cs": null,
       "original_chunk_type": "imageset",
       "size": 8,
       "sorting_method": "lexicographical",
@@ -2257,6 +2266,7 @@
       "deleted_frames": "[]",
       "frame_filter": "",
       "image_quality": 70,
+      "local_storage_backing_cs": null,
       "original_chunk_type": "video",
       "size": 25,
       "sorting_method": "lexicographical",
@@ -2277,6 +2287,7 @@
       "deleted_frames": "[]",
       "frame_filter": "",
       "image_quality": 70,
+      "local_storage_backing_cs": null,
       "original_chunk_type": "imageset",
       "size": 5,
       "sorting_method": "lexicographical",
@@ -2297,6 +2308,7 @@
       "deleted_frames": "[]",
       "frame_filter": "",
       "image_quality": 70,
+      "local_storage_backing_cs": null,
       "original_chunk_type": "imageset",
       "size": 2,
       "sorting_method": "lexicographical",
@@ -2317,6 +2329,7 @@
       "deleted_frames": "[]",
       "frame_filter": "",
       "image_quality": 70,
+      "local_storage_backing_cs": null,
       "original_chunk_type": "imageset",
       "size": 2,
       "sorting_method": "lexicographical",
@@ -2337,6 +2350,7 @@
       "deleted_frames": "[]",
       "frame_filter": "",
       "image_quality": 70,
+      "local_storage_backing_cs": null,
       "original_chunk_type": "imageset",
       "size": 2,
       "sorting_method": "lexicographical",
@@ -2357,6 +2371,7 @@
       "deleted_frames": "[]",
       "frame_filter": "",
       "image_quality": 70,
+      "local_storage_backing_cs": null,
       "original_chunk_type": "imageset",
       "size": 10,
       "sorting_method": "lexicographical",
@@ -2377,6 +2392,7 @@
       "deleted_frames": "[]",
       "frame_filter": "",
       "image_quality": 70,
+      "local_storage_backing_cs": null,
       "original_chunk_type": "imageset",
       "size": 11,
       "sorting_method": "lexicographical",
@@ -2397,6 +2413,7 @@
       "deleted_frames": "[]",
       "frame_filter": "",
       "image_quality": 70,
+      "local_storage_backing_cs": null,
       "original_chunk_type": "imageset",
       "size": 11,
       "sorting_method": "lexicographical",
@@ -2417,6 +2434,7 @@
       "deleted_frames": "[]",
       "frame_filter": "",
       "image_quality": 70,
+      "local_storage_backing_cs": null,
       "original_chunk_type": "imageset",
       "size": 1,
       "sorting_method": "lexicographical",
@@ -2437,6 +2455,7 @@
       "deleted_frames": "[]",
       "frame_filter": "",
       "image_quality": 70,
+      "local_storage_backing_cs": null,
       "original_chunk_type": "imageset",
       "size": 1,
       "sorting_method": "lexicographical",
@@ -2457,6 +2476,7 @@
       "deleted_frames": "[]",
       "frame_filter": "",
       "image_quality": 70,
+      "local_storage_backing_cs": null,
       "original_chunk_type": "imageset",
       "size": 1,
       "sorting_method": "lexicographical",
@@ -2477,6 +2497,7 @@
       "deleted_frames": "[]",
       "frame_filter": "",
       "image_quality": 70,
+      "local_storage_backing_cs": null,
       "original_chunk_type": "imageset",
       "size": 1,
       "sorting_method": "lexicographical",
@@ -2497,6 +2518,7 @@
       "deleted_frames": "[]",
       "frame_filter": "",
       "image_quality": 70,
+      "local_storage_backing_cs": null,
       "original_chunk_type": "imageset",
       "size": 1,
       "sorting_method": "lexicographical",
@@ -2517,6 +2539,7 @@
       "deleted_frames": "[]",
       "frame_filter": "",
       "image_quality": 70,
+      "local_storage_backing_cs": null,
       "original_chunk_type": "imageset",
       "size": 29,
       "sorting_method": "lexicographical",
@@ -2537,6 +2560,7 @@
       "deleted_frames": "[]",
       "frame_filter": "",
       "image_quality": 70,
+      "local_storage_backing_cs": null,
       "original_chunk_type": "imageset",
       "size": 10,
       "sorting_method": "random",
@@ -2557,6 +2581,7 @@
       "deleted_frames": "[]",
       "frame_filter": "",
       "image_quality": 70,
+      "local_storage_backing_cs": null,
       "original_chunk_type": "imageset",
       "size": 3,
       "sorting_method": "lexicographical",
@@ -2577,6 +2602,7 @@
       "deleted_frames": "[]",
       "frame_filter": "",
       "image_quality": 70,
+      "local_storage_backing_cs": null,
       "original_chunk_type": "imageset",
       "size": 4,
       "sorting_method": "lexicographical",
@@ -2597,6 +2623,7 @@
       "deleted_frames": "[]",
       "frame_filter": "",
       "image_quality": 70,
+      "local_storage_backing_cs": null,
       "original_chunk_type": "imageset",
       "size": 10,
       "sorting_method": "lexicographical",
@@ -2617,6 +2644,7 @@
       "deleted_frames": "10",
       "frame_filter": "step=5",
       "image_quality": 70,
+      "local_storage_backing_cs": null,
       "original_chunk_type": "video",
       "size": 20,
       "sorting_method": "lexicographical",
@@ -2637,6 +2665,7 @@
       "deleted_frames": "[]",
       "frame_filter": "",
       "image_quality": 70,
+      "local_storage_backing_cs": null,
       "original_chunk_type": "imageset",
       "size": 2,
       "sorting_method": "lexicographical",
@@ -2657,6 +2686,7 @@
       "deleted_frames": "[]",
       "frame_filter": "",
       "image_quality": 70,
+      "local_storage_backing_cs": null,
       "original_chunk_type": "audio_mp3",
       "size": 6914,
       "sorting_method": "lexicographical",
@@ -17411,6 +17441,258 @@
       "height": 720,
       "path": "random_video_10s.mp4",
       "width": 1280
+    }
+  },
+  {
+    "model": "growth.usergrowthdata",
+    "pk": 1,
+    "fields": {
+      "github_prompt_allowed": true,
+      "github_prompt_shown_at": "2022-02-24T20:45:19Z",
+      "github_prompt_support_clicked": false,
+      "user": [
+        "user6"
+      ]
+    }
+  },
+  {
+    "model": "growth.usergrowthdata",
+    "pk": 2,
+    "fields": {
+      "github_prompt_allowed": true,
+      "github_prompt_shown_at": "2021-12-14T18:38:46Z",
+      "github_prompt_support_clicked": false,
+      "user": [
+        "admin2"
+      ]
+    }
+  },
+  {
+    "model": "growth.usergrowthdata",
+    "pk": 3,
+    "fields": {
+      "github_prompt_allowed": true,
+      "github_prompt_shown_at": "2023-03-30T09:37:31.615Z",
+      "github_prompt_support_clicked": false,
+      "user": [
+        "lonely_user"
+      ]
+    }
+  },
+  {
+    "model": "growth.usergrowthdata",
+    "pk": 4,
+    "fields": {
+      "github_prompt_allowed": true,
+      "github_prompt_shown_at": "2021-12-14T18:04:57Z",
+      "github_prompt_support_clicked": false,
+      "user": [
+        "admin1"
+      ]
+    }
+  },
+  {
+    "model": "growth.usergrowthdata",
+    "pk": 5,
+    "fields": {
+      "github_prompt_allowed": true,
+      "github_prompt_shown_at": "2021-12-14T18:21:09Z",
+      "github_prompt_support_clicked": false,
+      "user": [
+        "user1"
+      ]
+    }
+  },
+  {
+    "model": "growth.usergrowthdata",
+    "pk": 6,
+    "fields": {
+      "github_prompt_allowed": true,
+      "github_prompt_shown_at": "2021-12-14T18:24:12Z",
+      "github_prompt_support_clicked": false,
+      "user": [
+        "user2"
+      ]
+    }
+  },
+  {
+    "model": "growth.usergrowthdata",
+    "pk": 7,
+    "fields": {
+      "github_prompt_allowed": true,
+      "github_prompt_shown_at": "2021-12-14T18:24:39Z",
+      "github_prompt_support_clicked": false,
+      "user": [
+        "user3"
+      ]
+    }
+  },
+  {
+    "model": "growth.usergrowthdata",
+    "pk": 8,
+    "fields": {
+      "github_prompt_allowed": true,
+      "github_prompt_shown_at": "2021-12-14T18:25:10Z",
+      "github_prompt_support_clicked": false,
+      "user": [
+        "user4"
+      ]
+    }
+  },
+  {
+    "model": "growth.usergrowthdata",
+    "pk": 9,
+    "fields": {
+      "github_prompt_allowed": true,
+      "github_prompt_shown_at": "2021-12-14T18:30:00Z",
+      "github_prompt_support_clicked": false,
+      "user": [
+        "worker1"
+      ]
+    }
+  },
+  {
+    "model": "growth.usergrowthdata",
+    "pk": 10,
+    "fields": {
+      "github_prompt_allowed": true,
+      "github_prompt_shown_at": "2021-12-14T18:30:43Z",
+      "github_prompt_support_clicked": false,
+      "user": [
+        "worker2"
+      ]
+    }
+  },
+  {
+    "model": "growth.usergrowthdata",
+    "pk": 11,
+    "fields": {
+      "github_prompt_allowed": true,
+      "github_prompt_shown_at": "2021-12-14T18:31:25Z",
+      "github_prompt_support_clicked": false,
+      "user": [
+        "worker3"
+      ]
+    }
+  },
+  {
+    "model": "growth.usergrowthdata",
+    "pk": 12,
+    "fields": {
+      "github_prompt_allowed": true,
+      "github_prompt_shown_at": "2021-12-14T18:32:01Z",
+      "github_prompt_support_clicked": false,
+      "user": [
+        "worker4"
+      ]
+    }
+  },
+  {
+    "model": "growth.usergrowthdata",
+    "pk": 13,
+    "fields": {
+      "github_prompt_allowed": true,
+      "github_prompt_shown_at": "2021-12-14T18:33:06Z",
+      "github_prompt_support_clicked": false,
+      "user": [
+        "user7"
+      ]
+    }
+  },
+  {
+    "model": "growth.usergrowthdata",
+    "pk": 14,
+    "fields": {
+      "github_prompt_allowed": true,
+      "github_prompt_shown_at": "2021-12-14T18:34:01Z",
+      "github_prompt_support_clicked": false,
+      "user": [
+        "user8"
+      ]
+    }
+  },
+  {
+    "model": "growth.usergrowthdata",
+    "pk": 15,
+    "fields": {
+      "github_prompt_allowed": true,
+      "github_prompt_shown_at": "2021-12-14T18:34:34Z",
+      "github_prompt_support_clicked": false,
+      "user": [
+        "user9"
+      ]
+    }
+  },
+  {
+    "model": "growth.usergrowthdata",
+    "pk": 16,
+    "fields": {
+      "github_prompt_allowed": true,
+      "github_prompt_shown_at": "2021-12-14T18:35:15Z",
+      "github_prompt_support_clicked": false,
+      "user": [
+        "user10"
+      ]
+    }
+  },
+  {
+    "model": "growth.usergrowthdata",
+    "pk": 17,
+    "fields": {
+      "github_prompt_allowed": true,
+      "github_prompt_shown_at": "2021-12-14T18:36:00Z",
+      "github_prompt_support_clicked": false,
+      "user": [
+        "dummy1"
+      ]
+    }
+  },
+  {
+    "model": "growth.usergrowthdata",
+    "pk": 18,
+    "fields": {
+      "github_prompt_allowed": true,
+      "github_prompt_shown_at": "2021-12-14T18:36:31Z",
+      "github_prompt_support_clicked": false,
+      "user": [
+        "dummy2"
+      ]
+    }
+  },
+  {
+    "model": "growth.usergrowthdata",
+    "pk": 19,
+    "fields": {
+      "github_prompt_allowed": true,
+      "github_prompt_shown_at": "2021-12-14T18:37:09Z",
+      "github_prompt_support_clicked": false,
+      "user": [
+        "dummy3"
+      ]
+    }
+  },
+  {
+    "model": "growth.usergrowthdata",
+    "pk": 20,
+    "fields": {
+      "github_prompt_allowed": true,
+      "github_prompt_shown_at": "2021-12-14T18:37:41Z",
+      "github_prompt_support_clicked": false,
+      "user": [
+        "dummy4"
+      ]
+    }
+  },
+  {
+    "model": "growth.usergrowthdata",
+    "pk": 21,
+    "fields": {
+      "github_prompt_allowed": true,
+      "github_prompt_shown_at": "2022-02-24T20:45:07Z",
+      "github_prompt_support_clicked": false,
+      "user": [
+        "user5"
+      ]
     }
   },
   {
