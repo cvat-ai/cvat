@@ -3,9 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 
-from cvat.apps.webhooks.schemas import EventDTO, EventGroupDTO
-
-from .models import WebhookTypeChoice
+from .models import Event, EventGroup, WebhookTypeChoice
 from .utils import REQUEST_COMPLETION_RESOURCES
 
 
@@ -14,27 +12,27 @@ def event_key(action: str, resource: str) -> str:
 
 
 class Events:
-    RESOURCES: dict[tuple[str, EventGroupDTO], list[str]] = {
-        ("project", EventGroupDTO(display_name="Project")): ["create", "update", "delete"],
-        ("task", EventGroupDTO(display_name="Task")): ["create", "update", "delete"],
-        ("job", EventGroupDTO(display_name="Job")): ["create", "update", "delete"],
-        ("issue", EventGroupDTO(display_name="Issue")): ["create", "update", "delete"],
-        ("comment", EventGroupDTO(display_name="Comment")): ["create", "update", "delete"],
-        ("organization", EventGroupDTO(display_name="Organization")): ["update"],
-        ("invitation", EventGroupDTO(display_name="Invitation")): ["create", "delete"],
-        ("membership", EventGroupDTO(display_name="Membership")): ["create", "update", "delete"],
+    _RESOURCES: dict[tuple[str, EventGroup], list[str]] = {
+        ("project", EventGroup(display_name="Project")): ["create", "update", "delete"],
+        ("task", EventGroup(display_name="Task")): ["create", "update", "delete"],
+        ("job", EventGroup(display_name="Job")): ["create", "update", "delete"],
+        ("issue", EventGroup(display_name="Issue")): ["create", "update", "delete"],
+        ("comment", EventGroup(display_name="Comment")): ["create", "update", "delete"],
+        ("organization", EventGroup(display_name="Organization")): ["update"],
+        ("invitation", EventGroup(display_name="Invitation")): ["create", "delete"],
+        ("membership", EventGroup(display_name="Membership")): ["create", "update", "delete"],
         **{(resource, group): ["completed"] for resource, group in REQUEST_COMPLETION_RESOURCES},
     }
 
     @classmethod
-    def select(cls, resources: list[str]) -> list[EventDTO]:
-        result: list[EventDTO] = []
+    def select(cls, resources: list[str]) -> list[Event]:
+        result: list[Event] = []
 
-        for (resource, group), actions in cls.RESOURCES.items():
+        for (resource, group), actions in cls._RESOURCES.items():
             if resource in resources:
                 for action in actions:
                     result.append(
-                        EventDTO(
+                        Event(
                             action=action,
                             resource=resource,
                             group=group,
@@ -52,20 +50,20 @@ class EventKeyChoice:
 
 class AllEvents:
     webhook_type = "all"
-    events: list[EventDTO] = list(
-        EventDTO(
+    events: list[Event] = list(
+        Event(
             resource=resource,
             group=group,
             action=action,
         )
-        for (resource, group), actions in Events.RESOURCES.items()
+        for (resource, group), actions in Events._RESOURCES.items()
         for action in actions
     )
 
 
 class ProjectEvents:
     webhook_type = WebhookTypeChoice.PROJECT
-    events: list[EventDTO] = [
+    events: list[Event] = [
         *Events.select(
             [
                 "task",
@@ -76,14 +74,14 @@ class ProjectEvents:
                 *(resource for (resource, _) in REQUEST_COMPLETION_RESOURCES),
             ]
         ),
-        EventDTO(
+        Event(
             action="update",
-            group=EventGroupDTO(display_name="Project"),
+            group=EventGroup(display_name="Project"),
             resource="project",
         ),
-        EventDTO(
+        Event(
             action="delete",
-            group=EventGroupDTO(display_name="Project"),
+            group=EventGroup(display_name="Project"),
             resource="project",
         ),
     ]
@@ -91,4 +89,4 @@ class ProjectEvents:
 
 class OrganizationEvents:
     webhook_type = WebhookTypeChoice.ORGANIZATION
-    events: list[EventDTO] = AllEvents.events
+    events: list[Event] = AllEvents.events

@@ -25,6 +25,8 @@ from cvat.apps.webhooks.dispatch import batch_add_webhooks_to_queue
 from cvat.apps.webhooks.event_type import event_key
 
 
+# NOTE @sosov: Completion events for requests managed by DatasetImporter, BackupImporter,
+# and EventsExporter are excluded because they are considered impractical.
 @receiver(request_succeeded, sender=DatasetExporter)
 @receiver(request_failed, sender=DatasetExporter)
 @receiver(request_succeeded, sender=BackupExporter)

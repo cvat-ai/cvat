@@ -27,17 +27,16 @@ from cvat.apps.engine.rq import ExportRequestId, ImportRequestId
 from cvat.apps.engine.serializers import BasicUserSerializer
 from cvat.apps.organizations.models import Invitation, Membership, Organization
 from cvat.apps.quality_control.rq import QualityRequestId
-from cvat.apps.webhooks.schemas import EventGroupDTO
 from cvat.utils.http import PROXIES_FOR_UNTRUSTED_URLS, make_requests_session
 
-from .models import Webhook
+from .models import EventGroup, Webhook
 
 _WEBHOOK_TIMEOUT = (3, 10)
 _RESPONSE_SIZE_LIMIT = 1 * 1024 * 1024  # 1 MB
 
 ModelT = TypeVar("ModelT", bound=Model)
 
-REQUEST_COMPLETION_RESOURCES: tuple[tuple[str, EventGroupDTO], ...] = (
+REQUEST_COMPLETION_RESOURCES: tuple[tuple[str, EventGroup], ...] = (
     (
         "request[{}]".format(
             ExportRequestId(
@@ -46,7 +45,7 @@ REQUEST_COMPLETION_RESOURCES: tuple[tuple[str, EventGroupDTO], ...] = (
                 subresource=RequestSubresource.ANNOTATIONS,
             ).type
         ),
-        EventGroupDTO(display_name="Dataset export"),
+        EventGroup(display_name="Dataset export"),
     ),
     (
         "request[{}]".format(
@@ -56,7 +55,7 @@ REQUEST_COMPLETION_RESOURCES: tuple[tuple[str, EventGroupDTO], ...] = (
                 subresource=RequestSubresource.DATASET,
             ).type
         ),
-        EventGroupDTO(display_name="Dataset export"),
+        EventGroup(display_name="Dataset export"),
     ),
     (
         "request[{}]".format(
@@ -66,7 +65,7 @@ REQUEST_COMPLETION_RESOURCES: tuple[tuple[str, EventGroupDTO], ...] = (
                 subresource=RequestSubresource.BACKUP,
             ).type
         ),
-        EventGroupDTO(display_name="Backup export"),
+        EventGroup(display_name="Backup export"),
     ),
     (
         "request[{}]".format(
@@ -76,19 +75,19 @@ REQUEST_COMPLETION_RESOURCES: tuple[tuple[str, EventGroupDTO], ...] = (
                 target_id=1,
             ).type
         ),
-        EventGroupDTO(display_name="Task data creation"),
+        EventGroup(display_name="Task data creation"),
     ),
     (
         f"request[{ConsensusRequestId(target=RequestTarget.TASK, target_id=1).type}]",
-        EventGroupDTO(display_name="Consensus merge"),
+        EventGroup(display_name="Consensus merge"),
     ),
     (
         f"request[{ConsensusRequestId(target=RequestTarget.JOB, target_id=1).type}]",
-        EventGroupDTO(display_name="Consensus merge"),
+        EventGroup(display_name="Consensus merge"),
     ),
     (
         f"request[{QualityRequestId(target=RequestTarget.TASK, target_id=1).type}]",
-        EventGroupDTO(display_name="Quality report creation"),
+        EventGroup(display_name="Quality report creation"),
     ),
 )
 
