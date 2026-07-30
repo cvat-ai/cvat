@@ -82,7 +82,7 @@ function validateLabels(_: RuleObject, value: string): Promise<void> {
 
 interface Props {
     labels: LabelOptColor[];
-    onSubmit: (labels: LabelOptColor[]) => void | Promise<unknown>;
+    onSubmit: (labels: LabelOptColor[]) => void;
     submitting: boolean;
 }
 
