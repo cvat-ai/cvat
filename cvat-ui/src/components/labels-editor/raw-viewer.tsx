@@ -181,10 +181,6 @@ export default class RawViewer extends React.PureComponent<Props> {
                 return attrId >= 0 && !parsedAttrIds.includes(attrId);
             });
 
-        const submit = async (): Promise<void> => {
-            await onSubmit(parsed);
-        };
-
         if (deletedLabels.length || deletedAttributes.length) {
             Modal.confirm({
                 title: 'You are going to remove existing labels/attributes',
@@ -220,11 +216,13 @@ export default class RawViewer extends React.PureComponent<Props> {
                 okButtonProps: {
                     danger: true,
                 },
-                onOk: submit,
+                onOk: () => {
+                    onSubmit(parsed);
+                },
                 closable: true,
             });
         } else {
-            submit().catch(() => {});
+            onSubmit(parsed);
         }
     };
 
