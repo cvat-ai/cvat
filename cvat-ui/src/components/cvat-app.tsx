@@ -62,7 +62,7 @@ import InvitationsPage from 'components/invitations-page/invitations-page';
 import RequestsPage from 'components/requests-page/requests-page';
 
 import AnnotationPageContainer from 'containers/annotation-page/annotation-page';
-import { Organization, getCore, UserGrowthData } from 'cvat-core-wrapper';
+import { Organization, getCore, UserGrowthDataModifiableFields } from 'cvat-core-wrapper';
 import {
     ErrorState, GrowthState, NotificationState, NotificationsState, PluginsState,
 } from 'reducers';
@@ -104,14 +104,7 @@ interface CVATAppProps {
     initRequests: () => void;
     loadServerAPISchema: () => void;
     loadGrowthData: () => void;
-    updateGrowthData: (
-        growthData: UserGrowthData,
-        fields: {
-            githubPromptShown?: boolean;
-            githubPromptSupportClicked?: boolean;
-            githubPromptAllowed?: boolean;
-        },
-    ) => void;
+    updateGrowthData: (fields: UserGrowthDataModifiableFields) => void;
     onChangeLocation: (from: string, to: string) => void;
     userInitialized: boolean;
     userFetching: boolean;
@@ -497,17 +490,13 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
     }
 
     private markGitHubStarPromptShown = (): void => {
-        const { growth, updateGrowthData } = this.props;
-        if (growth.data) {
-            updateGrowthData(growth.data, { githubPromptShown: true });
-        }
+        const { updateGrowthData } = this.props;
+        updateGrowthData({ githubPromptShown: true });
     };
 
     private supportCVAT = (): void => {
-        const { growth, updateGrowthData } = this.props;
-        if (growth.data) {
-            updateGrowthData(growth.data, { githubPromptSupportClicked: true });
-        }
+        const { updateGrowthData } = this.props;
+        updateGrowthData({ githubPromptSupportClicked: true });
         window.open(appConfig.GITHUB_URL, '_blank', 'noopener,noreferrer');
     };
 

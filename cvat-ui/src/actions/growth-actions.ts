@@ -48,9 +48,13 @@ export const getGrowthDataAsync = (): ThunkAction => async (dispatch, getState):
 };
 
 export const updateGrowthDataAsync = (
-    growthData: UserGrowthData,
     fields: UserGrowthDataModifiableFields,
-): ThunkAction => async (dispatch): Promise<void> => {
+): ThunkAction => async (dispatch, getState): Promise<void> => {
+    const { data: growthData } = getState().growth;
+    if (!growthData) {
+        return;
+    }
+
     dispatch(growthActions.updateGrowthData());
 
     try {

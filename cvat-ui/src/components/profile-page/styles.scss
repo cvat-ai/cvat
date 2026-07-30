@@ -62,11 +62,11 @@
 }
 
 .cvat-profile-notifications-card {
-    min-height: 294px;
+    min-height: $grid-unit-size * 37;
 
     .ant-card-body {
         display: flex;
-        min-height: 224px;
+        min-height: $grid-unit-size * 28;
         flex-direction: column;
     }
 }

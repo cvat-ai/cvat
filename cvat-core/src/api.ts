@@ -176,8 +176,8 @@ function build(): CVATCore {
             },
         },
         growth: {
-            async get(userID) {
-                const result = await PluginRegistry.apiWrapper(cvat.growth.get, userID);
+            async get(userId) {
+                const result = await PluginRegistry.apiWrapper(cvat.growth.get, userId);
                 return result;
             },
         },

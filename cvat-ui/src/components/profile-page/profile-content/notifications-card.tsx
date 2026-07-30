@@ -43,11 +43,7 @@ function NotificationsCard(): JSX.Element {
                     type='primary'
                     disabled={!isChanged}
                     loading={fetching}
-                    onClick={() => {
-                        if (data) {
-                            dispatch(updateGrowthDataAsync(data, { githubPromptAllowed }));
-                        }
-                    }}
+                    onClick={() => dispatch(updateGrowthDataAsync({ githubPromptAllowed }))}
                 >
                     Save changes
                 </Button>
