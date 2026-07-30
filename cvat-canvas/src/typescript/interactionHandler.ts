@@ -29,13 +29,6 @@ type SupportedShapes = SVG.Rect | SVG.Circle;
 
 const DELETE_BUTTON_OFFSET = 8;
 
-function hexToRGB(color: string): [number, number, number] {
-    const result = /^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(color);
-    return result ?
-        [Number.parseInt(result[1], 16), Number.parseInt(result[2], 16), Number.parseInt(result[3], 16)] :
-        [255, 255, 255];
-}
-
 function getTopRightPosition(shape: SVG.Rect | SVG.Circle): { x: number; y: number } {
     if (shape instanceof SVG.Rect) {
         return {
@@ -286,7 +279,7 @@ export class InteractionHandlerImpl implements InteractionHandler {
 
         for (const shape of shapes) {
             const {
-                points, shapeType, color = '#ffffff', outlines,
+                points, shapeType, outlines,
             } = shape;
             if (shapeType === 'polygon') {
                 const isInvalidShape = points.length < 3 * 2;
@@ -298,7 +291,7 @@ export class InteractionHandlerImpl implements InteractionHandler {
                         'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
                         stroke: isInvalidShape ? 'red' : 'black',
                     })
-                    .fill({ opacity: this.effectiveShapeOpacity, color })
+                    .fill({ opacity: this.effectiveShapeOpacity, color: 'white' })
                     .addClass('cvat_canvas_interact_intermediate_shape');
                 this.container.node.prepend(polygon.node);
                 this.intermediateShapes.push(polygon);
@@ -307,8 +300,7 @@ export class InteractionHandlerImpl implements InteractionHandler {
                 const top = points[points.length - 3];
                 const right = points[points.length - 2];
                 const bottom = points[points.length - 1];
-                const [red, green, blue] = hexToRGB(color);
-                const imageBitmap = RLEToImageData(red, green, blue, points);
+                const imageBitmap = RLEToImageData(255, 255, 255, points);
                 const image = this.container.image().attr({
                     'color-rendering': 'optimizeQuality',
                     'shape-rendering': 'geometricprecision',
@@ -324,24 +316,15 @@ export class InteractionHandlerImpl implements InteractionHandler {
                     if (outline.length >= 3 * 2) {
                         const outlinePoints = stringifyPoints(translateToCanvas(this.geometry.offset, outline));
                         const strokeWidth = consts.BASE_STROKE_WIDTH / this.geometry.scale;
-                        const dashSize = 6 / this.geometry.scale;
-                        const outlineBackground = this.container
+                        const maskOutline = this.container
                             .polygon(outlinePoints)
                             .fill('none')
                             .stroke({ color: '#000000', width: strokeWidth })
                             .addClass('cvat_canvas_interact_mask_outline');
-                        const outlineForeground = this.container
-                            .polygon(outlinePoints)
-                            .fill('none')
-                            .stroke({ color: '#ffffff', width: strokeWidth })
-                            .attr({ 'stroke-dasharray': `${dashSize} ${dashSize}` })
-                            .addClass('cvat_canvas_interact_mask_outline')
-                            .addClass('cvat_canvas_interact_mask_outline_animated');
 
-                        insertionPoint.after(outlineBackground.node);
-                        outlineBackground.node.after(outlineForeground.node);
-                        insertionPoint = outlineForeground.node;
-                        this.intermediateShapes.push(outlineBackground, outlineForeground);
+                        insertionPoint.after(maskOutline.node);
+                        insertionPoint = maskOutline.node;
+                        this.intermediateShapes.push(maskOutline);
                     }
                 }
 
@@ -590,10 +573,6 @@ export class InteractionHandlerImpl implements InteractionHandler {
         this.intermediateShapes.forEach((shape) => {
             if (shape.hasClass('cvat_canvas_interact_mask_outline')) {
                 shape.stroke({ width: this.effectiveStrokeWidth });
-                if (shape.hasClass('cvat_canvas_interact_mask_outline_animated')) {
-                    const dashSize = 6 / this.geometry.scale;
-                    shape.attr({ 'stroke-dasharray': `${dashSize} ${dashSize}` });
-                }
             } else {
                 shape.fill({ opacity: this.effectiveShapeOpacity });
             }

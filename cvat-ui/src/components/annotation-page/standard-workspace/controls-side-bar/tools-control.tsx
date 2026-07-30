@@ -46,7 +46,6 @@ import DetectorRunner, {
     type RegionOfInterest,
 } from 'components/model-runner-modal/detector-runner';
 import RegionOfInterestInputComponent from 'components/model-runner-modal/region-of-interest-input';
-import ColorPicker from 'components/annotation-page/standard-workspace/objects-side-bar/color-picker';
 import LabelSelector from 'components/label-selector/label-selector';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import CVATMarkdown from 'components/common/cvat-markdown';
@@ -175,7 +174,6 @@ interface State {
     interactorRegionOfInterest: RegionOfInterest;
     detectorRegionOfInterest: RegionOfInterest;
     toolsPopoverVisible: boolean;
-    interactorMaskColor: string;
     showInteractorMaskContours: boolean;
 }
 
@@ -288,7 +286,6 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             interactorRegionOfInterest: null,
             detectorRegionOfInterest: null,
             toolsPopoverVisible: false,
-            interactorMaskColor: '#ff00ff',
             showInteractorMaskContours: true,
         };
 
@@ -556,12 +553,12 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                     if (item.type !== ShapeType.MASK) continue;
 
                     const points = Int32Array.from(item.points);
-                    const contours = this.receiveContoursFromMask(points);
-                    const polygonPoints = contours[0] || [];
+                    const polygonPoints = this.receivePointsFromMask(points);
                     if (polygonPoints.length < 3) {
                         continue;
                     }
 
+                    const contours = this.receiveContoursFromMask(points);
                     const approximated = this.approximateResponsePoints(polygonPoints!);
                     const confidenceAttr = item.attributes.find((attr) => attr.spec_id === 0);
                     const confidence = confidenceAttr ? +confidenceAttr.value : 1;
@@ -794,7 +791,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
     private drawIntermediateShapesOnCanvas(): void {
         const { canvasInstance } = this.props;
         const {
-            convertMasksToPolygons, thresholdValue, interactorMaskColor, showInteractorMaskContours,
+            convertMasksToPolygons, thresholdValue, showInteractorMaskContours,
         } = this.state;
         const shapesToBeDrawn = this.interaction.latestResponse
             .filter(({ confidence }) => typeof confidence !== 'number' || confidence >= thresholdValue)
@@ -802,7 +799,6 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             .map(({ rle, contours, approximatedPoints }) => ({
                 shapeType: convertMasksToPolygons ? ShapeType.POLYGON : ShapeType.MASK,
                 points: convertMasksToPolygons ? approximatedPoints.flat() : rle,
-                color: interactorMaskColor,
                 outlines: showInteractorMaskContours && !convertMasksToPolygons ?
                     contours.map((contour) => contour.flat()) :
                     undefined,
@@ -1162,6 +1158,24 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         }
     }
 
+    private receivePointsFromMask(mask: Int32Array): [number, number][] {
+        if (!openCVWrapper.isInitialized) {
+            throw new Error('OpenCV was not initialized');
+        }
+
+        if (mask.length < 6) {
+            // minimal non-empty RLE is 6 points
+            return [];
+        }
+
+        const polygons = openCVWrapper.getContoursFromStateSync({ points: mask, shapeType: ShapeType.MASK });
+        if (polygons.length) {
+            return polygons[0].map<[number, number]>((val) => [val[0], val[1]]);
+        }
+
+        return [];
+    }
+
     private receiveContoursFromMask(mask: Int32Array): [number, number][][] {
         if (!openCVWrapper.isInitialized) {
             throw new Error('OpenCV was not initialized');
@@ -1290,7 +1304,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         } = this.props;
         const {
             activeInteractor, activeLabelID, fetching, allowROI,
-            startInteractingWithBox, convertMasksToPolygons, interactorMaskColor, showInteractorMaskContours,
+            startInteractingWithBox, convertMasksToPolygons, showInteractorMaskContours,
         } = this.state;
 
         if (!interactors.length) {
@@ -1367,29 +1381,6 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                             }}
                         />
                         <Text>Convert masks to polygons</Text>
-                    </div>
-                    <div>
-                        <Text>Mask color</Text>
-                        <ColorPicker
-                            value={interactorMaskColor}
-                            resetVisible={false}
-                            placement='right'
-                            onChange={(color: string) => {
-                                this.setState({ interactorMaskColor: color });
-                            }}
-                        >
-                            <Button
-                                shape='circle'
-                                aria-label='Interactor mask color'
-                                style={{
-                                    width: 24,
-                                    height: 24,
-                                    minWidth: 24,
-                                    marginLeft: 8,
-                                    backgroundColor: interactorMaskColor,
-                                }}
-                            />
-                        </ColorPicker>
                     </div>
                     <div>
                         <Switch
