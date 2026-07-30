@@ -2,6 +2,8 @@
 #
 # SPDX-License-Identifier: MIT
 
+from itertools import batched
+
 import django.db.models.deletion
 from django.conf import settings
 from django.db import migrations, models
@@ -12,18 +14,21 @@ def create_growth_data_for_existing_users(apps, schema_editor):
     User = apps.get_model("auth", "User")
     UserGrowthData = apps.get_model("growth", "UserGrowthData")
     current_time = now()
-    UserGrowthData.objects.bulk_create(
-        [
-            UserGrowthData(
-                user_id=user_id,
-                github_prompt_shown_at=current_time,
-                github_prompt_support_clicked=False,
-                github_prompt_allowed=True,
-            )
-            for user_id in User.objects.values_list("id", flat=True)
-        ],
-        ignore_conflicts=True,
-    )
+    user_ids = User.objects.values_list("id", flat=True).iterator()
+
+    for user_id_batch in batched(user_ids, 1000):
+        UserGrowthData.objects.bulk_create(
+            [
+                UserGrowthData(
+                    user_id=user_id,
+                    github_prompt_shown_at=current_time,
+                    github_prompt_support_clicked=False,
+                    github_prompt_allowed=True,
+                )
+                for user_id in user_id_batch
+            ],
+            ignore_conflicts=True,
+        )
 
 
 class Migration(migrations.Migration):
