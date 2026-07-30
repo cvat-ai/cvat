@@ -250,7 +250,7 @@ g.cvat_canvas_shape_occluded {
     @extend .cvat_canvas_shape;
 }
 
-@keyframes cvat_canvas_interact_mask_outline_animation {
+@keyframes cvat-canvas-interact-mask-outline-animation {
     to {
         stroke-dashoffset: -12px;
     }
@@ -261,7 +261,7 @@ g.cvat_canvas_shape_occluded {
 }
 
 .cvat_canvas_interact_mask_outline_animated {
-    animation: cvat_canvas_interact_mask_outline_animation 0.6s linear infinite;
+    animation: cvat-canvas-interact-mask-outline-animation 0.6s linear infinite;
 }
 
 .cvat_interaction_delete_button {
