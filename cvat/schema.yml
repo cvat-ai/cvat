@@ -1521,6 +1521,22 @@ paths:
       operationId: growth_list
       summary: List growth data
       parameters:
+      - name: filter
+        required: false
+        in: query
+        description: |2-
+
+          JSON Logic filter. This filter can be used to perform complex filtering by grouping rules.
+
+          For example, using such a filter you can get all resources created by you:
+
+              - {"and":[{"==":[{"var":"owner"},"<user>"]}]}
+
+          Details about the syntax used can be found at the link: https://jsonlogic.com/
+
+           Available filter_fields: ['id', 'user_id'].
+        schema:
+          type: string
       - name: page
         required: false
         in: query
@@ -1531,11 +1547,6 @@ paths:
         required: false
         in: query
         description: Number of results to return per page.
-        schema:
-          type: integer
-      - name: user_id
-        in: query
-        description: A simple equality filter for the user_id field
         schema:
           type: integer
       - name: sort
