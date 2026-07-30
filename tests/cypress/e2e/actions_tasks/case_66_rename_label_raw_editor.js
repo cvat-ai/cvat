@@ -25,6 +25,7 @@ context('Rename a label via raw editor.', () => {
     const newlabelName = `Changed case ${caseId}`;
     const newlabelColor = '#C14330';
     let rawLabelsValue = '';
+    let updatedRawLabelsValue = '';
 
     function testChangingRawLabelsViewerText(rawLabelsTextarea) {
         const labels = JSON.parse(rawLabelsTextarea.text());
@@ -36,8 +37,9 @@ context('Rename a label via raw editor.', () => {
                 label.color = newlabelColor;
             }
         });
+        updatedRawLabelsValue = JSON.stringify(labels);
         cy.get('.cvat-raw-labels-viewer').clear();
-        cy.get('.cvat-raw-labels-viewer').type(JSON.stringify(labels), { parseSpecialCharSequences: false });
+        cy.get('.cvat-raw-labels-viewer').type(updatedRawLabelsValue, { parseSpecialCharSequences: false });
     }
 
     before(() => {
@@ -58,24 +60,50 @@ context('Rename a label via raw editor.', () => {
     describe(`Testing case "${caseId}"`, () => {
         it('Change label name, color by raw editor. Press "Cancel". The values returned to their original values.', () => {
             cy.contains('[role="tab"]', 'Raw').click();
+            cy.get('.cvat-submit-raw-labels-conf-button').should('be.disabled');
+            cy.get('.cvat-reset-raw-labels-conf-button').should('be.disabled');
             cy.get('.cvat-raw-labels-viewer').then(($rawLabelsTextarea) => {
                 rawLabelsValue = $rawLabelsTextarea.text();
                 testChangingRawLabelsViewerText($rawLabelsTextarea);
             });
-            cy.contains('[type="button"]', 'Cancel').click();
+            cy.get('.cvat-submit-raw-labels-conf-button').should('not.be.disabled');
+            cy.get('.cvat-reset-raw-labels-conf-button').should('not.be.disabled');
+            cy.get('.cvat-reset-raw-labels-conf-button').click();
+            cy.get('.cvat-submit-raw-labels-conf-button').should('be.disabled');
+            cy.get('.cvat-reset-raw-labels-conf-button').should('be.disabled');
         });
 
-        it('After reset, the text of the element returned to its original value.', () => {
+        it('Invalid JSON disables Save, while Cancel restores the original value.', () => {
             cy.get('.cvat-raw-labels-viewer').then(($rawLabelsTextareaAfterReset) => {
                 expect(rawLabelsValue).to.be.equal($rawLabelsTextareaAfterReset.text());
             });
+            cy.get('.cvat-raw-labels-viewer').clear();
+            cy.get('.cvat-raw-labels-viewer').type('{');
+            cy.get('.cvat-submit-raw-labels-conf-button').should('be.disabled');
+            cy.get('.cvat-reset-raw-labels-conf-button').should('not.be.disabled');
+            cy.get('.cvat-reset-raw-labels-conf-button').click();
+            cy.get('.cvat-raw-labels-viewer').should('have.value', rawLabelsValue);
         });
 
         it('Change label name, color by raw editor. Press "Save". The label parameters have taken on new values.', () => {
+            cy.intercept('PATCH', '/api/labels/**', (request) => {
+                request.continue((response) => {
+                    response.setDelay(1000);
+                });
+            }).as('updateLabel');
             cy.get('.cvat-raw-labels-viewer').then(($rawLabelsTextarea) => {
                 testChangingRawLabelsViewerText($rawLabelsTextarea);
             });
-            cy.contains('[type="submit"]', 'Save').click();
+            cy.get('.cvat-submit-raw-labels-conf-button').should('not.be.disabled');
+            cy.get('.cvat-submit-raw-labels-conf-button').click();
+            cy.get('.cvat-submit-raw-labels-conf-button')
+                .should('be.disabled')
+                .and('have.class', 'ant-btn-loading');
+            cy.get('.cvat-reset-raw-labels-conf-button').should('not.be.disabled');
+            cy.get('.cvat-raw-labels-viewer').should('have.value', updatedRawLabelsValue);
+            cy.wait('@updateLabel');
+            cy.get('.cvat-submit-raw-labels-conf-button').should('be.disabled');
+            cy.get('.cvat-reset-raw-labels-conf-button').should('be.disabled');
             cy.contains('[role="tab"]', 'Constructor').click();
             cy.get('.cvat-constructor-viewer-item')
                 .should('have.text', newlabelName)
