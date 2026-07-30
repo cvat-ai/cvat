@@ -1058,12 +1058,11 @@ Cypress.Commands.add('configureTaskQualityMode', (qualityConfigurationParams) =>
         });
     }
     if (qualityConfigurationParams.validationFramesPercent) {
-        cy.get('#validationFramesPercent').clear();
-        cy.get('#validationFramesPercent').type(qualityConfigurationParams.validationFramesPercent);
+        cy.get('#validationFramesPercent').type(`{selectall}${qualityConfigurationParams.validationFramesPercent}`);
     }
     if (qualityConfigurationParams.validationFramesPerJobPercent) {
-        cy.get('#validationFramesPerJobPercent').clear();
-        cy.get('#validationFramesPerJobPercent').type(qualityConfigurationParams.validationFramesPerJobPercent);
+        cy.get('#validationFramesPerJobPercent')
+            .type(`{selectall}${qualityConfigurationParams.validationFramesPerJobPercent}`);
     }
 });
 
