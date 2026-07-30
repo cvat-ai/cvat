@@ -285,7 +285,9 @@ export class InteractionHandlerImpl implements InteractionHandler {
         this.clearIntermediateShapes();
 
         for (const shape of shapes) {
-            const { points, shapeType, color = '#ffffff' } = shape;
+            const {
+                points, shapeType, color = '#ffffff', outlines,
+            } = shape;
             if (shapeType === 'polygon') {
                 const isInvalidShape = points.length < 3 * 2;
                 const polygon = this.container
@@ -316,6 +318,32 @@ export class InteractionHandlerImpl implements InteractionHandler {
                 image.move(this.geometry.offset + left, this.geometry.offset + top);
                 this.container.node.prepend(image.node);
                 this.intermediateShapes.push(image);
+
+                let insertionPoint = image.node;
+                for (const outline of outlines || []) {
+                    if (outline.length >= 3 * 2) {
+                        const outlinePoints = stringifyPoints(translateToCanvas(this.geometry.offset, outline));
+                        const strokeWidth = consts.BASE_STROKE_WIDTH / this.geometry.scale;
+                        const dashSize = 6 / this.geometry.scale;
+                        const outlineBackground = this.container
+                            .polygon(outlinePoints)
+                            .fill('none')
+                            .stroke({ color: '#000000', width: strokeWidth })
+                            .addClass('cvat_canvas_interact_mask_outline');
+                        const outlineForeground = this.container
+                            .polygon(outlinePoints)
+                            .fill('none')
+                            .stroke({ color: '#ffffff', width: strokeWidth })
+                            .attr({ 'stroke-dasharray': `${dashSize} ${dashSize}` })
+                            .addClass('cvat_canvas_interact_mask_outline')
+                            .addClass('cvat_canvas_interact_mask_outline_animated');
+
+                        insertionPoint.after(outlineBackground.node);
+                        outlineBackground.node.after(outlineForeground.node);
+                        insertionPoint = outlineForeground.node;
+                        this.intermediateShapes.push(outlineBackground, outlineForeground);
+                    }
+                }
 
                 imageDataToDataURL(
                     imageBitmap,
@@ -560,7 +588,15 @@ export class InteractionHandlerImpl implements InteractionHandler {
         });
 
         this.intermediateShapes.forEach((shape) => {
-            shape.fill({ opacity: this.effectiveShapeOpacity });
+            if (shape.hasClass('cvat_canvas_interact_mask_outline')) {
+                shape.stroke({ width: this.effectiveStrokeWidth });
+                if (shape.hasClass('cvat_canvas_interact_mask_outline_animated')) {
+                    const dashSize = 6 / this.geometry.scale;
+                    shape.attr({ 'stroke-dasharray': `${dashSize} ${dashSize}` });
+                }
+            } else {
+                shape.fill({ opacity: this.effectiveShapeOpacity });
+            }
         });
     }
 

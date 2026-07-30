@@ -139,6 +139,7 @@ export interface InteractionData {
             shapeType: string;
             points: ArrayLike<number>;
             color?: string;
+            outlines?: ArrayLike<number>[];
         }[];
     };
     settings?: {

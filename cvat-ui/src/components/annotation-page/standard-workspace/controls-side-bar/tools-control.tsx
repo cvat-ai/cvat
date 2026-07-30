@@ -176,6 +176,7 @@ interface State {
     detectorRegionOfInterest: RegionOfInterest;
     toolsPopoverVisible: boolean;
     interactorMaskColor: string;
+    showInteractorMaskContours: boolean;
 }
 
 type DetectorResults = Extract<
@@ -246,6 +247,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         latestResponse: {
             rle: Int32Array;
             points: [number, number][];
+            contours: [number, number][][];
             approximatedPoints: [number, number][];
             confidence: number;
         }[];
@@ -287,6 +289,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             detectorRegionOfInterest: null,
             toolsPopoverVisible: false,
             interactorMaskColor: '#ff00ff',
+            showInteractorMaskContours: true,
         };
 
         this.interaction = {
@@ -319,7 +322,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             isActivated, defaultApproxPolyAccuracy, states, toolsBlockerState, jobInstance,
         } = this.props;
         const {
-            approxPolyAccuracy, mode, activeTracker, thresholdValue,
+            approxPolyAccuracy, mode, activeTracker, thresholdValue, showInteractorMaskContours,
         } = this.state;
 
         if (prevProps.states !== states || prevState.activeTracker !== activeTracker) {
@@ -376,6 +379,12 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
         if (prevState.thresholdValue !== thresholdValue) {
             if (isActivated && mode === 'interaction') {
+                this.drawIntermediateShapesOnCanvas();
+            }
+        }
+
+        if (prevState.showInteractorMaskContours !== showInteractorMaskContours) {
+            if (isActivated && mode === 'interaction' && this.interaction.latestResponse.length) {
                 this.drawIntermediateShapesOnCanvas();
             }
         }
@@ -547,7 +556,8 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                     if (item.type !== ShapeType.MASK) continue;
 
                     const points = Int32Array.from(item.points);
-                    const polygonPoints = this.receivePointsFromMask(points);
+                    const contours = this.receiveContoursFromMask(points);
+                    const polygonPoints = contours[0] || [];
                     if (polygonPoints.length < 3) {
                         continue;
                     }
@@ -559,6 +569,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                     latestResponse.push({
                         rle: points,
                         points: polygonPoints,
+                        contours,
                         approximatedPoints: approximated,
                         confidence,
                     });
@@ -782,14 +793,19 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
     private drawIntermediateShapesOnCanvas(): void {
         const { canvasInstance } = this.props;
-        const { convertMasksToPolygons, thresholdValue, interactorMaskColor } = this.state;
+        const {
+            convertMasksToPolygons, thresholdValue, interactorMaskColor, showInteractorMaskContours,
+        } = this.state;
         const shapesToBeDrawn = this.interaction.latestResponse
             .filter(({ confidence }) => typeof confidence !== 'number' || confidence >= thresholdValue)
             .filter(({ approximatedPoints }) => !convertMasksToPolygons || approximatedPoints.length >= 3)
-            .map(({ rle, approximatedPoints }) => ({
+            .map(({ rle, contours, approximatedPoints }) => ({
                 shapeType: convertMasksToPolygons ? ShapeType.POLYGON : ShapeType.MASK,
                 points: convertMasksToPolygons ? approximatedPoints.flat() : rle,
                 color: interactorMaskColor,
+                outlines: showInteractorMaskContours && !convertMasksToPolygons ?
+                    contours.map((contour) => contour.flat()) :
+                    undefined,
             }));
 
         canvasInstance.interact({
@@ -1146,7 +1162,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         }
     }
 
-    private receivePointsFromMask(mask: Int32Array): [number, number][] {
+    private receiveContoursFromMask(mask: Int32Array): [number, number][][] {
         if (!openCVWrapper.isInitialized) {
             throw new Error('OpenCV was not initialized');
         }
@@ -1156,12 +1172,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             return [];
         }
 
-        const polygons = openCVWrapper.getContoursFromStateSync({ points: mask, shapeType: ShapeType.MASK });
-        if (polygons.length) {
-            return polygons[0].map<[number, number]>((val) => [val[0], val[1]]);
-        }
-
-        return [];
+        return openCVWrapper.getContoursFromStateSync({ points: mask, shapeType: ShapeType.MASK });
     }
 
     private approximateResponsePoints(points: [number, number][]): [number, number][] {
@@ -1279,7 +1290,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         } = this.props;
         const {
             activeInteractor, activeLabelID, fetching, allowROI,
-            startInteractingWithBox, convertMasksToPolygons, interactorMaskColor,
+            startInteractingWithBox, convertMasksToPolygons, interactorMaskColor, showInteractorMaskContours,
         } = this.state;
 
         if (!interactors.length) {
@@ -1379,6 +1390,16 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                                 }}
                             />
                         </ColorPicker>
+                    </div>
+                    <div>
+                        <Switch
+                            checked={showInteractorMaskContours}
+                            disabled={convertMasksToPolygons}
+                            onChange={(checked: boolean) => {
+                                this.setState({ showInteractorMaskContours: checked });
+                            }}
+                        />
+                        <Text>Show mask outline</Text>
                     </div>
 
                     {renderStartWithBox && (
