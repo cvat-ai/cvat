@@ -224,6 +224,7 @@ def export(request: ExtendedRequest):
     # request validation is missed here since exporting to a cloud_storage is disabled
     manager._set_default_callback_params()
     manager.init_callback_with_params()
+    manager.init_job_callbacks()
     manager.setup_new_job(queue, request_id)
 
     response = Response(data=response_data, status=status.HTTP_202_ACCEPTED)
