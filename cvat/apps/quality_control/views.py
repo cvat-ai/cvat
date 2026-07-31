@@ -14,7 +14,7 @@ from drf_spectacular.utils import (
     extend_schema,
     extend_schema_view,
 )
-from rest_framework import mixins, serializers, status, viewsets
+from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.response import Response
@@ -52,7 +52,7 @@ from cvat.apps.quality_control.serializers import (
     QualityReportConfusionMatrixSerializer,
     QualityReportCreateSerializer,
     QualityReportSerializer,
-    QualityRequirementListSerializer,
+    QualityRequirementListItemSerializer,
     QualityRequirementSerializer,
     QualitySettingsParentType,
     QualitySettingsSerializer,
@@ -447,7 +447,6 @@ class QualityReportViewSet(
         report_data, content_type = prepare_report_for_downloading(
             report,
             host=request.build_absolute_uri("/"),
-            export_format=QualityReportExportFormat.JSON,
         )
         return HttpResponse(report_data, content_type=content_type)
 
@@ -520,34 +519,37 @@ class QualityReportViewSet(
                 {"format": f"Expected one of: {', '.join(QualityReportExportFormat.values)}."}
             ) from ex
 
-        if format_name == QualityReportExportFormat.JSON:
-            matrix_json = prepare_requirement_confusion_matrix_json(
-                report,
-                requirement_id=requirement_id,
-            )
-            if matrix_json is None:
-                raise NotFound(
-                    f"Confusion matrix for quality requirement '{requirement_id}' was not found"
+        match format_name:
+            case QualityReportExportFormat.JSON:
+                matrix_json = prepare_requirement_confusion_matrix_json(
+                    report,
+                    requirement_id=requirement_id,
                 )
+                if matrix_json is None:
+                    raise NotFound(
+                        f"Confusion matrix for quality requirement '{requirement_id}' was not found"
+                    )
 
-            return Response(matrix_json)
+                return Response(matrix_json)
+            case QualityReportExportFormat.CSV:
+                matrix_csv = prepare_requirement_confusion_matrix_for_downloading(
+                    report,
+                    requirement_id=requirement_id,
+                )
+                if matrix_csv is None:
+                    raise NotFound(
+                        f"Confusion matrix for quality requirement '{requirement_id}' was not found"
+                    )
 
-        matrix_csv = prepare_requirement_confusion_matrix_for_downloading(
-            report,
-            requirement_id=requirement_id,
-        )
-        if matrix_csv is None:
-            raise NotFound(
-                f"Confusion matrix for quality requirement '{requirement_id}' was not found"
-            )
-
-        filename_requirement = f"requirement-{requirement_id}"
-        response = HttpResponse(matrix_csv, content_type="text/csv")
-        response["Content-Disposition"] = (
-            f'attachment; filename="quality-report-{report.id}-'
-            f'{filename_requirement}-confusion.csv"'
-        )
-        return response
+                filename_requirement = f"requirement-{requirement_id}"
+                response = HttpResponse(matrix_csv, content_type="text/csv")
+                response["Content-Disposition"] = (
+                    f'attachment; filename="quality-report-{report.id}-'
+                    f'{filename_requirement}-confusion.csv"'
+                )
+                return response
+            case _:
+                raise AssertionError(f"Unsupported quality report export format '{format_name}'")
 
 
 SETTINGS_PARENT_TYPE_PARAM_NAME = "parent_type"
@@ -700,7 +702,7 @@ class QualitySettingsViewSet(
                 "settings_id", type=OpenApiTypes.INT, description="Settings id filter"
             ),
         ],
-        responses={"200": QualityRequirementListSerializer(many=True)},
+        responses={"200": QualityRequirementListItemSerializer(many=True)},
     ),
     create=extend_schema(
         summary="Create a quality requirement",
@@ -735,13 +737,7 @@ class QualityRequirementViewSet(
     PartialUpdateModelMixin,
     mixins.DestroyModelMixin,
 ):
-    queryset = QualityRequirement.objects.select_related(
-        "settings",
-        "settings__task",
-        "settings__task__project",
-        "settings__project",
-        "parent",
-    )
+    queryset = QualityRequirement.objects.all()
 
     iam_supports_organization_params = True
     iam_permission_class = QualityRequirementPermission
@@ -766,12 +762,6 @@ class QualityRequirementViewSet(
 
     serializer_class = QualityRequirementSerializer
 
-    def get_serializer_class(self) -> type[serializers.BaseSerializer]:
-        if self.action == "list":
-            return QualityRequirementListSerializer
-
-        return super().get_serializer_class()
-
     def get_queryset(self):
         queryset = super().get_queryset()
 
@@ -788,6 +778,14 @@ class QualityRequirementViewSet(
 
             permissions = QualityRequirementPermission.create_scope_list(self.request)
             queryset = permissions.filter(queryset)
+        else:
+            queryset = queryset.select_related(
+                "settings",
+                "settings__task",
+                "settings__task__project",
+                "settings__project",
+                "parent",
+            )
 
         return queryset
 

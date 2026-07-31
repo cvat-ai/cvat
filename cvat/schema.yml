@@ -4994,7 +4994,7 @@ paths:
           content:
             application/vnd.cvat+json:
               schema:
-                $ref: '#/components/schemas/PaginatedQualityRequirementListList'
+                $ref: '#/components/schemas/PaginatedQualityRequirementListItemList'
           description: ''
     post:
       operationId: quality_create_settings_requirements
@@ -7590,42 +7590,54 @@ components:
       type: object
       properties:
         default:
-          $ref: '#/components/schemas/AttributeComparisonDefault'
+          allOf:
+          - $ref: '#/components/schemas/AttributeComparisonDefaultRule'
+          nullable: true
         rules:
           type: array
           items:
             $ref: '#/components/schemas/AttributeComparisonRule'
-    AttributeComparisonDefault:
+    AttributeComparisonDefaultRule:
       type: object
       properties:
         enabled:
           type: boolean
           nullable: true
         comparator:
-          $ref: '#/components/schemas/ComparatorEnum'
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/ComparatorEnum'
+          - $ref: '#/components/schemas/NullEnum'
         threshold:
           type: number
           format: double
           maximum: 1
           minimum: 0
-    AttributeComparisonDefaultRequest:
+          nullable: true
+    AttributeComparisonDefaultRuleRequest:
       type: object
       properties:
         enabled:
           type: boolean
           nullable: true
         comparator:
-          $ref: '#/components/schemas/ComparatorEnum'
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/ComparatorEnum'
+          - $ref: '#/components/schemas/NullEnum'
         threshold:
           type: number
           format: double
           maximum: 1
           minimum: 0
+          nullable: true
     AttributeComparisonRequest:
       type: object
       properties:
         default:
-          $ref: '#/components/schemas/AttributeComparisonDefaultRequest'
+          allOf:
+          - $ref: '#/components/schemas/AttributeComparisonDefaultRuleRequest'
+          nullable: true
         rules:
           type: array
           items:
@@ -7639,12 +7651,16 @@ components:
         enabled:
           type: boolean
         comparator:
-          $ref: '#/components/schemas/ComparatorEnum'
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/ComparatorEnum'
+          - $ref: '#/components/schemas/NullEnum'
         threshold:
           type: number
           format: double
           maximum: 1
           minimum: 0
+          nullable: true
       required:
       - enabled
       - spec_id
@@ -7657,12 +7673,16 @@ components:
         enabled:
           type: boolean
         comparator:
-          $ref: '#/components/schemas/ComparatorEnum'
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/ComparatorEnum'
+          - $ref: '#/components/schemas/NullEnum'
         threshold:
           type: number
           format: double
           maximum: 1
           minimum: 0
+          nullable: true
       required:
       - enabled
       - spec_id
@@ -10008,7 +10028,7 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/QualityReport'
-    PaginatedQualityRequirementListList:
+    PaginatedQualityRequirementListItemList:
       type: object
       required:
       - count
@@ -10030,7 +10050,7 @@ components:
         results:
           type: array
           items:
-            $ref: '#/components/schemas/QualityRequirementList'
+            $ref: '#/components/schemas/QualityRequirementListItem'
     PaginatedQualitySettingsList:
       type: object
       required:
@@ -10639,7 +10659,7 @@ components:
         empty_is_annotated:
           type: boolean
           nullable: true
-          default: false
+          default: true
           description: |
             Consider empty frames annotated as "empty". This affects target metrics like
             accuracy in cases there are no annotations. If disabled, frames without annotations
@@ -10670,7 +10690,7 @@ components:
         requirements:
           type: array
           items:
-            $ref: '#/components/schemas/QualityRequirementListRequest'
+            $ref: '#/components/schemas/QualityRequirementListItemRequest'
     PatchedTaskValidationLayoutWriteRequest:
       type: object
       properties:
@@ -11103,12 +11123,15 @@ components:
           nullable: true
         score_components:
           $ref: '#/components/schemas/QualityReportScoreComponents'
+        not_computed:
+          type: boolean
         threshold:
           type: number
           format: double
       required:
       - metric
       - name
+      - not_computed
       - requirement_id
       - score
       - score_components
@@ -11122,6 +11145,8 @@ components:
           type: integer
         completed:
           type: integer
+        not_computed:
+          type: integer
         items:
           type: array
           items:
@@ -11130,6 +11155,7 @@ components:
       - completed
       - enabled
       - items
+      - not_computed
       - total
     QualityReportScoreComponents:
       type: object
@@ -11387,7 +11413,7 @@ components:
         empty_is_annotated:
           type: boolean
           nullable: true
-          default: false
+          default: true
           description: |
             Consider empty frames annotated as "empty". This affects target metrics like
             accuracy in cases there are no annotations. If disabled, frames without annotations
@@ -11401,7 +11427,7 @@ components:
           type: string
           format: date-time
           readOnly: true
-    QualityRequirementList:
+    QualityRequirementListItem:
       type: object
       properties:
         id:
@@ -11568,7 +11594,7 @@ components:
         empty_is_annotated:
           type: boolean
           nullable: true
-          default: false
+          default: true
           description: |
             Consider empty frames annotated as "empty". This affects target metrics like
             accuracy in cases there are no annotations. If disabled, frames without annotations
@@ -11582,7 +11608,7 @@ components:
           type: string
           format: date-time
           readOnly: true
-    QualityRequirementListRequest:
+    QualityRequirementListItemRequest:
       type: object
       properties:
         settings_id:
@@ -11736,7 +11762,7 @@ components:
         empty_is_annotated:
           type: boolean
           nullable: true
-          default: false
+          default: true
           description: |
             Consider empty frames annotated as "empty". This affects target metrics like
             accuracy in cases there are no annotations. If disabled, frames without annotations
@@ -11896,7 +11922,7 @@ components:
         empty_is_annotated:
           type: boolean
           nullable: true
-          default: false
+          default: true
           description: |
             Consider empty frames annotated as "empty". This affects target metrics like
             accuracy in cases there are no annotations. If disabled, frames without annotations
@@ -11936,7 +11962,7 @@ components:
         requirements:
           type: array
           items:
-            $ref: '#/components/schemas/QualityRequirementList'
+            $ref: '#/components/schemas/QualityRequirementListItem'
         created_date:
           type: string
           format: date-time
@@ -11970,7 +11996,7 @@ components:
         requirements:
           type: array
           items:
-            $ref: '#/components/schemas/QualityRequirementListRequest'
+            $ref: '#/components/schemas/QualityRequirementListItemRequest'
     QualityTargetMetric:
       enum:
       - accuracy

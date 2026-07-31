@@ -8,7 +8,10 @@ from collections.abc import Mapping
 from copy import deepcopy
 from typing import Any
 
-from cvat.apps.quality_control.attribute_comparators import DEFAULT_ATTRIBUTE_COMPARATOR
+from cvat.apps.quality_control.attribute_comparators import (
+    DEFAULT_ATTRIBUTE_COMPARATOR,
+    AttributeComparisonRule,
+)
 
 CVAT_ATTRIBUTE_SPEC_IDS_ATTR = "__cvat_attribute_spec_ids"
 
@@ -103,10 +106,14 @@ def attribute_comparison_may_compare(value: Mapping[str, Any] | None) -> bool:
     return any(rule.get("enabled") is True for rule in normalized.get("rules") or [])
 
 
-def make_default_attribute_rule(attribute_comparison: Mapping[str, Any] | None) -> dict[str, Any]:
+def make_default_attribute_rule(
+    attribute_comparison: Mapping[str, Any] | None,
+) -> AttributeComparisonRule:
     normalized = normalize_attribute_comparison(attribute_comparison, fill_default=True)
-    return {
-        "enabled": normalized.get("default", {}).get("enabled", _DEFAULT_ATTRIBUTE_ENABLED),
-        "comparator": DEFAULT_ATTRIBUTE_COMPARATOR,
-        **(normalized.get("default") or {}),
-    }
+    return AttributeComparisonRule.from_mapping(
+        {
+            "enabled": normalized.get("default", {}).get("enabled", _DEFAULT_ATTRIBUTE_ENABLED),
+            "comparator": DEFAULT_ATTRIBUTE_COMPARATOR,
+            **(normalized.get("default") or {}),
+        }
+    )

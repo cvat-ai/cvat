@@ -2,10 +2,18 @@
 #
 # SPDX-License-Identifier: MIT
 
-from collections.abc import Sequence
+from collections.abc import Collection, Mapping, Sequence
 from typing import Any
 
 from rest_framework import serializers
+
+
+def reject_unknown_fields(data: Mapping[str, Any], field_names: Collection[str]) -> None:
+    unknown_fields = set(data).difference(field_names)
+    if unknown_fields:
+        raise serializers.ValidationError(
+            {field_name: ["Unexpected field."] for field_name in sorted(unknown_fields)}
+        )
 
 
 def require_one_of_fields(data: dict[str, Any], keys: Sequence[str]) -> None:

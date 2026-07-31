@@ -324,7 +324,7 @@ class ComparisonParameters(ReportNode):
     panoptic_comparison: bool = True
     "Use only the visible part of the masks and polygons in comparisons"
 
-    empty_is_annotated: bool = False
+    empty_is_annotated: bool = True
     """
     Consider unannotated (empty) frames virtually annotated as "nothing".
     If disabled, quality metrics, such as accuracy, will be 0 if both GT and DS frames
@@ -705,12 +705,68 @@ class ComparisonReportJobStats(ReportNode):
 
 
 @define(kw_only=True, init=False, slots=False)
+class ComparisonReportRequirementCalculationSide(ReportNode):
+    candidate_count: int
+    selected_count: int
+    missing_attributes: list[str] = field(factory=list)
+
+    @classmethod
+    def from_dict(cls, d: dict[str, Any]) -> ComparisonReportRequirementCalculationSide:
+        return cls(
+            candidate_count=d.get("candidate_count", 0),
+            selected_count=d.get("selected_count", 0),
+            missing_attributes=sorted(set(d.get("missing_attributes") or [])),
+        )
+
+    @classmethod
+    def create_empty(cls) -> ComparisonReportRequirementCalculationSide:
+        return cls(candidate_count=0, selected_count=0, missing_attributes=[])
+
+
+@define(kw_only=True, init=False, slots=False)
+class ComparisonReportRequirementCalculation(ReportNode):
+    status: str
+    reason: str | None = None
+    annotations: ComparisonReportRequirementCalculationSide | None = None
+    ground_truth: ComparisonReportRequirementCalculationSide | None = None
+
+    def _as_dict(self, *, include_fields: list[str] | None = None) -> dict:
+        return {
+            key: value
+            for key, value in super()._as_dict(include_fields=include_fields).items()
+            if value is not None
+        }
+
+    @classmethod
+    def from_dict(cls, d: dict[str, Any]) -> ComparisonReportRequirementCalculation:
+        return cls(
+            status=d.get("status", "computed"),
+            reason=d.get("reason"),
+            annotations=(
+                ComparisonReportRequirementCalculationSide.from_dict(d["annotations"])
+                if d.get("annotations")
+                else None
+            ),
+            ground_truth=(
+                ComparisonReportRequirementCalculationSide.from_dict(d["ground_truth"])
+                if d.get("ground_truth")
+                else None
+            ),
+        )
+
+    @classmethod
+    def create_computed(cls) -> ComparisonReportRequirementCalculation:
+        return cls(status="computed")
+
+
+@define(kw_only=True, init=False, slots=False)
 class ComparisonReportRequirementSummaryItem(ReportNode):
     name: str
     metric: str
     score: float | None
     score_components: ComparisonReportScoreComponents
     threshold: float
+    not_computed: bool
     requirement_id: int | None = None
 
     @classmethod
@@ -723,6 +779,10 @@ class ComparisonReportRequirementSummaryItem(ReportNode):
             score_components=ComparisonReportScoreComponents.from_dict(
                 d.get("score_components", {})
             ),
+            not_computed=d.get(
+                "not_computed",
+                d.get("calculation", {}).get("status") == "not_computed",
+            ),
             threshold=d["threshold"],
         )
 
@@ -732,23 +792,28 @@ class ComparisonReportRequirementsSummary(ReportNode):
     total: int
     enabled: int
     completed: int
+    not_computed: int
     items: list[ComparisonReportRequirementSummaryItem] = field(factory=list)
 
     @classmethod
     def from_dict(cls, d: dict[str, Any]) -> ComparisonReportRequirementsSummary:
+        items = [
+            ComparisonReportRequirementSummaryItem.from_dict(item) for item in d.get("items", [])
+        ]
         return cls(
             total=d.get("total", 0),
             enabled=d.get("enabled", 0),
             completed=d.get("completed", 0),
-            items=[
-                ComparisonReportRequirementSummaryItem.from_dict(item)
-                for item in d.get("items", [])
-            ],
+            not_computed=d.get(
+                "not_computed",
+                sum(item.not_computed for item in items),
+            ),
+            items=items,
         )
 
     @classmethod
     def create_empty(cls) -> ComparisonReportRequirementsSummary:
-        return cls(total=0, enabled=0, completed=0, items=[])
+        return cls(total=0, enabled=0, completed=0, not_computed=0, items=[])
 
 
 @define(kw_only=True, init=False, slots=False)
@@ -824,6 +889,7 @@ class ComparisonReportRequirementComparisonSummary(ReportNode):
     conflicts_by_type: dict[AnnotationConflictType, int]
     score: float | None
     score_components: ComparisonReportScoreComponents
+    calculation: ComparisonReportRequirementCalculation
     confusion_matrix: ConfusionMatrix | None
 
     def _value_serializer(self, v):
@@ -834,6 +900,7 @@ class ComparisonReportRequirementComparisonSummary(ReportNode):
 
     @classmethod
     def from_dict(cls, d: dict):
+        score_components = ComparisonReportScoreComponents.from_dict(d.get("score_components", {}))
         return cls(
             conflict_count=d["conflict_count"],
             error_count=d["error_count"],
@@ -842,8 +909,11 @@ class ComparisonReportRequirementComparisonSummary(ReportNode):
                 for k, v in d.get("conflicts_by_type", {}).items()
             },
             score=d.get("score"),
-            score_components=ComparisonReportScoreComponents.from_dict(
-                d.get("score_components", {})
+            score_components=score_components,
+            calculation=(
+                ComparisonReportRequirementCalculation.from_dict(d["calculation"])
+                if d.get("calculation")
+                else ComparisonReportRequirementCalculation.create_computed()
             ),
             confusion_matrix=(
                 ConfusionMatrix.from_dict(d["confusion_matrix"])
@@ -951,16 +1021,19 @@ class ComparisonReportRequirementSummary(ReportNode):
 class ComparisonReport(ReportNode):
     parameters: ComparisonReportParameters
     comparison_summary: ComparisonReportSummary
-    frame_results: dict[int, ComparisonReportFrameSummary] | None
     groups: dict[str, ComparisonReportRequirementSummary] | None = None
 
     @property
     def conflicts(self) -> list[AnnotationConflict]:
-        if not self.frame_results:
+        if not self.groups:
             return []
 
         return deduplicate_annotation_conflicts(
-            list(itertools.chain.from_iterable(r.conflicts for r in self.frame_results.values()))
+            list(
+                itertools.chain.from_iterable(
+                    group_report.conflicts for group_report in self.groups.values()
+                )
+            )
         )
 
     @classmethod
@@ -973,23 +1046,11 @@ class ComparisonReport(ReportNode):
         return cls(
             parameters=ComparisonReportParameters.from_dict(d["parameters"]),
             comparison_summary=ComparisonReportSummary.from_dict(d["comparison_summary"]),
-            frame_results=(
-                {
-                    int(k): ComparisonReportFrameSummary.from_dict(v)
-                    for k, v in d["frame_results"].items()
-                }
-                if d.get("frame_results") is not None
-                else None
-            ),
             groups=groups,
         )
 
     def to_json(self) -> str:
         d = self.to_dict()
-
-        # String keys are needed for json dumping
-        if d.get("frame_results") is not None:
-            d["frame_results"] = {str(k): v for k, v in d["frame_results"].items()}
 
         if d.get("groups") is not None:
             for group in d["groups"].values():

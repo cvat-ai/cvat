@@ -17,6 +17,11 @@ from cvat.apps.engine import serializers as engine_serializers
 from cvat.apps.engine.models import Job, User
 from cvat.apps.quality_control import models
 from cvat.apps.quality_control.comparison_report import ComparisonReport, ConfusionMatrix
+from cvat.apps.quality_control.statistics import (
+    Averaging,
+    compute_accuracy,
+    compute_dice_coefficient,
+)
 
 
 class QualityReportExportFormat(TextChoices):
@@ -100,12 +105,6 @@ def prepare_json_report_for_downloading(db_report: models.QualityReport, *, host
     if db_report.project:
         # project reports should not have per-frame statistics, it's too detailed for this level
         serialized_data["comparison_summary"].pop("frames")
-        serialized_data.pop("frame_results")
-    else:
-        _decorate_frame_results(serialized_data["frame_results"])
-        serialized_data["frame_results"] = _stringify_frame_results(
-            serialized_data["frame_results"]
-        )
 
     for group in (serialized_data.get("groups") or {}).values():
         if group.get("frame_results") is None:
@@ -130,24 +129,47 @@ def prepare_json_report_for_downloading(db_report: models.QualityReport, *, host
     return BytesIO(dump_json(serialized_data, indent=True, append_newline=True))
 
 
-def prepare_csv_report_for_downloading(db_report: models.QualityReport) -> IO[bytes]:
-    """
-    Root reports do not have an aggregate confusion matrix.
-    """
-
-    return BytesIO()
-
-
 def _serialize_confusion_matrix_csv(confusion_matrix: ConfusionMatrix) -> str:
     assert confusion_matrix.labels is not None
     assert confusion_matrix.rows is not None
 
+    labels = list(confusion_matrix.labels)
+    rows = confusion_matrix.rows
+    precisions = confusion_matrix.precision
+    recalls = confusion_matrix.recall
+    jaccards = confusion_matrix.jaccard_index
+    assert precisions is not None
+    assert recalls is not None
+    assert jaccards is not None
+
+    unmatched_label_idx = labels.index("unmatched") if "unmatched" in labels else None
+    dataset_accuracy_micro, _ = compute_accuracy(
+        rows,
+        excluded_label_idx=unmatched_label_idx,
+    )
+    dataset_dice_coeff_avg_macro, dataset_dice_coeff_by_class, _ = compute_dice_coefficient(
+        rows,
+        averaging=Averaging.macro,
+        excluded_label_idx=unmatched_label_idx,
+    )
+
+    jaccards = jaccards.copy()
+    if unmatched_label_idx is not None:
+        jaccards[unmatched_label_idx] = float("nan")
+
     output = StringIO(newline="")
     writer = csv.writer(output)
-    writer.writerow(["ds \\ gt", *confusion_matrix.labels])
+    writer.writerow(["DS (row) \\ GT (col) label", *labels, "precision"])
 
-    for row_label, row in zip(confusion_matrix.labels, confusion_matrix.rows.tolist()):
-        writer.writerow([row_label, *row])
+    for row, label, precision in zip(rows, labels, precisions):
+        writer.writerow([label, *row.tolist(), precision])
+
+    writer.writerow(["recall", *recalls.tolist()])
+    writer.writerow(["dice coefficient", *dataset_dice_coeff_by_class.tolist()])
+    writer.writerow(["jaccard index", *jaccards.tolist()])
+    writer.writerow([""])
+    writer.writerow(["avg. accuracy (micro)", dataset_accuracy_micro])
+    writer.writerow(["avg. dice coefficient (macro)", dataset_dice_coeff_avg_macro])
 
     return output.getvalue()
 
@@ -283,17 +305,9 @@ def prepare_confusion_matrices_archive_for_downloading(db_report: models.Quality
 
 
 def prepare_report_for_downloading(
-    db_report: models.QualityReport, *, host: str, export_format: QualityReportExportFormat
+    db_report: models.QualityReport, *, host: str
 ) -> tuple[IO[bytes], str]:
-    if export_format == QualityReportExportFormat.JSON:
-        return (
-            prepare_json_report_for_downloading(db_report=db_report, host=host),
-            "application/json",
-        )
-    elif export_format == QualityReportExportFormat.CSV:
-        return (
-            prepare_csv_report_for_downloading(db_report=db_report),
-            "text/csv",
-        )
-    else:
-        assert False
+    return (
+        prepare_json_report_for_downloading(db_report=db_report, host=host),
+        "application/json",
+    )

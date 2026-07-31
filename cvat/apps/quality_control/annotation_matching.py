@@ -1000,6 +1000,7 @@ class Comparator:
             "group",  # changes from job to job, compared by other means
             "rotation",  # handled by other means
             "outside",  # handled by other means
+            "score",  # builtin, meaningless to compare
             CVAT_ATTRIBUTE_SPEC_IDS_ATTR,  # internal mapping used by quality attribute rules
         }
         self.included_ann_types = settings.included_annotation_types

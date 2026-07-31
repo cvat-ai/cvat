@@ -339,8 +339,6 @@ class QualityRequirement(TimestampedModel):
 
     name = models.CharField(max_length=250, blank=False)
 
-    is_base = models.BooleanField(default=False)
-
     sort_order = models.IntegerField(default=0)
 
     annotation_type = models.CharField(
@@ -393,11 +391,15 @@ class QualityRequirement(TimestampedModel):
     compare_attributes = models.BooleanField(null=True, blank=True)
     attribute_comparison = models.JSONField(null=True, blank=True, default=None)
 
-    empty_is_annotated = models.BooleanField(default=False, null=True, blank=True)
+    empty_is_annotated = models.BooleanField(default=True, null=True, blank=True)
 
     @property
     def organization_id(self) -> int | None:
         return self.settings.organization_id
+
+    @property
+    def is_base(self) -> bool:
+        return self.parent_id is None
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         defaults = deepcopy(self.get_defaults())
@@ -439,45 +441,34 @@ def get_base_requirement_name(annotation_type: str) -> str:
 
 
 def ensure_base_quality_requirements(quality_settings: QualitySettings) -> bool:
-    base_names = {
-        get_base_requirement_name(annotation_type)
-        for annotation_type in _BASE_REQUIREMENT_ANNOTATION_TYPES
-    }
-    existing_base_names = set(
-        quality_settings.requirements.filter(name__in=base_names).values_list("name", flat=True)
+    existing_base_annotation_types = set(
+        quality_settings.requirements.filter(
+            parent__isnull=True,
+            annotation_type__in=_BASE_REQUIREMENT_ANNOTATION_TYPES,
+        ).values_list("annotation_type", flat=True)
     )
-
-    changed = False
-    if existing_base_names:
-        updated_count = quality_settings.requirements.filter(
-            name__in=existing_base_names,
-            is_base=False,
-        ).update(is_base=True)
-        changed = bool(updated_count)
 
     requirements_to_create = []
     for sort_order, annotation_type in enumerate(_BASE_REQUIREMENT_ANNOTATION_TYPES):
-        name = get_base_requirement_name(annotation_type)
-        if name in existing_base_names:
+        if annotation_type in existing_base_annotation_types:
             continue
 
         requirements_to_create.append(
             QualityRequirement(
                 settings=quality_settings,
-                name=name,
-                is_base=True,
+                name=get_base_requirement_name(annotation_type),
                 sort_order=sort_order,
                 annotation_type=annotation_type,
                 enabled=False,
             )
         )
 
-    if requirements_to_create:
-        QualityRequirement.objects.bulk_create(requirements_to_create)
-        changed = True
+    if not requirements_to_create:
+        return False
 
-    if changed:
-        db_utils.clear_prefetched_relation_cache(quality_settings, "requirements")
-        quality_settings.touch()
-
-    return changed
+    # Avoid using upsert as it can lead to a deadlock when there are concurrent transactions.
+    # A simple insert should just fail on a constraint in such cases, which is what we need.
+    db_utils.bulk_create(QualityRequirement, requirements_to_create)
+    db_utils.clear_prefetched_relation_cache(quality_settings, "requirements")
+    quality_settings.touch()
+    return True

@@ -17,7 +17,10 @@ import numpy as np
 
 from cvat.apps.quality_control import models
 from cvat.apps.quality_control.annotation_matching import Comparator, LineMatcher, MatchingResults
-from cvat.apps.quality_control.attribute_comparators import match_attribute_values
+from cvat.apps.quality_control.attribute_comparators import (
+    AttributeComparisonRule,
+    match_attribute_values,
+)
 from cvat.apps.quality_control.attribute_comparison import (
     CVAT_ATTRIBUTE_SPEC_IDS_ATTR,
     attribute_comparison_may_compare,
@@ -32,8 +35,9 @@ from cvat.apps.quality_control.comparison_report import (
     ComparisonReport,
     ComparisonReportAnnotationsSummary,
     ComparisonReportFrameComparisonSummary,
-    ComparisonReportFrameSummary,
     ComparisonReportParameters,
+    ComparisonReportRequirementCalculation,
+    ComparisonReportRequirementCalculationSide,
     ComparisonReportRequirementComparisonSummary,
     ComparisonReportRequirementsSummary,
     ComparisonReportRequirementSummary,
@@ -47,12 +51,13 @@ from cvat.apps.quality_control.models import AnnotationConflictSeverity, Annotat
 from cvat.apps.quality_control.utils import array_safe_divide
 
 if TYPE_CHECKING:
-    from cvat.apps.quality_control.quality_reports import JobDataProvider
+    from cvat.apps.quality_control.data_providers import JobDataProvider
 
 
 @attrs.define
 class RequirementFrameResult:
     summary: ComparisonReportFrameComparisonSummary
+    calculation: ComparisonReportRequirementCalculation
     matched_pairs: list[tuple[dm.Annotation, dm.Annotation]] = attrs.Factory(list)
 
 
@@ -60,7 +65,7 @@ class RequirementFrameResult:
 class MatchingContext:
     frame_id: int
     estimator: DatasetQualityEstimator
-    categories: dm.Categories
+    categories: dm.CategoriesInfo
 
 
 @attrs.define(slots=False)
@@ -354,6 +359,62 @@ def merge_frame_summaries(
     merge_annotations_summary(target.annotations, other.annotations)
 
 
+def _make_requirement_calculation(
+    *,
+    annotations: ComparisonReportRequirementCalculationSide,
+    ground_truth: ComparisonReportRequirementCalculationSide,
+) -> ComparisonReportRequirementCalculation:
+    common_missing_attributes = set(annotations.missing_attributes) & set(
+        ground_truth.missing_attributes
+    )
+    if not annotations.candidate_count and not ground_truth.candidate_count:
+        status = "not_computed"
+        reason = "no_annotations"
+    elif not annotations.selected_count and not ground_truth.selected_count:
+        status = "not_computed"
+        reason = "required_attributes_missing" if common_missing_attributes else "filter_no_matches"
+    elif annotations.selected_count and ground_truth.selected_count and common_missing_attributes:
+        status = "not_computed"
+        reason = "required_attributes_missing"
+    else:
+        status = "computed"
+        reason = None
+
+    return (
+        ComparisonReportRequirementCalculation.create_computed()
+        if status == "computed"
+        else ComparisonReportRequirementCalculation(
+            status=status,
+            reason=reason,
+            annotations=annotations,
+            ground_truth=ground_truth,
+        )
+    )
+
+
+def select_requirement_calculation(
+    current: ComparisonReportRequirementCalculation | None,
+    candidate: ComparisonReportRequirementCalculation,
+) -> ComparisonReportRequirementCalculation:
+    if current is None:
+        return candidate
+
+    priority = {
+        "no_annotations": 0,
+        "filter_no_matches": 1,
+        "required_attributes_missing": 2,
+        None: 3,
+    }
+    return candidate if priority[candidate.reason] > priority[current.reason] else current
+
+
+def make_empty_requirement_calculation() -> ComparisonReportRequirementCalculation:
+    return _make_requirement_calculation(
+        annotations=ComparisonReportRequirementCalculationSide.create_empty(),
+        ground_truth=ComparisonReportRequirementCalculationSide.create_empty(),
+    )
+
+
 def _get_requirement_metric(requirement: Any) -> str:
     metric = _get_requirement_field(
         requirement,
@@ -369,9 +430,19 @@ def build_requirement_comparison_summary(
     requirement: Any,
     annotations: ComparisonReportAnnotationsSummary,
     conflicts: list[AnnotationConflict],
+    calculation: ComparisonReportRequirementCalculation | None = None,
 ) -> ComparisonReportRequirementComparisonSummary:
     metric = _get_requirement_metric(requirement)
-    score = getattr(annotations, metric, None)
+    if not _get_requirement_field(requirement, "enabled", default=True):
+        calculation = ComparisonReportRequirementCalculation.create_computed()
+    elif calculation is None:
+        calculation = (
+            ComparisonReportRequirementCalculation.create_computed()
+            if annotations.total_count
+            else make_empty_requirement_calculation()
+        )
+
+    score = None if calculation.status == "not_computed" else getattr(annotations, metric, None)
 
     return ComparisonReportRequirementComparisonSummary(
         conflict_count=len(conflicts),
@@ -379,6 +450,7 @@ def build_requirement_comparison_summary(
         conflicts_by_type=Counter(c.type for c in conflicts),
         score=float(score) if score is not None else None,
         score_components=annotations.to_score_components(),
+        calculation=calculation,
         confusion_matrix=annotations.confusion_matrix,
     )
 
@@ -387,6 +459,7 @@ def build_requirement_report(
     *,
     requirement: Any,
     frame_results: dict[int, ComparisonReportFrameComparisonSummary],
+    calculation: ComparisonReportRequirementCalculation | None = None,
     include_frame_results: bool = True,
 ) -> ComparisonReportRequirementSummary:
     conflicts: list[AnnotationConflict] = []
@@ -404,6 +477,7 @@ def build_requirement_report(
             requirement=requirement,
             annotations=annotations_summary,
             conflicts=conflicts,
+            calculation=calculation,
         ),
         frame_results=deepcopy(frame_results) if include_frame_results else None,
     )
@@ -419,6 +493,7 @@ def build_requirements_summary(
         if _get_requirement_field(requirement, "enabled", default=True)
     ]
     completed_count = 0
+    not_computed_count = 0
     items: list[ComparisonReportRequirementSummaryItem] = []
 
     for requirement in enabled_requirements:
@@ -432,25 +507,32 @@ def build_requirements_summary(
             requirement, "target_metric_threshold", "required_score", default=0
         )
         actual_score = group_report.comparison_summary.score
+        calculation = group_report.comparison_summary.calculation
         items.append(
             ComparisonReportRequirementSummaryItem(
                 name=group_name,
                 metric=str(metric),
                 score=actual_score,
                 score_components=group_report.comparison_summary.score_components,
+                not_computed=calculation.status == "not_computed",
                 threshold=float(required_score),
                 requirement_id=_get_requirement_field(
                     requirement, "source_requirement_id", "requirement_id"
                 ),
             )
         )
-        if actual_score is not None and required_score <= actual_score:
+        if calculation.status == "not_computed":
+            # An empty selection on both sides is a vacuous success, but it has no metric value.
+            not_computed_count += 1
+            completed_count += 1
+        elif actual_score is not None and required_score <= actual_score:
             completed_count += 1
 
     return ComparisonReportRequirementsSummary(
         total=len(requirements),
         enabled=len(enabled_requirements),
         completed=completed_count,
+        not_computed=not_computed_count,
         items=items,
     )
 
@@ -528,29 +610,109 @@ class RequirementHandler(ABC):
         }
         return mapping.get(self.requirement.annotation_type, [])
 
-    def _make_empty_frame_summary(self) -> ComparisonReportFrameComparisonSummary:
-        return ComparisonReportFrameComparisonSummary(
-            annotations=ComparisonReportAnnotationsSummary(
-                valid_count=0,
-                missing_count=0,
-                extra_count=0,
-                total_count=0,
-                ds_count=0,
-                gt_count=0,
-                confusion_matrix=ConfusionMatrix(
-                    labels=[],
-                    rows=np.zeros((0, 0), dtype=int),
-                    precision=np.array([]),
-                    recall=np.array([]),
-                    accuracy=np.array([]),
-                    jaccard_index=np.array([]),
-                ),
-            ),
-            conflicts=[],
+    def _get_explicit_comparison_attribute_names(
+        self,
+        annotations: list[dm.Annotation],
+    ) -> set[str]:
+        attribute_comparison = normalize_attribute_comparison(
+            getattr(self.requirement, "attribute_comparison", None),
+            fill_default=True,
+        )
+        default_rule = make_default_attribute_rule(attribute_comparison)
+        required_spec_ids = {
+            int(rule["spec_id"])
+            for rule in attribute_comparison.get("rules", [])
+            if rule.get("spec_id") is not None
+            and AttributeComparisonRule.from_mapping(
+                rule,
+                defaults=default_rule,
+            ).enabled
+        }
+        if not required_spec_ids:
+            return set()
+
+        names_by_spec_id: dict[int, str] = {}
+        for annotation in annotations:
+            spec_ids = annotation.attributes.get(CVAT_ATTRIBUTE_SPEC_IDS_ATTR, {}) or {}
+            names_by_spec_id.update(
+                (int(spec_id), name)
+                for name, spec_id in spec_ids.items()
+                if int(spec_id) in required_spec_ids
+            )
+
+        return {names_by_spec_id.get(spec_id, f"#{spec_id}") for spec_id in required_spec_ids}
+
+    @staticmethod
+    def _get_available_attribute_names(
+        annotations: list[dm.Annotation],
+    ) -> set[str]:
+        return {
+            name
+            for annotation in annotations
+            for name in (annotation.attributes or {})
+            if not name.startswith("__")
+        }
+
+    def _make_calculation_side(
+        self,
+        *,
+        candidates: list[dm.Annotation],
+        selected: list[dm.Annotation],
+        required_comparison_attributes: set[str],
+    ) -> ComparisonReportRequirementCalculationSide:
+        selected_attributes = self._get_available_attribute_names(selected)
+        missing_attributes = (
+            required_comparison_attributes - selected_attributes if selected else set()
         )
 
-    def _empty_result(self) -> RequirementFrameResult:
-        return RequirementFrameResult(summary=self._make_empty_frame_summary())
+        return ComparisonReportRequirementCalculationSide(
+            candidate_count=len(candidates),
+            selected_count=len(selected),
+            missing_attributes=sorted(missing_attributes),
+        )
+
+    def _filter_items(
+        self,
+        *,
+        ds_item: dm.DatasetItem,
+        gt_item: dm.DatasetItem,
+    ) -> tuple[
+        dm.DatasetItem,
+        dm.DatasetItem,
+        ComparisonReportRequirementCalculation,
+    ]:
+        ds_candidates = [
+            annotation
+            for annotation in ds_item.annotations
+            if annotation.type in self.settings.included_annotation_types
+        ]
+        gt_candidates = [
+            annotation
+            for annotation in gt_item.annotations
+            if annotation.type in self.settings.included_annotation_types
+        ]
+        ds_item = self._filter.filter_item(ds_item)
+        gt_item = self._filter.filter_item(gt_item)
+        ds_selected = list(ds_item.annotations)
+        gt_selected = list(gt_item.annotations)
+
+        required_comparison_attributes = self._get_explicit_comparison_attribute_names(
+            [*ds_candidates, *gt_candidates]
+        )
+        calculation = _make_requirement_calculation(
+            annotations=self._make_calculation_side(
+                candidates=ds_candidates,
+                selected=ds_selected,
+                required_comparison_attributes=required_comparison_attributes,
+            ),
+            ground_truth=self._make_calculation_side(
+                candidates=gt_candidates,
+                selected=gt_selected,
+                required_comparison_attributes=required_comparison_attributes,
+            ),
+        )
+
+        return ds_item, gt_item, calculation
 
     def _match_attrs(self, ann_a: dm.Annotation, ann_b: dm.Annotation):
         attribute_comparison = normalize_attribute_comparison(
@@ -559,7 +721,10 @@ class RequirementHandler(ABC):
         )
         default_rule = make_default_attribute_rule(attribute_comparison)
         rules_by_spec_id = {
-            int(rule["spec_id"]): {**default_rule, **rule}
+            int(rule["spec_id"]): AttributeComparisonRule.from_mapping(
+                rule,
+                defaults=default_rule,
+            )
             for rule in attribute_comparison.get("rules", [])
             if rule.get("spec_id") is not None
         }
@@ -582,7 +747,7 @@ class RequirementHandler(ABC):
             else:
                 rule = default_rule
 
-            if rule.get("enabled") is False:
+            if not rule.enabled:
                 continue
 
             attr_a = attrs_a.get(attr_name, notfound)
@@ -640,9 +805,15 @@ class RequirementHandler(ABC):
 
     @abstractmethod
     def match_annotations(
-        self, *, ds_item: dm.DatasetItem, gt_item: dm.DatasetItem
+        self,
+        *,
+        ds_item: dm.DatasetItem,
+        gt_item: dm.DatasetItem,
     ) -> RequirementFrameResult:
-        """Match annotations between dataset and ground truth items. Must be implemented in subclasses."""
+        """Match annotations between dataset and ground truth items.
+
+        Must be implemented in subclasses.
+        """
         raise NotImplementedError("Subclasses must implement match_annotations()")
 
     # row/column index in the confusion matrix corresponding to unmatched annotations
@@ -786,8 +957,10 @@ class TagRequirementHandler(RequirementHandler):
     ) -> RequirementFrameResult:
         conflicts = []
         frame_id = self.context.frame_id
-        gt_item = self._filter.filter_item(gt_item)
-        ds_item = self._filter.filter_item(ds_item)
+        ds_item, gt_item, calculation = self._filter_items(
+            ds_item=ds_item,
+            gt_item=gt_item,
+        )
 
         # Call comparator to match annotations
         matching_results: MatchingResults = self._comparator.match_annotations(gt_item, ds_item)
@@ -850,6 +1023,7 @@ class TagRequirementHandler(RequirementHandler):
                 ),
                 conflicts=conflicts,
             ),
+            calculation=calculation,
             matched_pairs=list(itertools.chain(matches, mismatches)),
         )
 
@@ -865,8 +1039,10 @@ class ShapeRequirementHandler(RequirementHandler):
         frame_id = self.context.frame_id
         gt_item = self._prepare_item_for_requirement(gt_item, self._gt_data_provider)
         ds_item = self._prepare_item_for_requirement(ds_item, self._ds_data_provider)
-        gt_item = self._filter.filter_item(gt_item)
-        ds_item = self._filter.filter_item(ds_item)
+        ds_item, gt_item, calculation = self._filter_items(
+            ds_item=ds_item,
+            gt_item=gt_item,
+        )
 
         # Call comparator to match annotations
         matching_results: MatchingResults = self._comparator.match_annotations(gt_item, ds_item)
@@ -1040,6 +1216,7 @@ class ShapeRequirementHandler(RequirementHandler):
                 ),
                 conflicts=conflicts,
             ),
+            calculation=calculation,
             matched_pairs=list(itertools.chain(shape_matches, shape_mismatches)),
         )
 
@@ -1062,6 +1239,7 @@ class DatasetQualityEstimator:
         self._gt_dataset = self._gt_data_provider.dm_dataset
 
         self._results: dict[str, dict[int, ComparisonReportFrameComparisonSummary]] = {}
+        self._calculations: dict[str, ComparisonReportRequirementCalculation] = {}
 
     @staticmethod
     def _merge_annotations_summary(
@@ -1176,16 +1354,15 @@ class DatasetQualityEstimator:
 
             result = handler.match_annotations(ds_item=ds_item, gt_item=gt_item)
             self._results.setdefault(requirement.name, {})[frame_id] = result.summary
+            self._calculations[requirement.name] = select_requirement_calculation(
+                self._calculations.get(requirement.name),
+                result.calculation,
+            )
 
     def _aggregate_all_results(
         self,
-    ) -> tuple[
-        dict[int, ComparisonReportFrameSummary],
-        list[int],
-        list[AnnotationConflict],
-    ]:
-        all_frame_results: dict[int, ComparisonReportFrameSummary] = {}
-        intersection_frames = []
+    ) -> tuple[list[int], list[AnnotationConflict]]:
+        intersection_frames: set[int] = set()
         conflicts: list[AnnotationConflict] = []
 
         enabled_requirement_names = {
@@ -1199,32 +1376,18 @@ class DatasetQualityEstimator:
                 continue
 
             for frame_id, frame_result in requirement_metrics.items():
-                if frame_id not in all_frame_results:
-                    all_frame_results[frame_id] = ComparisonReportFrameSummary(
-                        conflicts=deepcopy(frame_result.conflicts)
-                    )
-                    intersection_frames.append(frame_id)
-                else:
-                    all_frame_results[frame_id].conflicts = deduplicate_annotation_conflicts(
-                        [*all_frame_results[frame_id].conflicts, *frame_result.conflicts]
-                    )
-
-        for frame_result in all_frame_results.values():
-            conflicts += frame_result.conflicts
-
-        conflicts = deduplicate_annotation_conflicts(conflicts)
+                intersection_frames.add(frame_id)
+                conflicts.extend(frame_result.conflicts)
 
         return (
-            all_frame_results,
-            intersection_frames,
-            conflicts,
+            sorted(intersection_frames),
+            deduplicate_annotation_conflicts(conflicts),
         )
 
     def generate_report(self) -> ComparisonReport:
         self._compare_datasets()
 
         (
-            all_frame_results,
             intersection_frames,
             conflicts,
         ) = self._aggregate_all_results()
@@ -1233,6 +1396,9 @@ class DatasetQualityEstimator:
             requirement.name: build_requirement_report(
                 requirement=requirement,
                 frame_results=self._results.get(requirement.name, {}),
+                calculation=(
+                    self._calculations.get(requirement.name) or make_empty_requirement_calculation()
+                ),
             )
             for requirement in self._requirements
         }
@@ -1249,6 +1415,5 @@ class DatasetQualityEstimator:
                 jobs=None,
                 requirements=requirement_stats,
             ),
-            frame_results=all_frame_results,
             groups=group_reports,
         )
