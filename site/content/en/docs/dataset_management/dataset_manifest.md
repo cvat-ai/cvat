@@ -82,7 +82,7 @@ docker run -it --rm -u "$(id -u)":"$(id -g)" \
   -v "${PWD}":"/local" \
   --entrypoint python3 \
   cvat/server \
-  utils/dataset_manifest/create.py --output-dir /local /local/<path/to/sources>
+  /opt/cvat/utils/dataset_manifest/create.py --output-dir /local /local/<path/to/sources>
 ```
 
 Make sure to adapt the command to your file locations.
@@ -151,10 +151,10 @@ Create a dataset manifest using Docker image:
 
 ```bash
 docker run -it --rm -u "$(id -u)":"$(id -g)" \
-  -v ~/Documents/data/:${HOME}/manifest/:rw \
-  --entrypoint '/usr/bin/bash' \
+  -v ~/Documents/data/:/mnt/manifest/:rw \
+  --entrypoint python3 \
   cvat/server \
-  utils/dataset_manifest/create.py --output-dir ~/manifest/ ~/manifest/images/
+  /opt/cvat/utils/dataset_manifest/create.py --output-dir /mnt/manifest/ /mnt/manifest/images/
 ```
 
 ### File format

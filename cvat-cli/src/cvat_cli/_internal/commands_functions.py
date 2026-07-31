@@ -8,12 +8,9 @@ import textwrap
 from collections.abc import Sequence
 from typing import Any
 
-import cvat_sdk.auto_annotation as cvataa
-from cvat_sdk import Client, models
+from cvat_sdk import Client
 
-from .agent import FUNCTION_PROVIDER_NATIVE, run_agent
-from .agent_driver_detection import AgentDetectionFunctionDriver
-from .agent_driver_tracking import AgentTrackingFunctionDriver
+from .agent import FUNCTION_PROVIDER_NATIVE, get_function_driver_class, run_agent
 from .command_base import CommandGroup
 from .common import FunctionLoader, configure_function_implementation_arguments
 
@@ -40,29 +37,6 @@ class FunctionCreateNative:
 
         configure_function_implementation_arguments(parser)
 
-    @staticmethod
-    def _dump_sublabel_spec(
-        sl_spec: models.SublabelRequest | models.PatchedLabelRequest,
-    ) -> dict:
-        result = {
-            "name": sl_spec.name,
-            "attributes": [
-                {
-                    "name": attribute_spec.name,
-                    "input_type": attribute_spec.input_type,
-                    "values": attribute_spec.values,
-                }
-                for attribute_spec in getattr(sl_spec, "attributes", [])
-            ],
-        }
-
-        if getattr(sl_spec, "type", "any") != "any":
-            # Add the type conditionally, to stay compatible with older
-            # CVAT versions when the function doesn't define label types.
-            result["type"] = sl_spec.type
-
-        return result
-
     def execute(
         self,
         client: Client,
@@ -72,31 +46,15 @@ class FunctionCreateNative:
         function_loader: FunctionLoader,
     ) -> None:
         function = function_loader.load()
+        driver_class = get_function_driver_class(function.spec)
 
         remote_function: dict[str, Any] = {
             "provider": FUNCTION_PROVIDER_NATIVE,
             "name": name,
             "visibility": visibility,
+            "kind": driver_class.FUNCTION_KIND,
+            **driver_class.get_remote_function_fields(function.spec),
         }
-
-        spec = function.spec
-
-        if isinstance(spec, cvataa.DetectionFunctionSpec):
-            remote_function["kind"] = AgentDetectionFunctionDriver.FUNCTION_KIND
-            remote_function["labels_v2"] = []
-
-            for label_spec in spec.labels:
-                remote_function["labels_v2"].append(self._dump_sublabel_spec(label_spec))
-
-                if sublabels := getattr(label_spec, "sublabels", None):
-                    remote_function["labels_v2"][-1]["sublabels"] = [
-                        self._dump_sublabel_spec(sublabel) for sublabel in sublabels
-                    ]
-        elif isinstance(spec, cvataa.TrackingFunctionSpec):
-            remote_function["kind"] = AgentTrackingFunctionDriver.FUNCTION_KIND
-            remote_function["supported_shape_types"] = sorted(spec.supported_shape_types)
-        else:
-            raise cvataa.BadFunctionError(f"Unsupported function spec type: {type(spec).__name__}")
 
         _, response = client.api_client.call_api(
             "/api/functions",

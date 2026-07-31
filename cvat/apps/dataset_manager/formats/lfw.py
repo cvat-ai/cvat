@@ -3,8 +3,9 @@
 #
 # SPDX-License-Identifier: MIT
 
+import shutil
+
 from datumaro.components.dataset import Dataset
-from pyunpack import Archive
 
 from cvat.apps.dataset_manager.bindings import (
     GetCVATDataExtractor,
@@ -18,7 +19,7 @@ from .registry import dm_env, exporter, importer
 
 @importer(name="LFW", ext="ZIP", version="1.0")
 def _import(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs):
-    Archive(src_file.name).extractall(temp_dir)
+    shutil.unpack_archive(src_file.name, temp_dir, "zip")
 
     detect_dataset(temp_dir, format_name="lfw", importer=dm_env.importers.get("lfw"))
     dataset = Dataset.import_from(temp_dir, "lfw")

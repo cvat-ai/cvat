@@ -183,8 +183,11 @@ class ApiClient(object):
         config = self.configuration
 
         # header parameters
-        header_params = header_params or {}
-        header_params.update(self.get_common_headers())
+        header_params = {
+            **self.get_common_headers(),
+            **(header_params or {}),
+        }
+        header_params = {k: v for k, v in header_params.items() if v is not None}
         if header_params:
             header_params = self.sanitize_for_serialization(header_params)
             header_params = dict(self.parameters_to_tuples(header_params,
@@ -884,6 +887,8 @@ class Endpoint(object):
             return
 
         for key, value in kwargs.items():
+            if value is None and self.location_map.get(key) == 'header':
+                continue
             fixed_val = validate_and_convert_types(
                 value,
                 self.openapi_types[key],
@@ -1025,6 +1030,7 @@ class Endpoint(object):
             # is False, if _validate_inputs==True we catch this case
             # in self.__validate_inputs
             if (key not in self.params_map['nullable'] and value is None
+                    and self.location_map.get(key) != 'header'
                     and kwargs['_validate_inputs'] is False):
                 raise ApiValueError(
                     "Value may not be None for non-nullable parameter `%s`"

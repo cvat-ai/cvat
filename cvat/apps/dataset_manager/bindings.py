@@ -36,7 +36,6 @@ from cvat.apps.engine import models
 from cvat.apps.engine.cache import MediaCache
 from cvat.apps.engine.lazy_list import LazyList
 from cvat.apps.engine.media_io.frame_provider import FrameOutputType, TaskFrameProvider
-from cvat.apps.engine.model_utils import add_prefetch_fields
 from cvat.apps.engine.models import (
     AttributeSpec,
     AttributeType,
@@ -53,6 +52,7 @@ from cvat.apps.engine.models import (
     Task,
 )
 from cvat.apps.engine.rq import ImportRQMeta
+from cvat.utils import django_database as db_utils
 
 from ..engine.log import ServerLogManager
 from .annotation import AnnotationIR, AnnotationManager, TrackManager
@@ -90,7 +90,7 @@ class InstanceLabelData:
     def add_prefetch_info(cls, queryset: QuerySet[Label]) -> QuerySet[Label]:
         assert issubclass(queryset.model, Label)
 
-        return add_prefetch_fields(
+        return db_utils.add_prefetch_fields(
             queryset,
             [
                 "skeleton",

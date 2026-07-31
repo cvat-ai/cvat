@@ -21,6 +21,7 @@ See:
 
 - [Interactors](#interactors)
   - [AI tools: annotate with interactors](#ai-tools-annotate-with-interactors)
+  - [Limiting interactor input to a region of interest](#limiting-interactor-input-to-a-region-of-interest)
   - [AI tools: add extra points](#ai-tools-add-extra-points)
   - [AI tools: delete points](#ai-tools-delete-points)
   - [OpenCV: intelligent scissors](#opencv-intelligent-scissors)
@@ -29,6 +30,7 @@ See:
 - [Detectors](#detectors)
   - [Labels matching](#labels-matching)
   - [Annotate with detectors](#annotate-with-detectors)
+  - [Limiting detector input to a region of interest](#limiting-detector-input-to-a-region-of-interest)
   - [Detectors models](#detectors-models)
 - [Trackers](#trackers)
   - [AI tools: annotate with trackers](#ai-tools-annotate-with-trackers)
@@ -67,6 +69,24 @@ To annotate with interactors, do the following:
 6. Use the left click to add positive points and the right click to add negative points.
    <br>Number of points you can add depends on the model.
 7. On the top menu, click **Done** (or **Shift+N**, **N**).
+
+### Limiting interactor input to a region of interest
+
+For image/video jobs, you can restrict an interactor to a selected image area.
+Use this when you want the model to segment only a specific part of the frame.
+
+To set the region:
+
+1. In the **Interactors** tab, specify **Region of interest** values:
+   `x`, `y`, `width`, and `height`.
+2. Alternatively, click **Draw a region of interest** and draw the area on the canvas.
+3. Click **Interact** and place points or boxes inside the selected region.
+
+<img src="/images/interactors_roi.png" alt="Interactors tab with Region of interest inputs" style="max-width: 400px;">
+
+When a region of interest is set, CVAT sends only that image crop to the model,
+restricts interactor prompts to the selected area, and adds the resulting shape
+back in the correct full-frame position.
 
 ### AI tools: add extra points
 
@@ -196,6 +216,23 @@ This action will automatically annotate one frame.
 For automatic annotation of multiple frames,
 see {{< ilink "/docs/annotation/auto-annotation/automatic-annotation" "Automatic annotation" >}}.
 
+### Limiting detector input to a region of interest
+
+For image/video jobs, you can restrict a detector to a selected image area.
+Use this when only part of the frame should be analyzed.
+
+To set the region:
+
+1. In the **Detectors** tab, specify **Region of interest** values:
+   `x`, `y`, `width`, and `height`.
+2. Alternatively, click **Draw a region of interest** and draw the area on the canvas.
+3. Click **Annotate**.
+
+<img src="/images/detectors_roi.png" alt="Detectors tab with Region of interest inputs" style="max-width: 400px;">
+
+CVAT sends only the selected image crop to the detector and maps the returned
+annotations back to the correct full-frame coordinates.
+
 ### Detectors models
 
 | Model                          | Description                                                                                                                                                                                                                                                                                                                                                                                                                    |
@@ -277,7 +314,7 @@ All annotated objects will be automatically tracked up until target frame parame
 | TrackerMIL                    | OpenCV   | TrackerMIL model is not bound to <br>labels and can be used for any <br>object. It is a fast client-side model <br>designed to track simple non-overlapping objects. <br><br>For more information, see: <li>[Article: Object Tracking using OpenCV](https://learnopencv.com/tag/mil/)                                                                                                                                                                  | ![Example of annotation process using TrackerMIL model](/images/tracker_mil_detrac.gif) |
 | SiamMask                      | AI Tools | Fast online Object Tracking and Segmentation. The trackable object will <br>be tracked automatically if the previous frame <br>was the latest keyframe for the object. <br><br>For more information, see:<li> [GitHub: SiamMask](https://github.com/foolwood/SiamMask) <li> [Paper: SiamMask](https://arxiv.org/pdf/1812.05050.pdf)                                                                                                                    | ![Example of annotation process using SiamMask](/images/tracker_ai_tools.gif) |
 | Transformer Tracking (TransT) | AI Tools | Simple and efficient online tool for object tracking and segmentation. <br>If the previous frame was the latest keyframe <br>for the object, the trackable object will be tracked automatically.<br>This is a modified version of the PyTracking <br> Python framework based on Pytorch<br> <br><br>For more information, see: <li> [GitHub: TransT](https://github.com/chenxin-dlut/TransT)<li> [Paper: TransT](https://arxiv.org/pdf/2103.15436.pdf) | ![Example of annotation process using Transformer Tracking](/images/tracker_transit.gif) |
-| SAM2 Tracker                  | AI Agent | Advanced object tracking and segmentation using Meta's Segment Anything Model 2. <br>Available for CVAT Online and Enterprise via AI agents. <br>Supports polygons and masks with high precision tracking. <br>Requires user-side agent setup with Python 3.10+. <br><br>For more information, see: <li>{{< ilink "/docs/annotation/auto-annotation/segment-anything-2-tracker" "SAM2 Tracker Setup Guide" >}} <li>[SAM2 Blog: AI Agent Integration](https://www.cvat.ai/resources/blog/sam2-ai-agent-tracking) | _Example coming soon_ |
+| SAM2 Tracker                  | AI Agent | Advanced object tracking and segmentation using Meta's Segment Anything Model 2. {{< product-badge "online,enterprise" >}} <br>Supports polygons and masks with high precision tracking. <br>Requires user-side agent setup with Python 3.10+. <br><br>For more information, see: <li>{{< ilink "/docs/annotation/auto-annotation/segment-anything-2-tracker" "SAM2 Tracker Setup Guide" >}} <li>[SAM2 Blog: AI Agent Integration](https://www.cvat.ai/resources/blog/sam2-ai-agent-tracking) | _Example coming soon_ |
 
 ## OpenCV: histogram equalization
 

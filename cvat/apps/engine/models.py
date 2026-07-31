@@ -16,6 +16,7 @@ from functools import cached_property
 from pathlib import Path, PurePath
 from typing import TYPE_CHECKING, Any, ClassVar
 
+from dirtyfields import DirtyFieldsMixin
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
@@ -31,9 +32,9 @@ from drf_spectacular.utils import extend_schema_field
 
 from cvat.apps.engine.exceptions import CloudStorageMissingError
 from cvat.apps.engine.lazy_list import LazyList
-from cvat.apps.engine.model_utils import MaybeUndefined
 from cvat.apps.engine.utils import parse_specific_attributes, take_by
 from cvat.apps.events.utils import cache_deleted
+from cvat.utils import django_database as db_utils
 
 if TYPE_CHECKING:
     from cvat.apps.engine.cloud_provider import AbstractCloudStorage
@@ -460,12 +461,12 @@ class Data(models.Model):
     stop_frame = models.PositiveIntegerField(default=0)
     frame_filter = models.CharField(max_length=256, default="", blank=True)
     deleted_frames = IntArrayField(store_sorted=True, unique_values=True)
-    validation_layout: MaybeUndefined[ValidationLayout]
+    validation_layout: db_utils.MaybeUndefined[ValidationLayout]
 
     # Media descriptors
     images: models.manager.RelatedManager[Image]
-    video: MaybeUndefined[Video]
-    audio: MaybeUndefined[Audio]
+    video: db_utils.MaybeUndefined[Video]
+    audio: db_utils.MaybeUndefined[Audio]
     related_files: models.manager.RelatedManager[RelatedFile]
 
     # Cache descriptors
@@ -502,7 +503,7 @@ class Data(models.Model):
     client_files: models.manager.RelatedManager[ClientFile]
     server_files: models.manager.RelatedManager[ServerFile]
     remote_files: models.manager.RelatedManager[RemoteFile]
-    validation_params: MaybeUndefined[ValidationParams]
+    validation_params: db_utils.MaybeUndefined[ValidationParams]
     """
     Represents user-requested validation params before task is created.
     After the task creation, 'validation_layout' is used instead.
@@ -609,7 +610,9 @@ class Data(models.Model):
 
         if self.storage == StorageChoice.LOCAL and self.local_storage_backing_cs:
             return SubdirectoryCloudStorage(
-                db_storage_to_storage_instance(self.local_storage_backing_cs), f"data/{self.id}/raw"
+                # We can trust backing cloud storage, since only an admin can set it.
+                db_storage_to_storage_instance(self.local_storage_backing_cs, is_trusted=True),
+                f"data/{self.id}/raw",
             )
 
         return None
@@ -798,7 +801,7 @@ def clear_annotations_on_frames_in_honeypot_task(db_task: Task, frames: Sequence
         ).delete()
 
 
-class Project(TimestampedModel, AssignableModel, FileSystemRelatedModel):
+class Project(DirtyFieldsMixin, TimestampedModel, AssignableModel, FileSystemRelatedModel):
     name = SafeCharField(max_length=256)
     owner = models.ForeignKey(
         User, null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
@@ -913,7 +916,7 @@ class MediaType(TextChoices):
     AUDIO = "audio"
 
 
-class Task(TimestampedModel, AssignableModel, FileSystemRelatedModel):
+class Task(DirtyFieldsMixin, TimestampedModel, AssignableModel, FileSystemRelatedModel):
     objects = TaskQuerySet.as_manager()
 
     project = models.ForeignKey(
@@ -975,7 +978,7 @@ class Task(TimestampedModel, AssignableModel, FileSystemRelatedModel):
 
     segment_set: models.manager.RelatedManager[Segment]
 
-    user_can_view_task: MaybeUndefined[bool]
+    user_can_view_task: db_utils.MaybeUndefined[bool]
     "Can be defined by the fetching queryset to avoid extra IAM checks, e.g. in a list serializer"
 
     # Extend default permission model
@@ -1287,7 +1290,7 @@ class JobQuerySet(models.QuerySet):
         return self.annotate(child_jobs__count=models.Count("child_job"))
 
 
-class Job(TimestampedModel, AssignableModel, FileSystemRelatedModel):
+class Job(DirtyFieldsMixin, TimestampedModel, AssignableModel, FileSystemRelatedModel):
     objects = JobQuerySet.as_manager()
 
     segment = models.ForeignKey(Segment, on_delete=models.CASCADE)
@@ -1325,13 +1328,13 @@ class Job(TimestampedModel, AssignableModel, FileSystemRelatedModel):
     labeledinterval_set: models.manager.RelatedManager[LabeledInterval]
     labeledintervalattributeval_set: models.manager.RelatedManager[LabeledIntervalAttributeVal]
 
-    user_can_view_task: MaybeUndefined[bool]
+    user_can_view_task: db_utils.MaybeUndefined[bool]
     "Can be defined by the fetching queryset to avoid extra IAM checks, e.g. in a list serializer"
 
-    issue__count: MaybeUndefined[int]
+    issue__count: db_utils.MaybeUndefined[int]
     "Can be defined by the fetching queryset"
 
-    child_jobs__count: MaybeUndefined[int]
+    child_jobs__count: db_utils.MaybeUndefined[int]
     "Can be defined by the fetching queryset"
 
     def get_target_storage(self) -> Storage | None:
@@ -1687,7 +1690,7 @@ class Profile(models.Model):
     )
 
 
-class Issue(TimestampedModel, AssignableModel):
+class Issue(DirtyFieldsMixin, TimestampedModel, AssignableModel):
     frame = models.PositiveIntegerField()
     position = FloatArrayField()
     job = models.ForeignKey(
@@ -1715,7 +1718,7 @@ class Issue(TimestampedModel, AssignableModel):
         return self.job_id
 
 
-class Comment(TimestampedModel):
+class Comment(DirtyFieldsMixin, TimestampedModel):
     issue = models.ForeignKey(
         Issue, related_name="comments", related_query_name="comment", on_delete=models.CASCADE
     )

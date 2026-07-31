@@ -3,6 +3,8 @@
 #
 # SPDX-License-Identifier: MIT
 
+from __future__ import annotations
+
 import ast
 import hashlib
 import importlib
@@ -13,15 +15,16 @@ import re
 import stat
 import subprocess
 import sys
+import sysconfig
 import traceback
 import urllib.parse
 from collections import defaultdict, namedtuple
 from collections.abc import Callable, Generator, Iterable, Mapping, Sequence
-from contextlib import contextmanager, nullcontext, suppress
+from contextlib import nullcontext, suppress
 from itertools import islice
 from multiprocessing import cpu_count
 from pathlib import Path
-from typing import Any, TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar
 
 import cv2 as cv
 from attr.converters import to_bool
@@ -29,7 +32,7 @@ from av import VideoFrame
 from datumaro.util.os_util import walk
 from django.conf import settings
 from django.core.exceptions import ValidationError
-from django.db import connection, transaction
+from django.db.models import Model
 from django_rq.queues import DjangoRQ
 from django_sendfile import sendfile as _sendfile
 from PIL import Image
@@ -38,7 +41,24 @@ from rq.job import Job as RQJob
 
 from cvat.apps.engine.types import ExtendedRequest
 
+if TYPE_CHECKING:
+    from _typeshed import StrPath
+
+    from cvat.apps.engine.models import RequestTarget
+
 Import = namedtuple("Import", ["module", "name", "alias"])
+log = logging.getLogger(__name__)
+
+
+def get_request_target_django_model_by_enum(target: "RequestTarget") -> type[Model]:
+    from cvat.apps.engine.models import Job, Project, RequestTarget, Task
+
+    request_target_to_model: dict[RequestTarget, type[Model]] = {
+        RequestTarget.PROJECT: Project,
+        RequestTarget.TASK: Task,
+        RequestTarget.JOB: Job,
+    }
+    return request_target_to_model[target]
 
 
 def parse_imports(source_code: str):
@@ -458,10 +478,22 @@ def defaultdict_to_regular(d):
     return d
 
 
-@contextmanager
-def transaction_with_repeatable_read():
-    with transaction.atomic():
-        if connection.vendor != "sqlite":
-            connection.cursor().execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ;")
-            connection.cursor().execute("SET TRANSACTION READ ONLY;")
-        yield
+def extract_with_patool(archive_path: StrPath, out_dir: StrPath) -> None:
+    try:
+        subprocess.run(  # nosec: B603
+            [
+                os.path.join(sysconfig.get_path("scripts"), "patool"),
+                "--non-interactive",
+                "extract",
+                f"--outdir={out_dir}",
+                "--",
+                archive_path,
+            ],
+            check=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.PIPE,
+            text=True,
+            errors="replace",
+        )
+    except subprocess.CalledProcessError as ex:
+        raise RuntimeError("unable to extract archive:\n" + ex.stderr) from ex
