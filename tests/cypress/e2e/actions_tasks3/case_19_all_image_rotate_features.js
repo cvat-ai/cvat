@@ -11,12 +11,6 @@ import { imageRotate, checkDegRotate } from '../../support/utils.cy';
 context('Rotate all images feature.', () => {
     const caseId = '19';
 
-    function checkFrameNum(frameNum) {
-        cy.get('.cvat-player-frame-selector').within(() => {
-            cy.get('input[role="spinbutton"]').should('have.value', frameNum);
-        });
-    }
-
     before(() => {
         cy.prepareUserSession();
         cy.openTaskJob(taskName);
@@ -31,7 +25,7 @@ context('Rotate all images feature.', () => {
 
         it("Go to the next frame. It wasn't rotated.", () => {
             cy.get('.cvat-player-next-button').click();
-            checkFrameNum(1);
+            cy.checkFrameNum(1);
             checkDegRotate(0);
         });
 
@@ -48,10 +42,10 @@ context('Rotate all images feature.', () => {
 
         it('Go to the previous and to the next frame. They are also rotated 180 deg.', () => {
             cy.get('.cvat-player-previous-button').click();
-            checkFrameNum(0);
+            cy.checkFrameNum(0);
             checkDegRotate(180);
             cy.get('.cvat-player-next-button').click();
-            checkFrameNum(1);
+            cy.checkFrameNum(1);
             checkDegRotate(180);
         });
     });
