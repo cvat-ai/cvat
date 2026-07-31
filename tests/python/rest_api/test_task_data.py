@@ -1824,6 +1824,8 @@ class TestPostTaskData:
 
 @pytest.mark.usefixtures("restore_db_per_class")
 @pytest.mark.usefixtures("restore_cvat_data_per_class")
+@pytest.mark.usefixtures("restore_redis_inmem_per_class")
+@pytest.mark.usefixtures("restore_redis_ondisk_per_class")
 @pytest.mark.usefixtures("restore_redis_ondisk_after_class")
 class TestTaskData(TestTasksBase):
     @staticmethod
