@@ -6,7 +6,7 @@ import React from 'react';
 import { useSelector } from 'react-redux';
 
 import AudioRegionDetailsWrapper from 'audio/containers/annotation-page/audio-workspace/audio-region-details';
-import { getCachedAudioBuffer } from 'audio/utils/audio-buffer-cache';
+import { getCachedAudioData } from 'audio/utils/audio-data-cache';
 import { CombinedState } from 'reducers';
 import { shallowEqual } from 'utils/redux';
 import GlobalHotKeys from 'utils/mousetrap-react';
@@ -63,9 +63,9 @@ function AudioCanvas({
 
 function AudioCanvasWrapper(): JSX.Element {
     const {
-        audioBufferToken, audioLoading, audioError, waveformReady,
+        audioDataToken, audioLoading, audioError, waveformReady,
     } = useSelector((state: CombinedState) => ({
-        audioBufferToken: state.audio.player.audioBufferToken,
+        audioDataToken: state.audio.player.audioDataToken,
         audioLoading: state.audio.player.audioLoading,
         audioError: state.audio.player.audioError,
         waveformReady: state.audio.player.waveformReady,
@@ -93,8 +93,8 @@ function AudioCanvasWrapper(): JSX.Element {
 
     // Redux stores an opaque token rather than decoded PCM. Resolving it here keeps
     // the AudioBuffer in ordinary runtime memory and passes the same object to WaveSurfer.
-    const audioData = audioBufferToken ? getCachedAudioBuffer(audioBufferToken) : null;
-    if (!audioBufferToken || !audioData) {
+    const audioData = audioDataToken ? getCachedAudioData(audioDataToken) : null;
+    if (!audioDataToken || !audioData) {
         return (
             <div className='cvat-audio-canvas-wrapper'>
                 <div className='cvat-audio-placeholder'>
@@ -111,8 +111,8 @@ function AudioCanvasWrapper(): JSX.Element {
     // So key is essential here as it guarantees the player and plugins lifecycle validity.
     return (
         <AudioCanvas
-            key={audioBufferToken}
-            sourceToken={audioBufferToken}
+            key={audioDataToken}
+            sourceToken={audioDataToken}
             audioBuffer={audioData.audioBuffer}
             peaks={audioData.peaks}
             duration={audioData.duration}

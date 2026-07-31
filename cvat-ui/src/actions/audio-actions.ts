@@ -10,8 +10,8 @@ import {
 } from 'cvat-core-wrapper';
 import { clamp } from 'utils/math';
 import {
-    cacheAudioBuffer, removeCachedAudioBuffer,
-} from 'audio/utils/audio-buffer-cache';
+    cacheAudioData, removeCachedAudioData,
+} from 'audio/utils/audio-data-cache';
 
 export enum AudioActionTypes {
     SWITCH_AUDIO_PLAY = 'SWITCH_AUDIO_PLAY',
@@ -81,8 +81,8 @@ export const audioActions = {
     loadAudioData: (request: object) => (
         createAction(AudioActionTypes.LOAD_AUDIO_DATA, { request })
     ),
-    loadAudioDataSuccess: (request: object, audioBufferToken: string) => (
-        createAction(AudioActionTypes.LOAD_AUDIO_DATA_SUCCESS, { request, audioBufferToken })
+    loadAudioDataSuccess: (request: object, audioDataToken: string) => (
+        createAction(AudioActionTypes.LOAD_AUDIO_DATA_SUCCESS, { request, audioDataToken })
     ),
     loadAudioDataFailed: (request: object, error: string) => (
         createAction(AudioActionTypes.LOAD_AUDIO_DATA_FAILED, { request, error })
@@ -148,9 +148,9 @@ async function dispatchFetchAnnotations(dispatch: ThunkDispatch): Promise<void> 
 
 export function loadAudioDataAsync(job: Job, jobMeta: FramesMetaData): ThunkAction {
     return async (dispatch: ThunkDispatch, getState): Promise<void> => {
-        const previousToken = getState().audio.player.audioBufferToken;
+        const previousToken = getState().audio.player.audioDataToken;
         if (previousToken) {
-            removeCachedAudioBuffer(previousToken);
+            removeCachedAudioData(previousToken);
         }
 
         // use request object as request identity to prevent applying stale responses
@@ -163,15 +163,15 @@ export function loadAudioDataAsync(job: Job, jobMeta: FramesMetaData): ThunkActi
             const audioData = await fetchAndAssembleAudio(job.id, totalFrames, chunkSize);
             // Keep decoded PCM and waveform peaks out of Redux and pass their
             // opaque token to the canvas.
-            const audioBufferToken = cacheAudioBuffer(audioData);
+            const audioDataToken = cacheAudioData(audioData);
 
             // clean up and exit right away if stale
             if (getState().audio.player.audioLoadRequest !== request) {
-                removeCachedAudioBuffer(audioBufferToken);
+                removeCachedAudioData(audioDataToken);
                 return;
             }
 
-            dispatch(audioActions.loadAudioDataSuccess(request, audioBufferToken));
+            dispatch(audioActions.loadAudioDataSuccess(request, audioDataToken));
         } catch (error) {
             if (getState().audio.player.audioLoadRequest === request) {
                 dispatch(audioActions.loadAudioDataFailed(
@@ -183,10 +183,10 @@ export function loadAudioDataAsync(job: Job, jobMeta: FramesMetaData): ThunkActi
     };
 }
 
-export function releaseAudioDataAsync(audioBufferToken: string): ThunkAction {
+export function releaseAudioDataAsync(audioDataToken: string): ThunkAction {
     return async (dispatch: ThunkDispatch): Promise<void> => {
-        removeCachedAudioBuffer(audioBufferToken);
-        dispatch(audioActions.setWaveformReady(audioBufferToken, false));
+        removeCachedAudioData(audioDataToken);
+        dispatch(audioActions.setWaveformReady(audioDataToken, false));
     };
 }
 

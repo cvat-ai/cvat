@@ -67,7 +67,7 @@ interface Params {
 
 interface WaveSurferWebAudioPlayer {
     // WaveSurfer's WebAudio player holds the decoded source in this internal field.
-    // It is intentionally typed locally because this is a PoC private-API binding,
+    // It is intentionally typed locally because this is private-API binding,
     // not a public WaveSurfer API contract.
     buffer: AudioBuffer | null;
     emit(eventName: 'durationchange'): void;
