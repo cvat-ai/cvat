@@ -8,6 +8,7 @@ Cypress.Commands.add('closeAnnotationsActionsModal', () => {
     cy.get('.cvat-action-runner-cancel-btn').should('have.text', 'Close');
     cy.get('.cvat-action-runner-cancel-btn').click();
     cy.get('.cvat-action-runner-content').should('not.exist');
+    cy.get('.ant-modal-wrap').should('not.exist');
 });
 
 Cypress.Commands.add('openAnnotationsActionsModal', () => {
