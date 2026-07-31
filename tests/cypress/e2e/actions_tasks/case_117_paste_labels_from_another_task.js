@@ -82,7 +82,7 @@ context('Paste labels from one task to another.', { browser: '!firefox' }, () =>
             pasteIntoRawLabels(copiedLabels);
             cy.get('.cvat-raw-labels-viewer').invoke('val').should('not.contain', '"id":');
             cy.intercept('PATCH', '/api/tasks/**').as('patchTaskLabels');
-            cy.contains('button', 'Done').click();
+            cy.contains('button', 'Save').click();
             cy.get('.cvat-modal-confirm-remove-existing-labels').should('be.visible').within(() => {
                 cy.get('.cvat-modal-confirm-content-remove-existing-labels').should('have.text', task.labelSecond);
                 cy.get('.cvat-modal-confirm-content-remove-existing-attributes')
