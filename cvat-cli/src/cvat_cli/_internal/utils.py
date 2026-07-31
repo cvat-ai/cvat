@@ -33,6 +33,11 @@ def read_token_file(path: Path) -> tuple[str, str | None, str | None]:
         raise ValueError("path must be a regular file")
 
     text = path.read_text(encoding="utf-8")
+    if not text:
+        # jsonc.loads raises IndexError for empty strings:
+        # https://github.com/n-takumasa/json-with-comments/issues/48
+        return "", None, None
+
     try:
         doc = jsonc.loads(text)
     except JSONDecodeError:

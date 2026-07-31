@@ -282,6 +282,22 @@ class TestProfileCreateFromFile:
         )
         assert AuthStore(path=store_path).get_profile("release-bot").token == "raw-token"
 
+    def test_empty_token_file_reports_non_empty_pat_error(self, store_path, tmp_path, capsys):
+        f = tmp_path / "pat.txt"
+        f.write_text("")
+        run_cli(
+            self,
+            "profile",
+            "create",
+            "--name",
+            "p",
+            "--file",
+            str(f),
+            expected_code=1,
+        )
+        assert "A non-empty PAT is required." in capsys.readouterr().err
+        assert AuthStore(path=store_path).get_profile("p") is None
+
     def test_json_envelope_zero_args(self, store_path, tmp_path):
         f = tmp_path / "cvat-token.json"
         f.write_text(
