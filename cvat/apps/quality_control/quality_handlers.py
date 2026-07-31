@@ -1115,6 +1115,8 @@ class ShapeRequirementHandler(RequirementHandler):
                 )
             )
 
+        # NOTE @grigorii: Direction mismatches prevent annotations from matching with the
+        # current single-stage matcher. Keep this handling for a future multi-stage matcher.
         if (
             self.settings.compare_line_orientation
             and dm.AnnotationType.polyline in self._comparator.included_ann_types
@@ -1150,6 +1152,8 @@ class ShapeRequirementHandler(RequirementHandler):
                     )
                 )
 
+        # NOTE @grigorii: Attribute mismatches prevent annotations from matching with the
+        # current single-stage matcher. Keep this handling for a future multi-stage matcher.
         if self.settings.compare_attributes:
             for gt_ann, ds_ann in matches:
                 comparison = _get_comparison(gt_ann, ds_ann)
