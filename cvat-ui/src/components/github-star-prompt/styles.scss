@@ -142,7 +142,7 @@
         font-size: $grid-unit-size * 2.125;
         font-weight: 600;
 
-        &:not(:disabled):not(.ant-btn-disabled) {
+        &:not(:disabled, .ant-btn-disabled) {
             &:hover,
             &:focus,
             &:focus-visible,
@@ -166,7 +166,7 @@
         font-size: $grid-unit-size * 2.125;
         text-decoration: underline;
 
-        &:not(:disabled):not(.ant-btn-disabled) {
+        &:not(:disabled, .ant-btn-disabled) {
             &:hover,
             &:focus,
             &:focus-visible,
