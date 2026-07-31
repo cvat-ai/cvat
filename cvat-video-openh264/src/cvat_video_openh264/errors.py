@@ -4,6 +4,17 @@
 
 """Public exceptions raised by the CVAT OpenH264 adapter."""
 
+__all__ = [
+    "DecoderIntegrityError",
+    "DecoderProvisioningError",
+    "DecoderUnavailableError",
+    "DecoderVersionMismatchError",
+    "UnsupportedDecoderPlatformError",
+    "UnsupportedVideoChunkError",
+    "VideoDecoderError",
+    "VideoDecoderUnavailableError",
+]
+
 
 class VideoDecoderError(Exception):
     """Base class for stable video-decoder failures."""
@@ -13,7 +24,8 @@ class VideoDecoderUnavailableError(RuntimeError, VideoDecoderError):
     """Raised when a usable OpenH264 shared library cannot be found."""
 
 
-# Preserve the proof-of-concept name as an alias of the production exception.
+# The proof-of-concept name is part of the Task 1 compatibility contract and must
+# remain available during the coordinated package-ownership switchover.
 DecoderUnavailableError = VideoDecoderUnavailableError
 
 

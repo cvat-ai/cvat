@@ -1,19 +1,22 @@
 # CVAT OpenH264 video adapter
 
-`cvat-video-openh264` is the independently built video-decoding adapter for CVAT's Python
-clients. This package-development snapshot preserves the proof-of-concept decoder contract while
-the native ABI boundary is hardened for production.
+`cvat-video-openh264` is the standalone video-decoding adapter for CVAT's Python clients.
+It parses the constrained MP4/H.264 chunks produced by CVAT and decodes them into
+`PIL.Image.Image` frames using a separately supplied OpenH264 shared library.
 
-The package contains CVAT-owned Python code for parsing the constrained MP4/H.264 chunks produced
-by CVAT, converting AVC samples to Annex B access units, converting decoded I420 planes to RGB,
-and constructing Pillow images. It does **not** contain an OpenH264 binary, PyAV, FFmpeg,
-`libx264`, a codec downloader, or an install-time network hook.
+The package ships no OpenH264 binary, PyAV, FFmpeg, `libx264`, codec downloader, or
+install-time network hook. This development package must not be published or installed
+alongside the current `cvat-sdk` wheel while that wheel still owns the
+`cvat_video_openh264` import namespace. Publication remains gated on that coordinated
+package-ownership switchover.
 
-This project is intentionally isolated from `cvat-sdk` until the coordinated package-ownership
-switchover. Do not install this distribution in an environment where the current `cvat-sdk`
-wheel also owns the `cvat_video_openh264` import namespace.
+## Isolated development install
 
-## Public API
+```shell
+python -m pip install -e './cvat-video-openh264[test]'
+```
+
+## Example
 
 ```python
 from pathlib import Path
@@ -27,55 +30,35 @@ for image in iter_frames(
     process(image)
 ```
 
-`iter_frames(path, *, library_path=None)` yields `PIL.Image.Image` objects in MP4 sample order.
-The iterator owns one decoder. Exhausting or closing the iterator closes that decoder. Every
-yielded image owns its pixel data and remains valid after iteration advances or the decoder is
-closed.
+If `library_path` is omitted, the adapter checks `CVAT_OPENH264_LIBRARY` and then the
+platform's normal system-library discovery. Discovery and decoding begin only when the
+returned iterator is advanced.
 
-If `library_path` is omitted, the adapter checks `CVAT_OPENH264_LIBRARY` and then the platform's
-normal system-library discovery. Discovery and decoding begin only when the returned iterator is
-advanced; importing the package or constructing the iterator does not load a codec, prompt, or
-contact the network.
-
-The following compatibility symbols remain available while the proof of concept is migrated:
-
-- `DecoderInfo` and `resolve_decoder()`;
-- `DecoderUnavailableError`;
-- `UnsupportedVideoChunkError`.
-
-All public decoder exceptions derive from `VideoDecoderError`.
-
-## Accepted chunk contract
+`iter_frames()` yields images in MP4 sample order. The returned generator owns the open
+chunk file and one decoder; exhausting or closing it releases both. Each yielded image
+owns its pixel data and remains valid after iteration advances or the decoder closes.
 
 The parser accepts the narrow CVAT-generated format used by the current proof of concept:
 
-- one MP4 video track using an `avc1` sample entry;
+- one MP4 video track with an `avc1` sample entry;
 - constrained-baseline H.264 with SPS and PPS entries in `avcC`;
 - `stsz`, `stsc`, and exactly one `stco` or `co64` sample-table mapping;
-- decode-order samples with no nonzero composition offsets;
-- bounded sample counts and sample sizes;
-- sample offsets and sizes entirely inside the input file.
+- decode-order samples without nonzero composition offsets;
+- bounded sample counts and sizes whose offsets remain inside the file.
 
-Malformed boxes, unsupported profiles, reordered composition timestamps, inconsistent sample
-tables, invalid decoder output, and decoded-frame count mismatches raise
-`UnsupportedVideoChunkError`. General-purpose MP4 files are outside this contract.
+Malformed boxes, unsupported profiles, reordered composition timestamps, inconsistent
+sample tables, invalid decoder output, and frame-count mismatches raise
+`UnsupportedVideoChunkError`. All public decoder exceptions derive from
+`VideoDecoderError`. `DecoderInfo`, `resolve_decoder()`, and the PoC exception names remain
+available for compatibility.
 
 ## Development
 
-Run the package tests without installing `cvat-sdk`:
-
 ```shell
-python -m pip install -e './cvat-video-openh264[test]'
 python -m pytest cvat-video-openh264/tests
-```
-
-Build and inspect the standalone artifacts:
-
-```shell
 python -m build --outdir /tmp/cvat-video-openh264-dist cvat-video-openh264
 python cvat-video-openh264/scripts/check_artifacts.py /tmp/cvat-video-openh264-dist/*
 python cvat-video-openh264/scripts/check_fixture_inventory.py
 ```
 
-The checked-in fixture inventory documents every package test asset and generator. Package tests
-must not depend on PyAV or a codec binary.
+Package tests must not depend on PyAV or a codec binary.

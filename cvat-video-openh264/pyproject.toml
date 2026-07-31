@@ -18,10 +18,10 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 requires-python = ">=3.10"
-dependencies = ["Pillow >= 10.3.0"]
+dependencies = ["Pillow == 10.3.0"]
 
 [project.optional-dependencies]
-test = ["pytest >= 8.3.0"]
+test = ["pytest == 8.3.0"]
 
 [project.urls]
 homepage = "https://github.com/cvat-ai/cvat"

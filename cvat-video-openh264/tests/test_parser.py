@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+import ctypes
 import io
 import struct
 from pathlib import Path
@@ -12,20 +13,90 @@ import pytest
 import cvat_video_openh264._reader as reader
 from cvat_video_openh264 import DecoderInfo, UnsupportedVideoChunkError
 
-from tests._mp4_fixtures import make_avc_configuration, make_cvat_chunk
+from tests._mp4_fixtures import make_cvat_chunk
 
 
-def test_valid_cvat_chunk_yields_one_annex_b_access_unit(tmp_path: Path) -> None:
+def _install_fake_decoder(
+    monkeypatch: pytest.MonkeyPatch,
+    *,
+    decode_result: PIL.Image.Image | None = None,
+    captured_units: list[bytes] | None = None,
+) -> dict[str, bool]:
+    state = {"closed": False}
+
+    class FakeDecoder:
+        def __init__(self, decoder_info: DecoderInfo, library: ctypes.CDLL | None = None) -> None:
+            assert decoder_info.library_path == "fake-openh264"
+
+        def decode(self, access_unit: bytes) -> PIL.Image.Image | None:
+            if captured_units is not None:
+                captured_units.append(access_unit)
+            return decode_result
+
+        def close(self) -> None:
+            state["closed"] = True
+
+    monkeypatch.setattr(
+        reader,
+        "_resolve_decoder_and_library",
+        lambda _library_path: (DecoderInfo(library_path="fake-openh264", version=None), None),
+    )
+    monkeypatch.setattr(reader, "_OpenH264Decoder", FakeDecoder)
+    return state
+
+
+def test_valid_cvat_chunk_reaches_decoder_with_one_annex_b_access_unit(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     chunk_path = tmp_path / "0.mp4"
     chunk_path.write_bytes(make_cvat_chunk())
+    frame = PIL.Image.new("RGB", (16, 16))
+    captured: list[bytes] = []
+    _install_fake_decoder(monkeypatch, decode_result=frame, captured_units=captured)
 
-    track = reader._read_video_track(chunk_path)
-    access_units = list(reader._iter_access_units(chunk_path, track))
+    frames = list(reader.iter_frames(chunk_path))
 
-    assert len(track.samples) == 1
-    assert len(access_units) == 1
-    assert access_units[0].count(reader._ANNEX_B_START_CODE) == 3
-    assert access_units[0].endswith(b"\x65\x88\x84")
+    assert frames == [frame]
+    assert len(captured) == 1
+    assert captured[0].count(reader._ANNEX_B_START_CODE) == 3
+    assert captured[0].endswith(b"\x65\x88\x84")
+
+
+def test_non_constrained_baseline_profile_is_rejected_via_public_api(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    chunk_path = tmp_path / "0.mp4"
+    chunk_path.write_bytes(make_cvat_chunk(profile=77))
+    _install_fake_decoder(monkeypatch)
+
+    with pytest.raises(UnsupportedVideoChunkError, match="constrained-baseline"):
+        list(reader.iter_frames(chunk_path))
+
+
+def test_decoded_frame_count_mismatch_is_reported(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    chunk_path = tmp_path / "0.mp4"
+    chunk_path.write_bytes(make_cvat_chunk())
+    state = _install_fake_decoder(monkeypatch, decode_result=None)
+
+    with pytest.raises(
+        UnsupportedVideoChunkError,
+        match="Decoded 0 frames from 1 AVC samples",
+    ):
+        list(reader.iter_frames(chunk_path))
+
+    assert state["closed"]
+
+
+# The following tests exercise parser guards whose triggering inputs cannot be
+# expressed as valid CVAT chunk files without allocating megabytes of test data
+# (sample-count / sample-size limits) or without touching top-level container
+# framing that iter_frames rejects at an earlier layer. Testing the internal
+# helpers directly keeps the boundary checks fast and unambiguous.
 
 
 def test_invalid_box_size_is_rejected() -> None:
@@ -59,44 +130,3 @@ def test_sample_size_limit_is_enforced() -> None:
 
     with pytest.raises(UnsupportedVideoChunkError, match="invalid AVC sample size"):
         reader._parse_sample_sizes(io.BytesIO(payload), box)
-
-
-def test_non_constrained_baseline_profile_is_rejected() -> None:
-    with pytest.raises(UnsupportedVideoChunkError, match="constrained-baseline"):
-        reader._parse_avcc(make_avc_configuration(profile=77))
-
-
-def test_decoded_frame_count_mismatch_is_reported(
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    chunk_path = tmp_path / "0.mp4"
-    chunk_path.write_bytes(make_cvat_chunk())
-    decoder_closed = False
-
-    class FakeDecoder:
-        def __init__(self, decoder_info: DecoderInfo) -> None:
-            assert decoder_info.library_path == "fake-openh264"
-
-        def decode(self, access_unit: bytes) -> PIL.Image.Image | None:
-            assert access_unit.startswith(reader._ANNEX_B_START_CODE)
-            return None
-
-        def close(self) -> None:
-            nonlocal decoder_closed
-            decoder_closed = True
-
-    monkeypatch.setattr(
-        reader,
-        "resolve_decoder",
-        lambda **_: DecoderInfo(library_path="fake-openh264", version=None),
-    )
-    monkeypatch.setattr(reader, "_OpenH264Decoder", FakeDecoder)
-
-    with pytest.raises(
-        UnsupportedVideoChunkError,
-        match="Decoded 0 frames from 1 AVC samples",
-    ):
-        list(reader.iter_frames(chunk_path))
-
-    assert decoder_closed

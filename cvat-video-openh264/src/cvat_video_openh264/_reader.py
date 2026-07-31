@@ -11,7 +11,7 @@ import ctypes
 import ctypes.util
 import os
 import struct
-from collections.abc import Iterator
+from collections.abc import Generator, Iterator
 from dataclasses import dataclass
 from pathlib import Path
 from typing import BinaryIO
@@ -26,6 +26,8 @@ _VISUAL_SAMPLE_ENTRY_SIZE = 78
 _MAX_SAMPLE_COUNT = 1_000_000
 _MAX_SAMPLE_SIZE = 64 * 1024 * 1024
 _ANNEX_B_START_CODE = b"\x00\x00\x00\x01"
+# BT.601 limited→full range LUTs. Expand Y [16..235] and Cb/Cr [16..240] into the
+# full [0..255] components Pillow's YCbCr→RGB conversion assumes.
 _LIMITED_RANGE_LUMA_LUT = tuple(
     max(0, min(255, round((value - 16) * 255 / 219))) for value in range(256)
 )
@@ -375,63 +377,54 @@ def _parse_video_track(file: BinaryIO, trak: _Box, file_size: int) -> _VideoTrac
     )
 
 
-def _read_video_track(path: Path) -> _VideoTrack:
-    try:
-        file_size = path.stat().st_size
-        with path.open("rb") as file:
-            top_level_boxes = list(_iter_boxes(file, 0, file_size))
-            moov_boxes = [box for box in top_level_boxes if box.type == b"moov"]
-            if len(moov_boxes) != 1:
-                raise UnsupportedVideoChunkError("Expected exactly one MP4 movie box")
+def _read_video_track_from_stream(file: BinaryIO, file_size: int) -> _VideoTrack:
+    top_level_boxes = list(_iter_boxes(file, 0, file_size))
+    moov_boxes = [box for box in top_level_boxes if box.type == b"moov"]
+    if len(moov_boxes) != 1:
+        raise UnsupportedVideoChunkError("Expected exactly one MP4 movie box")
 
-            tracks = [
-                track
-                for trak in _iter_boxes(
-                    file, moov_boxes[0].payload_offset, moov_boxes[0].end_offset
-                )
-                if trak.type == b"trak"
-                if (track := _parse_video_track(file, trak, file_size)) is not None
-            ]
-    except OSError as exc:
-        raise UnsupportedVideoChunkError(f"Could not read video chunk {path!s}: {exc}") from exc
-
+    tracks = [
+        track
+        for trak in _iter_boxes(file, moov_boxes[0].payload_offset, moov_boxes[0].end_offset)
+        if trak.type == b"trak"
+        if (track := _parse_video_track(file, trak, file_size)) is not None
+    ]
     if len(tracks) != 1:
         raise UnsupportedVideoChunkError("Expected exactly one H.264 video track")
 
     return tracks[0]
 
 
-def _iter_access_units(path: Path, track: _VideoTrack) -> Iterator[bytes]:
+def _iter_access_units_from_stream(file: BinaryIO, track: _VideoTrack) -> Iterator[bytes]:
     configuration = track.avc_configuration
     parameter_sets = configuration.sequence_parameter_sets + configuration.picture_parameter_sets
 
-    with path.open("rb") as file:
-        for sample_index, sample in enumerate(track.samples):
-            payload = _read_at(file, sample.offset, sample.size)
-            offset = 0
-            access_unit = bytearray()
+    for sample_index, sample in enumerate(track.samples):
+        payload = _read_at(file, sample.offset, sample.size)
+        offset = 0
+        access_unit = bytearray()
 
-            if sample_index == 0:
-                for parameter_set in parameter_sets:
-                    access_unit += _ANNEX_B_START_CODE
-                    access_unit += parameter_set
-
-            while offset < len(payload):
-                if len(payload) - offset < configuration.nal_length_size:
-                    raise UnsupportedVideoChunkError("An AVC sample has a truncated NAL length")
-
-                nal_size = int.from_bytes(
-                    payload[offset : offset + configuration.nal_length_size], "big"
-                )
-                offset += configuration.nal_length_size
-                if not nal_size or nal_size > len(payload) - offset:
-                    raise UnsupportedVideoChunkError("An AVC sample has an invalid NAL length")
-
+        if sample_index == 0:
+            for parameter_set in parameter_sets:
                 access_unit += _ANNEX_B_START_CODE
-                access_unit += payload[offset : offset + nal_size]
-                offset += nal_size
+                access_unit += parameter_set
 
-            yield bytes(access_unit)
+        while offset < len(payload):
+            if len(payload) - offset < configuration.nal_length_size:
+                raise UnsupportedVideoChunkError("An AVC sample has a truncated NAL length")
+
+            nal_size = int.from_bytes(
+                payload[offset : offset + configuration.nal_length_size], "big"
+            )
+            offset += configuration.nal_length_size
+            if not nal_size or nal_size > len(payload) - offset:
+                raise UnsupportedVideoChunkError("An AVC sample has an invalid NAL length")
+
+            access_unit += _ANNEX_B_START_CODE
+            access_unit += payload[offset : offset + nal_size]
+            offset += nal_size
+
+        yield bytes(access_unit)
 
 
 class _OpenH264Version(ctypes.Structure):
@@ -456,9 +449,9 @@ def _load_library(library_path: str) -> ctypes.CDLL:
     return library
 
 
-def resolve_decoder(*, library_path: os.PathLike[str] | str | None = None) -> DecoderInfo:
-    """Resolve an explicit, configured, or system OpenH264 library without downloading it."""
-
+def _resolve_decoder_and_library(
+    library_path: os.PathLike[str] | str | None,
+) -> tuple[DecoderInfo, ctypes.CDLL]:
     configured_path = library_path or os.environ.get("CVAT_OPENH264_LIBRARY")
     resolved_path = (
         os.fspath(configured_path) if configured_path else ctypes.util.find_library("openh264")
@@ -482,7 +475,14 @@ def resolve_decoder(*, library_path: os.PathLike[str] | str | None = None) -> De
         get_version(ctypes.byref(native_version))
         version = (native_version.major, native_version.minor, native_version.revision)
 
-    return DecoderInfo(library_path=resolved_path, version=version)
+    return DecoderInfo(library_path=resolved_path, version=version), library
+
+
+def resolve_decoder(*, library_path: os.PathLike[str] | str | None = None) -> DecoderInfo:
+    """Resolve an explicit, configured, or system OpenH264 library without downloading it."""
+
+    info, _ = _resolve_decoder_and_library(library_path)
+    return info
 
 
 class _VideoProperty(ctypes.Structure):
@@ -597,8 +597,8 @@ def _i420_to_rgb(planes: ctypes.Array[ctypes.c_void_p], info: _BufferInfo) -> PI
 
 
 class _OpenH264Decoder:
-    def __init__(self, decoder_info: DecoderInfo) -> None:
-        self._library = _load_library(decoder_info.library_path)
+    def __init__(self, decoder_info: DecoderInfo, library: ctypes.CDLL | None = None) -> None:
+        self._library = library if library is not None else _load_library(decoder_info.library_path)
         self._library.WelsCreateDecoder.argtypes = [ctypes.POINTER(ctypes.c_void_p)]
         self._library.WelsCreateDecoder.restype = ctypes.c_long
         self._library.WelsDestroyDecoder.argtypes = [ctypes.c_void_p]
@@ -659,7 +659,7 @@ def iter_frames(
     path: os.PathLike[str] | str,
     *,
     library_path: os.PathLike[str] | str | None = None,
-) -> Iterator[PIL.Image.Image]:
+) -> Generator[PIL.Image.Image, None, None]:
     """
     Decode a CVAT-generated constrained-baseline MP4 chunk sequentially.
 
@@ -667,20 +667,33 @@ def iter_frames(
     """
 
     chunk_path = Path(path)
-    track = _read_video_track(chunk_path)
-    decoder = _OpenH264Decoder(resolve_decoder(library_path=library_path))
-    decoded_frame_count = 0
 
     try:
-        access_units = _iter_access_units(chunk_path, track)
-        with contextlib.closing(access_units):
-            for access_unit in access_units:
-                image = decoder.decode(access_unit)
-                if image is not None:
-                    decoded_frame_count += 1
-                    yield image
-    finally:
-        decoder.close()
+        file_size = chunk_path.stat().st_size
+        file = chunk_path.open("rb")
+    except OSError as exc:
+        raise UnsupportedVideoChunkError(
+            f"Could not read video chunk {chunk_path!s}: {exc}"
+        ) from exc
+
+    # Parsing and access-unit streaming intentionally share this handle. Closing the
+    # returned generator exits this context and releases both the decoder and the file.
+    with contextlib.closing(file):
+        track = _read_video_track_from_stream(file, file_size)
+        decoder_info, library = _resolve_decoder_and_library(library_path)
+        decoder = _OpenH264Decoder(decoder_info, library=library)
+        decoded_frame_count = 0
+
+        try:
+            access_units = _iter_access_units_from_stream(file, track)
+            with contextlib.closing(access_units):
+                for access_unit in access_units:
+                    image = decoder.decode(access_unit)
+                    if image is not None:
+                        decoded_frame_count += 1
+                        yield image
+        finally:
+            decoder.close()
 
     if decoded_frame_count != len(track.samples):
         raise UnsupportedVideoChunkError(

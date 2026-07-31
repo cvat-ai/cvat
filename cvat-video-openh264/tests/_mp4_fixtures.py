@@ -32,14 +32,14 @@ def make_avc_configuration(*, profile: int = 66) -> bytes:
     )
 
 
-def make_cvat_chunk() -> bytes:
-    """Build a one-sample constrained-baseline CVAT-style MP4 parser fixture."""
+def make_cvat_chunk(*, profile: int = 66) -> bytes:
+    """Build a one-sample CVAT-style MP4 parser fixture (constrained baseline by default)."""
 
     nal_unit = b"\x65\x88\x84"
     sample = _u32(len(nal_unit)) + nal_unit
     media_data = _box(b"mdat", sample)
 
-    avc_configuration = _box(b"avcC", make_avc_configuration())
+    avc_configuration = _box(b"avcC", make_avc_configuration(profile=profile))
     visual_sample_entry = bytearray(78)
     struct.pack_into(">HH", visual_sample_entry, 24, 16, 16)
     avc_sample_entry = _box(b"avc1", bytes(visual_sample_entry) + avc_configuration)

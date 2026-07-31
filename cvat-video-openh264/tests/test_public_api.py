@@ -10,6 +10,7 @@ import pytest
 
 import cvat_video_openh264 as video
 import cvat_video_openh264._reader as reader
+import cvat_video_openh264.errors as errors
 
 
 def test_public_decoder_contract_is_typed_and_compatible() -> None:
@@ -19,15 +20,10 @@ def test_public_decoder_contract_is_typed_and_compatible() -> None:
     assert signature.parameters["library_path"].kind is inspect.Parameter.KEYWORD_ONLY
     assert video.VideoDecoderUnavailableError is video.DecoderUnavailableError
     assert video.VideoDecoderUnavailableError.__name__ == "VideoDecoderUnavailableError"
-    for exception_type in (
-        video.VideoDecoderUnavailableError,
-        video.UnsupportedVideoChunkError,
-        video.UnsupportedDecoderPlatformError,
-        video.DecoderVersionMismatchError,
-        video.DecoderIntegrityError,
-        video.DecoderProvisioningError,
-    ):
-        assert issubclass(exception_type, video.VideoDecoderError)
+
+    for name in errors.__all__:
+        assert getattr(video, name) is getattr(errors, name)
+        assert issubclass(getattr(video, name), video.VideoDecoderError)
 
     assert issubclass(video.DecoderUnavailableError, RuntimeError)
     assert issubclass(video.UnsupportedVideoChunkError, ValueError)
