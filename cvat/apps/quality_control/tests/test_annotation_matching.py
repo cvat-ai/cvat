@@ -5,11 +5,16 @@
 from __future__ import annotations
 
 import unittest
+from typing import cast
 
 import datumaro as dm
 import numpy as np
 
-from cvat.apps.quality_control.annotation_matching import AttributeMatchingResult, Comparator
+from cvat.apps.quality_control.annotation_matching import (
+    AttributeMatchingResult,
+    Comparator,
+    DistanceComparator,
+)
 from cvat.apps.quality_control.comparison_report import ComparisonParameters
 
 
@@ -85,6 +90,24 @@ class TestComparator(unittest.TestCase):
         self.assertFalse(mismatches)
         self.assertFalse(gt_unmatched)
         self.assertFalse(ds_unmatched)
+
+    def test_distance_comparator_returns_numeric_pairwise_distances(self) -> None:
+        gt_ann = dm.Bbox(10, 10, 20, 20, label=0)
+        ds_ann = dm.Bbox(10, 10, 20, 20, label=0)
+        comparator = DistanceComparator(
+            {dm.AnnotationType.label: dm.LabelCategories.from_iterable(["car"])},
+            return_distances=True,
+        )
+
+        result = comparator.match_boxes(
+            _make_image_item(gt_ann),
+            _make_image_item(ds_ann),
+        )
+        distances = cast(dict[tuple[int, int], float], result[4])
+
+        distance = distances[(id(gt_ann), id(ds_ann))]
+        self.assertIsInstance(distance, float)
+        self.assertEqual(distance, 1)
 
     def test_score_is_not_compared_as_a_user_attribute(self) -> None:
         comparator = self._make_comparator()

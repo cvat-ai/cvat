@@ -403,6 +403,7 @@ class DistanceComparator(datumaro.components.comparator.DistanceComparator):
         *,
         included_ann_types: list[dm.AnnotationType] | None = None,
         return_distances: bool = False,
+        return_comparisons: bool = False,
         iou_threshold: float = 0.5,
         # https://cocodataset.org/#keypoints-eval
         # https://github.com/cocodataset/cocoapi/blob/8c9bcc3cf640524c4c20a9c40e89cb6a2f2fa0e9/PythonAPI/pycocotools/cocoeval.py#L523
@@ -416,10 +417,14 @@ class DistanceComparator(datumaro.components.comparator.DistanceComparator):
         attribute_matcher: AttributeMatchingFunction | None = None,
     ):
         super().__init__(iou_threshold=iou_threshold)
+        if return_distances and return_comparisons:
+            raise ValueError("Pairwise distances and comparisons cannot be returned together")
+
         self.categories = categories
         self._skeleton_info = {}
         self.included_ann_types = included_ann_types
         self.return_distances = return_distances
+        self.return_comparisons = return_comparisons
 
         self.oks_sigma = oks_sigma
         "% of the shape area"
@@ -447,6 +452,10 @@ class DistanceComparator(datumaro.components.comparator.DistanceComparator):
         """
 
         self.attribute_matcher = attribute_matcher
+
+    @property
+    def _returns_pairwise_data(self) -> bool:
+        return self.return_distances or self.return_comparisons
 
     def instance_bbox(
         self, instance_anns: Sequence[dm.Annotation]
@@ -591,6 +600,10 @@ class DistanceComparator(datumaro.components.comparator.DistanceComparator):
             )
 
         if self.return_distances:
+            returned_values = returned_values + (
+                {key: comparison.similarity for key, comparison in comparisons.items()},
+            )
+        elif self.return_comparisons:
             returned_values = returned_values + (comparisons,)
 
         return returned_values
@@ -756,7 +769,7 @@ class DistanceComparator(datumaro.components.comparator.DistanceComparator):
 
         # restore results for original annotations
         matched, mismatched, a_extra, b_extra = results[:4]
-        if self.return_distances:
+        if self._returns_pairwise_data:
             distances = results[4]
 
         # i_x ~ instance idx in _x
@@ -774,7 +787,7 @@ class DistanceComparator(datumaro.components.comparator.DistanceComparator):
         a_extra = [ia_a for i_a in a_extra for ia_a in a_instances[i_a]]
         b_extra = [ia_b for i_b in b_extra for ia_b in b_instances[i_b]]
 
-        if self.return_distances:
+        if self._returns_pairwise_data:
             for i_a, i_b in list(distances.keys()):
                 dist = distances.pop((i_a, i_b))
 
@@ -783,7 +796,7 @@ class DistanceComparator(datumaro.components.comparator.DistanceComparator):
 
         returned_values = (matched, mismatched, a_extra, b_extra)
 
-        if self.return_distances:
+        if self._returns_pairwise_data:
             returned_values = returned_values + (distances,)
 
         return returned_values
@@ -817,7 +830,7 @@ class DistanceComparator(datumaro.components.comparator.DistanceComparator):
         if not a_points and not b_points:
             results = [[], [], [], []]
 
-            if self.return_distances:
+            if self._returns_pairwise_data:
                 results.append({})
 
             return tuple(results)
@@ -933,7 +946,7 @@ class DistanceComparator(datumaro.components.comparator.DistanceComparator):
         if not a_skeletons and not b_skeletons:
             results = [[], [], [], []]
 
-            if self.return_distances:
+            if self._returns_pairwise_data:
                 results.append({})
 
             return tuple(results)
@@ -1006,7 +1019,7 @@ class DistanceComparator(datumaro.components.comparator.DistanceComparator):
         )
 
         matched, mismatched, a_extra, b_extra = results[:4]
-        if self.return_distances:
+        if self._returns_pairwise_data:
             distances = results[4]
 
         matched = [(points_map[id(p_a)], points_map[id(p_b)]) for (p_a, p_b) in matched]
@@ -1015,14 +1028,14 @@ class DistanceComparator(datumaro.components.comparator.DistanceComparator):
         b_extra = [points_map[id(p_b)] for p_b in b_extra]
 
         # Map points back to skeletons
-        if self.return_distances:
+        if self._returns_pairwise_data:
             for p_a_id, p_b_id in list(distances.keys()):
                 dist = distances.pop((p_a_id, p_b_id))
                 distances[(id(points_map[p_a_id]), id(points_map[p_b_id]))] = dist
 
         returned_values = (matched, mismatched, a_extra, b_extra)
 
-        if self.return_distances:
+        if self._returns_pairwise_data:
             returned_values = returned_values + (distances,)
 
         return returned_values
@@ -1117,7 +1130,7 @@ class Comparator:
         self._annotation_comparator = DistanceComparator(
             categories,
             included_ann_types=self._get_distance_comparator_ann_types(self.included_ann_types),
-            return_distances=True,
+            return_comparisons=True,
             panoptic_comparison=settings.panoptic_comparison,
             iou_threshold=settings.iou_threshold,
             oks_sigma=settings.oks_sigma,
