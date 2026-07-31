@@ -283,7 +283,7 @@ export class InteractionHandlerImpl implements InteractionHandler {
 
         for (const shape of shapes) {
             const {
-                points, shapeType, outlines,
+                points, shapeType, maskOutlines,
             } = shape;
             if (shapeType === 'polygon') {
                 const isInvalidShape = points.length < 3 * 2;
@@ -316,7 +316,7 @@ export class InteractionHandlerImpl implements InteractionHandler {
                 this.intermediateShapes.push(image);
 
                 let insertionPoint = image.node;
-                for (const outline of outlines ?? []) {
+                for (const outline of maskOutlines ?? []) {
                     if (outline.length >= 3 * 2) {
                         const outlinePoints = stringifyPoints(translateToCanvas(this.geometry.offset, outline));
                         const strokeWidth = consts.BASE_STROKE_WIDTH / this.geometry.scale;

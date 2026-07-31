@@ -174,7 +174,6 @@ interface State {
     interactorRegionOfInterest: RegionOfInterest;
     detectorRegionOfInterest: RegionOfInterest;
     toolsPopoverVisible: boolean;
-    showInteractorMaskContours: boolean;
 }
 
 type DetectorResults = Extract<
@@ -286,7 +285,6 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             interactorRegionOfInterest: null,
             detectorRegionOfInterest: null,
             toolsPopoverVisible: false,
-            showInteractorMaskContours: true,
         };
 
         this.interaction = {
@@ -319,7 +317,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             isActivated, defaultApproxPolyAccuracy, states, toolsBlockerState, jobInstance,
         } = this.props;
         const {
-            approxPolyAccuracy, mode, activeTracker, thresholdValue, showInteractorMaskContours,
+            approxPolyAccuracy, mode, activeTracker, thresholdValue,
         } = this.state;
 
         if (prevProps.states !== states || prevState.activeTracker !== activeTracker) {
@@ -376,12 +374,6 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
         if (prevState.thresholdValue !== thresholdValue) {
             if (isActivated && mode === 'interaction') {
-                this.drawIntermediateShapesOnCanvas();
-            }
-        }
-
-        if (prevState.showInteractorMaskContours !== showInteractorMaskContours) {
-            if (isActivated && mode === 'interaction' && this.interaction.latestResponse.length) {
                 this.drawIntermediateShapesOnCanvas();
             }
         }
@@ -553,13 +545,13 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                     if (item.type !== ShapeType.MASK) continue;
 
                     const points = Int32Array.from(item.points);
-                    const polygonPoints = this.receivePointsFromMask(points);
+                    const contours = this.receiveContoursFromMask(points);
+                    const polygonPoints = this.receivePointsFromMask(contours);
                     if (polygonPoints.length < 3) {
                         continue;
                     }
 
-                    const contours = this.receiveContoursFromMask(points);
-                    const approximated = this.approximateResponsePoints(polygonPoints!);
+                    const approximated = this.approximateResponsePoints(polygonPoints);
                     const confidenceAttr = item.attributes.find((attr) => attr.spec_id === 0);
                     const confidence = confidenceAttr ? +confidenceAttr.value : 1;
                     showConfidenceControl = showConfidenceControl || !!confidenceAttr;
@@ -790,18 +782,14 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
     private drawIntermediateShapesOnCanvas(): void {
         const { canvasInstance } = this.props;
-        const {
-            convertMasksToPolygons, thresholdValue, showInteractorMaskContours,
-        } = this.state;
+        const { convertMasksToPolygons, thresholdValue } = this.state;
         const shapesToBeDrawn = this.interaction.latestResponse
             .filter(({ confidence }) => typeof confidence !== 'number' || confidence >= thresholdValue)
             .filter(({ approximatedPoints }) => !convertMasksToPolygons || approximatedPoints.length >= 3)
             .map(({ rle, contours, approximatedPoints }) => ({
                 shapeType: convertMasksToPolygons ? ShapeType.POLYGON : ShapeType.MASK,
                 points: convertMasksToPolygons ? approximatedPoints.flat() : rle,
-                outlines: showInteractorMaskContours && !convertMasksToPolygons ?
-                    contours.map((contour) => contour.flat()) :
-                    undefined,
+                maskOutlines: contours.map((contour) => contour.flat()),
             }));
 
         canvasInstance.interact({
@@ -1158,19 +1146,9 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         }
     }
 
-    private receivePointsFromMask(mask: Int32Array): [number, number][] {
-        if (!openCVWrapper.isInitialized) {
-            throw new Error('OpenCV was not initialized');
-        }
-
-        if (mask.length < 6) {
-            // minimal non-empty RLE is 6 points
-            return [];
-        }
-
-        const polygons = openCVWrapper.getContoursFromStateSync({ points: mask, shapeType: ShapeType.MASK });
-        if (polygons.length) {
-            return polygons[0].map<[number, number]>((val) => [val[0], val[1]]);
+    private receivePointsFromMask(contours: [number, number][][]): [number, number][] {
+        if (contours.length) {
+            return contours[0].map<[number, number]>((val) => [val[0], val[1]]);
         }
 
         return [];
@@ -1304,7 +1282,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         } = this.props;
         const {
             activeInteractor, activeLabelID, fetching, allowROI,
-            startInteractingWithBox, convertMasksToPolygons, showInteractorMaskContours,
+            startInteractingWithBox, convertMasksToPolygons,
         } = this.state;
 
         if (!interactors.length) {
@@ -1382,17 +1360,6 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                         />
                         <Text>Convert masks to polygons</Text>
                     </div>
-                    <div>
-                        <Switch
-                            checked={showInteractorMaskContours}
-                            disabled={convertMasksToPolygons}
-                            onChange={(checked: boolean) => {
-                                this.setState({ showInteractorMaskContours: checked });
-                            }}
-                        />
-                        <Text>Show mask outline</Text>
-                    </div>
-
                     {renderStartWithBox && (
                         <div>
                             <Switch
