@@ -1559,9 +1559,7 @@ class TestQualityReportContents(_PermissionTestBase):
         requirement = self.enable_base_quality_requirement(
             admin_user, self.demo_task_id_multiple_jobs
         )
-        report = create_quality_report(
-            user=admin_user, task_id=self.demo_task_id_multiple_jobs
-        )
+        report = create_quality_report(user=admin_user, task_id=self.demo_task_id_multiple_jobs)
         with make_api_client(admin_user) as api_client:
             _, response = api_client.quality_api.retrieve_report_data(report["id"])
             assert response.status == HTTPStatus.OK
