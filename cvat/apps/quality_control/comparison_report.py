@@ -758,6 +758,9 @@ class ComparisonReportRequirementCalculation(ReportNode):
     def create_computed(cls) -> ComparisonReportRequirementCalculation:
         return cls(status="computed")
 
+    def without_details(self) -> ComparisonReportRequirementCalculation:
+        return self.__class__(status=self.status, reason=self.reason)
+
 
 @define(kw_only=True, init=False, slots=False)
 class ComparisonReportRequirementSummaryItem(ReportNode):
@@ -766,11 +769,18 @@ class ComparisonReportRequirementSummaryItem(ReportNode):
     score: float | None
     score_components: ComparisonReportScoreComponents
     threshold: float
-    not_computed: bool
+    calculation: ComparisonReportRequirementCalculation
     requirement_id: int | None = None
 
     @classmethod
     def from_dict(cls, d: dict[str, Any]) -> ComparisonReportRequirementSummaryItem:
+        calculation = (
+            ComparisonReportRequirementCalculation.from_dict(d["calculation"])
+            if d.get("calculation")
+            else ComparisonReportRequirementCalculation(
+                status="not_computed" if d.get("not_computed") else "computed"
+            )
+        )
         return cls(
             requirement_id=d["requirement_id"],
             name=d["name"],
@@ -779,10 +789,7 @@ class ComparisonReportRequirementSummaryItem(ReportNode):
             score_components=ComparisonReportScoreComponents.from_dict(
                 d.get("score_components", {})
             ),
-            not_computed=d.get(
-                "not_computed",
-                d.get("calculation", {}).get("status") == "not_computed",
-            ),
+            calculation=calculation.without_details(),
             threshold=d["threshold"],
         )
 
@@ -806,7 +813,7 @@ class ComparisonReportRequirementsSummary(ReportNode):
             completed=d.get("completed", 0),
             not_computed=d.get(
                 "not_computed",
-                sum(item.not_computed for item in items),
+                sum(item.calculation.status == "not_computed" for item in items),
             ),
             items=items,
         )

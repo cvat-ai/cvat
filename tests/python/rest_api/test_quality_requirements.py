@@ -1869,8 +1869,10 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
             if item["name"] == requirement_name
         )
         assert requirement_summary_item["score"] is None
-        assert requirement_summary_item["not_computed"] is True
-        assert "calculation" not in requirement_summary_item
+        assert requirement_summary_item["calculation"] == {
+            "status": "not_computed",
+            "reason": "filter_no_matches",
+        }
         assert report_data["comparison_summary"]["requirements"]["completed"] == 1
         assert report_data["comparison_summary"]["requirements"]["not_computed"] == 1
         assert "annotations" not in report_data["comparison_summary"]
@@ -2194,7 +2196,7 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
                         "missing_count": 0,
                         "extra_count": 0,
                     },
-                    "not_computed": False,
+                    "calculation": {"status": "computed"},
                     "threshold": 1.0,
                 },
                 {
@@ -2207,7 +2209,7 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
                         "missing_count": 0,
                         "extra_count": 0,
                     },
-                    "not_computed": False,
+                    "calculation": {"status": "computed"},
                     "threshold": 1.0,
                 },
             ],
@@ -2337,7 +2339,7 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
                         "missing_count": 0,
                         "extra_count": 0,
                     },
-                    "not_computed": False,
+                    "calculation": {"status": "computed"},
                     "threshold": 0.75,
                 }
             ],
@@ -2774,7 +2776,7 @@ class TestProjectQualityRequirementInheritance(_QualityRequirementsTestBase):
                         "missing_count": 0,
                         "extra_count": 0,
                     },
-                    "not_computed": False,
+                    "calculation": {"status": "computed"},
                     "threshold": 1.0,
                 }
             ],

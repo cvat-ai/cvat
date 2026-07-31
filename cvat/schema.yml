@@ -11107,6 +11107,26 @@ components:
       - included
       - not_checkable
       - total
+    QualityReportRequirementCalculation:
+      type: object
+      properties:
+        status:
+          $ref: '#/components/schemas/QualityReportRequirementCalculationStatusEnum'
+        reason:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/ReasonEnum'
+          - $ref: '#/components/schemas/NullEnum'
+      required:
+      - status
+    QualityReportRequirementCalculationStatusEnum:
+      enum:
+      - computed
+      - not_computed
+      type: string
+      description: |-
+        * `computed` - computed
+        * `not_computed` - not_computed
     QualityReportRequirementSummaryItem:
       type: object
       properties:
@@ -11123,15 +11143,15 @@ components:
           nullable: true
         score_components:
           $ref: '#/components/schemas/QualityReportScoreComponents'
-        not_computed:
-          type: boolean
+        calculation:
+          $ref: '#/components/schemas/QualityReportRequirementCalculation'
         threshold:
           type: number
           format: double
       required:
+      - calculation
       - metric
       - name
-      - not_computed
       - requirement_id
       - score
       - score_components
@@ -12007,6 +12027,16 @@ components:
         * `accuracy` - ACCURACY
         * `precision` - PRECISION
         * `recall` - RECALL
+    ReasonEnum:
+      enum:
+      - no_annotations
+      - filter_no_matches
+      - required_attributes_missing
+      type: string
+      description: |-
+        * `no_annotations` - no_annotations
+        * `filter_no_matches` - filter_no_matches
+        * `required_attributes_missing` - required_attributes_missing
     RegisterSerializerEx:
       type: object
       properties:

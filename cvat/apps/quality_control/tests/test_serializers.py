@@ -17,11 +17,35 @@ from cvat.apps.quality_control.attribute_comparators import (
     match_attribute_values,
 )
 from cvat.apps.quality_control.attribute_comparison import make_default_attribute_rule
+from cvat.apps.quality_control.comparison_report import ComparisonReportRequirementCalculation
 from cvat.apps.quality_control.serializers import (
     AttributeComparisonSerializer,
+    QualityReportRequirementCalculationSerializer,
     QualitySettingsRequirementsSerializer,
     QualitySettingsSerializer,
 )
+
+
+class TestQualityReportRequirementCalculationSerializer(unittest.TestCase):
+    def test_returns_compact_calculation(self) -> None:
+        self.assertEqual(
+            QualityReportRequirementCalculationSerializer(
+                ComparisonReportRequirementCalculation.create_computed()
+            ).data,
+            {"status": "computed"},
+        )
+        self.assertEqual(
+            QualityReportRequirementCalculationSerializer(
+                ComparisonReportRequirementCalculation(
+                    status="not_computed",
+                    reason="filter_no_matches",
+                )
+            ).data,
+            {
+                "status": "not_computed",
+                "reason": "filter_no_matches",
+            },
+        )
 
 
 class TestAttributeComparatorPresentation(unittest.TestCase):

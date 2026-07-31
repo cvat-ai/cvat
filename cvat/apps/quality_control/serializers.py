@@ -97,13 +97,33 @@ class QualityReportScoreComponentsSerializer(serializers.Serializer):
     extra_count = serializers.IntegerField()
 
 
+class QualityReportRequirementCalculationSerializer(serializers.Serializer):
+    status = serializers.ChoiceField(choices=("computed", "not_computed"))
+    reason = serializers.ChoiceField(
+        choices=(
+            "no_annotations",
+            "filter_no_matches",
+            "required_attributes_missing",
+        ),
+        allow_null=True,
+        required=False,
+    )
+
+    def to_representation(self, instance: object) -> dict[str, Any]:
+        representation = super().to_representation(instance)
+        if representation.get("reason") is None:
+            representation.pop("reason", None)
+
+        return representation
+
+
 class QualityReportRequirementSummaryItemSerializer(serializers.Serializer):
     requirement_id = serializers.IntegerField(allow_null=True)
     name = serializers.CharField()
     metric = serializers.CharField()
     score = serializers.FloatField(allow_null=True)
     score_components = QualityReportScoreComponentsSerializer()
-    not_computed = serializers.BooleanField()
+    calculation = QualityReportRequirementCalculationSerializer()
     threshold = serializers.FloatField()
 
 

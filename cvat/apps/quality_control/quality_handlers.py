@@ -518,7 +518,7 @@ def build_requirements_summary(
                 metric=str(metric),
                 score=actual_score,
                 score_components=group_report.comparison_summary.score_components,
-                not_computed=calculation.status == "not_computed",
+                calculation=calculation.without_details(),
                 threshold=float(required_score),
                 requirement_id=_get_requirement_field(
                     requirement, "source_requirement_id", "requirement_id"
