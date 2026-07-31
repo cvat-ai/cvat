@@ -4,9 +4,9 @@
 
 import React from 'react';
 import { useSelector } from 'react-redux';
-import WavesurferPlayer from '@wavesurfer/react';
 
 import AudioRegionDetailsWrapper from 'audio/containers/annotation-page/audio-workspace/audio-region-details';
+import { getCachedAudioBuffer } from 'audio/utils/audio-buffer-cache';
 import { CombinedState } from 'reducers';
 import { shallowEqual } from 'utils/redux';
 import GlobalHotKeys from 'utils/mousetrap-react';
@@ -18,18 +18,27 @@ import { useAudioIntervalAnnotations } from './hooks/use-audio-interval-annotati
 const minimapContainerID = 'minimap';
 
 interface AudioCanvasProps {
-    sourceURL: string;
+    sourceToken: string;
+    audioBuffer: AudioBuffer;
+    peaks: Float32Array[];
+    duration: number;
     waveformReady: boolean;
 }
 
-function AudioCanvas({ sourceURL, waveformReady }: AudioCanvasProps): JSX.Element {
+function AudioCanvas({
+    sourceToken, audioBuffer, peaks, duration, waveformReady,
+}: AudioCanvasProps): JSX.Element {
+    const containerRef = React.useRef<HTMLDivElement>(null);
     const waveform = useAudioWaveform({
-        sourceURL,
+        sourceToken,
         minimapContainerID,
+        audioBuffer,
+        peaks,
+        duration,
+        containerRef,
     });
     const annotations = useAudioIntervalAnnotations({ waveform });
 
-    const { playerBindings } = waveform;
     return (
         <div className='cvat-audio-canvas-wrapper'>
             <GlobalHotKeys {...annotations.navigation.shortcuts} />
@@ -39,22 +48,9 @@ function AudioCanvas({ sourceURL, waveformReady }: AudioCanvasProps): JSX.Elemen
                 style={!waveformReady ? { visibility: 'hidden', height: 0, overflow: 'hidden' } : undefined}
             >
                 <div
-                    ref={waveform.viewport.containerRef}
+                    ref={containerRef}
                     style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', overflow: 'hidden' }}
                 >
-                    <WavesurferPlayer
-                        url={sourceURL}
-                        height={140}
-                        waveColor='#4F46E5'
-                        progressColor='#818CF8'
-                        cursorColor='#C084FC'
-                        barWidth={2}
-                        barRadius={3}
-                        cursorWidth={2}
-                        plugins={playerBindings.plugins}
-                        onReady={playerBindings.onReady}
-                        onDestroy={playerBindings.onDestroy}
-                    />
                 </div>
                 <div className='cvat-audio-minimap-section'>
                     <div id={minimapContainerID} />
@@ -67,9 +63,9 @@ function AudioCanvas({ sourceURL, waveformReady }: AudioCanvasProps): JSX.Elemen
 
 function AudioCanvasWrapper(): JSX.Element {
     const {
-        audioUrl, audioLoading, audioError, waveformReady,
+        audioBufferToken, audioLoading, audioError, waveformReady,
     } = useSelector((state: CombinedState) => ({
-        audioUrl: state.audio.player.audioUrl,
+        audioBufferToken: state.audio.player.audioBufferToken,
         audioLoading: state.audio.player.audioLoading,
         audioError: state.audio.player.audioError,
         waveformReady: state.audio.player.waveformReady,
@@ -95,7 +91,10 @@ function AudioCanvasWrapper(): JSX.Element {
         );
     }
 
-    if (!audioUrl) {
+    // Redux stores an opaque token rather than decoded PCM. Resolving it here keeps
+    // the AudioBuffer in ordinary runtime memory and passes the same object to WaveSurfer.
+    const audioData = audioBufferToken ? getCachedAudioBuffer(audioBufferToken) : null;
+    if (!audioBufferToken || !audioData) {
         return (
             <div className='cvat-audio-canvas-wrapper'>
                 <div className='cvat-audio-placeholder'>
@@ -107,10 +106,18 @@ function AudioCanvasWrapper(): JSX.Element {
         );
     }
 
-    // key is !important here to force re-mounting of the AudioCanvas when the audioUrl changes
-    // internal lifecycle of plugins and events bound to Wavesurfer runtime depends on this
+    // A new token denotes a new AudioBuffer. Remounting makes the effect destroy the
+    // old WaveSurfer/player before binding the replacement and releases its cache entry.
+    // So key is essential here as it guarantees the player and plugins lifecycle validity.
     return (
-        <AudioCanvas key={audioUrl} sourceURL={audioUrl} waveformReady={waveformReady} />
+        <AudioCanvas
+            key={audioBufferToken}
+            sourceToken={audioBufferToken}
+            audioBuffer={audioData.audioBuffer}
+            peaks={audioData.peaks}
+            duration={audioData.duration}
+            waveformReady={waveformReady}
+        />
     );
 }
 

@@ -37,7 +37,7 @@ export interface AudioState {
             left: number;
             clientID: number | null;
         };
-        audioUrl: string | null;
+        audioBufferToken: string | null;
         audioLoading: boolean;
         audioError: string | null;
         waveformReady: boolean;
