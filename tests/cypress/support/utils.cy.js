@@ -169,8 +169,8 @@ export function getShapeCoord(type, objectSelector) {
 }
 
 export function checkDegRotate(deg) {
-        cy.get('#cvat_canvas_background').should('have.attr', 'style').and('contain', `rotate(${deg}deg);`);
-    }
+    cy.get('#cvat_canvas_background').should('have.attr', 'style').and('contain', `rotate(${deg}deg);`);
+}
 
 export function imageRotate(direction = 'anticlockwise', deg) {
     cy.get('.cvat-rotate-canvas-control').click();
@@ -181,7 +181,7 @@ export function imageRotate(direction = 'anticlockwise', deg) {
     } else {
         cy.get('.cvat-rotate-canvas-controls-left').should('be.visible').click();
     }
-    if (Number.isInteger(deg)){
+    if (Number.isInteger(deg)) {
         checkDegRotate(deg);
     }
     cy.get('body').click();
