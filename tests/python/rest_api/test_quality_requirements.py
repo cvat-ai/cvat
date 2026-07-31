@@ -1936,16 +1936,32 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
         report = self.create_quality_report(user=admin_user, task_id=task_id)
         report_data = self._get_report_data(admin_user, report["id"])
 
-        conflicts = report_data["groups"][requirement_name]["frame_results"]["0"]["conflicts"]
-        assert len(conflicts) == 1
-        assert conflicts[0]["type"] == "mismatching_attributes"
-        assert conflicts[0]["attribute_names"] == ["size"]
+        requirement_report = report_data["groups"][requirement_name]
+        conflicts = requirement_report["frame_results"]["0"]["conflicts"]
+        assert {conflict["type"] for conflict in conflicts} == {
+            "missing_annotation",
+            "extra_annotation",
+        }
+        assert requirement_report["comparison_summary"]["score"] == 0
+        assert requirement_report["comparison_summary"]["score_components"] == {
+            "valid_count": 0,
+            "missing_count": 1,
+            "extra_count": 1,
+        }
+        assert requirement_report["comparison_summary"]["confusion_matrix"]["labels"] == [
+            "car",
+            "unmatched",
+        ]
+        assert requirement_report["comparison_summary"]["confusion_matrix"]["rows"] == [
+            [0, 1],
+            [1, 0],
+        ]
         assert report_data["groups"][requirement_name]["parameters"]["attribute_comparison"] == {
             "default": {"enabled": False},
             "rules": [{"spec_id": attribute_ids["size"], "enabled": True, "comparator": "exact"}],
         }
 
-    def test_task_report_data_reports_attribute_conflict_names_and_error_severity(self, admin_user):
+    def test_task_report_data_attribute_mismatch_affects_matching_and_score(self, admin_user):
         (
             task_id,
             settings,
@@ -1998,12 +2014,14 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
         report_data = self._get_report_data(admin_user, report["id"])
 
         conflicts = report_data["groups"][requirement_name]["frame_results"]["0"]["conflicts"]
-        assert len(conflicts) == 1
-        assert conflicts[0]["type"] == "mismatching_attributes"
-        assert conflicts[0]["severity"] == "error"
-        assert conflicts[0]["attribute_names"] == ["color", "size"]
-        assert report_data["comparison_summary"]["error_count"] == 1
-        assert report_data["groups"][requirement_name]["comparison_summary"]["error_count"] == 1
+        assert {conflict["type"] for conflict in conflicts} == {
+            "missing_annotation",
+            "extra_annotation",
+        }
+        assert all(conflict["severity"] == "error" for conflict in conflicts)
+        assert report_data["comparison_summary"]["error_count"] == 2
+        assert report_data["groups"][requirement_name]["comparison_summary"]["error_count"] == 2
+        assert report_data["groups"][requirement_name]["comparison_summary"]["score"] == 0
 
     def test_task_report_counts_overlapping_leaf_requirements_independently(self, admin_user):
         (

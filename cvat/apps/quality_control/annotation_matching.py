@@ -37,6 +37,38 @@ SegmentMatchingResult: TypeAlias = tuple[
 ]
 
 
+@define(frozen=True)
+class AttributeMatchingResult:
+    matches: tuple[str, ...] = ()
+    mismatches: tuple[str, ...] = ()
+    a_only: tuple[str, ...] = ()
+    b_only: tuple[str, ...] = ()
+
+    @property
+    def conflicting_names(self) -> tuple[str, ...]:
+        return tuple(sorted({*self.mismatches, *self.a_only, *self.b_only}))
+
+
+AttributeMatchingFunction: TypeAlias = Callable[
+    [dm.Annotation, dm.Annotation], AttributeMatchingResult
+]
+
+
+@define(frozen=True)
+class _PairwiseComparison:
+    geometry_similarity: float
+    base_geometry_similarity: float
+    conflicting_attribute_names: tuple[str, ...] = ()
+    direction_mismatch: bool = False
+
+    @property
+    def similarity(self) -> float:
+        if self.conflicting_attribute_names or self.direction_mismatch:
+            return 0
+
+        return self.geometry_similarity
+
+
 def _match_segments_once(
     a_segms: Sequence[_ShapeT1],
     b_segms: Sequence[_ShapeT2],
@@ -377,9 +409,11 @@ class DistanceComparator(datumaro.components.comparator.DistanceComparator):
         oks_sigma: float = 0.09,
         point_size_base: PointSizeBase = PointSizeBase.GROUP_BBOX_SIZE,
         compare_line_orientation: bool = False,
+        line_orientation_threshold: float = 0.1,
         line_torso_radius: float = 0.01,
         panoptic_comparison: bool = False,
         allow_groups: bool = True,
+        attribute_matcher: AttributeMatchingFunction | None = None,
     ):
         super().__init__(iou_threshold=iou_threshold)
         self.categories = categories
@@ -396,6 +430,9 @@ class DistanceComparator(datumaro.components.comparator.DistanceComparator):
         self.compare_line_orientation = compare_line_orientation
         "Whether lines are oriented or not"
 
+        self.line_orientation_threshold = line_orientation_threshold
+        "Minimal direct / reversed line similarity difference to consider directions mismatching"
+
         # Here we use a % of image size in pixels, using the image size as the scale
         self.line_torso_radius = line_torso_radius
         "% of the line length at the specified scale"
@@ -408,6 +445,8 @@ class DistanceComparator(datumaro.components.comparator.DistanceComparator):
         When comparing grouped annotations, consider all the group elements with the same label
         as the same annotation, if applicable. Affects polygons, masks, and points
         """
+
+        self.attribute_matcher = attribute_matcher
 
     def instance_bbox(
         self, instance_anns: Sequence[dm.Annotation]
@@ -478,6 +517,7 @@ class DistanceComparator(datumaro.components.comparator.DistanceComparator):
             distance=label_distance,
             label_matcher=lambda a, b: a.label == b.label,
             dist_thresh=0.5,
+            compare_attributes=False,
         )
 
     def match_segments(
@@ -491,17 +531,51 @@ class DistanceComparator(datumaro.components.comparator.DistanceComparator):
         a_objs: Sequence[_ShapeT1] | None = None,
         b_objs: Sequence[_ShapeT2] | None = None,
         dist_thresh: float | None = None,
+        a_annotations_getter: Callable[[_ShapeT1], Sequence[dm.Annotation]] | None = None,
+        b_annotations_getter: Callable[[_ShapeT2], Sequence[dm.Annotation]] | None = None,
+        direction_distance: ShapeSimilarityFunction[_ShapeT1, _ShapeT2] | None = None,
+        compare_attributes: bool = True,
     ):
         if a_objs is None:
             a_objs = self._get_ann_type(t, item_a)
         if b_objs is None:
             b_objs = self._get_ann_type(t, item_b)
 
-        if self.return_distances:
-            distance, distances = self._make_memoizing_distance(distance)
+        if a_annotations_getter is None:
+            a_annotations_getter = self._as_annotation_sequence
+        if b_annotations_getter is None:
+            b_annotations_getter = self._as_annotation_sequence
+
+        def _compare(a: _ShapeT1, b: _ShapeT2) -> _PairwiseComparison:
+            base_geometry_similarity = distance(a, b)
+            geometry_similarity = (
+                direction_distance(a, b) if direction_distance else base_geometry_similarity
+            )
+            direction_mismatch = bool(
+                direction_distance
+                and base_geometry_similarity - geometry_similarity > self.line_orientation_threshold
+            )
+
+            conflicting_attribute_names: set[str] = set()
+            if compare_attributes and self.attribute_matcher:
+                for a_ann, b_ann in itertools.product(
+                    a_annotations_getter(a),
+                    b_annotations_getter(b),
+                ):
+                    attribute_result = self.attribute_matcher(a_ann, b_ann)
+                    conflicting_attribute_names.update(attribute_result.conflicting_names)
+
+            return _PairwiseComparison(
+                geometry_similarity=geometry_similarity,
+                base_geometry_similarity=base_geometry_similarity,
+                conflicting_attribute_names=tuple(sorted(conflicting_attribute_names)),
+                direction_mismatch=direction_mismatch,
+            )
+
+        compare, comparisons = self._make_memoizing_comparison(_compare)
 
         if not a_objs and not b_objs:
-            distances = {}
+            comparisons = {}
             returned_values = [], [], [], []
         else:
             extra_args = {}
@@ -511,13 +585,13 @@ class DistanceComparator(datumaro.components.comparator.DistanceComparator):
             returned_values = match_segments(
                 a_objs,
                 b_objs,
-                distance=distance,
+                distance=lambda a, b: compare(a, b).similarity,
                 dist_thresh=dist_thresh if dist_thresh is not None else self.iou_threshold,
                 **extra_args,
             )
 
         if self.return_distances:
-            returned_values = returned_values + (distances,)
+            returned_values = returned_values + (comparisons,)
 
         return returned_values
 
@@ -676,6 +750,8 @@ class DistanceComparator(datumaro.components.comparator.DistanceComparator):
             b_objs=range(len(b_instances)),
             distance=_segment_comparator,
             label_matcher=_label_matcher,
+            a_annotations_getter=lambda instance_id: a_instances[instance_id],
+            b_annotations_getter=lambda instance_id: b_instances[instance_id],
         )
 
         # restore results for original annotations
@@ -713,13 +789,25 @@ class DistanceComparator(datumaro.components.comparator.DistanceComparator):
         return returned_values
 
     def match_lines(self, item_a: dm.DatasetItem, item_b: dm.DatasetItem):
-        matcher = LineMatcher(
-            oriented=self.compare_line_orientation,
+        base_matcher = LineMatcher(
+            oriented=False,
             torso_r=self.line_torso_radius,
             scale=np.prod(item_a.media_as(dm.Image).size),
         )
+        direction_matcher = None
+        if self.compare_line_orientation:
+            direction_matcher = LineMatcher(
+                oriented=True,
+                torso_r=self.line_torso_radius,
+                scale=np.prod(item_a.media_as(dm.Image).size),
+            )
+
         return self.match_segments(
-            dm.AnnotationType.polyline, item_a, item_b, distance=matcher.distance
+            dm.AnnotationType.polyline,
+            item_a,
+            item_b,
+            distance=base_matcher.distance,
+            direction_distance=direction_matcher.distance if direction_matcher else None,
         )
 
     def match_points(self, item_a: dm.DatasetItem, item_b: dm.DatasetItem):
@@ -913,6 +1001,8 @@ class DistanceComparator(datumaro.components.comparator.DistanceComparator):
             a_objs=a_points,
             b_objs=b_points,
             distance=matcher.distance,
+            a_annotations_getter=lambda points: [points_map[id(points)]],
+            b_annotations_getter=lambda points: [points_map[id(points)]],
         )
 
         matched, mismatched, a_extra, b_extra = results[:4]
@@ -937,26 +1027,39 @@ class DistanceComparator(datumaro.components.comparator.DistanceComparator):
 
         return returned_values
 
+    @staticmethod
+    def _as_annotation_sequence(obj: Any) -> Sequence[dm.Annotation]:
+        if isinstance(obj, dm.Annotation):
+            return [obj]
+
+        return []
+
     @classmethod
-    def _make_memoizing_distance(cls, distance_function: Callable[[Any, Any], float]):
-        distances = {}
+    def _make_memoizing_comparison(
+        cls,
+        comparison_function: Callable[[Any, Any], _PairwiseComparison],
+    ) -> tuple[
+        Callable[[Any, Any], _PairwiseComparison],
+        dict[tuple[int, int], _PairwiseComparison],
+    ]:
+        comparisons = {}
         notfound = object()
 
-        def memoizing_distance(a, b):
+        def memoizing_comparison(a: Any, b: Any) -> _PairwiseComparison:
             if isinstance(a, int) and isinstance(b, int):
                 key = (a, b)
             else:
                 key = (id(a), id(b))
 
-            dist = distances.get(key, notfound)
+            comparison = comparisons.get(key, notfound)
 
-            if dist is notfound:
-                dist = distance_function(a, b)
-                distances[key] = dist
+            if comparison is notfound:
+                comparison = comparison_function(a, b)
+                comparisons[key] = comparison
 
-            return dist
+            return cast(_PairwiseComparison, comparison)
 
-        return memoizing_distance, distances
+        return memoizing_comparison, comparisons
 
     def match_annotations(self, item_a, item_b):
         return {t: self._match_ann_type(t, item_a, item_b) for t in self.included_ann_types}
@@ -992,7 +1095,13 @@ def _find_covered_segments(
 
 
 class Comparator:
-    def __init__(self, categories: dm.CategoriesInfo, *, settings: ComparisonParameters):
+    def __init__(
+        self,
+        categories: dm.CategoriesInfo,
+        *,
+        settings: ComparisonParameters,
+        attribute_matcher: AttributeMatchingFunction | None = None,
+    ):
         self.ignored_attrs = set(settings.ignored_attributes) | {
             "track_id",  # changes from task to task, can't be defined manually with the same name
             "keyframe",  # indicates the way annotation obtained, meaningless to compare
@@ -1014,7 +1123,9 @@ class Comparator:
             oks_sigma=settings.oks_sigma,
             point_size_base=settings.point_size_base,
             line_torso_radius=settings.line_thickness,
-            compare_line_orientation=False,  # should not be taken from outside, handled differently
+            compare_line_orientation=settings.compare_line_orientation,
+            line_orientation_threshold=settings.line_orientation_threshold,
+            attribute_matcher=attribute_matcher if settings.compare_attributes else None,
         )
         self.coverage_threshold = settings.object_visibility_threshold
         self.group_match_threshold = settings.group_match_threshold
@@ -1036,7 +1147,11 @@ class Comparator:
 
         return shape_type
 
-    def match_attrs(self, ann_a: dm.Annotation, ann_b: dm.Annotation):
+    def match_attrs(
+        self,
+        ann_a: dm.Annotation,
+        ann_b: dm.Annotation,
+    ) -> AttributeMatchingResult:
         a_attrs = ann_a.attributes
         b_attrs = ann_b.attributes
 
@@ -1062,7 +1177,12 @@ class Comparator:
             else:
                 mismatches.append(k)
 
-        return matches, mismatches, a_extra, b_extra
+        return AttributeMatchingResult(
+            matches=tuple(matches),
+            mismatches=tuple(mismatches),
+            a_only=tuple(a_extra),
+            b_only=tuple(b_extra),
+        )
 
     def find_groups(
         self, item: dm.DatasetItem
@@ -1176,7 +1296,16 @@ class Comparator:
     def get_distance(
         self, pairwise_distances, gt_ann: dm.Annotation, ds_ann: dm.Annotation
     ) -> float | None:
-        return pairwise_distances.get((id(gt_ann), id(ds_ann)))
+        comparison = self.get_comparison(pairwise_distances, gt_ann, ds_ann)
+        return comparison.geometry_similarity if comparison else None
+
+    def get_comparison(
+        self,
+        pairwise_comparisons: dict[tuple[int, int], _PairwiseComparison],
+        gt_ann: dm.Annotation,
+        ds_ann: dm.Annotation,
+    ) -> _PairwiseComparison | None:
+        return pairwise_comparisons.get((id(gt_ann), id(ds_ann)))
 
 
 class TagMatchingResult(NamedTuple):
