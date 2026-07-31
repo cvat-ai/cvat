@@ -23,6 +23,10 @@ CVAT_ROOT_DIR = next(dir.parent for dir in Path(__file__).parents if dir.name ==
 CVAT_DB_DIR = ASSETS_DIR / "cvat_db"
 CLICKHOUSE_INIT_SCRIPT = "/opt/cvat/components/analytics/clickhouse/init.py"
 PREFIX = "test"
+RQ_QUEUES_TO_DRAIN = ("import", "chunks")
+RQ_QUEUES_IDLE_TIMEOUT = 120
+RQ_QUEUES_IDLE_POLL_INTERVAL = 0.2
+RQ_QUEUES_IDLE_STABLE_SAMPLES = 3
 
 CONTAINER_NAME_FILES = ["docker-compose.tests.yml"]
 
@@ -180,6 +184,47 @@ def container_exec_cvat(request: pytest.FixtureRequest, command: list[str] | str
         return kube_exec_cvat(command)
     else:
         assert False, "unknown platform"
+
+
+def wait_for_rq_queues_to_be_idle(
+    request: pytest.FixtureRequest,
+    *,
+    queue_names: tuple[str, ...] = RQ_QUEUES_TO_DRAIN,
+    timeout: float = RQ_QUEUES_IDLE_TIMEOUT,
+) -> None:
+    """Wait until task-data workers cannot cross a test reset boundary."""
+    script = "\n".join(
+        (
+            "import time",
+            "",
+            "import django_rq",
+            "",
+            f"queue_names = {queue_names!r}",
+            f"deadline = time.monotonic() + {timeout!r}",
+            "stable_samples = 0",
+            "",
+            f"while stable_samples < {RQ_QUEUES_IDLE_STABLE_SAMPLES}:",
+            "    busy = {}",
+            "    for name in queue_names:",
+            "        queue = django_rq.get_queue(name)",
+            "        queued = queue.count",
+            "        started = queue.started_job_registry.count",
+            "        if queued or started:",
+            "            busy[name] = {\"queued\": queued, \"started\": started}",
+            "",
+            "    if busy:",
+            "        stable_samples = 0",
+            "    else:",
+            "        stable_samples += 1",
+            "",
+            f"    if stable_samples >= {RQ_QUEUES_IDLE_STABLE_SAMPLES}:",
+            "        break",
+            "    if time.monotonic() >= deadline:",
+            '        raise TimeoutError(f"RQ queues did not become idle: {busy}")',
+            f"    time.sleep({RQ_QUEUES_IDLE_POLL_INTERVAL!r})",
+        )
+    )
+    container_exec_cvat(request, ["python", "manage.py", "shell", "-c", script])
 
 
 def kube_exec_cvat_db(command):
@@ -598,7 +643,18 @@ def collect_code_coverage_from_containers():
 
 
 @pytest.fixture(scope="function")
+def wait_for_rq_queues_per_function(request):
+    wait_for_rq_queues_to_be_idle(request)
+
+
+@pytest.fixture(scope="class")
+def wait_for_rq_queues_per_class(request):
+    wait_for_rq_queues_to_be_idle(request)
+
+
+@pytest.fixture(scope="function")
 def restore_db_per_function(request):
+    request.getfixturevalue("wait_for_rq_queues_per_function")
     # Note that autouse fixtures are executed first within their scope, so be aware of the order
     # Pre-test DB setups (eg. with class-declared autouse setup() method) may be cleaned.
     # https://docs.pytest.org/en/stable/reference/fixtures.html#autouse-fixtures-are-executed-first-within-their-scope
@@ -611,6 +667,7 @@ def restore_db_per_function(request):
 
 @pytest.fixture(scope="class")
 def restore_db_per_class(request):
+    request.getfixturevalue("wait_for_rq_queues_per_class")
     platform = request.config.getoption("--platform")
     if platform == "local":
         docker_restore_db()
@@ -620,6 +677,7 @@ def restore_db_per_class(request):
 
 @pytest.fixture(scope="function")
 def restore_cvat_data_per_function(request):
+    request.getfixturevalue("wait_for_rq_queues_per_function")
     platform = request.config.getoption("--platform")
     if platform == "local":
         docker_restore_data_volumes()
@@ -629,6 +687,7 @@ def restore_cvat_data_per_function(request):
 
 @pytest.fixture(scope="class")
 def restore_cvat_data_per_class(request):
+    request.getfixturevalue("wait_for_rq_queues_per_class")
     platform = request.config.getoption("--platform")
     if platform == "local":
         docker_restore_data_volumes()
@@ -659,6 +718,7 @@ def restore_clickhouse_db_per_class(request):
 
 @pytest.fixture(scope="function")
 def restore_redis_inmem_per_function(request):
+    request.getfixturevalue("wait_for_rq_queues_per_function")
     # Note that autouse fixtures are executed first within their scope, so be aware of the order
     # Pre-test DB setups (eg. with class-declared autouse setup() method) may be cleaned.
     # https://docs.pytest.org/en/stable/reference/fixtures.html#autouse-fixtures-are-executed-first-within-their-scope
@@ -671,6 +731,7 @@ def restore_redis_inmem_per_function(request):
 
 @pytest.fixture(scope="class")
 def restore_redis_inmem_per_class(request):
+    request.getfixturevalue("wait_for_rq_queues_per_class")
     platform = request.config.getoption("--platform")
     if platform == "local":
         docker_restore_redis_inmem()
@@ -680,6 +741,7 @@ def restore_redis_inmem_per_class(request):
 
 @pytest.fixture(scope="function")
 def restore_redis_ondisk_per_function(request):
+    request.getfixturevalue("wait_for_rq_queues_per_function")
     platform = request.config.getoption("--platform")
     if platform == "local":
         docker_restore_redis_ondisk()
@@ -689,6 +751,7 @@ def restore_redis_ondisk_per_function(request):
 
 @pytest.fixture(scope="class")
 def restore_redis_ondisk_per_class(request):
+    request.getfixturevalue("wait_for_rq_queues_per_class")
     platform = request.config.getoption("--platform")
     if platform == "local":
         docker_restore_redis_ondisk()
@@ -700,6 +763,7 @@ def restore_redis_ondisk_per_class(request):
 def restore_redis_ondisk_after_class(request):
     yield
 
+    wait_for_rq_queues_to_be_idle(request)
     platform = request.config.getoption("--platform")
     if platform == "local":
         docker_restore_redis_ondisk()
