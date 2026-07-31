@@ -853,7 +853,13 @@ class _DataGetter(metaclass=ABCMeta):
                 else "\n".join([str(d) for d in ex.detail])
             )
             return Response(data=msg, status=ex.status_code)
-        except (TimeoutError, CvatChunkTimestampMismatchError, LockError):
+        except (TimeoutError, CvatChunkTimestampMismatchError, LockError) as ex:
+            slogger.glob.warning(
+                "Media request failed with %s: %s",
+                type(ex).__name__,
+                ex,
+                exc_info=True,
+            )
             return Response(
                 status=status.HTTP_429_TOO_MANY_REQUESTS,
                 headers={"Retry-After": _RETRY_AFTER_TIMEOUT},
