@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "fixtures": [
+    {
+      "id": "synthetic-cvat-constrained-baseline-chunk-v1",
+      "kind": "generated",
+      "repository_path": "tests/_mp4_fixtures.py",
+      "generated_filename": "synthetic_cvat_chunk.mp4",
+      "sha256": "55a8885616ac43540cf5e2dca568d76027d73de16bae1d7defdcc2fe505d92b4",
+      "original_filename": "synthetic_cvat_chunk.mp4",
+      "source": {
+        "type": "repository-owned-generation",
+        "generation_source": "tests._mp4_fixtures.make_cvat_chunk",
+        "acquisition_date": "2026-07-31"
+      },
+      "creator": "CVAT.ai Corporation",
+      "copyright_owner": "CVAT.ai Corporation",
+      "spdx_license_identifier": "MIT",
+      "redistribution_permission": {
+        "status": "approved",
+        "reference": "LICENSE",
+        "review": "Task 1 package and fixture provenance review"
+      },
+      "derivations": [
+        {
+          "tool": "Python standard library",
+          "command": "tests._mp4_fixtures.make_cvat_chunk()",
+          "description": "Construct MP4 boxes and one synthetic AVC sample deterministically"
+        }
+      ],
+      "media": {
+        "container": "ISO BMFF/MP4",
+        "codec": "synthetic AVC access-unit payload",
+        "codec_profile": "constrained-baseline",
+        "dimensions": [16, 16],
+        "frame_count": 1
+      },
+      "semantic_assertions": [
+        "CVAT-style MP4 sample tables are parsed",
+        "SPS and PPS precede the first Annex B access unit",
+        "decoded-frame count mismatch is reported"
+      ],
+      "contains_private_confidential_or_unapproved_personal_data": false
+    }
+  ]
+}
