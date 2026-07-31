@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+from abc import ABC, abstractmethod
 from datetime import datetime
 
 from django.conf import settings
@@ -12,14 +13,15 @@ from django.utils.timezone import now
 from .models import UserGrowthData
 
 
-class GitHubStarPromptPolicy:
+class GitHubStarPromptPolicy(ABC):
+    @abstractmethod
     def is_enabled(
         self,
         user: User,
         growth_data: UserGrowthData,
         current_time: datetime,
     ) -> bool:
-        raise NotImplementedError
+        pass
 
 
 class EnabledGitHubStarPromptPolicy(GitHubStarPromptPolicy):

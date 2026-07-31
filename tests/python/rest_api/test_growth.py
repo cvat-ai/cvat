@@ -9,7 +9,6 @@ import pytest
 from shared.utils.config import get_method, patch_method
 
 
-@pytest.mark.usefixtures("restore_db_per_function")
 class TestGrowthData:
     INITIAL_PROMPT_STATE = {
         "github_prompt_shown": False,
@@ -19,7 +18,7 @@ class TestGrowthData:
     }
 
     @pytest.fixture(autouse=True)
-    def setup(self, admin_user, find_users):
+    def setup(self, restore_db_per_function, admin_user, find_users):
         self.admin_user = admin_user
         self.user = find_users(privilege="user")[0]
         self.other_user = find_users(privilege="user", exclude_username=self.user["username"])[0]

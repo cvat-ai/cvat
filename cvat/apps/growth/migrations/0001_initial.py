@@ -14,7 +14,7 @@ def create_growth_data_for_existing_users(apps, schema_editor):
     User = apps.get_model("auth", "User")
     UserGrowthData = apps.get_model("growth", "UserGrowthData")
     current_time = now()
-    user_ids = User.objects.values_list("id", flat=True).iterator()
+    user_ids = User.objects.values_list("id", flat=True).iterator(chunk_size=1000)
 
     for user_id_batch in batched(user_ids, 1000):
         UserGrowthData.objects.bulk_create(
