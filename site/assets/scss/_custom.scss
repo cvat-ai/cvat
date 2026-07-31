@@ -9,6 +9,45 @@
 
 @import "product-tags";
 
+/* Unify alert box style site-wide (Note, Warning, etc.): compact padding
+   and normal body-text weight for all alerts, plus a small icon + label
+   heading instead of a large bold title, so it reads like a caption, not
+   a headline. Each alert type still gets its own accent color via
+   themes/docsy/assets/scss/_alerts.scss (border-color per $theme-colors);
+   here we only override the "Note" accent to match the site's orange
+   (see .td-toc a:hover below) and normalize the shared structure. */
+.alert {
+    padding: 0.5rem 1rem !important;
+    font-weight: 400 !important;
+    font-size: 0.95rem !important;
+}
+
+.alert-heading {
+    font-size: 0.8rem !important;
+    font-weight: 600 !important;
+    color: #666 !important;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    margin-bottom: 0.35rem !important;
+
+    i {
+        margin-right: 4px;
+    }
+}
+
+.alert-primary {
+    border-color: #f97526 !important;
+}
+
+/* Heading self-link icon (assets/js/anchor.js): it's an <a> with no class
+   in the upstream theme, so it was inheriting the site's global
+   a:hover { text-decoration: underline } and showing a stray underline
+   under the leading space before the icon. */
+.td-heading-anchor-link,
+.td-heading-anchor-link:hover {
+    text-decoration: none !important;
+}
+
 div.code-toolbar .toolbar {
     padding-right: 0.6em;
     opacity: 1 !important;
@@ -135,6 +174,8 @@ details > .code-toolbar {
     color: #000 !important;
     margin-top: 0.3rem;
     display: block;
+    border-left: 2px solid transparent;
+    padding-left: 0.5rem;
   }
 
   /* Level 2 (H3) — subheadings */
@@ -143,6 +184,8 @@ details > .code-toolbar {
     color: #222 !important;
     margin-left: 1rem;
     display: block;
+    border-left: 2px solid transparent;
+    padding-left: 0.5rem;
   }
 
   /* Hover and active states */
@@ -150,6 +193,15 @@ details > .code-toolbar {
   .td-toc a:focus {
     color: #f97526 !important;
     text-decoration: underline;
+  }
+
+  /* Current section while scrolling (Bootstrap ScrollSpy, wired up in
+     layouts/partials/hooks/body-end.html). The transparent border above
+     reserves the space so highlighting a section doesn't shift the text. */
+  .td-toc a.active {
+    color: #f97526 !important;
+    border-left-color: #f97526;
+    text-decoration: none;
   }
 
 /* 1. Remove arrows from the top level (ul-1) */

@@ -133,7 +133,7 @@ context('Manipulations with skeletons', { scrollBehavior: false }, () => {
             cy.get(selector).should('not.exist');
         }
 
-        it('Wrapping bounding box for a skeleton is visible only when skeleton is activated', () => {
+        it('Wrapping bounding box for a skeleton is not visible regardless of activation state', () => {
             createSkeletonObject('shape');
 
             cy.get('body').click();
@@ -141,8 +141,23 @@ context('Manipulations with skeletons', { scrollBehavior: false }, () => {
                 cy.get('.cvat_canvas_skeleton_wrapping_rect').should('exist').and('not.be.visible');
                 cy.wrap($el).trigger('mousemove');
                 cy.wrap($el).should('have.class', 'cvat_canvas_shape_activated');
-                cy.get('.cvat_canvas_skeleton_wrapping_rect').should('exist').and('be.visible');
+                cy.get('.cvat_canvas_skeleton_wrapping_rect').should('exist').and('not.be.visible');
             });
+
+            cy.removeAnnotations();
+        });
+
+        it('Control points for a skeleton exist only when skeleton is activated', () => {
+            createSkeletonObject('shape');
+
+            cy.get('body').click();
+
+            cy.get('.cvat_canvas_skeleton_control_point').should('not.exist');
+
+            cy.get('#cvat_canvas_shape_1').trigger('mousemove');
+            cy.get('#cvat_canvas_shape_1').should('have.class', 'cvat_canvas_shape_activated');
+
+            cy.get('.cvat_canvas_skeleton_control_point').should('have.length', 9);
 
             cy.removeAnnotations();
         });
