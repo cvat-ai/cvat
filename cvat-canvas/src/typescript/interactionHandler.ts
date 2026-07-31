@@ -62,6 +62,7 @@ export class InteractionHandlerImpl implements InteractionHandler {
     private allPrompts: SupportedShapes[];
     private deletionButtons: Map<SupportedShapes, SVG.G>;
     private intermediateShapes: (SVG.Image | SVG.Polygon)[];
+    private intermediateMaskOutlines: SVG.Polygon[];
     private onInteraction: (interactionResult: InteractionResult[], finished?: boolean) => void;
     private onMessage: (messages: CanvasHint[] | null, topic: string) => void;
     private geometry: Geometry;
@@ -101,6 +102,7 @@ export class InteractionHandlerImpl implements InteractionHandler {
         this.pointPrompts = [];
         this.allPrompts = [];
         this.intermediateShapes = [];
+        this.intermediateMaskOutlines = [];
         this.deletionButtons = new Map();
         this.effectiveStrokeWidth = consts.BASE_STROKE_WIDTH / this.geometry.scale;
         this.effectivePointSize = (configuration.controlPointsSize ?? consts.BASE_POINT_SIZE) / this.geometry.scale;
@@ -150,7 +152,9 @@ export class InteractionHandlerImpl implements InteractionHandler {
             }
             shape.remove();
         });
+        this.intermediateMaskOutlines.forEach((outline) => outline.remove());
         this.intermediateShapes = [];
+        this.intermediateMaskOutlines = [];
     }
 
     private release(): void {
@@ -312,7 +316,7 @@ export class InteractionHandlerImpl implements InteractionHandler {
                 this.intermediateShapes.push(image);
 
                 let insertionPoint = image.node;
-                for (const outline of outlines || []) {
+                for (const outline of outlines ?? []) {
                     if (outline.length >= 3 * 2) {
                         const outlinePoints = stringifyPoints(translateToCanvas(this.geometry.offset, outline));
                         const strokeWidth = consts.BASE_STROKE_WIDTH / this.geometry.scale;
@@ -324,7 +328,7 @@ export class InteractionHandlerImpl implements InteractionHandler {
 
                         insertionPoint.after(maskOutline.node);
                         insertionPoint = maskOutline.node;
-                        this.intermediateShapes.push(maskOutline);
+                        this.intermediateMaskOutlines.push(maskOutline);
                     }
                 }
 
@@ -571,11 +575,11 @@ export class InteractionHandlerImpl implements InteractionHandler {
         });
 
         this.intermediateShapes.forEach((shape) => {
-            if (shape.hasClass('cvat_canvas_interact_mask_outline')) {
-                shape.stroke({ width: this.effectiveStrokeWidth });
-            } else {
-                shape.fill({ opacity: this.effectiveShapeOpacity });
-            }
+            shape.fill({ opacity: this.effectiveShapeOpacity });
+        });
+
+        this.intermediateMaskOutlines.forEach((outline) => {
+            outline.stroke({ width: this.effectiveStrokeWidth });
         });
     }
 
