@@ -16,7 +16,7 @@ from rq.job import JobStatus
 from cvat.apps.consensus.merging_manager import MergingManager
 from cvat.apps.engine.background import BackupExporter, DatasetExporter, TaskCreator
 from cvat.apps.engine.rq import ExportRQMeta, RequestId, RQMetaWithFailureInfo
-from cvat.apps.quality_control.quality_reports import QualityReportRQJobManager
+from cvat.apps.quality_control.queue_manager import QualityReportQueueManager
 from cvat.apps.redis_handler.serializers import RequestSerializer
 from cvat.apps.redis_handler.signals import request_failed, request_succeeded
 from cvat.apps.redis_handler.utils import DetachedJob
@@ -33,8 +33,8 @@ from cvat.apps.webhooks.event_type import event_key
 @receiver(request_failed, sender=BackupExporter)
 @receiver(request_succeeded, sender=TaskCreator)
 @receiver(request_failed, sender=TaskCreator)
-@receiver(request_succeeded, sender=QualityReportRQJobManager)
-@receiver(request_failed, sender=QualityReportRQJobManager)
+@receiver(request_succeeded, sender=QualityReportQueueManager)
+@receiver(request_failed, sender=QualityReportQueueManager)
 @receiver(request_succeeded, sender=MergingManager)
 @receiver(request_failed, sender=MergingManager)
 def enqueue_request_completion_webhooks(
