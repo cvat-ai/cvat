@@ -14,7 +14,7 @@ import AudioRegionsListContainer from 'audio/containers/annotation-page/audio-wo
 import AudioContextMenuWrapper from 'audio/containers/annotation-page/audio-workspace/audio-context-menu-wrapper';
 import RemoveConfirmComponent from 'components/annotation-page/standard-workspace/remove-confirm';
 
-import AudioCanvasWrapper from './audio-canvas-wrapper';
+import AudioCanvasWrapper from './audio-canvas';
 import AudioControlsSideBarComponent from './controls-side-bar/controls-side-bar';
 import AudioControlsSidebarSkeleton from './skeleton/audio-controls-sidebar-skeleton';
 import AudioRegionsListSkeleton from './skeleton/audio-regions-list-skeleton';

@@ -5,10 +5,20 @@
 import datetime
 from contextlib import suppress
 
+import rq
 from django.db.models import Min
+
+from cvat.apps.webhooks.exceptions import WebhookDeliveryError
 
 from .cache import clear_cache
 from .const import COMPRESSED_EVENT_SCOPES, MAX_EVENT_DURATION
+
+
+def should_skip_rq_exception_event_recording(rq_job: rq.job.Job, exc_value: Exception) -> bool:
+    if isinstance(exc_value, WebhookDeliveryError):
+        return rq_job.get_status(refresh=False) != rq.job.JobStatus.FAILED
+
+    return False
 
 
 def _prepare_objects_to_delete(object_to_delete):

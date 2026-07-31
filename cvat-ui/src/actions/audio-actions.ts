@@ -8,10 +8,14 @@ import {
 import {
     AudioIntervalState, FramesMetaData, Job, Source, fetchAndAssembleAudio,
 } from 'cvat-core-wrapper';
+import { clamp } from 'utils/math';
 
 export enum AudioActionTypes {
     SWITCH_AUDIO_PLAY = 'SWITCH_AUDIO_PLAY',
-    SET_AUDIO_CURRENT_TIME = 'SET_AUDIO_CURRENT_TIME',
+    PLAY_FULL_AUDIO = 'PLAY_FULL_AUDIO',
+    REPORT_AUDIO_CURRENT_TIME = 'REPORT_AUDIO_CURRENT_TIME',
+    SEEK_AUDIO = 'SEEK_AUDIO',
+    COMPLETE_AUDIO_SEEK = 'COMPLETE_AUDIO_SEEK',
     SET_AUDIO_DURATION = 'SET_AUDIO_DURATION',
     SET_AUDIO_PLAYBACK_RATE = 'SET_AUDIO_PLAYBACK_RATE',
     SET_AUDIO_ZOOM = 'SET_AUDIO_ZOOM',
@@ -23,8 +27,11 @@ export enum AudioActionTypes {
     LOAD_AUDIO_DATA = 'LOAD_AUDIO_DATA',
     LOAD_AUDIO_DATA_SUCCESS = 'LOAD_AUDIO_DATA_SUCCESS',
     LOAD_AUDIO_DATA_FAILED = 'LOAD_AUDIO_DATA_FAILED',
+    RELEASE_AUDIO_DATA = 'RELEASE_AUDIO_DATA',
     SET_WAVEFORM_READY = 'SET_WAVEFORM_READY',
     SET_AUDIO_ACTIVE_LABEL = 'SET_AUDIO_ACTIVE_LABEL',
+    PLAY_AUDIO_INTERVAL_ONCE = 'PLAY_AUDIO_INTERVAL_ONCE',
+    COMPLETE_PLAY_AUDIO_INTERVAL_ONCE = 'COMPLETE_PLAY_AUDIO_INTERVAL_ONCE',
     AUDIO_UNDO = 'AUDIO_UNDO',
     AUDIO_REDO = 'AUDIO_REDO',
 }
@@ -33,8 +40,15 @@ export const audioActions = {
     switchAudioPlay: (playing: boolean) => (
         createAction(AudioActionTypes.SWITCH_AUDIO_PLAY, { playing })
     ),
-    setAudioCurrentTime: (time: number) => (
-        createAction(AudioActionTypes.SET_AUDIO_CURRENT_TIME, { time })
+    playFullAudio: () => createAction(AudioActionTypes.PLAY_FULL_AUDIO),
+    reportAudioCurrentTime: (time: number) => (
+        createAction(AudioActionTypes.REPORT_AUDIO_CURRENT_TIME, { time })
+    ),
+    seekAudio: (time: number) => (
+        createAction(AudioActionTypes.SEEK_AUDIO, { request: { time } })
+    ),
+    completeAudioSeek: (request: { time: number }) => (
+        createAction(AudioActionTypes.COMPLETE_AUDIO_SEEK, { request })
     ),
     setAudioDuration: (duration: number) => (
         createAction(AudioActionTypes.SET_AUDIO_DURATION, { duration })
@@ -62,26 +76,52 @@ export const audioActions = {
             left, top, clientID,
         })
     ),
-    loadAudioData: () => (
-        createAction(AudioActionTypes.LOAD_AUDIO_DATA)
+    loadAudioData: (request: object) => (
+        createAction(AudioActionTypes.LOAD_AUDIO_DATA, { request })
     ),
-    loadAudioDataSuccess: (audioUrl: string) => (
-        createAction(AudioActionTypes.LOAD_AUDIO_DATA_SUCCESS, { audioUrl })
+    loadAudioDataSuccess: (request: object, audioUrl: string) => (
+        createAction(AudioActionTypes.LOAD_AUDIO_DATA_SUCCESS, { request, audioUrl })
     ),
-    loadAudioDataFailed: (error: string) => (
-        createAction(AudioActionTypes.LOAD_AUDIO_DATA_FAILED, { error })
+    loadAudioDataFailed: (request: object, error: string) => (
+        createAction(AudioActionTypes.LOAD_AUDIO_DATA_FAILED, { request, error })
     ),
-    setWaveformReady: (ready: boolean) => (
-        createAction(AudioActionTypes.SET_WAVEFORM_READY, { ready })
+    setWaveformReady: (sourceURL: string, ready: boolean) => (
+        createAction(AudioActionTypes.SET_WAVEFORM_READY, { sourceURL, ready })
     ),
     setAudioActiveLabel: (labelId: number | null) => (
         createAction(AudioActionTypes.SET_AUDIO_ACTIVE_LABEL, { labelId })
+    ),
+    playAudioIntervalOnce: (request: { intervalID: number }) => (
+        createAction(AudioActionTypes.PLAY_AUDIO_INTERVAL_ONCE, { request })
+    ),
+    completePlayAudioIntervalOnce: (request: { intervalID: number }) => (
+        createAction(AudioActionTypes.COMPLETE_PLAY_AUDIO_INTERVAL_ONCE, { request })
     ),
     audioUndo: () => createAction(AudioActionTypes.AUDIO_UNDO),
     audioRedo: () => createAction(AudioActionTypes.AUDIO_REDO),
 };
 
 export type AudioActions = ActionUnion<typeof audioActions>;
+
+export function toggleAudioPlayback(): ThunkAction {
+    return async (dispatch: ThunkDispatch, getState): Promise<void> => {
+        const { playing, playIntervalOnceRequest } = getState().audio.player;
+        if (playing) {
+            dispatch(audioActions.switchAudioPlay(false));
+        } else if (playIntervalOnceRequest) {
+            dispatch(audioActions.switchAudioPlay(true));
+        } else {
+            dispatch(audioActions.playFullAudio());
+        }
+    };
+}
+
+export type AudioSeekIntent =
+    | { kind: 'boundary'; boundary: 'start' | 'end' }
+    | { kind: 'step'; direction: -1 | 1; size: 'short' | 'long' };
+
+const AUDIO_SHORT_JUMP_FRACTION = 0.005;
+const AUDIO_LONG_JUMP_FRACTION = 0.05;
 
 type AudioIntervalPatch = Partial<Pick<
     AudioIntervalState,
@@ -111,7 +151,9 @@ export function loadAudioDataAsync(job: Job, jobMeta: FramesMetaData): ThunkActi
             URL.revokeObjectURL(prevAudioUrl);
         }
 
-        dispatch(audioActions.loadAudioData());
+        // use request object as request identity to prevent applying stale responses
+        const request = {};
+        dispatch(audioActions.loadAudioData(request));
 
         try {
             const totalFrames = jobMeta.size;
@@ -119,10 +161,48 @@ export function loadAudioDataAsync(job: Job, jobMeta: FramesMetaData): ThunkActi
             const blob = await fetchAndAssembleAudio(job.id, totalFrames, chunkSize);
             const audioUrl = URL.createObjectURL(blob);
 
-            dispatch(audioActions.loadAudioDataSuccess(audioUrl));
+            // clean up and exit right away if stale
+            if (getState().audio.player.audioLoadRequest !== request) {
+                URL.revokeObjectURL(audioUrl);
+                return;
+            }
+
+            dispatch(audioActions.loadAudioDataSuccess(request, audioUrl));
         } catch (error) {
-            dispatch(audioActions.loadAudioDataFailed(error instanceof Error ? error.message : String(error)));
+            if (getState().audio.player.audioLoadRequest === request) {
+                dispatch(audioActions.loadAudioDataFailed(
+                    request,
+                    error instanceof Error ? error.message : String(error),
+                ));
+            }
         }
+    };
+}
+
+export function requestAudioSeekByIntent(intent: AudioSeekIntent): ThunkAction {
+    return async (dispatch: ThunkDispatch, getState): Promise<void> => {
+        const { currentTime, duration, zoom } = getState().audio.player;
+        if (duration <= 0) return;
+
+        let target: number;
+        if (intent.kind === 'boundary') {
+            target = intent.boundary === 'start' ? 0 : duration;
+        } else {
+            const safeZoom = Number.isFinite(zoom) && zoom > 0 ? zoom : 1;
+            const fraction = intent.size === 'short' ? AUDIO_SHORT_JUMP_FRACTION : AUDIO_LONG_JUMP_FRACTION;
+            target = currentTime + intent.direction * ((duration / safeZoom) * fraction);
+        }
+
+        dispatch(audioActions.seekAudio(clamp(target, 0, duration)));
+    };
+}
+
+export function requestPlayAudioIntervalOnce(clientID: number): ThunkAction {
+    return async (dispatch: ThunkDispatch, getState): Promise<void> => {
+        const interval = getState().audio.player.intervals.find((_interval) => _interval.clientID === clientID);
+        if (!interval) return;
+
+        dispatch(audioActions.playAudioIntervalOnce({ intervalID: clientID }));
     };
 }
 
@@ -161,6 +241,18 @@ export function updateAudioIntervalAsync(
         applyIntervalPatch(interval, patch);
         await interval.save();
         await dispatchFetchAnnotations(dispatch);
+    };
+}
+
+export function changeAudioIntervalLabelAsync(clientID: number, labelID: number): ThunkAction {
+    return async (dispatch: ThunkDispatch, getState): Promise<void> => {
+        const { intervals } = getState().audio.player;
+        const { labels } = getState().annotation.job;
+        const interval = intervals.find((_interval) => _interval.clientID === clientID);
+        const label = labels.find((_label) => _label.id === labelID);
+        if (!interval || !label || interval.label.id === labelID) return;
+
+        await dispatch(updateAudioIntervalAsync(clientID, { label }));
     };
 }
 

@@ -9,6 +9,13 @@ import { WebhookSourceType, WebhookContentType } from './enums';
 import { isEnum } from './common';
 import { ArgumentError } from './exceptions';
 
+export interface WebhookEvent {
+    key: string;
+    group: {
+        display_name: string;
+    };
+}
+
 interface RawWebhookData {
     id?: number;
     type: WebhookSourceType;
@@ -47,7 +54,7 @@ export default class Webhook {
     public isActive?: boolean;
     public enableSSL: boolean;
 
-    static async availableEvents(type: WebhookSourceType): Promise<string[]> {
+    static async availableEvents(type: WebhookSourceType): Promise<WebhookEvent[]> {
         return serverProxy.webhooks.events(type);
     }
 

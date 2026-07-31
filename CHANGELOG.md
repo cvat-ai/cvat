@@ -16,6 +16,102 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.72.0'></a>
+## \[2.72.0\] - 2026-07-29
+
+### Added
+
+- \[CLI\] New `cvat-cli profile` commands to list, create, set the default,
+  and delete saved Personal Access Token profiles.
+  (<https://github.com/cvat-ai/cvat/pull/10875>)
+
+### Changed
+
+- In the backend server image, CVAT source files are now installed in
+  `/opt/cvat` rather than `/home/django`, and owned by root
+  (<https://github.com/cvat-ai/cvat/pull/10575>)
+
+### Removed
+
+- Backend processes no longer write their logs to `logs/cvat_server.log`
+  (<https://github.com/cvat-ai/cvat/pull/10939>)
+
+### Fixed
+
+- Fixed mask bounding box not shrinking after removing underlying pixels
+  when another mask overlaps it with the "Remove underlying pixels" option enabled
+  (<https://github.com/cvat-ai/cvat/pull/10873>)
+
+- Fixed save annotations failure due to “spec_id is invalid” error
+  (<https://github.com/cvat-ai/cvat/pull/10936>)
+
+- Improved audio waveform timeline detail at larger zoom levels
+  (<https://github.com/cvat-ai/cvat/pull/10947>)
+
+- Fixed the caret jumping to the end while editing audio interval text attributes. (<https://github.com/cvat-ai/cvat/pull/10950>)
+- Fixed standard undo/redo shortcuts in the editor of audio interval text attributes.  (<https://github.com/cvat-ai/cvat/pull/10950>)
+
+- Fixed misaligned resize handles for selected audio intervals.
+  (<https://github.com/cvat-ai/cvat/pull/10951>)
+
+- \[Helm\] Fixed backup/export workers using ephemeral storage for backup
+  temporary files.
+  (<https://github.com/cvat-ai/cvat/pull/10958>)
+
+### Security
+
+- Fixed overly lax authorization rules for lambda function requests;
+  viewing a request now requires access to its target task or job,
+  while cancelling a request requires being the user who initiated it
+  (<https://github.com/cvat-ai/cvat/security/advisories/GHSA-m7p7-6w4m-886p>)
+
+- Prevented users from blocking automatic annotation for inaccessible tasks
+  (<https://github.com/cvat-ai/cvat/security/advisories/GHSA-7xhx-3q27-xvcx>)
+
+<a id='changelog-2.71.0'></a>
+## \[2.71.0\] - 2026-07-22
+
+### Added
+
+- \[CLI\] New `--profile NAME` option selects a saved server/credential profile.
+  Replaces `--server-host`/`--server-port`/`--auth` (<https://github.com/cvat-ai/cvat/pull/10845>)
+
+- \[CLI\] New `cvat-cli config default-server` command prints, sets, or clears the default server URL.
+  (<https://github.com/cvat-ai/cvat/pull/10845>)
+
+- \[SDK, CLI\] Added an interface and agent support for interaction
+  auto-annotation functions
+  (<https://github.com/cvat-ai/cvat/pull/10874>)
+
+### Changed
+
+- CVAT will now refuse to start if `keys/secret_key.py` contains arbitrary
+  code
+  (<https://github.com/cvat-ai/cvat/pull/10670>)
+
+- \[CLI\] `--auth` no longer defaults to the OS user; absent auth/profile/token, it uses profile credentials or prompts.
+  `--server-host` falls back to profile/default server/`http://localhost` (<https://github.com/cvat-ai/cvat/pull/10845>)
+
+- Change skeleton control points display to be visually distinguishable from the annotation points
+  (<https://github.com/cvat-ai/cvat/pull/10879>)
+
+### Fixed
+
+- \[SDK, CLI\] Changed the default server URL from `http://localhost:8080` to
+  `http://localhost`, fixed server URL construction when `--server-port` is used
+  with the default server, and report a clear error if a server URL already
+  contains a port
+  (<https://github.com/cvat-ai/cvat/pull/10895>)
+
+- \[Server API\] Prevented `/api/requests` from failing while cleaning up
+  abandoned jobs
+  (<https://github.com/cvat-ai/cvat/pull/10904>)
+
+- Reduced misleading event log entries for webhook delivery failures by recording
+  an exception only after all retries are exhausted, and shortened the connection
+  timeout for unreachable webhook consumers
+  (<https://github.com/cvat-ai/cvat/pull/10921>)
+
 <a id='changelog-2.70.0'></a>
 ## \[2.70.0\] - 2026-07-13
 
