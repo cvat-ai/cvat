@@ -4,6 +4,10 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+from uuid import UUID
+
+from django.contrib.auth.models import User
 from django.db.models import Model
 
 from cvat.apps.engine.rq import (
@@ -12,7 +16,9 @@ from cvat.apps.engine.rq import (
     MutableRQMetaAttribute,
     RQJobMetaField,
 )
-from cvat.apps.engine.types import ExtendedRequest
+
+if TYPE_CHECKING:
+    from cvat.apps.redis_handler.background import AbstractRequestManager
 
 
 class LambdaRQMeta(BaseRQMeta):
@@ -28,11 +34,18 @@ class LambdaRQMeta(BaseRQMeta):
     def build_for(
         cls,
         *,
-        request: ExtendedRequest,
-        db_obj: Model,
+        user: User,
+        uuid: UUID,
+        request_manager_cls: type[AbstractRequestManager],
+        instance: Model,
         function_id: str,
     ):
-        base_meta = BaseRQMeta.build(request=request, db_obj=db_obj)
+        base_meta = BaseRQMeta.build_from_instance(
+            user=user,
+            uuid=uuid,
+            instance=instance,
+            request_manager_cls=request_manager_cls,
+        )
         return {
             **base_meta,
             RQJobMetaField.FUNCTION_ID: function_id,

@@ -80,9 +80,6 @@ spec:
           - mountPath: /home/django/logs
             name: cvat-backend-data
             subPath: logs
-          - mountPath: /home/django/tmp_storage
-            name: cvat-backend-data
-            subPath: tmp_storage
           {{- with concat .Values.cvat.backend.additionalVolumeMounts $localValues.additionalVolumeMounts }}
           {{- toYaml . | nindent 10 }}
           {{- end }}
