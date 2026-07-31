@@ -2,7 +2,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-import os
 import os.path as osp
 from tempfile import TemporaryDirectory
 
@@ -15,51 +14,43 @@ from cvat.apps.dataset_manager.util import format_exception_chain
 
 class FormatExceptionChainTest(SimpleTestCase):
     def test_includes_all_causes(self):
-        try:
+        with self.assertRaises(RuntimeError) as capture:
             try:
                 raise ValueError("root cause")
             except ValueError as inner:
                 raise RuntimeError("outer error") from inner
-        except RuntimeError as ex:
-            message = format_exception_chain(ex)
 
-        self.assertEqual(message, "outer error: root cause")
+        self.assertEqual(format_exception_chain(capture.exception), "outer error: root cause")
 
     def test_skips_messages_embedded_in_previous_links(self):
-        try:
+        with self.assertRaises(RuntimeError) as capture:
             try:
                 raise ValueError("root cause")
             except ValueError as inner:
                 raise RuntimeError(f"outer error: {inner}") from inner
-        except RuntimeError as ex:
-            message = format_exception_chain(ex)
 
-        self.assertEqual(message, "outer error: root cause")
+        self.assertEqual(format_exception_chain(capture.exception), "outer error: root cause")
 
     def test_follows_implicit_context(self):
-        try:
+        with self.assertRaises(RuntimeError) as capture:
             try:
                 raise ValueError("root cause")
             except ValueError:
                 raise RuntimeError("outer error")
-        except RuntimeError as ex:
-            message = format_exception_chain(ex)
 
-        self.assertEqual(message, "outer error: root cause")
+        self.assertEqual(format_exception_chain(capture.exception), "outer error: root cause")
 
     def test_empty_message_falls_back_to_type_name(self):
         self.assertEqual(format_exception_chain(ValueError()), "ValueError")
 
     def test_stops_at_non_exception_links(self):
-        try:
+        with self.assertRaises(RuntimeError) as capture:
             try:
                 raise KeyboardInterrupt("internal detail")
             except BaseException as inner:
                 raise RuntimeError("outer error") from inner
-        except RuntimeError as ex:
-            message = format_exception_chain(ex)
 
-        self.assertEqual(message, "outer error")
+        self.assertEqual(format_exception_chain(capture.exception), "outer error")
 
     def test_dataset_import_error_reports_underlying_reason(self):
         # A dataset that looks like YOLO 1.1 but is missing obj.names:
