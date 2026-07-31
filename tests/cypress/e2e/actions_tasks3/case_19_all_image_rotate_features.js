@@ -6,25 +6,10 @@
 /// <reference types="cypress" />
 
 import { taskName } from '../../support/const';
+import { imageRotate, checkDegRotate } from '../../support/utils.cy';
 
 context('Rotate all images feature.', () => {
     const caseId = '19';
-
-    function checkDegRotate(deg) {
-        cy.get('#cvat_canvas_background').should('have.attr', 'style').and('contain', `rotate(${deg}deg);`);
-    }
-
-    function imageRotate(direction = 'anticlockwise', deg) {
-        cy.get('.cvat-rotate-canvas-control').click();
-        cy.get('.cvat-rotate-canvas-popover').should('be.visible');
-        if (direction === 'clockwise') {
-            cy.get('.cvat-rotate-canvas-controls-right').should('be.visible').click();
-        } else {
-            cy.get('.cvat-rotate-canvas-controls-left').should('be.visible').click();
-        }
-        checkDegRotate(deg);
-        cy.get('body').click();
-    }
 
     function checkFrameNum(frameNum) {
         cy.get('.cvat-player-frame-selector').within(() => {
