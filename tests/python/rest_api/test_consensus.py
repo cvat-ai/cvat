@@ -10,7 +10,6 @@ from itertools import product
 from typing import Any
 
 import pytest
-import urllib3
 from cvat_sdk.api_client import exceptions, models
 from cvat_sdk.api_client.api_client import ApiClient, Endpoint
 from cvat_sdk.core.helpers import get_paginated_collection
@@ -21,6 +20,7 @@ from shared.utils.config import make_api_client
 from .utils import (
     CollectionSimpleFilterTestBase,
     compare_annotations,
+    create_consensus_merge,
     invite_user_to_org,
     register_new_user,
     wait_background_request,
@@ -28,44 +28,6 @@ from .utils import (
 
 
 class _PermissionTestBase:
-    def merge(
-        self,
-        *,
-        task_id: int | None = None,
-        job_id: int | None = None,
-        user: str,
-        raise_on_error: bool = True,
-        wait_result: bool = True,
-    ) -> urllib3.HTTPResponse:
-        assert task_id is not None or job_id is not None
-
-        kwargs = {}
-        if task_id is not None:
-            kwargs["task_id"] = task_id
-        if job_id is not None:
-            kwargs["job_id"] = job_id
-
-        with make_api_client(user) as api_client:
-            _, response = api_client.consensus_api.create_merge(
-                consensus_merge_create_request=models.ConsensusMergeCreateRequest(**kwargs),
-                _parse_response=False,
-                _check_status=raise_on_error,
-            )
-
-            if not raise_on_error and response.status != HTTPStatus.ACCEPTED:
-                return response
-            assert response.status == HTTPStatus.ACCEPTED
-
-            if wait_result:
-                rq_id = json.loads(response.data)["rq_id"]
-                background_request, _ = wait_background_request(api_client, rq_id)
-                assert (
-                    background_request.status.value
-                    == models.RequestStatus.allowed_values[("value",)]["FINISHED"]
-                )
-
-            return response
-
     def request_merge(
         self,
         *,
@@ -73,7 +35,9 @@ class _PermissionTestBase:
         job_id: int | None = None,
         user: str,
     ) -> str:
-        response = self.merge(user=user, task_id=task_id, job_id=job_id, wait_result=False)
+        response = create_consensus_merge(
+            user=user, task_id=task_id, job_id=job_id, wait_result=False
+        )
         return json.loads(response.data)["rq_id"]
 
     @pytest.fixture
@@ -198,20 +162,20 @@ class TestPostConsensusMerge(_PermissionTestBase):
     def test_can_merge_task_with_consensus_jobs(self, admin_user, tasks):
         task_id = next(t["id"] for t in tasks if t["consensus_enabled"])
 
-        self.merge(user=admin_user, task_id=task_id)
+        create_consensus_merge(user=admin_user, task_id=task_id)
 
     def test_can_merge_consensus_job(self, admin_user, jobs):
         job_id = next(
             j["id"] for j in jobs if j["type"] == "annotation" and j["consensus_replicas"] > 0
         )
 
-        self.merge(user=admin_user, job_id=job_id)
+        create_consensus_merge(user=admin_user, job_id=job_id)
 
     def test_cannot_merge_task_without_consensus_jobs(self, admin_user, tasks):
         task_id = next(t["id"] for t in tasks if not t["consensus_enabled"])
 
         with pytest.raises(exceptions.ApiException) as capture:
-            self.merge(user=admin_user, task_id=task_id)
+            create_consensus_merge(user=admin_user, task_id=task_id)
 
         assert "Consensus is not enabled in this task" in capture.value.body
 
@@ -231,7 +195,7 @@ class TestPostConsensusMerge(_PermissionTestBase):
                     )
 
         with pytest.raises(exceptions.ApiException) as capture:
-            self.merge(user=admin_user, task_id=task_id)
+            create_consensus_merge(user=admin_user, task_id=task_id)
 
         assert "No annotation jobs in the annotation stage" in capture.value.body
 
@@ -244,15 +208,17 @@ class TestPostConsensusMerge(_PermissionTestBase):
         )
 
         with pytest.raises(exceptions.ApiException) as capture:
-            self.merge(user=admin_user, job_id=job_id)
+            create_consensus_merge(user=admin_user, job_id=job_id)
 
         assert "No annotated consensus jobs found for parent job" in capture.value.body
 
     def _test_merge_200(self, user: str, *, task_id: int | None = None, job_id: int | None = None):
-        return self.merge(user=user, task_id=task_id, job_id=job_id)
+        return create_consensus_merge(user=user, task_id=task_id, job_id=job_id)
 
     def _test_merge_403(self, user: str, *, task_id: int | None = None, job_id: int | None = None):
-        response = self.merge(user=user, task_id=task_id, job_id=job_id, raise_on_error=False)
+        response = create_consensus_merge(
+            user=user, task_id=task_id, job_id=job_id, raise_on_error=False
+        )
         assert response.status == HTTPStatus.FORBIDDEN
         return response
 
@@ -711,7 +677,7 @@ class TestMerging(_PermissionTestBase):
                 ),
             )
 
-            self.merge(job_id=parent_job["id"], user=admin_user)
+            create_consensus_merge(job_id=parent_job["id"], user=admin_user)
 
             merged_annotations = json.loads(
                 api_client.jobs_api.retrieve_annotations(parent_job["id"])[1].data

@@ -181,11 +181,11 @@ class DetailsComponent extends React.PureComponent<Props, State> {
                     <LabelsEditorComponent
                         {...labelsEditorProps}
                         labels={taskInstance.labels.map((label) => label.toJSON())}
-                        onSubmit={(labels: any[]): void => {
+                        onSubmit={(labels: any[]): Promise<Task> => (
                             onUpdateTask(taskInstance, {
                                 labels: labels.map((labelData): any => new core.classes.Label(labelData)),
-                            });
-                        }}
+                            })
+                        )}
                     />
                 </Col>
             </Row>

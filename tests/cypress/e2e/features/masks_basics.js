@@ -485,8 +485,14 @@ context('Manipulations with masks', { scrollBehavior: false }, () => {
                 cy.get(`#cvat_canvas_shape_${index + 1}`).should('exist').and('be.visible');
             }
 
-            // Fist mask is updated, second mask is removed after third mask is drawn
-            cy.contains('Some objects were deleted').should('exist').and('be.visible');
+            // First mask is updated, second mask is removed after third mask is drawn
+            cy.get('.cvat-empty-masks-notification').should('be.visible').within(() => {
+                cy.contains('Some objects were deleted').should('be.visible');
+                cy.contains(
+                    'As a result of removing the underlying pixels, some masks became empty and were subsequently deleted.',
+                ).should('be.visible');
+            });
+            cy.closeNotification('.cvat-empty-masks-notification');
             for (const id of [1, 3]) {
                 cy.get(`#cvat_canvas_shape_${id}`).should('exist').and('be.visible');
             }

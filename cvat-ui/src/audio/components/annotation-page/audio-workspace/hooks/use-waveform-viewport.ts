@@ -24,6 +24,9 @@ const ZOOM_DELTA_LIMIT = 8;
 export interface WaveformViewport {
     /** Bound in AudioCanvas view rendering */
     containerRef: React.RefObject<HTMLDivElement>;
+
+    /** Current reactive zoom expressed in pixels per second. */
+    pixelsPerSecond: number;
     /**
      * Converts clientX coordinate from viewport to semantic timestamp on the current track.
      * Returns the track boundary (start/end correspondingly) if clientX is outside of the container's BB.
@@ -187,6 +190,7 @@ export function useWaveformViewport(runtime: WaveSurferRuntime): WaveformViewpor
 
     return {
         containerRef,
+        pixelsPerSecond,
         clientXToTime,
         centerTimeRange,
         ensureTimeVisible,

@@ -252,6 +252,116 @@ def import_backup(
     return import_resource(endpoint, max_retries=max_retries, interval=interval, **kwargs)
 
 
+def create_quality_report(
+    *, user: str, task_id: int | None = None, project_id: int | None = None
+) -> dict:
+    assert task_id is not None or project_id is not None
+
+    with make_api_client(user) as api_client:
+        _, response = api_client.quality_api.create_report(
+            quality_report_create_request=models.QualityReportCreateRequest(
+                **({"task_id": task_id} if task_id else {}),
+                **({"project_id": project_id} if project_id else {}),
+            ),
+            _parse_response=False,
+        )
+        assert response.status == HTTPStatus.ACCEPTED
+        rq_id = json.loads(response.data)["rq_id"]
+
+        background_request, _ = wait_background_request(api_client, rq_id)
+        assert (
+            background_request.status.value
+            == models.RequestStatus.allowed_values[("value",)]["FINISHED"]
+        )
+        report_id = background_request.result_id
+
+        _, response = api_client.quality_api.retrieve_report(report_id, _parse_response=False)
+
+        return json.loads(response.data)
+
+
+def create_gt_job(user: str, task_id: int, *, complete: bool = True) -> models.IJobRead:
+    with make_api_client(user) as api_client:
+        meta, _ = api_client.tasks_api.retrieve_data_meta(task_id)
+        start_frame = meta.start_frame
+
+        job, _ = api_client.jobs_api.create(
+            models.JobWriteRequest(
+                type="ground_truth",
+                task_id=task_id,
+                frame_selection_method="manual",
+                frames=[start_frame],
+            )
+        )
+
+        if complete:
+            labels, _ = api_client.labels_api.list(
+                **({"project_id": job.project_id} if job.project_id else {"task_id": task_id})
+            )
+
+            api_client.jobs_api.update_annotations(
+                job.id,
+                labeled_data_request={
+                    "shapes": [
+                        {
+                            "frame": start_frame,
+                            "label_id": labels.results[0].id,
+                            "type": "rectangle",
+                            "points": [1, 1, 2, 2],
+                        },
+                    ],
+                },
+            )
+
+            api_client.jobs_api.partial_update(
+                job.id,
+                patched_job_write_request={
+                    "stage": "acceptance",
+                    "state": "completed",
+                },
+            )
+
+    return job
+
+
+def create_consensus_merge(
+    *,
+    task_id: int | None = None,
+    job_id: int | None = None,
+    user: str,
+    raise_on_error: bool = True,
+    wait_result: bool = True,
+) -> HTTPResponse:
+    assert task_id is not None or job_id is not None
+
+    kwargs = {}
+    if task_id is not None:
+        kwargs["task_id"] = task_id
+    if job_id is not None:
+        kwargs["job_id"] = job_id
+
+    with make_api_client(user) as api_client:
+        _, response = api_client.consensus_api.create_merge(
+            consensus_merge_create_request=models.ConsensusMergeCreateRequest(**kwargs),
+            _parse_response=False,
+            _check_status=raise_on_error,
+        )
+
+        if not raise_on_error and response.status != HTTPStatus.ACCEPTED:
+            return response
+        assert response.status == HTTPStatus.ACCEPTED
+
+        if wait_result:
+            rq_id = json.loads(response.data)["rq_id"]
+            background_request, _ = wait_background_request(api_client, rq_id)
+            assert (
+                background_request.status.value
+                == models.RequestStatus.allowed_values[("value",)]["FINISHED"]
+            )
+
+        return response
+
+
 def import_project_backup(username: str, file_content: BytesIO, **kwargs):
     with make_api_client(username) as api_client:
         return import_backup(
