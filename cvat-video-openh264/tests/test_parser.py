@@ -2,7 +2,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-import ctypes
 import io
 import struct
 from pathlib import Path
@@ -11,38 +10,10 @@ import PIL.Image
 import pytest
 
 import cvat_video_openh264._reader as reader
-from cvat_video_openh264 import DecoderInfo, UnsupportedVideoChunkError
+from cvat_video_openh264 import UnsupportedVideoChunkError
 
-from tests._mp4_fixtures import make_cvat_chunk
-
-
-def _install_fake_decoder(
-    monkeypatch: pytest.MonkeyPatch,
-    *,
-    decode_result: PIL.Image.Image | None = None,
-    captured_units: list[bytes] | None = None,
-) -> dict[str, bool]:
-    state = {"closed": False}
-
-    class FakeDecoder:
-        def __init__(self, decoder_info: DecoderInfo, library: ctypes.CDLL | None = None) -> None:
-            assert decoder_info.library_path == "fake-openh264"
-
-        def decode(self, access_unit: bytes) -> PIL.Image.Image | None:
-            if captured_units is not None:
-                captured_units.append(access_unit)
-            return decode_result
-
-        def close(self) -> None:
-            state["closed"] = True
-
-    monkeypatch.setattr(
-        reader,
-        "_resolve_decoder_and_library",
-        lambda _library_path: (DecoderInfo(library_path="fake-openh264", version=None), None),
-    )
-    monkeypatch.setattr(reader, "_OpenH264Decoder", FakeDecoder)
-    return state
+from tests.fixtures.mp4_factory import make_cvat_chunk
+from tests.helpers import install_fake_decoder
 
 
 def test_valid_cvat_chunk_reaches_decoder_with_one_annex_b_access_unit(
@@ -53,7 +24,7 @@ def test_valid_cvat_chunk_reaches_decoder_with_one_annex_b_access_unit(
     chunk_path.write_bytes(make_cvat_chunk())
     frame = PIL.Image.new("RGB", (16, 16))
     captured: list[bytes] = []
-    _install_fake_decoder(monkeypatch, decode_result=frame, captured_units=captured)
+    install_fake_decoder(monkeypatch, decode_result=frame, captured_units=captured)
 
     frames = list(reader.iter_frames(chunk_path))
 
@@ -69,7 +40,7 @@ def test_non_constrained_baseline_profile_is_rejected_via_public_api(
 ) -> None:
     chunk_path = tmp_path / "0.mp4"
     chunk_path.write_bytes(make_cvat_chunk(profile=77))
-    _install_fake_decoder(monkeypatch)
+    install_fake_decoder(monkeypatch)
 
     with pytest.raises(UnsupportedVideoChunkError, match="constrained-baseline"):
         list(reader.iter_frames(chunk_path))
@@ -81,7 +52,7 @@ def test_decoded_frame_count_mismatch_is_reported(
 ) -> None:
     chunk_path = tmp_path / "0.mp4"
     chunk_path.write_bytes(make_cvat_chunk())
-    state = _install_fake_decoder(monkeypatch, decode_result=None)
+    state = install_fake_decoder(monkeypatch, decode_result=None)
 
     with pytest.raises(
         UnsupportedVideoChunkError,

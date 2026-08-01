@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-"""Deterministic synthetic MP4 fixtures for parser-boundary tests."""
+"""Build deterministic synthetic MP4 fixtures for parser-boundary tests."""
 
 import struct
 

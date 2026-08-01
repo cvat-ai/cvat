@@ -4,13 +4,13 @@
     {
       "id": "synthetic-cvat-constrained-baseline-chunk-v1",
       "kind": "generated",
-      "repository_path": "tests/_mp4_fixtures.py",
+      "repository_path": "tests/fixtures/mp4_factory.py",
       "generated_filename": "synthetic_cvat_chunk.mp4",
       "sha256": "55a8885616ac43540cf5e2dca568d76027d73de16bae1d7defdcc2fe505d92b4",
       "original_filename": "synthetic_cvat_chunk.mp4",
       "source": {
         "type": "repository-owned-generation",
-        "generation_source": "tests._mp4_fixtures.make_cvat_chunk",
+        "generation_source": "tests.fixtures.mp4_factory.make_cvat_chunk",
         "acquisition_date": "2026-07-31"
       },
       "creator": "CVAT.ai Corporation",
@@ -24,7 +24,7 @@
       "derivations": [
         {
           "tool": "Python standard library",
-          "command": "tests._mp4_fixtures.make_cvat_chunk()",
+          "command": "tests.fixtures.mp4_factory.make_cvat_chunk()",
           "description": "Construct MP4 boxes and one synthetic AVC sample deterministically"
         }
       ],
