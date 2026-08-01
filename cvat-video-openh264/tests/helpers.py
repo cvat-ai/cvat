@@ -11,6 +11,7 @@ import pytest
 
 import cvat_video_openh264._reader as reader
 from cvat_video_openh264 import DecoderInfo
+from cvat_video_openh264.ctypes_structs import BufferInfo
 
 
 def convert_single_i420_pixel(y: int, u: int = 128, v: int = 128) -> tuple[int, int, int]:
@@ -24,7 +25,7 @@ def convert_single_i420_pixel(y: int, u: int = 128, v: int = 128) -> tuple[int, 
         ctypes.addressof(u_source),
         ctypes.addressof(v_source),
     )
-    buffer_info = reader._BufferInfo()
+    buffer_info = BufferInfo()
     system_buffer = buffer_info.user_data.system_buffer
     system_buffer.width = 1
     system_buffer.height = 1

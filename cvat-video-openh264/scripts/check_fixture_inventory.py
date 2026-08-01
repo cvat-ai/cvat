@@ -48,7 +48,7 @@ def _require_nonempty_mapping(record: Mapping[str, Any], field: str, fixture_id:
 def _load_module(path: Path) -> ModuleType:
     spec = importlib.util.spec_from_file_location("_cvat_video_fixture_generator", path)
     if spec is None or spec.loader is None:
-        raise FixtureInventoryError(f"Could not load fixture generator from {path}")
+        raise FixtureInventoryError(f"Could not load fixture generator from {str(path)!r}")
 
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
@@ -90,7 +90,7 @@ def validate_inventory(inventory: Mapping[str, Any], project_root: Path) -> None
         fixture_id = str(fixture.get("id", "<unknown>"))
         if missing_fields:
             raise FixtureInventoryError(
-                f"Fixture {fixture_id!r} is missing fields: {', '.join(missing_fields)}"
+                f"Fixture {fixture_id!r} is missing fields: {', '.join(missing_fields)!r}"
             )
 
         for field in ("source", "redistribution_permission", "media"):
@@ -124,7 +124,8 @@ def validate_inventory(inventory: Mapping[str, Any], project_root: Path) -> None
         actual_sha256 = hashlib.sha256(_generate_fixture(project_root, fixture)).hexdigest()
         if actual_sha256 != expected_sha256:
             raise FixtureInventoryError(
-                f"Fixture {fixture_id!r} checksum is {actual_sha256}, expected {expected_sha256}"
+                f"Fixture {fixture_id!r} checksum is {actual_sha256!r}, "
+                f"expected {expected_sha256!r}"
             )
 
 

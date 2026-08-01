@@ -3,28 +3,12 @@
 # SPDX-License-Identifier: MIT
 
 import copy
-import json
-from collections.abc import Callable
 from pathlib import Path
-from typing import Any
 
 import pytest
 from scripts.check_fixture_inventory import FixtureInventoryError, validate_inventory
 
-FixtureInventory = dict[str, Any]
-FixtureMutation = Callable[[dict[str, Any]], object]
-
-
-@pytest.fixture(name="project_root")
-def fixture_project_root() -> Path:
-    return Path(__file__).resolve().parents[1]
-
-
-@pytest.fixture(name="inventory")
-def fixture_inventory(project_root: Path) -> FixtureInventory:
-    inventory_path = project_root / "tests" / "fixtures" / "inventory.json"
-    with inventory_path.open(encoding="utf-8") as inventory_file:
-        return json.load(inventory_file)
+from tests.conftest import FixtureInventory, FixtureMutation
 
 
 def test_fixture_inventory_is_complete_and_matches_generated_bytes(

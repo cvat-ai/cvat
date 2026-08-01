@@ -36,6 +36,8 @@ jobs:
         with:
           # Use the oldest Python release supported by the package.
           python-version: '3.10'
+          cache: pip
+          cache-dependency-path: cvat-video-openh264/pyproject.toml
 
       - name: Install isolated build and test requirements
         run: |

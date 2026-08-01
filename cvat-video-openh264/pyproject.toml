@@ -46,6 +46,7 @@ version = {attr = "cvat_video_openh264.version.VERSION"}
 [tool.pytest.ini_options]
 addopts = ["--strict-config", "--strict-markers"]
 testpaths = ["tests"]
+pythonpath = ["."]
 
 [tool.isort]
 profile = "black"

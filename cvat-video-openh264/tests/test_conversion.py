@@ -7,6 +7,7 @@ import ctypes
 import pytest
 
 import cvat_video_openh264._reader as reader
+from cvat_video_openh264.ctypes_structs import BufferInfo
 
 from tests.helpers import convert_single_i420_pixel
 
@@ -43,7 +44,7 @@ def test_i420_conversion_supports_odd_dimensions_and_owns_output() -> None:
         ctypes.addressof(u_source),
         ctypes.addressof(v_source),
     )
-    buffer_info = reader._BufferInfo()
+    buffer_info = BufferInfo()
     system_buffer = buffer_info.user_data.system_buffer
     system_buffer.width = width
     system_buffer.height = height

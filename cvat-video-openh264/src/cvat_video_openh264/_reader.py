@@ -9,16 +9,24 @@ from __future__ import annotations
 import contextlib
 import ctypes
 import ctypes.util
+import itertools
 import os
 import struct
 from collections.abc import Generator, Iterator
-from dataclasses import dataclass
 from pathlib import Path
 from typing import BinaryIO
 
 import PIL.Image
 
+from .ctypes_structs import (
+    BufferInfo,
+    DecoderVTable,
+    DecodingParameters,
+    OpenH264Version,
+    VideoProperty,
+)
 from .errors import DecoderUnavailableError, UnsupportedVideoChunkError
+from .models import AvcConfiguration, Box, DecoderInfo, Sample, VideoTrack
 
 _BOX_HEADER_SIZE = 8
 _EXTENDED_BOX_HEADER_SIZE = 16
@@ -34,39 +42,6 @@ _LIMITED_RANGE_LUMA_LUT = tuple(
 _LIMITED_RANGE_CHROMA_LUT = tuple(
     max(0, min(255, round(128 + (value - 128) * 255 / 224))) for value in range(256)
 )
-
-
-@dataclass(frozen=True)
-class DecoderInfo:
-    library_path: str
-    version: tuple[int, int, int] | None
-
-
-@dataclass(frozen=True)
-class _Box:
-    type: bytes
-    offset: int
-    payload_offset: int
-    end_offset: int
-
-
-@dataclass(frozen=True)
-class _AvcConfiguration:
-    nal_length_size: int
-    sequence_parameter_sets: tuple[bytes, ...]
-    picture_parameter_sets: tuple[bytes, ...]
-
-
-@dataclass(frozen=True)
-class _Sample:
-    offset: int
-    size: int
-
-
-@dataclass(frozen=True)
-class _VideoTrack:
-    avc_configuration: _AvcConfiguration
-    samples: tuple[_Sample, ...]
 
 
 def _read_exact(file: BinaryIO, size: int) -> bytes:
@@ -90,7 +65,7 @@ def _read_u64(data: bytes, offset: int = 0) -> int:
     return struct.unpack_from(">Q", data, offset)[0]
 
 
-def _iter_boxes(file: BinaryIO, start: int, end: int) -> Iterator[_Box]:
+def _iter_boxes(file: BinaryIO, start: int, end: int) -> Iterator[Box]:
     offset = start
 
     while offset < end:
@@ -118,7 +93,7 @@ def _iter_boxes(file: BinaryIO, start: int, end: int) -> Iterator[_Box]:
                 f"The MP4 chunk contains an invalid {box_type.decode('ascii', 'replace')!r} box"
             )
 
-        yield _Box(
+        yield Box(
             type=box_type,
             offset=offset,
             payload_offset=offset + header_size,
@@ -127,7 +102,7 @@ def _iter_boxes(file: BinaryIO, start: int, end: int) -> Iterator[_Box]:
         offset += box_size
 
 
-def _find_box(file: BinaryIO, parent: _Box, box_type: bytes) -> _Box:
+def _find_box(file: BinaryIO, parent: Box, box_type: bytes) -> Box:
     matches = [
         box
         for box in _iter_boxes(file, parent.payload_offset, parent.end_offset)
@@ -141,7 +116,7 @@ def _find_box(file: BinaryIO, parent: _Box, box_type: bytes) -> _Box:
     return matches[0]
 
 
-def _parse_avcc(data: bytes) -> _AvcConfiguration:
+def _parse_avcc(data: bytes) -> AvcConfiguration:
     if len(data) < 7 or data[0] != 1:
         raise UnsupportedVideoChunkError("The MP4 chunk has an invalid AVC decoder configuration")
 
@@ -185,14 +160,14 @@ def _parse_avcc(data: bytes) -> _AvcConfiguration:
     if not sequence_parameter_sets or not picture_parameter_sets:
         raise UnsupportedVideoChunkError("The MP4 chunk has incomplete AVC parameter sets")
 
-    return _AvcConfiguration(
+    return AvcConfiguration(
         nal_length_size=nal_length_size,
         sequence_parameter_sets=sequence_parameter_sets,
         picture_parameter_sets=picture_parameter_sets,
     )
 
 
-def _parse_sample_description(file: BinaryIO, stsd: _Box) -> _AvcConfiguration:
+def _parse_sample_description(file: BinaryIO, stsd: Box) -> AvcConfiguration:
     header = _read_at(file, stsd.payload_offset, 8)
     entry_count = _read_u32(header, 4)
     if entry_count != 1:
@@ -210,7 +185,7 @@ def _parse_sample_description(file: BinaryIO, stsd: _Box) -> _AvcConfiguration:
 
     avcc = _find_box(
         file,
-        _Box(
+        Box(
             type=b"avc1",
             offset=avc1.offset,
             payload_offset=children_start,
@@ -221,7 +196,7 @@ def _parse_sample_description(file: BinaryIO, stsd: _Box) -> _AvcConfiguration:
     return _parse_avcc(_read_at(file, avcc.payload_offset, avcc.end_offset - avcc.payload_offset))
 
 
-def _parse_sample_sizes(file: BinaryIO, stsz: _Box) -> tuple[int, ...]:
+def _parse_sample_sizes(file: BinaryIO, stsz: Box) -> tuple[int, ...]:
     header = _read_at(file, stsz.payload_offset, 12)
     common_sample_size = _read_u32(header, 4)
     sample_count = _read_u32(header, 8)
@@ -245,7 +220,7 @@ def _parse_sample_sizes(file: BinaryIO, stsz: _Box) -> tuple[int, ...]:
     return tuple(sample_sizes)
 
 
-def _parse_chunk_offsets(file: BinaryIO, box: _Box) -> tuple[int, ...]:
+def _parse_chunk_offsets(file: BinaryIO, box: Box) -> tuple[int, ...]:
     entry_count = _read_u32(_read_at(file, box.payload_offset, 8), 4)
     entry_size = 4 if box.type == b"stco" else 8
     table_size = entry_count * entry_size
@@ -258,7 +233,7 @@ def _parse_chunk_offsets(file: BinaryIO, box: _Box) -> tuple[int, ...]:
     return tuple(struct.unpack(f">{entry_count}{format_character}", table))
 
 
-def _parse_sample_to_chunk(file: BinaryIO, stsc: _Box) -> tuple[tuple[int, int, int], ...]:
+def _parse_sample_to_chunk(file: BinaryIO, stsc: Box) -> tuple[tuple[int, int, int], ...]:
     entry_count = _read_u32(_read_at(file, stsc.payload_offset, 8), 4)
     table_size = entry_count * 12
 
@@ -273,14 +248,14 @@ def _parse_sample_to_chunk(file: BinaryIO, stsc: _Box) -> tuple[tuple[int, int, 
             samples_per_chunk == 0 or description_index != 1
             for _, samples_per_chunk, description_index in entries
         )
-        or any(current[0] >= following[0] for current, following in zip(entries, entries[1:]))
+        or any(current[0] >= following[0] for current, following in itertools.pairwise(entries))
     ):
         raise UnsupportedVideoChunkError("The MP4 sample-to-chunk mapping is unsupported")
 
     return entries
 
 
-def _validate_composition_offsets(file: BinaryIO, stbl: _Box) -> None:
+def _validate_composition_offsets(file: BinaryIO, stbl: Box) -> None:
     composition_offset_boxes = [
         box
         for box in _iter_boxes(file, stbl.payload_offset, stbl.end_offset)
@@ -312,7 +287,7 @@ def _build_samples(
     chunk_offsets: tuple[int, ...],
     sample_to_chunk: tuple[tuple[int, int, int], ...],
     file_size: int,
-) -> tuple[_Sample, ...]:
+) -> tuple[Sample, ...]:
     samples = []
     sample_index = 0
     mapping_index = 0
@@ -335,7 +310,7 @@ def _build_samples(
             if sample_offset > file_size or sample_size > file_size - sample_offset:
                 raise UnsupportedVideoChunkError("An AVC sample points outside the MP4 chunk")
 
-            samples.append(_Sample(offset=sample_offset, size=sample_size))
+            samples.append(Sample(offset=sample_offset, size=sample_size))
             sample_offset += sample_size
             sample_index += 1
 
@@ -345,7 +320,7 @@ def _build_samples(
     return tuple(samples)
 
 
-def _parse_video_track(file: BinaryIO, trak: _Box, file_size: int) -> _VideoTrack | None:
+def _parse_video_track(file: BinaryIO, trak: Box, file_size: int) -> VideoTrack | None:
     mdia = _find_box(file, trak, b"mdia")
     hdlr = _find_box(file, mdia, b"hdlr")
     hdlr_header = _read_at(file, hdlr.payload_offset, 12)
@@ -371,13 +346,13 @@ def _parse_video_track(file: BinaryIO, trak: _Box, file_size: int) -> _VideoTrac
     chunk_offsets = _parse_chunk_offsets(file, chunk_offset_boxes[0])
     sample_to_chunk = _parse_sample_to_chunk(file, stsc)
 
-    return _VideoTrack(
+    return VideoTrack(
         avc_configuration=_parse_sample_description(file, stsd),
         samples=_build_samples(sample_sizes, chunk_offsets, sample_to_chunk, file_size),
     )
 
 
-def _read_video_track_from_stream(file: BinaryIO, file_size: int) -> _VideoTrack:
+def _read_video_track_from_stream(file: BinaryIO, file_size: int) -> VideoTrack:
     top_level_boxes = list(_iter_boxes(file, 0, file_size))
     moov_boxes = [box for box in top_level_boxes if box.type == b"moov"]
     if len(moov_boxes) != 1:
@@ -395,7 +370,7 @@ def _read_video_track_from_stream(file: BinaryIO, file_size: int) -> _VideoTrack
     return tracks[0]
 
 
-def _iter_access_units_from_stream(file: BinaryIO, track: _VideoTrack) -> Iterator[bytes]:
+def _iter_access_units_from_stream(file: BinaryIO, track: VideoTrack) -> Iterator[bytes]:
     configuration = track.avc_configuration
     parameter_sets = configuration.sequence_parameter_sets + configuration.picture_parameter_sets
 
@@ -425,15 +400,6 @@ def _iter_access_units_from_stream(file: BinaryIO, track: _VideoTrack) -> Iterat
             offset += nal_size
 
         yield bytes(access_unit)
-
-
-class _OpenH264Version(ctypes.Structure):
-    _fields_ = [
-        ("major", ctypes.c_uint),
-        ("minor", ctypes.c_uint),
-        ("revision", ctypes.c_uint),
-        ("reserved", ctypes.c_uint),
-    ]
 
 
 def _load_library(library_path: str) -> ctypes.CDLL:
@@ -469,9 +435,9 @@ def _resolve_decoder_and_library(
     except AttributeError:
         pass
     else:
-        get_version.argtypes = [ctypes.POINTER(_OpenH264Version)]
+        get_version.argtypes = [ctypes.POINTER(OpenH264Version)]
         get_version.restype = None
-        native_version = _OpenH264Version()
+        native_version = OpenH264Version()
         get_version(ctypes.byref(native_version))
         version = (native_version.major, native_version.minor, native_version.revision)
 
@@ -483,68 +449,6 @@ def resolve_decoder(*, library_path: os.PathLike[str] | str | None = None) -> De
 
     info, _ = _resolve_decoder_and_library(library_path)
     return info
-
-
-class _VideoProperty(ctypes.Structure):
-    _fields_ = [("size", ctypes.c_uint), ("bitstream_type", ctypes.c_int)]
-
-
-class _DecodingParameters(ctypes.Structure):
-    _fields_ = [
-        ("reconstructed_file_name", ctypes.c_char_p),
-        ("cpu_load", ctypes.c_uint),
-        ("target_layer", ctypes.c_ubyte),
-        ("error_concealment", ctypes.c_int),
-        ("parse_only", ctypes.c_bool),
-        ("video_property", _VideoProperty),
-    ]
-
-
-class _SystemBuffer(ctypes.Structure):
-    _fields_ = [
-        ("width", ctypes.c_int),
-        ("height", ctypes.c_int),
-        ("format", ctypes.c_int),
-        ("stride", ctypes.c_int * 2),
-    ]
-
-
-class _BufferUserData(ctypes.Union):
-    _fields_ = [("system_buffer", _SystemBuffer)]
-
-
-class _BufferInfo(ctypes.Structure):
-    _fields_ = [
-        ("buffer_status", ctypes.c_int),
-        ("input_timestamp", ctypes.c_ulonglong),
-        ("output_timestamp", ctypes.c_ulonglong),
-        ("user_data", _BufferUserData),
-        ("destination", ctypes.c_void_p * 3),
-    ]
-
-
-_InitializeDecoder = ctypes.CFUNCTYPE(
-    ctypes.c_long, ctypes.c_void_p, ctypes.POINTER(_DecodingParameters)
-)
-_UninitializeDecoder = ctypes.CFUNCTYPE(ctypes.c_long, ctypes.c_void_p)
-_UnusedDecoderMethod = ctypes.CFUNCTYPE(None)
-_DecodeFrameNoDelay = ctypes.CFUNCTYPE(
-    ctypes.c_int,
-    ctypes.c_void_p,
-    ctypes.POINTER(ctypes.c_ubyte),
-    ctypes.c_int,
-    ctypes.POINTER(ctypes.c_void_p),
-    ctypes.POINTER(_BufferInfo),
-)
-
-
-class _DecoderVTable(ctypes.Structure):
-    _fields_ = [
-        ("initialize", _InitializeDecoder),
-        ("uninitialize", _UninitializeDecoder),
-        ("decode_frame", _UnusedDecoderMethod),
-        ("decode_frame_no_delay", _DecodeFrameNoDelay),
-    ]
 
 
 def _copy_plane(pointer: int, width: int, height: int, stride: int) -> PIL.Image.Image:
@@ -562,7 +466,7 @@ def _copy_plane(pointer: int, width: int, height: int, stride: int) -> PIL.Image
     )
 
 
-def _i420_to_rgb(planes: ctypes.Array[ctypes.c_void_p], info: _BufferInfo) -> PIL.Image.Image:
+def _i420_to_rgb(planes: ctypes.Array[ctypes.c_void_p], info: BufferInfo) -> PIL.Image.Image:
     system_buffer = info.user_data.system_buffer
     if system_buffer.format != 23:
         raise UnsupportedVideoChunkError(
@@ -596,6 +500,7 @@ def _i420_to_rgb(planes: ctypes.Array[ctypes.c_void_p], info: _BufferInfo) -> PI
     ).convert("RGB")
 
 
+# This decoder be replaced in a text PR with a Cython native OpenH264 boundary
 class _OpenH264Decoder:
     def __init__(self, decoder_info: DecoderInfo, library: ctypes.CDLL | None = None) -> None:
         self._library = library if library is not None else _load_library(decoder_info.library_path)
@@ -610,10 +515,10 @@ class _OpenH264Decoder:
             raise DecoderUnavailableError(f"OpenH264 decoder creation failed with code {result}")
 
         self._vtable = ctypes.cast(
-            self._decoder, ctypes.POINTER(ctypes.POINTER(_DecoderVTable))
+            self._decoder, ctypes.POINTER(ctypes.POINTER(DecoderVTable))
         ).contents.contents
-        parameters = _DecodingParameters()
-        parameters.video_property.size = ctypes.sizeof(_VideoProperty)
+        parameters = DecodingParameters()
+        parameters.video_property.size = ctypes.sizeof(VideoProperty)
         parameters.video_property.bitstream_type = 0
 
         result = self._vtable.initialize(self._decoder, ctypes.byref(parameters))
@@ -627,7 +532,7 @@ class _OpenH264Decoder:
     def decode(self, access_unit: bytes) -> PIL.Image.Image | None:
         source = (ctypes.c_ubyte * len(access_unit)).from_buffer_copy(access_unit)
         planes = (ctypes.c_void_p * 3)()
-        buffer_info = _BufferInfo()
+        buffer_info = BufferInfo()
         state = self._vtable.decode_frame_no_delay(
             self._decoder,
             source,
@@ -663,6 +568,7 @@ def iter_frames(
     """
     Decode a CVAT-generated constrained-baseline MP4 chunk sequentially.
 
+    The frame-count integrity check runs only when this iterator is exhausted normally.
     This adapter deliberately has no codec downloader or general-purpose media fallback.
     """
 

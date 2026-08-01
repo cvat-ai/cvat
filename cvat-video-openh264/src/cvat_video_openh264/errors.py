@@ -24,8 +24,8 @@ class VideoDecoderUnavailableError(RuntimeError, VideoDecoderError):
     """Raised when a usable OpenH264 shared library cannot be found."""
 
 
-# The proof-of-concept name is part of the Task 1 compatibility contract and must
-# remain available during the coordinated package-ownership switchover.
+# Preserve the proof-of-concept alias during the coordinated package-ownership
+# switchover; it maps legacy callers onto the stable public error hierarchy.
 DecoderUnavailableError = VideoDecoderUnavailableError
 
 

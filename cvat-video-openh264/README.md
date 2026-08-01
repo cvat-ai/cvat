@@ -37,10 +37,12 @@ returned iterator is advanced.
 `iter_frames()` yields images in MP4 sample order. The returned generator owns the open
 chunk file and one decoder; exhausting or closing it releases both. Each yielded image
 owns its pixel data and remains valid after iteration advances or the decoder closes.
+The frame-count integrity check runs only when iteration finishes normally; closing the
+generator early does not validate the remaining samples.
 
 The parser accepts the narrow CVAT-generated format used by the current proof of concept:
 
-- one MP4 video track with an `avc1` sample entry;
+- exactly one MP4 video track with exactly one `avc1` sample-description entry;
 - constrained-baseline H.264 with SPS and PPS entries in `avcC`;
 - `stsz`, `stsc`, and exactly one `stco` or `co64` sample-table mapping;
 - decode-order samples without nonzero composition offsets;

@@ -11,6 +11,7 @@ import pytest
 
 import cvat_video_openh264._reader as reader
 from cvat_video_openh264 import UnsupportedVideoChunkError
+from cvat_video_openh264.models import Box
 
 from tests.fixtures.mp4_factory import make_cvat_chunk
 from tests.helpers import install_fake_decoder
@@ -89,7 +90,7 @@ def test_sample_offset_arithmetic_is_checked() -> None:
 
 def test_sample_count_limit_is_enforced_before_allocation() -> None:
     payload = bytes(4) + struct.pack(">II", 1, reader._MAX_SAMPLE_COUNT + 1)
-    box = reader._Box(type=b"stsz", offset=0, payload_offset=0, end_offset=len(payload))
+    box = Box(type=b"stsz", offset=0, payload_offset=0, end_offset=len(payload))
 
     with pytest.raises(UnsupportedVideoChunkError, match="Unsupported MP4 sample count"):
         reader._parse_sample_sizes(io.BytesIO(payload), box)
@@ -97,7 +98,7 @@ def test_sample_count_limit_is_enforced_before_allocation() -> None:
 
 def test_sample_size_limit_is_enforced() -> None:
     payload = bytes(4) + struct.pack(">II", reader._MAX_SAMPLE_SIZE + 1, 1)
-    box = reader._Box(type=b"stsz", offset=0, payload_offset=0, end_offset=len(payload))
+    box = Box(type=b"stsz", offset=0, payload_offset=0, end_offset=len(payload))
 
     with pytest.raises(UnsupportedVideoChunkError, match="invalid AVC sample size"):
         reader._parse_sample_sizes(io.BytesIO(payload), box)
