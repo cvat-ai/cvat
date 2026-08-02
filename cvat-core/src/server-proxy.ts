@@ -25,6 +25,7 @@ import { APIApiTokenModifiableFields } from './server-request-types';
 import { PaginatedResource, SerializedModel, UpdateStatusData } from './core-types';
 import { Storage } from './storage';
 import { SerializedEvent } from './event';
+import type { WebhookEvent } from './webhook';
 import { RQStatus, StorageLocation, WebhookSourceType } from './enums';
 import { isEmail, isResourceURL } from './common';
 import config from './config';
@@ -1935,7 +1936,9 @@ async function getLambdaFunctions(): Promise<SerializedModel[]> {
         const response = await Axios.get(url);
         return response.data;
     } catch (errorData) {
-        if (errorData.response.status === 503) {
+        // 503 => the serverless (Nuclio) backend is not deployed/available,
+        // so there are no lambda functions to list.
+        if (errorData.response?.status === 503) {
             return [];
         }
         throw generateError(errorData);
@@ -2360,7 +2363,7 @@ async function pingWebhook(webhookID: number): Promise<any> {
     }
 }
 
-async function receiveWebhookEvents(type: WebhookSourceType): Promise<string[]> {
+async function receiveWebhookEvents(type: WebhookSourceType): Promise<WebhookEvent[]> {
     const { backendAPI } = config;
 
     try {

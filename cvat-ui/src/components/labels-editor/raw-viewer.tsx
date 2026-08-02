@@ -83,6 +83,7 @@ function validateLabels(_: RuleObject, value: string): Promise<void> {
 interface Props {
     labels: LabelOptColor[];
     onSubmit: (labels: LabelOptColor[]) => void;
+    submitting: boolean;
 }
 
 interface AttributeWithLabelPath {
@@ -226,7 +227,7 @@ export default class RawViewer extends React.PureComponent<Props> {
     };
 
     public render(): JSX.Element {
-        const { labels } = this.props;
+        const { labels, submitting } = this.props;
         const convertedLabels = convertLabels(labels);
         const textLabels = JSON.stringify(convertedLabels, null, 2);
         return (
@@ -247,6 +248,7 @@ export default class RawViewer extends React.PureComponent<Props> {
                                     const updatedValue = value
                                         .substr(0, selectionStart) + replaced + value.substr(selectionEnd);
                                     this.formRef.current.setFieldsValue({ labels: updatedValue });
+                                    this.formRef.current.validateFields(['labels']).catch(() => {});
                                     setTimeout(() => {
                                         element.setSelectionRange(selectionEnd, selectionEnd);
                                     });
@@ -258,37 +260,49 @@ export default class RawViewer extends React.PureComponent<Props> {
                         className='cvat-raw-labels-viewer'
                     />
                 </Form.Item>
-                <Row justify='start' align='middle'>
-                    <Col>
-                        <CVATTooltip title='Save labels'>
-                            <Button
-                                className='cvat-submit-raw-labels-conf-button'
-                                style={{ width: '150px' }}
-                                type='primary'
-                                htmlType='submit'
-                            >
-                                Done
-                            </Button>
-                        </CVATTooltip>
-                    </Col>
-                    <Col offset={1}>
-                        <CVATTooltip title='Reset all changes'>
-                            <Button
-                                className='cvat-reset-raw-labels-conf-button'
-                                type='primary'
-                                danger
-                                style={{ width: '150px' }}
-                                onClick={(): void => {
-                                    if (this.formRef.current) {
-                                        this.formRef.current.resetFields();
-                                    }
-                                }}
-                            >
-                                Reset
-                            </Button>
-                        </CVATTooltip>
-                    </Col>
-                </Row>
+                <Form.Item shouldUpdate noStyle>
+                    {({ getFieldError, getFieldValue }) => {
+                        const hasChanges = getFieldValue('labels') !== textLabels;
+                        const hasErrors = getFieldError('labels').length > 0;
+
+                        return (
+                            <Row justify='start' align='middle'>
+                                <Col>
+                                    <CVATTooltip title='Save labels'>
+                                        <Button
+                                            className='cvat-submit-raw-labels-conf-button'
+                                            style={{ width: '150px' }}
+                                            type='primary'
+                                            htmlType='submit'
+                                            loading={submitting}
+                                            disabled={!hasChanges || hasErrors || submitting}
+                                        >
+                                            Save
+                                        </Button>
+                                    </CVATTooltip>
+                                </Col>
+                                <Col offset={1}>
+                                    <CVATTooltip title='Reset all changes'>
+                                        <Button
+                                            className='cvat-reset-raw-labels-conf-button'
+                                            type='primary'
+                                            danger
+                                            style={{ width: '150px' }}
+                                            disabled={!hasChanges}
+                                            onClick={(): void => {
+                                                if (this.formRef.current) {
+                                                    this.formRef.current.resetFields();
+                                                }
+                                            }}
+                                        >
+                                            Cancel
+                                        </Button>
+                                    </CVATTooltip>
+                                </Col>
+                            </Row>
+                        );
+                    }}
+                </Form.Item>
             </Form>
         );
     }

@@ -45,7 +45,6 @@ from rest_framework.settings import api_settings
 from rq.job import Job as RQJob
 
 import cvat.apps.dataset_manager as dm
-import cvat.apps.dataset_manager.views  # pylint: disable=unused-import
 from cvat.apps.dataset_manager.serializers import DatasetFormatsSerializer
 from cvat.apps.engine import backup
 from cvat.apps.engine.background import BackupImporter, DatasetImporter, TaskCreator
@@ -71,7 +70,6 @@ from cvat.apps.engine.media_io.frame_provider import (
 )
 from cvat.apps.engine.media_io.media_provider import DataWithMeta, PreviewNotAvailable
 from cvat.apps.engine.mixins import BackupMixin, DatasetMixin, PartialUpdateModelMixin, UploadMixin
-from cvat.apps.engine.model_utils import bulk_create
 from cvat.apps.engine.models import (
     AnnotationGuide,
     Asset,
@@ -147,6 +145,7 @@ from cvat.apps.engine.serializers import (
     TaskWriteSerializer,
     UserSerializer,
 )
+from cvat.apps.engine.task import ensure_task_is_initialized
 from cvat.apps.engine.tus import TusFile
 from cvat.apps.engine.types import ExtendedRequest
 from cvat.apps.engine.utils import parse_exception_message, sendfile
@@ -158,6 +157,7 @@ from cvat.apps.engine.view_utils import (
 from cvat.apps.iam.filters import ORGANIZATION_OPEN_API_PARAMETERS
 from cvat.apps.iam.permissions import IsAuthenticatedOrReadPublicResource
 from cvat.apps.redis_handler.serializers import RqIdSerializer
+from cvat.utils import django_database as db_utils
 from cvat.utils.paths import join_untrusted_path, problem_with_untrusted_path
 from utils.dataset_manifest import ImageManifestManager
 
@@ -1269,7 +1269,7 @@ class TaskViewSet(
         return get_410_response_for_export_api("/api/tasks/id/backup/export")
 
     @transaction.atomic
-    def perform_update(self, serializer):
+    def perform_update(self, serializer: TaskWriteSerializer) -> None:
         instance = serializer.instance
 
         super().perform_update(serializer)
@@ -1322,7 +1322,7 @@ class TaskViewSet(
     def _append_upload_info_entries(self, client_files: list[dict[str, Any]]):
         # batch version of _maybe_append_upload_info_entry() without optional insertion
         task_data = cast(Data, self._object.data)
-        bulk_create(
+        db_utils.bulk_create(
             ClientFile,
             [
                 ClientFile(file=self._prepare_upload_info_entry(cf["file"].name), data=task_data)
@@ -1803,6 +1803,8 @@ class TaskViewSet(
             return Response(data)
 
         elif request.method == "POST" or request.method == "OPTIONS":
+            ensure_task_is_initialized(task=self._object)
+
             return self.upload_data(request, append_url_name="append-annotations-chunk")
 
         elif request.method == "PUT":
@@ -1954,6 +1956,8 @@ class TaskViewSet(
         prefetch()
 
         if request.method == "PATCH":
+            ensure_task_is_initialized(task=db_task)
+
             if db_task.media_type == models.MediaType.AUDIO:
                 # TODO: introduce support for frame deletion when there's more information
                 # on use cases. Should probably work with ranges.
@@ -1964,7 +1968,7 @@ class TaskViewSet(
             db_task.data = serializer.save()
 
         db_data = db_task.data
-        if db_data is None:
+        if db_data is None or not db_task.media_type:
             raise ValidationError("Data is not uploaded for the task yet")
 
         if (
@@ -2496,7 +2500,6 @@ class JobViewSet(
     def annotations(self, request: ExtendedRequest, pk: int):
         self._object: models.Job = self.get_object()  # force call of check_object_permissions()
         if request.method == "GET":
-
             if {
                 "format",
                 "filename",
@@ -3186,7 +3189,7 @@ class LabelViewSet(
         kwargs["local"] = True
         return super().get_serializer(*args, **kwargs)
 
-    def perform_update(self, serializer):
+    def perform_update(self, serializer: LabelSerializer) -> None:
         if serializer.instance.parent is not None:
             # NOTE: this can be relaxed when skeleton updates are implemented properly
             raise ValidationError(
@@ -3197,7 +3200,7 @@ class LabelViewSet(
 
         return super().perform_update(serializer)
 
-    def perform_destroy(self, instance: models.Label):
+    def perform_destroy(self, instance: models.Label) -> None:
         if instance.parent is not None:
             # NOTE: this can be relaxed when skeleton updates are implemented properly
             raise ValidationError(
@@ -3709,7 +3712,7 @@ class AssetsViewSet(
             pk=serializer.validated_data["guide_id"]
         )
         if db_guide.assets.count() >= settings.ASSET_MAX_COUNT_PER_GUIDE:
-            raise ValidationError(f"Maximum number of assets per guide reached")
+            raise ValidationError("Maximum number of assets per guide reached")
 
         serializer.save(owner=self.request.user)
         return Response(

@@ -8,7 +8,6 @@ from __future__ import annotations
 import operator
 from abc import ABCMeta, abstractmethod
 from collections.abc import Sequence
-from enum import Enum
 from functools import cached_property, reduce
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, TypeAlias, TypeVar
@@ -29,11 +28,6 @@ if TYPE_CHECKING:
     from rest_framework.viewsets import ViewSet
 
     from cvat.apps.engine.types import ExtendedRequest
-
-
-class StrEnum(str, Enum):
-    def __str__(self) -> str:
-        return self.value
 
 
 @define

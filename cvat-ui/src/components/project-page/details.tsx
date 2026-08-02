@@ -74,11 +74,11 @@ export default function DetailsComponent(props: DetailsComponentProps): JSX.Elem
             </Row>
             <LabelsEditor
                 labels={project.labels.map((label) => label.toJSON())}
-                onSubmit={(labels: any[]): void => {
+                onSubmit={(labels: any[]): Promise<Project> => (
                     onUpdateProject(project, {
                         labels: labels.map((labelData): any => new core.classes.Label(labelData)),
-                    });
-                }}
+                    })
+                )}
             />
         </div>
     );

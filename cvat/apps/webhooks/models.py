@@ -7,11 +7,30 @@ from __future__ import annotations
 from enum import Enum
 from functools import cached_property
 
+import attrs
 from django.contrib.auth.models import User
 from django.db import models
 
 from cvat.apps.engine.models import Project, TimestampedModel
 from cvat.apps.organizations.models import Organization
+
+
+@attrs.define(frozen=True)
+class EventGroup:
+    display_name: str
+
+
+@attrs.define(frozen=True)
+class Event:
+    action: str
+    resource: str
+    group: EventGroup
+
+    @property
+    def key(self) -> str:
+        from cvat.apps.webhooks.event_type import event_key
+
+        return event_key(action=self.action, resource=self.resource)
 
 
 class WebhookTypeChoice(str, Enum):

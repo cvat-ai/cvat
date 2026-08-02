@@ -9,7 +9,7 @@ import config from 'config';
 
 import ObjectState from 'cvat-core/src/object-state';
 import { AudioIntervalState } from 'cvat-core/src/annotations-objects/audio-interval-state';
-import Webhook from 'cvat-core/src/webhook';
+import Webhook, { type WebhookEvent } from 'cvat-core/src/webhook';
 import MLModel from 'cvat-core/src/ml-model';
 import CloudStorage from 'cvat-core/src/cloud-storage';
 import {
@@ -160,4 +160,5 @@ export type {
     ImageProcessing,
     SerializedImageFilter,
     SerializedInterval,
+    WebhookEvent,
 };

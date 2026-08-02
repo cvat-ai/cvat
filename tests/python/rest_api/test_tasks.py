@@ -571,6 +571,36 @@ class TestPostTasks:
             assert bad_url.encode() in response.data
 
 
+@pytest.mark.usefixtures("restore_db_per_function")
+class TestGetTaskDataMeta:
+    def test_cannot_get_data_meta_before_data_upload_is_finished(self, admin_user):
+        """Regression test for https://github.com/cvat-ai/cvat/pull/10855.
+
+        Requesting task metadata after data upload has started but before it
+        has finished used to raise `UnboundLocalError` (HTTP 500), because
+        `Task.data` existed while `Task.media_type` had not been detected yet.
+        The endpoint must now return HTTP 400 with a clear message.
+        """
+        with make_api_client(admin_user) as api_client:
+            task, _ = api_client.tasks_api.create({"name": "task without data"})
+
+            _, upload_response = api_client.tasks_api.create_data(task.id, upload_start=True)
+            assert upload_response.status == HTTPStatus.ACCEPTED
+
+            task, _ = api_client.tasks_api.retrieve(task.id)
+            assert task.data is not None
+            assert not task.media_type
+
+            _, response = api_client.tasks_api.retrieve_data_meta(
+                task.id,
+                _parse_response=False,
+                _check_status=False,
+            )
+
+            assert response.status == HTTPStatus.BAD_REQUEST
+            assert b"Data is not uploaded" in response.data
+
+
 @pytest.mark.usefixtures("restore_db_per_class")
 class TestGetData:
     _USERNAME = "user1"

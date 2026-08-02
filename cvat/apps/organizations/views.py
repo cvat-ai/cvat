@@ -195,13 +195,6 @@ class MembershipViewSet(
             "200": InvitationReadSerializer(many=True),
         },
     ),
-    partial_update=extend_schema(
-        summary="Update an invitation",
-        request=InvitationWriteSerializer(partial=True),
-        responses={
-            "200": InvitationReadSerializer,  # check InvitationWriteSerializer.to_representation
-        },
-    ),
     create=extend_schema(
         summary="Create an invitation",
         request=InvitationWriteSerializer,
@@ -249,12 +242,11 @@ class InvitationViewSet(
     viewsets.GenericViewSet,
     mixins.RetrieveModelMixin,
     mixins.ListModelMixin,
-    PartialUpdateModelMixin,
     mixins.CreateModelMixin,
     mixins.DestroyModelMixin,
 ):
     queryset = Invitation.objects.all()
-    http_method_names = ["get", "post", "patch", "delete", "head", "options"]
+    http_method_names = ["get", "post", "delete", "head", "options"]
     iam_supports_organization_params = True
     iam_permission_class = InvitationPermission
 
@@ -288,7 +280,7 @@ class InvitationViewSet(
 
         return queryset
 
-    def create(self, request):
+    def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         try:
@@ -308,12 +300,6 @@ class InvitationViewSet(
             organization=self.request.iam_context["organization"],
             request=self.request,
         )
-
-    def perform_update(self, serializer):
-        if "accepted" in self.request.query_params:
-            serializer.instance.accept()
-        else:
-            super().perform_update(serializer)
 
     @transaction.atomic
     @action(detail=True, methods=["POST"], url_path="accept")

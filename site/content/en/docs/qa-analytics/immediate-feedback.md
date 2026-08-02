@@ -5,6 +5,9 @@ weight: 5
 description: 'Quick responses about job annotation quality'
 aliases:
   - /docs/enterprise/immediate-feedback/
+products:
+  - online
+  - enterprise
 ---
 
 ## Overview

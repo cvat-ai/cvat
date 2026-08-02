@@ -46,7 +46,6 @@ from cvat.apps.engine.media_extractors import (
     ZipCompressedChunkWriter,
     load_image,
 )
-from cvat.apps.engine.model_utils import is_field_cached
 from cvat.apps.engine.rq import RQMetaWithFailureInfo
 from cvat.apps.engine.utils import (
     CvatChunkTimestampMismatchError,
@@ -54,6 +53,7 @@ from cvat.apps.engine.utils import (
     get_rq_lock_for_job,
     md5_hash,
 )
+from cvat.utils import django_database as db_utils
 from cvat.utils.paths import join_untrusted_path
 from utils.dataset_manifest import ImageManifestManager
 from utils.dataset_manifest.utils import Openable
@@ -471,7 +471,7 @@ class MediaCache:
             set_callback,
         )
 
-        if is_field_cached(db_task, "segment_set"):
+        if db_utils.is_field_cached(db_task, "segment_set"):
             # Refresh segments to report actual dates if they were fetched previously
             # Doing so without a check leads to an error if the related object is not prefetched
             db_task.refresh_from_db(fields=["segment_set"])

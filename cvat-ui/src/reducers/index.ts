@@ -32,11 +32,19 @@ export interface AudioState {
         intervals: AudioIntervalState[];
         activeIntervalID: number | null;
         hoveredIntervalID: number | null;
+        contextMenu: {
+            top: number;
+            left: number;
+            clientID: number | null;
+        };
         audioUrl: string | null;
         audioLoading: boolean;
         audioError: string | null;
         waveformReady: boolean;
         activeLabelId: number | null;
+        audioLoadRequest: object | null;
+        seekRequest: { time: number } | null;
+        playIntervalOnceRequest: { intervalID: number } | null;
     };
 }
 

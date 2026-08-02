@@ -164,7 +164,7 @@ class ApiTestBase(APITestCase):
             response = self.client.post(path, data=data, format=format, query_params=query_params)
         return response
 
-    def _patch_request(self, path: str, user: str, *, data: dict[str, Any] | None = None):
+    def _patch_request(self, path: str, user: User, *, data: dict[str, Any] | None = None):
         with ForceLogin(user, self.client):
             response = self.client.patch(path, data=data, format="json")
         return response
