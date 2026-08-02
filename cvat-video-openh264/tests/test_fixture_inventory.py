@@ -6,6 +6,7 @@ import copy
 from pathlib import Path
 
 import pytest
+
 from scripts.check_fixture_inventory import FixtureInventoryError, validate_inventory
 
 from tests.conftest import FixtureInventory, FixtureMutation

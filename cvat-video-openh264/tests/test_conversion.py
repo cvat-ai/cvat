@@ -6,8 +6,8 @@ import ctypes
 
 import pytest
 
-import cvat_video_openh264._reader as reader
 from cvat_video_openh264.ctypes_structs import BufferInfo
+from cvat_video_openh264.utils.i420 import copy_plane, i420_to_rgb
 
 from tests.helpers import convert_single_i420_pixel
 
@@ -15,7 +15,7 @@ from tests.helpers import convert_single_i420_pixel
 def test_copy_plane_honors_stride() -> None:
     source = ctypes.create_string_buffer(bytes((16, 17, 255, 18, 19, 255)))
 
-    plane = reader._copy_plane(ctypes.addressof(source), width=2, height=2, stride=3)
+    plane = copy_plane(ctypes.addressof(source), width=2, height=2, stride=3)
 
     assert plane.tobytes() == bytes((16, 17, 18, 19))
 
@@ -52,7 +52,7 @@ def test_i420_conversion_supports_odd_dimensions_and_owns_output() -> None:
     system_buffer.stride[0] = y_stride
     system_buffer.stride[1] = uv_stride
 
-    image = reader._i420_to_rgb(planes, buffer_info)
+    image = i420_to_rgb(planes, buffer_info)
     owned_pixels = image.tobytes()
     ctypes.memset(ctypes.addressof(y_source), 255, ctypes.sizeof(y_source))
     ctypes.memset(ctypes.addressof(u_source), 0, ctypes.sizeof(u_source))

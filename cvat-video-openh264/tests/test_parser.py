@@ -9,7 +9,8 @@ from pathlib import Path
 import PIL.Image
 import pytest
 
-import cvat_video_openh264._reader as reader
+import cvat_video_openh264.reader as reader
+import cvat_video_openh264.utils.mp4 as mp4
 from cvat_video_openh264 import UnsupportedVideoChunkError
 from cvat_video_openh264.models import Box
 
@@ -31,7 +32,7 @@ def test_valid_cvat_chunk_reaches_decoder_with_one_annex_b_access_unit(
 
     assert frames == [frame]
     assert len(captured) == 1
-    assert captured[0].count(reader._ANNEX_B_START_CODE) == 3
+    assert captured[0].count(mp4.ANNEX_B_START_CODE) == 3
     assert captured[0].endswith(b"\x65\x88\x84")
 
 
@@ -75,12 +76,12 @@ def test_invalid_box_size_is_rejected() -> None:
     invalid_box = struct.pack(">I4s", 64, b"free")
 
     with pytest.raises(UnsupportedVideoChunkError, match="invalid 'free' box"):
-        list(reader._iter_boxes(io.BytesIO(invalid_box), 0, len(invalid_box)))
+        list(mp4.iter_boxes(io.BytesIO(invalid_box), 0, len(invalid_box)))
 
 
 def test_sample_offset_arithmetic_is_checked() -> None:
     with pytest.raises(UnsupportedVideoChunkError, match="outside the MP4 chunk"):
-        reader._build_samples(
+        mp4.build_samples(
             sample_sizes=(8,),
             chunk_offsets=(13,),
             sample_to_chunk=((1, 1, 1),),
@@ -89,16 +90,16 @@ def test_sample_offset_arithmetic_is_checked() -> None:
 
 
 def test_sample_count_limit_is_enforced_before_allocation() -> None:
-    payload = bytes(4) + struct.pack(">II", 1, reader._MAX_SAMPLE_COUNT + 1)
+    payload = bytes(4) + struct.pack(">II", 1, mp4.MAX_SAMPLE_COUNT + 1)
     box = Box(type=b"stsz", offset=0, payload_offset=0, end_offset=len(payload))
 
     with pytest.raises(UnsupportedVideoChunkError, match="Unsupported MP4 sample count"):
-        reader._parse_sample_sizes(io.BytesIO(payload), box)
+        mp4.parse_sample_sizes(io.BytesIO(payload), box)
 
 
 def test_sample_size_limit_is_enforced() -> None:
-    payload = bytes(4) + struct.pack(">II", reader._MAX_SAMPLE_SIZE + 1, 1)
+    payload = bytes(4) + struct.pack(">II", mp4.MAX_SAMPLE_SIZE + 1, 1)
     box = Box(type=b"stsz", offset=0, payload_offset=0, end_offset=len(payload))
 
     with pytest.raises(UnsupportedVideoChunkError, match="invalid AVC sample size"):
-        reader._parse_sample_sizes(io.BytesIO(payload), box)
+        mp4.parse_sample_sizes(io.BytesIO(payload), box)

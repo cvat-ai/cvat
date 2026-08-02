@@ -9,9 +9,10 @@ import ctypes
 import PIL.Image
 import pytest
 
-import cvat_video_openh264._reader as reader
+import cvat_video_openh264.reader as reader
 from cvat_video_openh264 import DecoderInfo
 from cvat_video_openh264.ctypes_structs import BufferInfo
+from cvat_video_openh264.utils.i420 import i420_to_rgb
 
 
 def convert_single_i420_pixel(y: int, u: int = 128, v: int = 128) -> tuple[int, int, int]:
@@ -33,7 +34,7 @@ def convert_single_i420_pixel(y: int, u: int = 128, v: int = 128) -> tuple[int, 
     system_buffer.stride[0] = 1
     system_buffer.stride[1] = 1
 
-    return reader._i420_to_rgb(planes, buffer_info).getpixel((0, 0))
+    return i420_to_rgb(planes, buffer_info).getpixel((0, 0))
 
 
 def install_fake_decoder(
@@ -60,8 +61,8 @@ def install_fake_decoder(
 
     monkeypatch.setattr(
         reader,
-        "_resolve_decoder_and_library",
+        "resolve_decoder_and_library",
         lambda _library_path: (DecoderInfo(library_path="fake-openh264", version=None), None),
     )
-    monkeypatch.setattr(reader, "_OpenH264Decoder", FakeDecoder)
+    monkeypatch.setattr(reader, "OpenH264Decoder", FakeDecoder)
     return state
