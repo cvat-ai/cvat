@@ -70,6 +70,7 @@ def resolve_decoder_and_library(
     return DecoderInfo(library_path=resolved_path, version=version), library
 
 
+# This decoder will be replaced with CPython native OpenH264 boundary in the next PR
 class OpenH264Decoder:
     """Own one ctypes-backed OpenH264 decoder instance."""
 
