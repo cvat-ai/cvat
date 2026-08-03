@@ -43,6 +43,7 @@ Cypress.Commands.add('createOrganization', (organizationParams) => {
             });
     });
     cy.get('.cvat-organization-page').should('exist').and('be.visible');
+    cy.get('.cvat-spinner').should('not.exist');
     return cy.wrap(idWrapper);
 });
 

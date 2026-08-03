@@ -6,6 +6,7 @@
 /// <reference types="cypress" />
 
 import { defaultTaskSpec } from '../../support/default-specs';
+import * as allure from 'allure-js-commons';
 
 context('New organization pipeline.', () => {
     const caseId = '113';
@@ -338,8 +339,8 @@ context('New organization pipeline.', () => {
         });
     });
 
-    describe('Organization switcher cleanup.', () => {
-        beforeEach(() => {
+    describe('Regression tests.', () => {
+        before(() => {
             cy.headlessLogout().then(() => {
                 cy.task('getAuthHeaders').then((authHeaders) => {
                     cy.deleteOrganizations(authHeaders, [switcherOrganizationParams.shortName]);
@@ -348,11 +349,12 @@ context('New organization pipeline.', () => {
                 });
             });
             cy.headlessCreateUser(switcherUser);
+            cy.headlessLogin(makeLoginUser(switcherUser));
+            cy.createOrganization(switcherOrganizationParams);
         });
 
         it('Deleted organization disappears from the switcher without page reload.', () => {
-            cy.headlessLogin(makeLoginUser(switcherUser));
-            cy.createOrganization(switcherOrganizationParams);
+            allure.issue('https://github.com/cvat-ai/cvat/issues/10678', 'Deleted org still visible in switcher')
             cy.get('.cvat-header-menu-user-dropdown').click();
             cy.get('.cvat-header-menu')
                 .should('be.visible')
