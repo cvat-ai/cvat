@@ -354,7 +354,7 @@ context('New organization pipeline.', () => {
         });
 
         it('Deleted organization disappears from the switcher without page reload.', () => {
-            allure.issue('https://github.com/cvat-ai/cvat/issues/10678', 'Deleted org still visible in switcher')
+            allure.issue('https://github.com/cvat-ai/cvat/issues/10678', 'Deleted org still visible in switcher');
             cy.get('.cvat-header-menu-user-dropdown').click();
             cy.get('.cvat-header-menu')
                 .should('be.visible')
