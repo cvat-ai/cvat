@@ -23,6 +23,17 @@ export enum QualityRequirementMetric {
     RECALL = 'recall',
 }
 
+export enum QualityReportRequirementCalculationStatus {
+    COMPUTED = 'computed',
+    NOT_COMPUTED = 'not_computed',
+}
+
+export enum QualityReportRequirementCalculationReason {
+    NO_ANNOTATIONS = 'no_annotations',
+    FILTER_NO_MATCHES = 'filter_no_matches',
+    REQUIRED_ATTRIBUTES_MISSING = 'required_attributes_missing',
+}
+
 export enum QualityRequirementPointSizeBase {
     IMAGE_SIZE = 'image_size',
     GROUP_BBOX_SIZE = 'group_bbox_size',
@@ -133,6 +144,15 @@ export interface SerializedQualityRequirementReportSummaryItem {
     name: string;
     metric: QualityRequirementMetric;
     score: number | null;
+    score_components: {
+        valid_count: number;
+        missing_count: number;
+        extra_count: number;
+    };
+    calculation: {
+        status: QualityReportRequirementCalculationStatus;
+        reason?: QualityReportRequirementCalculationReason;
+    };
     threshold: number;
 }
 
@@ -140,6 +160,7 @@ export interface SerializedQualityRequirementsReportSummary {
     total: number;
     enabled: number;
     completed: number;
+    not_computed: number;
     items: SerializedQualityRequirementReportSummaryItem[];
 }
 
@@ -221,7 +242,6 @@ export interface SerializedQualityReportData {
         validation_frame_share: number;
         conflict_count: number;
         error_count: number;
-        warning_count: number;
         conflicts_by_type: {
             extra_annotation: number;
             missing_annotation: number;

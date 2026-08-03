@@ -4,7 +4,10 @@
 
 export { default as QualityConflict, AnnotationConflict, ConflictSeverity } from './quality-conflict';
 export { default as QualityReport } from './quality-report';
-export type { QualitySummary } from './quality-report';
+export type {
+    QualitySummary, QualityReportScoreComponents, QualityReportRequirementCalculation,
+    QualityReportRequirementSummaryItem,
+} from './quality-report';
 export { default as QualityRequirement } from './quality-requirement';
 export type { QualityRequirementEffectiveData, QualityRequirementSaveFields } from './quality-requirement';
 export {

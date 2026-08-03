@@ -28,6 +28,8 @@ import Project from 'cvat-core/src/project';
 import {
     AnnotationConflict, ConflictSeverity, QualityConflict, QualityReport, QualityRequirement,
     QualityRequirementSaveFields, QualitySettings, QualitySettingsSaveFields, QualitySummary,
+    QualityReportScoreComponents, QualityReportRequirementCalculation, QualityReportRequirementSummaryItem,
+    QualityReportRequirementCalculationStatus, QualityReportRequirementCalculationReason,
 } from 'cvat-core/src/quality';
 import ConsensusSettings from 'cvat-core/src/consensus-settings';
 import ApiToken from 'cvat-core/src/api-token';
@@ -119,6 +121,8 @@ export {
     QualityConflict,
     QualitySettings,
     QualityRequirement,
+    QualityReportRequirementCalculationStatus,
+    QualityReportRequirementCalculationReason,
     ConsensusSettings,
     ApiToken,
     AnnotationConflict,
@@ -146,6 +150,9 @@ export type {
     StorageData,
     APIWrapperEnterOptions,
     QualitySummary,
+    QualityReportScoreComponents,
+    QualityReportRequirementCalculation,
+    QualityReportRequirementSummaryItem,
     CVATCore,
     SerializedAPISchema,
     ProjectOrTaskOrJob,

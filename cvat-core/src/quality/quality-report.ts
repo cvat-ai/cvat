@@ -2,10 +2,33 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { SerializedQualityReportData, SerializedQualityRequirementReportSummaryItem } from './server-response-types';
-import { CamelizedV2 } from '../type-utils';
+import {
+    QualityRequirementMetric, QualityReportRequirementCalculationReason,
+    QualityReportRequirementCalculationStatus, SerializedQualityReportData,
+} from './server-response-types';
 import { fieldsToCamelCase } from '../common';
 import User from '../user';
+
+export interface QualityReportScoreComponents {
+    validCount: number;
+    missingCount: number;
+    extraCount: number;
+}
+
+export interface QualityReportRequirementCalculation {
+    status: QualityReportRequirementCalculationStatus;
+    reason?: QualityReportRequirementCalculationReason;
+}
+
+export interface QualityReportRequirementSummaryItem {
+    requirementId: number | null;
+    name: string;
+    metric: QualityRequirementMetric;
+    score: number | null;
+    scoreComponents: QualityReportScoreComponents;
+    calculation: QualityReportRequirementCalculation;
+    threshold: number;
+}
 
 export interface QualitySummary {
     totalFrames: number;
@@ -13,7 +36,6 @@ export interface QualitySummary {
     validationFrameShare: number;
     conflictCount: number;
     errorCount: number;
-    warningCount: number;
     conflictsByType: {
         extraAnnotations: number;
         missingAnnotations: number;
@@ -29,18 +51,21 @@ export interface QualitySummary {
         notConfigured: number;
         excluded: number;
         included: number;
+        completed: number;
     } | null;
     jobs: {
         total: number;
         notCheckable: number;
         excluded: number;
         included: number;
+        completed: number;
     } | null;
     requirements: {
         total: number;
         enabled: number;
         completed: number;
-        items: CamelizedV2<SerializedQualityRequirementReportSummaryItem>[];
+        notComputed: number;
+        items: QualityReportRequirementSummaryItem[];
     } | null;
 }
 
@@ -126,25 +151,34 @@ export default class QualityReport {
                 coveredAnnotation: this.#summary.conflicts_by_type?.covered_annotation,
             },
             errorCount: this.#summary.error_count,
-            warningCount: this.#summary.warning_count,
             tasks: this.#summary.tasks ? {
                 total: this.#summary.tasks.total,
                 custom: this.#summary.tasks.custom,
                 notConfigured: this.#summary.tasks.not_configured,
                 excluded: this.#summary.tasks.excluded,
                 included: this.#summary.tasks.included,
+                completed: this.#summary.tasks.completed,
             } : null,
             jobs: this.#summary.jobs ? {
                 total: this.#summary.jobs.total,
                 notCheckable: this.#summary.jobs.not_checkable,
                 excluded: this.#summary.jobs.excluded,
                 included: this.#summary.jobs.included,
+                completed: this.#summary.jobs.completed,
             } : null,
             requirements: this.#summary.requirements ? {
                 total: this.#summary.requirements.total,
                 enabled: this.#summary.requirements.enabled,
                 completed: this.#summary.requirements.completed,
-                items: this.#summary.requirements.items.map((item) => fieldsToCamelCase(item)),
+                notComputed: this.#summary.requirements.not_computed,
+                items: this.#summary.requirements.items.map((item) => {
+                    const camelizedItem = fieldsToCamelCase(item);
+                    return {
+                        ...camelizedItem,
+                        scoreComponents: fieldsToCamelCase(camelizedItem.scoreComponents),
+                        calculation: fieldsToCamelCase(camelizedItem.calculation),
+                    };
+                }),
             } : null,
         };
     }
