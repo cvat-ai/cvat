@@ -94,6 +94,15 @@ context('Manipulations with masks', { scrollBehavior: false }, () => {
                 });
         }
 
+        function readTemporaryMaskPixelAlpha(clientX, clientY) {
+            return cy.get('.cvat_masks_canvas_wrapper .lower-canvas').then(([$canvas]) => {
+                const rect = $canvas.getBoundingClientRect();
+                const x = Math.round((clientX - rect.left) * ($canvas.width / rect.width));
+                const y = Math.round((clientY - rect.top) * ($canvas.height / rect.height));
+                return $canvas.getContext('2d').getImageData(x, y, 1, 1).data[3];
+            });
+        }
+
         it('Drawing a couple of masks. Save job, reopen job, masks must exist', () => {
             cy.startMaskDrawing();
             cy.drawMask(drawingActions);
@@ -327,6 +336,43 @@ context('Manipulations with masks', { scrollBehavior: false }, () => {
 
             cy.get('.cvat-brush-tools-finish').trigger('mouseover');
             cy.get('.cvat-brush-tools-finish').trigger('mouseout');
+            cy.get('body').type('n');
+            cy.get('.cvat-brush-tools-toolbox').should('not.be.visible');
+        });
+
+        it('Undo and redo mask drawing actions locally', () => {
+            cy.startMaskDrawing();
+            cy.drawMask([{
+                method: 'brush',
+                coordinates: [[300, 300], [400, 300]],
+            }]);
+            cy.finishMaskDrawing();
+            cy.get('#cvat_canvas_shape_1').should('exist').and('be.visible');
+
+            cy.startMaskDrawing();
+            cy.drawMask([{
+                method: 'brush',
+                coordinates: [[300, 500], [400, 500]],
+            }, {
+                method: 'brush',
+                coordinates: [[600, 500], [700, 500]],
+            }]);
+            cy.get('.cvat-canvas-container').trigger('mousemove', {
+                clientX: 800,
+                clientY: 200,
+                bubbles: true,
+            });
+
+            readTemporaryMaskPixelAlpha(350, 500).should('be.greaterThan', 0);
+            readTemporaryMaskPixelAlpha(650, 500).should('be.greaterThan', 0);
+
+            cy.get('body').type('{ctrl}z');
+            cy.get('#cvat_canvas_shape_1').should('exist').and('be.visible');
+            readTemporaryMaskPixelAlpha(350, 500).should('be.greaterThan', 0);
+            readTemporaryMaskPixelAlpha(650, 500).should('equal', 0);
+
+            cy.get('body').type('{ctrl}{shift}z');
+            readTemporaryMaskPixelAlpha(650, 500).should('be.greaterThan', 0);
             cy.get('body').type('n');
             cy.get('.cvat-brush-tools-toolbox').should('not.be.visible');
         });
