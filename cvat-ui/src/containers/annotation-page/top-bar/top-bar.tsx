@@ -364,7 +364,11 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
     }
 
     private undo = (): void => {
-        const { undo, undoAction } = this.props;
+        const { undo, undoAction, canvasInstance } = this.props;
+
+        if (canvasInstance instanceof Canvas && canvasInstance.undo()) {
+            return;
+        }
 
         if (isAbleToChangeFrame() && undoAction) {
             undo();
@@ -372,7 +376,11 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
     };
 
     private redo = (): void => {
-        const { redo, redoAction } = this.props;
+        const { redo, redoAction, canvasInstance } = this.props;
+
+        if (canvasInstance instanceof Canvas && canvasInstance.redo()) {
+            return;
+        }
 
         if (isAbleToChangeFrame() && redoAction) {
             redo();
