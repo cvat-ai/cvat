@@ -10,7 +10,7 @@ from django.conf import settings
 from django.contrib.auth.models import User
 from django.db import transaction
 from django.db.models.signals import m2m_changed, post_delete, post_save, pre_delete, pre_save
-from django.dispatch import Signal, receiver
+from django.dispatch import receiver
 from rest_framework.exceptions import ValidationError
 
 from cvat.apps.engine.cache import MediaCache
@@ -22,9 +22,6 @@ from .models import Asset, CloudStorage, Data, Job, JobType, Profile, Project, S
 # TODO: need to log any problems reported by shutil.rmtree when the new
 # analytics feature is available. Now the log system can write information
 # into a file inside removed directory.
-
-request_succeeded = Signal()
-request_failed = Signal()
 
 
 @receiver(post_save, sender=Job)
