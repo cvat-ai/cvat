@@ -16,7 +16,11 @@ import datumaro as dm
 import numpy as np
 
 from cvat.apps.quality_control import models
-from cvat.apps.quality_control.annotation_matching import Comparator, LineMatcher, MatchingResults
+from cvat.apps.quality_control.annotation_matching import (
+    AttributeMatchingResult,
+    Comparator,
+    MatchingResults,
+)
 from cvat.apps.quality_control.attribute_comparators import (
     AttributeComparisonRule,
     match_attribute_values,
@@ -514,7 +518,7 @@ def build_requirements_summary(
                 metric=str(metric),
                 score=actual_score,
                 score_components=group_report.comparison_summary.score_components,
-                not_computed=calculation.status == "not_computed",
+                calculation=calculation.without_details(),
                 threshold=float(required_score),
                 requirement_id=_get_requirement_field(
                     requirement, "source_requirement_id", "requirement_id"
@@ -552,7 +556,11 @@ class RequirementHandler(ABC):
         self.settings = self._create_comparison_parameters()
 
         # Create comparator with these settings
-        self._comparator = Comparator(self.context.categories, settings=self.settings)
+        self._comparator = Comparator(
+            self.context.categories,
+            settings=self.settings,
+            attribute_matcher=self._match_attrs,
+        )
         self._filter = RequirementJsonLogicFilter(
             expression=getattr(self.requirement, "filter", "") or "",
             categories=self.context.categories,
@@ -714,7 +722,11 @@ class RequirementHandler(ABC):
 
         return ds_item, gt_item, calculation
 
-    def _match_attrs(self, ann_a: dm.Annotation, ann_b: dm.Annotation):
+    def _match_attrs(
+        self,
+        ann_a: dm.Annotation,
+        ann_b: dm.Annotation,
+    ) -> AttributeMatchingResult:
         attribute_comparison = normalize_attribute_comparison(
             getattr(self.requirement, "attribute_comparison", None),
             fill_default=True,
@@ -761,7 +773,12 @@ class RequirementHandler(ABC):
             else:
                 mismatches.append(attr_name)
 
-        return matches, mismatches, a_extra, b_extra
+        return AttributeMatchingResult(
+            matches=tuple(matches),
+            mismatches=tuple(mismatches),
+            a_only=tuple(a_extra),
+            b_only=tuple(b_extra),
+        )
 
     def _dm_ann_to_ann_id(self, ann: dm.Annotation, dataset: dm.Dataset) -> AnnotationId:
         """Convert Datumaro annotation to AnnotationId"""
@@ -1058,11 +1075,15 @@ class ShapeRequirementHandler(RequirementHandler):
             shape_mismatches,
             _,
             _,
-            shape_pairwise_distances,
+            shape_pairwise_comparisons,
         ) = all_shape_types_result
 
-        def _get_similarity(gt_ann: dm.Annotation, ds_ann: dm.Annotation) -> float | None:
-            return self._comparator.get_distance(shape_pairwise_distances, gt_ann, ds_ann)
+        def _get_comparison(gt_ann: dm.Annotation, ds_ann: dm.Annotation) -> Any:
+            return self._comparator.get_comparison(
+                shape_pairwise_comparisons,
+                gt_ann,
+                ds_ann,
+            )
 
         for unmatched_ann in gt_unmatched:
             conflicts.append(
@@ -1094,30 +1115,18 @@ class ShapeRequirementHandler(RequirementHandler):
                 )
             )
 
+        # NOTE @grigorii: Direction mismatches prevent annotations from matching with the
+        # current single-stage matcher. Keep this handling for a future multi-stage matcher.
         if (
             self.settings.compare_line_orientation
             and dm.AnnotationType.polyline in self._comparator.included_ann_types
         ):
-            # Check line directions
-            line_matcher = LineMatcher(
-                torso_r=self.settings.line_thickness,
-                oriented=True,
-                scale=np.prod(gt_item.media_as(dm.Image).size),
-            )
-
             for gt_ann, ds_ann in itertools.chain(matches, mismatches):
                 if gt_ann.type != ds_ann.type or gt_ann.type != dm.AnnotationType.polyline:
                     continue
 
-                non_oriented_distance = _get_similarity(gt_ann, ds_ann)
-                oriented_distance = line_matcher.distance(gt_ann, ds_ann)
-
-                # need to filter computation errors from line approximation
-                # and (almost) orientation-independent cases
-                if (
-                    non_oriented_distance - oriented_distance
-                    > self.settings.line_orientation_threshold
-                ):
+                comparison = _get_comparison(gt_ann, ds_ann)
+                if comparison and comparison.direction_mismatch:
                     conflicts.append(
                         self._make_conflict(
                             frame_id=frame_id,
@@ -1143,16 +1152,14 @@ class ShapeRequirementHandler(RequirementHandler):
                     )
                 )
 
+        # NOTE @grigorii: Attribute mismatches prevent annotations from matching with the
+        # current single-stage matcher. Keep this handling for a future multi-stage matcher.
         if self.settings.compare_attributes:
             for gt_ann, ds_ann in matches:
-                _, mismatching_attributes, missing_attributes, extra_attributes = self._match_attrs(
-                    gt_ann, ds_ann
+                comparison = _get_comparison(gt_ann, ds_ann)
+                conflicting_attribute_names = (
+                    comparison.conflicting_attribute_names if comparison else ()
                 )
-                conflicting_attribute_names = [
-                    *mismatching_attributes,
-                    *missing_attributes,
-                    *extra_attributes,
-                ]
                 if conflicting_attribute_names:
                     conflicts.append(
                         self._make_conflict(

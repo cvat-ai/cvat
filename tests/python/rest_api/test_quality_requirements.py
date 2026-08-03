@@ -12,7 +12,7 @@ import pytest
 from cvat_sdk.core.helpers import get_paginated_collection
 from deepdiff import DeepDiff
 
-from rest_api.utils import create_task
+from rest_api.utils import create_gt_job, create_quality_report, create_task
 from shared.utils.config import (
     delete_method,
     get_method,
@@ -290,7 +290,7 @@ class _QualityRequirementsTestBase(_PermissionTestBase):
             },
         )
         settings = self._get_task_settings(user, task_id=task_id)
-        gt_job = self.create_gt_job(user, task_id, complete=False)
+        gt_job = create_gt_job(user, task_id, complete=False)
         labels_by_name = self._get_task_labels_by_name(user, task_id=task_id)
         car_label = labels_by_name["car"]
         attribute_ids = {attribute.name: attribute.id for attribute in car_label.attributes}
@@ -1520,7 +1520,7 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
         )
         assert response.status_code == HTTPStatus.OK
 
-        gt_job = self.create_gt_job(admin_user, task_id, complete=False)
+        gt_job = create_gt_job(admin_user, task_id, complete=False)
         labels_by_name = self._get_task_labels_by_name(admin_user, task_id=task_id)
 
         with make_api_client(admin_user) as api_client:
@@ -1556,7 +1556,7 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
 
         self._complete_job(admin_user, gt_job.id)
 
-        report = self.create_quality_report(user=admin_user, task_id=task_id)
+        report = create_quality_report(user=admin_user, task_id=task_id)
         report_data = self._get_report_data(admin_user, report["id"])
 
         group_summary = report_data["groups"][requirement_name]["comparison_summary"]
@@ -1628,7 +1628,7 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
         )
         assert response.status_code == HTTPStatus.CREATED
 
-        gt_job = self.create_gt_job(admin_user, task_id, complete=False)
+        gt_job = create_gt_job(admin_user, task_id, complete=False)
         labels_by_name = self._get_task_labels_by_name(admin_user, task_id=task_id)
 
         with make_api_client(admin_user) as api_client:
@@ -1669,7 +1669,7 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
 
         self._complete_job(admin_user, gt_job.id)
 
-        report = self.create_quality_report(user=admin_user, task_id=task_id)
+        report = create_quality_report(user=admin_user, task_id=task_id)
         report_data = self._get_report_data(admin_user, report["id"])
 
         all_summary = report_data["groups"][all_requirement_name]["comparison_summary"]
@@ -1719,7 +1719,7 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
         )
         assert response.status_code == HTTPStatus.OK
 
-        gt_job = self.create_gt_job(admin_user, task_id, complete=False)
+        gt_job = create_gt_job(admin_user, task_id, complete=False)
         car_label = self._get_task_labels_by_name(admin_user, task_id=task_id)["car"]
         matching_shape = self._build_rectangle_shape(
             frame=0,
@@ -1737,7 +1737,7 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
             )
         self._complete_job(admin_user, gt_job.id)
 
-        initial_report = self.create_quality_report(user=admin_user, task_id=task_id)
+        initial_report = create_quality_report(user=admin_user, task_id=task_id)
         assert initial_report["summary"]["conflict_count"] == 0
         assert "valid_count" not in initial_report["summary"]
         initial_item = next(
@@ -1766,7 +1766,7 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
                 },
             )
 
-        changed_report = self.create_quality_report(user=admin_user, task_id=task_id)
+        changed_report = create_quality_report(user=admin_user, task_id=task_id)
         assert (
             changed_report["summary"]["conflict_count"]
             > initial_report["summary"]["conflict_count"]
@@ -1837,7 +1837,7 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
 
         self._complete_job(admin_user, gt_job.id)
 
-        report = self.create_quality_report(user=admin_user, task_id=task_id)
+        report = create_quality_report(user=admin_user, task_id=task_id)
         report_data = self._get_report_data(admin_user, report["id"])
 
         group_summary = report_data["groups"][requirement_name]["comparison_summary"]
@@ -1869,8 +1869,10 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
             if item["name"] == requirement_name
         )
         assert requirement_summary_item["score"] is None
-        assert requirement_summary_item["not_computed"] is True
-        assert "calculation" not in requirement_summary_item
+        assert requirement_summary_item["calculation"] == {
+            "status": "not_computed",
+            "reason": "filter_no_matches",
+        }
         assert report_data["comparison_summary"]["requirements"]["completed"] == 1
         assert report_data["comparison_summary"]["requirements"]["not_computed"] == 1
         assert "annotations" not in report_data["comparison_summary"]
@@ -1933,19 +1935,35 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
 
         self._complete_job(admin_user, gt_job.id)
 
-        report = self.create_quality_report(user=admin_user, task_id=task_id)
+        report = create_quality_report(user=admin_user, task_id=task_id)
         report_data = self._get_report_data(admin_user, report["id"])
 
-        conflicts = report_data["groups"][requirement_name]["frame_results"]["0"]["conflicts"]
-        assert len(conflicts) == 1
-        assert conflicts[0]["type"] == "mismatching_attributes"
-        assert conflicts[0]["attribute_names"] == ["size"]
+        requirement_report = report_data["groups"][requirement_name]
+        conflicts = requirement_report["frame_results"]["0"]["conflicts"]
+        assert {conflict["type"] for conflict in conflicts} == {
+            "missing_annotation",
+            "extra_annotation",
+        }
+        assert requirement_report["comparison_summary"]["score"] == 0
+        assert requirement_report["comparison_summary"]["score_components"] == {
+            "valid_count": 0,
+            "missing_count": 1,
+            "extra_count": 1,
+        }
+        assert requirement_report["comparison_summary"]["confusion_matrix"]["labels"] == [
+            "car",
+            "unmatched",
+        ]
+        assert requirement_report["comparison_summary"]["confusion_matrix"]["rows"] == [
+            [0, 1],
+            [1, 0],
+        ]
         assert report_data["groups"][requirement_name]["parameters"]["attribute_comparison"] == {
             "default": {"enabled": False},
             "rules": [{"spec_id": attribute_ids["size"], "enabled": True, "comparator": "exact"}],
         }
 
-    def test_task_report_data_reports_attribute_conflict_names_and_error_severity(self, admin_user):
+    def test_task_report_data_attribute_mismatch_affects_matching_and_score(self, admin_user):
         (
             task_id,
             settings,
@@ -1994,16 +2012,18 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
 
         self._complete_job(admin_user, gt_job.id)
 
-        report = self.create_quality_report(user=admin_user, task_id=task_id)
+        report = create_quality_report(user=admin_user, task_id=task_id)
         report_data = self._get_report_data(admin_user, report["id"])
 
         conflicts = report_data["groups"][requirement_name]["frame_results"]["0"]["conflicts"]
-        assert len(conflicts) == 1
-        assert conflicts[0]["type"] == "mismatching_attributes"
-        assert conflicts[0]["severity"] == "error"
-        assert conflicts[0]["attribute_names"] == ["color", "size"]
-        assert report_data["comparison_summary"]["error_count"] == 1
-        assert report_data["groups"][requirement_name]["comparison_summary"]["error_count"] == 1
+        assert {conflict["type"] for conflict in conflicts} == {
+            "missing_annotation",
+            "extra_annotation",
+        }
+        assert all(conflict["severity"] == "error" for conflict in conflicts)
+        assert report_data["comparison_summary"]["error_count"] == 2
+        assert report_data["groups"][requirement_name]["comparison_summary"]["error_count"] == 2
+        assert report_data["groups"][requirement_name]["comparison_summary"]["score"] == 0
 
     def test_task_report_counts_overlapping_leaf_requirements_independently(self, admin_user):
         (
@@ -2069,7 +2089,7 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
 
         self._complete_job(admin_user, gt_job.id)
 
-        report = self.create_quality_report(user=admin_user, task_id=task_id)
+        report = create_quality_report(user=admin_user, task_id=task_id)
         report_data = self._get_report_data(admin_user, report["id"])
 
         assert "annotations" not in report_data["groups"][first_leaf_name]["comparison_summary"]
@@ -2157,7 +2177,7 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
 
         self._complete_job(admin_user, gt_job.id)
 
-        report = self.create_quality_report(user=admin_user, task_id=task_id)
+        report = create_quality_report(user=admin_user, task_id=task_id)
         report_data = self._get_report_data(admin_user, report["id"])
 
         expected_requirements_summary = {
@@ -2176,7 +2196,7 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
                         "missing_count": 0,
                         "extra_count": 0,
                     },
-                    "not_computed": False,
+                    "calculation": {"status": "computed"},
                     "threshold": 1.0,
                 },
                 {
@@ -2189,7 +2209,7 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
                         "missing_count": 0,
                         "extra_count": 0,
                     },
-                    "not_computed": False,
+                    "calculation": {"status": "computed"},
                     "threshold": 1.0,
                 },
             ],
@@ -2272,7 +2292,7 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
             if requirement["name"] == disabled_requirement_name
         )
 
-        gt_job = self.create_gt_job(admin_user, task_id, complete=False)
+        gt_job = create_gt_job(admin_user, task_id, complete=False)
         labels_by_name = self._get_task_labels_by_name(admin_user, task_id=task_id)
         car_label = labels_by_name["car"]
         with make_api_client(admin_user) as api_client:
@@ -2319,12 +2339,12 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
                         "missing_count": 0,
                         "extra_count": 0,
                     },
-                    "not_computed": False,
+                    "calculation": {"status": "computed"},
                     "threshold": 0.75,
                 }
             ],
         }
-        report = self.create_quality_report(user=admin_user, task_id=task_id)
+        report = create_quality_report(user=admin_user, task_id=task_id)
         assert report["summary"]["requirements"] == expected_requirements_summary
 
         with make_api_client(admin_user) as api_client:
@@ -2447,8 +2467,8 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
             },
         )
 
-        passed_gt_job = self.create_gt_job(admin_user, passed_task_id, complete=False)
-        failed_gt_job = self.create_gt_job(admin_user, failed_task_id, complete=False)
+        passed_gt_job = create_gt_job(admin_user, passed_task_id, complete=False)
+        failed_gt_job = create_gt_job(admin_user, failed_task_id, complete=False)
         passed_car_label = self._get_task_labels_by_name(admin_user, task_id=passed_task_id)["car"]
         failed_car_label = self._get_task_labels_by_name(admin_user, task_id=failed_task_id)["car"]
 
@@ -2480,7 +2500,7 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
         self._complete_job(admin_user, passed_gt_job.id)
         self._complete_job(admin_user, failed_gt_job.id)
 
-        project_report = self.create_quality_report(user=admin_user, project_id=project.id)
+        project_report = create_quality_report(user=admin_user, project_id=project.id)
 
         assert project_report["summary"]["tasks"] == {
             "total": 2,
@@ -2564,8 +2584,8 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
             if requirement["name"] == disabled_requirement_name
         )
 
-        self.create_gt_job(admin_user, task["id"])
-        report = self.create_quality_report(user=admin_user, task_id=task["id"])
+        create_gt_job(admin_user, task["id"])
+        report = create_quality_report(user=admin_user, task_id=task["id"])
 
         response = get_method(admin_user, f"quality/reports/{report['id']}/confusion")
         assert response.status_code == HTTPStatus.OK
@@ -2708,7 +2728,7 @@ class TestProjectQualityRequirementInheritance(_QualityRequirementsTestBase):
         assert response.status_code == HTTPStatus.OK
         assert patched_settings["inherit"] is inherit
 
-        gt_job = self.create_gt_job(admin_user, task_id, complete=False)
+        gt_job = create_gt_job(admin_user, task_id, complete=False)
         car_label = self._get_task_labels_by_name(admin_user, task_id=task_id)["car"]
         car_shape = self._build_rectangle_shape(
             frame=0,
@@ -2726,7 +2746,7 @@ class TestProjectQualityRequirementInheritance(_QualityRequirementsTestBase):
             )
         self._complete_job(admin_user, gt_job.id)
 
-        report = self.create_quality_report(user=admin_user, task_id=task_id)
+        report = create_quality_report(user=admin_user, task_id=task_id)
         report_data = self._get_report_data(admin_user, report["id"])
 
         expected_requirement = project_requirement if inherit else task_requirement
@@ -2756,7 +2776,7 @@ class TestProjectQualityRequirementInheritance(_QualityRequirementsTestBase):
                         "missing_count": 0,
                         "extra_count": 0,
                     },
-                    "not_computed": False,
+                    "calculation": {"status": "computed"},
                     "threshold": 1.0,
                 }
             ],

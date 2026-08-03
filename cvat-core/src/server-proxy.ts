@@ -33,6 +33,7 @@ import {
 import { PaginatedResource, SerializedModel, UpdateStatusData } from './core-types';
 import { Storage } from './storage';
 import { SerializedEvent } from './event';
+import type { WebhookEvent } from './webhook';
 import { RQStatus, StorageLocation, WebhookSourceType } from './enums';
 import { isEmail, isResourceURL } from './common';
 import config from './config';
@@ -2370,7 +2371,7 @@ async function pingWebhook(webhookID: number): Promise<any> {
     }
 }
 
-async function receiveWebhookEvents(type: WebhookSourceType): Promise<string[]> {
+async function receiveWebhookEvents(type: WebhookSourceType): Promise<WebhookEvent[]> {
     const { backendAPI } = config;
 
     try {

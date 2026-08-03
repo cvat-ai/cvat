@@ -110,8 +110,13 @@ class TestRequirementCompletion(unittest.TestCase):
         self.assertEqual(requirements_summary.completed, 1)
         self.assertEqual(requirements_summary.not_computed, 1)
         self.assertIsNone(requirements_summary.items[0].score)
-        self.assertTrue(requirements_summary.items[0].not_computed)
-        self.assertNotIn("calculation", requirements_summary.items[0].to_dict())
+        self.assertEqual(
+            requirements_summary.items[0].calculation.to_dict(),
+            {
+                "status": "not_computed",
+                "reason": "no_annotations",
+            },
+        )
 
     def test_requirement_with_annotations_on_only_one_side_is_computed(self) -> None:
         requirement = models.QualityRequirement(
