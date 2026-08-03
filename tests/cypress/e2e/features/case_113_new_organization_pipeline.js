@@ -5,8 +5,8 @@
 
 /// <reference types="cypress" />
 
-import { defaultTaskSpec } from '../../support/default-specs';
 import * as allure from 'allure-js-commons';
+import { defaultTaskSpec } from '../../support/default-specs';
 
 context('New organization pipeline.', () => {
     const caseId = '113';
