@@ -24,7 +24,6 @@ export enum AudioActionTypes {
     SET_AUDIO_ZOOM = 'SET_AUDIO_ZOOM',
     SET_AUDIO_VOLUME = 'SET_AUDIO_VOLUME',
     SET_AUDIO_LOOP = 'SET_AUDIO_LOOP',
-    SET_AUDIO_AUTO_SCROLL = 'SET_AUDIO_AUTO_SCROLL',
     SET_AUDIO_ACTIVE_INTERVAL = 'SET_AUDIO_ACTIVE_INTERVAL',
     SET_AUDIO_HOVERED_INTERVAL = 'SET_AUDIO_HOVERED_INTERVAL',
     UPDATE_AUDIO_CONTEXT_MENU = 'UPDATE_AUDIO_CONTEXT_MENU',
@@ -64,9 +63,6 @@ export const audioActions = {
     ),
     setAudioLoop: (loop: boolean) => (
         createAction(AudioActionTypes.SET_AUDIO_LOOP, { loop })
-    ),
-    setAudioAutoScroll: (autoScroll: boolean) => (
-        createAction(AudioActionTypes.SET_AUDIO_AUTO_SCROLL, { autoScroll })
     ),
     setAudioVolume: (volume: number) => (
         createAction(AudioActionTypes.SET_AUDIO_VOLUME, { volume })
