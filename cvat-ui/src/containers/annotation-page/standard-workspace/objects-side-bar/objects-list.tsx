@@ -22,7 +22,7 @@ import {
     changeHideActiveObjectAsync,
     updateLayerAsync,
     compactLayersAsync,
-    switchZLayer,
+    toggleZLayerVisibility,
 } from 'actions/annotation-actions';
 import {
     changeShowGroundTruth as changeShowGroundTruthAction,
@@ -62,7 +62,7 @@ interface StateToProps {
     activatedElementID: number | null;
     minZLayer: number;
     maxZLayer: number;
-    curZLayer: number;
+    hiddenZLayers: number[];
     keyMap: KeyMap;
     normalizedKeyMap: Record<string, string>;
     showGroundTruth: boolean;
@@ -85,7 +85,7 @@ interface DispatchToProps {
     changeHideEditedState(...args: Parameters<typeof changeHideActiveObjectAsync>): void;
     updateLayer(...args: Parameters<typeof updateLayerAsync>): void;
     compactLayers(...args: Parameters<typeof compactLayersAsync>): void;
-    selectLayer(...args: Parameters<typeof switchZLayer>): void;
+    toggleLayerVisibility(...args: Parameters<typeof toggleZLayerVisibility>): void;
 }
 
 const componentShortcuts = {
@@ -224,7 +224,9 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 collapsedAll,
                 activatedStateID,
                 activatedElementID,
-                zLayer: { cur: curZLayer, min: minZLayer, max: maxZLayer },
+                zLayer: {
+                    min: minZLayer, max: maxZLayer, hidden: hiddenZLayers,
+                },
             },
             job: { instance: jobInstance },
             player: {
@@ -278,7 +280,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         activatedElementID,
         minZLayer,
         maxZLayer,
-        curZLayer,
+        hiddenZLayers,
         keyMap,
         normalizedKeyMap,
         showGroundTruth,
@@ -328,8 +330,8 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         compactLayers(...args: Parameters<typeof compactLayersAsync>): void {
             dispatch(compactLayersAsync(...args));
         },
-        selectLayer(...args: Parameters<typeof switchZLayer>): void {
-            dispatch(switchZLayer(...args));
+        toggleLayerVisibility(...args: Parameters<typeof toggleZLayerVisibility>): void {
+            dispatch(toggleZLayerVisibility(...args));
         },
     };
 }
@@ -418,15 +420,10 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
 
     private onChangeStatesOrdering = (statesOrdering: StatesOrdering): void => {
         const { filteredStates, statesOrdering: currentStatesOrdering } = this.state;
-        const { maxZLayer, selectLayer } = this.props;
-
         if (statesOrdering === currentStatesOrdering) {
             return;
         }
 
-        // whenever open or close layer ordering mode
-        // set maximum z layer as current to show everything
-        selectLayer(maxZLayer);
         this.setState({
             statesOrdering,
             sortedStatesID: sortAndMap(filteredStates, statesOrdering),
@@ -549,7 +546,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             activatedElementID,
             maxZLayer,
             minZLayer,
-            curZLayer,
+            hiddenZLayers,
             keyMap,
             normalizedKeyMap,
             colors,
@@ -775,7 +772,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                     statesCollapsedAll={statesCollapsedAll}
                     workspace={workspace}
                     statesOrdering={statesOrdering}
-                    currentLayer={curZLayer}
+                    hiddenLayers={hiddenZLayers}
                     sortedStatesID={sortedStatesID}
                     showGroundTruth={showGroundTruth}
                     objectStates={filteredStates}
@@ -783,7 +780,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                     switchHiddenAllShortcut={normalizedKeyMap.SWITCH_ALL_HIDDEN}
                     switchLockAllShortcut={normalizedKeyMap.SWITCH_ALL_LOCK}
                     changeStatesOrdering={this.onChangeStatesOrdering}
-                    selectLayer={this.props.selectLayer}
+                    toggleLayerVisibility={this.props.toggleLayerVisibility}
                     moveObjectsToLayer={this.moveObjectsToLayer}
                     moveObjectsOnNewLayer={this.moveObjectsOnNewLayer}
                     compactLayers={this.compactLayers}

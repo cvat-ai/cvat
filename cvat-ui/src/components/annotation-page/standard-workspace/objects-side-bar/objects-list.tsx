@@ -45,7 +45,7 @@ interface Props {
     statesLocked: boolean;
     statesCollapsedAll: boolean;
     statesOrdering: StatesOrdering;
-    currentLayer: number;
+    hiddenLayers: number[];
     sortedStatesID: number[];
     objectStates: ObjectState[];
     visibleSkeletonElements: Record<number, number[]>;
@@ -53,7 +53,7 @@ interface Props {
     switchHiddenAllShortcut: string;
     showGroundTruth: boolean;
     changeStatesOrdering(value: StatesOrdering): void;
-    selectLayer(zOrder: number): void;
+    toggleLayerVisibility(zOrder: number): void;
     moveObjectsToLayer(source: LayerMoveSource, targetZOrder: number): void;
     moveObjectsOnNewLayer(source: LayerMoveSource, placement: LayerPlacement): void;
     compactLayers(): void;
@@ -73,7 +73,7 @@ function ObjectListComponent(props: Props): JSX.Element {
         statesLocked,
         statesCollapsedAll,
         statesOrdering,
-        currentLayer,
+        hiddenLayers,
         sortedStatesID,
         objectStates,
         visibleSkeletonElements,
@@ -81,7 +81,7 @@ function ObjectListComponent(props: Props): JSX.Element {
         switchHiddenAllShortcut,
         showGroundTruth,
         changeStatesOrdering,
-        selectLayer,
+        toggleLayerVisibility,
         moveObjectsToLayer,
         moveObjectsOnNewLayer,
         compactLayers,
@@ -298,7 +298,7 @@ function ObjectListComponent(props: Props): JSX.Element {
             return null;
         }
 
-        const visible = zOrder <= currentLayer;
+        const visible = !hiddenLayers.includes(zOrder);
 
         return (
             <div className='cvat-objects-sidebar-z-layer-mark cvat-objects-sidebar-z-layer-mark-dragging'>
@@ -379,10 +379,9 @@ function ObjectListComponent(props: Props): JSX.Element {
                                                 layerObjectIds={objectIdsByLayer[zOrder] || []}
                                                 objectStates={layerObjectStates}
                                                 visibleSkeletonElements={visibleSkeletonElements}
-                                                selected={zOrder === currentLayer}
-                                                visible={zOrder <= currentLayer}
+                                                visible={!hiddenLayers.includes(zOrder)}
                                                 collapsed={collapsedLayers.has(zOrder)}
-                                                selectLayer={selectLayer}
+                                                toggleLayerVisibility={toggleLayerVisibility}
                                                 toggleLayerCollapsed={toggleLayerCollapsed}
                                             />
                                         </React.Fragment>

@@ -513,21 +513,6 @@
         }
     }
 
-    .cvat-canvas-layer-stack-trigger-layer {
-        position: absolute;
-        right: 3px;
-        bottom: 2px;
-        min-width: 12px;
-        max-width: 20px;
-        overflow: hidden;
-        color: $completed-progress-color;
-        font-size: 16px;
-        font-weight: 600;
-        line-height: 12px;
-        text-align: center;
-        text-overflow: ellipsis;
-        user-select: none;
-    }
 }
 
 .cvat-player-chapter-menu-wrapper {

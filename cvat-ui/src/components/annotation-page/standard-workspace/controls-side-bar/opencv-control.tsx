@@ -46,7 +46,7 @@ interface Props {
     jobInstance: Job;
     isActivated: boolean;
     frame: number;
-    curZOrder: number;
+    maxZOrder: number;
     defaultApproxPolyAccuracy: number;
     frameData: any;
     toolsBlockerState: ToolsBlockerState;
@@ -81,7 +81,7 @@ function mapStateToProps(state: CombinedState): Props {
     const {
         annotation: {
             annotations: {
-                zLayer: { cur: curZOrder },
+                zLayer: { max: maxZOrder },
             },
             job: { instance: jobInstance, labels },
             canvas: { activeControl, instance: canvasInstance, ready: canvasReady },
@@ -102,7 +102,7 @@ function mapStateToProps(state: CombinedState): Props {
         canvasReady,
         defaultApproxPolyAccuracy,
         jobInstance: jobInstance as Job,
-        curZOrder,
+        maxZOrder,
         labels,
         frame,
         frameData,
@@ -217,7 +217,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
         const { approxPolyAccuracy } = this.state;
         const {
             createAnnotations, isActivated, frame,
-            labels, curZOrder, canvasInstance, toolsBlockerState,
+            labels, maxZOrder, canvasInstance, toolsBlockerState,
         } = this.props;
 
         const { activeLabelID } = this.state;
@@ -245,7 +245,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                             )
                             .flat(),
                         occluded: false,
-                        zOrder: curZOrder,
+                        zOrder: maxZOrder,
                     });
                     createAnnotations([finalObject]);
                 }

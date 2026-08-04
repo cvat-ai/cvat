@@ -39,7 +39,7 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
         issuesResolvedHidden,
         canvasInstance,
         canvasIsReady,
-        annotationsZLayer,
+        hiddenZLayers,
         newIssuePosition,
         newIssueSource,
         issueFetching,
@@ -54,7 +54,7 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
         issuesResolvedHidden: state.review.issuesResolvedHidden,
         canvasInstance: state.annotation.canvas.instance,
         canvasIsReady: state.annotation.canvas.ready,
-        annotationsZLayer: state.annotation.annotations.zLayer.cur,
+        hiddenZLayers: state.annotation.annotations.zLayer.hidden,
         newIssuePosition: state.review.newIssue.position,
         newIssueSource: state.review.newIssue.source,
         issueFetching: state.review.fetching.issueId,
@@ -168,7 +168,7 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
                         _state.objectType === mainAnnotationsConflict.type
                     ));
 
-                    if (state && state.zOrder <= annotationsZLayer && !state.hidden) {
+                    if (state && !hiddenZLayers.includes(state.zOrder) && !state.hidden) {
                         const points = canvasInstance.setupConflictRegions(state);
                         if (points) {
                             return {
@@ -189,7 +189,7 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
         } else {
             setConflictMapping([]);
         }
-    }, [geometry, objectStates, showConflicts, canvasReady, qualityConflicts, annotationsZLayer]);
+    }, [geometry, objectStates, showConflicts, canvasReady, qualityConflicts, hiddenZLayers]);
 
     if (!canvasReady || !geometry) {
         return null;

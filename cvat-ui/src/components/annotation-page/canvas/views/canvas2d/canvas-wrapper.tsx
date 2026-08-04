@@ -112,7 +112,8 @@ interface StateToProps {
     textContent: string;
     showAllInterpolationTracks: boolean;
     workspace: Workspace;
-    curZLayer: number;
+    maxZLayer: number;
+    hiddenZLayers: number[];
     sidebarCollapsed: boolean;
     automaticBordering: boolean;
     snapToPoint: boolean;
@@ -175,7 +176,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 activatedStateID,
                 activatedElementID,
                 activatedAttributeID,
-                zLayer: { cur: curZLayer },
+                zLayer: { max: maxZLayer, hidden: hiddenZLayers },
                 highlightedConflict,
                 renderData,
             },
@@ -255,7 +256,8 @@ function mapStateToProps(state: CombinedState): StateToProps {
         textContent,
         showAllInterpolationTracks,
         showTagsOnFrame,
-        curZLayer,
+        maxZLayer,
+        hiddenZLayers,
         sidebarCollapsed,
         automaticBordering,
         snapToPoint,
@@ -472,7 +474,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             frameAngle,
             annotations,
             activatedStateID,
-            curZLayer,
+            hiddenZLayers,
             resetZoom,
             smoothImage,
             grid,
@@ -607,7 +609,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         if (
             prevProps.annotations !== annotations ||
             prevProps.frameData !== frameData ||
-            prevProps.curZLayer !== curZLayer ||
+            prevProps.hiddenZLayers !== hiddenZLayers ||
             prevProps.renderData !== renderData
         ) {
             this.updateCanvas();
@@ -697,7 +699,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
     private onCanvasShapeDrawn = (event: any): void => {
         const {
             jobInstance, activeLabelID, activeObjectType, frame, updateActiveControl, onCreateAnnotations,
-            onUpdateEditedObject, activeObjectHidden, workspace, curZLayer,
+            onUpdateEditedObject, activeObjectHidden, workspace, maxZLayer,
         } = this.props;
 
         if (!event.detail.continue) {
@@ -712,7 +714,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         state.label = state.label || jobInstance.labels.filter((label: any) => label.id === activeLabelID)[0];
         state.frame = frame;
         state.rotation = state.rotation || 0;
-        state.zOrder = curZLayer;
+        state.zOrder = maxZLayer;
         state.occluded = state.occluded || false;
         state.outside = state.outside || false;
         state.hidden = state.hidden || (activeObjectHidden && workspace !== Workspace.SINGLE_SHAPE);
@@ -1013,7 +1015,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
 
     private updateCanvas(): void {
         const {
-            curZLayer, annotations, frameData,
+            hiddenZLayers, annotations, frameData,
             workspace, frame, imageFilters, renderData,
         } = this.props;
 
@@ -1023,7 +1025,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
                 frame,
                 workspace,
                 exclude: [ObjectType.TAG],
-            }).filter((state: ObjectState): boolean => state.zOrder <= curZLayer);
+            }).filter((state: ObjectState): boolean => !hiddenZLayers.includes(state.zOrder));
             const proxy = new Proxy(frameData, {
                 get: (_frameData, prop, receiver) => {
                     if (prop === 'data') {
@@ -1149,7 +1151,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
 
     public render(): JSX.Element {
         const {
-            curZLayer,
+            hiddenZLayers,
             sidebarCollapsed,
             keyMap,
             automaticBordering,
@@ -1175,7 +1177,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
 
         const navigateObject = (step: number): void => {
             const filteredStates = annotations.filter(
-                (state) => !state.outside && !state.hidden && state.zOrder <= curZLayer,
+                (state) => !state.outside && !state.hidden && !hiddenZLayers.includes(state.zOrder),
             );
             if (filteredStates.length) {
                 const currentIndex = filteredStates.findIndex((state) => state.clientID === activatedStateID);
@@ -1255,11 +1257,10 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
                     <button
                         className='cvat-canvas-layer-stack-trigger'
                         type='button'
-                        aria-label={`Open layer stack. Current layer ${curZLayer}`}
+                        aria-label='Open layer stack'
                         onClick={(): void => onOpenLayerStack(sidebarCollapsed)}
                     >
                         <Icon component={LayerStackIcon} />
-                        <span className='cvat-canvas-layer-stack-trigger-layer'>{curZLayer}</span>
                     </button>
                 </CVATTooltip>
 

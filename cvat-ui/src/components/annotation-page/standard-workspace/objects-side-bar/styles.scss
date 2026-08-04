@@ -425,17 +425,13 @@
 }
 
 .cvat-objects-sidebar-z-layer-collapse-button,
-.cvat-objects-sidebar-z-layer-select-button,
+.cvat-objects-sidebar-z-layer-visibility-indicator,
 .cvat-objects-sidebar-z-layer-drag-handle {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     border-radius: $border-radius-base;
     color: $objects-bar-icons-color;
-}
-
-.cvat-objects-sidebar-z-layer-select-button[disabled] {
-    opacity: 1;
 }
 
 .cvat-objects-sidebar-z-layer-id {

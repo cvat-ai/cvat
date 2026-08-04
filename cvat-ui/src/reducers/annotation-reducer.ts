@@ -14,7 +14,6 @@ import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import {
     DimensionType, getCore, JobStage, Label, LabelType, ObjectState, ObjectType, ShapeType,
 } from 'cvat-core-wrapper';
-import { clamp } from 'utils/math';
 
 import {
     ActiveControl,
@@ -164,7 +163,7 @@ const defaultState: AnnotationState = {
         zLayer: {
             min: 0,
             max: 0,
-            cur: 0,
+            hidden: [],
         },
     },
     remove: {
@@ -295,7 +294,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     filters,
                     zLayer: {
                         ...state.annotations.zLayer,
-                        cur: Number.MAX_SAFE_INTEGER,
+                        hidden: [],
                     },
                 },
                 player: {
@@ -418,9 +417,10 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     renderData: getAnnotationsRenderData(states, state.annotations.filters),
                     history,
                     zLayer: {
+                        ...state.annotations.zLayer,
                         min: minZ,
                         max: maxZ,
-                        cur: maxZ,
+                        hidden: [],
                     },
                 },
             };
@@ -637,11 +637,13 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             } = action.payload;
             const { states: prevStates } = state.annotations;
             const nextStates = [...prevStates];
+            let zOrderChanged = false;
 
             const clientIDs = prevStates.map((prevState: ObjectState): number => prevState.clientID!);
             for (const updatedState of updatedStates) {
                 const index = clientIDs.indexOf(updatedState.clientID);
                 if (index !== -1) {
+                    zOrderChanged ||= nextStates[index].zOrder !== updatedState.zOrder;
                     nextStates[index] = updatedState;
                 }
             }
@@ -652,9 +654,10 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 annotations: {
                     ...state.annotations,
                     zLayer: {
+                        ...state.annotations.zLayer,
                         min: minZ,
                         max: maxZ,
-                        cur: clamp(state.annotations.zLayer.cur, minZ, maxZ),
+                        hidden: zOrderChanged ? [] : state.annotations.zLayer.hidden,
                     },
                     states: nextStates,
                     renderData: getAnnotationsRenderData(nextStates, state.annotations.filters),
@@ -981,6 +984,13 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             const { activatedStateID } = state.annotations;
             const { states, history } = action.payload;
             const [minZ, maxZ] = computeZRange(states);
+            const previousZOrders = new Map(state.annotations.states.map((objectState: ObjectState) => (
+                [objectState.clientID, objectState.zOrder]
+            )));
+            const zOrderChanged = states.some((objectState: ObjectState): boolean => (
+                previousZOrders.has(objectState.clientID) &&
+                previousZOrders.get(objectState.clientID) !== objectState.zOrder
+            ));
 
             return {
                 ...state,
@@ -992,9 +1002,10 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     history,
                     initialized: true,
                     zLayer: {
+                        ...state.annotations.zLayer,
                         min: minZ,
                         max: maxZ,
-                        cur: clamp(state.annotations.zLayer.cur, minZ, maxZ),
+                        hidden: zOrderChanged ? [] : state.annotations.zLayer.hidden,
                     },
                 },
             };
@@ -1019,32 +1030,23 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
             };
         }
-        case AnnotationActionTypes.SWITCH_Z_LAYER: {
-            const { cur } = action.payload;
-            const { max, min } = state.annotations.zLayer;
-
-            let { activatedStateID } = state.annotations;
-            if (activatedStateID !== null) {
-                const idx = state.annotations.states
-                    .map((_state: ObjectState) => _state.clientID)
-                    .indexOf(activatedStateID);
-                if (idx !== -1) {
-                    if (state.annotations.states[idx].zOrder > cur) {
-                        activatedStateID = null;
-                    }
-                } else {
-                    activatedStateID = null;
-                }
-            }
+        case AnnotationActionTypes.TOGGLE_Z_LAYER_VISIBILITY: {
+            const { zOrder } = action.payload;
+            const { hidden } = state.annotations.zLayer;
+            const willBeHidden = !hidden.includes(zOrder);
+            const activatedState = state.annotations.states.find((objectState: ObjectState): boolean => (
+                objectState.clientID === state.annotations.activatedStateID
+            ));
 
             return {
                 ...state,
                 annotations: {
                     ...state.annotations,
-                    activatedStateID,
+                    activatedStateID: willBeHidden && activatedState?.zOrder === zOrder ?
+                        null : state.annotations.activatedStateID,
                     zLayer: {
                         ...state.annotations.zLayer,
-                        cur: clamp(cur, min, max),
+                        hidden: willBeHidden ? [...hidden, zOrder] : hidden.filter((layer) => layer !== zOrder),
                     },
                 },
             };
