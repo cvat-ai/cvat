@@ -33,6 +33,7 @@ from cvat_sdk.api_client.api_client import ApiClient, Endpoint
 from cvat_sdk.api_client.exceptions import ForbiddenException
 from cvat_sdk.core.exceptions import BackgroundRequestException
 from cvat_sdk.core.helpers import get_paginated_collection
+from cvat_sdk.core.proxies.annotations import AnnotationUpdateAction
 from cvat_sdk.core.progress import NullProgressReporter
 from cvat_sdk.core.proxies.tasks import ResourceType, Task
 from cvat_sdk.core.uploading import Uploader
@@ -3742,6 +3743,21 @@ class TestImportTaskAnnotations:
             for t in tasks
             if t.get("size")
             if t["media_type"] == "audio" and t.get("validation_mode") != "gt_pool"
+        )
+        task_obj = self.client.tasks.retrieve(task["id"])
+        # add an annotation covering the whole interval with exclusive stop after the last frame
+        label = next(label for label in task_obj.get_labels() if label.type == "interval")
+        task_obj.update_annotations(
+            models.PatchedLabeledDataRequest(
+                intervals=[
+                    models.LabeledIntervalRequest(
+                        label_id=label.id,
+                        start=0,
+                        stop=task["size"],
+                    )
+                ]
+            ),
+            action=AnnotationUpdateAction.CREATE,
         )
 
         format_name = "Generic TSV 1.0"

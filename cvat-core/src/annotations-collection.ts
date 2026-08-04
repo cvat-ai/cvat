@@ -1284,7 +1284,7 @@ export default class Collection {
                 constructed.intervals.push({
                     attributes,
                     start: state.start,
-                    stop: Math.min(state.stop ?? this.stopFrame, this.stopFrame),
+                    stop: Math.min(state.stop ?? this.stopFrame + 1, this.stopFrame + 1),
                     label_id: state.label.id,
                     group: 0,
                     source: state.source,
