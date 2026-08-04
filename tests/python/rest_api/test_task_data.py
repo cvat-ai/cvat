@@ -1955,6 +1955,85 @@ class TestTaskData(TestTasksBase):
                 index=0,
             )
 
+    @pytest.mark.timeout(300)
+    def test_honeypot_update_invalidates_all_cached_segment_chunks(
+        self, request: pytest.FixtureRequest
+    ):
+        _, task_id = self._image_task_with_honeypots_and_segments_base(
+            request,
+            use_cache=True,
+        )
+
+        with make_api_client(self._USERNAME) as api_client:
+            validation_layout, _ = api_client.tasks_api.retrieve_validation_layout(task_id)
+            annotation_jobs = sorted(
+                (
+                    job
+                    for job in get_paginated_collection(
+                        api_client.jobs_api.list_endpoint, task_id=task_id
+                    )
+                    if job.type == "annotation"
+                ),
+                key=lambda job: job.start_frame,
+            )
+            assert annotation_jobs
+
+            job = annotation_jobs[0]
+            job_meta, _ = api_client.jobs_api.retrieve_data_meta(job.id)
+            job_frame_ids = list(self._get_job_abs_frame_set(job_meta))
+            chunk_ids = set(range(math.ceil(job_meta.size / job_meta.chunk_size)))
+            honeypot_frame_ids = set(validation_layout.honeypot_frames) & set(job_frame_ids)
+            honeypot_chunk_ids = {
+                job_frame_ids.index(frame_id) // job_meta.chunk_size
+                for frame_id in honeypot_frame_ids
+            }
+            unchanged_chunk_ids = chunk_ids - honeypot_chunk_ids
+
+            # The validation-layout update changes this segment's timestamp, even
+            # though the selected chunk contains no changed honeypot frame.
+            assert honeypot_frame_ids
+            assert unchanged_chunk_ids
+            unchanged_chunk_id = min(unchanged_chunk_ids)
+
+            for quality in ("original", "compressed"):
+                _, response = api_client.jobs_api.retrieve_data(
+                    job.id,
+                    type="chunk",
+                    quality=quality,
+                    index=unchanged_chunk_id,
+                    _parse_response=False,
+                )
+                assert response.status == HTTPStatus.OK
+
+            validation_frames = validation_layout.validation_frames
+            new_honeypot_real_frames = [
+                validation_frames[(validation_frames.index(frame) + 1) % len(validation_frames)]
+                for frame in validation_layout.honeypot_real_frames
+            ]
+
+            _, response = api_client.tasks_api.partial_update_validation_layout(
+                task_id,
+                patched_task_validation_layout_write_request=(
+                    models.PatchedTaskValidationLayoutWriteRequest(
+                        frame_selection_method="manual",
+                        honeypot_real_frames=new_honeypot_real_frames,
+                    )
+                ),
+                _parse_response=False,
+            )
+            assert response.status == HTTPStatus.OK
+
+            for quality in ("original", "compressed"):
+                _, response = api_client.jobs_api.retrieve_data(
+                    job.id,
+                    type="chunk",
+                    quality=quality,
+                    index=unchanged_chunk_id,
+                    _check_status=False,
+                    _parse_response=False,
+                )
+                assert response.status == HTTPStatus.OK
+
     @parametrize("task_spec, task_id", TestTasksBase._all_task_cases)
     def test_can_get_task_meta(self, task_spec: ITaskSpec, task_id: int):
 
