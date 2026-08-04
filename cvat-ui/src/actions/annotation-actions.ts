@@ -146,7 +146,7 @@ export enum AnnotationActionTypes {
     FETCH_ANNOTATIONS_SUCCESS = 'FETCH_ANNOTATIONS_SUCCESS',
     FETCH_ANNOTATIONS_FAILED = 'FETCH_ANNOTATIONS_FAILED',
     ROTATE_FRAME = 'ROTATE_FRAME',
-    TOGGLE_Z_LAYER_VISIBILITY = 'TOGGLE_Z_LAYER_VISIBILITY',
+    TOGGLE_Z_LAYERS_VISIBILITY = 'TOGGLE_Z_LAYERS_VISIBILITY',
     SEARCH_ANNOTATIONS_FAILED = 'SEARCH_ANNOTATIONS_FAILED',
     SEARCH_CHAPTERS_FAILED = 'SEARCH_CHAPTERS_FAILED',
     CHANGE_WORKSPACE = 'CHANGE_WORKSPACE',
@@ -229,11 +229,11 @@ export function canvasErrorOccurred(error: Error): AnyAction {
     };
 }
 
-export function toggleZLayerVisibility(zOrder: number): AnyAction {
+export function toggleZLayersVisibility(zOrders: number[]): AnyAction {
     return {
-        type: AnnotationActionTypes.TOGGLE_Z_LAYER_VISIBILITY,
+        type: AnnotationActionTypes.TOGGLE_Z_LAYERS_VISIBILITY,
         payload: {
-            zOrder,
+            zOrders,
         },
     };
 }

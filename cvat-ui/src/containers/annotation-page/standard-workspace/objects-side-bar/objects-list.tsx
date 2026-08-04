@@ -22,7 +22,7 @@ import {
     changeHideActiveObjectAsync,
     updateLayerAsync,
     compactLayersAsync,
-    toggleZLayerVisibility,
+    toggleZLayersVisibility,
 } from 'actions/annotation-actions';
 import {
     changeShowGroundTruth as changeShowGroundTruthAction,
@@ -85,7 +85,7 @@ interface DispatchToProps {
     changeHideEditedState(...args: Parameters<typeof changeHideActiveObjectAsync>): void;
     updateLayer(...args: Parameters<typeof updateLayerAsync>): void;
     compactLayers(...args: Parameters<typeof compactLayersAsync>): void;
-    toggleLayerVisibility(...args: Parameters<typeof toggleZLayerVisibility>): void;
+    toggleLayersVisibility(...args: Parameters<typeof toggleZLayersVisibility>): void;
 }
 
 const componentShortcuts = {
@@ -330,8 +330,8 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         compactLayers(...args: Parameters<typeof compactLayersAsync>): void {
             dispatch(compactLayersAsync(...args));
         },
-        toggleLayerVisibility(...args: Parameters<typeof toggleZLayerVisibility>): void {
-            dispatch(toggleZLayerVisibility(...args));
+        toggleLayersVisibility(...args: Parameters<typeof toggleZLayersVisibility>): void {
+            dispatch(toggleZLayersVisibility(...args));
         },
     };
 }
@@ -780,7 +780,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                     switchHiddenAllShortcut={normalizedKeyMap.SWITCH_ALL_HIDDEN}
                     switchLockAllShortcut={normalizedKeyMap.SWITCH_ALL_LOCK}
                     changeStatesOrdering={this.onChangeStatesOrdering}
-                    toggleLayerVisibility={this.props.toggleLayerVisibility}
+                    toggleLayersVisibility={this.props.toggleLayersVisibility}
                     moveObjectsToLayer={this.moveObjectsToLayer}
                     moveObjectsOnNewLayer={this.moveObjectsOnNewLayer}
                     compactLayers={this.compactLayers}

@@ -18,7 +18,7 @@ interface LayerSectionProps {
     visibleSkeletonElements: Record<number, number[]>;
     visible: boolean;
     collapsed: boolean;
-    toggleLayerVisibility(zOrder: number): void;
+    toggleLayerVisibility(zOrder: number, includeLower: boolean): void;
     toggleLayerCollapsed(zOrder: number): void;
 }
 

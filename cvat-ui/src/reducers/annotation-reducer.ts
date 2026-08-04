@@ -1030,23 +1030,32 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
             };
         }
-        case AnnotationActionTypes.TOGGLE_Z_LAYER_VISIBILITY: {
-            const { zOrder } = action.payload;
+        case AnnotationActionTypes.TOGGLE_Z_LAYERS_VISIBILITY: {
+            const { zOrders } = action.payload;
+            if (!zOrders.length) {
+                return state;
+            }
+
             const { hidden } = state.annotations.zLayer;
-            const willBeHidden = !hidden.includes(zOrder);
+            const affectedLayers = new Set<number>(zOrders);
+            const willBeHidden = !hidden.includes(zOrders[0]);
             const activatedState = state.annotations.states.find((objectState: ObjectState): boolean => (
                 objectState.clientID === state.annotations.activatedStateID
             ));
+            const deactivateState = willBeHidden && activatedState && affectedLayers.has(activatedState.zOrder);
+            const nextHidden = willBeHidden ?
+                Array.from(new Set([...hidden, ...zOrders])) :
+                hidden.filter((zOrder) => !affectedLayers.has(zOrder));
 
             return {
                 ...state,
                 annotations: {
                     ...state.annotations,
-                    activatedStateID: willBeHidden && activatedState?.zOrder === zOrder ?
+                    activatedStateID: deactivateState ?
                         null : state.annotations.activatedStateID,
                     zLayer: {
                         ...state.annotations.zLayer,
-                        hidden: willBeHidden ? [...hidden, zOrder] : hidden.filter((layer) => layer !== zOrder),
+                        hidden: nextHidden,
                     },
                 },
             };

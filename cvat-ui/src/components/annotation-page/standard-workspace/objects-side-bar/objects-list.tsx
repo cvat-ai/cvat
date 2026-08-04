@@ -53,7 +53,7 @@ interface Props {
     switchHiddenAllShortcut: string;
     showGroundTruth: boolean;
     changeStatesOrdering(value: StatesOrdering): void;
-    toggleLayerVisibility(zOrder: number): void;
+    toggleLayersVisibility(zOrders: number[]): void;
     moveObjectsToLayer(source: LayerMoveSource, targetZOrder: number): void;
     moveObjectsOnNewLayer(source: LayerMoveSource, placement: LayerPlacement): void;
     compactLayers(): void;
@@ -81,7 +81,7 @@ function ObjectListComponent(props: Props): JSX.Element {
         switchHiddenAllShortcut,
         showGroundTruth,
         changeStatesOrdering,
-        toggleLayerVisibility,
+        toggleLayersVisibility,
         moveObjectsToLayer,
         moveObjectsOnNewLayer,
         compactLayers,
@@ -269,6 +269,10 @@ function ObjectListComponent(props: Props): JSX.Element {
 
     const toggleAllLayersCollapsed = (): void => {
         setCollapsedLayers(allLayersCollapsed ? new Set() : new Set(zLayers));
+    };
+
+    const toggleLayerVisibility = (zOrder: number, includeLower: boolean): void => {
+        toggleLayersVisibility(includeLower ? zLayers.filter((layer) => layer <= zOrder) : [zOrder]);
     };
 
     const renderDragOverlay = (): JSX.Element | null => {

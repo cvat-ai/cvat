@@ -19,7 +19,7 @@ interface LayerHeaderProps {
     zOrder: number;
     visible: boolean;
     collapsed: boolean;
-    toggleLayerVisibility(zOrder: number): void;
+    toggleLayerVisibility(zOrder: number, includeLower: boolean): void;
     toggleLayerCollapsed(zOrder: number): void;
 }
 
@@ -77,7 +77,7 @@ function LayerHeader(props: LayerHeaderProps): JSX.Element {
                         type='text'
                         size='small'
                         icon={visible ? <EyeOutlined /> : <EyeInvisibleOutlined />}
-                        onClick={(): void => toggleLayerVisibility(zOrder)}
+                        onClick={(event): void => toggleLayerVisibility(zOrder, event.shiftKey)}
                     />
                 </CVATTooltip>
             </div>
