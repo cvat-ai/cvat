@@ -98,7 +98,8 @@ context('Objects ordering feature', () => {
     function moveObjectToForeground(clientId) {
         cy.get(`#cvat-objects-sidebar-state-item-${clientId}`)
             .find('.cvat-object-item-menu-button').click();
-        cy.get('.cvat-object-item-menu-to-layer-foreground').click();
+        cy.get('.cvat-object-item-menu:visible')
+            .find('.cvat-object-item-menu-to-layer-foreground').click();
     }
 
     function layerVisibilityButton(zOrder) {
@@ -202,9 +203,9 @@ context('Objects ordering feature', () => {
         it('Sort objects by "Updated time". Toggle lock on each object to update timestamps', () => {
             cy.sidebarItemSortBy('Updated time');
 
-            // Toggle lock on each object in order to update their timestamps
-            cy.get('.cvat-objects-sidebar-state-item').each(($item) => {
-                cy.wrap($item).within(() => {
+            // Update in descending ID order so the latest-first result is ascending by ID.
+            [4, 3, 2, 1].forEach((clientId) => {
+                cy.get(`#cvat-objects-sidebar-state-item-${clientId}`).within(() => {
                     cy.get('.cvat-object-item-button-lock').click();
                 });
             });
