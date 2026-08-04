@@ -41,7 +41,7 @@ Cypress.Commands.add('selectAnnotationsAction', (name) => {
     getOption().should('exist');
     // Virtual-list options may exist while clipped outside
     // the viewport, so visibility is not a valid readiness condition.
-    getOption().click({force: true});
+    getOption().click({ force: true });
 
     cy.get('.cvat-action-runner-list .ant-select-selection-item')
         .should('contain', name);
