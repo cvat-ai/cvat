@@ -152,8 +152,8 @@ def _validate_input_annotations(
                     f"Interval {interval['id']}" if interval.get("id") is not None else "Interval"
                 )
                 raise ValidationError(
-                    f"{interval_ref} cannot be outside the task boundaries"
-                    f"[{task_start}, {task_stop}], got "
+                    f"{interval_ref} start must be within [{task_start}, {task_stop}] "
+                    f"and stop must be within [{task_start}, {task_stop + 1}], got "
                     f"[{interval['start']}, {interval['stop']}]"
                 )
 
