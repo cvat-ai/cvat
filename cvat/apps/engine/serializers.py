@@ -4191,13 +4191,11 @@ class LabeledIntervalSerializer(
         min_value=0,
         help_text="Must be within the task frame bounds.",
     )
-    "Must be within the task frame bounds."
     stop = serializers.IntegerField(
         min_value=0,
         allow_null=True,
         help_text="Exclusive interval end. May be one greater than the task stop frame.",
     )
-    "Exclusive interval end. May be one greater than the task stop frame."
 
 
 class LabeledDataSerializer(serializers.Serializer):
