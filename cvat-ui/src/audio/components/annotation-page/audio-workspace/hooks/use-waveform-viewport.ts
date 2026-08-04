@@ -47,14 +47,16 @@ export interface WaveformViewport {
 /**
  * Responsible for viewport interactions. Exposes a stable API for the rest of the waveform hooks to use.
  */
-export function useWaveformViewport(runtime: WaveSurferRuntime): WaveformViewport {
+export function useWaveformViewport(
+    runtime: WaveSurferRuntime,
+    containerRef: React.RefObject<HTMLDivElement>,
+): WaveformViewport {
     const dispatch = useDispatch<ThunkDispatch>();
     const { zoom, duration } = useSelector((state: CombinedState) => ({
         zoom: state.audio.player.zoom,
         duration: state.audio.player.duration,
     }), shallowEqual);
     const { ready } = runtime;
-    const containerRef = useRef<HTMLDivElement>(null);
     const [containerWidth, setContainerWidth] = useState(0);
     const zoomRef = useRef(zoom);
     zoomRef.current = zoom;

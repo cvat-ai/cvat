@@ -27,7 +27,7 @@ const defaultState: AudioState = {
             left: 0,
             clientID: null,
         },
-        audioUrl: null,
+        audioDataToken: null,
         audioLoading: false,
         audioError: null,
         waveformReady: false,
@@ -199,7 +199,7 @@ export default function audioReducer(state: AudioState = defaultState, action: A
                     audioLoading: true,
                     audioError: null,
                     waveformReady: false,
-                    audioUrl: null,
+                    audioDataToken: null,
                     audioLoadRequest: action.payload.request,
                     seekRequest: null,
                     playIntervalOnceRequest: null,
@@ -213,7 +213,7 @@ export default function audioReducer(state: AudioState = defaultState, action: A
                 ...state,
                 player: {
                     ...state.player,
-                    audioUrl: action.payload.audioUrl,
+                    audioDataToken: action.payload.audioDataToken,
                     audioLoadRequest: null,
                     audioLoading: false,
                     audioError: null,
@@ -233,12 +233,18 @@ export default function audioReducer(state: AudioState = defaultState, action: A
             };
         }
         case AudioActionTypes.SET_WAVEFORM_READY: {
-            if (state.player.audioUrl !== action.payload.sourceURL) return state;
+            if (state.player.audioDataToken !== action.payload.sourceToken) return state;
             return {
                 ...state,
                 player: {
                     ...state.player,
                     waveformReady: action.payload.ready,
+                    ...(action.payload.ready ? {} : {
+                        audioDataToken: null,
+                        playing: false,
+                        currentTime: 0,
+                        duration: 0,
+                    }),
                 },
             };
         }

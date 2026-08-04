@@ -538,7 +538,13 @@ export default class LabelForm extends React.Component<Props> {
 
         return (
             <Form.Item name='type'>
-                <Select className='cvat-label-type-input' disabled={isSkeleton || locked} showSearch={false}>
+                <Select
+                    className='cvat-label-type-input'
+                    disabled={isSkeleton || locked}
+                    showSearch={false}
+                    popupMatchSelectWidth={false}
+                    dropdownStyle={{ minWidth: '150px' }}
+                >
                     {isSkeleton ? (
                         <Select.Option
                             className='cvat-label-type-option-skeleton'
