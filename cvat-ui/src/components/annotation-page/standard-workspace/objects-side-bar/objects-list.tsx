@@ -272,7 +272,7 @@ function ObjectListComponent(props: Props): JSX.Element {
     };
 
     const toggleLayerVisibility = (zOrder: number, includeLower: boolean): void => {
-        toggleLayersVisibility(includeLower ? zLayers.filter((layer) => layer <= zOrder) : [zOrder]);
+        toggleLayersVisibility(includeLower ? [zOrder, ...zLayers.filter((layer) => layer < zOrder)] : [zOrder]);
     };
 
     const renderDragOverlay = (): JSX.Element | null => {

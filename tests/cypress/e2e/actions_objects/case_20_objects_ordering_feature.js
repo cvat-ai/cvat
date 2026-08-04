@@ -95,6 +95,17 @@ context('Objects ordering feature', () => {
             });
     }
 
+    function moveObjectToForeground(clientId) {
+        cy.get(`#cvat-objects-sidebar-state-item-${clientId}`)
+            .find('.cvat-object-item-menu-button').click();
+        cy.get('.cvat-object-item-menu-to-layer-foreground').click();
+    }
+
+    function layerVisibilityButton(zOrder) {
+        return cy.get(`.cvat-objects-sidebar-z-layer[data-z-order="${zOrder}"]`)
+            .find('.cvat-objects-sidebar-z-layer-visibility-indicator');
+    }
+
     before(() => {
         cy.visit('/auth/login');
         cy.headlessLogin();
@@ -131,6 +142,51 @@ context('Objects ordering feature', () => {
                 cy.createRectangle(rectangle);
             });
             checkSideBarItemOrdering('ascent');
+        });
+
+        it('Move objects to separate layers.', () => {
+            moveObjectToForeground(1);
+            moveObjectToForeground(2);
+
+            cy.sidebarItemSortBy('Layer');
+            cy.get('.cvat-objects-sidebar-z-layer').should('have.length', 3);
+            [0, 1, 2].forEach((zOrder) => {
+                cy.get(`.cvat-objects-sidebar-z-layer[data-z-order="${zOrder}"]`).should('exist');
+            });
+        });
+
+        it('Show and hide layers using layer visibility controls.', () => {
+            cy.get('#cvat_canvas_shape_1').should('exist');
+            cy.get('#cvat_canvas_shape_2').should('exist');
+            cy.get('#cvat_canvas_shape_3').should('exist');
+            cy.get('#cvat_canvas_shape_4').should('exist');
+
+            layerVisibilityButton(1).click();
+            cy.get('#cvat_canvas_shape_1').should('not.exist');
+            cy.get('#cvat_canvas_shape_2').should('exist');
+            cy.get('#cvat_canvas_shape_3').should('exist');
+            cy.get('#cvat_canvas_shape_4').should('exist');
+
+            layerVisibilityButton(1).click();
+            cy.get('#cvat_canvas_shape_1').should('exist');
+
+            layerVisibilityButton(0).click();
+            cy.get('#cvat_canvas_shape_1').should('exist');
+            cy.get('#cvat_canvas_shape_2').should('exist');
+            cy.get('#cvat_canvas_shape_3').should('not.exist');
+            cy.get('#cvat_canvas_shape_4').should('not.exist');
+
+            layerVisibilityButton(1).click({ shiftKey: true });
+            cy.get('#cvat_canvas_shape_1').should('not.exist');
+            cy.get('#cvat_canvas_shape_2').should('exist');
+            cy.get('#cvat_canvas_shape_3').should('not.exist');
+            cy.get('#cvat_canvas_shape_4').should('not.exist');
+
+            layerVisibilityButton(1).click({ shiftKey: true });
+            cy.get('#cvat_canvas_shape_1').should('exist');
+            cy.get('#cvat_canvas_shape_2').should('exist');
+            cy.get('#cvat_canvas_shape_3').should('exist');
+            cy.get('#cvat_canvas_shape_4').should('exist');
         });
 
         it('Sort object by "ID - descent".', () => {
