@@ -90,7 +90,7 @@ function GitHubStarModal(props: Props): JSX.Element {
                     </div>
                 </section>
                 <section className='cvat-github-star-modal-scene' aria-hidden='true'>
-                    <img src='/assets/github-star-prompt-annotation-scene.png' alt='' />
+                    <img src='/assets/github-star-prompt-annotation-scene.webp' alt='' />
                 </section>
             </div>
         </Modal>
