@@ -1035,7 +1035,16 @@ class ComparisonReportFrameComparisonSummary(ComparisonReportFrameSummary):
         return instance
 
     @classmethod
-    def from_dict(cls, d: dict[str, Any], *, metric: str) -> ComparisonReportFrameComparisonSummary:
+    def from_dict(cls, d: dict[str, Any]) -> ComparisonReportFrameComparisonSummary:
+        return cls.from_dict_with_metric(
+            d,
+            metric=str(models.QualityTargetMetricType.ACCURACY),
+        )
+
+    @classmethod
+    def from_dict_with_metric(
+        cls, d: dict[str, Any], *, metric: str
+    ) -> ComparisonReportFrameComparisonSummary:
         frame_summary = ComparisonReportFrameSummary.from_dict(d)
         calculation = (
             ComparisonReportRequirementCalculation.from_dict(d["calculation"])
@@ -1120,7 +1129,9 @@ class ComparisonReportRequirementSummary(ReportNode):
             ),
             frame_results=(
                 {
-                    int(k): ComparisonReportFrameComparisonSummary.from_dict(v, metric=metric)
+                    int(k): ComparisonReportFrameComparisonSummary.from_dict_with_metric(
+                        v, metric=metric
+                    )
                     for k, v in d["frame_results"].items()
                 }
                 if d.get("frame_results") is not None
