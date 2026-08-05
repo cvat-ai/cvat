@@ -36,6 +36,8 @@ export interface WaveformViewport {
      * Centers the canvas on the given time range by scrolling.
      */
     centerTimeRange(range: AudioTimeRange): void;
+    /** Centers the canvas on the current playback position. */
+    centerPlaybackPosition(): void;
     /**
      * Ensures that the given time is visible in the viewport. If it's not, scrolls the canvas to make it visible.
      */
@@ -92,6 +94,13 @@ export function useWaveformViewport(
             scrollContainer.clientWidth,
             maximumScroll,
         ));
+    }, []);
+
+    const centerPlaybackPosition = useCallback((): void => {
+        const currentTime = runtime.instanceRef.current?.getCurrentTime();
+        if (currentTime === undefined) return;
+
+        centerTimeRange({ start: currentTime, end: currentTime });
     }, []);
 
     const ensureTimeVisible = useCallback((time: number): void => {
@@ -195,6 +204,7 @@ export function useWaveformViewport(
         pixelsPerSecond,
         clientXToTime,
         centerTimeRange,
+        centerPlaybackPosition,
         ensureTimeVisible,
     };
 }
