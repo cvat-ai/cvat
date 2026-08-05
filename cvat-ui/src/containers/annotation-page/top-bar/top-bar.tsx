@@ -29,7 +29,7 @@ import {
     undoActionAsync,
 } from 'actions/annotation-actions';
 import AnnotationTopBarComponent from 'components/annotation-page/top-bar/top-bar';
-import { Canvas } from 'cvat-canvas-wrapper';
+import { Canvas, CanvasMode } from 'cvat-canvas-wrapper';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import { FramesMetaData, Job } from 'cvat-core-wrapper';
 import {
@@ -366,8 +366,10 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
     private undo = (): void => {
         const { undo, undoAction, canvasInstance } = this.props;
 
-        if (canvasInstance instanceof Canvas && canvasInstance.undo()) {
-            return;
+        if (canvasInstance instanceof Canvas) {
+            if (canvasInstance.undo() || canvasInstance.mode() !== CanvasMode.IDLE) {
+                return;
+            }
         }
 
         if (isAbleToChangeFrame() && undoAction) {
@@ -378,8 +380,10 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
     private redo = (): void => {
         const { redo, redoAction, canvasInstance } = this.props;
 
-        if (canvasInstance instanceof Canvas && canvasInstance.redo()) {
-            return;
+        if (canvasInstance instanceof Canvas) {
+            if (canvasInstance.redo() || canvasInstance.mode() !== CanvasMode.IDLE) {
+                return;
+            }
         }
 
         if (isAbleToChangeFrame() && redoAction) {

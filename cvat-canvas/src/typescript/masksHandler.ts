@@ -789,22 +789,20 @@ export class MasksHandlerImpl implements MasksHandler {
             return false;
         }
 
-        if (this.isInsertion || this.activeHistoryAction) {
-            return true;
+        const action = this.undoStack.pop();
+        if (!action) {
+            return false;
         }
 
-        const action = this.undoStack.pop();
-        if (action) {
-            for (const object of action) {
-                this.canvas.remove(object);
-                const index = this.drawnObjects.indexOf(object);
-                if (index !== -1) {
-                    this.drawnObjects.splice(index, 1);
-                }
+        for (const object of action) {
+            this.canvas.remove(object);
+            const index = this.drawnObjects.indexOf(object);
+            if (index !== -1) {
+                this.drawnObjects.splice(index, 1);
             }
-            this.redoStack.push(action);
-            this.canvas.renderAll();
         }
+        this.redoStack.push(action);
+        this.canvas.renderAll();
 
         return true;
     }
@@ -814,19 +812,17 @@ export class MasksHandlerImpl implements MasksHandler {
             return false;
         }
 
-        if (this.isInsertion || this.activeHistoryAction) {
-            return true;
+        const action = this.redoStack.pop();
+        if (!action) {
+            return false;
         }
 
-        const action = this.redoStack.pop();
-        if (action) {
-            for (const object of action) {
-                this.canvas.add(object);
-                this.drawnObjects.push(object);
-            }
-            this.undoStack.push(action);
-            this.canvas.renderAll();
+        for (const object of action) {
+            this.canvas.add(object);
+            this.drawnObjects.push(object);
         }
+        this.undoStack.push(action);
+        this.canvas.renderAll();
 
         return true;
     }
