@@ -5,6 +5,9 @@ weight: 50
 description: 'Instructions on how to backup CVAT data with Docker.'
 aliases:
 - /docs/administration/advanced/backup_guide/
+products:
+  - community
+  - enterprise
 ---
 
 ## About CVAT data volumes

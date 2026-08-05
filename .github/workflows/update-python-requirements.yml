@@ -82,10 +82,11 @@ jobs:
         if: steps.changes.outputs.changed == 'true'
         env:
           GH_TOKEN: "${{ steps.gen-token.outputs.token }}"
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
         run: |
           git config user.name "cvat-bot[bot]"
           git config user.email "147643061+cvat-bot[bot]@users.noreply.github.com"
           git add cvat/requirements/*.txt utils/dataset_manifest/requirements.txt
           git commit -m "Regenerate Python requirements"
           git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git"
-          git push origin HEAD:${{ github.event.pull_request.head.ref }}
+          git push origin "HEAD:$HEAD_REF"

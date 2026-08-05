@@ -3,30 +3,24 @@
 // SPDX-License-Identifier: MIT
 
 import {
-    useRef, useState,
+    useEffect, useRef, useState,
 } from 'react';
 import { useDispatch } from 'react-redux';
-import type WaveSurfer from 'wavesurfer.js';
+import WaveSurfer from 'wavesurfer.js';
 import type { GenericPlugin } from 'wavesurfer.js/dist/base-plugin';
-import type { WavesurferProps } from '@wavesurfer/react';
 import TimelinePlugin from 'wavesurfer.js/dist/plugins/timeline';
 import MinimapPlugin from 'wavesurfer.js/dist/plugins/minimap';
 import RegionsPlugin from 'wavesurfer.js/dist/plugins/regions';
 import HoverPlugin from 'wavesurfer.js/dist/plugins/hover';
 
-import { audioActions } from 'actions/audio-actions';
+import { audioActions, releaseAudioDataAsync } from 'actions/audio-actions';
 import { formatSeconds } from 'audio/utils/format-audio-time';
 import { ThunkDispatch } from 'utils/redux';
 
 import { injectScrollbarStyle } from '../utils/inject-scrollbar-style';
 import { useWaveformViewport, WaveformViewport } from './use-waveform-viewport';
 import { useWaveformPlayback, WaveformPlayback } from './use-waveform-playback';
-
-export interface WaveformPlayerBindings {
-    plugins: GenericPlugin[];
-    onReady: NonNullable<WavesurferProps['onReady']>;
-    onDestroy: NonNullable<WavesurferProps['onDestroy']>;
-}
+import { useAdaptiveTimeline } from './use-adaptive-timeline';
 
 export interface WaveformRegionRuntime {
     /** Stable ref */
@@ -34,7 +28,6 @@ export interface WaveformRegionRuntime {
 }
 
 export interface AudioWaveform {
-    playerBindings: WaveformPlayerBindings;
     regionRuntime: WaveformRegionRuntime;
     viewport: WaveformViewport;
     playback: WaveformPlayback;
@@ -51,7 +44,7 @@ export interface WaveSurferRuntime {
     /** Stable ref */
     minimap: MinimapPlugin;
     /** Stable ref */
-    playerBindings: WaveformPlayerBindings;
+    timelineRef: React.MutableRefObject<TimelinePlugin | null>;
     regionRuntime: WaveformRegionRuntime;
     /**
      * Reactive flag showing when all runtime resources are ready.
@@ -64,8 +57,20 @@ export interface WaveSurferRuntime {
 }
 
 interface Params {
-    sourceURL: string;
+    sourceToken: string;
     minimapContainerID: string;
+    audioBuffer: AudioBuffer;
+    peaks: Float32Array[];
+    duration: number;
+    containerRef: React.RefObject<HTMLDivElement>;
+}
+
+interface WaveSurferWebAudioPlayer {
+    // WaveSurfer's WebAudio player holds the decoded source in this internal field.
+    // It is intentionally typed locally because this is private-API binding,
+    // not a public WaveSurfer API contract.
+    buffer: AudioBuffer | null;
+    emit(eventName: 'durationchange'): void;
 }
 
 /**
@@ -73,12 +78,12 @@ interface Params {
  * Exposes a stable API for the rest of the waveform hooks to use.
  */
 function useWaveSurferRuntime({
-    sourceURL, minimapContainerID,
+    sourceToken, minimapContainerID, audioBuffer, peaks, duration, containerRef,
 }: Params): WaveSurferRuntime {
-    interface WaveSurferSourceScope {
+    interface WaveSurferPluginScope {
         minimap: MinimapPlugin;
         regionsPlugin: RegionsPlugin;
-        playerBindings: WaveformPlayerBindings;
+        plugins: GenericPlugin[];
     }
 
     const dispatch = useDispatch<ThunkDispatch>();
@@ -87,8 +92,9 @@ function useWaveSurferRuntime({
     instanceRef.current = instance;
     const durationRef = useRef(0);
     const readyRef = useRef(false);
+    const timelineRef = useRef<TimelinePlugin | null>(null);
 
-    const createSourceScope = (): WaveSurferSourceScope => {
+    const createPlugins = (): WaveSurferPluginScope => {
         const minimap = MinimapPlugin.create({
             container: `#${minimapContainerID}`,
             waveColor: '#9CA3AF',
@@ -98,9 +104,11 @@ function useWaveSurferRuntime({
             height: 50,
             overlayColor: 'rgba(0, 85, 255, 0.3)',
         });
-        const regions = RegionsPlugin.create();
+        const timeline = TimelinePlugin.create();
+        timelineRef.current = timeline;
+        const regionsPlugin = RegionsPlugin.create();
         const plugins: GenericPlugin[] = [
-            TimelinePlugin.create(),
+            timeline,
             minimap,
             HoverPlugin.create({
                 lineColor: '#C084FC',
@@ -109,48 +117,74 @@ function useWaveSurferRuntime({
                 labelBackground: '#ffffff',
                 formatTimeCallback: formatSeconds,
             }),
-            regions,
+            regionsPlugin,
         ];
 
-        const onReady: NonNullable<WavesurferProps['onReady']> = (readyInstance): void => {
-            setInstance(readyInstance);
-            injectScrollbarStyle(readyInstance.getWrapper());
-            durationRef.current = readyInstance.getDuration();
+        return { minimap, regionsPlugin, plugins };
+    };
+
+    const pluginsScopeRef = useRef<WaveSurferPluginScope | null>(null);
+    if (!pluginsScopeRef.current) {
+        pluginsScopeRef.current = createPlugins();
+    }
+    const pluginsScope = pluginsScopeRef.current;
+
+    useEffect(() => {
+        const container = containerRef.current;
+        if (!container) {
+            throw new Error('Cannot initialize the audio waveform without its container element');
+        }
+
+        const wsInstance = WaveSurfer.create({
+            container,
+            backend: 'WebAudio',
+            autoScroll: true,
+            autoCenter: false,
+            peaks,
+            duration,
+            height: 140,
+            waveColor: '#4F46E5',
+            progressColor: '#818CF8',
+            cursorColor: '#C084FC',
+            barWidth: 2,
+            barRadius: 3,
+            cursorWidth: 2,
+            plugins: pluginsScope.plugins,
+        });
+
+        const unsubscribeReady = wsInstance.on('ready', () => {
+            // There seem to be no way to re-use the audio buffer using
+            // existing public APIs of WaveSurfer
+            // NOTE: This place relies on the internal implementation.
+            const player = wsInstance.getMediaElement() as unknown as WaveSurferWebAudioPlayer;
+            player.buffer = audioBuffer;
+            // The precomputed-peaks path sets the WebAudio player's duration directly.
+            // Notify WaveSurfer's reactive state so plugins, including Hover, see it.
+            player.emit('durationchange');
+
+            setInstance(wsInstance);
+            injectScrollbarStyle(wsInstance.getWrapper());
+            durationRef.current = wsInstance.getDuration();
             dispatch(audioActions.setAudioDuration(durationRef.current));
+            dispatch(audioActions.setWaveformReady(sourceToken, true));
             readyRef.current = true;
-            dispatch(audioActions.setWaveformReady(sourceURL, true));
-        };
-        const onDestroy: NonNullable<WavesurferProps['onDestroy']> = (): void => {
+        });
+
+        return () => {
+            unsubscribeReady();
             setInstance(null);
             readyRef.current = false;
-            dispatch(audioActions.setWaveformReady(sourceURL, false));
+            dispatch(releaseAudioDataAsync(sourceToken));
+            wsInstance.destroy();
         };
-
-        return {
-            minimap,
-            regionsPlugin: regions,
-            playerBindings: { plugins, onReady, onDestroy },
-        };
-    };
-
-    // initialized once on component mount. source url change causes
-    // remount via being AudioCanvas key
-    const sourceScopeRef = useRef<WaveSurferSourceScope | null>(null);
-    if (sourceScopeRef.current === null) {
-        sourceScopeRef.current = createSourceScope();
-    }
-    const sourceScope = sourceScopeRef.current;
-
-    const regionRuntime = {
-        regionsPlugin: sourceScope.regionsPlugin,
-    };
+    }, []);
 
     return {
         instanceRef,
         durationRef,
-        minimap: sourceScope.minimap,
-        playerBindings: sourceScope.playerBindings,
-        regionRuntime,
+        minimap: pluginsScope.minimap,
+        timelineRef,
+        regionRuntime: { regionsPlugin: pluginsScope.regionsPlugin },
         ready: instance !== null,
         readyRef,
     };
@@ -161,11 +195,11 @@ function useWaveSurferRuntime({
  */
 export function useAudioWaveform(params: Params): AudioWaveform {
     const runtime = useWaveSurferRuntime(params);
-    const viewport = useWaveformViewport(runtime);
+    const viewport = useWaveformViewport(runtime, params.containerRef);
+    useAdaptiveTimeline(runtime, viewport.pixelsPerSecond);
     const playback = useWaveformPlayback(runtime);
 
     return {
-        playerBindings: runtime.playerBindings,
         regionRuntime: runtime.regionRuntime,
         viewport,
         playback,
