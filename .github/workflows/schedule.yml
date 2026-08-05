@@ -287,6 +287,8 @@ jobs:
               ;;
           esac
 
+          CYPRESS_SPECS="cypress/e2e/${{ matrix.specs }}/**/*.js,cypress/e2e/remove_users_tasks_projects_organizations.js"
+
           echo "CYPRESS_SETUP_SPECS=$CYPRESS_SETUP_SPECS"
           yarn cypress run --headless --browser chrome --env coverage=false --spec "$CYPRESS_SETUP_SPECS" # if fail, further behavior is unpredictable
 
