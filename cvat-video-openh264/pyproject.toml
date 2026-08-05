@@ -18,10 +18,10 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 requires-python = ">=3.10"
-dependencies = ["Pillow == 10.3.0"]
+dependencies = ["Pillow >= 10.3.0"]
 
-[project.optional-dependencies]
-test = ["pytest == 8.3.0"]
+[dependency-groups]
+test = ["pytest>=9.0"]
 
 [project.urls]
 homepage = "https://github.com/cvat-ai/cvat"
@@ -30,12 +30,6 @@ repository = "https://github.com/cvat-ai/cvat/tree/develop/cvat-video-openh264"
 [build-system]
 requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
-
-[tool.setuptools]
-package-dir = {"" = "src"}
-
-[tool.setuptools.packages.find]
-where = ["src"]
 
 [tool.setuptools.package-data]
 cvat_video_openh264 = ["py.typed"]
@@ -46,7 +40,6 @@ version = {attr = "cvat_video_openh264.version.VERSION"}
 [tool.pytest.ini_options]
 addopts = ["--strict-config", "--strict-markers"]
 testpaths = ["tests"]
-pythonpath = ["."]
 
 [tool.isort]
 profile = "black"

@@ -19,7 +19,7 @@ from ..ctypes_structs import (
     OpenH264Version,
     VideoProperty,
 )
-from ..errors import DecoderUnavailableError, UnsupportedVideoChunkError
+from ..errors import UnsupportedVideoChunkError, VideoDecoderUnavailableError
 from ..models import DecoderInfo
 from .i420 import i420_to_rgb
 
@@ -32,7 +32,7 @@ def load_library(library_path: str) -> ctypes.CDLL:
         getattr(library, "WelsCreateDecoder")
         getattr(library, "WelsDestroyDecoder")
     except (AttributeError, OSError) as exc:
-        raise DecoderUnavailableError(
+        raise VideoDecoderUnavailableError(
             f"Could not load a compatible OpenH264 library from {library_path!r}: {exc}"
         ) from exc
 
@@ -49,7 +49,7 @@ def resolve_decoder_and_library(
         os.fspath(configured_path) if configured_path else ctypes.util.find_library("openh264")
     )
     if not resolved_path:
-        raise DecoderUnavailableError(
+        raise VideoDecoderUnavailableError(
             "OpenH264 is required for video chunks. Set CVAT_OPENH264_LIBRARY to a compatible "
             "shared library or install OpenH264 on the system."
         )
@@ -84,7 +84,9 @@ class OpenH264Decoder:
         self._decoder = ctypes.c_void_p()
         result = self._library.WelsCreateDecoder(ctypes.byref(self._decoder))
         if result or not self._decoder:
-            raise DecoderUnavailableError(f"OpenH264 decoder creation failed with code {result}")
+            raise VideoDecoderUnavailableError(
+                f"OpenH264 decoder creation failed with code {result}"
+            )
 
         self._vtable = ctypes.cast(
             self._decoder, ctypes.POINTER(ctypes.POINTER(DecoderVTable))
@@ -97,7 +99,7 @@ class OpenH264Decoder:
         if result:
             self._library.WelsDestroyDecoder(self._decoder)
             self._decoder = ctypes.c_void_p()
-            raise DecoderUnavailableError(
+            raise VideoDecoderUnavailableError(
                 f"OpenH264 decoder initialization failed with code {result}"
             )
 

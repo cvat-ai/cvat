@@ -14,21 +14,21 @@ import cvat_video_openh264.reader as reader
 import cvat_video_openh264.utils.decoder as decoder
 
 
-def test_public_decoder_contract_is_typed_and_compatible() -> None:
+def test_public_decoder_contract_is_typed() -> None:
     signature = inspect.signature(video.iter_frames)
 
     assert video.iter_frames is reader.iter_frames
     assert video.resolve_decoder is reader.resolve_decoder
     assert list(signature.parameters) == ["path", "library_path"]
     assert signature.parameters["library_path"].kind is inspect.Parameter.KEYWORD_ONLY
-    assert video.VideoDecoderUnavailableError is video.DecoderUnavailableError
+    assert not hasattr(video, "DecoderUnavailableError")
     assert video.VideoDecoderUnavailableError.__name__ == "VideoDecoderUnavailableError"
 
     for name in errors.__all__:
         assert getattr(video, name) is getattr(errors, name)
         assert issubclass(getattr(video, name), video.VideoDecoderError)
 
-    assert issubclass(video.DecoderUnavailableError, RuntimeError)
+    assert issubclass(video.VideoDecoderUnavailableError, RuntimeError)
     assert issubclass(video.UnsupportedVideoChunkError, ValueError)
 
 

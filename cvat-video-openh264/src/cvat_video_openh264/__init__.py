@@ -7,7 +7,6 @@
 from .errors import (
     DecoderIntegrityError,
     DecoderProvisioningError,
-    DecoderUnavailableError,
     DecoderVersionMismatchError,
     UnsupportedDecoderPlatformError,
     UnsupportedVideoChunkError,
@@ -20,7 +19,6 @@ __all__ = [
     "DecoderInfo",
     "DecoderIntegrityError",
     "DecoderProvisioningError",
-    "DecoderUnavailableError",
     "DecoderVersionMismatchError",
     "UnsupportedDecoderPlatformError",
     "UnsupportedVideoChunkError",

@@ -7,7 +7,6 @@
 __all__ = [
     "DecoderIntegrityError",
     "DecoderProvisioningError",
-    "DecoderUnavailableError",
     "DecoderVersionMismatchError",
     "UnsupportedDecoderPlatformError",
     "UnsupportedVideoChunkError",
@@ -22,11 +21,6 @@ class VideoDecoderError(Exception):
 
 class VideoDecoderUnavailableError(RuntimeError, VideoDecoderError):
     """Raised when a usable OpenH264 shared library cannot be found."""
-
-
-# Preserve the proof-of-concept alias during the coordinated package-ownership
-# switchover; it maps legacy callers onto the stable public error hierarchy.
-DecoderUnavailableError = VideoDecoderUnavailableError
 
 
 class UnsupportedVideoChunkError(ValueError, VideoDecoderError):
