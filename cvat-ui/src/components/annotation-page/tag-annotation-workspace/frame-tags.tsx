@@ -40,7 +40,9 @@ function FrameTags(): JSX.Element {
 
     const tagClassName = useCallback((tag: ObjectState): string => {
         const tagHighlighted = (highlightedConflict?.annotationConflicts || [])
-            .find((conflict: AnnotationConflict) => conflict.serverID === tag.serverID);
+            .find((conflict: AnnotationConflict) => (
+                conflict.serverID === tag.serverID && conflict.type === tag.objectType
+            ));
         return tagHighlighted ? 'cvat-frame-tag-highlighted' : 'cvat-frame-tag';
     }, [highlightedConflict]);
 

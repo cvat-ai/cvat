@@ -462,10 +462,27 @@ export default function QualityRequirementForm(props: Readonly<QualityRequiremen
                         </>
                     )}
                     {annotationType === 'polyline' && (
-                        <>
+                        <Col span={12}>
+                            {renderPercentInput(
+                                'lineThickness', 'Line thickness (%)', requirementDescriptions.lineThickness,
+                            )}
+                        </Col>
+                    )}
+                    {SEGMENTATION_ANNOTATION_TYPES.has(annotationType) && (
+                        <Col span={12}>
+                            {renderCheckbox(
+                                'panopticComparison', 'Panoptic comparison', requirementDescriptions.panopticComparison,
+                            )}
+                        </Col>
+                    )}
+                </Row>
+                {annotationType === 'polyline' && (
+                    <>
+                        <Divider />
+                        <Row gutter={16}>
                             <Col span={12}>
-                                {renderPercentInput(
-                                    'lineThickness', 'Line thickness (%)', requirementDescriptions.lineThickness,
+                                {renderCheckbox(
+                                    'matchOrientation', 'Match orientation', requirementDescriptions.matchOrientation,
                                 )}
                             </Col>
                             <Col span={12}>
@@ -475,22 +492,13 @@ export default function QualityRequirementForm(props: Readonly<QualityRequiremen
                                     requirementDescriptions.lineOrientationThreshold,
                                 )}
                             </Col>
-                            <Col span={12}>
-                                {renderCheckbox(
-                                    'matchOrientation', 'Match orientation', requirementDescriptions.matchOrientation,
-                                )}
-                            </Col>
-                        </>
-                    )}
-                    {SEGMENTATION_ANNOTATION_TYPES.has(annotationType) && (
-                        <>
-                            <Col span={12}>
-                                {renderPercentInput(
-                                    'objectVisibilityThreshold',
-                                    'Object visibility threshold (%)',
-                                    requirementDescriptions.objectVisibilityThreshold,
-                                )}
-                            </Col>
+                        </Row>
+                    </>
+                )}
+                {SEGMENTATION_ANNOTATION_TYPES.has(annotationType) && (
+                    <>
+                        <Divider />
+                        <Row gutter={16}>
                             <Col span={12}>
                                 {renderCheckbox(
                                     'checkCoveredAnnotations',
@@ -499,12 +507,20 @@ export default function QualityRequirementForm(props: Readonly<QualityRequiremen
                                 )}
                             </Col>
                             <Col span={12}>
-                                {renderCheckbox(
-                                    'panopticComparison', 'Panoptic comparison', requirementDescriptions.panopticComparison,
+                                {renderPercentInput(
+                                    'objectVisibilityThreshold',
+                                    'Object visibility threshold (%)',
+                                    requirementDescriptions.objectVisibilityThreshold,
                                 )}
                             </Col>
-                        </>
-                    )}
+                        </Row>
+                    </>
+                )}
+                <Divider />
+                <Row gutter={16}>
+                    <Col span={12}>
+                        {renderCheckbox('matchGroups', 'Match groups', requirementDescriptions.matchGroups)}
+                    </Col>
                     <Col span={12}>
                         {renderPercentInput(
                             'groupMatchThreshold',
@@ -512,8 +528,13 @@ export default function QualityRequirementForm(props: Readonly<QualityRequiremen
                             requirementDescriptions.groupMatchThreshold,
                         )}
                     </Col>
+                </Row>
+                <Divider />
+                <Row gutter={16}>
                     <Col span={12}>
-                        {renderCheckbox('matchGroups', 'Match groups', requirementDescriptions.matchGroups)}
+                        {renderCheckbox(
+                            'emptyIsAnnotated', 'Empty frames are annotated', requirementDescriptions.emptyIsAnnotated,
+                        )}
                     </Col>
                 </Row>
             </>
@@ -667,11 +688,13 @@ export default function QualityRequirementForm(props: Readonly<QualityRequiremen
                         <Checkbox>Enabled</Checkbox>
                     </Form.Item>
                 </Col>
-                <Col span={12}>
-                    {renderCheckbox(
-                        'emptyIsAnnotated', 'Empty frames are annotated', requirementDescriptions.emptyIsAnnotated,
-                    )}
-                </Col>
+                {annotationType === QualityRequirementAnnotationType.TAG && (
+                    <Col span={12}>
+                        {renderCheckbox(
+                            'emptyIsAnnotated', 'Empty frames are annotated', requirementDescriptions.emptyIsAnnotated,
+                        )}
+                    </Col>
+                )}
             </Row>
             {renderShapeComparison()}
             <QualityRequirementAttributeRules
