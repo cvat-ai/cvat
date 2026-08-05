@@ -44,18 +44,18 @@ class TestComparisonReportAccumulation(unittest.TestCase):
             rows=np.asarray([[0, 1], [0, 0]]),
         )
 
-        np.testing.assert_allclose(target.precision, [1, 0])
-        np.testing.assert_allclose(target.recall, [1, 0])
-        np.testing.assert_allclose(target.accuracy, [1, 1])
-        np.testing.assert_allclose(target.jaccard_index, [1, 0])
+        np.testing.assert_allclose(target.precision, [1, np.nan])
+        np.testing.assert_allclose(target.recall, [1, np.nan])
+        np.testing.assert_allclose(target.accuracy, [1, np.nan])
+        np.testing.assert_allclose(target.jaccard_index, [1, np.nan])
 
         target.accumulate(other)
 
         np.testing.assert_array_equal(target.rows, [[1, 1], [0, 0]])
-        np.testing.assert_allclose(target.precision, [0.5, 0])
-        np.testing.assert_allclose(target.recall, [1, 0])
-        np.testing.assert_allclose(target.accuracy, [0.5, 0.5])
-        np.testing.assert_allclose(target.jaccard_index, [0.5, 0])
+        np.testing.assert_allclose(target.precision, [0.5, np.nan])
+        np.testing.assert_allclose(target.recall, [1, np.nan])
+        np.testing.assert_allclose(target.accuracy, [0.5, np.nan])
+        np.testing.assert_allclose(target.jaccard_index, [0.5, np.nan])
 
     def test_merge_annotations_summary_accumulates_confusion_matrix(self) -> None:
         target = ComparisonReportAnnotationsSummary.create_empty()

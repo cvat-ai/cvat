@@ -2682,6 +2682,8 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
             "accuracy",
             "jaccard_index",
         }
+        for metric in ("precision", "recall", "accuracy", "jaccard_index"):
+            assert enabled_group_matrix[metric][-1] is None
 
         response = get_method(
             admin_user,

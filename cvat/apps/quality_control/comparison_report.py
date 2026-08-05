@@ -426,6 +426,12 @@ class ConfusionMatrix(ReportNode):
             # ... = TP + TN
         ) / (total_annotations_count or 1)
 
+        if labels[-1] == "unmatched":
+            self.precision[-1] = np.nan
+            self.recall[-1] = np.nan
+            self.accuracy[-1] = np.nan
+            self.jaccard_index[-1] = np.nan
+
     @cached_property
     def precision(self) -> np.ndarray | None:  # pylint: disable=method-hidden
         self._update_cached_fields()

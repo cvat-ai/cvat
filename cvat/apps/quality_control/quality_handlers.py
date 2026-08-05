@@ -55,7 +55,6 @@ from cvat.apps.quality_control.comparison_report import (
 )
 from cvat.apps.quality_control.filters import RequirementJsonLogicFilter
 from cvat.apps.quality_control.models import AnnotationConflictSeverity, AnnotationConflictType
-from cvat.apps.quality_control.utils import array_safe_divide
 
 if TYPE_CHECKING:
     from cvat.apps.quality_control.data_providers import JobDataProvider
@@ -866,18 +865,6 @@ class RequirementHandler(ABC):
         gt_ann_counts = np.sum(confusion_matrix, axis=0)
         total_annotations_count = np.sum(confusion_matrix)
 
-        label_jaccard_indices = array_safe_divide(
-            matched_ann_counts, ds_ann_counts + gt_ann_counts - matched_ann_counts
-        )
-        label_precisions = array_safe_divide(matched_ann_counts, ds_ann_counts)
-        label_recalls = array_safe_divide(matched_ann_counts, gt_ann_counts)
-        label_accuracies = (
-            total_annotations_count  # TP + TN + FP + FN
-            - (ds_ann_counts - matched_ann_counts)  # - FP
-            - (gt_ann_counts - matched_ann_counts)  # - FN
-            # ... = TP + TN
-        ) / (total_annotations_count or 1)
-
         valid_annotations_count = np.sum(matched_ann_counts)
         missing_annotations_count = np.sum(confusion_matrix[self._UNMATCHED_IDX, :])
         extra_annotations_count = np.sum(confusion_matrix[:, self._UNMATCHED_IDX])
@@ -894,10 +881,6 @@ class RequirementHandler(ABC):
             confusion_matrix=ConfusionMatrix(
                 labels=confusion_matrix_labels,
                 rows=confusion_matrix,
-                precision=label_precisions,
-                recall=label_recalls,
-                accuracy=label_accuracies,
-                jaccard_index=label_jaccard_indices,
             ),
         )
 
