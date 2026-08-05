@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 import textwrap
-from collections.abc import Mapping
+from collections.abc import Iterator, Mapping
 from enum import Enum
 from typing import Any
 
@@ -884,6 +884,249 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
         if self._should_touch_settings():
             self._touch_settings(instance.settings)
         return instance
+
+
+@extend_schema_field(
+    {
+        "type": "array",
+        "items": {
+            "$ref": "#/components/schemas/QualityRequirementBulkCreateNodeRequest",
+        },
+    }
+)
+class _QualityRequirementChildrenField(serializers.Field):
+    def to_internal_value(self, data: Any) -> list[dict[str, Any]]:
+        serializer = self.parent.__class__(
+            data=data,
+            many=True,
+            context=self.context,
+        )
+        serializer.is_valid(raise_exception=True)
+        return serializer.validated_data
+
+
+# NOTE @grigorii: This serializer validates the recursive request shape. Validation that
+# depends on the settings or implicit parent is repeated by QualityRequirementSerializer
+# while the hierarchy is created parent-first.
+class QualityRequirementBulkCreateNodeSerializer(QualityRequirementSerializer):
+    name = serializers.CharField(max_length=250)
+    children = _QualityRequirementChildrenField(
+        required=False,
+        help_text=(
+            "Nested requirements to create. Their parent is determined by their position "
+            "in the hierarchy."
+        ),
+    )
+
+    class Meta(QualityRequirementSerializer.Meta):
+        fields = (*QualityRequirementSerializer.Meta.fields, "children")
+
+    def get_fields(self) -> dict[str, serializers.Field]:
+        fields = super().get_fields()
+        for field_name in (
+            "id",
+            "settings_id",
+            "task_id",
+            "project_id",
+            "is_base",
+            "effective",
+            "created_date",
+            "updated_date",
+        ):
+            fields.pop(field_name, None)
+
+        fields["parent_requirement"].help_text = (
+            "Required for root requirements and forbidden for nested requirements. "
+            "Must identify an existing requirement from the selected quality settings."
+        )
+        return fields
+
+    def validate_filter(self, value: str) -> str:
+        return value
+
+    def to_internal_value(self, data: Any) -> dict[str, Any]:
+        validated_data = super().to_internal_value(data)
+        result = dict(data)
+        if "children" in validated_data:
+            result["children"] = validated_data["children"]
+
+        return result
+
+    def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
+        return attrs
+
+
+class QualityRequirementBulkCreateSerializer(serializers.Serializer):
+    settings_id = serializers.PrimaryKeyRelatedField(
+        source="settings",
+        queryset=models.QualitySettings.objects.all(),
+    )
+    requirements = QualityRequirementBulkCreateNodeSerializer(many=True, allow_empty=False)
+
+    @staticmethod
+    def _iter_nodes(
+        requirements: list[dict[str, Any]],
+        *,
+        collection_name: str = "requirements",
+        parent_path: tuple[tuple[str, int], ...] = (),
+    ) -> Iterator[tuple[tuple[tuple[str, int], ...], dict[str, Any]]]:
+        for index, requirement in enumerate(requirements):
+            path = (*parent_path, (collection_name, index))
+            yield path, requirement
+            yield from QualityRequirementBulkCreateSerializer._iter_nodes(
+                requirement.get("children", []),
+                collection_name="children",
+                parent_path=path,
+            )
+
+    @staticmethod
+    def _make_path_error(path: tuple[tuple[str, int], ...], detail: Any) -> dict[str, Any]:
+        result = detail
+        for collection_name, index in reversed(path):
+            result = {collection_name: {index: result}}
+
+        return result
+
+    def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
+        attrs = super().validate(attrs)
+        quality_settings = attrs["settings"]
+        requirements = attrs["requirements"]
+        nodes = list(self._iter_nodes(requirements))
+
+        if (
+            quality_settings.requirements.count() + len(nodes)
+            > QualityRequirementSerializer._get_requirement_limit()
+        ):
+            raise serializers.ValidationError(
+                {"requirements": QualityRequirementSerializer.get_requirement_limit_error_message()}
+            )
+
+        seen_names: set[str] = set()
+        paths_by_name: dict[str, tuple[tuple[str, int], ...]] = {}
+        for path, requirement in nodes:
+            name = requirement.get("name")
+            if not name:
+                continue
+            if name in seen_names:
+                raise serializers.ValidationError(
+                    self._make_path_error(path, {"name": "Requirement names must be unique."})
+                )
+
+            seen_names.add(name)
+            paths_by_name[name] = path
+
+        if (
+            existing_name := quality_settings.requirements.filter(name__in=seen_names)
+            .values_list("name", flat=True)
+            .first()
+        ):
+            raise serializers.ValidationError(
+                self._make_path_error(
+                    paths_by_name[existing_name],
+                    {"name": "Requirement with this name already exists in the selected settings."},
+                )
+            )
+
+        root_parent_ids: dict[int, tuple[tuple[str, int], ...]] = {}
+        for index, requirement in enumerate(requirements):
+            path = (("requirements", index),)
+            parent_id = requirement.get("parent_requirement")
+            if parent_id is None:
+                raise serializers.ValidationError(
+                    self._make_path_error(
+                        path,
+                        {"parent_requirement": "This field is required for root requirements."},
+                    )
+                )
+
+            root_parent_ids[int(parent_id)] = path
+
+        available_parent_ids = set(
+            quality_settings.requirements.filter(id__in=root_parent_ids).values_list(
+                "id", flat=True
+            )
+        )
+        if missing_parent_id := next(
+            (parent_id for parent_id in root_parent_ids if parent_id not in available_parent_ids),
+            None,
+        ):
+            raise serializers.ValidationError(
+                self._make_path_error(
+                    root_parent_ids[missing_parent_id],
+                    {
+                        "parent_requirement": (
+                            "Parent requirement must belong to the selected quality settings."
+                        )
+                    },
+                )
+            )
+
+        for path, requirement in nodes:
+            if len(path) > 1 and "parent_requirement" in requirement:
+                raise serializers.ValidationError(
+                    self._make_path_error(
+                        path,
+                        {
+                            "parent_requirement": (
+                                "Nested requirements inherit their parent from the hierarchy."
+                            )
+                        },
+                    )
+                )
+
+        return attrs
+
+    def create(self, validated_data: dict[str, Any]) -> list[models.QualityRequirement]:
+        quality_settings = validated_data["settings"]
+        requirements = validated_data["requirements"]
+        created_requirements: list[models.QualityRequirement] = []
+        serializer_context = {
+            **self.context,
+            "touch_settings": False,
+            "skip_requirement_limit_validation": True,
+        }
+
+        def create_node(
+            requirement: dict[str, Any],
+            *,
+            parent_id: int,
+            path: tuple[tuple[str, int], ...],
+        ) -> None:
+            requirement_data = dict(requirement)
+            children = requirement_data.pop("children", [])
+            requirement_data.update(
+                settings_id=quality_settings.id,
+                parent_requirement=parent_id,
+            )
+            serializer = QualityRequirementSerializer(
+                data=requirement_data,
+                context=serializer_context,
+            )
+            try:
+                serializer.is_valid(raise_exception=True)
+                instance = serializer.save()
+            except serializers.ValidationError as exc:
+                raise serializers.ValidationError(self._make_path_error(path, exc.detail)) from exc
+
+            created_requirements.append(instance)
+            for index, child in enumerate(children):
+                create_node(
+                    child,
+                    parent_id=instance.id,
+                    path=(*path, ("children", index)),
+                )
+
+        with transaction.atomic():
+            for index, requirement in enumerate(requirements):
+                create_node(
+                    requirement,
+                    parent_id=int(requirement["parent_requirement"]),
+                    path=(("requirements", index),),
+                )
+
+            quality_settings.save()
+
+        return created_requirements
 
 
 class QualityRequirementListItemSerializer(QualityRequirementSerializer):

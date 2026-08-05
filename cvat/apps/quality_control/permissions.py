@@ -458,6 +458,7 @@ class QualityRequirementPermission(OpenPolicyAgentPermission):
             {
                 "list": cls.Scopes.LIST,
                 "create": cls.Scopes.CREATE,
+                "bulk_create": cls.Scopes.CREATE,
                 "retrieve": cls.Scopes.VIEW,
                 "update": cls.Scopes.UPDATE,
                 "partial_update": cls.Scopes.UPDATE,

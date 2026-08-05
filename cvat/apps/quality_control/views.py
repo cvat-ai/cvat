@@ -54,6 +54,7 @@ from cvat.apps.quality_control.serializers import (
     QualityReportCreateSerializer,
     QualityReportListQuerySerializer,
     QualityReportSerializer,
+    QualityRequirementBulkCreateSerializer,
     QualityRequirementListItemSerializer,
     QualityRequirementSerializer,
     QualitySettingsParentType,
@@ -845,6 +846,30 @@ class QualityRequirementViewSet(
             )
 
         return queryset
+
+    @extend_schema(
+        summary="Create a hierarchy of quality requirements",
+        request=QualityRequirementBulkCreateSerializer,
+        responses={"201": QualityRequirementSerializer(many=True)},
+    )
+    @action(
+        detail=False,
+        methods=["POST"],
+        url_path="bulk",
+        serializer_class=QualityRequirementBulkCreateSerializer,
+        pagination_class=None,
+        filter_backends=[],
+    )
+    def bulk_create(self, request: ExtendedRequest) -> Response:
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        requirements = serializer.save()
+        response_serializer = QualityRequirementSerializer(
+            requirements,
+            many=True,
+            context=self.get_serializer_context(),
+        )
+        return Response(response_serializer.data, status=status.HTTP_201_CREATED)
 
     def perform_destroy(self, instance):
         if instance.is_base:

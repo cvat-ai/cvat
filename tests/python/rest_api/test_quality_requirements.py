@@ -192,6 +192,10 @@ class _QualityRequirementsTestBase(_PermissionTestBase):
         response = post_method(user, self._requirements_endpoint, data, **kwargs)
         return response.json() if response.content else None, response
 
+    def _bulk_create_requirements(self, user: str, data: dict[str, Any], **kwargs):
+        response = post_method(user, f"{self._requirements_endpoint}/bulk", data, **kwargs)
+        return response.json() if response.content else None, response
+
     def _retrieve_requirement(self, user: str, requirement_id: int, **kwargs):
         response = get_method(user, f"{self._requirements_endpoint}/{requirement_id}", **kwargs)
         return response.json() if response.content else None, response
@@ -436,6 +440,247 @@ class _QualityRequirementsTestBase(_PermissionTestBase):
 
 @pytest.mark.usefixtures("restore_db_per_function")
 class TestQualityRequirementsApi(_QualityRequirementsTestBase):
+    def test_can_bulk_create_requirement_hierarchy(self, admin_user, find_sandbox_task_without_gt):
+        task, _ = find_sandbox_task_without_gt(True)
+        settings = self._get_task_settings(admin_user, task_id=task["id"])
+        base_requirement = next(
+            requirement
+            for requirement in settings["requirements"]
+            if requirement["annotation_type"] == "rectangle"
+        )
+        root_name = f"bulk-root-{task['id']}"
+        child_name = f"bulk-child-{task['id']}"
+        grandchild_name = f"bulk-grandchild-{task['id']}"
+        sibling_name = f"bulk-sibling-{task['id']}"
+        second_root_name = f"bulk-second-root-{task['id']}"
+
+        created_requirements, response = self._bulk_create_requirements(
+            admin_user,
+            {
+                "settings_id": settings["id"],
+                "requirements": [
+                    {
+                        "name": root_name,
+                        "parent_requirement": base_requirement["id"],
+                        "children": [
+                            {
+                                "name": child_name,
+                                "children": [{"name": grandchild_name}],
+                            },
+                            {"name": sibling_name},
+                        ],
+                    },
+                    {
+                        "name": second_root_name,
+                        "parent_requirement": base_requirement["id"],
+                    },
+                ],
+            },
+        )
+
+        assert response.status_code == HTTPStatus.CREATED
+        assert [requirement["name"] for requirement in created_requirements] == [
+            root_name,
+            child_name,
+            grandchild_name,
+            sibling_name,
+            second_root_name,
+        ]
+        root, child, grandchild, sibling, second_root = created_requirements
+        assert root["parent_requirement"] == base_requirement["id"]
+        assert child["parent_requirement"] == root["id"]
+        assert grandchild["parent_requirement"] == child["id"]
+        assert sibling["parent_requirement"] == root["id"]
+        assert second_root["parent_requirement"] == base_requirement["id"]
+        assert all(
+            requirement["settings_id"] == settings["id"] for requirement in created_requirements
+        )
+        assert all(
+            requirement["effective"]["annotation_type"] == "rectangle"
+            for requirement in created_requirements
+        )
+
+    def test_bulk_create_rolls_back_hierarchy_if_descendant_is_invalid(
+        self, admin_user, find_sandbox_task_without_gt
+    ):
+        task, _ = find_sandbox_task_without_gt(True)
+        settings = self._get_task_settings(admin_user, task_id=task["id"])
+        base_requirement = next(
+            requirement
+            for requirement in settings["requirements"]
+            if requirement["annotation_type"] == "rectangle"
+        )
+        root_name = f"bulk-rollback-root-{task['id']}"
+        child_name = f"bulk-rollback-child-{task['id']}"
+
+        _, response = self._bulk_create_requirements(
+            admin_user,
+            {
+                "settings_id": settings["id"],
+                "requirements": [
+                    {
+                        "name": root_name,
+                        "parent_requirement": base_requirement["id"],
+                        "children": [
+                            {
+                                "name": child_name,
+                                "annotation_type": "skeleton",
+                            }
+                        ],
+                    }
+                ],
+            },
+        )
+
+        assert response.status_code == HTTPStatus.BAD_REQUEST
+        assert "annotation_type" in json.dumps(response.json())
+        listed_requirements, response = self._list_requirements(
+            admin_user, settings_id=settings["id"]
+        )
+        assert response.status_code == HTTPStatus.OK
+        assert not {root_name, child_name} & {
+            requirement["name"] for requirement in listed_requirements
+        }
+
+    def test_bulk_create_rejects_parent_from_other_settings(
+        self,
+        admin_user,
+        find_sandbox_task_without_gt,
+        find_sandbox_project_without_validation,
+    ):
+        task, _ = find_sandbox_task_without_gt(True)
+        task_settings = self._get_task_settings(admin_user, task_id=task["id"])
+        project, _ = find_sandbox_project_without_validation(True)
+        project_settings = self._get_project_settings(admin_user, project_id=project["id"])
+        foreign_parent = project_settings["requirements"][0]
+
+        _, response = self._bulk_create_requirements(
+            admin_user,
+            {
+                "settings_id": task_settings["id"],
+                "requirements": [
+                    {
+                        "name": f"bulk-foreign-parent-{task['id']}",
+                        "parent_requirement": foreign_parent["id"],
+                    }
+                ],
+            },
+        )
+
+        assert response.status_code == HTTPStatus.BAD_REQUEST
+        assert "selected quality settings" in json.dumps(response.json())
+
+    def test_bulk_create_rejects_explicit_parent_for_nested_requirement(
+        self, admin_user, find_sandbox_task_without_gt
+    ):
+        task, _ = find_sandbox_task_without_gt(True)
+        settings = self._get_task_settings(admin_user, task_id=task["id"])
+        base_requirement = settings["requirements"][0]
+
+        _, response = self._bulk_create_requirements(
+            admin_user,
+            {
+                "settings_id": settings["id"],
+                "requirements": [
+                    {
+                        "name": f"bulk-explicit-parent-root-{task['id']}",
+                        "parent_requirement": base_requirement["id"],
+                        "children": [
+                            {
+                                "name": f"bulk-explicit-parent-child-{task['id']}",
+                                "parent_requirement": base_requirement["id"],
+                            }
+                        ],
+                    }
+                ],
+            },
+        )
+
+        assert response.status_code == HTTPStatus.BAD_REQUEST
+        assert "inherit their parent from the hierarchy" in json.dumps(response.json())
+
+    def test_bulk_create_rejects_invalid_hierarchy_structure(
+        self, admin_user, find_sandbox_task_without_gt
+    ):
+        task, _ = find_sandbox_task_without_gt(True)
+        settings = self._get_task_settings(admin_user, task_id=task["id"])
+        base_requirement = settings["requirements"][0]
+        duplicate_name = f"bulk-duplicate-{task['id']}"
+        cases = [
+            ([], "empty"),
+            ([{"parent_requirement": base_requirement["id"]}], "name"),
+            ([{"name": f"bulk-missing-parent-{task['id']}"}], "root requirements"),
+            (
+                [
+                    {
+                        "name": duplicate_name,
+                        "parent_requirement": base_requirement["id"],
+                    },
+                    {
+                        "name": duplicate_name,
+                        "parent_requirement": base_requirement["id"],
+                    },
+                ],
+                "names must be unique",
+            ),
+            (
+                [
+                    {
+                        "name": base_requirement["name"],
+                        "parent_requirement": base_requirement["id"],
+                    }
+                ],
+                "already exists",
+            ),
+            (
+                [
+                    {
+                        "name": f"bulk-unknown-field-{task['id']}",
+                        "parent_requirement": base_requirement["id"],
+                        "unknown": True,
+                    }
+                ],
+                "unknown",
+            ),
+        ]
+
+        for requirements, error_text in cases:
+            _, response = self._bulk_create_requirements(
+                admin_user,
+                {
+                    "settings_id": settings["id"],
+                    "requirements": requirements,
+                },
+            )
+
+            assert response.status_code == HTTPStatus.BAD_REQUEST
+            assert error_text in json.dumps(response.json()).lower()
+
+    def test_bulk_create_rejects_payload_above_requirement_limit(
+        self, admin_user, find_sandbox_task_without_gt
+    ):
+        task, _ = find_sandbox_task_without_gt(True)
+        settings = self._get_task_settings(admin_user, task_id=task["id"])
+        base_requirement = settings["requirements"][0]
+        available_count = self._max_requirements_per_settings - len(settings["requirements"])
+
+        _, response = self._bulk_create_requirements(
+            admin_user,
+            {
+                "settings_id": settings["id"],
+                "requirements": [
+                    {
+                        "name": f"bulk-limit-{task['id']}-{index}",
+                        "parent_requirement": base_requirement["id"],
+                    }
+                    for index in range(available_count + 1)
+                ],
+            },
+        )
+
+        assert response.status_code == HTTPStatus.BAD_REQUEST
+        assert self._get_requirement_limit_error_message() in json.dumps(response.json())
+
     def test_can_crud_quality_requirements_for_task_settings(
         self, admin_user, find_sandbox_task_without_gt
     ):
@@ -1396,6 +1641,29 @@ class TestQualityRequirementsApi(_QualityRequirementsTestBase):
         )
 
         _, response = self._create_requirement(user["username"], payload)
+        assert response.status_code == (HTTPStatus.CREATED if allow else HTTPStatus.FORBIDDEN)
+
+    @pytest.mark.parametrize(*_PermissionTestBase._default_sandbox_cases)
+    def test_user_bulk_create_requirements_in_sandbox(
+        self, admin_user, find_sandbox_task_without_gt, is_staff, allow
+    ):
+        task, user = find_sandbox_task_without_gt(is_staff)
+        settings = self._get_task_settings(admin_user, task_id=task["id"])
+        base_requirement = settings["requirements"][0]
+
+        _, response = self._bulk_create_requirements(
+            user["username"],
+            {
+                "settings_id": settings["id"],
+                "requirements": [
+                    {
+                        "name": f"bulk-permission-{task['id']}-{user['id']}",
+                        "parent_requirement": base_requirement["id"],
+                    }
+                ],
+            },
+        )
+
         assert response.status_code == (HTTPStatus.CREATED if allow else HTTPStatus.FORBIDDEN)
 
 
