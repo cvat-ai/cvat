@@ -267,11 +267,6 @@ jobs:
           docker exec -i cvat_server /bin/bash -c "echo \"from django.contrib.auth.models import User; User.objects.create_superuser('${DJANGO_SU_NAME}', '${DJANGO_SU_EMAIL}', '${DJANGO_SU_PASSWORD}')\" | python3 ~/manage.py shell"
 
       - name: Run tests
-        env:
-          AUDIO_SPECS: >-
-                cypress/e2e/setup/setup_audio.js,
-                cypress/e2e/audio_workspace/**/*.js,
-                cypress/e2e/remove_users_tasks_projects_organizations.js
         run: |
           cd ./tests
           corepack enable yarn
@@ -292,8 +287,11 @@ jobs:
               ;;
           esac
 
-          yarn cypress run --headless --browser chrome --env coverage=false --spec "${CYPRESS_SETUP_SPECS}" # if fail, further behavior is unpredictable
-          CYPRESS_SPECS="cypress/e2e/${{ matrix.specs }}/**/*.js,cypress/e2e/remove_users_tasks_projects_organizations.js"
+          echo "CYPRESS_SETUP_SPECS=$CYPRESS_SETUP_SPECS"
+          yarn cypress run --headless --browser chrome --env coverage=false --spec "$CYPRESS_SETUP_SPECS" # if fail, further behavior is unpredictable
+
+          echo "CYPRESS_SPECS=$CYPRESS_SPECS"
+          echo "CYPRESS_ARGS=${CYPRESS_ARGS[*]}"
           yarn cypress run "${CYPRESS_ARGS[@]}" --spec "$CYPRESS_SPECS"
 
       - name: Creating a log file from "cvat" container logs
