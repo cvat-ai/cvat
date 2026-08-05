@@ -290,11 +290,11 @@ jobs:
           CYPRESS_SPECS="cypress/e2e/${{ matrix.specs }}/**/*.js,cypress/e2e/remove_users_tasks_projects_organizations.js"
 
           echo "CYPRESS_SETUP_SPECS=$CYPRESS_SETUP_SPECS"
-          yarn cypress run --headless --browser chrome --env coverage=false --spec "$CYPRESS_SETUP_SPECS" # if fail, further behavior is unpredictable
-
           echo "CYPRESS_SPECS=$CYPRESS_SPECS"
           echo "CYPRESS_ARGS=${CYPRESS_ARGS[*]}"
-          yarn cypress run "${CYPRESS_ARGS[@]}" --spec "$CYPRESS_SPECS"
+
+          yarn cypress run --headless --browser chrome --env coverage=false --spec "$CYPRESS_SETUP_SPECS" # if fail, further behavior is unpredictable
+          yarn cypress run "${CYPRESS_ARGS[@]}" --spec "${CYPRESS_SETUP_SPECS},${CYPRESS_SPECS}"
 
       - name: Creating a log file from "cvat" container logs
         if: failure()
