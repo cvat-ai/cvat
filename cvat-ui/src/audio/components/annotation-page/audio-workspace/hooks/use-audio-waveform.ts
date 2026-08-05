@@ -138,6 +138,8 @@ function useWaveSurferRuntime({
         const wsInstance = WaveSurfer.create({
             container,
             backend: 'WebAudio',
+            autoScroll: true,
+            autoCenter: false,
             peaks,
             duration,
             height: 140,
