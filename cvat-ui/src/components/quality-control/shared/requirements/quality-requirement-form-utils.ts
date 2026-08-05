@@ -730,11 +730,19 @@ export function serializeRequirementValues(
             continue;
         }
 
+        const value = descriptor.getValue(values, isRootRequirement);
+        if (isRootRequirement) {
+            if (value !== null) {
+                Object.assign(fields, { [descriptor.fieldName]: value });
+            }
+            continue;
+        }
+
         setResettableFieldValue(
             fields,
             resetFields,
             descriptor.fieldName,
-            descriptor.getValue(values, isRootRequirement),
+            value,
         );
     }
 

@@ -121,8 +121,26 @@ export function formatThreshold(value: number | null): string {
     return typeof value === 'number' ? `${Math.round(value * 100)}%` : 'N/A';
 }
 
+const ROOT_REQUIREMENT_INHERITED_FIELDS = new Set([
+    'annotation_type',
+    'metric',
+    'required_score',
+    'iou_threshold',
+    'point_size',
+    'point_size_base',
+    'line_thickness',
+    'match_orientation',
+    'line_orientation_threshold',
+    'match_groups',
+    'group_match_threshold',
+    'check_covered_annotations',
+    'object_visibility_threshold',
+    'panoptic_comparison',
+    'empty_is_annotated',
+]);
+
 export function requirementToSaveFields(requirement: QualityRequirement): SerializedQualityRequirementSaveData {
-    return {
+    const fields: SerializedQualityRequirementSaveData = {
         settings_id: requirement.settingsId,
         name: requirement.name,
         sort_order: requirement.sortOrder,
@@ -146,4 +164,15 @@ export function requirementToSaveFields(requirement: QualityRequirement): Serial
         attribute_comparison: requirement.attributeComparison,
         empty_is_annotated: requirement.emptyIsAnnotated,
     };
+
+    if (requirement.isBase) {
+        const mutableFields = fields as Record<string, unknown>;
+        for (const fieldName of ROOT_REQUIREMENT_INHERITED_FIELDS) {
+            if (mutableFields[fieldName] === null) {
+                delete mutableFields[fieldName];
+            }
+        }
+    }
+
+    return fields;
 }

@@ -180,16 +180,6 @@ export default function QualitySettingsForm(props: Readonly<Props>): JSX.Element
                 </Col>
             </Row>
             <Divider />
-            <Row className='cvat-quality-settings-title'>
-                <Text strong>
-                    Requirements
-                </Text>
-                <CVATTooltip title='Configure quality requirements used by reports' className='cvat-settings-tooltip'>
-                    <QuestionCircleOutlined
-                        className='cvat-quality-settings-tooltip-icon'
-                    />
-                </CVATTooltip>
-            </Row>
             <QualityRequirementsConstructor
                 form={form}
                 settings={settings}

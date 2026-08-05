@@ -302,4 +302,17 @@ context('Quality requirements UI', () => {
         requirementRow(childRequirementName).should('be.visible');
         requirementRow(grandchildRequirementName).should('be.visible');
     });
+
+    it('Renames a base requirement without sending empty inherited fields', () => {
+        openSettingsTab();
+
+        clickRowAction(defaultRectangleRequirementName, 'edit');
+        cy.get('.cvat-quality-requirement-form').should('be.visible');
+        setFormName('Base rectangle renamed');
+        submitForm();
+
+        expectNotification('Requirement has been updated');
+        cy.get('.cvat-quality-requirements-configuration-table').should('be.visible');
+        requirementRow('Base rectangle renamed').should('be.visible');
+    });
 });

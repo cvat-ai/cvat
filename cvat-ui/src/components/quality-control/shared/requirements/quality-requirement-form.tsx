@@ -364,9 +364,11 @@ export default function QualityRequirementForm(props: Readonly<QualityRequiremen
     ): JSX.Element => {
         const tooltip = getTooltipDescription(description);
         return (
-            <Form.Item name={name} valuePropName='checked'>
+            <Form.Item>
                 <Space size={4}>
-                    <Checkbox>{renderOverrideControl(name, label)}</Checkbox>
+                    <Form.Item name={name} valuePropName='checked' noStyle>
+                        <Checkbox>{renderOverrideControl(name, label)}</Checkbox>
+                    </Form.Item>
                     {tooltip && (
                         <CVATTooltip title={tooltip}>
                             <QuestionCircleOutlined className='cvat-quality-requirement-checkbox-tooltip' />
@@ -512,11 +514,6 @@ export default function QualityRequirementForm(props: Readonly<QualityRequiremen
                     </Col>
                     <Col span={12}>
                         {renderCheckbox('matchGroups', 'Match groups', requirementDescriptions.matchGroups)}
-                    </Col>
-                    <Col span={12}>
-                        {renderCheckbox(
-                            'emptyIsAnnotated', 'Empty frames are annotated', requirementDescriptions.emptyIsAnnotated,
-                        )}
                     </Col>
                 </Row>
             </>
@@ -669,6 +666,11 @@ export default function QualityRequirementForm(props: Readonly<QualityRequiremen
                     <Form.Item name='enabled' valuePropName='checked'>
                         <Checkbox>Enabled</Checkbox>
                     </Form.Item>
+                </Col>
+                <Col span={12}>
+                    {renderCheckbox(
+                        'emptyIsAnnotated', 'Empty frames are annotated', requirementDescriptions.emptyIsAnnotated,
+                    )}
                 </Col>
             </Row>
             {renderShapeComparison()}
