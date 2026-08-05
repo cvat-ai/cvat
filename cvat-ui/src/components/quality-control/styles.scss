@@ -365,6 +365,10 @@ $excluded-background: #d9d9d973;
 
 .cvat-quality-control-page-tabs {
     @include cvat-management-page-tabs;
+
+    &:has(.ant-tabs-tabpane-active .cvat-quality-control-management-tab) {
+        overflow: visible;
+    }
 }
 
 .cvat-quality-control-management-tab-summary {
@@ -374,6 +378,10 @@ $excluded-background: #d9d9d973;
     > .ant-col {
         padding: 0 $grid-unit-size;
     }
+}
+
+.cvat-quality-control-validation-mode-hint {
+    margin-bottom: $grid-unit-size * 2;
 }
 
 .cvat-quality-control-gt-job {

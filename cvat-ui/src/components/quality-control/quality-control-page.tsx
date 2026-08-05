@@ -25,7 +25,6 @@ import ResourceLink from 'components/common/resource-link';
 import { CombinedState, InstanceType } from 'reducers';
 import { updateJobAsync } from 'actions/jobs-actions';
 import { ActionUnion, createAction } from 'utils/redux';
-import { getTabFromHash } from 'utils/location-utils';
 import { useInstanceId, useInstanceType, usePlugins } from 'utils/hooks';
 import QualityRequirementsTab from './quality-requirements-tab';
 import QualityManagementTab from './task-quality/quality-magement-tab';
@@ -193,6 +192,12 @@ const reducer = (state: State, action: ActionUnion<typeof reducerActions>): Stat
 };
 
 const supportedTabs = ['requirements', 'jobs', 'tasks', 'management', 'settings'];
+
+function getQualityTabFromHash(): string {
+    const [tab] = window.location.hash.slice(1).split('?');
+    return supportedTabs.includes(tab) ? tab : supportedTabs[0];
+}
+
 function QualityControlPage(): JSX.Element {
     const reduxDispatch = useDispatch();
     const [state, dispatch] = useReducer(reducer, {
@@ -212,7 +217,7 @@ function QualityControlPage(): JSX.Element {
         },
     });
 
-    const [activeTab, setActiveTab] = useState(getTabFromHash(supportedTabs));
+    const [activeTab, setActiveTab] = useState(getQualityTabFromHash);
 
     const requestedInstanceType: InstanceType = useInstanceType();
     const requestedInstanceID = useInstanceId(requestedInstanceType);
@@ -304,7 +309,7 @@ function QualityControlPage(): JSX.Element {
         try {
             const receivedInstance = await receiveInstance(requestedInstanceType, requestedInstanceID);
             await receiveSettings(requestedInstanceType, requestedInstanceID, receivedInstance);
-            setActiveTab(getTabFromHash(supportedTabs));
+            setActiveTab(getQualityTabFromHash());
         } catch (error: unknown) {
             dispatch(reducerActions.setError(error instanceof Error ? error : new Error('Unknown error')));
         } finally {
@@ -410,13 +415,15 @@ function QualityControlPage(): JSX.Element {
     }, [requestedInstanceType, requestedInstanceID]);
 
     useEffect(() => {
-        const onHashChange = (): void => setActiveTab(getTabFromHash(supportedTabs));
+        const onHashChange = (): void => setActiveTab(getQualityTabFromHash());
         window.addEventListener('hashchange', onHashChange);
         return () => window.removeEventListener('hashchange', onHashChange);
     }, []);
 
     useEffect(() => {
-        window.history.replaceState(null, '', `#${activeTab}`);
+        const [tab, query] = window.location.hash.slice(1).split('?');
+        const hash = activeTab === tab && query ? `${activeTab}?${query}` : activeTab;
+        window.history.replaceState(null, '', `#${hash}`);
     }, [activeTab]);
 
     const onTabKeyChange = useCallback((key: string): void => {
