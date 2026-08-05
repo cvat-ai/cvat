@@ -329,29 +329,7 @@ def serialize_requirement_parameters(requirement: Any) -> dict[str, Any]:
 def merge_annotations_summary(
     target: ComparisonReportAnnotationsSummary, other: ComparisonReportAnnotationsSummary
 ) -> None:
-    for field in (
-        "valid_count",
-        "missing_count",
-        "extra_count",
-        "total_count",
-        "ds_count",
-        "gt_count",
-    ):
-        setattr(target, field, getattr(target, field) + getattr(other, field))
-
-    if target.confusion_matrix is None:
-        target.confusion_matrix = (
-            deepcopy(other.confusion_matrix) if other.confusion_matrix else None
-        )
-    elif (
-        other.confusion_matrix
-        and target.confusion_matrix.labels
-        and other.confusion_matrix.labels
-        and target.confusion_matrix.labels == other.confusion_matrix.labels
-    ):
-        target.confusion_matrix.accumulate(other.confusion_matrix)
-    elif other.confusion_matrix and other.confusion_matrix.labels:
-        target.confusion_matrix = None
+    target.accumulate(other)
 
 
 def merge_frame_summaries(
@@ -1272,20 +1250,6 @@ class DatasetQualityEstimator:
         self._results: dict[str, dict[int, ComparisonReportFrameComparisonSummary]] = {}
         self._calculations: dict[str, ComparisonReportRequirementCalculation] = {}
 
-    @staticmethod
-    def _merge_annotations_summary(
-        target: ComparisonReportAnnotationsSummary, other: ComparisonReportAnnotationsSummary
-    ) -> None:
-        merge_annotations_summary(target, other)
-
-    @classmethod
-    def _merge_frame_summaries(
-        cls,
-        target: ComparisonReportFrameComparisonSummary,
-        other: ComparisonReportFrameComparisonSummary,
-    ) -> None:
-        merge_frame_summaries(target, other)
-
     def _dm_item_to_frame_id(self, item: dm.DatasetItem, dataset: dm.Dataset) -> int:
         if dataset is self._ds_dataset:
             source_data_provider = self._ds_data_provider
@@ -1308,50 +1272,6 @@ class DatasetQualityEstimator:
 
     def _get_total_frames(self) -> int:
         return len(self._ds_data_provider.job_data)
-
-    def _compute_summary_from_confusion_matrix(
-        self, confusion_matrix: np.ndarray, confusion_matrix_labels: list[str]
-    ) -> ComparisonReportAnnotationsSummary:
-        unmatched_idx = -1
-
-        matched_ann_counts = np.diag(confusion_matrix)
-        ds_ann_counts = np.sum(confusion_matrix, axis=1)
-        gt_ann_counts = np.sum(confusion_matrix, axis=0)
-        total_annotations_count = np.sum(confusion_matrix)
-
-        label_jaccard_indices = array_safe_divide(
-            matched_ann_counts, ds_ann_counts + gt_ann_counts - matched_ann_counts
-        )
-        label_precisions = array_safe_divide(matched_ann_counts, ds_ann_counts)
-        label_recalls = array_safe_divide(matched_ann_counts, gt_ann_counts)
-        label_accuracies = (
-            total_annotations_count
-            - (ds_ann_counts - matched_ann_counts)
-            - (gt_ann_counts - matched_ann_counts)
-        ) / (total_annotations_count or 1)
-
-        valid_annotations_count = np.sum(matched_ann_counts)
-        missing_annotations_count = np.sum(confusion_matrix[unmatched_idx, :])
-        extra_annotations_count = np.sum(confusion_matrix[:, unmatched_idx])
-        ds_annotations_count = np.sum(ds_ann_counts[:unmatched_idx])
-        gt_annotations_count = np.sum(gt_ann_counts[:unmatched_idx])
-
-        return ComparisonReportAnnotationsSummary(
-            valid_count=valid_annotations_count,
-            missing_count=missing_annotations_count,
-            extra_count=extra_annotations_count,
-            total_count=total_annotations_count,
-            ds_count=ds_annotations_count,
-            gt_count=gt_annotations_count,
-            confusion_matrix=ConfusionMatrix(
-                labels=confusion_matrix_labels,
-                rows=confusion_matrix,
-                precision=label_precisions,
-                recall=label_recalls,
-                accuracy=label_accuracies,
-                jaccard_index=label_jaccard_indices,
-            ),
-        )
 
     def _compare_datasets(self):
         ds_job_dataset = self._ds_dataset

@@ -187,7 +187,7 @@ class TaskQualityCalculator:
                     assignee_id=job.assignee_id,
                     assignee_last_updated=job.assignee_updated_date,
                     data=job_comparison_report.to_json(),
-                    conflicts=[c.to_dict() for c in job_comparison_report.conflicts],
+                    conflicts=[c.to_dict() for c in job_comparison_report.get_conflicts()],
                 )
 
                 job_quality_reports[job.id] = job_report
@@ -264,7 +264,7 @@ class TaskQualityCalculator:
             task_validated_frames.update(r.comparison_summary.frames)
             task_validation_frames_count += r.comparison_summary.validation_frames
             task_total_frames += r.comparison_summary.total_frames
-            task_conflicts.extend(r.conflicts)
+            task_conflicts.extend(r.get_conflicts())
 
             for group_name, group_report in (r.groups or {}).items():
                 task_group_parameters.setdefault(group_name, deepcopy(group_report.parameters))
@@ -611,7 +611,7 @@ class ProjectQualityCalculator:
             total_frames += r.comparison_summary.total_frames
             total_validated_frames += r.comparison_summary.validation_frames
 
-            project_conflicts.extend(r.conflicts)
+            project_conflicts.extend(r.get_conflicts())
 
             for group_name, group_report in (r.groups or {}).items():
                 project_group_parameters.setdefault(group_name, deepcopy(group_report.parameters))

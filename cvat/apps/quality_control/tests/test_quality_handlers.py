@@ -6,18 +6,147 @@ from __future__ import annotations
 
 import unittest
 
+import numpy as np
+
 from cvat.apps.quality_control import models
 from cvat.apps.quality_control.comparison_report import (
+    AnnotationConflict,
+    ComparisonReport,
     ComparisonReportAnnotationsSummary,
+    ComparisonReportFrameComparisonSummary,
+    ComparisonReportParameters,
     ComparisonReportRequirementCalculation,
     ComparisonReportRequirementCalculationSide,
+    ComparisonReportRequirementComparisonSummary,
+    ComparisonReportRequirementsSummary,
+    ComparisonReportRequirementSummary,
+    ComparisonReportScoreComponents,
+    ComparisonReportSummary,
+    ConfusionMatrix,
 )
 from cvat.apps.quality_control.quality_handlers import (
     build_requirement_comparison_summary,
     build_requirement_report,
     build_requirements_summary,
+    merge_annotations_summary,
     select_requirement_calculation,
 )
+
+
+class TestComparisonReportAccumulation(unittest.TestCase):
+    def test_confusion_matrix_accumulate_resets_cached_metrics(self) -> None:
+        target = ConfusionMatrix(
+            labels=["car", "unmatched"],
+            rows=np.asarray([[1, 0], [0, 0]]),
+        )
+        other = ConfusionMatrix(
+            labels=["car", "unmatched"],
+            rows=np.asarray([[0, 1], [0, 0]]),
+        )
+
+        np.testing.assert_allclose(target.precision, [1, 0])
+        np.testing.assert_allclose(target.recall, [1, 0])
+        np.testing.assert_allclose(target.accuracy, [1, 1])
+        np.testing.assert_allclose(target.jaccard_index, [1, 0])
+
+        target.accumulate(other)
+
+        np.testing.assert_array_equal(target.rows, [[1, 1], [0, 0]])
+        np.testing.assert_allclose(target.precision, [0.5, 0])
+        np.testing.assert_allclose(target.recall, [1, 0])
+        np.testing.assert_allclose(target.accuracy, [0.5, 0.5])
+        np.testing.assert_allclose(target.jaccard_index, [0.5, 0])
+
+    def test_merge_annotations_summary_accumulates_confusion_matrix(self) -> None:
+        target = ComparisonReportAnnotationsSummary.create_empty()
+        other_matrix = ConfusionMatrix(
+            labels=["car", "unmatched"],
+            rows=np.asarray([[1, 1], [1, 0]]),
+        )
+        other = ComparisonReportAnnotationsSummary.from_confusion_matrix(other_matrix)
+
+        merge_annotations_summary(target, other)
+
+        self.assertEqual(target.valid_count, 1)
+        self.assertEqual(target.missing_count, 1)
+        self.assertEqual(target.extra_count, 1)
+        self.assertEqual(target.total_count, 3)
+        self.assertEqual(target.ds_count, 2)
+        self.assertEqual(target.gt_count, 2)
+        target_matrix = target.confusion_matrix
+        self.assertIsNotNone(target_matrix)
+        assert target_matrix is not None
+        np.testing.assert_array_equal(target_matrix.rows, other_matrix.rows)
+
+    def test_comparison_report_does_not_serialize_root_conflicts(self) -> None:
+        conflict = AnnotationConflict(
+            frame_id=0,
+            type=models.AnnotationConflictType.EXTRA_ANNOTATION,
+            annotation_ids=[],
+        )
+        report = ComparisonReport(
+            parameters=ComparisonReportParameters(inherited=False, job_filter=""),
+            comparison_summary=ComparisonReportSummary(
+                frames=[0],
+                total_frames=1,
+                conflict_count=1,
+                error_count=1,
+                conflicts_by_type={models.AnnotationConflictType.EXTRA_ANNOTATION: 1},
+                tasks=None,
+                jobs=None,
+                requirements=ComparisonReportRequirementsSummary.create_empty(),
+            ),
+            groups={
+                "cars": ComparisonReportRequirementSummary(
+                    parameters={},
+                    comparison_summary=ComparisonReportRequirementComparisonSummary(
+                        conflict_count=1,
+                        error_count=1,
+                        conflicts_by_type={models.AnnotationConflictType.EXTRA_ANNOTATION: 1},
+                        score=0.0,
+                        score_components=ComparisonReportScoreComponents(
+                            valid_count=0,
+                            missing_count=0,
+                            extra_count=1,
+                        ),
+                        calculation=ComparisonReportRequirementCalculation.create_computed(),
+                        confusion_matrix=None,
+                    ),
+                    frame_results={
+                        0: ComparisonReportFrameComparisonSummary(
+                            conflicts=[conflict],
+                            score=0.0,
+                            score_components=ComparisonReportScoreComponents(
+                                valid_count=0,
+                                missing_count=0,
+                                extra_count=1,
+                            ),
+                            calculation=ComparisonReportRequirementCalculation.create_computed(),
+                            confusion_matrix=None,
+                            annotation_summary=ComparisonReportAnnotationsSummary(
+                                valid_count=0,
+                                missing_count=0,
+                                extra_count=1,
+                                total_count=1,
+                                ds_count=1,
+                                gt_count=0,
+                                confusion_matrix=None,
+                            ),
+                            metric=models.QualityTargetMetricType.ACCURACY,
+                        )
+                    },
+                )
+            },
+        )
+
+        serialized_report = report.to_dict()
+
+        self.assertEqual(report.get_conflicts(), [conflict])
+        self.assertNotIn("conflicts", serialized_report)
+        self.assertEqual(
+            serialized_report["groups"]["cars"]["frame_results"][0]["conflicts"],
+            [conflict.to_dict()],
+        )
 
 
 class TestRequirementCompletion(unittest.TestCase):

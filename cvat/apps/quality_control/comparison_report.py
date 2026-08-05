@@ -456,6 +456,8 @@ class ConfusionMatrix(ReportNode):
         if other.labels:
             self.rows += np.ceil(other.rows * weight).astype(self.rows.dtype)
 
+        self.reset_cached_fields()
+
         return self
 
     @classmethod
@@ -1146,8 +1148,7 @@ class ComparisonReport(ReportNode):
     comparison_summary: ComparisonReportSummary
     groups: dict[str, ComparisonReportRequirementSummary] | None = None
 
-    @property
-    def conflicts(self) -> list[AnnotationConflict]:
+    def get_conflicts(self) -> list[AnnotationConflict]:
         if not self.groups:
             return []
 

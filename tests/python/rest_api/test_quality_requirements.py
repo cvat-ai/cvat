@@ -2369,6 +2369,7 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
 
         assert "groups" in report_data
         assert "frame_results" not in report_data
+        assert "conflicts" not in report_data
         assert enabled_requirement_name in report_data["groups"]
         assert disabled_requirement_name in report_data["groups"]
         frame_summary = next(
@@ -2395,6 +2396,7 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
             ].results[0]
         job_report_data = self._get_report_data(admin_user, job_report["id"])
         assert "frame_results" not in job_report_data
+        assert "conflicts" not in job_report_data
         assert job_report_data["parameters"] == {
             "inherited": False,
             "job_filter": updated_settings["job_filter"],
@@ -2562,6 +2564,8 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
         assert task_reports_by_task_id[failed_task_id]["summary"]["requirements"]["completed"] == 0
 
         project_report_data = self._get_report_data(admin_user, project_report["id"])
+        assert "frame_results" not in project_report_data
+        assert "conflicts" not in project_report_data
         project_requirement_summary = project_report_data["groups"][requirement_name][
             "comparison_summary"
         ]

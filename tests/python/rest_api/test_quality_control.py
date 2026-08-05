@@ -1628,8 +1628,9 @@ class TestQualityReportContents(_PermissionTestBase):
         }
         for frame_id in group_report["frame_results"].keys():
             assert "annotation_components" not in group_report["frame_results"][frame_id]
+            assert "annotations" not in group_report["frame_results"][frame_id]
             assert (
-                group_report["frame_results"][frame_id]["annotations"]["confusion_matrix"]["rows"]
+                group_report["frame_results"][frame_id]["confusion_matrix"]["rows"]
                 == expected_frame_confusion_matrix[frame_id]
             )
 
@@ -2080,19 +2081,11 @@ class TestPostProjectQualityReports(_PermissionTestBase):
             [t for t in tasks if t.get("project_id") == project_id], key=lambda t: t["id"]
         )
 
-        latest_project_reports = sorted(
-            [r for r in quality_reports if r["project_id"] == project_id], key=lambda r: -r["id"]
-        )
-        latest_project_report = next(r for r in latest_project_reports if r["target"] == "project")
-        latest_project_reports = [
-            r for r in latest_project_reports if r["parent_id"] == latest_project_report["id"]
-        ]
+        # NOTE @grigorii: The shared fixture reports use the legacy format and must not be
+        # reused in a generalized report. Create current reports to verify the reuse behavior.
         latest_task_reports = {
-            task_id: next(task_reports)
-            for task_id, task_reports in groupby(
-                sorted(latest_project_reports, key=lambda r: (r["task_id"], -r["id"])),
-                key=lambda r: r["task_id"],
-            )
+            task["id"]: create_quality_report(user=admin_user, task_id=task["id"])
+            for task in project_tasks
         }
 
         # Create project report before task changes
