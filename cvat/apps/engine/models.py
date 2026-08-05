@@ -1667,7 +1667,9 @@ class TrackedShapeAttributeVal(AttributeVal):
 
 class LabeledInterval(Annotation, ScoredAnnotationMixin):
     start = models.PositiveIntegerField()
+    "Must be within the task frame bounds."
     stop = models.PositiveIntegerField(null=True)
+    "Exclusive interval end. May be one greater than the task stop frame."
 
 
 class LabeledIntervalAttributeVal(AttributeVal):

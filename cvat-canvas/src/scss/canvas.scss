@@ -250,6 +250,10 @@ g.cvat_canvas_shape_occluded {
     @extend .cvat_canvas_shape;
 }
 
+.cvat_canvas_interact_mask_outline {
+    pointer-events: none;
+}
+
 .cvat_interaction_delete_button {
     opacity: 0.25;
 
