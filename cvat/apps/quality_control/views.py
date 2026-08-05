@@ -33,6 +33,7 @@ from cvat.apps.quality_control.export import (
     prepare_requirement_confusion_matrix_json,
 )
 from cvat.apps.quality_control.models import (
+    CURRENT_REPORT_DATA_REGEX,
     AnnotationConflict,
     QualityReport,
     QualityReportTarget,
@@ -51,6 +52,7 @@ from cvat.apps.quality_control.serializers import (
     AnnotationConflictSerializer,
     QualityReportConfusionMatrixSerializer,
     QualityReportCreateSerializer,
+    QualityReportListQuerySerializer,
     QualityReportSerializer,
     QualityRequirementListItemSerializer,
     QualityRequirementSerializer,
@@ -181,6 +183,13 @@ REPORT_TARGET_PARAM_NAME = "target"
                 description="A simple equality filter for target",
                 enum=[v[0] for v in QualityReportTarget.choices()],
             ),
+            OpenApiParameter(
+                "include_legacy",
+                type=OpenApiTypes.BOOL,
+                required=False,
+                default=False,
+                description="Include reports stored in the legacy data format",
+            ),
         ],
         responses={
             "200": QualityReportSerializer(many=True),
@@ -212,7 +221,7 @@ class QualityReportViewSet(
     ordering_fields = list(filter_fields)
     ordering = "-id"
 
-    def get_serializer_class(self):
+    def get_serializer_class(self) -> type[QualityReportSerializer]:
         # a separate method is required for drf-spectacular to work
         return QualityReportSerializer
 
@@ -220,6 +229,8 @@ class QualityReportViewSet(
         queryset = super().get_queryset()
 
         if self.action == "list":
+            query_serializer = QualityReportListQuerySerializer(data=self.request.query_params)
+            query_serializer.is_valid(raise_exception=True)
             iam_context = None
 
             # NOTE: the parent_id filter requires a different queryset
@@ -277,7 +288,23 @@ class QualityReportViewSet(
                         )
                     )
 
+            if not query_serializer.validated_data["include_legacy"]:
+                # The new UI only understands generalized reports. Legacy reports remain
+                # downloadable, and API clients can discover them with include_legacy=true.
+                queryset = queryset.filter(data__regex=CURRENT_REPORT_DATA_REGEX)
             queryset = queryset.defer("data")  # heavy field, should be excluded from COUNT(*)
+        elif self.action == "retrieve":
+            # Keep legacy report ids out of the UI-facing detail endpoint as well.
+            queryset = queryset.filter(data__regex=CURRENT_REPORT_DATA_REGEX)
+            queryset = queryset.select_related(
+                "job",
+                "job__segment",
+                "job__segment__task",
+                "job__segment__task__project",
+                "task",
+                "task__project",
+                "project",
+            )
         else:
             queryset = queryset.select_related(
                 "job",
@@ -436,6 +463,9 @@ class QualityReportViewSet(
     @action(detail=True, methods=["GET"], url_path="data", serializer_class=None)
     def data(self, request: ExtendedRequest, pk):
         report = self.get_object()  # check permissions
+        if not report.has_readable_data:
+            raise NotFound("Quality report data is not readable")
+
         format_name = request.query_params.get(
             "format", default=QualityReportExportFormat.JSON.value
         )
@@ -463,6 +493,9 @@ class QualityReportViewSet(
     @action(detail=True, methods=["GET"], url_path="confusion", serializer_class=None)
     def confusion(self, request, pk):
         report = self.get_object()  # check permissions
+        if not report.has_current_data_format:
+            raise NotFound("Confusion matrices are not available for this report format")
+
         archive = prepare_confusion_matrices_archive_for_downloading(report)
         response = HttpResponse(archive, content_type="application/zip")
         response["Content-Disposition"] = (
@@ -502,6 +535,9 @@ class QualityReportViewSet(
     @action(detail=True, methods=["GET"], url_path="confusion/matrix", serializer_class=None)
     def confusion_matrix(self, request, pk):
         report = self.get_object()  # check permissions
+        if not report.has_current_data_format:
+            raise NotFound("Confusion matrices are not available for this report format")
+
         requirement = request.query_params.get("requirement")
         if not requirement:
             raise ValidationError({"requirement": "This query parameter is required."})
@@ -762,22 +798,43 @@ class QualityRequirementViewSet(
 
     serializer_class = QualityRequirementSerializer
 
+    def get_serializer_class(self) -> type[QualityRequirementSerializer]:
+        if self.action == "list":
+            return QualityRequirementListItemSerializer
+
+        return super().get_serializer_class()
+
     def get_queryset(self):
         queryset = super().get_queryset()
 
         if self.action == "list":
+            iam_context = None
             if settings_id := self.request.query_params.get("settings_id", None):
+                settings = db_utils.get_or_404(QualitySettings, settings_id)
+                self.check_object_permissions(self.request, settings)
+                iam_context = get_iam_context(self.request, settings)
                 queryset = queryset.filter(settings_id=settings_id)
             elif task_id := self.request.query_params.get("task_id", None):
+                task = db_utils.get_or_404(Task, task_id)
+                self.check_object_permissions(self.request, task)
+                iam_context = get_iam_context(self.request, task)
                 queryset = queryset.filter(settings__task_id=task_id)
             elif project_id := self.request.query_params.get("project_id", None):
+                project = db_utils.get_or_404(Project, project_id)
+                self.check_object_permissions(self.request, project)
+                iam_context = get_iam_context(self.request, project)
                 # Include requirements from both project settings and task settings under the project.
                 queryset = queryset.filter(
                     Q(settings__project_id=project_id) | Q(settings__task__project_id=project_id)
                 )
 
-            permissions = QualityRequirementPermission.create_scope_list(self.request)
+            permissions = QualityRequirementPermission.create_scope_list(
+                self.request, iam_context=iam_context
+            )
             queryset = permissions.filter(queryset)
+            # NOTE @grigorii: Exclude the potentially large JSON field from the pagination
+            # COUNT query. The page serializer loads it separately for returned objects.
+            queryset = queryset.defer("attribute_comparison")
         else:
             queryset = queryset.select_related(
                 "settings",

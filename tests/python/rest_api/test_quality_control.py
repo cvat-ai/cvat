@@ -329,12 +329,8 @@ class TestListQualityReports(_PermissionTestBase):
             assert response.status == HTTPStatus.FORBIDDEN
 
     def test_can_list_quality_reports(self, admin_user, quality_reports):
-        reports = sorted(
-            [self.strip_root_annotation_summary_fields(report) for report in quality_reports],
-            key=lambda r: -r["id"],
-        )
-
-        self._test_list_reports_200(admin_user, sort="-id", expected_data=reports)
+        # Reports in the shared fixture use the legacy format and are hidden from the new UI.
+        self._test_list_reports_200(admin_user, sort="-id", expected_data=[])
 
     @pytest.mark.usefixtures("restore_db_per_function")
     @pytest.mark.parametrize("target", ["project", "task", "job"])
@@ -467,9 +463,25 @@ class TestSimpleQualityReportsFilters(CollectionSimpleFilterTestBase):
     @pytest.fixture(autouse=True)
     def setup(self, restore_db_per_class, admin_user, quality_reports, jobs, tasks, projects):
         self.user = admin_user
+
+        project_report = next(report for report in quality_reports if report["target"] == "project")
+        task_report = next(
+            report
+            for report in quality_reports
+            if report["target"] == "task" and report["parent_id"] == project_report["id"]
+        )
+        create_quality_report(user=admin_user, task_id=task_report["task_id"])
+        create_quality_report(user=admin_user, project_id=project_report["project_id"])
+
+        with make_api_client(admin_user) as api_client:
+            current_reports = get_paginated_collection(
+                api_client.quality_api.list_reports_endpoint,
+                return_json=True,
+            )
+
         self.samples = [
             _PermissionTestBase.strip_root_annotation_summary_fields(report)
-            for report in quality_reports
+            for report in current_reports
         ]
         self.job_samples = jobs
         self.task_samples = tasks
@@ -645,6 +657,43 @@ class TestGetQualityReportData(_PermissionTestBase):
 
         assert response.status_code == HTTPStatus.BAD_REQUEST
         assert "format" in response.json()
+
+    def test_legacy_report_can_be_downloaded_but_is_hidden_from_ui(
+        self, admin_user, quality_reports
+    ):
+        fixture_report = next(report for report in quality_reports if report["target"] == "task")
+        report_id = fixture_report["id"]
+
+        response = get_method(admin_user, "quality/reports", task_id=fixture_report["task_id"])
+        assert response.status_code == HTTPStatus.OK
+        assert all(report["id"] != report_id for report in response.json()["results"])
+
+        response = get_method(admin_user, "quality/reports", include_legacy="invalid")
+        assert response.status_code == HTTPStatus.BAD_REQUEST
+        assert "include_legacy" in response.json()
+
+        response = get_method(
+            admin_user,
+            "quality/reports",
+            task_id=fixture_report["task_id"],
+            include_legacy="true",
+        )
+        assert response.status_code == HTTPStatus.OK
+        legacy_reports = response.json()["results"]
+        discovered_report = next(report for report in legacy_reports if report["id"] == report_id)
+
+        response = get_method(admin_user, f"quality/reports/{discovered_report['id']}/data")
+        assert response.status_code == HTTPStatus.OK
+        report_data = response.json()
+        assert "parameters" in report_data
+        assert "comparison_summary" in report_data
+        assert "groups" not in report_data
+
+        response = get_method(admin_user, f"quality/reports/{report_id}")
+        assert response.status_code == HTTPStatus.NOT_FOUND
+
+        response = get_method(admin_user, f"quality/reports/{report_id}/confusion")
+        assert response.status_code == HTTPStatus.NOT_FOUND
 
     @pytest.mark.usefixtures("restore_db_per_function")
     @pytest.mark.parametrize(*_PermissionTestBase._default_sandbox_cases)
@@ -1268,17 +1317,6 @@ class TestListSettings(_PermissionTestBase):
 
 
 class TestSimpleQualitySettingsFilters(CollectionSimpleFilterTestBase):
-    @staticmethod
-    def _strip_volatile_fields(settings: Iterable[dict[str, Any]]) -> list[dict[str, Any]]:
-        return [
-            {
-                key: value
-                for key, value in settings_item.items()
-                if key not in {"created_date", "updated_date", "requirements"}
-            }
-            for settings_item in settings
-        ]
-
     @pytest.fixture(autouse=True)
     def setup(self, restore_db_per_class, admin_user, quality_settings, tasks, projects):
         self.user = admin_user
@@ -1291,9 +1329,14 @@ class TestSimpleQualitySettingsFilters(CollectionSimpleFilterTestBase):
 
     def _compare_results(self, gt_objects, received_objects):
         diff = DeepDiff(
-            self._strip_volatile_fields(gt_objects),
-            self._strip_volatile_fields(received_objects),
+            list(gt_objects),
+            list(received_objects),
             ignore_order=True,
+            exclude_regex_paths=[
+                r"root\[\d+\]\['created_date'\]",
+                r"root\[\d+\]\['updated_date'\]",
+                r"root\[\d+\]\['requirements'\]",
+            ],
         )
 
         assert diff == {}, diff

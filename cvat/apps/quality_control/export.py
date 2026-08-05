@@ -9,7 +9,7 @@ from io import BytesIO, StringIO
 from typing import IO, Any
 from zipfile import ZIP_DEFLATED, ZipFile
 
-from datumaro.util import dump_json
+from datumaro.util import dump_json, parse_json
 from django.db.models import TextChoices
 from django.utils.text import slugify
 
@@ -84,8 +84,14 @@ def prepare_json_report_for_downloading(db_report: models.QualityReport, *, host
         assignee=_serialize_assignee(db_report.assignee),
     )
 
-    comparison_report = ComparisonReport.from_json(db_report.get_report_data())
-    serialized_data.update(comparison_report.to_dict())
+    stored_report_data = parse_json(db_report.get_report_data())
+    if "groups" in stored_report_data:
+        comparison_report = ComparisonReport.from_dict(stored_report_data)
+        serialized_data.update(comparison_report.to_dict())
+    else:
+        # Legacy reports cannot be represented by ComparisonReport anymore. Preserve their
+        # original payload so they can still be downloaded after the UI switches formats.
+        serialized_data.update(stored_report_data)
 
     def _decorate_frame_results(frame_results: dict) -> None:
         for frame_result in frame_results.values():
@@ -106,6 +112,10 @@ def prepare_json_report_for_downloading(db_report: models.QualityReport, *, host
         # project reports should not have per-frame statistics, it's too detailed for this level
         serialized_data["comparison_summary"].pop("frames")
 
+    if frame_results := serialized_data.get("frame_results"):
+        _decorate_frame_results(frame_results)
+        serialized_data["frame_results"] = _stringify_frame_results(frame_results)
+
     for group in (serialized_data.get("groups") or {}).values():
         if group.get("frame_results") is None:
             continue
@@ -115,16 +125,19 @@ def prepare_json_report_for_downloading(db_report: models.QualityReport, *, host
 
     if task_stats := serialized_data["comparison_summary"].get("tasks", {}):
         for k in ("all", "custom", "not_configured", "excluded", "completed"):
-            task_stats[k] = sorted(task_stats[k])
+            if k in task_stats:
+                task_stats[k] = sorted(task_stats[k])
 
     if job_stats := serialized_data["comparison_summary"].get("jobs", {}):
         for k in ("all", "excluded", "not_checkable", "completed"):
-            job_stats[k] = sorted(job_stats[k])
+            if k in job_stats:
+                job_stats[k] = sorted(job_stats[k])
 
     # Add the percent representation for better human readability
-    serialized_data["comparison_summary"]["validation_frame_share_percent"] = (
-        serialized_data["comparison_summary"]["validation_frame_share"] * 100
-    )
+    if "validation_frame_share" in serialized_data["comparison_summary"]:
+        serialized_data["comparison_summary"]["validation_frame_share_percent"] = (
+            serialized_data["comparison_summary"]["validation_frame_share"] * 100
+        )
 
     return BytesIO(dump_json(serialized_data, indent=True, append_newline=True))
 

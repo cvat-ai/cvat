@@ -109,16 +109,6 @@ class TestComparator(unittest.TestCase):
         self.assertIsInstance(distance, float)
         self.assertEqual(distance, 1)
 
-    def test_score_is_not_compared_as_a_user_attribute(self) -> None:
-        comparator = self._make_comparator()
-
-        result = comparator.match_attrs(
-            dm.Label(0, attributes={"score": 0.25}),
-            dm.Label(0, attributes={"score": 0.75}),
-        )
-
-        self.assertEqual(result, AttributeMatchingResult())
-
     def test_attributes_affect_matching_and_pairwise_diagnostics(self) -> None:
         settings = ComparisonParameters()
         settings.included_annotation_types = [dm.AnnotationType.bbox]

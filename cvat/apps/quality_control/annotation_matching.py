@@ -1160,43 +1160,6 @@ class Comparator:
 
         return shape_type
 
-    def match_attrs(
-        self,
-        ann_a: dm.Annotation,
-        ann_b: dm.Annotation,
-    ) -> AttributeMatchingResult:
-        a_attrs = ann_a.attributes
-        b_attrs = ann_b.attributes
-
-        keys_to_match = (a_attrs.keys() | b_attrs.keys()).difference(self.ignored_attrs)
-
-        matches = []
-        mismatches = []
-        a_extra = []
-        b_extra = []
-
-        notfound = object()
-
-        for k in keys_to_match:
-            a_attr = a_attrs.get(k, notfound)
-            b_attr = b_attrs.get(k, notfound)
-
-            if a_attr is notfound:
-                b_extra.append(k)
-            elif b_attr is notfound:
-                a_extra.append(k)
-            elif a_attr == b_attr:
-                matches.append(k)
-            else:
-                mismatches.append(k)
-
-        return AttributeMatchingResult(
-            matches=tuple(matches),
-            mismatches=tuple(mismatches),
-            a_only=tuple(a_extra),
-            b_only=tuple(b_extra),
-        )
-
     def find_groups(
         self, item: dm.DatasetItem
     ) -> tuple[dict[int, list[dm.Annotation]], dict[int, int]]:
@@ -1305,12 +1268,6 @@ class Comparator:
             merged_results[-1].update(per_type_results[result_key][-1])
 
         return {"all_ann_types": merged_results, "all_shape_ann_types": shape_merged_results}
-
-    def get_distance(
-        self, pairwise_distances, gt_ann: dm.Annotation, ds_ann: dm.Annotation
-    ) -> float | None:
-        comparison = self.get_comparison(pairwise_distances, gt_ann, ds_ann)
-        return comparison.geometry_similarity if comparison else None
 
     def get_comparison(
         self,

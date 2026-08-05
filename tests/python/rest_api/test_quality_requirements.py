@@ -2,16 +2,16 @@
 #
 # SPDX-License-Identifier: MIT
 
+import csv
 import json
 from http import HTTPStatus
-from io import BytesIO
+from io import BytesIO, StringIO
 from typing import Any
 from zipfile import ZipFile
 
 import pytest
 from cvat_sdk.core.helpers import get_paginated_collection
 from deepdiff import DeepDiff
-
 from rest_api.utils import create_gt_job, create_quality_report, create_task
 from shared.utils.config import (
     delete_method,
@@ -40,6 +40,16 @@ class _QualityRequirementsTestBase(_PermissionTestBase):
         "polygon",
         "ellipse",
     }
+
+    @staticmethod
+    def _as_report_data_requirements_summary(summary: dict[str, Any]) -> dict[str, Any]:
+        return {
+            "total_count": summary["total"],
+            "enabled_count": summary["enabled"],
+            "completed_count": summary["completed"],
+            "not_computed_count": summary["not_computed"],
+            "items": summary["items"],
+        }
 
     @staticmethod
     def _base_requirement_name(annotation_type: str) -> str:
@@ -1873,8 +1883,8 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
             "status": "not_computed",
             "reason": "filter_no_matches",
         }
-        assert report_data["comparison_summary"]["requirements"]["completed"] == 1
-        assert report_data["comparison_summary"]["requirements"]["not_computed"] == 1
+        assert report_data["comparison_summary"]["requirements"]["completed_count"] == 1
+        assert report_data["comparison_summary"]["requirements"]["not_computed_count"] == 1
         assert "annotations" not in report_data["comparison_summary"]
 
     def test_task_report_data_applies_attribute_comparison_rules(self, admin_user):
@@ -2215,7 +2225,9 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
             ],
         }
         assert report["summary"]["requirements"] == expected_requirements_summary
-        assert report_data["comparison_summary"]["requirements"] == expected_requirements_summary
+        assert report_data["comparison_summary"]["requirements"] == (
+            self._as_report_data_requirements_summary(expected_requirements_summary)
+        )
         assert (
             "annotations"
             not in report_data["groups"][parent_requirement_name]["comparison_summary"]
@@ -2358,6 +2370,20 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
         assert "frame_results" not in report_data
         assert enabled_requirement_name in report_data["groups"]
         assert disabled_requirement_name in report_data["groups"]
+        frame_summary = next(
+            iter(report_data["groups"][enabled_requirement_name]["frame_results"].values())
+        )
+        assert "annotations" not in frame_summary
+        assert set(frame_summary) == {
+            "conflicts",
+            "conflict_count",
+            "error_count",
+            "conflicts_by_type",
+            "score",
+            "score_components",
+            "calculation",
+            "confusion_matrix",
+        }
         assert report_data["parameters"] == {
             "inherited": False,
             "job_filter": updated_settings["job_filter"],
@@ -2372,7 +2398,9 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
             "inherited": False,
             "job_filter": updated_settings["job_filter"],
         }
-        assert report_data["comparison_summary"]["requirements"] == expected_requirements_summary
+        assert report_data["comparison_summary"]["requirements"] == (
+            self._as_report_data_requirements_summary(expected_requirements_summary)
+        )
         report_level_summary_fields = {
             "frames",
             "total_frames",
@@ -2544,9 +2572,7 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
             "extra_count": 0,
         }
 
-    def test_task_report_confusion_endpoint_returns_zip_archive(
-        self, admin_user, find_sandbox_task_without_gt
-    ):
+    def test_confusion_matrix_correct(self, admin_user, find_sandbox_task_without_gt):
         task, _ = find_sandbox_task_without_gt(True)
         settings = self._get_task_settings(admin_user, task_id=task["id"])
 
@@ -2611,13 +2637,25 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
             enabled_group_csv = archive.read(
                 group_matrices[enabled_requirement_id]["path"]
             ).decode()
-            assert "DS (row) \\ GT (col) label" in enabled_group_csv
-            assert "precision" in enabled_group_csv
-            assert "recall" in enabled_group_csv
-            assert "dice coefficient" in enabled_group_csv
-            assert "jaccard index" in enabled_group_csv
-            assert "avg. accuracy (micro)" in enabled_group_csv
-            assert "avg. dice coefficient (macro)" in enabled_group_csv
+            csv_reader = csv.DictReader(StringIO(enabled_group_csv))
+            label_names = set(group_matrices[enabled_requirement_id]["labels"][:-1])
+            assert csv_reader.fieldnames
+            assert csv_reader.fieldnames[0] == "DS (row) \\ GT (col) label"
+            assert set(csv_reader.fieldnames[1:-2]) == label_names
+            assert csv_reader.fieldnames[-2:] == ["unmatched", "precision"]
+
+            rows = list(csv_reader)
+            row_label_field = "DS (row) \\ GT (col) label"
+            assert {row[row_label_field] for row in rows[: len(label_names)]} == label_names
+            assert [row[row_label_field] for row in rows[len(label_names) :]] == [
+                "unmatched",
+                "recall",
+                "dice coefficient",
+                "jaccard index",
+                "",
+                "avg. accuracy (micro)",
+                "avg. dice coefficient (macro)",
+            ]
 
         response = get_method(
             admin_user,
@@ -2782,5 +2820,7 @@ class TestProjectQualityRequirementInheritance(_QualityRequirementsTestBase):
             ],
         }
         assert report["summary"]["requirements"] == expected_requirements_summary
-        assert report_data["comparison_summary"]["requirements"] == expected_requirements_summary
+        assert report_data["comparison_summary"]["requirements"] == (
+            self._as_report_data_requirements_summary(expected_requirements_summary)
+        )
         assert "annotations" not in report_data["comparison_summary"]

@@ -8,8 +8,9 @@ import itertools
 import json
 from abc import ABC, abstractmethod
 from collections import Counter
+from collections.abc import Sequence
 from copy import deepcopy
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 import attrs
 import datumaro as dm
@@ -48,6 +49,8 @@ from cvat.apps.quality_control.comparison_report import (
     ComparisonReportRequirementSummaryItem,
     ComparisonReportSummary,
     ConfusionMatrix,
+    RequirementCalculationReason,
+    RequirementCalculationStatus,
     deduplicate_annotation_conflicts,
 )
 from cvat.apps.quality_control.filters import RequirementJsonLogicFilter
@@ -137,24 +140,16 @@ def _combine_filters(parent_filter: str | None, child_filter: str | None) -> str
     )
 
 
-def _requirement_sort_key(requirement: Any) -> tuple[int, int]:
+def _requirement_sort_key(requirement: models.QualityRequirement) -> tuple[int, int]:
     return (
-        getattr(requirement, "sort_order", 0) or 0,
-        getattr(requirement, "id", 0) or 0,
+        requirement.sort_order or 0,
+        requirement.id or 0,
     )
 
 
-def _requirement_parent_id(requirement: Any) -> int | None:
-    parent_id = getattr(requirement, "parent_id", None)
-    if parent_id is not None:
-        return parent_id
-
-    parent = getattr(requirement, "parent", None)
-    return getattr(parent, "id", None)
-
-
 def _make_effective_requirement(
-    requirement: Any, inherited: EffectiveQualityRequirement | None
+    requirement: models.QualityRequirement,
+    inherited: EffectiveQualityRequirement | None,
 ) -> EffectiveQualityRequirement:
     if inherited is None:
         defaults = models.QualityRequirement.get_defaults()
@@ -189,39 +184,41 @@ def _make_effective_requirement(
     values["compare_attributes"] = attribute_comparison_may_compare(values["attribute_comparison"])
 
     effective_filter = _combine_filters(
-        getattr(inherited, "filter", "") if inherited else "",
-        getattr(requirement, "filter", "") or "",
+        inherited.filter if inherited else "",
+        requirement.filter or "",
     )
 
     return EffectiveQualityRequirement(
         name=requirement.name,
-        enabled=bool(getattr(requirement, "enabled", True)),
+        enabled=requirement.enabled,
         filter=effective_filter,
-        source_requirement_id=getattr(requirement, "id", None),
-        parent_requirement=_requirement_parent_id(requirement),
-        sort_order=getattr(requirement, "sort_order", 0) or 0,
+        source_requirement_id=requirement.id,
+        parent_requirement=requirement.parent_id,
+        sort_order=requirement.sort_order or 0,
         **values,
     )
 
 
-def resolve_effective_requirement(requirement: Any) -> EffectiveQualityRequirement:
-    if getattr(requirement, "_effective_requirement", False):
+def resolve_effective_requirement(
+    requirement: models.QualityRequirement | EffectiveQualityRequirement,
+) -> EffectiveQualityRequirement:
+    if isinstance(requirement, EffectiveQualityRequirement):
         return requirement
 
-    chain = []
+    chain: list[models.QualityRequirement] = []
     current = requirement
-    visited_ids = set()
+    visited_ids: set[int] = set()
     while current is not None:
-        current_id = getattr(current, "id", None)
+        current_id = current.id
         if current_id is not None:
             if current_id in visited_ids:
                 raise ValueError("Requirement parent cycle is not allowed")
             visited_ids.add(current_id)
 
         chain.append(current)
-        current = getattr(current, "parent", None)
+        current = current.parent
 
-    effective = None
+    effective: EffectiveQualityRequirement | None = None
     for chain_requirement in reversed(chain):
         effective = _make_effective_requirement(chain_requirement, effective)
 
@@ -229,27 +226,29 @@ def resolve_effective_requirement(requirement: Any) -> EffectiveQualityRequireme
     return effective
 
 
-def resolve_effective_requirements(requirements: list[Any]) -> list[EffectiveQualityRequirement]:
-    if all(getattr(requirement, "_effective_requirement", False) for requirement in requirements):
-        return requirements
+def resolve_effective_requirements(
+    requirements: Sequence[models.QualityRequirement] | Sequence[EffectiveQualityRequirement],
+) -> list[EffectiveQualityRequirement]:
+    if all(isinstance(requirement, EffectiveQualityRequirement) for requirement in requirements):
+        return list(cast(Sequence[EffectiveQualityRequirement], requirements))
+
+    db_requirements = cast(Sequence[models.QualityRequirement], requirements)
 
     requirements_by_id = {
-        requirement.id: requirement
-        for requirement in requirements
-        if getattr(requirement, "id", None)
+        requirement.id: requirement for requirement in db_requirements if requirement.id is not None
     }
-    children_by_parent_id: dict[int | None, list[Any]] = {}
-    for requirement in requirements:
-        children_by_parent_id.setdefault(_requirement_parent_id(requirement), []).append(
-            requirement
-        )
+    children_by_parent_id: dict[int | None, list[models.QualityRequirement]] = {}
+    for requirement in db_requirements:
+        children_by_parent_id.setdefault(requirement.parent_id, []).append(requirement)
 
     effective_requirements: list[EffectiveQualityRequirement] = []
 
     def dfs(
-        requirement: Any, inherited: EffectiveQualityRequirement | None, path: set[int]
+        requirement: models.QualityRequirement,
+        inherited: EffectiveQualityRequirement | None,
+        path: set[int],
     ) -> None:
-        requirement_id = getattr(requirement, "id", None)
+        requirement_id = requirement.id
         if requirement_id is not None:
             if requirement_id in path:
                 raise ValueError("Requirement parent cycle is not allowed")
@@ -265,8 +264,8 @@ def resolve_effective_requirements(requirements: list[Any]) -> list[EffectiveQua
 
     roots = [
         requirement
-        for requirement in requirements
-        if _requirement_parent_id(requirement) not in requirements_by_id
+        for requirement in db_requirements
+        if requirement.parent_id not in requirements_by_id
     ]
     for root in sorted(roots, key=_requirement_sort_key):
         dfs(root, None, set())
@@ -360,7 +359,9 @@ def merge_frame_summaries(
     other: ComparisonReportFrameComparisonSummary,
 ) -> None:
     target.conflicts = deduplicate_annotation_conflicts([*target.conflicts, *other.conflicts])
-    merge_annotations_summary(target.annotations, other.annotations)
+    merge_annotations_summary(target.annotation_summary, other.annotation_summary)
+    target.calculation = select_requirement_calculation(target.calculation, other.calculation)
+    target.refresh_comparison_fields()
 
 
 def _make_requirement_calculation(
@@ -372,21 +373,25 @@ def _make_requirement_calculation(
         ground_truth.missing_attributes
     )
     if not annotations.candidate_count and not ground_truth.candidate_count:
-        status = "not_computed"
-        reason = "no_annotations"
+        status = RequirementCalculationStatus.NOT_COMPUTED
+        reason = RequirementCalculationReason.NO_ANNOTATIONS
     elif not annotations.selected_count and not ground_truth.selected_count:
-        status = "not_computed"
-        reason = "required_attributes_missing" if common_missing_attributes else "filter_no_matches"
+        status = RequirementCalculationStatus.NOT_COMPUTED
+        reason = (
+            RequirementCalculationReason.REQUIRED_ATTRIBUTES_MISSING
+            if common_missing_attributes
+            else RequirementCalculationReason.FILTER_NO_MATCHES
+        )
     elif annotations.selected_count and ground_truth.selected_count and common_missing_attributes:
-        status = "not_computed"
-        reason = "required_attributes_missing"
+        status = RequirementCalculationStatus.NOT_COMPUTED
+        reason = RequirementCalculationReason.REQUIRED_ATTRIBUTES_MISSING
     else:
-        status = "computed"
+        status = RequirementCalculationStatus.COMPUTED
         reason = None
 
     return (
         ComparisonReportRequirementCalculation.create_computed()
-        if status == "computed"
+        if status == RequirementCalculationStatus.COMPUTED
         else ComparisonReportRequirementCalculation(
             status=status,
             reason=reason,
@@ -404,9 +409,9 @@ def select_requirement_calculation(
         return candidate
 
     priority = {
-        "no_annotations": 0,
-        "filter_no_matches": 1,
-        "required_attributes_missing": 2,
+        RequirementCalculationReason.NO_ANNOTATIONS: 0,
+        RequirementCalculationReason.FILTER_NO_MATCHES: 1,
+        RequirementCalculationReason.REQUIRED_ATTRIBUTES_MISSING: 2,
         None: 3,
     }
     return candidate if priority[candidate.reason] > priority[current.reason] else current
@@ -446,7 +451,11 @@ def build_requirement_comparison_summary(
             else make_empty_requirement_calculation()
         )
 
-    score = None if calculation.status == "not_computed" else getattr(annotations, metric, None)
+    score = (
+        None
+        if calculation.status == RequirementCalculationStatus.NOT_COMPUTED
+        else getattr(annotations, metric, None)
+    )
 
     return ComparisonReportRequirementComparisonSummary(
         conflict_count=len(conflicts),
@@ -471,7 +480,7 @@ def build_requirement_report(
 
     for frame_result in frame_results.values():
         conflicts += frame_result.conflicts
-        merge_annotations_summary(annotations_summary, frame_result.annotations)
+        merge_annotations_summary(annotations_summary, frame_result.annotation_summary)
 
     conflicts = deduplicate_annotation_conflicts(conflicts)
 
@@ -525,7 +534,7 @@ def build_requirements_summary(
                 ),
             )
         )
-        if calculation.status == "not_computed":
+        if calculation.status == RequirementCalculationStatus.NOT_COMPUTED:
             # An empty selection on both sides is a vacuous success, but it has no metric value.
             not_computed_count += 1
             completed_count += 1
@@ -533,16 +542,16 @@ def build_requirements_summary(
             completed_count += 1
 
     return ComparisonReportRequirementsSummary(
-        total=len(requirements),
-        enabled=len(enabled_requirements),
-        completed=completed_count,
-        not_computed=not_computed_count,
+        total_count=len(requirements),
+        enabled_count=len(enabled_requirements),
+        completed_count=completed_count,
+        not_computed_count=not_computed_count,
         items=items,
     )
 
 
 class RequirementHandler(ABC):
-    def __init__(self, *, requirement: models.QualityRequirement, context: MatchingContext):
+    def __init__(self, *, requirement: EffectiveQualityRequirement, context: MatchingContext):
         self.requirement = requirement
         self.context = context
 
@@ -562,7 +571,7 @@ class RequirementHandler(ABC):
             attribute_matcher=self._match_attrs,
         )
         self._filter = RequirementJsonLogicFilter(
-            expression=getattr(self.requirement, "filter", "") or "",
+            expression=self.requirement.filter,
             categories=self.context.categories,
             included_annotation_types=self.settings.included_annotation_types,
         )
@@ -593,12 +602,11 @@ class RequirementHandler(ABC):
         field_mapping = {i: i for i in items}  # direct mapping for all fields
 
         for req_field, param_field in field_mapping.items():
-            if hasattr(self.requirement, req_field):
-                value = getattr(self.requirement, req_field)
-                if value is not None:
-                    setattr(params, param_field, value)
+            value = getattr(self.requirement, req_field)
+            if value is not None:
+                setattr(params, param_field, value)
 
-        attribute_comparison = getattr(self.requirement, "attribute_comparison", None)
+        attribute_comparison = self.requirement.attribute_comparison
         params.compare_attributes = attribute_comparison_may_compare(attribute_comparison)
 
         params.included_annotation_types = self._get_included_annotation_types()
@@ -623,7 +631,7 @@ class RequirementHandler(ABC):
         annotations: list[dm.Annotation],
     ) -> set[str]:
         attribute_comparison = normalize_attribute_comparison(
-            getattr(self.requirement, "attribute_comparison", None),
+            self.requirement.attribute_comparison,
             fill_default=True,
         )
         default_rule = make_default_attribute_rule(attribute_comparison)
@@ -804,9 +812,23 @@ class RequirementHandler(ABC):
             attribute_names=sorted(set(attribute_names or [])),
         )
 
+    def _make_frame_summary(
+        self,
+        *,
+        annotation_summary: ComparisonReportAnnotationsSummary,
+        conflicts: list[AnnotationConflict],
+        calculation: ComparisonReportRequirementCalculation,
+    ) -> ComparisonReportFrameComparisonSummary:
+        return ComparisonReportFrameComparisonSummary.from_annotation_summary(
+            annotation_summary=annotation_summary,
+            conflicts=conflicts,
+            calculation=calculation,
+            metric=_get_requirement_metric(self.requirement),
+        )
+
     @classmethod
     def for_requirement(
-        cls, requirement: models.QualityRequirement, *, context: MatchingContext
+        cls, requirement: EffectiveQualityRequirement, *, context: MatchingContext
     ) -> RequirementHandler:
         """Factory method to create appropriate handler based on requirement type"""
         from cvat.apps.quality_control.models import QualityRequirementAnnotationType
@@ -857,50 +879,6 @@ class RequirementHandler(ABC):
         confusion_matrix = np.zeros((num_labels, num_labels), dtype=int)
 
         return label_names, confusion_matrix, label_id_idx_map
-
-    def _prepare_item_for_requirement(
-        self, item: dm.DatasetItem, data_provider: JobDataProvider
-    ) -> dm.DatasetItem:
-        if (
-            self.requirement.annotation_type
-            != models.QualityRequirementAnnotationType.SKELETON_KEYPOINT
-        ):
-            return item
-
-        flattened_annotations: list[dm.Annotation] = []
-        for ann in item.annotations:
-            if ann.type != dm.AnnotationType.skeleton:
-                continue
-
-            parent_skeleton_context = self._filter.build_shape_context_for_annotation(ann)
-            parent_attrs = dict(getattr(ann, "attributes", {}) or {})
-            for element in ann.elements:
-                element_attrs = dict(getattr(element, "attributes", {}) or {})
-                if "source" not in element_attrs and "source" in parent_attrs:
-                    element_attrs["source"] = parent_attrs["source"]
-                if "track_id" not in element_attrs and "track_id" in parent_attrs:
-                    element_attrs["track_id"] = parent_attrs["track_id"]
-                if "keyframe" not in element_attrs and "keyframe" in parent_attrs:
-                    element_attrs["keyframe"] = parent_attrs["keyframe"]
-
-                visibility = list(getattr(element, "visibility", []) or [])
-                if visibility:
-                    element_visibility = visibility[0]
-                    element_attrs.setdefault(
-                        "outside", element_visibility == dm.Points.Visibility.absent
-                    )
-                    element_attrs.setdefault(
-                        "occluded", element_visibility == dm.Points.Visibility.hidden
-                    )
-
-                element_attrs[RequirementJsonLogicFilter.PARENT_SKELETON_CONTEXT_KEY] = (
-                    parent_skeleton_context
-                )
-                wrapped_element = element.wrap(attributes=element_attrs)
-                data_provider.remember_dm_ann_alias(element, wrapped_element)
-                flattened_annotations.append(wrapped_element)
-
-        return item.wrap(annotations=flattened_annotations)
 
     def _compute_annotations_summary(
         self, confusion_matrix: np.ndarray, confusion_matrix_labels: list[str]
@@ -1034,11 +1012,12 @@ class TagRequirementHandler(RequirementHandler):
             confusion_matrix[ds_label_idx, gt_label_idx] += 1
 
         return RequirementFrameResult(
-            summary=ComparisonReportFrameComparisonSummary(
-                annotations=self._generate_frame_annotations_summary(
+            summary=self._make_frame_summary(
+                annotation_summary=self._generate_frame_annotations_summary(
                     confusion_matrix, confusion_matrix_labels
                 ),
                 conflicts=conflicts,
+                calculation=calculation,
             ),
             calculation=calculation,
             matched_pairs=list(itertools.chain(matches, mismatches)),
@@ -1046,6 +1025,50 @@ class TagRequirementHandler(RequirementHandler):
 
 
 class ShapeRequirementHandler(RequirementHandler):
+    def _prepare_item_for_requirement(
+        self, item: dm.DatasetItem, data_provider: JobDataProvider
+    ) -> dm.DatasetItem:
+        if (
+            self.requirement.annotation_type
+            != models.QualityRequirementAnnotationType.SKELETON_KEYPOINT
+        ):
+            return item
+
+        flattened_annotations: list[dm.Annotation] = []
+        for ann in item.annotations:
+            if ann.type != dm.AnnotationType.skeleton:
+                continue
+
+            parent_skeleton_context = self._filter.build_shape_context_for_annotation(ann)
+            parent_attrs = dict(ann.attributes or {})
+            for element in ann.elements:
+                element_attrs = dict(element.attributes or {})
+                if "source" not in element_attrs and "source" in parent_attrs:
+                    element_attrs["source"] = parent_attrs["source"]
+                if "track_id" not in element_attrs and "track_id" in parent_attrs:
+                    element_attrs["track_id"] = parent_attrs["track_id"]
+                if "keyframe" not in element_attrs and "keyframe" in parent_attrs:
+                    element_attrs["keyframe"] = parent_attrs["keyframe"]
+
+                visibility = list(element.visibility or [])
+                if visibility:
+                    element_visibility = visibility[0]
+                    element_attrs.setdefault(
+                        "outside", element_visibility == dm.Points.Visibility.absent
+                    )
+                    element_attrs.setdefault(
+                        "occluded", element_visibility == dm.Points.Visibility.hidden
+                    )
+
+                element_attrs[RequirementJsonLogicFilter.PARENT_SKELETON_CONTEXT_KEY] = (
+                    parent_skeleton_context
+                )
+                wrapped_element = element.wrap(attributes=element_attrs)
+                data_provider.remember_dm_ann_alias(element, wrapped_element)
+                flattened_annotations.append(wrapped_element)
+
+        return item.wrap(annotations=flattened_annotations)
+
     def match_annotations(
         self,
         *,
@@ -1217,11 +1240,12 @@ class ShapeRequirementHandler(RequirementHandler):
             confusion_matrix[ds_label_idx, gt_label_idx] += 1
 
         return RequirementFrameResult(
-            summary=ComparisonReportFrameComparisonSummary(
-                annotations=self._generate_frame_annotations_summary(
+            summary=self._make_frame_summary(
+                annotation_summary=self._generate_frame_annotations_summary(
                     confusion_matrix, confusion_matrix_labels
                 ),
                 conflicts=conflicts,
+                calculation=calculation,
             ),
             calculation=calculation,
             matched_pairs=list(itertools.chain(shape_matches, shape_mismatches)),
@@ -1234,11 +1258,11 @@ class DatasetQualityEstimator:
         ds_data_provider: JobDataProvider,
         gt_data_provider: JobDataProvider,
         *,
-        requirements: list[models.QualityRequirement],
-        parameters: ComparisonParameters,
+        requirements: list[EffectiveQualityRequirement],
+        report_parameters: ComparisonReportParameters,
     ) -> None:
         self._requirements = resolve_effective_requirements(requirements)
-        self._parameters = parameters
+        self._report_parameters = report_parameters
 
         self._ds_data_provider = ds_data_provider
         self._gt_data_provider = gt_data_provider
@@ -1347,7 +1371,7 @@ class DatasetQualityEstimator:
             return
 
         for requirement in self._requirements:
-            if not getattr(requirement, "enabled", True):
+            if not requirement.enabled:
                 continue
 
             handler = RequirementHandler.for_requirement(
@@ -1373,9 +1397,7 @@ class DatasetQualityEstimator:
         conflicts: list[AnnotationConflict] = []
 
         enabled_requirement_names = {
-            requirement.name
-            for requirement in self._requirements
-            if getattr(requirement, "enabled", True)
+            requirement.name for requirement in self._requirements if requirement.enabled
         }
 
         for requirement_name, requirement_metrics in self._results.items():
@@ -1411,7 +1433,7 @@ class DatasetQualityEstimator:
         }
         requirement_stats = build_requirements_summary(self._requirements, group_reports)
         return ComparisonReport(
-            parameters=ComparisonReportParameters.from_comparison_parameters(self._parameters),
+            parameters=self._report_parameters,
             comparison_summary=ComparisonReportSummary(
                 frames=intersection_frames,
                 total_frames=self._get_total_frames(),

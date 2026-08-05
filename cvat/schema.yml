@@ -4442,6 +4442,12 @@ paths:
            Available filter_fields: ['created_date', 'gt_last_updated', 'id', 'job_id', 'project_id', 'target_last_updated', 'task_id'].
         schema:
           type: string
+      - in: query
+        name: include_legacy
+        schema:
+          type: boolean
+          default: false
+        description: Include reports stored in the legacy data format
       - name: job_id
         in: query
         description: A simple equality filter for the job_id field

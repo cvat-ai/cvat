@@ -107,8 +107,8 @@ class TestRequirementCompletion(unittest.TestCase):
             },
         )
         self.assertEqual(group_report.comparison_summary.score_components.valid_count, 0)
-        self.assertEqual(requirements_summary.completed, 1)
-        self.assertEqual(requirements_summary.not_computed, 1)
+        self.assertEqual(requirements_summary.completed_count, 1)
+        self.assertEqual(requirements_summary.not_computed_count, 1)
         self.assertIsNone(requirements_summary.items[0].score)
         self.assertEqual(
             requirements_summary.items[0].calculation.to_dict(),

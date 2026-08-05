@@ -24,6 +24,10 @@ from cvat.apps.quality_control.attribute_comparison import (
     attribute_comparison_may_compare,
     normalize_attribute_comparison,
 )
+from cvat.apps.quality_control.comparison_report import (
+    RequirementCalculationReason,
+    RequirementCalculationStatus,
+)
 from cvat.apps.quality_control.filters import RequirementJsonLogicFilter
 from cvat.utils import django_database as db_utils
 
@@ -98,13 +102,9 @@ class QualityReportScoreComponentsSerializer(serializers.Serializer):
 
 
 class QualityReportRequirementCalculationSerializer(serializers.Serializer):
-    status = serializers.ChoiceField(choices=("computed", "not_computed"))
+    status = serializers.ChoiceField(choices=RequirementCalculationStatus)
     reason = serializers.ChoiceField(
-        choices=(
-            "no_annotations",
-            "filter_no_matches",
-            "required_attributes_missing",
-        ),
+        choices=RequirementCalculationReason,
         allow_null=True,
         required=False,
     )
@@ -128,10 +128,10 @@ class QualityReportRequirementSummaryItemSerializer(serializers.Serializer):
 
 
 class QualityReportRequirementsSummarySerializer(serializers.Serializer):
-    total = serializers.IntegerField()
-    enabled = serializers.IntegerField()
-    completed = serializers.IntegerField()
-    not_computed = serializers.IntegerField()
+    total = serializers.IntegerField(source="total_count")
+    enabled = serializers.IntegerField(source="enabled_count")
+    completed = serializers.IntegerField(source="completed_count")
+    not_computed = serializers.IntegerField(source="not_computed_count")
     items = QualityReportRequirementSummaryItemSerializer(many=True)
 
 
@@ -254,6 +254,10 @@ class QualityReportSerializer(serializers.ModelSerializer):
         list_serializer_class = QualityReportListSerializer
 
 
+class QualityReportListQuerySerializer(serializers.Serializer):
+    include_legacy = serializers.BooleanField(required=False, default=False)
+
+
 class QualityReportCreateSerializer(serializers.Serializer):
     task_id = serializers.IntegerField(write_only=True, required=False)
     project_id = serializers.IntegerField(write_only=True, required=False)
@@ -362,9 +366,16 @@ class AttributeComparisonSerializer(_RejectUnknownFieldsSerializer):
 
 class QualityRequirementListSerializer(serializers.ListSerializer):
     def to_representation(self, data: Any) -> list[dict[str, Any]]:
-        requirements = data.all() if hasattr(data, "all") else data
-        page = requirements if isinstance(requirements, list) else list(requirements)
-        if page:
+        if (request := self.context.get("request")) is not None and isinstance(data, list) and data:
+            page: list[models.QualityRequirement] = data
+            attribute_comparisons = dict(
+                models.QualityRequirement.objects.filter(
+                    id__in={requirement.id for requirement in page}
+                ).values_list("id", "attribute_comparison")
+            )
+            for requirement in page:
+                requirement.attribute_comparison = attribute_comparisons[requirement.id]
+
             django_models.prefetch_related_objects(
                 page,
                 "settings",
@@ -374,8 +385,7 @@ class QualityRequirementListSerializer(serializers.ListSerializer):
                 "parent",
             )
 
-        child = QualityRequirementListItemSerializer(context=self.context)
-        return [child.to_representation(requirement) for requirement in page]
+        return super().to_representation(data)
 
 
 # TODO: try to split into different types per annotation type?
@@ -878,6 +888,11 @@ class QualityRequirementListItemSerializer(QualityRequirementSerializer):
 @extend_schema_field(QualityRequirementListItemSerializer(many=True))
 class QualitySettingsRequirementsSerializer(QualityRequirementListSerializer):
     child = serializers.DictField()
+
+    def to_representation(self, data: Any) -> list[dict[str, Any]]:
+        requirements = data.all() if hasattr(data, "all") else data
+        child = QualityRequirementListItemSerializer(context=self.context)
+        return [child.to_representation(requirement) for requirement in requirements]
 
     def validate(self, attrs: list[dict[str, Any]]) -> list[dict[str, Any]]:
         if not attrs:
