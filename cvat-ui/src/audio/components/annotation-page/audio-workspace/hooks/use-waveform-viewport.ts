@@ -171,26 +171,40 @@ export function useWaveformViewport(
     }, []);
 
     const previousZoomRef = useRef(pixelsPerSecond);
+    const previousContainerWidthRef = useRef(containerWidth);
+    // A resize changes pixels-per-second because it is derived from the container width.
+    // During resize, preserve the leftmost visible timestamp.
+    // Slider and programmatic zoom retain the playback cursor's screen position
+    // when it is visible; otherwise retain the current viewport's left edge.
+    // Wheel zoom retain the timestamp under the pointer.
     useLayoutEffect(() => {
         const instance = runtime.instanceRef.current;
         const scrollContainer = getScrollContainer();
         if (!instance || !scrollContainer) return;
 
         const previousZoom = previousZoomRef.current;
+        const previousContainerWidth = previousContainerWidthRef.current;
         previousZoomRef.current = pixelsPerSecond;
+        previousContainerWidthRef.current = containerWidth;
         const maximumScroll = Math.max(0, runtime.durationRef.current * pixelsPerSecond - scrollContainer.clientWidth);
         const anchor = zoomAnchorRef.current;
         zoomAnchorRef.current = null;
+        const containerResized = previousContainerWidth > 0 && containerWidth !== previousContainerWidth;
+        const visibleStartTime = previousZoom > 0 ? scrollContainer.scrollLeft / previousZoom : 0;
+        const currentTime = instance.getCurrentTime();
+        const cursorOffset = currentTime * previousZoom - scrollContainer.scrollLeft;
+        const cursorIsVisible = cursorOffset >= 0 && cursorOffset <= scrollContainer.clientWidth;
         instance.zoom(pixelsPerSecond);
         if (anchor) {
             instance.setScroll(clamp(anchor.time * pixelsPerSecond - anchor.x, 0, maximumScroll));
-        } else if (pixelsPerSecond < previousZoom) {
-            instance.setScroll(centeredScrollOffsetForTime(
-                instance.getCurrentTime(),
-                pixelsPerSecond,
-                scrollContainer.clientWidth,
-                maximumScroll,
-            ));
+        } else if (containerResized) {
+            instance.setScroll(clamp(visibleStartTime * pixelsPerSecond, 0, maximumScroll));
+        } else if (pixelsPerSecond !== previousZoom) {
+            let scrollOffset = visibleStartTime * pixelsPerSecond;
+            if (cursorIsVisible) {
+                scrollOffset = currentTime * pixelsPerSecond - cursorOffset;
+            }
+            instance.setScroll(clamp(scrollOffset, 0, maximumScroll));
         }
     }, [pixelsPerSecond, ready]);
 
