@@ -1554,8 +1554,12 @@ def _create_audio_task_media_descriptors(
     return audio
 
 
+def is_task_initialized(task: models.Task) -> bool:
+    return bool(task.media_type)
+
+
 def ensure_task_is_initialized(task: models.Task) -> None:
-    if not task.media_type:
+    if not is_task_initialized(task):
         raise ValidationError("This task data has not been initialized yet")
 
 

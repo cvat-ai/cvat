@@ -145,7 +145,7 @@ from cvat.apps.engine.serializers import (
     TaskWriteSerializer,
     UserSerializer,
 )
-from cvat.apps.engine.task import ensure_task_is_initialized
+from cvat.apps.engine.task import ensure_task_is_initialized, is_task_initialized
 from cvat.apps.engine.tus import TusFile
 from cvat.apps.engine.types import ExtendedRequest
 from cvat.apps.engine.utils import parse_exception_message, sendfile
@@ -1625,6 +1625,9 @@ class TaskViewSet(
     def data(self, request: ExtendedRequest, pk: int):
         self._object = self.get_object()  # call check_object_permissions as well
         if request.method == "POST" or request.method == "OPTIONS":
+            if is_task_initialized(self._object):
+                raise ValidationError("Adding more data is not supported")
+
             with transaction.atomic():
                 # Need to make sure that only one Data object can be attached to the task,
                 # otherwise this can lead to many problems such as Data objects without a task,
@@ -1633,17 +1636,22 @@ class TaskViewSet(
                 # other aggregations that are defined by the viewset queryset,
                 # we just need to lock 1 row with the target Task entity.
                 locked_instance = Task.objects.select_for_update().get(pk=pk)
-                task_data = locked_instance.data
-                if not task_data:
+                if not locked_instance.data_id:
                     task_data = Data.objects.create()
                     task_data.make_dirs()
                     locked_instance.data = task_data
                     self._object.data = task_data
                     locked_instance.save()
-                elif task_data.size != 0:
-                    return Response(
-                        data="Adding more data is not supported", status=status.HTTP_400_BAD_REQUEST
-                    )
+                elif is_task_initialized(locked_instance):
+                    raise ValidationError("Adding more data is not supported")
+
+            with transaction.atomic():
+                locked_instance = Task.objects.select_for_update().get(pk=pk)
+                if is_task_initialized(locked_instance):
+                    raise ValidationError("Adding more data is not supported")
+
+                self._object = self.get_object()
+
                 return self.upload_data(request, append_url_name="append-data-chunk")
         else:
             data_type = request.query_params.get("type", None)
