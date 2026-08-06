@@ -145,7 +145,7 @@ from cvat.apps.engine.serializers import (
     TaskWriteSerializer,
     UserSerializer,
 )
-from cvat.apps.engine.task import ensure_task_is_initialized, is_task_initialized
+from cvat.apps.engine.task import ensure_task_is_initialized
 from cvat.apps.engine.tus import TusFile
 from cvat.apps.engine.types import ExtendedRequest
 from cvat.apps.engine.utils import parse_exception_message, sendfile
@@ -1633,7 +1633,7 @@ class TaskViewSet(
                 # other aggregations that are defined by the viewset queryset,
                 # we just need to lock 1 row with the target Task entity.
                 locked_instance = Task.objects.select_for_update().get(pk=pk)
-                if is_task_initialized(locked_instance):
+                if locked_instance.is_initialized:
                     raise ValidationError("Adding more data is not supported")
 
                 if not locked_instance.data_id:

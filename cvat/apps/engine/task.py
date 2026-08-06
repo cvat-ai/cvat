@@ -1554,12 +1554,8 @@ def _create_audio_task_media_descriptors(
     return audio
 
 
-def is_task_initialized(task: models.Task) -> bool:
-    return bool(task.media_type)
-
-
 def ensure_task_is_initialized(task: models.Task) -> None:
-    if not is_task_initialized(task):
+    if not task.is_initialized:
         raise ValidationError("This task data has not been initialized yet")
 
 
@@ -1575,7 +1571,7 @@ def initialize_task(
 
     slogger.task[db_task.id].info("creating task")
 
-    if is_task_initialized(db_task):
+    if db_task.is_initialized:
         # initialize_task() is supposed to initialize task data layout.
         # Currently, a task data layout can only be set up once per the lifetime.
         raise ValidationError("Task data is already initialized")
