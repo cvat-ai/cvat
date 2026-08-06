@@ -71,6 +71,7 @@ export function useWaveformPlayback(runtime: WaveSurferRuntime): WaveformPlaybac
         const onTimeUpdate = (): void => {
             // With the WebAudio backend, a timeupdate emitted after pausing can
             // carry WaveSurfer's stale reactive time (the previous seek position).
+            // See: https://github.com/katspaugh/wavesurfer.js/issues/4347
             // Its player clock remains correct, so use it as the source of truth.
             const currentTime = instance.getCurrentTime();
             dispatch(audioActions.reportAudioCurrentTime(currentTime));
