@@ -147,6 +147,7 @@ export enum AnnotationActionTypes {
     FETCH_ANNOTATIONS_FAILED = 'FETCH_ANNOTATIONS_FAILED',
     ROTATE_FRAME = 'ROTATE_FRAME',
     SWITCH_Z_LAYER = 'SWITCH_Z_LAYER',
+    SHOW_Z_LAYERS = 'SHOW_Z_LAYERS',
     TOGGLE_Z_LAYERS_VISIBILITY = 'TOGGLE_Z_LAYERS_VISIBILITY',
     SEARCH_ANNOTATIONS_FAILED = 'SEARCH_ANNOTATIONS_FAILED',
     SEARCH_CHAPTERS_FAILED = 'SEARCH_CHAPTERS_FAILED',
@@ -244,6 +245,15 @@ export function switchZLayer(cur: number): AnyAction {
         type: AnnotationActionTypes.SWITCH_Z_LAYER,
         payload: {
             cur,
+        },
+    };
+}
+
+export function showZLayers(zOrders: number[]): AnyAction {
+    return {
+        type: AnnotationActionTypes.SHOW_Z_LAYERS,
+        payload: {
+            zOrders,
         },
     };
 }
@@ -1329,6 +1339,10 @@ export function createAnnotationsAsync(
         try {
             const { jobInstance } = receiveAnnotationsParameters();
             const clientIds = await jobInstance.annotations.put(statesToCreate);
+            const createdZLayers = Array.from(new Set(statesToCreate.flatMap((state) => (
+                'zOrder' in state && typeof state.zOrder === 'number' ? [state.zOrder] : []
+            ))));
+            dispatch(showZLayers(createdZLayers));
             await dispatch(fetchAnnotationsAsync());
 
             if (source === AnnotationSource.DRAW_SIMPLIFIED_POLY && statesToCreate.length === 1) {

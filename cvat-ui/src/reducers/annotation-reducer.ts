@@ -1053,6 +1053,23 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
             };
         }
+        case AnnotationActionTypes.SHOW_Z_LAYERS: {
+            const shownLayers = new Set<number>(action.payload.zOrders);
+            if (!shownLayers.size) {
+                return state;
+            }
+
+            return {
+                ...state,
+                annotations: {
+                    ...state.annotations,
+                    zLayer: {
+                        ...state.annotations.zLayer,
+                        hidden: state.annotations.zLayer.hidden.filter((zOrder) => !shownLayers.has(zOrder)),
+                    },
+                },
+            };
+        }
         case AnnotationActionTypes.TOGGLE_Z_LAYERS_VISIBILITY: {
             const { zOrders } = action.payload;
             if (!zOrders.length) {

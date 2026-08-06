@@ -160,9 +160,15 @@ context('Objects ordering feature', () => {
                 .find('.cvat-objects-sidebar-z-layer-select-button').click();
             cy.get('.cvat-canvas-layer-stack-trigger-layer').should('have.text', '1');
 
+            layerVisibilityButton(1).click();
+            cy.get('#cvat_canvas_shape_1').should('not.exist');
+
             cy.createRectangle(createRectangle('Apple', 300, 150));
             cy.get('.cvat-objects-sidebar-z-layer[data-z-order="1"]')
                 .find('#cvat-objects-sidebar-state-item-5').should('exist');
+            cy.get('#cvat_canvas_shape_1').should('exist');
+            cy.get('#cvat_canvas_shape_5').should('exist');
+            layerVisibilityButton(1).find('svg').should('have.attr', 'data-icon', 'eye');
         });
 
         it('Show and hide layers using layer visibility controls.', () => {
