@@ -89,6 +89,26 @@
         *::part(wrapper) {
             overflow: hidden;
         }
+
+        &.cvat-audio-waveform-interaction-drag {
+            cursor: grabbing;
+
+            *::part(wrapper),
+            *::part(region),
+            *::part(region-handle) {
+                cursor: grabbing !important;
+            }
+        }
+
+        &.cvat-audio-waveform-interaction-resize {
+            cursor: ew-resize;
+
+            *::part(wrapper),
+            *::part(region),
+            *::part(region-handle) {
+                cursor: ew-resize !important;
+            }
+        }
     }
 
     .cvat-audio-minimap-section {

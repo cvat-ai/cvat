@@ -142,6 +142,10 @@ export function useRegionEditing({
 
     useEffect(() => {
         if (!ready) return undefined;
-        return attachRegionAutoScroll(regionRuntime.regionsPlugin, viewport.ensureTimeVisible);
+        return attachRegionAutoScroll(
+            regionRuntime.regionsPlugin,
+            viewport.ensureTimeVisible,
+            () => viewport.containerRef.current,
+        );
     }, [ready]);
 }

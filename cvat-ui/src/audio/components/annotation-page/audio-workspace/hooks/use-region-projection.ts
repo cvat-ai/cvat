@@ -8,7 +8,7 @@ import type { Region } from 'wavesurfer.js/dist/plugins/regions';
 
 import { ActiveControl, CombinedState } from 'reducers';
 import { shallowEqual } from 'utils/redux';
-import { INTERVAL_BOUNDARY_EPSILON } from 'audio/utils/waveform-geometry';
+import { INTERVAL_BOUNDARY_EPSILON, MIN_INTERVAL_DURATION } from 'audio/utils/waveform-geometry';
 
 import { getAudioRegionColor, getRegionItemColor } from '../audio-region-colors';
 import {
@@ -111,6 +111,7 @@ export function useRegionProjection({ regionRuntime, ready }: Params): void {
                 color: getColor(interval, isActive),
                 drag: canEdit,
                 resize: canEdit,
+                minLength: MIN_INTERVAL_DURATION,
             });
             setRegionStyle(region, interval, isActive);
         });

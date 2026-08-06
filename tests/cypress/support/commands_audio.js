@@ -63,6 +63,34 @@ Cypress.Commands.add('assertWaveformReady', () => {
         .and('not.have.css', 'visibility', 'hidden');
 });
 
+Cypress.Commands.add('getAudioWaveformHost', () => (
+    cy.get('.cvat-audio-waveform-wrapper > div:first-child > div')
+));
+
+Cypress.Commands.add('getAudioWaveformViewport', () => (
+    cy.get('.cvat-audio-waveform-wrapper')
+));
+
+Cypress.Commands.add('getAudioWaveformScrollContainer', () => (
+    cy.getAudioWaveformHost().shadow().find('.scroll')
+));
+
+Cypress.Commands.add('getAudioWaveformCursor', () => (
+    cy.getAudioWaveformHost().shadow().find('.cursor')
+));
+
+Cypress.Commands.add('getAudioWaveformWrapper', () => (
+    cy.getAudioWaveformHost().shadow().find('.wrapper')
+));
+
+Cypress.Commands.add('getAudioRegion', () => (
+    cy.getAudioWaveformHost().shadow().find('[part~="region"]')
+));
+
+Cypress.Commands.add('getAudioRegionHandle', (side) => (
+    cy.getAudioWaveformHost().shadow().find(`[part~="region-handle-${side}"]`)
+));
+
 Cypress.Commands.add('openAudioJob', (taskName) => {
     cy.window().its('cvat', { timeout: 25000 }).should('not.be.undefined');
     cy.window().then((win) => cy.wrap(win.cvat.users.get({ self: true })))
