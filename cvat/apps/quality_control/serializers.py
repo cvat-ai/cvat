@@ -300,16 +300,8 @@ _INHERITED_REQUIREMENT_FIELDS = (
 )
 
 
-class _RejectUnknownFieldsSerializer(serializers.Serializer):
-    def to_internal_value(self, data: Any) -> dict[str, Any]:
-        if isinstance(data, Mapping):
-            field_validation.reject_unknown_fields(data, self.fields)
-
-        return super().to_internal_value(data)
-
-
 @extend_schema_serializer(component_name="AttributeComparisonDefaultRule")
-class AttributeComparisonDefaultSerializer(_RejectUnknownFieldsSerializer):
+class AttributeComparisonDefaultSerializer(serializers.Serializer):
     enabled = serializers.BooleanField(required=False, allow_null=True)
     comparator = serializers.ChoiceField(
         choices=get_attribute_comparator_names(),
@@ -324,7 +316,7 @@ class AttributeComparisonDefaultSerializer(_RejectUnknownFieldsSerializer):
     )
 
 
-class AttributeComparisonRuleSerializer(_RejectUnknownFieldsSerializer):
+class AttributeComparisonRuleSerializer(serializers.Serializer):
     spec_id = serializers.IntegerField(
         required=True,
         help_text="AttributeSpec id to override.",
@@ -343,7 +335,7 @@ class AttributeComparisonRuleSerializer(_RejectUnknownFieldsSerializer):
     )
 
 
-class AttributeComparisonSerializer(_RejectUnknownFieldsSerializer):
+class AttributeComparisonSerializer(serializers.Serializer):
     default = AttributeComparisonDefaultSerializer(required=False, allow_null=True)
     rules = AttributeComparisonRuleSerializer(many=True, required=False)
 
@@ -449,7 +441,10 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
         source="compare_groups",
         required=False,
         allow_null=True,
-        help_text="Enables or disables annotation group checks",
+        help_text=(
+            "Enables or disables annotation group checks. "
+            "Only annotations of the same shape type can form matching groups."
+        ),
     )
     attribute_comparison = AttributeComparisonSerializer(
         required=False,
@@ -564,12 +559,6 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
             annotation_type=annotation_type,
         )
         return value
-
-    def to_internal_value(self, data):
-        if isinstance(data, Mapping):
-            field_validation.reject_unknown_fields(data, self.fields)
-
-        return super().to_internal_value(data)
 
     @staticmethod
     def _get_allowed_attribute_spec_ids(

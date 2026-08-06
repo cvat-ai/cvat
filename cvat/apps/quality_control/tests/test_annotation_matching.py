@@ -91,6 +91,30 @@ class TestComparator(unittest.TestCase):
         self.assertFalse(gt_unmatched)
         self.assertFalse(ds_unmatched)
 
+    def test_mask_and_polygon_comparator_processes_segmentations_once(self) -> None:
+        mask = np.zeros((8, 8), dtype=bool)
+        mask[2:6, 2:6] = True
+        settings = ComparisonParameters()
+        settings.included_annotation_types = [
+            dm.AnnotationType.mask,
+            dm.AnnotationType.polygon,
+        ]
+
+        comparator = Comparator(
+            {dm.AnnotationType.label: dm.LabelCategories.from_iterable(["car"])},
+            settings=settings,
+        )
+
+        matches, mismatches, gt_unmatched, ds_unmatched, _ = comparator.match_annotations(
+            _make_mask_item(mask),
+            _make_mask_item(mask.copy()),
+        )["all_ann_types"]
+
+        self.assertEqual(len(matches), 1)
+        self.assertFalse(mismatches)
+        self.assertFalse(gt_unmatched)
+        self.assertFalse(ds_unmatched)
+
     def test_distance_comparator_returns_numeric_pairwise_distances(self) -> None:
         gt_ann = dm.Bbox(10, 10, 20, 20, label=0)
         ds_ann = dm.Bbox(10, 10, 20, 20, label=0)

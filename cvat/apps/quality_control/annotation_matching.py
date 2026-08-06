@@ -1075,7 +1075,18 @@ class DistanceComparator(datumaro.components.comparator.DistanceComparator):
         return memoizing_comparison, comparisons
 
     def match_annotations(self, item_a, item_b):
-        return {t: self._match_ann_type(t, item_a, item_b) for t in self.included_ann_types}
+        segmentation_types = {dm.AnnotationType.mask, dm.AnnotationType.polygon}
+        included_ann_types = set(self.included_ann_types)
+        results = {
+            t: self._match_ann_type(t, item_a, item_b)
+            for t in self.included_ann_types
+            if t not in segmentation_types
+        }
+
+        if included_ann_types & segmentation_types:
+            results[dm.AnnotationType.polygon] = self.match_segmentations(item_a, item_b)
+
+        return results
 
 
 def _find_covered_segments(
@@ -1129,7 +1140,7 @@ class Comparator:
         self.non_groupable_ann_type = settings.non_groupable_ann_type
         self._annotation_comparator = DistanceComparator(
             categories,
-            included_ann_types=self._get_distance_comparator_ann_types(self.included_ann_types),
+            included_ann_types=self.included_ann_types,
             return_comparisons=True,
             panoptic_comparison=settings.panoptic_comparison,
             iou_threshold=settings.iou_threshold,
@@ -1142,23 +1153,6 @@ class Comparator:
         )
         self.coverage_threshold = settings.object_visibility_threshold
         self.group_match_threshold = settings.group_match_threshold
-
-    @staticmethod
-    def _get_distance_comparator_ann_types(
-        included_ann_types: Sequence[dm.AnnotationType],
-    ) -> set[dm.AnnotationType]:
-        comparator_ann_types = set(included_ann_types)
-        if dm.AnnotationType.mask in comparator_ann_types:
-            comparator_ann_types.add(dm.AnnotationType.polygon)
-
-        return comparator_ann_types - {dm.AnnotationType.mask}
-
-    @staticmethod
-    def _get_per_type_result_key(shape_type: dm.AnnotationType) -> dm.AnnotationType:
-        if shape_type == dm.AnnotationType.mask:
-            return dm.AnnotationType.polygon
-
-        return shape_type
 
     def find_groups(
         self, item: dm.DatasetItem
@@ -1245,27 +1239,16 @@ class Comparator:
 
         merged_results = [[], [], [], [], {}]
         shape_merged_results = [[], [], [], [], {}]
-        processed_result_keys = set()
-        for shape_type in self.included_ann_types:
-            result_key = self._get_per_type_result_key(shape_type)
-            if result_key in processed_result_keys:
-                continue
-
-            processed_result_keys.add(result_key)
-
-            shape_type_results = per_type_results.get(result_key, None)
-            if shape_type_results is None:
-                continue
-
+        for shape_type, shape_type_results in per_type_results.items():
             for merged_field, field in zip(merged_results, shape_type_results[:-1]):
                 merged_field.extend(field)
 
-            if result_key != dm.AnnotationType.label:
+            if shape_type != dm.AnnotationType.label:
                 for merged_field, field in zip(shape_merged_results, shape_type_results[:-1]):
                     merged_field.extend(field)
-                shape_merged_results[-1].update(per_type_results[result_key][-1])
+                shape_merged_results[-1].update(shape_type_results[-1])
 
-            merged_results[-1].update(per_type_results[result_key][-1])
+            merged_results[-1].update(shape_type_results[-1])
 
         return {"all_ann_types": merged_results, "all_shape_ann_types": shape_merged_results}
 

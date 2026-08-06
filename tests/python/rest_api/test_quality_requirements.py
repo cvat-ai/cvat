@@ -462,10 +462,12 @@ class TestQualityRequirementsApi(_QualityRequirementsTestBase):
                     {
                         "name": root_name,
                         "parent_requirement": base_requirement["id"],
+                        "unknown": True,
                         "children": [
                             {
                                 "name": child_name,
-                                "children": [{"name": grandchild_name}],
+                                "unknown": True,
+                                "children": [{"name": grandchild_name, "unknown": True}],
                             },
                             {"name": sibling_name},
                         ],
@@ -631,16 +633,6 @@ class TestQualityRequirementsApi(_QualityRequirementsTestBase):
                     }
                 ],
                 "already exists",
-            ),
-            (
-                [
-                    {
-                        "name": f"bulk-unknown-field-{task['id']}",
-                        "parent_requirement": base_requirement["id"],
-                        "unknown": True,
-                    }
-                ],
-                "unknown",
             ),
         ]
 
@@ -864,7 +856,11 @@ class TestQualityRequirementsApi(_QualityRequirementsTestBase):
             {
                 "point_size": 0.5,
                 "match_orientation": True,
-                "attribute_comparison": {"default": {"enabled": True}},
+                "unknown": True,
+                "attribute_comparison": {
+                    "unknown": True,
+                    "default": {"enabled": True, "unknown": True},
+                },
                 "match_groups": True,
             },
         )
@@ -872,13 +868,13 @@ class TestQualityRequirementsApi(_QualityRequirementsTestBase):
         assert updated_requirement["point_size"] == 0.5
         assert updated_requirement["match_orientation"] is True
         assert updated_requirement["match_groups"] is True
+        assert updated_requirement["attribute_comparison"] == {
+            "default": {"enabled": True},
+        }
 
     @pytest.mark.parametrize(
         "attribute_comparison",
         [
-            {"unknown": True},
-            {"default": {"unknown": True}},
-            {"rules": [{"spec_id": 1, "enabled": True, "unknown": True}]},
             {
                 "rules": [
                     {"spec_id": 1, "enabled": True},
@@ -890,9 +886,6 @@ class TestQualityRequirementsApi(_QualityRequirementsTestBase):
             {"rules": [{"spec_id": 1, "enabled": True, "threshold": 1.1}]},
         ],
         ids=[
-            "unknown-root-field",
-            "unknown-default-field",
-            "unknown-rule-field",
             "duplicate-spec-id",
             "unsupported-comparator",
             "default-threshold-out-of-range",
