@@ -87,15 +87,11 @@ function LeftGroup(props: Props): JSX.Element {
     const handlers: Record<keyof typeof componentShortcuts, (event?: KeyboardEvent) => void> = {
         UNDO: (event: KeyboardEvent | undefined) => {
             event?.preventDefault();
-            if (undoAction) {
-                onUndoClick();
-            }
+            onUndoClick();
         },
         REDO: (event: KeyboardEvent | undefined) => {
             event?.preventDefault();
-            if (redoAction) {
-                onRedoClick();
-            }
+            onRedoClick();
         },
         SWITCH_TOOLS_BLOCKER_STATE: (event: KeyboardEvent | undefined) => {
             event?.preventDefault();
