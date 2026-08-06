@@ -1225,7 +1225,7 @@ class Credentials:
         return converted_credentials[self.credentials_type]
 
     @classmethod
-    def from_db(cls, credentials_type, value):
+    def from_db(cls, credentials_type: CredentialsTypeChoice, value: str) -> Credentials:
         instance = cls()
 
         instance.credentials_type = credentials_type
