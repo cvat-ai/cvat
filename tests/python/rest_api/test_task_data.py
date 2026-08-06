@@ -27,7 +27,7 @@ from cvat_sdk.api_client import models
 from cvat_sdk.core.helpers import get_paginated_collection
 from deepdiff import DeepDiff
 from PIL import Image
-from pytest_cases import parametrize
+from pytest_cases import fixture_ref, parametrize
 
 import shared.utils.s3 as s3
 from rest_api._test_base import TestTasksBase
@@ -1954,6 +1954,96 @@ class TestTaskData(TestTasksBase):
                 quality="compressed",
                 index=0,
             )
+
+    @pytest.mark.timeout(300)
+    @parametrize(
+        "task_spec, task_id", [fixture_ref("fxt_uploaded_images_task_with_honeypots_and_segments")]
+    )
+    def test_all_job_chunks_available_after_honeypot_frame_change(
+        self, task_spec: ITaskSpec, task_id: int
+    ):
+        # Check for regressions on https://github.com/cvat-ai/cvat/issues/11006
+
+        with make_api_client(self._USERNAME) as api_client:
+            task_meta, _ = api_client.tasks_api.retrieve_data_meta(task_id)
+            validation_layout, _ = api_client.tasks_api.retrieve_validation_layout(task_id)
+            honeypot_abs_frames = {
+                rel_frame: rel_frame * task_spec.frame_step + task_meta.start_frame
+                for rel_frame in validation_layout.honeypot_frames
+            }  # { rel_frame -> abs_frame }
+
+            annotation_jobs = sorted(
+                (
+                    job
+                    for job in get_paginated_collection(
+                        api_client.jobs_api.list_endpoint, task_id=task_id
+                    )
+                    if job.type == "annotation"
+                ),
+                key=lambda job: job.start_frame,
+            )
+            assert annotation_jobs
+
+            for job in annotation_jobs:
+                job_meta, _ = api_client.jobs_api.retrieve_data_meta(job.id)
+                job_chunk_ids = set(range(math.ceil(job_meta.size / job_meta.chunk_size)))
+                job_honeypot_chunk_ids = {
+                    (abs_frame - job_meta.start_frame)
+                    // task_spec.frame_step
+                    // job_meta.chunk_size
+                    for abs_frame in honeypot_abs_frames
+                }
+                job_non_honeypot_chunk_ids = job_chunk_ids - job_honeypot_chunk_ids
+                if not job_honeypot_chunk_ids or not job_non_honeypot_chunk_ids:
+                    continue
+
+            assert (
+                job_non_honeypot_chunk_ids and job_honeypot_chunk_ids
+            ), "Can't find a suitable job for the test"
+
+            unchanged_chunk_id = min(job_non_honeypot_chunk_ids)
+
+            # Initialize the chunk in the cache
+            for quality in ("original", "compressed"):
+                _, response = api_client.jobs_api.retrieve_data(
+                    job.id,
+                    type="chunk",
+                    quality=quality,
+                    index=unchanged_chunk_id,
+                    _parse_response=False,
+                )
+                assert response.status == HTTPStatus.OK
+
+            # Update honeypots
+            validation_frames = validation_layout.validation_frames
+            new_honeypot_real_frames = [
+                validation_frames[(validation_frames.index(frame) + 1) % len(validation_frames)]
+                for frame in validation_layout.honeypot_real_frames
+            ]
+
+            _, response = api_client.tasks_api.partial_update_validation_layout(
+                task_id,
+                patched_task_validation_layout_write_request=(
+                    models.PatchedTaskValidationLayoutWriteRequest(
+                        frame_selection_method="manual",
+                        honeypot_real_frames=new_honeypot_real_frames,
+                    )
+                ),
+                _parse_response=False,
+            )
+            assert response.status == HTTPStatus.OK
+
+            # Check all the chunks are still available
+            for quality in ("original", "compressed"):
+                _, response = api_client.jobs_api.retrieve_data(
+                    job.id,
+                    type="chunk",
+                    quality=quality,
+                    index=unchanged_chunk_id,
+                    _check_status=False,
+                    _parse_response=False,
+                )
+                assert response.status == HTTPStatus.OK
 
     @parametrize("task_spec, task_id", TestTasksBase._all_task_cases)
     def test_can_get_task_meta(self, task_spec: ITaskSpec, task_id: int):
