@@ -1086,26 +1086,23 @@ class KeypointsMatcher(datumaro.components.annotations.matcher.PointsMatcher):
     def distance(self, a: dm.Points, b: dm.Points) -> float:
         a_bbox = self.instance_map[id(a)][1]
         b_bbox = self.instance_map[id(b)][1]
-        a_area = a_bbox[2] * a_bbox[3]
-        b_area = b_bbox[2] * b_bbox[3]
 
         visibility_a = [v == dm.Points.Visibility.visible for v in a.visibility]
         visibility_b = [v == dm.Points.Visibility.visible for v in b.visibility]
 
+        if self.point_size_base == models.PointSizeBase.IMAGE_SIZE:
+            return oks(
+                a, b, sigma=self.sigma,
+                scale=self.img_h * self.img_w,
+                visibility_a=visibility_a, visibility_b=visibility_b,
+            )
+
+        # GROUP_BBOX_SIZE: check bbox overlap first
+        a_area = a_bbox[2] * a_bbox[3]
+        b_area = b_bbox[2] * b_bbox[3]
+
         if a_area == 0 and b_area == 0:
-            # Degenerate case: single-point or collinear skeletons produce
-            # zero-area bboxes. bbox_iou() always returns 0 for these, so the
-            # normal IoU guard would block even identical annotations.
-            if self.point_size_base == models.PointSizeBase.IMAGE_SIZE:
-                # Scale OKS by image area — mirrors match_points._distance
-                return oks(
-                    a, b, sigma=self.sigma,
-                    scale=self.img_h * self.img_w,
-                    visibility_a=visibility_a, visibility_b=visibility_b,
-                )
-            else:
-                # GROUP_BBOX_SIZE: skeletons must have a valid bbox to compare
-                return 0
+            return 0
 
         if datumaro.util.annotation_util.bbox_iou(a_bbox, b_bbox) <= 0:
             return 0
