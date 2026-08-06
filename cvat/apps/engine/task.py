@@ -1573,7 +1573,7 @@ def initialize_task(
     if isinstance(db_task, int):
         db_task = models.Task.objects.select_for_update().get(pk=db_task)
 
-    slogger.glob.info("create task #{}".format(db_task.id))
+    slogger.task[db_task.id].info("creating task")
 
     if is_task_initialized(db_task):
         # initialize_task() is supposed to initialize task data layout.
