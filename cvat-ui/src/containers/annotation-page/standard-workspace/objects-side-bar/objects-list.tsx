@@ -22,6 +22,7 @@ import {
     changeHideActiveObjectAsync,
     updateLayerAsync,
     compactLayersAsync,
+    switchZLayer,
     toggleZLayersVisibility,
 } from 'actions/annotation-actions';
 import {
@@ -62,6 +63,7 @@ interface StateToProps {
     activatedElementID: number | null;
     minZLayer: number;
     maxZLayer: number;
+    currentZLayer: number;
     hiddenZLayers: number[];
     keyMap: KeyMap;
     normalizedKeyMap: Record<string, string>;
@@ -85,6 +87,7 @@ interface DispatchToProps {
     changeHideEditedState(...args: Parameters<typeof changeHideActiveObjectAsync>): void;
     updateLayer(...args: Parameters<typeof updateLayerAsync>): void;
     compactLayers(...args: Parameters<typeof compactLayersAsync>): void;
+    selectLayer(...args: Parameters<typeof switchZLayer>): void;
     toggleLayersVisibility(...args: Parameters<typeof toggleZLayersVisibility>): void;
 }
 
@@ -225,7 +228,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 activatedStateID,
                 activatedElementID,
                 zLayer: {
-                    min: minZLayer, max: maxZLayer, hidden: hiddenZLayers,
+                    min: minZLayer, max: maxZLayer, cur: currentZLayer, hidden: hiddenZLayers,
                 },
             },
             job: { instance: jobInstance },
@@ -280,6 +283,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         activatedElementID,
         minZLayer,
         maxZLayer,
+        currentZLayer,
         hiddenZLayers,
         keyMap,
         normalizedKeyMap,
@@ -329,6 +333,9 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         },
         compactLayers(...args: Parameters<typeof compactLayersAsync>): void {
             dispatch(compactLayersAsync(...args));
+        },
+        selectLayer(...args: Parameters<typeof switchZLayer>): void {
+            dispatch(switchZLayer(...args));
         },
         toggleLayersVisibility(...args: Parameters<typeof toggleZLayersVisibility>): void {
             dispatch(toggleZLayersVisibility(...args));
@@ -546,6 +553,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             activatedElementID,
             maxZLayer,
             minZLayer,
+            currentZLayer,
             hiddenZLayers,
             keyMap,
             normalizedKeyMap,
@@ -772,6 +780,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                     statesCollapsedAll={statesCollapsedAll}
                     workspace={workspace}
                     statesOrdering={statesOrdering}
+                    currentLayer={currentZLayer}
                     hiddenLayers={hiddenZLayers}
                     sortedStatesID={sortedStatesID}
                     showGroundTruth={showGroundTruth}
@@ -780,6 +789,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                     switchHiddenAllShortcut={normalizedKeyMap.SWITCH_ALL_HIDDEN}
                     switchLockAllShortcut={normalizedKeyMap.SWITCH_ALL_LOCK}
                     changeStatesOrdering={this.onChangeStatesOrdering}
+                    selectLayer={this.props.selectLayer}
                     toggleLayersVisibility={this.props.toggleLayersVisibility}
                     moveObjectsToLayer={this.moveObjectsToLayer}
                     moveObjectsOnNewLayer={this.moveObjectsOnNewLayer}

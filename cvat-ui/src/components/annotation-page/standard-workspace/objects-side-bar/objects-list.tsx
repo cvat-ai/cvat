@@ -45,6 +45,7 @@ interface Props {
     statesLocked: boolean;
     statesCollapsedAll: boolean;
     statesOrdering: StatesOrdering;
+    currentLayer: number;
     hiddenLayers: number[];
     sortedStatesID: number[];
     objectStates: ObjectState[];
@@ -53,6 +54,7 @@ interface Props {
     switchHiddenAllShortcut: string;
     showGroundTruth: boolean;
     changeStatesOrdering(value: StatesOrdering): void;
+    selectLayer(zOrder: number): void;
     toggleLayersVisibility(zOrders: number[]): void;
     moveObjectsToLayer(source: LayerMoveSource, targetZOrder: number): void;
     moveObjectsOnNewLayer(source: LayerMoveSource, placement: LayerPlacement): void;
@@ -73,6 +75,7 @@ function ObjectListComponent(props: Props): JSX.Element {
         statesLocked,
         statesCollapsedAll,
         statesOrdering,
+        currentLayer,
         hiddenLayers,
         sortedStatesID,
         objectStates,
@@ -81,6 +84,7 @@ function ObjectListComponent(props: Props): JSX.Element {
         switchHiddenAllShortcut,
         showGroundTruth,
         changeStatesOrdering,
+        selectLayer,
         toggleLayersVisibility,
         moveObjectsToLayer,
         moveObjectsOnNewLayer,
@@ -383,8 +387,10 @@ function ObjectListComponent(props: Props): JSX.Element {
                                                 layerObjectIds={objectIdsByLayer[zOrder] || []}
                                                 objectStates={layerObjectStates}
                                                 visibleSkeletonElements={visibleSkeletonElements}
+                                                selected={zOrder === currentLayer}
                                                 visible={!hiddenLayers.includes(zOrder)}
                                                 collapsed={collapsedLayers.has(zOrder)}
+                                                selectLayer={selectLayer}
                                                 toggleLayerVisibility={toggleLayerVisibility}
                                                 toggleLayerCollapsed={toggleLayerCollapsed}
                                             />

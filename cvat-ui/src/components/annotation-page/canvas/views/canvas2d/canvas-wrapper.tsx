@@ -112,7 +112,7 @@ interface StateToProps {
     textContent: string;
     showAllInterpolationTracks: boolean;
     workspace: Workspace;
-    maxZLayer: number;
+    currentZLayer: number;
     hiddenZLayers: number[];
     sidebarCollapsed: boolean;
     automaticBordering: boolean;
@@ -176,7 +176,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 activatedStateID,
                 activatedElementID,
                 activatedAttributeID,
-                zLayer: { max: maxZLayer, hidden: hiddenZLayers },
+                zLayer: { cur: currentZLayer, hidden: hiddenZLayers },
                 highlightedConflict,
                 renderData,
             },
@@ -256,7 +256,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         textContent,
         showAllInterpolationTracks,
         showTagsOnFrame,
-        maxZLayer,
+        currentZLayer,
         hiddenZLayers,
         sidebarCollapsed,
         automaticBordering,
@@ -699,7 +699,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
     private onCanvasShapeDrawn = (event: any): void => {
         const {
             jobInstance, activeLabelID, activeObjectType, frame, updateActiveControl, onCreateAnnotations,
-            onUpdateEditedObject, activeObjectHidden, workspace, maxZLayer,
+            onUpdateEditedObject, activeObjectHidden, workspace, currentZLayer,
         } = this.props;
 
         if (!event.detail.continue) {
@@ -714,7 +714,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         state.label = state.label || jobInstance.labels.filter((label: any) => label.id === activeLabelID)[0];
         state.frame = frame;
         state.rotation = state.rotation || 0;
-        state.zOrder = maxZLayer;
+        state.zOrder = currentZLayer;
         state.occluded = state.occluded || false;
         state.outside = state.outside || false;
         state.hidden = state.hidden || (activeObjectHidden && workspace !== Workspace.SINGLE_SHAPE);
@@ -1151,6 +1151,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
 
     public render(): JSX.Element {
         const {
+            currentZLayer,
             hiddenZLayers,
             sidebarCollapsed,
             keyMap,
@@ -1253,14 +1254,15 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
                     <UpOutlined className='cvat-canvas-image-setups-trigger' />
                 </Popover>
 
-                <CVATTooltip title='Open layer stack'>
+                <CVATTooltip title={`Open layer stack. Current layer ${currentZLayer}`}>
                     <button
                         className='cvat-canvas-layer-stack-trigger'
                         type='button'
-                        aria-label='Open layer stack'
+                        aria-label={`Open layer stack. Current layer ${currentZLayer}`}
                         onClick={(): void => onOpenLayerStack(sidebarCollapsed)}
                     >
                         <Icon component={LayerStackIcon} />
+                        <span className='cvat-canvas-layer-stack-trigger-layer'>{currentZLayer}</span>
                     </button>
                 </CVATTooltip>
 

@@ -16,8 +16,10 @@ interface LayerSectionProps {
     layerObjectIds: number[];
     objectStates: ObjectState[];
     visibleSkeletonElements: Record<number, number[]>;
+    selected: boolean;
     visible: boolean;
     collapsed: boolean;
+    selectLayer(zOrder: number): void;
     toggleLayerVisibility(zOrder: number, includeLower: boolean): void;
     toggleLayerCollapsed(zOrder: number): void;
 }
@@ -26,7 +28,7 @@ interface LayerSectionProps {
 function LayerSection(props: LayerSectionProps): JSX.Element {
     const {
         zOrder, layerObjectIds, objectStates, visibleSkeletonElements,
-        visible, collapsed,
+        selected, visible, collapsed, selectLayer,
         toggleLayerCollapsed, toggleLayerVisibility,
     } = props;
 
@@ -40,8 +42,10 @@ function LayerSection(props: LayerSectionProps): JSX.Element {
         >
             <LayerHeader
                 zOrder={zOrder}
+                selected={selected}
                 visible={visible}
                 collapsed={collapsed}
+                selectLayer={selectLayer}
                 toggleLayerVisibility={toggleLayerVisibility}
                 toggleLayerCollapsed={toggleLayerCollapsed}
             />

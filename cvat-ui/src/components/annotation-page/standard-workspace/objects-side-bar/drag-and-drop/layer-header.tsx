@@ -7,7 +7,7 @@ import React from 'react';
 import { useDraggable } from '@dnd-kit/core';
 import {
     CaretDownOutlined, CaretRightOutlined, EyeInvisibleOutlined,
-    EyeOutlined, HolderOutlined,
+    EyeOutlined, HolderOutlined, SelectOutlined,
 } from '@ant-design/icons';
 import Button from 'antd/lib/button';
 import Text from 'antd/lib/typography/Text';
@@ -17,8 +17,10 @@ import { layerDragID } from './index';
 
 interface LayerHeaderProps {
     zOrder: number;
+    selected: boolean;
     visible: boolean;
     collapsed: boolean;
+    selectLayer(zOrder: number): void;
     toggleLayerVisibility(zOrder: number, includeLower: boolean): void;
     toggleLayerCollapsed(zOrder: number): void;
 }
@@ -26,7 +28,7 @@ interface LayerHeaderProps {
 // Renders layer controls and exposes the layer itself as a draggable handle target.
 function LayerHeader(props: LayerHeaderProps): JSX.Element {
     const {
-        zOrder, visible, collapsed, toggleLayerCollapsed, toggleLayerVisibility,
+        zOrder, selected, visible, collapsed, selectLayer, toggleLayerCollapsed, toggleLayerVisibility,
     } = props;
 
     const {
@@ -42,6 +44,7 @@ function LayerHeader(props: LayerHeaderProps): JSX.Element {
     ].join(' ');
 
     const visibilityTooltip = visible ? 'Hide layer' : 'Show layer';
+    const selectLayerTooltip = selected ? 'Current layer' : 'Set as current layer';
     return (
         <div
             ref={setNodeRef}
@@ -56,6 +59,17 @@ function LayerHeader(props: LayerHeaderProps): JSX.Element {
                         size='small'
                         icon={collapsed ? <CaretRightOutlined /> : <CaretDownOutlined />}
                         onClick={(): void => toggleLayerCollapsed(zOrder)}
+                    />
+                </CVATTooltip>
+                <CVATTooltip title={selectLayerTooltip}>
+                    <Button
+                        className='cvat-objects-sidebar-z-layer-select-button'
+                        type='text'
+                        size='small'
+                        icon={<SelectOutlined />}
+                        aria-pressed={selected}
+                        disabled={selected}
+                        onClick={(): void => selectLayer(zOrder)}
                     />
                 </CVATTooltip>
                 <CVATTooltip title='Drag layer'>

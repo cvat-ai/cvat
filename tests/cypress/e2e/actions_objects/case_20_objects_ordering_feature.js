@@ -154,6 +154,15 @@ context('Objects ordering feature', () => {
             [0, 1, 2].forEach((zOrder) => {
                 cy.get(`.cvat-objects-sidebar-z-layer[data-z-order="${zOrder}"]`).should('exist');
             });
+
+            cy.get('.cvat-canvas-layer-stack-trigger-layer').should('have.text', '0');
+            cy.get('.cvat-objects-sidebar-z-layer[data-z-order="1"]')
+                .find('.cvat-objects-sidebar-z-layer-select-button').click();
+            cy.get('.cvat-canvas-layer-stack-trigger-layer').should('have.text', '1');
+
+            cy.createRectangle(createRectangle('Apple', 300, 150));
+            cy.get('.cvat-objects-sidebar-z-layer[data-z-order="1"]')
+                .find('#cvat-objects-sidebar-state-item-5').should('exist');
         });
 
         it('Show and hide layers using layer visibility controls.', () => {
@@ -204,7 +213,7 @@ context('Objects ordering feature', () => {
             cy.sidebarItemSortBy('Updated time');
 
             // Update in descending ID order so the latest-first result is ascending by ID.
-            [4, 3, 2, 1].forEach((clientId) => {
+            [5, 4, 3, 2, 1].forEach((clientId) => {
                 cy.get(`#cvat-objects-sidebar-state-item-${clientId}`).within(() => {
                     cy.get('.cvat-object-item-button-lock').click();
                 });

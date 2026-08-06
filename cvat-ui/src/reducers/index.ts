@@ -952,6 +952,7 @@ export interface AnnotationState {
         zLayer: {
             min: number;
             max: number;
+            cur: number;
             hidden: number[];
         };
     };

@@ -146,6 +146,7 @@ export enum AnnotationActionTypes {
     FETCH_ANNOTATIONS_SUCCESS = 'FETCH_ANNOTATIONS_SUCCESS',
     FETCH_ANNOTATIONS_FAILED = 'FETCH_ANNOTATIONS_FAILED',
     ROTATE_FRAME = 'ROTATE_FRAME',
+    SWITCH_Z_LAYER = 'SWITCH_Z_LAYER',
     TOGGLE_Z_LAYERS_VISIBILITY = 'TOGGLE_Z_LAYERS_VISIBILITY',
     SEARCH_ANNOTATIONS_FAILED = 'SEARCH_ANNOTATIONS_FAILED',
     SEARCH_CHAPTERS_FAILED = 'SEARCH_CHAPTERS_FAILED',
@@ -234,6 +235,15 @@ export function toggleZLayersVisibility(zOrders: number[]): AnyAction {
         type: AnnotationActionTypes.TOGGLE_Z_LAYERS_VISIBILITY,
         payload: {
             zOrders,
+        },
+    };
+}
+
+export function switchZLayer(cur: number): AnyAction {
+    return {
+        type: AnnotationActionTypes.SWITCH_Z_LAYER,
+        payload: {
+            cur,
         },
     };
 }

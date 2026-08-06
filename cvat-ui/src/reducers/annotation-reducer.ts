@@ -14,6 +14,7 @@ import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import {
     DimensionType, getCore, JobStage, Label, LabelType, ObjectState, ObjectType, ShapeType,
 } from 'cvat-core-wrapper';
+import { clamp } from 'utils/math';
 
 import {
     ActiveControl,
@@ -163,6 +164,7 @@ const defaultState: AnnotationState = {
         zLayer: {
             min: 0,
             max: 0,
+            cur: 0,
             hidden: [],
         },
     },
@@ -294,6 +296,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     filters,
                     zLayer: {
                         ...state.annotations.zLayer,
+                        cur: Number.MAX_SAFE_INTEGER,
                         hidden: [],
                     },
                 },
@@ -420,6 +423,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                         ...state.annotations.zLayer,
                         min: minZ,
                         max: maxZ,
+                        cur: maxZ,
                         hidden: [],
                     },
                 },
@@ -657,6 +661,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                         ...state.annotations.zLayer,
                         min: minZ,
                         max: maxZ,
+                        cur: clamp(state.annotations.zLayer.cur, minZ, maxZ),
                         hidden: zOrderChanged ? [] : state.annotations.zLayer.hidden,
                     },
                     states: nextStates,
@@ -1005,6 +1010,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                         ...state.annotations.zLayer,
                         min: minZ,
                         max: maxZ,
+                        cur: clamp(state.annotations.zLayer.cur, minZ, maxZ),
                         hidden: zOrderChanged ? [] : state.annotations.zLayer.hidden,
                     },
                 },
@@ -1027,6 +1033,23 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     ...state.annotations,
                     filters,
                     renderData: getAnnotationsRenderData(state.annotations.states, filters),
+                },
+            };
+        }
+        case AnnotationActionTypes.SWITCH_Z_LAYER: {
+            const { cur } = action.payload;
+            const { min, max, hidden } = state.annotations.zLayer;
+            const nextCurrentLayer = clamp(cur, min, max);
+
+            return {
+                ...state,
+                annotations: {
+                    ...state.annotations,
+                    zLayer: {
+                        ...state.annotations.zLayer,
+                        cur: nextCurrentLayer,
+                        hidden: hidden.filter((zOrder) => zOrder !== nextCurrentLayer),
+                    },
                 },
             };
         }
