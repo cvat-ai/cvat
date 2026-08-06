@@ -59,6 +59,7 @@ export interface WaveSurferRuntime {
 interface Params {
     sourceToken: string;
     minimapContainerID: string;
+    minimapTimelineContainerID: string;
     audioBuffer: AudioBuffer;
     peaks: Float32Array[];
     duration: number;
@@ -73,17 +74,23 @@ interface WaveSurferWebAudioPlayer {
     emit(eventName: 'durationchange'): void;
 }
 
+interface MinimapPluginInternals {
+    // WaveSurfer's minimap owns an internal WaveSurfer instance for the unzoomed overview.
+    miniWavesurfer: WaveSurfer | null;
+}
+
 /**
  * Responsible for creating and managing the WaveSurfer instance and its plugins.
  * Exposes a stable API for the rest of the waveform hooks to use.
  */
 function useWaveSurferRuntime({
-    sourceToken, minimapContainerID, audioBuffer, peaks, duration, containerRef,
+    sourceToken, minimapContainerID, minimapTimelineContainerID, audioBuffer, peaks, duration, containerRef,
 }: Params): WaveSurferRuntime {
     interface WaveSurferPluginScope {
         minimap: MinimapPlugin;
         regionsPlugin: RegionsPlugin;
         plugins: GenericPlugin[];
+        destroy(): void;
     }
 
     const dispatch = useDispatch<ThunkDispatch>();
@@ -106,6 +113,14 @@ function useWaveSurferRuntime({
         });
         const timeline = TimelinePlugin.create();
         timelineRef.current = timeline;
+        const unsubscribeMinimapInit = minimap.on('init', () => {
+            const { miniWavesurfer } = minimap as unknown as MinimapPluginInternals;
+            if (!miniWavesurfer) return;
+
+            miniWavesurfer.registerPlugin(TimelinePlugin.create({
+                container: `#${minimapTimelineContainerID}`,
+            }));
+        });
         const regionsPlugin = RegionsPlugin.create();
         const plugins: GenericPlugin[] = [
             timeline,
@@ -120,7 +135,12 @@ function useWaveSurferRuntime({
             regionsPlugin,
         ];
 
-        return { minimap, regionsPlugin, plugins };
+        return {
+            minimap,
+            regionsPlugin,
+            plugins,
+            destroy: unsubscribeMinimapInit,
+        };
     };
 
     const pluginsScopeRef = useRef<WaveSurferPluginScope | null>(null);
@@ -175,6 +195,7 @@ function useWaveSurferRuntime({
             setInstance(null);
             readyRef.current = false;
             dispatch(releaseAudioDataAsync(sourceToken));
+            pluginsScope.destroy();
             wsInstance.destroy();
         };
     }, []);

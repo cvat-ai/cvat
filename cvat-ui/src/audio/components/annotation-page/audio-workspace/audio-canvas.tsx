@@ -17,6 +17,7 @@ import { useAudioIntervalAnnotations } from './hooks/use-audio-interval-annotati
 import AudioWaveformControls from './audio-waveform-controls';
 
 const minimapContainerID = 'minimap';
+const minimapTimelineContainerID = 'minimap-timeline';
 
 interface AudioCanvasProps {
     sourceToken: string;
@@ -33,6 +34,7 @@ function AudioCanvas({
     const waveform = useAudioWaveform({
         sourceToken,
         minimapContainerID,
+        minimapTimelineContainerID,
         audioBuffer,
         peaks,
         duration,
@@ -58,6 +60,7 @@ function AudioCanvas({
                 />
                 <div className='cvat-audio-minimap-section'>
                     <div id={minimapContainerID} />
+                    <div id={minimapTimelineContainerID} />
                 </div>
             </div>
             <AudioRegionDetailsWrapper />
