@@ -68,9 +68,13 @@ export function useWaveformPlayback(runtime: WaveSurferRuntime): WaveformPlaybac
         const instance = runtime.instanceRef.current;
         if (!instance) return undefined;
 
-        const onTimeUpdate = (time: number): void => {
-            dispatch(audioActions.reportAudioCurrentTime(time));
-            listenersRef.current.forEach((listener) => listener(time));
+        const onTimeUpdate = (): void => {
+            // With the WebAudio backend, a timeupdate emitted after pausing can
+            // carry WaveSurfer's stale reactive time (the previous seek position).
+            // Its player clock remains correct, so use it as the source of truth.
+            const currentTime = instance.getCurrentTime();
+            dispatch(audioActions.reportAudioCurrentTime(currentTime));
+            listenersRef.current.forEach((listener) => listener(currentTime));
         };
         const onFinish = (): void => {
             dispatch(audioActions.switchAudioPlay(false));
