@@ -318,10 +318,7 @@ class TestTasksBase:
             image_files=image_files,
             server_files=server_files,
             cloud_storage_id=cloud_storage_id,
-            # FIXME: random sorting with frame filter and cloud images (and, optionally, honeypots)
-            # doesn't work with static cache
-            # https://github.com/cvat-ai/cvat/issues/9021
-            use_cache=True,
+            use_cache=False,
         )
 
     def _uploaded_images_task_with_gt_and_segments_base(
