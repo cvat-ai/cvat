@@ -167,6 +167,7 @@ class UserRegisterAPITestCase(ApiTestBase):
             query_params={"org": org_slug},
         )
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertTrue(User.objects.filter(email=self.user_data["email"]).exists())
 
         response = self._run_api_v2_user_register(self.user_data)
         self._check_response(
@@ -181,6 +182,8 @@ class UserRegisterAPITestCase(ApiTestBase):
             },
         )
         invited_db_user = User.objects.get(email=self.user_data["email"])
+        self.assertEqual(User.objects.filter(email__iexact=self.user_data["email"]).count(), 1)
+        self.assertTrue(invited_db_user.memberships.filter(organization__slug=org_slug).exists())
         self.assertTrue(invited_db_user.emailaddress_set.update(verified=True))
         response = self.client.post(
             "/api/auth/login",
