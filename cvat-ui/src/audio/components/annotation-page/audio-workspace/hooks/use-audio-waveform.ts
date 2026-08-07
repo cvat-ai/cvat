@@ -15,6 +15,7 @@ import HoverPlugin from 'wavesurfer.js/dist/plugins/hover';
 
 import { audioActions, releaseAudioDataAsync } from 'actions/audio-actions';
 import { formatSeconds } from 'audio/utils/format-audio-time';
+import { MINIMAP_TIMELINE_HEIGHT } from 'audio/utils/waveform-geometry';
 import { ThunkDispatch } from 'utils/redux';
 
 import { injectScrollbarStyle } from '../utils/inject-scrollbar-style';
@@ -36,13 +37,21 @@ export interface AudioWaveform {
     readyRef: React.MutableRefObject<boolean>;
 }
 
+interface MinimapRuntime {
+    /** Stable ref */
+    plugin: MinimapPlugin;
+    /** Stable ref */
+    instanceRef: React.MutableRefObject<WaveSurfer | null>;
+    /** Stable ref */
+    timelineRef: React.MutableRefObject<TimelinePlugin | null>;
+}
+
 export interface WaveSurferRuntime {
     /** Stable ref */
     instanceRef: React.MutableRefObject<WaveSurfer | null>;
     /** Stable ref */
     durationRef: React.MutableRefObject<number>;
-    /** Stable ref */
-    minimap: MinimapPlugin;
+    minimap: MinimapRuntime;
     /** Stable ref */
     timelineRef: React.MutableRefObject<TimelinePlugin | null>;
     regionRuntime: WaveformRegionRuntime;
@@ -59,7 +68,6 @@ export interface WaveSurferRuntime {
 interface Params {
     sourceToken: string;
     minimapContainerID: string;
-    minimapTimelineContainerID: string;
     audioBuffer: AudioBuffer;
     peaks: Float32Array[];
     duration: number;
@@ -84,7 +92,7 @@ interface MinimapPluginInternals {
  * Exposes a stable API for the rest of the waveform hooks to use.
  */
 function useWaveSurferRuntime({
-    sourceToken, minimapContainerID, minimapTimelineContainerID, audioBuffer, peaks, duration, containerRef,
+    sourceToken, minimapContainerID, audioBuffer, peaks, duration, containerRef,
 }: Params): WaveSurferRuntime {
     interface WaveSurferPluginScope {
         minimap: MinimapPlugin;
@@ -95,11 +103,13 @@ function useWaveSurferRuntime({
 
     const dispatch = useDispatch<ThunkDispatch>();
     const [instance, setInstance] = useState<WaveSurfer | null>(null);
+    const minimapInstanceRef = useRef<WaveSurfer | null>(null);
     const instanceRef = useRef(instance);
     instanceRef.current = instance;
     const durationRef = useRef(0);
     const readyRef = useRef(false);
     const timelineRef = useRef<TimelinePlugin | null>(null);
+    const minimapTimelineRef = useRef<TimelinePlugin | null>(null);
 
     const createPlugins = (): WaveSurferPluginScope => {
         const minimap = MinimapPlugin.create({
@@ -117,9 +127,12 @@ function useWaveSurferRuntime({
             const { miniWavesurfer } = minimap as unknown as MinimapPluginInternals;
             if (!miniWavesurfer) return;
 
-            miniWavesurfer.registerPlugin(TimelinePlugin.create({
-                container: `#${minimapTimelineContainerID}`,
-            }));
+            const minimapTimeline = TimelinePlugin.create({
+                height: MINIMAP_TIMELINE_HEIGHT,
+            });
+            minimapTimelineRef.current = minimapTimeline;
+            miniWavesurfer.registerPlugin(minimapTimeline);
+            minimapInstanceRef.current = miniWavesurfer;
         });
         const regionsPlugin = RegionsPlugin.create();
         const plugins: GenericPlugin[] = [
@@ -193,6 +206,7 @@ function useWaveSurferRuntime({
         return () => {
             unsubscribeReady();
             setInstance(null);
+            minimapInstanceRef.current = null;
             readyRef.current = false;
             dispatch(releaseAudioDataAsync(sourceToken));
             pluginsScope.destroy();
@@ -203,7 +217,11 @@ function useWaveSurferRuntime({
     return {
         instanceRef,
         durationRef,
-        minimap: pluginsScope.minimap,
+        minimap: {
+            plugin: pluginsScope.minimap,
+            instanceRef: minimapInstanceRef,
+            timelineRef: minimapTimelineRef,
+        },
         timelineRef,
         regionRuntime: { regionsPlugin: pluginsScope.regionsPlugin },
         ready: instance !== null,
@@ -217,7 +235,7 @@ function useWaveSurferRuntime({
 export function useAudioWaveform(params: Params): AudioWaveform {
     const runtime = useWaveSurferRuntime(params);
     const viewport = useWaveformViewport(runtime, params.containerRef);
-    useAdaptiveTimeline(runtime, viewport.pixelsPerSecond);
+    useAdaptiveTimeline(runtime, viewport.pixelsPerSecond, viewport.overviewPixelsPerSecond);
     const playback = useWaveformPlayback(runtime);
 
     return {
