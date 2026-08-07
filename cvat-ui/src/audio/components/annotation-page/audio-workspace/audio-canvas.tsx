@@ -14,6 +14,7 @@ import GlobalHotKeys from 'utils/mousetrap-react';
 import AudioCanvasSkeleton from './skeleton/audio-canvas-skeleton';
 import { useAudioWaveform } from './hooks/use-audio-waveform';
 import { useAudioIntervalAnnotations } from './hooks/use-audio-interval-annotations';
+import AudioWaveformControls from './audio-waveform-controls';
 
 const minimapContainerID = 'minimap';
 
@@ -52,6 +53,9 @@ function AudioCanvas({
                     style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', overflow: 'hidden' }}
                 >
                 </div>
+                <AudioWaveformControls
+                    centerPlaybackPosition={waveform.viewport.centerPlaybackPosition}
+                />
                 <div className='cvat-audio-minimap-section'>
                     <div id={minimapContainerID} />
                 </div>
