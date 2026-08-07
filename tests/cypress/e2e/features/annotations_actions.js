@@ -153,8 +153,8 @@ context('Testing annotations actions workflow', () => {
                 attributes: [],
             }]).flat();
 
+            cy.intercept('PUT', `/api/jobs/${jobId}/annotations**`).as('putAnnotations');
             cy.window().then((window) => {
-                cy.intercept('PUT', `/api/jobs/${jobId}/annotations**`).as('putAnnotations');
                 window.cvat.server.request(`/api/jobs/${jobId}/annotations`, {
                     method: 'PUT',
                     data: { shapes, tracks, tags },
