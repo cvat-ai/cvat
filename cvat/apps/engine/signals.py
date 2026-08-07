@@ -140,12 +140,12 @@ def __delete_data_handler(instance: Data, **kwargs):
     )
 
     if instance.local_storage_backing_cs:
-        storage_instance = instance.get_cloud_storage_instance()
-        assert storage_instance
+        storage_client = instance.get_cloud_storage_client()
+        assert storage_client
 
         transaction.on_commit(
             functools.partial(
-                storage_instance.bulk_delete,
+                storage_client.bulk_delete,
                 [p.as_posix() for p in instance._saved_media_rel_paths],
             ),
             robust=True,
