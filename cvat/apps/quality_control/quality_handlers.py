@@ -98,7 +98,6 @@ class EffectiveQualityRequirement:
     panoptic_comparison: bool | None = None
     compare_attributes: bool | None = None
     attribute_comparison: dict[str, Any] | None = None
-    empty_is_annotated: bool | None = None
     _effective_requirement: bool = True
 
 
@@ -119,7 +118,6 @@ _INHERITED_REQUIREMENT_FIELDS = (
     "panoptic_comparison",
     "compare_attributes",
     "attribute_comparison",
-    "empty_is_annotated",
 )
 
 
@@ -574,7 +572,6 @@ class RequirementHandler(ABC):
             "check_covered_annotations",
             "object_visibility_threshold",
             "panoptic_comparison",
-            "empty_is_annotated",
         ]
         field_mapping = {i: i for i in items}  # direct mapping for all fields
 
@@ -884,25 +881,6 @@ class RequirementHandler(ABC):
             ),
         )
 
-    def _generate_frame_annotations_summary(
-        self, confusion_matrix: np.ndarray, confusion_matrix_labels: list[str]
-    ) -> ComparisonReportAnnotationsSummary:
-        summary = self._compute_annotations_summary(confusion_matrix, confusion_matrix_labels)
-
-        if self.settings.empty_is_annotated:
-            # Add virtual annotations for empty frames
-            if not summary.total_count:
-                summary.valid_count = 1
-                summary.total_count = 1
-
-            if not summary.ds_count:
-                summary.ds_count = 1
-
-            if not summary.gt_count:
-                summary.gt_count = 1
-
-        return summary
-
 
 class TagRequirementHandler(RequirementHandler):
     def match_annotations(
@@ -974,7 +952,7 @@ class TagRequirementHandler(RequirementHandler):
 
         return RequirementFrameResult(
             summary=self._make_frame_summary(
-                annotation_summary=self._generate_frame_annotations_summary(
+                annotation_summary=self._compute_annotations_summary(
                     confusion_matrix, confusion_matrix_labels
                 ),
                 conflicts=conflicts,
@@ -1202,7 +1180,7 @@ class ShapeRequirementHandler(RequirementHandler):
 
         return RequirementFrameResult(
             summary=self._make_frame_summary(
-                annotation_summary=self._generate_frame_annotations_summary(
+                annotation_summary=self._compute_annotations_summary(
                     confusion_matrix, confusion_matrix_labels
                 ),
                 conflicts=conflicts,

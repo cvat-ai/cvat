@@ -690,7 +690,7 @@ class TestQualityRequirementsApi(_QualityRequirementsTestBase):
         assert created_requirement["settings_id"] == settings["id"]
         assert created_requirement["name"] == requirement_name
         assert created_requirement["metric"] == "accuracy"
-        assert created_requirement["empty_is_annotated"] is True
+        assert "empty_is_annotated" not in created_requirement
 
         retrieved_requirement, response = self._retrieve_requirement(
             admin_user, created_requirement["id"]
@@ -1691,7 +1691,7 @@ class TestBaseQualityRequirementsApi(_QualityRequirementsTestBase):
         }
         assert all(requirement["enabled"] is False for requirement in requirements)
         assert all(requirement["is_base"] is True for requirement in requirements)
-        assert all(requirement["empty_is_annotated"] is True for requirement in requirements)
+        assert all("empty_is_annotated" not in requirement for requirement in requirements)
         assert all("effective" not in requirement for requirement in requirements)
 
     def test_new_project_gets_disabled_base_requirements_for_all_supported_types(self, admin_user):
@@ -1719,7 +1719,7 @@ class TestBaseQualityRequirementsApi(_QualityRequirementsTestBase):
         }
         assert all(requirement["enabled"] is False for requirement in requirements)
         assert all(requirement["is_base"] is True for requirement in requirements)
-        assert all(requirement["empty_is_annotated"] is True for requirement in requirements)
+        assert all("empty_is_annotated" not in requirement for requirement in requirements)
 
     def test_new_project_task_inherits_project_quality_settings_by_default(self, admin_user):
         with make_api_client(admin_user) as api_client:
@@ -1755,6 +1755,92 @@ class TestBaseQualityRequirementsApi(_QualityRequirementsTestBase):
 
 @pytest.mark.usefixtures("restore_db_per_function")
 class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
+    def test_empty_frames_do_not_affect_requirement_metrics(self, admin_user):
+        task_id, _ = create_task(
+            admin_user,
+            spec={
+                "name": "empty-frames-do-not-affect-quality",
+                "labels": [{"name": "car", "type": "rectangle"}],
+            },
+            data={
+                "image_quality": 70,
+                "client_files": generate_image_files(2),
+            },
+        )
+        settings = self._get_task_settings(admin_user, task_id=task_id)
+        requirement_name = f"empty-frame-check-{task_id}"
+        _, response = self._patch_settings(
+            admin_user,
+            settings["id"],
+            {
+                "inherit": False,
+                "requirements": [
+                    *self._retained_base_requirement_payloads(settings),
+                    self._build_requirement_payload(requirement_name, required_score=1.0),
+                ],
+            },
+        )
+        assert response.status_code == HTTPStatus.OK
+
+        gt_job = create_gt_job(admin_user, task_id, complete=False)
+        car_label = self._get_task_labels_by_name(admin_user, task_id=task_id)["car"]
+        matching_shape = self._build_rectangle_shape(
+            frame=0,
+            label_id=car_label.id,
+            points=[0, 0, 10, 10],
+        )
+        with make_api_client(admin_user) as api_client:
+            api_client.jobs_api.update_annotations(
+                gt_job.id,
+                labeled_data_request={"shapes": [matching_shape]},
+            )
+            api_client.tasks_api.update_annotations(
+                task_id,
+                labeled_data_request={"shapes": [matching_shape]},
+            )
+        self._complete_job(admin_user, gt_job.id)
+
+        report = create_quality_report(user=admin_user, task_id=task_id)
+        report_data = self._get_report_data(admin_user, report["id"])
+        group = report_data["groups"][requirement_name]
+
+        assert group["comparison_summary"]["score"] == 1.0
+        assert group["comparison_summary"]["score_components"] == {
+            "valid_count": 1,
+            "missing_count": 0,
+            "extra_count": 0,
+        }
+        assert group["comparison_summary"]["confusion_matrix"] == {
+            "labels": ["car", "unmatched"],
+            "rows": [[1, 0], [0, 0]],
+        }
+
+        empty_frame = group["frame_results"]["1"]
+        assert empty_frame["score"] is None
+        assert empty_frame["score_components"] == {
+            "valid_count": 0,
+            "missing_count": 0,
+            "extra_count": 0,
+        }
+        assert empty_frame["calculation"] == {
+            "status": "not_computed",
+            "reason": "no_annotations",
+            "annotations": {
+                "candidate_count": 0,
+                "selected_count": 0,
+                "missing_attributes": [],
+            },
+            "ground_truth": {
+                "candidate_count": 0,
+                "selected_count": 0,
+                "missing_attributes": [],
+            },
+        }
+        assert empty_frame["confusion_matrix"] == {
+            "labels": ["car", "unmatched"],
+            "rows": [[0, 0], [0, 0]],
+        }
+
     def test_task_report_data_applies_shape_requirement_filter_to_metrics(self, admin_user):
         task_id, _ = create_task(
             admin_user,

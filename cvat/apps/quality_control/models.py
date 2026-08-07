@@ -421,8 +421,6 @@ class QualityRequirement(TimestampedModel):
     compare_attributes = models.BooleanField(null=True, blank=True)
     attribute_comparison = models.JSONField(null=True, blank=True, default=None)
 
-    empty_is_annotated = models.BooleanField(default=True, null=True, blank=True)
-
     @property
     def organization_id(self) -> int | None:
         return self.settings.organization_id

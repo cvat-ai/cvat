@@ -296,7 +296,6 @@ _INHERITED_REQUIREMENT_FIELDS = (
     "panoptic_comparison",
     "compare_attributes",
     "attribute_comparison",
-    "empty_is_annotated",
 )
 
 
@@ -639,7 +638,6 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
             "object_visibility_threshold",
             "panoptic_comparison",
             "attribute_comparison",
-            "empty_is_annotated",
             "created_date",
             "updated_date",
         )
@@ -656,7 +654,6 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
         validators = []
 
         extra_kwargs = {k: {"required": False} for k in fields}
-        extra_kwargs.setdefault("empty_is_annotated", {}).setdefault("default", True)
 
         for field_name, help_text in {
             "iou_threshold": "Used for distinction between matched / unmatched shapes",
@@ -699,12 +696,6 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
             """,
             "panoptic_comparison": """
                 Use only the visible part of the masks and polygons in comparisons
-            """,
-            "empty_is_annotated": """
-                Consider empty frames annotated as "empty". This affects target metrics like
-                accuracy in cases there are no annotations. If disabled, frames without annotations
-                are counted as not matching (accuracy is 0). If enabled, accuracy will be 1 instead.
-                This will also add virtual annotations to empty frames in the comparison results.
             """,
         }.items():
             extra_kwargs.setdefault(field_name, {}).setdefault(
@@ -1168,7 +1159,6 @@ class QualitySettingsSerializer(WriteOnceMixin, serializers.ModelSerializer):
         write_once_fields = ("task_id", "project_id")
 
         extra_kwargs = {k: {"required": False} for k in fields}
-        extra_kwargs.setdefault("empty_is_annotated", {}).setdefault("default", True)
 
         for field_name, help_text in {
             "inherit": """

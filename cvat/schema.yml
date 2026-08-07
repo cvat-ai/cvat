@@ -10705,15 +10705,6 @@ components:
           description: Incremental attribute comparison settings. The default rule
             applies to attributes without an override; rules override behavior for
             individual AttributeSpec ids.
-        empty_is_annotated:
-          type: boolean
-          nullable: true
-          default: true
-          description: |
-            Consider empty frames annotated as "empty". This affects target metrics like
-            accuracy in cases there are no annotations. If disabled, frames without annotations
-            are counted as not matching (accuracy is 0). If enabled, accuracy will be 1 instead.
-            This will also add virtual annotations to empty frames in the comparison results.
     PatchedQualitySettingsRequest:
       type: object
       properties:
@@ -11480,15 +11471,6 @@ components:
           description: Incremental attribute comparison settings. The default rule
             applies to attributes without an override; rules override behavior for
             individual AttributeSpec ids.
-        empty_is_annotated:
-          type: boolean
-          nullable: true
-          default: true
-          description: |
-            Consider empty frames annotated as "empty". This affects target metrics like
-            accuracy in cases there are no annotations. If disabled, frames without annotations
-            are counted as not matching (accuracy is 0). If enabled, accuracy will be 1 instead.
-            This will also add virtual annotations to empty frames in the comparison results.
         created_date:
           type: string
           format: date-time
@@ -11647,15 +11629,6 @@ components:
           description: Incremental attribute comparison settings. The default rule
             applies to attributes without an override; rules override behavior for
             individual AttributeSpec ids.
-        empty_is_annotated:
-          type: boolean
-          nullable: true
-          default: true
-          description: |
-            Consider empty frames annotated as "empty". This affects target metrics like
-            accuracy in cases there are no annotations. If disabled, frames without annotations
-            are counted as not matching (accuracy is 0). If enabled, accuracy will be 1 instead.
-            This will also add virtual annotations to empty frames in the comparison results.
         children:
           type: array
           items:
@@ -11841,15 +11814,6 @@ components:
           description: Incremental attribute comparison settings. The default rule
             applies to attributes without an override; rules override behavior for
             individual AttributeSpec ids.
-        empty_is_annotated:
-          type: boolean
-          nullable: true
-          default: true
-          description: |
-            Consider empty frames annotated as "empty". This affects target metrics like
-            accuracy in cases there are no annotations. If disabled, frames without annotations
-            are counted as not matching (accuracy is 0). If enabled, accuracy will be 1 instead.
-            This will also add virtual annotations to empty frames in the comparison results.
         created_date:
           type: string
           format: date-time
@@ -12010,15 +11974,6 @@ components:
           description: Incremental attribute comparison settings. The default rule
             applies to attributes without an override; rules override behavior for
             individual AttributeSpec ids.
-        empty_is_annotated:
-          type: boolean
-          nullable: true
-          default: true
-          description: |
-            Consider empty frames annotated as "empty". This affects target metrics like
-            accuracy in cases there are no annotations. If disabled, frames without annotations
-            are counted as not matching (accuracy is 0). If enabled, accuracy will be 1 instead.
-            This will also add virtual annotations to empty frames in the comparison results.
     QualityRequirementRequest:
       type: object
       properties:
@@ -12171,15 +12126,6 @@ components:
           description: Incremental attribute comparison settings. The default rule
             applies to attributes without an override; rules override behavior for
             individual AttributeSpec ids.
-        empty_is_annotated:
-          type: boolean
-          nullable: true
-          default: true
-          description: |
-            Consider empty frames annotated as "empty". This affects target metrics like
-            accuracy in cases there are no annotations. If disabled, frames without annotations
-            are counted as not matching (accuracy is 0). If enabled, accuracy will be 1 instead.
-            This will also add virtual annotations to empty frames in the comparison results.
     QualitySettings:
       type: object
       properties:

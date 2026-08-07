@@ -37,7 +37,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.200257Z",
           "updated_date": "2026-06-03T17:00:52.200264Z"
         },
@@ -67,7 +66,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.200290Z",
           "updated_date": "2026-06-03T17:00:52.200292Z"
         },
@@ -97,7 +95,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.200303Z",
           "updated_date": "2026-06-03T17:00:52.200305Z"
         },
@@ -127,7 +124,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.200314Z",
           "updated_date": "2026-06-03T17:00:52.200315Z"
         },
@@ -157,7 +153,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.200324Z",
           "updated_date": "2026-06-03T17:00:52.200325Z"
         },
@@ -187,7 +182,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.200334Z",
           "updated_date": "2026-06-03T17:00:52.200335Z"
         },
@@ -217,7 +211,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.200343Z",
           "updated_date": "2026-06-03T17:00:52.200344Z"
         },
@@ -247,7 +240,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.200353Z",
           "updated_date": "2026-06-03T17:00:52.200354Z"
         },
@@ -277,7 +269,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.200362Z",
           "updated_date": "2026-06-03T17:00:52.200363Z"
         }
@@ -319,7 +310,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.206896Z",
           "updated_date": "2026-06-03T17:00:52.206898Z"
         },
@@ -349,7 +339,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.206914Z",
           "updated_date": "2026-06-03T17:00:52.206915Z"
         },
@@ -379,7 +368,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.206925Z",
           "updated_date": "2026-06-03T17:00:52.206926Z"
         },
@@ -409,7 +397,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.206934Z",
           "updated_date": "2026-06-03T17:00:52.206935Z"
         },
@@ -439,7 +426,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.206959Z",
           "updated_date": "2026-06-03T17:00:52.206960Z"
         },
@@ -469,7 +455,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.206973Z",
           "updated_date": "2026-06-03T17:00:52.206974Z"
         },
@@ -499,7 +484,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.206986Z",
           "updated_date": "2026-06-03T17:00:52.206987Z"
         },
@@ -529,7 +513,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.206999Z",
           "updated_date": "2026-06-03T17:00:52.207000Z"
         },
@@ -559,7 +542,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.207008Z",
           "updated_date": "2026-06-03T17:00:52.207009Z"
         }
@@ -601,7 +583,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.211050Z",
           "updated_date": "2026-06-03T17:00:52.211053Z"
         },
@@ -631,7 +612,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.211070Z",
           "updated_date": "2026-06-03T17:00:52.211071Z"
         },
@@ -661,7 +641,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.211081Z",
           "updated_date": "2026-06-03T17:00:52.211082Z"
         },
@@ -691,7 +670,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.211092Z",
           "updated_date": "2026-06-03T17:00:52.211093Z"
         },
@@ -721,7 +699,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.211102Z",
           "updated_date": "2026-06-03T17:00:52.211103Z"
         },
@@ -751,7 +728,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.211113Z",
           "updated_date": "2026-06-03T17:00:52.211114Z"
         },
@@ -781,7 +757,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.211123Z",
           "updated_date": "2026-06-03T17:00:52.211124Z"
         },
@@ -811,7 +786,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.211133Z",
           "updated_date": "2026-06-03T17:00:52.211134Z"
         },
@@ -841,7 +815,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.211143Z",
           "updated_date": "2026-06-03T17:00:52.211144Z"
         }
@@ -883,7 +856,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.215166Z",
           "updated_date": "2026-06-03T17:00:52.215170Z"
         },
@@ -913,7 +885,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.215186Z",
           "updated_date": "2026-06-03T17:00:52.215188Z"
         },
@@ -943,7 +914,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.215198Z",
           "updated_date": "2026-06-03T17:00:52.215199Z"
         },
@@ -973,7 +943,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.215208Z",
           "updated_date": "2026-06-03T17:00:52.215209Z"
         },
@@ -1003,7 +972,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.215218Z",
           "updated_date": "2026-06-03T17:00:52.215219Z"
         },
@@ -1033,7 +1001,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.215229Z",
           "updated_date": "2026-06-03T17:00:52.215230Z"
         },
@@ -1063,7 +1030,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.215239Z",
           "updated_date": "2026-06-03T17:00:52.215240Z"
         },
@@ -1093,7 +1059,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.215250Z",
           "updated_date": "2026-06-03T17:00:52.215251Z"
         },
@@ -1123,7 +1088,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.215259Z",
           "updated_date": "2026-06-03T17:00:52.215260Z"
         }
@@ -1165,7 +1129,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.219323Z",
           "updated_date": "2026-06-03T17:00:52.219326Z"
         },
@@ -1195,7 +1158,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.219342Z",
           "updated_date": "2026-06-03T17:00:52.219343Z"
         },
@@ -1225,7 +1187,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.219352Z",
           "updated_date": "2026-06-03T17:00:52.219353Z"
         },
@@ -1255,7 +1216,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.219362Z",
           "updated_date": "2026-06-03T17:00:52.219363Z"
         },
@@ -1285,7 +1245,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.219371Z",
           "updated_date": "2026-06-03T17:00:52.219372Z"
         },
@@ -1315,7 +1274,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.219380Z",
           "updated_date": "2026-06-03T17:00:52.219381Z"
         },
@@ -1345,7 +1303,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.219389Z",
           "updated_date": "2026-06-03T17:00:52.219390Z"
         },
@@ -1375,7 +1332,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.219398Z",
           "updated_date": "2026-06-03T17:00:52.219399Z"
         },
@@ -1405,7 +1361,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.219407Z",
           "updated_date": "2026-06-03T17:00:52.219408Z"
         }
@@ -1447,7 +1402,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.223104Z",
           "updated_date": "2026-06-03T17:00:52.223107Z"
         },
@@ -1477,7 +1431,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.223122Z",
           "updated_date": "2026-06-03T17:00:52.223123Z"
         },
@@ -1507,7 +1460,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.223133Z",
           "updated_date": "2026-06-03T17:00:52.223134Z"
         },
@@ -1537,7 +1489,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.223143Z",
           "updated_date": "2026-06-03T17:00:52.223144Z"
         },
@@ -1567,7 +1518,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.223153Z",
           "updated_date": "2026-06-03T17:00:52.223154Z"
         },
@@ -1597,7 +1547,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.223163Z",
           "updated_date": "2026-06-03T17:00:52.223164Z"
         },
@@ -1627,7 +1576,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.223174Z",
           "updated_date": "2026-06-03T17:00:52.223175Z"
         },
@@ -1657,7 +1605,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.223184Z",
           "updated_date": "2026-06-03T17:00:52.223185Z"
         },
@@ -1687,7 +1634,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.223194Z",
           "updated_date": "2026-06-03T17:00:52.223195Z"
         }
@@ -1729,7 +1675,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.226774Z",
           "updated_date": "2026-06-03T17:00:52.226776Z"
         },
@@ -1759,7 +1704,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.226791Z",
           "updated_date": "2026-06-03T17:00:52.226792Z"
         },
@@ -1789,7 +1733,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.226801Z",
           "updated_date": "2026-06-03T17:00:52.226802Z"
         },
@@ -1819,7 +1762,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.226810Z",
           "updated_date": "2026-06-03T17:00:52.226811Z"
         },
@@ -1849,7 +1791,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.226820Z",
           "updated_date": "2026-06-03T17:00:52.226821Z"
         },
@@ -1879,7 +1820,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.226829Z",
           "updated_date": "2026-06-03T17:00:52.226830Z"
         },
@@ -1909,7 +1849,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.226839Z",
           "updated_date": "2026-06-03T17:00:52.226840Z"
         },
@@ -1939,7 +1878,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.226849Z",
           "updated_date": "2026-06-03T17:00:52.226850Z"
         },
@@ -1969,7 +1907,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.226858Z",
           "updated_date": "2026-06-03T17:00:52.226859Z"
         }
@@ -2011,7 +1948,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.231018Z",
           "updated_date": "2026-06-03T17:00:52.231021Z"
         },
@@ -2041,7 +1977,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.231036Z",
           "updated_date": "2026-06-03T17:00:52.231038Z"
         },
@@ -2071,7 +2006,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.231047Z",
           "updated_date": "2026-06-03T17:00:52.231048Z"
         },
@@ -2101,7 +2035,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.231056Z",
           "updated_date": "2026-06-03T17:00:52.231057Z"
         },
@@ -2131,7 +2064,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.231066Z",
           "updated_date": "2026-06-03T17:00:52.231067Z"
         },
@@ -2161,7 +2093,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.231075Z",
           "updated_date": "2026-06-03T17:00:52.231076Z"
         },
@@ -2191,7 +2122,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.231084Z",
           "updated_date": "2026-06-03T17:00:52.231085Z"
         },
@@ -2221,7 +2151,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.231094Z",
           "updated_date": "2026-06-03T17:00:52.231095Z"
         },
@@ -2251,7 +2180,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.231103Z",
           "updated_date": "2026-06-03T17:00:52.231104Z"
         }
@@ -2293,7 +2221,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.235172Z",
           "updated_date": "2026-06-03T17:00:52.235174Z"
         },
@@ -2323,7 +2250,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.235190Z",
           "updated_date": "2026-06-03T17:00:52.235191Z"
         },
@@ -2353,7 +2279,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.235201Z",
           "updated_date": "2026-06-03T17:00:52.235202Z"
         },
@@ -2383,7 +2308,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.235212Z",
           "updated_date": "2026-06-03T17:00:52.235213Z"
         },
@@ -2413,7 +2337,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.235222Z",
           "updated_date": "2026-06-03T17:00:52.235223Z"
         },
@@ -2443,7 +2366,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.235232Z",
           "updated_date": "2026-06-03T17:00:52.235233Z"
         },
@@ -2473,7 +2395,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.235243Z",
           "updated_date": "2026-06-03T17:00:52.235244Z"
         },
@@ -2503,7 +2424,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.235253Z",
           "updated_date": "2026-06-03T17:00:52.235254Z"
         },
@@ -2533,7 +2453,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.235263Z",
           "updated_date": "2026-06-03T17:00:52.235264Z"
         }
@@ -2575,7 +2494,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.239100Z",
           "updated_date": "2026-06-03T17:00:52.239102Z"
         },
@@ -2605,7 +2523,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.239117Z",
           "updated_date": "2026-06-03T17:00:52.239118Z"
         },
@@ -2635,7 +2552,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.239128Z",
           "updated_date": "2026-06-03T17:00:52.239129Z"
         },
@@ -2665,7 +2581,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.239138Z",
           "updated_date": "2026-06-03T17:00:52.239140Z"
         },
@@ -2695,7 +2610,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.239149Z",
           "updated_date": "2026-06-03T17:00:52.239150Z"
         },
@@ -2725,7 +2639,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.239159Z",
           "updated_date": "2026-06-03T17:00:52.239160Z"
         },
@@ -2755,7 +2668,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.239170Z",
           "updated_date": "2026-06-03T17:00:52.239171Z"
         },
@@ -2785,7 +2697,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.239180Z",
           "updated_date": "2026-06-03T17:00:52.239181Z"
         },
@@ -2815,7 +2726,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.239191Z",
           "updated_date": "2026-06-03T17:00:52.239192Z"
         }
@@ -2857,7 +2767,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.243057Z",
           "updated_date": "2026-06-03T17:00:52.243060Z"
         },
@@ -2887,7 +2796,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.243074Z",
           "updated_date": "2026-06-03T17:00:52.243075Z"
         },
@@ -2917,7 +2825,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.243085Z",
           "updated_date": "2026-06-03T17:00:52.243086Z"
         },
@@ -2947,7 +2854,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.243095Z",
           "updated_date": "2026-06-03T17:00:52.243096Z"
         },
@@ -2977,7 +2883,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.243105Z",
           "updated_date": "2026-06-03T17:00:52.243106Z"
         },
@@ -3007,7 +2912,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.243115Z",
           "updated_date": "2026-06-03T17:00:52.243116Z"
         },
@@ -3037,7 +2941,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.243125Z",
           "updated_date": "2026-06-03T17:00:52.243126Z"
         },
@@ -3067,7 +2970,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.243135Z",
           "updated_date": "2026-06-03T17:00:52.243137Z"
         },
@@ -3097,7 +2999,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.243145Z",
           "updated_date": "2026-06-03T17:00:52.243147Z"
         }
@@ -3139,7 +3040,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.247018Z",
           "updated_date": "2026-06-03T17:00:52.247020Z"
         },
@@ -3169,7 +3069,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.247035Z",
           "updated_date": "2026-06-03T17:00:52.247036Z"
         },
@@ -3199,7 +3098,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.247046Z",
           "updated_date": "2026-06-03T17:00:52.247047Z"
         },
@@ -3229,7 +3127,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.247057Z",
           "updated_date": "2026-06-03T17:00:52.247058Z"
         },
@@ -3259,7 +3156,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.247067Z",
           "updated_date": "2026-06-03T17:00:52.247068Z"
         },
@@ -3289,7 +3185,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.247077Z",
           "updated_date": "2026-06-03T17:00:52.247078Z"
         },
@@ -3319,7 +3214,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.247087Z",
           "updated_date": "2026-06-03T17:00:52.247089Z"
         },
@@ -3349,7 +3243,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.247098Z",
           "updated_date": "2026-06-03T17:00:52.247099Z"
         },
@@ -3379,7 +3272,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.247108Z",
           "updated_date": "2026-06-03T17:00:52.247109Z"
         }
@@ -3421,7 +3313,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.250861Z",
           "updated_date": "2026-06-03T17:00:52.250863Z"
         },
@@ -3451,7 +3342,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.250875Z",
           "updated_date": "2026-06-03T17:00:52.250876Z"
         },
@@ -3481,7 +3371,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.250885Z",
           "updated_date": "2026-06-03T17:00:52.250886Z"
         },
@@ -3511,7 +3400,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.250894Z",
           "updated_date": "2026-06-03T17:00:52.250895Z"
         },
@@ -3541,7 +3429,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.250903Z",
           "updated_date": "2026-06-03T17:00:52.250904Z"
         },
@@ -3571,7 +3458,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.250912Z",
           "updated_date": "2026-06-03T17:00:52.250913Z"
         },
@@ -3601,7 +3487,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.250921Z",
           "updated_date": "2026-06-03T17:00:52.250922Z"
         },
@@ -3631,7 +3516,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.250931Z",
           "updated_date": "2026-06-03T17:00:52.250932Z"
         },
@@ -3661,7 +3545,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.250952Z",
           "updated_date": "2026-06-03T17:00:52.250953Z"
         }
@@ -3703,7 +3586,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.254731Z",
           "updated_date": "2026-06-03T17:00:52.254734Z"
         },
@@ -3733,7 +3615,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.254748Z",
           "updated_date": "2026-06-03T17:00:52.254749Z"
         },
@@ -3763,7 +3644,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.254759Z",
           "updated_date": "2026-06-03T17:00:52.254760Z"
         },
@@ -3793,7 +3673,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.254769Z",
           "updated_date": "2026-06-03T17:00:52.254770Z"
         },
@@ -3823,7 +3702,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.254779Z",
           "updated_date": "2026-06-03T17:00:52.254780Z"
         },
@@ -3853,7 +3731,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.254789Z",
           "updated_date": "2026-06-03T17:00:52.254790Z"
         },
@@ -3883,7 +3760,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.254800Z",
           "updated_date": "2026-06-03T17:00:52.254801Z"
         },
@@ -3913,7 +3789,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.254810Z",
           "updated_date": "2026-06-03T17:00:52.254811Z"
         },
@@ -3943,7 +3818,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.254820Z",
           "updated_date": "2026-06-03T17:00:52.254821Z"
         }
@@ -3985,7 +3859,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.258755Z",
           "updated_date": "2026-06-03T17:00:52.258757Z"
         },
@@ -4015,7 +3888,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.258771Z",
           "updated_date": "2026-06-03T17:00:52.258772Z"
         },
@@ -4045,7 +3917,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.258783Z",
           "updated_date": "2026-06-03T17:00:52.258784Z"
         },
@@ -4075,7 +3946,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.258793Z",
           "updated_date": "2026-06-03T17:00:52.258794Z"
         },
@@ -4105,7 +3975,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.258803Z",
           "updated_date": "2026-06-03T17:00:52.258804Z"
         },
@@ -4135,7 +4004,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.258813Z",
           "updated_date": "2026-06-03T17:00:52.258814Z"
         },
@@ -4165,7 +4033,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.258823Z",
           "updated_date": "2026-06-03T17:00:52.258824Z"
         },
@@ -4195,7 +4062,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.258834Z",
           "updated_date": "2026-06-03T17:00:52.258835Z"
         },
@@ -4225,7 +4091,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.258843Z",
           "updated_date": "2026-06-03T17:00:52.258844Z"
         }
@@ -4267,7 +4132,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.262787Z",
           "updated_date": "2026-06-03T17:00:52.262789Z"
         },
@@ -4297,7 +4161,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.262803Z",
           "updated_date": "2026-06-03T17:00:52.262804Z"
         },
@@ -4327,7 +4190,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.262813Z",
           "updated_date": "2026-06-03T17:00:52.262814Z"
         },
@@ -4357,7 +4219,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.262822Z",
           "updated_date": "2026-06-03T17:00:52.262823Z"
         },
@@ -4387,7 +4248,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.262831Z",
           "updated_date": "2026-06-03T17:00:52.262832Z"
         },
@@ -4417,7 +4277,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.262840Z",
           "updated_date": "2026-06-03T17:00:52.262841Z"
         },
@@ -4447,7 +4306,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.262850Z",
           "updated_date": "2026-06-03T17:00:52.262851Z"
         },
@@ -4477,7 +4335,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.262859Z",
           "updated_date": "2026-06-03T17:00:52.262860Z"
         },
@@ -4507,7 +4364,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.262868Z",
           "updated_date": "2026-06-03T17:00:52.262869Z"
         }
@@ -4549,7 +4405,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.266534Z",
           "updated_date": "2026-06-03T17:00:52.266537Z"
         },
@@ -4579,7 +4434,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.266551Z",
           "updated_date": "2026-06-03T17:00:52.266552Z"
         },
@@ -4609,7 +4463,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.266562Z",
           "updated_date": "2026-06-03T17:00:52.266563Z"
         },
@@ -4639,7 +4492,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.266573Z",
           "updated_date": "2026-06-03T17:00:52.266574Z"
         },
@@ -4669,7 +4521,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.266583Z",
           "updated_date": "2026-06-03T17:00:52.266584Z"
         },
@@ -4699,7 +4550,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.266593Z",
           "updated_date": "2026-06-03T17:00:52.266594Z"
         },
@@ -4729,7 +4579,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.266603Z",
           "updated_date": "2026-06-03T17:00:52.266604Z"
         },
@@ -4759,7 +4608,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.266614Z",
           "updated_date": "2026-06-03T17:00:52.266615Z"
         },
@@ -4789,7 +4637,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.266624Z",
           "updated_date": "2026-06-03T17:00:52.266625Z"
         }
@@ -4831,7 +4678,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.270845Z",
           "updated_date": "2026-06-03T17:00:52.270848Z"
         },
@@ -4861,7 +4707,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.270865Z",
           "updated_date": "2026-06-03T17:00:52.270867Z"
         },
@@ -4891,7 +4736,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.270877Z",
           "updated_date": "2026-06-03T17:00:52.270878Z"
         },
@@ -4921,7 +4765,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.270888Z",
           "updated_date": "2026-06-03T17:00:52.270889Z"
         },
@@ -4951,7 +4794,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.270898Z",
           "updated_date": "2026-06-03T17:00:52.270899Z"
         },
@@ -4981,7 +4823,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.270909Z",
           "updated_date": "2026-06-03T17:00:52.270910Z"
         },
@@ -5011,7 +4852,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.270919Z",
           "updated_date": "2026-06-03T17:00:52.270920Z"
         },
@@ -5041,7 +4881,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.270930Z",
           "updated_date": "2026-06-03T17:00:52.270931Z"
         },
@@ -5071,7 +4910,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.270955Z",
           "updated_date": "2026-06-03T17:00:52.270956Z"
         }
@@ -5113,7 +4951,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.274755Z",
           "updated_date": "2026-06-03T17:00:52.274758Z"
         },
@@ -5143,7 +4980,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.274771Z",
           "updated_date": "2026-06-03T17:00:52.274772Z"
         },
@@ -5173,7 +5009,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.274781Z",
           "updated_date": "2026-06-03T17:00:52.274782Z"
         },
@@ -5203,7 +5038,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.274790Z",
           "updated_date": "2026-06-03T17:00:52.274791Z"
         },
@@ -5233,7 +5067,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.274799Z",
           "updated_date": "2026-06-03T17:00:52.274800Z"
         },
@@ -5263,7 +5096,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.274808Z",
           "updated_date": "2026-06-03T17:00:52.274809Z"
         },
@@ -5293,7 +5125,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.274818Z",
           "updated_date": "2026-06-03T17:00:52.274819Z"
         },
@@ -5323,7 +5154,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.274827Z",
           "updated_date": "2026-06-03T17:00:52.274828Z"
         },
@@ -5353,7 +5183,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.274836Z",
           "updated_date": "2026-06-03T17:00:52.274837Z"
         }
@@ -5395,7 +5224,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.278759Z",
           "updated_date": "2026-06-03T17:00:52.278761Z"
         },
@@ -5425,7 +5253,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.278775Z",
           "updated_date": "2026-06-03T17:00:52.278776Z"
         },
@@ -5455,7 +5282,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.278785Z",
           "updated_date": "2026-06-03T17:00:52.278786Z"
         },
@@ -5485,7 +5311,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.278794Z",
           "updated_date": "2026-06-03T17:00:52.278795Z"
         },
@@ -5515,7 +5340,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.278803Z",
           "updated_date": "2026-06-03T17:00:52.278804Z"
         },
@@ -5545,7 +5369,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.278813Z",
           "updated_date": "2026-06-03T17:00:52.278814Z"
         },
@@ -5575,7 +5398,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.278822Z",
           "updated_date": "2026-06-03T17:00:52.278823Z"
         },
@@ -5605,7 +5427,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.278831Z",
           "updated_date": "2026-06-03T17:00:52.278832Z"
         },
@@ -5635,7 +5456,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.278841Z",
           "updated_date": "2026-06-03T17:00:52.278842Z"
         }
@@ -5677,7 +5497,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.282698Z",
           "updated_date": "2026-06-03T17:00:52.282702Z"
         },
@@ -5707,7 +5526,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.282720Z",
           "updated_date": "2026-06-03T17:00:52.282721Z"
         },
@@ -5737,7 +5555,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.282731Z",
           "updated_date": "2026-06-03T17:00:52.282733Z"
         },
@@ -5767,7 +5584,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.282742Z",
           "updated_date": "2026-06-03T17:00:52.282743Z"
         },
@@ -5797,7 +5613,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.282753Z",
           "updated_date": "2026-06-03T17:00:52.282754Z"
         },
@@ -5827,7 +5642,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.282763Z",
           "updated_date": "2026-06-03T17:00:52.282764Z"
         },
@@ -5857,7 +5671,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.282774Z",
           "updated_date": "2026-06-03T17:00:52.282775Z"
         },
@@ -5887,7 +5700,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.282784Z",
           "updated_date": "2026-06-03T17:00:52.282785Z"
         },
@@ -5917,7 +5729,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.282794Z",
           "updated_date": "2026-06-03T17:00:52.282795Z"
         }
@@ -5959,7 +5770,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.286866Z",
           "updated_date": "2026-06-03T17:00:52.286868Z"
         },
@@ -5989,7 +5799,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.286882Z",
           "updated_date": "2026-06-03T17:00:52.286883Z"
         },
@@ -6019,7 +5828,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.286892Z",
           "updated_date": "2026-06-03T17:00:52.286893Z"
         },
@@ -6049,7 +5857,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.286901Z",
           "updated_date": "2026-06-03T17:00:52.286902Z"
         },
@@ -6079,7 +5886,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.286911Z",
           "updated_date": "2026-06-03T17:00:52.286912Z"
         },
@@ -6109,7 +5915,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.286920Z",
           "updated_date": "2026-06-03T17:00:52.286921Z"
         },
@@ -6139,7 +5944,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.286929Z",
           "updated_date": "2026-06-03T17:00:52.286930Z"
         },
@@ -6169,7 +5973,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.286949Z",
           "updated_date": "2026-06-03T17:00:52.286950Z"
         },
@@ -6199,7 +6002,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.286959Z",
           "updated_date": "2026-06-03T17:00:52.286960Z"
         }
@@ -6241,7 +6043,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.290662Z",
           "updated_date": "2026-06-03T17:00:52.290664Z"
         },
@@ -6271,7 +6072,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.290678Z",
           "updated_date": "2026-06-03T17:00:52.290679Z"
         },
@@ -6301,7 +6101,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.290688Z",
           "updated_date": "2026-06-03T17:00:52.290689Z"
         },
@@ -6331,7 +6130,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.290697Z",
           "updated_date": "2026-06-03T17:00:52.290698Z"
         },
@@ -6361,7 +6159,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.290706Z",
           "updated_date": "2026-06-03T17:00:52.290707Z"
         },
@@ -6391,7 +6188,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.290716Z",
           "updated_date": "2026-06-03T17:00:52.290717Z"
         },
@@ -6421,7 +6217,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.290725Z",
           "updated_date": "2026-06-03T17:00:52.290726Z"
         },
@@ -6451,7 +6246,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.290734Z",
           "updated_date": "2026-06-03T17:00:52.290735Z"
         },
@@ -6481,7 +6275,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.290743Z",
           "updated_date": "2026-06-03T17:00:52.290744Z"
         }
@@ -6523,7 +6316,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.294554Z",
           "updated_date": "2026-06-03T17:00:52.294556Z"
         },
@@ -6553,7 +6345,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.294569Z",
           "updated_date": "2026-06-03T17:00:52.294571Z"
         },
@@ -6583,7 +6374,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.294580Z",
           "updated_date": "2026-06-03T17:00:52.294581Z"
         },
@@ -6613,7 +6403,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.294590Z",
           "updated_date": "2026-06-03T17:00:52.294591Z"
         },
@@ -6643,7 +6432,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.294599Z",
           "updated_date": "2026-06-03T17:00:52.294600Z"
         },
@@ -6673,7 +6461,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.294608Z",
           "updated_date": "2026-06-03T17:00:52.294609Z"
         },
@@ -6703,7 +6490,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.294618Z",
           "updated_date": "2026-06-03T17:00:52.294619Z"
         },
@@ -6733,7 +6519,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.294627Z",
           "updated_date": "2026-06-03T17:00:52.294628Z"
         },
@@ -6763,7 +6548,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.294637Z",
           "updated_date": "2026-06-03T17:00:52.294637Z"
         }
@@ -6805,7 +6589,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.298629Z",
           "updated_date": "2026-06-03T17:00:52.298631Z"
         },
@@ -6835,7 +6618,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.298644Z",
           "updated_date": "2026-06-03T17:00:52.298646Z"
         },
@@ -6865,7 +6647,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.298654Z",
           "updated_date": "2026-06-03T17:00:52.298655Z"
         },
@@ -6895,7 +6676,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.298664Z",
           "updated_date": "2026-06-03T17:00:52.298665Z"
         },
@@ -6925,7 +6705,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.298673Z",
           "updated_date": "2026-06-03T17:00:52.298674Z"
         },
@@ -6955,7 +6734,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.298682Z",
           "updated_date": "2026-06-03T17:00:52.298683Z"
         },
@@ -6985,7 +6763,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.298692Z",
           "updated_date": "2026-06-03T17:00:52.298693Z"
         },
@@ -7015,7 +6792,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.298701Z",
           "updated_date": "2026-06-03T17:00:52.298702Z"
         },
@@ -7045,7 +6821,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.298711Z",
           "updated_date": "2026-06-03T17:00:52.298712Z"
         }
@@ -7087,7 +6862,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.302534Z",
           "updated_date": "2026-06-03T17:00:52.302536Z"
         },
@@ -7117,7 +6891,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.302550Z",
           "updated_date": "2026-06-03T17:00:52.302551Z"
         },
@@ -7147,7 +6920,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.302560Z",
           "updated_date": "2026-06-03T17:00:52.302561Z"
         },
@@ -7177,7 +6949,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.302569Z",
           "updated_date": "2026-06-03T17:00:52.302570Z"
         },
@@ -7207,7 +6978,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.302579Z",
           "updated_date": "2026-06-03T17:00:52.302579Z"
         },
@@ -7237,7 +7007,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.302588Z",
           "updated_date": "2026-06-03T17:00:52.302589Z"
         },
@@ -7267,7 +7036,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.302597Z",
           "updated_date": "2026-06-03T17:00:52.302598Z"
         },
@@ -7297,7 +7065,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.302606Z",
           "updated_date": "2026-06-03T17:00:52.302607Z"
         },
@@ -7327,7 +7094,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.302616Z",
           "updated_date": "2026-06-03T17:00:52.302616Z"
         }
@@ -7369,7 +7135,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.306507Z",
           "updated_date": "2026-06-03T17:00:52.306509Z"
         },
@@ -7399,7 +7164,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.306525Z",
           "updated_date": "2026-06-03T17:00:52.306526Z"
         },
@@ -7429,7 +7193,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.306537Z",
           "updated_date": "2026-06-03T17:00:52.306538Z"
         },
@@ -7459,7 +7222,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.306548Z",
           "updated_date": "2026-06-03T17:00:52.306549Z"
         },
@@ -7489,7 +7251,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.306559Z",
           "updated_date": "2026-06-03T17:00:52.306560Z"
         },
@@ -7519,7 +7280,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.306569Z",
           "updated_date": "2026-06-03T17:00:52.306570Z"
         },
@@ -7549,7 +7309,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.306579Z",
           "updated_date": "2026-06-03T17:00:52.306580Z"
         },
@@ -7579,7 +7338,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.306589Z",
           "updated_date": "2026-06-03T17:00:52.306590Z"
         },
@@ -7609,7 +7367,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.306600Z",
           "updated_date": "2026-06-03T17:00:52.306601Z"
         }
@@ -7651,7 +7408,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.310769Z",
           "updated_date": "2026-06-03T17:00:52.310772Z"
         },
@@ -7681,7 +7437,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.310789Z",
           "updated_date": "2026-06-03T17:00:52.310790Z"
         },
@@ -7711,7 +7466,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.310801Z",
           "updated_date": "2026-06-03T17:00:52.310802Z"
         },
@@ -7741,7 +7495,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.310811Z",
           "updated_date": "2026-06-03T17:00:52.310812Z"
         },
@@ -7771,7 +7524,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.310822Z",
           "updated_date": "2026-06-03T17:00:52.310823Z"
         },
@@ -7801,7 +7553,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.310832Z",
           "updated_date": "2026-06-03T17:00:52.310833Z"
         },
@@ -7831,7 +7582,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.310843Z",
           "updated_date": "2026-06-03T17:00:52.310844Z"
         },
@@ -7861,7 +7611,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.310854Z",
           "updated_date": "2026-06-03T17:00:52.310855Z"
         },
@@ -7891,7 +7640,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.310864Z",
           "updated_date": "2026-06-03T17:00:52.310865Z"
         }
@@ -7933,7 +7681,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.314779Z",
           "updated_date": "2026-06-03T17:00:52.314782Z"
         },
@@ -7963,7 +7710,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.314796Z",
           "updated_date": "2026-06-03T17:00:52.314797Z"
         },
@@ -7993,7 +7739,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.314806Z",
           "updated_date": "2026-06-03T17:00:52.314807Z"
         },
@@ -8023,7 +7768,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.314816Z",
           "updated_date": "2026-06-03T17:00:52.314817Z"
         },
@@ -8053,7 +7797,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.314825Z",
           "updated_date": "2026-06-03T17:00:52.314826Z"
         },
@@ -8083,7 +7826,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.314834Z",
           "updated_date": "2026-06-03T17:00:52.314835Z"
         },
@@ -8113,7 +7855,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.314843Z",
           "updated_date": "2026-06-03T17:00:52.314844Z"
         },
@@ -8143,7 +7884,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.314853Z",
           "updated_date": "2026-06-03T17:00:52.314853Z"
         },
@@ -8173,7 +7913,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.314862Z",
           "updated_date": "2026-06-03T17:00:52.314863Z"
         }
@@ -8215,7 +7954,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.318711Z",
           "updated_date": "2026-06-03T17:00:52.318714Z"
         },
@@ -8245,7 +7983,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.318728Z",
           "updated_date": "2026-06-03T17:00:52.318729Z"
         },
@@ -8275,7 +8012,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.318738Z",
           "updated_date": "2026-06-03T17:00:52.318739Z"
         },
@@ -8305,7 +8041,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.318747Z",
           "updated_date": "2026-06-03T17:00:52.318748Z"
         },
@@ -8335,7 +8070,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.318757Z",
           "updated_date": "2026-06-03T17:00:52.318758Z"
         },
@@ -8365,7 +8099,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.318766Z",
           "updated_date": "2026-06-03T17:00:52.318767Z"
         },
@@ -8395,7 +8128,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.318775Z",
           "updated_date": "2026-06-03T17:00:52.318784Z"
         },
@@ -8425,7 +8157,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.318793Z",
           "updated_date": "2026-06-03T17:00:52.318793Z"
         },
@@ -8455,7 +8186,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.318802Z",
           "updated_date": "2026-06-03T17:00:52.318803Z"
         }
@@ -8497,7 +8227,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.322663Z",
           "updated_date": "2026-06-03T17:00:52.322665Z"
         },
@@ -8527,7 +8256,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.322678Z",
           "updated_date": "2026-06-03T17:00:52.322679Z"
         },
@@ -8557,7 +8285,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.322688Z",
           "updated_date": "2026-06-03T17:00:52.322689Z"
         },
@@ -8587,7 +8314,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.322698Z",
           "updated_date": "2026-06-03T17:00:52.322699Z"
         },
@@ -8617,7 +8343,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.322707Z",
           "updated_date": "2026-06-03T17:00:52.322708Z"
         },
@@ -8647,7 +8372,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.322717Z",
           "updated_date": "2026-06-03T17:00:52.322718Z"
         },
@@ -8677,7 +8401,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.322726Z",
           "updated_date": "2026-06-03T17:00:52.322727Z"
         },
@@ -8707,7 +8430,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.322735Z",
           "updated_date": "2026-06-03T17:00:52.322736Z"
         },
@@ -8737,7 +8459,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.322745Z",
           "updated_date": "2026-06-03T17:00:52.322745Z"
         }
@@ -8779,7 +8500,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.326767Z",
           "updated_date": "2026-06-03T17:00:52.326770Z"
         },
@@ -8809,7 +8529,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.326785Z",
           "updated_date": "2026-06-03T17:00:52.326787Z"
         },
@@ -8839,7 +8558,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.326797Z",
           "updated_date": "2026-06-03T17:00:52.326798Z"
         },
@@ -8869,7 +8587,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.326808Z",
           "updated_date": "2026-06-03T17:00:52.326809Z"
         },
@@ -8899,7 +8616,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.326818Z",
           "updated_date": "2026-06-03T17:00:52.326819Z"
         },
@@ -8929,7 +8645,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.326829Z",
           "updated_date": "2026-06-03T17:00:52.326830Z"
         },
@@ -8959,7 +8674,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.326839Z",
           "updated_date": "2026-06-03T17:00:52.326840Z"
         },
@@ -8989,7 +8703,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.326850Z",
           "updated_date": "2026-06-03T17:00:52.326851Z"
         },
@@ -9019,7 +8732,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.326860Z",
           "updated_date": "2026-06-03T17:00:52.326861Z"
         }
@@ -9061,7 +8773,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.330568Z",
           "updated_date": "2026-06-03T17:00:52.330570Z"
         },
@@ -9091,7 +8802,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.330584Z",
           "updated_date": "2026-06-03T17:00:52.330585Z"
         },
@@ -9121,7 +8831,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.330594Z",
           "updated_date": "2026-06-03T17:00:52.330595Z"
         },
@@ -9151,7 +8860,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.330603Z",
           "updated_date": "2026-06-03T17:00:52.330604Z"
         },
@@ -9181,7 +8889,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.330612Z",
           "updated_date": "2026-06-03T17:00:52.330613Z"
         },
@@ -9211,7 +8918,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.330621Z",
           "updated_date": "2026-06-03T17:00:52.330622Z"
         },
@@ -9241,7 +8947,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.330631Z",
           "updated_date": "2026-06-03T17:00:52.330632Z"
         },
@@ -9271,7 +8976,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.330640Z",
           "updated_date": "2026-06-03T17:00:52.330641Z"
         },
@@ -9301,7 +9005,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.330649Z",
           "updated_date": "2026-06-03T17:00:52.330650Z"
         }
@@ -9343,7 +9046,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.334541Z",
           "updated_date": "2026-06-03T17:00:52.334543Z"
         },
@@ -9373,7 +9075,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.334557Z",
           "updated_date": "2026-06-03T17:00:52.334558Z"
         },
@@ -9403,7 +9104,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.334567Z",
           "updated_date": "2026-06-03T17:00:52.334568Z"
         },
@@ -9433,7 +9133,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.334576Z",
           "updated_date": "2026-06-03T17:00:52.334577Z"
         },
@@ -9463,7 +9162,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.334585Z",
           "updated_date": "2026-06-03T17:00:52.334586Z"
         },
@@ -9493,7 +9191,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.334594Z",
           "updated_date": "2026-06-03T17:00:52.334595Z"
         },
@@ -9523,7 +9220,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.334605Z",
           "updated_date": "2026-06-03T17:00:52.334606Z"
         },
@@ -9553,7 +9249,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.334614Z",
           "updated_date": "2026-06-03T17:00:52.334615Z"
         },
@@ -9583,7 +9278,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.334624Z",
           "updated_date": "2026-06-03T17:00:52.334624Z"
         }
@@ -9625,7 +9319,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.338884Z",
           "updated_date": "2026-06-03T17:00:52.338886Z"
         },
@@ -9655,7 +9348,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.338899Z",
           "updated_date": "2026-06-03T17:00:52.338900Z"
         },
@@ -9685,7 +9377,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.338909Z",
           "updated_date": "2026-06-03T17:00:52.338910Z"
         },
@@ -9715,7 +9406,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.338918Z",
           "updated_date": "2026-06-03T17:00:52.338919Z"
         },
@@ -9745,7 +9435,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.338927Z",
           "updated_date": "2026-06-03T17:00:52.338928Z"
         },
@@ -9775,7 +9464,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.338936Z",
           "updated_date": "2026-06-03T17:00:52.338945Z"
         },
@@ -9805,7 +9493,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.338958Z",
           "updated_date": "2026-06-03T17:00:52.338959Z"
         },
@@ -9835,7 +9522,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.338970Z",
           "updated_date": "2026-06-03T17:00:52.338972Z"
         },
@@ -9865,7 +9551,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.338981Z",
           "updated_date": "2026-06-03T17:00:52.338982Z"
         }
@@ -9907,7 +9592,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.342718Z",
           "updated_date": "2026-06-03T17:00:52.342720Z"
         },
@@ -9937,7 +9621,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.342733Z",
           "updated_date": "2026-06-03T17:00:52.342734Z"
         },
@@ -9967,7 +9650,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.342743Z",
           "updated_date": "2026-06-03T17:00:52.342744Z"
         },
@@ -9997,7 +9679,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.342752Z",
           "updated_date": "2026-06-03T17:00:52.342753Z"
         },
@@ -10027,7 +9708,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.342761Z",
           "updated_date": "2026-06-03T17:00:52.342762Z"
         },
@@ -10057,7 +9737,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.342771Z",
           "updated_date": "2026-06-03T17:00:52.342771Z"
         },
@@ -10087,7 +9766,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.342780Z",
           "updated_date": "2026-06-03T17:00:52.342781Z"
         },
@@ -10117,7 +9795,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.342789Z",
           "updated_date": "2026-06-03T17:00:52.342790Z"
         },
@@ -10147,7 +9824,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.342798Z",
           "updated_date": "2026-06-03T17:00:52.342799Z"
         }
@@ -10189,7 +9865,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.346515Z",
           "updated_date": "2026-06-03T17:00:52.346517Z"
         },
@@ -10219,7 +9894,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.346532Z",
           "updated_date": "2026-06-03T17:00:52.346533Z"
         },
@@ -10249,7 +9923,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.346542Z",
           "updated_date": "2026-06-03T17:00:52.346543Z"
         },
@@ -10279,7 +9952,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.346551Z",
           "updated_date": "2026-06-03T17:00:52.346552Z"
         },
@@ -10309,7 +9981,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.346561Z",
           "updated_date": "2026-06-03T17:00:52.346562Z"
         },
@@ -10339,7 +10010,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.346570Z",
           "updated_date": "2026-06-03T17:00:52.346571Z"
         },
@@ -10369,7 +10039,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.346579Z",
           "updated_date": "2026-06-03T17:00:52.346580Z"
         },
@@ -10399,7 +10068,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.346588Z",
           "updated_date": "2026-06-03T17:00:52.346589Z"
         },
@@ -10429,7 +10097,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.346598Z",
           "updated_date": "2026-06-03T17:00:52.346599Z"
         }
@@ -10471,7 +10138,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.350350Z",
           "updated_date": "2026-06-03T17:00:52.350352Z"
         },
@@ -10501,7 +10167,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.350365Z",
           "updated_date": "2026-06-03T17:00:52.350366Z"
         },
@@ -10531,7 +10196,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.350375Z",
           "updated_date": "2026-06-03T17:00:52.350376Z"
         },
@@ -10561,7 +10225,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.350384Z",
           "updated_date": "2026-06-03T17:00:52.350385Z"
         },
@@ -10591,7 +10254,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.350394Z",
           "updated_date": "2026-06-03T17:00:52.350394Z"
         },
@@ -10621,7 +10283,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.350403Z",
           "updated_date": "2026-06-03T17:00:52.350404Z"
         },
@@ -10651,7 +10312,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.350412Z",
           "updated_date": "2026-06-03T17:00:52.350413Z"
         },
@@ -10681,7 +10341,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.350421Z",
           "updated_date": "2026-06-03T17:00:52.350422Z"
         },
@@ -10711,7 +10370,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.350430Z",
           "updated_date": "2026-06-03T17:00:52.350431Z"
         }
@@ -10753,7 +10411,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.354558Z",
           "updated_date": "2026-06-03T17:00:52.354561Z"
         },
@@ -10783,7 +10440,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.354575Z",
           "updated_date": "2026-06-03T17:00:52.354576Z"
         },
@@ -10813,7 +10469,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.354585Z",
           "updated_date": "2026-06-03T17:00:52.354586Z"
         },
@@ -10843,7 +10498,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.354594Z",
           "updated_date": "2026-06-03T17:00:52.354595Z"
         },
@@ -10873,7 +10527,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.354603Z",
           "updated_date": "2026-06-03T17:00:52.354604Z"
         },
@@ -10903,7 +10556,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.354612Z",
           "updated_date": "2026-06-03T17:00:52.354613Z"
         },
@@ -10933,7 +10585,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.354622Z",
           "updated_date": "2026-06-03T17:00:52.354623Z"
         },
@@ -10963,7 +10614,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.354631Z",
           "updated_date": "2026-06-03T17:00:52.354632Z"
         },
@@ -10993,7 +10643,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.354640Z",
           "updated_date": "2026-06-03T17:00:52.354641Z"
         }
@@ -11035,7 +10684,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.358392Z",
           "updated_date": "2026-06-03T17:00:52.358394Z"
         },
@@ -11065,7 +10713,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.358407Z",
           "updated_date": "2026-06-03T17:00:52.358408Z"
         },
@@ -11095,7 +10742,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.358417Z",
           "updated_date": "2026-06-03T17:00:52.358418Z"
         },
@@ -11125,7 +10771,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.358427Z",
           "updated_date": "2026-06-03T17:00:52.358428Z"
         },
@@ -11155,7 +10800,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.358436Z",
           "updated_date": "2026-06-03T17:00:52.358437Z"
         },
@@ -11185,7 +10829,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.358446Z",
           "updated_date": "2026-06-03T17:00:52.358447Z"
         },
@@ -11215,7 +10858,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.358456Z",
           "updated_date": "2026-06-03T17:00:52.358457Z"
         },
@@ -11245,7 +10887,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.358465Z",
           "updated_date": "2026-06-03T17:00:52.358466Z"
         },
@@ -11275,7 +10916,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.358475Z",
           "updated_date": "2026-06-03T17:00:52.358476Z"
         }
@@ -11317,7 +10957,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.362045Z",
           "updated_date": "2026-06-03T17:00:52.362048Z"
         },
@@ -11347,7 +10986,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.362061Z",
           "updated_date": "2026-06-03T17:00:52.362062Z"
         },
@@ -11377,7 +11015,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.362071Z",
           "updated_date": "2026-06-03T17:00:52.362072Z"
         },
@@ -11407,7 +11044,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.362081Z",
           "updated_date": "2026-06-03T17:00:52.362082Z"
         },
@@ -11437,7 +11073,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.362090Z",
           "updated_date": "2026-06-03T17:00:52.362091Z"
         },
@@ -11467,7 +11102,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.362108Z",
           "updated_date": "2026-06-03T17:00:52.362109Z"
         },
@@ -11497,7 +11131,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.362117Z",
           "updated_date": "2026-06-03T17:00:52.362118Z"
         },
@@ -11527,7 +11160,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.362126Z",
           "updated_date": "2026-06-03T17:00:52.362127Z"
         },
@@ -11557,7 +11189,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.362136Z",
           "updated_date": "2026-06-03T17:00:52.362137Z"
         }
@@ -11599,7 +11230,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.366064Z",
           "updated_date": "2026-06-03T17:00:52.366066Z"
         },
@@ -11629,7 +11259,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.366079Z",
           "updated_date": "2026-06-03T17:00:52.366080Z"
         },
@@ -11659,7 +11288,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.366089Z",
           "updated_date": "2026-06-03T17:00:52.366089Z"
         },
@@ -11689,7 +11317,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.366098Z",
           "updated_date": "2026-06-03T17:00:52.366099Z"
         },
@@ -11719,7 +11346,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.366107Z",
           "updated_date": "2026-06-03T17:00:52.366108Z"
         },
@@ -11749,7 +11375,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.366116Z",
           "updated_date": "2026-06-03T17:00:52.366117Z"
         },
@@ -11779,7 +11404,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.366125Z",
           "updated_date": "2026-06-03T17:00:52.366126Z"
         },
@@ -11809,7 +11433,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.366135Z",
           "updated_date": "2026-06-03T17:00:52.366135Z"
         },
@@ -11839,7 +11462,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.366144Z",
           "updated_date": "2026-06-03T17:00:52.366145Z"
         }
@@ -11881,7 +11503,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.369879Z",
           "updated_date": "2026-06-03T17:00:52.369882Z"
         },
@@ -11911,7 +11532,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.369895Z",
           "updated_date": "2026-06-03T17:00:52.369896Z"
         },
@@ -11941,7 +11561,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.369905Z",
           "updated_date": "2026-06-03T17:00:52.369906Z"
         },
@@ -11971,7 +11590,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.369914Z",
           "updated_date": "2026-06-03T17:00:52.369915Z"
         },
@@ -12001,7 +11619,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.369923Z",
           "updated_date": "2026-06-03T17:00:52.369924Z"
         },
@@ -12031,7 +11648,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.369933Z",
           "updated_date": "2026-06-03T17:00:52.369934Z"
         },
@@ -12061,7 +11677,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.369947Z",
           "updated_date": "2026-06-03T17:00:52.369948Z"
         },
@@ -12091,7 +11706,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.369957Z",
           "updated_date": "2026-06-03T17:00:52.369958Z"
         },
@@ -12121,7 +11735,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.369966Z",
           "updated_date": "2026-06-03T17:00:52.369967Z"
         }
@@ -12163,7 +11776,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.373569Z",
           "updated_date": "2026-06-03T17:00:52.373571Z"
         },
@@ -12193,7 +11805,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.373585Z",
           "updated_date": "2026-06-03T17:00:52.373586Z"
         },
@@ -12223,7 +11834,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.373595Z",
           "updated_date": "2026-06-03T17:00:52.373596Z"
         },
@@ -12253,7 +11863,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.373604Z",
           "updated_date": "2026-06-03T17:00:52.373605Z"
         },
@@ -12283,7 +11892,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.373613Z",
           "updated_date": "2026-06-03T17:00:52.373614Z"
         },
@@ -12313,7 +11921,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.373623Z",
           "updated_date": "2026-06-03T17:00:52.373624Z"
         },
@@ -12343,7 +11950,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.373632Z",
           "updated_date": "2026-06-03T17:00:52.373633Z"
         },
@@ -12373,7 +11979,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.373641Z",
           "updated_date": "2026-06-03T17:00:52.373642Z"
         },
@@ -12403,7 +12008,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.373650Z",
           "updated_date": "2026-06-03T17:00:52.373651Z"
         }
@@ -12445,7 +12049,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.377631Z",
           "updated_date": "2026-06-03T17:00:52.377633Z"
         },
@@ -12475,7 +12078,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.377647Z",
           "updated_date": "2026-06-03T17:00:52.377648Z"
         },
@@ -12505,7 +12107,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.377656Z",
           "updated_date": "2026-06-03T17:00:52.377657Z"
         },
@@ -12535,7 +12136,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.377666Z",
           "updated_date": "2026-06-03T17:00:52.377667Z"
         },
@@ -12565,7 +12165,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.377675Z",
           "updated_date": "2026-06-03T17:00:52.377676Z"
         },
@@ -12595,7 +12194,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.377684Z",
           "updated_date": "2026-06-03T17:00:52.377685Z"
         },
@@ -12625,7 +12223,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.377693Z",
           "updated_date": "2026-06-03T17:00:52.377694Z"
         },
@@ -12655,7 +12252,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.377702Z",
           "updated_date": "2026-06-03T17:00:52.377703Z"
         },
@@ -12685,7 +12281,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.377712Z",
           "updated_date": "2026-06-03T17:00:52.377713Z"
         }
@@ -12727,7 +12322,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.381495Z",
           "updated_date": "2026-06-03T17:00:52.381497Z"
         },
@@ -12757,7 +12351,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.381509Z",
           "updated_date": "2026-06-03T17:00:52.381510Z"
         },
@@ -12787,7 +12380,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.381519Z",
           "updated_date": "2026-06-03T17:00:52.381520Z"
         },
@@ -12817,7 +12409,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.381529Z",
           "updated_date": "2026-06-03T17:00:52.381530Z"
         },
@@ -12847,7 +12438,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.381538Z",
           "updated_date": "2026-06-03T17:00:52.381539Z"
         },
@@ -12877,7 +12467,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.381547Z",
           "updated_date": "2026-06-03T17:00:52.381548Z"
         },
@@ -12907,7 +12496,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.381556Z",
           "updated_date": "2026-06-03T17:00:52.381557Z"
         },
@@ -12937,7 +12525,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.381566Z",
           "updated_date": "2026-06-03T17:00:52.381567Z"
         },
@@ -12967,7 +12554,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.381575Z",
           "updated_date": "2026-06-03T17:00:52.381576Z"
         }
@@ -13009,7 +12595,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.385373Z",
           "updated_date": "2026-06-03T17:00:52.385376Z"
         },
@@ -13039,7 +12624,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.385391Z",
           "updated_date": "2026-06-03T17:00:52.385392Z"
         },
@@ -13069,7 +12653,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.385402Z",
           "updated_date": "2026-06-03T17:00:52.385403Z"
         },
@@ -13099,7 +12682,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.385412Z",
           "updated_date": "2026-06-03T17:00:52.385413Z"
         },
@@ -13129,7 +12711,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.385421Z",
           "updated_date": "2026-06-03T17:00:52.385422Z"
         },
@@ -13159,7 +12740,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.385430Z",
           "updated_date": "2026-06-03T17:00:52.385430Z"
         },
@@ -13189,7 +12769,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.385439Z",
           "updated_date": "2026-06-03T17:00:52.385439Z"
         },
@@ -13219,7 +12798,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.385448Z",
           "updated_date": "2026-06-03T17:00:52.385449Z"
         },
@@ -13249,7 +12827,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.385457Z",
           "updated_date": "2026-06-03T17:00:52.385458Z"
         }
@@ -13291,7 +12868,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.389371Z",
           "updated_date": "2026-06-03T17:00:52.389374Z"
         },
@@ -13321,7 +12897,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.389388Z",
           "updated_date": "2026-06-03T17:00:52.389389Z"
         },
@@ -13351,7 +12926,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.389397Z",
           "updated_date": "2026-06-03T17:00:52.389398Z"
         },
@@ -13381,7 +12955,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.389407Z",
           "updated_date": "2026-06-03T17:00:52.389408Z"
         },
@@ -13411,7 +12984,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.389416Z",
           "updated_date": "2026-06-03T17:00:52.389417Z"
         },
@@ -13441,7 +13013,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.389425Z",
           "updated_date": "2026-06-03T17:00:52.389426Z"
         },
@@ -13471,7 +13042,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.389434Z",
           "updated_date": "2026-06-03T17:00:52.389435Z"
         },
@@ -13501,7 +13071,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.389444Z",
           "updated_date": "2026-06-03T17:00:52.389445Z"
         },
@@ -13531,7 +13100,6 @@
           "object_visibility_threshold": 0.05,
           "panoptic_comparison": true,
           "attribute_comparison": null,
-          "empty_is_annotated": true,
           "created_date": "2026-06-03T17:00:52.389453Z",
           "updated_date": "2026-06-03T17:00:52.389454Z"
         }
