@@ -1916,9 +1916,8 @@ class TestTaskData(TestTasksBase):
             f"bytes 0-{len(full_chunk) - 1}/{len(full_chunk)}"
         )
 
-    def test_can_get_data_chunk_byte_ranges(self, fxt_uploaded_images_task: tuple[ITaskSpec, int]):
-        _, task_id = fxt_uploaded_images_task
-
+    @parametrize("task_spec, task_id", [fixture_ref("fxt_uploaded_images_task")])
+    def test_can_get_data_chunk_byte_ranges(self, task_spec: ITaskSpec, task_id: int):
         with make_api_client(self._USERNAME) as api_client:
             _, task_chunk_response = api_client.tasks_api.retrieve_data(
                 task_id, type="chunk", quality="compressed", number=0, _parse_response=False
@@ -1956,13 +1955,13 @@ class TestTaskData(TestTasksBase):
             )
 
     @pytest.mark.timeout(300)
-    @parametrize(
-        "task_spec, task_id", [fixture_ref("fxt_uploaded_images_task_with_honeypots_and_segments")]
-    )
     def test_all_job_chunks_available_after_honeypot_frame_change(
-        self, task_spec: ITaskSpec, task_id: int
+        self, request: pytest.FixtureRequest
     ):
         # Check for regressions on https://github.com/cvat-ai/cvat/issues/11006
+
+        # Create a new task to be modified in the test
+        task_spec, task_id = self._image_task_with_honeypots_and_segments_base(request)
 
         with make_api_client(self._USERNAME) as api_client:
             task_meta, _ = api_client.tasks_api.retrieve_data_meta(task_id)

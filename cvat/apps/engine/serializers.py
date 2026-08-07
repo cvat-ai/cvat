@@ -1690,15 +1690,13 @@ class JobValidationLayoutWriteSerializer(serializers.Serializer):
 
             # Update chunks
             job_frame_provider = JobFrameProvider(db_job)
-            updated_segment_chunk_ids = set(
+            updated_segment_chunk_ids = range(
                 # We store chunk update dates only per segment,
                 # so we invalidate all the chunks in the segment.
                 # This allows the cache to check the chunk timestamps before returning them.
                 # Change the granularity to per chunk, if the performance is bad.
-                range(
-                    job_frame_provider.get_chunk_number(db_segment.start_frame),
-                    job_frame_provider.get_chunk_number(db_segment.stop_frame),
-                )
+                job_frame_provider.get_chunk_number(db_segment.start_frame),
+                job_frame_provider.get_chunk_number(db_segment.stop_frame),
             )
             segment_frames = sorted(segment_frame_set)
             segment_frame_map = dict(zip(segment_honeypots, requested_frames))
