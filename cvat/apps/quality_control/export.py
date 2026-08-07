@@ -16,7 +16,11 @@ from django.utils.text import slugify
 from cvat.apps.engine import serializers as engine_serializers
 from cvat.apps.engine.models import Job, User
 from cvat.apps.quality_control import models
-from cvat.apps.quality_control.comparison_report import ComparisonReport, ConfusionMatrix
+from cvat.apps.quality_control.comparison_report import (
+    UNMATCHED_LABEL_NAME,
+    ComparisonReport,
+    ConfusionMatrix,
+)
 from cvat.apps.quality_control.statistics import (
     Averaging,
     compute_accuracy,
@@ -155,7 +159,9 @@ def _serialize_confusion_matrix_csv(confusion_matrix: ConfusionMatrix) -> str:
     assert recalls is not None
     assert jaccards is not None
 
-    unmatched_label_idx = labels.index("unmatched") if "unmatched" in labels else None
+    unmatched_label_idx = (
+        labels.index(UNMATCHED_LABEL_NAME) if UNMATCHED_LABEL_NAME in labels else None
+    )
     dataset_accuracy_micro, _ = compute_accuracy(
         rows,
         excluded_label_idx=unmatched_label_idx,

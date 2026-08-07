@@ -29,6 +29,8 @@ from cvat.apps.quality_control.models import (
 )
 from cvat.apps.quality_control.utils import array_safe_divide
 
+UNMATCHED_LABEL_NAME = "unmatched"
+
 
 def _parse_annotation_conflict_type(value: str) -> AnnotationConflictType:
     return AnnotationConflictType(value)
@@ -418,7 +420,7 @@ class ConfusionMatrix(ReportNode):
             # ... = TP + TN
         ) / (total_annotations_count or 1)
 
-        if labels[-1] == "unmatched":
+        if labels[-1] == UNMATCHED_LABEL_NAME:
             self.precision[-1] = np.nan
             self.recall[-1] = np.nan
             self.accuracy[-1] = np.nan
@@ -811,17 +813,14 @@ class ComparisonReportRequirementsSummary(ReportNode):
             ComparisonReportRequirementSummaryItem.from_dict(item) for item in d.get("items", [])
         ]
         return cls(
-            total_count=d.get("total_count", d.get("total", 0)),
-            enabled_count=d.get("enabled_count", d.get("enabled", 0)),
-            completed_count=d.get("completed_count", d.get("completed", 0)),
+            total_count=d.get("total_count", 0),
+            enabled_count=d.get("enabled_count", 0),
+            completed_count=d.get("completed_count", 0),
             not_computed_count=d.get(
                 "not_computed_count",
-                d.get(
-                    "not_computed",
-                    sum(
-                        item.calculation.status == RequirementCalculationStatus.NOT_COMPUTED
-                        for item in items
-                    ),
+                sum(
+                    item.calculation.status == RequirementCalculationStatus.NOT_COMPUTED
+                    for item in items
                 ),
             ),
             items=items,

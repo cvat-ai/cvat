@@ -297,16 +297,8 @@ class QualityReportViewSet(
         elif self.action == "retrieve":
             # Keep legacy report ids out of the UI-facing detail endpoint as well.
             queryset = queryset.filter(data__regex=CURRENT_REPORT_DATA_REGEX)
-            queryset = queryset.select_related(
-                "job",
-                "job__segment",
-                "job__segment__task",
-                "job__segment__task__project",
-                "task",
-                "task__project",
-                "project",
-            )
-        else:
+
+        if self.action != "list":
             queryset = queryset.select_related(
                 "job",
                 "job__segment",

@@ -543,6 +543,7 @@ class DistanceComparator(datumaro.components.comparator.DistanceComparator):
         a_annotations_getter: Callable[[_ShapeT1], Sequence[dm.Annotation]] | None = None,
         b_annotations_getter: Callable[[_ShapeT2], Sequence[dm.Annotation]] | None = None,
         direction_distance: ShapeSimilarityFunction[_ShapeT1, _ShapeT2] | None = None,
+        direction_threshold: float | None = None,
         compare_attributes: bool = True,
     ):
         if a_objs is None:
@@ -562,7 +563,8 @@ class DistanceComparator(datumaro.components.comparator.DistanceComparator):
             )
             direction_mismatch = bool(
                 direction_distance
-                and base_geometry_similarity - geometry_similarity > self.line_orientation_threshold
+                and direction_threshold is not None
+                and base_geometry_similarity - geometry_similarity > direction_threshold
             )
 
             conflicting_attribute_names: set[str] = set()
@@ -821,6 +823,7 @@ class DistanceComparator(datumaro.components.comparator.DistanceComparator):
             item_b,
             distance=base_matcher.distance,
             direction_distance=direction_matcher.distance if direction_matcher else None,
+            direction_threshold=self.line_orientation_threshold,
         )
 
     def match_points(self, item_a: dm.DatasetItem, item_b: dm.DatasetItem):

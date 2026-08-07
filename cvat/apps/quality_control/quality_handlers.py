@@ -34,6 +34,7 @@ from cvat.apps.quality_control.attribute_comparison import (
     normalize_attribute_comparison,
 )
 from cvat.apps.quality_control.comparison_report import (
+    UNMATCHED_LABEL_NAME,
     AnnotationConflict,
     AnnotationId,
     ComparisonParameters,
@@ -710,7 +711,7 @@ class RequirementHandler(ABC):
         ann_b: dm.Annotation,
     ) -> AttributeMatchingResult:
         attribute_comparison = normalize_attribute_comparison(
-            getattr(self.requirement, "attribute_comparison", None),
+            self.requirement.attribute_comparison,
             fill_default=True,
         )
         default_rule = make_default_attribute_rule(attribute_comparison)
@@ -847,7 +848,7 @@ class RequirementHandler(ABC):
                 label_id_idx_map[label_id] = len(label_names)
                 label_names.append(label.name)
 
-        label_names.append("unmatched")
+        label_names.append(UNMATCHED_LABEL_NAME)
 
         num_labels = len(label_names)
         confusion_matrix = np.zeros((num_labels, num_labels), dtype=int)
