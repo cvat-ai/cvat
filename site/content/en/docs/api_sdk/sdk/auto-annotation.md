@@ -38,8 +38,11 @@ An AA function may be used in one of the following modes:
   When they do, the agents detect this, and process their requests by calling appropriate
   methods on the corresponding AA function.
 
+  Consult {{< ilink "/docs/annotation/auto-annotation/ai-models" >}}
+  for information on how to use each function kind from the CVAT UI.
+
   Depending on how you create the native function, it'll be accessible to only you,
-  or your organization.
+  your organization, or every user of the CVAT instance.
 
   For more details, consult the descriptions of the `function create-native`
   and `function run-agent` commands in {{< ilink "/docs/api_sdk/cli" "the CLI documentation" >}}.
@@ -150,16 +153,7 @@ This part of the auto-annotation layer defines the protocols that an AA function
 A detection function is a type of AA function
 that accepts an image and returns a list of shapes found in that image.
 
-A detection function can be used in the following ways:
-
-- In immediate mode, the AA function is run for every image in a given CVAT task,
-  and the resulting lists of shapes are combined and uploaded to CVAT.
-
-- In agent mode, the AA function can be used from the CVAT UI to either annotate a complete task
-  (similar to immediate mode) or a single frame in a task.
-  After being registered with CVAT, a detection function will appear on the job page
-  under "AI Tools" (in the "Detectors" tab),
-  as well as on the task page under "Actions -> Automatic annotation".
+A detection function can be used in either agent or immediate mode.
 
 A detection function must have two attributes, `spec` and `detect`.
 
@@ -290,8 +284,6 @@ and a set of prompts describing an object (or objects) in that image,
 and returns the shapes of those objects.
 
 An interaction function can only be used in agent mode.
-After being registered with CVAT, an interaction function will appear on the job page
-in "AI Tools" under the "Interactors" tab.
 
 An interaction function must have two attributes, `spec` and `detect`.
 It may also optionally have a `preprocess_image` attribute.
@@ -393,9 +385,6 @@ A tracking function is a type of AA function that analyzes an image with one or 
 and then predicts the positions of those shapes on subsequent images.
 
 A tracking function can only be used in agent mode.
-After being registered with CVAT, a tracking function will appear on the job page,
-either in "AI Tools" under the "Trackers" tab, or in the "Run annotation actions" dialog,
-depending on the supported shape types.
 
 {{% alert title="Warning" color="warning" %}}
 Currently, only one agent should be run for each tracking function.
@@ -499,6 +488,9 @@ It must be called as follows:
 ```python
 annotate_task(<client>, <task ID>, <AA function>, <optional arguments...>)
 ```
+
+It will run the AA function for every image in the given task,
+combine the resulting list of shapes and uploaded it to the task.
 
 The supplied client will be used to make all API calls.
 
