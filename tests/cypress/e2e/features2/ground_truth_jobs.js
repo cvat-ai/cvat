@@ -484,7 +484,7 @@ context('Ground truth jobs', () => {
                 });
             });
 
-            it.only('Check GT annotation source in GT job and regular job review overlay', { scrollBehavior: false }, () => {
+            it('Check GT annotation source in GT job and regular job review overlay', { scrollBehavior: false }, () => {
                 const [frame] = groundTruthFrames;
                 const [rectangle] = groundTruthRectangles;
 
