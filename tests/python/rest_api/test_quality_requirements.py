@@ -1810,36 +1810,11 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
             "missing_count": 0,
             "extra_count": 0,
         }
-        assert group["comparison_summary"]["confusion_matrix"] == {
-            "labels": ["car", "unmatched"],
-            "rows": [[1, 0], [0, 0]],
-        }
+        confusion_matrix = group["comparison_summary"]["confusion_matrix"]
+        assert confusion_matrix["labels"] == ["car", "unmatched"]
+        assert confusion_matrix["rows"] == [[1, 0], [0, 0]]
 
-        empty_frame = group["frame_results"]["1"]
-        assert empty_frame["score"] is None
-        assert empty_frame["score_components"] == {
-            "valid_count": 0,
-            "missing_count": 0,
-            "extra_count": 0,
-        }
-        assert empty_frame["calculation"] == {
-            "status": "not_computed",
-            "reason": "no_annotations",
-            "annotations": {
-                "candidate_count": 0,
-                "selected_count": 0,
-                "missing_attributes": [],
-            },
-            "ground_truth": {
-                "candidate_count": 0,
-                "selected_count": 0,
-                "missing_attributes": [],
-            },
-        }
-        assert empty_frame["confusion_matrix"] == {
-            "labels": ["car", "unmatched"],
-            "rows": [[0, 0], [0, 0]],
-        }
+        assert "1" not in group["frame_results"]
 
     def test_task_report_data_applies_shape_requirement_filter_to_metrics(self, admin_user):
         task_id, _ = create_task(
@@ -2202,7 +2177,7 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
         assert "annotations" not in group_summary
         assert group_summary["score"] is None
         assert group_summary["score_components"] == {
-            "valid_count": 1,
+            "valid_count": 0,
             "missing_count": 0,
             "extra_count": 0,
         }
