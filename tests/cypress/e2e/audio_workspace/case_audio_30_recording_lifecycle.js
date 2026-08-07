@@ -30,7 +30,8 @@ context('Audio annotation. Recording lifecycle.', () => {
             cy.get('.cvat-player-pause-button').click();
 
             cy.get('.cvat-cursor-control').should('have.class', 'cvat-active-canvas-control');
-            cy.get('.cvat-audio-region-item').should('have.length', 1);
+            cy.get('.cvat-audio-region-item').should('have.length', 1)
+                .and('have.class', 'cvat-audio-region-item-active');
         });
 
         it('Cancels a recording on Escape without creating an interval', () => {
