@@ -65,7 +65,7 @@ def is_github_prompt_enabled(
 
     return (
         policy.is_enabled(user, growth_data, current_time)
-        and growth_data.github_prompt_allowed
+        and growth_data.promotion_notifications_allowed
         and not growth_data.github_prompt_support_clicked
         and not is_github_prompt_on_cooldown(growth_data, current_time)
     )

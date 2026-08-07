@@ -35,7 +35,7 @@ context('GitHub star prompt', () => {
                 github_prompt_shown: false,
                 github_prompt_support_clicked: false,
                 github_prompt_enabled: true,
-                github_prompt_allowed: true,
+                promotion_notifications_allowed: true,
             };
 
             cy.intercept('GET', '/api/growth**', (request) => {
@@ -93,14 +93,14 @@ context('GitHub star prompt', () => {
         cy.get('.cvat-github-star-modal').should('not.exist');
 
         cy.openProfile();
-        cy.get('.cvat-profile-page-menu-item-notifications').click();
-        cy.get('.cvat-profile-notifications-card').within(() => {
+        cy.get('.cvat-profile-page-menu-item-privacy-consent').click();
+        cy.get('.cvat-profile-privacy-consent-card').within(() => {
             cy.get('.ant-switch').should('have.attr', 'aria-checked', 'true').click();
             cy.contains('button', 'Save changes').click();
         });
 
         cy.wait('@updateGrowthData').then(({ request, response }) => {
-            expect(request.body).to.deep.equal({ github_prompt_allowed: false });
+            expect(request.body).to.deep.equal({ promotion_notifications_allowed: false });
             expect(response.statusCode).to.equal(200);
         });
     });

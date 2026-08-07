@@ -15,6 +15,6 @@ export type UserModifiableFields = CamelizedV2<APIUserModifiableFields>;
 
 export type APIUserGrowthDataModifiableFields = Partial<Pick<
     SerializedUserGrowthData,
-    'github_prompt_shown' | 'github_prompt_support_clicked' | 'github_prompt_allowed'
+    'github_prompt_shown' | 'github_prompt_support_clicked' | 'promotion_notifications_allowed'
 >>;
 export type UserGrowthDataModifiableFields = Camelized<APIUserGrowthDataModifiableFields>;

@@ -2,12 +2,12 @@
 #
 # SPDX-License-Identifier: MIT
 
-from itertools import batched
-
 import django.db.models.deletion
 from django.conf import settings
 from django.db import migrations, models
 from django.utils.timezone import now
+
+from cvat.apps.engine.utils import take_by
 
 
 def create_growth_data_for_existing_users(apps, schema_editor):
@@ -16,14 +16,14 @@ def create_growth_data_for_existing_users(apps, schema_editor):
     current_time = now()
     user_ids = User.objects.values_list("id", flat=True).iterator(chunk_size=1000)
 
-    for user_id_batch in batched(user_ids, 1000):
+    for user_id_batch in take_by(user_ids, 1000):
         UserGrowthData.objects.bulk_create(
             [
                 UserGrowthData(
                     user_id=user_id,
                     github_prompt_shown_at=current_time,
                     github_prompt_support_clicked=False,
-                    github_prompt_allowed=True,
+                    promotion_notifications_allowed=True,
                 )
                 for user_id in user_id_batch
             ],
@@ -48,7 +48,7 @@ class Migration(migrations.Migration):
                 ),
                 ("github_prompt_shown_at", models.DateTimeField(blank=True, null=True)),
                 ("github_prompt_support_clicked", models.BooleanField(default=False)),
-                ("github_prompt_allowed", models.BooleanField(default=True)),
+                ("promotion_notifications_allowed", models.BooleanField(default=True)),
                 (
                     "user",
                     models.OneToOneField(

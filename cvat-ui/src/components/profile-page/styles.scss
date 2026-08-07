@@ -61,7 +61,7 @@
     }
 }
 
-.cvat-profile-notifications-card {
+.cvat-profile-privacy-consent-card {
     min-height: $grid-unit-size * 37;
 
     .ant-card-body {
@@ -71,28 +71,28 @@
     }
 }
 
-.cvat-profile-notifications-item {
+.cvat-profile-privacy-consent-item {
     display: flex;
     align-items: center;
     gap: $grid-unit-size * 2;
 }
 
-.cvat-profile-notifications-item-copy {
+.cvat-profile-privacy-consent-item-copy {
     min-width: 0;
 }
 
-.cvat-profile-notifications-item-title {
+.cvat-profile-privacy-consent-item-title {
     color: $text-color;
     font-weight: 600;
     line-height: $grid-unit-size * 2.5;
 }
 
-.cvat-profile-notifications-item-description {
+.cvat-profile-privacy-consent-item-description {
     color: $text-color-secondary;
     line-height: $grid-unit-size * 2.5;
 }
 
-.cvat-profile-notifications-actions {
+.cvat-profile-privacy-consent-actions {
     display: flex;
     margin-top: auto;
     justify-content: flex-end;

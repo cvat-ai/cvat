@@ -10382,7 +10382,7 @@ components:
           type: boolean
         github_prompt_support_clicked:
           type: boolean
-        github_prompt_allowed:
+        promotion_notifications_allowed:
           type: boolean
     PatchedUserRequest:
       type: object
@@ -11921,7 +11921,7 @@ components:
         github_prompt_enabled:
           type: boolean
           readOnly: true
-        github_prompt_allowed:
+        promotion_notifications_allowed:
           type: boolean
     UserIdentifiers:
       type: object

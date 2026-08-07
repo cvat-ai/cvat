@@ -14,7 +14,7 @@ class TestGrowthData:
         "github_prompt_shown": False,
         "github_prompt_support_clicked": False,
         "github_prompt_enabled": True,
-        "github_prompt_allowed": True,
+        "promotion_notifications_allowed": True,
     }
 
     @pytest.fixture(autouse=True)
@@ -31,7 +31,7 @@ class TestGrowthData:
             "github_prompt_shown",
             "github_prompt_support_clicked",
             "github_prompt_enabled",
-            "github_prompt_allowed",
+            "promotion_notifications_allowed",
         }
         assert isinstance(growth_data["id"], int)
         assert growth_data["owner"]["id"] == user["id"]
@@ -72,15 +72,20 @@ class TestGrowthData:
 
         expected_prompt_state = self.INITIAL_PROMPT_STATE.copy()
         for fields in (
+            {"promotion_notifications_allowed": False},
+            {"promotion_notifications_allowed": True},
             {"github_prompt_shown": True},
             {"github_prompt_support_clicked": True},
-            {"github_prompt_allowed": False},
         ):
             response = patch_method(self.user["username"], f"growth/{growth_id}", fields)
             assert response.status_code == HTTPStatus.OK
 
             expected_prompt_state.update(fields)
-            expected_prompt_state["github_prompt_enabled"] = False
+            expected_prompt_state["github_prompt_enabled"] = (
+                expected_prompt_state["promotion_notifications_allowed"]
+                and not expected_prompt_state["github_prompt_shown"]
+                and not expected_prompt_state["github_prompt_support_clicked"]
+            )
             self._assert_growth_data(response.json(), self.user, expected_prompt_state)
 
     @pytest.mark.parametrize(
@@ -102,6 +107,6 @@ class TestGrowthData:
         response = patch_method(
             self.user["username"],
             f"growth/{growth_data['id']}",
-            {"github_prompt_allowed": False},
+            {"promotion_notifications_allowed": False},
         )
         assert response.status_code == HTTPStatus.FORBIDDEN

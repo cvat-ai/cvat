@@ -15,8 +15,8 @@ const { Title, Paragraph } = Typography;
 interface Props {
     open: boolean;
     onShown: () => void;
-    onSupport?: () => void;
-    onClose?: () => void;
+    onSupport: () => void;
+    onClose: () => void;
 }
 
 function GitHubStarModal(props: Props): JSX.Element {
@@ -71,8 +71,8 @@ function GitHubStarModal(props: Props): JSX.Element {
                             icon={<StarFilled />}
                             className='cvat-github-star-modal-support-button cvat-github-star-prompt-open-button'
                             onClick={() => {
-                                onSupport?.();
-                                onClose?.();
+                                onSupport();
+                                onClose();
                             }}
                         >
                             Star CVAT on GitHub

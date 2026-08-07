@@ -76,7 +76,7 @@ export interface SerializedUserGrowthData {
     github_prompt_shown: boolean;
     github_prompt_support_clicked: boolean;
     github_prompt_enabled: boolean;
-    github_prompt_allowed: boolean;
+    promotion_notifications_allowed: boolean;
 }
 
 interface SerializedStorage {

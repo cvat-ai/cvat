@@ -24,7 +24,7 @@ class UserGrowthDataSerializer(serializers.ModelSerializer):
             "github_prompt_shown",
             "github_prompt_support_clicked",
             "github_prompt_enabled",
-            "github_prompt_allowed",
+            "promotion_notifications_allowed",
         )
         read_only_fields = ("id", "owner", "github_prompt_enabled")
 
@@ -53,9 +53,11 @@ class UserGrowthDataSerializer(serializers.ModelSerializer):
         if support_clicked and not instance.github_prompt_support_clicked:
             instance.github_prompt_support_clicked = True
             update_fields.append("github_prompt_support_clicked")
-        if "github_prompt_allowed" in validated_data:
-            instance.github_prompt_allowed = validated_data["github_prompt_allowed"]
-            update_fields.append("github_prompt_allowed")
+        if "promotion_notifications_allowed" in validated_data:
+            instance.promotion_notifications_allowed = validated_data[
+                "promotion_notifications_allowed"
+            ]
+            update_fields.append("promotion_notifications_allowed")
 
         if update_fields:
             instance.save(update_fields=update_fields)

@@ -18,12 +18,12 @@ import CVATLoadingSpinner from 'components/common/loading-spinner';
 import dimensions from 'utils/dimensions';
 import ProfileContent from './profile-content/profile-content';
 import SecurityContent from './security-content/security-content';
-import NotificationsCard from './profile-content/notifications-card';
+import PrivacyConsentCard from './profile-content/privacy-consent-card';
 
 import './styles.scss';
 
 const { Title } = Typography;
-const supportedTabs = ['profile', 'security', 'notifications'];
+const supportedTabs = ['profile', 'security', 'privacy-consent'];
 
 function ProfilePageComponent(): JSX.Element {
     const { user, fetching, isPasswordChangeEnabled } = useSelector((state: CombinedState) => ({
@@ -46,9 +46,9 @@ function ProfilePageComponent(): JSX.Element {
             label: <Text className='cvat-profile-page-menu-item-security'>Security</Text>,
         },
         {
-            key: 'notifications',
+            key: 'privacy-consent',
             icon: <BellOutlined />,
-            label: <Text className='cvat-profile-page-menu-item-notifications'>Notifications</Text>,
+            label: <Text className='cvat-profile-page-menu-item-privacy-consent'>Privacy & consent</Text>,
         },
     ];
 
@@ -70,8 +70,8 @@ function ProfilePageComponent(): JSX.Element {
         switch (activeTab) {
             case 'security':
                 return <SecurityContent isPasswordChangeEnabled={isPasswordChangeEnabled} />;
-            case 'notifications':
-                return <NotificationsCard />;
+            case 'privacy-consent':
+                return <PrivacyConsentCard />;
             case 'profile':
             default:
                 return <ProfileContent />;

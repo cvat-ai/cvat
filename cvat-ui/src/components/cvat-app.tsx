@@ -346,6 +346,10 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
             }
         }
 
+        if (user?.id !== prevProps.user?.id && this.state.githubStarPromptVisible) {
+            this.setState({ githubStarPromptVisible: false });
+        }
+
         if (!userAgreementsInitialized && !userAgreementsFetching) {
             loadUserAgreements();
             return;
