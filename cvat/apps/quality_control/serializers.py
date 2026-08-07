@@ -720,14 +720,10 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
             annotation_type = attrs.get("annotation_type")
             name = attrs.get("name")
         else:
-            quality_settings = attrs["settings"] if "settings" in attrs else self.instance.settings
-            parent_requirement = attrs["parent"] if "parent" in attrs else self.instance.parent
-            annotation_type = (
-                attrs["annotation_type"]
-                if "annotation_type" in attrs
-                else self.instance.annotation_type
-            )
-            name = attrs["name"] if "name" in attrs else self.instance.name
+            quality_settings = attrs.get("settings", self.instance.settings)
+            parent_requirement = attrs.get("parent", self.instance.parent)
+            annotation_type = attrs.get("annotation_type", self.instance.annotation_type)
+            name = attrs.get("name", self.instance.name)
 
         if quality_settings is None:
             raise serializers.ValidationError({"settings_id": "This field is required."})
