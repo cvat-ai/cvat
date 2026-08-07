@@ -643,7 +643,14 @@ class Data(models.Model):
         if self.images.exists():
             return True
 
-        if hasattr(self, "video") and db_storage.get_client().supports_streaming:
+        # Video tasks without manifests technically work with backing CS too,
+        # but reading the video from the beginning each time is too slow in practice,
+        # so we disallow it.
+        if (
+            hasattr(self, "video")
+            and db_storage.get_client().supports_streaming
+            and self.get_manifest_path().exists()
+        ):
             return True
 
         return False
