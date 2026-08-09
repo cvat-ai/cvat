@@ -11,7 +11,7 @@ readme = "README.md"
 authors = [{name = "CVAT.ai Corporation", email = "support@cvat.ai"}]
 keywords = ["CVAT", "H.264", "OpenH264", "video"]
 license = "MIT"
-license-files = ["LICENSE", "THIRD_PARTY_NOTICES.md"]
+license-files = ["LICENSE"]
 classifiers = [
     "Development Status :: 2 - Pre-Alpha",
     "Programming Language :: Python :: 3",

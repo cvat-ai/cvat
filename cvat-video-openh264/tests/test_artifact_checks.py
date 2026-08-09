@@ -14,7 +14,6 @@ def _write_wheel(path: Path, members: tuple[str, ...]) -> None:
         for member in (
             *members,
             "cvat_video_openh264-0.1.0.dev0.dist-info/licenses/LICENSE",
-            "cvat_video_openh264-0.1.0.dev0.dist-info/licenses/THIRD_PARTY_NOTICES.md",
         ):
             wheel.writestr(member, b"")
 

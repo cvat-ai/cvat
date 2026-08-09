@@ -48,11 +48,12 @@ def validate_artifact(path: Path) -> None:
         for member in normalized_members
     ):
         raise ArtifactValidationError(f"{path.name!r} does not contain the adapter package")
-    for required_notice in ("LICENSE", "THIRD_PARTY_NOTICES.md"):
-        if not any(member.name == required_notice for member in normalized_members):
-            raise ArtifactValidationError(
-                f"{path.name!r} does not contain required notice {required_notice!r}"
-            )
+
+    required_notice = "LICENSE"
+    if not any(member.name == required_notice for member in normalized_members):
+        raise ArtifactValidationError(
+            f"{path.name!r} does not contain required notice {required_notice!r}"
+        )
 
     if path.suffix == ".whl" and not path.name.endswith("-py3-none-any.whl"):
         raise ArtifactValidationError(f"{path.name!r} is not a pure-Python wheel")
