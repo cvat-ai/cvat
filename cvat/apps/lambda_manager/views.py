@@ -1478,6 +1478,12 @@ class FunctionViewSet(viewsets.ViewSet):
                 description="Request id",
             ),
         ],
+        responses={
+            "204": OpenApiResponse(description="The request has been canceled"),
+            "409": OpenApiResponse(
+                description="The request is still running and cannot be canceled"
+            ),
+        },
     ),
 )
 class RequestViewSet(viewsets.ViewSet):

@@ -3500,7 +3500,9 @@ paths:
       - basicAuth: []
       responses:
         '204':
-          description: No response body
+          description: The request has been canceled
+        '409':
+          description: The request is still running and cannot be canceled
   /api/memberships:
     get:
       operationId: memberships_list
