@@ -61,7 +61,7 @@ from utils.dataset_manifest import (
 from utils.dataset_manifest.core import VideoManifestValidator, is_dataset_manifest
 from utils.dataset_manifest.utils import find_related_images
 
-from .cloud_provider import HeaderFirstMediaDownloader, db_storage_to_storage_instance
+from .cloud_provider import HeaderFirstMediaDownloader
 
 slogger = ServerLogManager(__name__)
 
@@ -442,13 +442,13 @@ def _validate_manifest(
     full_manifest_path = join_untrusted_path(root_dir, manifest_file)
 
     if is_in_cloud and not is_backup_restore:
-        cloud_storage_instance = db_storage_to_storage_instance(db_cloud_storage)
+        storage_client = db_cloud_storage.get_client()
         # check that cloud storage manifest file exists and is up to date
         if not full_manifest_path.exists() or (
             datetime.fromtimestamp(full_manifest_path.stat().st_mtime, tz=timezone.utc)
-            < cloud_storage_instance.get_file_last_modified(manifest_file)
+            < storage_client.get_file_last_modified(manifest_file)
         ):
-            cloud_storage_instance.download_file(manifest_file, full_manifest_path)
+            storage_client.download_file(manifest_file, full_manifest_path)
 
     if not is_manifest(full_manifest_path):
         raise ValidationError("Invalid manifest was uploaded")
@@ -525,15 +525,6 @@ def _download_data(
             local_files[name] = True
 
     return list(local_files.keys())
-
-
-def _download_data_from_cloud_storage(
-    db_storage: models.CloudStorage,
-    files: Sequence[PurePath],
-    upload_dir: Path,
-):
-    cloud_storage_instance = db_storage_to_storage_instance(db_storage)
-    cloud_storage_instance.bulk_download_to_dir(files, upload_dir)
 
 
 def _read_dataset_manifest(path: Path, *, create_index: bool = False) -> ImageManifestManager:
@@ -629,7 +620,7 @@ def _create_task_manifest_from_cloud_data(
     )
     sorted_media = [f for f in sorted_media if f in regular_images]
 
-    storage_client = db_storage_to_storage_instance(db_storage)
+    storage_client = db_storage.get_client()
     content_generator = storage_client.bulk_download_to_memory(
         list(map(os.fspath, sorted_media)),
         object_downloader=HeaderFirstMediaDownloader.create(
@@ -1075,7 +1066,7 @@ def _filter_cloud_storage_files(
     cloud_storage_manifest_prefix: str | None,
     cloud_storage_manifest: ImageManifestManager | None,
 ) -> None:
-    cloud_storage_instance = db_storage_to_storage_instance(cloud_storage)
+    storage_client = cloud_storage.get_client()
 
     if cloud_storage_manifest and not data["server_files"] and not data["filename_pattern"]:
         # only manifest file was specified in server files by the user
@@ -1112,9 +1103,7 @@ def _filter_cloud_storage_files(
         else:
             while len(dirs):
                 directory = dirs.pop()
-                for f in cloud_storage_instance.list_files(
-                    prefix=directory, _use_flat_listing=True
-                ):
+                for f in storage_client.list_files(prefix=directory, _use_flat_listing=True):
                     if f["type"] == "REG":
                         if problem_with_untrusted_path(f["name"]):
                             continue
@@ -1154,7 +1143,7 @@ def _filter_cloud_storage_files(
             prefix = ""
 
             while True:
-                for f in cloud_storage_instance.list_files(prefix=prefix, _use_flat_listing=True):
+                for f in storage_client.list_files(prefix=prefix, _use_flat_listing=True):
                     if f["type"] == "REG":
                         if problem_with_untrusted_path(f["name"]):
                             continue
@@ -1182,10 +1171,10 @@ def _filter_cloud_storage_files(
 
         data["server_files"].extend(additional_files)
 
-    if cloud_storage_instance.prefix:
+    if storage_client.prefix:
         # filter server_files based on default prefix
         data["server_files"] = list(
-            filter(lambda x: x.startswith(cloud_storage_instance.prefix), data["server_files"])
+            filter(lambda x: x.startswith(storage_client.prefix), data["server_files"])
         )
 
     if job_file_mapping is not None:
@@ -1556,7 +1545,7 @@ def _create_audio_task_media_descriptors(
 
 def ensure_task_is_initialized(task: models.Task) -> None:
     if not task.media_type:
-        raise ValidationError("This task data has not been initialized yet. Please try again later")
+        raise ValidationError("This task data has not been initialized yet")
 
 
 @transaction.atomic
@@ -1693,10 +1682,8 @@ def initialize_task(
         ):
             update_status("Downloading input media")
 
-            _download_data_from_cloud_storage(
-                db_storage=db_data.cloud_storage,
-                files=list(map(PurePosixPath, itertools.chain.from_iterable(media.values()))),
-                upload_dir=upload_dir,
+            db_data.cloud_storage.get_client().bulk_download_to_dir(
+                list(map(PurePosixPath, itertools.chain.from_iterable(media.values()))), upload_dir
             )
 
             is_data_in_cloud = False

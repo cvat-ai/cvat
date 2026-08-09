@@ -383,17 +383,31 @@ class CommonData(InstanceLabelData):
     def _get_db_images(self) -> Iterator[models.Image]:
         raise NotImplementedError()
 
-    def abs_frame_id(self, relative_id):
+    def _abs_frame_id(self, relative_id, *, allow_after_range: bool = False):
         # relative_id is frame index in segment for job, so it can start with more than just zero
-        if relative_id not in self.rel_range:
+        if relative_id not in self.rel_range and not (
+            allow_after_range and relative_id == self.rel_range.stop
+        ):
             raise ValueError("Unknown internal frame id %s" % relative_id)
         return relative_id * self._frame_step + self._db_data.start_frame
 
-    def rel_frame_id(self, absolute_id):
+    def abs_frame_id(self, relative_id):
+        return self._abs_frame_id(relative_id)
+
+    def abs_interval_stop(self, relative_id):
+        return self._abs_frame_id(relative_id, allow_after_range=True)
+
+    def _rel_frame_id(self, absolute_id, *, allow_after_range: bool = False):
         d, m = divmod(absolute_id - self._db_data.start_frame, self._frame_step)
-        if m or d not in self.rel_range:
+        if m or (d not in self.rel_range and not (allow_after_range and d == self.rel_range.stop)):
             raise ValueError("Unknown frame %s" % absolute_id)
         return d
+
+    def rel_frame_id(self, absolute_id):
+        return self._rel_frame_id(absolute_id)
+
+    def rel_interval_stop(self, absolute_id):
+        return self._rel_frame_id(absolute_id, allow_after_range=True)
 
     def _init_frame_info(self):
         self._deleted_frames = {k: True for k in self._db_data.deleted_frames}
@@ -557,7 +571,7 @@ class CommonData(InstanceLabelData):
             id=interval["id"],
             start=frame_to_timestamp(self.abs_frame_id(interval["start"])),
             stop=(
-                frame_to_timestamp(self.abs_frame_id(interval["stop"]))
+                frame_to_timestamp(self.abs_interval_stop(interval["stop"]))
                 if interval["stop"] is not None
                 else None
             ),
@@ -763,7 +777,7 @@ class CommonData(InstanceLabelData):
         label_id = self._get_label_id(_interval.pop("label"))
         _interval["start"] = self.rel_frame_id(timestamp_to_frame(_interval["start"]))
         _interval["stop"] = (
-            self.rel_frame_id(timestamp_to_frame(_interval["stop"]))
+            self.rel_interval_stop(timestamp_to_frame(_interval["stop"]))
             if _interval["stop"] is not None
             else None
         )

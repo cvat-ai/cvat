@@ -20,7 +20,6 @@ import ColorPicker from 'components/annotation-page/standard-workspace/objects-s
 import { getRegionItemColor } from './audio-region-colors';
 import AudioRegionItemMenu from './audio-region-item-menu';
 import AudioRegionsListHeader, { AudioRegionsOrdering } from './audio-regions-list-header';
-import { setPlayOnceRegionId } from './utils/play-once-region';
 import {
     copyAudioIntervalURL,
     intervalDurationSeconds,
@@ -54,8 +53,7 @@ interface ItemProps {
     activeControl: ActiveControl;
     onSetActiveInterval(clientID: number | null): void;
     onSetHoveredInterval(clientID: number | null): void;
-    onSwitchPlay(playing: boolean): void;
-    onSetCurrentTime(time: number): void;
+    onPlayIntervalOnce(clientID: number): void;
     onToggleIntervalLock(clientID: number): void;
     onToggleIntervalHidden(clientID: number): void;
     onCopyInterval(clientID: number): void;
@@ -67,7 +65,7 @@ function AudioRegionItem(props: ItemProps): JSX.Element {
     const {
         interval, displayIndex, isActive, itemColor, colorBy,
         activeControl,
-        onSetActiveInterval, onSetHoveredInterval, onSwitchPlay, onSetCurrentTime,
+        onSetActiveInterval, onSetHoveredInterval, onPlayIntervalOnce,
         onToggleIntervalLock, onToggleIntervalHidden,
         onCopyInterval, onDeleteInterval, onChangeIntervalColor,
     } = props;
@@ -85,11 +83,8 @@ function AudioRegionItem(props: ItemProps): JSX.Element {
     }, [isCursor, onSetActiveInterval, id]);
     const handleDoubleClick = useCallback(() => {
         if (!isCursor) return;
-        setPlayOnceRegionId(String(id));
-        onSetActiveInterval(id);
-        onSetCurrentTime(Math.max(0, intervalStartSeconds(interval)));
-        onSwitchPlay(true);
-    }, [isCursor, onSetActiveInterval, onSetCurrentTime, onSwitchPlay, id, interval]);
+        onPlayIntervalOnce(id);
+    }, [isCursor, onPlayIntervalOnce, id]);
     const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
         if (isCursor && (e.key === 'Enter' || e.key === ' ')) onSetActiveInterval(id);
     }, [isCursor, onSetActiveInterval, id]);
@@ -222,8 +217,7 @@ interface Props {
     switchHiddenAllShortcut: string;
     onSetActiveInterval(clientID: number | null): void;
     onSetHoveredInterval(clientID: number | null): void;
-    onSwitchPlay(playing: boolean): void;
-    onSetCurrentTime(time: number): void;
+    onPlayIntervalOnce(clientID: number): void;
     onToggleIntervalLock(clientID: number): void;
     onToggleIntervalHidden(clientID: number): void;
     onToggleIntervalsLock(clientIDs: number[], lock: boolean): void;
@@ -245,8 +239,7 @@ export default function AudioRegionsList(props: Props): JSX.Element {
         switchHiddenAllShortcut,
         onSetActiveInterval,
         onSetHoveredInterval,
-        onSwitchPlay,
-        onSetCurrentTime,
+        onPlayIntervalOnce,
         onToggleIntervalLock,
         onToggleIntervalHidden,
         onToggleIntervalsLock,
@@ -342,8 +335,7 @@ export default function AudioRegionsList(props: Props): JSX.Element {
                             activeControl={activeControl}
                             onSetActiveInterval={onSetActiveInterval}
                             onSetHoveredInterval={onSetHoveredInterval}
-                            onSwitchPlay={onSwitchPlay}
-                            onSetCurrentTime={onSetCurrentTime}
+                            onPlayIntervalOnce={onPlayIntervalOnce}
                             onToggleIntervalLock={onToggleIntervalLock}
                             onToggleIntervalHidden={onToggleIntervalHidden}
                             onCopyInterval={onCopyInterval}

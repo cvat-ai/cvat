@@ -43,8 +43,7 @@ from cvat.apps.engine import field_validation, models
 from cvat.apps.engine.cloud_provider import (
     Credentials,
     Status,
-    db_storage_to_storage_instance,
-    get_cloud_storage_instance,
+    get_cloud_storage_client,
 )
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.media_io.frame_provider import TaskFrameProvider
@@ -153,14 +152,10 @@ class HyperlinkedEndpointSerializer(serializers.Serializer):
         return instance
 
     def to_representation(self, instance):
-        request = self.context.get("request")
-        if not request:
-            return None
-
         return serializers.Hyperlink(
             reverse(
                 self.view_name,
-                request=request,
+                request=self.context.get("request"),
                 query=build_field_filter_params(self.filter_key, getattr(instance, self.key_field)),
             ),
             instance,
@@ -224,12 +219,8 @@ class LabelsSummarySerializer(serializers.Serializer):
         return reverse("label-list", request=request, query={filter_key: instance.id})
 
     def to_representation(self, instance):
-        request = self.context.get("request")
-        if not request:
-            return None
-
         return {
-            "url": self.get_url(request, instance),
+            "url": self.get_url(self.context.get("request"), instance),
         }
 
 
@@ -3729,8 +3720,7 @@ class DataMetaWriteSerializer(serializers.ModelSerializer):
     def validate_cloud_storage_id(self, cloud_storage_id: int):
         try:
             db_storage: models.CloudStorage = models.CloudStorage.objects.get(id=cloud_storage_id)
-            storage = db_storage_to_storage_instance(db_storage)
-            storage_status = storage.get_status()
+            storage_status = db_storage.get_client().get_status()
             if storage_status != Status.AVAILABLE:
                 raise serializers.ValidationError(
                     f"The specified cloud storage '{db_storage.display_name}' is not available."
@@ -4195,8 +4185,15 @@ class LabeledIntervalSerializer(
     AttributedAnnotationSerializer,
     ScoredAnnotationSerializer,
 ):
-    start = serializers.IntegerField(min_value=0)
-    stop = serializers.IntegerField(min_value=0, allow_null=True)
+    start = serializers.IntegerField(
+        min_value=0,
+        help_text="Must be within the task frame bounds.",
+    )
+    stop = serializers.IntegerField(
+        min_value=0,
+        allow_null=True,
+        help_text="Exclusive interval end. May be one greater than the task stop frame.",
+    )
 
 
 class LabeledDataSerializer(serializers.Serializer):
@@ -4509,18 +4506,19 @@ class CloudStorageWriteSerializer(serializers.ModelSerializer):
             credentials_type=validated_data.get("credentials_type"),
             connection_string=validated_data.pop("connection_string", ""),
         )
-        details = {
-            "resource": validated_data.get("resource"),
-            "credentials": credentials,
-            "specific_attributes": parse_specific_attributes(
-                validated_data.get("specific_attributes", "")
-            ),
-        }
+        specific_attributes = parse_specific_attributes(
+            validated_data.get("specific_attributes", "")
+        )
 
-        if prefix := details["specific_attributes"].get("prefix"):
+        if prefix := specific_attributes.get("prefix"):
             self._validate_prefix(prefix)
 
-        storage = get_cloud_storage_instance(cloud_provider=provider_type, **details)
+        storage = get_cloud_storage_client(
+            cloud_provider=provider_type,
+            resource=validated_data.get("resource"),
+            credentials=credentials,
+            specific_attributes=specific_attributes,
+        )
 
         storage_status = storage.get_status()
         if storage_status == Status.AVAILABLE:
@@ -4570,13 +4568,7 @@ class CloudStorageWriteSerializer(serializers.ModelSerializer):
 
     @transaction.atomic
     def update(self, instance, validated_data):
-        credentials = Credentials()
-        credentials.convert_from_db(
-            {
-                "type": instance.credentials_type,
-                "value": instance.credentials,
-            }
-        )
+        credentials = Credentials.from_db(instance.credentials_type, instance.credentials)
         credentials_dict = {
             k: v
             for k, v in validated_data.items()
@@ -4626,7 +4618,7 @@ class CloudStorageWriteSerializer(serializers.ModelSerializer):
             "credentials": credentials,
             "specific_attributes": parse_specific_attributes(instance.specific_attributes),
         }
-        storage = get_cloud_storage_instance(cloud_provider=instance.provider_type, **details)
+        storage = get_cloud_storage_client(cloud_provider=instance.provider_type, **details)
         storage_status = storage.get_status()
         if storage_status == Status.AVAILABLE:
             new_manifest_names = set(i.get("filename") for i in validated_data.get("manifests", []))
