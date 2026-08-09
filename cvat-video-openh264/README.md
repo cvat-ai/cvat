@@ -60,7 +60,6 @@ discovery API.
 python -m pytest cvat-video-openh264/tests
 python -m build --outdir /tmp/cvat-video-openh264-dist cvat-video-openh264
 python cvat-video-openh264/scripts/check_artifacts.py /tmp/cvat-video-openh264-dist/*
-python cvat-video-openh264/scripts/check_fixture_inventory.py
 ```
 
 Package tests must not depend on PyAV or a codec binary.

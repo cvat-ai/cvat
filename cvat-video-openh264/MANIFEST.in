@@ -1,2 +1,2 @@
 recursive-include scripts *.py
-recursive-include tests *.json *.md *.py
+recursive-include tests *.py
