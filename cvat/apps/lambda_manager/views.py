@@ -820,6 +820,38 @@ class LambdaQueue:
 
         return LambdaJob(rq_job)
 
+    def delete_job(self, pk: str) -> None:
+        queue = self._get_queue()
+
+        # Use the same (queue, rq_id) lock as enqueue() so a DELETE cannot
+        # race a concurrent POST for the same task over this job's identity.
+        with get_rq_lock_for_job(queue, pk):
+            rq_job = queue.fetch_job(pk)
+            if rq_job is None or not LambdaRQMeta.for_job(rq_job).lambda_:
+                raise ValidationError(
+                    "{} lambda job is not found".format(pk), code=status.HTTP_404_NOT_FOUND
+                )
+
+            job_status = rq_job.get_status(refresh=False)
+            if job_status == rq.job.JobStatus.STARTED:
+                # The work-horse may still be running and writing annotations.
+                # Deleting the hash now would let this RQ id be reused by a
+                # new request while the old execution is still alive, so the
+                # old run's late progress/result could overwrite the new one.
+                raise ValidationError(
+                    "Request #{} is still running and cannot be canceled".format(pk),
+                    code=status.HTTP_409_CONFLICT,
+                )
+
+            if job_status in (
+                rq.job.JobStatus.QUEUED,
+                rq.job.JobStatus.DEFERRED,
+                rq.job.JobStatus.SCHEDULED,
+            ):
+                rq_job.cancel()
+
+            rq_job.delete()
+
 
 class DetectionResultConverter:
     def __init__(self, db_task: Task) -> None:
@@ -1049,9 +1081,6 @@ class LambdaJob:
     @property
     def is_scheduled(self):
         return self.get_status() == rq.job.JobStatus.SCHEDULED
-
-    def delete(self):
-        self.job.delete()
 
     @classmethod
     def _call_detector(
@@ -1554,4 +1583,4 @@ class RequestViewSet(viewsets.ViewSet):
         queue = LambdaQueue()
         rq_job = queue.fetch_job(pk)
         self.check_object_permissions(request, rq_job)
-        rq_job.delete()
+        queue.delete_job(pk)
