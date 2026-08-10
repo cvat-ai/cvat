@@ -11,6 +11,8 @@ export const MIN_INTERVAL_DURATION = 0.001;
 export const INTERVAL_BOUNDARY_EPSILON = 0.001;
 export const MIN_RECORDING_DURATION = 0.05;
 
+export const MINIMAP_TIMELINE_HEIGHT = 18;
+
 export function computeWaveformZoom(displayZoom: number, durationSec: number, containerWidth: number): number {
     if (durationSec <= 0 || containerWidth <= 0) return 1;
     return Math.max(1, (containerWidth / durationSec) * displayZoom);
