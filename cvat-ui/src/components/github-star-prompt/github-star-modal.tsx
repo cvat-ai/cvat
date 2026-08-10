@@ -42,7 +42,7 @@ function GitHubStarModal(props: Props): JSX.Element {
             open={open}
             getContainer={false}
             footer={null}
-            width={1024}
+            width={1088}
             title={null}
             onCancel={onClose}
         >

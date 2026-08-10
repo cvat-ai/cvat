@@ -7,7 +7,7 @@
 .ant-modal-root .ant-modal-wrap.cvat-github-star-modal-wrap {
     display: flex;
     position: absolute;
-    min-width: $grid-unit-size * 128;
+    min-width: $grid-unit-size * 136;
     align-items: center;
     justify-content: center;
     overflow: hidden;
@@ -39,7 +39,7 @@
 .cvat-github-star-modal-layout {
     display: grid;
     min-height: $grid-unit-size * 67.5;
-    grid-template-columns: minmax($grid-unit-size * 48.75, 0.88fr) minmax(0, 1.12fr);
+    grid-template-columns: minmax($grid-unit-size * 56.75, 0.95fr) minmax(0, 1.12fr);
 }
 
 .cvat-github-star-modal-copy {
