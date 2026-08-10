@@ -79,7 +79,7 @@ interface WaveSurferWebAudioPlayer {
     // It is intentionally typed locally because this is private-API binding,
     // not a public WaveSurfer API contract.
     buffer: AudioBuffer | null;
-    emit(eventName: 'durationchange'): void;
+    emit(eventName: 'loadedmetadata' | 'canplay'): void;
 }
 
 interface MinimapPluginInternals {
@@ -185,16 +185,19 @@ function useWaveSurferRuntime({
             plugins: pluginsScope.plugins,
         });
 
-        const unsubscribeReady = wsInstance.on('ready', () => {
-            // There seem to be no way to re-use the audio buffer using
-            // existing public APIs of WaveSurfer
-            // NOTE: This place relies on the internal implementation.
+        // WaveSurfer has no public API for passing an already-decoded AudioBuffer.
+        // Initialize its WebAudioPlayer before WaveSurfer starts loading the supplied
+        // peaks and duration. This mirrors the player.src initialization path: it
+        // installs the buffer and emits the metadata/readiness events that update
+        // WaveSurfer's internal player state.
+        const unsubscribeInit = wsInstance.on('init', () => {
             const player = wsInstance.getMediaElement() as unknown as WaveSurferWebAudioPlayer;
             player.buffer = audioBuffer;
-            // The precomputed-peaks path sets the WebAudio player's duration directly.
-            // Notify WaveSurfer's reactive state so plugins, including Hover, see it.
-            player.emit('durationchange');
+            player.emit('loadedmetadata');
+            player.emit('canplay');
+        });
 
+        const unsubscribeReady = wsInstance.on('ready', () => {
             setInstance(wsInstance);
             injectScrollbarStyle(wsInstance.getWrapper());
             durationRef.current = wsInstance.getDuration();
@@ -204,6 +207,7 @@ function useWaveSurferRuntime({
         });
 
         return () => {
+            unsubscribeInit();
             unsubscribeReady();
             setInstance(null);
             minimapInstanceRef.current = null;
