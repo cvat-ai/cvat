@@ -284,11 +284,11 @@ jobs:
           CYPRESS_SETUP_SPECS="cypress/e2e/setup/setup.js,cypress/e2e/setup/setup_project.js"
           case "${{ matrix.specs }}" in
             canvas3d_*)
-              CYPRESS_ARGS+=(--headed --config-file cypress_canvas3d.config.js)
+              CYPRESS_ARGS+=(--config-file cypress_canvas3d.config.js)
               CYPRESS_SETUP_SPECS="cypress/e2e/setup/setup_canvas3d.js"
               ;;
             audio_*)
-              CYPRESS_ARGS+=(--headed --config-file cypress_audio.config.js)
+              CYPRESS_ARGS+=(--config-file cypress_audio.config.js)
               CYPRESS_SETUP_SPECS="cypress/e2e/setup/setup_audio.js"
               ;;
           esac
