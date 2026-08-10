@@ -152,7 +152,7 @@ def validate_file_status(func):
     return wrapper
 
 
-class AbstractCloudStorage(ABC):
+class CloudStorageClient(ABC):
     def __init__(self, *, prefix: str | None = None, is_trusted: bool = False) -> None:
         self.prefix = prefix
         self.proxies = None if is_trusted else PROXIES_FOR_UNTRUSTED_URLS
@@ -393,7 +393,7 @@ class AbstractCloudStorage(ABC):
 
 
 class HeaderFirstDownloader(ABC):
-    def __init__(self, *, client: AbstractCloudStorage):
+    def __init__(self, *, client: CloudStorageClient):
         self.client = client
 
     @abstractmethod
@@ -549,7 +549,7 @@ class HeaderFirstMediaDownloader:
         return downloader
 
 
-def get_cloud_storage_instance(
+def get_cloud_storage_client(
     *,
     cloud_provider: CloudProviderChoice,
     resource: str,
@@ -559,7 +559,7 @@ def get_cloud_storage_instance(
 ):
     instance = None
     if cloud_provider == CloudProviderChoice.AMAZON_S3:
-        instance = S3CloudStorage(
+        instance = S3CloudStorageClient(
             resource,
             access_key_id=credentials.key,
             secret_key=credentials.secret_key,
@@ -570,7 +570,7 @@ def get_cloud_storage_instance(
             is_trusted=is_trusted,
         )
     elif cloud_provider == CloudProviderChoice.AZURE_BLOB_STORAGE:
-        instance = AzureBlobCloudStorage(
+        instance = AzureBlobCloudStorageClient(
             resource,
             account_name=credentials.account_name,
             sas_token=credentials.session_token,
@@ -579,7 +579,7 @@ def get_cloud_storage_instance(
             is_trusted=is_trusted,
         )
     elif cloud_provider == CloudProviderChoice.GOOGLE_CLOUD_STORAGE:
-        instance = GcsCloudStorage(
+        instance = GcsCloudStorageClient(
             resource,
             service_account_json=credentials.key_file_path,
             anonymous_access=credentials.credentials_type == CredentialsTypeChoice.ANONYMOUS_ACCESS,
@@ -592,7 +592,7 @@ def get_cloud_storage_instance(
     return instance
 
 
-class S3CloudStorage(AbstractCloudStorage):
+class S3CloudStorageClient(CloudStorageClient):
     transfer_config = {
         "max_io_queue": 10,
     }
@@ -840,7 +840,7 @@ class S3CloudStorage(AbstractCloudStorage):
         return allowed_actions
 
 
-class AzureBlobCloudStorage(AbstractCloudStorage):
+class AzureBlobCloudStorageClient(CloudStorageClient):
     MAX_CONCURRENCY = 3
 
     class Effect:
@@ -1002,7 +1002,7 @@ def _define_gcs_status(func):
     return wrapper
 
 
-class GcsCloudStorage(AbstractCloudStorage):
+class GcsCloudStorageClient(CloudStorageClient):
 
     class Effect:
         pass
@@ -1123,8 +1123,8 @@ class GcsCloudStorage(AbstractCloudStorage):
         pass
 
 
-class SubdirectoryCloudStorage(AbstractCloudStorage):
-    def __init__(self, underlying: AbstractCloudStorage, subdirectory: str) -> None:
+class SubdirectoryCloudStorageClient(CloudStorageClient):
+    def __init__(self, underlying: CloudStorageClient, subdirectory: str) -> None:
         super().__init__()
 
         self.underlying = underlying
@@ -1224,23 +1224,28 @@ class Credentials:
         }
         return converted_credentials[self.credentials_type]
 
-    def convert_from_db(self, credentials):
-        self.credentials_type = credentials.get("type")
-        if self.credentials_type == CredentialsTypeChoice.KEY_SECRET_KEY_PAIR:
-            self.key, self.secret_key = credentials.get("value").split()
-        elif self.credentials_type == CredentialsTypeChoice.ACCOUNT_NAME_TOKEN_PAIR:
-            self.account_name, self.session_token = credentials.get("value").split()
-        elif self.credentials_type == CredentialsTypeChoice.ANONYMOUS_ACCESS:
+    @classmethod
+    def from_db(cls, credentials_type: CredentialsTypeChoice, value: str) -> Credentials:
+        instance = cls()
+
+        instance.credentials_type = credentials_type
+        if instance.credentials_type == CredentialsTypeChoice.KEY_SECRET_KEY_PAIR:
+            instance.key, instance.secret_key = value.split()
+        elif instance.credentials_type == CredentialsTypeChoice.ACCOUNT_NAME_TOKEN_PAIR:
+            instance.account_name, instance.session_token = value.split()
+        elif instance.credentials_type == CredentialsTypeChoice.ANONYMOUS_ACCESS:
             # account_name will be in [some_value, '']
-            self.account_name = credentials.get("value")
-        elif self.credentials_type == CredentialsTypeChoice.KEY_FILE_PATH:
-            self.key_file_path = credentials.get("value")
-        elif self.credentials_type == CredentialsTypeChoice.CONNECTION_STRING:
-            self.connection_string = credentials.get("value")
+            instance.account_name = value
+        elif instance.credentials_type == CredentialsTypeChoice.KEY_FILE_PATH:
+            instance.key_file_path = value
+        elif instance.credentials_type == CredentialsTypeChoice.CONNECTION_STRING:
+            instance.connection_string = value
         else:
             raise NotImplementedError(
-                "Found {} not supported credentials type".format(self.credentials_type)
+                "Found {} not supported credentials type".format(instance.credentials_type)
             )
+
+        return instance
 
     def reset(self, exclusion):
         for i in set(self.__slots__) - exclusion - {"credentials_type"}:
@@ -1278,28 +1283,6 @@ class Credentials:
         ]
 
 
-def db_storage_to_storage_instance(
-    db_storage: CloudStorage, *, is_trusted: bool = False
-) -> AbstractCloudStorage:
-    credentials = Credentials()
-    credentials.convert_from_db(
-        {
-            "type": db_storage.credentials_type,
-            "value": db_storage.credentials,
-        }
-    )
-    details = {
-        "resource": db_storage.resource,
-        "credentials": credentials,
-        "specific_attributes": db_storage.get_specific_attributes(),
-    }
-    return get_cloud_storage_instance(
-        cloud_provider=db_storage.provider_type,
-        is_trusted=is_trusted,
-        **details,
-    )
-
-
 P = ParamSpec("P")
 T = TypeVar("T")
 
@@ -1312,8 +1295,7 @@ def import_resource_from_cloud_storage(
     *args: P.args,
     **kwargs: P.kwargs,
 ) -> T:
-    storage = db_storage_to_storage_instance(db_storage)
-    storage.download_file(key, Path(filename))
+    db_storage.get_client().download_file(key, Path(filename))
 
     return import_func(filename, *args, **kwargs)
 
@@ -1330,7 +1312,6 @@ def export_resource_to_cloud_storage(
     file_path = func(*args, **kwargs)
     rq_job_meta = ExportRQMeta.for_job(rq_job)
 
-    storage = db_storage_to_storage_instance(db_storage)
-    storage.upload_file(Path(file_path), rq_job_meta.result_filename)
+    db_storage.get_client().upload_file(Path(file_path), rq_job_meta.result_filename)
 
     return file_path

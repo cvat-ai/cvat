@@ -554,7 +554,7 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
                 frame_names_to_download.append(media_file.path)
 
         if media_files_to_download:
-            storage_client = self._db_data.get_cloud_storage_instance()
+            storage_client = self._db_data.get_cloud_storage_client()
             with TmpDirManager.get_tmp_directory() as tmp_dir:
                 storage_client.bulk_download_to_dir(
                     files=media_files_to_download, upload_dir=Path(tmp_dir)
