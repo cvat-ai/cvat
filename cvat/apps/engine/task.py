@@ -1544,7 +1544,7 @@ def _create_audio_task_media_descriptors(
 
 
 def ensure_task_is_initialized(task: models.Task) -> None:
-    if not task.media_type:
+    if not task.is_initialized:
         raise ValidationError("This task data has not been initialized yet")
 
 
@@ -1556,20 +1556,28 @@ def initialize_task(
     is_backup_restore: bool = False,
 ) -> None:
     if isinstance(db_task, int):
-        db_task = (
-            models.Task.objects.exclude(data=None)
-            .select_related("data")
-            .select_for_update(of=("self", "data"))
-            .get(pk=db_task)
-        )
+        db_task = models.Task.objects.select_for_update().get(pk=db_task)
+
+    slogger.task[db_task.id].info("creating task")
+
+    if db_task.is_initialized:
+        # initialize_task() is supposed to initialize task data layout.
+        # Currently, a task data layout can only be set up once per the lifetime.
+        raise ValidationError("Task data is already initialized")
+
+    # In some cases, e.g. single request data uploading, the task creation function
+    # can be scheduled before the transaction that creates the Data object is committed.
+    # Thus, we should avoid trying to lock the task together with data in a single SELECT query.
+    if not db_task.data_id:
+        raise ValidationError("Task has no source media info")
+    db_data = models.Data.objects.select_for_update(nowait=True).get(pk=db_task.data_id)
+    db_task.data = db_data
 
     if db_task.data.cloud_storage_id is not None:
         db_task.data.cloud_storage = db_utils.get_object_by_id_for_share(
             model=models.CloudStorage,
             object_id=db_task.data.cloud_storage_id,
         )
-
-    slogger.glob.info("create task #{}".format(db_task.id))
 
     job = rq.get_current_job()
     rq_job_meta = ImportRQMeta.for_job(job)
@@ -1584,7 +1592,6 @@ def initialize_task(
         db_task, data, is_backup_restore=is_backup_restore
     )
 
-    db_data = db_task.require_data()
     upload_dir = (
         db_data.get_upload_dirname()
         if db_data.storage != models.StorageChoice.SHARE
