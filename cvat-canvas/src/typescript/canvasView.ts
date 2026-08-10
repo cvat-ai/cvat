@@ -48,6 +48,8 @@ export interface CanvasView {
     html(): HTMLDivElement;
     setupConflictRegions(clientID: number): number[];
     translateFromSVG(points: number[]): number[];
+    undo(): boolean;
+    redo(): boolean;
 }
 
 export class CanvasViewImpl implements CanvasView, Listener {
@@ -2648,6 +2650,14 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
     public html(): HTMLDivElement {
         return this.canvas;
+    }
+
+    public undo(): boolean {
+        return this.masksHandler.undo();
+    }
+
+    public redo(): boolean {
+        return this.masksHandler.redo();
     }
 
     public setupConflictRegions(state: any): number[] {
