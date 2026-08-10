@@ -27,7 +27,7 @@ from cvat_sdk.api_client import models
 from cvat_sdk.core.helpers import get_paginated_collection
 from deepdiff import DeepDiff
 from PIL import Image
-from pytest_cases import fixture_ref, parametrize
+from pytest_cases import fixture, fixture_ref, parametrize
 
 import shared.utils.s3 as s3
 from rest_api._test_base import TestTasksBase
@@ -1954,23 +1954,86 @@ class TestTaskData(TestTasksBase):
                 index=0,
             )
 
+    def _ensure_task_has_mixed_job_chunk_counts(self, task_id: int) -> None:
+        "Check the task has both jobs with both 1 and multiple chunks"
+
+        with make_api_client(self._USERNAME) as api_client:
+            annotation_jobs = [
+                job
+                for job in get_paginated_collection(
+                    api_client.jobs_api.list_endpoint, task_id=task_id
+                )
+                if job.type == "annotation"
+            ]
+            assert annotation_jobs
+
+            chunk_counts = set()
+            for job in annotation_jobs:
+                job_meta, _ = api_client.jobs_api.retrieve_data_meta(job.id)
+                chunk_counts.add(math.ceil(job_meta.size / job_meta.chunk_size))
+
+            assert min(chunk_counts) == 1 and max(chunk_counts) > 1, (
+                "The task must have both single-chunk and multi-chunk jobs, "
+                f"got job chunk counts {sorted(chunk_counts)}"
+            )
+
+    def _image_task_with_honeypots_and_mixed_job_chunk_counts_base(
+        self, request: pytest.FixtureRequest, **kwargs
+    ) -> tuple[ITaskSpec, int]:
+        "The task to check for regressions on https://github.com/cvat-ai/cvat/issues/11006"
+
+        # The chunk size is picked so that the task has both single-chunk and multi-chunk jobs:
+        # the regular jobs have 4 + 2 honeypot frames, and the last one has 2 + 2.
+        # Honeypots are placed randomly inside a job, so both the first and the last chunk
+        # of a job can contain them.
+        task_spec, task_id = self._image_task_with_honeypots_and_segments_base(
+            request, chunk_size=4, **kwargs
+        )
+        self._ensure_task_has_mixed_job_chunk_counts(task_id)
+        return task_spec, task_id
+
+    @fixture(scope="class")
+    @parametrize(
+        "static_cache_enabled",
+        [
+            pytest.param(
+                to_bool(os.getenv("CVAT_ALLOW_STATIC_CACHE", False)),
+                marks=[
+                    pytest.mark.skipif(
+                        not to_bool(os.getenv("CVAT_ALLOW_STATIC_CACHE", False)),
+                        reason="This test covers only the static cache."
+                        "Check test_all_job_chunks_available_after_honeypot_frame_change()"
+                        "for the dynamic cache case.",
+                    )
+                ],
+            ),
+        ],
+    )
+    def fxt_uploaded_images_task_with_honeypots_mixed_job_chunk_counts_and_changed_honeypots(
+        self, request: pytest.FixtureRequest, *, static_cache_enabled: bool
+    ) -> tuple[ITaskSpec, int]:
+        "The task to check for regressions on https://github.com/cvat-ai/cvat/issues/11006"
+
+        assert static_cache_enabled
+        task_spec, task_id = self._image_task_with_honeypots_and_mixed_job_chunk_counts_base(
+            request
+        )
+        self._rotate_all_task_honeypots(task_spec, task_id)
+        return task_spec, task_id
+
     @pytest.mark.timeout(300)
+    @pytest.mark.skipif(
+        to_bool(os.getenv("CVAT_ALLOW_STATIC_CACHE", False)),
+        reason="This test covers only the dynamic cache.",
+    )
     def test_all_job_chunks_available_after_honeypot_frame_change(
         self, request: pytest.FixtureRequest
     ):
-        # Check for regressions on https://github.com/cvat-ai/cvat/issues/11006
-
-        # Create a new task to be modified in the test
-        task_spec, task_id = self._image_task_with_honeypots_and_segments_base(request)
+        task_spec, task_id = self._image_task_with_honeypots_and_mixed_job_chunk_counts_base(
+            request
+        )
 
         with make_api_client(self._USERNAME) as api_client:
-            task_meta, _ = api_client.tasks_api.retrieve_data_meta(task_id)
-            validation_layout, _ = api_client.tasks_api.retrieve_validation_layout(task_id)
-            honeypot_abs_frames = {
-                rel_frame: rel_frame * task_spec.frame_step + task_meta.start_frame
-                for rel_frame in validation_layout.honeypot_frames
-            }  # { rel_frame -> abs_frame }
-
             annotation_jobs = sorted(
                 (
                     job
@@ -1981,68 +2044,35 @@ class TestTaskData(TestTasksBase):
                 ),
                 key=lambda job: job.start_frame,
             )
-            assert annotation_jobs
 
+            job_chunk_ids: dict[int, Sequence[int]] = {}
             for job in annotation_jobs:
                 job_meta, _ = api_client.jobs_api.retrieve_data_meta(job.id)
-                job_chunk_ids = set(range(math.ceil(job_meta.size / job_meta.chunk_size)))
-                job_honeypot_chunk_ids = {
-                    (abs_frame - job_meta.start_frame)
-                    // task_spec.frame_step
-                    // job_meta.chunk_size
-                    for abs_frame in honeypot_abs_frames
-                }
-                job_non_honeypot_chunk_ids = job_chunk_ids - job_honeypot_chunk_ids
-                if not job_honeypot_chunk_ids or not job_non_honeypot_chunk_ids:
-                    continue
+                job_chunk_ids[job.id] = range(math.ceil(job_meta.size / job_meta.chunk_size))
 
-            assert (
-                job_non_honeypot_chunk_ids and job_honeypot_chunk_ids
-            ), "Can't find a suitable job for the test"
+            def _read_all_chunks():
+                for job_id, chunk_ids in job_chunk_ids.items():
+                    for chunk_id, quality in product(chunk_ids, ("original", "compressed")):
+                        _, response = api_client.jobs_api.retrieve_data(
+                            job_id,
+                            type="chunk",
+                            quality=quality,
+                            index=chunk_id,
+                            _check_status=False,
+                            _parse_response=False,
+                        )
+                        assert (
+                            response.status == HTTPStatus.OK
+                        ), f"{job_id=}, {chunk_id=} of {sorted(chunk_ids)}, {quality=}"
 
-            unchanged_chunk_id = min(job_non_honeypot_chunk_ids)
-
-            # Initialize the chunk in the cache
-            for quality in ("original", "compressed"):
-                _, response = api_client.jobs_api.retrieve_data(
-                    job.id,
-                    type="chunk",
-                    quality=quality,
-                    index=unchanged_chunk_id,
-                    _parse_response=False,
-                )
-                assert response.status == HTTPStatus.OK
+            # Initialize chunks in the cache
+            _read_all_chunks()
 
             # Update honeypots
-            validation_frames = validation_layout.validation_frames
-            new_honeypot_real_frames = [
-                validation_frames[(validation_frames.index(frame) + 1) % len(validation_frames)]
-                for frame in validation_layout.honeypot_real_frames
-            ]
-
-            _, response = api_client.tasks_api.partial_update_validation_layout(
-                task_id,
-                patched_task_validation_layout_write_request=(
-                    models.PatchedTaskValidationLayoutWriteRequest(
-                        frame_selection_method="manual",
-                        honeypot_real_frames=new_honeypot_real_frames,
-                    )
-                ),
-                _parse_response=False,
-            )
-            assert response.status == HTTPStatus.OK
+            self._rotate_all_task_honeypots(task_spec, task_id)
 
             # Check all the chunks are still available
-            for quality in ("original", "compressed"):
-                _, response = api_client.jobs_api.retrieve_data(
-                    job.id,
-                    type="chunk",
-                    quality=quality,
-                    index=unchanged_chunk_id,
-                    _check_status=False,
-                    _parse_response=False,
-                )
-                assert response.status == HTTPStatus.OK
+            _read_all_chunks()
 
     @parametrize("task_spec, task_id", TestTasksBase._all_task_cases)
     def test_can_get_task_meta(self, task_spec: ITaskSpec, task_id: int):
@@ -2436,7 +2466,15 @@ class TestTaskData(TestTasksBase):
         # This test has to check all the job frames availability, it can make many requests
         timeout=300
     )
-    @parametrize("task_spec, task_id", TestTasksBase._2d_task_cases)
+    @parametrize(
+        "task_spec, task_id",
+        TestTasksBase._2d_task_cases
+        + [
+            fixture_ref(
+                fxt_uploaded_images_task_with_honeypots_mixed_job_chunk_counts_and_changed_honeypots
+            )
+        ],
+    )
     def test_can_get_job_frames(self, task_spec: ITaskSpec, task_id: int):
         with make_api_client(self._USERNAME) as api_client:
             jobs = sorted(

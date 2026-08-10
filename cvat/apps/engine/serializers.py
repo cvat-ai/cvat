@@ -1694,8 +1694,8 @@ class JobValidationLayoutWriteSerializer(serializers.Serializer):
                 # so we invalidate all the chunks in the segment.
                 # This allows the cache to check the chunk timestamps before returning them.
                 # Change the granularity to per chunk, if the performance is bad.
-                job_frame_provider.get_chunk_number(db_segment.start_frame),
-                job_frame_provider.get_chunk_number(db_segment.stop_frame),
+                job_frame_provider.get_chunk_number(min(segment_frame_set)),
+                job_frame_provider.get_chunk_number(max(segment_frame_set)) + 1,
             )
             segment_frames = sorted(segment_frame_set)
             segment_frame_map = dict(zip(segment_honeypots, requested_frames))
