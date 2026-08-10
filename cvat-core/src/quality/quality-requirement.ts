@@ -48,7 +48,6 @@ export default class QualityRequirement {
     #objectVisibilityThreshold: number | null;
     #panopticComparison: boolean | null;
     #attributeComparison: SerializedQualityRequirementAttributeComparison | null;
-    #emptyIsAnnotated: boolean | null;
     #createdDate: string;
     #updatedDate: string;
 
@@ -79,7 +78,6 @@ export default class QualityRequirement {
         this.#objectVisibilityThreshold = initialData.object_visibility_threshold;
         this.#panopticComparison = initialData.panoptic_comparison;
         this.#attributeComparison = initialData.attribute_comparison;
-        this.#emptyIsAnnotated = initialData.empty_is_annotated;
         this.#createdDate = initialData.created_date;
         this.#updatedDate = initialData.updated_date;
     }
@@ -186,10 +184,6 @@ export default class QualityRequirement {
 
     get attributeComparison(): SerializedQualityRequirementAttributeComparison | null {
         return this.#attributeComparison;
-    }
-
-    get emptyIsAnnotated(): boolean | null {
-        return this.#emptyIsAnnotated;
     }
 
     get createdDate(): string {

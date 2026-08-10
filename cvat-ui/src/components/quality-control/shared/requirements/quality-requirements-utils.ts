@@ -136,7 +136,6 @@ const ROOT_REQUIREMENT_INHERITED_FIELDS = new Set([
     'check_covered_annotations',
     'object_visibility_threshold',
     'panoptic_comparison',
-    'empty_is_annotated',
 ]);
 
 export function requirementToSaveFields(requirement: QualityRequirement): SerializedQualityRequirementSaveData {
@@ -162,7 +161,6 @@ export function requirementToSaveFields(requirement: QualityRequirement): Serial
         object_visibility_threshold: requirement.objectVisibilityThreshold,
         panoptic_comparison: requirement.panopticComparison,
         attribute_comparison: requirement.attributeComparison,
-        empty_is_annotated: requirement.emptyIsAnnotated,
     };
 
     if (requirement.isBase) {

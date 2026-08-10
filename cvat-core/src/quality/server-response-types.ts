@@ -84,7 +84,6 @@ export interface SerializedEffectiveQualityRequirementData {
     object_visibility_threshold: number | null;
     panoptic_comparison: boolean | null;
     attribute_comparison: SerializedQualityRequirementAttributeComparison;
-    empty_is_annotated: boolean | null;
 }
 
 export interface SerializedQualityRequirementFilters {
@@ -120,7 +119,6 @@ export interface SerializedQualityRequirementData {
     object_visibility_threshold: number | null;
     panoptic_comparison: boolean | null;
     attribute_comparison: SerializedQualityRequirementAttributeComparison | null;
-    empty_is_annotated: boolean | null;
     created_date: string;
     updated_date: string;
 }

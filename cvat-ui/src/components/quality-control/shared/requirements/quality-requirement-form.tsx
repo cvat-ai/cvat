@@ -529,14 +529,6 @@ export default function QualityRequirementForm(props: Readonly<QualityRequiremen
                         )}
                     </Col>
                 </Row>
-                <Divider />
-                <Row gutter={16}>
-                    <Col span={12}>
-                        {renderCheckbox(
-                            'emptyIsAnnotated', 'Empty frames are annotated', requirementDescriptions.emptyIsAnnotated,
-                        )}
-                    </Col>
-                </Row>
             </>
         );
     };
@@ -688,13 +680,6 @@ export default function QualityRequirementForm(props: Readonly<QualityRequiremen
                         <Checkbox>Enabled</Checkbox>
                     </Form.Item>
                 </Col>
-                {annotationType === QualityRequirementAnnotationType.TAG && (
-                    <Col span={12}>
-                        {renderCheckbox(
-                            'emptyIsAnnotated', 'Empty frames are annotated', requirementDescriptions.emptyIsAnnotated,
-                        )}
-                    </Col>
-                )}
             </Row>
             {renderShapeComparison()}
             <QualityRequirementAttributeRules

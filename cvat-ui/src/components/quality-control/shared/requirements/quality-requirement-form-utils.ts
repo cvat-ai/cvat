@@ -32,7 +32,6 @@ export const ROOT_DEFAULTS = {
     checkCoveredAnnotations: true,
     objectVisibilityThreshold: 5,
     panopticComparison: true,
-    emptyIsAnnotated: false,
 };
 
 export const METRIC_OPTIONS: QualityRequirementMetric[] = Object.values(QualityRequirementMetric);
@@ -71,7 +70,6 @@ export type InheritedFormFieldName =
     'checkCoveredAnnotations' |
     'objectVisibilityThreshold' |
     'panopticComparison' |
-    'emptyIsAnnotated' |
     'attributeComparison';
 
 export type OverridableFormFieldName = Exclude<InheritedFormFieldName, 'annotationType' | 'attributeComparison'>;
@@ -91,7 +89,6 @@ export const INHERITED_FORM_FIELDS = new Set<InheritedFormFieldName>([
     'checkCoveredAnnotations',
     'objectVisibilityThreshold',
     'panopticComparison',
-    'emptyIsAnnotated',
     'attributeComparison',
 ]);
 
@@ -109,7 +106,6 @@ export const OVERRIDABLE_FORM_FIELDS: OverridableFormFieldName[] = [
     'checkCoveredAnnotations',
     'objectVisibilityThreshold',
     'panopticComparison',
-    'emptyIsAnnotated',
 ];
 
 const LOCAL_INHERITED_FIELD_GETTERS: Record<
@@ -130,7 +126,6 @@ const LOCAL_INHERITED_FIELD_GETTERS: Record<
     checkCoveredAnnotations: (requirement: QualityRequirement) => requirement.checkCoveredAnnotations,
     objectVisibilityThreshold: (requirement: QualityRequirement) => requirement.objectVisibilityThreshold,
     panopticComparison: (requirement: QualityRequirement) => requirement.panopticComparison,
-    emptyIsAnnotated: (requirement: QualityRequirement) => requirement.emptyIsAnnotated,
     attributeComparison: (requirement: QualityRequirement) => requirement.attributeComparison,
 };
 
@@ -161,7 +156,6 @@ export interface RequirementFormValues {
     checkCoveredAnnotations?: boolean | null;
     objectVisibilityThreshold?: number | null;
     panopticComparison?: boolean | null;
-    emptyIsAnnotated?: boolean | null;
     matchUnspecifiedAttributes?: boolean;
     attributeRules?: AttributeRuleFormValue[];
 }
@@ -482,13 +476,6 @@ export function getInitialValues(
             (item: QualityRequirement) => getRequirementEffectiveField(item, 'panopticComparison'),
             ROOT_DEFAULTS.panopticComparison,
         ),
-        emptyIsAnnotated: getBooleanValue(
-            sourceRequirement,
-            requirementsById,
-            (item: QualityRequirement) => item.emptyIsAnnotated,
-            (item: QualityRequirement) => getRequirementEffectiveField(item, 'emptyIsAnnotated'),
-            ROOT_DEFAULTS.emptyIsAnnotated,
-        ),
         matchUnspecifiedAttributes,
         attributeRules,
     };
@@ -688,9 +675,6 @@ const SERIALIZED_INHERITED_FIELD_DESCRIPTORS: SerializedInheritedFieldDescriptor
 }, {
     fieldName: 'panopticComparison',
     getValue: (values: RequirementFormValues) => values.panopticComparison ?? null,
-}, {
-    fieldName: 'emptyIsAnnotated',
-    getValue: (values: RequirementFormValues) => values.emptyIsAnnotated ?? null,
 }, {
     fieldName: 'attributeComparison',
     getValue: (values: RequirementFormValues, isRootRequirement: boolean) => (
