@@ -13,7 +13,7 @@ export interface AudioIntervalAnnotations {
 }
 
 interface Params {
-    waveform: Omit<AudioWaveform, 'playerBindings'>;
+    waveform: AudioWaveform;
 }
 
 /**

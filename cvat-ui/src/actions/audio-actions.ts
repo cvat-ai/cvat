@@ -9,6 +9,9 @@ import {
     AudioIntervalState, FramesMetaData, Job, Source, fetchAndAssembleAudio,
 } from 'cvat-core-wrapper';
 import { clamp } from 'utils/math';
+import {
+    cacheAudioData, removeCachedAudioData,
+} from 'audio/utils/audio-data-cache';
 
 export enum AudioActionTypes {
     SWITCH_AUDIO_PLAY = 'SWITCH_AUDIO_PLAY',
@@ -27,7 +30,6 @@ export enum AudioActionTypes {
     LOAD_AUDIO_DATA = 'LOAD_AUDIO_DATA',
     LOAD_AUDIO_DATA_SUCCESS = 'LOAD_AUDIO_DATA_SUCCESS',
     LOAD_AUDIO_DATA_FAILED = 'LOAD_AUDIO_DATA_FAILED',
-    RELEASE_AUDIO_DATA = 'RELEASE_AUDIO_DATA',
     SET_WAVEFORM_READY = 'SET_WAVEFORM_READY',
     SET_AUDIO_ACTIVE_LABEL = 'SET_AUDIO_ACTIVE_LABEL',
     PLAY_AUDIO_INTERVAL_ONCE = 'PLAY_AUDIO_INTERVAL_ONCE',
@@ -79,14 +81,14 @@ export const audioActions = {
     loadAudioData: (request: object) => (
         createAction(AudioActionTypes.LOAD_AUDIO_DATA, { request })
     ),
-    loadAudioDataSuccess: (request: object, audioUrl: string) => (
-        createAction(AudioActionTypes.LOAD_AUDIO_DATA_SUCCESS, { request, audioUrl })
+    loadAudioDataSuccess: (request: object, audioDataToken: string) => (
+        createAction(AudioActionTypes.LOAD_AUDIO_DATA_SUCCESS, { request, audioDataToken })
     ),
     loadAudioDataFailed: (request: object, error: string) => (
         createAction(AudioActionTypes.LOAD_AUDIO_DATA_FAILED, { request, error })
     ),
-    setWaveformReady: (sourceURL: string, ready: boolean) => (
-        createAction(AudioActionTypes.SET_WAVEFORM_READY, { sourceURL, ready })
+    setWaveformReady: (sourceToken: string, ready: boolean) => (
+        createAction(AudioActionTypes.SET_WAVEFORM_READY, { sourceToken, ready })
     ),
     setAudioActiveLabel: (labelId: number | null) => (
         createAction(AudioActionTypes.SET_AUDIO_ACTIVE_LABEL, { labelId })
@@ -146,9 +148,9 @@ async function dispatchFetchAnnotations(dispatch: ThunkDispatch): Promise<void> 
 
 export function loadAudioDataAsync(job: Job, jobMeta: FramesMetaData): ThunkAction {
     return async (dispatch: ThunkDispatch, getState): Promise<void> => {
-        const prevAudioUrl = getState().audio.player.audioUrl;
-        if (prevAudioUrl) {
-            URL.revokeObjectURL(prevAudioUrl);
+        const previousToken = getState().audio.player.audioDataToken;
+        if (previousToken) {
+            removeCachedAudioData(previousToken);
         }
 
         // use request object as request identity to prevent applying stale responses
@@ -158,16 +160,18 @@ export function loadAudioDataAsync(job: Job, jobMeta: FramesMetaData): ThunkActi
         try {
             const totalFrames = jobMeta.size;
             const { chunkSize } = jobMeta;
-            const blob = await fetchAndAssembleAudio(job.id, totalFrames, chunkSize);
-            const audioUrl = URL.createObjectURL(blob);
+            const audioData = await fetchAndAssembleAudio(job.id, totalFrames, chunkSize);
+            // Keep decoded PCM and waveform peaks out of Redux and pass their
+            // opaque token to the canvas.
+            const audioDataToken = cacheAudioData(audioData);
 
             // clean up and exit right away if stale
             if (getState().audio.player.audioLoadRequest !== request) {
-                URL.revokeObjectURL(audioUrl);
+                removeCachedAudioData(audioDataToken);
                 return;
             }
 
-            dispatch(audioActions.loadAudioDataSuccess(request, audioUrl));
+            dispatch(audioActions.loadAudioDataSuccess(request, audioDataToken));
         } catch (error) {
             if (getState().audio.player.audioLoadRequest === request) {
                 dispatch(audioActions.loadAudioDataFailed(
@@ -176,6 +180,13 @@ export function loadAudioDataAsync(job: Job, jobMeta: FramesMetaData): ThunkActi
                 ));
             }
         }
+    };
+}
+
+export function releaseAudioDataAsync(audioDataToken: string): ThunkAction {
+    return async (dispatch: ThunkDispatch): Promise<void> => {
+        removeCachedAudioData(audioDataToken);
+        dispatch(audioActions.setWaveformReady(audioDataToken, false));
     };
 }
 
