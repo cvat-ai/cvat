@@ -244,13 +244,13 @@ def resolve_effective_requirements(
     def dfs(
         requirement: models.QualityRequirement,
         inherited: EffectiveQualityRequirement | None,
-        path: set[int],
+        visited: set[int],
     ) -> None:
         requirement_id = requirement.id
         if requirement_id is not None:
-            if requirement_id in path:
+            if requirement_id in visited:
                 raise ValueError("Requirement parent cycle is not allowed")
-            path = {*path, requirement_id}
+            visited = {*visited, requirement_id}
 
         effective = _make_effective_requirement(requirement, inherited)
         effective_requirements.append(effective)
@@ -258,7 +258,7 @@ def resolve_effective_requirements(
         children = sorted(children_by_parent_id.get(requirement_id, []), key=_requirement_sort_key)
 
         for child in children:
-            dfs(child, effective, path)
+            dfs(child, effective, visited)
 
     roots = [
         requirement

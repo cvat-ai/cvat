@@ -15,6 +15,7 @@ from django.db import models
 from django.forms.models import model_to_dict
 
 from cvat.apps.engine.models import Job, JobType, Project, ShapeType, Task, TimestampedModel, User
+from cvat.apps.quality_control.utils import is_current_report_data
 from cvat.utils import django_database as db_utils
 
 if TYPE_CHECKING:
@@ -190,7 +191,7 @@ class QualityReport(models.Model):
         except (TypeError, ValueError):
             return False
 
-        return isinstance(report_data, dict) and "groups" in report_data
+        return is_current_report_data(report_data)
 
     def get_task(self) -> Task | None:
         if self.task:

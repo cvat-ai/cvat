@@ -26,6 +26,7 @@ from cvat.apps.quality_control.statistics import (
     compute_accuracy,
     compute_dice_coefficient,
 )
+from cvat.apps.quality_control.utils import is_current_report_data
 
 
 class QualityReportExportFormat(TextChoices):
@@ -89,7 +90,7 @@ def prepare_json_report_for_downloading(db_report: models.QualityReport, *, host
     )
 
     stored_report_data = parse_json(db_report.get_report_data())
-    if "groups" in stored_report_data:
+    if is_current_report_data(stored_report_data):
         comparison_report = ComparisonReport.from_dict(stored_report_data)
         serialized_data.update(comparison_report.to_dict())
     else:
