@@ -8,15 +8,19 @@
 import { convertClasses } from './utils';
 
 function openOrganizationsMenu() {
-    cy.get('.cvat-header-menu-user-dropdown')
-        .should('exist').and('be.visible').click();
+    cy.get('.cvat-header-menu-user-dropdown-user').should('be.visible');
+    cy.get('.cvat-header-menu-user-dropdown').should('be.visible');
+    cy.get('.cvat-header-menu-user-dropdown').click();
     cy.get('.cvat-header-menu').should('be.visible');
     cy.get('.cvat-header-menu')
         .find('[role="menuitem"]')
         .filter(':contains("Organization")')
         .should('exist')
         .and('be.visible')
-        .and('not.have.attr', 'aria-disabled', 'true')
+        .and('not.have.attr', 'aria-disabled', 'true');
+    cy.get('.cvat-header-menu')
+        .find('[role="menuitem"]')
+        .filter(':contains("Organization")')
         .click();
     cy.get('.cvat-header-menu-create-organization').should('be.visible');
 }
@@ -24,8 +28,8 @@ function openOrganizationsMenu() {
 Cypress.Commands.add('createOrganization', (organizationParams) => {
     openOrganizationsMenu();
     cy.get('.cvat-header-menu-create-organization')
-        .should('be.visible')
-        .click();
+        .should('be.visible');
+    cy.get('.cvat-header-menu-create-organization').click();
     cy.url().should('contain', '/organizations/create');
     const idWrapper = { id: null };
     cy.get('.cvat-create-organization-form').should('be.visible').within(() => {
@@ -174,7 +178,9 @@ Cypress.Commands.add('inviteMembersToOrganization', (members) => {
     cy.wrap(invitedEmails).should('have.members', members.map((el) => el.email));
     cy.get('.cvat-organization-invitation-modal').should('not.exist');
     cy.intercept('GET', '/api/memberships**').as('getOrganizationMembersAfterInvite');
-    cy.reload();
+    cy.get('.cvat-organization-page-search-bar').find('input').as('organizationMembersSearch');
+    cy.get('@organizationMembersSearch').clear();
+    cy.get('@organizationMembersSearch').type('{enter}');
     cy.wait('@getOrganizationMembersAfterInvite')
         .its('response.statusCode')
         .should('equal', 200);
