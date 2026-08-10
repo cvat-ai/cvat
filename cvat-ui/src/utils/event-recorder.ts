@@ -15,12 +15,6 @@ interface Logger {
     log(...parameters: Parameters<typeof core.logger.log>): ReturnType<typeof core.logger['log']>;
 }
 
-export interface ImmediateMouseEventContext {
-    task_id?: number;
-    project_id?: number;
-    organization?: number;
-}
-
 const defaultLogger: Logger = core.logger;
 
 // the class is responsible for logging general mouse events
@@ -62,34 +56,6 @@ class EventRecorder {
                 obj_name: this.filterClassName(elementToRecord.className),
                 location: window.location.pathname,
             }, false);
-        }
-    }
-
-    public async recordMouseEventImmediately(
-        event: MouseEvent,
-        cssClass: string,
-        context: ImmediateMouseEventContext,
-    ): Promise<void> {
-        const elementToRecord = this.isEventToBeRecorded(event.target as HTMLElement | null, [cssClass]);
-        if (!elementToRecord) {
-            throw new Error(`Could not find the clicked element with class "${cssClass}"`);
-        }
-
-        const recordedEvent = await core.logger.log(EventScope.clickElement, {
-            obj_val: elementToRecord.innerText,
-            obj_name: this.filterClassName(elementToRecord.className),
-            location: window.location.pathname,
-            ...context,
-        }, false);
-
-        try {
-            await core.logger.save();
-        } catch (error: unknown) {
-            const eventIndex = core.logger.collection.indexOf(recordedEvent);
-            if (eventIndex !== -1) {
-                core.logger.collection.splice(eventIndex, 1);
-            }
-            throw error;
         }
     }
 
