@@ -405,41 +405,18 @@ class QualityRequirementPermission(OpenPolicyAgentPermission):
         permissions = []
 
         for scope in cls.get_scopes(request, view, obj):
-            if scope == cls.Scopes.LIST:
-                list_iam_context = iam_context
-
-                if settings_id := request.query_params.get("settings_id", None):
-                    settings_obj = db_utils.get_or_404(QualitySettings, int(settings_id))
-                    list_iam_context = get_iam_context(request, settings_obj)
-                    permissions.append(
-                        QualitySettingPermission.create_scope_view(
-                            request,
-                            settings_obj,
-                            iam_context=list_iam_context,
-                        )
+            if scope == cls.Scopes.LIST and isinstance(obj, QualitySettings):
+                permissions.append(
+                    QualitySettingPermission.create_scope_view(
+                        request,
+                        obj,
+                        iam_context=iam_context,
                     )
-                elif task_id := request.query_params.get("task_id", None):
-                    task = db_utils.get_or_404(Task, int(task_id))
-                    list_iam_context = get_iam_context(request, task)
-                    permissions.append(
-                        TaskPermission.create_scope_view(
-                            request,
-                            task,
-                            iam_context=list_iam_context,
-                        )
-                    )
-                elif project_id := request.query_params.get("project_id", None):
-                    project = db_utils.get_or_404(Project, int(project_id))
-                    list_iam_context = get_iam_context(request, project)
-                    permissions.append(
-                        ProjectPermission.create_scope_view(
-                            request,
-                            project,
-                            iam_context=list_iam_context,
-                        )
-                    )
-
-                permissions.append(cls.create_scope_list(request, list_iam_context))
+                )
+            elif scope == cls.Scopes.LIST and isinstance(obj, Task):
+                permissions.append(TaskPermission.create_scope_view(request, obj, iam_context))
+            elif scope == cls.Scopes.LIST and isinstance(obj, Project):
+                permissions.append(ProjectPermission.create_scope_view(request, obj, iam_context))
             elif scope == cls.Scopes.VIEW:
                 requirement = cast(QualityRequirement, obj)
                 permissions.append(
@@ -481,6 +458,7 @@ class QualityRequirementPermission(OpenPolicyAgentPermission):
             {
                 "list": cls.Scopes.LIST,
                 "create": cls.Scopes.CREATE,
+                "bulk_create": cls.Scopes.CREATE,
                 "retrieve": cls.Scopes.VIEW,
                 "update": cls.Scopes.UPDATE,
                 "partial_update": cls.Scopes.UPDATE,

@@ -36,7 +36,6 @@ _BASE_REQUIREMENT_DEFAULTS = {
     "panoptic_comparison": True,
     "compare_attributes": False,
     "attribute_comparison": None,
-    "empty_is_annotated": True,
 }
 
 
@@ -155,7 +154,6 @@ class Migration(migrations.Migration):
                 ("panoptic_comparison", models.BooleanField(blank=True, null=True)),
                 ("compare_attributes", models.BooleanField(blank=True, null=True)),
                 ("attribute_comparison", models.JSONField(blank=True, default=None, null=True)),
-                ("empty_is_annotated", models.BooleanField(blank=True, default=True, null=True)),
                 (
                     "parent",
                     models.ForeignKey(

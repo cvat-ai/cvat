@@ -26,7 +26,6 @@ from cvat.apps.engine.utils import take_by
 from cvat.apps.quality_control import models
 from cvat.apps.quality_control.comparison_report import (
     AnnotationConflict,
-    ComparisonParameters,
     ComparisonReport,
     ComparisonReportAnnotationsSummary,
     ComparisonReportFrameComparisonSummary,
@@ -41,6 +40,7 @@ from cvat.apps.quality_control.comparison_report import (
 from cvat.apps.quality_control.data_providers import JobDataProvider, QualitySettingsManager
 from cvat.apps.quality_control.quality_handlers import (
     DatasetQualityEstimator,
+    EffectiveQualityRequirement,
     build_requirement_comparison_summary,
     build_requirement_report,
     build_requirements_summary,
@@ -58,8 +58,8 @@ def _all_enabled_requirements_completed(summary: ComparisonReportSummary) -> boo
     return bool(
         summary.validation_frames
         and requirements
-        and requirements.enabled
-        and requirements.completed == requirements.enabled
+        and requirements.enabled_count
+        and requirements.completed_count == requirements.enabled_count
     )
 
 
@@ -92,8 +92,8 @@ class TaskQualityCalculator:
             if not gt_job_id:
                 return None
 
-            quality_params = self.get_quality_params(task)
             quality_settings = QualitySettingsManager().get_task_settings(task)
+            report_parameters = self.get_report_parameters(task)
 
             all_job_ids: set[int] = set(
                 Job.objects.filter(segment__task=task)
@@ -162,7 +162,7 @@ class TaskQualityCalculator:
                     job_data_provider,
                     gt_job_data_provider,
                     requirements=quality_requirements,
-                    parameters=quality_params,
+                    report_parameters=report_parameters,
                 )
                 job_comparison_reports[job.id] = comparator.generate_report()
 
@@ -171,7 +171,7 @@ class TaskQualityCalculator:
 
         task_comparison_report = self._compute_task_report(
             job_comparison_reports,
-            parameters=quality_params,
+            report_parameters=report_parameters,
             requirements=quality_requirements,
             all_job_ids=all_job_ids,
         )
@@ -187,7 +187,7 @@ class TaskQualityCalculator:
                     assignee_id=job.assignee_id,
                     assignee_last_updated=job.assignee_updated_date,
                     data=job_comparison_report.to_json(),
-                    conflicts=[c.to_dict() for c in job_comparison_report.conflicts],
+                    conflicts=[c.to_dict() for c in job_comparison_report.get_conflicts()],
                 )
 
                 job_quality_reports[job.id] = job_report
@@ -229,8 +229,8 @@ class TaskQualityCalculator:
     def _compute_task_report(
         self,
         job_reports: dict[int, ComparisonReport],
-        parameters: ComparisonParameters,
-        requirements: list[models.QualityRequirement],
+        report_parameters: ComparisonReportParameters,
+        requirements: list[EffectiveQualityRequirement],
         *,
         all_job_ids: set[int],
     ) -> ComparisonReport:
@@ -264,7 +264,7 @@ class TaskQualityCalculator:
             task_validated_frames.update(r.comparison_summary.frames)
             task_validation_frames_count += r.comparison_summary.validation_frames
             task_total_frames += r.comparison_summary.total_frames
-            task_conflicts.extend(r.conflicts)
+            task_conflicts.extend(r.get_conflicts())
 
             for group_name, group_report in (r.groups or {}).items():
                 task_group_parameters.setdefault(group_name, deepcopy(group_report.parameters))
@@ -295,7 +295,7 @@ class TaskQualityCalculator:
             for group_name, group_frame_results in task_group_frame_results.items()
         }
         for requirement in requirements:
-            if not getattr(requirement, "enabled", True):
+            if not requirement.enabled:
                 continue
 
             requirement_groups.setdefault(
@@ -310,7 +310,7 @@ class TaskQualityCalculator:
             group_report.parameters for group_report in requirement_groups.values()
         ]
         task_report_data = ComparisonReport(
-            parameters=ComparisonReportParameters.from_comparison_parameters(parameters),
+            parameters=report_parameters,
             comparison_summary=ComparisonReportSummary(
                 validation_frames=task_validation_frames_count,
                 total_frames=task_total_frames,
@@ -387,11 +387,11 @@ class TaskQualityCalculator:
 
         return db_task_report
 
-    def get_quality_params(self, task: Task) -> ComparisonParameters:
+    def get_report_parameters(self, task: Task) -> ComparisonReportParameters:
         quality_settings_manager = QualitySettingsManager()
         task_own_settings = quality_settings_manager.get_task_settings(task, inherit=False)
         task_effective_settings = quality_settings_manager.get_task_settings(task)
-        return ComparisonParameters.from_settings(
+        return ComparisonReportParameters.from_settings(
             task_effective_settings, inherited=task_own_settings.id != task_effective_settings.id
         )
 
@@ -416,7 +416,7 @@ class ProjectQualityCalculator:
             if isinstance(project, int):
                 project = Project.objects.get(id=project)
 
-            project_quality_params = self.get_quality_params(project)
+            project_report_parameters = self.get_report_parameters(project)
             project_requirements = resolve_effective_requirements(
                 list(
                     QualitySettingsManager()
@@ -451,6 +451,7 @@ class ProjectQualityCalculator:
                             models.QualityReport.objects.filter(
                                 created_date__isnull=False,
                                 task_id=OuterRef("id"),
+                                data__regex=models.CURRENT_REPORT_DATA_REGEX,
                             )
                             .order_by("-created_date")
                             .values("id")[:1]
@@ -518,7 +519,7 @@ class ProjectQualityCalculator:
 
         project_comparison_report = self._compute_project_report(
             task_reports=task_comparison_reports,
-            quality_params=project_quality_params,
+            report_parameters=project_report_parameters,
             requirements=project_requirements,
             all_task_ids=all_task_ids,
         )
@@ -543,8 +544,8 @@ class ProjectQualityCalculator:
         self,
         task_reports: dict[int, ComparisonReport],
         *,
-        quality_params: ComparisonParameters,
-        requirements: list[models.QualityRequirement],
+        report_parameters: ComparisonReportParameters,
+        requirements: list[EffectiveQualityRequirement],
         all_task_ids: set[int],
     ) -> ComparisonReport:
         # Aggregate nested reports. It's possible that there are no child reports,
@@ -610,7 +611,7 @@ class ProjectQualityCalculator:
             total_frames += r.comparison_summary.total_frames
             total_validated_frames += r.comparison_summary.validation_frames
 
-            project_conflicts.extend(r.conflicts)
+            project_conflicts.extend(r.get_conflicts())
 
             for group_name, group_report in (r.groups or {}).items():
                 project_group_parameters.setdefault(group_name, deepcopy(group_report.parameters))
@@ -652,7 +653,7 @@ class ProjectQualityCalculator:
             )
 
         for requirement in requirements:
-            if not getattr(requirement, "enabled", True):
+            if not requirement.enabled:
                 continue
 
             requirement_groups.setdefault(
@@ -669,7 +670,7 @@ class ProjectQualityCalculator:
         ]
         project_conflicts = deduplicate_annotation_conflicts(project_conflicts)
         project_report_data = ComparisonReport(
-            parameters=ComparisonReportParameters.from_comparison_parameters(quality_params),
+            parameters=report_parameters,
             comparison_summary=ComparisonReportSummary(
                 total_frames=total_frames,
                 validation_frames=total_validated_frames,
@@ -694,6 +695,6 @@ class ProjectQualityCalculator:
 
         return project_report
 
-    def get_quality_params(self, project: Project) -> ComparisonParameters:
+    def get_report_parameters(self, project: Project) -> ComparisonReportParameters:
         quality_settings = QualitySettingsManager().get_project_settings(project)
-        return ComparisonParameters.from_settings(quality_settings, inherited=False)
+        return ComparisonReportParameters.from_settings(quality_settings, inherited=False)

@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 import textwrap
-from collections.abc import Mapping
+from collections.abc import Iterator, Mapping
 from enum import Enum
 from typing import Any
 
@@ -23,6 +23,10 @@ from cvat.apps.quality_control.attribute_comparators import get_attribute_compar
 from cvat.apps.quality_control.attribute_comparison import (
     attribute_comparison_may_compare,
     normalize_attribute_comparison,
+)
+from cvat.apps.quality_control.comparison_report import (
+    RequirementCalculationReason,
+    RequirementCalculationStatus,
 )
 from cvat.apps.quality_control.filters import RequirementJsonLogicFilter
 from cvat.utils import django_database as db_utils
@@ -98,13 +102,9 @@ class QualityReportScoreComponentsSerializer(serializers.Serializer):
 
 
 class QualityReportRequirementCalculationSerializer(serializers.Serializer):
-    status = serializers.ChoiceField(choices=("computed", "not_computed"))
+    status = serializers.ChoiceField(choices=RequirementCalculationStatus)
     reason = serializers.ChoiceField(
-        choices=(
-            "no_annotations",
-            "filter_no_matches",
-            "required_attributes_missing",
-        ),
+        choices=RequirementCalculationReason,
         allow_null=True,
         required=False,
     )
@@ -128,10 +128,10 @@ class QualityReportRequirementSummaryItemSerializer(serializers.Serializer):
 
 
 class QualityReportRequirementsSummarySerializer(serializers.Serializer):
-    total = serializers.IntegerField()
-    enabled = serializers.IntegerField()
-    completed = serializers.IntegerField()
-    not_computed = serializers.IntegerField()
+    total = serializers.IntegerField(source="total_count")
+    enabled = serializers.IntegerField(source="enabled_count")
+    completed = serializers.IntegerField(source="completed_count")
+    not_computed = serializers.IntegerField(source="not_computed_count")
     items = QualityReportRequirementSummaryItemSerializer(many=True)
 
 
@@ -254,6 +254,10 @@ class QualityReportSerializer(serializers.ModelSerializer):
         list_serializer_class = QualityReportListSerializer
 
 
+class QualityReportListQuerySerializer(serializers.Serializer):
+    include_legacy = serializers.BooleanField(required=False, default=False)
+
+
 class QualityReportCreateSerializer(serializers.Serializer):
     task_id = serializers.IntegerField(write_only=True, required=False)
     project_id = serializers.IntegerField(write_only=True, required=False)
@@ -292,20 +296,11 @@ _INHERITED_REQUIREMENT_FIELDS = (
     "panoptic_comparison",
     "compare_attributes",
     "attribute_comparison",
-    "empty_is_annotated",
 )
 
 
-class _RejectUnknownFieldsSerializer(serializers.Serializer):
-    def to_internal_value(self, data: Any) -> dict[str, Any]:
-        if isinstance(data, Mapping):
-            field_validation.reject_unknown_fields(data, self.fields)
-
-        return super().to_internal_value(data)
-
-
 @extend_schema_serializer(component_name="AttributeComparisonDefaultRule")
-class AttributeComparisonDefaultSerializer(_RejectUnknownFieldsSerializer):
+class AttributeComparisonDefaultSerializer(serializers.Serializer):
     enabled = serializers.BooleanField(required=False, allow_null=True)
     comparator = serializers.ChoiceField(
         choices=get_attribute_comparator_names(),
@@ -320,7 +315,7 @@ class AttributeComparisonDefaultSerializer(_RejectUnknownFieldsSerializer):
     )
 
 
-class AttributeComparisonRuleSerializer(_RejectUnknownFieldsSerializer):
+class AttributeComparisonRuleSerializer(serializers.Serializer):
     spec_id = serializers.IntegerField(
         required=True,
         help_text="AttributeSpec id to override.",
@@ -339,7 +334,7 @@ class AttributeComparisonRuleSerializer(_RejectUnknownFieldsSerializer):
     )
 
 
-class AttributeComparisonSerializer(_RejectUnknownFieldsSerializer):
+class AttributeComparisonSerializer(serializers.Serializer):
     default = AttributeComparisonDefaultSerializer(required=False, allow_null=True)
     rules = AttributeComparisonRuleSerializer(many=True, required=False)
 
@@ -362,9 +357,16 @@ class AttributeComparisonSerializer(_RejectUnknownFieldsSerializer):
 
 class QualityRequirementListSerializer(serializers.ListSerializer):
     def to_representation(self, data: Any) -> list[dict[str, Any]]:
-        requirements = data.all() if hasattr(data, "all") else data
-        page = requirements if isinstance(requirements, list) else list(requirements)
-        if page:
+        if (request := self.context.get("request")) is not None and isinstance(data, list) and data:
+            page: list[models.QualityRequirement] = data
+            attribute_comparisons = dict(
+                models.QualityRequirement.objects.filter(
+                    id__in={requirement.id for requirement in page}
+                ).values_list("id", "attribute_comparison")
+            )
+            for requirement in page:
+                requirement.attribute_comparison = attribute_comparisons[requirement.id]
+
             django_models.prefetch_related_objects(
                 page,
                 "settings",
@@ -374,8 +376,7 @@ class QualityRequirementListSerializer(serializers.ListSerializer):
                 "parent",
             )
 
-        child = QualityRequirementListItemSerializer(context=self.context)
-        return [child.to_representation(requirement) for requirement in page]
+        return super().to_representation(data)
 
 
 # TODO: try to split into different types per annotation type?
@@ -439,7 +440,10 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
         source="compare_groups",
         required=False,
         allow_null=True,
-        help_text="Enables or disables annotation group checks",
+        help_text=(
+            "Enables or disables annotation group checks. "
+            "Only annotations of the same shape type can form matching groups."
+        ),
     )
     attribute_comparison = AttributeComparisonSerializer(
         required=False,
@@ -555,12 +559,6 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
         )
         return value
 
-    def to_internal_value(self, data):
-        if isinstance(data, Mapping):
-            field_validation.reject_unknown_fields(data, self.fields)
-
-        return super().to_internal_value(data)
-
     @staticmethod
     def _get_allowed_attribute_spec_ids(
         quality_settings: models.QualitySettings,
@@ -640,7 +638,6 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
             "object_visibility_threshold",
             "panoptic_comparison",
             "attribute_comparison",
-            "empty_is_annotated",
             "created_date",
             "updated_date",
         )
@@ -657,7 +654,6 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
         validators = []
 
         extra_kwargs = {k: {"required": False} for k in fields}
-        extra_kwargs.setdefault("empty_is_annotated", {}).setdefault("default", True)
 
         for field_name, help_text in {
             "iou_threshold": "Used for distinction between matched / unmatched shapes",
@@ -701,12 +697,6 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
             "panoptic_comparison": """
                 Use only the visible part of the masks and polygons in comparisons
             """,
-            "empty_is_annotated": """
-                Consider empty frames annotated as "empty". This affects target metrics like
-                accuracy in cases there are no annotations. If disabled, frames without annotations
-                are counted as not matching (accuracy is 0). If enabled, accuracy will be 1 instead.
-                This will also add virtual annotations to empty frames in the comparison results.
-            """,
         }.items():
             extra_kwargs.setdefault(field_name, {}).setdefault(
                 "help_text", textwrap.dedent(help_text.lstrip("\n"))
@@ -724,12 +714,16 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         attrs = super().validate(attrs)
 
-        quality_settings = attrs.get("settings", getattr(self.instance, "settings", None))
-        parent_requirement = attrs.get("parent", getattr(self.instance, "parent", None))
-        annotation_type = attrs.get(
-            "annotation_type", getattr(self.instance, "annotation_type", None)
-        )
-        name = attrs.get("name", getattr(self.instance, "name", None))
+        if self.instance is None:
+            quality_settings = attrs.get("settings")
+            parent_requirement = attrs.get("parent")
+            annotation_type = attrs.get("annotation_type")
+            name = attrs.get("name")
+        else:
+            quality_settings = attrs.get("settings", self.instance.settings)
+            parent_requirement = attrs.get("parent", self.instance.parent)
+            annotation_type = attrs.get("annotation_type", self.instance.annotation_type)
+            name = attrs.get("name", self.instance.name)
 
         if quality_settings is None:
             raise serializers.ValidationError({"settings_id": "This field is required."})
@@ -868,6 +862,249 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
         return instance
 
 
+@extend_schema_field(
+    {
+        "type": "array",
+        "items": {
+            "$ref": "#/components/schemas/QualityRequirementBulkCreateNodeRequest",
+        },
+    }
+)
+class _QualityRequirementChildrenField(serializers.Field):
+    def to_internal_value(self, data: Any) -> list[dict[str, Any]]:
+        serializer = self.parent.__class__(
+            data=data,
+            many=True,
+            context=self.context,
+        )
+        serializer.is_valid(raise_exception=True)
+        return serializer.validated_data
+
+
+# NOTE @grigorii: This serializer validates the recursive request shape. Validation that
+# depends on the settings or implicit parent is repeated by QualityRequirementSerializer
+# while the hierarchy is created parent-first.
+class QualityRequirementBulkCreateNodeSerializer(QualityRequirementSerializer):
+    name = serializers.CharField(max_length=250)
+    children = _QualityRequirementChildrenField(
+        required=False,
+        help_text=(
+            "Nested requirements to create. Their parent is determined by their position "
+            "in the hierarchy."
+        ),
+    )
+
+    class Meta(QualityRequirementSerializer.Meta):
+        fields = (*QualityRequirementSerializer.Meta.fields, "children")
+
+    def get_fields(self) -> dict[str, serializers.Field]:
+        fields = super().get_fields()
+        for field_name in (
+            "id",
+            "settings_id",
+            "task_id",
+            "project_id",
+            "is_base",
+            "effective",
+            "created_date",
+            "updated_date",
+        ):
+            fields.pop(field_name, None)
+
+        fields["parent_requirement"].help_text = (
+            "Required for root requirements and forbidden for nested requirements. "
+            "Must identify an existing requirement from the selected quality settings."
+        )
+        return fields
+
+    def validate_filter(self, value: str) -> str:
+        return value
+
+    def to_internal_value(self, data: Any) -> dict[str, Any]:
+        validated_data = super().to_internal_value(data)
+        result = dict(data)
+        if "children" in validated_data:
+            result["children"] = validated_data["children"]
+
+        return result
+
+    def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
+        return attrs
+
+
+class QualityRequirementBulkCreateSerializer(serializers.Serializer):
+    settings_id = serializers.PrimaryKeyRelatedField(
+        source="settings",
+        queryset=models.QualitySettings.objects.all(),
+    )
+    requirements = QualityRequirementBulkCreateNodeSerializer(many=True, allow_empty=False)
+
+    @staticmethod
+    def _iter_nodes(
+        requirements: list[dict[str, Any]],
+        *,
+        collection_name: str = "requirements",
+        parent_path: tuple[tuple[str, int], ...] = (),
+    ) -> Iterator[tuple[tuple[tuple[str, int], ...], dict[str, Any]]]:
+        for index, requirement in enumerate(requirements):
+            path = (*parent_path, (collection_name, index))
+            yield path, requirement
+            yield from QualityRequirementBulkCreateSerializer._iter_nodes(
+                requirement.get("children", []),
+                collection_name="children",
+                parent_path=path,
+            )
+
+    @staticmethod
+    def _make_path_error(path: tuple[tuple[str, int], ...], detail: Any) -> dict[str, Any]:
+        result = detail
+        for collection_name, index in reversed(path):
+            result = {collection_name: {index: result}}
+
+        return result
+
+    def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
+        attrs = super().validate(attrs)
+        quality_settings = attrs["settings"]
+        requirements = attrs["requirements"]
+        nodes = list(self._iter_nodes(requirements))
+
+        if (
+            quality_settings.requirements.count() + len(nodes)
+            > QualityRequirementSerializer._get_requirement_limit()
+        ):
+            raise serializers.ValidationError(
+                {"requirements": QualityRequirementSerializer.get_requirement_limit_error_message()}
+            )
+
+        seen_names: set[str] = set()
+        paths_by_name: dict[str, tuple[tuple[str, int], ...]] = {}
+        for path, requirement in nodes:
+            name = requirement.get("name")
+            if not name:
+                continue
+            if name in seen_names:
+                raise serializers.ValidationError(
+                    self._make_path_error(path, {"name": "Requirement names must be unique."})
+                )
+
+            seen_names.add(name)
+            paths_by_name[name] = path
+
+        if (
+            existing_name := quality_settings.requirements.filter(name__in=seen_names)
+            .values_list("name", flat=True)
+            .first()
+        ):
+            raise serializers.ValidationError(
+                self._make_path_error(
+                    paths_by_name[existing_name],
+                    {"name": "Requirement with this name already exists in the selected settings."},
+                )
+            )
+
+        root_parent_ids: dict[int, tuple[tuple[str, int], ...]] = {}
+        for index, requirement in enumerate(requirements):
+            path = (("requirements", index),)
+            parent_id = requirement.get("parent_requirement")
+            if parent_id is None:
+                raise serializers.ValidationError(
+                    self._make_path_error(
+                        path,
+                        {"parent_requirement": "This field is required for root requirements."},
+                    )
+                )
+
+            root_parent_ids[int(parent_id)] = path
+
+        available_parent_ids = set(
+            quality_settings.requirements.filter(id__in=root_parent_ids).values_list(
+                "id", flat=True
+            )
+        )
+        if missing_parent_id := next(
+            (parent_id for parent_id in root_parent_ids if parent_id not in available_parent_ids),
+            None,
+        ):
+            raise serializers.ValidationError(
+                self._make_path_error(
+                    root_parent_ids[missing_parent_id],
+                    {
+                        "parent_requirement": (
+                            "Parent requirement must belong to the selected quality settings."
+                        )
+                    },
+                )
+            )
+
+        for path, requirement in nodes:
+            if len(path) > 1 and "parent_requirement" in requirement:
+                raise serializers.ValidationError(
+                    self._make_path_error(
+                        path,
+                        {
+                            "parent_requirement": (
+                                "Nested requirements inherit their parent from the hierarchy."
+                            )
+                        },
+                    )
+                )
+
+        return attrs
+
+    def create(self, validated_data: dict[str, Any]) -> list[models.QualityRequirement]:
+        quality_settings = validated_data["settings"]
+        requirements = validated_data["requirements"]
+        created_requirements: list[models.QualityRequirement] = []
+        serializer_context = {
+            **self.context,
+            "touch_settings": False,
+            "skip_requirement_limit_validation": True,
+        }
+
+        def create_node(
+            requirement: dict[str, Any],
+            *,
+            parent_id: int,
+            path: tuple[tuple[str, int], ...],
+        ) -> None:
+            requirement_data = dict(requirement)
+            children = requirement_data.pop("children", [])
+            requirement_data.update(
+                settings_id=quality_settings.id,
+                parent_requirement=parent_id,
+            )
+            serializer = QualityRequirementSerializer(
+                data=requirement_data,
+                context=serializer_context,
+            )
+            try:
+                serializer.is_valid(raise_exception=True)
+                instance = serializer.save()
+            except serializers.ValidationError as exc:
+                raise serializers.ValidationError(self._make_path_error(path, exc.detail)) from exc
+
+            created_requirements.append(instance)
+            for index, child in enumerate(children):
+                create_node(
+                    child,
+                    parent_id=instance.id,
+                    path=(*path, ("children", index)),
+                )
+
+        with transaction.atomic():
+            for index, requirement in enumerate(requirements):
+                create_node(
+                    requirement,
+                    parent_id=int(requirement["parent_requirement"]),
+                    path=(("requirements", index),),
+                )
+
+            quality_settings.save()
+
+        return created_requirements
+
+
 class QualityRequirementListItemSerializer(QualityRequirementSerializer):
     def get_fields(self) -> dict[str, serializers.Field]:
         fields = super().get_fields()
@@ -878,6 +1115,11 @@ class QualityRequirementListItemSerializer(QualityRequirementSerializer):
 @extend_schema_field(QualityRequirementListItemSerializer(many=True))
 class QualitySettingsRequirementsSerializer(QualityRequirementListSerializer):
     child = serializers.DictField()
+
+    def to_representation(self, data: Any) -> list[dict[str, Any]]:
+        requirements = data.all() if hasattr(data, "all") else data
+        child = QualityRequirementListItemSerializer(context=self.context)
+        return [child.to_representation(requirement) for requirement in requirements]
 
     def validate(self, attrs: list[dict[str, Any]]) -> list[dict[str, Any]]:
         if not attrs:
@@ -913,7 +1155,6 @@ class QualitySettingsSerializer(WriteOnceMixin, serializers.ModelSerializer):
         write_once_fields = ("task_id", "project_id")
 
         extra_kwargs = {k: {"required": False} for k in fields}
-        extra_kwargs.setdefault("empty_is_annotated", {}).setdefault("default", True)
 
         for field_name, help_text in {
             "inherit": """

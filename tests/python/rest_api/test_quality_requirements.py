@@ -2,9 +2,10 @@
 #
 # SPDX-License-Identifier: MIT
 
+import csv
 import json
 from http import HTTPStatus
-from io import BytesIO
+from io import BytesIO, StringIO
 from typing import Any
 from zipfile import ZipFile
 
@@ -40,6 +41,16 @@ class _QualityRequirementsTestBase(_PermissionTestBase):
         "polygon",
         "ellipse",
     }
+
+    @staticmethod
+    def _as_report_data_requirements_summary(summary: dict[str, Any]) -> dict[str, Any]:
+        return {
+            "total_count": summary["total"],
+            "enabled_count": summary["enabled"],
+            "completed_count": summary["completed"],
+            "not_computed_count": summary["not_computed"],
+            "items": summary["items"],
+        }
 
     @staticmethod
     def _base_requirement_name(annotation_type: str) -> str:
@@ -179,6 +190,10 @@ class _QualityRequirementsTestBase(_PermissionTestBase):
             data = self._add_default_requirement_parent(data, settings_id=settings_id)
 
         response = post_method(user, self._requirements_endpoint, data, **kwargs)
+        return response.json() if response.content else None, response
+
+    def _bulk_create_requirements(self, user: str, data: dict[str, Any], **kwargs):
+        response = post_method(user, f"{self._requirements_endpoint}/bulk", data, **kwargs)
         return response.json() if response.content else None, response
 
     def _retrieve_requirement(self, user: str, requirement_id: int, **kwargs):
@@ -425,6 +440,239 @@ class _QualityRequirementsTestBase(_PermissionTestBase):
 
 @pytest.mark.usefixtures("restore_db_per_function")
 class TestQualityRequirementsApi(_QualityRequirementsTestBase):
+    def test_can_bulk_create_requirement_hierarchy(self, admin_user, find_sandbox_task_without_gt):
+        task, _ = find_sandbox_task_without_gt(True)
+        settings = self._get_task_settings(admin_user, task_id=task["id"])
+        base_requirement = next(
+            requirement
+            for requirement in settings["requirements"]
+            if requirement["annotation_type"] == "rectangle"
+        )
+        root_name = f"bulk-root-{task['id']}"
+        child_name = f"bulk-child-{task['id']}"
+        grandchild_name = f"bulk-grandchild-{task['id']}"
+        sibling_name = f"bulk-sibling-{task['id']}"
+        second_root_name = f"bulk-second-root-{task['id']}"
+
+        created_requirements, response = self._bulk_create_requirements(
+            admin_user,
+            {
+                "settings_id": settings["id"],
+                "requirements": [
+                    {
+                        "name": root_name,
+                        "parent_requirement": base_requirement["id"],
+                        "unknown": True,
+                        "children": [
+                            {
+                                "name": child_name,
+                                "unknown": True,
+                                "children": [{"name": grandchild_name, "unknown": True}],
+                            },
+                            {"name": sibling_name},
+                        ],
+                    },
+                    {
+                        "name": second_root_name,
+                        "parent_requirement": base_requirement["id"],
+                    },
+                ],
+            },
+        )
+
+        assert response.status_code == HTTPStatus.CREATED
+        assert [requirement["name"] for requirement in created_requirements] == [
+            root_name,
+            child_name,
+            grandchild_name,
+            sibling_name,
+            second_root_name,
+        ]
+        root, child, grandchild, sibling, second_root = created_requirements
+        assert root["parent_requirement"] == base_requirement["id"]
+        assert child["parent_requirement"] == root["id"]
+        assert grandchild["parent_requirement"] == child["id"]
+        assert sibling["parent_requirement"] == root["id"]
+        assert second_root["parent_requirement"] == base_requirement["id"]
+        assert all(
+            requirement["settings_id"] == settings["id"] for requirement in created_requirements
+        )
+        assert all(
+            requirement["effective"]["annotation_type"] == "rectangle"
+            for requirement in created_requirements
+        )
+
+    def test_bulk_create_rolls_back_hierarchy_if_descendant_is_invalid(
+        self, admin_user, find_sandbox_task_without_gt
+    ):
+        task, _ = find_sandbox_task_without_gt(True)
+        settings = self._get_task_settings(admin_user, task_id=task["id"])
+        base_requirement = next(
+            requirement
+            for requirement in settings["requirements"]
+            if requirement["annotation_type"] == "rectangle"
+        )
+        root_name = f"bulk-rollback-root-{task['id']}"
+        child_name = f"bulk-rollback-child-{task['id']}"
+
+        _, response = self._bulk_create_requirements(
+            admin_user,
+            {
+                "settings_id": settings["id"],
+                "requirements": [
+                    {
+                        "name": root_name,
+                        "parent_requirement": base_requirement["id"],
+                        "children": [
+                            {
+                                "name": child_name,
+                                "annotation_type": "skeleton",
+                            }
+                        ],
+                    }
+                ],
+            },
+        )
+
+        assert response.status_code == HTTPStatus.BAD_REQUEST
+        assert "annotation_type" in json.dumps(response.json())
+        listed_requirements, response = self._list_requirements(
+            admin_user, settings_id=settings["id"]
+        )
+        assert response.status_code == HTTPStatus.OK
+        assert not {root_name, child_name} & {
+            requirement["name"] for requirement in listed_requirements
+        }
+
+    def test_bulk_create_rejects_parent_from_other_settings(
+        self,
+        admin_user,
+        find_sandbox_task_without_gt,
+        find_sandbox_project_without_validation,
+    ):
+        task, _ = find_sandbox_task_without_gt(True)
+        task_settings = self._get_task_settings(admin_user, task_id=task["id"])
+        project, _ = find_sandbox_project_without_validation(True)
+        project_settings = self._get_project_settings(admin_user, project_id=project["id"])
+        foreign_parent = project_settings["requirements"][0]
+
+        _, response = self._bulk_create_requirements(
+            admin_user,
+            {
+                "settings_id": task_settings["id"],
+                "requirements": [
+                    {
+                        "name": f"bulk-foreign-parent-{task['id']}",
+                        "parent_requirement": foreign_parent["id"],
+                    }
+                ],
+            },
+        )
+
+        assert response.status_code == HTTPStatus.BAD_REQUEST
+        assert "selected quality settings" in json.dumps(response.json())
+
+    def test_bulk_create_rejects_explicit_parent_for_nested_requirement(
+        self, admin_user, find_sandbox_task_without_gt
+    ):
+        task, _ = find_sandbox_task_without_gt(True)
+        settings = self._get_task_settings(admin_user, task_id=task["id"])
+        base_requirement = settings["requirements"][0]
+
+        _, response = self._bulk_create_requirements(
+            admin_user,
+            {
+                "settings_id": settings["id"],
+                "requirements": [
+                    {
+                        "name": f"bulk-explicit-parent-root-{task['id']}",
+                        "parent_requirement": base_requirement["id"],
+                        "children": [
+                            {
+                                "name": f"bulk-explicit-parent-child-{task['id']}",
+                                "parent_requirement": base_requirement["id"],
+                            }
+                        ],
+                    }
+                ],
+            },
+        )
+
+        assert response.status_code == HTTPStatus.BAD_REQUEST
+        assert "inherit their parent from the hierarchy" in json.dumps(response.json())
+
+    def test_bulk_create_rejects_invalid_hierarchy_structure(
+        self, admin_user, find_sandbox_task_without_gt
+    ):
+        task, _ = find_sandbox_task_without_gt(True)
+        settings = self._get_task_settings(admin_user, task_id=task["id"])
+        base_requirement = settings["requirements"][0]
+        duplicate_name = f"bulk-duplicate-{task['id']}"
+        cases = [
+            ([], "empty"),
+            ([{"parent_requirement": base_requirement["id"]}], "name"),
+            ([{"name": f"bulk-missing-parent-{task['id']}"}], "root requirements"),
+            (
+                [
+                    {
+                        "name": duplicate_name,
+                        "parent_requirement": base_requirement["id"],
+                    },
+                    {
+                        "name": duplicate_name,
+                        "parent_requirement": base_requirement["id"],
+                    },
+                ],
+                "names must be unique",
+            ),
+            (
+                [
+                    {
+                        "name": base_requirement["name"],
+                        "parent_requirement": base_requirement["id"],
+                    }
+                ],
+                "already exists",
+            ),
+        ]
+
+        for requirements, error_text in cases:
+            _, response = self._bulk_create_requirements(
+                admin_user,
+                {
+                    "settings_id": settings["id"],
+                    "requirements": requirements,
+                },
+            )
+
+            assert response.status_code == HTTPStatus.BAD_REQUEST
+            assert error_text in json.dumps(response.json()).lower()
+
+    def test_bulk_create_rejects_payload_above_requirement_limit(
+        self, admin_user, find_sandbox_task_without_gt
+    ):
+        task, _ = find_sandbox_task_without_gt(True)
+        settings = self._get_task_settings(admin_user, task_id=task["id"])
+        base_requirement = settings["requirements"][0]
+        available_count = self._max_requirements_per_settings - len(settings["requirements"])
+
+        _, response = self._bulk_create_requirements(
+            admin_user,
+            {
+                "settings_id": settings["id"],
+                "requirements": [
+                    {
+                        "name": f"bulk-limit-{task['id']}-{index}",
+                        "parent_requirement": base_requirement["id"],
+                    }
+                    for index in range(available_count + 1)
+                ],
+            },
+        )
+
+        assert response.status_code == HTTPStatus.BAD_REQUEST
+        assert self._get_requirement_limit_error_message() in json.dumps(response.json())
+
     def test_can_crud_quality_requirements_for_task_settings(
         self, admin_user, find_sandbox_task_without_gt
     ):
@@ -442,7 +690,7 @@ class TestQualityRequirementsApi(_QualityRequirementsTestBase):
         assert created_requirement["settings_id"] == settings["id"]
         assert created_requirement["name"] == requirement_name
         assert created_requirement["metric"] == "accuracy"
-        assert created_requirement["empty_is_annotated"] is True
+        assert "empty_is_annotated" not in created_requirement
 
         retrieved_requirement, response = self._retrieve_requirement(
             admin_user, created_requirement["id"]
@@ -608,7 +856,11 @@ class TestQualityRequirementsApi(_QualityRequirementsTestBase):
             {
                 "point_size": 0.5,
                 "match_orientation": True,
-                "attribute_comparison": {"default": {"enabled": True}},
+                "unknown": True,
+                "attribute_comparison": {
+                    "unknown": True,
+                    "default": {"enabled": True, "unknown": True},
+                },
                 "match_groups": True,
             },
         )
@@ -616,13 +868,13 @@ class TestQualityRequirementsApi(_QualityRequirementsTestBase):
         assert updated_requirement["point_size"] == 0.5
         assert updated_requirement["match_orientation"] is True
         assert updated_requirement["match_groups"] is True
+        assert updated_requirement["attribute_comparison"] == {
+            "default": {"enabled": True},
+        }
 
     @pytest.mark.parametrize(
         "attribute_comparison",
         [
-            {"unknown": True},
-            {"default": {"unknown": True}},
-            {"rules": [{"spec_id": 1, "enabled": True, "unknown": True}]},
             {
                 "rules": [
                     {"spec_id": 1, "enabled": True},
@@ -634,9 +886,6 @@ class TestQualityRequirementsApi(_QualityRequirementsTestBase):
             {"rules": [{"spec_id": 1, "enabled": True, "threshold": 1.1}]},
         ],
         ids=[
-            "unknown-root-field",
-            "unknown-default-field",
-            "unknown-rule-field",
             "duplicate-spec-id",
             "unsupported-comparator",
             "default-threshold-out-of-range",
@@ -1387,6 +1636,29 @@ class TestQualityRequirementsApi(_QualityRequirementsTestBase):
         _, response = self._create_requirement(user["username"], payload)
         assert response.status_code == (HTTPStatus.CREATED if allow else HTTPStatus.FORBIDDEN)
 
+    @pytest.mark.parametrize(*_PermissionTestBase._default_sandbox_cases)
+    def test_user_bulk_create_requirements_in_sandbox(
+        self, admin_user, find_sandbox_task_without_gt, is_staff, allow
+    ):
+        task, user = find_sandbox_task_without_gt(is_staff)
+        settings = self._get_task_settings(admin_user, task_id=task["id"])
+        base_requirement = settings["requirements"][0]
+
+        _, response = self._bulk_create_requirements(
+            user["username"],
+            {
+                "settings_id": settings["id"],
+                "requirements": [
+                    {
+                        "name": f"bulk-permission-{task['id']}-{user['id']}",
+                        "parent_requirement": base_requirement["id"],
+                    }
+                ],
+            },
+        )
+
+        assert response.status_code == (HTTPStatus.CREATED if allow else HTTPStatus.FORBIDDEN)
+
 
 @pytest.mark.usefixtures("restore_db_per_function")
 class TestBaseQualityRequirementsApi(_QualityRequirementsTestBase):
@@ -1419,7 +1691,7 @@ class TestBaseQualityRequirementsApi(_QualityRequirementsTestBase):
         }
         assert all(requirement["enabled"] is False for requirement in requirements)
         assert all(requirement["is_base"] is True for requirement in requirements)
-        assert all(requirement["empty_is_annotated"] is True for requirement in requirements)
+        assert all("empty_is_annotated" not in requirement for requirement in requirements)
         assert all("effective" not in requirement for requirement in requirements)
 
     def test_new_project_gets_disabled_base_requirements_for_all_supported_types(self, admin_user):
@@ -1447,7 +1719,7 @@ class TestBaseQualityRequirementsApi(_QualityRequirementsTestBase):
         }
         assert all(requirement["enabled"] is False for requirement in requirements)
         assert all(requirement["is_base"] is True for requirement in requirements)
-        assert all(requirement["empty_is_annotated"] is True for requirement in requirements)
+        assert all("empty_is_annotated" not in requirement for requirement in requirements)
 
     def test_new_project_task_inherits_project_quality_settings_by_default(self, admin_user):
         with make_api_client(admin_user) as api_client:
@@ -1483,6 +1755,67 @@ class TestBaseQualityRequirementsApi(_QualityRequirementsTestBase):
 
 @pytest.mark.usefixtures("restore_db_per_function")
 class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
+    def test_empty_frames_do_not_affect_requirement_metrics(self, admin_user):
+        task_id, _ = create_task(
+            admin_user,
+            spec={
+                "name": "empty-frames-do-not-affect-quality",
+                "labels": [{"name": "car", "type": "rectangle"}],
+            },
+            data={
+                "image_quality": 70,
+                "client_files": generate_image_files(2),
+            },
+        )
+        settings = self._get_task_settings(admin_user, task_id=task_id)
+        requirement_name = f"empty-frame-check-{task_id}"
+        _, response = self._patch_settings(
+            admin_user,
+            settings["id"],
+            {
+                "inherit": False,
+                "requirements": [
+                    *self._retained_base_requirement_payloads(settings),
+                    self._build_requirement_payload(requirement_name, required_score=1.0),
+                ],
+            },
+        )
+        assert response.status_code == HTTPStatus.OK
+
+        gt_job = create_gt_job(admin_user, task_id, complete=False)
+        car_label = self._get_task_labels_by_name(admin_user, task_id=task_id)["car"]
+        matching_shape = self._build_rectangle_shape(
+            frame=0,
+            label_id=car_label.id,
+            points=[0, 0, 10, 10],
+        )
+        with make_api_client(admin_user) as api_client:
+            api_client.jobs_api.update_annotations(
+                gt_job.id,
+                labeled_data_request={"shapes": [matching_shape]},
+            )
+            api_client.tasks_api.update_annotations(
+                task_id,
+                labeled_data_request={"shapes": [matching_shape]},
+            )
+        self._complete_job(admin_user, gt_job.id)
+
+        report = create_quality_report(user=admin_user, task_id=task_id)
+        report_data = self._get_report_data(admin_user, report["id"])
+        group = report_data["groups"][requirement_name]
+
+        assert group["comparison_summary"]["score"] == 1.0
+        assert group["comparison_summary"]["score_components"] == {
+            "valid_count": 1,
+            "missing_count": 0,
+            "extra_count": 0,
+        }
+        confusion_matrix = group["comparison_summary"]["confusion_matrix"]
+        assert confusion_matrix["labels"] == ["car", "unmatched"]
+        assert confusion_matrix["rows"] == [[1, 0], [0, 0]]
+
+        assert "1" not in group["frame_results"]
+
     def test_task_report_data_applies_shape_requirement_filter_to_metrics(self, admin_user):
         task_id, _ = create_task(
             admin_user,
@@ -1844,7 +2177,7 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
         assert "annotations" not in group_summary
         assert group_summary["score"] is None
         assert group_summary["score_components"] == {
-            "valid_count": 1,
+            "valid_count": 0,
             "missing_count": 0,
             "extra_count": 0,
         }
@@ -1873,8 +2206,8 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
             "status": "not_computed",
             "reason": "filter_no_matches",
         }
-        assert report_data["comparison_summary"]["requirements"]["completed"] == 1
-        assert report_data["comparison_summary"]["requirements"]["not_computed"] == 1
+        assert report_data["comparison_summary"]["requirements"]["completed_count"] == 1
+        assert report_data["comparison_summary"]["requirements"]["not_computed_count"] == 1
         assert "annotations" not in report_data["comparison_summary"]
 
     def test_task_report_data_applies_attribute_comparison_rules(self, admin_user):
@@ -2215,7 +2548,9 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
             ],
         }
         assert report["summary"]["requirements"] == expected_requirements_summary
-        assert report_data["comparison_summary"]["requirements"] == expected_requirements_summary
+        assert report_data["comparison_summary"]["requirements"] == (
+            self._as_report_data_requirements_summary(expected_requirements_summary)
+        )
         assert (
             "annotations"
             not in report_data["groups"][parent_requirement_name]["comparison_summary"]
@@ -2356,8 +2691,23 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
 
         assert "groups" in report_data
         assert "frame_results" not in report_data
+        assert "conflicts" not in report_data
         assert enabled_requirement_name in report_data["groups"]
         assert disabled_requirement_name in report_data["groups"]
+        frame_summary = next(
+            iter(report_data["groups"][enabled_requirement_name]["frame_results"].values())
+        )
+        assert "annotations" not in frame_summary
+        assert set(frame_summary) == {
+            "conflicts",
+            "conflict_count",
+            "error_count",
+            "conflicts_by_type",
+            "score",
+            "score_components",
+            "calculation",
+            "confusion_matrix",
+        }
         assert report_data["parameters"] == {
             "inherited": False,
             "job_filter": updated_settings["job_filter"],
@@ -2368,11 +2718,14 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
             ].results[0]
         job_report_data = self._get_report_data(admin_user, job_report["id"])
         assert "frame_results" not in job_report_data
+        assert "conflicts" not in job_report_data
         assert job_report_data["parameters"] == {
             "inherited": False,
             "job_filter": updated_settings["job_filter"],
         }
-        assert report_data["comparison_summary"]["requirements"] == expected_requirements_summary
+        assert report_data["comparison_summary"]["requirements"] == (
+            self._as_report_data_requirements_summary(expected_requirements_summary)
+        )
         report_level_summary_fields = {
             "frames",
             "total_frames",
@@ -2533,6 +2886,8 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
         assert task_reports_by_task_id[failed_task_id]["summary"]["requirements"]["completed"] == 0
 
         project_report_data = self._get_report_data(admin_user, project_report["id"])
+        assert "frame_results" not in project_report_data
+        assert "conflicts" not in project_report_data
         project_requirement_summary = project_report_data["groups"][requirement_name][
             "comparison_summary"
         ]
@@ -2544,9 +2899,7 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
             "extra_count": 0,
         }
 
-    def test_task_report_confusion_endpoint_returns_zip_archive(
-        self, admin_user, find_sandbox_task_without_gt
-    ):
+    def test_confusion_matrix_correct(self, admin_user, find_sandbox_task_without_gt):
         task, _ = find_sandbox_task_without_gt(True)
         settings = self._get_task_settings(admin_user, task_id=task["id"])
 
@@ -2611,13 +2964,25 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
             enabled_group_csv = archive.read(
                 group_matrices[enabled_requirement_id]["path"]
             ).decode()
-            assert "DS (row) \\ GT (col) label" in enabled_group_csv
-            assert "precision" in enabled_group_csv
-            assert "recall" in enabled_group_csv
-            assert "dice coefficient" in enabled_group_csv
-            assert "jaccard index" in enabled_group_csv
-            assert "avg. accuracy (micro)" in enabled_group_csv
-            assert "avg. dice coefficient (macro)" in enabled_group_csv
+            csv_reader = csv.DictReader(StringIO(enabled_group_csv))
+            label_names = set(group_matrices[enabled_requirement_id]["labels"][:-1])
+            assert csv_reader.fieldnames
+            assert csv_reader.fieldnames[0] == "DS (row) \\ GT (col) label"
+            assert set(csv_reader.fieldnames[1:-2]) == label_names
+            assert csv_reader.fieldnames[-2:] == ["unmatched", "precision"]
+
+            rows = list(csv_reader)
+            row_label_field = "DS (row) \\ GT (col) label"
+            assert {row[row_label_field] for row in rows[: len(label_names)]} == label_names
+            assert [row[row_label_field] for row in rows[len(label_names) :]] == [
+                "unmatched",
+                "recall",
+                "dice coefficient",
+                "jaccard index",
+                "",
+                "avg. accuracy (micro)",
+                "avg. dice coefficient (macro)",
+            ]
 
         response = get_method(
             admin_user,
@@ -2639,6 +3004,8 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
             "accuracy",
             "jaccard_index",
         }
+        for metric in ("precision", "recall", "accuracy", "jaccard_index"):
+            assert enabled_group_matrix[metric][-1] is None
 
         response = get_method(
             admin_user,
@@ -2782,5 +3149,7 @@ class TestProjectQualityRequirementInheritance(_QualityRequirementsTestBase):
             ],
         }
         assert report["summary"]["requirements"] == expected_requirements_summary
-        assert report_data["comparison_summary"]["requirements"] == expected_requirements_summary
+        assert report_data["comparison_summary"]["requirements"] == (
+            self._as_report_data_requirements_summary(expected_requirements_summary)
+        )
         assert "annotations" not in report_data["comparison_summary"]

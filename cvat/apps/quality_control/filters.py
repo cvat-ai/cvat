@@ -116,7 +116,7 @@ class _ShapeFilterContext:
         return cls(
             ann,
             categories,
-            dict(getattr(ann, "attributes", {}) or {}),
+            dict(ann.attributes),
             include_track=include_track,
         )
 

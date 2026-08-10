@@ -133,6 +133,24 @@ class TestAttributeComparisonSerializer(unittest.TestCase):
             },
         )
 
+    def test_ignores_unknown_fields(self) -> None:
+        serializer = AttributeComparisonSerializer(
+            data={
+                "unknown": True,
+                "default": {"enabled": True, "unknown": True},
+                "rules": [{"spec_id": 1, "enabled": False, "unknown": True}],
+            }
+        )
+
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+        self.assertEqual(
+            serializer.validated_data,
+            {
+                "default": {"enabled": True},
+                "rules": [{"spec_id": 1, "enabled": False}],
+            },
+        )
+
 
 class TestQualitySettingsRequirementsSerializer(unittest.TestCase):
     def test_rejects_empty_requirement_list(self) -> None:

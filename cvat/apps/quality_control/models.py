@@ -21,6 +21,11 @@ if TYPE_CHECKING:
     from cvat.apps.organizations.models import Organization
 
 
+# QualityReport.data contains a serialized JSON object stored as a JSON string. PostgreSQL's
+# text representation can therefore contain escaped or unescaped quotes around object keys.
+CURRENT_REPORT_DATA_REGEX = r'\\?"groups\\?"\s*:'
+
+
 class AnnotationConflictType(str, Enum):
     MISSING_ANNOTATION = "missing_annotation"
     EXTRA_ANNOTATION = "extra_annotation"
@@ -161,6 +166,31 @@ class QualityReport(models.Model):
 
     def get_report_data(self) -> str:
         return self.data
+
+    @property
+    def has_readable_data(self) -> bool:
+        from datumaro.util import parse_json
+
+        try:
+            report_data = parse_json(self.data)
+        except (TypeError, ValueError):
+            return False
+
+        return isinstance(report_data, dict) and {
+            "parameters",
+            "comparison_summary",
+        }.issubset(report_data)
+
+    @property
+    def has_current_data_format(self) -> bool:
+        from datumaro.util import parse_json
+
+        try:
+            report_data = parse_json(self.data)
+        except (TypeError, ValueError):
+            return False
+
+        return isinstance(report_data, dict) and "groups" in report_data
 
     def get_task(self) -> Task | None:
         if self.task:
@@ -390,8 +420,6 @@ class QualityRequirement(TimestampedModel):
 
     compare_attributes = models.BooleanField(null=True, blank=True)
     attribute_comparison = models.JSONField(null=True, blank=True, default=None)
-
-    empty_is_annotated = models.BooleanField(default=True, null=True, blank=True)
 
     @property
     def organization_id(self) -> int | None:
