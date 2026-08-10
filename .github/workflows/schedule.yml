@@ -299,8 +299,8 @@ jobs:
           echo "CYPRESS_SPECS=$CYPRESS_SPECS"
           echo "CYPRESS_ARGS=${CYPRESS_ARGS[*]}"
 
-          yarn cypress run --headless --browser chrome --env coverage=false --spec "$CYPRESS_SETUP_SPECS" # if fail, further behavior is unpredictable
-          yarn cypress run "${CYPRESS_ARGS[@]}" --spec "${CYPRESS_SETUP_SPECS},${CYPRESS_SPECS}"
+          yarn cypress run --headless "${CYPRESS_ARGS[@]}" --env coverage=false --spec "$CYPRESS_SETUP_SPECS" # if fail, further behavior is unpredictable
+          yarn cypress run --headed "${CYPRESS_ARGS[@]}" --spec "${CYPRESS_SETUP_SPECS},${CYPRESS_SPECS}"
 
       - name: Creating a log file from "cvat" container logs
         if: failure()
