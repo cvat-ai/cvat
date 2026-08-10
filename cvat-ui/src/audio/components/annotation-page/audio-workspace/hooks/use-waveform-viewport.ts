@@ -27,6 +27,8 @@ export interface WaveformViewport {
 
     /** Current reactive zoom expressed in pixels per second. */
     pixelsPerSecond: number;
+    /** Full-duration scale in pixels per second, independent of the current zoom. */
+    overviewPixelsPerSecond: number;
     /**
      * Converts clientX coordinate from viewport to semantic timestamp on the current track.
      * Returns the track boundary (start/end correspondingly) if clientX is outside of the container's BB.
@@ -62,6 +64,7 @@ export function useWaveformViewport(
     zoomRef.current = zoom;
     const zoomAnchorRef = useRef<{ time: number; x: number } | null>(null);
     const pixelsPerSecond = computeWaveformZoom(zoom, duration, containerWidth);
+    const overviewPixelsPerSecond = duration > 0 ? containerWidth / duration : 0;
     const pixelsPerSecondRef = useRef(pixelsPerSecond);
     pixelsPerSecondRef.current = pixelsPerSecond;
 
@@ -209,13 +212,19 @@ export function useWaveformViewport(
     }, [pixelsPerSecond, ready]);
 
     useLayoutEffect(() => {
-        const { overlay } = runtime.minimap as unknown as { overlay?: HTMLElement };
+        if (!ready) return;
+
+        const minimapPlugin = runtime.minimap?.plugin;
+        if (!minimapPlugin) return;
+
+        const { overlay } = minimapPlugin as unknown as { overlay?: HTMLElement };
         if (overlay) overlay.style.opacity = zoom > ZOOM_MIN ? '1' : '0';
     }, [ready, zoom]);
 
     return {
         containerRef,
         pixelsPerSecond,
+        overviewPixelsPerSecond,
         clientXToTime,
         centerTimeRange,
         centerPlaybackPosition,
