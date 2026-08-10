@@ -50,7 +50,11 @@ from rq.queue import Queue as RQQueue
 from cvat.apps.dataset_manager.tests.utils import TestDir
 from cvat.apps.dataset_manager.util import current_function_name
 from cvat.apps.engine.cache import MediaCache
-from cvat.apps.engine.cloud_provider import AzureBlobCloudStorage, S3CloudStorage, Status
+from cvat.apps.engine.cloud_provider import (
+    AzureBlobCloudStorageClient,
+    S3CloudStorageClient,
+    Status,
+)
 from cvat.apps.engine.media_extractors import ValidateDimension, sort
 from cvat.apps.engine.models import (
     AnnotationGuide,
@@ -1873,7 +1877,7 @@ class _CloudStorageTestBase(ApiTestBase):
 
     @classmethod
     def _start_aws_patch(cls):
-        class MockS3(S3CloudStorage):
+        class MockS3Client(S3CloudStorageClient):
             _files = {}
 
             def get_status(self):
@@ -1938,10 +1942,12 @@ class _CloudStorageTestBase(ApiTestBase):
                     "next": str(next_page_start) if next_page_start < len(entries) else None,
                 }
 
-        cls._aws_patch = mock.patch("cvat.apps.engine.cloud_provider.S3CloudStorage", MockS3)
+        cls._aws_patch = mock.patch(
+            "cvat.apps.engine.cloud_provider.S3CloudStorageClient", MockS3Client
+        )
         cls._aws_patch.start()
 
-        return MockS3
+        return MockS3Client
 
     @classmethod
     def _stop_aws_patch(cls):
@@ -8548,7 +8554,7 @@ class TaskJobLimitAPITestCase(ApiTestBase):
 
 class TestCloudStorageS3Status(SimpleTestCase):
     def setUp(self):
-        self.storage = S3CloudStorage(
+        self.storage = S3CloudStorageClient(
             bucket="test-bucket",
             access_key_id="test-key",
             secret_key="test-secret",
@@ -8587,7 +8593,7 @@ class TestCloudStorageS3Status(SimpleTestCase):
 
 class TestCloudStorageAzureStatus(SimpleTestCase):
     def setUp(self):
-        self.storage = AzureBlobCloudStorage(
+        self.storage = AzureBlobCloudStorageClient(
             container="test-container",
             account_name="test-account",
             sas_token="test-sas-token",
