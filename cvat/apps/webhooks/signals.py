@@ -5,6 +5,7 @@
 import json
 from typing import TypeVar
 
+from django.contrib.auth.models import User
 from django.db import transaction
 from django.db.models import Model
 from django.db.models.signals import post_delete, post_save, pre_delete
@@ -12,9 +13,6 @@ from django.dispatch import receiver
 from rest_framework.renderers import JSONRenderer
 
 from cvat.apps.engine.models import Comment, Issue, Job, Project, Task
-from cvat.apps.events.handlers import (
-    get_serializer,
-)
 from cvat.apps.events.handlers import organization_id as resolve_organization_id
 from cvat.apps.events.handlers import project_id as resolve_project_id
 from cvat.apps.organizations.models import Invitation, Membership, Organization
@@ -35,6 +33,7 @@ ModelT = TypeVar("ModelT", bound=Model)
 @receiver(post_save, sender=Organization)
 @receiver(post_save, sender=Invitation)
 @receiver(post_save, sender=Membership)
+@receiver(post_save, sender=User)
 def post_save_resource_event(
     sender: type[ModelT],
     instance: ModelT,
@@ -117,17 +116,25 @@ def post_save_resource_event(
     retrieved_instance = utils.retrieve_instance(model=sender, pk=instance.pk)
 
     _webhook_payload = {
-        resource_name: get_serializer(instance=retrieved_instance).data,
+        resource_name: utils.get_serializer(instance=retrieved_instance).data,
         "sender": utils.get_sender(instance=instance),
     }
 
     if not created:
+        serializer_attnames = utils.get_serializer_attnames(
+            instance=instance,
+            serializer=utils.get_serializer(instance=instance),
+        )
+        exposed_dirty_fields = {
+            field: value for field, value in dirty_fields.items() if field in serializer_attnames
+        }
+
         # TODO: backward compatibility, remove in future releases
-        _before_update = {field: value["saved"] for field, value in dirty_fields.items()}
+        _before_update = {field: value["saved"] for field, value in exposed_dirty_fields.items()}
 
         _changes = {
             field: {"from": value["saved"], "to": value["current"]}
-            for field, value in dirty_fields.items()
+            for field, value in exposed_dirty_fields.items()
         }
         changes_payload_part = {
             "before_update": json.loads(JSONRenderer().render(_before_update)),
@@ -161,6 +168,8 @@ def post_save_resource_event(
 @receiver(pre_delete, sender=Comment)
 @receiver(pre_delete, sender=Invitation)
 @receiver(pre_delete, sender=Membership)
+@receiver(pre_delete, sender=Organization)
+@receiver(pre_delete, sender=User)
 def pre_delete_resource_event(sender: type[ModelT], instance: ModelT, **kwargs):
     resource_name = instance.__class__.__name__.lower()
 
@@ -170,7 +179,7 @@ def pre_delete_resource_event(sender: type[ModelT], instance: ModelT, **kwargs):
 
     retrieved_instance = utils.retrieve_instance(model=sender, pk=instance.pk)
 
-    instance._deleted_instance_snapshot = get_serializer(instance=retrieved_instance).data
+    instance._deleted_instance_snapshot = utils.get_serializer(instance=retrieved_instance).data
 
 
 @receiver(post_delete, sender=Project)
@@ -180,6 +189,8 @@ def pre_delete_resource_event(sender: type[ModelT], instance: ModelT, **kwargs):
 @receiver(post_delete, sender=Comment)
 @receiver(post_delete, sender=Invitation)
 @receiver(post_delete, sender=Membership)
+@receiver(post_delete, sender=Organization)
+@receiver(post_delete, sender=User)
 def post_delete_resource_event(sender: type[ModelT], instance: ModelT, **kwargs):
     resource_name = instance.__class__.__name__.lower()
 

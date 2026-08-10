@@ -7108,6 +7108,7 @@ paths:
           enum:
           - organization
           - project
+          - instance
       tags:
       - webhooks
       security:
@@ -7414,7 +7415,11 @@ paths:
         name: type
         schema:
           type: string
+          enum:
+          - organization
+          - project
         description: Type of webhook
+        required: true
       tags:
       - webhooks
       security:
@@ -8642,15 +8647,19 @@ components:
       - create:issue
       - create:job
       - create:membership
+      - create:organization
       - create:project
       - create:task
+      - create:user
       - delete:comment
       - delete:invitation
       - delete:issue
       - delete:job
       - delete:membership
+      - delete:organization
       - delete:project
       - delete:task
+      - delete:user
       - update:comment
       - update:issue
       - update:job
@@ -8658,6 +8667,7 @@ components:
       - update:organization
       - update:project
       - update:task
+      - update:user
       type: string
       description: |-
         * `completed:request[calculate:quality]` - COMPLETED:REQUEST[CALCULATE:QUALITY]
@@ -8672,15 +8682,19 @@ components:
         * `create:issue` - CREATE:ISSUE
         * `create:job` - CREATE:JOB
         * `create:membership` - CREATE:MEMBERSHIP
+        * `create:organization` - CREATE:ORGANIZATION
         * `create:project` - CREATE:PROJECT
         * `create:task` - CREATE:TASK
+        * `create:user` - CREATE:USER
         * `delete:comment` - DELETE:COMMENT
         * `delete:invitation` - DELETE:INVITATION
         * `delete:issue` - DELETE:ISSUE
         * `delete:job` - DELETE:JOB
         * `delete:membership` - DELETE:MEMBERSHIP
+        * `delete:organization` - DELETE:ORGANIZATION
         * `delete:project` - DELETE:PROJECT
         * `delete:task` - DELETE:TASK
+        * `delete:user` - DELETE:USER
         * `update:comment` - UPDATE:COMMENT
         * `update:issue` - UPDATE:ISSUE
         * `update:job` - UPDATE:JOB
@@ -8688,6 +8702,7 @@ components:
         * `update:organization` - UPDATE:ORGANIZATION
         * `update:project` - UPDATE:PROJECT
         * `update:task` - UPDATE:TASK
+        * `update:user` - UPDATE:USER
     FileInfo:
       type: object
       properties:
@@ -13310,6 +13325,11 @@ components:
         has_analytics_access:
           type: boolean
           readOnly: true
+          nullable: true
+        email_verified:
+          type: boolean
+          nullable: true
+          readOnly: true
       required:
       - groups
       - username
@@ -13519,10 +13539,12 @@ components:
       enum:
       - organization
       - project
+      - instance
       type: string
       description: |-
         * `organization` - ORGANIZATION
         * `project` - PROJECT
+        * `instance` - INSTANCE
     WebhookWriteRequest:
       type: object
       properties:

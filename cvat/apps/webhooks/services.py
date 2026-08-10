@@ -47,6 +47,11 @@ def select_webhooks(
         )
         selected_webhooks += list(project_webhooks)
 
+    instance_webhooks = queryset.filter(
+        type=WebhookTypeChoice.INSTANCE,
+    )
+    selected_webhooks += list(instance_webhooks)
+
     return selected_webhooks
 
 

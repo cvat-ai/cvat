@@ -3273,7 +3273,9 @@ class UserViewSet(
     PartialUpdateModelMixin,
     mixins.DestroyModelMixin,
 ):
-    queryset = User.objects.prefetch_related("groups").all()
+    queryset = (
+        User.objects.select_related("profile").prefetch_related("groups", "emailaddress_set").all()
+    )
     iam_supports_organization_params = True
     iam_permission_class = UserPermission
 

@@ -25,11 +25,12 @@ from typing import Any, cast
 from urllib.parse import urlparse
 
 import django_rq
+from allauth.account.models import EmailAddress
 from django.conf import settings
 from django.contrib.auth.models import Group
 from django.core.files.uploadedfile import UploadedFile
 from django.db import transaction
-from django.db.models import Count, Prefetch, prefetch_related_objects
+from django.db.models import Count, Prefetch, QuerySet, prefetch_related_objects
 from django.utils import timezone
 from django.utils.functional import cached_property
 from drf_spectacular.utils import OpenApiExample, extend_schema_field, extend_schema_serializer
@@ -340,7 +341,9 @@ class UserSerializer(serializers.ModelSerializer):
         source="profile.has_analytics_access",
         required=False,
         read_only=True,
+        allow_null=True,
     )
+    email_verified = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -358,10 +361,27 @@ class UserSerializer(serializers.ModelSerializer):
             "last_login",
             "date_joined",
             "has_analytics_access",
+            "email_verified",
         )
         read_only_fields = ("last_login", "date_joined", "has_analytics_access")
         write_only_fields = ("password",)
         extra_kwargs = {"last_login": {"allow_null": True}}
+
+    @extend_schema_field(serializers.BooleanField(allow_null=True))
+    def get_email_verified(self, instance: User) -> bool | None:
+        for email_address in cast(QuerySet[EmailAddress], instance.emailaddress_set.all()):
+            if email_address.primary:
+                if email_address.email != instance.email:
+                    slogger.glob.warning(
+                        f"The primary email address {email_address.email!r} "
+                        f"of the user {instance.username} "
+                        f"does not match their User.email {instance.email!r}"
+                    )
+                    return None
+
+                return email_address.verified
+
+        return None
 
 
 class DelimitedStringListField(serializers.ListField):
