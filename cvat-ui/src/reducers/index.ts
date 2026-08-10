@@ -794,6 +794,7 @@ export interface NotificationsState {
 
 export enum ActiveControl {
     CURSOR = 'cursor',
+    SELECT = 'select',
     DRAG_CANVAS = 'drag_canvas',
     ZOOM_CANVAS = 'zoom_canvas',
     DRAW_RECTANGLE = 'draw_rectangle',
@@ -926,6 +927,7 @@ export interface AnnotationState {
         activeLabelID: number | null;
         activeObjectType: ObjectType;
         activeInitialState?: any;
+        copiedStates?: any[];
         activeSimplifyPoly?: boolean;
     };
     editing: EditingState;
@@ -933,6 +935,7 @@ export interface AnnotationState {
         activatedStateID: number | null;
         activatedElementID: number | null;
         activatedAttributeID: number | null;
+        selectedStatesID: number[];
         highlightedConflict: QualityConflict | null;
         collapsed: Record<number, boolean>;
         collapsedAll: boolean;

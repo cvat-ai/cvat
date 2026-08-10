@@ -82,6 +82,17 @@ polyline.cvat_shape_drawing_opacity {
     fill: #fcfbfc;
 }
 
+// persistent visual for shapes that are part of a multi-selection
+// (does not hide mask images, unlike .cvat_canvas_shape_selection)
+.cvat_canvas_shape_selected_object {
+    @extend .cvat_shape_action_dasharray;
+
+    stroke: #1890ff;
+
+    // glow makes the selection obvious at any zoom level and also works for masks
+    filter: drop-shadow(0 0 4px #1890ff) drop-shadow(0 0 10px #1890ff);
+}
+
 image.cvat_canvas_shape_selection {
     visibility: hidden;
 }

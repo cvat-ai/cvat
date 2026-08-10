@@ -12,12 +12,16 @@ export interface SelectionFilter {
     shapeType?: string[];
     maxCount?: number;
     restrictToFirstSelectedType?: boolean;
+    // when true, a shape is selected if its bounding box intersects the selection box
+    // (default behaviour requires the selection box to fully contain the shape)
+    intersect?: boolean;
 }
 
 export interface ObjectSelector {
     enable(
         callback: (selected: ObjectState[]) => void,
         filter?: SelectionFilter,
+        initialEvent?: MouseEvent,
     ): void;
     transform(geometry: Geometry): void;
     push(state: ObjectState): void;
@@ -123,15 +127,21 @@ export class ObjectSelectorImpl implements ObjectSelector {
                 (shape: SVG.Shape): boolean => !shape.hasClass('cvat_canvas_hidden'),
             );
 
+            const intersect = !!this.selectionFilter?.intersect;
             let newStates = [];
             for (const shape of shapes) {
                 const bbox = shape.bbox();
                 const clientID = shape.attr('clientID');
-                if (
-                    bbox.x > box.xtl &&
+                const contained = bbox.x > box.xtl &&
                     bbox.y > box.ytl &&
                     bbox.x + bbox.width < box.xbr &&
-                    bbox.y + bbox.height < box.ybr &&
+                    bbox.y + bbox.height < box.ybr;
+                const intersected = bbox.x < box.xbr &&
+                    bbox.x + bbox.width > box.xtl &&
+                    bbox.y < box.ybr &&
+                    bbox.y + bbox.height > box.ytl;
+                if (
+                    (intersect ? intersected : contained) &&
                     !(clientID in this.selectedObjects)
                 ) {
                     const objectState = states.find((state: ObjectState): boolean => state.clientID === clientID);
@@ -170,7 +180,11 @@ export class ObjectSelectorImpl implements ObjectSelector {
         this.resetAppearance = {};
     }
 
-    public enable(callback: (selected: ObjectState[]) => void, filter?: SelectionFilter): void {
+    public enable(
+        callback: (selected: ObjectState[]) => void,
+        filter?: SelectionFilter,
+        initialEvent?: MouseEvent,
+    ): void {
         if (!this.isEnabled) {
             window.document.addEventListener('mouseup', this.onMouseUp);
             this.canvas.node.addEventListener('mousedown', this.onMouseDown);
@@ -251,6 +265,13 @@ export class ObjectSelectorImpl implements ObjectSelector {
 
             this.selectionFilter = filter;
             this.isEnabled = true;
+
+            if (initialEvent) {
+                // start the selection box immediately from the triggering mousedown
+                // (used by shift + left-mousedown selection, where the listeners below
+                // are attached only after the initial press has already happened)
+                this.onMouseDown(initialEvent);
+            }
         }
     }
 

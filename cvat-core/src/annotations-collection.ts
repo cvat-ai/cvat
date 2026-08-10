@@ -249,6 +249,170 @@ export default class Collection {
         return updatedStates;
     }
 
+    // Saves several object states at once and records the whole change as a single
+    // undo/redo item (e.g. moving a multi-selection together). Mirrors _applyZOrderUpdates.
+    public updateBatch(objectStates: ObjectState[]): ObjectState[] {
+        checkObjectType('objectStates', objectStates, null, { cls: Array, name: 'Array' });
+
+        const clientIDs = new Set<number>();
+        const objects = objectStates.map((state) => {
+            const object = this.objects[state.clientID];
+            if (!(object instanceof Shape || object instanceof Track) || object.removed) {
+                throw new ArgumentError(`Object with client ID ${state.clientID} cannot be updated`);
+            }
+            if (object.lock || state.isGroundTruth) {
+                throw new ArgumentError(`Object with client ID ${state.clientID} is not editable`);
+            }
+            if (clientIDs.has(state.clientID)) {
+                throw new ArgumentError(`Object with client ID ${state.clientID} is duplicated`);
+            }
+            clientIDs.add(state.clientID);
+            return object;
+        });
+
+        const updatedStates: ObjectState[] = [];
+        const snapshots: {
+            clientID: number;
+            frame: number;
+            undo: () => void;
+            redo: () => void;
+        }[] = [];
+
+        // save() only applies fields raised in updateFlags, so a restore must go
+        // through the points setter of a fresh state
+        const restorePoints = (object: Shape | Track, frame: number, points: number[] | null): void => {
+            if (!Array.isArray(points)) {
+                return;
+            }
+            const target = new ObjectState(object.get(frame));
+            target.points = [...points];
+            object.save(frame, target);
+        };
+
+        // Prevent each individual object.save() from creating its own history item.
+        this.history.freeze(true);
+
+        try {
+            for (let index = 0; index < objectStates.length; index++) {
+                const state = objectStates[index];
+                const object = objects[index];
+
+                const { frame } = state;
+                const beforePoints = new ObjectState(object.get(frame)).points;
+                const updatedState = object.save(frame, state);
+                const afterPoints = updatedState.points;
+
+                snapshots.push({
+                    clientID: state.clientID,
+                    frame,
+                    undo: () => restorePoints(object, frame, beforePoints),
+                    redo: () => restorePoints(object, frame, afterPoints),
+                });
+                updatedStates.push(updatedState);
+            }
+        } catch (error: unknown) {
+            snapshots.forEach(({ undo }) => undo());
+            throw error;
+        } finally {
+            this.history.freeze(false);
+        }
+
+        if (snapshots.length) {
+            const { frame } = snapshots[snapshots.length - 1];
+            this.history.do(
+                HistoryActions.CHANGED_POINTS,
+                () => {
+                    this.history.freeze(true);
+                    try {
+                        snapshots.forEach(({ undo }) => undo());
+                    } finally {
+                        this.history.freeze(false);
+                    }
+                },
+                () => {
+                    this.history.freeze(true);
+                    try {
+                        snapshots.forEach(({ redo }) => redo());
+                    } finally {
+                        this.history.freeze(false);
+                    }
+                },
+                snapshots.map(({ clientID }) => clientID),
+                frame,
+            );
+        }
+
+        return updatedStates;
+    }
+
+    // Removes several objects at once and records the whole change as a single
+    // undo/redo item (e.g. deleting a multi-selection together)
+    public removeBatch(objectStates: ObjectState[], force: boolean): number[] {
+        checkObjectType('objectStates', objectStates, null, { cls: Array, name: 'Array' });
+
+        const clientIDs = new Set<number>();
+        const objects = objectStates.map((state) => {
+            const object = this.objects[state.clientID];
+            if (!(object instanceof Shape || object instanceof Track || object instanceof Tag) || object.removed) {
+                throw new ArgumentError(`Object with client ID ${state.clientID} cannot be removed`);
+            }
+            if (object.lock && !force) {
+                throw new ArgumentError(`Object with client ID ${state.clientID} is locked`);
+            }
+            if (clientIDs.has(state.clientID)) {
+                throw new ArgumentError(`Object with client ID ${state.clientID} is duplicated`);
+            }
+            clientIDs.add(state.clientID);
+            return object;
+        });
+
+        const removedObjects: (Shape | Track | Tag)[] = [];
+        let frame = null;
+
+        // Prevent each individual object.delete() from creating its own history item.
+        this.history.freeze(true);
+        try {
+            for (let index = 0; index < objectStates.length; index++) {
+                const state = objectStates[index];
+                const object = objects[index];
+                if (!object.delete(state.frame, force)) {
+                    throw new ArgumentError(`Object with client ID ${state.clientID} could not be removed`);
+                }
+                removedObjects.push(object);
+                frame = state.frame;
+            }
+        } catch (error: unknown) {
+            removedObjects.forEach((object) => {
+                object.removed = false;
+            });
+            throw error;
+        } finally {
+            this.history.freeze(false);
+        }
+
+        if (removedObjects.length) {
+            this.history.do(
+                HistoryActions.REMOVED_OBJECT,
+                () => {
+                    removedObjects.forEach((object) => {
+                        object.removed = false;
+                        object.updated = Date.now();
+                    });
+                },
+                () => {
+                    removedObjects.forEach((object) => {
+                        object.removed = true;
+                        object.updated = Date.now();
+                    });
+                },
+                removedObjects.map((object) => object.clientID),
+                frame,
+            );
+        }
+
+        return removedObjects.map((object) => object.clientID);
+    }
+
     public import(data: Partial<SerializedCollection>): {
         tags: Tag[];
         shapes: Shape[];

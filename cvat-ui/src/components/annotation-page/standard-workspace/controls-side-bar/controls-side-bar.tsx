@@ -21,6 +21,7 @@ import ControlVisibilityObserver, {
 } from './control-visibility-observer';
 import RotateControl, { Props as RotateControlProps } from './rotate-control';
 import CursorControl, { Props as CursorControlProps } from './cursor-control';
+import SelectControl, { Props as SelectControlProps } from './select-control';
 import MoveControl, { Props as MoveControlProps } from './move-control';
 import FitControl, { Props as FitControlProps } from './fit-control';
 import ResizeControl, { Props as ResizeControlProps } from './resize-control';
@@ -51,11 +52,13 @@ interface Props {
     normalizedKeyMap: Record<string, string>;
     labels: Label[];
     frameData: any;
+    hasCopiedSelection: boolean;
 
     updateActiveControl(activeControl: ActiveControl): void;
     rotateFrame(rotation: Rotation): void;
     repeatDrawShape(): void;
     pasteShape(): void;
+    pasteSelection(): void;
     resetGroup(): void;
     redrawShape(): void;
 }
@@ -123,6 +126,7 @@ registerComponentShortcuts(componentShortcuts);
 // We use the observer to see if these controls are in the scopeport
 // They automatically put to extra if not
 const ObservedCursorControl = ControlVisibilityObserver<CursorControlProps>(CursorControl, 'CursorControl');
+const ObservedSelectControl = ControlVisibilityObserver<SelectControlProps>(SelectControl, 'SelectControl');
 const ObservedMoveControl = ControlVisibilityObserver<MoveControlProps>(MoveControl, 'MoveControl');
 const ObservedRotateControl = ControlVisibilityObserver<RotateControlProps>(RotateControl, 'RotateControl');
 const ObservedFitControl = ControlVisibilityObserver<FitControlProps>(FitControl, 'FitControl');
@@ -156,9 +160,11 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
         rotateFrame,
         repeatDrawShape,
         pasteShape,
+        pasteSelection,
         resetGroup,
         redrawShape,
         frameData,
+        hasCopiedSelection,
     } = props;
 
     const controlsDisabled = !labels.length || frameData.deleted;
@@ -344,7 +350,12 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
             PASTE_SHAPE: (event: KeyboardEvent | undefined) => {
                 event?.preventDefault();
                 canvasInstance.cancel();
-                pasteShape();
+                // paste the whole multi-selection when it is on the clipboard, else a single shape
+                if (hasCopiedSelection) {
+                    pasteSelection();
+                } else {
+                    pasteShape();
+                }
             },
             SWITCH_DRAW_MODE_STANDARD_CONTROLS: (event: KeyboardEvent | undefined) => {
                 handleDrawMode(event, 'draw');
@@ -363,6 +374,12 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
                     cursorShortkey={normalizedKeyMap.CANCEL}
                     canvasInstance={canvasInstance}
                     activeControl={activeControl}
+                />
+                <ObservedSelectControl
+                    canvasInstance={canvasInstance}
+                    activeControl={activeControl}
+                    disabled={controlsDisabled}
+                    updateActiveControl={updateActiveControl}
                 />
                 <ObservedMoveControl canvasInstance={canvasInstance} activeControl={activeControl} />
                 <ObservedRotateControl
