@@ -1628,9 +1628,7 @@ class JobValidationLayoutWriteSerializer(serializers.Serializer):
             if bulk_context:
                 frame_selector = bulk_context.honeypot_frame_selector
             else:
-                active_validation_frame_counts = {
-                    validation_frame: 0 for validation_frame in task_active_validation_frames
-                }
+                active_validation_frame_counts = dict.fromkeys(task_active_validation_frames, 0)
                 for task_honeypot_frame in task_honeypot_frames:
                     real_frame = _to_rel_frame(db_frames[task_honeypot_frame].real_frame)
                     if real_frame in task_active_validation_frames:
@@ -1871,7 +1869,7 @@ class JobValidationLayoutReadSerializer(serializers.Serializer):
                 if not frame.is_placeholder:
                     continue
 
-                if not frame.frame in segment_frame_set:
+                if frame.frame not in segment_frame_set:
                     continue
 
                 segment_honeypot_frames.append(
@@ -2036,7 +2034,7 @@ class TaskValidationLayoutWriteSerializer(serializers.Serializer):
                 )
         elif frame_selection_method == models.JobFrameSelectionMethod.RANDOM_UNIFORM:
             # Reset distribution for active validation frames
-            active_validation_frame_counts = {f: 0 for f in active_validation_frames}
+            active_validation_frame_counts = dict.fromkeys(active_validation_frames, 0)
             frame_selector = HoneypotFrameSelector(active_validation_frame_counts)
             bulk_context.honeypot_frame_selector = frame_selector
 
