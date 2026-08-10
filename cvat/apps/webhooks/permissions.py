@@ -22,6 +22,7 @@ class WebhookPermission(OpenPolicyAgentPermission):
         CREATE = "create"
         CREATE_IN_PROJECT = "create@project"
         CREATE_IN_ORG = "create@organization"
+        CREATE_IN_INSTANCE = "create@instance"
         DELETE = "delete"
         UPDATE = "update"
         LIST = "list"

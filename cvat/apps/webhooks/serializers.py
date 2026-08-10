@@ -22,6 +22,10 @@ class EventKeysValidator:
         return attrs.get("type")
 
     def __call__(self, attrs, serializer):
+        if attrs.get("type") is not None:
+            if attrs["type"] not in (WebhookTypeChoice.PROJECT, WebhookTypeChoice.ORGANIZATION):
+                raise serializers.ValidationError(f"Invalid type, got {attrs['type']}")
+
         if attrs.get("events") is not None:
             webhook_type = self.get_webhook_type(attrs, serializer)
             events_keys = set(EventKeysField().to_representation(attrs["events"]))

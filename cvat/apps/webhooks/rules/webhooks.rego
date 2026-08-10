@@ -6,8 +6,8 @@ import data.utils
 import data.organizations
 
 # input : {
-#     "scope": <"create@project" | "create@organization" | "update" | "delete" |
-#         "list" | "view"> or null,
+#     "scope": <"create@project" | "create@organization" | "create@instance" |
+#         "update" | "delete" | "list" | "view"> or null,
 #     "auth": {
 #         "user": {
 #             "id": <num>
