@@ -10,14 +10,15 @@ import { convertClasses } from './utils';
 function openOrganizationsMenu() {
     cy.get('.cvat-header-menu-user-dropdown')
         .should('exist').and('be.visible').click();
-    cy.wait(500); // animation
     cy.get('.cvat-header-menu').should('be.visible');
     cy.get('.cvat-header-menu')
         .find('[role="menuitem"]')
         .filter(':contains("Organization")')
         .should('exist')
         .and('be.visible')
+        .and('not.have.attr', 'aria-disabled', 'true')
         .click();
+    cy.get('.cvat-header-menu-create-organization').should('be.visible');
 }
 
 Cypress.Commands.add('createOrganization', (organizationParams) => {
@@ -44,6 +45,8 @@ Cypress.Commands.add('createOrganization', (organizationParams) => {
     });
     cy.get('.cvat-organization-page').should('exist').and('be.visible');
     cy.get('.cvat-spinner').should('not.exist');
+    cy.get('.cvat-header-menu-user-dropdown-organization')
+        .should('have.text', organizationParams.shortName);
     return cy.wrap(idWrapper);
 });
 
@@ -77,6 +80,7 @@ Cypress.Commands.add('activateOrganization', (organizationShortName) => {
     cy.get('.cvat-header-menu-user-dropdown-organization')
         .should('exist')
         .and('have.text', organizationShortName);
+    cy.get('.cvat-spinner').should('not.exist');
 });
 
 Cypress.Commands.add('deactivateOrganization', () => {
@@ -84,6 +88,7 @@ Cypress.Commands.add('deactivateOrganization', () => {
     cy.contains('.cvat-header-menu-organization-item', 'Personal workspace').click();
     cy.get('.cvat-header-menu-user-dropdown').should('be.visible');
     cy.get('.cvat-header-menu-user-dropdown-organization').should('not.exist');
+    cy.get('.cvat-spinner').should('not.exist');
 });
 
 Cypress.Commands.add('openOrganization', (organizationShortName) => {
@@ -154,9 +159,26 @@ Cypress.Commands.add('inviteMembersToOrganization', (members) => {
             cy.contains('button', 'Invite more').click();
         }
     }
+    cy.intercept('POST', '/api/invitations**').as('inviteOrganizationMember');
     cy.get('.cvat-organization-invitation-modal')
         .contains('button', 'OK')
         .click();
+    const invitedEmails = [];
+    for (const el of members) {
+        cy.wait('@inviteOrganizationMember').then((interception) => {
+            expect(interception.response.statusCode).to.be.oneOf([200, 201]);
+            expect(interception.request.body.email).to.equal(el.email);
+            invitedEmails.push(interception.request.body.email);
+        });
+    }
+    cy.wrap(invitedEmails).should('have.members', members.map((el) => el.email));
+    cy.get('.cvat-organization-invitation-modal').should('not.exist');
+    cy.intercept('GET', '/api/memberships**').as('getOrganizationMembersAfterInvite');
+    cy.reload();
+    cy.wait('@getOrganizationMembersAfterInvite')
+        .its('response.statusCode')
+        .should('equal', 200);
+    cy.get('.cvat-organization-page').should('be.visible');
 });
 
 Cypress.Commands.add('removeMemberFromOrganization', (username) => {
