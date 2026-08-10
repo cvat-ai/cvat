@@ -14,7 +14,7 @@ import { ActiveControl, CombinedState } from 'reducers';
 import { shallowEqual, ThunkDispatch } from 'utils/redux';
 
 import {
-    clientIDFromWaveRegionId, intervalEndSeconds, intervalStartSeconds,
+    clientIDFromWaveRegionId,
 } from '../utils/audio-interval';
 import { WaveformRegionRuntime } from './use-audio-waveform';
 import { WaveformViewport } from './use-waveform-viewport';
@@ -67,13 +67,6 @@ export function useRegionSelection({ regionRuntime, viewport, ready }: Params): 
         if (!ready) return undefined;
 
         const { regionsPlugin } = regionRuntime;
-        const intervalRange = (clientID: number): { start: number; end: number } | null => {
-            const interval = intervalsRef.current.find((item) => item.clientID === clientID);
-            return interval ? {
-                start: intervalStartSeconds(interval),
-                end: intervalEndSeconds(interval),
-            } : null;
-        };
         const selectInterval = async (region: Region, event: MouseEvent): Promise<number | null> => {
             if (!isIntervalRegionTarget(region)) return null;
 
@@ -130,12 +123,6 @@ export function useRegionSelection({ regionRuntime, viewport, ready }: Params): 
             event.preventDefault();
             selectInterval(region, event).then((clientID) => {
                 if (clientID === null) return;
-
-                const range = intervalRange(clientID);
-                if (range) {
-                    viewport.centerTimeRange(range);
-                }
-
                 dispatch(requestPlayAudioIntervalOnce(clientID));
             }).catch(() => {});
         };

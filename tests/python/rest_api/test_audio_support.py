@@ -298,7 +298,7 @@ class TestAudioAnnotations:
             yield
 
     @parametrize("instance_type", ["task", "job"])
-    def test_can_save_intervals(self, tasks, instance_type: str):
+    def test_can_save_interval_ending_at_task_boundary(self, tasks, instance_type: str):
         task_id = next(t for t in tasks if t["media_type"] == "audio")["id"]
 
         task = self.client.tasks.retrieve(task_id)
@@ -310,7 +310,7 @@ class TestAudioAnnotations:
                 models.LabeledIntervalRequest(
                     label_id=label.id,
                     start=0,
-                    stop=task.size - 1,
+                    stop=task.size,
                 ),
             ]
         )
@@ -377,7 +377,7 @@ class TestAudioAnnotations:
                 models.LabeledIntervalRequest(
                     label_id=labels[0].id,
                     start=0,
-                    stop=task.size,
+                    stop=task.size + 1,
                 ),
             ]
         )
@@ -392,4 +392,4 @@ class TestAudioAnnotations:
         with pytest.raises(exceptions.ApiException) as capture:
             instance.set_annotations(payload)
 
-        assert "cannot be outside" in str(capture.value)
+        assert "stop must be within" in str(capture.value)
