@@ -14,8 +14,6 @@ import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import {
     DimensionType, getCore, JobStage, Label, LabelType, ObjectState, ObjectType, ShapeType,
 } from 'cvat-core-wrapper';
-import { clamp } from 'utils/math';
-
 import {
     ActiveControl,
     AnnotationState,
@@ -165,7 +163,7 @@ const defaultState: AnnotationState = {
             min: 0,
             max: 0,
             cur: 0,
-            hidden: new Set<number>(),
+            hiddenByFrame: new Map<number, Set<number>>([[0, new Set<number>()]]),
         },
     },
     remove: {
@@ -294,10 +292,11 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 annotations: {
                     ...state.annotations,
                     filters,
+                    initialized: false,
                     zLayer: {
                         ...state.annotations.zLayer,
-                        cur: Number.MAX_SAFE_INTEGER,
-                        hidden: new Set<number>(),
+                        cur: 0,
+                        hiddenByFrame: new Map<number, Set<number>>([[number, new Set<number>()]]),
                     },
                 },
                 player: {
@@ -396,6 +395,11 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 changeFrameEvent,
             } = action.payload;
             const [minZ, maxZ] = computeZRange(states);
+            const currentZLayer = state.annotations.initialized ? state.annotations.zLayer.cur : maxZ;
+            const hiddenByFrame = new Map(state.annotations.zLayer.hiddenByFrame);
+            if (!hiddenByFrame.has(number)) {
+                hiddenByFrame.set(number, new Set<number>());
+            }
 
             return {
                 ...state,
@@ -417,14 +421,16 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     activatedStateID: updateActivatedStateID(states, activatedStateID),
                     highlightedConflict: null,
                     states,
+                    initialized: true,
                     renderData: getAnnotationsRenderData(states, state.annotations.filters),
                     history,
                     zLayer: {
                         ...state.annotations.zLayer,
                         min: minZ,
                         max: maxZ,
-                        cur: maxZ,
-                        hidden: new Set<number>(),
+                        // The selected layer may be empty, so only initialize it when the job first opens.
+                        cur: currentZLayer,
+                        hiddenByFrame,
                     },
                 },
             };
@@ -641,13 +647,11 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             } = action.payload;
             const { states: prevStates } = state.annotations;
             const nextStates = [...prevStates];
-            let zOrderChanged = false;
 
             const clientIDs = prevStates.map((prevState: ObjectState): number => prevState.clientID!);
             for (const updatedState of updatedStates) {
                 const index = clientIDs.indexOf(updatedState.clientID);
                 if (index !== -1) {
-                    zOrderChanged ||= nextStates[index].zOrder !== updatedState.zOrder;
                     nextStates[index] = updatedState;
                 }
             }
@@ -661,8 +665,6 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                         ...state.annotations.zLayer,
                         min: minZ,
                         max: maxZ,
-                        cur: clamp(state.annotations.zLayer.cur, minZ, maxZ),
-                        hidden: zOrderChanged ? new Set<number>() : state.annotations.zLayer.hidden,
                     },
                     states: nextStates,
                     renderData: getAnnotationsRenderData(nextStates, state.annotations.filters),
@@ -989,13 +991,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             const { activatedStateID } = state.annotations;
             const { states, history } = action.payload;
             const [minZ, maxZ] = computeZRange(states);
-            const previousZOrders = new Map(state.annotations.states.map((objectState: ObjectState) => (
-                [objectState.clientID, objectState.zOrder]
-            )));
-            const zOrderChanged = states.some((objectState: ObjectState): boolean => (
-                previousZOrders.has(objectState.clientID) &&
-                previousZOrders.get(objectState.clientID) !== objectState.zOrder
-            ));
+            const currentZLayer = state.annotations.initialized ? state.annotations.zLayer.cur : maxZ;
 
             return {
                 ...state,
@@ -1010,8 +1006,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                         ...state.annotations.zLayer,
                         min: minZ,
                         max: maxZ,
-                        cur: clamp(state.annotations.zLayer.cur, minZ, maxZ),
-                        hidden: zOrderChanged ? new Set<number>() : state.annotations.zLayer.hidden,
+                        cur: currentZLayer,
                     },
                 },
             };
@@ -1038,10 +1033,11 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
         }
         case AnnotationActionTypes.SWITCH_Z_LAYER: {
             const { cur } = action.payload;
-            const { min, max, hidden } = state.annotations.zLayer;
-            const nextCurrentLayer = clamp(cur, min, max);
-            const nextHidden = new Set(hidden);
-            nextHidden.delete(nextCurrentLayer);
+            const frame = state.player.frame.number;
+            const hiddenByFrame = new Map(state.annotations.zLayer.hiddenByFrame);
+            const nextHidden = new Set<number>(hiddenByFrame.get(frame));
+            nextHidden.delete(cur);
+            hiddenByFrame.set(frame, nextHidden);
 
             return {
                 ...state,
@@ -1049,8 +1045,8 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     ...state.annotations,
                     zLayer: {
                         ...state.annotations.zLayer,
-                        cur: nextCurrentLayer,
-                        hidden: nextHidden,
+                        cur,
+                        hiddenByFrame,
                     },
                 },
             };
@@ -1060,10 +1056,13 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             if (!shownLayers.size) {
                 return state;
             }
-            const nextHidden = new Set(state.annotations.zLayer.hidden);
+            const frame = state.player.frame.number;
+            const hiddenByFrame = new Map(state.annotations.zLayer.hiddenByFrame);
+            const nextHidden = new Set<number>(hiddenByFrame.get(frame));
             shownLayers.forEach((zOrder: number): void => {
                 nextHidden.delete(zOrder);
             });
+            hiddenByFrame.set(frame, nextHidden);
 
             return {
                 ...state,
@@ -1071,7 +1070,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     ...state.annotations,
                     zLayer: {
                         ...state.annotations.zLayer,
-                        hidden: nextHidden,
+                        hiddenByFrame,
                     },
                 },
             };
@@ -1082,14 +1081,16 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 return state;
             }
 
-            const { hidden } = state.annotations.zLayer;
+            const frame = state.player.frame.number;
+            const hiddenByFrame = new Map(state.annotations.zLayer.hiddenByFrame);
+            const currentFrameHidden = hiddenByFrame.get(frame) || new Set<number>();
             const affectedLayers = new Set<number>(zOrders);
-            const willBeHidden = !hidden.has(zOrders[0]);
+            const willBeHidden = !currentFrameHidden.has(zOrders[0]);
             const activatedState = state.annotations.states.find((objectState: ObjectState): boolean => (
                 objectState.clientID === state.annotations.activatedStateID
             ));
             const deactivateState = willBeHidden && activatedState && affectedLayers.has(activatedState.zOrder);
-            const nextHidden = new Set(hidden);
+            const nextHidden = new Set(currentFrameHidden);
             zOrders.forEach((zOrder: number): void => {
                 if (willBeHidden) {
                     nextHidden.add(zOrder);
@@ -1097,6 +1098,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     nextHidden.delete(zOrder);
                 }
             });
+            hiddenByFrame.set(frame, nextHidden);
 
             return {
                 ...state,
@@ -1106,7 +1108,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                         null : state.annotations.activatedStateID,
                     zLayer: {
                         ...state.annotations.zLayer,
-                        hidden: nextHidden,
+                        hiddenByFrame,
                     },
                 },
             };

@@ -7,6 +7,7 @@ import './styles.scss';
 import React, { useState, useEffect, useCallback } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { shallowEqual } from 'utils/redux';
+import getHiddenZLayers from 'utils/get-hidden-z-layers';
 
 import { ActiveControl, CombinedState, NewIssueSource } from 'reducers';
 
@@ -54,7 +55,7 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
         issuesResolvedHidden: state.review.issuesResolvedHidden,
         canvasInstance: state.annotation.canvas.instance,
         canvasIsReady: state.annotation.canvas.ready,
-        hiddenZLayers: state.annotation.annotations.zLayer.hidden,
+        hiddenZLayers: getHiddenZLayers(state),
         newIssuePosition: state.review.newIssue.position,
         newIssueSource: state.review.newIssue.source,
         issueFetching: state.review.fetching.issueId,

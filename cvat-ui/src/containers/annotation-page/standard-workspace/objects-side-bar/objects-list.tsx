@@ -29,6 +29,7 @@ import {
     changeShowGroundTruth as changeShowGroundTruthAction,
 } from 'actions/settings-actions';
 import isAbleToChangeFrame from 'utils/is-able-to-change-frame';
+import getHiddenZLayers from 'utils/get-hidden-z-layers';
 import {
     CombinedState, StatesOrdering, ColorBy, Workspace,
     ActiveControl,
@@ -228,7 +229,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 activatedStateID,
                 activatedElementID,
                 zLayer: {
-                    min: minZLayer, max: maxZLayer, cur: currentZLayer, hidden: hiddenZLayers,
+                    min: minZLayer, max: maxZLayer, cur: currentZLayer,
                 },
             },
             job: { instance: jobInstance },
@@ -284,7 +285,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         minZLayer,
         maxZLayer,
         currentZLayer,
-        hiddenZLayers,
+        hiddenZLayers: getHiddenZLayers(state),
         keyMap,
         normalizedKeyMap,
         showGroundTruth,

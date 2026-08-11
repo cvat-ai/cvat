@@ -31,6 +31,7 @@ import {
     ActiveControl,
     ColorBy, CombinedState, ContextMenuType, Workspace,
 } from 'reducers';
+import getHiddenZLayers from 'utils/get-hidden-z-layers';
 import { shallowEqual } from 'utils/redux';
 import {
     OrientationVisibility, CameraAction, Canvas3d, ViewsDOM,
@@ -181,7 +182,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
             annotations: {
                 states: annotations,
                 activatedStateID,
-                zLayer: { hidden: hiddenZLayers },
             },
             workspace,
         },
@@ -205,7 +205,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         frameData,
         contextMenuVisibility,
         annotations,
-        hiddenZLayers,
+        hiddenZLayers: getHiddenZLayers(state),
         frameFetching,
         frame,
         opacity,
@@ -305,7 +305,7 @@ export const PerspectiveViewComponent = React.memo(
             normalizedKeyMap: state.shortcuts.normalizedKeyMap,
             annotations: state.annotation.annotations.states as ObjectState[],
             activatedStateID: state.annotation.annotations.activatedStateID,
-            hiddenZLayers: state.annotation.annotations.zLayer.hidden,
+            hiddenZLayers: getHiddenZLayers(state),
         }), shallowEqual);
 
         const screenKeyControl = (code: CameraAction, altKey: boolean, shiftKey: boolean): void => {

@@ -17,6 +17,7 @@ import {
     updateAnnotationsAsync,
 } from 'actions/annotation-actions';
 import isAbleToChangeFrame from 'utils/is-able-to-change-frame';
+import getHiddenZLayers from 'utils/get-hidden-z-layers';
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import { ThunkDispatch } from 'utils/redux';
 import AppearanceBlock from 'components/annotation-page/appearance-block';
@@ -105,7 +106,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 activatedStateID,
                 activatedAttributeID,
                 states,
-                zLayer: { hidden },
             },
             job: { labels },
             canvas: { ready: canvasIsReady },
@@ -121,7 +121,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         keyMap,
         normalizedKeyMap,
         canvasIsReady,
-        hiddenZLayers: hidden,
+        hiddenZLayers: getHiddenZLayers(state),
     };
 }
 

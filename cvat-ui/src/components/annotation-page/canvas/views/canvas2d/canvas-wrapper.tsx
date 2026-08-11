@@ -26,6 +26,7 @@ import {
     AnnotationConflict, ObjectState, ObjectType, ShapeType, QualityConflict, getCore,
 } from 'cvat-core-wrapper';
 import { openZLayerInObjectsSidebar, scrollAndExpandState } from 'utils/objects-sidebar';
+import getHiddenZLayers from 'utils/get-hidden-z-layers';
 import config from 'config';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import FrameTags from 'components/annotation-page/tag-annotation-workspace/frame-tags';
@@ -176,7 +177,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 activatedStateID,
                 activatedElementID,
                 activatedAttributeID,
-                zLayer: { cur: currentZLayer, hidden: hiddenZLayers },
+                zLayer: { cur: currentZLayer },
                 highlightedConflict,
                 renderData,
             },
@@ -257,7 +258,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         showAllInterpolationTracks,
         showTagsOnFrame,
         currentZLayer,
-        hiddenZLayers,
+        hiddenZLayers: getHiddenZLayers(state),
         sidebarCollapsed,
         automaticBordering,
         snapToPoint,
