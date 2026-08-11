@@ -4,6 +4,7 @@
 
 /// <reference types="cypress" />
 
+import * as allure from 'allure-js-commons';
 import { defaultTaskSpec } from '../../support/default-specs';
 
 context('Ground truth jobs', () => {
@@ -481,6 +482,7 @@ context('Ground truth jobs', () => {
                         cy.get('.cvat_canvas_shape').should('not.exist');
                         cy.get('.cvat-objects-sidebar-state-item').should('not.exist');
                     });
+                    cy.closeNotification('.cvat-notification-continue-job');
                 });
             });
 
@@ -522,7 +524,6 @@ context('Ground truth jobs', () => {
                     cy.visit(`/tasks/${taskId}/jobs/${jobId}`);
                     cy.get('.cvat-spinner').should('not.exist');
                     cy.get('.cvat-canvas-container').should('exist').and('be.visible');
-                    cy.get('.cvat-workspace-selector').should('exist').and('be.visible');
                     cy.changeWorkspace('Review');
                     cy.get('.cvat-objects-sidebar-show-ground-truth').click();
                     cy.get('.cvat-objects-sidebar-show-ground-truth').should(
@@ -553,7 +554,10 @@ context('Ground truth jobs', () => {
                     cy.contains('a', `Job #${groundTruthJobId}`).click();
                 });
             });
-            it('Check crashing while navigating through GT job frames (#9095) ', () => {
+            it('Check crashing while navigating through GT job frames', () => {
+                allure.issue('https://github.com/cvat-ai/cvat/pull/9095',
+                    "Can't read props of undefined (reading 'width') in Video GT Job",
+                );
                 cy.get('.cvat-canvas-container').should('exist').and('be.visible');
                 cy.get('.ant-notification-notice-error').should('not.exist');
             });
@@ -592,7 +596,8 @@ context('Ground truth jobs', () => {
                 cy.headlessDeleteTask(taskId);
             });
 
-            it('Incorrect data returned in frames meta response for a GT job (#9097)', () => {
+            it('Incorrect data returned in frames meta response for a GT job', () => {
+                allure.issue('https://github.com/cvat-ai/cvat/pull/9097');
                 cy.get('.cvat-tag-ground-truth').should('be.visible').and('have.length', 1);
                 cy.intercept('GET', '/api/jobs/**/data/meta**').as('getMeta');
                 cy.getJobIdFromIdx(1).then((gtJobId) => {

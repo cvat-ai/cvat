@@ -23,6 +23,7 @@
   "version": "0.0.0",
   "packageManager": "yarn@4.9.2",
   "devDependencies": {
-    "cypress-repeat": "^2.3.10"
+    "cypress-repeat": "^2.3.10",
+    "eslint-plugin-import-x": "^4.17.1"
   }
 }

@@ -812,10 +812,11 @@ Cypress.Commands.add('openProfile', () => {
 });
 
 Cypress.Commands.add('changeWorkspace', (mode) => {
-    cy.get('.cvat-workspace-selector').click();
-    cy.get('.cvat-workspace-selector-dropdown').within(() => {
-        cy.get(`.ant-select-item-option[title="${mode}"]`).click();
-    });
+    cy.get('.cvat-workspace-selector').should('exist').and('be.visible').click();
+    cy.get('.ant-select-dropdown:visible').should('exist')
+        .contains('.ant-select-item-option-content', 'Review')
+        .should('be.visible')
+        .click();
 
     cy.get('.cvat-workspace-selector').should('contain.text', mode);
 });
