@@ -20,7 +20,7 @@ result stable:
   ``loaddata_sorted`` management command reorders by FK dependency at
   load time, so the on-disk order can be arbitrary);
 * field keys within each record are sorted alphabetically;
-* known unordered many-to-many fields (e.g. ``auth.user.groups``) are
+* known unordered many-to-many fields (e.g. ``iam.user.groups``) are
   sorted as well.
 
 It can also preserve volatile timestamp fields (``last_login``,
@@ -98,7 +98,7 @@ DUMPDATA_EXCLUDES = (
 # preservation is enabled the script copies these values from the existing
 # data.json so that re-dumping an unchanged DB produces no diff.
 VOLATILE_FIELDS: dict[str, frozenset[str]] = {
-    "auth.user": frozenset({"last_login"}),
+    "iam.user": frozenset({"last_login"}),
     "engine.profile": frozenset({"last_activity_date"}),
     "quality_control.qualityreport": frozenset(
         {"assignee_last_updated", "gt_last_updated", "target_last_updated"}
@@ -120,7 +120,7 @@ def _is_blanket_volatile(field_name: str) -> bool:
 # semantically meaningful. Sorting them stabilizes the dump even if the
 # m2m join table returns rows in a different order between runs.
 SORTABLE_LIST_FIELDS: dict[str, frozenset[str]] = {
-    "auth.user": frozenset({"groups", "user_permissions"}),
+    "iam.user": frozenset({"groups", "user_permissions"}),
     "auth.group": frozenset({"permissions"}),
 }
 
