@@ -12,8 +12,9 @@ import { INTERVAL_BOUNDARY_EPSILON, MIN_INTERVAL_DURATION } from 'audio/utils/wa
 
 import { getAudioRegionColor, getRegionItemColor } from '../audio-region-colors';
 import {
-    clientIDFromWaveRegionId, intervalEndSeconds, intervalStartSeconds, waveRegionId,
+    clientIDFromWaveRegionId, intervalEndSeconds, intervalStartSeconds,
 } from '../utils/audio-interval';
+import type { AudioTimeRange } from '../utils/audio-interval';
 import { WaveformRegionRuntime } from './use-audio-waveform';
 
 interface Params {
@@ -21,10 +22,28 @@ interface Params {
     ready: boolean;
 }
 
+interface RegionGeometry extends AudioTimeRange {
+    clientID: number;
+    hidden: boolean;
+}
+
+function areRegionGeometriesEqual(previous: RegionGeometry[], next: RegionGeometry[]): boolean {
+    return previous.length === next.length &&
+        previous.every((geometry, index) => shallowEqual(geometry, next[index]));
+}
+
 /**
  * Projects visible Redux intervals and their appearance into WaveSurfer regions.
  */
 export function useRegionProjection({ regionRuntime, ready }: Params): void {
+    const regionGeometry = useSelector((state: CombinedState): RegionGeometry[] => (
+        state.audio.player.intervals.map((interval) => ({
+            clientID: interval.clientID as number,
+            start: intervalStartSeconds(interval),
+            end: intervalEndSeconds(interval),
+            hidden: !!interval.hidden,
+        }))
+    ), areRegionGeometriesEqual);
     const {
         intervals, activeIntervalID, hoveredIntervalID, labels,
         colorBy, opacity, selectedOpacity, activeControl,
@@ -39,81 +58,82 @@ export function useRegionProjection({ regionRuntime, ready }: Params): void {
         activeControl: state.annotation.canvas.activeControl,
     }), shallowEqual);
 
-    // synchronize waveform regions with redux state
+    // This effect subscribes only to geometry and visibility.
+    // It is important that other model changes do not trigger
+    // geometry updates.
     useEffect(() => {
         if (!ready) return;
         const { regionsPlugin } = regionRuntime;
 
-        const visibleIntervals = intervals.filter((interval) => !interval.hidden);
-        const intervalsByID = new Map(visibleIntervals.map((interval) => [interval.clientID, interval]));
+        const visibleGeometry = regionGeometry.filter((geometry) => !geometry.hidden);
+        const geometryByID = new Map(visibleGeometry.map((geometry) => [geometry.clientID, geometry]));
         const regionsByID = new Map<number, Region>();
 
-        const canEditInterval = (interval: (typeof intervals)[0]): boolean => (
-            activeControl === ActiveControl.AUDIO_REGION_EDIT && !interval.lock
-        );
-        const isActiveInterval = (clientID: number): boolean => clientID === activeIntervalID;
-        const getColor = (interval: (typeof intervals)[0], isActive: boolean): string => (
-            getAudioRegionColor(interval, labels, colorBy, opacity, selectedOpacity, isActive)
-        );
-        const setRegionStyle = (region: Region, interval: (typeof intervals)[0], isActive: boolean): void => {
-            const { element } = region;
-            if (element) {
-                const selectionDisabled = activeControl === ActiveControl.AUDIO_REGION_CREATE ||
-                    activeControl === ActiveControl.AUDIO_REGION_RECORD;
-                element.style.pointerEvents = selectionDisabled ? 'none' : 'all';
-                const highlighted = isActive || interval.clientID === hoveredIntervalID;
-                const borderColor = getRegionItemColor(interval, labels, colorBy);
-                // A border changes the region's padding box. WaveSurfer anchors resize handles
-                // to that box, which shifts their hit areas inward from the displayed boundaries.
-                // An inset shadow provides the same visual selection outline without changing
-                // the coordinate system used by the handles.
-                element.style.boxShadow = highlighted ? `inset 0 0 0 2px ${borderColor}` : '';
-            }
-        };
-
-        // reconcile existing regions with redux state
         regionsPlugin.getRegions().forEach((region) => {
             const clientID = clientIDFromWaveRegionId(region.id);
             if (clientID === null) return;
 
-            const interval = intervalsByID.get(clientID);
-            if (!interval) {
+            const geometry = geometryByID.get(clientID);
+            if (!geometry) {
                 region.remove();
                 return;
             }
 
             regionsByID.set(clientID, region);
-            const start = intervalStartSeconds(interval);
-            const end = intervalEndSeconds(interval);
-            const isActive = isActiveInterval(clientID);
-            const canEdit = canEditInterval(interval);
-            const options: Parameters<Region['setOptions']>[0] = {
-                color: getColor(interval, isActive),
-                drag: canEdit,
-                resize: canEdit,
-            };
-            if (Math.abs(region.start - start) >= INTERVAL_BOUNDARY_EPSILON) options.start = start;
-            if (Math.abs(region.end - end) >= INTERVAL_BOUNDARY_EPSILON) options.end = end;
-            region.setOptions(options);
-            setRegionStyle(region, interval, isActive);
+            if (
+                Math.abs(region.start - geometry.start) >= INTERVAL_BOUNDARY_EPSILON ||
+                Math.abs(region.end - geometry.end) >= INTERVAL_BOUNDARY_EPSILON
+            ) {
+                region.setOptions({ start: geometry.start, end: geometry.end });
+            }
         });
 
-        // add new regions for intervals that don't have a corresponding region yet
-        visibleIntervals.forEach((interval) => {
-            const clientID = interval.clientID as number;
-            if (regionsByID.has(clientID)) return;
-            const canEdit = canEditInterval(interval);
-            const isActive = isActiveInterval(clientID);
-            const region = regionsPlugin.addRegion({
-                id: waveRegionId(interval),
-                start: intervalStartSeconds(interval),
-                end: intervalEndSeconds(interval),
-                color: getColor(interval, isActive),
-                drag: canEdit,
-                resize: canEdit,
+        // Add newly visible regions. Their initial geometry is set as part of creation.
+        visibleGeometry.forEach((geometry) => {
+            if (regionsByID.has(geometry.clientID)) return;
+            regionsPlugin.addRegion({
+                id: String(geometry.clientID),
+                start: geometry.start,
+                end: geometry.end,
                 minLength: MIN_INTERVAL_DURATION,
             });
-            setRegionStyle(region, interval, isActive);
+        });
+    }, [ready, regionGeometry]);
+
+    // Keep non-geometric region state in a separate projection path
+    useEffect(() => {
+        if (!ready) return;
+        const { regionsPlugin } = regionRuntime;
+        const intervalsByID = new Map(intervals.map((interval) => [interval.clientID, interval]));
+
+        regionsPlugin.getRegions().forEach((region) => {
+            const clientID = clientIDFromWaveRegionId(region.id);
+            if (clientID === null) return;
+
+            const interval = intervalsByID.get(clientID);
+            if (!interval || interval.hidden) return;
+
+            const isActive = clientID === activeIntervalID;
+            const canEdit = activeControl === ActiveControl.AUDIO_REGION_EDIT && !interval.lock;
+            region.setOptions({
+                color: getAudioRegionColor(interval, labels, colorBy, opacity, selectedOpacity, isActive),
+                drag: canEdit,
+                resize: canEdit,
+            });
+
+            const { element } = region;
+            if (!element) return;
+
+            const selectionDisabled = activeControl === ActiveControl.AUDIO_REGION_CREATE ||
+                activeControl === ActiveControl.AUDIO_REGION_RECORD;
+            element.style.pointerEvents = selectionDisabled ? 'none' : 'all';
+            const highlighted = isActive || clientID === hoveredIntervalID;
+            const borderColor = getRegionItemColor(interval, labels, colorBy);
+            // A border changes the region's padding box. WaveSurfer anchors resize handles
+            // to that box, which shifts their hit areas inward from the displayed boundaries.
+            // An inset shadow provides the same visual selection outline without changing
+            // the coordinate system used by the handles.
+            element.style.boxShadow = highlighted ? `inset 0 0 0 2px ${borderColor}` : '';
         });
     }, [
         activeControl, activeIntervalID, colorBy, hoveredIntervalID, intervals, labels,
