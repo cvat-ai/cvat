@@ -5,7 +5,6 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from copy import deepcopy
 from enum import Enum
 from functools import cached_property
 from typing import TYPE_CHECKING, Any
@@ -382,12 +381,11 @@ class QualityRequirement(TimestampedModel):
     target_metric = models.CharField(
         max_length=32,
         choices=QualityTargetMetricType.choices(),
-        default=QualityTargetMetricType.ACCURACY,
         null=True,
         blank=True,
     )
 
-    target_metric_threshold = models.FloatField(default=0.7, null=True, blank=True)
+    target_metric_threshold = models.FloatField(null=True, blank=True)
 
     filter = models.TextField(blank=True)
     enabled = models.BooleanField(default=True)
@@ -403,7 +401,6 @@ class QualityRequirement(TimestampedModel):
     point_size_base = models.CharField(
         max_length=32,
         choices=PointSizeBase.choices(),
-        default=PointSizeBase.GROUP_BBOX_SIZE,
         null=True,
         blank=True,
     )
@@ -420,7 +417,7 @@ class QualityRequirement(TimestampedModel):
     panoptic_comparison = models.BooleanField(null=True, blank=True)
 
     compare_attributes = models.BooleanField(null=True, blank=True)
-    attribute_comparison = models.JSONField(null=True, blank=True, default=None)
+    attribute_comparison = models.JSONField(null=True, blank=True)
 
     @property
     def organization_id(self) -> int | None:
@@ -430,20 +427,17 @@ class QualityRequirement(TimestampedModel):
     def is_base(self) -> bool:
         return self.parent_id is None
 
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        defaults = deepcopy(self.get_defaults())
-        for field in self._meta.fields:
-            if field.name in defaults:
-                field.default = defaults[field.name]
-
-        super().__init__(*args, **kwargs)
-
     @classmethod
-    def get_defaults(cls) -> dict:
+    def get_base_defaults(cls) -> dict[str, Any]:
         from cvat.apps.quality_control.comparison_report import ComparisonParameters
 
         default_settings = ComparisonParameters().to_dict()
-        default_settings["compare_attributes"] = False
+        default_settings.update(
+            target_metric=QualityTargetMetricType.ACCURACY,
+            target_metric_threshold=0.7,
+            compare_attributes=False,
+            attribute_comparison=None,
+        )
 
         existing_fields = {f.name for f in cls._meta.fields}
         return {k: v for k, v in default_settings.items() if k in existing_fields}
@@ -477,6 +471,7 @@ def ensure_base_quality_requirements(quality_settings: QualitySettings) -> bool:
         ).values_list("annotation_type", flat=True)
     )
 
+    base_defaults = QualityRequirement.get_base_defaults()
     requirements_to_create = []
     for sort_order, annotation_type in enumerate(_BASE_REQUIREMENT_ANNOTATION_TYPES):
         if annotation_type in existing_base_annotation_types:
@@ -489,6 +484,7 @@ def ensure_base_quality_requirements(quality_settings: QualitySettings) -> bool:
                 sort_order=sort_order,
                 annotation_type=annotation_type,
                 enabled=False,
+                **base_defaults,
             )
         )
 

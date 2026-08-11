@@ -117,14 +117,13 @@ class Migration(migrations.Migration):
                             ("precision", "PRECISION"),
                             ("recall", "RECALL"),
                         ],
-                        default="accuracy",
                         max_length=32,
                         null=True,
                     ),
                 ),
                 (
                     "target_metric_threshold",
-                    models.FloatField(blank=True, default=0.7, null=True),
+                    models.FloatField(blank=True, null=True),
                 ),
                 ("filter", models.TextField(blank=True)),
                 ("enabled", models.BooleanField(default=True)),
@@ -140,7 +139,6 @@ class Migration(migrations.Migration):
                             ("image_size", "IMAGE_SIZE"),
                             ("group_bbox_size", "GROUP_BBOX_SIZE"),
                         ],
-                        default="group_bbox_size",
                         max_length=32,
                         null=True,
                     ),
@@ -153,7 +151,7 @@ class Migration(migrations.Migration):
                 ("object_visibility_threshold", models.FloatField(blank=True, null=True)),
                 ("panoptic_comparison", models.BooleanField(blank=True, null=True)),
                 ("compare_attributes", models.BooleanField(blank=True, null=True)),
-                ("attribute_comparison", models.JSONField(blank=True, default=None, null=True)),
+                ("attribute_comparison", models.JSONField(blank=True, null=True)),
                 (
                     "parent",
                     models.ForeignKey(

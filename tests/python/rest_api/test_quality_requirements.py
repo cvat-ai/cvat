@@ -1693,6 +1693,26 @@ class TestBaseQualityRequirementsApi(_QualityRequirementsTestBase):
         assert all(requirement["is_base"] is True for requirement in requirements)
         assert all("empty_is_annotated" not in requirement for requirement in requirements)
         assert all("effective" not in requirement for requirement in requirements)
+        expected_defaults = {
+            "metric": "accuracy",
+            "required_score": 0.7,
+            "iou_threshold": 0.4,
+            "point_size": 0.09,
+            "point_size_base": "group_bbox_size",
+            "line_thickness": 0.01,
+            "match_orientation": True,
+            "line_orientation_threshold": 0.1,
+            "match_groups": True,
+            "group_match_threshold": 0.5,
+            "check_covered_annotations": True,
+            "object_visibility_threshold": 0.05,
+            "panoptic_comparison": True,
+            "attribute_comparison": None,
+        }
+        assert all(
+            all(requirement[field_name] == value for field_name, value in expected_defaults.items())
+            for requirement in requirements
+        )
 
     def test_new_project_gets_disabled_base_requirements_for_all_supported_types(self, admin_user):
         with make_api_client(admin_user) as api_client:
