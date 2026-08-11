@@ -19,7 +19,9 @@ context('Audio annotation. Create region via toolbar button.', () => {
             cy.get('.cvat-audio-region-item').should('have.length', 0);
             cy.audioCreateRegionViaButton(firstLabelName, 100, 250);
             cy.get('.cvat-audio-region-item', { timeout: 5000 }).should('have.length', 1);
-            cy.get('.cvat-audio-region-item').first().should('contain.text', firstLabelName);
+            cy.get('.cvat-audio-region-item').first()
+                .should('contain.text', firstLabelName)
+                .and('have.class', 'cvat-audio-region-item-active');
         });
     });
 });
