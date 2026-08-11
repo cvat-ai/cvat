@@ -231,6 +231,7 @@ jobs:
             docker logs test_cvat_worker_consensus_1 > $LOGS_DIR/cvat_worker_consensus.log
             docker logs test_cvat_worker_webhooks_1 > $LOGS_DIR/cvat_worker_webhooks.log
             docker logs test_cvat_worker_export_1 > $LOGS_DIR/cvat_worker_export.log
+            docker logs test_cvat_worker_chunks_1 > $LOGS_DIR/cvat_worker_chunks.log
             docker logs test_cvat_redis_inmem_1 > $LOGS_DIR/cvat_redis_inmem.log
             docker logs test_cvat_redis_ondisk_1 > $LOGS_DIR/cvat_redis_ondisk.log
 
