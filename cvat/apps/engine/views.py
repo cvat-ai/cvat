@@ -1632,17 +1632,16 @@ class TaskViewSet(
                 # other aggregations that are defined by the viewset queryset,
                 # we just need to lock 1 row with the target Task entity.
                 locked_instance = Task.objects.select_for_update().get(pk=pk)
-                task_data = locked_instance.data
-                if not task_data:
+                if locked_instance.is_initialized:
+                    raise ValidationError("Adding more data is not supported")
+
+                if not locked_instance.data_id:
                     task_data = Data.objects.create()
                     task_data.make_dirs()
                     locked_instance.data = task_data
                     self._object.data = task_data
                     locked_instance.save()
-                elif task_data.size != 0:
-                    return Response(
-                        data="Adding more data is not supported", status=status.HTTP_400_BAD_REQUEST
-                    )
+
                 return self.upload_data(request, append_url_name="append-data-chunk")
         else:
             data_type = request.query_params.get("type", None)

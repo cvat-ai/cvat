@@ -1689,9 +1689,13 @@ class JobValidationLayoutWriteSerializer(serializers.Serializer):
 
             # Update chunks
             job_frame_provider = JobFrameProvider(db_job)
-            updated_segment_chunk_ids = set(
-                job_frame_provider.get_chunk_number(updated_segment_frame_id)
-                for updated_segment_frame_id in updated_honeypots
+            updated_segment_chunk_ids = range(
+                # We store chunk update dates only per segment,
+                # so we invalidate all the chunks in the segment.
+                # This allows the cache to check the chunk timestamps before returning them.
+                # Change the granularity to per chunk, if the performance is bad.
+                job_frame_provider.get_chunk_number(min(segment_frame_set)),
+                job_frame_provider.get_chunk_number(max(segment_frame_set)) + 1,
             )
             segment_frames = sorted(segment_frame_set)
             segment_frame_map = dict(zip(segment_honeypots, requested_frames))
@@ -1704,7 +1708,9 @@ class JobValidationLayoutWriteSerializer(serializers.Serializer):
                 ]
 
                 for quality in models.FrameQuality:
-                    if db_data.storage_method == models.StorageMethodChoice.FILE_SYSTEM:
+                    if db_data.storage_method == models.StorageMethodChoice.FILE_SYSTEM and not (
+                        updated_honeypots.keys().isdisjoint(chunk_frames)
+                    ):
                         rq_id = f"segment_{db_segment.id}_write_chunk_{chunk_id}_{quality}"
                         rq_job = enqueue_create_chunk_job(
                             queue=queue,
