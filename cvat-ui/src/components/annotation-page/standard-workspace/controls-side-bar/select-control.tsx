@@ -28,7 +28,7 @@ function SelectControl(props: Props): JSX.Element {
             updateActiveControl(ActiveControl.CURSOR);
         } else {
             canvasInstance.cancel();
-            canvasInstance.selectObjects({ enabled: true, once: true });
+            canvasInstance.selectObjects({ enabled: true });
             updateActiveControl(ActiveControl.SELECT);
         }
     };

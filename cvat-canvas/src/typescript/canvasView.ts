@@ -99,6 +99,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
     private ctrlPressed: boolean;
     private pendingSelectionEvent: MouseEvent | null;
     private selectedObjects: number[];
+    private selectedObjectsBox: SVG.Rect | null;
+    private selectedObjectsLabel: HTMLDivElement | null;
     private innerObjectsFlags: {
         drawHidden: Record<number, boolean>;
         editHidden: Record<number, boolean>;
@@ -547,10 +549,12 @@ export class CanvasViewImpl implements CanvasView, Listener {
         }
     };
 
-    private onSelectObjectsDone = (objects?: any[]): void => {
-        this.mode = Mode.IDLE;
-        if (this.controller.selectData.enabled) {
-            this.controller.selectObjects({ enabled: false });
+    private onSelectObjectsDone = (objects?: any[], continueSelection = false): void => {
+        if (!continueSelection) {
+            this.mode = Mode.IDLE;
+            if (this.controller.selectData.enabled) {
+                this.controller.selectObjects({ enabled: false });
+            }
         }
         // Visual persistence of the selection is handled by the consumer.
         // Emit an empty list too, so drawing an empty selection clears the old one.
@@ -559,6 +563,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             cancelable: true,
             detail: {
                 states: objects || [],
+                continueSelection,
             },
         }));
     };
@@ -824,6 +829,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         this.regionSelector.transform(this.geometry);
         this.objectSelector.transform(this.geometry);
         this.sliceHandler.transform(this.geometry);
+        this.updateSelectedObjectsOverlay();
     }
 
     private transformCanvas(): void {
@@ -916,6 +922,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
         this.refreshRotationPointView();
         this.refreshSkeletonResizer();
+        this.updateSelectedObjectsOverlay();
     }
 
     private resizeCanvas(): void {
@@ -1633,6 +1640,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                             }
                         }
                         groupLastCenter = { x: cx, y: cy };
+                        this.updateSelectedObjectsOverlay();
                     }
                 }
             }).on('dragend', (): void => {
@@ -1641,6 +1649,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     for (const siblingID of groupSiblingIDs) {
                         this.resetViewPosition(siblingID);
                     }
+                    this.updateSelectedObjectsOverlay();
                     return;
                 }
 
@@ -2003,16 +2012,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
             this.pendingSelectionEvent = event;
             this.controller.selectObjects({ enabled: true });
             this.pendingSelectionEvent = null;
-
-            const onDocumentMouseUp = (): void => {
-                window.document.removeEventListener('mouseup', onDocumentMouseUp);
-                if (this.mode === Mode.SELECT) {
-                    this.controller.selectObjects({ enabled: false });
-                }
-            };
-            // registered after objectSelector's own mouseup listener, so it runs
-            // once the intersecting shapes have already been collected
-            window.document.addEventListener('mouseup', onDocumentMouseUp);
         }
     };
 
@@ -2097,6 +2096,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
         this.ctrlPressed = false;
         this.pendingSelectionEvent = null;
         this.selectedObjects = [];
+        this.selectedObjectsBox = null;
+        this.selectedObjectsLabel = null;
         this.innerObjectsFlags = {
             drawHidden: {},
             editHidden: {},
@@ -3495,6 +3496,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 if (shapeSizeElement) {
                     shapeSizeElement.update(shape);
                 }
+                this.updateSelectedObjectsOverlay();
             }, () => {
                 this.mode = Mode.IDLE;
                 if (shapeSizeElement) {
@@ -3628,8 +3630,101 @@ export class CanvasViewImpl implements CanvasView, Listener {
         ));
     }
 
+    private clearSelectedObjectsOverlay(): void {
+        this.selectedObjectsBox?.remove();
+        this.selectedObjectsLabel?.remove();
+        this.selectedObjectsBox = null;
+        this.selectedObjectsLabel = null;
+    }
+
+    private updateSelectedObjectsLabelPosition(): void {
+        if (!this.selectedObjectsBox || !this.selectedObjectsLabel) {
+            return;
+        }
+
+        const canvasBox = this.canvas.getBoundingClientRect();
+        const selectionBox = this.selectedObjectsBox.node.getBoundingClientRect();
+        const { offsetWidth: labelWidth, offsetHeight: labelHeight } = this.selectedObjectsLabel;
+        const selectionTop = selectionBox.top - canvasBox.top;
+        const selectionLeft = selectionBox.left - canvasBox.left;
+        const top = selectionTop >= labelHeight ? selectionTop - labelHeight : selectionTop;
+
+        this.selectedObjectsLabel.style.top = `${clamp(top, 0, this.canvas.clientHeight - labelHeight)}px`;
+        this.selectedObjectsLabel.style.left = `${clamp(
+            selectionLeft,
+            0,
+            this.canvas.clientWidth - labelWidth,
+        )}px`;
+    }
+
+    private updateSelectedObjectsOverlay(): void {
+        const selectedShapes = this.selectedObjects
+            .map((clientID: number): SVG.Shape | null => this.svgShapes[clientID] || null)
+            .filter((shape: SVG.Shape | null): shape is SVG.Shape => Boolean(shape?.node.isConnected));
+
+        if (selectedShapes.length < 2) {
+            this.clearSelectedObjectsOverlay();
+            return;
+        }
+
+        const boxes = selectedShapes.map((shape: SVG.Shape): SVG.RBox => shape.rbox(this.adoptedContent));
+        const left = Math.min(...boxes.map((box: SVG.RBox): number => box.x));
+        const top = Math.min(...boxes.map((box: SVG.RBox): number => box.y));
+        const right = Math.max(...boxes.map((box: SVG.RBox): number => box.x2));
+        const bottom = Math.max(...boxes.map((box: SVG.RBox): number => box.y2));
+
+        if (!this.selectedObjectsBox) {
+            this.selectedObjectsBox = this.adoptedContent
+                .rect(right - left, bottom - top)
+                .addClass('cvat_canvas_selected_objects_box');
+        }
+
+        this.selectedObjectsBox
+            .move(left, top)
+            .size(right - left, bottom - top)
+            .attr('stroke-width', consts.BASE_STROKE_WIDTH / this.geometry.scale)
+            .front();
+
+        if (!this.selectedObjectsLabel) {
+            const label = window.document.createElement('div');
+            const title = window.document.createElement('span');
+            const menuButton = window.document.createElement('button');
+
+            label.className = 'cvat_canvas_selected_objects_label';
+            title.className = 'cvat_canvas_selected_objects_label_title';
+            menuButton.className = 'cvat_canvas_selected_objects_menu_button';
+            menuButton.type = 'button';
+            menuButton.title = 'Group actions';
+            menuButton.setAttribute('aria-label', 'Open group actions');
+            menuButton.textContent = '...';
+            menuButton.addEventListener('mousedown', (event: MouseEvent): void => event.stopPropagation());
+            menuButton.addEventListener('click', (event: MouseEvent): void => {
+                event.stopPropagation();
+                const buttonBox = menuButton.getBoundingClientRect();
+                this.canvas.dispatchEvent(new CustomEvent('canvas.selectionmenu', {
+                    bubbles: false,
+                    cancelable: true,
+                    detail: {
+                        left: buttonBox.left,
+                        top: buttonBox.bottom,
+                    },
+                }));
+            });
+
+            label.append(title, menuButton);
+            this.canvas.appendChild(label);
+            this.selectedObjectsLabel = label;
+        }
+
+        const title = this.selectedObjectsLabel.querySelector('.cvat_canvas_selected_objects_label_title');
+        if (title) {
+            title.textContent = `Group (${selectedShapes.length})`;
+        }
+        this.updateSelectedObjectsLabelPosition();
+    }
+
     private setupSelectedObjects(): void {
-        // reflect the persistent multi-selection on the shapes with a dedicated class
+        // Reflect the persistent multi-selection on the shapes with a dedicated class.
         for (const shape of Array.from(
             this.content.getElementsByClassName('cvat_canvas_shape_selected_object'),
         )) {
@@ -3642,6 +3737,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 shape.addClass('cvat_canvas_shape_selected_object');
             }
         }
+
+        this.updateSelectedObjectsOverlay();
     }
 
     // Update text position after corresponding box has been moved, resized, etc.

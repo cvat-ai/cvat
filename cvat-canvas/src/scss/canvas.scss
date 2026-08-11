@@ -87,10 +87,54 @@ polyline.cvat_shape_drawing_opacity {
 .cvat_canvas_shape_selected_object {
     @extend .cvat_shape_action_dasharray;
 
-    stroke: #1890ff;
+    stroke: black;
+}
 
-    // glow makes the selection obvious at any zoom level and also works for masks
-    filter: drop-shadow(0 0 4px #1890ff) drop-shadow(0 0 10px #1890ff);
+.cvat_canvas_selected_objects_box {
+    fill: gray;
+    fill-opacity: 0.1;
+    stroke: black;
+    stroke-dasharray: 10 10;
+    stroke-opacity: 0.8;
+    pointer-events: none;
+}
+
+.cvat_canvas_selected_objects_label {
+    position: absolute;
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    color: white;
+    font-size: 14px;
+    font-weight: bold;
+    line-height: 20px;
+    filter: drop-shadow(1px 1px 1px black) drop-shadow(-1px -1px 1px black);
+    pointer-events: none;
+}
+
+.cvat_canvas_selected_objects_label_title {
+    white-space: nowrap;
+    text-transform: uppercase;
+}
+
+.cvat_canvas_selected_objects_menu_button {
+    width: 20px;
+    height: 20px;
+    margin-left: 4px;
+    padding: 0 0 4px;
+    color: white;
+    background: transparent;
+    border: 0;
+    cursor: pointer;
+    font-size: 18px;
+    font-weight: bold;
+    line-height: 20px;
+    pointer-events: auto;
+
+    &:hover,
+    &:focus-visible {
+        color: #40a9ff;
+    }
 }
 
 image.cvat_canvas_shape_selection {

@@ -7,9 +7,14 @@ import './styles.scss';
 
 import React from 'react';
 import { connect } from 'react-redux';
+import Button from 'antd/lib/button';
+import Dropdown from 'antd/lib/dropdown';
+import Select from 'antd/lib/select';
 import Spin from 'antd/lib/spin';
 import Popover from 'antd/lib/popover';
-import Icon, { UpOutlined } from '@ant-design/icons';
+import Icon, {
+    DeleteOutlined, GroupOutlined, UpOutlined,
+} from '@ant-design/icons';
 import notification from 'antd/lib/notification';
 import debounce from 'lodash/debounce';
 
@@ -23,11 +28,13 @@ import {
 } from 'cvat-canvas-wrapper';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import {
-    AnnotationConflict, ObjectState, ObjectType, ShapeType, QualityConflict, getCore,
+    AnnotationConflict, Label, ObjectState, ObjectType, ShapeType, QualityConflict, getCore,
 } from 'cvat-core-wrapper';
 import { openZLayerInObjectsSidebar, scrollAndExpandState } from 'utils/objects-sidebar';
+import { filterApplicableLabels } from 'utils/filter-applicable-labels';
 import config from 'config';
 import CVATTooltip from 'components/common/cvat-tooltip';
+import LabelSelector from 'components/label-selector/label-selector';
 import FrameTags from 'components/annotation-page/tag-annotation-workspace/frame-tags';
 import { LayerStackIcon } from 'icons';
 import {
@@ -40,6 +47,7 @@ import {
     mergeAnnotationsAsync,
     groupAnnotationsAsync,
     selectObjects,
+    removeSelectionAsync,
     joinAnnotationsAsync,
     sliceAnnotationsAsync,
     splitAnnotationsAsync,
@@ -84,6 +92,7 @@ interface StateToProps {
     activatedAttributeID: number | null;
     selectedStatesID: number[];
     annotations: ObjectState[];
+    labels: Label[];
     renderData: RenderData;
     frameData: any;
     frameAngle: number;
@@ -143,6 +152,7 @@ interface DispatchToProps {
     onSplitAnnotations(state: ObjectState): void;
     onGroupAnnotations(states: ObjectState[]): void;
     onSelectObjects(selectedStatesID: number[]): void;
+    onRemoveSelection(): void;
     onJoinAnnotations(states: ObjectState[], points: number[][]): void;
     onSliceAnnotations(state: ObjectState, results: number[][]): void;
     onActivateObject: (activatedStateID: number | null, activatedElementID: number | null) => void;
@@ -170,7 +180,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 activeControl, instance: canvasInstance, ready: canvasIsReady, activeObjectHidden,
             },
             drawing: { activeLabelID, activeObjectType },
-            job: { instance: jobInstance },
+            job: { instance: jobInstance, labels },
             player: {
                 frame: { data: frameData, number: frame },
                 frameAngles,
@@ -235,6 +245,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         activatedAttributeID,
         selectedStatesID,
         annotations,
+        labels,
         renderData,
         opacity: opacity / 100,
         colorBy,
@@ -379,6 +390,9 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         onSelectObjects(selectedStatesID: number[]): void {
             dispatch(selectObjects(selectedStatesID));
         },
+        onRemoveSelection(): void {
+            dispatch(removeSelectionAsync(false));
+        },
         onJoinAnnotations(states: ObjectState[], points: number[][]): void {
             dispatch(joinAnnotationsAsync(states, points));
         },
@@ -449,7 +463,18 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
 
 type Props = StateToProps & DispatchToProps;
 
-class CanvasWrapperComponent extends React.PureComponent<Props> {
+interface State {
+    selectionMenuPosition: {
+        left: number;
+        top: number;
+    } | null;
+}
+
+class CanvasWrapperComponent extends React.PureComponent<Props, State> {
+    public state: State = {
+        selectionMenuPosition: null,
+    };
+
     private debouncedUpdate = debounce(this.updateCanvas.bind(this), 250, { leading: true });
     private canvasTipsRef = React.createRef<CanvasTipsComponent>();
 
@@ -610,6 +635,9 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             // reflect the multi-selection (shift + left-mousedown) on the canvas:
             // drives the persistent selection visual and enables live group drag
             canvasInstance.setSelectedObjects(selectedStatesID);
+            if (this.state.selectionMenuPosition) {
+                this.setState({ selectionMenuPosition: null });
+            }
         }
 
         if (prevProps.highlightedConflict !== highlightedConflict) {
@@ -718,6 +746,9 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         canvasInstance.html().removeEventListener('canvas.merged', this.onCanvasObjectsMerged);
         canvasInstance.html().removeEventListener('canvas.grouped', this.onCanvasObjectsGrouped);
         canvasInstance.html().removeEventListener('canvas.selected', this.onCanvasSelected);
+        canvasInstance.html().removeEventListener(
+            'canvas.selectionmenu', this.onCanvasSelectionMenu as EventListener,
+        );
         canvasInstance.html().removeEventListener('canvas.joined', this.onCanvasObjectsJoined);
         canvasInstance.html().removeEventListener('canvas.regionselected', this.onCanvasPositionSelected);
         canvasInstance.html().removeEventListener('canvas.splitted', this.onCanvasTrackSplitted);
@@ -736,6 +767,42 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             const { onCanvasErrorOccurred } = this.props;
             onCanvasErrorOccurred(exception);
         }
+    };
+
+    private onCanvasSelectionMenu = (event: CustomEvent): void => {
+        const { canvasInstance } = this.props as { canvasInstance: Canvas };
+        const canvasGridItem = canvasInstance.html().parentElement?.parentElement;
+        const gridItemBox = canvasGridItem?.getBoundingClientRect();
+        const { left, top } = event.detail;
+
+        this.setState({
+            selectionMenuPosition: {
+                left: left - (gridItemBox?.left || 0),
+                top: top - (gridItemBox?.top || 0),
+            },
+        });
+    };
+
+    private onChangeSelectedObjectsLabel = (label: Label): void => {
+        const {
+            annotations, selectedStatesID, onUpdateAnnotationsBatch,
+        } = this.props;
+        const selectedIDs = new Set(selectedStatesID);
+        const selectedStates = annotations.filter(
+            (state: ObjectState): boolean => selectedIDs.has(state.clientID as number),
+        );
+
+        for (const selectedState of selectedStates) {
+            selectedState.label = label;
+        }
+        onUpdateAnnotationsBatch(selectedStates);
+        this.setState({ selectionMenuPosition: null });
+    };
+
+    private onRemoveSelectedObjects = (): void => {
+        const { onRemoveSelection } = this.props;
+        onRemoveSelection();
+        this.setState({ selectionMenuPosition: null });
     };
 
     private onCanvasWarningOccurrence = (event: any): void => {
@@ -831,8 +898,8 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
 
     private onCanvasSelected = (event: any): void => {
         const { onSelectObjects, updateActiveControl } = this.props;
-        const { states } = event.detail;
-        updateActiveControl(ActiveControl.CURSOR);
+        const { states, continueSelection } = event.detail;
+        updateActiveControl(continueSelection ? ActiveControl.SELECT : ActiveControl.CURSOR);
         onSelectObjects(states.map((state: ObjectState): number => state.clientID));
     };
 
@@ -874,13 +941,21 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
 
     private onCanvasMouseDown = (e: MouseEvent): void => {
         const {
-            workspace, activatedStateID, selectedStatesID, onActivateObject, onSelectObjects, keyMap,
+            workspace, activatedStateID, selectedStatesID, onActivateObject, onSelectObjects, keyMap, activeControl,
+            updateActiveControl,
         } = this.props;
+        const shapeElement = (e.target as Element)?.closest?.('.cvat_canvas_shape');
+        const multiSelectModifierPressed = isMultiSelectModifierPressed(e, keyMap);
+
+        if (e.button === 0 && activeControl === ActiveControl.CURSOR &&
+            multiSelectModifierPressed && !shapeElement) {
+            updateActiveControl(ActiveControl.SELECT);
+        }
 
         // a click outside of the selected objects resets the multi-selection
         // (shift is reserved for making a new selection, a click on a selected shape starts a group drag)
-        if (e.button === 0 && !isMultiSelectModifierPressed(e, keyMap) && selectedStatesID.length) {
-            const shapeElement = (e.target as Element)?.closest?.('.cvat_canvas_shape');
+        if (e.button === 0 && activeControl !== ActiveControl.SELECT &&
+            !multiSelectModifierPressed && selectedStatesID.length) {
             const clickedClientID = shapeElement ? +(shapeElement.getAttribute('clientID') as string) : null;
             if (clickedClientID === null || !selectedStatesID.includes(clickedClientID)) {
                 onSelectObjects([]);
@@ -1260,6 +1335,9 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         canvasInstance.html().addEventListener('canvas.merged', this.onCanvasObjectsMerged);
         canvasInstance.html().addEventListener('canvas.grouped', this.onCanvasObjectsGrouped);
         canvasInstance.html().addEventListener('canvas.selected', this.onCanvasSelected);
+        canvasInstance.html().addEventListener(
+            'canvas.selectionmenu', this.onCanvasSelectionMenu as EventListener,
+        );
         canvasInstance.html().addEventListener('canvas.joined', this.onCanvasObjectsJoined);
         canvasInstance.html().addEventListener('canvas.regionselected', this.onCanvasPositionSelected);
         canvasInstance.html().addEventListener('canvas.splitted', this.onCanvasTrackSplitted);
@@ -1279,6 +1357,8 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             showTagsOnFrame,
             canvasIsReady,
             annotations,
+            labels,
+            selectedStatesID,
             activatedStateID,
             focusedObjectPadding,
             onSwitchAutomaticBordering,
@@ -1288,6 +1368,22 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             onExpandObject,
         } = this.props;
         const { canvasInstance } = this.props as { canvasInstance: Canvas };
+        const { selectionMenuPosition } = this.state;
+        const selectedIDs = new Set(selectedStatesID);
+        const selectedStates = annotations.filter(
+            (state: ObjectState): boolean => selectedIDs.has(state.clientID as number),
+        );
+        const applicableLabels = labels.filter((label: Label): boolean => selectedStates.every(
+            (state: ObjectState): boolean => filterApplicableLabels(state, labels).some(
+                (applicableLabel: Label): boolean => applicableLabel.id === label.id,
+            ),
+        ));
+        const selectedLabelID = selectedStates.length > 0 && selectedStates.every(
+            (state: ObjectState): boolean => state.label.id === selectedStates[0].label.id,
+        ) ? selectedStates[0].label.id : null;
+        const labelSelectorDisabled = !applicableLabels.length || selectedStates.some(
+            (state: ObjectState): boolean => state.lock || state.shapeType === ShapeType.SKELETON,
+        );
 
         const preventDefault = (event: KeyboardEvent | undefined): void => {
             if (event) {
@@ -1362,6 +1458,87 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
                         height: '100%',
                     }}
                 />
+
+                {selectionMenuPosition && (
+                    <Dropdown
+                        destroyPopupOnHide
+                        open
+                        placement='bottomLeft'
+                        trigger={[]}
+                        onOpenChange={(open: boolean, info): void => {
+                            if (!open && info.source !== 'menu') {
+                                this.setState({ selectionMenuPosition: null });
+                            }
+                        }}
+                        menu={{
+                            selectable: false,
+                            className: 'cvat-object-item-menu',
+                            onClick: (info): void => info.domEvent.stopPropagation(),
+                            items: [
+                                {
+                                    key: 'change-label',
+                                    label: (
+                                        <div
+                                            className='cvat-canvas-selected-objects-label-selector'
+                                        >
+                                            {applicableLabels.length ? (
+                                                <LabelSelector
+                                                    disabled={labelSelectorDisabled}
+                                                    size='small'
+                                                    labels={applicableLabels}
+                                                    value={selectedLabelID}
+                                                    placeholder='Select label'
+                                                    onChange={this.onChangeSelectedObjectsLabel}
+                                                    getPopupContainer={
+                                                        (triggerNode): HTMLElement => triggerNode.parentElement!
+                                                    }
+                                                />
+                                            ) : (
+                                                <Select
+                                                    disabled
+                                                    size='small'
+                                                    placeholder='No common labels'
+                                                />
+                                            )}
+                                        </div>
+                                    ),
+                                },
+                                {
+                                    key: 'group',
+                                    label: (
+                                        <Button type='link' icon={<GroupOutlined />} disabled>
+                                            Group objects
+                                        </Button>
+                                    ),
+                                },
+                                {
+                                    key: 'remove',
+                                    label: (
+                                        <Button
+                                            type='link'
+                                            icon={<DeleteOutlined />}
+                                            onClick={this.onRemoveSelectedObjects}
+                                        >
+                                            Delete group
+                                        </Button>
+                                    ),
+                                },
+                            ],
+                        }}
+                    >
+                        <span
+                            className='cvat-canvas-selected-objects-menu-anchor'
+                            style={{
+                                position: 'absolute',
+                                display: 'block',
+                                left: selectionMenuPosition.left,
+                                top: selectionMenuPosition.top,
+                                width: 1,
+                                height: 1,
+                            }}
+                        />
+                    </Dropdown>
+                )}
 
                 <Popover
                     destroyTooltipOnHide

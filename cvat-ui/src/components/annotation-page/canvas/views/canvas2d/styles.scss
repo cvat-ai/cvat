@@ -4,6 +4,15 @@
 
 @import 'base';
 
+.cvat-canvas-selected-objects-label-selector {
+    width: $grid-unit-size * 30;
+    padding: $grid-unit-size * 2;
+
+    > .ant-select {
+        width: 100%;
+    }
+}
+
 .cvat-image-setups-filters {
     margin-bottom: $grid-unit-size * 3;
 }

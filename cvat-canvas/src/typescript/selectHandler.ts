@@ -12,7 +12,7 @@ export interface SelectHandler {
 }
 
 export class SelectHandlerImpl implements SelectHandler {
-    private onSelectDone: (objects?: any[]) => void;
+    private onSelectDone: (objects?: any[], continueSelection?: boolean) => void;
     private selector: ObjectSelector;
     private initialized: boolean;
     private selectedStates: any[];
@@ -28,6 +28,8 @@ export class SelectHandlerImpl implements SelectHandler {
             this.selectedStates = selected;
             if (selectData.once) {
                 this.closeSelection();
+            } else {
+                this.onSelectDone(this.selectedStates, true);
             }
         }, selectionFilter, initialEvent);
         this.initialized = true;
