@@ -3,10 +3,10 @@
 #
 # SPDX-License-Identifier: MIT
 
+from dirtyfields import DirtyFieldsMixin
 from django.contrib.auth.models import AbstractUser
 
 
-class User(AbstractUser):
-
+class User(DirtyFieldsMixin, AbstractUser):
     class Meta(AbstractUser.Meta):
         db_table = "auth_user"
