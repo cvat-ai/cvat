@@ -229,10 +229,6 @@ export function createAudioIntervalAsync(start: number, stop: number, labelID: n
             stop: Math.round(stop * 1000),
             source: Source.MANUAL,
         });
-        state.attributes = Object.fromEntries(label.attributes.map((attribute) => [
-            attribute.id as number,
-            attribute.defaultValue,
-        ]));
 
         const { createAnnotationsAsync } = await import('./annotation-actions');
         await dispatch(createAnnotationsAsync([state]));

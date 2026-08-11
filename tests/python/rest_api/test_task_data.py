@@ -27,7 +27,7 @@ from cvat_sdk.api_client import models
 from cvat_sdk.core.helpers import get_paginated_collection
 from deepdiff import DeepDiff
 from PIL import Image
-from pytest_cases import parametrize
+from pytest_cases import fixture, fixture_ref, parametrize
 
 import shared.utils.s3 as s3
 from rest_api._test_base import TestTasksBase
@@ -1871,9 +1871,9 @@ class TestPostTaskData:
 
 @pytest.mark.usefixtures("restore_db_per_class")
 @pytest.mark.usefixtures("restore_cvat_data_per_class")
-@pytest.mark.usefixtures("restore_redis_ondisk_per_function")
+@pytest.mark.usefixtures("restore_redis_ondisk_per_class")
 @pytest.mark.usefixtures("restore_redis_ondisk_after_class")
-@pytest.mark.usefixtures("restore_redis_inmem_per_function")
+@pytest.mark.usefixtures("restore_redis_inmem_per_class")
 class TestTaskData(TestTasksBase):
     @staticmethod
     def _retrieve_data_with_range(
@@ -1963,9 +1963,8 @@ class TestTaskData(TestTasksBase):
             f"bytes 0-{len(full_chunk) - 1}/{len(full_chunk)}"
         )
 
-    def test_can_get_data_chunk_byte_ranges(self, fxt_uploaded_images_task: tuple[ITaskSpec, int]):
-        _, task_id = fxt_uploaded_images_task
-
+    @parametrize("task_spec, task_id", [fixture_ref("fxt_uploaded_images_task")])
+    def test_can_get_data_chunk_byte_ranges(self, task_spec: ITaskSpec, task_id: int):
         with make_api_client(self._USERNAME) as api_client:
             _, task_chunk_response = api_client.tasks_api.retrieve_data(
                 task_id, type="chunk", quality="compressed", number=0, _parse_response=False
@@ -2001,6 +2000,126 @@ class TestTaskData(TestTasksBase):
                 quality="compressed",
                 index=0,
             )
+
+    def _ensure_task_has_mixed_job_chunk_counts(self, task_id: int) -> None:
+        "Check the task has both jobs with both 1 and multiple chunks"
+
+        with make_api_client(self._USERNAME) as api_client:
+            annotation_jobs = [
+                job
+                for job in get_paginated_collection(
+                    api_client.jobs_api.list_endpoint, task_id=task_id
+                )
+                if job.type == "annotation"
+            ]
+            assert annotation_jobs
+
+            chunk_counts = set()
+            for job in annotation_jobs:
+                job_meta, _ = api_client.jobs_api.retrieve_data_meta(job.id)
+                chunk_counts.add(math.ceil(job_meta.size / job_meta.chunk_size))
+
+            assert min(chunk_counts) == 1 and max(chunk_counts) > 1, (
+                "The task must have both single-chunk and multi-chunk jobs, "
+                f"got job chunk counts {sorted(chunk_counts)}"
+            )
+
+    def _image_task_with_honeypots_and_mixed_job_chunk_counts_base(
+        self, request: pytest.FixtureRequest, **kwargs
+    ) -> tuple[ITaskSpec, int]:
+        "The task to check for regressions on https://github.com/cvat-ai/cvat/issues/11006"
+
+        # The chunk size is picked so that the task has both single-chunk and multi-chunk jobs:
+        # the regular jobs have 4 + 2 honeypot frames, and the last one has 2 + 2.
+        # Honeypots are placed randomly inside a job, so both the first and the last chunk
+        # of a job can contain them.
+        task_spec, task_id = self._image_task_with_honeypots_and_segments_base(
+            request, chunk_size=4, **kwargs
+        )
+        self._ensure_task_has_mixed_job_chunk_counts(task_id)
+        return task_spec, task_id
+
+    @fixture(scope="class")
+    @parametrize(
+        "static_cache_enabled",
+        [
+            pytest.param(
+                to_bool(os.getenv("CVAT_ALLOW_STATIC_CACHE", False)),
+                marks=[
+                    pytest.mark.skipif(
+                        not to_bool(os.getenv("CVAT_ALLOW_STATIC_CACHE", False)),
+                        reason="This test covers only the static cache."
+                        "Check test_all_job_chunks_available_after_honeypot_frame_change()"
+                        "for the dynamic cache case.",
+                    )
+                ],
+            ),
+        ],
+    )
+    def fxt_uploaded_images_task_with_honeypots_mixed_job_chunk_counts_and_changed_honeypots(
+        self, request: pytest.FixtureRequest, *, static_cache_enabled: bool
+    ) -> tuple[ITaskSpec, int]:
+        "The task to check for regressions on https://github.com/cvat-ai/cvat/issues/11006"
+
+        assert static_cache_enabled
+        task_spec, task_id = self._image_task_with_honeypots_and_mixed_job_chunk_counts_base(
+            request
+        )
+        self._rotate_all_task_honeypots(task_spec, task_id)
+        return task_spec, task_id
+
+    @pytest.mark.timeout(300)
+    @pytest.mark.skipif(
+        to_bool(os.getenv("CVAT_ALLOW_STATIC_CACHE", False)),
+        reason="This test covers only the dynamic cache.",
+    )
+    def test_all_job_chunks_available_after_honeypot_frame_change(
+        self, request: pytest.FixtureRequest
+    ):
+        task_spec, task_id = self._image_task_with_honeypots_and_mixed_job_chunk_counts_base(
+            request
+        )
+
+        with make_api_client(self._USERNAME) as api_client:
+            annotation_jobs = sorted(
+                (
+                    job
+                    for job in get_paginated_collection(
+                        api_client.jobs_api.list_endpoint, task_id=task_id
+                    )
+                    if job.type == "annotation"
+                ),
+                key=lambda job: job.start_frame,
+            )
+
+            job_chunk_ids: dict[int, Sequence[int]] = {}
+            for job in annotation_jobs:
+                job_meta, _ = api_client.jobs_api.retrieve_data_meta(job.id)
+                job_chunk_ids[job.id] = range(math.ceil(job_meta.size / job_meta.chunk_size))
+
+            def _read_all_chunks():
+                for job_id, chunk_ids in job_chunk_ids.items():
+                    for chunk_id, quality in product(chunk_ids, ("original", "compressed")):
+                        _, response = api_client.jobs_api.retrieve_data(
+                            job_id,
+                            type="chunk",
+                            quality=quality,
+                            index=chunk_id,
+                            _check_status=False,
+                            _parse_response=False,
+                        )
+                        assert (
+                            response.status == HTTPStatus.OK
+                        ), f"{job_id=}, {chunk_id=} of {sorted(chunk_ids)}, {quality=}"
+
+            # Initialize chunks in the cache
+            _read_all_chunks()
+
+            # Update honeypots
+            self._rotate_all_task_honeypots(task_spec, task_id)
+
+            # Check all the chunks are still available
+            _read_all_chunks()
 
     @parametrize("task_spec, task_id", TestTasksBase._all_task_cases)
     def test_can_get_task_meta(self, task_spec: ITaskSpec, task_id: int):
@@ -2394,7 +2513,15 @@ class TestTaskData(TestTasksBase):
         # This test has to check all the job frames availability, it can make many requests
         timeout=300
     )
-    @parametrize("task_spec, task_id", TestTasksBase._2d_task_cases)
+    @parametrize(
+        "task_spec, task_id",
+        TestTasksBase._2d_task_cases
+        + [
+            fixture_ref(
+                fxt_uploaded_images_task_with_honeypots_mixed_job_chunk_counts_and_changed_honeypots
+            )
+        ],
+    )
     def test_can_get_job_frames(self, task_spec: ITaskSpec, task_id: int):
         with make_api_client(self._USERNAME) as api_client:
             jobs = sorted(
