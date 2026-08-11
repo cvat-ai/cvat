@@ -64,7 +64,7 @@ interface StateToProps {
     minZLayer: number;
     maxZLayer: number;
     currentZLayer: number;
-    hiddenZLayers: number[];
+    hiddenZLayers: Set<number>;
     keyMap: KeyMap;
     normalizedKeyMap: Record<string, string>;
     showGroundTruth: boolean;

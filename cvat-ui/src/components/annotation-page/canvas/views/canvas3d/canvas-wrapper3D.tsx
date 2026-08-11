@@ -140,7 +140,7 @@ interface StateToProps {
     jobInstance: Job;
     frameData: any;
     annotations: ObjectState[];
-    hiddenZLayers: number[];
+    hiddenZLayers: Set<number>;
     contextMenuVisibility: boolean;
     activeLabelID: number | null;
     activatedStateID: number | null;
@@ -314,7 +314,7 @@ export const PerspectiveViewComponent = React.memo(
 
         const navigateObject = (step: number): void => {
             const filteredStates = annotations.filter(
-                (state) => !state.outside && !state.hidden && !hiddenZLayers.includes(state.zOrder),
+                (state) => !state.outside && !state.hidden && !hiddenZLayers.has(state.zOrder),
             );
 
             if (!filteredStates.length) {
@@ -651,7 +651,7 @@ const Canvas3DWrapperComponent = React.memo((props: Props): null => {
             canvasInstance.setup(
                 frameData,
                 annotations.filter((state) => (
-                    state.objectType !== ObjectType.TAG && !hiddenZLayers.includes(state.zOrder)
+                    state.objectType !== ObjectType.TAG && !hiddenZLayers.has(state.zOrder)
                 )),
             );
         }

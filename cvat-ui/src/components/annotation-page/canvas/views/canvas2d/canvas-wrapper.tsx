@@ -113,7 +113,7 @@ interface StateToProps {
     showAllInterpolationTracks: boolean;
     workspace: Workspace;
     currentZLayer: number;
-    hiddenZLayers: number[];
+    hiddenZLayers: Set<number>;
     sidebarCollapsed: boolean;
     automaticBordering: boolean;
     snapToPoint: boolean;
@@ -1025,7 +1025,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
                 frame,
                 workspace,
                 exclude: [ObjectType.TAG],
-            }).filter((state: ObjectState): boolean => !hiddenZLayers.includes(state.zOrder));
+            }).filter((state: ObjectState): boolean => !hiddenZLayers.has(state.zOrder));
             const proxy = new Proxy(frameData, {
                 get: (_frameData, prop, receiver) => {
                     if (prop === 'data') {
@@ -1178,7 +1178,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
 
         const navigateObject = (step: number): void => {
             const filteredStates = annotations.filter(
-                (state) => !state.outside && !state.hidden && !hiddenZLayers.includes(state.zOrder),
+                (state) => !state.outside && !state.hidden && !hiddenZLayers.has(state.zOrder),
             );
             if (filteredStates.length) {
                 const currentIndex = filteredStates.findIndex((state) => state.clientID === activatedStateID);

@@ -1339,6 +1339,7 @@ export function createAnnotationsAsync(
         try {
             const { jobInstance } = receiveAnnotationsParameters();
             const clientIds = await jobInstance.annotations.put(statesToCreate);
+            // Reveal layers after creation so newly created objects are immediately visible.
             const createdZLayers = Array.from(new Set(statesToCreate.flatMap((state) => (
                 'zOrder' in state && typeof state.zOrder === 'number' ? [state.zOrder] : []
             ))));

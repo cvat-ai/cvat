@@ -168,7 +168,7 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
                         _state.objectType === mainAnnotationsConflict.type
                     ));
 
-                    if (state && !hiddenZLayers.includes(state.zOrder) && !state.hidden) {
+                    if (state && !hiddenZLayers.has(state.zOrder) && !state.hidden) {
                         const points = canvasInstance.setupConflictRegions(state);
                         if (points) {
                             return {

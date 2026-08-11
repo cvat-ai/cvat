@@ -38,7 +38,7 @@ interface StateToProps {
     keyMap: KeyMap;
     normalizedKeyMap: Record<string, string>;
     canvasIsReady: boolean;
-    hiddenZLayers: number[];
+    hiddenZLayers: Set<number>;
 }
 
 interface DispatchToProps {
@@ -155,7 +155,7 @@ function AttributeAnnotationSidebar(props: StateToProps & DispatchToProps): JSX.
     } = props;
 
     const filteredStates = states.filter((state) => (
-        !state.outside && !state.hidden && !hiddenZLayers.includes(state.zOrder)
+        !state.outside && !state.hidden && !hiddenZLayers.has(state.zOrder)
     ));
     const [labelAttrMap, setLabelAttrMap] = useState(
         labels.reduce((acc, label): LabelAttrMap => {

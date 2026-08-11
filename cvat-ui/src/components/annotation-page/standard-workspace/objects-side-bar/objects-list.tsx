@@ -46,7 +46,7 @@ interface Props {
     statesCollapsedAll: boolean;
     statesOrdering: StatesOrdering;
     currentLayer: number;
-    hiddenLayers: number[];
+    hiddenLayers: Set<number>;
     sortedStatesID: number[];
     objectStates: ObjectState[];
     visibleSkeletonElements: Record<number, number[]>;
@@ -306,7 +306,7 @@ function ObjectListComponent(props: Props): JSX.Element {
             return null;
         }
 
-        const visible = !hiddenLayers.includes(zOrder);
+        const visible = !hiddenLayers.has(zOrder);
 
         return (
             <div className='cvat-objects-sidebar-z-layer-mark cvat-objects-sidebar-z-layer-mark-dragging'>
@@ -388,7 +388,7 @@ function ObjectListComponent(props: Props): JSX.Element {
                                                 objectStates={layerObjectStates}
                                                 visibleSkeletonElements={visibleSkeletonElements}
                                                 selected={zOrder === currentLayer}
-                                                visible={!hiddenLayers.includes(zOrder)}
+                                                visible={!hiddenLayers.has(zOrder)}
                                                 collapsed={collapsedLayers.has(zOrder)}
                                                 selectLayer={selectLayer}
                                                 toggleLayerVisibility={toggleLayerVisibility}

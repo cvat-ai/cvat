@@ -953,7 +953,7 @@ export interface AnnotationState {
             min: number;
             max: number;
             cur: number;
-            hidden: number[];
+            hidden: Set<number>;
         };
     };
     remove: {
