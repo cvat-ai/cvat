@@ -525,6 +525,27 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
         },
     });
 
+    Object.defineProperty(Job.prototype.annotations.selectIntervalBoundaries, 'implementation', {
+        value: function selectIntervalBoundariesImplementation(
+            this: JobClass,
+            intervalStates: Parameters<typeof JobClass.prototype.annotations.selectIntervalBoundaries>[0],
+            position: Parameters<typeof JobClass.prototype.annotations.selectIntervalBoundaries>[1],
+            delta: Parameters<typeof JobClass.prototype.annotations.selectIntervalBoundaries>[2],
+        ): ReturnType<typeof JobClass.prototype.annotations.selectIntervalBoundaries> {
+            return Promise.resolve(getCollection(this).selectIntervalBoundaries(intervalStates, position, delta));
+        },
+    });
+
+    Object.defineProperty(Job.prototype.annotations.saveIntervals, 'implementation', {
+        value: function saveIntervalsImplementation(
+            this: JobClass,
+            states: Parameters<typeof JobClass.prototype.annotations.saveIntervals>[0],
+        ): ReturnType<typeof JobClass.prototype.annotations.saveIntervals> {
+            getCollection(this).saveIntervals(states);
+            return Promise.resolve();
+        },
+    });
+
     Object.defineProperty(Job.prototype.annotations.statistics, 'implementation', {
         value: function statisticsImplementation(
             this: JobClass,
@@ -1321,6 +1342,27 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
             position: Parameters<typeof TaskClass.prototype.annotations.selectInterval>[1],
         ): ReturnType<typeof TaskClass.prototype.annotations.selectInterval> {
             return Promise.resolve(getCollection(this).selectInterval(intervalStates, position));
+        },
+    });
+
+    Object.defineProperty(Task.prototype.annotations.selectIntervalBoundaries, 'implementation', {
+        value: function selectIntervalBoundariesImplementation(
+            this: TaskClass,
+            intervalStates: Parameters<typeof TaskClass.prototype.annotations.selectIntervalBoundaries>[0],
+            position: Parameters<typeof TaskClass.prototype.annotations.selectIntervalBoundaries>[1],
+            delta: Parameters<typeof TaskClass.prototype.annotations.selectIntervalBoundaries>[2],
+        ): ReturnType<typeof TaskClass.prototype.annotations.selectIntervalBoundaries> {
+            return Promise.resolve(getCollection(this).selectIntervalBoundaries(intervalStates, position, delta));
+        },
+    });
+
+    Object.defineProperty(Task.prototype.annotations.saveIntervals, 'implementation', {
+        value: function saveIntervalsImplementation(
+            this: TaskClass,
+            states: Parameters<typeof TaskClass.prototype.annotations.saveIntervals>[0],
+        ): ReturnType<typeof TaskClass.prototype.annotations.saveIntervals> {
+            getCollection(this).saveIntervals(states);
+            return Promise.resolve();
         },
     });
 

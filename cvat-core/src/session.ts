@@ -131,6 +131,26 @@ function buildDuplicatedAPI(prototype): void {
                     return result;
                 },
 
+                async selectIntervalBoundaries(intervalStates, position, delta) {
+                    const result = await PluginRegistry.apiWrapper.call(
+                        this,
+                        prototype.annotations.selectIntervalBoundaries,
+                        intervalStates,
+                        position,
+                        delta,
+                    );
+                    return result;
+                },
+
+                async saveIntervals(states) {
+                    const result = await PluginRegistry.apiWrapper.call(
+                        this,
+                        prototype.annotations.saveIntervals,
+                        states,
+                    );
+                    return result;
+                },
+
                 async merge(objectStates) {
                     const result = await PluginRegistry.apiWrapper.call(
                         this,
@@ -445,6 +465,10 @@ export class Session {
             state: AudioIntervalState | null,
             distance: number | null,
         }>;
+        selectIntervalBoundaries: (
+            intervalStates: AudioIntervalState[], position: number, delta: number,
+        ) => Promise<Array<{ state: AudioIntervalState, side: 'start' | 'end' }>>;
+        saveIntervals: (states: AudioIntervalState[]) => Promise<void>;
         import: (data: SerializedCollection) => Promise<void>;
         export: () => Promise<SerializedCollection>;
         commit: (
@@ -529,6 +553,8 @@ export class Session {
             upload: Object.getPrototypeOf(this).annotations.upload.bind(this),
             select: Object.getPrototypeOf(this).annotations.select.bind(this),
             selectInterval: Object.getPrototypeOf(this).annotations.selectInterval.bind(this),
+            selectIntervalBoundaries: Object.getPrototypeOf(this).annotations.selectIntervalBoundaries.bind(this),
+            saveIntervals: Object.getPrototypeOf(this).annotations.saveIntervals.bind(this),
             import: Object.getPrototypeOf(this).annotations.import.bind(this),
             export: Object.getPrototypeOf(this).annotations.export.bind(this),
             commit: Object.getPrototypeOf(this).annotations.commit.bind(this),

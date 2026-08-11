@@ -7,7 +7,9 @@ import { useDispatch, useSelector } from 'react-redux';
 import type { Region } from 'wavesurfer.js/dist/plugins/regions';
 
 import { MIN_INTERVAL_DURATION, INTERVAL_BOUNDARY_EPSILON } from 'audio/utils/waveform-geometry';
-import { createAudioIntervalAsync, updateAudioIntervalAsync } from 'actions/audio-actions';
+import {
+    createAudioIntervalAsync, updateAudioIntervalAsync,
+} from 'actions/audio-actions';
 import { ActiveControl, CombinedState } from 'reducers';
 import { shallowEqual, ThunkDispatch } from 'utils/redux';
 
@@ -16,12 +18,14 @@ import {
 } from '../utils/audio-interval';
 import { attachRegionAutoScroll } from '../utils/region-auto-scroll';
 import { WaveformRegionRuntime } from './use-audio-waveform';
+import { useBulkBoundariesEditing } from './use-bulk-boundaries-editing';
 import { WaveformViewport } from './use-waveform-viewport';
 
 const REGION_DRAG_BOUNDS_CONSTRAINT = Symbol('regionDragBoundsConstraint');
 interface Params {
     regionRuntime: WaveformRegionRuntime;
     viewport: WaveformViewport;
+    durationRef: React.MutableRefObject<number>;
     isPreviewRegion(region: Region): boolean;
     ready: boolean;
 }
@@ -61,7 +65,7 @@ function installRegionDragBoundsConstraint(region: Region): void {
  * Persists user-created and user-edited waveform regions as audio intervals.
  */
 export function useRegionEditing({
-    regionRuntime, viewport, isPreviewRegion, ready,
+    regionRuntime, viewport, durationRef, isPreviewRegion, ready,
 }: Params): void {
     const dispatch = useDispatch<ThunkDispatch>();
     const { intervals, activeLabelId, activeControl } = useSelector(
@@ -74,6 +78,9 @@ export function useRegionEditing({
     );
     const latestRef = useRef({ intervals, activeLabelId });
     latestRef.current = { intervals, activeLabelId };
+    useBulkBoundariesEditing({
+        regionRuntime, viewport, durationRef, ready,
+    });
 
     // setup when runtime is ready
     useEffect(() => {
@@ -112,12 +119,10 @@ export function useRegionEditing({
                 return;
             }
 
-            dispatch(
-                updateAudioIntervalAsync(clientID, {
-                    start: Math.round(region.start * 1000),
-                    stop: Math.round(region.end * 1000),
-                }),
-            );
+            dispatch(updateAudioIntervalAsync(clientID, {
+                start: Math.round(region.start * 1000),
+                stop: Math.round(region.end * 1000),
+            }));
         };
 
         regionsPlugin.getRegions().forEach((region) => {

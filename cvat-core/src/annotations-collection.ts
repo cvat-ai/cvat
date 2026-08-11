@@ -1664,6 +1664,42 @@ export default class Collection {
         };
     }
 
+    public selectIntervalBoundaries(
+        intervalStates: AudioIntervalState[], position: number, delta: number,
+    ): Array<{ state: AudioIntervalState, side: 'start' | 'end' }> {
+        checkObjectType('intervals for boundary selection', intervalStates, null, { cls: Array, name: 'Array' });
+        checkObjectType('position', position, 'number', null);
+        checkObjectType('delta', delta, 'number', null);
+
+        const boundaries: Array<{ state: AudioIntervalState, side: 'start' | 'end' }> = [];
+        for (const state of intervalStates) {
+            checkObjectType('interval state', state, null, { cls: AudioIntervalState, name: 'AudioIntervalState' });
+            if (state.hidden) continue;
+
+            if (Math.abs(position - state.start) <= delta) {
+                boundaries.push({ state, side: 'start' });
+            }
+            if (Math.abs(position - (state.stop ?? this.stopFrame + 1)) <= delta) {
+                boundaries.push({ state, side: 'end' });
+            }
+        }
+
+        return boundaries;
+    }
+
+    public saveIntervals(states: AudioIntervalState[]): void {
+        this.history.beginTransaction(HistoryActions.CHANGED_AUDIO_INTERVALS);
+        try {
+            states.forEach((state) => {
+                const interval = state.clientID === null ? null : this.objects[state.clientID];
+                if (!(interval instanceof AudioInterval)) return;
+                interval.save(state);
+            });
+        } finally {
+            this.history.endTransaction();
+        }
+    }
+
     private _searchEmpty(
         frameFrom: number,
         frameTo: number,

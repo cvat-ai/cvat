@@ -12,8 +12,9 @@ import { INTERVAL_BOUNDARY_EPSILON } from 'audio/utils/waveform-geometry';
 
 import { getAudioRegionColor, getRegionItemColor } from '../audio-region-colors';
 import {
-    clientIDFromWaveRegionId, intervalEndSeconds, intervalStartSeconds, waveRegionId,
+    intervalEndSeconds, intervalStartSeconds, waveRegionId,
 } from '../utils/audio-interval';
+import { getIntervalRegionsByClientID } from '../utils/wave-regions';
 import { WaveformRegionRuntime } from './use-audio-waveform';
 
 interface Params {
@@ -46,7 +47,7 @@ export function useRegionProjection({ regionRuntime, ready }: Params): void {
 
         const visibleIntervals = intervals.filter((interval) => !interval.hidden);
         const intervalsByID = new Map(visibleIntervals.map((interval) => [interval.clientID, interval]));
-        const regionsByID = new Map<number, Region>();
+        const regionsByID = getIntervalRegionsByClientID(regionsPlugin);
 
         const canEditInterval = (interval: (typeof intervals)[0]): boolean => (
             activeControl === ActiveControl.AUDIO_REGION_EDIT && !interval.lock
@@ -72,17 +73,12 @@ export function useRegionProjection({ regionRuntime, ready }: Params): void {
         };
 
         // reconcile existing regions with redux state
-        regionsPlugin.getRegions().forEach((region) => {
-            const clientID = clientIDFromWaveRegionId(region.id);
-            if (clientID === null) return;
-
+        regionsByID.forEach((region, clientID) => {
             const interval = intervalsByID.get(clientID);
             if (!interval) {
                 region.remove();
                 return;
             }
-
-            regionsByID.set(clientID, region);
             const start = intervalStartSeconds(interval);
             const end = intervalEndSeconds(interval);
             const isActive = isActiveInterval(clientID);

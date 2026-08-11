@@ -105,6 +105,7 @@ export function useWaveformRegions({
     useRegionEditing({
         regionRuntime,
         viewport,
+        durationRef,
         isPreviewRegion: previewCapability.isPreviewRegion,
         ready,
     });

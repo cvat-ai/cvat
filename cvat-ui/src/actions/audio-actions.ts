@@ -277,8 +277,10 @@ export function updateAudioIntervalsAsync(
         for (const interval of targets) {
             const patch = typeof patcher === 'function' ? patcher(interval) : patcher;
             applyIntervalPatch(interval, patch);
-            await interval.save();
         }
+        const job = getState().annotation.job.instance;
+        if (!job) return;
+        await job.annotations.saveIntervals(targets);
         await dispatchFetchAnnotations(dispatch);
     };
 }
