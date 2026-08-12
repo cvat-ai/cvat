@@ -44,6 +44,8 @@ context('Audio annotation. Extend region via toolbar button.', () => {
             cy.audioExtendViaButton(firstLabelName);
 
             cy.get('.cvat-audio-region-item', { timeout: 5000 }).should('have.length', 3);
+            cy.get('.cvat-cursor-control').should('have.class', 'cvat-active-canvas-control');
+            cy.get('.cvat-audio-region-item').last().should('have.class', 'cvat-audio-region-item-active');
             getRegionRects().then(([left, extended, right]) => {
                 expect(extended.left).to.be.closeTo(left.right, REGION_POSITION_TOLERANCE_PX);
                 expect(extended.right).to.be.lessThan(right.left);
@@ -71,7 +73,10 @@ context('Audio annotation. Extend region via toolbar button.', () => {
 
             cy.audioExtendViaButton(firstLabelName);
             cy.get('.cvat-audio-region-item', { timeout: 5000 }).should('have.length', 1);
-            cy.get('.cvat-audio-region-item').first().should('contain.text', firstLabelName);
+            cy.get('.cvat-cursor-control').should('have.class', 'cvat-active-canvas-control');
+            cy.get('.cvat-audio-region-item').first()
+                .should('contain.text', firstLabelName)
+                .and('have.class', 'cvat-audio-region-item-active');
             cy.get('@pausedCursorPosition').then((pausedCursorPosition) => {
                 getWaveformWrapper().then(($wrapper) => {
                     const wrapperLeft = $wrapper[0].getBoundingClientRect().left;
