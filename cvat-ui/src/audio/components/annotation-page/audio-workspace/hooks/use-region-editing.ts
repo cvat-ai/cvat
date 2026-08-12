@@ -124,7 +124,7 @@ export function useRegionEditing({
             const clientID = clientIDFromWaveRegionId(region.id);
             if (clientID === null) return;
             const interval = latestRef.current.intervals.find((item) => item.clientID === clientID);
-            if (!interval || interval.pinned) return;
+            if (!interval) return;
             if (
                 Math.abs(intervalStartSeconds(interval) - region.start) < INTERVAL_BOUNDARY_EPSILON &&
                 Math.abs(intervalEndSeconds(interval) - region.end) < INTERVAL_BOUNDARY_EPSILON
@@ -234,7 +234,7 @@ export function useRegionEditing({
             if (
                 resizeDrag ||
                 event.button !== 0 ||
-                latestRef.current.activeControl !== ActiveControl.AUDIO_REGION_EDIT
+                latestRef.current.activeControl !== ActiveControl.CURSOR
             ) return;
 
             const path = event.composedPath();

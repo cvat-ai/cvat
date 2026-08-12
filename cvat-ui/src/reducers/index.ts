@@ -828,7 +828,6 @@ export enum ActiveControl {
     AI_TOOLS = 'ai_tools',
     OPENCV_TOOLS = 'opencv_tools',
     AUDIO_REGION_CREATE = 'audio_region_create',
-    AUDIO_REGION_EDIT = 'audio_region_edit',
     AUDIO_REGION_RECORD = 'audio_region_record',
 }
 
