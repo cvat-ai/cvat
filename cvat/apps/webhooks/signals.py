@@ -5,16 +5,17 @@
 import json
 from typing import TypeVar
 
-from django.contrib.auth.models import User
+from allauth.account.models import EmailAddress
 from django.db import transaction
 from django.db.models import Model
-from django.db.models.signals import post_delete, post_save, pre_delete
+from django.db.models.signals import m2m_changed, post_delete, post_save, pre_delete, pre_save
 from django.dispatch import receiver
 from rest_framework.renderers import JSONRenderer
 
-from cvat.apps.engine.models import Comment, Issue, Job, Project, Task
+from cvat.apps.engine.models import Comment, Issue, Job, Profile, Project, Task
 from cvat.apps.events.handlers import organization_id as resolve_organization_id
 from cvat.apps.events.handlers import project_id as resolve_project_id
+from cvat.apps.iam.models import User
 from cvat.apps.organizations.models import Invitation, Membership, Organization
 from cvat.apps.webhooks import utils
 from cvat.apps.webhooks.event_type import EventKeyChoice, event_key
@@ -159,6 +160,108 @@ def post_save_resource_event(
         lambda: batch_add_webhooks_to_queue(webhook_payload_pairs=webhook_payload_pairs),
         robust=True,
     )
+
+
+@receiver(pre_save, sender=EmailAddress)
+def pre_save_email_address_event(
+    sender: type[EmailAddress],
+    instance: EmailAddress,
+    raw: bool,
+    **kwargs,
+):
+    if raw:
+        return
+
+    instance.instance_at_pre_save = (
+        EmailAddress.objects.filter(pk=instance.pk).first() if instance.pk else None
+    )
+
+
+@receiver(post_save, sender=EmailAddress)
+def post_save_email_address_event(
+    sender: type[EmailAddress],
+    instance: EmailAddress,
+    raw: bool,
+    **kwargs,
+):
+    if raw:
+        return
+
+    instance_at_pre_save: EmailAddress | None = instance.instance_at_pre_save
+    del instance.instance_at_pre_save
+
+    if not instance.primary:
+        return
+
+    email_verified_at_pre_save = (
+        instance_at_pre_save.verified if instance_at_pre_save is not None else None
+    )
+
+    if email_verified_at_pre_save == instance.verified:
+        return
+
+    utils.send_user_update_event(
+        user_id=instance.user_id,
+        changes={
+            "email_verified": {"from": email_verified_at_pre_save, "to": instance.verified},
+        },
+    )
+
+
+@receiver(post_save, sender=Profile)
+def post_save_profile_event(
+    sender: type[Profile],
+    instance: Profile,
+    raw: bool,
+    **kwargs,
+):
+    if raw:
+        return
+
+    dirty_field = instance.get_dirty_fields(verbose=True).get("has_analytics_access")
+    if dirty_field is None:
+        return
+
+    utils.send_user_update_event(
+        user_id=instance.user_id,
+        changes={
+            "has_analytics_access": {"from": dirty_field["saved"], "to": dirty_field["current"]},
+        },
+    )
+
+
+@receiver(m2m_changed, sender=User.groups.through)
+def m2m_changed_user_groups_event(
+    sender: type[Model],
+    instance: User,
+    action: str,
+    reverse: bool,
+    **kwargs,
+):
+    if reverse:
+        return
+
+    if action in ("pre_add", "pre_remove", "pre_clear"):
+        instance.groups_at_pre_save = list(
+            instance.groups.order_by("name").values_list("name", flat=True)
+        )
+        return
+
+    if action in ("post_add", "post_remove", "post_clear"):
+        groups_at_pre_save: list[str] = instance.groups_at_pre_save
+        del instance.groups_at_pre_save
+
+        groups = list(instance.groups.order_by("name").values_list("name", flat=True))
+
+        if groups_at_pre_save == groups:
+            return
+
+        utils.send_user_update_event(
+            user_id=instance.pk,
+            changes={"groups": {"from": groups_at_pre_save, "to": groups}},
+        )
+
+    return
 
 
 @receiver(pre_delete, sender=Project)

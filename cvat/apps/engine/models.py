@@ -1695,7 +1695,7 @@ class LabeledIntervalAttributeVal(AttributeVal):
     )
 
 
-class Profile(models.Model):
+class Profile(DirtyFieldsMixin, models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     rating = models.FloatField(default=0.0)
     last_activity_date = models.DateTimeField(null=True, blank=True, default=None)
