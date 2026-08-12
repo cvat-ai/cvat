@@ -370,6 +370,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
 
         if (!organizationInitialized && !organizationFetching) {
             loadOrganization();
+            return;
         }
 
         if (!formatsInitialized && !formatsFetching) {

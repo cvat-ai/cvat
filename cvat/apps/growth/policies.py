@@ -10,6 +10,8 @@ from django.contrib.auth.models import User
 from django.utils.module_loading import import_string
 from django.utils.timezone import now
 
+from cvat.apps.organizations.models import Organization
+
 from .models import UserGrowthData
 
 
@@ -18,6 +20,7 @@ class GitHubStarPromptPolicy(ABC):
     def is_enabled(
         self,
         user: User,
+        organization: Organization | None,
         growth_data: UserGrowthData,
         current_time: datetime,
     ) -> bool:
@@ -28,6 +31,7 @@ class EnabledGitHubStarPromptPolicy(GitHubStarPromptPolicy):
     def is_enabled(
         self,
         user: User,
+        organization: Organization | None,
         growth_data: UserGrowthData,
         current_time: datetime,
     ) -> bool:
@@ -38,6 +42,7 @@ class DisabledGitHubStarPromptPolicy(GitHubStarPromptPolicy):
     def is_enabled(
         self,
         user: User,
+        organization: Organization | None,
         growth_data: UserGrowthData,
         current_time: datetime,
     ) -> bool:
@@ -57,6 +62,7 @@ def is_github_prompt_on_cooldown(
 
 def is_github_prompt_enabled(
     user: User,
+    organization: Organization | None,
     growth_data: UserGrowthData,
     current_time: datetime | None = None,
 ) -> bool:
@@ -64,7 +70,7 @@ def is_github_prompt_enabled(
     policy = import_string(settings.GITHUB_STAR_PROMPT_POLICY)()
 
     return (
-        policy.is_enabled(user, growth_data, current_time)
+        policy.is_enabled(user, organization, growth_data, current_time)
         and growth_data.promotion_notifications_allowed
         and not growth_data.github_prompt_support_clicked
         and not is_github_prompt_on_cooldown(growth_data, current_time)

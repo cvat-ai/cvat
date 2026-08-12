@@ -1636,7 +1636,7 @@ async function getGrowthData(userId: number): Promise<SerializedUserGrowthData[]
     const { backendAPI } = config;
     try {
         const response = await Axios.get(`${backendAPI}/growth`, {
-            params: { user_id: userId },
+            params: { user_id: userId, ...enableOrganization() },
         });
         return response.data.results;
     } catch (errorData) {
@@ -1651,7 +1651,9 @@ async function updateGrowthData(
     const { backendAPI } = config;
 
     try {
-        const response = await Axios.patch(`${backendAPI}/growth/${id}`, growthData);
+        const response = await Axios.patch(`${backendAPI}/growth/${id}`, growthData, {
+            params: enableOrganization(),
+        });
         return response.data;
     } catch (errorData) {
         throw generateError(errorData);

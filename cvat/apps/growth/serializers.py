@@ -34,7 +34,8 @@ class UserGrowthDataSerializer(serializers.ModelSerializer):
         return representation
 
     def get_github_prompt_enabled(self, instance: UserGrowthData) -> bool:
-        return is_github_prompt_enabled(instance.user, instance)
+        organization = self.context["request"].iam_context["organization"]
+        return is_github_prompt_enabled(instance.user, organization, instance)
 
     def validate(self, attrs: dict) -> dict:
         for field in ("github_prompt_shown", "github_prompt_support_clicked"):
