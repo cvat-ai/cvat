@@ -49,6 +49,8 @@ interface Canvas {
     zoomCanvas(enable: boolean): void;
 
     mode(): Mode;
+    undo(): boolean;
+    redo(): boolean;
     cancel(): void;
     configure(configuration: Configuration): void;
     isAbleToChangeFrame(): boolean;
@@ -170,6 +172,14 @@ class CanvasImpl implements Canvas {
 
     public mode(): Mode {
         return this.model.mode;
+    }
+
+    public undo(): boolean {
+        return this.view.undo();
+    }
+
+    public redo(): boolean {
+        return this.view.redo();
     }
 
     public cancel(): void {

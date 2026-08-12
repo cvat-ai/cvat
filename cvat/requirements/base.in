@@ -18,6 +18,7 @@ django-allauth[saml]==65.18.0
 django-auth-ldap==2.2.0
 django-cors-headers==3.5.0
 django-crum==0.7.9
+django-dirtyfields~=1.9.9
 django-filter>=25.2
 django-health-check>=3.18.1,<4
 django-rq>=2.10.1,<3
@@ -45,7 +46,7 @@ pottery~=3.0
 psutil==5.9.4
 psycopg2-binary~=2.9
 python-ldap==3.4.7
-python-logstash-async==2.5.0
+python-logstash-async==4.1.0
 python-rapidjson>=1.20
 redis~=8.0
 requests~=2.26

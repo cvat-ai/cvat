@@ -61,12 +61,6 @@ context('Single object annotation mode', { scrollBehavior: false }, () => {
         });
     }
 
-    function checkFrameNum(frameNum) {
-        cy.get('.cvat-player-frame-selector').within(() => {
-            cy.get('input[role="spinbutton"]').should('have.value', frameNum);
-        });
-    }
-
     function checkSingleShapeModeOpened() {
         cy.get('.cvat-workspace-selector').should('have.text', 'Single shape');
         cy.get('.cvat-canvas-controls-sidebar').should('not.exist');
@@ -93,7 +87,7 @@ context('Single object annotation mode', { scrollBehavior: false }, () => {
 
         cy.intercept('PATCH', `/api/jobs/${jobId}/**`).as('submitJob');
         for (let frame = 0; frame < frameCount; frame++) {
-            checkFrameNum(frame);
+            cy.checkFrameNum(frame);
             creatorFunction();
         }
 
@@ -208,14 +202,14 @@ context('Single object annotation mode', { scrollBehavior: false }, () => {
             cy.get('.cvat-single-shape-annotation-sidebar-finish-frame-wrapper').within(() => {
                 cy.contains('Skip').click();
             });
-            checkFrameNum(1);
+            cy.checkFrameNum(1);
 
             // Auto next frame - disabled
             cy.get('.cvat-single-shape-annotation-sidebar-auto-next-frame-checkbox').within(() => {
                 cy.get('[type="checkbox"]').uncheck();
             });
             clickPoints(polygonShape);
-            checkFrameNum(1);
+            cy.checkFrameNum(1);
 
             // Auto save when finish - disabled
             cy.get('.cvat-player-next-button-empty').click();
@@ -227,16 +221,16 @@ context('Single object annotation mode', { scrollBehavior: false }, () => {
 
             // Navigate only on empty frames
             cy.get('.cvat-player-previous-button-empty').click();
-            checkFrameNum(0);
+            cy.checkFrameNum(0);
             cy.get('.cvat-player-next-button-empty').click();
-            checkFrameNum(0);
+            cy.checkFrameNum(0);
             cy.get('.cvat-single-shape-annotation-sidebar-navigate-empty-checkbox').within(() => {
                 cy.get('[type="checkbox"]').uncheck();
             });
             cy.get('.cvat-player-next-button').click();
-            checkFrameNum(1);
+            cy.checkFrameNum(1);
             cy.get('.cvat-player-next-button').click();
-            checkFrameNum(2);
+            cy.checkFrameNum(2);
 
             cy.saveJob();
         });
