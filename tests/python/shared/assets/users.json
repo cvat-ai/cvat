@@ -6,6 +6,7 @@
     {
       "date_joined": "2023-03-30T09:37:31.615000Z",
       "email": "lonely_user@cvat.org",
+      "email_verified": false,
       "first_name": "Lonely",
       "groups": [
         "user"
@@ -23,6 +24,7 @@
     {
       "date_joined": "2022-02-24T20:45:19Z",
       "email": "user6@cvat.org",
+      "email_verified": false,
       "first_name": "User",
       "groups": [
         "user"
@@ -40,6 +42,7 @@
     {
       "date_joined": "2022-02-24T20:45:07Z",
       "email": "user5@cvat.org",
+      "email_verified": false,
       "first_name": "User",
       "groups": [
         "user"
@@ -57,6 +60,7 @@
     {
       "date_joined": "2021-12-14T18:38:46Z",
       "email": "admin2@cvat.org",
+      "email_verified": true,
       "first_name": "Admin",
       "groups": [
         "admin"
@@ -74,6 +78,7 @@
     {
       "date_joined": "2021-12-14T18:37:41Z",
       "email": "dummy4@cvat.org",
+      "email_verified": false,
       "first_name": "Dummy",
       "groups": [],
       "has_analytics_access": false,
@@ -89,6 +94,7 @@
     {
       "date_joined": "2021-12-14T18:37:09Z",
       "email": "dummy3@cvat.org",
+      "email_verified": false,
       "first_name": "Dummy",
       "groups": [],
       "has_analytics_access": false,
@@ -104,6 +110,7 @@
     {
       "date_joined": "2021-12-14T18:36:31Z",
       "email": "dummy2@cvat.org",
+      "email_verified": false,
       "first_name": "Dummy",
       "groups": [],
       "has_analytics_access": false,
@@ -119,6 +126,7 @@
     {
       "date_joined": "2021-12-14T18:36:00Z",
       "email": "dummy1@cvat.org",
+      "email_verified": null,
       "first_name": "Dummy",
       "groups": [],
       "has_analytics_access": false,
@@ -134,6 +142,7 @@
     {
       "date_joined": "2021-12-14T18:35:15Z",
       "email": "user10@cvat.org",
+      "email_verified": false,
       "first_name": "User",
       "groups": [
         "user"
@@ -151,6 +160,7 @@
     {
       "date_joined": "2021-12-14T18:34:34Z",
       "email": "user9@cvat.org",
+      "email_verified": false,
       "first_name": "User",
       "groups": [
         "user"
@@ -168,6 +178,7 @@
     {
       "date_joined": "2021-12-14T18:34:01Z",
       "email": "user8@cvat.org",
+      "email_verified": false,
       "first_name": "User",
       "groups": [
         "user"
@@ -185,6 +196,7 @@
     {
       "date_joined": "2021-12-14T18:33:06Z",
       "email": "user7@cvat.org",
+      "email_verified": false,
       "first_name": "User",
       "groups": [
         "user"
@@ -202,6 +214,7 @@
     {
       "date_joined": "2021-12-14T18:32:01Z",
       "email": "worker4@cvat.org",
+      "email_verified": false,
       "first_name": "Worker",
       "groups": [
         "worker"
@@ -219,6 +232,7 @@
     {
       "date_joined": "2021-12-14T18:31:25Z",
       "email": "worker3@cvat.org",
+      "email_verified": false,
       "first_name": "Worker",
       "groups": [
         "worker"
@@ -236,6 +250,7 @@
     {
       "date_joined": "2021-12-14T18:30:43Z",
       "email": "worker2@cvat.org",
+      "email_verified": false,
       "first_name": "Worker",
       "groups": [
         "worker"
@@ -253,6 +268,7 @@
     {
       "date_joined": "2021-12-14T18:30:00Z",
       "email": "worker1@cvat.org",
+      "email_verified": false,
       "first_name": "Worker",
       "groups": [
         "worker"
@@ -270,6 +286,7 @@
     {
       "date_joined": "2021-12-14T18:25:10Z",
       "email": "user4@cvat.org",
+      "email_verified": false,
       "first_name": "User",
       "groups": [
         "user"
@@ -287,6 +304,7 @@
     {
       "date_joined": "2021-12-14T18:24:39Z",
       "email": "user3@cvat.org",
+      "email_verified": false,
       "first_name": "User",
       "groups": [
         "user"
@@ -304,6 +322,7 @@
     {
       "date_joined": "2021-12-14T18:24:12Z",
       "email": "user2@cvat.org",
+      "email_verified": false,
       "first_name": "User",
       "groups": [
         "user"
@@ -321,6 +340,7 @@
     {
       "date_joined": "2021-12-14T18:21:09Z",
       "email": "user1@cvat.org",
+      "email_verified": false,
       "first_name": "User",
       "groups": [
         "user"
@@ -338,6 +358,7 @@
     {
       "date_joined": "2021-12-14T18:04:57Z",
       "email": "admin1@cvat.org",
+      "email_verified": true,
       "first_name": "Admin",
       "groups": [
         "admin"
