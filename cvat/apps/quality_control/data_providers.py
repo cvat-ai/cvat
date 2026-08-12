@@ -144,6 +144,19 @@ class JobDataProvider:
         }
 
     @cached_property
+    def _label_types_by_name(self) -> dict[tuple[str, str], str]:
+        return {
+            (
+                db_label.parent.name if db_label.parent else "",
+                db_label.name,
+            ): db_label.type
+            for db_label in self.job_data._label_mapping.values()
+        }
+
+    def get_label_type(self, name: str, *, parent: str = "") -> str:
+        return self._label_types_by_name[(parent, name)]
+
+    @cached_property
     def dm_dataset(self):
         from cvat.apps.dataset_manager.formats.registry import dm_env
 

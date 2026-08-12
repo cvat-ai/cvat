@@ -16,6 +16,7 @@ import attrs
 import datumaro as dm
 import numpy as np
 
+from cvat.apps.engine.models import LabelType
 from cvat.apps.quality_control import models
 from cvat.apps.quality_control.annotation_matching import (
     AttributeMatchingResult,
@@ -856,20 +857,36 @@ class RequirementHandler(ABC):
     # row/column index in the confusion matrix corresponding to unmatched annotations
     _UNMATCHED_IDX = -1
 
+    def _is_label_compatible_with_requirement(self, label: dm.LabelCategories.Category) -> bool:
+        if (
+            self.requirement.annotation_type
+            == models.QualityRequirementAnnotationType.SKELETON_KEYPOINT
+        ):
+            return bool(label.parent) and self._gt_data_provider.get_label_type(
+                label.parent
+            ) == str(LabelType.SKELETON)
+
+        if label.parent:
+            return False
+
+        label_type = self._gt_data_provider.get_label_type(label.name)
+        if self.requirement.annotation_type == models.QualityRequirementAnnotationType.SKELETON:
+            return label_type == str(LabelType.SKELETON)
+
+        return label_type in {
+            str(LabelType.ANY),
+            self.requirement.annotation_type,
+        }
+
     def _make_zero_confusion_matrix(self) -> tuple[list[str], np.ndarray, dict[int, int]]:
         label_id_idx_map = {}
         label_names = []
         for label_id, label in enumerate(self._gt_dataset.categories()[dm.AnnotationType.label]):
-            if (
-                self.requirement.annotation_type
-                == models.QualityRequirementAnnotationType.SKELETON_KEYPOINT
-            ):
-                if label.parent:
-                    label_id_idx_map[label_id] = len(label_names)
-                    label_names.append(f"{label.parent}.{label.name}")
-            elif not label.parent:
-                label_id_idx_map[label_id] = len(label_names)
-                label_names.append(label.name)
+            if not self._is_label_compatible_with_requirement(label):
+                continue
+
+            label_id_idx_map[label_id] = len(label_names)
+            label_names.append(f"{label.parent}.{label.name}" if label.parent else label.name)
 
         label_names.append(UNMATCHED_LABEL_NAME)
 

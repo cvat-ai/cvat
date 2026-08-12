@@ -12,7 +12,6 @@ from zipfile import ZipFile
 import pytest
 from cvat_sdk.core.helpers import get_paginated_collection
 from deepdiff import DeepDiff
-
 from rest_api.utils import create_gt_job, create_quality_report, create_task
 from shared.utils.config import (
     delete_method,
@@ -1835,6 +1834,145 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
         assert confusion_matrix["rows"] == [[1, 0], [0, 0]]
 
         assert "1" not in group["frame_results"]
+
+    def test_confusion_matrix_only_contains_labels_compatible_with_requirement_type(
+        self, admin_user
+    ):
+        task_id, _ = create_task(
+            admin_user,
+            spec={
+                "name": "type-specific-confusion-matrix",
+                "labels": [
+                    {"name": "car", "type": "rectangle"},
+                    {"name": "generic", "type": "any"},
+                    {"name": "scene", "type": "tag"},
+                    {"name": "region", "type": "polygon"},
+                    {
+                        "name": "pose",
+                        "type": "skeleton",
+                        "sublabels": [
+                            {"name": "nose", "type": "points"},
+                            {"name": "eye", "type": "points"},
+                        ],
+                        "svg": (
+                            '<circle data-type="element node" data-element-id="1" '
+                            'data-node-id="1" data-label-name="nose"></circle>'
+                            '<circle data-type="element node" data-element-id="2" '
+                            'data-node-id="2" data-label-name="eye"></circle>'
+                        ),
+                    },
+                ],
+            },
+            data={
+                "image_quality": 70,
+                "client_files": generate_image_files(1),
+            },
+        )
+        settings = self._get_task_settings(admin_user, task_id=task_id)
+        requirement_names = {
+            "rectangle": f"rectangle-matrix-{task_id}",
+            "skeleton": f"skeleton-matrix-{task_id}",
+            "skeleton_keypoint": f"keypoint-matrix-{task_id}",
+        }
+        updated_settings, response = self._patch_settings(
+            admin_user,
+            settings["id"],
+            {
+                "inherit": False,
+                "requirements": [
+                    *self._retained_base_requirement_payloads(settings),
+                    self._build_requirement_payload(
+                        requirement_names["rectangle"],
+                        annotation_type="rectangle",
+                        filter_expression=json.dumps({"==": [{"var": "shape.label"}, "car"]}),
+                    ),
+                    self._build_requirement_payload(
+                        requirement_names["skeleton"],
+                        annotation_type="skeleton",
+                    ),
+                    self._build_requirement_payload(
+                        requirement_names["skeleton_keypoint"],
+                        annotation_type="skeleton_keypoint",
+                    ),
+                ],
+            },
+        )
+        assert response.status_code == HTTPStatus.OK
+        requirement_ids = {
+            annotation_type: next(
+                requirement["id"]
+                for requirement in updated_settings["requirements"]
+                if requirement["name"] == requirement_name
+            )
+            for annotation_type, requirement_name in requirement_names.items()
+        }
+
+        gt_job = create_gt_job(admin_user, task_id, complete=False)
+        car_label = self._get_task_labels_by_name(admin_user, task_id=task_id)["car"]
+        matching_shape = self._build_rectangle_shape(
+            frame=0,
+            label_id=car_label.id,
+            points=[0, 0, 10, 10],
+        )
+        with make_api_client(admin_user) as api_client:
+            api_client.jobs_api.update_annotations(
+                gt_job.id,
+                labeled_data_request={"shapes": [matching_shape]},
+            )
+            api_client.tasks_api.update_annotations(
+                task_id,
+                labeled_data_request={"shapes": [matching_shape]},
+            )
+        self._complete_job(admin_user, gt_job.id)
+
+        report = create_quality_report(user=admin_user, task_id=task_id)
+        report_data = self._get_report_data(admin_user, report["id"])
+        matrices = {
+            annotation_type: report_data["groups"][requirement_name]["comparison_summary"][
+                "confusion_matrix"
+            ]
+            for annotation_type, requirement_name in requirement_names.items()
+        }
+        assert matrices["rectangle"]["labels"] == ["car", "generic", "unmatched"]
+        assert matrices["rectangle"]["rows"] == [
+            [1, 0, 0],
+            [0, 0, 0],
+            [0, 0, 0],
+        ]
+        assert matrices["skeleton"]["labels"] == ["pose", "unmatched"]
+        assert matrices["skeleton_keypoint"]["labels"] == [
+            "pose.nose",
+            "pose.eye",
+            "unmatched",
+        ]
+
+        response = get_method(
+            admin_user,
+            f"quality/reports/{report['id']}/confusion/matrix",
+            requirement=requirement_ids["rectangle"],
+        )
+        assert response.status_code == HTTPStatus.OK
+        assert response.json()["labels"] == matrices["rectangle"]["labels"]
+
+        response = get_method(admin_user, f"quality/reports/{report['id']}/confusion")
+        assert response.status_code == HTTPStatus.OK
+        with ZipFile(BytesIO(response.content)) as archive:
+            manifest = json.loads(archive.read("manifest.json"))
+            rectangle_export = next(
+                matrix
+                for matrix in manifest["matrices"]
+                if matrix["scope"] == "group"
+                and matrix["requirement_id"] == requirement_ids["rectangle"]
+            )
+            assert rectangle_export["labels"] == matrices["rectangle"]["labels"]
+            csv_reader = csv.DictReader(StringIO(archive.read(rectangle_export["path"]).decode()))
+            assert csv_reader.fieldnames == [
+                "DS (row) \\ GT (col) label",
+                "car",
+                "generic",
+                "unmatched",
+                "precision",
+            ]
 
     def test_task_report_data_applies_shape_requirement_filter_to_metrics(self, admin_user):
         task_id, _ = create_task(
