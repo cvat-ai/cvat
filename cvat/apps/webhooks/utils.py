@@ -11,9 +11,10 @@ from typing import TypeVar
 
 import requests
 from crum import get_current_request
-from django.contrib.auth.models import User
 from django.core.exceptions import FieldDoesNotExist
+from django.db import transaction
 from django.db.models import Model
+from rest_framework.renderers import JSONRenderer
 from rest_framework.serializers import BaseSerializer
 
 from cvat.apps.consensus.rq import ConsensusRequestId
@@ -29,6 +30,7 @@ from cvat.apps.engine.models import (
 )
 from cvat.apps.engine.rq import ExportRequestId, ImportRequestId
 from cvat.apps.engine.serializers import BasicUserSerializer, UserSerializer
+from cvat.apps.iam.models import User
 from cvat.apps.organizations.models import Invitation, Membership, Organization
 from cvat.apps.quality_control.rq import QualityRequestId
 from cvat.utils.http import PROXIES_FOR_UNTRUSTED_URLS, make_requests_session
@@ -282,3 +284,46 @@ def recreate_old_instance(instance: ModelT, dirty_fields: dict) -> ModelT:
         setattr(old_instance, field, value["saved"])
 
     return old_instance
+
+
+def send_user_update_event(user_id: int, changes: dict[str, dict]) -> None:
+    """Emit update:user for a change that happened outside the auth_user row."""
+
+    from .dispatch import batch_add_webhooks_to_queue
+    from .event_type import event_key
+    from .services import select_webhooks
+
+    resource_name = User.__name__.lower()
+
+    event_key_ = event_key(action="update", resource=resource_name)
+
+    webhooks = select_webhooks(
+        event_key=event_key_,
+        organization_id=None,
+        project_id=None,
+    )
+
+    if not webhooks:
+        return
+
+    user = retrieve_instance(model=User, pk=user_id)
+
+    # TODO: backward compatibility, remove in future releases
+    _before_update = {field: value["from"] for field, value in changes.items()}
+
+    webhook_payload = {
+        "event": event_key_,
+        resource_name: get_serializer(instance=user).data,
+        "sender": get_sender(instance=user),
+        "before_update": json.loads(JSONRenderer().render(_before_update)),
+        "changes": json.loads(JSONRenderer().render(changes)),
+    }
+
+    webhook_payload_pairs = [
+        (webhook, {**webhook_payload, "webhook_id": webhook.id}) for webhook in webhooks
+    ]
+
+    transaction.on_commit(
+        lambda: batch_add_webhooks_to_queue(webhook_payload_pairs=webhook_payload_pairs),
+        robust=True,
+    )
