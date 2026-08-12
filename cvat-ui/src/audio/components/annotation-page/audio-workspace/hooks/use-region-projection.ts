@@ -96,6 +96,10 @@ export function useRegionProjection({ regionRuntime, ready }: Params): void {
                 start: geometry.start,
                 end: geometry.end,
                 minLength: MIN_INTERVAL_DURATION,
+                // Resize handles are kept as custom pointer targets, but
+                // we implement our own resize logic.
+                resizeStart: false,
+                resizeEnd: false,
             });
         });
     }, [ready, regionGeometry]);

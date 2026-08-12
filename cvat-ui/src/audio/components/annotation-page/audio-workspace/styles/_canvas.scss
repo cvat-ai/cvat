@@ -109,6 +109,14 @@
                 cursor: ew-resize !important;
             }
         }
+
+        // The hover timestamp is derived from the last pointer event and lags
+        // behind a stationary pointer while custom resize auto-scrolls.
+        &.cvat-audio-waveform-interaction-auto-scroll {
+            *::part(hover) {
+                visibility: hidden;
+            }
+        }
     }
 
     .cvat-audio-minimap-section {
