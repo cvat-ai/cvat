@@ -164,6 +164,7 @@ Cypress.Commands.add('inviteMembersToOrganization', (members) => {
         }
     }
     cy.intercept('POST', '/api/invitations**').as('inviteOrganizationMember');
+    cy.intercept('GET', '/api/memberships**').as('getOrganizationMembersAfterInvite');
     cy.get('.cvat-organization-invitation-modal')
         .contains('button', 'OK')
         .click();
@@ -177,10 +178,6 @@ Cypress.Commands.add('inviteMembersToOrganization', (members) => {
     }
     cy.wrap(invitedEmails).should('have.members', members.map((el) => el.email));
     cy.get('.cvat-organization-invitation-modal').should('not.exist');
-    cy.intercept('GET', '/api/memberships**').as('getOrganizationMembersAfterInvite');
-    cy.get('.cvat-organization-page-search-bar').find('input').as('organizationMembersSearch');
-    cy.get('@organizationMembersSearch').clear();
-    cy.get('@organizationMembersSearch').type('{enter}');
     cy.wait('@getOrganizationMembersAfterInvite')
         .its('response.statusCode')
         .should('equal', 200);
