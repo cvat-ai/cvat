@@ -129,7 +129,7 @@ const AUDIO_LONG_JUMP_FRACTION = 0.05;
 
 type AudioIntervalPatch = Partial<Pick<
     AudioIntervalState,
-    'start' | 'stop' | 'label' | 'attributes' | 'lock' | 'hidden' | 'color'
+    'start' | 'stop' | 'label' | 'attributes' | 'lock' | 'pinned' | 'hidden' | 'color'
 >>;
 
 function applyIntervalPatch(interval: AudioIntervalState, patch: AudioIntervalPatch): void {
@@ -139,6 +139,7 @@ function applyIntervalPatch(interval: AudioIntervalState, patch: AudioIntervalPa
     if (patch.label) target.label = patch.label;
     if (patch.attributes) target.attributes = patch.attributes;
     if (typeof patch.lock === 'boolean') target.lock = patch.lock;
+    if (typeof patch.pinned === 'boolean') target.pinned = patch.pinned;
     if (typeof patch.hidden === 'boolean') target.hidden = patch.hidden;
     if (typeof patch.color === 'string') target.color = patch.color;
 }

@@ -124,7 +124,7 @@ export function useRegionEditing({
             const clientID = clientIDFromWaveRegionId(region.id);
             if (clientID === null) return;
             const interval = latestRef.current.intervals.find((item) => item.clientID === clientID);
-            if (!interval) return;
+            if (!interval || interval.pinned) return;
             if (
                 Math.abs(intervalStartSeconds(interval) - region.start) < INTERVAL_BOUNDARY_EPSILON &&
                 Math.abs(intervalEndSeconds(interval) - region.end) < INTERVAL_BOUNDARY_EPSILON

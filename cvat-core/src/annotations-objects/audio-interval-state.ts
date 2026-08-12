@@ -18,6 +18,7 @@ export interface SerializedAudioIntervalState {
     stop: number | null;
     color: string;
     lock: boolean;
+    pinned: boolean;
     updated: number;
     source: Source;
     score: number;
@@ -48,6 +49,7 @@ export class AudioIntervalState {
     public color: string;
     public hidden: boolean;
     public lock: boolean;
+    public pinned: boolean;
     public attributes: Record<number, string>;
 
     constructor(serialized: SerializedAudioIntervalState) {
@@ -80,6 +82,7 @@ export class AudioIntervalState {
                 delete this.label;
                 delete this.attributes;
                 delete this.position;
+                delete this.pinned;
                 delete this.lock;
                 delete this.color;
                 delete this.hidden;
@@ -97,6 +100,7 @@ export class AudioIntervalState {
             start: serialized.start,
             stop: serialized.stop,
             lock: serialized.lock,
+            pinned: serialized.pinned,
             color: serialized.color,
             hidden: serialized.hidden,
             source: serialized.source,
@@ -217,6 +221,21 @@ export class AudioIntervalState {
                         data.lock = lock;
                     },
                 },
+                pinned: {
+                    get: () => data.pinned,
+                    set: (pinned) => {
+                        if (typeof pinned !== 'boolean') {
+                            throw new ArgumentError('Pinned is expected to be a boolean.');
+                        }
+
+                        if (pinned === data.pinned) {
+                            return;
+                        }
+
+                        data.updateFlags.pinned = true;
+                        data.pinned = pinned;
+                    },
+                },
                 updated: {
                     get: () => data.updated,
                 },
@@ -245,6 +264,9 @@ export class AudioIntervalState {
 
         if (typeof serialized.hidden === 'boolean') {
             data.hidden = serialized.hidden;
+        }
+        if (typeof serialized.pinned === 'boolean') {
+            data.pinned = serialized.pinned;
         }
         if (typeof serialized.color === 'string') {
             data.color = serialized.color;
@@ -294,6 +316,7 @@ export class AudioIntervalState {
             stop: body.stop,
             color: body.label.color!,
             lock: false,
+            pinned: false,
             updated: Date.now(),
             source: body.source,
             score: 1,

@@ -118,7 +118,7 @@ export function useRegionProjection({ regionRuntime, ready }: Params): void {
             if (!interval || interval.hidden) return;
 
             const isActive = clientID === activeIntervalID;
-            const canEdit = activeControl === ActiveControl.AUDIO_REGION_EDIT && !interval.lock;
+            const canEdit = activeControl === ActiveControl.AUDIO_REGION_EDIT && !interval.lock && !interval.pinned;
             region.setOptions({
                 color: getAudioRegionColor(interval, labels, colorBy, opacity, selectedOpacity, isActive),
                 drag: canEdit,
