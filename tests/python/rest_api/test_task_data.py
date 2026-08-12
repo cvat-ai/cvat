@@ -985,6 +985,53 @@ class TestPostTaskData:
             assert expected_error and expected_error in rq_job_details.message
 
     @pytest.mark.with_external_services
+    @pytest.mark.parametrize("cloud_storage_id", [1])
+    @pytest.mark.parametrize(
+        "server_files, filename_pattern",
+        [
+            # a directory can be selected explicitly or sent by the UI
+            # when all the files inside it are selected
+            (["videos/", "videos/manifest.jsonl"], None),
+            (["videos/manifest.jsonl"], "videos/*"),
+            (["videos/manifest.jsonl"], "*"),
+            # only a manifest is specified, filename_pattern is set to "*" implicitly
+            (["videos/manifest.jsonl"], None),
+        ],
+    )
+    def test_create_task_with_video_and_manifest_in_cloud_storage_directory(
+        self,
+        cloud_storage_id: int,
+        server_files: list[str],
+        filename_pattern: str | None,
+    ):
+        # videos/manifest.jsonl is a video manifest describing videos/video_1.mp4;
+        # it must not be parsed as an image manifest when the directory or the
+        # filename pattern is resolved into files
+        expected_frame_count = 3
+
+        task_spec = {
+            "name": "Task with a video and a manifest in a cloud storage directory",
+            "labels": [{"name": "car"}],
+        }
+
+        data_spec = {
+            "image_quality": 75,
+            "use_cache": True,
+            "cloud_storage_id": cloud_storage_id,
+            "server_files": server_files,
+        }
+        if filename_pattern:
+            data_spec["filename_pattern"] = filename_pattern
+
+        task_id, _ = create_task(self._USERNAME, task_spec, data_spec)
+
+        with make_api_client(self._USERNAME) as api_client:
+            task, response = api_client.tasks_api.retrieve(task_id)
+            assert response.status == HTTPStatus.OK
+            assert task.size == expected_frame_count
+            assert task.mode == "interpolation"
+
+    @pytest.mark.with_external_services
     @pytest.mark.parametrize("use_manifest", [True, False])
     @pytest.mark.parametrize("use_cache", [True, False])
     @pytest.mark.parametrize(
