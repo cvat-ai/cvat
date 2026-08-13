@@ -6,7 +6,9 @@ import type RegionsPlugin from 'wavesurfer.js/dist/plugins/regions';
 
 // Start scrolling when the active region boundary enters this edge zone.
 const AUTO_SCROLL_EDGE_ZONE = 40;
-const AUTO_SCROLL_MAX_STEP = 24;
+const AUTO_SCROLL_MAX_STEP = 16;
+// Increase the auto-scroll velocity over several frames instead of jumping to full speed.
+const AUTO_SCROLL_VELOCITY_SCALE_INCREMENT = 0.02;
 type ScrollDirection = -1 | 1;
 
 interface RegionsPluginInternals {
@@ -39,15 +41,15 @@ function disableWaveSurferAutoScroll(plugin: RegionsPlugin): () => void {
     };
 }
 
-function scrollStepForBoundary(boundaryX: number, viewportRect: DOMRect): number {
+function scrollStepForBoundary(boundaryX: number, viewportRect: DOMRect, velocityScale: number): number {
     const leftEdge = viewportRect.left + AUTO_SCROLL_EDGE_ZONE;
     if (boundaryX < leftEdge) {
-        return -Math.ceil((AUTO_SCROLL_MAX_STEP * (leftEdge - boundaryX)) / AUTO_SCROLL_EDGE_ZONE);
+        return -Math.ceil((AUTO_SCROLL_MAX_STEP * (leftEdge - boundaryX) * velocityScale) / AUTO_SCROLL_EDGE_ZONE);
     }
 
     const rightEdge = viewportRect.right - AUTO_SCROLL_EDGE_ZONE;
     if (boundaryX > rightEdge) {
-        return Math.ceil((AUTO_SCROLL_MAX_STEP * (boundaryX - rightEdge)) / AUTO_SCROLL_EDGE_ZONE);
+        return Math.ceil((AUTO_SCROLL_MAX_STEP * (boundaryX - rightEdge) * velocityScale) / AUTO_SCROLL_EDGE_ZONE);
     }
 
     return 0;
@@ -66,6 +68,7 @@ export function attachRegionResizeAutoScroll(
     let animationFrameHandle: number | null = null;
     let isAutoScrolling = false;
     const armedDirections = new Set<ScrollDirection>();
+    let velocityScale = 0;
     const restoreWaveSurferAutoScroll = disableWaveSurferAutoScroll(plugin);
 
     const setAutoScrolling = (nextIsAutoScrolling: boolean): void => {
@@ -78,6 +81,7 @@ export function attachRegionResizeAutoScroll(
     const stop = (): void => {
         autoScroll = null;
         armedDirections.clear();
+        velocityScale = 0;
         setAutoScrolling(false);
         if (animationFrameHandle !== null) {
             cancelAnimationFrame(animationFrameHandle);
@@ -103,7 +107,7 @@ export function attachRegionResizeAutoScroll(
                 return;
             }
 
-            const deltaX = scrollStepForBoundary(targetX, viewport.getBoundingClientRect());
+            const deltaX = scrollStepForBoundary(targetX, viewport.getBoundingClientRect(), velocityScale);
             const direction = Math.sign(deltaX) as ScrollDirection;
             let didAutoScroll = false;
             if (deltaX !== 0 && armedDirections.has(direction)) {
@@ -111,6 +115,11 @@ export function attachRegionResizeAutoScroll(
                 if (actualDeltaX !== 0) {
                     activeAutoScroll.onScroll(actualDeltaX);
                     didAutoScroll = true;
+                    // Velocity is shared by both directions and never decreases during a resize.
+                    // It's only needed to slow down the initial acceleration of auto-scroll when the boundary
+                    // is within the edge zone so the user has time to react.
+                    // Getting to full speed in about 1s.
+                    velocityScale = Math.min(1, velocityScale + AUTO_SCROLL_VELOCITY_SCALE_INCREMENT);
                 }
             }
             setAutoScrolling(didAutoScroll);
@@ -123,6 +132,7 @@ export function attachRegionResizeAutoScroll(
         onScroll: (deltaX: number) => void,
     ): void => {
         armedDirections.clear();
+        velocityScale = AUTO_SCROLL_VELOCITY_SCALE_INCREMENT;
         autoScroll = {
             getTargetX, onScroll,
         };
