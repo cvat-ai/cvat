@@ -9,6 +9,9 @@
   responses for admins and for the requesting user
   (<https://github.com/cvat-ai/cvat/pull/10991>)
 
+- \[Server API\] Added a read-only `created_via` field to user responses
+  (<https://github.com/cvat-ai/cvat/pull/10991>)
+
 ### Changed
 
 - \[Server API\] `GET /api/webhooks/events` now requires a `type` query

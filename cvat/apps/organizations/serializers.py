@@ -11,6 +11,7 @@ from django.db import transaction
 from rest_framework import serializers
 
 from cvat.apps.engine.serializers import BasicUserSerializer
+from cvat.apps.iam.models import UserCreatedViaEnum
 from cvat.apps.iam.utils import get_dummy_or_regular_user
 
 from .models import Invitation, Membership, Organization
@@ -123,7 +124,11 @@ class InvitationWriteSerializer(serializers.ModelSerializer):
             user = get_user_model().objects.get(email__iexact=user_email)
             del membership_data["user"]
         except ObjectDoesNotExist:
-            user = get_user_model().objects.create_user(username=user_email, email=user_email)
+            user = get_user_model().objects.create_user(
+                username=user_email,
+                email=user_email,
+                created_via=UserCreatedViaEnum.INVITATION,
+            )
             user.set_unusable_password()
             user.save()
             del membership_data["user"]

@@ -21,6 +21,7 @@ from .utils import (
     create_task,
     export_task_backup,
     export_task_dataset,
+    invite_user_to_org,
     register_new_user,
 )
 
@@ -872,6 +873,18 @@ class TestWebhookUserEvents:
         assert payload["user"]["username"] == user["username"]
         assert payload["user"]["email"] == user["email"]
         assert payload["user"]["is_active"] is True
+        assert payload["user"]["created_via"] == "email_password"
+
+    def test_webhook_create_user_by_invitation(self, request: pytest.FixtureRequest) -> None:
+        webhook_id = create_instance_type_webhook(request, events=["create:user"])
+
+        invite_user_to_org("webhook_invited_user@email.com", org_id=2, role="worker")
+
+        deliveries, payload = get_instance_webhook_deliveries(request, webhook_id)
+
+        assert deliveries["count"] == 1
+        assert payload["event"] == "create:user"
+        assert payload["user"]["created_via"] == "invitation"
 
     def test_webhook_update_user(self, request: pytest.FixtureRequest, users) -> None:
         user = next(user for user in users if user["username"] == "dummy1")
@@ -888,11 +901,12 @@ class TestWebhookUserEvents:
         assert payload["event"] == "update:user"
         assert payload["webhook_id"] == webhook_id
         assert payload["before_update"]["first_name"] == user["first_name"]
+        assert payload["user"]["first_name"] == patch_data["first_name"]
+        assert payload["user"]["created_via"] == user["created_via"]
         assert payload["changes"]["first_name"] == {
             "from": user["first_name"],
             "to": patch_data["first_name"],
         }
-        assert payload["user"]["first_name"] == patch_data["first_name"]
 
     def test_webhook_delete_user(self, request: pytest.FixtureRequest, users) -> None:
         user = next(user for user in users if user["username"] == "dummy1")
