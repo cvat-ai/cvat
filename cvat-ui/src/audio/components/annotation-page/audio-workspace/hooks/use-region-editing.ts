@@ -319,13 +319,13 @@ export function useRegionEditing({
         };
 
         const onPointerUp = (event: PointerEvent): void => {
-            const completedInteraction = interaction;
-            if (!completedInteraction || completedInteraction.pointerID !== event.pointerId) return;
-            const completedResize = resizeMeta;
+            const currInteraction = interaction;
+            if (!currInteraction || currInteraction.pointerID !== event.pointerId) return;
+            const currResize = resizeMeta;
 
             interaction = null;
             resizeMeta = null;
-            if (!completedResize) {
+            if (!currResize) {
                 dispatch(audioActions.setAudioInteractingInterval(null));
                 return;
             }
@@ -335,9 +335,9 @@ export function useRegionEditing({
             dispatch(audioActions.setAudioInteractingInterval(null));
             if (!hasResized) return;
 
-            dispatch(updateAudioIntervalAsync(completedInteraction.clientID, {
-                start: Math.round(completedResize.region.start * 1000),
-                stop: Math.round(completedResize.region.end * 1000),
+            dispatch(updateAudioIntervalAsync(currInteraction.clientID, {
+                start: Math.round(currResize.region.start * 1000),
+                stop: Math.round(currResize.region.end * 1000),
             }));
         };
 
