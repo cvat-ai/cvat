@@ -13,7 +13,6 @@ from rest_framework import status
 from rest_framework.exceptions import NotAuthenticated
 from rest_framework.response import Response
 from rest_framework.serializers import BaseSerializer
-from rest_framework.views import exception_handler as drf_exception_handler
 
 from cvat.apps.access_tokens.models import AccessToken
 from cvat.apps.access_tokens.serializers import AccessTokenReadSerializer
@@ -686,6 +685,8 @@ def handle_rq_exception(rq_job: rq.job.Job, exc_type: type[Exception], exc_value
 
 
 def exception_handler(exc: Exception, context) -> Response | None:
+    from rest_framework.views import exception_handler as drf_exception_handler
+
     if isinstance(exc, DatabaseError):
         if db_utils.is_lock_timeout_error(exc):
             exc = ResourceIsBusyApiException()
