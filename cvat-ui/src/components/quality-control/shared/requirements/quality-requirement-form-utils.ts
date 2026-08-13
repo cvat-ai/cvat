@@ -619,11 +619,7 @@ function buildAttributeComparison(
         });
 
     if (!values.matchUnspecifiedAttributes && !rules.length) {
-        if (!isRootRequirement) {
-            return { default: { enabled: false } };
-        }
-
-        return null;
+        return { default: { enabled: false } };
     }
 
     return {
