@@ -111,7 +111,7 @@ def format_import_exception(ex: Exception) -> str:
         # Private types (e.g. Datumaro's _ImportFail) carry no information for the user
         return type(current).__name__.startswith("_") or (
             # Datumaro raises this error internally for old-style extractors during the import.
-            # It is always handled, but remains the context and so the resulting message.
+            # It is always handled, but remains in the context and in the resulting message.
             "unexpected keyword argument 'ctx'"
             in str(current)
         )
