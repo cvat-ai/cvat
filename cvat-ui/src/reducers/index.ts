@@ -32,6 +32,7 @@ export interface AudioState {
         intervals: AudioIntervalState[];
         activeIntervalID: number | null;
         hoveredIntervalID: number | null;
+        interactingIntervalID: number | null;
         contextMenu: {
             top: number;
             left: number;

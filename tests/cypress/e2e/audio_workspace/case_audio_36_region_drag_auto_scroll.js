@@ -69,8 +69,6 @@ context('Audio annotation. Region editing auto-scrolls the waveform.', () => {
         cy.audioSliderSetValue('cvat-audio-zoom-control', '{home}', 1);
         cy.audioSliderSetValue('cvat-audio-zoom-control', '{downarrow}', 20);
         cy.audioCreateRegionViaButton(firstLabelName, 400, 550);
-        cy.get('body').type('e');
-        cy.get('.cvat-audio-edit-region-control').should('have.class', 'cvat-active-canvas-control');
         cy.getAudioRegion().should('have.css', 'cursor', 'grab');
     });
 

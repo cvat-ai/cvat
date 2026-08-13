@@ -45,12 +45,13 @@ export function useRegionProjection({ regionRuntime, ready }: Params): void {
         }))
     ), areRegionGeometriesEqual);
     const {
-        intervals, activeIntervalID, hoveredIntervalID, labels,
+        intervals, activeIntervalID, hoveredIntervalID, interactingIntervalID, labels,
         colorBy, opacity, selectedOpacity, activeControl,
     } = useSelector((state: CombinedState) => ({
         intervals: state.audio.player.intervals,
         activeIntervalID: state.audio.player.activeIntervalID,
         hoveredIntervalID: state.audio.player.hoveredIntervalID,
+        interactingIntervalID: state.audio.player.interactingIntervalID,
         labels: state.annotation.job.labels,
         colorBy: state.settings.shapes.colorBy,
         opacity: state.settings.shapes.opacity,
@@ -118,7 +119,9 @@ export function useRegionProjection({ regionRuntime, ready }: Params): void {
             if (!interval || interval.hidden) return;
 
             const isActive = clientID === activeIntervalID;
-            const isHighlighted = isActive || clientID === hoveredIntervalID;
+            const isInteracting = clientID === interactingIntervalID;
+            const isHovered = interactingIntervalID === null && clientID === hoveredIntervalID;
+            const isHighlighted = isActive || isInteracting || isHovered;
             const canEdit = activeControl === ActiveControl.CURSOR && !interval.lock && !interval.pinned;
             region.setOptions({
                 color: getAudioRegionColor(interval, labels, colorBy, opacity, selectedOpacity, isActive),
@@ -140,7 +143,7 @@ export function useRegionProjection({ regionRuntime, ready }: Params): void {
             element.style.boxShadow = isHighlighted ? `inset 0 0 0 2px ${borderColor}` : '';
         });
     }, [
-        activeControl, activeIntervalID, colorBy, hoveredIntervalID, intervals, labels,
+        activeControl, activeIntervalID, colorBy, hoveredIntervalID, interactingIntervalID, intervals, labels,
         opacity, ready, selectedOpacity,
     ]);
 }
