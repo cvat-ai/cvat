@@ -29,6 +29,8 @@ from cvat.apps.quality_control.quality_handlers import (
     build_requirement_report,
     build_requirements_summary,
     merge_annotations_summary,
+    resolve_effective_requirement,
+    resolve_effective_requirements,
     select_requirement_calculation,
 )
 
@@ -147,6 +149,72 @@ class TestComparisonReportAccumulation(unittest.TestCase):
             serialized_report["groups"]["cars"]["frame_results"][0]["conflicts"],
             [conflict.to_dict()],
         )
+
+
+class TestEffectiveQualityRequirements(unittest.TestCase):
+    @staticmethod
+    def _make_root(**overrides) -> models.QualityRequirement:
+        values = {
+            **models.QualityRequirement.get_base_defaults(),
+            "id": 1,
+            "name": "root",
+            "annotation_type": models.QualityRequirementAnnotationType.RECTANGLE,
+            "enabled": True,
+            **overrides,
+        }
+        return models.QualityRequirement(**values)
+
+    def test_model_does_not_fill_inherited_fields_for_child(self) -> None:
+        root = self._make_root()
+
+        child = models.QualityRequirement(id=2, name="child", parent=root)
+
+        self.assertIsNone(child.annotation_type)
+        self.assertIsNone(child.target_metric)
+        self.assertIsNone(child.target_metric_threshold)
+        self.assertIsNone(child.iou_threshold)
+        self.assertIsNone(child.point_size_base)
+
+    def test_requirement_inherits_from_each_effective_parent(self) -> None:
+        root = self._make_root(iou_threshold=0.4, line_thickness=0.01)
+        parent = models.QualityRequirement(
+            id=2,
+            name="parent",
+            parent=root,
+            iou_threshold=0.6,
+        )
+        child = models.QualityRequirement(
+            id=3,
+            name="child",
+            parent=parent,
+            line_thickness=0.2,
+        )
+
+        effective_requirements = [
+            resolve_effective_requirement(child),
+            {
+                requirement.name: requirement
+                for requirement in resolve_effective_requirements([child, root, parent])
+            }[child.name],
+        ]
+
+        for effective in effective_requirements:
+            self.assertEqual(effective.annotation_type, root.annotation_type)
+            self.assertEqual(effective.iou_threshold, parent.iou_threshold)
+            self.assertEqual(effective.line_thickness, child.line_thickness)
+
+    def test_batch_resolution_rejects_requirement_without_its_parent(self) -> None:
+        root = self._make_root()
+        child = models.QualityRequirement(id=2, name="child", parent=root)
+
+        with self.assertRaisesRegex(ValueError, "Parent quality requirements must be included"):
+            resolve_effective_requirements([child])
+
+    def test_resolution_rejects_incomplete_root(self) -> None:
+        root = self._make_root(iou_threshold=None)
+
+        with self.assertRaisesRegex(ValueError, "iou_threshold"):
+            resolve_effective_requirement(root)
 
 
 class TestRequirementCompletion(unittest.TestCase):

@@ -1186,19 +1186,6 @@ class QualitySettingsSerializer(WriteOnceMixin, serializers.ModelSerializer):
             JsonLogicFilter().parse_query(value, raise_on_empty=False)
         return value
 
-    def get_extra_kwargs(self):
-        defaults = models.QualityRequirement.get_defaults()
-
-        extra_kwargs = super().get_extra_kwargs()
-
-        for param_name in defaults.keys() | extra_kwargs.keys():
-            param_kwargs: dict = extra_kwargs.setdefault(param_name, {})
-
-            if param_name in defaults:
-                param_kwargs.setdefault("default", defaults[param_name])
-
-        return extra_kwargs
-
     def _make_requirement_serializer(
         self,
         *,

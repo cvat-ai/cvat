@@ -16,6 +16,7 @@ import attrs
 import datumaro as dm
 import numpy as np
 
+from cvat.apps.engine.models import LabelType
 from cvat.apps.quality_control import models
 from cvat.apps.quality_control.annotation_matching import (
     AttributeMatchingResult,
@@ -117,8 +118,13 @@ _INHERITED_REQUIREMENT_FIELDS = (
     "check_covered_annotations",
     "object_visibility_threshold",
     "panoptic_comparison",
-    "compare_attributes",
     "attribute_comparison",
+)
+
+_REQUIRED_ROOT_REQUIREMENT_FIELDS = tuple(
+    field_name
+    for field_name in _INHERITED_REQUIREMENT_FIELDS
+    if field_name != "attribute_comparison"
 )
 
 
@@ -150,30 +156,39 @@ def _make_effective_requirement(
     inherited: EffectiveQualityRequirement | None,
 ) -> EffectiveQualityRequirement:
     if inherited is None:
-        defaults = models.QualityRequirement.get_defaults()
+        if requirement.parent_id is not None:
+            raise ValueError("Parent effective requirement is required")
+
         values = {
-            "annotation_type": models.QualityRequirementAnnotationType.RECTANGLE,
-            "target_metric": models.QualityTargetMetricType.ACCURACY,
-            "target_metric_threshold": 0.7,
-            **defaults,
-            "compare_attributes": False,
-            "attribute_comparison": normalize_attribute_comparison(None, fill_default=True),
+            field_name: deepcopy(getattr(requirement, field_name))
+            for field_name in _INHERITED_REQUIREMENT_FIELDS
         }
+
+        missing_fields = [
+            field_name
+            for field_name in _REQUIRED_ROOT_REQUIREMENT_FIELDS
+            if values[field_name] is None
+        ]
+        if missing_fields:
+            raise ValueError(
+                "Root quality requirement must define inherited fields: "
+                + ", ".join(missing_fields)
+            )
     else:
         values = {
             field_name: deepcopy(getattr(inherited, field_name))
             for field_name in _INHERITED_REQUIREMENT_FIELDS
         }
 
-    for field_name in _INHERITED_REQUIREMENT_FIELDS:
-        local_value = getattr(requirement, field_name, None)
-        if local_value is None:
-            continue
+        for field_name in _INHERITED_REQUIREMENT_FIELDS:
+            local_value = getattr(requirement, field_name, None)
+            if local_value is None:
+                continue
 
-        if field_name == "attribute_comparison":
-            values[field_name] = merge_attribute_comparison(values.get(field_name), local_value)
-        else:
-            values[field_name] = local_value
+            if field_name == "attribute_comparison":
+                values[field_name] = merge_attribute_comparison(values.get(field_name), local_value)
+            else:
+                values[field_name] = local_value
 
     values["attribute_comparison"] = normalize_attribute_comparison(
         values.get("attribute_comparison"),
@@ -235,6 +250,16 @@ def resolve_effective_requirements(
     requirements_by_id = {
         requirement.id: requirement for requirement in db_requirements if requirement.id is not None
     }
+    missing_parent_ids = {
+        requirement.parent_id
+        for requirement in db_requirements
+        if requirement.parent_id is not None and requirement.parent_id not in requirements_by_id
+    }
+    if missing_parent_ids:
+        raise ValueError(
+            f"Parent quality requirements must be included: {sorted(missing_parent_ids)}"
+        )
+
     children_by_parent_id: dict[int | None, list[models.QualityRequirement]] = {}
     for requirement in db_requirements:
         children_by_parent_id.setdefault(requirement.parent_id, []).append(requirement)
@@ -244,13 +269,13 @@ def resolve_effective_requirements(
     def dfs(
         requirement: models.QualityRequirement,
         inherited: EffectiveQualityRequirement | None,
-        path: set[int],
+        visited: set[int],
     ) -> None:
         requirement_id = requirement.id
         if requirement_id is not None:
-            if requirement_id in path:
+            if requirement_id in visited:
                 raise ValueError("Requirement parent cycle is not allowed")
-            path = {*path, requirement_id}
+            visited = {*visited, requirement_id}
 
         effective = _make_effective_requirement(requirement, inherited)
         effective_requirements.append(effective)
@@ -258,15 +283,14 @@ def resolve_effective_requirements(
         children = sorted(children_by_parent_id.get(requirement_id, []), key=_requirement_sort_key)
 
         for child in children:
-            dfs(child, effective, path)
+            dfs(child, effective, visited)
 
-    roots = [
-        requirement
-        for requirement in db_requirements
-        if requirement.parent_id not in requirements_by_id
-    ]
+    roots = [requirement for requirement in db_requirements if requirement.parent_id is None]
     for root in sorted(roots, key=_requirement_sort_key):
         dfs(root, None, set())
+
+    if len(effective_requirements) != len(db_requirements):
+        raise ValueError("Requirement parent cycle is not allowed")
 
     return effective_requirements
 
@@ -833,20 +857,36 @@ class RequirementHandler(ABC):
     # row/column index in the confusion matrix corresponding to unmatched annotations
     _UNMATCHED_IDX = -1
 
+    def _is_label_compatible_with_requirement(self, label: dm.LabelCategories.Category) -> bool:
+        if (
+            self.requirement.annotation_type
+            == models.QualityRequirementAnnotationType.SKELETON_KEYPOINT
+        ):
+            return bool(label.parent) and self._gt_data_provider.get_label_type(
+                label.parent
+            ) == str(LabelType.SKELETON)
+
+        if label.parent:
+            return False
+
+        label_type = self._gt_data_provider.get_label_type(label.name)
+        if self.requirement.annotation_type == models.QualityRequirementAnnotationType.SKELETON:
+            return label_type == str(LabelType.SKELETON)
+
+        return label_type in {
+            str(LabelType.ANY),
+            self.requirement.annotation_type,
+        }
+
     def _make_zero_confusion_matrix(self) -> tuple[list[str], np.ndarray, dict[int, int]]:
         label_id_idx_map = {}
         label_names = []
         for label_id, label in enumerate(self._gt_dataset.categories()[dm.AnnotationType.label]):
-            if (
-                self.requirement.annotation_type
-                == models.QualityRequirementAnnotationType.SKELETON_KEYPOINT
-            ):
-                if label.parent:
-                    label_id_idx_map[label_id] = len(label_names)
-                    label_names.append(f"{label.parent}.{label.name}")
-            elif not label.parent:
-                label_id_idx_map[label_id] = len(label_names)
-                label_names.append(label.name)
+            if not self._is_label_compatible_with_requirement(label):
+                continue
+
+            label_id_idx_map[label_id] = len(label_names)
+            label_names.append(f"{label.parent}.{label.name}" if label.parent else label.name)
 
         label_names.append(UNMATCHED_LABEL_NAME)
 
