@@ -15,9 +15,11 @@ import {
     collapseObjectItems,
     changeGroupColorAsync,
     copyShape as copyShapeAction,
+    copySelection as copySelectionAction,
     switchPropagateVisibility as switchPropagateVisibilityAction,
     switchSimplifyVisibility as switchSimplifyVisibilityAction,
     removeObject as removeObjectAction,
+    removeSelectionAsync,
     fetchAnnotationsAsync,
     changeHideActiveObjectAsync,
     updateLayerAsync,
@@ -60,6 +62,7 @@ interface StateToProps {
     colorBy: ColorBy;
     activatedStateID: number | null;
     activatedElementID: number | null;
+    selectedStatesID: number[];
     minZLayer: number;
     maxZLayer: number;
     curZLayer: number;
@@ -76,7 +79,9 @@ interface DispatchToProps {
     updateAnnotations(...args: Parameters<typeof updateAnnotationsAsync>): void;
     collapseStates(...args: Parameters<typeof collapseObjectItems>): void;
     removeObject(...args: Parameters<typeof removeObjectAction>): void;
+    removeSelection(...args: Parameters<typeof removeSelectionAsync>): void;
     copyShape(...args: Parameters<typeof copyShapeAction>): void;
+    copySelection(...args: Parameters<typeof copySelectionAction>): void;
     switchPropagateVisibility(...args: Parameters<typeof switchPropagateVisibilityAction>): void;
     switchSimplifyVisibility(...args: Parameters<typeof switchSimplifyVisibilityAction>): void;
     changeFrame(...args: Parameters<typeof changeFrameAsync>): void;
@@ -224,6 +229,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 collapsedAll,
                 activatedStateID,
                 activatedElementID,
+                selectedStatesID,
                 zLayer: { cur: curZLayer, min: minZLayer, max: maxZLayer },
             },
             job: { instance: jobInstance },
@@ -276,6 +282,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         colorBy,
         activatedStateID,
         activatedElementID,
+        selectedStatesID,
         minZLayer,
         maxZLayer,
         curZLayer,
@@ -299,6 +306,12 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         },
         removeObject(...args: Parameters<typeof removeObjectAction>): void {
             dispatch(removeObjectAction(...args));
+        },
+        removeSelection(...args: Parameters<typeof removeSelectionAsync>): void {
+            dispatch(removeSelectionAsync(...args));
+        },
+        copySelection(...args: Parameters<typeof copySelectionAction>): void {
+            dispatch(copySelectionAction(...args));
         },
         copyShape(...args: Parameters<typeof copyShapeAction>): void {
             dispatch(copyShapeAction(...args));
@@ -559,7 +572,10 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             updateAnnotations,
             changeGroupColor,
             removeObject,
+            removeSelection,
             copyShape,
+            copySelection,
+            selectedStatesID,
             switchPropagateVisibility,
             switchSimplifyVisibility,
             changeFrame,
@@ -662,6 +678,12 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             },
             DELETE_OBJECT_STANDARD_WORKSPACE: (event?: KeyboardEvent) => {
                 preventDefault(event);
+                // with an active multi-selection the whole selection is removed
+                if (selectedStatesID.length > 1) {
+                    removeSelection(event ? event.shiftKey : false);
+                    return;
+                }
+
                 const state = activatedState(true);
                 if (state) {
                     removeObject(state, event ? event.shiftKey : false);
@@ -717,6 +739,16 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                 }
             },
             COPY_SHAPE: () => {
+                // with an active multi-selection the whole selection is copied
+                if (selectedStatesID.length > 1) {
+                    const selectedStates = objectStates
+                        .filter((objectState: ObjectState) => selectedStatesID.includes(objectState.clientID));
+                    if (selectedStates.length) {
+                        copySelection(selectedStates);
+                        return;
+                    }
+                }
+
                 const state = activatedState(true);
                 if (state) {
                     copyShape(state);

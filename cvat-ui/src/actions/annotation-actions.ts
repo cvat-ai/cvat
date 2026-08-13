@@ -119,6 +119,8 @@ export enum AnnotationActionTypes {
     COLLAPSE_APPEARANCE = 'COLLAPSE_APPEARANCE',
     COLLAPSE_OBJECT_ITEMS = 'COLLAPSE_OBJECT_ITEMS',
     ACTIVATE_OBJECT = 'ACTIVATE_OBJECT',
+    SELECT_OBJECTS = 'SELECT_OBJECTS',
+    COPY_SELECTION = 'COPY_SELECTION',
     UPDATE_EDITED_STATE = 'UPDATE_EDITED_STATE',
     HIDE_ACTIVE_OBJECT = 'HIDE_ACTIVE_OBJECT',
     REMOVE_OBJECT = 'REMOVE_OBJECT',
@@ -603,6 +605,137 @@ export function copyShape(objectState: any): AnyAction {
         payload: {
             objectState,
         },
+    };
+}
+
+export function selectObjects(selectedStatesID: number[]): AnyAction {
+    return {
+        type: AnnotationActionTypes.SELECT_OBJECTS,
+        payload: {
+            selectedStatesID,
+        },
+    };
+}
+
+export function copySelection(objectStates: any[]): AnyAction {
+    const job = getStore().getState().annotation.job.instance;
+    job?.logger.log(EventScope.copyObject, { count: objectStates.length });
+
+    return {
+        type: AnnotationActionTypes.COPY_SELECTION,
+        payload: {
+            // keep the source states as the clipboard; new objects are built lazily on paste,
+            // so copy on one frame + paste on a later frame works
+            copiedStates: objectStates,
+        },
+    };
+}
+
+// removes the whole multi-selection as a single undoable change
+export function removeSelectionAsync(force: boolean): ThunkAction {
+    return async (dispatch: ThunkDispatch): Promise<void> => {
+        const {
+            job: { instance: jobInstance },
+            annotations: { states, selectedStatesID },
+        } = getStore().getState().annotation;
+
+        const selectedStates = states
+            .filter((state: any) => selectedStatesID.includes(state.clientID));
+        if (!jobInstance || !selectedStates.length) {
+            return;
+        }
+
+        try {
+            const removedIDs: number[] = await jobInstance.annotations.removeBatch(selectedStates, force);
+            if (removedIDs.length) {
+                await jobInstance.logger.log(EventScope.deleteObject, { count: removedIDs.length });
+                dispatch(selectObjects([]));
+                dispatch(fetchAnnotationsAsync());
+            }
+        } catch (error) {
+            dispatch({
+                type: AnnotationActionTypes.REMOVE_OBJECT_FAILED,
+                payload: { error },
+            });
+        }
+    };
+}
+
+// build a serialized copy of a state translated by (dx, dy), preserving relative geometry;
+// mirrors the serialization used by cvat.utils.propagateShapes, but allows same-frame paste
+function serializeStateWithOffset(state: any, frame: number, dx: number, dy: number): any {
+    const offsetPoints = (points: number[] | null, shapeType: string): number[] | null => {
+        if (!points) {
+            return points;
+        }
+        if (shapeType === 'mask') {
+            // [...rle, left, top, right, bottom]
+            const shifted = [...points];
+            const n = shifted.length;
+            shifted[n - 4] += dx;
+            shifted[n - 3] += dy;
+            shifted[n - 2] += dx;
+            shifted[n - 1] += dy;
+            return shifted;
+        }
+        return points.map((value, index) => value + (index % 2 === 0 ? dx : dy));
+    };
+
+    return {
+        attributes: { ...state.attributes },
+        points: state.shapeType === 'skeleton' ? null : offsetPoints(state.points, state.shapeType),
+        occluded: state.occluded,
+        outside: state.outside,
+        objectType: state.objectType !== ObjectType.TRACK ? state.objectType : ObjectType.SHAPE,
+        shapeType: state.shapeType,
+        label: state.label,
+        zOrder: state.zOrder,
+        rotation: state.rotation,
+        frame,
+        elements: state.shapeType === 'skeleton' ?
+            state.elements.map((element: any) => serializeStateWithOffset(element, frame, dx, dy)) : [],
+        source: state.source,
+    };
+}
+
+export function pasteSelectionAsync(): ThunkAction {
+    return async (dispatch: ThunkDispatch): Promise<void> => {
+        const {
+            job: { instance: jobInstance },
+            player: { frame: { number: frameNumber } },
+            drawing: { copiedStates },
+        } = getStore().getState().annotation;
+
+        if (!jobInstance || !copiedStates || !copiedStates.length) {
+            return;
+        }
+
+        // small constant offset so pasted objects do not perfectly overlap the originals
+        const offset = 20;
+        const statesToCreate = copiedStates.map((state: any): ObjectState => {
+            if (state.objectType === ObjectType.TAG) {
+                return new cvat.classes.ObjectState({
+                    objectType: ObjectType.TAG,
+                    label: state.label,
+                    attributes: { ...state.attributes },
+                    frame: frameNumber,
+                });
+            }
+            return new cvat.classes.ObjectState(serializeStateWithOffset(state, frameNumber, offset, offset));
+        });
+
+        try {
+            // a single put() records one CREATED_OBJECTS history action -> one undo step
+            const clientIDs: number[] = await jobInstance.annotations.put(statesToCreate);
+            await dispatch(fetchAnnotationsAsync());
+            // select the freshly pasted objects so the whole group can be moved into place
+            dispatch(selectObjects(clientIDs));
+        } catch (error) {
+            dispatch({
+                type: AnnotationActionTypes.CREATE_ANNOTATIONS_FAILED,
+                payload: { error },
+            });
+        }
     };
 }
 
@@ -1252,6 +1385,37 @@ export function updateAnnotationsAsync(statesToUpdate: ObjectState[]): ThunkActi
             if (workspace === Workspace.REVIEW) {
                 states = lockStatesForReviewWorkspace(states);
             }
+
+            const needToUpdateAll = states
+                .some((state) => state.shapeType === ShapeType.MASK || state.parentID !== null);
+            if (needToUpdateAll) {
+                dispatch(fetchAnnotationsAsync());
+                return;
+            }
+
+            dispatchAnnotationsUpdate(dispatch, states, await jobInstance.actions.get());
+        } catch (error) {
+            dispatch({
+                type: AnnotationActionTypes.UPDATE_ANNOTATIONS_FAILED,
+                payload: { error },
+            });
+            dispatch(fetchAnnotationsAsync());
+        }
+    };
+}
+
+// Updates several objects at once and records the change as a single undo step
+// (used when a multi-selection is moved together).
+export function updateAnnotationsBatchAsync(statesToUpdate: ObjectState[]): ThunkAction {
+    return async (dispatch: ThunkDispatch): Promise<void> => {
+        const { jobInstance } = receiveAnnotationsParameters();
+        try {
+            const statesToSave = statesToUpdate.filter((objectState) => !objectState.isGroundTruth);
+            if (!statesToSave.length) {
+                return;
+            }
+
+            const states = await jobInstance.annotations.updateBatch(statesToSave);
 
             const needToUpdateAll = states
                 .some((state) => state.shapeType === ShapeType.MASK || state.parentID !== null);
