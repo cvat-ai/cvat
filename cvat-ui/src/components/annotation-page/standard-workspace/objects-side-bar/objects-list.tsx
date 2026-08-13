@@ -46,6 +46,7 @@ interface Props {
     statesCollapsedAll: boolean;
     statesOrdering: StatesOrdering;
     currentLayer: number;
+    hiddenLayers: Set<number>;
     sortedStatesID: number[];
     objectStates: ObjectState[];
     visibleSkeletonElements: Record<number, number[]>;
@@ -54,6 +55,7 @@ interface Props {
     showGroundTruth: boolean;
     changeStatesOrdering(value: StatesOrdering): void;
     selectLayer(zOrder: number): void;
+    toggleLayersVisibility(zOrders: number[]): void;
     moveObjectsToLayer(source: LayerMoveSource, targetZOrder: number): void;
     moveObjectsOnNewLayer(source: LayerMoveSource, placement: LayerPlacement): void;
     compactLayers(): void;
@@ -74,6 +76,7 @@ function ObjectListComponent(props: Props): JSX.Element {
         statesCollapsedAll,
         statesOrdering,
         currentLayer,
+        hiddenLayers,
         sortedStatesID,
         objectStates,
         visibleSkeletonElements,
@@ -82,6 +85,7 @@ function ObjectListComponent(props: Props): JSX.Element {
         showGroundTruth,
         changeStatesOrdering,
         selectLayer,
+        toggleLayersVisibility,
         moveObjectsToLayer,
         moveObjectsOnNewLayer,
         compactLayers,
@@ -271,6 +275,10 @@ function ObjectListComponent(props: Props): JSX.Element {
         setCollapsedLayers(allLayersCollapsed ? new Set() : new Set(zLayers));
     };
 
+    const toggleLayerVisibility = (zOrder: number, includeLower: boolean): void => {
+        toggleLayersVisibility(includeLower ? [zOrder, ...zLayers.filter((layer) => layer < zOrder)] : [zOrder]);
+    };
+
     const renderDragOverlay = (): JSX.Element | null => {
         if (!activeDragID) {
             return null;
@@ -298,7 +306,7 @@ function ObjectListComponent(props: Props): JSX.Element {
             return null;
         }
 
-        const visible = zOrder <= currentLayer;
+        const visible = !hiddenLayers.has(zOrder);
 
         return (
             <div className='cvat-objects-sidebar-z-layer-mark cvat-objects-sidebar-z-layer-mark-dragging'>
@@ -380,9 +388,10 @@ function ObjectListComponent(props: Props): JSX.Element {
                                                 objectStates={layerObjectStates}
                                                 visibleSkeletonElements={visibleSkeletonElements}
                                                 selected={zOrder === currentLayer}
-                                                visible={zOrder <= currentLayer}
+                                                visible={!hiddenLayers.has(zOrder)}
                                                 collapsed={collapsedLayers.has(zOrder)}
                                                 selectLayer={selectLayer}
+                                                toggleLayerVisibility={toggleLayerVisibility}
                                                 toggleLayerCollapsed={toggleLayerCollapsed}
                                             />
                                         </React.Fragment>
