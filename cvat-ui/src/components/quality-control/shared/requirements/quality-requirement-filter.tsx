@@ -60,24 +60,10 @@ const SOURCE_VALUES = [
     { value: 'file', title: 'File' },
 ];
 
-const getLabelOptions = (labels: Label[]): { value: string; title: string }[] => labels.flatMap((label) => {
-    const options = [{
-        value: label.name,
-        title: label.name,
-    }];
-
-    if (label.type === 'skeleton' && label.structure?.sublabels) {
-        options.push(...label.structure.sublabels.map((sublabel) => {
-            const name = `${label.name} / ${sublabel.name}`;
-            return {
-                value: name,
-                title: name,
-            };
-        }));
-    }
-
-    return options;
-});
+const getLabelOptions = (labels: Label[]): { value: string; title: string }[] => labels.map((label) => ({
+    value: label.name,
+    title: label.name,
+}));
 
 const getConvertedInputType = (inputType: string): string => {
     switch (inputType) {
