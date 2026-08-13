@@ -362,8 +362,14 @@ class UserSerializer(serializers.ModelSerializer):
             "date_joined",
             "has_analytics_access",
             "email_verified",
+            "created_via",
         )
-        read_only_fields = ("last_login", "date_joined", "has_analytics_access")
+        read_only_fields = (
+            "last_login",
+            "date_joined",
+            "has_analytics_access",
+            "created_via",
+        )
         write_only_fields = ("password",)
         extra_kwargs = {"last_login": {"allow_null": True}}
 
