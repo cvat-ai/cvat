@@ -67,6 +67,20 @@ const defaultState: PluginsState = {
                 items: [],
             },
         },
+        taskPage: {
+            details: {
+                topBar: {
+                    extras: [],
+                },
+            },
+        },
+        projectPage: {
+            details: {
+                topBar: {
+                    extras: [],
+                },
+            },
+        },
         modelsPage: {
             topBar: {
                 items: [],
