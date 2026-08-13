@@ -48,7 +48,7 @@ psycopg2-binary~=2.9
 python-ldap==3.4.7
 python-logstash-async==4.1.0
 python-rapidjson>=1.20
-redis~=8.0
+redis~=8.1
 requests~=2.26
 rq-scheduler==0.13.1
 rq==1.16.0
