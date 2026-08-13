@@ -10,13 +10,13 @@ import { convertClasses } from './utils';
 function openOrganizationsMenu() {
     cy.get('.cvat-header-menu-user-dropdown')
         .should('exist').and('be.visible').click();
-    // eslint-disable-next-line cypress/no-unnecessary-waiting
     cy.wait(500); // animation
+    cy.get('.cvat-header-menu').should('be.visible');
     cy.get('.cvat-header-menu')
-        .should('exist')
-        .and('be.visible')
         .find('[role="menuitem"]')
         .filter(':contains("Organization")')
+        .should('exist')
+        .and('be.visible')
         .click();
 }
 

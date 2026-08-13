@@ -1334,8 +1334,8 @@ export function changeWorkspaceAsync(workspace: Workspace): ThunkAction {
 export function createAnnotationsAsync(
     statesToCreate: (ObjectState | AudioIntervalState)[],
     source: AnnotationSource = AnnotationSource.OTHER,
-): ThunkAction {
-    return async (dispatch: ThunkDispatch): Promise<void> => {
+): ThunkAction<Promise<number[]>> {
+    return async (dispatch: ThunkDispatch): Promise<number[]> => {
         try {
             const { jobInstance } = receiveAnnotationsParameters();
             const clientIds = await jobInstance.annotations.put(statesToCreate);
@@ -1350,6 +1350,8 @@ export function createAnnotationsAsync(
                 const [clientId] = clientIds;
                 dispatch(switchSimplifyVisibility(clientId));
             }
+
+            return clientIds;
         } catch (error) {
             dispatch({
                 type: AnnotationActionTypes.CREATE_ANNOTATIONS_FAILED,
@@ -1357,6 +1359,7 @@ export function createAnnotationsAsync(
                     error,
                 },
             });
+            return [];
         }
     };
 }
