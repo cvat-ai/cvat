@@ -690,7 +690,8 @@ class TestGetQualityReportData(_PermissionTestBase):
         assert "groups" not in report_data
 
         response = get_method(admin_user, f"quality/reports/{report_id}")
-        assert response.status_code == HTTPStatus.NOT_FOUND
+        assert response.status_code == HTTPStatus.OK
+        assert response.json()["id"] == report_id
 
         response = get_method(admin_user, f"quality/reports/{report_id}/confusion")
         assert response.status_code == HTTPStatus.NOT_FOUND

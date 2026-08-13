@@ -294,9 +294,6 @@ class QualityReportViewSet(
                 # downloadable, and API clients can discover them with include_legacy=true.
                 queryset = queryset.filter(data__regex=CURRENT_REPORT_DATA_REGEX)
             queryset = queryset.defer("data")  # heavy field, should be excluded from COUNT(*)
-        elif self.action == "retrieve":
-            # Keep legacy report ids out of the UI-facing detail endpoint as well.
-            queryset = queryset.filter(data__regex=CURRENT_REPORT_DATA_REGEX)
 
         if self.action != "list":
             queryset = queryset.select_related(
