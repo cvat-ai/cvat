@@ -650,7 +650,7 @@ export function removeSelectionAsync(force: boolean): ThunkAction {
             if (removedIDs.length) {
                 await jobInstance.logger.log(EventScope.deleteObject, { count: removedIDs.length });
                 dispatch(selectObjects([]));
-                dispatch(fetchAnnotationsAsync());
+                await dispatch(fetchAnnotationsAsync());
             }
         } catch (error) {
             dispatch({

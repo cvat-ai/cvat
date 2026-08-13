@@ -152,7 +152,7 @@ interface DispatchToProps {
     onSplitAnnotations(state: ObjectState): void;
     onGroupAnnotations(states: ObjectState[]): void;
     onSelectObjects(selectedStatesID: number[]): void;
-    onRemoveSelection(): void;
+    onRemoveSelection(): Promise<void>;
     onJoinAnnotations(states: ObjectState[], points: number[][]): void;
     onSliceAnnotations(state: ObjectState, results: number[][]): void;
     onActivateObject: (activatedStateID: number | null, activatedElementID: number | null) => void;
@@ -390,8 +390,8 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         onSelectObjects(selectedStatesID: number[]): void {
             dispatch(selectObjects(selectedStatesID));
         },
-        onRemoveSelection(): void {
-            dispatch(removeSelectionAsync(false));
+        onRemoveSelection(): Promise<void> {
+            return dispatch(removeSelectionAsync(false));
         },
         onJoinAnnotations(states: ObjectState[], points: number[][]): void {
             dispatch(joinAnnotationsAsync(states, points));
@@ -799,9 +799,16 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
         this.setState({ selectionMenuPosition: null });
     };
 
-    private onRemoveSelectedObjects = (): void => {
-        const { onRemoveSelection } = this.props;
-        onRemoveSelection();
+    private onRemoveSelectedObjects = async (): Promise<void> => {
+        const {
+            canvasInstance, onRemoveSelection, updateActiveControl,
+        } = this.props;
+
+        if (canvasInstance instanceof Canvas) {
+            canvasInstance.selectObjects({ enabled: false });
+        }
+        updateActiveControl(ActiveControl.CURSOR);
+        await onRemoveSelection();
         this.setState({ selectionMenuPosition: null });
     };
 
