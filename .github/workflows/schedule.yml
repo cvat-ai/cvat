@@ -46,6 +46,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: CVAT server. Getting cache from the default branch
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
@@ -103,6 +105,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
@@ -177,12 +181,27 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        specs: ['actions_tasks', 'actions_tasks2', 'actions_tasks3', 'actions_tasks4',
-                'actions_objects', 'actions_objects2', 'actions_users',
-                'actions_projects_models', 'canvas3d_functionality',
-                'issues_prs', 'issues_prs2', 'features']
+        specs:
+          [
+              "actions_tasks",
+              "actions_tasks2",
+              "actions_tasks3",
+              "actions_objects",
+              "actions_objects2",
+              "actions_users",
+              "actions_projects_models",
+              "canvas3d_functionality",
+              "canvas3d_functionality_2",
+              "issues_prs",
+              "issues_prs2",
+              "features",
+              "features2",
+              "audio_workspace"
+          ]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
@@ -259,18 +278,29 @@ jobs:
           corepack enable yarn
           yarn --immutable
 
-          shopt -s extglob
-          if [[ ${{ matrix.specs }} == canvas3d_* ]]; then
-            npx cypress run \
-              --headed \
-              --browser chrome \
-              --config-file cypress_canvas3d.config.js \
-              --spec 'cypress/e2e/setup/setup_canvas3d.js,cypress/e2e/canvas3d_*/**/*.js,cypress/e2e/remove_users_tasks_projects_organizations.js'
-          else
-            npx cypress run \
-              --browser chrome \
-              --spec 'cypress/e2e/setup/setup.js,cypress/e2e/setup/setup_project.js,cypress/e2e/${{ matrix.specs }}/**/*.js,cypress/e2e/remove_users_tasks_projects_organizations.js'
-          fi
+          CYPRESS_ARGS=(
+            --browser chrome
+          )
+          CYPRESS_SETUP_SPECS="cypress/e2e/setup/setup.js,cypress/e2e/setup/setup_project.js"
+          case "${{ matrix.specs }}" in
+            canvas3d_*)
+              CYPRESS_ARGS+=(--config-file cypress_canvas3d.config.js)
+              CYPRESS_SETUP_SPECS="cypress/e2e/setup/setup_canvas3d.js"
+              ;;
+            audio_*)
+              CYPRESS_ARGS+=(--config-file cypress_audio.config.js)
+              CYPRESS_SETUP_SPECS="cypress/e2e/setup/setup_audio.js"
+              ;;
+          esac
+
+          CYPRESS_SPECS="cypress/e2e/${{ matrix.specs }}/**/*.js,cypress/e2e/remove_users_tasks_projects_organizations.js"
+
+          echo "CYPRESS_SETUP_SPECS=$CYPRESS_SETUP_SPECS"
+          echo "CYPRESS_SPECS=$CYPRESS_SPECS"
+          echo "CYPRESS_ARGS=${CYPRESS_ARGS[*]}"
+
+          yarn cypress run --headless "${CYPRESS_ARGS[@]}" --env coverage=false --spec "$CYPRESS_SETUP_SPECS" # if fail, further behavior is unpredictable
+          yarn cypress run --headed "${CYPRESS_ARGS[@]}" --spec "${CYPRESS_SETUP_SPECS},${CYPRESS_SPECS}"
 
       - name: Creating a log file from "cvat" container logs
         if: failure()

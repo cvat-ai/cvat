@@ -38,8 +38,11 @@ Cypress.Commands.add('selectAnnotationsAction', (name) => {
         .click();
     // Re-query before clicking because Ant Design may re-render the
     // dropdown and detach the option previously yielded by Cypress.
-    getOption().should('be.visible');
+    getOption().should('exist');
+    // Virtual-list options may exist while clipped outside
+    // the viewport, so visibility is not a valid readiness condition.
     getOption().click({ force: true });
+
     cy.get('.cvat-action-runner-list .ant-select-selection-item')
         .should('contain', name);
 });

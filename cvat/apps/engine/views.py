@@ -55,7 +55,6 @@ from cvat.apps.engine.cache import (
     MediaCache,
 )
 from cvat.apps.engine.cloud_provider import Status as CloudStorageStatus
-from cvat.apps.engine.cloud_provider import db_storage_to_storage_instance
 from cvat.apps.engine.exceptions import CloudStorageMissingError
 from cvat.apps.engine.media_extractors import get_mime, get_video_chapters
 from cvat.apps.engine.media_io.audio_provider import (
@@ -1633,17 +1632,16 @@ class TaskViewSet(
                 # other aggregations that are defined by the viewset queryset,
                 # we just need to lock 1 row with the target Task entity.
                 locked_instance = Task.objects.select_for_update().get(pk=pk)
-                task_data = locked_instance.data
-                if not task_data:
+                if locked_instance.is_initialized:
+                    raise ValidationError("Adding more data is not supported")
+
+                if not locked_instance.data_id:
                     task_data = Data.objects.create()
                     task_data.make_dirs()
                     locked_instance.data = task_data
                     self._object.data = task_data
                     locked_instance.save()
-                elif task_data.size != 0:
-                    return Response(
-                        data="Adding more data is not supported", status=status.HTTP_400_BAD_REQUEST
-                    )
+
                 return self.upload_data(request, append_url_name="append-data-chunk")
         else:
             data_type = request.query_params.get("type", None)
@@ -3464,10 +3462,9 @@ class CloudStorageViewSet(
     )
     @action(detail=True, methods=["GET"], url_path="content-v2")
     def content_v2(self, request: ExtendedRequest, pk: int):
-        storage = None
         try:
             db_storage = self.get_object()
-            storage = db_storage_to_storage_instance(db_storage)
+            storage_client = db_storage.get_client()
             prefix = request.query_params.get("prefix", "")
             page_size = request.query_params.get(
                 "page_size", str(settings.BUCKET_CONTENT_MAX_PAGE_SIZE)
@@ -3494,8 +3491,8 @@ class CloudStorageViewSet(
 
                 if not full_manifest_path.exists() or datetime.fromtimestamp(
                     full_manifest_path.stat().st_mtime, tz=timezone.utc
-                ) < storage.get_file_last_modified(manifest_path):
-                    storage.download_file(manifest_path, full_manifest_path)
+                ) < storage_client.get_file_last_modified(manifest_path):
+                    storage_client.download_file(manifest_path, full_manifest_path)
                 manifest = ImageManifestManager(
                     full_manifest_path, db_storage.get_storage_dirname()
                 )
@@ -3511,11 +3508,11 @@ class CloudStorageViewSet(
                     page_size,
                     manifest_prefix=manifest_prefix,
                     prefix=prefix,
-                    default_prefix=storage.prefix,
+                    default_prefix=storage_client.prefix,
                     start_index=start_index,
                 )
             else:
-                content = storage.list_files_on_one_page(
+                content = storage_client.list_files_on_one_page(
                     prefix, next_token=next_token, page_size=page_size, _use_sort=True
                 )
             for i in content["content"]:
@@ -3611,8 +3608,7 @@ class CloudStorageViewSet(
     def status(self, request: ExtendedRequest, pk: int):
         try:
             db_storage = self.get_object()
-            storage = db_storage_to_storage_instance(db_storage)
-            storage_status = storage.get_status()
+            storage_status = db_storage.get_client().get_status()
             return Response(storage_status)
         except CloudStorage.DoesNotExist:
             message = f"Storage {pk} does not exist"
@@ -3634,8 +3630,7 @@ class CloudStorageViewSet(
         """
         try:
             db_storage = self.get_object()
-            storage = db_storage_to_storage_instance(db_storage)
-            actions = storage.supported_actions
+            actions = db_storage.get_client().supported_actions
             return Response(actions, content_type="text/plain")
         except CloudStorage.DoesNotExist:
             message = f"Storage {pk} does not exist"
