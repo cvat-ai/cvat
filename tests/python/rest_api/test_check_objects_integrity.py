@@ -66,14 +66,6 @@ class TestGetResources:
                 json_objs = json.load(f)
                 resp_objs = response.json()
 
-                if endpoint == "quality/settings":
-                    for collection in (json_objs, resp_objs):
-                        for settings in collection["results"]:
-                            settings.pop("updated_date", None)
-                            for requirement in settings.get("requirements", []):
-                                requirement.pop("created_date", None)
-                                requirement.pop("updated_date", None)
-
                 assert (
                     DeepDiff(
                         json_objs,
