@@ -226,7 +226,7 @@ module.exports = (env, argv = {}) => {
                         to  : 'assets/[name][ext]',
                     },
                     {
-                        from: 'plugins/**/assets/*.(onnx|js)',
+                        from: 'plugins/**/assets/*.(onnx|js|png)',
                         to  : 'assets/[name][ext]',
                     },
                 ],
