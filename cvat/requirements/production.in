@@ -4,4 +4,4 @@
 # It will be enabled only if COVERAGE_PROCESS_START env is defined.
 coverage~=7.2
 
-uvicorn[standard]==0.44.0
+uvicorn[standard]==0.49.0

@@ -246,12 +246,8 @@ class TestTasksBase:
             request, start_frame=start_frame, step=step
         )
 
-    def _images_task_with_honeypots_and_changed_real_frames_base(
-        self, request: pytest.FixtureRequest, **kwargs
-    ):
-        task_spec, task_id = self._image_task_with_honeypots_and_segments_base(
-            request, start_frame=2, step=3, **kwargs
-        )
+    def _rotate_all_task_honeypots(self, task_spec: ITaskSpec, task_id: int) -> None:
+        "Updates the passed task and task spec inplace"
 
         with make_api_client(self._USERNAME) as api_client:
             validation_layout, _ = api_client.tasks_api.retrieve_validation_layout(task_id)
@@ -277,7 +273,16 @@ class TestTasksBase:
             _get_frame = task_spec._get_frame
             task_spec._get_frame = lambda i: _get_frame(frame_map.get(i, i))
 
-            return task_spec, task_id
+    def _images_task_with_honeypots_and_changed_real_frames_base(
+        self, request: pytest.FixtureRequest, **kwargs
+    ):
+        task_spec, task_id = self._image_task_with_honeypots_and_segments_base(
+            request, start_frame=2, step=3, **kwargs
+        )
+
+        self._rotate_all_task_honeypots(task_spec=task_spec, task_id=task_id)
+
+        return task_spec, task_id
 
     @fixture(scope="class")
     @parametrize("random_seed", [1, 2, 5])

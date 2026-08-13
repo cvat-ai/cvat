@@ -1072,6 +1072,10 @@ class Task(DirtyFieldsMixin, TimestampedModel, AssignableModel, FileSystemRelate
             "chunks_updated_date"
         ]
 
+    @property
+    def is_initialized(self) -> bool:
+        return bool(self.media_type)
+
 
 # Redefined a couple of operation for FileSystemStorage to avoid renaming
 # or other side effects.
