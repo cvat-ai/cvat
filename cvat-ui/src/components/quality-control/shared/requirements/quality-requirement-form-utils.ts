@@ -164,6 +164,7 @@ export interface QualityRequirementFormProps {
     settings: QualitySettings;
     labels: Label[];
     requirement: QualityRequirement | null;
+    enabledOverride?: boolean;
     parentRequirement: QualityRequirement | null;
     copiedRequirement: QualityRequirement | null;
     disabled: boolean;

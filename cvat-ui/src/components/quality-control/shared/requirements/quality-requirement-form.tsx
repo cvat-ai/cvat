@@ -58,6 +58,7 @@ export default function QualityRequirementForm(props: Readonly<QualityRequiremen
         settings,
         labels,
         requirement,
+        enabledOverride,
         parentRequirement,
         copiedRequirement,
         disabled,
@@ -69,14 +70,15 @@ export default function QualityRequirementForm(props: Readonly<QualityRequiremen
     const [submitting, setSubmitting] = useState(false);
     const [touchedFields, setTouchedFields] = useState<Set<string>>(() => getCopiedTouchedFields(copiedRequirement));
     const [resetFields, setResetFields] = useState<Set<string>>(new Set());
-    const initialValues = useMemo(
-        () => (
+    const initialValues = useMemo(() => {
+        const values = (
             copiedRequirement ?
                 getCopiedInitialValues(copiedRequirement, parentRequirement, settings.requirements) :
                 getInitialValues(requirement, parentRequirement, settings.requirements)
-        ),
-        [copiedRequirement, requirement, parentRequirement, settings.requirements],
-    );
+        );
+
+        return typeof enabledOverride === 'boolean' ? { ...values, enabled: enabledOverride } : values;
+    }, [copiedRequirement, enabledOverride, requirement, parentRequirement, settings.requirements]);
     const parentOptions = useMemo(
         () => buildParentOptions(settings.requirements, requirement),
         [settings.requirements, requirement],

@@ -32,7 +32,7 @@ type RequirementFormMode =
     { type: 'list' } |
     { type: 'create'; parentRequirement: QualityRequirement } |
     { type: 'copy'; sourceRequirement: QualityRequirement; parentRequirement: QualityRequirement } |
-    { type: 'edit'; requirement: QualityRequirement };
+    { type: 'edit'; requirement: QualityRequirement; enabledOverride: boolean };
 
 const FilteringComponentBase = ResourceFilterHOC(
     config, localStorageRecentKeyword, localStorageRecentCapacity,
@@ -97,6 +97,7 @@ export default function QualitySettingsForm(props: Readonly<Props>): JSX.Element
                 settings={settings}
                 labels={labels}
                 requirement={requirementFormMode.type === 'edit' ? requirementFormMode.requirement : null}
+                enabledOverride={requirementFormMode.type === 'edit' ? requirementFormMode.enabledOverride : undefined}
                 parentRequirement={
                     requirementFormMode.type === 'create' || requirementFormMode.type === 'copy' ?
                         requirementFormMode.parentRequirement :
@@ -188,8 +189,8 @@ export default function QualitySettingsForm(props: Readonly<Props>): JSX.Element
                 onCreateRequirement={(parentRequirement: QualityRequirement) => {
                     setRequirementFormMode({ type: 'create', parentRequirement });
                 }}
-                onEditRequirement={(requirement: QualityRequirement) => {
-                    setRequirementFormMode({ type: 'edit', requirement });
+                onEditRequirement={(requirement: QualityRequirement, enabledOverride: boolean) => {
+                    setRequirementFormMode({ type: 'edit', requirement, enabledOverride });
                 }}
                 onCopyRequirement={(sourceRequirement: QualityRequirement) => {
                     const parentRequirement = typeof sourceRequirement.parentRequirementId === 'number' ?

@@ -91,7 +91,7 @@ interface Props {
     disabled: boolean;
     onReload: () => Promise<void>;
     onCreateRequirement: (parentRequirement: QualityRequirement) => void;
-    onEditRequirement: (requirement: QualityRequirement) => void;
+    onEditRequirement: (requirement: QualityRequirement, enabled: boolean) => void;
     onCopyRequirement: (requirement: QualityRequirement) => void;
 }
 
@@ -374,7 +374,10 @@ export default function QualityRequirementsConstructor(props: Readonly<Props>): 
                                     size='small'
                                     disabled={actionsDisabled}
                                     icon={<EditOutlined />}
-                                    onClick={() => onEditRequirement(record.requirement)}
+                                    onClick={() => onEditRequirement(
+                                        record.requirement,
+                                        isRequirementEnabled(record.requirement),
+                                    )}
                                 />
                             </CVATTooltip>
                             {!record.requirement.isBase && (
