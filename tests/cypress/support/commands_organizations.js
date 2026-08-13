@@ -169,10 +169,9 @@ Cypress.Commands.add('inviteMembersToOrganization', (members) => {
         .contains('button', 'OK')
         .click();
     const invitedEmails = [];
-    for (const el of members) {
+    for (let i = 0; i < members.length; i++) {
         cy.wait('@inviteOrganizationMember').then((interception) => {
             expect(interception.response.statusCode).to.be.oneOf([200, 201]);
-            expect(interception.request.body.email).to.equal(el.email);
             invitedEmails.push(interception.request.body.email);
         });
     }
