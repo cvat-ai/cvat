@@ -43,7 +43,7 @@ function LayerHeader(props: LayerHeaderProps): JSX.Element {
         ...(!visible ? ['cvat-objects-sidebar-z-layer-mark-invisible'] : []),
     ].join(' ');
 
-    const visibilityTooltip = visible ? 'Hide layer' : 'Show layer';
+    const visibilityTooltip = `${visible ? 'Hide' : 'Show'} layer. Hold Shift when clicking to apply for lower layers`;
     const selectLayerTooltip = selected ? 'Current layer' : 'Set as current layer';
     return (
         <div
