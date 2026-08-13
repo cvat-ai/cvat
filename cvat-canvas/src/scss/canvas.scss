@@ -96,7 +96,8 @@ polyline.cvat_shape_drawing_opacity {
     stroke: black;
     stroke-dasharray: 10 10;
     stroke-opacity: 0.8;
-    pointer-events: none;
+    pointer-events: all;
+    cursor: move;
 }
 
 .cvat_canvas_selected_objects_label {

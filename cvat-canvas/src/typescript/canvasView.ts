@@ -1984,10 +1984,19 @@ export class CanvasViewImpl implements CanvasView, Listener {
     }
 
     private onContentMouseDown = (event: MouseEvent): void => {
-        const targetShape = (event.target as Element)?.closest?.('.cvat_canvas_shape');
+        let targetShape = (event.target as Element)?.closest?.('.cvat_canvas_shape');
+        const targetSelectionBox = (event.target as Element)?.closest?.('.cvat_canvas_selected_objects_box');
+        if (!targetShape && targetSelectionBox && this.isMultiSelectModifierPressed(event)) {
+            targetShape = Array.from(document.elementsFromPoint(event.clientX, event.clientY))
+                .map((element: Element): Element | null => element.closest('.cvat_canvas_shape'))
+                .find((shape: Element | null): boolean => {
+                    const rawClientID = shape?.getAttribute('clientID') || shape?.getAttribute('data-client-id');
+                    return rawClientID !== null && this.selectedObjects.includes(+rawClientID);
+                }) || null;
+        }
         const onBackground = !targetShape;
         if (event.button === 0 && this.isMultiSelectModifierPressed(event) &&
-            this.mode === Mode.IDLE && targetShape) {
+            [Mode.IDLE, Mode.SELECT].includes(this.mode) && targetShape) {
             const rawClientID = targetShape.getAttribute('clientID') || targetShape.getAttribute('data-client-id');
             const clientID = rawClientID === null ? null : +rawClientID;
             if (clientID === null || !Number.isInteger(clientID)) {
@@ -1997,7 +2006,11 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 this.selectedObjects.filter((id) => id !== clientID) :
                 [...this.selectedObjects, clientID];
             const states = this.controller.objects.filter((state: any) => nextSelection.includes(state.clientID));
-            this.onSelectObjectsDone(states);
+            if (this.mode === Mode.SELECT) {
+                this.selectHandler.setSelected(states);
+            } else {
+                this.onSelectObjectsDone(states);
+            }
             this.canvas.addEventListener('click', (clickEvent: MouseEvent) => {
                 clickEvent.preventDefault();
                 clickEvent.stopPropagation();
@@ -3637,6 +3650,80 @@ export class CanvasViewImpl implements CanvasView, Listener {
         this.selectedObjectsLabel = null;
     }
 
+    private makeSelectedObjectsBoxDraggable(): void {
+        if (!this.selectedObjectsBox) {
+            return;
+        }
+
+        let startedAt = 0;
+        let startCenter: { x: number; y: number } | null = null;
+        let lastPointer: { x: number; y: number } | null = null;
+        let dragging = false;
+
+        (this.selectedObjectsBox as any).draggable();
+        this.selectedObjectsBox.on('beforedrag', (event: CustomEvent): void => {
+            if (this.isMultiSelectModifierPressed(event.detail.event) || !this.isGroupSelectionMovable()) {
+                event.preventDefault();
+            }
+        }).on('dragstart', (event: CustomEvent): void => {
+            const { cx, cy } = this.selectedObjectsBox.bbox();
+            const { p } = event.detail;
+            dragging = true;
+            startCenter = { x: cx, y: cy };
+            lastPointer = { x: p.x, y: p.y };
+            startedAt = Date.now();
+        }).on('dragmove', (event: CustomEvent): void => {
+            if (!dragging || !lastPointer) {
+                return;
+            }
+
+            event.preventDefault();
+            const { p } = event.detail;
+            const dx = p.x - lastPointer.x;
+            const dy = p.y - lastPointer.y;
+            if (dx !== 0 || dy !== 0) {
+                this.selectedObjectsBox?.dmove(dx, dy);
+                for (const clientID of this.selectedObjects) {
+                    this.svgShapes[clientID]?.dmove(dx, dy);
+                }
+                lastPointer = { x: p.x, y: p.y };
+                this.updateSelectedObjectsLabelPosition();
+            }
+        }).on('dragend', (): void => {
+            if (!dragging || !startCenter || !this.selectedObjectsBox) {
+                return;
+            }
+
+            const { cx, cy } = this.selectedObjectsBox.bbox();
+            const dx = cx - startCenter.x;
+            const dy = cy - startCenter.y;
+            if (dx !== 0 || dy !== 0) {
+                const movedStates = this.controller.objects
+                    .filter((state: any) => this.selectedObjects.includes(state.clientID))
+                    .map((state: any) => ({
+                        state,
+                        points: this.translateStatePoints(state, dx, dy),
+                    }));
+
+                movedStates.forEach(({ state }) => this.markStateEdited(state));
+                this.canvas.dispatchEvent(
+                    new CustomEvent('canvas.groupmoved', {
+                        bubbles: false,
+                        cancelable: true,
+                        detail: {
+                            states: movedStates,
+                            duration: Date.now() - startedAt,
+                        },
+                    }),
+                );
+            }
+
+            dragging = false;
+            startCenter = null;
+            lastPointer = null;
+        });
+    }
+
     private updateSelectedObjectsLabelPosition(): void {
         if (!this.selectedObjectsBox || !this.selectedObjectsLabel) {
             return;
@@ -3677,6 +3764,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             this.selectedObjectsBox = this.adoptedContent
                 .rect(right - left, bottom - top)
                 .addClass('cvat_canvas_selected_objects_box');
+            this.makeSelectedObjectsBoxDraggable();
         }
 
         this.selectedObjectsBox

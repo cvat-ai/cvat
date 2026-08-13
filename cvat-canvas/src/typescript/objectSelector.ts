@@ -25,6 +25,7 @@ export interface ObjectSelector {
     ): void;
     transform(geometry: Geometry): void;
     push(state: ObjectState): void;
+    setSelected(states: ObjectState[]): void;
     disable(): void;
     resetSelected(): void;
 }
@@ -303,6 +304,13 @@ export class ObjectSelectorImpl implements ObjectSelector {
                 delete this.selectedObjects[state.clientID];
                 this.onSelectCallback(Object.values(this.selectedObjects));
             }
+        }
+    }
+
+    public setSelected(states: ObjectState[]): void {
+        if (this.isEnabled) {
+            this.selectedObjects = Object.fromEntries(states.map((state) => [state.clientID, state]));
+            this.onSelectCallback(states);
         }
     }
 

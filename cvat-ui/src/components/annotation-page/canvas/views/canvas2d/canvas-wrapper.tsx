@@ -146,7 +146,7 @@ interface DispatchToProps {
     onResetCanvas: () => void;
     updateActiveControl: (activeControl: ActiveControl) => void;
     onUpdateAnnotations(states: ObjectState[]): void;
-    onUpdateAnnotationsBatch(states: ObjectState[]): void;
+    onUpdateAnnotationsBatch(states: ObjectState[]): Promise<void>;
     onCreateAnnotations(states: ObjectState[], source?: AnnotationSource): void;
     onMergeAnnotations(states: ObjectState[]): void;
     onSplitAnnotations(state: ObjectState): void;
@@ -372,8 +372,8 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         onUpdateAnnotations(states: ObjectState[]): void {
             dispatch(updateAnnotationsAsync(states));
         },
-        onUpdateAnnotationsBatch(states: ObjectState[]): void {
-            dispatch(updateAnnotationsBatchAsync(states));
+        onUpdateAnnotationsBatch(states: ObjectState[]): Promise<void> {
+            return dispatch(updateAnnotationsBatchAsync(states));
         },
         onCreateAnnotations(
             states: ObjectState[],
@@ -945,17 +945,17 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
             updateActiveControl,
         } = this.props;
         const shapeElement = (e.target as Element)?.closest?.('.cvat_canvas_shape');
+        const selectionBox = (e.target as Element)?.closest?.('.cvat_canvas_selected_objects_box');
         const multiSelectModifierPressed = isMultiSelectModifierPressed(e, keyMap);
 
         if (e.button === 0 && activeControl === ActiveControl.CURSOR &&
-            multiSelectModifierPressed && !shapeElement) {
+            multiSelectModifierPressed && !shapeElement && !selectionBox) {
             updateActiveControl(ActiveControl.SELECT);
         }
 
         // a click outside of the selected objects resets the multi-selection
         // (shift is reserved for making a new selection, a click on a selected shape starts a group drag)
-        if (e.button === 0 && activeControl !== ActiveControl.SELECT &&
-            !multiSelectModifierPressed && selectedStatesID.length) {
+        if (e.button === 0 && !multiSelectModifierPressed && selectedStatesID.length && !selectionBox) {
             const clickedClientID = shapeElement ? +(shapeElement.getAttribute('clientID') as string) : null;
             if (clickedClientID === null || !selectedStatesID.includes(clickedClientID)) {
                 onSelectObjects([]);
@@ -991,10 +991,10 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
         );
     };
 
-    private onCanvasObjectsGroupMoved = (
+    private onCanvasObjectsGroupMoved = async (
         e: CustomEvent<{ duration: number; states: { state: ObjectState; points: number[] }[] }>,
-    ): void => {
-        const { onUpdateAnnotationsBatch } = this.props;
+    ): Promise<void> => {
+        const { onUpdateAnnotationsBatch, onSelectObjects } = this.props;
         const { detail: { states } } = e;
 
         // apply the new geometry and persist the whole selection as one undoable change
@@ -1003,7 +1003,8 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
             objectState.points = moved.points;
             return objectState;
         });
-        onUpdateAnnotationsBatch(updatedStates);
+        await onUpdateAnnotationsBatch(updatedStates);
+        onSelectObjects(updatedStates.map((state: ObjectState): number => state.clientID as number));
     };
 
     private onCanvasShapeResized = (e: CustomEvent<{ duration: number; state: ObjectState }>): void => {
