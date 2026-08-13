@@ -164,8 +164,8 @@
 
 .cvat-objects-sidebar-issues-list {
     background-color: $background-color-2;
-    height: calc(100% - $grid-unit-size * 4);
-    overflow: hidden auto;
+    height: calc(100% - $grid-unit-size * 9);
+    overflow-y: auto;
     padding: $grid-unit-size * 0.5;
 }
 
