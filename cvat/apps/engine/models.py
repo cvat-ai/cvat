@@ -37,7 +37,7 @@ from cvat.apps.events.utils import cache_deleted
 from cvat.utils import django_database as db_utils
 
 if TYPE_CHECKING:
-    from cvat.apps.engine.cloud_provider import AbstractCloudStorage
+    from cvat.apps.engine.cloud_provider import CloudStorageClient
     from cvat.apps.organizations.models import Organization
 
 
@@ -348,6 +348,17 @@ class CloudStorage(TimestampedModel):
     def has_at_least_one_manifest(self) -> bool:
         return self.manifests.exists()
 
+    def get_client(self, *, is_trusted: bool = False) -> CloudStorageClient:
+        from .cloud_provider import Credentials, get_cloud_storage_client
+
+        return get_cloud_storage_client(
+            cloud_provider=self.provider_type,
+            is_trusted=is_trusted,
+            resource=self.resource,
+            credentials=Credentials.from_db(self.credentials_type, self.credentials),
+            specific_attributes=self.get_specific_attributes(),
+        )
+
 
 class Location(str, Enum):
     CLOUD_STORAGE = "cloud_storage"
@@ -599,19 +610,19 @@ class Data(models.Model):
                 PurePath(f.path) for f in self.related_files.all()
             ]
 
-    def get_cloud_storage_instance(self) -> AbstractCloudStorage | None:
-        from .cloud_provider import SubdirectoryCloudStorage, db_storage_to_storage_instance
+    def get_cloud_storage_client(self) -> CloudStorageClient | None:
+        from .cloud_provider import SubdirectoryCloudStorageClient
 
         if self.storage == StorageChoice.CLOUD_STORAGE:
-            if self.cloud_storage_id is None:
+            if self.cloud_storage is None:
                 raise CloudStorageMissingError("Task is not connected to cloud storage")
 
-            return db_storage_to_storage_instance(self.cloud_storage)
+            return self.cloud_storage.get_client()
 
         if self.storage == StorageChoice.LOCAL and self.local_storage_backing_cs:
-            return SubdirectoryCloudStorage(
+            return SubdirectoryCloudStorageClient(
                 # We can trust backing cloud storage, since only an admin can set it.
-                db_storage_to_storage_instance(self.local_storage_backing_cs, is_trusted=True),
+                self.local_storage_backing_cs.get_client(is_trusted=True),
                 f"data/{self.id}/raw",
             )
 
@@ -630,14 +641,14 @@ class Data(models.Model):
 
         self.local_storage_backing_cs = backing_cs
 
-        cloud_storage_instance = self.get_cloud_storage_instance()
-        assert cloud_storage_instance
+        storage_client = self.get_cloud_storage_client()
+        assert storage_client
 
         upload_dir = self.get_upload_dirname()
 
         rel_paths_to_move = self.get_all_media_rel_paths()
 
-        cloud_storage_instance.bulk_upload_from_dir(rel_paths_to_move, upload_dir)
+        storage_client.bulk_upload_from_dir(rel_paths_to_move, upload_dir)
 
         self.save(update_fields=["local_storage_backing_cs"])
 
@@ -662,20 +673,20 @@ class Data(models.Model):
     def move_from_backing_cs(self) -> None:
         assert self.local_storage_backing_cs_id
 
-        cloud_storage_instance = self.get_cloud_storage_instance()
-        assert cloud_storage_instance
+        storage_client = self.get_cloud_storage_client()
+        assert storage_client
 
         upload_dir = self.get_upload_dirname()
 
         rel_paths_to_move = self.get_all_media_rel_paths()
 
-        cloud_storage_instance.bulk_download_to_dir(rel_paths_to_move, upload_dir)
+        storage_client.bulk_download_to_dir(rel_paths_to_move, upload_dir)
 
         self.local_storage_backing_cs = None
         self.save(update_fields=["local_storage_backing_cs"])
 
         def clear_original_files() -> None:
-            cloud_storage_instance.bulk_delete([p.as_posix() for p in rel_paths_to_move])
+            storage_client.bulk_delete([p.as_posix() for p in rel_paths_to_move])
 
         transaction.on_commit(clear_original_files, robust=True)
 
@@ -1060,6 +1071,10 @@ class Task(DirtyFieldsMixin, TimestampedModel, AssignableModel, FileSystemRelate
         return self.segment_set.aggregate(chunks_updated_date=models.Max("chunks_updated_date"))[
             "chunks_updated_date"
         ]
+
+    @property
+    def is_initialized(self) -> bool:
+        return bool(self.media_type)
 
 
 # Redefined a couple of operation for FileSystemStorage to avoid renaming
@@ -1667,7 +1682,9 @@ class TrackedShapeAttributeVal(AttributeVal):
 
 class LabeledInterval(Annotation, ScoredAnnotationMixin):
     start = models.PositiveIntegerField()
+    "Must be within the task frame bounds."
     stop = models.PositiveIntegerField(null=True)
+    "Exclusive interval end. May be one greater than the task stop frame."
 
 
 class LabeledIntervalAttributeVal(AttributeVal):

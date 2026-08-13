@@ -37,7 +37,7 @@ export interface AudioState {
             left: number;
             clientID: number | null;
         };
-        audioUrl: string | null;
+        audioDataToken: string | null;
         audioLoading: boolean;
         audioError: string | null;
         waveformReady: boolean;
@@ -432,6 +432,20 @@ export interface PluginsState {
                 items: PluginComponent[];
             };
         }
+        taskPage: {
+            details: {
+                topBar: {
+                    extras: PluginComponent[];
+                };
+            };
+        };
+        projectPage: {
+            details: {
+                topBar: {
+                    extras: PluginComponent[];
+                };
+            };
+        };
         modelsPage: {
             topBar: {
                 items: PluginComponent[];
@@ -953,6 +967,7 @@ export interface AnnotationState {
             min: number;
             max: number;
             cur: number;
+            hiddenByFrame: Map<number, Set<number>>;
         };
     };
     remove: {
