@@ -248,6 +248,16 @@
 
     .cvat-quality-requirement-filter-recent-button {
         align-self: flex-end;
+        display: inline-flex;
+        align-items: center;
+        gap: calc($grid-unit-size / 2);
+        padding-inline: $grid-unit-size ($grid-unit-size * 2);
+
+        .anticon {
+            flex: none;
+            display: flex;
+            line-height: 1;
+        }
     }
 
     .cvat-quality-requirement-filter-section {

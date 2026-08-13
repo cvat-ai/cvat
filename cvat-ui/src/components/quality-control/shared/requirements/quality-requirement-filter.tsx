@@ -695,7 +695,6 @@ export default function QualityRequirementFilter(props: Readonly<Props>): JSX.El
                         className='cvat-quality-requirement-filter-recent-button'
                     >
                         Recent
-                        {' '}
                         <DownOutlined />
                     </Button>
                 </Popover>
