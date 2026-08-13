@@ -4,6 +4,7 @@
 
 import React, { useState } from 'react';
 import {
+    CaretDownOutlined,
     DeleteOutlined,
     PlusOutlined,
     QuestionCircleOutlined,
@@ -405,6 +406,20 @@ export default function QualityRequirementAttributeRules(props: Readonly<Props>)
                             pagination={false}
                             expandable={{
                                 expandedRowKeys: expandedAttributeRuleKeys,
+                                expandIcon: ({ expanded, onExpand, record }) => {
+                                    const expandable = record.comparator === QualityRequirementAttributeComparator.LEVENSHTEIN;
+
+                                    return (
+                                        <CaretDownOutlined
+                                            rotate={expanded ? 0 : -90}
+                                            style={{
+                                                marginInlineEnd: 8,
+                                                visibility: expandable ? 'visible' : 'hidden',
+                                            }}
+                                            onClick={expandable ? (event) => onExpand(record, event) : undefined}
+                                        />
+                                    );
+                                },
                                 rowExpandable: (record: AttributeRuleRow) => (
                                     record.comparator === QualityRequirementAttributeComparator.LEVENSHTEIN
                                 ),
