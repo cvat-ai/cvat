@@ -524,16 +524,21 @@ context('Ground truth jobs', () => {
                     cy.get('body').trigger('mouseup');
                     checkCanvasObjectSource(rectangle, 'semi-auto', 'Ground truth');
 
-                    cy.visit(`/tasks/${taskId}/jobs/${jobId}`);
-                    cy.get('.cvat-spinner').should('not.exist');
+                    cy.visit(
+                        `/tasks/${taskId}/jobs/${jobId}?defaultWorkspace=REVIEW&frame=${frame}`,
+                    );
                     cy.get('.cvat-canvas-container').should('exist').and('be.visible');
-                    cy.get('.cvat-workspace-selector').should('exist').and('be.visible');
-                    cy.changeWorkspace('Review');
-                    cy.get('.cvat-objects-sidebar-show-ground-truth').click();
+                    cy.get('#cvat_canvas_background').should('exist').and('be.visible');
+                    cy.get('.cvat-workspace-selector')
+                        .should('be.visible')
+                        .and('contain.text', 'Review');
+                    cy.checkFrameNum(frame);
+                    cy.get('.cvat-objects-sidebar-show-ground-truth')
+                        .should('be.visible')
+                        .click();
                     cy.get('.cvat-objects-sidebar-show-ground-truth').should(
                         'have.class', 'cvat-objects-sidebar-show-ground-truth-active',
                     );
-                    cy.goCheckFrameNumber(frame);
                     checkRectangleAndObjectMenu(rectangle);
                     checkCanvasObjectSource(rectangle, 'Ground truth', 'auto');
                     cy.get(`#cvat-objects-sidebar-state-item-${rectangle.id}`)
