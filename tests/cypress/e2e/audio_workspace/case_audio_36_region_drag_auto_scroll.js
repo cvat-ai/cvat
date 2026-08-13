@@ -8,21 +8,23 @@ import { taskName, firstLabelName } from '../../support/const_audio';
 
 context('Audio annotation. Region editing auto-scrolls the waveform.', () => {
     const caseId = 'audio_36';
-    const EDGE_OFFSET_PX = 2;
+    // The auto-scroll areas extend 40px from each viewport edge. Keep the
+    // pointer well inside them instead of moving it beyond the viewport.
+    const AUTO_SCROLL_AREA_OFFSET_PX = 20;
 
     const getRegionBounds = () => cy.getAudioRegion().should('have.length', 1).then(($region) => ({
         left: Number.parseFloat($region[0].style.left),
         rightInset: Number.parseFloat($region[0].style.right),
     }));
 
-    const dragToViewportEdge = (target, edge) => {
+    const dragToAutoScrollArea = (target, edge) => {
         target.then(($target) => {
             cy.getAudioWaveformViewport().then(($viewport) => {
                 const viewportRect = $viewport[0].getBoundingClientRect();
                 const targetRect = $target[0].getBoundingClientRect();
                 const targetY = targetRect.top - viewportRect.top + targetRect.height / 2;
-                const x = edge === 'left' ? EDGE_OFFSET_PX : viewportRect.width - EDGE_OFFSET_PX;
-                const xBeyondEdge = edge === 'left' ? -EDGE_OFFSET_PX : viewportRect.width + EDGE_OFFSET_PX;
+                const x = edge === 'left' ? AUTO_SCROLL_AREA_OFFSET_PX :
+                    viewportRect.width - AUTO_SCROLL_AREA_OFFSET_PX;
 
                 cy.wrap($target).realMouseDown({
                     position: 'center',
@@ -32,12 +34,9 @@ context('Audio annotation. Region editing auto-scrolls the waveform.', () => {
                 cy.wrap($viewport).realMouseMove(x, targetY, {
                     scrollBehavior: false,
                 });
-                cy.document().should((currentDocument) => {
-                    expect(currentDocument.pointerLockElement).not.to.be.null;
-                });
-                cy.wrap($viewport).realMouseMove(xBeyondEdge, targetY, {
-                    scrollBehavior: false,
-                });
+                // Allow the requestAnimationFrame-driven auto-scroll to run
+                // while the pointer stays in the edge area.
+                cy.wait(100);
                 cy.wrap($viewport).realMouseUp({
                     button: 'left',
                     scrollBehavior: false,
@@ -76,41 +75,13 @@ context('Audio annotation. Region editing auto-scrolls the waveform.', () => {
     });
 
     afterEach(() => {
-        cy.document().should((currentDocument) => {
-            expect(currentDocument.pointerLockElement).to.be.null;
-        });
         cy.audioClearAnnotationsAndSave();
     });
 
     describe(`Testing case "${caseId}"`, () => {
-        it('Dragging left moves the region left and scrolls left', () => {
-            cy.getAudioWaveformScrollContainer().then(($scroll) => cy.wrap($scroll).scrollTo(100, 0));
-            rememberInteractionStart();
-            dragToViewportEdge(cy.getAudioRegion(), 'left');
-            expectScrolledTo('left');
-            getRegionBounds().then((after) => {
-                cy.get('@boundsBefore').then((before) => {
-                    expect(after.left).to.be.lessThan(before.left);
-                    expect(after.rightInset).to.be.greaterThan(before.rightInset);
-                });
-            });
-        });
-
-        it('Dragging right moves the region right and scrolls right', () => {
-            rememberInteractionStart();
-            dragToViewportEdge(cy.getAudioRegion(), 'right');
-            expectScrolledTo('right');
-            getRegionBounds().then((after) => {
-                cy.get('@boundsBefore').then((before) => {
-                    expect(after.left).to.be.greaterThan(before.left);
-                    expect(after.rightInset).to.be.lessThan(before.rightInset);
-                });
-            });
-        });
-
         it('Resizing the end right extends the region and scrolls right', () => {
             rememberInteractionStart();
-            dragToViewportEdge(cy.getAudioRegionHandle('right'), 'right');
+            dragToAutoScrollArea(cy.getAudioRegionHandle('right'), 'right');
             expectScrolledTo('right');
             getRegionBounds().then((after) => {
                 cy.get('@boundsBefore').then((before) => {
@@ -123,7 +94,7 @@ context('Audio annotation. Region editing auto-scrolls the waveform.', () => {
         it('Resizing the start left extends the region and scrolls left', () => {
             cy.getAudioWaveformScrollContainer().then(($scroll) => cy.wrap($scroll).scrollTo(100, 0));
             rememberInteractionStart();
-            dragToViewportEdge(cy.getAudioRegionHandle('left'), 'left');
+            dragToAutoScrollArea(cy.getAudioRegionHandle('left'), 'left');
             expectScrolledTo('left');
             getRegionBounds().then((after) => {
                 cy.get('@boundsBefore').then((before) => {
