@@ -88,21 +88,16 @@ control the overall brightness of an image
 To reset the setting to default values, click
 **Reset color settings**
 
-## Adding layers and Z-axis slider
+## Layer Stack
 
-**Z-axis Slider** enables you to add annotation layers while
-hiding the layers positioned beyond.
+Use the **Layer Stack** to manage the display order and visibility of annotations.
+The **Open Layer Stack** button in the lower-right corner of the canvas displays
+the current layer. New annotations are created on this layer.
 
-You can also move between layers by moving the slider
-to the layer you need.
+In the Layer Stack panel, you can select the current layer, show or hide layers,
+move objects between layers, reorder or merge layers, and compact layer numbers.
 
-The slider becomes active when multiple Z-layers are present within a frame.
-Click **+** on the slider to add a new layer;
-upon pressing it, a new layer is automatically created and activated.
-
-You can also relocate objects between layers using the **+** and **-** keys.
-
-![Z-Order Slider](/images/image140.jpg)
+For details, see [Layers](/docs/annotation/annotation-editor/layers/).
 
 ## Interacting with Objects
 

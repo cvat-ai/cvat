@@ -432,6 +432,20 @@ export interface PluginsState {
                 items: PluginComponent[];
             };
         }
+        taskPage: {
+            details: {
+                topBar: {
+                    extras: PluginComponent[];
+                };
+            };
+        };
+        projectPage: {
+            details: {
+                topBar: {
+                    extras: PluginComponent[];
+                };
+            };
+        };
         modelsPage: {
             topBar: {
                 items: PluginComponent[];
@@ -953,6 +967,7 @@ export interface AnnotationState {
             min: number;
             max: number;
             cur: number;
+            hiddenByFrame: Map<number, Set<number>>;
         };
     };
     remove: {
