@@ -34,13 +34,13 @@ export const pluginActions = {
     ),
     addUIComponent: (
         path: string,
-        component: React.Component,
+        component: React.ComponentType<any>,
         data: {
             weight?: number;
             shouldBeRendered?: (props?: object, state?: object) => boolean;
         } = {},
     ) => createAction(PluginsActionTypes.ADD_UI_COMPONENT, { path, component, data }),
-    removeUIComponent: (path: string, component: React.Component) => createAction(
+    removeUIComponent: (path: string, component: React.ComponentType<any>) => createAction(
         PluginsActionTypes.REMOVE_UI_COMPONENT, { path, component },
     ),
     addUICallback: (

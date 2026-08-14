@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: CVAT REST API
-  version: 2.72.1
+  version: 2.73.1
   description: REST API for Computer Vision Annotation Tool (CVAT)
   termsOfService: https://www.google.com/policies/terms/
   contact:
@@ -1515,6 +1515,118 @@ paths:
             application/vnd.cvat+json:
               schema:
                 $ref: '#/components/schemas/RqId'
+          description: ''
+  /api/growth:
+    get:
+      operationId: growth_list
+      summary: List growth data
+      parameters:
+      - name: filter
+        required: false
+        in: query
+        description: |2-
+
+          JSON Logic filter. This filter can be used to perform complex filtering by grouping rules.
+
+          For example, using such a filter you can get all resources created by you:
+
+              - {"and":[{"==":[{"var":"owner"},"<user>"]}]}
+
+          Details about the syntax used can be found at the link: https://jsonlogic.com/
+
+           Available filter_fields: ['id', 'user_id'].
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: sort
+        required: false
+        in: query
+        description: 'Which field to use when ordering the results. Available ordering_fields:
+          [''id'']'
+        schema:
+          type: string
+      tags:
+      - growth
+      security:
+      - tokenAuth: []
+      - accessTokenAuth: []
+      - sessionAuth: []
+        csrfAuth: []
+        csrfHeaderAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/PaginatedUserGrowthDataList'
+          description: ''
+  /api/growth/{id}:
+    get:
+      operationId: growth_retrieve
+      summary: Get growth data
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - growth
+      security:
+      - tokenAuth: []
+      - accessTokenAuth: []
+      - sessionAuth: []
+        csrfAuth: []
+        csrfHeaderAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/UserGrowthData'
+          description: ''
+    patch:
+      operationId: growth_partial_update
+      summary: Update growth data
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - growth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedUserGrowthDataRequest'
+      security:
+      - tokenAuth: []
+      - accessTokenAuth: []
+      - sessionAuth: []
+        csrfAuth: []
+        csrfHeaderAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/UserGrowthData'
           description: ''
   /api/guides:
     post:
@@ -9639,6 +9751,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/TaskRead'
+    PaginatedUserGrowthDataList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserGrowthData'
     PaginatedWebhookDeliveryReadList:
       type: object
       required:
@@ -10240,6 +10375,15 @@ components:
           type: integer
           writeOnly: true
           nullable: true
+    PatchedUserGrowthDataRequest:
+      type: object
+      properties:
+        github_prompt_shown:
+          type: boolean
+        github_prompt_support_clicked:
+          type: boolean
+        promotion_notifications_allowed:
+          type: boolean
     PatchedUserRequest:
       type: object
       properties:
@@ -11323,6 +11467,7 @@ components:
           additionalProperties:
             type: string
             minLength: 1
+            maxLength: 64
       required:
       - name
     SublabelRequest:
@@ -11760,6 +11905,25 @@ components:
       required:
       - groups
       - username
+    UserGrowthData:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        owner:
+          allOf:
+          - $ref: '#/components/schemas/BasicUser'
+          readOnly: true
+        github_prompt_shown:
+          type: boolean
+        github_prompt_support_clicked:
+          type: boolean
+        github_prompt_enabled:
+          type: boolean
+          readOnly: true
+        promotion_notifications_allowed:
+          type: boolean
     UserIdentifiers:
       type: object
       properties:

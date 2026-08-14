@@ -2539,3 +2539,27 @@ class ProjectDumpUpload(_DbTestBase):
             new_task = self._get_tasks(project["id"])[0]
             data_from_task_after_upload = self._get_data_from_task(new_task["id"], True)
             compare_datasets(expected_dataset, data_from_task_after_upload)
+
+
+class ImportErrorMessageTest(_DbTestBase):
+    def test_api_v2_can_include_underlying_reason_in_import_error_message(self):
+        # A YOLO 1.1 archive that passes format detection (obj.data is present)
+        # but fails during import (obj.names is missing): the reported message
+        # must contain the underlying reason, not only the generic
+        # "Failed to import dataset" text
+        images = self._generate_task_images(1)
+        task = self._create_task(tasks["main"], images)
+
+        with TemporaryDirectory() as tmp_dir:
+            archive_path = osp.join(tmp_dir, "dataset.zip")
+            with zipfile.ZipFile(archive_path, "w") as archive:
+                archive.writestr(
+                    "obj.data",
+                    "classes = 1\ntrain = train.txt\nnames = obj.names\nbackup = backup/\n",
+                )
+                archive.writestr("train.txt", "obj_train_data/image_0.jpg\n")
+
+            with self.assertRaisesRegex(dm.bindings.CvatImportError, "obj\\.names"):
+                dm.task.import_task_annotations(
+                    archive_path, task["id"], "YOLO 1.1", conv_mask_to_poly=False
+                )
