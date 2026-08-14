@@ -132,6 +132,7 @@ export class DrawHandlerImpl implements DrawHandler {
     private shapeSizeElement: ShapeSizeElement | null;
     private fitPreview: SVG.G | null;
     private previewAnimationFrame: number | null;
+    private controlPointsAnimationFrame: number | null;
     private pendingPreviewPoints: number[] | null;
     private displayedFit: RotatedFit | null;
     private targetFit: RotatedFit | null;
@@ -356,6 +357,32 @@ export class DrawHandlerImpl implements DrawHandler {
         }
 
         this.previewAnimationFrame = window.requestAnimationFrame((): void => this.renderFitPreview());
+    }
+
+    private resizeDrawControlPoints(): void {
+        if (!this.drawInstance) {
+            return;
+        }
+
+        const paintHandler = this.drawInstance.remember('_paintHandler');
+        if (paintHandler) {
+            for (const point of (paintHandler as any).set.members) {
+                this.strokePoint(point);
+                point.attr('stroke-width', `${consts.POINTS_STROKE_WIDTH / this.geometry.scale}`);
+                point.attr('r', `${this.controlPointsSize / this.geometry.scale}`);
+            }
+        }
+    }
+
+    private scheduleDrawControlPointsResize(): void {
+        if (this.controlPointsAnimationFrame !== null) {
+            return;
+        }
+
+        this.controlPointsAnimationFrame = window.requestAnimationFrame((): void => {
+            this.controlPointsAnimationFrame = null;
+            this.resizeDrawControlPoints();
+        });
     }
 
     private getFinalEllipseCoordinates(points: number[], fitIntoFrame: boolean): number[] {
@@ -655,6 +682,10 @@ export class DrawHandlerImpl implements DrawHandler {
             window.cancelAnimationFrame(this.previewAnimationFrame);
             this.previewAnimationFrame = null;
         }
+        if (this.controlPointsAnimationFrame !== null) {
+            window.cancelAnimationFrame(this.controlPointsAnimationFrame);
+            this.controlPointsAnimationFrame = null;
+        }
         this.pendingPreviewPoints = null;
         this.displayedFit = null;
         this.targetFit = null;
@@ -793,6 +824,7 @@ export class DrawHandlerImpl implements DrawHandler {
 
         const updatePreview = (shape: SVG.Shape): void => {
             this.scheduleFitPreview(readPointsFromShape(shape));
+            this.scheduleDrawControlPointsResize();
         };
 
         this.drawInstance
@@ -1661,6 +1693,7 @@ export class DrawHandlerImpl implements DrawHandler {
         this.pointsGroup = null;
         this.fitPreview = null;
         this.previewAnimationFrame = null;
+        this.controlPointsAnimationFrame = null;
         this.pendingPreviewPoints = null;
         this.displayedFit = null;
         this.targetFit = null;
@@ -1773,15 +1806,7 @@ export class DrawHandlerImpl implements DrawHandler {
             this.drawInstance.attr({
                 'stroke-width': consts.BASE_STROKE_WIDTH / geometry.scale,
             });
-
-            const paintHandler = this.drawInstance.remember('_paintHandler');
-            if (paintHandler) {
-                for (const point of (paintHandler as any).set.members) {
-                    this.strokePoint(point);
-                    point.attr('stroke-width', `${consts.POINTS_STROKE_WIDTH / geometry.scale}`);
-                    point.attr('r', `${this.controlPointsSize / geometry.scale}`);
-                }
-            }
+            this.resizeDrawControlPoints();
         }
 
         if (this.fitPreview) {
