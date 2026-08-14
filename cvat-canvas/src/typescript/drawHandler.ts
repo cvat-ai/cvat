@@ -152,15 +152,39 @@ export class DrawHandlerImpl implements DrawHandler {
         }
         const fitted = rotatedShapeFitter.minAreaRect(contour);
         const angle = ((fitted.angle % 180) + 180) % 180;
-        if (angle >= 90) {
-            return {
-                center: fitted.center,
-                size: { width: fitted.size.height, height: fitted.size.width },
-                angle: angle - 90,
-            };
-        }
+        const normalizedFit = angle >= 90 ? {
+            center: fitted.center,
+            size: { width: fitted.size.height, height: fitted.size.width },
+            angle: angle - 90,
+        } : { ...fitted, angle };
 
-        return { ...fitted, angle };
+        const [firstX, firstY] = points;
+        const equivalentFits: RotatedFit[] = [
+            normalizedFit,
+            { ...normalizedFit, angle: normalizedFit.angle + 180 },
+            {
+                ...normalizedFit,
+                size: { width: normalizedFit.size.height, height: normalizedFit.size.width },
+                angle: normalizedFit.angle + 90,
+            },
+            {
+                ...normalizedFit,
+                size: { width: normalizedFit.size.height, height: normalizedFit.size.width },
+                angle: normalizedFit.angle + 270,
+            },
+        ];
+
+        const distanceToTopSide = (fit: RotatedFit): number => {
+            const angleRadians = (fit.angle * Math.PI) / 180;
+            const relativeX = firstX - fit.center.x;
+            const relativeY = firstY - fit.center.y;
+            const localY = -relativeX * Math.sin(angleRadians) + relativeY * Math.cos(angleRadians);
+            return Math.abs(localY + fit.size.height / 2);
+        };
+
+        return equivalentFits.reduce((closestFit: RotatedFit, fit: RotatedFit): RotatedFit => (
+            distanceToTopSide(fit) < distanceToTopSide(closestFit) ? fit : closestFit
+        ));
     }
 
     private fitRotatedPreview(points: number[]): RotatedFit | null {
