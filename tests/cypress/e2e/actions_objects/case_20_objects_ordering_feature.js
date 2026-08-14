@@ -95,6 +95,18 @@ context('Objects ordering feature', () => {
             });
     }
 
+    function moveObjectToForeground(clientId) {
+        cy.get(`#cvat-objects-sidebar-state-item-${clientId}`)
+            .find('.cvat-object-item-menu-button').click();
+        cy.get('.cvat-object-item-menu:visible')
+            .find('.cvat-object-item-menu-to-layer-foreground').click();
+    }
+
+    function layerVisibilityButton(zOrder) {
+        return cy.get(`.cvat-objects-sidebar-z-layer[data-z-order="${zOrder}"]`)
+            .find('.cvat-objects-sidebar-z-layer-visibility-indicator');
+    }
+
     before(() => {
         cy.visit('/auth/login');
         cy.headlessLogin();
@@ -133,6 +145,66 @@ context('Objects ordering feature', () => {
             checkSideBarItemOrdering('ascent');
         });
 
+        it('Move objects to separate layers.', () => {
+            moveObjectToForeground(1);
+            moveObjectToForeground(2);
+
+            cy.sidebarItemSortBy('Layer');
+            cy.get('.cvat-objects-sidebar-z-layer').should('have.length', 3);
+            [0, 1, 2].forEach((zOrder) => {
+                cy.get(`.cvat-objects-sidebar-z-layer[data-z-order="${zOrder}"]`).should('exist');
+            });
+
+            cy.get('.cvat-canvas-layer-stack-trigger-layer').should('have.text', '0');
+            cy.get('.cvat-objects-sidebar-z-layer[data-z-order="1"]')
+                .find('.cvat-objects-sidebar-z-layer-select-button').click();
+            cy.get('.cvat-canvas-layer-stack-trigger-layer').should('have.text', '1');
+
+            layerVisibilityButton(1).click();
+            cy.get('#cvat_canvas_shape_1').should('not.exist');
+
+            cy.createRectangle(createRectangle('Apple', 300, 150));
+            cy.get('.cvat-objects-sidebar-z-layer[data-z-order="1"]')
+                .find('#cvat-objects-sidebar-state-item-5').should('exist');
+            cy.get('#cvat_canvas_shape_1').should('exist');
+            cy.get('#cvat_canvas_shape_5').should('exist');
+            layerVisibilityButton(1).find('svg').should('have.attr', 'data-icon', 'eye');
+        });
+
+        it('Show and hide layers using layer visibility controls.', () => {
+            cy.get('#cvat_canvas_shape_1').should('exist');
+            cy.get('#cvat_canvas_shape_2').should('exist');
+            cy.get('#cvat_canvas_shape_3').should('exist');
+            cy.get('#cvat_canvas_shape_4').should('exist');
+
+            layerVisibilityButton(1).click();
+            cy.get('#cvat_canvas_shape_1').should('not.exist');
+            cy.get('#cvat_canvas_shape_2').should('exist');
+            cy.get('#cvat_canvas_shape_3').should('exist');
+            cy.get('#cvat_canvas_shape_4').should('exist');
+
+            layerVisibilityButton(1).click();
+            cy.get('#cvat_canvas_shape_1').should('exist');
+
+            layerVisibilityButton(0).click();
+            cy.get('#cvat_canvas_shape_1').should('exist');
+            cy.get('#cvat_canvas_shape_2').should('exist');
+            cy.get('#cvat_canvas_shape_3').should('not.exist');
+            cy.get('#cvat_canvas_shape_4').should('not.exist');
+
+            layerVisibilityButton(1).click({ shiftKey: true });
+            cy.get('#cvat_canvas_shape_1').should('not.exist');
+            cy.get('#cvat_canvas_shape_2').should('exist');
+            cy.get('#cvat_canvas_shape_3').should('not.exist');
+            cy.get('#cvat_canvas_shape_4').should('not.exist');
+
+            layerVisibilityButton(1).click({ shiftKey: true });
+            cy.get('#cvat_canvas_shape_1').should('exist');
+            cy.get('#cvat_canvas_shape_2').should('exist');
+            cy.get('#cvat_canvas_shape_3').should('exist');
+            cy.get('#cvat_canvas_shape_4').should('exist');
+        });
+
         it('Sort object by "ID - descent".', () => {
             cy.sidebarItemSortBy('ID - descent');
             checkSideBarItemOrdering('descent');
@@ -146,9 +218,9 @@ context('Objects ordering feature', () => {
         it('Sort objects by "Updated time". Toggle lock on each object to update timestamps', () => {
             cy.sidebarItemSortBy('Updated time');
 
-            // Toggle lock on each object in order to update their timestamps
-            cy.get('.cvat-objects-sidebar-state-item').each(($item) => {
-                cy.wrap($item).within(() => {
+            // Update in descending ID order so the latest-first result is ascending by ID.
+            [5, 4, 3, 2, 1].forEach((clientId) => {
+                cy.get(`#cvat-objects-sidebar-state-item-${clientId}`).within(() => {
                     cy.get('.cvat-object-item-button-lock').click();
                 });
             });
