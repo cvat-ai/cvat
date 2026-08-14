@@ -7,7 +7,7 @@ import { useSelector } from 'react-redux';
 import { shallowEqual } from 'utils/redux';
 import { CombinedState } from 'reducers';
 
-import { UserOutlined, LockOutlined } from '@ant-design/icons';
+import { UserOutlined, LockOutlined, BellOutlined } from '@ant-design/icons';
 import { Col, Row } from 'antd/lib/grid';
 import Typography from 'antd/lib/typography';
 import Text from 'antd/lib/typography/Text';
@@ -18,11 +18,12 @@ import CVATLoadingSpinner from 'components/common/loading-spinner';
 import dimensions from 'utils/dimensions';
 import ProfileContent from './profile-content/profile-content';
 import SecurityContent from './security-content/security-content';
+import PrivacyConsentCard from './profile-content/privacy-consent-card';
 
 import './styles.scss';
 
 const { Title } = Typography;
-const supportedTabs = ['profile', 'security'];
+const supportedTabs = ['profile', 'security', 'privacy-consent'];
 
 function ProfilePageComponent(): JSX.Element {
     const { user, fetching, isPasswordChangeEnabled } = useSelector((state: CombinedState) => ({
@@ -44,6 +45,11 @@ function ProfilePageComponent(): JSX.Element {
             icon: <LockOutlined />,
             label: <Text className='cvat-profile-page-menu-item-security'>Security</Text>,
         },
+        {
+            key: 'privacy-consent',
+            icon: <BellOutlined />,
+            label: <Text className='cvat-profile-page-menu-item-privacy-consent'>Privacy & consent</Text>,
+        },
     ];
 
     const onMenuClick = useCallback((key: string): void => {
@@ -64,6 +70,8 @@ function ProfilePageComponent(): JSX.Element {
         switch (activeTab) {
             case 'security':
                 return <SecurityContent isPasswordChangeEnabled={isPasswordChangeEnabled} />;
+            case 'privacy-consent':
+                return <PrivacyConsentCard />;
             case 'profile':
             default:
                 return <ProfileContent />;

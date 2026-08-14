@@ -70,6 +70,15 @@ export interface SerializedUser {
     has_analytics_access: boolean;
 }
 
+export interface SerializedUserGrowthData {
+    id: number;
+    owner: SerializedUser;
+    github_prompt_shown: boolean;
+    github_prompt_support_clicked: boolean;
+    github_prompt_enabled: boolean;
+    promotion_notifications_allowed: boolean;
+}
+
 interface SerializedStorage {
     id: number;
     location: StorageLocation;
