@@ -47,6 +47,7 @@ interface Props {
     propagate(): void;
     createURL(): void;
     switchOrientation(): void;
+    changeOrientation(degrees: 90 | 180 | 270): void;
     toBackground(): void;
     toForeground(): void;
     toOneLayerBackward(): void;
@@ -64,6 +65,8 @@ interface Props {
 interface ItemProps {
     toolProps: Props;
 }
+
+type OrientationAngle = 90 | 180 | 270;
 
 function CreateURLItem(props: ItemProps): JSX.Element {
     const { toolProps } = props;
@@ -177,6 +180,32 @@ function SwitchOrientationItem(props: ItemProps): JSX.Element {
             className='cvat-object-item-menu-switch-orientation'
         >
             Switch orientation
+        </Button>
+    );
+}
+
+function ChangeOrientationItem(props: ItemProps & { degrees: OrientationAngle }): JSX.Element {
+    const { toolProps, degrees } = props;
+    const { changeOrientation } = toolProps;
+    return (
+        <Button
+            type='link'
+            onClick={(): void => changeOrientation(degrees)}
+            className={`cvat-object-item-menu-orientation-${degrees}`}
+        >
+            {`${degrees}°`}
+        </Button>
+    );
+}
+
+function OrientationItem(): JSX.Element {
+    return (
+        <Button
+            type='link'
+            icon={<RetweetOutlined />}
+            className='cvat-object-item-menu-orientation'
+        >
+            Orientation
         </Button>
     );
 }
@@ -341,6 +370,7 @@ export default function ItemMenu(props: Props): MenuProps {
         COPY = 'copy',
         PROPAGATE = 'propagate',
         SWITCH_ORIENTATION = 'switch_orientation',
+        ORIENTATION = 'orientation',
         RESET_PERSPECTIVE = 'reset_perspective',
         TO_BACKGROUND = 'to_background',
         TO_FOREGROUND = 'to_foreground',
@@ -405,6 +435,18 @@ export default function ItemMenu(props: Props): MenuProps {
         items.push({
             key: MenuKeys.SWITCH_ORIENTATION,
             label: <SwitchOrientationItem toolProps={props} />,
+        });
+    }
+
+    if (is2D && !locked && [ShapeType.RECTANGLE, ShapeType.ELLIPSE].includes(shapeType)) {
+        items.push({
+            key: MenuKeys.ORIENTATION,
+            label: <OrientationItem />,
+            popupClassName: 'cvat-object-item-menu',
+            children: ([90, 180, 270] as const).map((degrees: OrientationAngle) => ({
+                key: `${MenuKeys.ORIENTATION}_${degrees}`,
+                label: <ChangeOrientationItem toolProps={props} degrees={degrees} />,
+            })),
         });
     }
 

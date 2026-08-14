@@ -130,6 +130,7 @@ interface Props {
     propagate(): void;
     createURL(): void;
     switchOrientation(): void;
+    changeOrientation(degrees: 90 | 180 | 270): void;
     toBackground(): void;
     toOneLayerBackward(): void;
     toForeground(): void;
@@ -174,6 +175,7 @@ function ItemTopComponent(props: Props): JSX.Element {
         propagate,
         createURL,
         switchOrientation,
+        changeOrientation,
         toBackground,
         toForeground,
         toOneLayerBackward,
@@ -262,6 +264,7 @@ function ItemTopComponent(props: Props): JSX.Element {
                         propagate,
                         createURL,
                         switchOrientation,
+                        changeOrientation,
                         toBackground,
                         toForeground,
                         toOneLayerBackward,
