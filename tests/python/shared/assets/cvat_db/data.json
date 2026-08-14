@@ -17444,6 +17444,258 @@
     }
   },
   {
+    "model": "growth.usergrowthdata",
+    "pk": 1,
+    "fields": {
+      "promotion_notifications_allowed": true,
+      "github_prompt_shown_at": "2022-02-24T20:45:19Z",
+      "github_prompt_support_clicked": false,
+      "user": [
+        "user6"
+      ]
+    }
+  },
+  {
+    "model": "growth.usergrowthdata",
+    "pk": 2,
+    "fields": {
+      "promotion_notifications_allowed": true,
+      "github_prompt_shown_at": "2021-12-14T18:38:46Z",
+      "github_prompt_support_clicked": false,
+      "user": [
+        "admin2"
+      ]
+    }
+  },
+  {
+    "model": "growth.usergrowthdata",
+    "pk": 3,
+    "fields": {
+      "promotion_notifications_allowed": true,
+      "github_prompt_shown_at": "2023-03-30T09:37:31.615Z",
+      "github_prompt_support_clicked": false,
+      "user": [
+        "lonely_user"
+      ]
+    }
+  },
+  {
+    "model": "growth.usergrowthdata",
+    "pk": 4,
+    "fields": {
+      "promotion_notifications_allowed": true,
+      "github_prompt_shown_at": "2021-12-14T18:04:57Z",
+      "github_prompt_support_clicked": false,
+      "user": [
+        "admin1"
+      ]
+    }
+  },
+  {
+    "model": "growth.usergrowthdata",
+    "pk": 5,
+    "fields": {
+      "promotion_notifications_allowed": true,
+      "github_prompt_shown_at": "2021-12-14T18:21:09Z",
+      "github_prompt_support_clicked": false,
+      "user": [
+        "user1"
+      ]
+    }
+  },
+  {
+    "model": "growth.usergrowthdata",
+    "pk": 6,
+    "fields": {
+      "promotion_notifications_allowed": true,
+      "github_prompt_shown_at": "2021-12-14T18:24:12Z",
+      "github_prompt_support_clicked": false,
+      "user": [
+        "user2"
+      ]
+    }
+  },
+  {
+    "model": "growth.usergrowthdata",
+    "pk": 7,
+    "fields": {
+      "promotion_notifications_allowed": true,
+      "github_prompt_shown_at": "2021-12-14T18:24:39Z",
+      "github_prompt_support_clicked": false,
+      "user": [
+        "user3"
+      ]
+    }
+  },
+  {
+    "model": "growth.usergrowthdata",
+    "pk": 8,
+    "fields": {
+      "promotion_notifications_allowed": true,
+      "github_prompt_shown_at": "2021-12-14T18:25:10Z",
+      "github_prompt_support_clicked": false,
+      "user": [
+        "user4"
+      ]
+    }
+  },
+  {
+    "model": "growth.usergrowthdata",
+    "pk": 9,
+    "fields": {
+      "promotion_notifications_allowed": true,
+      "github_prompt_shown_at": "2021-12-14T18:30:00Z",
+      "github_prompt_support_clicked": false,
+      "user": [
+        "worker1"
+      ]
+    }
+  },
+  {
+    "model": "growth.usergrowthdata",
+    "pk": 10,
+    "fields": {
+      "promotion_notifications_allowed": true,
+      "github_prompt_shown_at": "2021-12-14T18:30:43Z",
+      "github_prompt_support_clicked": false,
+      "user": [
+        "worker2"
+      ]
+    }
+  },
+  {
+    "model": "growth.usergrowthdata",
+    "pk": 11,
+    "fields": {
+      "promotion_notifications_allowed": true,
+      "github_prompt_shown_at": "2021-12-14T18:31:25Z",
+      "github_prompt_support_clicked": false,
+      "user": [
+        "worker3"
+      ]
+    }
+  },
+  {
+    "model": "growth.usergrowthdata",
+    "pk": 12,
+    "fields": {
+      "promotion_notifications_allowed": true,
+      "github_prompt_shown_at": "2021-12-14T18:32:01Z",
+      "github_prompt_support_clicked": false,
+      "user": [
+        "worker4"
+      ]
+    }
+  },
+  {
+    "model": "growth.usergrowthdata",
+    "pk": 13,
+    "fields": {
+      "promotion_notifications_allowed": true,
+      "github_prompt_shown_at": "2021-12-14T18:33:06Z",
+      "github_prompt_support_clicked": false,
+      "user": [
+        "user7"
+      ]
+    }
+  },
+  {
+    "model": "growth.usergrowthdata",
+    "pk": 14,
+    "fields": {
+      "promotion_notifications_allowed": true,
+      "github_prompt_shown_at": "2021-12-14T18:34:01Z",
+      "github_prompt_support_clicked": false,
+      "user": [
+        "user8"
+      ]
+    }
+  },
+  {
+    "model": "growth.usergrowthdata",
+    "pk": 15,
+    "fields": {
+      "promotion_notifications_allowed": true,
+      "github_prompt_shown_at": "2021-12-14T18:34:34Z",
+      "github_prompt_support_clicked": false,
+      "user": [
+        "user9"
+      ]
+    }
+  },
+  {
+    "model": "growth.usergrowthdata",
+    "pk": 16,
+    "fields": {
+      "promotion_notifications_allowed": true,
+      "github_prompt_shown_at": "2021-12-14T18:35:15Z",
+      "github_prompt_support_clicked": false,
+      "user": [
+        "user10"
+      ]
+    }
+  },
+  {
+    "model": "growth.usergrowthdata",
+    "pk": 17,
+    "fields": {
+      "promotion_notifications_allowed": true,
+      "github_prompt_shown_at": "2021-12-14T18:36:00Z",
+      "github_prompt_support_clicked": false,
+      "user": [
+        "dummy1"
+      ]
+    }
+  },
+  {
+    "model": "growth.usergrowthdata",
+    "pk": 18,
+    "fields": {
+      "promotion_notifications_allowed": true,
+      "github_prompt_shown_at": "2021-12-14T18:36:31Z",
+      "github_prompt_support_clicked": false,
+      "user": [
+        "dummy2"
+      ]
+    }
+  },
+  {
+    "model": "growth.usergrowthdata",
+    "pk": 19,
+    "fields": {
+      "promotion_notifications_allowed": true,
+      "github_prompt_shown_at": "2021-12-14T18:37:09Z",
+      "github_prompt_support_clicked": false,
+      "user": [
+        "dummy3"
+      ]
+    }
+  },
+  {
+    "model": "growth.usergrowthdata",
+    "pk": 20,
+    "fields": {
+      "promotion_notifications_allowed": true,
+      "github_prompt_shown_at": "2021-12-14T18:37:41Z",
+      "github_prompt_support_clicked": false,
+      "user": [
+        "dummy4"
+      ]
+    }
+  },
+  {
+    "model": "growth.usergrowthdata",
+    "pk": 21,
+    "fields": {
+      "promotion_notifications_allowed": true,
+      "github_prompt_shown_at": "2022-02-24T20:45:07Z",
+      "github_prompt_support_clicked": false,
+      "user": [
+        "user5"
+      ]
+    }
+  },
+  {
     "model": "organizations.invitation",
     "pk": "5FjIXya6fTGvlRpauFvi2QN1wDOqo1V9REB5rJinDR8FZO9gr0qmtWpghsCte8Y1",
     "fields": {

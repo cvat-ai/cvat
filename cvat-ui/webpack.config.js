@@ -184,7 +184,7 @@ module.exports = (env, argv = {}) => {
                     ],
                 },
                 {
-                    test: /\.(png|jpg|jpeg|gif)$/i,
+                    test: /\.(png|jpg|jpeg|gif|webp)$/i,
                     type: 'asset/resource',
                 },
             ],
@@ -222,7 +222,7 @@ module.exports = (env, argv = {}) => {
                         to  : 'assets/opencv_4.8.0.js',
                     },
                     {
-                        from: 'src/assets/*.png',
+                        from: 'src/assets/*.{png,webp}',
                         to  : 'assets/[name][ext]',
                     },
                     {
