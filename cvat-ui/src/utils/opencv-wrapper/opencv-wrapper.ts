@@ -117,26 +117,18 @@ export class OpenCVWrapper {
         }
 
         const decodedScript = new TextDecoder('utf-8').decode(bytes);
-        await new Promise<void>((resolve, reject) => {
-            (window as any).Module = {
-                onRuntimeInitialized: () => {
-                    delete (window as any).Module;
-                    resolve();
-                },
-            };
+        // OpenCV 5 uses a UMD bundle that can expose either a ready module or an asynchronous factory.
+        // eslint-disable-next-line no-new-func
+        const OpenCVConstructor = new Function(decodedScript);
+        OpenCVConstructor.call(window);
 
-            try {
-                // Inject OpenCV to DOM
-                // eslint-disable-next-line no-new-func
-                const OpenCVConstructor = new Function(decodedScript);
-                OpenCVConstructor();
-            } catch (error: unknown) {
-                delete (window as any).Module;
-                reject(new Error(`Initialization error: ${error instanceof Error ? error.message : 'unknown'}`));
-            }
-        });
+        const openCVModule = (window as any).cv;
+        const cv = typeof openCVModule === 'function' ? await openCVModule() : await openCVModule;
+        if (!cv || typeof cv.Mat !== 'function') {
+            throw new Error('OpenCV initialization error: module was not found');
+        }
 
-        this.cvInterface = core.opencv.createOpenCVInterface((window as any).cv);
+        this.cvInterface = core.opencv.createOpenCVInterface(cv);
     }
 
     public async initialize(onProgress: (percent: number) => void): Promise<void> {

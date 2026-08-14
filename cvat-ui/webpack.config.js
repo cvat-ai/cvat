@@ -218,8 +218,8 @@ module.exports = (env, argv = {}) => {
                         to: 'assets/[name][ext]',
                     },
                     {
-                        from: 'src/assets/opencv_4.8.0.js',
-                        to  : 'assets/opencv_4.8.0.js',
+                        from: 'src/assets/opencv_5.0.0.js',
+                        to  : 'assets/opencv_5.0.0.js',
                     },
                     {
                         from: 'src/assets/*.png',

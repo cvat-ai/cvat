@@ -46,6 +46,12 @@ interface FinalCoordinates {
     box: Box;
 }
 
+interface RotatedFit {
+    center: { x: number; y: number };
+    size: { width: number; height: number };
+    angle: number;
+}
+
 function checkConstraint(shapeType: string, points: number[], box: Box | null = null): boolean {
     if (shapeType === 'rectangle') {
         const [xtl, ytl, xbr, ybr] = points;
@@ -124,6 +130,209 @@ export class DrawHandlerImpl implements DrawHandler {
     private canceled: boolean;
     private pointsGroup: SVG.G | null;
     private shapeSizeElement: ShapeSizeElement | null;
+    private fitPreview: SVG.G | null;
+    private previewAnimationFrame: number | null;
+    private pendingPreviewPoints: number[] | null;
+    private displayedFit: RotatedFit | null;
+    private targetFit: RotatedFit | null;
+
+    private fitRotatedRectangle(points: number[]): RotatedFit | null {
+        if (points.length < 6) {
+            return null;
+        }
+
+        const { rotatedShapeFitter } = this.drawData;
+        if (!rotatedShapeFitter) {
+            return null;
+        }
+
+        const contour: [number, number][] = [];
+        for (let i = 0; i < points.length; i += 2) {
+            contour.push([points[i], points[i + 1]]);
+        }
+        const fitted = rotatedShapeFitter.minAreaRect(contour);
+        const angle = ((fitted.angle % 180) + 180) % 180;
+        if (angle >= 90) {
+            return {
+                center: fitted.center,
+                size: { width: fitted.size.height, height: fitted.size.width },
+                angle: angle - 90,
+            };
+        }
+
+        return { ...fitted, angle };
+    }
+
+    private fitRotatedPreview(points: number[]): RotatedFit | null {
+        if (points.length > 6) {
+            return this.fitRotatedRectangle(points);
+        }
+
+        if (points.length < 4) {
+            return null;
+        }
+
+        const [firstX, firstY, secondX, secondY] = points;
+        const angleRadians = Math.atan2(secondY - firstY, secondX - firstX);
+        const cos = Math.cos(angleRadians);
+        const sin = Math.sin(angleRadians);
+        let minX = Infinity;
+        let minY = Infinity;
+        let maxX = -Infinity;
+        let maxY = -Infinity;
+
+        for (let index = 0; index < points.length; index += 2) {
+            const x = points[index];
+            const y = points[index + 1];
+            const projectedX = x * cos + y * sin;
+            const projectedY = -x * sin + y * cos;
+            minX = Math.min(minX, projectedX);
+            minY = Math.min(minY, projectedY);
+            maxX = Math.max(maxX, projectedX);
+            maxY = Math.max(maxY, projectedY);
+        }
+
+        const projectedCenterX = (minX + maxX) / 2;
+        const projectedCenterY = (minY + maxY) / 2;
+        return {
+            center: {
+                x: projectedCenterX * cos - projectedCenterY * sin,
+                y: projectedCenterX * sin + projectedCenterY * cos,
+            },
+            // The two-point guide is not rendered, but gives the first fitted rectangle
+            // a stable animation origin. Three points keep the same axis to avoid the
+            // ambiguous minimum-area fit changing while the cursor crosses its boundary.
+            size: {
+                width: maxX - minX,
+                height: maxY - minY,
+            },
+            angle: (angleRadians * 180) / Math.PI,
+        };
+    }
+
+    private updateFitPreview(fitted: RotatedFit | null): void {
+        if (!fitted || fitted.size.width < consts.SIZE_THRESHOLD || fitted.size.height < consts.SIZE_THRESHOLD) {
+            if (this.fitPreview) {
+                this.fitPreview.remove();
+                this.fitPreview = null;
+            }
+            return;
+        }
+
+        const previewAttributes = {
+            'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
+            'stroke-dasharray': `${6 / this.geometry.scale} ${4 / this.geometry.scale}`,
+            'pointer-events': 'none',
+            fill: 'none',
+            stroke: this.outlinedBorders,
+        };
+
+        if (!this.fitPreview) {
+            this.fitPreview = this.canvas.group().attr({ 'pointer-events': 'none' });
+            this.fitPreview.rect().attr(previewAttributes);
+            if (this.drawData.shapeType === 'ellipse') {
+                this.fitPreview.ellipse().attr(previewAttributes);
+            }
+        }
+
+        this.fitPreview.untransform();
+        const [rectanglePreview, ellipsePreview] = this.fitPreview.children();
+        rectanglePreview.attr({
+            ...previewAttributes,
+            x: fitted.center.x - fitted.size.width / 2,
+            y: fitted.center.y - fitted.size.height / 2,
+            width: fitted.size.width,
+            height: fitted.size.height,
+            fill: 'white',
+            'fill-opacity': 0.1,
+            stroke: 'black',
+            'stroke-dasharray': this.drawData.shapeType === 'ellipse' ? previewAttributes['stroke-dasharray'] : 'none',
+            'stroke-opacity': 1,
+        });
+        if (ellipsePreview) {
+            ellipsePreview.attr({
+                ...previewAttributes,
+                cx: fitted.center.x,
+                cy: fitted.center.y,
+                rx: fitted.size.width / 2,
+                ry: fitted.size.height / 2,
+                'stroke-dasharray': 'none',
+            });
+        }
+        this.fitPreview.rotate(fitted.angle, fitted.center.x, fitted.center.y);
+    }
+
+    private getClosestEquivalentFit(fitted: RotatedFit, reference: RotatedFit): RotatedFit {
+        const normalizeAngle = (angle: number): number => {
+            const difference = ((((angle - reference.angle + 90) % 180) + 180) % 180) - 90;
+            return reference.angle + difference;
+        };
+
+        const direct = { ...fitted, angle: normalizeAngle(fitted.angle) };
+        const swapped = {
+            ...fitted,
+            size: { width: fitted.size.height, height: fitted.size.width },
+            angle: normalizeAngle(fitted.angle + 90),
+        };
+
+        return Math.abs(direct.angle - reference.angle) <= Math.abs(swapped.angle - reference.angle) ?
+            direct : swapped;
+    }
+
+    private renderFitPreview(): void {
+        this.previewAnimationFrame = null;
+        if (this.pendingPreviewPoints) {
+            this.targetFit = this.fitRotatedPreview(this.pendingPreviewPoints);
+            this.pendingPreviewPoints = null;
+        }
+
+        if (!this.targetFit) {
+            this.displayedFit = null;
+            this.updateFitPreview(null);
+            return;
+        }
+
+        const targetFit = this.displayedFit ?
+            this.getClosestEquivalentFit(this.targetFit, this.displayedFit) : this.targetFit;
+        const isExpandingFromLine = this.displayedFit &&
+            Math.min(this.displayedFit.size.width, this.displayedFit.size.height) < consts.SIZE_THRESHOLD;
+        const smoothingFactor = isExpandingFromLine ? 0.02 : 0.1;
+        const nextFit = this.displayedFit ? {
+            center: {
+                x: this.displayedFit.center.x + (targetFit.center.x - this.displayedFit.center.x) * smoothingFactor,
+                y: this.displayedFit.center.y + (targetFit.center.y - this.displayedFit.center.y) * smoothingFactor,
+            },
+            size: {
+                width: this.displayedFit.size.width +
+                    (targetFit.size.width - this.displayedFit.size.width) * smoothingFactor,
+                height: this.displayedFit.size.height +
+                    (targetFit.size.height - this.displayedFit.size.height) * smoothingFactor,
+            },
+            angle: this.displayedFit.angle + (targetFit.angle - this.displayedFit.angle) * smoothingFactor,
+        } : targetFit;
+
+        this.displayedFit = nextFit;
+        this.targetFit = targetFit;
+        this.updateFitPreview(nextFit);
+
+        const needsAnotherFrame = Math.abs(targetFit.center.x - nextFit.center.x) > 0.1 ||
+            Math.abs(targetFit.center.y - nextFit.center.y) > 0.1 ||
+            Math.abs(targetFit.size.width - nextFit.size.width) > 0.1 ||
+            Math.abs(targetFit.size.height - nextFit.size.height) > 0.1 ||
+            Math.abs(targetFit.angle - nextFit.angle) > 0.1;
+        if (needsAnotherFrame) {
+            this.previewAnimationFrame = window.requestAnimationFrame((): void => this.renderFitPreview());
+        }
+    }
+
+    private scheduleFitPreview(points: number[]): void {
+        this.pendingPreviewPoints = points;
+        if (this.previewAnimationFrame !== null) {
+            return;
+        }
+
+        this.previewAnimationFrame = window.requestAnimationFrame((): void => this.renderFitPreview());
+    }
 
     private getFinalEllipseCoordinates(points: number[], fitIntoFrame: boolean): number[] {
         const { offset } = this.geometry;
@@ -393,6 +602,7 @@ export class DrawHandlerImpl implements DrawHandler {
         // We check if it is activated with remember function
         if (this.drawInstance.remember('_paintHandler')) {
             if (['polygon', 'polyline', 'points'].includes(this.drawData.shapeType) ||
+                this.drawData.rectDrawingMethod === RectDrawingMethod.ROTATED_POINTS ||
                 (this.drawData.shapeType === 'cuboid' &&
                 this.drawData.cuboidDrawingMethod === CuboidDrawingMethod.CORNER_POINTS)) {
                 // Check for unsaved drawn shapes
@@ -411,6 +621,19 @@ export class DrawHandlerImpl implements DrawHandler {
             this.pointsGroup.remove();
             this.pointsGroup = null;
         }
+
+        if (this.fitPreview) {
+            this.fitPreview.remove();
+            this.fitPreview = null;
+        }
+
+        if (this.previewAnimationFrame !== null) {
+            window.cancelAnimationFrame(this.previewAnimationFrame);
+            this.previewAnimationFrame = null;
+        }
+        this.pendingPreviewPoints = null;
+        this.displayedFit = null;
+        this.targetFit = null;
 
         this.drawInstance.off();
         this.drawInstance.remove();
@@ -529,6 +752,76 @@ export class DrawHandlerImpl implements DrawHandler {
                 );
             } else {
                 this.onDrawDone(null);
+            }
+        });
+    }
+
+    private drawRotatedShapeByPoints(): void {
+        this.drawInstance = (this.canvas as any)
+            .polygon()
+            .addClass('cvat_canvas_shape_drawing')
+            .attr({
+                'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
+                'stroke-dasharray': `${3 / this.geometry.scale} ${3 / this.geometry.scale}`,
+                'fill-opacity': 0,
+                stroke: this.outlinedBorders,
+            });
+
+        const updatePreview = (shape: SVG.Shape): void => {
+            this.scheduleFitPreview(readPointsFromShape(shape));
+        };
+
+        this.drawInstance
+            .on('drawstart drawpoint drawupdate undopoint', (e: CustomEvent): void => {
+                updatePreview((e.target as any as { instance: SVG.Shape }).instance);
+            })
+            .on('drawdone', (e: CustomEvent): void => {
+                const fitted = this.fitRotatedRectangle(
+                    readPointsFromShape((e.target as any as { instance: SVG.Shape }).instance),
+                );
+                const { shapeType, redraw: clientID } = this.drawData;
+
+                if (this.canceled || !fitted ||
+                    fitted.size.width < consts.SIZE_THRESHOLD || fitted.size.height < consts.SIZE_THRESHOLD) {
+                    this.release();
+                    this.onDrawDone(null);
+                    return;
+                }
+
+                const box = [
+                    fitted.center.x - fitted.size.width / 2,
+                    fitted.center.y - fitted.size.height / 2,
+                    fitted.center.x + fitted.size.width / 2,
+                    fitted.center.y + fitted.size.height / 2,
+                ];
+                const points = shapeType === 'ellipse' ?
+                    this.getFinalEllipseCoordinates([
+                        fitted.center.x,
+                        fitted.center.y,
+                        fitted.center.x + fitted.size.width / 2,
+                        fitted.center.y - fitted.size.height / 2,
+                    ], false) :
+                    this.getFinalRectCoordinates(box, false);
+
+                this.release();
+                if (checkConstraint(shapeType, points)) {
+                    this.onDrawDone({
+                        clientID,
+                        shapeType,
+                        points,
+                        rotation: fitted.angle,
+                    }, Date.now() - this.startTimestamp);
+                } else {
+                    this.onDrawDone(null);
+                }
+            });
+
+        // Undoing a point is provided by the same right-click interaction as polygons.
+        this.canvas.on('mousedown.draw', (e: MouseEvent): void => {
+            if (e.button === 2) {
+                e.stopPropagation();
+                e.preventDefault();
+                this.drawInstance.draw('undo');
             }
         });
     }
@@ -1271,7 +1564,9 @@ export class DrawHandlerImpl implements DrawHandler {
             this.setupPasteEvents();
         } else {
             if (this.drawData.shapeType === 'rectangle') {
-                if (this.drawData.rectDrawingMethod === RectDrawingMethod.EXTREME_POINTS) {
+                if (this.drawData.rectDrawingMethod === RectDrawingMethod.ROTATED_POINTS) {
+                    this.drawRotatedShapeByPoints();
+                } else if (this.drawData.rectDrawingMethod === RectDrawingMethod.EXTREME_POINTS) {
                     this.drawBoxBy4Points(); // draw box by extreme clicking
                 } else {
                     this.drawBox(); // default box drawing
@@ -1285,8 +1580,12 @@ export class DrawHandlerImpl implements DrawHandler {
             } else if (this.drawData.shapeType === 'points') {
                 this.drawPoints();
             } else if (this.drawData.shapeType === 'ellipse') {
-                this.drawEllipse();
-                this.shapeSizeElement = displayShapeSize(this.canvas, this.text);
+                if (this.drawData.rectDrawingMethod === RectDrawingMethod.ROTATED_POINTS) {
+                    this.drawRotatedShapeByPoints();
+                } else {
+                    this.drawEllipse();
+                    this.shapeSizeElement = displayShapeSize(this.canvas, this.text);
+                }
             } else if (this.drawData.shapeType === 'cuboid') {
                 if (this.drawData.cuboidDrawingMethod === CuboidDrawingMethod.CORNER_POINTS) {
                     this.drawCuboidBy4Points();
@@ -1298,7 +1597,8 @@ export class DrawHandlerImpl implements DrawHandler {
                 this.drawSkeleton();
             }
 
-            if (this.drawData.shapeType !== 'ellipse') {
+            if (this.drawData.shapeType !== 'ellipse' ||
+                this.drawData.rectDrawingMethod === RectDrawingMethod.ROTATED_POINTS) {
                 this.setupDrawEvents();
             }
         }
@@ -1335,6 +1635,11 @@ export class DrawHandlerImpl implements DrawHandler {
         this.crosshair = new Crosshair();
         this.drawInstance = null;
         this.pointsGroup = null;
+        this.fitPreview = null;
+        this.previewAnimationFrame = null;
+        this.pendingPreviewPoints = null;
+        this.displayedFit = null;
+        this.targetFit = null;
         this.getDrawnStates = getDrawnStates;
         this.isCtrlKeyDown = isCtrlKeyDown;
         this.cursorPosition = {
@@ -1453,6 +1758,15 @@ export class DrawHandlerImpl implements DrawHandler {
                     point.attr('r', `${this.controlPointsSize / geometry.scale}`);
                 }
             }
+        }
+
+        if (this.fitPreview) {
+            this.fitPreview.children().forEach((preview: SVG.Element): void => {
+                preview.attr({
+                    'stroke-width': consts.BASE_STROKE_WIDTH / geometry.scale,
+                    'stroke-dasharray': `${6 / geometry.scale} ${4 / geometry.scale}`,
+                });
+            });
         }
     }
 
