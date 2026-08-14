@@ -1718,6 +1718,7 @@ export function redrawShapeAsync(): ThunkAction {
         const {
             annotations: { activatedStateID, states },
             canvas: { instance: canvasInstance },
+            drawing: { activeRectDrawingMethod },
         } = getStore().getState().annotation;
 
         if (activatedStateID !== null) {
@@ -1740,6 +1741,7 @@ export function redrawShapeAsync(): ThunkAction {
                     enabled: true,
                     redraw: activatedStateID,
                     shapeType: state.shapeType,
+                    rectDrawingMethod: activeRectDrawingMethod,
                     crosshair: [ShapeType.RECTANGLE, ShapeType.CUBOID, ShapeType.ELLIPSE].includes(state.shapeType),
                 });
             }
