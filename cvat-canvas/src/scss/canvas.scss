@@ -85,19 +85,21 @@ polyline.cvat_shape_drawing_opacity {
 // persistent visual for shapes that are part of a multi-selection
 // (does not hide mask images, unlike .cvat_canvas_shape_selection)
 .cvat_canvas_shape_selected_object {
-    @extend .cvat_shape_action_dasharray;
-
     stroke: black;
+    stroke-opacity: 1;
 }
 
 .cvat_canvas_selected_objects_box {
-    fill: gray;
-    fill-opacity: 0.1;
-    stroke: black;
-    stroke-dasharray: 10 10;
-    stroke-opacity: 0.8;
+    fill: white;
+    fill-opacity: 0.08;
+    stroke: #1f1f1f;
+    stroke-opacity: 1;
     pointer-events: all;
     cursor: move;
+
+    &:hover {
+        fill-opacity: 0.14;
+    }
 }
 
 .cvat_canvas_selected_objects_label {
@@ -105,23 +107,27 @@ polyline.cvat_shape_drawing_opacity {
     z-index: 5;
     display: flex;
     align-items: center;
+    min-height: 24px;
+    padding: 2px 4px 2px 8px;
     color: white;
+    background: rgba(31, 31, 31, 88%);
+    border: 1px solid rgba(255, 255, 255, 35%);
+    border-radius: 2px;
     font-size: 14px;
-    font-weight: bold;
+    font-weight: 600;
     line-height: 20px;
-    filter: drop-shadow(1px 1px 1px black) drop-shadow(-1px -1px 1px black);
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 45%));
     pointer-events: none;
 }
 
 .cvat_canvas_selected_objects_label_title {
     white-space: nowrap;
-    text-transform: uppercase;
 }
 
 .cvat_canvas_selected_objects_menu_button {
     width: 20px;
     height: 20px;
-    margin-left: 4px;
+    margin-left: 6px;
     padding: 0 0 4px;
     color: white;
     background: transparent;

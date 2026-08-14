@@ -79,6 +79,7 @@ import { ImageFilter } from 'utils/image-processing';
 import { ShortcutScope } from 'utils/enums';
 import { registerComponentShortcuts } from 'actions/shortcuts-actions';
 import { subKeyMap } from 'utils/component-subkeymap';
+import { isMultiSelectModifierPressed, multiSelectModifierFromKeyMap } from 'utils/multi-selection';
 import ImageSetupsContent from './image-setups-content';
 import CanvasTipsComponent from './canvas-hints';
 
@@ -339,26 +340,6 @@ const multiSelectShortcut = {
     },
 };
 registerComponentShortcuts(multiSelectShortcut);
-
-function multiSelectModifierFromKeyMap(keyMap: KeyMap): 'shift' | 'ctrl' | 'alt' | 'meta' {
-    const [sequence] = keyMap.CANVAS_MULTI_SELECT_MODIFIER?.sequences ?? [];
-    if (sequence === 'ctrl' || sequence === 'control') return 'ctrl';
-    if (sequence === 'alt' || sequence === 'option') return 'alt';
-    if (sequence === 'meta' || sequence === 'command' || sequence === 'cmd') return 'meta';
-    return 'shift';
-}
-
-function isMultiSelectModifierPressed(event: MouseEvent, keyMap: KeyMap): boolean {
-    const modifier = multiSelectModifierFromKeyMap(keyMap);
-    const modifiers = {
-        shift: event.shiftKey,
-        ctrl: event.ctrlKey,
-        alt: event.altKey,
-        meta: event.metaKey,
-    };
-    return modifiers[modifier] && Object.entries(modifiers)
-        .every(([key, pressed]) => key === modifier || !pressed);
-}
 
 function mapDispatchToProps(dispatch: any): DispatchToProps {
     return {
@@ -828,6 +809,10 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
 
         if (selectedStates.length) {
             onCopySelection(selectedStates);
+            notification.success({
+                message: `${selectedStates.length} objects copied`,
+                duration: 2,
+            });
         }
         this.setState({ selectionMenuPosition: null });
     };
@@ -1415,6 +1400,9 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
         const labelSelectorDisabled = !applicableLabels.length || selectedStates.some(
             (state: ObjectState): boolean => state.lock || state.shapeType === ShapeType.SKELETON,
         );
+        const labelSelectorDisabledReason = !applicableLabels.length ?
+            'No label can be applied to every selected object' :
+            'Labels cannot be changed for locked objects or skeletons';
 
         const preventDefault = (event: KeyboardEvent | undefined): void => {
             if (event) {
@@ -1511,6 +1499,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
                                     label: (
                                         <div
                                             className='cvat-canvas-selected-objects-label-selector'
+                                            title={labelSelectorDisabled ? labelSelectorDisabledReason : undefined}
                                         >
                                             {applicableLabels.length ? (
                                                 <LabelSelector
@@ -1518,7 +1507,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
                                                     size='small'
                                                     labels={applicableLabels}
                                                     value={selectedLabelID}
-                                                    placeholder='Select label'
+                                                    placeholder={selectedLabelID === null ? 'Multiple labels' : 'Select label'}
                                                     onChange={this.onChangeSelectedObjectsLabel}
                                                     getPopupContainer={
                                                         (triggerNode): HTMLElement => triggerNode.parentElement!
@@ -1542,7 +1531,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
                                             icon={<CopyOutlined />}
                                             onClick={this.onCopySelectedObjects}
                                         >
-                                            Copy group
+                                            Copy selection
                                         </Button>
                                     ),
                                 },
@@ -1554,7 +1543,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
                                             icon={<DeleteOutlined />}
                                             onClick={this.onRemoveSelectedObjects}
                                         >
-                                            Delete group
+                                            Delete selection
                                         </Button>
                                     ),
                                 },

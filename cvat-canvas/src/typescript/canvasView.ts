@@ -45,6 +45,9 @@ import {
     HighlightSeverity, GroupData, SelectData, JoinData, CanvasHint,
 } from './canvasModel';
 
+const SELECTED_OBJECTS_BOX_PADDING = 6;
+const SELECTED_OBJECTS_BOX_STROKE_WIDTH = 3;
+
 export interface CanvasView {
     html(): HTMLDivElement;
     setupConflictRegions(clientID: number): number[];
@@ -3759,6 +3762,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         const top = Math.min(...boxes.map((box: SVG.RBox): number => box.y));
         const right = Math.max(...boxes.map((box: SVG.RBox): number => box.x2));
         const bottom = Math.max(...boxes.map((box: SVG.RBox): number => box.y2));
+        const padding = SELECTED_OBJECTS_BOX_PADDING / this.geometry.scale;
 
         if (!this.selectedObjectsBox) {
             this.selectedObjectsBox = this.adoptedContent
@@ -3768,9 +3772,9 @@ export class CanvasViewImpl implements CanvasView, Listener {
         }
 
         this.selectedObjectsBox
-            .move(left, top)
-            .size(right - left, bottom - top)
-            .attr('stroke-width', consts.BASE_STROKE_WIDTH / this.geometry.scale)
+            .move(left - padding, top - padding)
+            .size(right - left + padding * 2, bottom - top + padding * 2)
+            .attr('stroke-width', SELECTED_OBJECTS_BOX_STROKE_WIDTH / this.geometry.scale)
             .front();
 
         if (!this.selectedObjectsLabel) {
@@ -3782,8 +3786,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
             title.className = 'cvat_canvas_selected_objects_label_title';
             menuButton.className = 'cvat_canvas_selected_objects_menu_button';
             menuButton.type = 'button';
-            menuButton.title = 'Group actions';
-            menuButton.setAttribute('aria-label', 'Open group actions');
+            menuButton.title = 'Selection actions';
+            menuButton.setAttribute('aria-label', 'Open selection actions');
             menuButton.textContent = '...';
             menuButton.addEventListener('mousedown', (event: MouseEvent): void => event.stopPropagation());
             menuButton.addEventListener('click', (event: MouseEvent): void => {
@@ -3806,7 +3810,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
         const title = this.selectedObjectsLabel.querySelector('.cvat_canvas_selected_objects_label_title');
         if (title) {
-            title.textContent = `Group (${selectedShapes.length})`;
+            title.textContent = `GROUP (${selectedShapes.length})`;
         }
         this.updateSelectedObjectsLabelPosition();
     }

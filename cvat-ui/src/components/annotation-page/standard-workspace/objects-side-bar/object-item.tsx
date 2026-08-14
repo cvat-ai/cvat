@@ -11,11 +11,14 @@ import ObjectButtonsContainer from 'containers/annotation-page/standard-workspac
 import ItemDetailsContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/object-item-details';
 import { ColorBy } from 'reducers';
 import { ObjectType, ShapeType } from 'cvat-core-wrapper';
+import { KeyMap } from 'utils/mousetrap-react';
+import { isMultiSelectModifierPressed } from 'utils/multi-selection';
 import ObjectItemElementComponent from './object-item-element';
 import ItemBasics from './object-item-basics';
 
 interface Props {
     normalizedKeyMap: Record<string, string>;
+    keyMap: KeyMap;
     activated: boolean;
     multiSelected: boolean;
     objectType: ObjectType;
@@ -35,6 +38,7 @@ interface Props {
     zLayerDragging?: boolean;
     zOrder: number;
     activate(activeElementID?: number): void;
+    toggleSelection(): void;
     focusAndExpand(): void;
     copy(): void;
     propagate(): void;
@@ -73,8 +77,10 @@ function ObjectItemComponent(props: Props): JSX.Element {
         zLayerDragging,
         zOrder,
         normalizedKeyMap,
+        keyMap,
         isGroundTruth,
         activate,
+        toggleSelection,
         focusAndExpand,
         copy,
         propagate,
@@ -110,15 +116,42 @@ function ObjectItemComponent(props: Props): JSX.Element {
         className += ' cvat-objects-sidebar-state-item-multi-selected';
     }
 
-    const activateState = useCallback(() => {
-        activate();
-    }, []);
+    const activateState = useCallback((event: React.MouseEvent): void => {
+        if (!isMultiSelectModifierPressed(event, keyMap)) {
+            activate();
+        }
+    }, [activate, keyMap]);
+    const activateAfterElement = useCallback((): void => activate(), [activate]);
+
+    const onMouseDown = useCallback((event: React.MouseEvent): void => {
+        if (event.button === 0 && isMultiSelectModifierPressed(event, keyMap)) {
+            const interactiveElement = (event.target as Element).closest('button, input, textarea, .ant-select');
+            if (!interactiveElement) {
+                event.preventDefault();
+                event.stopPropagation();
+                toggleSelection();
+            }
+        }
+    }, [keyMap, toggleSelection]);
+
+    const onKeyDown = useCallback((event: React.KeyboardEvent): void => {
+        if (['Enter', ' '].includes(event.key) && isMultiSelectModifierPressed(event, keyMap)) {
+            event.preventDefault();
+            event.stopPropagation();
+            toggleSelection();
+        }
+    }, [keyMap, toggleSelection]);
 
     return (
         <div style={{ display: 'flex', marginBottom: '1px' }}>
             <div
                 {...zLayerDragProps}
+                role='option'
+                aria-selected={multiSelected}
+                tabIndex={0}
                 onMouseEnter={activateState}
+                onMouseDown={onMouseDown}
+                onKeyDown={onKeyDown}
                 onDoubleClick={focusAndExpand}
                 id={`cvat-objects-sidebar-state-item-${clientID}`}
                 className={`${className}${zLayerDragProps ? ' cvat-objects-sidebar-state-item-draggable' : ''}`}
@@ -184,7 +217,7 @@ function ObjectItemComponent(props: Props): JSX.Element {
                                     key={element}
                                     parentID={clientID}
                                     clientID={element}
-                                    onMouseLeave={activateState}
+                                    onMouseLeave={activateAfterElement}
                                 />
                             )),
                         }]}

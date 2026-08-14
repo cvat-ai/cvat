@@ -18,6 +18,7 @@ import {
     switchSimplifyVisibility as switchSimplifyVisibilityAction,
     removeObject as removeObjectAction,
     collapseObjectItems,
+    selectObjects as selectObjectsAction,
 } from 'actions/annotation-actions';
 import {
     ActiveControl, CombinedState, ColorBy,
@@ -35,6 +36,7 @@ import { Canvas, CanvasMode } from 'cvat-canvas-wrapper';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import { filterApplicableLabels } from 'utils/filter-applicable-labels';
 import { toClipboard } from 'utils/to-clipboard';
+import { KeyMap } from 'utils/mousetrap-react';
 
 interface OwnProps {
     clientID: number;
@@ -53,13 +55,14 @@ interface StateToProps {
     frameNumber: number;
     activated: boolean;
     multiSelected: boolean;
+    selectedStatesID: number[];
     colorBy: ColorBy;
     ready: boolean;
     activeControl: ActiveControl;
     minZLayer: number;
     maxZLayer: number;
     normalizedKeyMap: Record<string, string>;
-    keyMap: Record<string, { sequences: string[] }>;
+    keyMap: KeyMap;
     canvasInstance: Canvas | Canvas3d;
     focusedObjectPadding: number;
     defaultApproxPolyAccuracy: number;
@@ -80,6 +83,7 @@ interface DispatchToProps {
     changeGroupColor(group: number, color: string): void;
     updateActiveControl(activeControl: ActiveControl): void;
     expandObject(objectState: ObjectState): void;
+    selectObjects(selectedStatesID: number[]): void;
 }
 
 function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
@@ -119,6 +123,7 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
         frameNumber,
         activated: activatedStateID === clientID,
         multiSelected: selectedStatesID.includes(clientID),
+        selectedStatesID,
         minZLayer,
         maxZLayer,
         normalizedKeyMap,
@@ -162,6 +167,9 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         },
         expandObject(objectState: ObjectState): void {
             dispatch(collapseObjectItems([objectState], false));
+        },
+        selectObjects(selectedStatesID: number[]): void {
+            dispatch(selectObjectsAction(selectedStatesID));
         },
     };
 }
@@ -476,6 +484,18 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
         }
     };
 
+    private toggleSelection = (): void => {
+        const {
+            objectState, selectedStatesID, selectObjects,
+        } = this.props;
+        const clientID = objectState.clientID as number;
+        const nextSelection = selectedStatesID.includes(clientID) ?
+            selectedStatesID.filter((selectedClientID: number): boolean => selectedClientID !== clientID) :
+            [...selectedStatesID, clientID];
+
+        selectObjects(nextSelection);
+    };
+
     private focusAndExpand = (): void => {
         const {
             objectState, canvasInstance, focusedObjectPadding, expandObject,
@@ -607,9 +627,11 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
                     attributes={attributes}
                     elements={elements}
                     normalizedKeyMap={normalizedKeyMap}
+                    keyMap={keyMap}
                     labels={labels}
                     colorBy={colorBy}
                     activate={this.activate}
+                    toggleSelection={this.toggleSelection}
                     focusAndExpand={this.focusAndExpand}
                     remove={this.remove}
                     copy={this.copy}
