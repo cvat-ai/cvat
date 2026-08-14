@@ -66,7 +66,7 @@ export interface HighlightedElements {
 export enum RectDrawingMethod {
     CLASSIC = 'By 2 points',
     EXTREME_POINTS = 'By 4 points',
-    ROTATED_POINTS = 'By N points',
+    ROTATED_POINTS = 'Rotated (N points)',
 }
 
 export enum CuboidDrawingMethod {

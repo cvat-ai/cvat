@@ -117,7 +117,7 @@ function DrawShapePopoverComponent(props: Props): JSX.Element {
                                     }
                                 >
                                     <Radio value={RectDrawingMethod.ROTATED_POINTS} style={{ width: 'auto' }}>
-                                        By N points
+                                        {RectDrawingMethod.ROTATED_POINTS}
                                     </Radio>
                                 </CVATTooltip>
                             </Radio.Group>
