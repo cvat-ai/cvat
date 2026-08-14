@@ -68,6 +68,7 @@ class _QualityRequirementsTestBase(_PermissionTestBase):
         parent_requirement: int | None = None,
         sort_order: int | None = None,
         point_size: float | None = None,
+        point_size_base: str | None = None,
         match_orientation: bool | None = None,
         match_groups: bool | None = None,
         attribute_comparison: dict[str, Any] | None = None,
@@ -90,6 +91,8 @@ class _QualityRequirementsTestBase(_PermissionTestBase):
             payload["sort_order"] = sort_order
         if point_size is not None:
             payload["point_size"] = point_size
+        if point_size_base is not None:
+            payload["point_size_base"] = point_size_base
         if match_orientation is not None:
             payload["match_orientation"] = match_orientation
         if match_groups is not None:
@@ -1835,6 +1838,127 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
         assert confusion_matrix["rows"] == [[1, 0], [0, 0]]
 
         assert "1" not in group["frame_results"]
+
+    def test_skeleton_keypoint_point_size_base_affects_matching(self, admin_user):
+        task_id, _ = create_task(
+            admin_user,
+            spec={
+                "name": "skeleton-keypoint-point-size-base",
+                "labels": [
+                    {
+                        "name": "pose",
+                        "type": "skeleton",
+                        "sublabels": [
+                            {"name": "first", "type": "points"},
+                            {"name": "second", "type": "points"},
+                        ],
+                        "svg": (
+                            '<circle data-type="element node" data-element-id="1" '
+                            'data-node-id="1" data-label-name="first"></circle>'
+                            '<circle data-type="element node" data-element-id="2" '
+                            'data-node-id="2" data-label-name="second"></circle>'
+                        ),
+                    }
+                ],
+            },
+            data={
+                "image_quality": 70,
+                "client_files": generate_image_files(1),
+            },
+        )
+        settings = self._get_task_settings(admin_user, task_id=task_id)
+        image_size_requirement_name = f"skeleton-keypoints-image-size-{task_id}"
+        group_bbox_requirement_name = f"skeleton-keypoints-group-bbox-{task_id}"
+        _, response = self._patch_settings(
+            admin_user,
+            settings["id"],
+            {
+                "inherit": False,
+                "requirements": [
+                    *self._retained_base_requirement_payloads(settings),
+                    self._build_requirement_payload(
+                        image_size_requirement_name,
+                        annotation_type="skeleton_keypoint",
+                        point_size=0.09,
+                        point_size_base="image_size",
+                        match_groups=False,
+                    ),
+                    self._build_requirement_payload(
+                        group_bbox_requirement_name,
+                        annotation_type="skeleton_keypoint",
+                        point_size=0.09,
+                        point_size_base="group_bbox_size",
+                        match_groups=False,
+                    ),
+                ],
+            },
+        )
+        assert response.status_code == HTTPStatus.OK
+
+        pose_label = self._get_task_labels_by_name(admin_user, task_id=task_id)["pose"]
+        sublabels = {sublabel.name: sublabel for sublabel in pose_label.sublabels}
+
+        def build_skeleton(first_point: list[int], second_point: list[int]) -> dict[str, Any]:
+            return {
+                "type": "skeleton",
+                "frame": 0,
+                "label_id": pose_label.id,
+                "points": [],
+                "occluded": False,
+                "outside": False,
+                "elements": [
+                    {
+                        "type": "points",
+                        "frame": 0,
+                        "label_id": sublabels["first"].id,
+                        "points": first_point,
+                        "occluded": False,
+                        "outside": False,
+                    },
+                    {
+                        "type": "points",
+                        "frame": 0,
+                        "label_id": sublabels["second"].id,
+                        "points": second_point,
+                        "occluded": False,
+                        "outside": False,
+                    },
+                ],
+            }
+
+        gt_job = create_gt_job(admin_user, task_id, complete=False)
+        with make_api_client(admin_user) as api_client:
+            api_client.jobs_api.update_annotations(
+                gt_job.id,
+                labeled_data_request={"shapes": [build_skeleton([10, 10], [20, 20])]},
+            )
+            api_client.tasks_api.update_annotations(
+                task_id,
+                labeled_data_request={"shapes": [build_skeleton([15, 15], [25, 25])]},
+            )
+        self._complete_job(admin_user, gt_job.id)
+
+        report = create_quality_report(user=admin_user, task_id=task_id)
+        report_data = self._get_report_data(admin_user, report["id"])
+        image_size_summary = report_data["groups"][image_size_requirement_name][
+            "comparison_summary"
+        ]
+        group_bbox_summary = report_data["groups"][group_bbox_requirement_name][
+            "comparison_summary"
+        ]
+
+        assert image_size_summary["score"] == 1.0
+        assert image_size_summary["score_components"] == {
+            "valid_count": 2,
+            "missing_count": 0,
+            "extra_count": 0,
+        }
+        assert group_bbox_summary["score"] == 0.0
+        assert group_bbox_summary["score_components"] == {
+            "valid_count": 0,
+            "missing_count": 2,
+            "extra_count": 2,
+        }
 
     def test_confusion_matrix_only_contains_labels_compatible_with_requirement_type(
         self, admin_user

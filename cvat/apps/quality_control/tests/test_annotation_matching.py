@@ -16,6 +16,7 @@ from cvat.apps.quality_control.annotation_matching import (
     DistanceComparator,
 )
 from cvat.apps.quality_control.comparison_report import ComparisonParameters
+from cvat.apps.quality_control.models import PointSizeBase
 
 
 def _make_mask_item(mask: np.ndarray) -> dm.DatasetItem:
@@ -132,6 +133,39 @@ class TestComparator(unittest.TestCase):
         distance = distances[(id(gt_ann), id(ds_ann))]
         self.assertIsInstance(distance, float)
         self.assertEqual(distance, 1)
+
+    def test_point_size_base_changes_grouped_point_matching(self) -> None:
+        categories = {
+            dm.AnnotationType.label: dm.LabelCategories.from_iterable(["first", "second"])
+        }
+        gt_item = _make_image_item(
+            dm.Points([10, 10], label=0, group=1),
+            dm.Points([20, 20], label=1, group=1),
+        )
+        ds_item = _make_image_item(
+            dm.Points([15, 15], label=0, group=1),
+            dm.Points([25, 25], label=1, group=1),
+        )
+
+        image_size_results = DistanceComparator(
+            categories,
+            iou_threshold=0.4,
+            oks_sigma=0.09,
+            point_size_base=PointSizeBase.IMAGE_SIZE,
+        ).match_points(gt_item, ds_item)
+        group_bbox_results = DistanceComparator(
+            categories,
+            iou_threshold=0.4,
+            oks_sigma=0.09,
+            point_size_base=PointSizeBase.GROUP_BBOX_SIZE,
+        ).match_points(gt_item, ds_item)
+
+        self.assertEqual(len(image_size_results[0]), 2)
+        self.assertFalse(image_size_results[2])
+        self.assertFalse(image_size_results[3])
+        self.assertFalse(group_bbox_results[0])
+        self.assertEqual(len(group_bbox_results[2]), 2)
+        self.assertEqual(len(group_bbox_results[3]), 2)
 
     def test_attributes_affect_matching_and_pairwise_diagnostics(self) -> None:
         settings = ComparisonParameters()
