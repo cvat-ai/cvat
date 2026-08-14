@@ -31,6 +31,7 @@ interface Props {
     onStartIssue(position: number[]): void;
     openIssue(position: number[], message: string): void;
     onCopyObject(objectState: ObjectState): void;
+    onCreateObjectURL(objectState: ObjectState): void;
 }
 
 interface ReviewContextMenuProps {
@@ -39,6 +40,7 @@ interface ReviewContextMenuProps {
     latestComments: string[];
     conflict?: QualityConflict;
     copyObject: ObjectState | null;
+    createURLDisabled: boolean;
     onClick: (param: MenuInfo) => void;
 }
 
@@ -49,10 +51,11 @@ enum ReviewContextMenuKeys {
     QUICK_ISSUE_FROM_LATEST = 'quick_issue_from_latest',
     QUICK_ISSUE_FROM_CONFLICT = 'quick_issue_from_conflict',
     COPY_OBJECT = 'copy_object',
+    CREATE_URL = 'create_url',
 }
 
 function ReviewContextMenu({
-    top, left, latestComments, conflict, copyObject, onClick,
+    top, left, latestComments, conflict, copyObject, createURLDisabled, onClick,
 }: ReviewContextMenuProps): JSX.Element {
     return (
         <Menu onClick={onClick} selectable={false} className='cvat-canvas-context-menu' style={{ top, left }}>
@@ -99,6 +102,13 @@ function ReviewContextMenu({
                     Copy annotation
                 </Menu.Item>
             ) : null}
+            <Menu.Item
+                className='cvat-context-menu-item cvat-context-menu-create-url'
+                key={ReviewContextMenuKeys.CREATE_URL}
+                disabled={createURLDisabled}
+            >
+                Create object URL
+            </Menu.Item>
         </Menu>
     );
 }
@@ -117,6 +127,7 @@ export default function CanvasContextMenu(props: Props): JSX.Element | null {
         onStartIssue,
         openIssue,
         onCopyObject,
+        onCreateObjectURL,
     } = props;
 
     if (!visible || contextMenuClientID === null) {
@@ -130,6 +141,8 @@ export default function CanvasContextMenu(props: Props): JSX.Element | null {
     }
 
     const copyObject = state?.isGroundTruth ? state : null;
+    // a link may be created for saved objects only
+    const createURLDisabled = !Number.isInteger(state?.serverID);
     if (workspace === Workspace.REVIEW) {
         const conflict = frameConflicts
             .find((qualityConflict: QualityConflict) => qualityConflict.annotationConflicts.some(
@@ -146,9 +159,15 @@ export default function CanvasContextMenu(props: Props): JSX.Element | null {
                 left={left}
                 conflict={conflict}
                 copyObject={copyObject}
+                createURLDisabled={createURLDisabled}
                 latestComments={latestComments}
                 onClick={(param: MenuInfo) => {
                     if (state) {
+                        if (param.key === ReviewContextMenuKeys.CREATE_URL) {
+                            onCreateObjectURL(state);
+                            return;
+                        }
+
                         let { points } = state;
                         if ([ShapeType.ELLIPSE, ShapeType.RECTANGLE].includes(state.shapeType)) {
                             const [cx, cy] = state.shapeType === 'ellipse' ? state.points : [

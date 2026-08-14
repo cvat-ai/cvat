@@ -28,9 +28,9 @@ import {
     Rotation,
     Workspace,
 } from 'reducers';
-import { switchToolsBlockerState } from './settings-actions';
+import { changeShowGroundTruth, switchToolsBlockerState } from './settings-actions';
 import { updateJobAsync } from './jobs-actions';
-import { loadAudioDataAsync } from './audio-actions';
+import { audioActions, loadAudioDataAsync } from './audio-actions';
 
 interface AnnotationsParameters {
     filters: object[];
@@ -145,6 +145,7 @@ export enum AnnotationActionTypes {
     CHANGE_SHOW_SEARCH_FRAMES_MODAL = 'CHANGE_SHOW_SEARCH_FRAMES_MODAL',
     FETCH_ANNOTATIONS_SUCCESS = 'FETCH_ANNOTATIONS_SUCCESS',
     FETCH_ANNOTATIONS_FAILED = 'FETCH_ANNOTATIONS_FAILED',
+    LINKED_OBJECT_NOT_FOUND = 'LINKED_OBJECT_NOT_FOUND',
     ROTATE_FRAME = 'ROTATE_FRAME',
     SWITCH_Z_LAYER = 'SWITCH_Z_LAYER',
     SEARCH_ANNOTATIONS_FAILED = 'SEARCH_ANNOTATIONS_FAILED',
@@ -630,6 +631,42 @@ export function activateObject(
     };
 }
 
+// Looks for an object requested via an URL (?serverID=..&type=..) and activates it.
+// The object may belong either to the job itself or to another collection loaded together with it
+// (e.g. ground truth annotations, which are available in the review workspace only)
+function activateObjectFromURL(target: { serverID: number, type: string }): ThunkAction<void> {
+    return (dispatch: ThunkDispatch, getState: () => CombinedState): void => {
+        const state = getState();
+        const objectState = state.annotation.annotations.states.find((_state: ObjectState) => (
+            _state.serverID === target.serverID && `${_state.objectType}` === target.type
+        ));
+
+        if (objectState) {
+            dispatch(activateObject(objectState.clientID as number, null, null));
+            return;
+        }
+
+        // audio intervals are stored apart from object states
+        const interval = state.audio.player.intervals.find((_interval: AudioIntervalState) => (
+            _interval.serverID === target.serverID
+        ));
+
+        if (interval) {
+            dispatch(audioActions.setAudioActiveInterval(interval.clientID as number));
+            return;
+        }
+
+        // The object is not found. The filter from the URL hides all the other annotations, so it
+        // is dropped to display the frame as usual.
+        dispatch(changeAnnotationsFilters([]));
+        dispatch(fetchAnnotationsAsync());
+        dispatch({
+            type: AnnotationActionTypes.LINKED_OBJECT_NOT_FOUND,
+            payload: {},
+        });
+    };
+}
+
 export function collapseSidebar(): AnyAction {
     return {
         type: AnnotationActionTypes.COLLAPSE_SIDEBAR,
@@ -972,15 +1009,17 @@ export function closeJob(): ThunkAction {
 }
 
 export function getJobAsync({
-    taskID, jobID, initialFrame, initialFilters, queryParameters,
+    taskID, jobID, initialFrame, initialFilters, initialObject, queryParameters,
 }: {
     taskID: number;
     jobID: number;
     initialFrame: number | null;
     initialFilters: object[];
+    initialObject?: { serverID: number; type: string } | null;
     queryParameters: {
         initialOpenGuide: boolean;
         initialWorkspace: Workspace | null;
+        initialShowConflicts: boolean | null;
         defaultLabel: string | null;
         defaultPointsCount: number | null;
     }
@@ -1086,12 +1125,22 @@ export function getJobAsync({
                 },
             });
 
+            // the setting is reset on GET_JOB_SUCCESS, so it may be applied only after the job is opened
+            // without it, ground truth annotations are not fetched at all and can not be found by a link
+            if (gtJob && typeof queryParameters.initialShowConflicts === 'boolean') {
+                dispatch(changeShowGroundTruth(queryParameters.initialShowConflicts));
+            }
+
             if (job.dimension === DimensionType.DIMENSION_1D) {
                 dispatch(loadAudioDataAsync(job, jobMeta));
-                dispatch(fetchAnnotationsAsync());
+                await dispatch(fetchAnnotationsAsync());
             } else {
-                dispatch(fetchAnnotationsAsync());
+                await dispatch(fetchAnnotationsAsync());
                 dispatch(changeFrameAsync(frameNumber, false));
+            }
+
+            if (initialObject) {
+                dispatch(activateObjectFromURL(initialObject));
             }
         } catch (error) {
             dispatch({

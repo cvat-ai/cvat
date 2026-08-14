@@ -597,11 +597,18 @@ export interface ErrorState {
     ignore?: boolean;
 }
 
+export enum NotificationLevel {
+    INFO = 'info',
+    SUCCESS = 'success',
+    WARNING = 'warning',
+}
+
 export interface NotificationState {
     message: string;
     description?: string;
     duration?: number;
     className?: string;
+    level?: NotificationLevel;
 }
 
 export interface BulkOperationsErrorState extends ErrorState {
@@ -791,6 +798,9 @@ export interface NotificationsState {
         };
         projects: {
             restoringDone: null | NotificationState;
+        };
+        annotation: {
+            linkedObjectNotFound: null | NotificationState;
         };
         exporting: {
             dataset: null | NotificationState;

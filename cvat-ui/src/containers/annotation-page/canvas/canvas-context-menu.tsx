@@ -16,6 +16,7 @@ import { reviewActions, finishIssueAsync } from 'actions/review-actions';
 import { ThunkDispatch } from 'utils/redux';
 import { Canvas } from 'cvat-canvas-wrapper';
 import { ObjectState, ShapeType, QualityConflict } from 'cvat-core-wrapper';
+import { copyObjectURL } from 'utils/object-url';
 
 interface StateToProps {
     contextMenuParentID: number | null;
@@ -31,6 +32,7 @@ interface StateToProps {
     workspace: Workspace;
     latestComments: string[];
     activatedStateID: number | null;
+    frameNumber: number;
 }
 
 interface DispatchToProps {
@@ -55,6 +57,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 ready,
             },
             workspace,
+            player: { frame: { number: frameNumber } },
         },
         review: { latestComments, frameConflicts },
     } = state;
@@ -85,6 +88,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         workspace,
         latestComments,
         frameConflicts,
+        frameNumber,
     };
 }
 
@@ -240,6 +244,12 @@ class CanvasContextMenuContainer extends React.PureComponent<Props, State> {
         }
     };
 
+    private onCreateObjectURL = (objectState: ObjectState): void => {
+        const { frameNumber, onUpdateContextMenu } = this.props;
+        copyObjectURL(objectState, frameNumber);
+        onUpdateContextMenu(false, 0, 0, null, ContextMenuType.CANVAS_SHAPE);
+    };
+
     private moveContextMenu = (e: MouseEvent): void => {
         if (this.dragging) {
             this.setState((state) => {
@@ -307,6 +317,7 @@ class CanvasContextMenuContainer extends React.PureComponent<Props, State> {
                     onStartIssue={onStartIssue}
                     openIssue={openIssue}
                     onCopyObject={onCopyObject}
+                    onCreateObjectURL={this.onCreateObjectURL}
                 />
             ) : null
         );

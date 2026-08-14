@@ -34,7 +34,7 @@ import {
 import { Canvas, CanvasMode } from 'cvat-canvas-wrapper';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import { filterApplicableLabels } from 'utils/filter-applicable-labels';
-import { toClipboard } from 'utils/to-clipboard';
+import { copyObjectURL } from 'utils/object-url';
 
 interface OwnProps {
     clientID: number;
@@ -387,12 +387,7 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
 
     private createURL = (): void => {
         const { objectState, frameNumber } = this.props;
-        const { origin, pathname } = window.location;
-
-        const search = `frame=${frameNumber}&type=${objectState.objectType}&serverID=${objectState.serverID}`;
-        const url = `${origin}${pathname}?${search}`;
-
-        toClipboard(url);
+        copyObjectURL(objectState, frameNumber);
     };
 
     private switchOrientation = (): void => {

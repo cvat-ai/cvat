@@ -32,7 +32,7 @@ import { getInstanceType } from 'actions/common';
 import { ResourceUpdateTypes } from 'utils/enums';
 
 import config from 'config';
-import { NotificationsState } from '.';
+import { NotificationLevel, NotificationsState } from '.';
 
 const shouldLog = (error: Error): boolean => {
     if (error instanceof ServerError) {
@@ -232,6 +232,9 @@ const defaultState: NotificationsState = {
         },
         projects: {
             restoringDone: null,
+        },
+        annotation: {
+            linkedObjectNotFound: null,
         },
         exporting: {
             dataset: null,
@@ -1330,6 +1333,21 @@ export default function (state = defaultState, action: AnyAction): Notifications
                             message: 'Could not remove annotations',
                             reason: action.payload.error,
                             shouldLog: shouldLog(action.payload.error),
+                        },
+                    },
+                },
+            };
+        }
+        case AnnotationActionTypes.LINKED_OBJECT_NOT_FOUND: {
+            return {
+                ...state,
+                messages: {
+                    ...state.messages,
+                    annotation: {
+                        ...state.messages.annotation,
+                        linkedObjectNotFound: {
+                            message: 'The object from the link was not found',
+                            level: NotificationLevel.WARNING,
                         },
                     },
                 },

@@ -23,6 +23,7 @@ import {
 
 interface Props {
     locked: boolean;
+    isGroundTruth: boolean;
     serverID: number | null;
     shapeType: ShapeType;
     objectType: ObjectType;
@@ -333,7 +334,7 @@ function RunAnnotationActionItem(props: ItemProps): JSX.Element {
 
 export default function ItemMenu(props: Props): MenuProps {
     const {
-        locked, shapeType, objectType, colorBy, jobInstance,
+        locked, isGroundTruth, shapeType, objectType, colorBy, jobInstance,
     } = props;
 
     enum MenuKeys {
@@ -361,6 +362,20 @@ export default function ItemMenu(props: Props): MenuProps {
         key: MenuKeys.CREATE_URL,
         label: <CreateURLItem toolProps={props} />,
     }];
+
+    const menuProps: MenuProps = {
+        items,
+        onClick: (event): void => {
+            event.domEvent.stopPropagation();
+        },
+        selectable: false,
+        className: 'cvat-object-item-menu',
+    };
+
+    if (isGroundTruth) {
+        // ground truth objects are read-only, sharing a link is the only action
+        return menuProps;
+    }
 
     if (objectType !== ObjectType.TAG) {
         items.push({
@@ -459,12 +474,5 @@ export default function ItemMenu(props: Props): MenuProps {
         label: <RunAnnotationActionItem toolProps={props} />,
     });
 
-    return {
-        items,
-        onClick: (event): void => {
-            event.domEvent.stopPropagation();
-        },
-        selectable: false,
-        className: 'cvat-object-item-menu',
-    };
+    return menuProps;
 }

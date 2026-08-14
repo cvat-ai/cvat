@@ -64,7 +64,7 @@ import RequestsPage from 'components/requests-page/requests-page';
 import AnnotationPageContainer from 'containers/annotation-page/annotation-page';
 import { Organization, getCore } from 'cvat-core-wrapper';
 import {
-    ErrorState, NotificationState, NotificationsState, PluginsState,
+    ErrorState, NotificationLevel, NotificationState, NotificationsState, PluginsState,
 } from 'reducers';
 import showPlatformNotification, {
     platformInfo,
@@ -135,6 +135,16 @@ interface CVATAppState {
     backendIsHealthy: boolean;
     healthCheckError: string | null;
 }
+
+// antd describes notification kinds with a type-only union (ArgsProps['type']), which is erased on
+// compilation, so unavailable at the runtime. The own enum is mapped to the antd methods instead.
+const notifyByLevel: Record<NotificationLevel, typeof notification.info> = {
+    [NotificationLevel.INFO]: notification.info,
+    [NotificationLevel.SUCCESS]: notification.success,
+    [NotificationLevel.WARNING]: notification.warning,
+    // errors are not just notifications, reported via showErrors()
+};
+
 class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentProps, CVATAppState> {
     constructor(props: CVATAppProps & RouteComponentProps) {
         super(props);
@@ -384,7 +394,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
     private showMessages(): void {
         const { notifications, resetMessages, history } = this.props;
         function showMessage(notificationState: NotificationState): void {
-            notification.info({
+            notifyByLevel[notificationState.level ?? NotificationLevel.INFO]({
                 message: (
                     <CVATMarkdown history={history}>{notificationState.message}</CVATMarkdown>
                 ),

@@ -193,91 +193,90 @@ function ItemTopComponent(props: Props): JSX.Element {
 
     let objectActions: JSX.Element | null = null;
 
-    if (!isGroundTruth) {
-        // The same trigger hosts mutually exclusive overlays, matching the color picker flow.
-        const menuTrigger = (
-            <Col span={2}>
-                <MoreOutlined />
-            </Col>
-        );
+    // The same trigger hosts mutually exclusive overlays, matching the color picker flow.
+    const menuTrigger = (
+        <Col span={2}>
+            <MoreOutlined />
+        </Col>
+    );
 
-        if (colorPickerVisible) {
-            objectActions = (
-                <ColorPicker
-                    visible
-                    value={color}
-                    onVisibleChange={setColorPickerVisible}
-                    onChange={(_color: string) => {
-                        changeColor(_color);
-                    }}
-                >
-                    {menuTrigger}
-                </ColorPicker>
-            );
-        } else if (layerPopoverVisible) {
-            objectActions = (
-                <LayerPicker
-                    visible
-                    value={zOrder}
-                    onVisibleChange={setLayerPopoverVisible}
-                    onChange={toSpecificLayer}
-                >
-                    {menuTrigger}
-                </LayerPicker>
-            );
-        } else {
-            objectActions = (
-                <Dropdown
-                    destroyPopupOnHide
-                    open={objectMenuVisible}
-                    onOpenChange={setObjectMenuVisible}
-                    placement='bottomLeft'
-                    trigger={['click']}
-                    className='cvat-object-item-menu-button'
-                    menu={ItemMenu({
-                        jobInstance,
-                        locked,
-                        serverID,
-                        shapeType,
-                        objectType,
-                        color,
-                        colorBy,
-                        colorPickerVisible,
-                        changeColorShortcut,
-                        copyShortcut,
-                        pasteShortcut,
-                        propagateShortcut,
-                        toBackgroundShortcut,
-                        toForegroundShortcut,
-                        toOneLayerBackwardShortcut,
-                        toOneLayerForwardShortcut,
-                        removeShortcut,
-                        sliceShortcut,
-                        runAnnotationsActionShortcut,
-                        closeMenu: (): void => setObjectMenuVisible(false),
-                        changeColor,
-                        setLayerPopoverVisible,
-                        copy,
-                        remove,
-                        propagate,
-                        createURL,
-                        switchOrientation,
-                        toBackground,
-                        toForeground,
-                        toOneLayerBackward,
-                        toOneLayerForward,
-                        resetCuboidPerspective,
-                        setColorPickerVisible,
-                        edit,
-                        slice,
-                        simplify,
-                        runAnnotationAction,
-                    })}
-                >
-                    {menuTrigger}
-                </Dropdown>
-            );
-        }
+    if (colorPickerVisible) {
+        objectActions = (
+            <ColorPicker
+                visible
+                value={color}
+                onVisibleChange={setColorPickerVisible}
+                onChange={(_color: string) => {
+                    changeColor(_color);
+                }}
+            >
+                {menuTrigger}
+            </ColorPicker>
+        );
+    } else if (layerPopoverVisible) {
+        objectActions = (
+            <LayerPicker
+                visible
+                value={zOrder}
+                onVisibleChange={setLayerPopoverVisible}
+                onChange={toSpecificLayer}
+            >
+                {menuTrigger}
+            </LayerPicker>
+        );
+    } else {
+        objectActions = (
+            <Dropdown
+                destroyPopupOnHide
+                open={objectMenuVisible}
+                onOpenChange={setObjectMenuVisible}
+                placement='bottomLeft'
+                trigger={['click']}
+                className='cvat-object-item-menu-button'
+                menu={ItemMenu({
+                    jobInstance,
+                    locked,
+                    isGroundTruth,
+                    serverID,
+                    shapeType,
+                    objectType,
+                    color,
+                    colorBy,
+                    colorPickerVisible,
+                    changeColorShortcut,
+                    copyShortcut,
+                    pasteShortcut,
+                    propagateShortcut,
+                    toBackgroundShortcut,
+                    toForegroundShortcut,
+                    toOneLayerBackwardShortcut,
+                    toOneLayerForwardShortcut,
+                    removeShortcut,
+                    sliceShortcut,
+                    runAnnotationsActionShortcut,
+                    closeMenu: (): void => setObjectMenuVisible(false),
+                    changeColor,
+                    setLayerPopoverVisible,
+                    copy,
+                    remove,
+                    propagate,
+                    createURL,
+                    switchOrientation,
+                    toBackground,
+                    toForeground,
+                    toOneLayerBackward,
+                    toOneLayerForward,
+                    resetCuboidPerspective,
+                    setColorPickerVisible,
+                    edit,
+                    slice,
+                    simplify,
+                    runAnnotationAction,
+                })}
+            >
+                {menuTrigger}
+            </Dropdown>
+        );
     }
 
     return (

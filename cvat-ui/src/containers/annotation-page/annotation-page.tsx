@@ -79,6 +79,11 @@ function mapDispatchToProps(dispatch: any, own: OwnProps): DispatchToProps {
     const parsedFrame = +(searchParams.get('frame') || 'NaN');
     const initialFrame = Number.isInteger(parsedFrame) && parsedFrame >= 0 ? parsedFrame : null;
 
+    // toggles ground truth annotations and quality conflicts, available in the review workspace only
+    const parsedShowConflicts = searchParams.get('showConflicts');
+    const initialShowConflicts = parsedShowConflicts === null ? null : parsedShowConflicts !== 'false';
+
+    let initialObject: { serverID: number; type: string } | null = null;
     if (searchParams.has('serverID') && searchParams.has('type')) {
         const serverID = searchParams.get('serverID');
         const type = searchParams.get('type');
@@ -86,6 +91,7 @@ function mapDispatchToProps(dispatch: any, own: OwnProps): DispatchToProps {
             initialFilters.push({
                 and: [{ '==': [{ var: 'serverID' }, serverID] }, { '==': [{ var: 'type' }, type] }],
             });
+            initialObject = { serverID: +serverID, type: type as string };
         }
     }
 
@@ -94,6 +100,7 @@ function mapDispatchToProps(dispatch: any, own: OwnProps): DispatchToProps {
     searchParams.delete('serverID');
     searchParams.delete('type');
     searchParams.delete('openGuide');
+    searchParams.delete('showConflicts');
 
     if (searchParams.size !== initialSize) {
         own.history.replace(`${own.history.location.pathname}?${searchParams.toString()}`);
@@ -106,8 +113,10 @@ function mapDispatchToProps(dispatch: any, own: OwnProps): DispatchToProps {
                 jobID,
                 initialFrame,
                 initialFilters,
+                initialObject,
                 queryParameters: {
                     initialOpenGuide,
+                    initialShowConflicts,
                     defaultLabel,
                     defaultPointsCount,
                     ...(initialWorkspace ? { initialWorkspace: initialWorkspace[1] } : { initialWorkspace: null }),

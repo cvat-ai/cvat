@@ -5,6 +5,7 @@
 /// <reference types="cypress" />
 
 import { defaultTaskSpec } from '../../support/default-specs';
+import { ClipboardCtx } from '../../support/const';
 
 context('Ground truth jobs', () => {
     const labelName = 'car';
@@ -98,7 +99,15 @@ context('Ground truth jobs', () => {
                 .should('have.class', 'cvat_canvas_ground_truth')
                 .should('have.css', 'stroke-dasharray', '1px');
 
-            cy.get('.cvat-object-item-menu-button').should('not.exist');
+            // GT object actions menu only allows copying a link to the object
+            cy.get(`#cvat-objects-sidebar-state-item-${rectangle.id}`).within(() => {
+                cy.get('[aria-label="more"]').click();
+            });
+            cy.document().find('.cvat-object-item-menu').within(() => {
+                cy.get('.ant-dropdown-menu-item').should('have.length', 1);
+                cy.get('.cvat-object-item-menu-create-url').should('exist');
+            });
+            cy.get('body').type('{Esc}');
         }
 
         cy.get(`#cvat-objects-sidebar-state-item-${rectangle.id}`)
@@ -232,6 +241,58 @@ context('Ground truth jobs', () => {
                 cy.goCheckFrameNumber(frame);
                 checkRectangleAndObjectMenu(groundTruthRectangles[index]);
             });
+        });
+
+        it('Open a link to a ground truth object', () => {
+            // continues in the regular job, opened in the review workspace with ground truth displayed
+            const rectangle = groundTruthRectangles[0];
+            const clipboard = new ClipboardCtx('.cvat-object-item-menu-create-url');
+            clipboard.init();
+
+            cy.goCheckFrameNumber(groundTruthFrames[0]);
+            cy.get(`#cvat-objects-sidebar-state-item-${rectangle.id}`).within(() => {
+                cy.get('[aria-label="more"]').click();
+            });
+
+            clipboard.copy().then((url) => {
+                expect(url).include(`frame=${groundTruthFrames[0]}`);
+                expect(url).include('type=shape');
+                expect(url).include('defaultWorkspace=review');
+                expect(url).include('showConflicts=true');
+
+                // the link opens the review workspace with ground truth annotations enabled,
+                // the requested object is the only displayed one and it is activated
+                cy.visit(url);
+                cy.get('.cvat-canvas-container').should('be.visible');
+                cy.get('.cvat-workspace-selector').should('have.text', 'Review');
+                cy.get('.cvat-objects-sidebar-show-ground-truth').should(
+                    'have.class', 'cvat-objects-sidebar-show-ground-truth-active',
+                );
+                cy.checkFrameNum(groundTruthFrames[0]);
+                cy.get('.cvat-objects-sidebar-state-item').should('have.length', 1);
+                cy.get(`#cvat-objects-sidebar-state-item-${rectangle.id}`)
+                    .should('have.class', 'cvat-objects-sidebar-state-active-item');
+                cy.get(`#cvat_canvas_shape_${rectangle.id}`)
+                    .should('be.visible')
+                    .should('have.class', 'cvat_canvas_ground_truth');
+            });
+        });
+
+        it('Create a link to a ground truth object from the canvas context menu', () => {
+            const rectangle = groundTruthRectangles[0];
+            const clipboard = new ClipboardCtx('.cvat-context-menu-create-url');
+            clipboard.init();
+
+            cy.get(`#cvat_canvas_shape_${rectangle.id}`).trigger('mousemove');
+            cy.get(`#cvat_canvas_shape_${rectangle.id}`).rightclick();
+            cy.get('.cvat-canvas-context-menu').should('be.visible');
+
+            clipboard.copy().then((url) => {
+                expect(url).include(`frame=${groundTruthFrames[0]}`);
+                expect(url).include('defaultWorkspace=review');
+                expect(url).include('showConflicts=true');
+            });
+            cy.get('.cvat-canvas-context-menu').should('not.exist');
         });
 
         it('Delete ground truth job', () => {
