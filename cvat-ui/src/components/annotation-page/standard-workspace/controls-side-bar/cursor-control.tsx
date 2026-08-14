@@ -40,9 +40,12 @@ function CursorControl(props: Props): JSX.Element {
     } = props;
 
     const { keyMap } = useSelector((state: CombinedState) => state.shortcuts);
+    const selectedStatesID = useSelector(
+        (state: CombinedState) => state.annotation.annotations.selectedStatesID,
+    );
 
     const handler = (): void => {
-        if (activeControl !== ActiveControl.CURSOR) {
+        if (activeControl !== ActiveControl.CURSOR || selectedStatesID.length) {
             canvasInstance.cancel();
         }
     };

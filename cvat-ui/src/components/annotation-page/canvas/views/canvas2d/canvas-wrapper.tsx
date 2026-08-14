@@ -13,7 +13,7 @@ import Select from 'antd/lib/select';
 import Spin from 'antd/lib/spin';
 import Popover from 'antd/lib/popover';
 import Icon, {
-    DeleteOutlined, GroupOutlined, UpOutlined,
+    CopyOutlined, DeleteOutlined, UpOutlined,
 } from '@ant-design/icons';
 import notification from 'antd/lib/notification';
 import debounce from 'lodash/debounce';
@@ -47,6 +47,7 @@ import {
     mergeAnnotationsAsync,
     groupAnnotationsAsync,
     selectObjects,
+    copySelection,
     removeSelectionAsync,
     joinAnnotationsAsync,
     sliceAnnotationsAsync,
@@ -152,6 +153,7 @@ interface DispatchToProps {
     onSplitAnnotations(state: ObjectState): void;
     onGroupAnnotations(states: ObjectState[]): void;
     onSelectObjects(selectedStatesID: number[]): void;
+    onCopySelection(states: ObjectState[]): void;
     onRemoveSelection(): Promise<void>;
     onJoinAnnotations(states: ObjectState[], points: number[][]): void;
     onSliceAnnotations(state: ObjectState, results: number[][]): void;
@@ -389,6 +391,9 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         },
         onSelectObjects(selectedStatesID: number[]): void {
             dispatch(selectObjects(selectedStatesID));
+        },
+        onCopySelection(states: ObjectState[]): void {
+            dispatch(copySelection(states));
         },
         onRemoveSelection(): Promise<void> {
             return dispatch(removeSelectionAsync(false));
@@ -812,6 +817,21 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
         this.setState({ selectionMenuPosition: null });
     };
 
+    private onCopySelectedObjects = (): void => {
+        const {
+            annotations, selectedStatesID, onCopySelection,
+        } = this.props;
+        const selectedIDs = new Set(selectedStatesID);
+        const selectedStates = annotations.filter(
+            (state: ObjectState): boolean => selectedIDs.has(state.clientID as number),
+        );
+
+        if (selectedStates.length) {
+            onCopySelection(selectedStates);
+        }
+        this.setState({ selectionMenuPosition: null });
+    };
+
     private onCanvasWarningOccurrence = (event: any): void => {
         const { message, domain } = event.detail;
         notification.warning({
@@ -949,7 +969,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
     private onCanvasMouseDown = (e: MouseEvent): void => {
         const {
             workspace, activatedStateID, selectedStatesID, onActivateObject, onSelectObjects, keyMap, activeControl,
-            updateActiveControl,
+            updateActiveControl, canvasInstance,
         } = this.props;
         const shapeElement = (e.target as Element)?.closest?.('.cvat_canvas_shape');
         const selectionBox = (e.target as Element)?.closest?.('.cvat_canvas_selected_objects_box');
@@ -962,9 +982,15 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
 
         // a click outside of the selected objects resets the multi-selection
         // (shift is reserved for making a new selection, a click on a selected shape starts a group drag)
-        if (e.button === 0 && !multiSelectModifierPressed && selectedStatesID.length && !selectionBox) {
+        if (e.button === 0 && !multiSelectModifierPressed && selectedStatesID.length > 1 && !selectionBox) {
             const clickedClientID = shapeElement ? +(shapeElement.getAttribute('clientID') as string) : null;
             if (clickedClientID === null || !selectedStatesID.includes(clickedClientID)) {
+                // Leave grouping mode before the click event so an object outside the group
+                // can become active immediately with the same user action.
+                if (canvasInstance instanceof Canvas && activeControl === ActiveControl.SELECT) {
+                    canvasInstance.selectObjects({ enabled: false });
+                    updateActiveControl(ActiveControl.CURSOR);
+                }
                 onSelectObjects([]);
             }
         }
@@ -1035,7 +1061,8 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
     };
 
     private onCanvasShapeClicked = (e: any): void => {
-        const { onExpandObject } = this.props;
+        const { onActivateObject, onExpandObject } = this.props;
+        onActivateObject(e.detail.state.clientID, null);
         scrollAndExpandState(e.detail.state, onExpandObject);
     };
 
@@ -1060,19 +1087,15 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
             return;
         }
 
-        // when shapes overlap, prefer members of the multi-selection under the cursor
-        // so the selection can be grabbed and dragged as a group (e.g. right after paste)
-        let result = null;
         if (selectedStatesID.length > 1) {
-            const selectedCandidates = event.detail.states
-                .filter((state: ObjectState) => selectedStatesID.includes(state.clientID as number));
-            if (selectedCandidates.length) {
-                result = await jobInstance.annotations.select(selectedCandidates, event.detail.x, event.detail.y);
-            }
+            return;
         }
 
-        if (!result || !result.state) {
-            result = await jobInstance.annotations.select(event.detail.states, event.detail.x, event.detail.y);
+        const result = await jobInstance.annotations.select(event.detail.states, event.detail.x, event.detail.y);
+
+        // Selection may have become active while the asynchronous hit test was running.
+        if (this.props.selectedStatesID.length > 1) {
+            return;
         }
 
         if (result && result.state) {
@@ -1512,10 +1535,14 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
                                     ),
                                 },
                                 {
-                                    key: 'group',
+                                    key: 'copy',
                                     label: (
-                                        <Button type='link' icon={<GroupOutlined />} disabled>
-                                            Group objects
+                                        <Button
+                                            type='link'
+                                            icon={<CopyOutlined />}
+                                            onClick={this.onCopySelectedObjects}
+                                        >
+                                            Copy group
                                         </Button>
                                     ),
                                 },

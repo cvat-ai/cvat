@@ -1136,6 +1136,10 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
         case AnnotationActionTypes.RESET_CANVAS: {
             return {
                 ...state,
+                annotations: {
+                    ...state.annotations,
+                    selectedStatesID: [],
+                },
                 canvas: {
                     ...state.canvas,
                     activeControl: ActiveControl.CURSOR,
