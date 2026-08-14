@@ -18,6 +18,34 @@ export type LabelOptColor = SerializedLabel;
 const core = getCore();
 let id = 0;
 
+// Number attributes store a [minimum, maximum, step] triple in "values"
+// instead of a list of options, so they need their own checks.
+function validateNumberAttributeRange(attrName: string, values: string[]): void {
+    if (values.length !== 3) {
+        throw new Error(`Attribute: "${attrName}": three numbers are expected`);
+    }
+
+    const numbers = values.map((value: string): number => (value.length ? Number(value) : NaN));
+    const invalidIndex = numbers.findIndex((number: number) => !Number.isFinite(number));
+    if (invalidIndex !== -1) {
+        throw new Error(`Attribute: "${attrName}": "${values[invalidIndex]}" is not a number`);
+    }
+
+    const [min, max, step] = numbers;
+
+    if (min >= max) {
+        throw new Error(`Attribute: "${attrName}": minimum must be less than maximum`);
+    }
+
+    if (max - min < step) {
+        throw new Error(`Attribute: "${attrName}": step must be less than minmax difference`);
+    }
+
+    if (step <= 0) {
+        throw new Error(`Attribute: "${attrName}": step must be a positive number`);
+    }
+}
+
 function validateParsedAttribute(attr: SerializedAttribute): void {
     if (typeof attr !== 'object' || attr === null) {
         throw new Error('Attribute must be a JSON object');
@@ -54,7 +82,9 @@ function validateParsedAttribute(attr: SerializedAttribute): void {
     }
 
     const attrValues = attr.values.map((value: string) => value.trim());
-    if (new Set(attrValues).size !== attrValues.length) {
+    if (attr.input_type.toLowerCase() === 'number') {
+        validateNumberAttributeRange(attr.name, attrValues);
+    } else if (new Set(attrValues).size !== attrValues.length) {
         throw new Error(`Attribute: "${attr.name}": attribute values must be unique`);
     }
 
