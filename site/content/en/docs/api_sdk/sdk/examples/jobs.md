@@ -89,7 +89,7 @@ _Other SDK options:_
 | `Job.import_annotations(..., pbar=ProgressReporter())`           | Report upload progress (a `cvat_sdk.core.progress.ProgressReporter`).                                    |
 | `Job.get_issues()`                                               | Fetch the review issues raised on a job.                                                                 |
 | `Job.export_dataset(format_name, path)`                          | Export a single job's dataset - the export counterpart of `import_annotations`.                          |
-| `Job.get_frame(frame_id: int, quality="original" \| "compressed")` | Return a single frame as a file-like object (`io.RawIOBase`) of image bytes. `quality` defaults to `"original"`. |
+| `Job.get_frame(frame_id: int, *, quality="original" \| "compressed")` | Return a single frame as a file-like object (`io.RawIOBase`) of image bytes. `quality` is an optional keyword argument (`"original"` or `"compressed"`); if omitted, the server default is used. |
 | `Job.download_frames(frame_ids: Sequence[int], outdir=".", quality="original", image_extension=None, filename_pattern="frame_{frame_id:06d}{frame_ext}")` | Save the given frames to disk under `outdir`. `image_extension` (e.g. `"png"`) overrides the auto-detected extension; `quality` is `"original"` or `"compressed"`. |
 | `Job.get_meta()` / `Job.get_labels()`                            | Read a job's frame metadata and label schema.                                                            |
 
