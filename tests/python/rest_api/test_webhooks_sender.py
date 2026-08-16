@@ -227,11 +227,6 @@ class TestWebhookProjectEvents:
 
         assert payload["event"] == events[0]
         assert payload["sender"]["username"] == "admin1"
-        assert payload["before_update"]["name"] == project["name"]
-        assert payload["changes"]["name"] == {
-            "from": project["name"],
-            "to": patch_data["name"],
-        }
 
         project.update(patch_data)
         assert (
@@ -316,20 +311,6 @@ class TestWebhookIntersection:
         assert deliveries_1["count"] == deliveries_2["count"] == 1
 
         assert payload_1["project"]["name"] == payload_2["project"]["name"] == patch_data["name"]
-
-        assert (
-            payload_1["before_update"]["name"]
-            == payload_2["before_update"]["name"]
-            == post_data["name"]
-        )
-        assert payload_1["changes"]["name"] == {
-            "from": post_data["name"],
-            "to": patch_data["name"],
-        }
-        assert payload_2["changes"]["name"] == {
-            "from": post_data["name"],
-            "to": patch_data["name"],
-        }
 
         assert payload_1["webhook_id"] == webhook_id_1
         assert payload_2["webhook_id"] == webhook_id_2
@@ -430,11 +411,6 @@ class TestWebhookTaskEvents:
         deliveries, payload = get_deliveries(webhook_id=webhook_id)
 
         assert deliveries["count"] == 1
-        assert payload["before_update"]["assignee_id"] == tasks[task_id]["assignee"]["id"]
-        assert payload["changes"]["assignee_id"] == {
-            "from": tasks[task_id]["assignee"]["id"],
-            "to": assignee_id,
-        }
         assert payload["task"]["assignee"]["id"] == assignee_id
 
     def test_webhook_create_and_delete_task(self, organizations):
@@ -511,11 +487,6 @@ class TestWebhookJobEvents:
         deliveries, payload = get_deliveries(webhook_id)
 
         assert deliveries["count"] == 1
-        assert payload["before_update"]["assignee_id"] is None
-        assert payload["changes"]["assignee_id"] == {
-            "from": None,
-            "to": patch_data["assignee"],
-        }
         assert payload["job"]["assignee"]["id"] == patch_data["assignee"]
 
     def test_webhook_update_job_stage(self, jobs, tasks):
@@ -532,11 +503,6 @@ class TestWebhookJobEvents:
 
         deliveries, payload = get_deliveries(webhook_id)
         assert deliveries["count"] == 1
-        assert payload["before_update"]["stage"] == job["stage"]
-        assert payload["changes"]["stage"] == {
-            "from": job["stage"],
-            "to": patch_data["stage"],
-        }
         assert payload["job"]["stage"] == patch_data["stage"]
 
     def test_webhook_update_job_state(self, jobs, tasks):
@@ -557,11 +523,6 @@ class TestWebhookJobEvents:
 
         deliveries, payload = get_deliveries(webhook_id)
         assert deliveries["count"] == 1
-        assert payload["before_update"]["state"] == job["state"]
-        assert payload["changes"]["state"] == {
-            "from": job["state"],
-            "to": patch_data["state"],
-        }
         assert payload["job"]["state"] == patch_data["state"]
 
 
@@ -585,11 +546,6 @@ class TestWebhookIssueEvents:
         deliveries, payload = get_deliveries(webhook_id)
 
         assert deliveries["count"] == 1
-        assert payload["before_update"]["resolved"] == issue["resolved"]
-        assert payload["changes"]["resolved"] == {
-            "from": issue["resolved"],
-            "to": patch_data["resolved"],
-        }
         assert payload["issue"]["resolved"] == patch_data["resolved"]
 
     def test_webhook_update_issue_position(self, issues, jobs, tasks):
@@ -610,11 +566,6 @@ class TestWebhookIssueEvents:
         deliveries, payload = get_deliveries(webhook_id)
 
         assert deliveries["count"] == 1
-        assert payload["before_update"]["position"] == issue["position"]
-        assert payload["changes"]["position"] == {
-            "from": issue["position"],
-            "to": patch_data["position"],
-        }
         assert payload["issue"]["position"] == patch_data["position"]
 
     @pytest.mark.parametrize("org_id", (2,))
@@ -682,11 +633,6 @@ class TestWebhookMembershipEvents:
         deliveries, payload = get_deliveries(webhook_id)
 
         assert deliveries["count"] == 1
-        assert payload["before_update"]["role"] == membership["role"]
-        assert payload["changes"]["role"] == {
-            "from": membership["role"],
-            "to": patch_data["role"],
-        }
         assert payload["membership"]["role"] == patch_data["role"]
 
     def test_webhook_delete_membership(self, memberships):
@@ -749,11 +695,6 @@ class TestWebhookOrganizationEvents:
         deliveries, payload = get_deliveries(webhook_id)
 
         assert deliveries["count"] == 1
-        assert payload["before_update"]["name"] == organizations[org_id]["name"]
-        assert payload["changes"]["name"] == {
-            "from": organizations[org_id]["name"],
-            "to": patch_data["name"],
-        }
         assert payload["organization"]["name"] == patch_data["name"]
 
     def test_webhook_delete_organization(
@@ -803,11 +744,6 @@ class TestWebhookCommentEvents:
         deliveries, payload = get_deliveries(webhook_id)
 
         assert deliveries["count"] == 1
-        assert payload["before_update"]["message"] == comment["message"]
-        assert payload["changes"]["message"] == {
-            "from": comment["message"],
-            "to": patch_data["message"],
-        }
 
         comment.update(patch_data)
         assert (
@@ -900,13 +836,8 @@ class TestWebhookUserEvents:
         assert deliveries["count"] == 1
         assert payload["event"] == "update:user"
         assert payload["webhook_id"] == webhook_id
-        assert payload["before_update"]["first_name"] == user["first_name"]
         assert payload["user"]["first_name"] == patch_data["first_name"]
         assert payload["user"]["created_via"] == user["created_via"]
-        assert payload["changes"]["first_name"] == {
-            "from": user["first_name"],
-            "to": patch_data["first_name"],
-        }
 
     def test_webhook_delete_user(self, request: pytest.FixtureRequest, users) -> None:
         user = next(user for user in users if user["username"] == "dummy1")
@@ -946,8 +877,6 @@ class TestWebhookEmailAddressEvents:
         assert payload["webhook_id"] == webhook_id
         assert payload["user"]["id"] == user["id"]
         assert payload["user"]["email_verified"] is True
-        assert payload["before_update"] == {"email_verified": None}
-        assert payload["changes"] == {"email_verified": {"from": None, "to": True}}
 
     def test_webhook_update_user_on_primary_email_address_verified(
         self, request: pytest.FixtureRequest, users
@@ -967,8 +896,6 @@ class TestWebhookEmailAddressEvents:
         assert payload["webhook_id"] == webhook_id
         assert payload["user"]["id"] == user["id"]
         assert payload["user"]["email_verified"] is True
-        assert payload["before_update"] == {"email_verified": False}
-        assert payload["changes"] == {"email_verified": {"from": False, "to": True}}
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
@@ -990,8 +917,6 @@ class TestWebhookProfileEvents:
         assert payload["webhook_id"] == webhook_id
         assert payload["user"]["id"] == user["id"]
         assert payload["user"]["has_analytics_access"] is True
-        assert payload["before_update"] == {"has_analytics_access": False}
-        assert payload["changes"] == {"has_analytics_access": {"from": False, "to": True}}
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
@@ -1009,14 +934,21 @@ class TestWebhookUserGroupsEvents:
         response = patch_method("admin1", f"users/{user['id']}", patch_data)
         assert response.status_code == HTTPStatus.OK
 
-        deliveries, payload = get_instance_webhook_deliveries(request, webhook_id)
+        deliveries, _ = get_instance_webhook_deliveries(request, webhook_id, 2)
 
-        assert deliveries["count"] == 1
-        assert payload["event"] == "update:user"
-        assert payload["webhook_id"] == webhook_id
-        assert payload["before_update"] == {"groups": []}
-        assert payload["changes"] == {"groups": {"from": [], "to": ["worker"]}}
-        assert payload["user"]["groups"] == ["worker"]
+        assert deliveries["count"] == 2
+
+        event1 = json.loads(deliveries["results"][0]["response"])
+        assert event1["event"] == "update:user"
+        assert event1["webhook_id"] == webhook_id
+        assert event1["user"]["id"] == user["id"]
+        assert event1["user"]["groups"] == ["worker"]
+
+        event2 = json.loads(deliveries["results"][1]["response"])
+        assert event2["event"] == "update:user"
+        assert event2["webhook_id"] == webhook_id
+        assert event2["user"]["id"] == user["id"]
+        assert event2["user"]["groups"] == []
 
     def test_webhook_update_user_on_group_removed(
         self, request: pytest.FixtureRequest, users
@@ -1029,13 +961,21 @@ class TestWebhookUserGroupsEvents:
         response = patch_method("admin1", f"users/{user['id']}", {"groups": []})
         assert response.status_code == HTTPStatus.OK
 
-        deliveries, payload = get_instance_webhook_deliveries(request, webhook_id)
+        deliveries, _ = get_instance_webhook_deliveries(request, webhook_id, 2)
 
-        assert deliveries["count"] == 1
-        assert payload["event"] == "update:user"
-        assert payload["webhook_id"] == webhook_id
-        assert payload["changes"] == {"groups": {"from": ["user"], "to": []}}
-        assert payload["user"]["groups"] == []
+        assert deliveries["count"] == 2
+
+        event1 = json.loads(deliveries["results"][0]["response"])
+        assert event1["event"] == "update:user"
+        assert event1["webhook_id"] == webhook_id
+        assert event1["user"]["id"] == user["id"]
+        assert event1["user"]["groups"] == []
+
+        event2 = json.loads(deliveries["results"][1]["response"])
+        assert event2["event"] == "update:user"
+        assert event2["webhook_id"] == webhook_id
+        assert event2["user"]["id"] == user["id"]
+        assert event2["user"]["groups"] == ["user"]
 
     def test_webhook_not_sent_when_groups_are_unchanged(
         self, request: pytest.FixtureRequest, users
@@ -1051,9 +991,9 @@ class TestWebhookUserGroupsEvents:
         deliveries, payload = get_instance_webhook_deliveries(request, webhook_id)
 
         assert deliveries["count"] == 1
-        assert payload["changes"] == {
-            "first_name": {"from": user["first_name"], "to": patch_data["first_name"]}
-        }
+        assert payload["event"] == "update:user"
+        assert payload["user"]["first_name"] == patch_data["first_name"]
+        assert payload["user"]["groups"] == user["groups"]
 
 
 @pytest.mark.usefixtures("restore_db_per_class")
@@ -1149,15 +1089,6 @@ class TestWebhookRedelivery:
 
         assert deliveries_1["results"][0]["redelivery"] is False
         assert deliveries_2["results"][0]["redelivery"] is True
-
-        assert payload_1["changes"]["name"] == {
-            "from": project["name"],
-            "to": patch_data["name"],
-        }
-        assert payload_2["changes"]["name"] == {
-            "from": project["name"],
-            "to": patch_data["name"],
-        }
 
         project.update(patch_data)
         assert (

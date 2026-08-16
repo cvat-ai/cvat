@@ -11,10 +11,8 @@ from typing import TypeVar
 
 import requests
 from crum import get_current_request
-from django.core.exceptions import FieldDoesNotExist
 from django.db import transaction
 from django.db.models import Model
-from rest_framework.renderers import JSONRenderer
 from rest_framework.serializers import BaseSerializer
 
 from cvat.apps.consensus.rq import ConsensusRequestId
@@ -111,37 +109,6 @@ def get_serializer(instance: Model) -> BaseSerializer | None:
         return UserSerializer(instance=instance, context=context)
 
     return get_serializer(instance=instance)
-
-
-def get_serializer_attnames(instance: Model, serializer: BaseSerializer) -> set[str]:
-    """Return model field attnames referenced by the serializer's output fields.
-
-    For example, ProjectReadSerializer yields attnames such as ``name``,
-    ``owner_id``, ``assignee_id``, ``annotation_guide_id``, and ``organization_id``.
-    Computed fields, method fields, and ``source="*"`` fields are skipped.
-    """
-
-    attnames: set[str] = set()
-
-    for field in serializer.fields.values():
-        if field.write_only:
-            continue
-
-        source_attrs = field.source_attrs
-        if not source_attrs:
-            continue
-
-        try:
-            model_field = instance._meta.get_field(source_attrs[0])
-        except FieldDoesNotExist:
-            continue
-
-        if not hasattr(model_field, "attname"):
-            continue
-
-        attnames.add(model_field.attname)
-
-    return attnames
 
 
 def retrieve_instance(model: type[ModelT], pk: int) -> ModelT:
@@ -286,7 +253,7 @@ def recreate_old_instance(instance: ModelT, dirty_fields: dict) -> ModelT:
     return old_instance
 
 
-def send_user_update_event(user_id: int, changes: dict[str, dict]) -> None:
+def send_user_update_event(user_id: int) -> None:
     """Emit update:user for a change that happened outside the auth_user row."""
 
     from .dispatch import batch_add_webhooks_to_queue
@@ -308,15 +275,10 @@ def send_user_update_event(user_id: int, changes: dict[str, dict]) -> None:
 
     user = retrieve_instance(model=User, pk=user_id)
 
-    # TODO: backward compatibility, remove in future releases
-    _before_update = {field: value["from"] for field, value in changes.items()}
-
     webhook_payload = {
         "event": event_key_,
         resource_name: get_serializer(instance=user).data,
         "sender": get_sender(instance=user),
-        "before_update": json.loads(JSONRenderer().render(_before_update)),
-        "changes": json.loads(JSONRenderer().render(changes)),
     }
 
     webhook_payload_pairs = [

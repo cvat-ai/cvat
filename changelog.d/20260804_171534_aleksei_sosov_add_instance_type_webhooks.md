@@ -18,3 +18,13 @@
   parameter (`project` or `organization`); the previous default `all`
   catalog was removed
   (<https://github.com/cvat-ai/cvat/pull/10991>)
+
+### Removed
+
+- \[Server API\] Webhook payloads for `update:<resource>` events no longer
+  contain the `before_update` and `changes` keys.
+  (<https://github.com/cvat-ai/cvat/pull/10991>)
+
+- \[Server API\] Removed the `changed_fields` field from webhook delivery
+  responses
+  (<https://github.com/cvat-ai/cvat/pull/10991>)

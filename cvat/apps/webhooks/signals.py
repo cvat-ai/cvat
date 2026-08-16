@@ -2,15 +2,13 @@
 #
 # SPDX-License-Identifier: MIT
 
-import json
 from typing import TypeVar
 
 from allauth.account.models import EmailAddress
 from django.db import transaction
 from django.db.models import Model
-from django.db.models.signals import m2m_changed, post_delete, post_save, pre_delete, pre_save
+from django.db.models.signals import m2m_changed, post_delete, post_save, pre_delete
 from django.dispatch import receiver
-from rest_framework.renderers import JSONRenderer
 
 from cvat.apps.engine.models import Comment, Issue, Job, Profile, Project, Task
 from cvat.apps.events.handlers import organization_id as resolve_organization_id
@@ -53,55 +51,58 @@ def post_save_resource_event(
     if event_key_ not in (a[0] for a in EventKeyChoice.choices()):
         return
 
-    dirty_fields: dict[str, dict] = {
-        instance._meta.get_field(field).attname: value
-        for field, value in instance.get_dirty_fields(
-            verbose=True,
-            check_relationship=True,
-        ).items()
-    }
-
-    if update_fields is not None:
-        update_fields = {instance._meta.get_field(field).attname for field in update_fields}
-
-        dirty_fields = {
-            field: value for field, value in dirty_fields.items() if field in update_fields
+    if isinstance(instance, (Project, Task)) and not created:
+        dirty_fields: dict[str, dict] = {
+            instance._meta.get_field(field).attname: value
+            for field, value in instance.get_dirty_fields(
+                verbose=True,
+                check_relationship=True,
+            ).items()
         }
 
-    old_instance = utils.recreate_old_instance(instance=instance, dirty_fields=dirty_fields)
+        if update_fields is not None:
+            update_fields = {instance._meta.get_field(field).attname for field in update_fields}
 
-    # consider task and project transfers as deletion in one organization and creation in another
-    if (
-        isinstance(instance, (Project, Task))
-        and not created
-        and resolve_organization_id(old_instance) != resolve_organization_id(instance)
-    ):
-        new_org_id = resolve_organization_id(instance)
-        new_project_id = resolve_project_id(instance)
+            dirty_fields = {
+                field: value for field, value in dirty_fields.items() if field in update_fields
+            }
 
-        old_org_id = resolve_organization_id(old_instance)
-        old_project_id = resolve_project_id(old_instance)
+        old_instance = utils.recreate_old_instance(instance=instance, dirty_fields=dirty_fields)
 
-        webhooks_per_event_key = {
-            event_key_: select_webhooks(
-                event_key=event_key_,
-                organization_id=new_org_id,
-                project_id=new_project_id,
-                select_for_org=False,
-            ),
-            event_key(action="delete", resource=resource_name): select_webhooks(
-                event_key=event_key(action="delete", resource=resource_name),
-                organization_id=old_org_id,
-                project_id=old_project_id,
-                select_for_project=False,
-            ),
-            event_key(action="create", resource=resource_name): select_webhooks(
-                event_key=event_key(action="create", resource=resource_name),
-                organization_id=new_org_id,
-                project_id=new_project_id,
-                select_for_project=False,
-            ),
-        }
+        if resolve_organization_id(instance) != resolve_organization_id(old_instance):
+            new_org_id = resolve_organization_id(instance)
+            old_org_id = resolve_organization_id(old_instance)
+            new_project_id = resolve_project_id(instance)
+            old_project_id = resolve_project_id(old_instance)
+
+            webhooks_per_event_key = {
+                event_key_: select_webhooks(
+                    event_key=event_key_,
+                    organization_id=new_org_id,
+                    project_id=new_project_id,
+                    select_for_org=False,
+                ),
+                event_key(action="delete", resource=resource_name): select_webhooks(
+                    event_key=event_key(action="delete", resource=resource_name),
+                    organization_id=old_org_id,
+                    project_id=old_project_id,
+                    select_for_project=False,
+                ),
+                event_key(action="create", resource=resource_name): select_webhooks(
+                    event_key=event_key(action="create", resource=resource_name),
+                    organization_id=new_org_id,
+                    project_id=new_project_id,
+                    select_for_project=False,
+                ),
+            }
+        else:
+            webhooks_per_event_key = {
+                event_key_: select_webhooks(
+                    event_key=event_key_,
+                    organization_id=resolve_organization_id(instance),
+                    project_id=resolve_project_id(instance),
+                ),
+            }
     else:
         webhooks_per_event_key = {
             event_key_: select_webhooks(
@@ -121,27 +122,6 @@ def post_save_resource_event(
         "sender": utils.get_sender(instance=instance),
     }
 
-    if not created:
-        serializer_attnames = utils.get_serializer_attnames(
-            instance=instance,
-            serializer=utils.get_serializer(instance=instance),
-        )
-        exposed_dirty_fields = {
-            field: value for field, value in dirty_fields.items() if field in serializer_attnames
-        }
-
-        # TODO: backward compatibility, remove in future releases
-        _before_update = {field: value["saved"] for field, value in exposed_dirty_fields.items()}
-
-        _changes = {
-            field: {"from": value["saved"], "to": value["current"]}
-            for field, value in exposed_dirty_fields.items()
-        }
-        changes_payload_part = {
-            "before_update": json.loads(JSONRenderer().render(_before_update)),
-            "changes": json.loads(JSONRenderer().render(_changes)),
-        }
-
     webhook_payload_pairs = [
         (
             webhook,
@@ -149,7 +129,6 @@ def post_save_resource_event(
                 "event": event_key,
                 "webhook_id": webhook.id,
                 **_webhook_payload,
-                **(changes_payload_part if event_key.startswith("update") else {}),
             },
         )
         for event_key, webhooks in webhooks_per_event_key.items()
@@ -159,21 +138,6 @@ def post_save_resource_event(
     transaction.on_commit(
         lambda: batch_add_webhooks_to_queue(webhook_payload_pairs=webhook_payload_pairs),
         robust=True,
-    )
-
-
-@receiver(pre_save, sender=EmailAddress)
-def pre_save_email_address_event(
-    sender: type[EmailAddress],
-    instance: EmailAddress,
-    raw: bool,
-    **kwargs,
-):
-    if raw:
-        return
-
-    instance.instance_at_pre_save = (
-        EmailAddress.objects.filter(pk=instance.pk).first() if instance.pk else None
     )
 
 
@@ -187,25 +151,10 @@ def post_save_email_address_event(
     if raw:
         return
 
-    instance_at_pre_save: EmailAddress | None = instance.instance_at_pre_save
-    del instance.instance_at_pre_save
-
     if not instance.primary:
         return
 
-    email_verified_at_pre_save = (
-        instance_at_pre_save.verified if instance_at_pre_save is not None else None
-    )
-
-    if email_verified_at_pre_save == instance.verified:
-        return
-
-    utils.send_user_update_event(
-        user_id=instance.user_id,
-        changes={
-            "email_verified": {"from": email_verified_at_pre_save, "to": instance.verified},
-        },
-    )
+    utils.send_user_update_event(user_id=instance.user_id)
 
 
 @receiver(post_save, sender=Profile)
@@ -218,16 +167,7 @@ def post_save_profile_event(
     if raw:
         return
 
-    dirty_field = instance.get_dirty_fields(verbose=True).get("has_analytics_access")
-    if dirty_field is None:
-        return
-
-    utils.send_user_update_event(
-        user_id=instance.user_id,
-        changes={
-            "has_analytics_access": {"from": dirty_field["saved"], "to": dirty_field["current"]},
-        },
-    )
+    utils.send_user_update_event(user_id=instance.user_id)
 
 
 @receiver(m2m_changed, sender=User.groups.through)
@@ -241,27 +181,8 @@ def m2m_changed_user_groups_event(
     if reverse:
         return
 
-    if action in ("pre_add", "pre_remove", "pre_clear"):
-        instance.groups_at_pre_save = list(
-            instance.groups.order_by("name").values_list("name", flat=True)
-        )
-        return
-
     if action in ("post_add", "post_remove", "post_clear"):
-        groups_at_pre_save: list[str] = instance.groups_at_pre_save
-        del instance.groups_at_pre_save
-
-        groups = list(instance.groups.order_by("name").values_list("name", flat=True))
-
-        if groups_at_pre_save == groups:
-            return
-
-        utils.send_user_update_event(
-            user_id=instance.pk,
-            changes={"groups": {"from": groups_at_pre_save, "to": groups}},
-        )
-
-    return
+        utils.send_user_update_event(user_id=instance.pk)
 
 
 @receiver(pre_delete, sender=Project)

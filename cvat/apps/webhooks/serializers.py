@@ -187,7 +187,6 @@ class WebhookDeliveryReadSerializer(serializers.ModelSerializer):
             "request_duration",
             "created_date",
             "updated_date",
-            "changed_fields",
             "request",
             "response",
         )

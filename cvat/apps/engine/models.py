@@ -1304,7 +1304,7 @@ class JobQuerySet(models.QuerySet):
         return self.annotate(child_jobs__count=models.Count("child_job"))
 
 
-class Job(DirtyFieldsMixin, TimestampedModel, AssignableModel, FileSystemRelatedModel):
+class Job(TimestampedModel, AssignableModel, FileSystemRelatedModel):
     objects = JobQuerySet.as_manager()
 
     segment = models.ForeignKey(Segment, on_delete=models.CASCADE)
@@ -1695,7 +1695,7 @@ class LabeledIntervalAttributeVal(AttributeVal):
     )
 
 
-class Profile(DirtyFieldsMixin, models.Model):
+class Profile(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     rating = models.FloatField(default=0.0)
     last_activity_date = models.DateTimeField(null=True, blank=True, default=None)
@@ -1706,7 +1706,7 @@ class Profile(DirtyFieldsMixin, models.Model):
     )
 
 
-class Issue(DirtyFieldsMixin, TimestampedModel, AssignableModel):
+class Issue(TimestampedModel, AssignableModel):
     frame = models.PositiveIntegerField()
     position = FloatArrayField()
     job = models.ForeignKey(
@@ -1734,7 +1734,7 @@ class Issue(DirtyFieldsMixin, TimestampedModel, AssignableModel):
         return self.job_id
 
 
-class Comment(DirtyFieldsMixin, TimestampedModel):
+class Comment(TimestampedModel):
     issue = models.ForeignKey(
         Issue, related_name="comments", related_query_name="comment", on_delete=models.CASCADE
     )
