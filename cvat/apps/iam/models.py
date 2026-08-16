@@ -5,7 +5,6 @@
 
 from enum import Enum
 
-from dirtyfields import DirtyFieldsMixin
 from django.contrib.auth.models import AbstractUser
 from django.contrib.auth.models import UserManager as DjangoUserManager
 from django.db import models
@@ -36,7 +35,7 @@ class UserManager(DjangoUserManager):
         return super().create_superuser(*args, **kwargs)
 
 
-class User(DirtyFieldsMixin, AbstractUser):
+class User(AbstractUser):
     created_via = models.CharField(max_length=32, choices=UserCreatedViaEnum.choices(), null=True)
 
     objects = UserManager()
