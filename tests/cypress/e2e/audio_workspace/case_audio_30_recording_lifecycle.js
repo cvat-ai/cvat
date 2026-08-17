@@ -15,7 +15,7 @@ context('Audio annotation. Recording lifecycle.', () => {
     });
 
     afterEach(() => {
-        cy.audioClearAnnotationsAndSave();
+        cy.audioClearAnnotations();
     });
 
     describe(`Testing case "${caseId}"`, () => {

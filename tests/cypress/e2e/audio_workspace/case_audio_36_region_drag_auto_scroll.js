@@ -73,7 +73,7 @@ context('Audio annotation. Region editing auto-scrolls the waveform.', () => {
     });
 
     afterEach(() => {
-        cy.audioClearAnnotationsAndSave();
+        cy.audioClearAnnotations();
     });
 
     describe(`Testing case "${caseId}"`, () => {

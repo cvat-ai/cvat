@@ -17,7 +17,7 @@ context('Audio annotation. Relabeling restores label defaults.', () => {
     });
 
     after(() => {
-        cy.audioClearAnnotationsAndSave();
+        cy.audioClearAnnotations();
     });
 
     describe(`Testing case "${caseId}"`, () => {
