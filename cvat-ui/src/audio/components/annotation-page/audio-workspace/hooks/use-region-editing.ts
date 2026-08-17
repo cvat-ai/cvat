@@ -11,10 +11,11 @@ import {
     createAudioIntervalAsync, updateAudioIntervalAsync,
 } from 'actions/audio-actions';
 import { ActiveControl, CombinedState } from 'reducers';
+import { clamp } from 'utils/math';
 import { shallowEqual, ThunkDispatch } from 'utils/redux';
 
 import {
-    clientIDFromWaveRegionId, intervalEndSeconds, intervalStartSeconds,
+    clampRange, clientIDFromWaveRegionId, intervalEndSeconds, intervalStartSeconds,
 } from '../utils/audio-interval';
 import { attachRegionResizeAutoScroll } from '../utils/region-resize-auto-scroll';
 import { WaveformRegionRuntime } from './use-audio-waveform';
@@ -70,7 +71,7 @@ function installRegionDragBoundsConstraint(region: Region): void {
             return;
         }
         const deltaSeconds = (deltaPx / width) * total;
-        const clampedSeconds = Math.max(-region.start, Math.min(total - region.end, deltaSeconds));
+        const clampedSeconds = clamp(deltaSeconds, -region.start, total - region.end);
         original((clampedSeconds / total) * width, side, startTime);
     };
     /* eslint-enable no-underscore-dangle */
@@ -112,8 +113,7 @@ export function useRegionEditing({
                 clientID !== null && latestRef.current.intervals.some((interval) => interval.clientID === clientID);
             if (exists) return;
 
-            const start = Math.max(0, region.start);
-            const end = Math.max(start, region.end);
+            const { start, end } = clampRange(region, durationRef.current);
             // remove the source region to get it re-created from redux
             region.remove();
             if (end - start > MIN_INTERVAL_DURATION) {
@@ -210,13 +210,11 @@ export function useRegionEditing({
             if (time === null || duration <= 0) return false;
 
             const delta = time - drag.startTime;
-            const start = drag.side === 'start' ? Math.max(
-                0,
-                Math.min(drag.start + delta, drag.end - MIN_INTERVAL_DURATION),
+            const start = drag.side === 'start' ? clamp(
+                drag.start + delta, 0, drag.end - MIN_INTERVAL_DURATION,
             ) : drag.start;
-            const end = drag.side === 'end' ? Math.min(
-                duration,
-                Math.max(drag.end + delta, drag.start + MIN_INTERVAL_DURATION),
+            const end = drag.side === 'end' ? clamp(
+                drag.end + delta, drag.start + MIN_INTERVAL_DURATION, duration,
             ) : drag.end;
             if (start === drag.region.start && end === drag.region.end) {
                 return false;
