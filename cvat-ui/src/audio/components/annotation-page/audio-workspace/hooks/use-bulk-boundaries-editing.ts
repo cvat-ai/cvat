@@ -71,7 +71,7 @@ function isBulkEvent(event: PointerEvent): boolean {
 }
 
 function isBulkEditingAllowed(activeControl: ActiveControl): boolean {
-    return activeControl === ActiveControl.AUDIO_REGION_EDIT;
+    return activeControl === ActiveControl.CURSOR;
 }
 
 function setBoundaryIndicator(boundary: Boundary, active: boolean): void {

@@ -28,6 +28,7 @@ export enum AudioActionTypes {
     SET_AUDIO_LOOP = 'SET_AUDIO_LOOP',
     SET_AUDIO_ACTIVE_INTERVAL = 'SET_AUDIO_ACTIVE_INTERVAL',
     SET_AUDIO_HOVERED_INTERVAL = 'SET_AUDIO_HOVERED_INTERVAL',
+    SET_AUDIO_INTERACTING_INTERVAL = 'SET_AUDIO_INTERACTING_INTERVAL',
     UPDATE_AUDIO_CONTEXT_MENU = 'UPDATE_AUDIO_CONTEXT_MENU',
     LOAD_AUDIO_DATA = 'LOAD_AUDIO_DATA',
     LOAD_AUDIO_DATA_SUCCESS = 'LOAD_AUDIO_DATA_SUCCESS',
@@ -74,6 +75,9 @@ export const audioActions = {
     ),
     setAudioHoveredInterval: (clientID: number | null) => (
         createAction(AudioActionTypes.SET_AUDIO_HOVERED_INTERVAL, { clientID })
+    ),
+    setAudioInteractingInterval: (clientID: number | null) => (
+        createAction(AudioActionTypes.SET_AUDIO_INTERACTING_INTERVAL, { clientID })
     ),
     updateAudioContextMenu: (left: number, top: number, clientID: number | null = null) => (
         createAction(AudioActionTypes.UPDATE_AUDIO_CONTEXT_MENU, {
@@ -129,7 +133,7 @@ const AUDIO_LONG_JUMP_FRACTION = 0.05;
 
 type AudioIntervalPatch = Partial<Pick<
     AudioIntervalState,
-    'start' | 'stop' | 'label' | 'attributes' | 'lock' | 'hidden' | 'color'
+    'start' | 'stop' | 'label' | 'attributes' | 'lock' | 'pinned' | 'hidden' | 'color'
 >>;
 
 function applyIntervalPatch(interval: AudioIntervalState, patch: AudioIntervalPatch): void {
@@ -139,6 +143,7 @@ function applyIntervalPatch(interval: AudioIntervalState, patch: AudioIntervalPa
     if (patch.label) target.label = patch.label;
     if (patch.attributes) target.attributes = patch.attributes;
     if (typeof patch.lock === 'boolean') target.lock = patch.lock;
+    if (typeof patch.pinned === 'boolean') target.pinned = patch.pinned;
     if (typeof patch.hidden === 'boolean') target.hidden = patch.hidden;
     if (typeof patch.color === 'string') target.color = patch.color;
 }
