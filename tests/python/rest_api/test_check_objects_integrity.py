@@ -58,7 +58,11 @@ class TestGetResources:
                         == {}
                     )
             else:
-                response = config.get_method("admin1", endpoint, page_size="all")
+                request_params = {"page_size": "all"}
+                if endpoint == "quality/reports":
+                    request_params["include_legacy"] = "true"
+
+                response = config.get_method("admin1", endpoint, **request_params)
                 json_objs = json.load(f)
                 resp_objs = response.json()
 
@@ -67,7 +71,9 @@ class TestGetResources:
                         json_objs,
                         resp_objs,
                         ignore_order=True,
-                        exclude_regex_paths=r"root\['results'\]\[\d+\]\['last_login'\]",
+                        exclude_regex_paths=[
+                            r"root\['results'\]\[\d+\]\['last_login'\]",
+                        ],
                     )
                     == {}
                 )

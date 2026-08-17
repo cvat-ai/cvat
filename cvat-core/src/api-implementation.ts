@@ -23,6 +23,7 @@ import {
 } from './common';
 
 import User from './user';
+import UserGrowthData from './growth';
 import AnnotationFormats from './annotation-formats';
 import ApiToken from './api-token';
 import { Task, Job } from './session';
@@ -184,6 +185,11 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
 
         users = users.map((user) => new User(user));
         return users;
+    });
+
+    implementationMixin(cvat.growth.get, async (userId: number): Promise<UserGrowthData[]> => {
+        const result = await serverProxy.growth.get(userId);
+        return result.map((growthData) => new UserGrowthData(growthData));
     });
 
     implementationMixin(cvat.apiTokens.get, async (filter) => {

@@ -36,6 +36,7 @@ import QualitySettings from './quality-settings';
 import ConsensusSettings from './consensus-settings';
 import AnnotationGuide from './guide';
 import ApiToken from './api-token';
+import UserGrowthData from './growth';
 import { JobValidationLayout, TaskValidationLayout } from './validation-layout';
 import { Request } from './request';
 import AboutData from './about';
@@ -98,6 +99,9 @@ export default interface CVATCore {
     };
     users: {
         get: any;
+    };
+    growth: {
+        get: (userId: number) => Promise<UserGrowthData[]>;
     };
     apiTokens: {
         get: (filter: ApiTokensFilter) => Promise<PaginatedResource<ApiToken>>;
