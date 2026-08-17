@@ -46,6 +46,79 @@ def make_zip_archive(src_path, dst_path):
                 archive.write(path, osp.relpath(path, src_path))
 
 
+DEFAULT_EXCEPTION_CHAIN_DEPTH = 5
+DEFAULT_EXCEPTION_CHAIN_LENGTH = 1024
+
+
+def format_exception_chain(
+    ex: Exception,
+    *,
+    max_depth: int = DEFAULT_EXCEPTION_CHAIN_DEPTH,
+    max_length: int = DEFAULT_EXCEPTION_CHAIN_LENGTH,
+    ignore: Callable[[BaseException], bool] | None = None,
+) -> str:
+    """
+    Produces a message including the exception cause chain.
+
+    Both explicit causes (raise ... from ...) and implicit ones (an exception raised while
+    another one was being handled) are followed. At most max_depth links are followed and
+    the result is truncated to max_length. Messages already reported by descendants are skipped.
+
+    The links accepted by the ignore callback are not reported, but are still followed.
+    """
+
+    messages: list[str] = []
+    seen: set[int] = set()
+    current: BaseException | None = ex
+    while isinstance(current, Exception) and id(current) not in seen and len(seen) < max_depth:
+        seen.add(id(current))
+
+        if ignore is not None and ignore(current):
+            message = ""
+        else:
+            message = str(current).strip() or type(current).__name__
+
+        # Skip the messages already included in their descendant
+        if message and (not messages or not messages[-1].endswith(message)):
+            messages.append(message)
+
+        # Follow the context too, because some code may miss the "from" clause.
+        current = current.__cause__ or (
+            None if current.__suppress_context__ else current.__context__
+        )
+
+    if not messages:
+        return type(ex).__name__
+
+    result = messages[0]
+    for message in messages[1:]:
+        result += (" " if result.endswith((".", "!", "?", ";", ":")) else ": ") + message
+
+    if len(result) > max_length:
+        result = result[:max_length] + "..."
+
+    return result
+
+
+def format_import_exception(ex: Exception) -> str:
+    """
+    Produces a user-facing message for a dataset or annotation import failure,
+    e.g. "Failed to import dataset 'yolo' at '/tmp/xxx'. [Errno 2] No such file
+    or directory: '/tmp/xxx/obj.names'".
+    """
+
+    def is_implementation_detail(current: BaseException) -> bool:
+        # Private types (e.g. Datumaro's _ImportFail) carry no information for the user
+        return type(current).__name__.startswith("_") or (
+            # Datumaro raises this error internally for old-style extractors during the import.
+            # It is always handled, but remains in the context and in the resulting message.
+            "unexpected keyword argument 'ctx'"
+            in str(current)
+        )
+
+    return format_exception_chain(ex, ignore=is_implementation_detail)
+
+
 def faster_deepcopy(v):
     "A slightly optimized version of the default deepcopy, can be used as a drop-in replacement."
     # Default deepcopy is very slow, here we do shallow copy for primitive types and containers

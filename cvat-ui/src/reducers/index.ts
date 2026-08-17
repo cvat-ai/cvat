@@ -13,7 +13,7 @@ import {
     QualityConflict, FramesMetaData, RQStatus, Event, Invitation, SerializedAPISchema,
     Request, JobValidationLayout, QualitySettings, TaskValidationLayout, ObjectState,
     ConsensusSettings, AboutData, ShapeType, ObjectType, ApiToken, AudioIntervalState,
-    Membership, AnnotationFormats, CloudStorage,
+    Membership, AnnotationFormats, CloudStorage, UserGrowthData,
 } from 'cvat-core-wrapper';
 
 import type { IntelligentScissors, OpenCVTracker } from 'utils/opencv-wrapper/opencv-wrapper';
@@ -59,6 +59,12 @@ export interface AuthState {
         current: ApiToken[];
         count: number;
     };
+}
+
+export interface GrowthState {
+    data: UserGrowthData | null;
+    fetching: boolean;
+    initialized: boolean;
 }
 
 export interface ChangePasswordData {
@@ -432,6 +438,20 @@ export interface PluginsState {
                 items: PluginComponent[];
             };
         }
+        taskPage: {
+            details: {
+                topBar: {
+                    extras: PluginComponent[];
+                };
+            };
+        };
+        projectPage: {
+            details: {
+                topBar: {
+                    extras: PluginComponent[];
+                };
+            };
+        };
         modelsPage: {
             topBar: {
                 items: PluginComponent[];
@@ -953,6 +973,7 @@ export interface AnnotationState {
             min: number;
             max: number;
             cur: number;
+            hiddenByFrame: Map<number, Set<number>>;
         };
     };
     remove: {
@@ -1202,6 +1223,7 @@ export interface NavigationState {
 
 export interface CombinedState {
     auth: AuthState;
+    growth: GrowthState;
     projects: ProjectsState;
     jobs: JobsState;
     tasks: TasksState;

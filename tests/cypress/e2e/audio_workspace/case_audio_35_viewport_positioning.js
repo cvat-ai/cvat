@@ -15,32 +15,28 @@ context('Audio annotation. Waveform viewport positioning.', { testIsolation: fal
     const TIMESTAMP_TOLERANCE_FRACTION = 0.01;
     const CURSOR_POSITION_TOLERANCE_PX = 2;
 
-    const getWaveformHost = () => cy.get('.cvat-audio-waveform-wrapper > div:first-child > div');
-    const getScrollContainer = () => getWaveformHost().shadow().find('.scroll');
-    const getCursor = () => getWaveformHost().shadow().find('.cursor');
-
-    const scrollToOneThird = () => getScrollContainer().then(($scroll) => {
+    const scrollToOneThird = () => cy.getAudioWaveformScrollContainer().then(($scroll) => {
         const { clientWidth, scrollWidth } = $scroll[0];
         cy.wrap($scroll).scrollTo((scrollWidth - clientWidth) / 3, 0);
     });
 
-    const seekAtViewportOffset = (offset) => getScrollContainer().then(($scroll) => {
+    const seekAtViewportOffset = (offset) => cy.getAudioWaveformScrollContainer().then(($scroll) => {
         const { scrollLeft, clientWidth, clientHeight } = $scroll[0];
-        getWaveformHost().shadow().find('.wrapper').click(
+        cy.getAudioWaveformWrapper().click(
             scrollLeft + clientWidth * offset,
             clientHeight / 2,
             { force: true },
         );
     });
 
-    const getViewportPosition = () => getScrollContainer().then(($scroll) => {
+    const getViewportPosition = () => cy.getAudioWaveformScrollContainer().then(($scroll) => {
         const { scrollLeft, scrollWidth } = $scroll[0];
         return scrollLeft / scrollWidth;
     });
 
-    const getCursorPosition = () => getScrollContainer().then(($scroll) => {
+    const getCursorPosition = () => cy.getAudioWaveformScrollContainer().then(($scroll) => {
         const { scrollLeft } = $scroll[0];
-        return getCursor().then(($cursor) => $cursor[0].offsetLeft - scrollLeft);
+        return cy.getAudioWaveformCursor().then(($cursor) => $cursor[0].offsetLeft - scrollLeft);
     });
 
     before(() => {
@@ -61,10 +57,10 @@ context('Audio annotation. Waveform viewport positioning.', { testIsolation: fal
             cy.audioSliderSetValue('cvat-audio-zoom-control', '{downarrow}', ZOOM_BASELINE_STEPS);
             scrollToOneThird();
 
-            getWaveformHost().then(($host) => {
+            cy.getAudioWaveformHost().then(($host) => {
                 const rect = $host[0].getBoundingClientRect();
                 const pointerOffset = rect.width * 0.25;
-                getScrollContainer().then(($scroll) => {
+                cy.getAudioWaveformScrollContainer().then(($scroll) => {
                     const before = ($scroll[0].scrollLeft + pointerOffset) / $scroll[0].scrollWidth;
                     const beforeWidth = $scroll[0].scrollWidth;
 
@@ -78,7 +74,7 @@ context('Audio annotation. Waveform viewport positioning.', { testIsolation: fal
                         }));
                     }
 
-                    getScrollContainer().should(($updatedScroll) => {
+                    cy.getAudioWaveformScrollContainer().should(($updatedScroll) => {
                         expect($updatedScroll[0].scrollWidth).to.be.greaterThan(beforeWidth);
                         const after = ($updatedScroll[0].scrollLeft + pointerOffset) / $updatedScroll[0].scrollWidth;
                         expect(after).to.be.closeTo(before, TIMESTAMP_TOLERANCE_FRACTION);
@@ -95,7 +91,7 @@ context('Audio annotation. Waveform viewport positioning.', { testIsolation: fal
 
             getViewportPosition().then((before) => {
                 cy.viewport(1000, 700);
-                getScrollContainer().should(($updatedScroll) => {
+                cy.getAudioWaveformScrollContainer().should(($updatedScroll) => {
                     expect($updatedScroll[0].clientWidth).to.be.at.most(RESIZED_SCROLL_WIDTH_UPPER_BOUND_PX);
                     const after = $updatedScroll[0].scrollLeft / $updatedScroll[0].scrollWidth;
                     expect(after).to.be.closeTo(before, TIMESTAMP_TOLERANCE_FRACTION);
@@ -110,11 +106,11 @@ context('Audio annotation. Waveform viewport positioning.', { testIsolation: fal
             seekAtViewportOffset(0.6);
 
             getCursorPosition().then((before) => {
-                getScrollContainer().then(($scroll) => {
+                cy.getAudioWaveformScrollContainer().then(($scroll) => {
                     const beforeWidth = $scroll[0].scrollWidth;
                     // x3 -> x5
                     cy.audioSliderSetValue('cvat-audio-zoom-control', '{downarrow}', ZOOM_ADJUSTMENT_STEPS);
-                    getScrollContainer().should(($updatedScroll) => {
+                    cy.getAudioWaveformScrollContainer().should(($updatedScroll) => {
                         expect($updatedScroll[0].scrollWidth).to.be.greaterThan(beforeWidth);
                     });
                 });
@@ -133,11 +129,11 @@ context('Audio annotation. Waveform viewport positioning.', { testIsolation: fal
             scrollToOneThird();
 
             getViewportPosition().then((before) => {
-                getScrollContainer().then(($scroll) => {
+                cy.getAudioWaveformScrollContainer().then(($scroll) => {
                     const beforeWidth = $scroll[0].scrollWidth;
                     // x3 -> x5
                     cy.audioSliderSetValue('cvat-audio-zoom-control', '{downarrow}', ZOOM_ADJUSTMENT_STEPS);
-                    getScrollContainer().should(($updatedScroll) => {
+                    cy.getAudioWaveformScrollContainer().should(($updatedScroll) => {
                         expect($updatedScroll[0].scrollWidth).to.be.greaterThan(beforeWidth);
                     });
                 });

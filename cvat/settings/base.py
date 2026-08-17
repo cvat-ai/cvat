@@ -147,6 +147,7 @@ INSTALLED_APPS = [
     "cvat.apps.redis_handler",
     "cvat.apps.consensus",
     "cvat.apps.access_tokens",
+    "cvat.apps.growth",
 ]
 
 SITE_ID = 1
@@ -297,6 +298,7 @@ OBJECTS_NOT_RELATED_WITH_ORG = [
     "server",
     "request",
     "access_token",
+    "growth",
 ]
 
 # ORG settings
