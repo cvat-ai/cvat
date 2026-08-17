@@ -407,7 +407,9 @@ export default function QualityRequirementAttributeRules(props: Readonly<Props>)
                             expandable={{
                                 expandedRowKeys: expandedAttributeRuleKeys,
                                 expandIcon: ({ expanded, onExpand, record }) => {
-                                    const expandable = record.comparator === QualityRequirementAttributeComparator.LEVENSHTEIN;
+                                    const expandable = (
+                                        record.comparator === QualityRequirementAttributeComparator.LEVENSHTEIN
+                                    );
 
                                     return (
                                         <CaretDownOutlined
