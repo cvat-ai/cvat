@@ -15,7 +15,7 @@ context('Audio annotation. Interval navigation and overlap selection.', () => {
     });
 
     afterEach(() => {
-        cy.audioClearAnnotationsAndSave();
+        cy.audioClearAnnotations();
     });
 
     describe(`Testing case "${caseId}"`, () => {
@@ -26,7 +26,7 @@ context('Audio annotation. Interval navigation and overlap selection.', () => {
             cy.get('.cvat-audio-region-item').should('have.length', 3);
 
             cy.get('.cvat-audio-region-item').eq(1)
-                .find('.cvat-audio-region-item-action-btn').eq(1).click();
+                .find('.cvat-audio-region-item-action-btn').eq(2).click();
             cy.get('.cvat-audio-region-item').eq(1).should('have.class', 'cvat-audio-region-item-hidden');
 
             cy.get('.cvat-audio-region-item').first().click();
