@@ -30,9 +30,7 @@ context('Audio annotation. Saving after relabeling persists attributes.', () => 
             cy.audioChangeSelectedRegionLabel(secondLabelName);
             cy.get('.cvat-audio-region-details textarea').should('have.value', secondAttrDefaultValue);
 
-            cy.intercept('PATCH', '/api/jobs/**/annotations**').as('saveAnnotations');
-            cy.audioSaveAnnotations();
-            cy.wait('@saveAnnotations').its('response.statusCode').should('equal', 200);
+            cy.saveJob();
             cy.get('.cvat-notification-notice-save-annotations-failed').should('not.exist');
 
             cy.reload();

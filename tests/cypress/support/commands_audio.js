@@ -210,12 +210,6 @@ Cypress.Commands.add('audioSliderSetValue', (controlClass, arrowDirection, steps
     cy.get('.cvat-audio-canvas-wrapper').click('topLeft', { force: true });
 });
 
-Cypress.Commands.add('audioSaveAnnotations', () => {
-    cy.get('.cvat-annotation-header-save-button').click();
-    cy.get('.cvat-annotation-header-save-button').should('contain.text', 'Saving...');
-    cy.get('.cvat-annotation-header-save-button').should('contain.text', 'Save');
-});
-
 Cypress.Commands.add('audioClearAnnotations', () => {
     cy.get('.cvat-audio-regions-list-wrapper').then(($list) => {
         if ($list.find('.cvat-audio-region-item').length) {

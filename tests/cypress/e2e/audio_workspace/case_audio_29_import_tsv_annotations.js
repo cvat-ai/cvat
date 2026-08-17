@@ -26,7 +26,7 @@ context('Audio annotation. Import transcriptions from a TSV file.', () => {
     });
 
     after(() => {
-        cy.audioClearAnnotationsAndSave();
+        cy.clearAnnotationsAndSave();
     });
 
     describe(`Testing case "${caseId}"`, () => {
