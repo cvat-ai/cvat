@@ -35,6 +35,18 @@ const componentShortcuts = {
         sequences: ['l'],
         scope: ShortcutScope.OBJECTS_SIDEBAR,
     },
+    AUDIO_SWITCH_ALL_PINNED: {
+        name: 'Pin/unpin all intervals',
+        description: 'Change pinned state for all unlocked audio intervals in the side bar',
+        sequences: ['t p'],
+        scope: ShortcutScope.OBJECTS_SIDEBAR,
+    },
+    AUDIO_SWITCH_PINNED: {
+        name: 'Pin/unpin an interval',
+        description: 'Change pinned state for the active audio interval',
+        sequences: ['p'],
+        scope: ShortcutScope.OBJECTS_SIDEBAR,
+    },
     AUDIO_SWITCH_ALL_HIDDEN: {
         name: 'Hide/show all intervals',
         description: 'Change hidden state for all audio intervals in the side bar',
@@ -73,8 +85,10 @@ interface DispatchToProps {
     onSetHoveredInterval(clientID: number | null): void;
     onPlayIntervalOnce(clientID: number): void;
     onToggleIntervalLock(clientID: number): void;
+    onToggleIntervalPinned(clientID: number): void;
     onToggleIntervalHidden(clientID: number): void;
     onToggleIntervalsLock(clientIDs: number[], lock: boolean): void;
+    onToggleIntervalsPinned(clientIDs: number[], pinned: boolean): void;
     onToggleIntervalsHidden(clientIDs: number[], hidden: boolean): void;
     onCopyInterval(clientID: number): void;
     onDeleteInterval(clientID: number, force?: boolean): void;
@@ -111,11 +125,17 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         onToggleIntervalLock(clientID: number): void {
             dispatch(updateAudioIntervalAsync(clientID, (interval) => ({ lock: !interval.lock })));
         },
+        onToggleIntervalPinned(clientID: number): void {
+            dispatch(updateAudioIntervalAsync(clientID, (interval) => ({ pinned: !interval.pinned })));
+        },
         onToggleIntervalHidden(clientID: number): void {
             dispatch(updateAudioIntervalAsync(clientID, (interval) => ({ hidden: !interval.hidden })));
         },
         onToggleIntervalsLock(clientIDs: number[], lock: boolean): void {
             dispatch(updateAudioIntervalsAsync(clientIDs, { lock }));
+        },
+        onToggleIntervalsPinned(clientIDs: number[], pinned: boolean): void {
+            dispatch(updateAudioIntervalsAsync(clientIDs, { pinned }));
         },
         onToggleIntervalsHidden(clientIDs: number[], hidden: boolean): void {
             dispatch(updateAudioIntervalsAsync(clientIDs, { hidden }));
@@ -140,7 +160,8 @@ function AudioRegionsListContainer(props: Props): JSX.Element {
         activeControl,
         keyMap, normalizedKeyMap,
         onSetActiveInterval, onSetHoveredInterval, onPlayIntervalOnce,
-        onToggleIntervalLock, onToggleIntervalHidden, onToggleIntervalsLock, onToggleIntervalsHidden,
+        onToggleIntervalLock, onToggleIntervalPinned, onToggleIntervalHidden,
+        onToggleIntervalsLock, onToggleIntervalsPinned, onToggleIntervalsHidden,
         onCopyInterval, onDeleteInterval, onChangeIntervalColor,
     } = props;
 
@@ -151,8 +172,11 @@ function AudioRegionsListContainer(props: Props): JSX.Element {
     const activeInterval = activeIntervalID !== null ?
         intervals.find((interval) => interval.clientID === activeIntervalID) ?? null : null;
     const allLocked = intervals.length > 0 && intervals.every((interval) => !!interval.lock);
+    const pinnableIntervals = intervals.filter((interval) => !interval.lock);
+    const allPinned = pinnableIntervals.length > 0 && pinnableIntervals.every((interval) => !!interval.pinned);
     const allHidden = intervals.length > 0 && intervals.every((interval) => !!interval.hidden);
     const allIds = intervals.map((interval) => intervalID(interval));
+    const pinnableIds = pinnableIntervals.map((interval) => intervalID(interval));
 
     const handlers: Record<keyof typeof componentShortcuts, (e?: KeyboardEvent) => void> = {
         AUDIO_SWITCH_ALL_LOCK: (e) => {
@@ -162,6 +186,14 @@ function AudioRegionsListContainer(props: Props): JSX.Element {
         AUDIO_SWITCH_LOCK: (e) => {
             preventDefault(e);
             if (activeInterval) onToggleIntervalLock(intervalID(activeInterval));
+        },
+        AUDIO_SWITCH_ALL_PINNED: (e) => {
+            preventDefault(e);
+            onToggleIntervalsPinned(pinnableIds, !allPinned);
+        },
+        AUDIO_SWITCH_PINNED: (e) => {
+            preventDefault(e);
+            if (activeInterval && !activeInterval.lock) onToggleIntervalPinned(intervalID(activeInterval));
         },
         AUDIO_SWITCH_ALL_HIDDEN: (e) => {
             preventDefault(e);
@@ -191,13 +223,16 @@ function AudioRegionsListContainer(props: Props): JSX.Element {
                 colorBy={colorBy}
                 activeControl={activeControl}
                 switchLockAllShortcut={normalizedKeyMap.AUDIO_SWITCH_ALL_LOCK ?? ''}
+                switchPinAllShortcut={normalizedKeyMap.AUDIO_SWITCH_ALL_PINNED ?? ''}
                 switchHiddenAllShortcut={normalizedKeyMap.AUDIO_SWITCH_ALL_HIDDEN ?? ''}
                 onSetActiveInterval={onSetActiveInterval}
                 onSetHoveredInterval={onSetHoveredInterval}
                 onPlayIntervalOnce={onPlayIntervalOnce}
                 onToggleIntervalLock={onToggleIntervalLock}
+                onToggleIntervalPinned={onToggleIntervalPinned}
                 onToggleIntervalHidden={onToggleIntervalHidden}
                 onToggleIntervalsLock={onToggleIntervalsLock}
+                onToggleIntervalsPinned={onToggleIntervalsPinned}
                 onToggleIntervalsHidden={onToggleIntervalsHidden}
                 onCopyInterval={onCopyInterval}
                 onDeleteInterval={onDeleteInterval}

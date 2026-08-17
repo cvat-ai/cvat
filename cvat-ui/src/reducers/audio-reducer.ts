@@ -21,6 +21,7 @@ const defaultState: AudioState = {
         intervals: [],
         activeIntervalID: null,
         hoveredIntervalID: null,
+        interactingIntervalID: null,
         contextMenu: {
             top: 0,
             left: 0,
@@ -164,6 +165,15 @@ export default function audioReducer(state: AudioState = defaultState, action: A
                 },
             };
         }
+        case AudioActionTypes.SET_AUDIO_INTERACTING_INTERVAL: {
+            return {
+                ...state,
+                player: {
+                    ...state.player,
+                    interactingIntervalID: action.payload.clientID,
+                },
+            };
+        }
         case AudioActionTypes.UPDATE_AUDIO_CONTEXT_MENU: {
             const {
                 left, top, clientID,
@@ -283,6 +293,7 @@ export default function audioReducer(state: AudioState = defaultState, action: A
                     ...state.player,
                     activeIntervalID: null,
                     hoveredIntervalID: null,
+                    interactingIntervalID: null,
                     playIntervalOnceRequest: null,
                     contextMenu: defaultState.player.contextMenu,
                 },
@@ -296,6 +307,10 @@ export default function audioReducer(state: AudioState = defaultState, action: A
                 (interval) => interval.clientID === state.player.hoveredIntervalID,
             ) ?
                 state.player.hoveredIntervalID : null;
+            const interactingIntervalID = intervals.some(
+                (interval) => interval.clientID === state.player.interactingIntervalID,
+            ) ?
+                state.player.interactingIntervalID : null;
             const contextMenuClientID = intervals.some(
                 (interval) => interval.clientID === state.player.contextMenu.clientID,
             ) ?
@@ -311,6 +326,7 @@ export default function audioReducer(state: AudioState = defaultState, action: A
                     intervals,
                     activeIntervalID,
                     hoveredIntervalID,
+                    interactingIntervalID,
                     contextMenu: {
                         ...state.player.contextMenu,
                         clientID: contextMenuClientID,
