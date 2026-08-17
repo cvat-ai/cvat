@@ -224,7 +224,7 @@ Cypress.Commands.add('audioClearAnnotationsAndSave', () => {
         if ($list.find('.cvat-audio-region-item').length) {
             cy.removeAnnotations();
             cy.get('.cvat-audio-region-item').should('have.length', 0);
-            cy.audioSaveAnnotations();
+            cy.saveJob();
         }
     });
 });
