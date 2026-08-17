@@ -14,6 +14,7 @@ import {
     audioFile as AUDIO_FILE,
 } from './const_audio';
 import { defaultTaskSpec } from './default-specs';
+import { removeAudioAnnotations } from './utils.cy';
 
 const WAVEFORM_TIMEOUT = 30000;
 
@@ -211,22 +212,11 @@ Cypress.Commands.add('audioSliderSetValue', (controlClass, arrowDirection, steps
 });
 
 Cypress.Commands.add('audioClearAnnotations', () => {
-    cy.get('.cvat-audio-regions-list-wrapper').then(($list) => {
-        if ($list.find('.cvat-audio-region-item').length) {
-            cy.removeAnnotations();
-            cy.get('.cvat-audio-region-item').should('have.length', 0);
-        }
-    });
+    removeAudioAnnotations();
 });
 
 Cypress.Commands.add('audioClearAnnotationsAndSave', () => {
-    cy.get('.cvat-audio-regions-list-wrapper').then(($list) => {
-        if ($list.find('.cvat-audio-region-item').length) {
-            cy.removeAnnotations();
-            cy.get('.cvat-audio-region-item').should('have.length', 0);
-            cy.saveJob();
-        }
-    });
+    removeAudioAnnotations({save: true});
 });
 
 Cypress.Commands.add('audioUndo', () => {
