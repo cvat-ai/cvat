@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useLayoutEffect, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import type { Region, UpdateSide } from 'wavesurfer.js/dist/plugins/regions';
 
@@ -15,17 +15,19 @@ import { AudioTimeRange, clampRange } from '../utils/audio-interval';
 import { addPart, removePart } from '../utils/shadow-dom';
 import { getIntervalRegionsByClientID } from '../utils/wave-regions';
 import { WaveformRegionRuntime } from './use-audio-waveform';
+import type { RegionHighlighting } from './use-region-projection';
+import type { SelectionInteraction } from './use-region-selection';
 import { WaveformViewport } from './use-waveform-viewport';
 
 const BOUNDARY_TOLERANCE_MS = 50;
 const BULK_EDIT_BOUNDARY_PART = 'cvat-audio-bulk-edit-boundary';
+const RESIZE_CURSOR_CLASS = 'cvat-audio-waveform-interaction-resize';
 
 interface Boundary {
     regionClientID: number;
     region: Region;
     side: UpdateSide;
     value: number;
-    element: HTMLElement;
 }
 
 interface RegionUpdate extends AudioTimeRange {
@@ -57,6 +59,8 @@ type BulkDragStatus = { status: 'pending'; value: PendingBulkDrag } | { status: 
 
 interface Params {
     regionRuntime: WaveformRegionRuntime;
+    regionHighlighting: RegionHighlighting;
+    selectionInteraction: SelectionInteraction;
     viewport: WaveformViewport;
     durationRef: React.MutableRefObject<number>;
     ready: boolean;
@@ -74,11 +78,18 @@ function isBulkEditingAllowed(activeControl: ActiveControl): boolean {
     return activeControl === ActiveControl.CURSOR;
 }
 
+function boundaryKey(boundary: Boundary): string {
+    return `${boundary.regionClientID}:${boundary.side}`;
+}
+
 function setBoundaryIndicator(boundary: Boundary, active: boolean): void {
+    const element = boundaryElement(boundary.region, boundary.side);
+    if (!element) return;
+
     if (active) {
-        addPart(boundary.element, BULK_EDIT_BOUNDARY_PART);
+        addPart(element, BULK_EDIT_BOUNDARY_PART);
     } else {
-        removePart(boundary.element, BULK_EDIT_BOUNDARY_PART);
+        removePart(element, BULK_EDIT_BOUNDARY_PART);
     }
 }
 
@@ -88,7 +99,7 @@ function setBoundaryIndicator(boundary: Boundary, active: boolean): void {
  * and prevents its drag auto-scroll/pointer-lock behavior from taking over.
  */
 export function useBulkBoundariesEditing({
-    regionRuntime, viewport, durationRef, ready,
+    regionRuntime, regionHighlighting, selectionInteraction, viewport, durationRef, ready,
 }: Params): void {
     const dispatch = useDispatch<ThunkDispatch>();
     const { intervals, job, activeControl } = useSelector(
@@ -110,20 +121,54 @@ export function useBulkBoundariesEditing({
     activeControlRef.current = activeControl;
 
     const clearHoveredBoundaries = (): void => {
+        viewport.containerRef.current?.classList.remove(RESIZE_CURSOR_CLASS);
         hoveredRef.current.boundaries.forEach((boundary) => setBoundaryIndicator(boundary, false));
+        regionHighlighting.removeHighlightedRegionIDs(
+            new Set(hoveredRef.current.boundaries.map((boundary) => boundary.regionClientID)),
+        );
         hoveredRef.current = { boundaries: [], time: null };
         document.body.style.cursor = previousCursorRef.current;
     };
 
     const setHoveredBoundaries = (boundaries: Boundary[], time: number | null): void => {
-        clearHoveredBoundaries();
+        viewport.containerRef.current?.classList.toggle(RESIZE_CURSOR_CLASS, !!boundaries.length);
+        document.body.style.cursor = previousCursorRef.current;
         if (boundaries.length) {
             previousCursorRef.current = document.body.style.cursor;
             document.body.style.cursor = 'ew-resize';
-            boundaries.forEach((boundary) => setBoundaryIndicator(boundary, true));
         }
+        const previousRegionIDs = new Set(hoveredRef.current.boundaries.map((boundary) => boundary.regionClientID));
+        const nextRegionIDs = new Set(boundaries.map((boundary) => boundary.regionClientID));
+        regionHighlighting.removeHighlightedRegionIDs(
+            [...previousRegionIDs].filter((regionID) => !nextRegionIDs.has(regionID)),
+        );
+        regionHighlighting.addHighlightedRegionIDs(
+            [...nextRegionIDs].filter((regionID) => !previousRegionIDs.has(regionID)),
+        );
+
+        const previousBoundariesByKey = new Map(
+            hoveredRef.current.boundaries.map((boundary) => [boundaryKey(boundary), boundary]),
+        );
+        const nextBoundariesByKey = new Map(boundaries.map((boundary) => [boundaryKey(boundary), boundary]));
+        previousBoundariesByKey.forEach((boundary, key) => {
+            if (!nextBoundariesByKey.has(key)) {
+                setBoundaryIndicator(boundary, false);
+            }
+        });
+        nextBoundariesByKey.forEach((boundary, key) => {
+            if (!previousBoundariesByKey.has(key)) {
+                setBoundaryIndicator(boundary, true);
+            }
+        });
+
         hoveredRef.current = { boundaries, time };
     };
+
+    useLayoutEffect(() => {
+        hoveredRef.current.boundaries
+            .filter((boundary) => regionHighlighting.highlightedRegionIDs.has(boundary.regionClientID))
+            .forEach((boundary) => setBoundaryIndicator(boundary, true));
+    }, [regionHighlighting.highlightedRegionIDs]);
 
     useEffect(() => {
         if (!ready) return undefined;
@@ -143,8 +188,7 @@ export function useBulkBoundariesEditing({
                 if (state.clientID === null || state.lock) return [];
 
                 const region = regionsByID.get(state.clientID);
-                const element = region ? boundaryElement(region, side) : null;
-                if (!region || !element) return [];
+                if (!region?.element) return [];
 
                 return [
                     {
@@ -152,7 +196,6 @@ export function useBulkBoundariesEditing({
                         region,
                         side,
                         value: side === 'start' ? state.start / 1000 : (state.stop ?? state.start) / 1000,
-                        element,
                     },
                 ];
             });
@@ -216,6 +259,8 @@ export function useBulkBoundariesEditing({
         const engage = (pointerID: number, boundaries: Boundary[], startTime: number, latestTime: number): void => {
             if (!boundaries.length) return;
 
+            selectionInteraction.disableSelectionInteraction();
+
             const affectedRegions = [
                 ...new Map(boundaries.map((boundary) => [boundary.regionClientID, boundary.region])),
             ].map(([regionClientID, region]) => ({ regionClientID, region }));
@@ -235,6 +280,10 @@ export function useBulkBoundariesEditing({
 
         let hoverGuard: object | null = null;
         let lastPointerX: number | null = null;
+        // Prevents the WS from seeking to the DnD release position
+        // Also, enables our selection after its non-capture pointer events are handled
+        // TODO: find better solution for this
+        let suppressReleaseClick = false;
         const updateHoveredBoundaries = (time: number | null): void => {
             if (time === null) {
                 hoverGuard = null;
@@ -286,6 +335,11 @@ export function useBulkBoundariesEditing({
         };
 
         const onPointerDown = (event: PointerEvent): void => {
+            if (suppressReleaseClick) {
+                suppressReleaseClick = false;
+                selectionInteraction.enableSelectionInteraction();
+            }
+
             if (!isBulkEditingAllowed(activeControlRef.current) || !isBulkEvent(event) || event.button !== 0) return;
             if (bulkDragRef.current) return;
 
@@ -337,8 +391,15 @@ export function useBulkBoundariesEditing({
             const drag = bulkDragRef.current;
             if (!drag || drag.value.pointerID !== event.pointerId) return;
 
+            event.stopImmediatePropagation();
             bulkDragRef.current = null;
             if (drag.status !== 'engaged') return;
+
+            if (event.type === 'pointercancel') {
+                selectionInteraction.enableSelectionInteraction();
+            } else {
+                suppressReleaseClick = true;
+            }
 
             const updates = drag.value.affectedRegions.map(({ regionClientID, region }) => ({
                 regionClientID,
@@ -358,10 +419,20 @@ export function useBulkBoundariesEditing({
             ));
         };
 
+        const onClick = (event: MouseEvent): void => {
+            if (!suppressReleaseClick) return;
+
+            suppressReleaseClick = false;
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            selectionInteraction.enableSelectionInteraction();
+        };
+
         document.addEventListener('pointermove', onPointerMove, { capture: true });
         document.addEventListener('pointerdown', onPointerDown, { capture: true });
         document.addEventListener('pointerup', applyBulkChanges, { capture: true });
         document.addEventListener('pointercancel', applyBulkChanges, { capture: true });
+        document.addEventListener('click', onClick, { capture: true });
         document.addEventListener('keydown', onShiftKeyChange);
         document.addEventListener('keyup', onShiftKeyChange);
         return () => {
@@ -371,8 +442,10 @@ export function useBulkBoundariesEditing({
             document.removeEventListener('pointerdown', onPointerDown, { capture: true });
             document.removeEventListener('pointerup', applyBulkChanges, { capture: true });
             document.removeEventListener('pointercancel', applyBulkChanges, { capture: true });
+            document.removeEventListener('click', onClick, { capture: true });
             document.removeEventListener('keydown', onShiftKeyChange);
             document.removeEventListener('keyup', onShiftKeyChange);
+            selectionInteraction.enableSelectionInteraction();
             clearHoveredBoundaries();
         };
     }, [ready]);

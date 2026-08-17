@@ -18,13 +18,15 @@ import {
 import { attachRegionResizeAutoScroll } from '../utils/region-resize-auto-scroll';
 import { WaveformRegionRuntime } from './use-audio-waveform';
 import { useBulkBoundariesEditing } from './use-bulk-boundaries-editing';
+import type { RegionHighlighting } from './use-region-projection';
+import type { SelectionInteraction } from './use-region-selection';
 import { WaveformViewport } from './use-waveform-viewport';
 
 const REGION_DRAG_BOUNDS_CONSTRAINT = Symbol('regionDragBoundsConstraint');
 const RESIZE_CURSOR_CLASS = 'cvat-audio-waveform-interaction-resize';
 const AUTO_SCROLL_CLASS = 'cvat-audio-waveform-interaction-auto-scroll';
 
-interface RegionInteraction {
+interface RegionPointerInteraction {
     pointerID: number;
     clientID: number;
 }
@@ -41,6 +43,8 @@ interface ResizeMeta {
 
 interface Params {
     regionRuntime: WaveformRegionRuntime;
+    regionHighlighting: RegionHighlighting;
+    selectionInteraction: SelectionInteraction;
     viewport: WaveformViewport;
     isPreviewRegion(region: Region): boolean;
     durationRef: React.MutableRefObject<number>;
@@ -82,7 +86,8 @@ function installRegionDragBoundsConstraint(region: Region): void {
  * Persists user-created and user-edited waveform regions as audio intervals.
  */
 export function useRegionEditing({
-    regionRuntime, viewport, isPreviewRegion, durationRef, ready,
+    regionRuntime, regionHighlighting, selectionInteraction, viewport,
+    isPreviewRegion, durationRef, ready,
 }: Params): void {
     const dispatch = useDispatch<ThunkDispatch>();
     const { intervals, activeLabelId, activeControl } = useSelector(
@@ -96,7 +101,7 @@ export function useRegionEditing({
     const latestRef = useRef({ intervals, activeLabelId, activeControl });
     latestRef.current = { intervals, activeLabelId, activeControl };
     useBulkBoundariesEditing({
-        regionRuntime, viewport, durationRef, ready,
+        regionRuntime, regionHighlighting, selectionInteraction, viewport, durationRef, ready,
     });
 
     // setup when runtime is ready
@@ -170,7 +175,7 @@ export function useRegionEditing({
     useEffect(() => {
         if (!ready) return undefined;
 
-        let interaction: RegionInteraction | null = null;
+        let interaction: RegionPointerInteraction | null = null;
         let resizeMeta: ResizeMeta | null = null;
         let hasResized = false;
         let resizeCursorViewport: HTMLElement | null = null;
