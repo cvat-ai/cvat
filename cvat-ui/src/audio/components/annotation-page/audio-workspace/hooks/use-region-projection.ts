@@ -45,12 +45,13 @@ export function useRegionProjection({ regionRuntime, ready }: Params): void {
         }))
     ), areRegionGeometriesEqual);
     const {
-        intervals, activeIntervalID, hoveredIntervalID, labels,
+        intervals, activeIntervalID, hoveredIntervalID, interactingIntervalID, labels,
         colorBy, opacity, selectedOpacity, activeControl,
     } = useSelector((state: CombinedState) => ({
         intervals: state.audio.player.intervals,
         activeIntervalID: state.audio.player.activeIntervalID,
         hoveredIntervalID: state.audio.player.hoveredIntervalID,
+        interactingIntervalID: state.audio.player.interactingIntervalID,
         labels: state.annotation.job.labels,
         colorBy: state.settings.shapes.colorBy,
         opacity: state.settings.shapes.opacity,
@@ -118,11 +119,14 @@ export function useRegionProjection({ regionRuntime, ready }: Params): void {
             if (!interval || interval.hidden) return;
 
             const isActive = clientID === activeIntervalID;
-            const canEdit = activeControl === ActiveControl.AUDIO_REGION_EDIT && !interval.lock;
+            const isInteracting = clientID === interactingIntervalID;
+            const isHovered = interactingIntervalID === null && clientID === hoveredIntervalID;
+            const isHighlighted = isActive || isInteracting || isHovered;
+            const canEdit = activeControl === ActiveControl.CURSOR && !interval.lock && !interval.pinned;
             region.setOptions({
                 color: getAudioRegionColor(interval, labels, colorBy, opacity, selectedOpacity, isActive),
                 drag: canEdit,
-                resize: canEdit,
+                resize: canEdit && isHighlighted,
             });
 
             const { element } = region;
@@ -131,16 +135,15 @@ export function useRegionProjection({ regionRuntime, ready }: Params): void {
             const selectionDisabled = activeControl === ActiveControl.AUDIO_REGION_CREATE ||
                 activeControl === ActiveControl.AUDIO_REGION_RECORD;
             element.style.pointerEvents = selectionDisabled ? 'none' : 'all';
-            const highlighted = isActive || clientID === hoveredIntervalID;
             const borderColor = getRegionItemColor(interval, labels, colorBy);
             // A border changes the region's padding box. WaveSurfer anchors resize handles
             // to that box, which shifts their hit areas inward from the displayed boundaries.
             // An inset shadow provides the same visual selection outline without changing
             // the coordinate system used by the handles.
-            element.style.boxShadow = highlighted ? `inset 0 0 0 2px ${borderColor}` : '';
+            element.style.boxShadow = isHighlighted ? `inset 0 0 0 2px ${borderColor}` : '';
         });
     }, [
-        activeControl, activeIntervalID, colorBy, hoveredIntervalID, intervals, labels,
+        activeControl, activeIntervalID, colorBy, hoveredIntervalID, interactingIntervalID, intervals, labels,
         opacity, ready, selectedOpacity,
     ]);
 }
