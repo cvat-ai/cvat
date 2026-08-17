@@ -21,6 +21,7 @@ import {
 } from 'cvat-core/src/server-response-types';
 import {
     OrganizationMembersFilter, AnalyticsEventsFilter, ApiTokensFilter, ApiTokenModifiableFields,
+    UserGrowthDataModifiableFields,
 } from 'cvat-core/src/server-request-types';
 import { UpdateStatusData } from 'cvat-core/src/core-types';
 import { Job, Task } from 'cvat-core/src/session';
@@ -44,6 +45,7 @@ import { Storage, StorageData } from 'cvat-core/src/storage';
 import Issue from 'cvat-core/src/issue';
 import Comment from 'cvat-core/src/comment';
 import User from 'cvat-core/src/user';
+import UserGrowthData from 'cvat-core/src/growth';
 import Organization, { Membership, Invitation } from 'cvat-core/src/organization';
 import AnnotationGuide from 'cvat-core/src/guide';
 import { JobValidationLayout, TaskValidationLayout } from 'cvat-core/src/validation-layout';
@@ -97,6 +99,7 @@ export {
     Webhook,
     Issue,
     User,
+    UserGrowthData,
     CloudStorage,
     Organization,
     Membership,
@@ -167,6 +170,7 @@ export type {
     TrackerResults,
     ApiTokenModifiableFields,
     ApiTokensFilter,
+    UserGrowthDataModifiableFields,
     ImageProcessing,
     SerializedImageFilter,
     SerializedInterval,

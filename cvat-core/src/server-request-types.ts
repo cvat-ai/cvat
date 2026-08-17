@@ -2,7 +2,9 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { SerializedApiToken, SerializedUser } from './server-response-types';
+import {
+    SerializedApiToken, SerializedUser, SerializedUserGrowthData,
+} from './server-response-types';
 import { QualityRequirementAnnotationType } from './quality/server-response-types';
 import { JobType } from './enums';
 import { Camelized, CamelizedV2 } from './type-utils';
@@ -98,3 +100,9 @@ export type ApiTokenModifiableFields = CamelizedV2<APIApiTokenModifiableFields>;
 
 export type APIUserModifiableFields = Partial<Pick<SerializedUser, 'username' | 'first_name' | 'last_name'>>;
 export type UserModifiableFields = CamelizedV2<APIUserModifiableFields>;
+
+export type APIUserGrowthDataModifiableFields = Partial<Pick<
+    SerializedUserGrowthData,
+    'github_prompt_shown' | 'github_prompt_support_clicked' | 'promotion_notifications_allowed'
+>>;
+export type UserGrowthDataModifiableFields = Camelized<APIUserGrowthDataModifiableFields>;

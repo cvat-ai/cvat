@@ -8,9 +8,9 @@ description: 'Explains how to manage the display order of annotation objects usi
 ## What Are Layers in CVAT?
 
 Layers in CVAT are used to manage the display order of objects on the canvas.
-Each object is placed on a separate layer,
-and the layer's position determines whether the object appears above
-or below other objects when they overlap.
+Each object is assigned to a numbered layer, and multiple objects can share the same layer.
+An object on a higher-numbered layer appears above an object on a lower-numbered layer
+when they overlap.
 
 Adjusting the display order is especially useful when working with overlapping polygons and masks,
 where you need to change how objects are displayed without modifying the annotations themselves.
@@ -36,14 +36,53 @@ Each layer appears as a layer card; the objects placed on it appear as object ca
 
 | Icon | Element name | Description |
 | :---: | --- | --- |
-| ![Open Layer Stack icon](/images/open-layer-stack-icon.png) | Open Layer Stack | Opens the Layer Stack panel and displays the number of the active layer. |
+| ![Open Layer Stack icon](/images/open-layer-stack-icon.png) | Open Layer Stack | Opens the Layer Stack panel and displays the number of the current layer. |
 | ![Compact layers icon](/images/compact-layers-icon.png) | Compact layers | Renumbers layers starting from 0 while preserving their current order. This is useful when layer numbers become non-consecutive after objects are moved or deleted. |
 | ![Collapse or expand all layers icon](/images/collapse-expand-all-layers-icon.png) | Collapse/Expand All Layers | Collapses or expands object cards in the sidebar. When collapsed, only the layers remain visible, making the list more compact. |
-| ![Select as current layer icon](/images/select-current-layer-icon.png) | Select as current layer | Hides objects located on layers above the selected layer, so you can focus on editing objects on the current layer and the layers below it. |
+| ![Select as current layer icon](/images/select-current-layer-icon.png) | Select as current layer | Makes the selected layer current. New objects are created on this layer. Selecting a hidden layer also makes it visible. |
 | ![Layer number icon](/images/layer-number-icon.png) | Layer number | Displays the layer number. |
-| ![Visible layer icon](/images/layer-visible-icon.png)<br>![Hidden layer icon](/images/layer-hidden-icon.png) | Layer visibility status | Displays the current visibility status of the layer on the canvas. |
+| ![Visible layer icon](/images/layer-visible-icon.png)<br>![Hidden layer icon](/images/layer-hidden-icon.png) | Layer visibility | Shows or hides the layer on the canvas. Shift-click the icon to apply the same action to the selected layer and all lower-numbered layers. |
 
 ## Working with Layers
+
+### Selecting the Current Layer
+
+The current layer determines where CVAT places newly created objects.
+When you open a job, the highest occupied layer on the initial frame is selected by default.
+
+To change the current layer:
+
+1. Open the **Layer Stack** panel.
+2. Find the layer you want to use.
+3. Click **Select as current layer**.
+
+The number displayed on the **Open Layer Stack** button identifies the current layer.
+Selecting a layer does not change the visibility of other layers.
+
+The current layer remains selected when you navigate between frames, apply an annotation filter,
+or delete the last object from that layer. An empty current layer may not appear in the panel,
+but it remains current and appears again when you create an object on it.
+
+If the selected layer is hidden, CVAT makes it visible. CVAT also makes the target layer visible
+after creating an object, so a newly created annotation does not remain hidden.
+
+### Showing and Hiding Layers
+
+All layers are visible by default. Click the visibility icon on a layer card to hide or show
+that layer without changing the current layer or the visibility of other layers.
+
+To hide or show several layers at once, hold **Shift** and click the visibility icon.
+CVAT applies the action to the clicked layer and all existing lower-numbered layers:
+
+- If the clicked layer is visible, CVAT hides it and the lower-numbered layers.
+- If the clicked layer is hidden, CVAT shows it and the lower-numbered layers.
+
+![Showing and hiding multiple layers](/images/showing-hiding-layers.gif)
+
+Visibility settings are stored separately for each frame during the annotation session.
+When you return to a frame, CVAT restores the visibility configuration used on that frame.
+Moving an object or a complete layer does not reset this configuration. An object moved onto
+a hidden layer becomes hidden; an object moved away from it follows the visibility of its new layer.
 
 ### Moving Objects Using Drag and Drop
 

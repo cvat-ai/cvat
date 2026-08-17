@@ -1014,11 +1014,14 @@ class ShapeRequirementHandler(RequirementHandler):
         ):
             return item
 
+        used_group_ids = {ann.group for ann in item.annotations if ann.group}
+        virtual_group_ids = itertools.count(max({0, *used_group_ids}) + 1)
         flattened_annotations: list[dm.Annotation] = []
         for ann in item.annotations:
             if ann.type != dm.AnnotationType.skeleton:
                 continue
 
+            skeleton_group = ann.group or next(virtual_group_ids)
             parent_skeleton_context = self._filter.build_shape_context_for_annotation(ann)
             parent_attrs = dict(ann.attributes or {})
             for element in ann.elements:
@@ -1043,7 +1046,7 @@ class ShapeRequirementHandler(RequirementHandler):
                 element_attrs[RequirementJsonLogicFilter.PARENT_SKELETON_CONTEXT_KEY] = (
                     parent_skeleton_context
                 )
-                wrapped_element = element.wrap(attributes=element_attrs)
+                wrapped_element = element.wrap(attributes=element_attrs, group=skeleton_group)
                 data_provider.remember_dm_ann_alias(element, wrapped_element)
                 flattened_annotations.append(wrapped_element)
 

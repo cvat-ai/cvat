@@ -5,7 +5,10 @@
 from __future__ import annotations
 
 import unittest
+from types import SimpleNamespace
+from unittest import mock
 
+import datumaro as dm
 import numpy as np
 
 from cvat.apps.quality_control import models
@@ -25,6 +28,7 @@ from cvat.apps.quality_control.comparison_report import (
     ConfusionMatrix,
 )
 from cvat.apps.quality_control.quality_handlers import (
+    ShapeRequirementHandler,
     build_requirement_comparison_summary,
     build_requirement_report,
     build_requirements_summary,
@@ -33,6 +37,66 @@ from cvat.apps.quality_control.quality_handlers import (
     resolve_effective_requirements,
     select_requirement_calculation,
 )
+
+
+class TestShapeRequirementHandler(unittest.TestCase):
+    @staticmethod
+    def _make_handler() -> ShapeRequirementHandler:
+        handler = ShapeRequirementHandler.__new__(ShapeRequirementHandler)
+        handler.requirement = SimpleNamespace(
+            annotation_type=models.QualityRequirementAnnotationType.SKELETON_KEYPOINT
+        )
+        handler._filter = mock.Mock()
+        return handler
+
+    def test_ungrouped_skeleton_keypoints_get_virtual_group_without_used_groups(self) -> None:
+        elements = [
+            dm.Points([10, 10], label=1),
+            dm.Points([20, 20], label=2),
+        ]
+        item = dm.DatasetItem(
+            id="frame",
+            annotations=[dm.Skeleton(elements, label=0)],
+        )
+
+        prepared_item = self._make_handler()._prepare_item_for_requirement(item, mock.Mock())
+
+        self.assertEqual([ann.group for ann in prepared_item.annotations], [1, 1])
+
+    def test_skeleton_keypoints_inherit_parent_or_virtual_group(self) -> None:
+        first_ungrouped_elements = [
+            dm.Points([10, 10], label=1),
+            dm.Points([20, 20], label=2),
+        ]
+        grouped_elements = [
+            dm.Points([30, 30], label=1),
+            dm.Points([40, 40], label=2),
+        ]
+        second_ungrouped_elements = [dm.Points([50, 50], label=1)]
+        item = dm.DatasetItem(
+            id="frame",
+            annotations=[
+                dm.Skeleton(first_ungrouped_elements, label=0),
+                dm.Skeleton(grouped_elements, label=0, group=3),
+                dm.Skeleton(second_ungrouped_elements, label=0),
+            ],
+        )
+        data_provider = mock.Mock()
+
+        prepared_item = self._make_handler()._prepare_item_for_requirement(item, data_provider)
+
+        self.assertEqual([ann.group for ann in prepared_item.annotations], [4, 4, 3, 3, 5])
+        self.assertTrue(
+            all(
+                element.group == 0
+                for element in [
+                    *first_ungrouped_elements,
+                    *grouped_elements,
+                    *second_ungrouped_elements,
+                ]
+            )
+        )
+        self.assertEqual(data_provider.remember_dm_ann_alias.call_count, 5)
 
 
 class TestComparisonReportAccumulation(unittest.TestCase):

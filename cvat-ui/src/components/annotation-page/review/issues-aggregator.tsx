@@ -7,6 +7,7 @@ import './styles.scss';
 import React, { useState, useEffect, useCallback } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { shallowEqual } from 'utils/redux';
+import getHiddenZLayers from 'utils/get-hidden-z-layers';
 
 import { ActiveControl, CombinedState, NewIssueSource } from 'reducers';
 
@@ -40,7 +41,7 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
         issuesResolvedHidden,
         canvasInstance,
         canvasIsReady,
-        annotationsZLayer,
+        hiddenZLayers,
         newIssuePosition,
         newIssueSource,
         issueFetching,
@@ -55,7 +56,7 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
         issuesResolvedHidden: state.review.issuesResolvedHidden,
         canvasInstance: state.annotation.canvas.instance,
         canvasIsReady: state.annotation.canvas.ready,
-        annotationsZLayer: state.annotation.annotations.zLayer.cur,
+        hiddenZLayers: getHiddenZLayers(state),
         newIssuePosition: state.review.newIssue.position,
         newIssueSource: state.review.newIssue.source,
         issueFetching: state.review.fetching.issueId,
@@ -166,7 +167,7 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
                         _state.objectType === mainAnnotationsConflict.type
                     ));
 
-                    if (state && state.zOrder <= annotationsZLayer && !state.hidden) {
+                    if (state && !hiddenZLayers.has(state.zOrder) && !state.hidden) {
                         const points = canvasInstance.setupConflictRegions(state);
                         if (points) {
                             return {
@@ -188,7 +189,7 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
         } else {
             setConflictMapping([]);
         }
-    }, [geometry, objectStates, showConflicts, canvasReady, qualityConflicts, annotationsZLayer]);
+    }, [geometry, objectStates, showConflicts, canvasReady, qualityConflicts, hiddenZLayers]);
 
     if (!canvasReady || !geometry) {
         return null;

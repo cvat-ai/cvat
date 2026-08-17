@@ -17,7 +17,7 @@ import {
     SerializedRegister, SerializedJob, SerializedGuide, SerializedAsset, SerializedAPISchema,
     SerializedInvitationData, SerializedCloudStorage, SerializedFramesMetaData, SerializedCollection,
     SerializedRequest, SerializedJobValidationLayout, SerializedTaskValidationLayout, SerializedConsensusSettingsData,
-    SerializedApiToken,
+    SerializedApiToken, SerializedUserGrowthData,
 } from './server-response-types';
 import {
     SerializedQualityConflictData, SerializedQualityReportData,
@@ -25,7 +25,7 @@ import {
     SerializedQualitySettingsData, SerializedQualitySettingsSaveData,
 } from './quality/server-response-types';
 import {
-    APIApiTokenModifiableFields,
+    APIApiTokenModifiableFields, APIUserGrowthDataModifiableFields,
     ProjectsFilter, TasksFilter, JobsFilter,
     APIQualitySettingsFilter, APIQualityConflictsFilter, APIQualityReportsFilter,
     APIAnalyticsEventsFilter, APIConsensusSettingsFilter, APIApiTokensFilter, APIQualityRequirementsFilter,
@@ -1638,6 +1638,34 @@ async function updateUser(id: number, userData: Partial<SerializedUser>): Promis
     return response.data;
 }
 
+async function getGrowthData(userId: number): Promise<SerializedUserGrowthData[]> {
+    const { backendAPI } = config;
+    try {
+        const response = await Axios.get(`${backendAPI}/growth`, {
+            params: { user_id: userId, ...enableOrganization() },
+        });
+        return response.data.results;
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+}
+
+async function updateGrowthData(
+    id: number,
+    growthData: APIUserGrowthDataModifiableFields,
+): Promise<SerializedUserGrowthData> {
+    const { backendAPI } = config;
+
+    try {
+        const response = await Axios.patch(`${backendAPI}/growth/${id}`, growthData, {
+            params: enableOrganization(),
+        });
+        return response.data;
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+}
+
 export const PREVIEW_DEFAULT = Symbol('preview-default');
 export type PreviewResponse = Blob | typeof PREVIEW_DEFAULT | null;
 
@@ -2721,6 +2749,11 @@ export default Object.freeze({
         get: getUsers,
         self: getSelf,
         update: updateUser,
+    }),
+
+    growth: Object.freeze({
+        get: getGrowthData,
+        update: updateGrowthData,
     }),
 
     apiTokens: Object.freeze({

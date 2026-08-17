@@ -426,6 +426,7 @@
 
 .cvat-objects-sidebar-z-layer-collapse-button,
 .cvat-objects-sidebar-z-layer-select-button,
+.cvat-objects-sidebar-z-layer-visibility-indicator,
 .cvat-objects-sidebar-z-layer-drag-handle {
     display: inline-flex;
     align-items: center;
@@ -435,6 +436,7 @@
 }
 
 .cvat-objects-sidebar-z-layer-select-button[disabled] {
+    color: $completed-progress-color;
     opacity: 1;
 }
 
