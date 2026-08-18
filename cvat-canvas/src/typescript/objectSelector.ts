@@ -15,6 +15,8 @@ export interface SelectionFilter {
     // when true, a shape is selected if its bounding box intersects the selection box
     // (default behaviour requires the selection box to fully contain the shape)
     intersect?: boolean;
+    // keep the regular object appearance while the consumer renders persistent selection feedback
+    preserveAppearance?: boolean;
 }
 
 export interface ObjectSelector {
@@ -133,10 +135,10 @@ export class ObjectSelectorImpl implements ObjectSelector {
             for (const shape of shapes) {
                 const bbox = shape.bbox();
                 const clientID = shape.attr('clientID');
-                const contained = bbox.x > box.xtl &&
-                    bbox.y > box.ytl &&
-                    bbox.x + bbox.width < box.xbr &&
-                    bbox.y + bbox.height < box.ybr;
+                const contained = bbox.x >= box.xtl &&
+                    bbox.y >= box.ytl &&
+                    bbox.x + bbox.width <= box.xbr &&
+                    bbox.y + bbox.height <= box.ybr;
                 const intersected = bbox.x < box.xbr &&
                     bbox.x + bbox.width > box.xtl &&
                     bbox.y < box.ybr &&
@@ -195,6 +197,10 @@ export class ObjectSelectorImpl implements ObjectSelector {
             this.selectedObjects = {};
             this.onSelectCallback = (_selected: ObjectState[]): void => {
                 const appendToSelection = (objectState: ObjectState): (() => void) => {
+                    if (this.selectionFilter.preserveAppearance) {
+                        return () => {};
+                    }
+
                     const { clientID } = objectState;
                     const shape = this.canvas.select(`#cvat_canvas_shape_${clientID}`).first();
                     if (shape) {

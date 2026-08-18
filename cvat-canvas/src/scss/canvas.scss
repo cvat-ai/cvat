@@ -83,10 +83,16 @@ polyline.cvat_shape_drawing_opacity {
 }
 
 // persistent visual for shapes that are part of a multi-selection
-// (does not hide mask images, unlike .cvat_canvas_shape_selection)
+// use the label color to identify shapes that belong to the current selection
 .cvat_canvas_shape_selected_object {
-    stroke: black;
+    stroke: var(--cvat-selection-color);
     stroke-opacity: 1;
+}
+
+.cvat_canvas_selected_mask_box {
+    fill: none;
+    stroke: var(--cvat-selection-color);
+    pointer-events: none;
 }
 
 .cvat_canvas_selected_objects_box {

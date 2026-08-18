@@ -967,7 +967,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
 
         // a click outside of the selected objects resets the multi-selection
         // (shift is reserved for making a new selection, a click on a selected shape starts a group drag)
-        if (e.button === 0 && !multiSelectModifierPressed && selectedStatesID.length > 1 && !selectionBox) {
+        if (e.button === 0 && !multiSelectModifierPressed && selectedStatesID.length && !selectionBox) {
             const clickedClientID = shapeElement ? +(shapeElement.getAttribute('clientID') as string) : null;
             if (clickedClientID === null || !selectedStatesID.includes(clickedClientID)) {
                 // Leave grouping mode before the click event so an object outside the group
@@ -1072,14 +1072,14 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
             return;
         }
 
-        if (selectedStatesID.length > 1) {
+        if (selectedStatesID.length) {
             return;
         }
 
         const result = await jobInstance.annotations.select(event.detail.states, event.detail.x, event.detail.y);
 
         // Selection may have become active while the asynchronous hit test was running.
-        if (this.props.selectedStatesID.length > 1) {
+        if (this.props.selectedStatesID.length) {
             return;
         }
 

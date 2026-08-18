@@ -103,6 +103,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
     private pendingSelectionEvent: MouseEvent | null;
     private selectedObjects: number[];
     private selectedObjectsBox: SVG.Rect | null;
+    private selectedMaskBoxes: Record<number, SVG.Rect>;
     private selectedObjectsLabel: HTMLDivElement | null;
     private innerObjectsFlags: {
         drawHidden: Record<number, boolean>;
@@ -2113,6 +2114,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         this.pendingSelectionEvent = null;
         this.selectedObjects = [];
         this.selectedObjectsBox = null;
+        this.selectedMaskBoxes = {};
         this.selectedObjectsLabel = null;
         this.innerObjectsFlags = {
             drawHidden: {},
@@ -2753,7 +2755,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             if (data.enabled) {
                 this.mode = Mode.SELECT;
                 this.selectHandler.select(
-                    data, { objectType: ['shape', 'track'], intersect: true }, this.pendingSelectionEvent,
+                    data, { objectType: ['shape', 'track'], preserveAppearance: true }, this.pendingSelectionEvent,
                 );
             } else {
                 this.selectHandler.select(data, {});
@@ -3649,7 +3651,11 @@ export class CanvasViewImpl implements CanvasView, Listener {
     private clearSelectedObjectsOverlay(): void {
         this.selectedObjectsBox?.remove();
         this.selectedObjectsLabel?.remove();
+        Object.values(this.selectedMaskBoxes).forEach((box: SVG.Rect): void => {
+            box.remove();
+        });
         this.selectedObjectsBox = null;
+        this.selectedMaskBoxes = {};
         this.selectedObjectsLabel = null;
     }
 
@@ -3688,6 +3694,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 this.selectedObjectsBox?.dmove(dx, dy);
                 for (const clientID of this.selectedObjects) {
                     this.svgShapes[clientID]?.dmove(dx, dy);
+                    this.selectedMaskBoxes[clientID]?.dmove(dx, dy);
                 }
                 lastPointer = { x: p.x, y: p.y };
                 this.updateSelectedObjectsLabelPosition();
@@ -3752,9 +3759,44 @@ export class CanvasViewImpl implements CanvasView, Listener {
             .map((clientID: number): SVG.Shape | null => this.svgShapes[clientID] || null)
             .filter((shape: SVG.Shape | null): shape is SVG.Shape => Boolean(shape?.node.isConnected));
 
-        if (selectedShapes.length < 2) {
+        if (!selectedShapes.length) {
             this.clearSelectedObjectsOverlay();
             return;
+        }
+
+        const selectedMaskIDs = new Set(this.controller.objects
+            .filter((state: any): boolean => (
+                state.shapeType === 'mask' && this.selectedObjects.includes(state.clientID)
+            ))
+            .map((state: any): number => state.clientID));
+        for (const [clientID, box] of Object.entries(this.selectedMaskBoxes)) {
+            if (!selectedMaskIDs.has(+clientID)) {
+                box.remove();
+                delete this.selectedMaskBoxes[+clientID];
+            }
+        }
+        for (const clientID of selectedMaskIDs) {
+            const mask = this.svgShapes[clientID];
+            const state = this.controller.objects.find((object: any): boolean => object.clientID === clientID);
+            if (!mask) {
+                continue;
+            }
+
+            const maskBox = mask.bbox();
+            if (!this.selectedMaskBoxes[clientID]) {
+                this.selectedMaskBoxes[clientID] = this.adoptedContent
+                    .rect(maskBox.width, maskBox.height)
+                    .addClass('cvat_canvas_selected_mask_box');
+            }
+            this.selectedMaskBoxes[clientID]
+                .move(maskBox.x, maskBox.y)
+                .size(maskBox.width, maskBox.height)
+                .attr('stroke-width', SELECTED_OBJECTS_BOX_STROKE_WIDTH / this.geometry.scale)
+                .front();
+            this.selectedMaskBoxes[clientID].node.style.setProperty(
+                '--cvat-selection-color',
+                state?.label.color || 'black',
+            );
         }
 
         const boxes = selectedShapes.map((shape: SVG.Shape): SVG.RBox => shape.rbox(this.adoptedContent));
@@ -3821,11 +3863,14 @@ export class CanvasViewImpl implements CanvasView, Listener {
             this.content.getElementsByClassName('cvat_canvas_shape_selected_object'),
         )) {
             shape.classList.remove('cvat_canvas_shape_selected_object');
+            (shape as SVGElement).style.removeProperty('--cvat-selection-color');
         }
 
         for (const clientID of this.selectedObjects) {
             const shape = this.svgShapes[clientID];
-            if (shape) {
+            const state = this.controller.objects.find((object: any): boolean => object.clientID === clientID);
+            if (shape && state?.shapeType !== 'mask') {
+                shape.node.style.setProperty('--cvat-selection-color', state.label.color);
                 shape.addClass('cvat_canvas_shape_selected_object');
             }
         }
