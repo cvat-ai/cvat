@@ -1687,7 +1687,7 @@ export default class Collection {
         return boundaries;
     }
 
-    public saveIntervals(states: AudioIntervalState[]): void {
+    public bulkSave(states: AudioIntervalState[]): void {
         this.history.beginTransaction(HistoryActions.CHANGED_AUDIO_INTERVALS);
         try {
             states.forEach((state) => {

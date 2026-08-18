@@ -290,7 +290,7 @@ export function updateAudioIntervalsAsync(
         }
         const job = getState().annotation.job.instance;
         if (!job) return;
-        await job.annotations.saveIntervals(targets);
+        await job.annotations.bulkSave(targets);
         await dispatchFetchAnnotations(dispatch);
     };
 }
