@@ -48,9 +48,9 @@ def main() -> None:
             assignee = job.assignee.username if job.assignee else "-"
             print(f"  job {job.id}: stage={job.stage}, state={job.state}, assignee={assignee}")
 
-        # 2. Only the unassigned ones
+        task = client.tasks.retrieve(TASK_ID)
         unassigned = client.jobs.list(filter=all_(F.task_id == TASK_ID, not_(F.assignee.is_set())))
-        print(f"Unassigned jobs: {[job.id for job in unassigned]}")
+        print(f"Unassigned jobs: {[job.id for job in unassigned]} out of {task.jobs.count}")
 
         # 3. Round-robin assignment. To pull a team automatically instead of
         # passing ids, use client.users.list(...).
