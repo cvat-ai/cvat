@@ -520,8 +520,8 @@
 
 // objects that are part of the canvas multi-selection
 .cvat-objects-sidebar-state-item.cvat-objects-sidebar-state-item-multi-selected {
-    border: 2px dashed #1890ff;
-    box-shadow: 0 0 6px rgba(24, 144, 255, 60%);
+    border: 2px solid rgba(0, 0, 0, 66%);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 14%);
 }
 
 .cvat-objects-sidebar-state-item {
