@@ -8,20 +8,23 @@ from django.db import migrations
 OLD_APP_LABEL = "auth"
 NEW_APP_LABEL = "iam"
 
-STALE_USER_CONTENT_TYPE_ERROR = """\
-Cannot re-label the user content type: django_content_type table holds both
-"{old_label}|user" (id={old_id}) and "{new_label}|user" (id={new_id}). Only one of them may exist,
-so this migration stopped without changing anything.
+CONFLICTING_USER_CONTENT_TYPE_ERROR = """\
+Cannot re-label the user content type: the "{db_table}" table holds both
+"{old_label}|user" (id={old_id}) and "{new_label}|user" (id={new_id}) rows.
+Only one of them may exist. The migration stopped without changing anything.
 
-Why both exist - an upgrade -> downgrade -> upgrade sequence:
+This is likely because this migration was applied previously and then was rolled back:
 
-  upgrade    "{old_label}|user" is re-labelled to "{new_label}|user" in place, so the row id - and
-             every auth_permission row and GenericForeignKey pointing at it - stays valid.
-  downgrade  the row is re-labelled back to "{old_label}|user". post_migrate then re-creates
-             "{new_label}|user" as a brand-new row, because iam.User is still an installed
-             model. It gets a fresh id and a fresh set of permissions.
-  upgrade    both rows now exist, so re-labelling "{old_label}|user" would violate the
-             (app_label, model) unique constraint.
+- upgrade:
+   The "{new_label}|user" row is created or re-labelled from the old "{old_label}|user" in place.
+
+- downgrade:
+   The row is re-labelled back to "{old_label}|user". Django ContentTypes' post_migrate
+   handler automatically creates a new "{new_label}|user" row after all migrations,
+   because "{new_label}.User" is still an installed model after the migration.
+
+- upgrade (the current call):
+   Both rows now exist and conflict between each other.
 
 This migration deliberately does not merge or delete the duplicate for you. Anything
 created while "{new_label}|user" existed - permission grants, admin log entries, or any row
@@ -30,9 +33,12 @@ and only you can decide which of those records should survive.
 
 To continue:
 
-  1. Re-point everything that references content type id={new_id} at id={old_id}.
-  2. Delete the "{new_label}|user" row once nothing references it.
-  3. Re-run this migration.
+1. Re-point everything that references the "{new_label}|user" (id={new_id}) content type at
+   "{old_label}|user" (id={old_id}).
+2. Delete the "{new_label}|user" row once nothing references it. This can be done manually or
+   via the "django manage.py remove_stale_contenttypes" command after switching to the previous
+   version of the repository.
+3. Re-run this migration.
 """
 
 
@@ -43,18 +49,18 @@ def move_user_content_type(apps, schema_editor):
     old_content_type_row = rows.filter(app_label=OLD_APP_LABEL).first()
     if not old_content_type_row:
         # Fresh installation - auth.User is swapped out, so auth|user is never created and
-        # there is nothing to move. Any iam|user row here is the real one (post_migrate
-        # created it and auth_permission points at it), so it must not be deleted.
+        # there is nothing to migrate.
         return
 
-    contenttype_post_migration_created_row = rows.filter(app_label=NEW_APP_LABEL).first()
-    if contenttype_post_migration_created_row:
+    new_content_type_row = rows.filter(app_label=NEW_APP_LABEL).first()
+    if new_content_type_row:
         raise CommandError(
-            STALE_USER_CONTENT_TYPE_ERROR.format(
+            CONFLICTING_USER_CONTENT_TYPE_ERROR.format(
+                db_table=ContentType._meta.db_table,
                 old_label=OLD_APP_LABEL,
                 new_label=NEW_APP_LABEL,
                 old_id=old_content_type_row.pk,
-                new_id=contenttype_post_migration_created_row.pk,
+                new_id=new_content_type_row.pk,
             )
         )
 
