@@ -2,27 +2,44 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { SerializedQualityReportData } from './server-response-types';
-import User from './user';
+import {
+    QualityRequirementMetric, QualityReportRequirementCalculationReason,
+    QualityReportRequirementCalculationStatus, SerializedQualityReportData,
+} from './server-response-types';
+import { fieldsToCamelCase } from '../common';
+import User from '../user';
+
+export interface QualityReportScoreComponents {
+    validCount: number;
+    missingCount: number;
+    extraCount: number;
+}
+
+export interface QualityReportRequirementCalculation {
+    status: QualityReportRequirementCalculationStatus;
+    reason?: QualityReportRequirementCalculationReason;
+}
+
+export interface QualityReportRequirementSummaryItem {
+    requirementId: number | null;
+    name: string;
+    metric: QualityRequirementMetric;
+    score: number | null;
+    scoreComponents: QualityReportScoreComponents;
+    calculation: QualityReportRequirementCalculation;
+    threshold: number;
+}
 
 export interface QualitySummary {
     totalFrames: number;
     validationFrames: number;
     validationFrameShare: number;
     conflictCount: number;
-    validCount: number;
-    dsCount: number;
-    gtCount: number;
-    accuracy: number;
-    precision: number;
-    recall: number;
     errorCount: number;
-    warningCount: number;
     conflictsByType: {
         extraAnnotations: number;
         missingAnnotations: number;
         mismatchingLabel: number;
-        lowOverlap: number;
         mismatchingDirection: number;
         mismatchingAttributes: number;
         mismatchingGroups: number;
@@ -34,18 +51,28 @@ export interface QualitySummary {
         notConfigured: number;
         excluded: number;
         included: number;
+        completed: number;
     } | null;
     jobs: {
         total: number;
         notCheckable: number;
         excluded: number;
         included: number;
+        completed: number;
+    } | null;
+    requirements: {
+        total: number;
+        enabled: number;
+        completed: number;
+        notComputed: number;
+        items: QualityReportRequirementSummaryItem[];
     } | null;
 }
 
 export default class QualityReport {
     #id: number;
     #parentID: number;
+    #projectId: number;
     #taskID: number;
     #jobID: number;
     #target: string;
@@ -57,6 +84,7 @@ export default class QualityReport {
     constructor(initialData: SerializedQualityReportData) {
         this.#id = initialData.id;
         this.#parentID = initialData.parent_id;
+        this.#projectId = initialData.project_id;
         this.#taskID = initialData.task_id;
         this.#jobID = initialData.job_id;
         this.#target = initialData.target;
@@ -77,6 +105,10 @@ export default class QualityReport {
 
     get parentID(): number {
         return this.#parentID;
+    }
+
+    get projectId(): number {
+        return this.#projectId;
     }
 
     get taskID(): number {
@@ -109,36 +141,44 @@ export default class QualityReport {
             validationFrames: this.#summary.validation_frames,
             validationFrameShare: this.#summary.validation_frame_share,
             conflictCount: this.#summary.conflict_count,
-            validCount: this.#summary.valid_count,
-            dsCount: this.#summary.ds_count,
-            gtCount: this.#summary.gt_count,
-            accuracy: this.#summary.accuracy,
-            precision: this.#summary.precision,
-            recall: this.#summary.recall,
             conflictsByType: {
                 extraAnnotations: this.#summary.conflicts_by_type?.extra_annotation,
                 missingAnnotations: this.#summary.conflicts_by_type?.missing_annotation,
                 mismatchingLabel: this.#summary.conflicts_by_type?.mismatching_label,
-                lowOverlap: this.#summary.conflicts_by_type?.low_overlap,
                 mismatchingDirection: this.#summary.conflicts_by_type?.mismatching_direction,
                 mismatchingAttributes: this.#summary.conflicts_by_type?.mismatching_attributes,
                 mismatchingGroups: this.#summary.conflicts_by_type?.mismatching_groups,
                 coveredAnnotation: this.#summary.conflicts_by_type?.covered_annotation,
             },
             errorCount: this.#summary.error_count,
-            warningCount: this.#summary.warning_count,
             tasks: this.#summary.tasks ? {
                 total: this.#summary.tasks.total,
                 custom: this.#summary.tasks.custom,
                 notConfigured: this.#summary.tasks.not_configured,
                 excluded: this.#summary.tasks.excluded,
                 included: this.#summary.tasks.included,
+                completed: this.#summary.tasks.completed,
             } : null,
             jobs: this.#summary.jobs ? {
                 total: this.#summary.jobs.total,
                 notCheckable: this.#summary.jobs.not_checkable,
                 excluded: this.#summary.jobs.excluded,
                 included: this.#summary.jobs.included,
+                completed: this.#summary.jobs.completed,
+            } : null,
+            requirements: this.#summary.requirements ? {
+                total: this.#summary.requirements.total,
+                enabled: this.#summary.requirements.enabled,
+                completed: this.#summary.requirements.completed,
+                notComputed: this.#summary.requirements.not_computed,
+                items: this.#summary.requirements.items.map((item) => {
+                    const camelizedItem = fieldsToCamelCase(item);
+                    return {
+                        ...camelizedItem,
+                        scoreComponents: fieldsToCamelCase(camelizedItem.scoreComponents),
+                        calculation: fieldsToCamelCase(camelizedItem.calculation),
+                    };
+                }),
             } : null,
         };
     }

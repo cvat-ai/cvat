@@ -13,7 +13,7 @@ import { ActiveControl, CombinedState, NewIssueSource } from 'reducers';
 
 import { commentIssueAsync, resolveIssueAsync, reopenIssueAsync } from 'actions/review-actions';
 import {
-    AnnotationConflict, ConflictSeverity, ObjectState, QualityConflict,
+    AnnotationConflict, ConflictSeverity, ObjectState, ObjectType, QualityConflict,
 } from 'cvat-core-wrapper';
 import { Canvas, CanvasMode } from 'cvat-canvas-wrapper';
 import { highlightConflict, updateActiveControl } from 'actions/annotation-actions';
@@ -28,6 +28,7 @@ interface ConflictMappingElement {
     x: number;
     y: number;
     serverID: number;
+    objectType: ObjectType;
     conflict: QualityConflict;
 }
 
@@ -69,9 +70,6 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
     const [expandedIssue, setExpandedIssue] = useState<number | null>(null);
     const [geometry, setGeometry] = useState<Canvas['geometry'] | null>(null);
     const [canvasRect, setCanvasRect] = useState<DOMRect | null>(null);
-    const highlightedObjectsIDs = highlightedConflict?.annotationConflicts
-        ?.map((annotationConflict: AnnotationConflict) => annotationConflict.serverID);
-
     const canvasReady = canvasInstance instanceof Canvas && canvasIsReady;
 
     const onEnter = useCallback((conflict: QualityConflict) => {
@@ -178,6 +176,7 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
                                 x: points[0],
                                 y: points[1],
                                 serverID: state.serverID,
+                                objectType: state.objectType,
                                 conflict,
                             };
                         }
@@ -280,7 +279,12 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
         null;
 
     for (const conflict of conflictMapping) {
-        const isConflictHighlighted = highlightedObjectsIDs?.includes(conflict.serverID) || false;
+        const isConflictHighlighted = highlightedConflict?.annotationConflicts.some(
+            (annotationConflict: AnnotationConflict) => (
+                annotationConflict.serverID === conflict.serverID &&
+                annotationConflict.type === conflict.objectType
+            ),
+        ) || false;
         conflictLabels.push(
             <ConflictLabel
                 key={(Math.random() + 1).toString(36).substring(7)}

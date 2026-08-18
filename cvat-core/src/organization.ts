@@ -4,9 +4,9 @@
 // SPDX-License-Identifier: MIT
 
 import {
-    OrganizationMembersFilter,
     SerializedInvitationData, SerializedOrganization, SerializedOrganizationContact, SerializedUser,
 } from './server-response-types';
+import { OrganizationMembersFilter } from './server-request-types';
 import {
     checkFilter, checkObjectType, fieldsToSnakeCase, isEnum, isInteger, isString,
 } from './common';

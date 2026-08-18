@@ -32,6 +32,7 @@ export interface AudioState {
         intervals: AudioIntervalState[];
         activeIntervalID: number | null;
         hoveredIntervalID: number | null;
+        interactingIntervalID: number | null;
         contextMenu: {
             top: number;
             left: number;
@@ -383,7 +384,7 @@ export interface PluginsState {
         };
         qualityControlPage: {
             task: {
-                overviewTab: ((props: {
+                requirementsTab: ((props: {
                     instance: Task;
                     qualitySettings: {
                         settings: QualitySettings | null;
@@ -403,7 +404,7 @@ export interface PluginsState {
                     }) => JSX.Element)[];
             }
             project : {
-                overviewTab: ((props: {
+                requirementsTab: ((props: {
                     instance: Project;
                     qualitySettings: {
                         settings: QualitySettings | null;
@@ -422,6 +423,11 @@ export interface PluginsState {
         };
     },
     components: {
+        qualityControlPage: {
+            tabs: {
+                items: PluginComponent[];
+            };
+        };
         header: {
             userMenu: {
                 items: PluginComponent[];
@@ -834,7 +840,6 @@ export enum ActiveControl {
     AI_TOOLS = 'ai_tools',
     OPENCV_TOOLS = 'opencv_tools',
     AUDIO_REGION_CREATE = 'audio_region_create',
-    AUDIO_REGION_EDIT = 'audio_region_edit',
     AUDIO_REGION_RECORD = 'audio_region_record',
 }
 
