@@ -10,7 +10,7 @@ There is no high-level proxy for cloud storages yet, so this recipe uses the
 low-level API (client.api_client.cloudstorages_api).
 
 Steps:
-  1. Register the bucket with key/secret credentials.
+  1. Attach the bucket with key/secret credentials to CVAT.
   2. List all registered storages.
   3. Retrieve the new one.
   4. Update its display name.
