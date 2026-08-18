@@ -38,7 +38,7 @@ interface Props {
     copy(): void;
     propagate(): void;
     switchOrientation(): void;
-    changeOrientation(degrees: 90 | 180 | 270): void;
+    changeOrientation(degrees: -90 | 90 | 180): void;
     createURL(): void;
     toBackground(): void;
     toForeground(): void;

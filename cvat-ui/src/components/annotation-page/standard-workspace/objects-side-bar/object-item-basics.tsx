@@ -130,7 +130,7 @@ interface Props {
     propagate(): void;
     createURL(): void;
     switchOrientation(): void;
-    changeOrientation(degrees: 90 | 180 | 270): void;
+    changeOrientation(degrees: -90 | 90 | 180): void;
     toBackground(): void;
     toOneLayerBackward(): void;
     toForeground(): void;

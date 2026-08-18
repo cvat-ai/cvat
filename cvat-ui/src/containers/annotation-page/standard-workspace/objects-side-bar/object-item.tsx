@@ -35,6 +35,7 @@ import { Canvas, CanvasMode } from 'cvat-canvas-wrapper';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import { filterApplicableLabels } from 'utils/filter-applicable-labels';
 import { toClipboard } from 'utils/to-clipboard';
+import changeObjectOrientation from 'utils/change-object-orientation';
 
 interface OwnProps {
     clientID: number;
@@ -425,30 +426,9 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
         }
     };
 
-    private changeOrientation = (degrees: 90 | 180 | 270): void => {
+    private changeOrientation = (degrees: -90 | 90 | 180): void => {
         const { objectState } = this.props;
-        if ([ShapeType.RECTANGLE, ShapeType.ELLIPSE].includes(objectState.shapeType)) {
-            if (degrees % 180) {
-                if (objectState.shapeType === ShapeType.RECTANGLE) {
-                    const [left, top, right, bottom] = objectState.points as number[];
-                    const centerX = (left + right) / 2;
-                    const centerY = (top + bottom) / 2;
-                    const width = right - left;
-                    const height = bottom - top;
-                    objectState.points = [
-                        centerX - height / 2,
-                        centerY - width / 2,
-                        centerX + height / 2,
-                        centerY + width / 2,
-                    ];
-                } else {
-                    const [centerX, centerY, rightX, topY] = objectState.points as number[];
-                    const radiusX = rightX - centerX;
-                    const radiusY = centerY - topY;
-                    objectState.points = [centerX, centerY, centerX + radiusY, centerY - radiusX];
-                }
-            }
-            objectState.rotation = ((objectState.rotation || 0) + degrees + 360) % 360;
+        if (changeObjectOrientation(objectState, degrees)) {
             this.commit();
         }
     };

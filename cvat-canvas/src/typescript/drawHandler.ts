@@ -50,6 +50,10 @@ interface RotatedFit {
     center: { x: number; y: number };
     size: { width: number; height: number };
     angle: number;
+    topEdge?: {
+        point: { x: number; y: number };
+        normal: { x: number; y: number };
+    };
 }
 
 function checkConstraint(shapeType: string, points: number[], box: Box | null = null): boolean {
@@ -136,6 +140,7 @@ export class DrawHandlerImpl implements DrawHandler {
     private pendingPreviewPoints: number[] | null;
     private displayedFit: RotatedFit | null;
     private targetFit: RotatedFit | null;
+    private topEdgeReference: NonNullable<RotatedFit['topEdge']> | null;
 
     private fitRotatedRectangle(points: number[]): RotatedFit | null {
         if (points.length < 6) {
@@ -183,9 +188,51 @@ export class DrawHandlerImpl implements DrawHandler {
             return Math.abs(localY + fit.size.height / 2);
         };
 
-        return equivalentFits.reduce((closestFit: RotatedFit, fit: RotatedFit): RotatedFit => (
+        const closestToFirstPoint = equivalentFits.reduce((closestFit: RotatedFit, fit: RotatedFit): RotatedFit => (
             distanceToTopSide(fit) < distanceToTopSide(closestFit) ? fit : closestFit
         ));
+        const fittedCandidates = equivalentFits.map((fit: RotatedFit): RotatedFit => this.withTopEdge(fit));
+        const orientedFit = this.topEdgeReference ? (() => {
+            const reference = this.topEdgeReference as NonNullable<RotatedFit['topEdge']>;
+            const closestToPreviousEdge = fittedCandidates.reduce(
+                (closestFit: RotatedFit, fit: RotatedFit): RotatedFit => {
+                    const similarity = (candidate: RotatedFit): number => (
+                        candidate.topEdge.normal.x * reference.normal.x +
+                        candidate.topEdge.normal.y * reference.normal.y
+                    );
+                    return similarity(fit) > similarity(closestFit) ? fit : closestFit;
+                },
+                fittedCandidates[0],
+            );
+            const switchThreshold = 8 / this.geometry.scale;
+
+            // Keep the original first-point rule, but avoid switching between
+            // nearly equidistant edges when the minimum-area fit jitters.
+            return distanceToTopSide(closestToFirstPoint) + switchThreshold <
+                distanceToTopSide(closestToPreviousEdge) ?
+                this.withTopEdge(closestToFirstPoint) : closestToPreviousEdge;
+        })() : this.withTopEdge(closestToFirstPoint);
+
+        this.topEdgeReference = orientedFit.topEdge;
+        return this.withTopEdge(orientedFit);
+    }
+
+    private withTopEdge(fitted: RotatedFit): RotatedFit {
+        const angleRadians = (fitted.angle * Math.PI) / 180;
+        const normal = {
+            x: Math.sin(angleRadians),
+            y: -Math.cos(angleRadians),
+        };
+        return {
+            ...fitted,
+            topEdge: {
+                point: {
+                    x: fitted.center.x + normal.x * (fitted.size.height / 2),
+                    y: fitted.center.y + normal.y * (fitted.size.height / 2),
+                },
+                normal,
+            },
+        };
     }
 
     private fitRotatedPreview(points: number[]): RotatedFit | null {
@@ -219,7 +266,7 @@ export class DrawHandlerImpl implements DrawHandler {
 
         const projectedCenterX = (minX + maxX) / 2;
         const projectedCenterY = (minY + maxY) / 2;
-        return {
+        return this.withTopEdge({
             center: {
                 x: projectedCenterX * cos - projectedCenterY * sin,
                 y: projectedCenterX * sin + projectedCenterY * cos,
@@ -232,7 +279,7 @@ export class DrawHandlerImpl implements DrawHandler {
                 height: maxY - minY,
             },
             angle: (angleRadians * 180) / Math.PI,
-        };
+        });
     }
 
     private updateFitPreview(fitted: RotatedFit | null): void {
@@ -258,10 +305,13 @@ export class DrawHandlerImpl implements DrawHandler {
             if (this.drawData.shapeType === 'ellipse') {
                 this.fitPreview.ellipse().attr(previewAttributes);
             }
+            this.fitPreview.circle().attr(previewAttributes);
         }
 
         this.fitPreview.untransform();
-        const [rectanglePreview, ellipsePreview] = this.fitPreview.children();
+        const [rectanglePreview, ...remainingPreviews] = this.fitPreview.children();
+        const ellipsePreview = this.drawData.shapeType === 'ellipse' ? remainingPreviews[0] : null;
+        const rotationPreview = this.drawData.shapeType === 'ellipse' ? remainingPreviews[1] : remainingPreviews[0];
         rectanglePreview.attr({
             ...previewAttributes,
             x: fitted.center.x - fitted.size.width / 2,
@@ -284,6 +334,29 @@ export class DrawHandlerImpl implements DrawHandler {
                 'stroke-dasharray': 'none',
             });
         }
+        const topEdge = fitted.topEdge || this.withTopEdge(fitted).topEdge;
+        const normalLength = Math.hypot(topEdge.normal.x, topEdge.normal.y);
+        const rotationPointOffset = (2 * this.controlPointsSize + 5) / this.geometry.scale;
+        const rotationPoint = {
+            x: topEdge.point.x + (topEdge.normal.x / normalLength) * rotationPointOffset,
+            y: topEdge.point.y + (topEdge.normal.y / normalLength) * rotationPointOffset,
+        };
+        const angleRadians = (fitted.angle * Math.PI) / 180;
+        const relativeX = rotationPoint.x - fitted.center.x;
+        const relativeY = rotationPoint.y - fitted.center.y;
+        rotationPreview.attr({
+            // The rectangle preview can use a 90-degree equivalent orientation to
+            // smooth its motion. Transform the semantic top-edge marker into that
+            // local coordinate system before the group itself is rotated.
+            cx: fitted.center.x + relativeX * Math.cos(angleRadians) + relativeY * Math.sin(angleRadians),
+            cy: fitted.center.y - relativeX * Math.sin(angleRadians) + relativeY * Math.cos(angleRadians),
+            r: this.controlPointsSize / this.geometry.scale,
+            fill: 'white',
+            stroke: CIRCLE_STROKE,
+            'stroke-width': consts.POINTS_STROKE_WIDTH / this.geometry.scale,
+            'stroke-dasharray': 'none',
+            'pointer-events': 'none',
+        });
         this.fitPreview.rotate(fitted.angle, fitted.center.x, fitted.center.y);
     }
 
@@ -304,6 +377,27 @@ export class DrawHandlerImpl implements DrawHandler {
             direct : swapped;
     }
 
+    private interpolateNormal(
+        previous: NonNullable<RotatedFit['topEdge']>['normal'],
+        target: NonNullable<RotatedFit['topEdge']>['normal'],
+        factor: number,
+    ): NonNullable<RotatedFit['topEdge']>['normal'] {
+        const previousAngle = Math.atan2(previous.y, previous.x);
+        const targetAngle = Math.atan2(target.y, target.x);
+        let difference = targetAngle - previousAngle;
+        if (difference > Math.PI) {
+            difference -= 2 * Math.PI;
+        } else if (difference <= -Math.PI) {
+            difference += 2 * Math.PI;
+        }
+
+        const angle = previousAngle + difference * factor;
+        return {
+            x: Math.cos(angle),
+            y: Math.sin(angle),
+        };
+    }
+
     private renderFitPreview(): void {
         this.previewAnimationFrame = null;
         if (this.pendingPreviewPoints) {
@@ -322,7 +416,8 @@ export class DrawHandlerImpl implements DrawHandler {
         const isExpandingFromLine = this.displayedFit &&
             Math.min(this.displayedFit.size.width, this.displayedFit.size.height) < consts.SIZE_THRESHOLD;
         const smoothingFactor = isExpandingFromLine ? 0.02 : 0.1;
-        const nextFit = this.displayedFit ? {
+        const topEdgeSmoothingFactor = isExpandingFromLine ? 0.02 : 0.06;
+        const nextFit: RotatedFit = this.displayedFit ? {
             center: {
                 x: this.displayedFit.center.x + (targetFit.center.x - this.displayedFit.center.x) * smoothingFactor,
                 y: this.displayedFit.center.y + (targetFit.center.y - this.displayedFit.center.y) * smoothingFactor,
@@ -334,17 +429,39 @@ export class DrawHandlerImpl implements DrawHandler {
                     (targetFit.size.height - this.displayedFit.size.height) * smoothingFactor,
             },
             angle: this.displayedFit.angle + (targetFit.angle - this.displayedFit.angle) * smoothingFactor,
+            topEdge: this.displayedFit.topEdge && targetFit.topEdge ? {
+                point: {
+                    x: this.displayedFit.topEdge.point.x +
+                        (targetFit.topEdge.point.x - this.displayedFit.topEdge.point.x) * topEdgeSmoothingFactor,
+                    y: this.displayedFit.topEdge.point.y +
+                        (targetFit.topEdge.point.y - this.displayedFit.topEdge.point.y) * topEdgeSmoothingFactor,
+                },
+                normal: {
+                    ...this.interpolateNormal(
+                        this.displayedFit.topEdge.normal,
+                        targetFit.topEdge.normal,
+                        topEdgeSmoothingFactor,
+                    ),
+                },
+            } : targetFit.topEdge,
         } : targetFit;
 
         this.displayedFit = nextFit;
         this.targetFit = targetFit;
         this.updateFitPreview(nextFit);
 
+        const topEdgeNeedsAnotherFrame = targetFit.topEdge && nextFit.topEdge && (
+            Math.abs(targetFit.topEdge.point.x - nextFit.topEdge.point.x) > 0.1 ||
+            Math.abs(targetFit.topEdge.point.y - nextFit.topEdge.point.y) > 0.1 ||
+            Math.abs(targetFit.topEdge.normal.x - nextFit.topEdge.normal.x) > 0.01 ||
+            Math.abs(targetFit.topEdge.normal.y - nextFit.topEdge.normal.y) > 0.01
+        );
         const needsAnotherFrame = Math.abs(targetFit.center.x - nextFit.center.x) > 0.1 ||
             Math.abs(targetFit.center.y - nextFit.center.y) > 0.1 ||
             Math.abs(targetFit.size.width - nextFit.size.width) > 0.1 ||
             Math.abs(targetFit.size.height - nextFit.size.height) > 0.1 ||
-            Math.abs(targetFit.angle - nextFit.angle) > 0.1;
+            Math.abs(targetFit.angle - nextFit.angle) > 0.1 ||
+            topEdgeNeedsAnotherFrame;
         if (needsAnotherFrame) {
             this.previewAnimationFrame = window.requestAnimationFrame((): void => this.renderFitPreview());
         }
@@ -689,6 +806,7 @@ export class DrawHandlerImpl implements DrawHandler {
         this.pendingPreviewPoints = null;
         this.displayedFit = null;
         this.targetFit = null;
+        this.topEdgeReference = null;
 
         this.drawInstance.off();
         this.drawInstance.remove();
@@ -1697,6 +1815,7 @@ export class DrawHandlerImpl implements DrawHandler {
         this.pendingPreviewPoints = null;
         this.displayedFit = null;
         this.targetFit = null;
+        this.topEdgeReference = null;
         this.getDrawnStates = getDrawnStates;
         this.isCtrlKeyDown = isCtrlKeyDown;
         this.cursorPosition = {
@@ -1816,6 +1935,9 @@ export class DrawHandlerImpl implements DrawHandler {
                     'stroke-dasharray': `${6 / geometry.scale} ${4 / geometry.scale}`,
                 });
             });
+            if (this.displayedFit) {
+                this.updateFitPreview(this.displayedFit);
+            }
         }
     }
 

@@ -8,7 +8,7 @@ import Button from 'antd/lib/button';
 import { MenuProps } from 'antd/lib/menu';
 import Icon, {
     LinkOutlined, CopyOutlined, BlockOutlined, RetweetOutlined, DeleteOutlined, EditOutlined,
-    FunctionOutlined, VerticalAlignBottomOutlined,
+    FunctionOutlined, VerticalAlignBottomOutlined, RedoOutlined, UndoOutlined,
 } from '@ant-design/icons';
 
 import {
@@ -47,7 +47,7 @@ interface Props {
     propagate(): void;
     createURL(): void;
     switchOrientation(): void;
-    changeOrientation(degrees: 90 | 180 | 270): void;
+    changeOrientation(degrees: -90 | 90 | 180): void;
     toBackground(): void;
     toForeground(): void;
     toOneLayerBackward(): void;
@@ -66,7 +66,7 @@ interface ItemProps {
     toolProps: Props;
 }
 
-type OrientationAngle = 90 | 180 | 270;
+type OrientationAngle = -90 | 90 | 180;
 
 function CreateURLItem(props: ItemProps): JSX.Element {
     const { toolProps } = props;
@@ -187,13 +187,20 @@ function SwitchOrientationItem(props: ItemProps): JSX.Element {
 function ChangeOrientationItem(props: ItemProps & { degrees: OrientationAngle }): JSX.Element {
     const { toolProps, degrees } = props;
     const { changeOrientation } = toolProps;
+    const orientationOptions: Record<OrientationAngle, { icon: JSX.Element; label: string }> = {
+        90: { icon: <RedoOutlined />, label: '90°' },
+        '-90': { icon: <UndoOutlined />, label: '90°' },
+        180: { icon: <RetweetOutlined />, label: '180°' },
+    };
+    const { icon, label } = orientationOptions[degrees];
     return (
         <Button
             type='link'
+            icon={icon}
             onClick={(): void => changeOrientation(degrees)}
             className={`cvat-object-item-menu-orientation-${degrees}`}
         >
-            {`${degrees}°`}
+            {label}
         </Button>
     );
 }
@@ -443,7 +450,7 @@ export default function ItemMenu(props: Props): MenuProps {
             key: MenuKeys.ORIENTATION,
             label: <OrientationItem />,
             popupClassName: 'cvat-object-item-menu',
-            children: ([90, 180, 270] as const).map((degrees: OrientationAngle) => ({
+            children: ([90, -90, 180] as const).map((degrees: OrientationAngle) => ({
                 key: `${MenuKeys.ORIENTATION}_${degrees}`,
                 label: <ChangeOrientationItem toolProps={props} degrees={degrees} />,
             })),
