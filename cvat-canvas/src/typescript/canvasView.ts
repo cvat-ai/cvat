@@ -103,7 +103,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
     private pendingSelectionEvent: MouseEvent | null;
     private selectedObjects: number[];
     private selectedObjectsBox: SVG.Rect | null;
-    private selectedMaskBoxes: Record<number, SVG.Rect>;
     private selectedObjectsLabel: HTMLDivElement | null;
     private innerObjectsFlags: {
         drawHidden: Record<number, boolean>;
@@ -1600,11 +1599,15 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 const { cx, cy } = shape.bbox();
                 startCenter = { x: cx, y: cy };
                 groupDragging = this.selectedObjects.length > 1 &&
-                    this.selectedObjects.includes(state.clientID) && this.isGroupSelectionMovable();
+                    this.selectedObjects.includes(state.clientID) && this.isStateMovableInSelection(state);
+                const movableSelectedIDs = this.getMovableSelectedObjectIDs();
                 groupSiblingIDs = groupDragging ?
-                    this.selectedObjects.filter((id) => id !== state.clientID) : [];
+                    movableSelectedIDs.filter((id) => id !== state.clientID) : [];
                 groupLastCenter = { x: cx, y: cy };
                 start = Date.now();
+                if (groupDragging) {
+                    this.setSelectedObjectsOverlayDragging(true);
+                }
             }).on('dragmove', (e: CustomEvent): void => {
                 onDragMove();
                 if (state.shapeType === 'skeleton' && e.target) {
@@ -1644,7 +1647,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
                             }
                         }
                         groupLastCenter = { x: cx, y: cy };
-                        this.updateSelectedObjectsOverlay();
                     }
                 }
             }).on('dragend', (): void => {
@@ -1653,6 +1655,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     for (const siblingID of groupSiblingIDs) {
                         this.resetViewPosition(siblingID);
                     }
+                    this.setSelectedObjectsOverlayDragging(false);
                     this.updateSelectedObjectsOverlay();
                     return;
                 }
@@ -1698,7 +1701,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     }
 
                     if (groupDragging) {
-                        // move the whole selection together and record it as a single change
+                        // Move all editable members together and record them as a single change.
                         const totalDx = cx - startCenter.x;
                         const totalDy = cy - startCenter.y;
                         const movedStates = [{ state, points: draggedPoints }];
@@ -1741,8 +1744,13 @@ export class CanvasViewImpl implements CanvasView, Listener {
                         }),
                     );
                 }
+                if (groupDragging) {
+                    this.setSelectedObjectsOverlayDragging(false);
+                    this.updateSelectedObjectsOverlay();
+                }
             }).on('dragabort', (): void => {
                 onDragEnd();
+                this.setSelectedObjectsOverlayDragging(false);
                 this.draggableShape = null;
                 aborted = true;
                 // disable internal drag events of SVG.js
@@ -2114,7 +2122,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
         this.pendingSelectionEvent = null;
         this.selectedObjects = [];
         this.selectedObjectsBox = null;
-        this.selectedMaskBoxes = {};
         this.selectedObjectsLabel = null;
         this.innerObjectsFlags = {
             drawHidden: {},
@@ -3536,11 +3543,11 @@ export class CanvasViewImpl implements CanvasView, Listener {
             });
         }
 
-        // membership in a multi-selection overrides pinned, so the whole
-        // selection can be dragged as a group grabbing any of its shapes
+        // A movable selected shape can drag the other movable members while
+        // locked, pinned, ground-truth, and skeleton members remain in place.
         const partOfGroupSelection = this.selectedObjects.length > 1 &&
             this.selectedObjects.includes(state.clientID);
-        const draggableBySelection = partOfGroupSelection && this.isGroupSelectionMovable();
+        const draggableBySelection = partOfGroupSelection && this.isStateMovableInSelection(state);
         if ((!partOfGroupSelection && !state.pinned) || draggableBySelection) {
             this.draggable(state, shape, () => {
                 this.mode = Mode.DRAG;
@@ -3640,22 +3647,27 @@ export class CanvasViewImpl implements CanvasView, Listener {
         return points;
     }
 
-    private isGroupSelectionMovable(): boolean {
-        const selectedStates = this.controller.objects
-            .filter((state: any) => this.selectedObjects.includes(state.clientID));
-        return selectedStates.length === this.selectedObjects.length && selectedStates.every((state: any) => (
-            !state.lock && !state.pinned && !state.isGroundTruth && state.shapeType !== 'skeleton'
-        ));
+    private isStateMovableInSelection(state: any): boolean {
+        return !!state && !state.lock && !state.pinned && !state.isGroundTruth && state.shapeType !== 'skeleton';
+    }
+
+    private getMovableSelectedObjectIDs(): number[] {
+        return this.controller.objects
+            .filter((state: any): boolean => (
+                this.selectedObjects.includes(state.clientID) && this.isStateMovableInSelection(state)
+            ))
+            .map((state: any): number => state.clientID);
+    }
+
+    private setSelectedObjectsOverlayDragging(dragging: boolean): void {
+        this.selectedObjectsBox?.node.classList.toggle('cvat_canvas_selected_objects_box_dragging', dragging);
+        this.selectedObjectsLabel?.classList.toggle('cvat_canvas_selected_objects_label_dragging', dragging);
     }
 
     private clearSelectedObjectsOverlay(): void {
         this.selectedObjectsBox?.remove();
         this.selectedObjectsLabel?.remove();
-        Object.values(this.selectedMaskBoxes).forEach((box: SVG.Rect): void => {
-            box.remove();
-        });
         this.selectedObjectsBox = null;
-        this.selectedMaskBoxes = {};
         this.selectedObjectsLabel = null;
     }
 
@@ -3667,20 +3679,27 @@ export class CanvasViewImpl implements CanvasView, Listener {
         let startedAt = 0;
         let startCenter: { x: number; y: number } | null = null;
         let lastPointer: { x: number; y: number } | null = null;
+        let movableIDs: number[] = [];
         let dragging = false;
 
         (this.selectedObjectsBox as any).draggable();
-        this.selectedObjectsBox.on('beforedrag', (event: CustomEvent): void => {
-            if (this.isMultiSelectModifierPressed(event.detail.event) || !this.isGroupSelectionMovable()) {
+        this.selectedObjectsBox.on('contextmenu', (event: MouseEvent): void => {
+            event.preventDefault();
+            event.stopPropagation();
+            this.openSelectedObjectsMenu(event.clientX, event.clientY);
+        }).on('beforedrag', (event: CustomEvent): void => {
+            if (this.isMultiSelectModifierPressed(event.detail.event) || !this.getMovableSelectedObjectIDs().length) {
                 event.preventDefault();
             }
         }).on('dragstart', (event: CustomEvent): void => {
             const { cx, cy } = this.selectedObjectsBox.bbox();
             const { p } = event.detail;
             dragging = true;
+            movableIDs = this.getMovableSelectedObjectIDs();
             startCenter = { x: cx, y: cy };
             lastPointer = { x: p.x, y: p.y };
             startedAt = Date.now();
+            this.setSelectedObjectsOverlayDragging(true);
         }).on('dragmove', (event: CustomEvent): void => {
             if (!dragging || !lastPointer) {
                 return;
@@ -3692,9 +3711,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
             const dy = p.y - lastPointer.y;
             if (dx !== 0 || dy !== 0) {
                 this.selectedObjectsBox?.dmove(dx, dy);
-                for (const clientID of this.selectedObjects) {
+                for (const clientID of movableIDs) {
                     this.svgShapes[clientID]?.dmove(dx, dy);
-                    this.selectedMaskBoxes[clientID]?.dmove(dx, dy);
                 }
                 lastPointer = { x: p.x, y: p.y };
                 this.updateSelectedObjectsLabelPosition();
@@ -3709,7 +3727,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             const dy = cy - startCenter.y;
             if (dx !== 0 || dy !== 0) {
                 const movedStates = this.controller.objects
-                    .filter((state: any) => this.selectedObjects.includes(state.clientID))
+                    .filter((state: any) => movableIDs.includes(state.clientID))
                     .map((state: any) => ({
                         state,
                         points: this.translateStatePoints(state, dx, dy),
@@ -3729,9 +3747,23 @@ export class CanvasViewImpl implements CanvasView, Listener {
             }
 
             dragging = false;
+            movableIDs = [];
             startCenter = null;
             lastPointer = null;
+            this.setSelectedObjectsOverlayDragging(false);
+            this.updateSelectedObjectsOverlay();
         });
+    }
+
+    private openSelectedObjectsMenu(left: number, top: number): void {
+        this.canvas.dispatchEvent(new CustomEvent('canvas.selectionmenu', {
+            bubbles: false,
+            cancelable: true,
+            detail: {
+                left,
+                top,
+            },
+        }));
     }
 
     private updateSelectedObjectsLabelPosition(): void {
@@ -3764,41 +3796,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
             return;
         }
 
-        const selectedMaskIDs = new Set(this.controller.objects
-            .filter((state: any): boolean => (
-                state.shapeType === 'mask' && this.selectedObjects.includes(state.clientID)
-            ))
-            .map((state: any): number => state.clientID));
-        for (const [clientID, box] of Object.entries(this.selectedMaskBoxes)) {
-            if (!selectedMaskIDs.has(+clientID)) {
-                box.remove();
-                delete this.selectedMaskBoxes[+clientID];
-            }
-        }
-        for (const clientID of selectedMaskIDs) {
-            const mask = this.svgShapes[clientID];
-            const state = this.controller.objects.find((object: any): boolean => object.clientID === clientID);
-            if (!mask) {
-                continue;
-            }
-
-            const maskBox = mask.bbox();
-            if (!this.selectedMaskBoxes[clientID]) {
-                this.selectedMaskBoxes[clientID] = this.adoptedContent
-                    .rect(maskBox.width, maskBox.height)
-                    .addClass('cvat_canvas_selected_mask_box');
-            }
-            this.selectedMaskBoxes[clientID]
-                .move(maskBox.x, maskBox.y)
-                .size(maskBox.width, maskBox.height)
-                .attr('stroke-width', SELECTED_OBJECTS_BOX_STROKE_WIDTH / this.geometry.scale)
-                .front();
-            this.selectedMaskBoxes[clientID].node.style.setProperty(
-                '--cvat-selection-color',
-                state?.label.color || 'black',
-            );
-        }
-
         const boxes = selectedShapes.map((shape: SVG.Shape): SVG.RBox => shape.rbox(this.adoptedContent));
         const left = Math.min(...boxes.map((box: SVG.RBox): number => box.x));
         const top = Math.min(...boxes.map((box: SVG.RBox): number => box.y));
@@ -3819,6 +3816,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
             .attr('stroke-width', SELECTED_OBJECTS_BOX_STROKE_WIDTH / this.geometry.scale)
             .front();
 
+        this.selectedObjectsBox.node.setAttribute('aria-label', 'Move selection');
+
         if (!this.selectedObjectsLabel) {
             const label = window.document.createElement('div');
             const title = window.document.createElement('span');
@@ -3835,14 +3834,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             menuButton.addEventListener('click', (event: MouseEvent): void => {
                 event.stopPropagation();
                 const buttonBox = menuButton.getBoundingClientRect();
-                this.canvas.dispatchEvent(new CustomEvent('canvas.selectionmenu', {
-                    bubbles: false,
-                    cancelable: true,
-                    detail: {
-                        left: buttonBox.left,
-                        top: buttonBox.bottom,
-                    },
-                }));
+                this.openSelectedObjectsMenu(buttonBox.left, buttonBox.bottom);
             });
 
             label.append(title, menuButton);
@@ -3852,8 +3844,9 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
         const title = this.selectedObjectsLabel.querySelector('.cvat_canvas_selected_objects_label_title');
         if (title) {
-            title.textContent = `GROUP (${selectedShapes.length})`;
+            title.textContent = `GROUP (${this.selectedObjects.length})`;
         }
+        this.selectedObjectsLabel.title = '';
         this.updateSelectedObjectsLabelPosition();
     }
 
@@ -3864,15 +3857,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
         )) {
             shape.classList.remove('cvat_canvas_shape_selected_object');
             (shape as SVGElement).style.removeProperty('--cvat-selection-color');
-        }
-
-        for (const clientID of this.selectedObjects) {
-            const shape = this.svgShapes[clientID];
-            const state = this.controller.objects.find((object: any): boolean => object.clientID === clientID);
-            if (shape && state?.shapeType !== 'mask') {
-                shape.node.style.setProperty('--cvat-selection-color', state.label.color);
-                shape.addClass('cvat_canvas_shape_selected_object');
-            }
         }
 
         this.updateSelectedObjectsOverlay();

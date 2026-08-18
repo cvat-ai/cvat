@@ -82,30 +82,16 @@ polyline.cvat_shape_drawing_opacity {
     fill: #fcfbfc;
 }
 
-// persistent visual for shapes that are part of a multi-selection
-// use the label color to identify shapes that belong to the current selection
-.cvat_canvas_shape_selected_object {
-    stroke: var(--cvat-selection-color);
-    stroke-opacity: 1;
-}
-
-.cvat_canvas_selected_mask_box {
-    fill: none;
-    stroke: var(--cvat-selection-color);
-    pointer-events: none;
-}
-
 .cvat_canvas_selected_objects_box {
-    fill: white;
-    fill-opacity: 0.08;
+    fill: none;
     stroke: #1f1f1f;
     stroke-opacity: 1;
     pointer-events: all;
     cursor: move;
+}
 
-    &:hover {
-        fill-opacity: 0.14;
-    }
+.cvat_canvas_selected_objects_box_dragging {
+    opacity: 0;
 }
 
 .cvat_canvas_selected_objects_label {
@@ -128,6 +114,10 @@ polyline.cvat_shape_drawing_opacity {
 
 .cvat_canvas_selected_objects_label_title {
     white-space: nowrap;
+}
+
+.cvat_canvas_selected_objects_label_dragging {
+    visibility: hidden;
 }
 
 .cvat_canvas_selected_objects_menu_button {
