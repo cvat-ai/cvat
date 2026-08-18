@@ -28,6 +28,7 @@ interface StateToProps {
     labels: CombinedState['annotation']['job']['labels'];
     frameData: any;
     hasCopiedSelection: boolean;
+    hasSelectedObjects: boolean;
 }
 
 interface DispatchToProps {
@@ -49,6 +50,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 frame: { data: frameData },
             },
             drawing: { copiedStates },
+            annotations: { selectedStatesID },
         },
         settings: {
             player: { rotateAll },
@@ -65,6 +67,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         keyMap,
         frameData,
         hasCopiedSelection: !!copiedStates && copiedStates.length > 0,
+        hasSelectedObjects: selectedStatesID.length > 0,
     };
 }
 

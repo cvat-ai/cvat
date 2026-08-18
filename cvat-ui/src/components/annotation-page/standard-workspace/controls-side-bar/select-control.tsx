@@ -12,15 +12,17 @@ import { ActiveControl } from 'reducers';
 export interface Props {
     canvasInstance: Canvas;
     activeControl: ActiveControl;
+    hasSelectedObjects: boolean;
     disabled: boolean;
     updateActiveControl(activeControl: ActiveControl): void;
 }
 
 function SelectControl(props: Props): JSX.Element {
     const {
-        canvasInstance, activeControl, disabled, updateActiveControl,
+        canvasInstance, activeControl, hasSelectedObjects, disabled, updateActiveControl,
     } = props;
     const selecting = activeControl === ActiveControl.SELECT;
+    const highlighted = selecting || hasSelectedObjects;
 
     const onClick = (): void => {
         if (selecting) {
@@ -38,7 +40,7 @@ function SelectControl(props: Props): JSX.Element {
     ) : (
         <CVATTooltip title='Select objects' placement='right'>
             <SelectOutlined
-                className={selecting ?
+                className={highlighted ?
                     'cvat-select-control cvat-active-canvas-control' :
                     'cvat-select-control'}
                 onClick={onClick}

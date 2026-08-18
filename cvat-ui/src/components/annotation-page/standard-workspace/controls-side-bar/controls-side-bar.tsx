@@ -53,6 +53,7 @@ interface Props {
     labels: Label[];
     frameData: any;
     hasCopiedSelection: boolean;
+    hasSelectedObjects: boolean;
 
     updateActiveControl(activeControl: ActiveControl): void;
     rotateFrame(rotation: Rotation): void;
@@ -165,6 +166,7 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
         redrawShape,
         frameData,
         hasCopiedSelection,
+        hasSelectedObjects,
     } = props;
 
     const controlsDisabled = !labels.length || frameData.deleted;
@@ -378,6 +380,7 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
                 <ObservedSelectControl
                     canvasInstance={canvasInstance}
                     activeControl={activeControl}
+                    hasSelectedObjects={hasSelectedObjects}
                     disabled={controlsDisabled}
                     updateActiveControl={updateActiveControl}
                 />
