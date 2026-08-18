@@ -14,8 +14,7 @@ Steps:
   2. List all registered storages.
   3. Retrieve the new one.
   4. Update its display name.
-  5. Optionally detach it (CVAT_EXAMPLES_CLEANUP=1) — the bucket's contents
-     are never touched.
+  5. Optionally, detach it from CVAT.
 
 Usage:
   export CVAT_HOST=https://app.cvat.ai
