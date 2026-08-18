@@ -23,6 +23,7 @@ import {
 } from './common';
 
 import User from './user';
+import UserGrowthData from './growth';
 import AnnotationFormats from './annotation-formats';
 import ApiToken from './api-token';
 import { Task, Job } from './session';
@@ -32,13 +33,16 @@ import Organization, { Invitation } from './organization';
 import Webhook from './webhook';
 import { ArgumentError } from './exceptions';
 import {
-    AnalyticsEventsFilter, QualityConflictsFilter,
-    SerializedAsset, ConsensusSettingsFilter, SerializedOrganization,
+    SerializedAsset, SerializedOrganization,
 } from './server-response-types';
-import QualityReport from './quality-report';
+import {
+    AnalyticsEventsFilter, QualityConflictsFilter, QualityRequirementsFilter, ConsensusSettingsFilter,
+} from './server-request-types';
+import {
+    ConflictSeverity, getQualitySettingsSchemaDescriptions, QualityConflict,
+    QualityReport, QualityRequirement, QualitySettings,
+} from './quality';
 import AboutData from './about';
-import QualityConflict, { ConflictSeverity } from './quality-conflict';
-import QualitySettings from './quality-settings';
 import { getFramesMeta } from './frames';
 import ConsensusSettings from './consensus-settings';
 import {
@@ -184,6 +188,11 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
 
         users = users.map((user) => new User(user));
         return users;
+    });
+
+    implementationMixin(cvat.growth.get, async (userId: number): Promise<UserGrowthData[]> => {
+        const result = await serverProxy.growth.get(userId);
+        return result.map((growthData) => new UserGrowthData(growthData));
     });
 
     implementationMixin(cvat.apiTokens.get, async (filter) => {
@@ -551,11 +560,41 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
             const params = fieldsToSnakeCase(filter);
 
             const settingsList = await serverProxy.analytics.quality.settings.get(params, aggregate);
-            const schema = await getServerAPISchema();
-            const descriptions = convertDescriptions(schema.components.schemas.QualitySettings.properties);
+            const { descriptions, requirementDescriptions } = await getQualitySettingsSchemaDescriptions();
 
-            const settings = settingsList.map((setting) => new QualitySettings({ ...setting, descriptions }));
+            const settings = settingsList.map((setting) => new QualitySettings({
+                ...setting,
+                descriptions,
+                requirement_descriptions: requirementDescriptions,
+            }));
             return settings;
+        });
+    implementationMixin(
+        cvat.analytics.quality.requirements.get, async (
+            filter: Parameters<CVATCore['analytics']['quality']['requirements']['get']>[0],
+            aggregate?: Parameters<CVATCore['analytics']['quality']['requirements']['get']>[1],
+        ) => {
+            checkFilter(filter, {
+                id: isInteger,
+                settingsId: isInteger,
+                taskId: isInteger,
+                projectId: isInteger,
+                annotationType: isString,
+                enabled: isBoolean,
+                page: isInteger,
+                pageSize: isPageSize,
+                filter: isString,
+                search: isString,
+                sort: isString,
+            });
+
+            const params = fieldsToSnakeCase(filter as QualityRequirementsFilter);
+            const requirementsData = await serverProxy.analytics.quality.requirements.get(params, aggregate);
+            const requirements = Object.assign(
+                requirementsData.map((requirement) => new QualityRequirement({ ...requirement })),
+                { count: requirementsData.count },
+            );
+            return requirements;
         });
     implementationMixin(cvat.analytics.events.export, async (
         filter: AnalyticsEventsFilter,

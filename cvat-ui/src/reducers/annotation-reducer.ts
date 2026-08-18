@@ -1222,7 +1222,10 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 // object may be hidden using annotations filter
                 // it is not guaranteed to be visible
                 const conflictObject = state.annotations.states
-                    .find((_state) => _state.serverID === mainConflict.serverID);
+                    .find((_state) => (
+                        _state.serverID === mainConflict.serverID &&
+                        _state.objectType === mainConflict.type
+                    ));
 
                 return {
                     ...state,

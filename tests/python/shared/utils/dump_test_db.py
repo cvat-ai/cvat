@@ -103,6 +103,7 @@ VOLATILE_FIELDS: dict[str, frozenset[str]] = {
     "quality_control.qualityreport": frozenset(
         {"assignee_last_updated", "gt_last_updated", "target_last_updated"}
     ),
+    "quality_control.qualityrequirement": frozenset({"created_date"}),
     "access_tokens.accesstoken": frozenset({"last_used_date"}),
 }
 
