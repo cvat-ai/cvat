@@ -1056,10 +1056,10 @@ Cypress.Commands.add('advancedConfiguration', (advancedConfigurationParams) => {
 });
 
 Cypress.Commands.add('configureTaskQualityMode', (qualityConfigurationParams) => {
-    cy.contains('Quality').click();
+    cy.contains('.ant-collapse-header', /^Quality$/).click();
     if (qualityConfigurationParams.validationMode) {
-        cy.get('#validationMode').within(() => {
-            cy.contains(qualityConfigurationParams.validationMode).click();
+        cy.contains('.ant-form-item', 'Validation mode').within(() => {
+            cy.contains('.ant-radio-button-wrapper', qualityConfigurationParams.validationMode).click();
         });
     }
     if (qualityConfigurationParams.validationFramesPercent) {
