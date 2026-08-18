@@ -2,13 +2,15 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useCallback, useState } from 'react';
+import React, {
+    useCallback, useEffect, useState,
+} from 'react';
 import Select from 'antd/lib/select';
 import Collapse from 'antd/lib/collapse';
 import Radio from 'antd/lib/radio';
 import Checkbox from 'antd/lib/checkbox';
 import InputNumber from 'antd/lib/input-number';
-import Input from 'antd/lib/input';
+import TextArea from 'antd/lib/input/TextArea';
 import Popover from 'antd/lib/popover';
 import { EditOutlined } from '@ant-design/icons';
 
@@ -23,6 +25,46 @@ interface AudioRegionDetailsProps {
     trackDurationSeconds: number;
     onChangeLabel(labelId: number): void;
     onChangeAttribute(attrID: number, value: string): void;
+}
+
+function TextAttributeInput({
+    attributeID, value, disabled, onChange,
+}: {
+    attributeID: number;
+    value: string;
+    disabled: boolean;
+    onChange(attrID: number, value: string): void;
+}): JSX.Element {
+    // Using local value prevents the value to be replaced in the text area on every keystroke
+    // It helps keeping the caret position as well as working system shortcuts like undo/redo
+    const [localValue, setLocalValue] = useState(value);
+
+    // Keep the draft in sync with changes initiated outside this editor, e.g. undo/redo command.
+    useEffect(() => {
+        if (value !== localValue) {
+            setLocalValue(value);
+        }
+    }, [value]);
+
+    // Update after the local state change to avoid interrupting IME composition.
+    // (wrap to internal use effect to avoid issues e.g. with chinese keyboard)
+    useEffect(() => {
+        if (localValue !== value) {
+            onChange(attributeID, localValue);
+        }
+    }, [localValue]);
+
+    return (
+        <TextArea
+            rows={4}
+            size='small'
+            value={localValue}
+            disabled={disabled}
+            onChange={(event) => {
+                setLocalValue(event.target.value);
+            }}
+        />
+    );
 }
 
 function AttributeInput({
@@ -97,12 +139,11 @@ function AttributeInput({
     }
 
     return (
-        <Input.TextArea
-            rows={4}
-            size='small'
+        <TextAttributeInput
+            attributeID={attribute.id!}
             value={value}
             disabled={disabled}
-            onChange={(e) => onChange(attribute.id!, e.target.value)}
+            onChange={onChange}
         />
     );
 }

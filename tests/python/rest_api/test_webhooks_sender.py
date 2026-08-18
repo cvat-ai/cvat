@@ -12,8 +12,16 @@ from deepdiff import DeepDiff
 from shared.fixtures.data import Container
 from shared.fixtures.init import CVAT_ROOT_DIR
 from shared.utils.config import delete_method, get_method, patch_method, post_method
+from shared.utils.helpers import generate_image_files
 
-from .utils import export_task_backup, export_task_dataset
+from .utils import (
+    create_consensus_merge,
+    create_gt_job,
+    create_quality_report,
+    create_task,
+    export_task_backup,
+    export_task_dataset,
+)
 
 # Testing webhook functionality:
 #  - webhook_receiver container receive post request and return responses with the same body
@@ -116,6 +124,10 @@ class TestWebhookProjectEvents:
         assert payload["event"] == events[0]
         assert payload["sender"]["username"] == "admin1"
         assert payload["before_update"]["name"] == project["name"]
+        assert payload["changes"]["name"] == {
+            "from": project["name"],
+            "to": patch_data["name"],
+        }
 
         project.update(patch_data)
         assert (
@@ -206,6 +218,14 @@ class TestWebhookIntersection:
             == payload_2["before_update"]["name"]
             == post_data["name"]
         )
+        assert payload_1["changes"]["name"] == {
+            "from": post_data["name"],
+            "to": patch_data["name"],
+        }
+        assert payload_2["changes"]["name"] == {
+            "from": post_data["name"],
+            "to": patch_data["name"],
+        }
 
         assert payload_1["webhook_id"] == webhook_id_1
         assert payload_2["webhook_id"] == webhook_id_2
@@ -306,7 +326,11 @@ class TestWebhookTaskEvents:
         deliveries, payload = get_deliveries(webhook_id=webhook_id)
 
         assert deliveries["count"] == 1
-        assert payload["before_update"]["assignee"]["id"] == tasks[task_id]["assignee"]["id"]
+        assert payload["before_update"]["assignee_id"] == tasks[task_id]["assignee"]["id"]
+        assert payload["changes"]["assignee_id"] == {
+            "from": tasks[task_id]["assignee"]["id"],
+            "to": assignee_id,
+        }
         assert payload["task"]["assignee"]["id"] == assignee_id
 
     def test_webhook_create_and_delete_task(self, organizations):
@@ -336,8 +360,8 @@ class TestWebhookTaskEvents:
         assert delete_payload["event"] == "delete:task"
 
         # These values cannot be computed if the task has no data
-        assert create_payload["task"]["jobs"]["completed"] is None
-        assert create_payload["task"]["jobs"]["validation"] is None
+        assert create_payload["task"]["jobs"]["completed"] == 0
+        assert create_payload["task"]["jobs"]["validation"] == 0
         assert task["jobs"]["completed"] == 0
         assert task["jobs"]["validation"] == 0
         assert delete_payload["task"]["jobs"]["completed"] == 0
@@ -383,7 +407,11 @@ class TestWebhookJobEvents:
         deliveries, payload = get_deliveries(webhook_id)
 
         assert deliveries["count"] == 1
-        assert payload["before_update"]["assignee"] is None
+        assert payload["before_update"]["assignee_id"] is None
+        assert payload["changes"]["assignee_id"] == {
+            "from": None,
+            "to": patch_data["assignee"],
+        }
         assert payload["job"]["assignee"]["id"] == patch_data["assignee"]
 
     def test_webhook_update_job_stage(self, jobs, tasks):
@@ -401,6 +429,10 @@ class TestWebhookJobEvents:
         deliveries, payload = get_deliveries(webhook_id)
         assert deliveries["count"] == 1
         assert payload["before_update"]["stage"] == job["stage"]
+        assert payload["changes"]["stage"] == {
+            "from": job["stage"],
+            "to": patch_data["stage"],
+        }
         assert payload["job"]["stage"] == patch_data["stage"]
 
     def test_webhook_update_job_state(self, jobs, tasks):
@@ -422,6 +454,10 @@ class TestWebhookJobEvents:
         deliveries, payload = get_deliveries(webhook_id)
         assert deliveries["count"] == 1
         assert payload["before_update"]["state"] == job["state"]
+        assert payload["changes"]["state"] == {
+            "from": job["state"],
+            "to": patch_data["state"],
+        }
         assert payload["job"]["state"] == patch_data["state"]
 
 
@@ -446,6 +482,10 @@ class TestWebhookIssueEvents:
 
         assert deliveries["count"] == 1
         assert payload["before_update"]["resolved"] == issue["resolved"]
+        assert payload["changes"]["resolved"] == {
+            "from": issue["resolved"],
+            "to": patch_data["resolved"],
+        }
         assert payload["issue"]["resolved"] == patch_data["resolved"]
 
     def test_webhook_update_issue_position(self, issues, jobs, tasks):
@@ -467,6 +507,10 @@ class TestWebhookIssueEvents:
 
         assert deliveries["count"] == 1
         assert payload["before_update"]["position"] == issue["position"]
+        assert payload["changes"]["position"] == {
+            "from": issue["position"],
+            "to": patch_data["position"],
+        }
         assert payload["issue"]["position"] == patch_data["position"]
 
     @pytest.mark.parametrize("org_id", (2,))
@@ -535,6 +579,10 @@ class TestWebhookMembershipEvents:
 
         assert deliveries["count"] == 1
         assert payload["before_update"]["role"] == membership["role"]
+        assert payload["changes"]["role"] == {
+            "from": membership["role"],
+            "to": patch_data["role"],
+        }
         assert payload["membership"]["role"] == patch_data["role"]
 
     def test_webhook_delete_membership(self, memberships):
@@ -574,6 +622,10 @@ class TestWebhookOrganizationEvents:
 
         assert deliveries["count"] == 1
         assert payload["before_update"]["name"] == organizations[org_id]["name"]
+        assert payload["changes"]["name"] == {
+            "from": organizations[org_id]["name"],
+            "to": patch_data["name"],
+        }
         assert payload["organization"]["name"] == patch_data["name"]
 
 
@@ -599,6 +651,10 @@ class TestWebhookCommentEvents:
 
         assert deliveries["count"] == 1
         assert payload["before_update"]["message"] == comment["message"]
+        assert payload["changes"]["message"] == {
+            "from": comment["message"],
+            "to": patch_data["message"],
+        }
 
         comment.update(patch_data)
         assert (
@@ -742,6 +798,15 @@ class TestWebhookRedelivery:
         assert deliveries_1["results"][0]["redelivery"] is False
         assert deliveries_2["results"][0]["redelivery"] is True
 
+        assert payload_1["changes"]["name"] == {
+            "from": project["name"],
+            "to": patch_data["name"],
+        }
+        assert payload_2["changes"]["name"] == {
+            "from": project["name"],
+            "to": patch_data["name"],
+        }
+
         project.update(patch_data)
         assert (
             DeepDiff(
@@ -796,34 +861,120 @@ def _task_with_data_in_org(tasks: Container) -> dict:
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
-class TestWebhookExportEvents:
+class TestExportCompletedRequestEvent:
     def test_webhook_create_export_for_task(self, tasks: Container) -> None:
         task = _task_with_data_in_org(tasks)
         webhook_id = create_webhook(
-            events=["create:export"], webhook_type="organization", org_id=task["organization"]
+            events=["completed:request[export:annotations]"],
+            webhook_type="organization",
+            org_id=task["organization"],
         )["id"]
 
         export_task_dataset("admin1", id=task["id"], save_images=False, download_result=False)
 
         _, payload = get_deliveries(webhook_id)
-        assert payload["event"] == "create:export"
-        assert payload["status"] == "succeeded"
-        assert payload["target"] == "task"
-        assert payload["target_id"] == task["id"]
+        assert payload["event"] == "completed:request[export:annotations]"
+        assert payload["request"]["status"] == "finished"
+        assert payload["request"]["message"] == ""
+        assert payload["request"]["operation"]["target"] == "task"
+        assert payload["request"]["operation"]["task_id"] == task["id"]
+        assert isinstance(payload["request"]["result_url"], str)
+        assert payload["request"]["result_id"] is None
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
-class TestWebhookBackupEvents:
+class TestBackupCompletedRequestEvent:
     def test_webhook_create_backup_for_task(self, tasks: Container) -> None:
         task = _task_with_data_in_org(tasks)
         webhook_id = create_webhook(
-            events=["create:backup"], webhook_type="organization", org_id=task["organization"]
+            events=["completed:request[export:backup]"],
+            webhook_type="organization",
+            org_id=task["organization"],
         )["id"]
 
         export_task_backup("admin1", id=task["id"], download_result=False)
 
         _, payload = get_deliveries(webhook_id)
-        assert payload["event"] == "create:backup"
-        assert payload["status"] == "succeeded"
-        assert payload["target"] == "task"
-        assert payload["target_id"] == task["id"]
+        assert payload["event"] == "completed:request[export:backup]"
+        assert payload["request"]["status"] == "finished"
+        assert payload["request"]["message"] == ""
+        assert payload["request"]["operation"]["target"] == "task"
+        assert payload["request"]["operation"]["task_id"] == task["id"]
+        assert payload["request"]["result_id"] is None
+        assert isinstance(payload["request"]["result_url"], str)
+
+
+@pytest.mark.usefixtures("restore_db_per_function")
+class TestTaskCreationCompletedRequestEvent:
+    def test_webhook_create_task_with_data(self, organizations: Container) -> None:
+        org_id = next(iter(organizations))["id"]
+        webhook_id = create_webhook(
+            events=["completed:request[create:task]"],
+            webhook_type="organization",
+            org_id=org_id,
+        )["id"]
+
+        task_id, _ = create_task(
+            "admin1",
+            spec={"name": "task creation completion webhook test"},
+            data={
+                "image_quality": 75,
+                "client_files": generate_image_files(2),
+                "segment_size": 1,
+            },
+            org_id=org_id,
+        )
+
+        _, payload = get_deliveries(webhook_id)
+        assert payload["event"] == "completed:request[create:task]"
+        assert payload["request"]["status"] == "finished"
+        assert payload["request"]["message"] == ""
+        assert payload["request"]["operation"]["target"] == "task"
+        assert payload["request"]["operation"]["task_id"] == task_id
+        assert payload["request"]["result_id"] is None
+        assert payload["request"]["result_url"] is None
+
+
+@pytest.mark.usefixtures("restore_db_per_function")
+class TestQualityReportCompletedRequestEvent:
+    def test_webhook_create_quality_report_for_task(self, tasks: Container) -> None:
+        task = _task_with_data_in_org(tasks)
+        webhook_id = create_webhook(
+            events=["completed:request[calculate:quality]"],
+            webhook_type="organization",
+            org_id=task["organization"],
+        )["id"]
+
+        create_gt_job("admin1", task["id"])
+        report = create_quality_report(user="admin1", task_id=task["id"])
+
+        _, payload = get_deliveries(webhook_id)
+        assert payload["event"] == "completed:request[calculate:quality]"
+        assert payload["request"]["status"] == "finished"
+        assert payload["request"]["message"] == ""
+        assert payload["request"]["operation"]["target"] == "task"
+        assert payload["request"]["operation"]["task_id"] == task["id"]
+        assert payload["request"]["result_id"] == report["id"]
+        assert payload["request"]["result_url"] is None
+
+
+@pytest.mark.usefixtures("restore_db_per_function")
+class TestConsensusMergeCompletedRequestEvent:
+    def test_webhook_create_consensus_merge_for_task(self, tasks: Container) -> None:
+        task = next(t for t in tasks if t["consensus_enabled"] and t["organization"] is not None)
+        webhook_id = create_webhook(
+            events=["completed:request[merge:task]"],
+            webhook_type="organization",
+            org_id=task["organization"],
+        )["id"]
+
+        create_consensus_merge(user="admin1", task_id=task["id"])
+
+        _, payload = get_deliveries(webhook_id)
+        assert payload["event"] == "completed:request[merge:task]"
+        assert payload["request"]["status"] == "finished"
+        assert payload["request"]["message"] == ""
+        assert payload["request"]["operation"]["target"] == "task"
+        assert payload["request"]["operation"]["task_id"] == task["id"]
+        assert payload["request"]["result_id"] is None
+        assert payload["request"]["result_url"] is None

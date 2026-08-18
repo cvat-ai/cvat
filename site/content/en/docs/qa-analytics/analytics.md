@@ -5,6 +5,9 @@ weight: 6
 description: 'Learn how to access and analyze detailed data and metrics in CVAT Online and Enterprise.'
 aliases:
   - /docs/manual/advanced/analytics-and-monitoring/analytics/
+products:
+  - online
+  - enterprise
 ---
 
 CVAT provides analytics data for projects, tasks, and jobs to help

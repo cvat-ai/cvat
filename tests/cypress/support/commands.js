@@ -1051,10 +1051,10 @@ Cypress.Commands.add('advancedConfiguration', (advancedConfigurationParams) => {
 });
 
 Cypress.Commands.add('configureTaskQualityMode', (qualityConfigurationParams) => {
-    cy.contains('Quality').click();
+    cy.contains('.ant-collapse-header', /^Quality$/).click();
     if (qualityConfigurationParams.validationMode) {
-        cy.get('#validationMode').within(() => {
-            cy.contains(qualityConfigurationParams.validationMode).click();
+        cy.contains('.ant-form-item', 'Validation mode').within(() => {
+            cy.contains('.ant-radio-button-wrapper', qualityConfigurationParams.validationMode).click();
         });
     }
     if (qualityConfigurationParams.validationFramesPercent) {
@@ -1692,6 +1692,21 @@ Cypress.Commands.add('drawMask', (instructions) => {
                 cy.get('input').clear();
                 cy.get('input').type(`${value}`);
             });
+        } else if (method === 'underlying-pixels') {
+            const { value } = instruction;
+            cy.get('.cvat-brush-tools-underlying-pixels').then(($btn) => {
+                const isActive = $btn.hasClass('cvat-brush-tools-active-tool');
+                if (Boolean(value) !== isActive) {
+                    cy.wrap($btn).click();
+                }
+            });
+            if (value) {
+                cy.get('.cvat-brush-tools-underlying-pixels')
+                    .should('have.class', 'cvat-brush-tools-active-tool');
+            } else {
+                cy.get('.cvat-brush-tools-underlying-pixels')
+                    .should('not.have.class', 'cvat-brush-tools-active-tool');
+            }
         } else {
             const { coordinates } = instruction;
             if (['brush', 'eraser'].includes(method)) {
