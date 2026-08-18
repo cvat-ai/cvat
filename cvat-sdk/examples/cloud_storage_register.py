@@ -12,7 +12,7 @@ low-level API (client.api_client.cloudstorages_api).
 Steps:
   1. Register the bucket with key/secret credentials.
   2. List all registered storages.
-  3. Retrieve the new one (the server never returns credentials).
+  3. Retrieve the new one.
   4. Update its display name.
   5. Optionally detach it (CVAT_EXAMPLES_CLEANUP=1) — the bucket's contents
      are never touched.
