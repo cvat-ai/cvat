@@ -126,6 +126,11 @@ export interface DrawData {
             size: { width: number; height: number };
             angle: number;
         };
+        fitEllipse(points: [number, number][]): {
+            center: { x: number; y: number };
+            size: { width: number; height: number };
+            angle: number;
+        };
     };
     cuboidDrawingMethod?: CuboidDrawingMethod;
     skeletonSVG?: SVGSVGElement;

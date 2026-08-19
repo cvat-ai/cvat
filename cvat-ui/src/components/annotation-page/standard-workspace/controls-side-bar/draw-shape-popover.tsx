@@ -110,7 +110,8 @@ function DrawShapePopoverComponent(props: Props): JSX.Element {
                                 )}
                                 <CVATTooltip
                                     title={
-                                        'Click at least three contour points. A dashed fitted shape previews the result ' +
+                                        `Click at least ${shapeType === ShapeType.ELLIPSE ? 'five' : 'three'} contour points. ` +
+                                        'A dashed fitted shape previews the result ' +
                                         'as points are added or removed; ' +
                                         `press ${repeatShapeShortcut} or select Done to finish, ` +
                                         'and right-click to undo the last point.'
