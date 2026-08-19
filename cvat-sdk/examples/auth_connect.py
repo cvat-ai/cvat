@@ -9,31 +9,33 @@ Steps:
   2. Print the server version.
   3. Print who you are authenticated as (a quick sanity check for scripts).
 
-Usage:
-  export CVAT_HOST=https://app.cvat.ai
-  export CVAT_ACCESS_TOKEN=...   # create one in the CVAT UI: Profile -> Security
-  python auth_connect.py
+Usage (run ``python auth_connect.py --help`` for the full list of options):
+  python auth_connect.py --host 'https://app.cvat.ai' --token '<your token>'
+
+Create a token in the CVAT UI under Profile -> Security.
 """
 
-import os
-import sys
+import argparse
 
 from cvat_sdk import make_client
 
 
-def require_env(name: str, hint: str) -> str:
-    value = os.environ.get(name)
-    if not value:
-        sys.exit(f"Set the {name} environment variable: {hint}")
-    return value
-
-
-HOST = require_env("CVAT_HOST", "your CVAT server URL, e.g. https://app.cvat.ai")
-TOKEN = require_env("CVAT_ACCESS_TOKEN", "create one in the CVAT UI: Profile -> Security")
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument(
+        "--host", required=True, help="CVAT server URL, e.g. 'https://app.cvat.ai'"
+    )
+    parser.add_argument(
+        "--token",
+        required=True,
+        help="Personal Access Token (create one in the CVAT UI: Profile -> Security)",
+    )
+    return parser.parse_args()
 
 
 def main() -> None:
-    with make_client(HOST, access_token=TOKEN) as client:
+    args = parse_args()
+    with make_client(args.host, access_token=args.token) as client:
         print("Server version:", client.get_server_version())
         me = client.users.retrieve_current_user()
         print(f"Authenticated as {me.username} (id={me.id})")

@@ -2,161 +2,34 @@
 title: 'Task recipes'
 linkTitle: 'Tasks'
 weight: 3
-description: 'Create tasks from local images or a bucket; inspect and export existing tasks'
+description: 'Create one task or a batch of tasks from a bucket; inspect and export existing tasks'
 ---
 
-Three recipes cover the task lifecycle: `task_create_from_images.py` uploads a
-folder of images, `task_create_from_cloud.py` uses object keys already in a
-registered bucket, and `task_inspect_and_export.py` inspects an existing task
+Three recipes cover the task lifecycle: `task_create_from_cloud.py` creates one
+task from object keys already in a registered bucket,
+`tasks_bulk_from_cloud.py` creates a whole batch of tasks in a project from
+that same bucket, and `task_inspect_and_export.py` inspects an existing task
 and exports its dataset locally + to a bucket.
-
-## Create a task from local images
-
-Uploads a folder of `*.jpg`/`*.jpeg`/`*.png` files as a new task. With
-`CVAT_PROJECT_ID` set the task is created inside that project and inherits its
-labels; otherwise it uses `CVAT_LABELS`.
-
-| Variable | Required | Meaning |
-| --- | --- | --- |
-| `CVAT_HOST` | yes | Server URL |
-| `CVAT_ACCESS_TOKEN` | yes | Personal Access Token |
-| `IMAGE_DIR` | yes | Directory containing images |
-| `CVAT_PROJECT_ID` | no | Id of the project to create the task in |
-| `CVAT_LABELS` | no | Comma-separated labels (used only without a project) |
-| `CVAT_TASK_NAME` | no | Task name (default `Example task`) |
-| `CVAT_EXAMPLES_CLEANUP` | no | Set to `1` to delete the task at the end |
-
-```bash
-export CVAT_HOST=https://app.cvat.ai
-export CVAT_ACCESS_TOKEN=...
-export IMAGE_DIR=./images
-python task_create_from_images.py
-```
-
-### The script
-
-```python
-"""Create an annotation task from a local directory of images, then list,
-retrieve, and rename it.
-
-Steps:
-  1. Collect *.jpg / *.jpeg / *.png files from IMAGE_DIR (sorted).
-  2. Create the task and upload the images. With CVAT_PROJECT_ID the task is
-     created inside that project and inherits its labels; without it, the task
-     gets its own labels from CVAT_LABELS.
-  3. List tasks currently in the "annotation" status.
-  4. Retrieve the new task by id and rename it.
-  5. Optionally delete it (CVAT_EXAMPLES_CLEANUP=1).
-
-Usage:
-  export CVAT_HOST=https://app.cvat.ai
-  export CVAT_ACCESS_TOKEN=...       # CVAT UI: Profile -> Security
-  export IMAGE_DIR=./images
-  export CVAT_PROJECT_ID=42          # optional: create inside a project
-  export CVAT_LABELS=car,person      # optional, used only without a project
-  python task_create_from_images.py
-"""
-
-import os
-import sys
-from pathlib import Path
-
-from cvat_sdk import make_client, models
-from cvat_sdk.core.filters import F
-from cvat_sdk.core.proxies.tasks import ResourceType
-
-
-def require_env(name: str, hint: str) -> str:
-    value = os.environ.get(name)
-    if not value:
-        sys.exit(f"Set the {name} environment variable: {hint}")
-    return value
-
-
-HOST = require_env("CVAT_HOST", "your CVAT server URL, e.g. https://app.cvat.ai")
-TOKEN = require_env("CVAT_ACCESS_TOKEN", "create one in the CVAT UI: Profile -> Security")
-IMAGE_DIR = Path(require_env("IMAGE_DIR", "a directory containing *.jpg/*.png images"))
-PROJECT_ID = os.environ.get("CVAT_PROJECT_ID")
-TASK_NAME = os.environ.get("CVAT_TASK_NAME", "Example task")
-LABELS = os.environ.get("CVAT_LABELS", "object").split(",")
-CLEANUP = os.environ.get("CVAT_EXAMPLES_CLEANUP") == "1"
-
-
-def find_images(directory: Path) -> list[Path]:
-    if not directory.is_dir():
-        sys.exit(f"IMAGE_DIR {directory} is not a directory")
-    images = sorted(p for p in directory.iterdir() if p.suffix.lower() in (".jpg", ".jpeg", ".png"))
-    if not images:
-        sys.exit(f"No images found in {directory}")
-    return images
-
-
-def main() -> None:
-    images = find_images(IMAGE_DIR)
-    print(f"Found {len(images)} images in {IMAGE_DIR}")
-
-    with make_client(HOST, access_token=TOKEN) as client:
-        # 1-2. Create the task and upload the images.
-        if PROJECT_ID:
-            # Tasks in a project inherit the project's labels — do NOT pass labels.
-            spec = models.TaskWriteRequest(name=TASK_NAME, project_id=int(PROJECT_ID))
-        else:
-            spec = models.TaskWriteRequest(
-                name=TASK_NAME,
-                labels=[models.PatchedLabelRequest(name=name) for name in LABELS],
-            )
-        task = client.tasks.create_from_data(
-            spec=spec,
-            resource_type=ResourceType.LOCAL,
-            resources=images,
-            # predefined = keep the order we pass; image_quality trades size for fidelity
-            data_params={"image_quality": 95, "sorting_method": "predefined"},
-        )
-        where = f" into project {PROJECT_ID}" if PROJECT_ID else ""
-        print(f"Created task {task.id}{where} with {task.size} frames: {HOST}/tasks/{task.id}")
-
-        # 3. List tasks that are still being annotated
-        in_annotation = client.tasks.list(filter=F.status == "annotation")
-        print(f"Tasks in 'annotation' status: {len(in_annotation)}")
-
-        # 4. Retrieve by id and rename
-        fetched = client.tasks.retrieve(task.id)
-        renamed = fetched.update(models.PatchedTaskWriteRequest(name=f"{TASK_NAME} (renamed)"))
-        print(f"Renamed to: {renamed.name}")
-
-        # 5. Opt-in cleanup
-        if CLEANUP:
-            renamed.remove()
-            print(f"Deleted task {task.id}")
-        else:
-            print("Keeping the task; set CVAT_EXAMPLES_CLEANUP=1 to delete it")
-
-
-if __name__ == "__main__":
-    main()
-```
 
 ## Create a task from cloud object keys
 
-Creates a task from images that already live in a registered bucket — nothing is
-uploaded from your machine.
+Creates a task from images that already live in a registered bucket — nothing
+is uploaded from your machine.
 
-| Variable | Required | Meaning |
+| Flag | Required | Meaning |
 | --- | --- | --- |
-| `CVAT_HOST` | yes | Server URL |
-| `CVAT_ACCESS_TOKEN` | yes | Personal Access Token |
-| `CVAT_CLOUD_STORAGE_ID` | yes | Registered cloud storage id (see `cloud_storage_register.py`) |
-| `CLOUD_KEYS` | yes | Comma-separated object keys in the bucket |
-| `CVAT_LABELS` | no | Comma-separated labels (default `object`) |
-| `CVAT_TASK_NAME` | no | Task name (default `Task from cloud storage`) |
-| `CVAT_EXAMPLES_CLEANUP` | no | Set to `1` to delete the task at the end |
+| `--host` | yes | Server URL |
+| `--token` | yes | Personal Access Token |
+| `--cloud-storage-id` | yes | Registered cloud storage id (see `cloud_storage_register.py`) |
+| `--cloud-keys` | yes | Object keys in the bucket, space-separated |
+| `--name` | no | Task name (default `'Task from cloud storage'`) |
+| `--labels` | no | Label names, space-separated (default `object`) |
+| `--cleanup` | no | Delete the created task at the end |
 
 ```bash
-export CVAT_HOST=https://app.cvat.ai
-export CVAT_ACCESS_TOKEN=...
-export CVAT_CLOUD_STORAGE_ID=7
-export CLOUD_KEYS=images/0001.jpg,images/0002.jpg
-python task_create_from_cloud.py
+python task_create_from_cloud.py --host 'https://app.cvat.ai' --token '<your token>' \
+    --cloud-storage-id 7 --cloud-keys 'images/0001.jpg' 'images/0002.jpg' \
+    --labels car person
 ```
 
 ### The script
@@ -168,67 +41,229 @@ cloud storage — nothing is uploaded from your machine.
 Steps:
   1. Create a task whose data is a list of object keys in the bucket.
   2. Print the result.
-  3. Optionally delete it (CVAT_EXAMPLES_CLEANUP=1).
+  3. Optionally delete it (--cleanup).
 
 Register a bucket first with cloud_storage_register.py to get the storage id.
 
-Usage:
-  export CVAT_HOST=https://app.cvat.ai
-  export CVAT_ACCESS_TOKEN=...                       # CVAT UI: Profile -> Security
-  export CVAT_CLOUD_STORAGE_ID=7
-  export CLOUD_KEYS=images/0001.jpg,images/0002.jpg  # comma-separated object keys
-  export CVAT_LABELS=car,person                      # optional
-  python task_create_from_cloud.py
+Usage (run ``python task_create_from_cloud.py --help`` for the full list of options):
+  python task_create_from_cloud.py --host 'https://app.cvat.ai' --token '<your token>' \
+      --cloud-storage-id 7 --cloud-keys 'images/0001.jpg' 'images/0002.jpg' \
+      --labels car person
 """
 
-import os
-import sys
+import argparse
 
 from cvat_sdk import make_client, models
 from cvat_sdk.core.proxies.tasks import ResourceType
 
 
-def require_env(name: str, hint: str) -> str:
-    value = os.environ.get(name)
-    if not value:
-        sys.exit(f"Set the {name} environment variable: {hint}")
-    return value
-
-
-HOST = require_env("CVAT_HOST", "your CVAT server URL, e.g. https://app.cvat.ai")
-TOKEN = require_env("CVAT_ACCESS_TOKEN", "create one in the CVAT UI: Profile -> Security")
-CLOUD_STORAGE_ID = int(
-    require_env(
-        "CVAT_CLOUD_STORAGE_ID", "a registered cloud storage id (cloud_storage_register.py)"
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument(
+        "--host", required=True, help="CVAT server URL, e.g. 'https://app.cvat.ai'"
     )
-)
-CLOUD_KEYS = require_env(
-    "CLOUD_KEYS", "comma-separated object keys, e.g. images/0001.jpg,images/0002.jpg"
-).split(",")
-TASK_NAME = os.environ.get("CVAT_TASK_NAME", "Task from cloud storage")
-LABELS = os.environ.get("CVAT_LABELS", "object").split(",")
-CLEANUP = os.environ.get("CVAT_EXAMPLES_CLEANUP") == "1"
+    parser.add_argument(
+        "--token",
+        required=True,
+        help="Personal Access Token (CVAT UI: Profile -> Security)",
+    )
+    parser.add_argument(
+        "--cloud-storage-id",
+        type=int,
+        required=True,
+        help="a registered cloud storage id (see cloud_storage_register.py)",
+    )
+    parser.add_argument(
+        "--cloud-keys",
+        nargs="+",
+        required=True,
+        help="object keys in the bucket, e.g. 'images/0001.jpg' 'images/0002.jpg'",
+    )
+    parser.add_argument(
+        "--name",
+        default="Task from cloud storage",
+        help="task name (default: 'Task from cloud storage')",
+    )
+    parser.add_argument(
+        "--labels", nargs="+", default=["object"], help="label names (default: object)"
+    )
+    parser.add_argument(
+        "--cleanup", action="store_true", help="delete the created task at the end"
+    )
+    return parser.parse_args()
 
 
 def main() -> None:
-    with make_client(HOST, access_token=TOKEN) as client:
+    args = parse_args()
+    with make_client(args.host, access_token=args.token) as client:
         # ResourceType.SHARE + cloud_storage_id = read images from the bucket
         task = client.tasks.create_from_data(
             spec=models.TaskWriteRequest(
-                name=TASK_NAME,
-                labels=[models.PatchedLabelRequest(name=name) for name in LABELS],
+                name=args.name,
+                labels=[models.PatchedLabelRequest(name=name) for name in args.labels],
             ),
             resource_type=ResourceType.SHARE,
-            resources=CLOUD_KEYS,
-            data_params={"cloud_storage_id": CLOUD_STORAGE_ID},
+            resources=args.cloud_keys,
+            data_params={"cloud_storage_id": args.cloud_storage_id},
         )
-        print(f"Created task {task.id} with {task.size} frames: {HOST}/tasks/{task.id}")
+        print(f"Created task {task.id} with {task.size} frames: {args.host}/tasks/{task.id}")
 
-        if CLEANUP:
+        if args.cleanup:
             task.remove()
             print(f"Deleted task {task.id}")
         else:
-            print("Keeping the task; set CVAT_EXAMPLES_CLEANUP=1 to delete it")
+            print("Keeping the task; pass --cleanup to delete it")
+
+
+if __name__ == "__main__":
+    main()
+```
+
+## Bulk-create tasks in a project from a bucket
+
+Creates several tasks in one call, all inside the same project, each reading
+its data from a registered cloud storage. One `--task` flag creates one task;
+its value is a comma-separated list of object keys. A single key makes a video
+(or single-image) task; multiple keys make an image task whose frames are
+those keys in order. Because every task belongs to the project, they share its
+label schema — no `--labels` here.
+
+| Flag | Required | Meaning |
+| --- | --- | --- |
+| `--host` | yes | Server URL |
+| `--token` | yes | Personal Access Token |
+| `--cloud-storage-id` | yes | Registered cloud storage id (see `cloud_storage_register.py`) |
+| `--project-id` | yes | Project the tasks are created in; supplies the labels |
+| `--task KEY[,KEY,...]` | yes | One `--task` per task; repeat the flag for more |
+| `--name-prefix` | no | Task-name prefix; each task is named `<prefix> N` (default `'Bulk task'`) |
+| `--cleanup` | no | Delete every created task at the end |
+
+```bash
+# three video tasks in project 42
+python tasks_bulk_from_cloud.py --host 'https://app.cvat.ai' --token '<your token>' \
+    --cloud-storage-id 7 --project-id 42 \
+    --task 'videos/clip_01.mp4' --task 'videos/clip_02.mp4' --task 'videos/clip_03.mp4'
+
+# two image-batch tasks in project 42
+python tasks_bulk_from_cloud.py --host 'https://app.cvat.ai' --token '<your token>' \
+    --cloud-storage-id 7 --project-id 42 \
+    --task 'batch_a/img_1.jpg,batch_a/img_2.jpg' \
+    --task 'batch_b/img_1.jpg,batch_b/img_2.jpg'
+```
+
+### The script
+
+```python
+"""Bulk-create tasks inside a project, each task's data read from a registered
+cloud storage. Nothing is uploaded from your machine.
+
+One --task flag creates one task. Its argument is a comma-separated list of
+object keys in the bucket:
+
+  * a single key -> a video task (or a single-image task);
+  * several keys -> an image task whose frames are those keys, in order.
+
+All tasks land in the same project, so they share its label schema.
+
+Steps:
+  1. For each --task, create a task in --project-id using ResourceType.SHARE.
+  2. Print the created ids and a summary count.
+  3. Optionally delete every created task (--cleanup).
+
+Register a bucket first with cloud_storage_register.py to get the storage id.
+
+Usage (run ``python tasks_bulk_from_cloud.py --help`` for the full list of options):
+  # three video tasks in project 42
+  python tasks_bulk_from_cloud.py --host 'https://app.cvat.ai' --token '<your token>' \
+      --cloud-storage-id 7 --project-id 42 \
+      --task 'videos/clip_01.mp4' --task 'videos/clip_02.mp4' --task 'videos/clip_03.mp4'
+
+  # two image-batch tasks in project 42
+  python tasks_bulk_from_cloud.py --host 'https://app.cvat.ai' --token '<your token>' \
+      --cloud-storage-id 7 --project-id 42 \
+      --task 'batch_a/img_1.jpg,batch_a/img_2.jpg' \
+      --task 'batch_b/img_1.jpg,batch_b/img_2.jpg'
+"""
+
+import argparse
+
+from cvat_sdk import make_client, models
+from cvat_sdk.core.proxies.tasks import ResourceType
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument(
+        "--host", required=True, help="CVAT server URL, e.g. 'https://app.cvat.ai'"
+    )
+    parser.add_argument(
+        "--token",
+        required=True,
+        help="Personal Access Token (CVAT UI: Profile -> Security)",
+    )
+    parser.add_argument(
+        "--cloud-storage-id",
+        type=int,
+        required=True,
+        help="a registered cloud storage id (see cloud_storage_register.py)",
+    )
+    parser.add_argument(
+        "--project-id",
+        type=int,
+        required=True,
+        help="tasks are created in this project and inherit its labels",
+    )
+    parser.add_argument(
+        "--task",
+        dest="tasks",
+        action="append",
+        required=True,
+        metavar="KEY[,KEY,...]",
+        help="comma-separated object keys for one task; repeat for more tasks",
+    )
+    parser.add_argument(
+        "--name-prefix",
+        default="Bulk task",
+        help="task name prefix; each task is named '<prefix> N' (default: 'Bulk task')",
+    )
+    parser.add_argument(
+        "--cleanup", action="store_true", help="delete every created task at the end"
+    )
+    return parser.parse_args()
+
+
+def main() -> None:
+    args = parse_args()
+    task_key_groups = [
+        [key.strip() for key in spec.split(",") if key.strip()] for spec in args.tasks
+    ]
+    if any(not group for group in task_key_groups):
+        raise SystemExit("each --task must contain at least one non-empty key")
+
+    with make_client(args.host, access_token=args.token) as client:
+        created = []
+        for i, keys in enumerate(task_key_groups, start=1):
+            # Tasks in a project inherit the project's labels — do NOT pass labels.
+            # ResourceType.SHARE + cloud_storage_id reads the objects from the bucket.
+            task = client.tasks.create_from_data(
+                spec=models.TaskWriteRequest(
+                    name=f"{args.name_prefix} {i}", project_id=args.project_id
+                ),
+                resource_type=ResourceType.SHARE,
+                resources=keys,
+                data_params={"cloud_storage_id": args.cloud_storage_id},
+            )
+            created.append(task)
+            print(f"Created task {task.id} ({task.size} frames): {args.host}/tasks/{task.id}")
+
+        print(f"Created {len(created)} tasks in project {args.project_id}")
+
+        if args.cleanup:
+            for task in created:
+                task.remove()
+            print(f"Deleted {len(created)} tasks")
+        else:
+            print("Keeping the tasks; pass --cleanup to delete them")
 
 
 if __name__ == "__main__":
@@ -240,20 +275,17 @@ if __name__ == "__main__":
 Prints a summary of an existing task (labels, jobs, frames) and exports its
 dataset both to a local zip and to a registered cloud storage.
 
-| Variable | Required | Meaning |
+| Flag | Required | Meaning |
 | --- | --- | --- |
-| `CVAT_HOST` | yes | Server URL |
-| `CVAT_ACCESS_TOKEN` | yes | Personal Access Token |
-| `CVAT_TASK_ID` | yes | Id of the task to inspect and export |
-| `CVAT_CLOUD_STORAGE_ID` | yes | Registered cloud storage id |
-| `CVAT_EXPORT_FORMAT` | no | Server format name (default `COCO 1.0`) |
+| `--host` | yes | Server URL |
+| `--token` | yes | Personal Access Token |
+| `--task-id` | yes | Id of the task to inspect and export |
+| `--cloud-storage-id` | yes | Registered cloud storage id |
+| `--export-format` | no | Exporter name (default `'COCO 1.0'`) |
 
 ```bash
-export CVAT_HOST=https://app.cvat.ai
-export CVAT_ACCESS_TOKEN=...
-export CVAT_TASK_ID=42
-export CVAT_CLOUD_STORAGE_ID=7
-python task_inspect_and_export.py
+python task_inspect_and_export.py --host 'https://app.cvat.ai' --token '<your token>' \
+    --task-id 42 --cloud-storage-id 7 --export-format 'COCO 1.0'
 ```
 
 ### The script
@@ -264,20 +296,16 @@ local zip AND to a registered cloud storage.
 
 Steps:
   1. Retrieve the task and print a summary: labels, jobs (stage/state), frames.
-  2. Fetch the server's export format list and validate CVAT_EXPORT_FORMAT.
+  2. Fetch the server's export format list and validate --export-format.
   3. Export to task_<id>_dataset.zip in the current directory.
   4. Export the same dataset straight to the cloud storage.
 
-Usage:
-  export CVAT_HOST=https://app.cvat.ai
-  export CVAT_ACCESS_TOKEN=...          # CVAT UI: Profile -> Security
-  export CVAT_TASK_ID=42               # an existing task id
-  export CVAT_CLOUD_STORAGE_ID=7       # see cloud_storage_register.py
-  export CVAT_EXPORT_FORMAT="COCO 1.0" # optional, default "COCO 1.0"
-  python task_inspect_and_export.py
+Usage (run ``python task_inspect_and_export.py --help`` for the full list of options):
+  python task_inspect_and_export.py --host 'https://app.cvat.ai' --token '<your token>' \
+      --task-id 42 --cloud-storage-id 7 --export-format 'COCO 1.0'
 """
 
-import os
+import argparse
 import sys
 from pathlib import Path
 
@@ -285,28 +313,38 @@ from cvat_sdk import make_client
 from cvat_sdk.core.proxies.types import Location
 
 
-def require_env(name: str, hint: str) -> str:
-    value = os.environ.get(name)
-    if not value:
-        sys.exit(f"Set the {name} environment variable: {hint}")
-    return value
-
-
-HOST = require_env("CVAT_HOST", "your CVAT server URL, e.g. https://app.cvat.ai")
-TOKEN = require_env("CVAT_ACCESS_TOKEN", "create one in the CVAT UI: Profile -> Security")
-TASK_ID = int(require_env("CVAT_TASK_ID", "id of an existing task, e.g. 42"))
-CLOUD_STORAGE_ID = int(
-    require_env(
-        "CVAT_CLOUD_STORAGE_ID", "a registered cloud storage id (cloud_storage_register.py)"
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument(
+        "--host", required=True, help="CVAT server URL, e.g. 'https://app.cvat.ai'"
     )
-)
-EXPORT_FORMAT = os.environ.get("CVAT_EXPORT_FORMAT", "COCO 1.0")
+    parser.add_argument(
+        "--token",
+        required=True,
+        help="Personal Access Token (CVAT UI: Profile -> Security)",
+    )
+    parser.add_argument(
+        "--task-id", type=int, required=True, help="id of an existing task, e.g. 42"
+    )
+    parser.add_argument(
+        "--cloud-storage-id",
+        type=int,
+        required=True,
+        help="a registered cloud storage id (see cloud_storage_register.py)",
+    )
+    parser.add_argument(
+        "--export-format",
+        default="COCO 1.0",
+        help="exporter name, e.g. 'COCO 1.0' (default: 'COCO 1.0')",
+    )
+    return parser.parse_args()
 
 
 def main() -> None:
-    with make_client(HOST, access_token=TOKEN) as client:
+    args = parse_args()
+    with make_client(args.host, access_token=args.token) as client:
         # 1. Inspect
-        task = client.tasks.retrieve(TASK_ID)
+        task = client.tasks.retrieve(args.task_id)
         print(f"Task {task.id}: {task.name!r}, {task.size} frames")
         print(f"  labels: {[label.name for label in task.get_labels()]}")
         for job in task.get_jobs():
@@ -316,24 +354,28 @@ def main() -> None:
         # Low-level API: there is no high-level proxy for the format list yet.
         formats, _ = client.api_client.server_api.retrieve_annotation_formats()
         names = [f.name for f in formats.exporters]
-        if EXPORT_FORMAT not in names:
-            sys.exit(f"Unknown export format {EXPORT_FORMAT!r}. Choose one of: {', '.join(names)}")
+        if args.export_format not in names:
+            sys.exit(
+                f"Unknown export format {args.export_format!r}. Choose one of: {', '.join(names)}"
+            )
 
         # 3. Export to a local zip
         local_path = Path(f"task_{task.id}_dataset.zip")
-        task.export_dataset(EXPORT_FORMAT, local_path, include_images=True, location=Location.LOCAL)
+        task.export_dataset(
+            args.export_format, local_path, include_images=True, location=Location.LOCAL
+        )
         print(f"Exported {local_path.resolve()}")
 
         # 4. Export straight to the cloud storage
         remote_name = f"task_{task.id}_dataset.zip"
         task.export_dataset(
-            EXPORT_FORMAT,
+            args.export_format,
             remote_name,
             include_images=True,
             location=Location.CLOUD_STORAGE,
-            cloud_storage_id=CLOUD_STORAGE_ID,
+            cloud_storage_id=args.cloud_storage_id,
         )
-        print(f"Exported {remote_name} to cloud storage {CLOUD_STORAGE_ID}")
+        print(f"Exported {remote_name} to cloud storage {args.cloud_storage_id}")
 
 
 if __name__ == "__main__":
@@ -360,14 +402,14 @@ _Other SDK options:_
 
 _Notes:_
 
-- To add a task to a project, pass `project_id` in `TaskWriteRequest` and do **not**
-  pass labels — the task inherits the project's label schema.
-- `task_create_from_cloud.py` uses `ResourceType.SHARE`, so the images are read
-  from the bucket rather than uploaded from your machine.
+- To add a task to a project, pass `project_id` in `TaskWriteRequest` and do
+  **not** pass labels — the task inherits the project's label schema.
+- Both cloud recipes use `ResourceType.SHARE`, so the images are read from the
+  bucket rather than uploaded from your machine.
 - `include_images=False` exports annotations only and is much smaller.
-- Pass a valid `format_name` from the server's exporter list, e.g. `"COCO 1.0"` or
-  `"CVAT for images 1.1"`. An unknown format name is rejected by the recipe.
+- Pass a valid `format_name` from the server's exporter list, e.g. `"COCO 1.0"`
+  or `"CVAT for images 1.1"`. An unknown format name is rejected by the recipe.
 - Full recipes:
-  [`task_create_from_images.py`](https://github.com/cvat-ai/cvat/tree/develop/cvat-sdk/examples/task_create_from_images.py),
   [`task_create_from_cloud.py`](https://github.com/cvat-ai/cvat/tree/develop/cvat-sdk/examples/task_create_from_cloud.py),
+  [`tasks_bulk_from_cloud.py`](https://github.com/cvat-ai/cvat/tree/develop/cvat-sdk/examples/tasks_bulk_from_cloud.py),
   [`task_inspect_and_export.py`](https://github.com/cvat-ai/cvat/tree/develop/cvat-sdk/examples/task_inspect_and_export.py).

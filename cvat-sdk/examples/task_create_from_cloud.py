@@ -8,67 +8,78 @@ cloud storage — nothing is uploaded from your machine.
 Steps:
   1. Create a task whose data is a list of object keys in the bucket.
   2. Print the result.
-  3. Optionally delete it (CVAT_EXAMPLES_CLEANUP=1).
+  3. Optionally delete it (--cleanup).
 
 Register a bucket first with cloud_storage_register.py to get the storage id.
 
-Usage:
-  export CVAT_HOST=https://app.cvat.ai
-  export CVAT_ACCESS_TOKEN=...                       # CVAT UI: Profile -> Security
-  export CVAT_CLOUD_STORAGE_ID=7
-  export CLOUD_KEYS=images/0001.jpg,images/0002.jpg  # comma-separated object keys
-  export CVAT_LABELS=car,person                      # optional
-  python task_create_from_cloud.py
+Usage (run ``python task_create_from_cloud.py --help`` for the full list of options):
+  python task_create_from_cloud.py --host 'https://app.cvat.ai' --token '<your token>' \\
+      --cloud-storage-id 7 --cloud-keys 'images/0001.jpg' 'images/0002.jpg' \\
+      --labels car person
 """
 
-import os
-import sys
+import argparse
 
 from cvat_sdk import make_client, models
 from cvat_sdk.core.proxies.tasks import ResourceType
 
 
-def require_env(name: str, hint: str) -> str:
-    value = os.environ.get(name)
-    if not value:
-        sys.exit(f"Set the {name} environment variable: {hint}")
-    return value
-
-
-HOST = require_env("CVAT_HOST", "your CVAT server URL, e.g. https://app.cvat.ai")
-TOKEN = require_env("CVAT_ACCESS_TOKEN", "create one in the CVAT UI: Profile -> Security")
-CLOUD_STORAGE_ID = int(
-    require_env(
-        "CVAT_CLOUD_STORAGE_ID", "a registered cloud storage id (cloud_storage_register.py)"
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument(
+        "--host", required=True, help="CVAT server URL, e.g. 'https://app.cvat.ai'"
     )
-)
-CLOUD_KEYS = require_env(
-    "CLOUD_KEYS", "comma-separated object keys, e.g. images/0001.jpg,images/0002.jpg"
-).split(",")
-TASK_NAME = os.environ.get("CVAT_TASK_NAME", "Task from cloud storage")
-LABELS = os.environ.get("CVAT_LABELS", "object").split(",")
-CLEANUP = os.environ.get("CVAT_EXAMPLES_CLEANUP") == "1"
+    parser.add_argument(
+        "--token",
+        required=True,
+        help="Personal Access Token (CVAT UI: Profile -> Security)",
+    )
+    parser.add_argument(
+        "--cloud-storage-id",
+        type=int,
+        required=True,
+        help="a registered cloud storage id (see cloud_storage_register.py)",
+    )
+    parser.add_argument(
+        "--cloud-keys",
+        nargs="+",
+        required=True,
+        help="object keys in the bucket, e.g. 'images/0001.jpg' 'images/0002.jpg'",
+    )
+    parser.add_argument(
+        "--name",
+        default="Task from cloud storage",
+        help="task name (default: 'Task from cloud storage')",
+    )
+    parser.add_argument(
+        "--labels", nargs="+", default=["object"], help="label names (default: object)"
+    )
+    parser.add_argument(
+        "--cleanup", action="store_true", help="delete the created task at the end"
+    )
+    return parser.parse_args()
 
 
 def main() -> None:
-    with make_client(HOST, access_token=TOKEN) as client:
+    args = parse_args()
+    with make_client(args.host, access_token=args.token) as client:
         # ResourceType.SHARE + cloud_storage_id = read images from the bucket
         task = client.tasks.create_from_data(
             spec=models.TaskWriteRequest(
-                name=TASK_NAME,
-                labels=[models.PatchedLabelRequest(name=name) for name in LABELS],
+                name=args.name,
+                labels=[models.PatchedLabelRequest(name=name) for name in args.labels],
             ),
             resource_type=ResourceType.SHARE,
-            resources=CLOUD_KEYS,
-            data_params={"cloud_storage_id": CLOUD_STORAGE_ID},
+            resources=args.cloud_keys,
+            data_params={"cloud_storage_id": args.cloud_storage_id},
         )
-        print(f"Created task {task.id} with {task.size} frames: {HOST}/tasks/{task.id}")
+        print(f"Created task {task.id} with {task.size} frames: {args.host}/tasks/{task.id}")
 
-        if CLEANUP:
+        if args.cleanup:
             task.remove()
             print(f"Deleted task {task.id}")
         else:
-            print("Keeping the task; set CVAT_EXAMPLES_CLEANUP=1 to delete it")
+            print("Keeping the task; pass --cleanup to delete it")
 
 
 if __name__ == "__main__":

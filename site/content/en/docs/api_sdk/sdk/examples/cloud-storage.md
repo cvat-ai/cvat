@@ -15,24 +15,20 @@ proxy for cloud storages yet.
 Registers a bucket by key/secret, lists all registered storages, retrieves the
 new one, and renames it — a smoke test that the credentials work.
 
-| Variable | Required | Meaning |
+| Flag | Required | Meaning |
 | --- | --- | --- |
-| `CVAT_HOST` | yes | Server URL |
-| `CVAT_ACCESS_TOKEN` | yes | Personal Access Token |
-| `S3_BUCKET` | yes | Bucket name |
-| `S3_ACCESS_KEY` | yes | Bucket access key id |
-| `S3_SECRET_KEY` | yes | Bucket secret key |
-| `S3_ENDPOINT_URL` | yes | Endpoint URL, e.g. `https://s3.amazonaws.com` |
-| `CVAT_EXAMPLES_CLEANUP` | no | Set to `1` to detach the bucket from CVAT (data untouched) |
+| `--host` | yes | Server URL |
+| `--token` | yes | Personal Access Token |
+| `--bucket` | yes | Bucket name |
+| `--access-key` | yes | Bucket access key id |
+| `--secret-key` | yes | Bucket secret key |
+| `--endpoint-url` | yes | Endpoint URL, e.g. `'https://s3.amazonaws.com'` |
+| `--cleanup` | no | Detach the bucket from CVAT at the end (data untouched) |
 
 ```bash
-export CVAT_HOST=https://app.cvat.ai
-export CVAT_ACCESS_TOKEN=...
-export S3_BUCKET=my-bucket
-export S3_ACCESS_KEY=...
-export S3_SECRET_KEY=...
-export S3_ENDPOINT_URL=https://s3.amazonaws.com
-python cloud_storage_register.py
+python cloud_storage_register.py --host 'https://app.cvat.ai' --token '<your token>' \
+    --bucket 'my-bucket' --access-key '<key>' --secret-key '<secret>' \
+    --endpoint-url 'https://s3.amazonaws.com'
 ```
 
 ### The script
@@ -50,62 +46,68 @@ Steps:
   2. List all registered storages.
   3. Retrieve the new one (the server never returns credentials).
   4. Update its display name.
-  5. Optionally detach it (CVAT_EXAMPLES_CLEANUP=1) — the bucket's contents
-     are never touched.
+  5. Optionally detach it (--cleanup) — the bucket's contents are never touched.
 
-Usage:
-  export CVAT_HOST=https://app.cvat.ai
-  export CVAT_ACCESS_TOKEN=...    # CVAT UI: Profile -> Security
-  export S3_BUCKET=my-bucket
-  export S3_ACCESS_KEY=...
-  export S3_SECRET_KEY=...
-  export S3_ENDPOINT_URL=https://s3.amazonaws.com
-  python cloud_storage_register.py
+Usage (run ``python cloud_storage_register.py --help`` for the full list of options):
+  python cloud_storage_register.py --host 'https://app.cvat.ai' --token '<your token>' \
+      --bucket 'my-bucket' --access-key '<key>' --secret-key '<secret>' \
+      --endpoint-url 'https://s3.amazonaws.com'
 """
 
-import os
-import sys
+import argparse
 
 from cvat_sdk import make_client, models
+from cvat_sdk.core.helpers import get_paginated_collection
 
 
-def require_env(name: str, hint: str) -> str:
-    value = os.environ.get(name)
-    if not value:
-        sys.exit(f"Set the {name} environment variable: {hint}")
-    return value
-
-
-HOST = require_env("CVAT_HOST", "your CVAT server URL, e.g. https://app.cvat.ai")
-TOKEN = require_env("CVAT_ACCESS_TOKEN", "create one in the CVAT UI: Profile -> Security")
-BUCKET = require_env("S3_BUCKET", "the bucket name, e.g. my-bucket")
-ACCESS_KEY = require_env("S3_ACCESS_KEY", "the bucket's access key id")
-SECRET_KEY = require_env("S3_SECRET_KEY", "the bucket's secret key")
-ENDPOINT_URL = require_env("S3_ENDPOINT_URL", "e.g. https://s3.amazonaws.com or http://minio:9000")
-CLEANUP = os.environ.get("CVAT_EXAMPLES_CLEANUP") == "1"
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument(
+        "--host", required=True, help="CVAT server URL, e.g. 'https://app.cvat.ai'"
+    )
+    parser.add_argument(
+        "--token",
+        required=True,
+        help="Personal Access Token (CVAT UI: Profile -> Security)",
+    )
+    parser.add_argument("--bucket", required=True, help="the bucket name, e.g. 'my-bucket'")
+    parser.add_argument("--access-key", required=True, help="the bucket's access key id")
+    parser.add_argument("--secret-key", required=True, help="the bucket's secret key")
+    parser.add_argument(
+        "--endpoint-url",
+        required=True,
+        help="e.g. 'https://s3.amazonaws.com' or 'http://minio:9000'",
+    )
+    parser.add_argument(
+        "--cleanup", action="store_true", help="detach the storage at the end (data is never touched)"
+    )
+    return parser.parse_args()
 
 
 def main() -> None:
-    with make_client(HOST, access_token=TOKEN) as client:
+    args = parse_args()
+    with make_client(args.host, access_token=args.token) as client:
         api = client.api_client.cloudstorages_api
 
         # 1. Register
         storage, _ = api.create(
             models.CloudStorageWriteRequest(
                 provider_type="AWS_S3_BUCKET",  # any S3-compatible service
-                resource=BUCKET,
-                display_name=BUCKET,
+                resource=args.bucket,
+                display_name=args.bucket,
                 credentials_type="KEY_SECRET_KEY_PAIR",
-                key=ACCESS_KEY,
-                secret_key=SECRET_KEY,
-                specific_attributes=f"endpoint_url={ENDPOINT_URL}",
+                key=args.access_key,
+                secret_key=args.secret_key,
+                specific_attributes=f"endpoint_url={args.endpoint_url}",
             )
         )
-        print(f"Registered cloud storage {storage.id} -> {BUCKET}")
+        print(f"Registered cloud storage {storage.id} -> {args.bucket}")
 
-        # 2. List
-        page, _ = api.list()
-        print(f"Registered storages: {[cs.id for cs in page.results]}")
+        # 2. List — api.list() returns a single page. Pair it with
+        # get_paginated_collection to walk every page of any low-level list
+        # endpoint (works for tasks_api.list_endpoint, jobs_api.list_endpoint, ...).
+        storages = get_paginated_collection(api.list_endpoint)
+        print(f"Registered storages: {[cs.id for cs in storages]}")
 
         # 3. Retrieve — credentials are never returned, only metadata
         fetched, _ = api.retrieve(storage.id)
@@ -115,17 +117,17 @@ def main() -> None:
         updated, _ = api.partial_update(
             storage.id,
             patched_cloud_storage_write_request=models.PatchedCloudStorageWriteRequest(
-                display_name=f"{BUCKET} (updated)"
+                display_name=f"{args.bucket} (updated)"
             ),
         )
         print(f"Renamed storage {updated.id} to {updated.display_name!r}")
 
         # 5. Opt-in cleanup: detaches the bucket from CVAT, never deletes data
-        if CLEANUP:
+        if args.cleanup:
             api.destroy(storage.id)
             print(f"Deleted cloud storage {storage.id}")
         else:
-            print("Keeping the storage; set CVAT_EXAMPLES_CLEANUP=1 to delete it")
+            print("Keeping the storage; pass --cleanup to delete it")
 
 
 if __name__ == "__main__":
@@ -134,8 +136,8 @@ if __name__ == "__main__":
 
 _Other SDK options:_
 
-The recipe uses the low-level `client.api_client.cloudstorages_api` because there
-is no high-level proxy for cloud storages yet.
+The recipe uses the low-level `client.api_client.cloudstorages_api` because
+there is no high-level proxy for cloud storages yet.
 
 | SDK method / parameter | What it adds |
 | --- | --- |
@@ -146,11 +148,13 @@ is no high-level proxy for cloud storages yet.
 | `cloudstorages_api.retrieve_actions(id: int)` | Return the operations the credentials allow on the bucket (e.g. `"read"` / `"read,write"`) as a string. `id` is the cloud storage id; the string is the returned data (first tuple element). |
 | `cloudstorages_api.retrieve_preview(id: int)` | Fetch a preview image for the storage. `id` is the cloud storage id; the image bytes are on the HTTP response (`response.data`, the second tuple element), not the parsed data. |
 | `PatchedCloudStorageWriteRequest(key=..., secret_key=...)` | Rotate credentials through `partial_update` (any writable field can be patched). |
+| `get_paginated_collection(api.list_endpoint)` | Walk every page of any low-level `*_api.list_endpoint` (tasks, jobs, cloud storages, ...); returns a flat list. |
 
 _Notes:_
 
-- The server validates the bucket by connecting to `endpoint_url` itself, so use
-  an address the server container can reach.
-- Cleanup detaches the bucket from CVAT; the bucket's contents are never touched.
+- The server validates the bucket by connecting to `endpoint_url` itself, so
+  use an address the server container can reach.
+- Cleanup detaches the bucket from CVAT; the bucket's contents are never
+  touched.
 - Full recipe:
   [`cloud_storage_register.py`](https://github.com/cvat-ai/cvat/tree/develop/cvat-sdk/examples/cloud_storage_register.py).

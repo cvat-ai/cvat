@@ -1,28 +1,39 @@
 # CVAT SDK recipes
 
-Complete, copy-and-run scripts for the CVAT Python SDK. Pick a recipe, set the
-environment variables from its docstring, and run it:
+Complete, copy-and-run scripts for the CVAT Python SDK. Each recipe uses
+`argparse`, so pass `--help` to any script to see all options. Example:
 
-    export CVAT_HOST=https://app.cvat.ai
-    export CVAT_ACCESS_TOKEN=<your token>   # CVAT UI: Profile -> Security
-    export IMAGE_DIR=./images
-    python task_create_from_images.py
+    python tasks_bulk_from_cloud.py --help
+    python tasks_bulk_from_cloud.py \
+        --host 'https://app.cvat.ai' \
+        --token '<your token>' \
+        --cloud-storage-id 7 --project-id 42 \
+        --task 'videos/clip_01.mp4' --task 'videos/clip_02.mp4'
 
-Conventions: recipes that create resources keep them (set `CVAT_EXAMPLES_CLEANUP=1`
-to delete them at the end); recipes that inspect or export take an existing id via
-`CVAT_PROJECT_ID` / `CVAT_TASK_ID`; list-valued variables are comma-separated.
+Create a token in the CVAT UI under Profile -> Security.
 
-| Recipe | What it does | Extra env vars |
+Conventions: recipes that create resources keep them (pass `--cleanup` to
+delete them at the end); recipes that inspect or export take an existing id via
+`--project-id` / `--task-id`; list-valued options accept multiple values
+(e.g. `--labels car person`).
+
+| Recipe | What it does | Recipe-specific flags |
 | --- | --- | --- |
 | `auth_connect.py` | Connect with a Personal Access Token, whoami | — |
-| `auth_profiles.py` | Profile auth; deprecated password fallback | `CVAT_PROFILE` or `CVAT_USERNAME`+`CVAT_PASSWORD` |
-| `project_create_and_list.py` | Create, list, filter, retrieve, rename a project | `CVAT_PROJECT_NAME`, `CVAT_LABELS` |
-| `project_status_report.py` | CSV report of an existing project's tasks/jobs | `CVAT_PROJECT_ID` |
-| `project_backup_restore.py` | Backup an existing project, restore as a copy | `CVAT_PROJECT_ID` |
-| `project_export_dataset.py` | Export a project dataset locally and to a bucket | `CVAT_PROJECT_ID`, `CVAT_CLOUD_STORAGE_ID`, `CVAT_EXPORT_FORMAT` |
-| `task_create_from_images.py` | Create a task from a folder of images | `IMAGE_DIR`, `CVAT_PROJECT_ID`, `CVAT_LABELS` |
-| `task_create_from_cloud.py` | Create a task from bucket object keys | `CVAT_CLOUD_STORAGE_ID`, `CLOUD_KEYS` |
-| `task_inspect_and_export.py` | Inspect a task; export locally and to a bucket | `CVAT_TASK_ID`, `CVAT_CLOUD_STORAGE_ID`, `CVAT_EXPORT_FORMAT` |
-| `job_list_and_assign.py` | List a task's jobs; round-robin assignment | `CVAT_TASK_ID`, `CVAT_ASSIGNEE_IDS` |
-| `job_workflow.py` | Import annotations into a job; advance its stage | `CVAT_TASK_ID`, `ANNOTATIONS_PATH`, `ANNOTATIONS_FORMAT` |
-| `cloud_storage_register.py` | Attach an S3-compatible bucket to CVAT | `S3_BUCKET`, `S3_ACCESS_KEY`, `S3_SECRET_KEY`, `S3_ENDPOINT_URL` |
+| `auth_profiles.py` | Authenticate from a saved profile | `--profile` (omit for the default profile) |
+| `auth_cli.py` | Build a CLI-compatible script via `make_client_from_cli` | reuses cvat-cli's flags: `--server-host`, `--auth`, `--profile`, ... |
+| `project_create_and_list.py` | Create, list, filter, retrieve, rename a project | `--name`, `--labels`, `--cleanup` |
+| `project_status_report.py` | CSV report of an existing project's tasks/jobs | `--project-id` |
+| `project_backup.py` | Download a backup zip of an existing project | `--project-id`, `--output` |
+| `project_restore.py` | Restore a project from a backup zip | `--backup`, `--cleanup` |
+| `project_export_dataset.py` | Export a project dataset locally and to a bucket | `--project-id`, `--cloud-storage-id`, `--export-format` |
+| `task_create_from_cloud.py` | Create a task from bucket object keys | `--cloud-storage-id`, `--cloud-keys`, `--cleanup` |
+| `tasks_bulk_from_cloud.py` | Bulk-create tasks in a project from bucket object keys | `--cloud-storage-id`, `--project-id`, `--task` (repeat), `--cleanup` |
+| `task_inspect_and_export.py` | Inspect a task; export locally and to a bucket | `--task-id`, `--cloud-storage-id`, `--export-format` |
+| `job_list.py` | List a task's jobs with stage/state/assignee | `--task-id`, `--stage`, `--state` |
+| `job_assign.py` | Round-robin assign unassigned jobs; CSV report | `--task-id`, `--assignees` or `--search` |
+| `job_workflow.py` | Batch-advance completed jobs to the next stage | `--from-stage`, `--task-id` |
+| `cloud_storage_register.py` | Attach an S3-compatible bucket to CVAT | `--bucket`, `--access-key`, `--secret-key`, `--endpoint-url`, `--cleanup` |
+
+Every recipe additionally takes `--host` and `--token`. Wrap values that
+contain URL punctuation in single quotes, e.g. `--host 'https://app.cvat.ai'`.

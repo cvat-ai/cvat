@@ -2,26 +2,26 @@
 title: 'Authenticate a client'
 linkTitle: 'Authentication'
 weight: 1
-description: 'Copy-and-run auth recipes: PAT (recommended), saved profiles, and the deprecated password fallback'
+description: 'Copy-and-run auth recipes: PAT (recommended), saved profiles, and the CLI-compatible argument set'
 ---
 
-Two recipes: `auth_connect.py` is the recommended PAT path; `auth_profiles.py` shows
-saved profiles plus the deprecated password fallback.
+Three recipes: `auth_connect.py` is the recommended PAT path, `auth_profiles.py`
+signs in from a saved profile with no secret in your code, and `auth_cli.py`
+wires up the shared `cvat-cli` argument set (`--server-host`, `--auth`,
+`--profile`, ...) so your scripts feel like an extension of the CLI.
 
 ## Connect with a Personal Access Token
 
 Opens an authenticated client with a PAT, prints the server version, and prints
 who you are — a quick sanity check any script can copy.
 
-| Variable | Required | Meaning |
+| Flag | Required | Meaning |
 | --- | --- | --- |
-| `CVAT_HOST` | yes | Server URL, e.g. `https://app.cvat.ai` |
-| `CVAT_ACCESS_TOKEN` | yes | Token created in the CVAT UI (Profile -> Security) |
+| `--host` | yes | Server URL, e.g. `'https://app.cvat.ai'` |
+| `--token` | yes | Token created in the CVAT UI (Profile -> Security) |
 
 ```bash
-export CVAT_HOST=https://app.cvat.ai
-export CVAT_ACCESS_TOKEN=...
-python auth_connect.py
+python auth_connect.py --host 'https://app.cvat.ai' --token '<your token>'
 ```
 
 ### The script
@@ -34,31 +34,33 @@ Steps:
   2. Print the server version.
   3. Print who you are authenticated as (a quick sanity check for scripts).
 
-Usage:
-  export CVAT_HOST=https://app.cvat.ai
-  export CVAT_ACCESS_TOKEN=...   # create one in the CVAT UI: Profile -> Security
-  python auth_connect.py
+Usage (run ``python auth_connect.py --help`` for the full list of options):
+  python auth_connect.py --host 'https://app.cvat.ai' --token '<your token>'
+
+Create a token in the CVAT UI under Profile -> Security.
 """
 
-import os
-import sys
+import argparse
 
 from cvat_sdk import make_client
 
 
-def require_env(name: str, hint: str) -> str:
-    value = os.environ.get(name)
-    if not value:
-        sys.exit(f"Set the {name} environment variable: {hint}")
-    return value
-
-
-HOST = require_env("CVAT_HOST", "your CVAT server URL, e.g. https://app.cvat.ai")
-TOKEN = require_env("CVAT_ACCESS_TOKEN", "create one in the CVAT UI: Profile -> Security")
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument(
+        "--host", required=True, help="CVAT server URL, e.g. 'https://app.cvat.ai'"
+    )
+    parser.add_argument(
+        "--token",
+        required=True,
+        help="Personal Access Token (create one in the CVAT UI: Profile -> Security)",
+    )
+    return parser.parse_args()
 
 
 def main() -> None:
-    with make_client(HOST, access_token=TOKEN) as client:
+    args = parse_args()
+    with make_client(args.host, access_token=args.token) as client:
         print("Server version:", client.get_server_version())
         me = client.users.retrieve_current_user()
         print(f"Authenticated as {me.username} (id={me.id})")
@@ -68,102 +70,153 @@ if __name__ == "__main__":
     main()
 ```
 
-## Sign in from a saved profile (or the deprecated password fallback)
+## Sign in from a saved profile
 
-Uses a saved CLI profile so no secret lives in the code. Falls back to
-username/password sign-in only if `CVAT_USERNAME` and `CVAT_PASSWORD` are set —
-that path is deprecated and will be removed in a future release.
+Uses a saved CLI profile so no secret lives in the code. Create a profile once
+with `cvat-cli`; then any script can pick it by name or fall back to the
+default profile.
 
 Create a profile once:
 
 ```bash
-cvat-cli --server-host https://app.cvat.ai profile create --name app --set-default
+cvat-cli --server-host 'https://app.cvat.ai' profile create --name app --set-default
 ```
 
-| Variable | Required | Meaning |
+| Flag | Required | Meaning |
 | --- | --- | --- |
-| `CVAT_PROFILE` | no | Profile to use; falls back to the default profile if unset |
-| `CVAT_HOST` | fallback only | Server URL, required for the password fallback |
-| `CVAT_USERNAME` | fallback only | Username, deprecated fallback only |
-| `CVAT_PASSWORD` | fallback only | Password, deprecated fallback only |
+| `--profile` | no | Name of a saved profile; omit to use the default profile |
 
 ```bash
-export CVAT_PROFILE=app
-python auth_profiles.py
+python auth_profiles.py --profile app
+python auth_profiles.py               # uses the default profile
 ```
 
 ### The script
 
 ```python
-"""Authenticate without putting a token in your code: saved profiles (recommended),
-with the deprecated username/password sign-in as a fallback.
+"""Authenticate without putting a token in your code: use a saved profile.
 
 Create a profile once on the command line, then any script can use it:
 
-  cvat-cli --server-host https://app.cvat.ai profile create --name app --set-default
+  cvat-cli --server-host 'https://app.cvat.ai' profile create --name app --set-default
 
 Steps:
-  1. If CVAT_PROFILE is set, use that profile; otherwise try the default profile.
-  2. If no profile exists and CVAT_USERNAME/CVAT_PASSWORD are set, fall back to
-     the DEPRECATED password sign-in (kept for local/dev servers only).
-  3. Print who you are authenticated as.
+  1. If --profile is passed, use that profile; otherwise use the default profile.
+  2. Print who you are authenticated as.
 
-Usage:
-  export CVAT_PROFILE=app                 # or rely on the default profile
-  python auth_profiles.py
-
-  # deprecated fallback:
-  export CVAT_HOST=https://app.cvat.ai
-  export CVAT_USERNAME=me
-  export CVAT_PASSWORD=secret
-  python auth_profiles.py
+Usage (run ``python auth_profiles.py --help`` for the full list of options):
+  python auth_profiles.py --profile app
+  python auth_profiles.py               # uses the default profile
 """
 
-import os
+import argparse
 import sys
 
-from cvat_sdk import Client, make_client
-from cvat_sdk.core.auth import AuthStore, make_client_from_profile
+from cvat_sdk import make_client_from_profile
+from cvat_sdk.core.auth import AuthStore
 
 
-def require_env(name: str, hint: str) -> str:
-    value = os.environ.get(name)
-    if not value:
-        sys.exit(f"Set the {name} environment variable: {hint}")
-    return value
-
-
-PROFILE_NAME = os.environ.get("CVAT_PROFILE")
-USERNAME = os.environ.get("CVAT_USERNAME")
-PASSWORD = os.environ.get("CVAT_PASSWORD")
-
-
-def open_client() -> Client:
-    if PROFILE_NAME:
-        profile = AuthStore().get_profile(PROFILE_NAME)
-        if profile is None:
-            sys.exit(f"Profile {PROFILE_NAME!r} not found. Create it with cvat-cli.")
-        print(f"Using profile {PROFILE_NAME!r}")
-        return make_client_from_profile(profile)
-
-    if USERNAME and PASSWORD:
-        host = require_env("CVAT_HOST", "your CVAT server URL, e.g. https://app.cvat.ai")
-        return make_client(host, credentials=(USERNAME, PASSWORD))
-
-    default = AuthStore().get_default_profile()
-    if default is None:
-        sys.exit(
-            "No credentials configured. Either create a profile:\n"
-            "    cvat-cli --server-host https://app.cvat.ai profile create --name app --set-default\n"
-            "or set CVAT_USERNAME and CVAT_PASSWORD (deprecated fallback)."
-        )
-    name, profile = default
-    print(f"Using default profile {name!r}")
-    return make_client_from_profile(profile)
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument(
+        "--profile", help="name of a saved profile; omit to use the default profile"
+    )
+    return parser.parse_args()
 
 
 def main() -> None:
-    with open_client() as client:
+    args = parse_args()
+    store = AuthStore()
+    if args.profile:
+        profile = store.get_profile(args.profile)
+        if profile is None:
+            sys.exit(f"Profile {args.profile!r} not found. Create it with cvat-cli.")
+        print(f"Using profile {args.profile!r}")
+    else:
+        default = store.get_default_profile()
+        if default is None:
+            sys.exit(
+                "No default profile configured. Create one with:\n"
+                "    cvat-cli --server-host 'https://app.cvat.ai' profile create"
+                " --name app --set-default"
+            )
+        name, profile = default
+        print(f"Using default profile {name!r}")
+
+    with make_client_from_profile(profile) as client:
+        me = client.users.retrieve_current_user()
+        print(f"Authenticated as {me.username} (id={me.id})")
+
+
+if __name__ == "__main__":
+    main()
+```
+
+## Build a CLI-compatible script
+
+Reuses `cvat-cli`'s shared auth arguments (`--server-host`, `--server-port`,
+`--auth`, `--profile`, `--insecure`, `--organization`) with
+`configure_client_auth_arguments`, then hands the parsed namespace to
+`make_client_from_cli`, which picks the right factory (profile / PAT / password)
+from the arguments. This is the go-to pattern when your script should feel like
+an extension of `cvat-cli`.
+
+| Flag | Required | Meaning |
+| --- | --- | --- |
+| `--server-host` | fallback | Server URL when not using a profile |
+| `--auth` | fallback | `USER:PASS` (deprecated password sign-in) or `USER` — see `cvat-cli` |
+| `--profile` | fallback | Named saved profile; falls back to the default profile if no host/auth |
+| `--insecure`, `--organization`, `--server-port` | no | Reused from `cvat-cli`'s shared arg set |
+
+Also honors `CVAT_ACCESS_TOKEN` / `CVAT_PASSWORD` environment variables the same
+way `cvat-cli` does.
+
+```bash
+python auth_cli.py --profile app
+python auth_cli.py --server-host 'https://app.cvat.ai'          # uses CVAT_ACCESS_TOKEN env
+python auth_cli.py --server-host 'https://app.cvat.ai' --auth me:secret
+```
+
+### The script
+
+```python
+"""Build a CLI-compatible script that reuses cvat-cli's auth argument set:
+--server-host / --server-port / --auth / --profile / --insecure / --organization.
+
+This is the go-to pattern when your script should feel like an extension of
+cvat-cli — it accepts the same flags, honors CVAT_ACCESS_TOKEN / PASS env
+variables, and resolves profiles the same way (explicit --profile, else the
+default profile if no host/auth is passed).
+
+Steps:
+  1. Register the shared auth flags with configure_client_auth_arguments.
+  2. Add your own script-specific arguments on top.
+  3. Hand the parsed namespace to make_client_from_cli — it picks the right
+     Client factory (profile / PAT / password) from the arguments.
+
+Usage (run ``python auth_cli.py --help`` for the full list of options):
+  python auth_cli.py --profile app
+  python auth_cli.py --server-host 'https://app.cvat.ai'   # uses CVAT_ACCESS_TOKEN env
+  python auth_cli.py --server-host 'https://app.cvat.ai' --auth me:secret
+"""
+
+import argparse
+
+from cvat_sdk import make_client_from_cli
+from cvat_sdk.core.auth import configure_client_auth_arguments
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    configure_client_auth_arguments(parser)
+    # Add your script's own arguments here, e.g.
+    # parser.add_argument("--task-id", type=int, required=True)
+    return parser.parse_args()
+
+
+def main() -> None:
+    args = parse_args()
+    with make_client_from_cli(args) as client:
         me = client.users.retrieve_current_user()
         print(f"Authenticated as {me.username} (id={me.id})")
 
@@ -174,10 +227,9 @@ if __name__ == "__main__":
 
 _Notes:_
 
-- Create a profile once on the CLI, then reuse it with no secret in your code:
-  `cvat-cli --server-host https://app.cvat.ai profile create --name app --set-default`.
-- Username/password sign-in is a **deprecated** fallback for local/dev servers only
-  and will be removed in a future release.
+- Personal Access Tokens are the recommended path. Password sign-in (via `--auth
+  USER:PASS`) is a deprecated fallback that will be removed in a future release.
 - Full recipes:
   [`auth_connect.py`](https://github.com/cvat-ai/cvat/tree/develop/cvat-sdk/examples/auth_connect.py),
-  [`auth_profiles.py`](https://github.com/cvat-ai/cvat/tree/develop/cvat-sdk/examples/auth_profiles.py).
+  [`auth_profiles.py`](https://github.com/cvat-ai/cvat/tree/develop/cvat-sdk/examples/auth_profiles.py),
+  [`auth_cli.py`](https://github.com/cvat-ai/cvat/tree/develop/cvat-sdk/examples/auth_cli.py).

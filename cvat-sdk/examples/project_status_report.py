@@ -6,40 +6,43 @@
 task, stage, state, assignee, and frame count — a quick management overview.
 
 Steps:
-  1. Retrieve the project by id.
-  2. Walk its tasks and their jobs.
+  1. Retrieve the project by id (for its name in the report).
+  2. List every job in the project with one server call.
   3. Write report.csv into the current directory.
 
-Usage:
-  export CVAT_HOST=https://app.cvat.ai
-  export CVAT_ACCESS_TOKEN=...    # CVAT UI: Profile -> Security
-  export CVAT_PROJECT_ID=42      # an existing project id
-  python project_status_report.py
+Usage (run ``python project_status_report.py --help`` for the full list of options):
+  python project_status_report.py --host 'https://app.cvat.ai' --token '<your token>' \\
+      --project-id 42
 """
 
+import argparse
 import csv
-import os
-import sys
+from collections.abc import Iterable
 from pathlib import Path
 
 from cvat_sdk import make_client
+from cvat_sdk.core.filters import F
+from cvat_sdk.core.proxies.jobs import Job
 from cvat_sdk.core.proxies.projects import Project
 
 
-def require_env(name: str, hint: str) -> str:
-    value = os.environ.get(name)
-    if not value:
-        sys.exit(f"Set the {name} environment variable: {hint}")
-    return value
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument(
+        "--host", required=True, help="CVAT server URL, e.g. 'https://app.cvat.ai'"
+    )
+    parser.add_argument(
+        "--token",
+        required=True,
+        help="Personal Access Token (CVAT UI: Profile -> Security)",
+    )
+    parser.add_argument(
+        "--project-id", type=int, required=True, help="id of an existing project, e.g. 42"
+    )
+    return parser.parse_args()
 
 
-HOST = require_env("CVAT_HOST", "your CVAT server URL, e.g. https://app.cvat.ai")
-TOKEN = require_env("CVAT_ACCESS_TOKEN", "create one in the CVAT UI: Profile -> Security")
-PROJECT_ID = int(require_env("CVAT_PROJECT_ID", "id of an existing project, e.g. 42"))
-REPORT_PATH = Path("report.csv")
-
-
-def write_report(project: Project, path: Path) -> None:
+def write_report(project: Project, jobs: Iterable[Job], path: Path) -> None:
     with path.open("w", newline="") as f:
         writer = csv.writer(f)
         writer.writerow(
@@ -55,30 +58,34 @@ def write_report(project: Project, path: Path) -> None:
                 "frames",
             ]
         )
-        for task in project.get_tasks():
-            for job in task.get_jobs():
-                assignee = job.assignee.username if job.assignee else ""
-                writer.writerow(
-                    [
-                        project.id,
-                        project.name,
-                        task.id,
-                        task.name,
-                        job.id,
-                        job.stage,
-                        job.state,
-                        assignee,
-                        task.size,
-                    ]
-                )
+        for job in jobs:
+            assignee = job.assignee.username if job.assignee else ""
+            writer.writerow(
+                [
+                    project.id,
+                    project.name,
+                    job.task_id,
+                    job.task_name,
+                    job.id,
+                    job.stage,
+                    job.state,
+                    assignee,
+                    job.stop_frame - job.start_frame + 1,
+                ]
+            )
 
 
 def main() -> None:
-    with make_client(HOST, access_token=TOKEN) as client:
-        project = client.projects.retrieve(PROJECT_ID)
+    args = parse_args()
+    report_path = Path("report.csv")
+    with make_client(args.host, access_token=args.token) as client:
+        project = client.projects.retrieve(args.project_id)
         print(f"Reporting on project {project.id}: {project.name!r}")
-        write_report(project, REPORT_PATH)
-        print(f"Wrote {REPORT_PATH.resolve()}")
+        # One server call for every job in the project; each job carries
+        # task_id/task_name/assignee, so no per-task fetch is needed.
+        jobs = client.jobs.list(filter=F.project_id == args.project_id)
+        write_report(project, jobs, report_path)
+        print(f"Wrote {report_path.resolve()}")
 
 
 if __name__ == "__main__":

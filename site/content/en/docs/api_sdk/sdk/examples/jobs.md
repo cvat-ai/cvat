@@ -2,186 +2,339 @@
 title: 'Job recipes'
 linkTitle: 'Jobs'
 weight: 4
-description: 'List a task jobs and assign round-robin; drive a job through its workflow with annotation import'
+description: 'List a task jobs, round-robin unassigned jobs, batch-advance completed jobs'
 ---
 
-Two recipes: `job_list_and_assign.py` lists a task's jobs and distributes the
-unassigned ones round-robin, and `job_workflow.py` picks the most recently
-updated job, imports annotations, and moves it to the validation stage.
+Three recipes: `job_list.py` lists a task's jobs with optional stage/state
+filters, `job_assign.py` round-robins unassigned jobs across a resolved pool
+of users and writes a CSV report, and `job_workflow.py` batch-advances every
+completed job at a given stage to the next stage.
 
-## List and auto-assign a task's jobs
+## List a task's jobs
 
-Lists the jobs of a task, filters the unassigned ones, and hands them out
-round-robin across `CVAT_ASSIGNEE_IDS` (or all to you if unset).
+Queries the jobs of a task with optional server-side `--stage` / `--state`
+filters, ordered by most recently updated.
 
-| Variable | Required | Meaning |
+| Flag | Required | Meaning |
 | --- | --- | --- |
-| `CVAT_HOST` | yes | Server URL |
-| `CVAT_ACCESS_TOKEN` | yes | Personal Access Token |
-| `CVAT_TASK_ID` | yes | Id of the task whose jobs to assign |
-| `CVAT_ASSIGNEE_IDS` | no | Comma-separated user ids; defaults to your own user |
+| `--host` | yes | Server URL |
+| `--token` | yes | Personal Access Token |
+| `--task-id` | yes | Id of the task whose jobs to list |
+| `--stage` | no | Only jobs at this stage, e.g. `annotation` |
+| `--state` | no | Only jobs in this state, e.g. `new` |
 
 ```bash
-export CVAT_HOST=https://app.cvat.ai
-export CVAT_ACCESS_TOKEN=...
-export CVAT_TASK_ID=42
-python job_list_and_assign.py
+python job_list.py --host 'https://app.cvat.ai' --token '<your token>' \
+    --task-id 42
+python job_list.py --host 'https://app.cvat.ai' --token '<your token>' \
+    --task-id 42 --stage annotation --state new
 ```
 
 ### The script
 
 ```python
-"""List an existing task's jobs, find the unassigned ones, and distribute them
-across annotators round-robin (CVAT has no built-in auto-assignment).
+"""List the jobs of an existing task with their stage, state, and assignee.
 
 Steps:
-  1. List all jobs of the task with their stage/state/assignee.
-  2. Filter the jobs that have no assignee yet.
-  3. Assign them round-robin across CVAT_ASSIGNEE_IDS — or all to you,
-     if CVAT_ASSIGNEE_IDS is not set.
+  1. Query jobs of the task, most recently updated first. --stage / --state
+     filter server-side, so large tasks stay cheap. The same endpoint also
+     accepts free-text search, e.g. search='alice'.
+  2. Print one row per job.
 
-Usage:
-  export CVAT_HOST=https://app.cvat.ai
-  export CVAT_ACCESS_TOKEN=...       # CVAT UI: Profile -> Security
-  export CVAT_TASK_ID=42            # an existing task id
-  export CVAT_ASSIGNEE_IDS=10,11,12 # optional, comma-separated user ids
-  python job_list_and_assign.py
+Usage (run ``python job_list.py --help`` for the full list of options):
+  python job_list.py --host 'https://app.cvat.ai' --token '<your token>' \
+      --task-id 42
+  python job_list.py --host 'https://app.cvat.ai' --token '<your token>' \
+      --task-id 42 --stage annotation --state new
 """
 
-import os
-import sys
+import argparse
 
-from cvat_sdk import make_client, models
-from cvat_sdk.core.filters import F, all_, not_
-
-
-def require_env(name: str, hint: str) -> str:
-    value = os.environ.get(name)
-    if not value:
-        sys.exit(f"Set the {name} environment variable: {hint}")
-    return value
+from cvat_sdk import make_client
+from cvat_sdk.core.filters import F, all_
 
 
-HOST = require_env("CVAT_HOST", "your CVAT server URL, e.g. https://app.cvat.ai")
-TOKEN = require_env("CVAT_ACCESS_TOKEN", "create one in the CVAT UI: Profile -> Security")
-TASK_ID = int(require_env("CVAT_TASK_ID", "id of an existing task, e.g. 42"))
-ASSIGNEE_IDS = [int(x) for x in os.environ.get("CVAT_ASSIGNEE_IDS", "").split(",") if x]
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument(
+        "--host", required=True, help="CVAT server URL, e.g. 'https://app.cvat.ai'"
+    )
+    parser.add_argument(
+        "--token",
+        required=True,
+        help="Personal Access Token (CVAT UI: Profile -> Security)",
+    )
+    parser.add_argument(
+        "--task-id", type=int, required=True, help="id of an existing task, e.g. 42"
+    )
+    parser.add_argument("--stage", help="only jobs at this stage, e.g. 'annotation'")
+    parser.add_argument("--state", help="only jobs in this state, e.g. 'new'")
+    return parser.parse_args()
 
 
 def main() -> None:
-    with make_client(HOST, access_token=TOKEN) as client:
-        # 1. List all jobs of the task
-        jobs = client.jobs.list(filter=F.task_id == TASK_ID)
-        print(f"Task {TASK_ID} has {len(jobs)} jobs")
+    args = parse_args()
+    with make_client(args.host, access_token=args.token) as client:
+        conditions = [F.task_id == args.task_id]
+        if args.stage:
+            conditions.append(F.stage == args.stage)
+        if args.state:
+            conditions.append(F.state == args.state)
+
+        jobs = client.jobs.list(filter=all_(*conditions), sort="-updated_date")
+        print(f"Task {args.task_id}: {len(jobs)} matching jobs")
         for job in jobs:
             assignee = job.assignee.username if job.assignee else "-"
             print(f"  job {job.id}: stage={job.stage}, state={job.state}, assignee={assignee}")
-
-        # 2. Only the unassigned ones
-        unassigned = client.jobs.list(filter=all_(F.task_id == TASK_ID, not_(F.assignee.is_set())))
-        print(f"Unassigned jobs: {[job.id for job in unassigned]}")
-
-        # 3. Round-robin assignment. To pull a team automatically instead of
-        # passing ids, use client.users.list(...).
-        assignees = ASSIGNEE_IDS or [client.users.retrieve_current_user().id]
-        for i, job in enumerate(unassigned):
-            user_id = assignees[i % len(assignees)]
-            job.update(models.PatchedJobWriteRequest(assignee=user_id))
-            print(f"Assigned job {job.id} -> user {user_id}")
 
 
 if __name__ == "__main__":
     main()
 ```
 
-## Import annotations and advance a job
+## Round-robin assign a task's jobs
 
-Sorts the task's jobs by most recently updated, imports annotations from a file
-into the first one, and moves the job to the `validation` stage.
+Distributes the unassigned jobs of a task across a resolved user pool and
+writes `assignments.csv` (`job_id, previous_assignee, new_assignee,
+new_assignee_id`). The pool is resolved by looking up usernames exactly with
+`--assignees`, by server-side search with `--search`, or self-assigns if
+neither is passed.
 
-| Variable | Required | Meaning |
+| Flag | Required | Meaning |
 | --- | --- | --- |
-| `CVAT_HOST` | yes | Server URL |
-| `CVAT_ACCESS_TOKEN` | yes | Personal Access Token |
-| `CVAT_TASK_ID` | yes | Id of the task |
-| `ANNOTATIONS_PATH` | yes | Annotations file matching `ANNOTATIONS_FORMAT` |
-| `ANNOTATIONS_FORMAT` | no | Importer name (default `COCO 1.0`) |
+| `--host` | yes | Server URL |
+| `--token` | yes | Personal Access Token |
+| `--task-id` | yes | Id of the task |
+| `--assignees USERNAME [...]` | no | Usernames to round-robin (exact match) |
+| `--search QUERY` | no | Server-side user search; every match becomes an assignee |
+
+`--assignees` and `--search` are mutually exclusive. Omit both to self-assign.
 
 ```bash
-export CVAT_HOST=https://app.cvat.ai
-export CVAT_ACCESS_TOKEN=...
-export CVAT_TASK_ID=42
-export ANNOTATIONS_PATH=./annotations.json
-python job_workflow.py
+# self-assign every unassigned job
+python job_assign.py --host 'https://app.cvat.ai' --token '<your token>' \
+    --task-id 42
+# round-robin across an explicit pool
+python job_assign.py --host 'https://app.cvat.ai' --token '<your token>' \
+    --task-id 42 --assignees alice bob
+# pool = every user matching the search
+python job_assign.py --host 'https://app.cvat.ai' --token '<your token>' \
+    --task-id 42 --search 'annotator-team'
 ```
 
 ### The script
 
 ```python
-"""Drive a job through its workflow: pick the most recently updated job of a
-task, import annotations into it, and move it to the validation stage.
+"""Round-robin the unassigned jobs of a task across a set of annotators and
+write a CSV report of the assignments (job_id, previous_assignee, new_assignee).
+
+The user API supports server-side search, so you rarely need to know user ids —
+pass usernames (or a search query) and let the recipe resolve them.
 
 Steps:
-  1. List the task's jobs, most recently updated first (server-side ordering;
-     the same endpoint also accepts free-text search, e.g. search="alice").
-  2. Import annotations from a file into the first job. The file's format must
-     match ANNOTATIONS_FORMAT (an importer name, e.g. "COCO 1.0").
-  3. Verify the shapes arrived, then move the job to the validation stage.
+  1. Resolve the assignee pool:
+       --assignees USERNAME [USERNAME ...] : look up each username exactly.
+       --search QUERY                      : run client.users.list(search=QUERY),
+                                             print the matches, use them all.
+       neither                             : assign to me (the authenticated user).
+  2. Filter the task's unassigned jobs.
+  3. Round-robin the jobs across the resolved users.
+  4. Write assignments.csv into the current directory.
 
-Usage:
-  export CVAT_HOST=https://app.cvat.ai
-  export CVAT_ACCESS_TOKEN=...              # CVAT UI: Profile -> Security
-  export CVAT_TASK_ID=42                   # an existing task id
-  export ANNOTATIONS_PATH=./annotations.json
-  export ANNOTATIONS_FORMAT="COCO 1.0"     # optional, default "COCO 1.0"
-  python job_workflow.py
+Usage (run ``python job_assign.py --help`` for the full list of options):
+  python job_assign.py --host 'https://app.cvat.ai' --token '<your token>' \
+      --task-id 42                              # self-assign
+  python job_assign.py --host 'https://app.cvat.ai' --token '<your token>' \
+      --task-id 42 --assignees alice bob
+  python job_assign.py --host 'https://app.cvat.ai' --token '<your token>' \
+      --task-id 42 --search 'annotator-team'    # pool = every match of the search
 """
 
-import os
+import argparse
+import csv
 import sys
 from pathlib import Path
 
 from cvat_sdk import make_client, models
-from cvat_sdk.core.filters import F
+from cvat_sdk.core.filters import F, all_, not_
+from cvat_sdk.core.proxies.users import User
 
 
-def require_env(name: str, hint: str) -> str:
-    value = os.environ.get(name)
-    if not value:
-        sys.exit(f"Set the {name} environment variable: {hint}")
-    return value
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument(
+        "--host", required=True, help="CVAT server URL, e.g. 'https://app.cvat.ai'"
+    )
+    parser.add_argument(
+        "--token",
+        required=True,
+        help="Personal Access Token (CVAT UI: Profile -> Security)",
+    )
+    parser.add_argument(
+        "--task-id", type=int, required=True, help="id of an existing task, e.g. 42"
+    )
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument(
+        "--assignees",
+        nargs="+",
+        metavar="USERNAME",
+        help="usernames to round-robin across (looked up exactly on the server)",
+    )
+    group.add_argument(
+        "--search",
+        metavar="QUERY",
+        help="server-side user search; every match becomes an assignee",
+    )
+    return parser.parse_args()
 
 
-HOST = require_env("CVAT_HOST", "your CVAT server URL, e.g. https://app.cvat.ai")
-TOKEN = require_env("CVAT_ACCESS_TOKEN", "create one in the CVAT UI: Profile -> Security")
-TASK_ID = int(require_env("CVAT_TASK_ID", "id of an existing task, e.g. 42"))
-ANNOTATIONS_PATH = Path(
-    require_env("ANNOTATIONS_PATH", "an annotations file matching ANNOTATIONS_FORMAT")
-)
-ANNOTATIONS_FORMAT = os.environ.get("ANNOTATIONS_FORMAT", "COCO 1.0")
+def resolve_pool(client, args: argparse.Namespace) -> list[User]:
+    """Resolve --assignees / --search / nothing to a list of User objects."""
+    if args.search:
+        matches = client.users.list(search=args.search)
+        if not matches:
+            sys.exit(f"No users matched search {args.search!r}")
+        print(f"Users matching {args.search!r}:")
+        for user in matches:
+            print(f"  {user.id}\t{user.username}")
+        return matches
+
+    if args.assignees:
+        pool: list[User] = []
+        for username in args.assignees:
+            found = client.users.list(filter=F.username == username)
+            if not found:
+                sys.exit(f"User {username!r} not found")
+            pool.append(found[0])
+        return pool
+
+    me = client.users.retrieve_current_user()
+    print(f"No --assignees / --search; self-assigning as {me.username} (id={me.id})")
+    return [me]
 
 
 def main() -> None:
-    if not ANNOTATIONS_PATH.is_file():
-        sys.exit(f"ANNOTATIONS_PATH {ANNOTATIONS_PATH} does not exist")
+    args = parse_args()
+    report_path = Path("assignments.csv")
+    with make_client(args.host, access_token=args.token) as client:
+        pool = resolve_pool(client, args)
 
-    with make_client(HOST, access_token=TOKEN) as client:
-        # 1. Most recently updated job first
-        jobs = client.jobs.list(filter=F.task_id == TASK_ID, sort="-updated_date")
-        if not jobs:
-            sys.exit(f"Task {TASK_ID} has no jobs")
-        job = jobs[0]
-        print(f"Working with job {job.id} (stage={job.stage}, state={job.state})")
+        unassigned = client.jobs.list(
+            filter=all_(F.task_id == args.task_id, not_(F.assignee.is_set()))
+        )
+        print(f"Task {args.task_id}: {len(unassigned)} unassigned jobs to distribute")
 
-        # 2. Import annotations
-        job.import_annotations(ANNOTATIONS_FORMAT, ANNOTATIONS_PATH)
-        print(f"Imported {ANNOTATIONS_FORMAT} annotations from {ANNOTATIONS_PATH}")
-        shapes = job.get_annotations().shapes
-        print(f"Job {job.id} now has {len(shapes)} shapes")
+        with report_path.open("w", newline="") as f:
+            writer = csv.writer(f)
+            writer.writerow(["job_id", "previous_assignee", "new_assignee", "new_assignee_id"])
+            for i, job in enumerate(unassigned):
+                user = pool[i % len(pool)]
+                previous = job.assignee.username if job.assignee else ""
+                job.update(models.PatchedJobWriteRequest(assignee=user.id))
+                writer.writerow([job.id, previous, user.username, user.id])
+                print(f"Assigned job {job.id} -> {user.username} (id={user.id})")
 
-        # 3. Advance the workflow stage: annotation -> validation -> acceptance
-        job.update(models.PatchedJobWriteRequest(stage="validation"))
-        print(f"Moved job {job.id} to the validation stage")
+        print(f"Wrote {report_path.resolve()}")
+
+
+if __name__ == "__main__":
+    main()
+```
+
+## Batch-advance completed jobs
+
+Finds every job whose state is `completed` at `--from-stage` and moves each
+one to the next stage (`annotation → validation → acceptance`). Optionally
+restrict the sweep to a single task.
+
+| Flag | Required | Meaning |
+| --- | --- | --- |
+| `--host` | yes | Server URL |
+| `--token` | yes | Personal Access Token |
+| `--from-stage` | yes | Advance completed jobs at this stage (`annotation` or `validation`) |
+| `--task-id` | no | Restrict the sweep to a single task |
+
+```bash
+# send everything annotators finished into review
+python job_workflow.py --host 'https://app.cvat.ai' --token '<your token>' \
+    --from-stage annotation
+# accept everything that passed review, scoped to one task
+python job_workflow.py --host 'https://app.cvat.ai' --token '<your token>' \
+    --from-stage validation --task-id 42
+```
+
+### The script
+
+```python
+"""Batch-advance completed jobs to the next workflow stage
+
+Find every job whose state is 'completed' at --from-stage, move each one to
+the next stage, and print the list of modified jobs. Optionally restrict the
+sweep to a single task with --task-id.
+
+Steps:
+  1. Query jobs matching (stage == --from-stage, state == 'completed').
+  2. Update each job's stage to the next one in the workflow.
+  3. Print the modified job ids.
+
+Usage (run ``python job_workflow.py --help`` for the full list of options):
+  # Send everything annotators finished into review:
+  python job_workflow.py --host 'https://app.cvat.ai' --token '<your token>' \
+      --from-stage annotation
+  # Accept everything that passed review, scoped to one task:
+  python job_workflow.py --host 'https://app.cvat.ai' --token '<your token>' \
+      --from-stage validation --task-id 42
+"""
+
+import argparse
+
+from cvat_sdk import make_client, models
+from cvat_sdk.core.filters import F, all_
+
+NEXT_STAGE = {"annotation": "validation", "validation": "acceptance"}
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument(
+        "--host", required=True, help="CVAT server URL, e.g. 'https://app.cvat.ai'"
+    )
+    parser.add_argument(
+        "--token",
+        required=True,
+        help="Personal Access Token (CVAT UI: Profile -> Security)",
+    )
+    parser.add_argument(
+        "--from-stage",
+        required=True,
+        choices=sorted(NEXT_STAGE),
+        help="advance completed jobs currently at this stage",
+    )
+    parser.add_argument(
+        "--task-id",
+        type=int,
+        help="restrict the sweep to a single task (default: every task you can see)",
+    )
+    return parser.parse_args()
+
+
+def main() -> None:
+    args = parse_args()
+    to_stage = NEXT_STAGE[args.from_stage]
+
+    with make_client(args.host, access_token=args.token) as client:
+        conditions = [F.stage == args.from_stage, F.state == "completed"]
+        if args.task_id is not None:
+            conditions.append(F.task_id == args.task_id)
+
+        jobs = client.jobs.list(filter=all_(*conditions))
+        print(f"Found {len(jobs)} completed jobs at stage {args.from_stage!r}")
+
+        for job in jobs:
+            job.update(models.PatchedJobWriteRequest(stage=to_stage))
+            print(f"  job {job.id}: {args.from_stage} -> {to_stage}")
+
+        print(f"Moved {len(jobs)} jobs to stage {to_stage!r}")
 
 
 if __name__ == "__main__":
@@ -205,11 +358,14 @@ _Other SDK options:_
 
 _Notes:_
 
-- `stage` is one of `annotation`, `validation`, `acceptance`.
-- Jobs are created automatically with their task (controlled by `segment_size` at
-  task creation) — you can update and assign them, but not create a job on its own.
-  CVAT has no built-in auto-assignment, so `job_list_and_assign.py` is the scripted
+- `stage` is one of `annotation`, `validation`, `acceptance`; `state` is one of
+  `new`, `in progress`, `rejected`, `completed`.
+- Jobs are created automatically with their task (controlled by `segment_size`
+  at task creation) — you can update and assign them, but not create a job on
+  its own.
+- CVAT has no built-in auto-assignment, so `job_assign.py` is the scripted
   pattern.
 - Full recipes:
-  [`job_list_and_assign.py`](https://github.com/cvat-ai/cvat/tree/develop/cvat-sdk/examples/job_list_and_assign.py),
+  [`job_list.py`](https://github.com/cvat-ai/cvat/tree/develop/cvat-sdk/examples/job_list.py),
+  [`job_assign.py`](https://github.com/cvat-ai/cvat/tree/develop/cvat-sdk/examples/job_assign.py),
   [`job_workflow.py`](https://github.com/cvat-ai/cvat/tree/develop/cvat-sdk/examples/job_workflow.py).

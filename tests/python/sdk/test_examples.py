@@ -7,6 +7,7 @@ import subprocess
 import sys
 from pathlib import Path
 
+import platformdirs
 import pytest
 from shared.utils.config import (
     BASE_URL,
@@ -18,6 +19,7 @@ from shared.utils.config import (
 from shared.utils.helpers import generate_image_file
 
 from cvat_sdk import Client, models
+from cvat_sdk.core.auth import AuthStore, ProfileEntry
 from cvat_sdk.core.proxies.projects import Project
 from cvat_sdk.core.proxies.tasks import ResourceType, Task
 
@@ -45,22 +47,24 @@ class TestExamples:
     def run_recipe(
         self,
         name: str,
-        extra_env: dict[str, str] | None = None,
+        args: list[str] | None = None,
+        with_auth: bool = True,
+        with_cleanup: bool = True,
         expect_failure: bool = False,
+        env: dict[str, str] | None = None,
     ) -> subprocess.CompletedProcess:
-        env = {
-            **os.environ,
-            "CVAT_HOST": BASE_URL,
-            "CVAT_ACCESS_TOKEN": self.token,
-            "CVAT_EXAMPLES_CLEANUP": "1",
-            **(extra_env or {}),
-        }
+        cmd = [sys.executable, str(EXAMPLES_DIR / name)]
+        if with_auth:
+            cmd += ["--host", BASE_URL, "--token", self.token]
+        if with_cleanup:
+            cmd += ["--cleanup"]
+        cmd += list(args or [])
         result = subprocess.run(
-            [sys.executable, str(EXAMPLES_DIR / name)],
-            env=env,
+            cmd,
             cwd=self.tmp_path,
             capture_output=True,
             text=True,
+            env=env,
         )
         if expect_failure:
             assert result.returncode != 0, f"{name} unexpectedly succeeded:\n{result.stdout}"
@@ -107,61 +111,151 @@ class TestExamples:
         return project
 
     def test_auth_connect(self):
-        result = self.run_recipe("auth_connect.py")
+        result = self.run_recipe("auth_connect.py", with_cleanup=False)
         assert f"Authenticated as {self.user}" in result.stdout
 
-    def test_auth_profiles_password_fallback(self):
+    def _seeded_profile_env(self, name: str, *, set_default: bool) -> dict[str, str]:
+        # Point the subprocess's AuthStore at a private path via XDG_CONFIG_HOME
+        # (Linux/Docker CI), then seed one profile at that same path.
+        config_home = self.tmp_path / "auth_config"
+        env = os.environ.copy()
+        env["XDG_CONFIG_HOME"] = str(config_home)
+        env["HOME"] = str(self.tmp_path)
+        # platformdirs reads env at call time — mirror the subprocess env briefly
+        # to compute the exact auth.json path the recipe will look at.
+        with pytest.MonkeyPatch.context() as mp:
+            mp.setenv("XDG_CONFIG_HOME", env["XDG_CONFIG_HOME"])
+            mp.setenv("HOME", env["HOME"])
+            store_path = (
+                platformdirs.user_config_path("cvat-sdk", "CVAT.ai", roaming=False) / "auth.json"
+            )
+        AuthStore(path=store_path).put_profile(
+            name,
+            ProfileEntry(
+                server=BASE_URL, token=self.token, created_date="2026-01-01T00:00:00+00:00"
+            ),
+            set_default=set_default,
+        )
+        return env
+
+    def test_auth_profiles_named(self):
+        env = self._seeded_profile_env("recipes_named", set_default=False)
         result = self.run_recipe(
             "auth_profiles.py",
-            {"CVAT_USERNAME": self.user, "CVAT_PASSWORD": USER_PASS},
+            args=["--profile", "recipes_named"],
+            with_auth=False,
+            with_cleanup=False,
+            env=env,
         )
-        assert "deprecated" in result.stdout
+        assert "Using profile 'recipes_named'" in result.stdout
+        assert f"Authenticated as {self.user}" in result.stdout
+
+    def test_auth_profiles_default(self):
+        env = self._seeded_profile_env("recipes_default", set_default=True)
+        result = self.run_recipe(
+            "auth_profiles.py",
+            with_auth=False,
+            with_cleanup=False,
+            env=env,
+        )
+        assert "Using default profile 'recipes_default'" in result.stdout
+        assert f"Authenticated as {self.user}" in result.stdout
+
+    def test_auth_profiles_missing_default_fails(self):
+        config_home = self.tmp_path / "empty_auth_config"
+        env = os.environ.copy()
+        env["XDG_CONFIG_HOME"] = str(config_home)
+        env["HOME"] = str(self.tmp_path)
+        result = self.run_recipe(
+            "auth_profiles.py",
+            with_auth=False,
+            with_cleanup=False,
+            expect_failure=True,
+            env=env,
+        )
+        assert "No default profile configured" in result.stderr
+
+    def test_auth_cli_password_auth(self):
+        # make_client_from_cli's --auth USER:PASS path — same shape as cvat-cli.
+        result = self.run_recipe(
+            "auth_cli.py",
+            args=["--server-host", BASE_URL, "--auth", f"{self.user}:{USER_PASS}"],
+            with_auth=False,
+            with_cleanup=False,
+        )
         assert f"Authenticated as {self.user}" in result.stdout
 
     @pytest.mark.with_external_services
     def test_cloud_storage_register(self):
         result = self.run_recipe(
             "cloud_storage_register.py",
-            {
-                "S3_BUCKET": "test",
-                "S3_ACCESS_KEY": MINIO_KEY,
-                "S3_SECRET_KEY": MINIO_SECRET_KEY,
-                "S3_ENDPOINT_URL": "http://minio:9000",
-            },
+            args=[
+                "--bucket", "test",
+                "--access-key", MINIO_KEY,
+                "--secret-key", MINIO_SECRET_KEY,
+                "--endpoint-url", "http://minio:9000",
+            ],
         )
         assert "Registered cloud storage" in result.stdout
         assert "(updated)" in result.stdout
         assert "Deleted cloud storage" in result.stdout
 
-    def test_job_workflow(self, fxt_image_file: Path, fxt_coco_file: Path):
-        # The COCO fixture references labels 'car' and 'person', so the task
-        # must have them for import to succeed.
-        task = self.client.tasks.create_from_data(
-            spec=models.TaskWriteRequest(
-                name="Workflow task",
-                labels=[
-                    models.PatchedLabelRequest(name="car"),
-                    models.PatchedLabelRequest(name="person"),
-                ],
-            ),
-            resource_type=ResourceType.LOCAL,
-            resources=[fxt_image_file],
-        )
+    def test_job_workflow_advances_completed_jobs(self):
+        task = self.make_task()
+        # Seed: mark the first job of the task as completed at annotation stage;
+        # leave the rest untouched — they must not be advanced.
+        jobs = task.get_jobs()
+        target = jobs[0]
+        target.update(models.PatchedJobWriteRequest(stage="annotation", state="completed"))
+
         result = self.run_recipe(
             "job_workflow.py",
-            {"CVAT_TASK_ID": str(task.id), "ANNOTATIONS_PATH": str(fxt_coco_file)},
+            args=["--from-stage", "annotation", "--task-id", str(task.id)],
+            with_cleanup=False,
         )
-        assert "Imported COCO 1.0 annotations" in result.stdout
-        assert "to the validation stage" in result.stdout
-        job = task.get_jobs()[0]
-        assert self.client.jobs.retrieve(job.id).get_annotations().shapes
-        assert self.client.jobs.retrieve(job.id).stage == "validation"
+        assert f"job {target.id}: annotation -> validation" in result.stdout
+        assert "Moved 1 jobs to stage 'validation'" in result.stdout
+        assert self.client.jobs.retrieve(target.id).stage == "validation"
+        for other in jobs[1:]:
+            assert self.client.jobs.retrieve(other.id).stage == "annotation"
 
-    def test_job_list_and_assign(self):
+    def test_job_list(self):
         task = self.make_task()
-        result = self.run_recipe("job_list_and_assign.py", {"CVAT_TASK_ID": str(task.id)})
+        result = self.run_recipe(
+            "job_list.py",
+            args=["--task-id", str(task.id)],
+            with_cleanup=False,
+        )
+        assert f"Task {task.id}:" in result.stdout
+        for job in task.get_jobs():
+            assert f"job {job.id}:" in result.stdout
+
+    def test_job_assign_self(self):
+        task = self.make_task()
+        result = self.run_recipe(
+            "job_assign.py",
+            args=["--task-id", str(task.id)],
+            with_cleanup=False,
+        )
         me = self.client.users.retrieve_current_user()
-        assert f"-> user {me.id}" in result.stdout
+        assert f"self-assigning as {me.username}" in result.stdout
+        # CSV is written to the recipe's cwd (== tmp_path)
+        report = self.tmp_path / "assignments.csv"
+        assert report.exists()
+        lines = report.read_text().splitlines()
+        assert lines[0] == "job_id,previous_assignee,new_assignee,new_assignee_id"
+        for job in task.get_jobs():
+            assert self.client.jobs.retrieve(job.id).assignee.id == me.id
+
+    def test_job_assign_by_username(self):
+        task = self.make_task()
+        me = self.client.users.retrieve_current_user()
+        result = self.run_recipe(
+            "job_assign.py",
+            args=["--task-id", str(task.id), "--assignees", me.username],
+            with_cleanup=False,
+        )
+        assert f"-> {me.username}" in result.stdout
         for job in task.get_jobs():
             assert self.client.jobs.retrieve(job.id).assignee.id == me.id
 
@@ -170,10 +264,11 @@ class TestExamples:
         task = self.make_task()
         result = self.run_recipe(
             "task_inspect_and_export.py",
-            {
-                "CVAT_TASK_ID": str(task.id),
-                "CVAT_CLOUD_STORAGE_ID": str(IMPORT_EXPORT_BUCKET_ID),
-            },
+            args=[
+                "--task-id", str(task.id),
+                "--cloud-storage-id", str(IMPORT_EXPORT_BUCKET_ID),
+            ],
+            with_cleanup=False,
         )
         assert "labels: ['object']" in result.stdout
         local = self.tmp_path / f"task_{task.id}_dataset.zip"
@@ -184,48 +279,53 @@ class TestExamples:
     def test_task_create_from_cloud(self):
         result = self.run_recipe(
             "task_create_from_cloud.py",
-            {
-                "CVAT_CLOUD_STORAGE_ID": str(IMPORT_EXPORT_BUCKET_ID),
-                "CLOUD_KEYS": "images/image_1.jpg,images/image_2.jpg",
-            },
+            args=[
+                "--cloud-storage-id", str(IMPORT_EXPORT_BUCKET_ID),
+                "--cloud-keys", "images/image_1.jpg", "images/image_2.jpg",
+            ],
         )
         assert "Created task" in result.stdout
         assert "with 2 frames" in result.stdout
         assert "Deleted task" in result.stdout
 
-    def test_task_create_from_images_standalone(self):
-        image_dir = self.make_image_dir()
-        result = self.run_recipe("task_create_from_images.py", {"IMAGE_DIR": str(image_dir)})
-        assert "Created task" in result.stdout
-        assert "with 2 frames" in result.stdout
-        assert "Deleted task" in result.stdout
-
-    def test_task_create_from_images_in_project(self):
+    @pytest.mark.with_external_services
+    def test_tasks_bulk_from_cloud(self):
         project = self.make_project()
-        image_dir = self.make_image_dir()
         result = self.run_recipe(
-            "task_create_from_images.py",
-            {"IMAGE_DIR": str(image_dir), "CVAT_PROJECT_ID": str(project.id)},
+            "tasks_bulk_from_cloud.py",
+            args=[
+                "--cloud-storage-id", str(IMPORT_EXPORT_BUCKET_ID),
+                "--project-id", str(project.id),
+                "--task", "images/image_1.jpg",
+                "--task", "images/image_2.jpg,images/image_3.jpg",
+            ],
         )
-        assert f"into project {project.id}" in result.stdout
+        assert "Created 2 tasks in project" in result.stdout
+        assert "Deleted 2 tasks" in result.stdout
 
-    def test_task_create_from_images_empty_dir(self):
-        empty = self.tmp_path / "empty"
-        empty.mkdir()
+    def test_tasks_bulk_from_cloud_rejects_empty_task(self):
         result = self.run_recipe(
-            "task_create_from_images.py", {"IMAGE_DIR": str(empty)}, expect_failure=True
+            "tasks_bulk_from_cloud.py",
+            args=[
+                "--cloud-storage-id", "1",
+                "--project-id", "1",
+                "--task", ",",
+            ],
+            expect_failure=True,
+            with_cleanup=False,
         )
-        assert "No images found" in result.stderr
+        assert "each --task must contain at least one non-empty key" in result.stderr
 
     @pytest.mark.with_external_services
     def test_project_export_dataset(self):
         project = self.make_project_with_task()
         result = self.run_recipe(
             "project_export_dataset.py",
-            {
-                "CVAT_PROJECT_ID": str(project.id),
-                "CVAT_CLOUD_STORAGE_ID": str(IMPORT_EXPORT_BUCKET_ID),
-            },
+            args=[
+                "--project-id", str(project.id),
+                "--cloud-storage-id", str(IMPORT_EXPORT_BUCKET_ID),
+            ],
+            with_cleanup=False,
         )
         local = self.tmp_path / f"project_{project.id}_dataset.zip"
         assert local.exists() and local.stat().st_size > 0
@@ -235,25 +335,41 @@ class TestExamples:
         project = self.make_project_with_task()
         result = self.run_recipe(
             "project_export_dataset.py",
-            {
-                "CVAT_PROJECT_ID": str(project.id),
-                "CVAT_CLOUD_STORAGE_ID": "1",
-                "CVAT_EXPORT_FORMAT": "Bogus 9.9",
-            },
+            args=[
+                "--project-id", str(project.id),
+                "--cloud-storage-id", "1",
+                "--export-format", "Bogus 9.9",
+            ],
+            with_cleanup=False,
             expect_failure=True,
         )
         assert "Unknown export format" in result.stderr
 
-    def test_project_backup_restore(self):
+    def test_project_backup_then_restore(self):
         project = self.make_project_with_task()
-        result = self.run_recipe("project_backup_restore.py", {"CVAT_PROJECT_ID": str(project.id)})
-        assert (self.tmp_path / "project_backup.zip").exists()
-        assert "Restored a copy as project" in result.stdout
-        assert "Deleted restored project" in result.stdout
+        backup_result = self.run_recipe(
+            "project_backup.py",
+            args=["--project-id", str(project.id)],
+            with_cleanup=False,
+        )
+        backup_path = self.tmp_path / f"project_{project.id}_backup.zip"
+        assert backup_path.exists()
+        assert f"Backed up project {project.id}" in backup_result.stdout
+
+        restore_result = self.run_recipe(
+            "project_restore.py",
+            args=["--backup", str(backup_path)],
+        )
+        assert "Restored a copy as project" in restore_result.stdout
+        assert "Deleted restored project" in restore_result.stdout
 
     def test_project_status_report(self):
         project = self.make_project_with_task()
-        self.run_recipe("project_status_report.py", {"CVAT_PROJECT_ID": str(project.id)})
+        self.run_recipe(
+            "project_status_report.py",
+            args=["--project-id", str(project.id)],
+            with_cleanup=False,
+        )
         report = self.tmp_path / "report.csv"
         assert report.exists()
         lines = report.read_text().splitlines()
@@ -264,7 +380,8 @@ class TestExamples:
 
     def test_project_create_and_list(self):
         result = self.run_recipe(
-            "project_create_and_list.py", {"CVAT_PROJECT_NAME": "Recipes CI project"}
+            "project_create_and_list.py",
+            args=["--name", "Recipes CI project"],
         )
         assert "Created project" in result.stdout
         assert "Renamed to: Recipes CI project (renamed)" in result.stdout
