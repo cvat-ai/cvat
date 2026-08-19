@@ -136,6 +136,11 @@ type AudioIntervalPatch = Partial<Pick<
     'start' | 'stop' | 'label' | 'attributes' | 'lock' | 'pinned' | 'hidden' | 'color'
 >>;
 
+export interface AudioIntervalBoundary {
+    state: AudioIntervalState;
+    side: 'start' | 'end';
+}
+
 function applyIntervalPatch(interval: AudioIntervalState, patch: AudioIntervalPatch): void {
     const target = interval;
     if (typeof patch.start === 'number') target.start = patch.start;
@@ -221,6 +226,30 @@ export function requestPlayAudioIntervalOnce(clientID: number): ThunkAction {
         if (!interval) return;
 
         dispatch(audioActions.playAudioIntervalOnce({ intervalID: clientID }));
+    };
+}
+
+export function findAudioIntervalBoundariesAsync(
+    positionMs: number, deltaMs: number,
+): ThunkAction<Promise<AudioIntervalBoundary[]>> {
+    return async (_dispatch, getState): Promise<AudioIntervalBoundary[]> => {
+        const { intervals } = getState().audio.player;
+        const { instance: job } = getState().annotation.job;
+        if (!job) return [];
+
+        const boundaries: AudioIntervalBoundary[] = [];
+        for (const state of intervals) {
+            if (state.hidden) continue;
+
+            if (Math.abs(positionMs - state.start) <= deltaMs) {
+                boundaries.push({ state, side: 'start' });
+            }
+            if (Math.abs(positionMs - (state.stop ?? job.stopFrame + 1)) <= deltaMs) {
+                boundaries.push({ state, side: 'end' });
+            }
+        }
+
+        return boundaries;
     };
 }
 

@@ -1601,7 +1601,7 @@ export default class Collection {
                 continue;
             }
 
-            const distance = AudioInterval.distance(state.start, state.stop ?? this.stopFrame, position);
+            const distance = AudioInterval.distance(state.start, state.stop ?? this.stopFrame + 1, position);
             if (distance !== null && (minimumDistance === null || distance < minimumDistance)) {
                 minimumDistance = distance;
                 minimumState = state;
@@ -1612,29 +1612,6 @@ export default class Collection {
             state: minimumState,
             distance: minimumDistance,
         };
-    }
-
-    public selectIntervalBoundaries(
-        intervalStates: AudioIntervalState[], position: number, delta: number,
-    ): Array<{ state: AudioIntervalState, side: 'start' | 'end' }> {
-        checkObjectType('intervals for boundary selection', intervalStates, null, { cls: Array, name: 'Array' });
-        checkObjectType('position', position, 'number', null);
-        checkObjectType('delta', delta, 'number', null);
-
-        const boundaries: Array<{ state: AudioIntervalState, side: 'start' | 'end' }> = [];
-        for (const state of intervalStates) {
-            checkObjectType('interval state', state, null, { cls: AudioIntervalState, name: 'AudioIntervalState' });
-            if (state.hidden) continue;
-
-            if (Math.abs(position - state.start) <= delta) {
-                boundaries.push({ state, side: 'start' });
-            }
-            if (Math.abs(position - (state.stop ?? this.stopFrame + 1)) <= delta) {
-                boundaries.push({ state, side: 'end' });
-            }
-        }
-
-        return boundaries;
     }
 
     public bulkSave(states: AudioIntervalState[]): void {

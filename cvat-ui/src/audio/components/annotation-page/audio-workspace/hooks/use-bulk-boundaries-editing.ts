@@ -7,7 +7,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import type { Region, UpdateSide } from 'wavesurfer.js/dist/plugins/regions';
 
 import { MIN_INTERVAL_DURATION } from 'audio/utils/waveform-geometry';
-import { updateAudioIntervalsAsync } from 'actions/audio-actions';
+import { findAudioIntervalBoundariesAsync, updateAudioIntervalsAsync } from 'actions/audio-actions';
 import { ActiveControl, CombinedState } from 'reducers';
 import { shallowEqual, ThunkDispatch } from 'utils/redux';
 
@@ -102,22 +102,16 @@ export function useBulkBoundariesEditing({
     regionRuntime, regionHighlighting, selectionInteraction, viewport, durationRef, ready,
 }: Params): void {
     const dispatch = useDispatch<ThunkDispatch>();
-    const { intervals, job, activeControl } = useSelector(
+    const { activeControl } = useSelector(
         (state: CombinedState) => ({
-            intervals: state.audio.player.intervals,
-            job: state.annotation.job.instance,
             activeControl: state.annotation.canvas.activeControl,
         }),
         shallowEqual,
     );
-    const intervalsRef = useRef(intervals);
-    const jobRef = useRef(job);
     const activeControlRef = useRef(activeControl);
     const hoveredRef = useRef<HoveredBoundaries>({ boundaries: [], time: null });
     const bulkDragRef = useRef<BulkDragStatus | null>(null);
     const previousCursorRef = useRef('');
-    intervalsRef.current = intervals;
-    jobRef.current = job;
     activeControlRef.current = activeControl;
 
     const clearHoveredBoundaries = (): void => {
@@ -173,14 +167,12 @@ export function useBulkBoundariesEditing({
     useEffect(() => {
         if (!ready) return undefined;
 
-        const findNearBoundaries = async (time: number): Promise<Boundary[]> => {
-            const currentJob = jobRef.current;
-            if (!currentJob) return [];
-
-            const semanticBoundaries = await currentJob.annotations.selectIntervalBoundaries(
-                intervalsRef.current,
-                time * 1000,
-                BOUNDARY_TOLERANCE_MS,
+        const findNearBoundaries = async (timeSec: number): Promise<Boundary[]> => {
+            const semanticBoundaries = await dispatch(
+                findAudioIntervalBoundariesAsync(
+                    timeSec * 1000,
+                    BOUNDARY_TOLERANCE_MS,
+                ),
             );
             const regionsByID = getIntervalRegionsByClientID(regionRuntime.regionsPlugin);
 
@@ -352,7 +344,8 @@ export function useBulkBoundariesEditing({
 
             const { boundaries: hoveredBoundaries, time: hoveredTime } = hoveredRef.current;
             const isHoverUpToDate =
-                hoveredTime !== null && Math.abs(time - hoveredTime) <= BOUNDARY_TOLERANCE_MS / 1000;
+                hoveredTime !== null &&
+                Math.abs(time - hoveredTime) <= BOUNDARY_TOLERANCE_MS / 1000;
             const boundaries = isHoverUpToDate ? hoveredBoundaries : [];
 
             if (isHoverUpToDate) {
