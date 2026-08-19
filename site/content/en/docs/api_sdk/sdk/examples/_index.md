@@ -28,10 +28,10 @@ they stay in sync with the SDK.
 
 ## Topics
 
-- [Authenticate]({{< ref "authentication" >}}) — `auth_connect.py`, `auth_profiles.py`, `auth_cli.py`
-- [Projects]({{< ref "projects" >}}) — create/list, status report, backup, restore,
+- [Authenticate](authentication) — `auth_connect.py`, `auth_profiles.py`, `auth_cli.py`
+- [Projects](projects) — create/list, status report, backup, restore,
   dataset export
-- [Tasks]({{< ref "tasks" >}}) — create from a bucket, bulk-create in a project,
+- [Tasks](tasks) — create from a bucket, bulk-create in a project,
   inspect and export
-- [Jobs]({{< ref "jobs" >}}) — list jobs, round-robin assignment, batch-advance stages
-- [Cloud storage]({{< ref "cloud-storage" >}}) — attach an S3-compatible bucket
+- [Jobs](jobs) — list jobs, round-robin assignment, batch-advance stages
+- [Cloud storage](cloud-storage) — attach an S3-compatible bucket

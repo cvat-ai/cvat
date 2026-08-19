@@ -26,9 +26,7 @@ from cvat_sdk.core.proxies.tasks import ResourceType
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument(
-        "--host", required=True, help="CVAT server URL, e.g. 'https://app.cvat.ai'"
-    )
+    parser.add_argument("--host", required=True, help="CVAT server URL, e.g. 'https://app.cvat.ai'")
     parser.add_argument(
         "--token",
         required=True,
@@ -54,9 +52,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--labels", nargs="+", default=["object"], help="label names (default: object)"
     )
-    parser.add_argument(
-        "--cleanup", action="store_true", help="delete the created task at the end"
-    )
+    parser.add_argument("--cleanup", action="store_true", help="delete the created task at the end")
     return parser.parse_args()
 
 

@@ -344,7 +344,7 @@ if __name__ == "__main__":
 _Other SDK options:_
 
 | SDK method / parameter                                           | What it adds                                                                                             |
-|------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------|
+| ---------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
 | `Job.update(models.PatchedJobWriteRequest(stage=...))`           | Change a job's `stage` (retrieve the job, then update). Must be one of: `annotation`, `validation`, `acceptance`. |
 | `Job.update(models.PatchedJobWriteRequest(state=...))`           | Change a job's `state`, must be one of these values:  `new`, `in progress`, `rejected`, `completed`.     |
 | `Job.import_annotations(..., import_mode="replace" \| "append")` | `"replace"` overwrites the job's existing annotations (default); `"append"` merges the imported ones in. |

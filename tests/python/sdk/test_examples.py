@@ -9,6 +9,11 @@ from pathlib import Path
 
 import platformdirs
 import pytest
+from cvat_sdk import Client, models
+from cvat_sdk.core.auth import AuthStore, ProfileEntry
+from cvat_sdk.core.proxies.projects import Project
+from cvat_sdk.core.proxies.tasks import ResourceType, Task
+
 from shared.utils.config import (
     BASE_URL,
     IMPORT_EXPORT_BUCKET_ID,
@@ -17,11 +22,6 @@ from shared.utils.config import (
     USER_PASS,
 )
 from shared.utils.helpers import generate_image_file
-
-from cvat_sdk import Client, models
-from cvat_sdk.core.auth import AuthStore, ProfileEntry
-from cvat_sdk.core.proxies.projects import Project
-from cvat_sdk.core.proxies.tasks import ResourceType, Task
 
 EXAMPLES_DIR = Path(__file__).parents[3] / "cvat-sdk" / "examples"
 
@@ -190,10 +190,14 @@ class TestExamples:
         result = self.run_recipe(
             "cloud_storage_register.py",
             args=[
-                "--bucket", "test",
-                "--access-key", MINIO_KEY,
-                "--secret-key", MINIO_SECRET_KEY,
-                "--endpoint-url", "http://minio:9000",
+                "--bucket",
+                "test",
+                "--access-key",
+                MINIO_KEY,
+                "--secret-key",
+                MINIO_SECRET_KEY,
+                "--endpoint-url",
+                "http://minio:9000",
             ],
         )
         assert "Registered cloud storage" in result.stdout
@@ -265,8 +269,10 @@ class TestExamples:
         result = self.run_recipe(
             "task_inspect_and_export.py",
             args=[
-                "--task-id", str(task.id),
-                "--cloud-storage-id", str(IMPORT_EXPORT_BUCKET_ID),
+                "--task-id",
+                str(task.id),
+                "--cloud-storage-id",
+                str(IMPORT_EXPORT_BUCKET_ID),
             ],
             with_cleanup=False,
         )
@@ -280,8 +286,11 @@ class TestExamples:
         result = self.run_recipe(
             "task_create_from_cloud.py",
             args=[
-                "--cloud-storage-id", str(IMPORT_EXPORT_BUCKET_ID),
-                "--cloud-keys", "images/image_1.jpg", "images/image_2.jpg",
+                "--cloud-storage-id",
+                str(IMPORT_EXPORT_BUCKET_ID),
+                "--cloud-keys",
+                "images/image_1.jpg",
+                "images/image_2.jpg",
             ],
         )
         assert "Created task" in result.stdout
@@ -294,10 +303,14 @@ class TestExamples:
         result = self.run_recipe(
             "tasks_bulk_from_cloud.py",
             args=[
-                "--cloud-storage-id", str(IMPORT_EXPORT_BUCKET_ID),
-                "--project-id", str(project.id),
-                "--task", "images/image_1.jpg",
-                "--task", "images/image_2.jpg,images/image_3.jpg",
+                "--cloud-storage-id",
+                str(IMPORT_EXPORT_BUCKET_ID),
+                "--project-id",
+                str(project.id),
+                "--task",
+                "images/image_1.jpg",
+                "--task",
+                "images/image_2.jpg,images/image_3.jpg",
             ],
         )
         assert "Created 2 tasks in project" in result.stdout
@@ -307,9 +320,12 @@ class TestExamples:
         result = self.run_recipe(
             "tasks_bulk_from_cloud.py",
             args=[
-                "--cloud-storage-id", "1",
-                "--project-id", "1",
-                "--task", ",",
+                "--cloud-storage-id",
+                "1",
+                "--project-id",
+                "1",
+                "--task",
+                ",",
             ],
             expect_failure=True,
             with_cleanup=False,
@@ -322,8 +338,10 @@ class TestExamples:
         result = self.run_recipe(
             "project_export_dataset.py",
             args=[
-                "--project-id", str(project.id),
-                "--cloud-storage-id", str(IMPORT_EXPORT_BUCKET_ID),
+                "--project-id",
+                str(project.id),
+                "--cloud-storage-id",
+                str(IMPORT_EXPORT_BUCKET_ID),
             ],
             with_cleanup=False,
         )
@@ -336,9 +354,12 @@ class TestExamples:
         result = self.run_recipe(
             "project_export_dataset.py",
             args=[
-                "--project-id", str(project.id),
-                "--cloud-storage-id", "1",
-                "--export-format", "Bogus 9.9",
+                "--project-id",
+                str(project.id),
+                "--cloud-storage-id",
+                "1",
+                "--export-format",
+                "Bogus 9.9",
             ],
             with_cleanup=False,
             expect_failure=True,

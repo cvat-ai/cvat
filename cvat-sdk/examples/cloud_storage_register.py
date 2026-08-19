@@ -30,9 +30,7 @@ from cvat_sdk.core.helpers import get_paginated_collection
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument(
-        "--host", required=True, help="CVAT server URL, e.g. 'https://app.cvat.ai'"
-    )
+    parser.add_argument("--host", required=True, help="CVAT server URL, e.g. 'https://app.cvat.ai'")
     parser.add_argument(
         "--token",
         required=True,
@@ -47,7 +45,9 @@ def parse_args() -> argparse.Namespace:
         help="e.g. 'https://s3.amazonaws.com' or 'http://minio:9000'",
     )
     parser.add_argument(
-        "--cleanup", action="store_true", help="detach the storage at the end (data is never touched)"
+        "--cleanup",
+        action="store_true",
+        help="detach the storage at the end (data is never touched)",
     )
     return parser.parse_args()
 

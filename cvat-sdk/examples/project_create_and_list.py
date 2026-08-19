@@ -25,9 +25,7 @@ from cvat_sdk.core.filters import F
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument(
-        "--host", required=True, help="CVAT server URL, e.g. 'https://app.cvat.ai'"
-    )
+    parser.add_argument("--host", required=True, help="CVAT server URL, e.g. 'https://app.cvat.ai'")
     parser.add_argument(
         "--token",
         required=True,
@@ -73,9 +71,7 @@ def main() -> None:
         print(f"Project {fetched.id} labels: {[label.name for label in fetched.get_labels()]}")
 
         # 5. Rename
-        renamed = fetched.update(
-            models.PatchedProjectWriteRequest(name=f"{args.name} (renamed)")
-        )
+        renamed = fetched.update(models.PatchedProjectWriteRequest(name=f"{args.name} (renamed)"))
         print(f"Renamed to: {renamed.name}")
 
         # 6. Opt-in cleanup
