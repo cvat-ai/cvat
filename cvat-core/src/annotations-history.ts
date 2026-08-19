@@ -33,6 +33,11 @@ class HistoryTransaction implements ActionItem {
     }
 
     public add(action: ActionItem): void {
+        if (!this.actions.length) {
+            this.frame = action.frame;
+        } else if (this.frame !== action.frame) {
+            throw new Error('All history actions in a transaction must target the same frame');
+        }
         this.actions.push(action);
     }
 
@@ -115,6 +120,12 @@ export default class AnnotationHistory {
         this._undo = this._undo.slice(-MAX_HISTORY_LENGTH + 1);
         this._undo.push(transaction);
         this._redo = [];
+    }
+
+    public async abortTransaction(): Promise<void> {
+        const { transaction } = this;
+        this.transaction = null;
+        await transaction?.undo();
     }
 
     public async undo(count: number): Promise<number[]> {
