@@ -10,11 +10,11 @@ There is no high-level proxy for cloud storages yet, so this recipe uses the
 low-level API (client.api_client.cloudstorages_api).
 
 Steps:
-  1. Register the bucket with key/secret credentials.
+  1. Attach the bucket with key/secret credentials to CVAT.
   2. List all registered storages.
-  3. Retrieve the new one (the server never returns credentials).
+  3. Retrieve the new one.
   4. Update its display name.
-  5. Optionally detach it (--cleanup) — the bucket's contents are never touched.
+  5. Optionally, detach it from CVAT.
 
 Usage (run ``python cloud_storage_register.py --help`` for the full list of options):
   python cloud_storage_register.py --host 'https://app.cvat.ai' --token '<your token>' \\
