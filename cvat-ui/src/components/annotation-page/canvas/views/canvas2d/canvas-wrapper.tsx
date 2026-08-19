@@ -1012,17 +1012,19 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
     private onCanvasObjectsGroupMoved = async (
         e: CustomEvent<{ duration: number; states: { state: ObjectState; points: number[] }[] }>,
     ): Promise<void> => {
-        const { onUpdateAnnotationsBatch, onSelectObjects } = this.props;
+        const {
+            selectedStatesID, onUpdateAnnotationsBatch, onSelectObjects,
+        } = this.props;
         const { detail: { states } } = e;
 
-        // apply the new geometry and persist the whole selection as one undoable change
+        // Persist movable members as one undoable change, while retaining fixed members in the selection.
         const updatedStates = states.map((moved): ObjectState => {
             const { state: objectState } = moved;
             objectState.points = moved.points;
             return objectState;
         });
         await onUpdateAnnotationsBatch(updatedStates);
-        onSelectObjects(updatedStates.map((state: ObjectState): number => state.clientID as number));
+        onSelectObjects(selectedStatesID);
     };
 
     private onCanvasShapeResized = (e: CustomEvent<{ duration: number; state: ObjectState }>): void => {
