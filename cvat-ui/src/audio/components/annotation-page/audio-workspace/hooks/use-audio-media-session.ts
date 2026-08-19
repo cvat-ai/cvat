@@ -30,6 +30,7 @@ const AUDIO_FOCUS_PROBE_SOURCE = [
  * This allows the user to control playback using system-level media controls.
  */
 export function useAudioMediaSession({ instanceRef, ready }: WaveSurferRuntime): void {
+    // NOTE: WaveSurfer had it as a plugin in v6 but it no longer available in v7.
     const audioFocusProbeRef = useRef<HTMLAudioElement | null>(null);
 
     useEffect(() => {
