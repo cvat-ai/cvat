@@ -46,7 +46,7 @@ import {
 } from './canvasModel';
 
 const SELECTED_OBJECTS_BOX_PADDING = 6;
-const SELECTED_OBJECTS_BOX_STROKE_WIDTH = 3;
+const SELECTED_OBJECTS_BOX_STROKE_WIDTH = 2;
 
 export interface CanvasView {
     html(): HTMLDivElement;
