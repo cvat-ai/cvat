@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 import os
+import site
 import subprocess
 import sys
 from pathlib import Path
@@ -119,6 +120,9 @@ class TestExamples:
         # (Linux/Docker CI), then seed one profile at that same path.
         config_home = self.tmp_path / "auth_config"
         env = os.environ.copy()
+        # Preserve `pip install --user` site-packages: Python resolves it from
+        # HOME (or PYTHONUSERBASE) at startup, and we override HOME below.
+        env["PYTHONUSERBASE"] = site.getuserbase()
         env["XDG_CONFIG_HOME"] = str(config_home)
         env["HOME"] = str(self.tmp_path)
         # platformdirs reads env at call time — mirror the subprocess env briefly
@@ -164,6 +168,7 @@ class TestExamples:
     def test_auth_profiles_missing_default_fails(self):
         config_home = self.tmp_path / "empty_auth_config"
         env = os.environ.copy()
+        env["PYTHONUSERBASE"] = site.getuserbase()
         env["XDG_CONFIG_HOME"] = str(config_home)
         env["HOME"] = str(self.tmp_path)
         result = self.run_recipe(
