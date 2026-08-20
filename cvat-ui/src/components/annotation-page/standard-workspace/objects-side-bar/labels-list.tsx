@@ -53,11 +53,16 @@ function LabelsListComponent(): JSX.Element {
     );
 
     useEffect(() => {
-        const updatedComponentShortcuts = JSON.parse(JSON.stringify(componentShortcuts));
-        for (const key of Object.keys(updatedComponentShortcuts)) {
-            updatedComponentShortcuts[key].sequences =
-                keyMap[key]?.sequences ?? updatedComponentShortcuts[key].sequences;
-        }
+        const updatedComponentShortcuts = Object.keys(componentShortcuts).reduce<Record<string, KeyMapItem>>(
+            (shortcuts, key) => ({
+                ...shortcuts,
+                [key]: {
+                    ...componentShortcuts[key],
+                    sequences: keyMap[key]?.sequences ?? componentShortcuts[key].sequences,
+                },
+            }),
+            {},
+        );
         for (const [index, labelID] of Object.entries(keyToLabelMapping)) {
             if (labelID) {
                 const labelName = labels.find((label: any) => label.id === labelID)?.name;
