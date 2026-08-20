@@ -36,7 +36,7 @@ python task_create_from_cloud.py --host 'https://app.cvat.ai' --token '<your tok
 
 ```python
 """Create an annotation task from images that already live in a registered
-cloud storage — nothing is uploaded from your machine.
+cloud storage.
 
 Steps:
   1. Create a task whose data is a list of object keys in the bucket.
@@ -155,7 +155,7 @@ python tasks_bulk_from_cloud.py --host 'https://app.cvat.ai' --token '<your toke
 
 ```python
 """Bulk-create tasks inside a project, each task's data read from a registered
-cloud storage. Nothing is uploaded from your machine.
+cloud storage.
 
 One --task flag creates one task. Its argument is a comma-separated list of
 object keys in the bucket:

@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 """Bulk-create tasks inside a project, each task's data read from a registered
-cloud storage. Nothing is uploaded from your machine.
+cloud storage.
 
 One --task flag creates one task. Its argument is a comma-separated list of
 object keys in the bucket:
@@ -40,7 +40,7 @@ from cvat_sdk.core.proxies.tasks import ResourceType
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser = argparse.ArgumentParser(description=" ".join(__doc__.splitlines()[:2]))
     parser.add_argument("--host", required=True, help="CVAT server URL, e.g. 'https://app.cvat.ai'")
     parser.add_argument(
         "--token",

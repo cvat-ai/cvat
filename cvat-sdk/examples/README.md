@@ -3,7 +3,7 @@
 Complete, copy-and-run examples for the CVAT Python SDK. Each example is a command-line script.
 Invoke a script with the `--help` parameter to see all its options. Example:
 
-\```sh
+```sh
 python tasks_bulk_from_cloud.py --help
 python tasks_bulk_from_cloud.py \
     --host 'https://app.cvat.ai' \
@@ -11,7 +11,7 @@ python tasks_bulk_from_cloud.py \
     --cloud-storage-id 7 --project-id 42 \
     --task 'videos/clip_01.mp4' \
     --task 'videos/clip_02.mp4'
-\```
+```
 
 Most of the examples use Personal Access Tokens for user authentication. You'll need to create one
 to run a script, the instructions are available [here](https://docs.cvat.ai/docs/api_sdk/access_tokens/).

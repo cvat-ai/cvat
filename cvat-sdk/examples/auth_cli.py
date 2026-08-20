@@ -32,7 +32,7 @@ from cvat_sdk.core.auth import configure_client_auth_arguments
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser = argparse.ArgumentParser(description=" ".join(__doc__.splitlines()[:2]))
     configure_client_auth_arguments(parser)
     # Add your script's own arguments here, e.g.
     # parser.add_argument("--task-id", type=int, required=True)
