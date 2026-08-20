@@ -17,6 +17,7 @@ import {
 } from 'icons';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { ColorBy } from 'reducers';
+import type { OrientationAngle } from 'utils/change-object-orientation';
 import {
     DimensionType, Job, ObjectType, ShapeType,
 } from 'cvat-core-wrapper';
@@ -47,7 +48,7 @@ interface Props {
     propagate(): void;
     createURL(): void;
     switchOrientation(): void;
-    changeOrientation(degrees: -90 | 90 | 180): void;
+    changeOrientation(degrees: OrientationAngle): void;
     toBackground(): void;
     toForeground(): void;
     toOneLayerBackward(): void;
@@ -66,7 +67,11 @@ interface ItemProps {
     toolProps: Props;
 }
 
-type OrientationAngle = -90 | 90 | 180;
+const ORIENTATION_OPTIONS: Record<OrientationAngle, { icon: JSX.Element; label: string }> = {
+    90: { icon: <RedoOutlined />, label: '90°' },
+    '-90': { icon: <UndoOutlined />, label: '90°' },
+    180: { icon: <RetweetOutlined />, label: '180°' },
+};
 
 function CreateURLItem(props: ItemProps): JSX.Element {
     const { toolProps } = props;
@@ -187,12 +192,7 @@ function SwitchOrientationItem(props: ItemProps): JSX.Element {
 function ChangeOrientationItem(props: ItemProps & { degrees: OrientationAngle }): JSX.Element {
     const { toolProps, degrees } = props;
     const { changeOrientation } = toolProps;
-    const orientationOptions: Record<OrientationAngle, { icon: JSX.Element; label: string }> = {
-        90: { icon: <RedoOutlined />, label: '90°' },
-        '-90': { icon: <UndoOutlined />, label: '90°' },
-        180: { icon: <RetweetOutlined />, label: '180°' },
-    };
-    const { icon, label } = orientationOptions[degrees];
+    const { icon, label } = ORIENTATION_OPTIONS[degrees];
     return (
         <Button
             type='link'

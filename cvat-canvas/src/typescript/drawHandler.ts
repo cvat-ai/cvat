@@ -56,6 +56,10 @@ interface RotatedFit {
     };
 }
 
+const MIN_ROTATED_RECTANGLE_POINTS = 3;
+const MIN_FITTED_ELLIPSE_POINTS = 5;
+const TOP_EDGE_SWITCH_THRESHOLD = 8;
+
 function checkConstraint(shapeType: string, points: number[], box: Box | null = null): boolean {
     if (shapeType === 'rectangle') {
         const [xtl, ytl, xbr, ybr] = points;
@@ -142,10 +146,14 @@ export class DrawHandlerImpl implements DrawHandler {
     private targetFit: RotatedFit | null;
     private topEdgeReference: NonNullable<RotatedFit['topEdge']> | null;
 
-    private fitRotatedShape(points: number[]): RotatedFit | null {
-        const useEllipseFit = this.drawData.shapeType === 'ellipse' &&
+    private usesEllipseFit(): boolean {
+        return this.drawData.shapeType === 'ellipse' &&
             this.drawData.rectDrawingMethod === RectDrawingMethod.ROTATED_POINTS;
-        const minPoints = useEllipseFit ? 5 : 3;
+    }
+
+    private fitRotatedShape(points: number[]): RotatedFit | null {
+        const useEllipseFit = this.usesEllipseFit();
+        const minPoints = useEllipseFit ? MIN_FITTED_ELLIPSE_POINTS : MIN_ROTATED_RECTANGLE_POINTS;
         if (points.length < minPoints * 2) {
             return null;
         }
@@ -213,7 +221,7 @@ export class DrawHandlerImpl implements DrawHandler {
                 },
                 fittedCandidates[0],
             );
-            const switchThreshold = 8 / this.geometry.scale;
+            const switchThreshold = TOP_EDGE_SWITCH_THRESHOLD / this.geometry.scale;
 
             // Keep the original first-point rule, but avoid switching between
             // nearly equidistant edges when the fitted shape jitters.
@@ -223,7 +231,7 @@ export class DrawHandlerImpl implements DrawHandler {
         })() : this.withTopEdge(closestToFirstPoint);
 
         this.topEdgeReference = orientedFit.topEdge;
-        return this.withTopEdge(orientedFit);
+        return orientedFit;
     }
 
     private withTopEdge(fitted: RotatedFit): RotatedFit {
@@ -245,9 +253,8 @@ export class DrawHandlerImpl implements DrawHandler {
     }
 
     private fitRotatedPreview(points: number[]): RotatedFit | null {
-        if (this.drawData.shapeType === 'ellipse' &&
-            this.drawData.rectDrawingMethod === RectDrawingMethod.ROTATED_POINTS) {
-            return points.length >= 5 * 2 ? this.fitRotatedShape(points) : null;
+        if (this.usesEllipseFit()) {
+            return points.length >= MIN_FITTED_ELLIPSE_POINTS * 2 ? this.fitRotatedShape(points) : null;
         }
 
         if (points.length > 6) {
@@ -450,13 +457,11 @@ export class DrawHandlerImpl implements DrawHandler {
                     y: this.displayedFit.topEdge.point.y +
                         (targetFit.topEdge.point.y - this.displayedFit.topEdge.point.y) * topEdgeSmoothingFactor,
                 },
-                normal: {
-                    ...this.interpolateNormal(
-                        this.displayedFit.topEdge.normal,
-                        targetFit.topEdge.normal,
-                        topEdgeSmoothingFactor,
-                    ),
-                },
+                normal: this.interpolateNormal(
+                    this.displayedFit.topEdge.normal,
+                    targetFit.topEdge.normal,
+                    topEdgeSmoothingFactor,
+                ),
             } : targetFit.topEdge,
         } : targetFit;
 

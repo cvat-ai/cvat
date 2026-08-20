@@ -11,6 +11,7 @@ import ObjectButtonsContainer from 'containers/annotation-page/standard-workspac
 import ItemDetailsContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/object-item-details';
 import { ColorBy } from 'reducers';
 import { ObjectType, ShapeType } from 'cvat-core-wrapper';
+import type { OrientationAngle } from 'utils/change-object-orientation';
 import ObjectItemElementComponent from './object-item-element';
 import ItemBasics from './object-item-basics';
 
@@ -38,7 +39,7 @@ interface Props {
     copy(): void;
     propagate(): void;
     switchOrientation(): void;
-    changeOrientation(degrees: -90 | 90 | 180): void;
+    changeOrientation(degrees: OrientationAngle): void;
     createURL(): void;
     toBackground(): void;
     toForeground(): void;

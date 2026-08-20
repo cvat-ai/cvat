@@ -35,7 +35,7 @@ import { Canvas, CanvasMode } from 'cvat-canvas-wrapper';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import { filterApplicableLabels } from 'utils/filter-applicable-labels';
 import { toClipboard } from 'utils/to-clipboard';
-import changeObjectOrientation from 'utils/change-object-orientation';
+import changeObjectOrientation, { type OrientationAngle } from 'utils/change-object-orientation';
 
 interface OwnProps {
     clientID: number;
@@ -426,7 +426,7 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
         }
     };
 
-    private changeOrientation = (degrees: -90 | 90 | 180): void => {
+    private changeOrientation = (degrees: OrientationAngle): void => {
         const { objectState } = this.props;
         if (changeObjectOrientation(objectState, degrees)) {
             this.commit();

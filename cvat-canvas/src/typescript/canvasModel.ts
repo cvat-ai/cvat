@@ -69,6 +69,19 @@ export enum RectDrawingMethod {
     ROTATED_POINTS = 'Rotated (N points)',
 }
 
+export interface RotatedShapeFitter {
+    minAreaRect(points: [number, number][]): {
+        center: { x: number; y: number };
+        size: { width: number; height: number };
+        angle: number;
+    };
+    fitEllipse(points: [number, number][]): {
+        center: { x: number; y: number };
+        size: { width: number; height: number };
+        angle: number;
+    };
+}
+
 export enum CuboidDrawingMethod {
     CLASSIC = 'From rectangle',
     CORNER_POINTS = 'By 4 points',
@@ -120,18 +133,7 @@ export interface DrawData {
     continue?: boolean;
     shapeType?: string;
     rectDrawingMethod?: RectDrawingMethod;
-    rotatedShapeFitter?: {
-        minAreaRect(points: [number, number][]): {
-            center: { x: number; y: number };
-            size: { width: number; height: number };
-            angle: number;
-        };
-        fitEllipse(points: [number, number][]): {
-            center: { x: number; y: number };
-            size: { width: number; height: number };
-            angle: number;
-        };
-    };
+    rotatedShapeFitter?: RotatedShapeFitter;
     cuboidDrawingMethod?: CuboidDrawingMethod;
     skeletonSVG?: SVGSVGElement;
     numberOfPoints?: number;

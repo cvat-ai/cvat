@@ -47,7 +47,7 @@ import {
 } from 'components/annotation-page/standard-workspace/objects-side-bar/drag-and-drop';
 import { openAnnotationsActionModal } from 'components/annotation-page/annotations-actions/annotations-actions-modal';
 import { OBJECTS_SIDEBAR_OPEN_Z_LAYER_EVENT } from 'utils/objects-sidebar';
-import changeObjectOrientation from 'utils/change-object-orientation';
+import changeObjectOrientation, { type OrientationAngle } from 'utils/change-object-orientation';
 
 interface StateToProps {
     jobInstance: any;
@@ -618,6 +618,14 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             return null;
         };
 
+        const changeActiveObjectOrientation = (degrees: OrientationAngle, event?: KeyboardEvent): void => {
+            preventDefault(event);
+            const state = activatedState(true);
+            if (state && !state.lock && changeObjectOrientation(state, degrees)) {
+                updateAnnotations([state]);
+            }
+        };
+
         const handlers: Record<keyof typeof componentShortcuts, (event?: KeyboardEvent) => void> = {
             SWITCH_ALL_LOCK: (event?: KeyboardEvent) => {
                 preventDefault(event);
@@ -790,25 +798,13 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                 }
             },
             CHANGE_OBJECT_ORIENTATION_CLOCKWISE: (event?: KeyboardEvent) => {
-                preventDefault(event);
-                const state = activatedState(true);
-                if (state && !state.lock && changeObjectOrientation(state, 90)) {
-                    updateAnnotations([state]);
-                }
+                changeActiveObjectOrientation(90, event);
             },
             CHANGE_OBJECT_ORIENTATION_COUNTERCLOCKWISE: (event?: KeyboardEvent) => {
-                preventDefault(event);
-                const state = activatedState(true);
-                if (state && !state.lock && changeObjectOrientation(state, -90)) {
-                    updateAnnotations([state]);
-                }
+                changeActiveObjectOrientation(-90, event);
             },
             CHANGE_OBJECT_ORIENTATION_180: (event?: KeyboardEvent) => {
-                preventDefault(event);
-                const state = activatedState(true);
-                if (state && !state.lock && changeObjectOrientation(state, 180)) {
-                    updateAnnotations([state]);
-                }
+                changeActiveObjectOrientation(180, event);
             },
         };
 
