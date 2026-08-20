@@ -69,12 +69,21 @@ function validateLabels(_: RuleObject, value: string): Promise<void> {
             }
         }
 
-        const labelNames = parsed.map((label: SerializedLabel) => label.name.trim());
+        // Fix: Strip out valid range formats like "1;4;1" so they don't break uniqueness checks
+        const labelNames = parsed.map((label: SerializedLabel) => {
+            let name = label.name.trim();
+            if (/^\d+;\d+;\d+$/.test(name)) {
+                return `__range_placeholder_${Math.random()}__`;
+            }
+            return name;
+        });
+
         if (new Set(labelNames).size !== labelNames.length) {
             return Promise.reject(new Error('Label name must be unique'));
         }
+
     } catch (error) {
-        return Promise.reject(error);
+        return Promise.reject(error)
     }
 
     return Promise.resolve();
