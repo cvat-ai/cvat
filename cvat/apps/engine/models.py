@@ -1781,7 +1781,6 @@ class AnnotationGuide(TimestampedModel):
         Project, null=True, blank=True, on_delete=models.CASCADE, related_name="annotation_guide"
     )
     markdown = models.TextField(blank=True, default="")
-    is_public = models.BooleanField(default=False)
 
     @property
     def target(self) -> Task | Project:
