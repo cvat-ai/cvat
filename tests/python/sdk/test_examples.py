@@ -142,10 +142,10 @@ class TestExamples:
         )
         return env
 
-    def test_auth_profiles_named(self):
+    def test_auth_token_named(self):
         env = self._seeded_profile_env("recipes_named", set_default=False)
         result = self.run_recipe(
-            "auth_profiles.py",
+            "auth_token.py",
             args=["--profile", "recipes_named"],
             with_auth=False,
             with_cleanup=False,
@@ -154,10 +154,10 @@ class TestExamples:
         assert "Using profile 'recipes_named'" in result.stdout
         assert f"Authenticated as {self.user}" in result.stdout
 
-    def test_auth_profiles_default(self):
+    def test_auth_token_default(self):
         env = self._seeded_profile_env("recipes_default", set_default=True)
         result = self.run_recipe(
-            "auth_profiles.py",
+            "auth_token.py",
             with_auth=False,
             with_cleanup=False,
             env=env,
@@ -165,14 +165,14 @@ class TestExamples:
         assert "Using default profile 'recipes_default'" in result.stdout
         assert f"Authenticated as {self.user}" in result.stdout
 
-    def test_auth_profiles_missing_default_fails(self):
+    def test_auth_token_missing_default_fails(self):
         config_home = self.tmp_path / "empty_auth_config"
         env = os.environ.copy()
         env["PYTHONUSERBASE"] = site.getuserbase()
         env["XDG_CONFIG_HOME"] = str(config_home)
         env["HOME"] = str(self.tmp_path)
         result = self.run_recipe(
-            "auth_profiles.py",
+            "auth_token.py",
             with_auth=False,
             with_cleanup=False,
             expect_failure=True,

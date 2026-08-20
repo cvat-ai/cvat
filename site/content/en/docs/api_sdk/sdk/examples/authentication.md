@@ -5,7 +5,7 @@ weight: 1
 description: 'Copy-and-run auth recipes: PAT (recommended), saved profiles, and the CLI-compatible argument set'
 ---
 
-Three recipes: `auth_connect.py` is the recommended PAT path, `auth_profiles.py`
+Three recipes: `auth_connect.py` is the recommended PAT path, `auth_token.py`
 signs in from a saved profile with no secret in your code, and `auth_cli.py`
 wires up the shared `cvat-cli` argument set (`--server-host`, `--auth`,
 `--profile`, ...) so your scripts feel like an extension of the CLI.
@@ -87,8 +87,8 @@ cvat-cli --server-host 'https://app.cvat.ai' profile create --name app --set-def
 | `--profile` | no | Name of a saved profile; omit to use the default profile |
 
 ```bash
-python auth_profiles.py --profile app
-python auth_profiles.py               # uses the default profile
+python auth_token.py --profile app
+python auth_token.py               # uses the default profile
 ```
 
 ### The script
@@ -104,9 +104,9 @@ Steps:
   1. If --profile is passed, use that profile; otherwise use the default profile.
   2. Print who you are authenticated as.
 
-Usage (run ``python auth_profiles.py --help`` for the full list of options):
-  python auth_profiles.py --profile app
-  python auth_profiles.py               # uses the default profile
+Usage (run ``python auth_token.py --help`` for the full list of options):
+  python auth_token.py --profile app
+  python auth_token.py               # uses the default profile
 """
 
 import argparse
@@ -231,5 +231,5 @@ _Notes:_
   USER:PASS`) is a deprecated fallback that will be removed in a future release.
 - Full recipes:
   [`auth_connect.py`](https://github.com/cvat-ai/cvat/tree/develop/cvat-sdk/examples/auth_connect.py),
-  [`auth_profiles.py`](https://github.com/cvat-ai/cvat/tree/develop/cvat-sdk/examples/auth_profiles.py),
+  [`auth_token.py`](https://github.com/cvat-ai/cvat/tree/develop/cvat-sdk/examples/auth_token.py),
   [`auth_cli.py`](https://github.com/cvat-ai/cvat/tree/develop/cvat-sdk/examples/auth_cli.py).

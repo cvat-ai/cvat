@@ -3,7 +3,7 @@
 Complete, copy-and-run examples for the CVAT Python SDK. Each example is a command-line script.
 Invoke a script with the `--help` parameter to see all its options. Example:
 
-\```sh
+```sh
 python tasks_bulk_from_cloud.py --help
 python tasks_bulk_from_cloud.py \
     --host 'https://app.cvat.ai' \
@@ -11,7 +11,7 @@ python tasks_bulk_from_cloud.py \
     --cloud-storage-id 7 --project-id 42 \
     --task 'videos/clip_01.mp4' \
     --task 'videos/clip_02.mp4'
-\```
+```
 
 Most of the examples use Personal Access Tokens for user authentication. You'll need to create one
 to run a script, the instructions are available [here](https://docs.cvat.ai/docs/api_sdk/access_tokens/).
@@ -25,7 +25,7 @@ Conventions:
 | Example | What it does | Parameters |
 | --- | --- | --- |
 | `auth_connect.py` | Authenticate with a Personal Access Token, get current user | — |
-| `auth_profiles.py` | Authenticate from a saved profile | `--profile` (omit for the default profile) |
+| `auth_token.py` | Authenticate from a saved profile | `--profile` (omit for the default profile) |
 | `auth_cli.py` | Build a CLI-compatible script via `make_client_from_cli` | reuses cvat-cli's [flags](https://docs.cvat.ai/docs/api_sdk/cli/#authentication): `--server-host`, `--auth`, `--profile`, ... |
 | `project_create_and_list.py` | Create, list, filter, retrieve, rename a project | `--name`, `--labels`, `--cleanup` |
 | `project_status_report.py` | CSV report of an existing project's tasks/jobs | `--project-id` |
