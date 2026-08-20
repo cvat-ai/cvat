@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { useEffect } from 'react';
+import { useLayoutEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import type { Region } from 'wavesurfer.js/dist/plugins/regions';
 
@@ -22,6 +22,12 @@ interface Params {
     ready: boolean;
 }
 
+export interface RegionHighlighting {
+    highlightedRegionIDs: ReadonlySet<number>;
+    addHighlightedRegionIDs(regionIDs: Iterable<number>): void;
+    removeHighlightedRegionIDs(regionIDs: Iterable<number>): void;
+}
+
 interface RegionGeometry extends AudioTimeRange {
     clientID: number;
     hidden: boolean;
@@ -35,7 +41,25 @@ function areRegionGeometriesEqual(previous: RegionGeometry[], next: RegionGeomet
 /**
  * Projects visible Redux intervals and their appearance into WaveSurfer regions.
  */
-export function useRegionProjection({ regionRuntime, ready }: Params): void {
+export function useRegionProjection({ regionRuntime, ready }: Params): RegionHighlighting {
+    const [highlightedRegionIDs, setHighlightedRegionIDs] = useState<Set<number>>(() => new Set());
+    const regionHighlighting: RegionHighlighting = {
+        highlightedRegionIDs,
+        addHighlightedRegionIDs: (regionIDs: Iterable<number>): void => {
+            setHighlightedRegionIDs((oldHighlighted) => {
+                const nextHighlighted = new Set(oldHighlighted);
+                for (const regionID of regionIDs) nextHighlighted.add(regionID);
+                return nextHighlighted.size === oldHighlighted.size ? oldHighlighted : nextHighlighted;
+            });
+        },
+        removeHighlightedRegionIDs: (regionIDs: Iterable<number>): void => {
+            setHighlightedRegionIDs((oldHighlighted) => {
+                const nextHighlighted = new Set(oldHighlighted);
+                for (const regionID of regionIDs) nextHighlighted.delete(regionID);
+                return nextHighlighted.size === oldHighlighted.size ? oldHighlighted : nextHighlighted;
+            });
+        },
+    };
     const regionGeometry = useSelector((state: CombinedState): RegionGeometry[] => (
         state.audio.player.intervals.map((interval) => ({
             clientID: interval.clientID as number,
@@ -58,11 +82,10 @@ export function useRegionProjection({ regionRuntime, ready }: Params): void {
         selectedOpacity: state.settings.shapes.selectedOpacity,
         activeControl: state.annotation.canvas.activeControl,
     }), shallowEqual);
-
     // This effect subscribes only to geometry and visibility.
     // It is important that other model changes do not trigger
     // geometry updates.
-    useEffect(() => {
+    useLayoutEffect(() => {
         if (!ready) return;
         const { regionsPlugin } = regionRuntime;
 
@@ -106,7 +129,7 @@ export function useRegionProjection({ regionRuntime, ready }: Params): void {
     }, [ready, regionGeometry]);
 
     // Keep non-geometric region state in a separate projection path
-    useEffect(() => {
+    useLayoutEffect(() => {
         if (!ready) return;
         const { regionsPlugin } = regionRuntime;
         const intervalsByID = new Map(intervals.map((interval) => [interval.clientID, interval]));
@@ -121,7 +144,7 @@ export function useRegionProjection({ regionRuntime, ready }: Params): void {
             const isActive = clientID === activeIntervalID;
             const isInteracting = clientID === interactingIntervalID;
             const isHovered = interactingIntervalID === null && clientID === hoveredIntervalID;
-            const isHighlighted = isActive || isInteracting || isHovered;
+            const isHighlighted = isActive || isInteracting || isHovered || highlightedRegionIDs.has(clientID);
             const canEdit = activeControl === ActiveControl.CURSOR && !interval.lock && !interval.pinned;
             region.setOptions({
                 color: getAudioRegionColor(interval, labels, colorBy, opacity, selectedOpacity, isActive),
@@ -143,7 +166,10 @@ export function useRegionProjection({ regionRuntime, ready }: Params): void {
             element.style.boxShadow = isHighlighted ? `inset 0 0 0 2px ${borderColor}` : '';
         });
     }, [
-        activeControl, activeIntervalID, colorBy, hoveredIntervalID, interactingIntervalID, intervals, labels,
+        activeControl, activeIntervalID, colorBy, hoveredIntervalID, highlightedRegionIDs, interactingIntervalID,
+        intervals, labels,
         opacity, ready, selectedOpacity,
     ]);
+
+    return regionHighlighting;
 }
