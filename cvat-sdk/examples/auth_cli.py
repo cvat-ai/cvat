@@ -11,14 +11,16 @@ variables, and resolves profiles the same way (explicit --profile, else the
 default profile if no host/auth is passed).
 
 Steps:
-  1. Register the shared auth flags with configure_client_auth_arguments.
+  1. Register the shared auth flags with configure_client_auth_arguments().
   2. Add your own script-specific arguments on top.
-  3. Hand the parsed namespace to make_client_from_cli — it picks the right
-     Client factory (profile / PAT / password) from the arguments.
+  3. Hand the parsed namespace to make_client_from_cli() to create a server API client object.
 
 Usage (run ``python auth_cli.py --help`` for the full list of options):
   python auth_cli.py --profile app
-  python auth_cli.py --server-host 'https://app.cvat.ai'   # uses CVAT_ACCESS_TOKEN env
+
+  export CVAT_ACCESS_TOKEN='<token>'
+  python auth_cli.py --server-host 'https://app.cvat.ai'
+
   python auth_cli.py --server-host 'https://app.cvat.ai' --auth me:secret
 """
 
