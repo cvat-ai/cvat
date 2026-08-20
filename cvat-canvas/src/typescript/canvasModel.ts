@@ -66,7 +66,7 @@ export interface HighlightedElements {
 export enum RectDrawingMethod {
     CLASSIC = 'By 2 points',
     EXTREME_POINTS = 'By 4 points',
-    ROTATED_POINTS = 'Rotated (N points)',
+    ROTATED_POINTS = 'Rotated points',
 }
 
 export interface RotatedShapeFitter {
@@ -407,10 +407,6 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         mode: Mode;
         exception: Error | null;
     };
-
-    // This callback belongs to the canvas runtime rather than Redux state. Retaining it here
-    // lets a repeated rotated draw use the already initialized OpenCV module.
-    private rotatedShapeFitter: DrawData['rotatedShapeFitter'];
 
     public constructor() {
         super();
@@ -783,17 +779,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
     }
 
     public draw(drawData: DrawData): void {
-        if (drawData.rotatedShapeFitter) {
-            this.rotatedShapeFitter = drawData.rotatedShapeFitter;
-        }
-
-        const effectiveDrawData: DrawData = {
-            ...drawData,
-            rotatedShapeFitter: drawData.rotatedShapeFitter || (
-                drawData.enabled && drawData.rectDrawingMethod === RectDrawingMethod.ROTATED_POINTS ?
-                    this.rotatedShapeFitter : undefined
-            ),
-        };
+        const rotatedShapeFitter = drawData.rotatedShapeFitter ?? this.data.drawData.rotatedShapeFitter;
 
         const supportedShapes = [
             'rectangle', 'polygon', 'polyline', 'points', 'ellipse', 'cuboid', 'skeleton', 'mask',
@@ -802,57 +788,57 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
             throw Error(`Canvas is busy. Action: ${this.data.mode}`);
         }
 
-        if (effectiveDrawData.enabled) {
-            if (effectiveDrawData.shapeType === 'skeleton' && !effectiveDrawData.skeletonSVG) {
+        if (drawData.enabled) {
+            if (drawData.shapeType === 'skeleton' && !drawData.skeletonSVG) {
                 throw new Error('Skeleton template must be specified when drawing a skeleton');
             }
 
-            if (!effectiveDrawData.shapeType && !effectiveDrawData.initialState) {
+            if (!drawData.shapeType && !drawData.initialState) {
                 throw new Error('A shape type is not specified');
             }
 
-            if (effectiveDrawData.shapeType && !supportedShapes.includes(effectiveDrawData.shapeType)) {
-                throw new Error(`Drawing method for type "${effectiveDrawData.shapeType}" is not implemented`);
+            if (drawData.shapeType && !supportedShapes.includes(drawData.shapeType)) {
+                throw new Error(`Drawing method for type "${drawData.shapeType}" is not implemented`);
             }
 
-            if (typeof effectiveDrawData.numberOfPoints !== 'undefined') {
-                if (effectiveDrawData.shapeType === 'polygon' && effectiveDrawData.numberOfPoints < 3) {
+            if (typeof drawData.numberOfPoints !== 'undefined') {
+                if (drawData.shapeType === 'polygon' && drawData.numberOfPoints < 3) {
                     throw new Error('A polygon consists of at least 3 points');
-                } else if (effectiveDrawData.shapeType === 'polyline' && effectiveDrawData.numberOfPoints < 2) {
+                } else if (drawData.shapeType === 'polyline' && drawData.numberOfPoints < 2) {
                     throw new Error('A polyline consists of at least 2 points');
                 }
             }
         }
 
-        if (typeof effectiveDrawData.redraw === 'number') {
-            const clientID = effectiveDrawData.redraw;
+        if (typeof drawData.redraw === 'number') {
+            const clientID = drawData.redraw;
             const [state] = this.data.objects.filter((_state: any): boolean => _state.clientID === clientID);
 
             if (state) {
-                this.data.drawData = { ...effectiveDrawData };
+                this.data.drawData = { ...drawData, rotatedShapeFitter };
                 this.data.drawData.shapeType = state.shapeType;
             } else {
                 return;
             }
         } else {
-            if (disableInternalSVGDrawing(effectiveDrawData, this.data.drawData)) {
+            if (disableInternalSVGDrawing(drawData, this.data.drawData)) {
                 this.notify(UpdateReasons.DRAW);
                 return;
             }
 
-            this.data.drawData = { ...effectiveDrawData };
+            this.data.drawData = { ...drawData, rotatedShapeFitter };
             if (this.data.drawData.initialState) {
                 this.data.drawData.shapeType = this.data.drawData.initialState.shapeType;
             }
         }
 
         // install default values for drawing method
-        if (effectiveDrawData.enabled) {
-            if (effectiveDrawData.shapeType === 'rectangle') {
-                this.data.drawData.rectDrawingMethod = effectiveDrawData.rectDrawingMethod || RectDrawingMethod.CLASSIC;
+        if (drawData.enabled) {
+            if (drawData.shapeType === 'rectangle') {
+                this.data.drawData.rectDrawingMethod = drawData.rectDrawingMethod || RectDrawingMethod.CLASSIC;
             }
-            if (effectiveDrawData.shapeType === 'cuboid') {
-                this.data.drawData.cuboidDrawingMethod = effectiveDrawData.cuboidDrawingMethod ||
+            if (drawData.shapeType === 'cuboid') {
+                this.data.drawData.cuboidDrawingMethod = drawData.cuboidDrawingMethod ||
                     CuboidDrawingMethod.CLASSIC;
             }
         }
@@ -1082,9 +1068,14 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
     }
 
     public cancel(): void {
+        const { rotatedShapeFitter } = this.data.drawData;
         this.data = {
             ...this.data,
             ...defaultData,
+            drawData: {
+                ...defaultData.drawData,
+                rotatedShapeFitter,
+            },
         };
         this.notify(UpdateReasons.CANCEL);
     }

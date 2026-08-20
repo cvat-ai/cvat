@@ -31,8 +31,17 @@ import consts from './consts';
 import {
     DrawData, Geometry, RectDrawingMethod, Configuration, CuboidDrawingMethod,
 } from './canvasModel';
-
 import { cuboidFrom4Points, intersection } from './cuboid';
+import {
+    fitRotatedShape,
+    fitRotatedPreviewFromGuide,
+    getClosestEquivalentFit,
+    interpolateNormal,
+    MIN_FITTED_ELLIPSE_POINTS,
+    RotatedShapeFit,
+    RotatedShapeTopEdge,
+    withTopEdge,
+} from './rotatedShapeFitter';
 
 export interface DrawHandler {
     configure(configuration: Configuration): void;
@@ -45,20 +54,6 @@ interface FinalCoordinates {
     points: number[];
     box: Box;
 }
-
-interface RotatedFit {
-    center: { x: number; y: number };
-    size: { width: number; height: number };
-    angle: number;
-    topEdge?: {
-        point: { x: number; y: number };
-        normal: { x: number; y: number };
-    };
-}
-
-const MIN_ROTATED_RECTANGLE_POINTS = 3;
-const MIN_FITTED_ELLIPSE_POINTS = 5;
-const TOP_EDGE_SWITCH_THRESHOLD = 8;
 
 function checkConstraint(shapeType: string, points: number[], box: Box | null = null): boolean {
     if (shapeType === 'rectangle') {
@@ -142,168 +137,39 @@ export class DrawHandlerImpl implements DrawHandler {
     private previewAnimationFrame: number | null;
     private controlPointsAnimationFrame: number | null;
     private pendingPreviewPoints: number[] | null;
-    private displayedFit: RotatedFit | null;
-    private targetFit: RotatedFit | null;
-    private topEdgeReference: NonNullable<RotatedFit['topEdge']> | null;
+    private displayedFit: RotatedShapeFit | null;
+    private targetFit: RotatedShapeFit | null;
+    private topEdgeReference: RotatedShapeTopEdge | null;
 
     private usesEllipseFit(): boolean {
         return this.drawData.shapeType === 'ellipse' &&
             this.drawData.rectDrawingMethod === RectDrawingMethod.ROTATED_POINTS;
     }
 
-    private fitRotatedShape(points: number[]): RotatedFit | null {
-        const useEllipseFit = this.usesEllipseFit();
-        const minPoints = useEllipseFit ? MIN_FITTED_ELLIPSE_POINTS : MIN_ROTATED_RECTANGLE_POINTS;
-        if (points.length < minPoints * 2) {
-            return null;
+    private fitRotatedShape(points: number[]): RotatedShapeFit | null {
+        const fitted = fitRotatedShape(points, {
+            fitter: this.drawData.rotatedShapeFitter,
+            useEllipseFit: this.usesEllipseFit(),
+            previousTopEdge: this.topEdgeReference,
+            scale: this.geometry.scale,
+        });
+
+        if (fitted?.topEdge) {
+            this.topEdgeReference = fitted.topEdge;
         }
 
-        const { rotatedShapeFitter } = this.drawData;
-        if (!rotatedShapeFitter) {
-            return null;
-        }
-
-        const contour: [number, number][] = [];
-        for (let i = 0; i < points.length; i += 2) {
-            contour.push([points[i], points[i + 1]]);
-        }
-        let fitted: ReturnType<typeof rotatedShapeFitter.minAreaRect>;
-        try {
-            fitted = useEllipseFit ?
-                rotatedShapeFitter.fitEllipse(contour) : rotatedShapeFitter.minAreaRect(contour);
-        } catch {
-            return null;
-        }
-        const angle = ((fitted.angle % 180) + 180) % 180;
-        const normalizedFit = angle >= 90 ? {
-            center: fitted.center,
-            size: { width: fitted.size.height, height: fitted.size.width },
-            angle: angle - 90,
-        } : { ...fitted, angle };
-
-        const [firstX, firstY] = points;
-        const equivalentFits: RotatedFit[] = [
-            normalizedFit,
-            { ...normalizedFit, angle: normalizedFit.angle + 180 },
-            {
-                ...normalizedFit,
-                size: { width: normalizedFit.size.height, height: normalizedFit.size.width },
-                angle: normalizedFit.angle + 90,
-            },
-            {
-                ...normalizedFit,
-                size: { width: normalizedFit.size.height, height: normalizedFit.size.width },
-                angle: normalizedFit.angle + 270,
-            },
-        ];
-
-        const distanceToTopSide = (fit: RotatedFit): number => {
-            const angleRadians = (fit.angle * Math.PI) / 180;
-            const relativeX = firstX - fit.center.x;
-            const relativeY = firstY - fit.center.y;
-            const localY = -relativeX * Math.sin(angleRadians) + relativeY * Math.cos(angleRadians);
-            return Math.abs(localY + fit.size.height / 2);
-        };
-
-        const closestToFirstPoint = equivalentFits.reduce((closestFit: RotatedFit, fit: RotatedFit): RotatedFit => (
-            distanceToTopSide(fit) < distanceToTopSide(closestFit) ? fit : closestFit
-        ));
-        const fittedCandidates = equivalentFits.map((fit: RotatedFit): RotatedFit => this.withTopEdge(fit));
-        const orientedFit = this.topEdgeReference ? (() => {
-            const reference = this.topEdgeReference as NonNullable<RotatedFit['topEdge']>;
-            const closestToPreviousEdge = fittedCandidates.reduce(
-                (closestFit: RotatedFit, fit: RotatedFit): RotatedFit => {
-                    const similarity = (candidate: RotatedFit): number => (
-                        candidate.topEdge.normal.x * reference.normal.x +
-                        candidate.topEdge.normal.y * reference.normal.y
-                    );
-                    return similarity(fit) > similarity(closestFit) ? fit : closestFit;
-                },
-                fittedCandidates[0],
-            );
-            const switchThreshold = TOP_EDGE_SWITCH_THRESHOLD / this.geometry.scale;
-
-            // Keep the original first-point rule, but avoid switching between
-            // nearly equidistant edges when the fitted shape jitters.
-            return distanceToTopSide(closestToFirstPoint) + switchThreshold <
-                distanceToTopSide(closestToPreviousEdge) ?
-                this.withTopEdge(closestToFirstPoint) : closestToPreviousEdge;
-        })() : this.withTopEdge(closestToFirstPoint);
-
-        this.topEdgeReference = orientedFit.topEdge;
-        return orientedFit;
+        return fitted;
     }
 
-    private withTopEdge(fitted: RotatedFit): RotatedFit {
-        const angleRadians = (fitted.angle * Math.PI) / 180;
-        const normal = {
-            x: Math.sin(angleRadians),
-            y: -Math.cos(angleRadians),
-        };
-        return {
-            ...fitted,
-            topEdge: {
-                point: {
-                    x: fitted.center.x + normal.x * (fitted.size.height / 2),
-                    y: fitted.center.y + normal.y * (fitted.size.height / 2),
-                },
-                normal,
-            },
-        };
-    }
-
-    private fitRotatedPreview(points: number[]): RotatedFit | null {
+    private fitRotatedPreview(points: number[]): RotatedShapeFit | null {
         if (this.usesEllipseFit()) {
             return points.length >= MIN_FITTED_ELLIPSE_POINTS * 2 ? this.fitRotatedShape(points) : null;
         }
 
-        if (points.length > 6) {
-            return this.fitRotatedShape(points);
-        }
-
-        if (points.length < 4) {
-            return null;
-        }
-
-        const [firstX, firstY, secondX, secondY] = points;
-        const angleRadians = Math.atan2(secondY - firstY, secondX - firstX);
-        const cos = Math.cos(angleRadians);
-        const sin = Math.sin(angleRadians);
-        let minX = Infinity;
-        let minY = Infinity;
-        let maxX = -Infinity;
-        let maxY = -Infinity;
-
-        for (let index = 0; index < points.length; index += 2) {
-            const x = points[index];
-            const y = points[index + 1];
-            const projectedX = x * cos + y * sin;
-            const projectedY = -x * sin + y * cos;
-            minX = Math.min(minX, projectedX);
-            minY = Math.min(minY, projectedY);
-            maxX = Math.max(maxX, projectedX);
-            maxY = Math.max(maxY, projectedY);
-        }
-
-        const projectedCenterX = (minX + maxX) / 2;
-        const projectedCenterY = (minY + maxY) / 2;
-        return this.withTopEdge({
-            center: {
-                x: projectedCenterX * cos - projectedCenterY * sin,
-                y: projectedCenterX * sin + projectedCenterY * cos,
-            },
-            // The two-point guide is not rendered, but gives the first fitted rectangle
-            // a stable animation origin. Three points keep the same axis to avoid the
-            // ambiguous minimum-area fit changing while the cursor crosses its boundary.
-            size: {
-                width: maxX - minX,
-                height: maxY - minY,
-            },
-            angle: (angleRadians * 180) / Math.PI,
-        });
+        return points.length > 6 ? this.fitRotatedShape(points) : fitRotatedPreviewFromGuide(points);
     }
 
-    private updateFitPreview(fitted: RotatedFit | null): void {
+    private updateFitPreview(fitted: RotatedShapeFit | null): void {
         if (!fitted || fitted.size.width < consts.SIZE_THRESHOLD || fitted.size.height < consts.SIZE_THRESHOLD) {
             if (this.fitPreview) {
                 this.fitPreview.remove();
@@ -355,7 +221,7 @@ export class DrawHandlerImpl implements DrawHandler {
                 'stroke-dasharray': 'none',
             });
         }
-        const topEdge = fitted.topEdge || this.withTopEdge(fitted).topEdge;
+        const topEdge = fitted.topEdge || withTopEdge(fitted).topEdge;
         const normalLength = Math.hypot(topEdge.normal.x, topEdge.normal.y);
         const rotationPointOffset = (2 * this.controlPointsSize + 5) / this.geometry.scale;
         const rotationPoint = {
@@ -381,44 +247,6 @@ export class DrawHandlerImpl implements DrawHandler {
         this.fitPreview.rotate(fitted.angle, fitted.center.x, fitted.center.y);
     }
 
-    private getClosestEquivalentFit(fitted: RotatedFit, reference: RotatedFit): RotatedFit {
-        const normalizeAngle = (angle: number): number => {
-            const difference = ((((angle - reference.angle + 90) % 180) + 180) % 180) - 90;
-            return reference.angle + difference;
-        };
-
-        const direct = { ...fitted, angle: normalizeAngle(fitted.angle) };
-        const swapped = {
-            ...fitted,
-            size: { width: fitted.size.height, height: fitted.size.width },
-            angle: normalizeAngle(fitted.angle + 90),
-        };
-
-        return Math.abs(direct.angle - reference.angle) <= Math.abs(swapped.angle - reference.angle) ?
-            direct : swapped;
-    }
-
-    private interpolateNormal(
-        previous: NonNullable<RotatedFit['topEdge']>['normal'],
-        target: NonNullable<RotatedFit['topEdge']>['normal'],
-        factor: number,
-    ): NonNullable<RotatedFit['topEdge']>['normal'] {
-        const previousAngle = Math.atan2(previous.y, previous.x);
-        const targetAngle = Math.atan2(target.y, target.x);
-        let difference = targetAngle - previousAngle;
-        if (difference > Math.PI) {
-            difference -= 2 * Math.PI;
-        } else if (difference <= -Math.PI) {
-            difference += 2 * Math.PI;
-        }
-
-        const angle = previousAngle + difference * factor;
-        return {
-            x: Math.cos(angle),
-            y: Math.sin(angle),
-        };
-    }
-
     private renderFitPreview(): void {
         this.previewAnimationFrame = null;
         if (this.pendingPreviewPoints) {
@@ -433,12 +261,12 @@ export class DrawHandlerImpl implements DrawHandler {
         }
 
         const targetFit = this.displayedFit ?
-            this.getClosestEquivalentFit(this.targetFit, this.displayedFit) : this.targetFit;
+            getClosestEquivalentFit(this.targetFit, this.displayedFit) : this.targetFit;
         const isExpandingFromLine = this.displayedFit &&
             Math.min(this.displayedFit.size.width, this.displayedFit.size.height) < consts.SIZE_THRESHOLD;
         const smoothingFactor = isExpandingFromLine ? 0.02 : 0.1;
         const topEdgeSmoothingFactor = isExpandingFromLine ? 0.02 : 0.06;
-        const nextFit: RotatedFit = this.displayedFit ? {
+        const nextFit: RotatedShapeFit = this.displayedFit ? {
             center: {
                 x: this.displayedFit.center.x + (targetFit.center.x - this.displayedFit.center.x) * smoothingFactor,
                 y: this.displayedFit.center.y + (targetFit.center.y - this.displayedFit.center.y) * smoothingFactor,
@@ -457,7 +285,7 @@ export class DrawHandlerImpl implements DrawHandler {
                     y: this.displayedFit.topEdge.point.y +
                         (targetFit.topEdge.point.y - this.displayedFit.topEdge.point.y) * topEdgeSmoothingFactor,
                 },
-                normal: this.interpolateNormal(
+                normal: interpolateNormal(
                     this.displayedFit.topEdge.normal,
                     targetFit.topEdge.normal,
                     topEdgeSmoothingFactor,

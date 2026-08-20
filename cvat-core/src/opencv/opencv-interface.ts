@@ -79,11 +79,11 @@ export function createOpenCVInterface(cv: any): OpenCVInterface {
         contours: {
             convexHull: (contours: [number, number][][]): [number, number][] => {
                 const points = contours.flat(2) as number[];
-                const input = cv.matFromArray(points.length / 2, 1, cv.CV_32FC2, points);
+                const input = cv.matFromArray(points.length / 2, 1, cv.CV_32SC2, points);
                 const output = new cv.Mat();
                 try {
                     cv.convexHull(input, output, false, true);
-                    const result = Array.from(output.data32F as number[]);
+                    const result = Array.from(output.data32S as number[]);
                     const converted: [number, number][] = [];
                     for (let i = 0; i < result.length; i += 2) {
                         converted.push([result[i], result[i + 1]]);

@@ -317,7 +317,6 @@
 
 .cvat-draw-shape-popover-content {
     @extend .cvat-popover-content;
-    width: $grid-unit-size * 40;
 
     > div:nth-child(3) > div > div {
         width: 100%;

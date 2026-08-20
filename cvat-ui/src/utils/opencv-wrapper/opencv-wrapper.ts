@@ -117,13 +117,11 @@ export class OpenCVWrapper {
         }
 
         const decodedScript = new TextDecoder('utf-8').decode(bytes);
-        // OpenCV 5 uses a UMD bundle that can expose either a ready module or an asynchronous factory.
         // eslint-disable-next-line no-new-func
         const OpenCVConstructor = new Function(decodedScript);
         OpenCVConstructor.call(window);
 
-        const openCVModule = (window as any).cv;
-        const cv = typeof openCVModule === 'function' ? await openCVModule() : await openCVModule;
+        const cv = await (window as any).cv;
         if (!cv || typeof cv.Mat !== 'function') {
             throw new Error('OpenCV initialization error: module was not found');
         }

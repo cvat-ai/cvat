@@ -117,7 +117,10 @@ function DrawShapePopoverComponent(props: Props): JSX.Element {
                                         'and right-click to undo the last point.'
                                     }
                                 >
-                                    <Radio value={RectDrawingMethod.ROTATED_POINTS} style={{ width: 'auto' }}>
+                                    <Radio
+                                        value={RectDrawingMethod.ROTATED_POINTS}
+                                        style={{ width: 'auto', alignSelf: 'center' }}
+                                    >
                                         Rotated
                                     </Radio>
                                 </CVATTooltip>

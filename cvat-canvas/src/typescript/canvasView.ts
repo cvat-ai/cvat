@@ -360,13 +360,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 const [state] = this.controller.objects
                     .filter((_state: any): boolean => _state.clientID === clientID);
 
-                // A rotated N-points redraw produces both new axis-aligned points and
-                // a rotation. Store the rotation before emitting the edit event, so
-                // the existing edit flow persists both values together.
-                if (state && typeof data.rotation === 'number') {
-                    state.rotation = data.rotation;
-                }
-                this.onEditDone(state, points);
+                this.onEditDone(state, points, data.rotation);
                 this.dispatchCanceledEvent();
                 return;
             }
