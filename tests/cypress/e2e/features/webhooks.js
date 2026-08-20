@@ -18,7 +18,7 @@ context('Webhooks pipeline.', () => {
         enableSSL: true,
         isActive: true,
         events: [
-            'project', 'job', 'task',
+            'Project', 'Job', 'Task', 'Dataset export',
         ],
     };
     const projectWebhookParams = {
@@ -35,7 +35,7 @@ context('Webhooks pipeline.', () => {
         enableSSL: true,
         isActive: false,
         events: [
-            'job',
+            'Job',
         ],
     };
 

@@ -534,6 +534,7 @@ Cypress.Commands.add('openTaskById', (taskId) => {
 Cypress.Commands.add('saveJob', (method = 'PATCH', status = 200, as = 'saveJob') => {
     cy.intercept(method, '/api/jobs/**').as(as);
     cy.clickSaveAnnotationView();
+    cy.hideTooltips(); // own the side-effects
     cy.wait(`@${as}`).its('response.statusCode').should('equal', status);
 });
 
@@ -1051,10 +1052,10 @@ Cypress.Commands.add('advancedConfiguration', (advancedConfigurationParams) => {
 });
 
 Cypress.Commands.add('configureTaskQualityMode', (qualityConfigurationParams) => {
-    cy.contains('Quality').click();
+    cy.contains('.ant-collapse-header', /^Quality$/).click();
     if (qualityConfigurationParams.validationMode) {
-        cy.get('#validationMode').within(() => {
-            cy.contains(qualityConfigurationParams.validationMode).click();
+        cy.contains('.ant-form-item', 'Validation mode').within(() => {
+            cy.contains('.ant-radio-button-wrapper', qualityConfigurationParams.validationMode).click();
         });
     }
     if (qualityConfigurationParams.validationFramesPercent) {
@@ -1586,6 +1587,7 @@ Cypress.Commands.add('verifyNotification', () => {
 
 Cypress.Commands.add('goToCloudStoragesPage', () => {
     cy.intercept('GET', '/api/cloudstorages?**').as('getCloudStorages');
+    cy.hideTooltips();
     cy.get('a[value="cloudstorages"]').click();
     cy.url().should('include', '/cloudstorages');
     cy.wait('@getCloudStorages');
@@ -1692,6 +1694,21 @@ Cypress.Commands.add('drawMask', (instructions) => {
                 cy.get('input').clear();
                 cy.get('input').type(`${value}`);
             });
+        } else if (method === 'underlying-pixels') {
+            const { value } = instruction;
+            cy.get('.cvat-brush-tools-underlying-pixels').then(($btn) => {
+                const isActive = $btn.hasClass('cvat-brush-tools-active-tool');
+                if (Boolean(value) !== isActive) {
+                    cy.wrap($btn).click();
+                }
+            });
+            if (value) {
+                cy.get('.cvat-brush-tools-underlying-pixels')
+                    .should('have.class', 'cvat-brush-tools-active-tool');
+            } else {
+                cy.get('.cvat-brush-tools-underlying-pixels')
+                    .should('not.have.class', 'cvat-brush-tools-active-tool');
+            }
         } else {
             const { coordinates } = instruction;
             if (['brush', 'eraser'].includes(method)) {
@@ -1879,6 +1896,7 @@ Cypress.Commands.add('clickDeleteFrameAnnotationView', () => {
 
 Cypress.Commands.add('clickSaveAnnotationView', () => {
     cy.get('.cvat-annotation-header-save-button').should('exist').and('be.visible').click();
+    cy.hideTooltips();
 });
 
 Cypress.Commands.add('makeCustomImage', (directory, fileName,

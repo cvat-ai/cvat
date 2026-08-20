@@ -8,7 +8,6 @@ import mimetypes
 import os
 import re
 import shutil
-import tempfile
 from abc import ABCMeta, abstractmethod
 from collections import defaultdict, deque
 from collections.abc import Collection, Iterable
@@ -500,7 +499,7 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
                 if imm_original.exists:
                     present_frame_nums = {im.frame for im in self._db_data.images.all()}
 
-                    with tempfile.TemporaryDirectory() as tmp_dir:
+                    with TmpDirManager.get_tmp_directory() as tmp_dir:
                         filtered_manifest_path = Path(tmp_dir, self.MEDIA_MANIFEST_FILENAME)
                         imm_filtered = ImageManifestManager(
                             filtered_manifest_path, create_index=False
@@ -555,8 +554,8 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
                 frame_names_to_download.append(media_file.path)
 
         if media_files_to_download:
-            storage_client = self._db_data.get_cloud_storage_instance()
-            with tempfile.TemporaryDirectory() as tmp_dir:
+            storage_client = self._db_data.get_cloud_storage_client()
+            with TmpDirManager.get_tmp_directory() as tmp_dir:
                 storage_client.bulk_download_to_dir(
                     files=media_files_to_download, upload_dir=Path(tmp_dir)
                 )

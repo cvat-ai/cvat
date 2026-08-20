@@ -5,6 +5,8 @@ weight: 60
 description: 'Instructions for upgrading CVAT deployed with docker compose'
 aliases:
 - /docs/administration/advanced/upgrade_guide/
+products:
+  - community
 ---
 
 ## Upgrade guide
@@ -56,6 +58,19 @@ To upgrade CVAT, follow these steps:
   ```shell
   docker logs cvat_server -f
   ```
+
+## Upgrade to v2.72.0 or later
+
+Version 2.72.0 moves CVAT application source files from `/home/django` to
+`/opt/cvat`. If your deployment bind-mounts files into the application source
+tree, update their container paths before starting the new version. For example,
+mount a custom settings module at
+`/opt/cvat/cvat_enterprise/settings/custom_settings.py` and a replacement logo
+at `/opt/cvat/cvat/apps/engine/static/logo.svg`.
+
+The CVAT data directories and `auth_config.yml` are not application source
+files: they remain under `/home/django` (for example,
+`/home/django/auth_config.yml`).
 
 ## How to upgrade CVAT from v2.46.0 to v2.47.0.
 

@@ -646,7 +646,8 @@ export class DrawHandlerImpl implements DrawHandler {
 
         this.canvas.on('mousemove.draw', (e: MouseEvent): void => {
             // TODO: Use enumeration after typification cvat-core
-            if (e.shiftKey && ['polygon', 'polyline'].includes(this.drawData.shapeType)) {
+            const slidingEnabled = e.shiftKey && !e.ctrlKey && !e.altKey && !e.metaKey;
+            if (slidingEnabled && ['polygon', 'polyline'].includes(this.drawData.shapeType)) {
                 if (lastDrawnPoint.x === null || lastDrawnPoint.y === null) {
                     this.drawInstance.draw('point', e);
                 } else {

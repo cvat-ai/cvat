@@ -418,6 +418,14 @@ class TrackManagerTest(TestCase):
 
 
 class AnnotationIRTest(TestCase):
+    def test_interval_stop_can_be_immediately_after_range(self):
+        interval = {"id": 1, "start": 0, "stop": 11}
+
+        self.assertTrue(AnnotationIR.is_interval_inside(interval, 0, 10))
+
+        self.assertFalse(AnnotationIR.is_interval_inside({**interval, "stop": 12}, 0, 10))
+        self.assertFalse(AnnotationIR.is_interval_inside({**interval, "start": 11}, 0, 10))
+
     def test_slice_track_does_not_duplicate_outside_frame_on_the_end(self):
         for dimension in [DimensionType.DIM_2D, DimensionType.DIM_3D]:
             with self.subTest(dimension=dimension):

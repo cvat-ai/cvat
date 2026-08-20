@@ -32,7 +32,7 @@ from cvat import __version__
 from cvat.apps.iam.password_validation import DEFAULT_MIN_PASSWORD_LENGTH
 
 # Build paths inside the project like this: BASE_DIR / ...
-BASE_DIR = Path(__file__).parents[2]
+BASE_DIR = Path(os.environ.get("CVAT_BASE_DIR", Path(__file__).parents[2]))
 
 ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
 INTERNAL_IPS = ["127.0.0.1"]
@@ -147,6 +147,7 @@ INSTALLED_APPS = [
     "cvat.apps.redis_handler",
     "cvat.apps.consensus",
     "cvat.apps.access_tokens",
+    "cvat.apps.growth",
 ]
 
 SITE_ID = 1
@@ -297,6 +298,7 @@ OBJECTS_NOT_RELATED_WITH_ORG = [
     "server",
     "request",
     "access_token",
+    "growth",
 ]
 
 # ORG settings
@@ -561,14 +563,6 @@ LOGGING = {
             "filters": [],
             "formatter": "standard",
         },
-        "server_file": {
-            "class": "logging.handlers.RotatingFileHandler",
-            "level": "DEBUG",
-            "filename": LOGS_ROOT / "cvat_server.log",
-            "formatter": "standard",
-            "maxBytes": 1024 * 1024 * 50,  # 50 MB
-            "backupCount": 5,
-        },
         "dataset_handler": {
             "class": "logging.handlers.RotatingFileHandler",
             "level": "DEBUG",
@@ -592,7 +586,7 @@ LOGGING = {
         },
     },
     "root": {
-        "handlers": ["console", "server_file"],
+        "handlers": ["console"],
     },
     "loggers": {
         "cvat": {

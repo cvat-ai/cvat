@@ -26,17 +26,14 @@ See:
   - [AI tools: delete points](#ai-tools-delete-points)
   - [OpenCV: intelligent scissors](#opencv-intelligent-scissors)
   - [Settings](#settings)
-  - [Interactors models](#interactors-models)
 - [Detectors](#detectors)
   - [Labels matching](#labels-matching)
   - [Annotate with detectors](#annotate-with-detectors)
   - [Limiting detector input to a region of interest](#limiting-detector-input-to-a-region-of-interest)
-  - [Detectors models](#detectors-models)
 - [Trackers](#trackers)
   - [AI tools: annotate with trackers](#ai-tools-annotate-with-trackers)
   - [OpenCV: annotate with trackers](#opencv-annotate-with-trackers)
   - [When tracking](#when-tracking)
-  - [Trackers models](#trackers-models)
 - [OpenCV: histogram equalization](#opencv-histogram-equalization)
 
 ## Interactors
@@ -60,7 +57,8 @@ To annotate with interactors, do the following:
 
 1. Click **Magic wand** ![Magic wand icon](/images/image189.jpg), and go to the **Interactors** tab.
 2. From the **Label** drop-down, select a label for the polygon.
-3. From the **Interactor** drop-down, select a model (see [Interactors models](#interactors-models)).
+3. From the **Interactor** drop-down, select a model
+   (see {{< ilink "/docs/annotation/auto-annotation/ai-models" >}}).
    <br>Click the **Question mark** to see information about each model:
    <br>![AI Tools interface with open Model information tooltip](/images/image114_detrac.jpg)
 4. (Optional) If the model returns masks, and you need to
@@ -153,6 +151,11 @@ To increase or lower the action threshold, hold **Ctrl** and scroll the mouse wh
 
 During the drawing process, you can remove the last point by clicking on it with the left mouse button.
 
+![Example of annotation process using Intelligent scissors](/images/intelligent_scissors.gif)
+
+For more information on intelligent scissors, see the
+[Intelligent Scissors Specification](https://docs.opencv.org/4.x/df/d6b/classcv_1_1segmentation_1_1IntelligentScissorsMB.html).
+
 ### Settings
 
 - On how to adjust the polygon,
@@ -160,14 +163,6 @@ During the drawing process, you can remove the last point by clicking on it with
 
 - For more information about polygons in general, see
   {{< ilink "/docs/annotation/manual-annotation/shapes/annotation-with-polygons" "Annotation with polygons" >}}.
-
-### Interactors models
-
-| Model                                                     | Tool     | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | Example                                           |
-| --------------------------------------------------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------- |
-| Segment Anything Model (SAM)                              | AI Tools | The Segment Anything Model (SAM) produces high <br> quality object masks, and it can be used to generate <br> masks for all objects in an image. It has been trained <br>on a dataset of 11 million images and <br>1.1 billion masks, and has strong zero-shot performance on a variety of segmentation tasks. <br><br>For more information, see: <li>[GitHub: Segment Anything](https://github.com/facebookresearch/segment-anything) <li>[Site: Segment Anything](https://segment-anything.com/)<li>[Paper: Segment Anything](https://ai.facebook.com/research/publications/segment-anything/)               | ![Example of annotation process using Segment Anything Model](/images/interactors_SAM.gif) |
-| Inside-Outside-Guidance<br>(IOG)                          | AI Tool  | The model uses a bounding box and <br>inside/outside points to create a mask. <br>First of all, you need to create a bounding<br> box, wrapping the object. <br>Then you need to use positive <br>and negative points to say the <br>model where is <br>a foreground, and where is a background.<br>Negative points are optional. <br><br>For more information, see: <li>[GitHub: IOG](https://github.com/shiyinzhang/Inside-Outside-Guidance) <li>[Paper: IOG](https://openaccess.thecvf.com/content_CVPR_2020/papers/Zhang_Interactive_Object_Segmentation_With_Inside-Outside_Guidance_CVPR_2020_paper.pdf) | ![Example of annotation process using Inside-Outside-Guidance model](/images/iog_example.gif) |
-| Intelligent scissors                                      | OpenCV   | Intelligent scissors is a CV method of creating <br>a polygon by placing points with the automatic <br>drawing of a line between them. The distance<br> between the adjacent points is limited by <br>the threshold of action, displayed as a <br>red square that is tied to the cursor. <br><br> For more information, see: <li>[Site: Intelligent Scissors Specification](https://docs.opencv.org/4.x/df/d6b/classcv_1_1segmentation_1_1IntelligentScissorsMB.html)                                                                                                                                          | ![Example of annotation process using Intelligent scissors](/images/intelligent_scissors.gif) |
 
 ## Detectors
 
@@ -192,15 +187,16 @@ If you have a label that is not on the list
 of DL labels, you will not be able to
 match them.
 
-For this reason, supported DL models are suitable only for certain labels.
-<br>To check the list of labels for each model, see [Detectors models](#detectors-models).
+You can check each deployed model's supported labels
+at the {{< ilink "/docs/workspace/models" "Models page" >}}.
 
 ### Annotate with detectors
 
 To annotate with detectors, do the following:
 
 1. Click **Magic wand** ![Magic wand icon](/images/image189.jpg), and go to the **Detectors** tab.
-2. From the **Model** drop-down, select model (see [Detectors models](#detectors-models)).
+2. From the **Model** drop-down, select model
+   (see {{< ilink "/docs/annotation/auto-annotation/ai-models" >}}).
 3. From the left drop-down select the DL model label, from the right drop-down
    select the matching label of your task.
 
@@ -232,18 +228,6 @@ To set the region:
 
 CVAT sends only the selected image crop to the detector and maps the returned
 annotations back to the correct full-frame coordinates.
-
-### Detectors models
-
-| Model                          | Description                                                                                                                                                                                                                                                                                                                                                                                                                    |
-| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Mask RCNN                      | The model generates polygons for each instance of an object in the image. <br><br> For more information, see: <li>[GitHub: Mask RCNN](https://github.com/matterport/Mask_RCNN) <li>[Paper: Mask RCNN](https://arxiv.org/pdf/1703.06870.pdf)                                                                                                                                                                                    |
-| Faster RCNN                    | The model generates bounding boxes for each instance of an object in the image. <br>In this model, RPN and Fast R-CNN are combined into a single network. <br><br> For more information, see: <li>[GitHub: Faster RCNN](https://github.com/ShaoqingRen/faster_rcnn) <li>[Paper: Faster RCNN](https://arxiv.org/pdf/1506.01497.pdf)                                                                                             |
-| YOLO v3                        | YOLO v3 is a family of object detection architectures and models pre-trained on the COCO dataset. <br><br> For more information, see: <li>[GitHub: YOLO v3](https://github.com/ultralytics/yolov3) <li>[Site: YOLO v3](https://docs.ultralytics.com/#yolov3) <li>[Paper: YOLO v3](https://arxiv.org/pdf/1804.02767v1.pdf)                                                                                                      |
-| Semantic segmentation for ADAS | This is a segmentation network to classify each pixel into 20 classes. <br><br> For more information, see: <li>[Site: ADAS](https://docs.openvino.ai/2019_R1/_semantic_segmentation_adas_0001_description_semantic_segmentation_adas_0001.html)                                                                                                                                                                                |
-| Faster RCNN with Tensorflow    | Faster RCNN version with Tensorflow. The model generates bounding boxes for each instance of an object in the image. <br>In this model, RPN and Fast R-CNN are combined into a single network. <br><br> For more information, see: <li>[Site: Faster RCNN with Tensorflow](https://docs.openvino.ai/2021.4/omz_models_model_faster_rcnn_inception_v2_coco.html) <li>[Paper: Faster RCNN](https://arxiv.org/pdf/1506.01497.pdf) |
-| RetinaNet                      | Pytorch implementation of RetinaNet object detection. <br> <br><br> For more information, see: <li>[Specification: RetinaNet](https://paperswithcode.com/lib/detectron2/retinanet) <li>[Paper: RetinaNet](https://arxiv.org/pdf/1708.02002.pdf)<li>[Documentation: RetinaNet](https://detectron2.readthedocs.io/en/latest/tutorials/training.html)                                                                             |
-| Face Detection                 | Face detector based on MobileNetV2 as a backbone for indoor and outdoor scenes shot by a front-facing camera. <br> <br><br> For more information, see: <li>[Site: Face Detection 0205](https://docs.openvino.ai/latest/omz_models_model_face_detection_0205.html)                                                                                                                                                              |
 
 ## Trackers
 
@@ -296,6 +280,10 @@ To annotate with trackers, do the following:
 
    <br>![Tracking tab in OpenCV window with selected Tracker](/images/tracker_mil_control.png)
 
+   Currently, TrackerMIL is the only tracker available.
+   For more information on it,
+   see [Object Tracking using OpenCV](https://learnopencv.com/tag/mil/).
+
 4. Annotation actions window will pop-up. Setup `Target frame`
 and `Convert rectangle shapes to tracks` parameters and click `Run`
 
@@ -306,15 +294,6 @@ and `Convert rectangle shapes to tracks` parameters and click `Run`
    <br>![Annotation actions window with parameters and buttons](/images/tracker_mil_action.png)
 
 All annotated objects will be automatically tracked up until target frame parameter.
-
-### Trackers models
-
-| Model                         | Tool     | Description                                                                                                                                                                                                                                                                                                                                                                                                                                            | Example                                                       |
-| ----------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------- |
-| TrackerMIL                    | OpenCV   | TrackerMIL model is not bound to <br>labels and can be used for any <br>object. It is a fast client-side model <br>designed to track simple non-overlapping objects. <br><br>For more information, see: <li>[Article: Object Tracking using OpenCV](https://learnopencv.com/tag/mil/)                                                                                                                                                                  | ![Example of annotation process using TrackerMIL model](/images/tracker_mil_detrac.gif) |
-| SiamMask                      | AI Tools | Fast online Object Tracking and Segmentation. The trackable object will <br>be tracked automatically if the previous frame <br>was the latest keyframe for the object. <br><br>For more information, see:<li> [GitHub: SiamMask](https://github.com/foolwood/SiamMask) <li> [Paper: SiamMask](https://arxiv.org/pdf/1812.05050.pdf)                                                                                                                    | ![Example of annotation process using SiamMask](/images/tracker_ai_tools.gif) |
-| Transformer Tracking (TransT) | AI Tools | Simple and efficient online tool for object tracking and segmentation. <br>If the previous frame was the latest keyframe <br>for the object, the trackable object will be tracked automatically.<br>This is a modified version of the PyTracking <br> Python framework based on Pytorch<br> <br><br>For more information, see: <li> [GitHub: TransT](https://github.com/chenxin-dlut/TransT)<li> [Paper: TransT](https://arxiv.org/pdf/2103.15436.pdf) | ![Example of annotation process using Transformer Tracking](/images/tracker_transit.gif) |
-| SAM2 Tracker                  | AI Agent | Advanced object tracking and segmentation using Meta's Segment Anything Model 2. <br>Available for CVAT Online and Enterprise via AI agents. <br>Supports polygons and masks with high precision tracking. <br>Requires user-side agent setup with Python 3.10+. <br><br>For more information, see: <li>{{< ilink "/docs/annotation/auto-annotation/segment-anything-2-tracker" "SAM2 Tracker Setup Guide" >}} <li>[SAM2 Blog: AI Agent Integration](https://www.cvat.ai/resources/blog/sam2-ai-agent-tracking) | _Example coming soon_ |
 
 ## OpenCV: histogram equalization
 
