@@ -100,7 +100,7 @@ function splitFilterIntoPredefined(predefinedFilters: string[], filter: string):
     const parsedFilter = JSON.parse(filter);
     const filterKeys = Object.keys(parsedFilter);
     if (filterKeys.length === 1 && filterKeys[0] === 'and') {
-        const subFilters = parsedFilter.and.map((value) => JSON.stringify(value));
+        const subFilters = parsedFilter.and.map((value: object) => JSON.stringify(value)) as string[];
         if (subFilters.every((subFilter) => predefinedFilters.includes(subFilter))) {
             return subFilters;
         }
