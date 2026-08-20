@@ -9,8 +9,8 @@ Steps:
   2. Print the server version.
   3. Print who you are authenticated as (a quick sanity check for scripts).
 
-Usage (run ``python auth_connect.py --help`` for the full list of options):
-  python auth_connect.py --host 'https://app.cvat.ai' --token '<your token>'
+Usage (run ``python auth_token.py --help`` for the full list of options):
+  python auth_token.py --host 'https://app.cvat.ai' --token '<your token>'
 
 Create a token in the CVAT UI under Profile -> Security.
 """

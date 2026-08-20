@@ -12,9 +12,9 @@ Steps:
   1. If --profile is passed, use that profile; otherwise use the default profile.
   2. Print who you are authenticated as.
 
-Usage (run ``python auth_profiles.py --help`` for the full list of options):
-  python auth_profiles.py --profile app
-  python auth_profiles.py               # uses the default profile
+Usage (run ``python auth_profile.py --help`` for the full list of options):
+  python auth_profile.py --profile app
+  python auth_profile.py               # uses the default profile
 """
 
 import argparse

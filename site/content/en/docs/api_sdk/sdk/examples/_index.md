@@ -13,7 +13,7 @@ Shared conventions:
 
 - Every recipe takes `--host` and `--token`. Create a token in the CVAT UI under
   Profile -> Security. Wrap values that contain URL punctuation in single quotes,
-  e.g. `--host 'https://app.cvat.ai'`. `auth_profiles.py` and `auth_cli.py` show
+  e.g. `--host 'https://app.cvat.ai'`. `auth_profile.py` and `auth_cli.py` show
   alternative sign-in flows.
 - Recipes that create resources keep them and print their ids and UI links. Pass
   `--cleanup` to delete what the script created (never the sources it read).
@@ -28,7 +28,7 @@ they stay in sync with the SDK.
 
 ## Topics
 
-- [Authenticate](authentication) — `auth_connect.py`, `auth_profiles.py`, `auth_cli.py`
+- [Authenticate](authentication) — `auth_token.py`, `auth_profile.py`, `auth_cli.py`
 - [Projects](projects) — create/list, status report, backup, restore,
   dataset export
 - [Tasks](tasks) — create from a bucket, bulk-create in a project,

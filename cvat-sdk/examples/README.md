@@ -24,8 +24,8 @@ Conventions:
 
 | Example | What it does | Parameters |
 | --- | --- | --- |
-| `auth_connect.py` | Authenticate with a Personal Access Token, get current user | — |
-| `auth_profiles.py` | Authenticate from a saved profile | `--profile` (omit for the default profile) |
+| `auth_token.py` | Authenticate with a Personal Access Token, get current user | — |
+| `auth_profile.py` | Authenticate from a saved profile | `--profile` (omit for the default profile) |
 | `auth_cli.py` | Build a CLI-compatible script via `make_client_from_cli` | reuses cvat-cli's [flags](https://docs.cvat.ai/docs/api_sdk/cli/#authentication): `--server-host`, `--auth`, `--profile`, ... |
 | `project_create_and_list.py` | Create, list, filter, retrieve, rename a project | `--name`, `--labels`, `--cleanup` |
 | `project_status_report.py` | CSV report of an existing project's tasks/jobs | `--project-id` |
