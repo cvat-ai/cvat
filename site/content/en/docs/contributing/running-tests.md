@@ -21,7 +21,7 @@ description: 'Instructions on how to run all existence tests.'
    ```shell
    docker exec -i cvat_server \
              /bin/bash -c \
-             "echo \"from django.contrib.auth.models import User; User.objects.create_superuser('admin', 'admin@localhost.company', '12qwaszx')\" | python3 ~/manage.py shell"
+             "echo \"from django.contrib.auth import get_user_model; get_user_model().objects.create_superuser('admin', 'admin@localhost.company', '12qwaszx')\" | python3 ~/manage.py shell"
    ```
 1. Install npm dependencies:
    ```bash

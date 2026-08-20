@@ -30,7 +30,7 @@ import numpy as np
 from attr import define, field
 from datumaro.components.comparator import EqualityComparator
 from datumaro.components.dataset import Dataset
-from django.contrib.auth.models import Group, User
+from django.contrib.auth.models import Group
 from PIL import Image
 from rest_framework import status
 
@@ -52,6 +52,7 @@ from cvat.apps.engine.tests.utils import (
     ImportApiTestBase,
     get_paginated_collection,
 )
+from cvat.apps.iam.models import User
 
 projects_path = osp.join(osp.dirname(__file__), "assets", "projects.json")
 with open(projects_path) as file:
