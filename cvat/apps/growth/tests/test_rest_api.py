@@ -4,7 +4,6 @@
 
 from datetime import timedelta
 
-from django.contrib.auth.models import User
 from django.test import override_settings
 from django.utils.timezone import now
 from rest_framework import status
@@ -12,6 +11,7 @@ from rest_framework.test import APITestCase
 
 from cvat.apps.engine.tests.utils import ForceLogin
 from cvat.apps.growth.models import UserGrowthData
+from cvat.apps.iam.models import User
 
 
 class UserGrowthDataAPITestCase(APITestCase):
