@@ -944,6 +944,7 @@ export class DrawHandlerImpl implements DrawHandler {
     }
 
     private drawRotatedShapeByPoints(): void {
+        let placedPoints = 0;
         this.drawInstance = (this.canvas as any)
             .polygon()
             .addClass('cvat_canvas_shape_drawing')
@@ -955,12 +956,26 @@ export class DrawHandlerImpl implements DrawHandler {
             });
 
         const updatePreview = (shape: SVG.Shape): void => {
-            this.scheduleFitPreview(readPointsFromShape(shape));
+            const points = readPointsFromShape(shape);
+            const shouldShowEllipsePreview = this.drawData.shapeType !== 'ellipse' || placedPoints >= 5;
+            this.scheduleFitPreview(shouldShowEllipsePreview ? points : []);
             this.scheduleDrawControlPointsResize();
         };
 
         this.drawInstance
-            .on('drawstart drawpoint drawupdate undopoint', (e: CustomEvent): void => {
+            .on('drawstart', (e: CustomEvent): void => {
+                placedPoints = 1;
+                updatePreview((e.target as any as { instance: SVG.Shape }).instance);
+            })
+            .on('drawpoint', (e: CustomEvent): void => {
+                placedPoints += 1;
+                updatePreview((e.target as any as { instance: SVG.Shape }).instance);
+            })
+            .on('drawupdate', (e: CustomEvent): void => {
+                updatePreview((e.target as any as { instance: SVG.Shape }).instance);
+            })
+            .on('undopoint', (e: CustomEvent): void => {
+                placedPoints = Math.max(1, placedPoints - 1);
                 updatePreview((e.target as any as { instance: SVG.Shape }).instance);
             })
             .on('drawdone', (e: CustomEvent): void => {
