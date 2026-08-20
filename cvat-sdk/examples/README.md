@@ -1,27 +1,32 @@
-# CVAT SDK recipes
+# CVAT SDK Examples
 
-Complete, copy-and-run scripts for the CVAT Python SDK. Each recipe uses
-`argparse`, so pass `--help` to any script to see all options. Example:
+Complete, copy-and-run examples for the CVAT Python SDK. Each example is a command-line script.
+Invoke a script with the `--help` parameter to see all its options. Example:
 
-    python tasks_bulk_from_cloud.py --help
-    python tasks_bulk_from_cloud.py \
-        --host 'https://app.cvat.ai' \
-        --token '<your token>' \
-        --cloud-storage-id 7 --project-id 42 \
-        --task 'videos/clip_01.mp4' --task 'videos/clip_02.mp4'
+\```sh
+python tasks_bulk_from_cloud.py --help
+python tasks_bulk_from_cloud.py \
+    --host 'https://app.cvat.ai' \
+    --token '<your token>' \
+    --cloud-storage-id 7 --project-id 42 \
+    --task 'videos/clip_01.mp4' \
+    --task 'videos/clip_02.mp4'
+\```
 
-Create a token in the CVAT UI under Profile -> Security.
+Most of the examples use Personal Access Tokens for user authentication. You'll need to create one
+to run a script, the instructions are available [here](https://docs.cvat.ai/docs/api_sdk/access_tokens/).
 
-Conventions: recipes that create resources keep them (pass `--cleanup` to
-delete them at the end); recipes that inspect or export take an existing id via
-`--project-id` / `--task-id`; list-valued options accept multiple values
-(e.g. `--labels car person`).
+Conventions:
+- examples that create resources keep them by default. Pass `--cleanup` to delete them at the end
+- examples that operate with existing server objects take an id
+  as the parameter (e.g. `--project-id`)
+- list-valued options accept multiple values (e.g. `--labels car person`)
 
-| Recipe | What it does | Recipe-specific flags |
+| Example | What it does | Parameters |
 | --- | --- | --- |
-| `auth_connect.py` | Connect with a Personal Access Token, whoami | — |
+| `auth_connect.py` | Authenticate with a Personal Access Token, get current user | — |
 | `auth_profiles.py` | Authenticate from a saved profile | `--profile` (omit for the default profile) |
-| `auth_cli.py` | Build a CLI-compatible script via `make_client_from_cli` | reuses cvat-cli's flags: `--server-host`, `--auth`, `--profile`, ... |
+| `auth_cli.py` | Build a CLI-compatible script via `make_client_from_cli` | reuses cvat-cli's [flags](https://docs.cvat.ai/docs/api_sdk/cli/#authentication): `--server-host`, `--auth`, `--profile`, ... |
 | `project_create_and_list.py` | Create, list, filter, retrieve, rename a project | `--name`, `--labels`, `--cleanup` |
 | `project_status_report.py` | CSV report of an existing project's tasks/jobs | `--project-id` |
 | `project_backup.py` | Download a backup zip of an existing project | `--project-id`, `--output` |
