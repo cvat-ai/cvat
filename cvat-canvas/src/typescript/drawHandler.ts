@@ -36,8 +36,9 @@ import {
     fitRotatedShape,
     fitRotatedPreviewFromGuide,
     getClosestEquivalentFit,
-    interpolateNormal,
+    interpolateRotatedShapeFit,
     MIN_FITTED_ELLIPSE_POINTS,
+    needsAnotherFitAnimationFrame,
     RotatedShapeFit,
     RotatedShapeTopEdge,
     withTopEdge,
@@ -53,6 +54,15 @@ export interface DrawHandler {
 interface FinalCoordinates {
     points: number[];
     box: Box;
+}
+
+interface RotatedShapePreviewState {
+    svg: SVG.G | null;
+    animationFrame: number | null;
+    pendingPoints: number[] | null;
+    displayedFit: RotatedShapeFit | null;
+    targetFit: RotatedShapeFit | null;
+    topEdgeReference: RotatedShapeTopEdge | null;
 }
 
 function checkConstraint(shapeType: string, points: number[], box: Box | null = null): boolean {
@@ -133,13 +143,8 @@ export class DrawHandlerImpl implements DrawHandler {
     private canceled: boolean;
     private pointsGroup: SVG.G | null;
     private shapeSizeElement: ShapeSizeElement | null;
-    private fitPreview: SVG.G | null;
-    private previewAnimationFrame: number | null;
     private controlPointsAnimationFrame: number | null;
-    private pendingPreviewPoints: number[] | null;
-    private displayedFit: RotatedShapeFit | null;
-    private targetFit: RotatedShapeFit | null;
-    private topEdgeReference: RotatedShapeTopEdge | null;
+    private rotatedShapePreview: RotatedShapePreviewState;
 
     private usesEllipseFit(): boolean {
         return this.drawData.shapeType === 'ellipse' &&
@@ -147,15 +152,16 @@ export class DrawHandlerImpl implements DrawHandler {
     }
 
     private fitRotatedShape(points: number[]): RotatedShapeFit | null {
+        const preview = this.rotatedShapePreview;
         const fitted = fitRotatedShape(points, {
             fitter: this.drawData.rotatedShapeFitter,
             useEllipseFit: this.usesEllipseFit(),
-            previousTopEdge: this.topEdgeReference,
+            previousTopEdge: preview.topEdgeReference,
             scale: this.geometry.scale,
         });
 
         if (fitted?.topEdge) {
-            this.topEdgeReference = fitted.topEdge;
+            preview.topEdgeReference = fitted.topEdge;
         }
 
         return fitted;
@@ -170,10 +176,11 @@ export class DrawHandlerImpl implements DrawHandler {
     }
 
     private updateFitPreview(fitted: RotatedShapeFit | null): void {
+        const preview = this.rotatedShapePreview;
         if (!fitted || fitted.size.width < consts.SIZE_THRESHOLD || fitted.size.height < consts.SIZE_THRESHOLD) {
-            if (this.fitPreview) {
-                this.fitPreview.remove();
-                this.fitPreview = null;
+            if (preview.svg) {
+                preview.svg.remove();
+                preview.svg = null;
             }
             return;
         }
@@ -186,17 +193,17 @@ export class DrawHandlerImpl implements DrawHandler {
             stroke: this.outlinedBorders,
         };
 
-        if (!this.fitPreview) {
-            this.fitPreview = this.canvas.group().attr({ 'pointer-events': 'none' });
-            this.fitPreview.rect().attr(previewAttributes);
+        if (!preview.svg) {
+            preview.svg = this.canvas.group().attr({ 'pointer-events': 'none' });
+            preview.svg.rect().attr(previewAttributes);
             if (this.drawData.shapeType === 'ellipse') {
-                this.fitPreview.ellipse().attr(previewAttributes);
+                preview.svg.ellipse().attr(previewAttributes);
             }
-            this.fitPreview.circle().attr(previewAttributes);
+            preview.svg.circle().attr(previewAttributes);
         }
 
-        this.fitPreview.untransform();
-        const [rectanglePreview, ...remainingPreviews] = this.fitPreview.children();
+        preview.svg.untransform();
+        const [rectanglePreview, ...remainingPreviews] = preview.svg.children();
         const ellipsePreview = this.drawData.shapeType === 'ellipse' ? remainingPreviews[0] : null;
         const rotationPreview = this.drawData.shapeType === 'ellipse' ? remainingPreviews[1] : remainingPreviews[0];
         rectanglePreview.attr({
@@ -244,83 +251,56 @@ export class DrawHandlerImpl implements DrawHandler {
             'stroke-dasharray': 'none',
             'pointer-events': 'none',
         });
-        this.fitPreview.rotate(fitted.angle, fitted.center.x, fitted.center.y);
+        preview.svg.rotate(fitted.angle, fitted.center.x, fitted.center.y);
     }
 
     private renderFitPreview(): void {
-        this.previewAnimationFrame = null;
-        if (this.pendingPreviewPoints) {
-            this.targetFit = this.fitRotatedPreview(this.pendingPreviewPoints);
-            this.pendingPreviewPoints = null;
+        const preview = this.rotatedShapePreview;
+        preview.animationFrame = null;
+        if (preview.pendingPoints) {
+            preview.targetFit = this.fitRotatedPreview(preview.pendingPoints);
+            preview.pendingPoints = null;
         }
 
-        if (!this.targetFit) {
-            this.displayedFit = null;
+        if (!preview.targetFit) {
+            preview.displayedFit = null;
             this.updateFitPreview(null);
             return;
         }
 
-        const targetFit = this.displayedFit ?
-            getClosestEquivalentFit(this.targetFit, this.displayedFit) : this.targetFit;
-        const isExpandingFromLine = this.displayedFit &&
-            Math.min(this.displayedFit.size.width, this.displayedFit.size.height) < consts.SIZE_THRESHOLD;
+        const targetFit = preview.displayedFit ?
+            getClosestEquivalentFit(preview.targetFit, preview.displayedFit) : preview.targetFit;
+        const isExpandingFromLine = preview.displayedFit &&
+            Math.min(
+                preview.displayedFit.size.width,
+                preview.displayedFit.size.height,
+            ) < consts.SIZE_THRESHOLD;
         const smoothingFactor = isExpandingFromLine ? 0.02 : 0.1;
         const topEdgeSmoothingFactor = isExpandingFromLine ? 0.02 : 0.06;
-        const nextFit: RotatedShapeFit = this.displayedFit ? {
-            center: {
-                x: this.displayedFit.center.x + (targetFit.center.x - this.displayedFit.center.x) * smoothingFactor,
-                y: this.displayedFit.center.y + (targetFit.center.y - this.displayedFit.center.y) * smoothingFactor,
-            },
-            size: {
-                width: this.displayedFit.size.width +
-                    (targetFit.size.width - this.displayedFit.size.width) * smoothingFactor,
-                height: this.displayedFit.size.height +
-                    (targetFit.size.height - this.displayedFit.size.height) * smoothingFactor,
-            },
-            angle: this.displayedFit.angle + (targetFit.angle - this.displayedFit.angle) * smoothingFactor,
-            topEdge: this.displayedFit.topEdge && targetFit.topEdge ? {
-                point: {
-                    x: this.displayedFit.topEdge.point.x +
-                        (targetFit.topEdge.point.x - this.displayedFit.topEdge.point.x) * topEdgeSmoothingFactor,
-                    y: this.displayedFit.topEdge.point.y +
-                        (targetFit.topEdge.point.y - this.displayedFit.topEdge.point.y) * topEdgeSmoothingFactor,
-                },
-                normal: interpolateNormal(
-                    this.displayedFit.topEdge.normal,
-                    targetFit.topEdge.normal,
-                    topEdgeSmoothingFactor,
-                ),
-            } : targetFit.topEdge,
-        } : targetFit;
+        const nextFit = preview.displayedFit ? interpolateRotatedShapeFit(
+            preview.displayedFit,
+            targetFit,
+            smoothingFactor,
+            topEdgeSmoothingFactor,
+        ) : targetFit;
 
-        this.displayedFit = nextFit;
-        this.targetFit = targetFit;
+        preview.displayedFit = nextFit;
+        preview.targetFit = targetFit;
         this.updateFitPreview(nextFit);
 
-        const topEdgeNeedsAnotherFrame = targetFit.topEdge && nextFit.topEdge && (
-            Math.abs(targetFit.topEdge.point.x - nextFit.topEdge.point.x) > 0.1 ||
-            Math.abs(targetFit.topEdge.point.y - nextFit.topEdge.point.y) > 0.1 ||
-            Math.abs(targetFit.topEdge.normal.x - nextFit.topEdge.normal.x) > 0.01 ||
-            Math.abs(targetFit.topEdge.normal.y - nextFit.topEdge.normal.y) > 0.01
-        );
-        const needsAnotherFrame = Math.abs(targetFit.center.x - nextFit.center.x) > 0.1 ||
-            Math.abs(targetFit.center.y - nextFit.center.y) > 0.1 ||
-            Math.abs(targetFit.size.width - nextFit.size.width) > 0.1 ||
-            Math.abs(targetFit.size.height - nextFit.size.height) > 0.1 ||
-            Math.abs(targetFit.angle - nextFit.angle) > 0.1 ||
-            topEdgeNeedsAnotherFrame;
-        if (needsAnotherFrame) {
-            this.previewAnimationFrame = window.requestAnimationFrame((): void => this.renderFitPreview());
+        if (needsAnotherFitAnimationFrame(targetFit, nextFit)) {
+            preview.animationFrame = window.requestAnimationFrame((): void => this.renderFitPreview());
         }
     }
 
     private scheduleFitPreview(points: number[]): void {
-        this.pendingPreviewPoints = points;
-        if (this.previewAnimationFrame !== null) {
+        const preview = this.rotatedShapePreview;
+        preview.pendingPoints = points;
+        if (preview.animationFrame !== null) {
             return;
         }
 
-        this.previewAnimationFrame = window.requestAnimationFrame((): void => this.renderFitPreview());
+        preview.animationFrame = window.requestAnimationFrame((): void => this.renderFitPreview());
     }
 
     private resizeDrawControlPoints(): void {
@@ -637,23 +617,23 @@ export class DrawHandlerImpl implements DrawHandler {
             this.pointsGroup = null;
         }
 
-        if (this.fitPreview) {
-            this.fitPreview.remove();
-            this.fitPreview = null;
+        if (this.rotatedShapePreview.svg) {
+            this.rotatedShapePreview.svg.remove();
+            this.rotatedShapePreview.svg = null;
         }
 
-        if (this.previewAnimationFrame !== null) {
-            window.cancelAnimationFrame(this.previewAnimationFrame);
-            this.previewAnimationFrame = null;
+        if (this.rotatedShapePreview.animationFrame !== null) {
+            window.cancelAnimationFrame(this.rotatedShapePreview.animationFrame);
+            this.rotatedShapePreview.animationFrame = null;
         }
         if (this.controlPointsAnimationFrame !== null) {
             window.cancelAnimationFrame(this.controlPointsAnimationFrame);
             this.controlPointsAnimationFrame = null;
         }
-        this.pendingPreviewPoints = null;
-        this.displayedFit = null;
-        this.targetFit = null;
-        this.topEdgeReference = null;
+        this.rotatedShapePreview.pendingPoints = null;
+        this.rotatedShapePreview.displayedFit = null;
+        this.rotatedShapePreview.targetFit = null;
+        this.rotatedShapePreview.topEdgeReference = null;
 
         this.drawInstance.off();
         this.drawInstance.remove();
@@ -1671,13 +1651,15 @@ export class DrawHandlerImpl implements DrawHandler {
         this.crosshair = new Crosshair();
         this.drawInstance = null;
         this.pointsGroup = null;
-        this.fitPreview = null;
-        this.previewAnimationFrame = null;
         this.controlPointsAnimationFrame = null;
-        this.pendingPreviewPoints = null;
-        this.displayedFit = null;
-        this.targetFit = null;
-        this.topEdgeReference = null;
+        this.rotatedShapePreview = {
+            svg: null,
+            animationFrame: null,
+            pendingPoints: null,
+            displayedFit: null,
+            targetFit: null,
+            topEdgeReference: null,
+        };
         this.getDrawnStates = getDrawnStates;
         this.isCtrlKeyDown = isCtrlKeyDown;
         this.cursorPosition = {
@@ -1790,15 +1772,15 @@ export class DrawHandlerImpl implements DrawHandler {
             this.resizeDrawControlPoints();
         }
 
-        if (this.fitPreview) {
-            this.fitPreview.children().forEach((preview: SVG.Element): void => {
+        if (this.rotatedShapePreview.svg) {
+            this.rotatedShapePreview.svg.children().forEach((preview: SVG.Element): void => {
                 preview.attr({
                     'stroke-width': consts.BASE_STROKE_WIDTH / geometry.scale,
                     'stroke-dasharray': `${6 / geometry.scale} ${4 / geometry.scale}`,
                 });
             });
-            if (this.displayedFit) {
-                this.updateFitPreview(this.displayedFit);
+            if (this.rotatedShapePreview.displayedFit) {
+                this.updateFitPreview(this.rotatedShapePreview.displayedFit);
             }
         }
     }

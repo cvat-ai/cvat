@@ -208,3 +208,59 @@ export function interpolateNormal(
         y: Math.sin(angle),
     };
 }
+
+function interpolateValue(current: number, target: number, factor: number): number {
+    return current + (target - current) * factor;
+}
+
+export function interpolateRotatedShapeFit(
+    current: RotatedShapeFit,
+    target: RotatedShapeFit,
+    fitFactor: number,
+    topEdgeFactor: number,
+): RotatedShapeFit {
+    return {
+        center: {
+            x: interpolateValue(current.center.x, target.center.x, fitFactor),
+            y: interpolateValue(current.center.y, target.center.y, fitFactor),
+        },
+        size: {
+            width: interpolateValue(current.size.width, target.size.width, fitFactor),
+            height: interpolateValue(current.size.height, target.size.height, fitFactor),
+        },
+        angle: interpolateValue(current.angle, target.angle, fitFactor),
+        topEdge: current.topEdge && target.topEdge ? {
+            point: {
+                x: interpolateValue(current.topEdge.point.x, target.topEdge.point.x, topEdgeFactor),
+                y: interpolateValue(current.topEdge.point.y, target.topEdge.point.y, topEdgeFactor),
+            },
+            normal: interpolateNormal(current.topEdge.normal, target.topEdge.normal, topEdgeFactor),
+        } : target.topEdge,
+    };
+}
+
+function hasDifference(values: [number, number][], tolerance: number): boolean {
+    return values.some(([target, current]: [number, number]): boolean => (
+        Math.abs(target - current) > tolerance
+    ));
+}
+
+export function needsAnotherFitAnimationFrame(target: RotatedShapeFit, current: RotatedShapeFit): boolean {
+    const topEdgeNeedsAnotherFrame = target.topEdge && current.topEdge && (
+        hasDifference([
+            [target.topEdge.point.x, current.topEdge.point.x],
+            [target.topEdge.point.y, current.topEdge.point.y],
+        ], 0.1) || hasDifference([
+            [target.topEdge.normal.x, current.topEdge.normal.x],
+            [target.topEdge.normal.y, current.topEdge.normal.y],
+        ], 0.01)
+    );
+
+    return hasDifference([
+        [target.center.x, current.center.x],
+        [target.center.y, current.center.y],
+        [target.size.width, current.size.width],
+        [target.size.height, current.size.height],
+        [target.angle, current.angle],
+    ], 0.1) || Boolean(topEdgeNeedsAnotherFrame);
+}
