@@ -681,6 +681,53 @@ def compute_target_metric(
     raise AssertionError(target_metric.aggregation)
 
 
+@define(frozen=True)
+class ComputedQualityMetricSummary:
+    metric: models.QualityMetric
+    values: dict[models.QualityMetricAggregation, float]
+    worst_labels: tuple[str, ...]
+
+
+def compute_quality_metric_summary(
+    annotations: ComparisonReportAnnotationsSummary,
+    metric: models.QualityTargetMetricType | models.QualityMetric | str,
+) -> ComputedQualityMetricSummary:
+    base_metric = models.QualityTargetMetricType.parse(metric).metric
+    values = {
+        aggregation: compute_target_metric(
+            annotations,
+            models.QualityTargetMetricType(metric=base_metric, aggregation=aggregation),
+        )
+        for aggregation in models.QualityMetricAggregation
+    }
+
+    confusion_matrix = annotations.confusion_matrix
+    if not confusion_matrix or not confusion_matrix.labels:
+        return ComputedQualityMetricSummary(
+            metric=base_metric,
+            values=values,
+            worst_labels=(),
+        )
+
+    active_label_indices = confusion_matrix.get_active_label_indices()
+    metric_values = getattr(confusion_matrix, base_metric.value)
+    if metric_values is None or not len(active_label_indices):
+        worst_labels = ()
+    else:
+        worst_value = values[models.QualityMetricAggregation.LABEL]
+        worst_labels = tuple(
+            confusion_matrix.labels[index]
+            for index in active_label_indices
+            if np.isclose(metric_values[index], worst_value)
+        )
+
+    return ComputedQualityMetricSummary(
+        metric=base_metric,
+        values=values,
+        worst_labels=worst_labels,
+    )
+
+
 @define(kw_only=True, init=False, slots=False)
 class ComparisonReportTaskStats(ReportNode):
     all: set[int]

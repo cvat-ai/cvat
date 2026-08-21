@@ -20,7 +20,10 @@ from cvat.apps.quality_control.comparison_report import (
     UNMATCHED_LABEL_NAME,
     ComparisonReport,
     ComparisonReportAnnotationsSummary,
+    ComparisonReportRequirementSummary,
     ConfusionMatrix,
+    RequirementCalculationStatus,
+    compute_quality_metric_summary,
     compute_target_metric,
 )
 from cvat.apps.quality_control.utils import is_current_report_data
@@ -207,12 +210,12 @@ def _get_group_requirement_id(group_report) -> int | None:
     return int(requirement_id) if requirement_id is not None else None
 
 
-def _get_requirement_confusion_matrix(
+def _get_requirement_report(
     db_report: models.QualityReport, *, requirement_id: int
-) -> ConfusionMatrix | None:
+) -> ComparisonReportRequirementSummary | None:
     comparison_report = ComparisonReport.from_json(db_report.get_report_data())
     groups = comparison_report.groups or {}
-    group_report = next(
+    return next(
         (
             group_report
             for group_report in groups.values()
@@ -220,6 +223,12 @@ def _get_requirement_confusion_matrix(
         ),
         None,
     )
+
+
+def _get_requirement_confusion_matrix(
+    db_report: models.QualityReport, *, requirement_id: int
+) -> ConfusionMatrix | None:
+    group_report = _get_requirement_report(db_report, requirement_id=requirement_id)
 
     if not group_report:
         return None
@@ -234,14 +243,39 @@ def _get_requirement_confusion_matrix(
 def prepare_requirement_confusion_matrix_json(
     db_report: models.QualityReport, *, requirement_id: int
 ) -> dict[str, Any] | None:
-    confusion_matrix = _get_requirement_confusion_matrix(
-        db_report,
-        requirement_id=requirement_id,
-    )
-    if confusion_matrix is None:
+    group_report = _get_requirement_report(db_report, requirement_id=requirement_id)
+    if group_report is None:
         return None
 
-    return confusion_matrix.to_dict()
+    confusion_matrix = group_report.comparison_summary.confusion_matrix
+    if not _has_downloadable_confusion_matrix(confusion_matrix):
+        return None
+
+    metric = models.QualityTargetMetricType.parse(
+        group_report.parameters.get("metric", models.QualityMetric.ACCURACY)
+    )
+    is_computed = (
+        group_report.comparison_summary.calculation.status == RequirementCalculationStatus.COMPUTED
+    )
+    metric_summary = (
+        compute_quality_metric_summary(
+            ComparisonReportAnnotationsSummary.from_confusion_matrix(confusion_matrix),
+            metric,
+        )
+        if is_computed
+        else None
+    )
+    result = confusion_matrix.to_dict()
+    result["target_metric_summary"] = {
+        "metric": metric.metric.value,
+        "aggregation": metric.aggregation.value,
+        "values": {
+            aggregation.value: metric_summary.values[aggregation] if metric_summary else None
+            for aggregation in models.QualityMetricAggregation
+        },
+        "worst_labels": list(metric_summary.worst_labels) if metric_summary else [],
+    }
+    return result
 
 
 def prepare_requirement_confusion_matrix_for_downloading(

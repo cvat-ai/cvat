@@ -227,6 +227,16 @@ export interface SerializedQualityConfusionMatrixData {
     accuracy: (number | null)[];
     jaccard_index: (number | null)[];
     dice: (number | null)[];
+    target_metric_summary: {
+        metric: 'accuracy' | 'precision' | 'recall' | 'jaccard_index' | 'dice';
+        aggregation: 'micro' | 'mean' | 'label';
+        values: {
+            micro: number | null;
+            mean: number | null;
+            label: number | null;
+        };
+        worst_labels: string[];
+    };
 }
 
 export interface SerializedQualitySettingsData {

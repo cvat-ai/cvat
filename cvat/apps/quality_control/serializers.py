@@ -140,6 +140,21 @@ class QualityReportConfusionMatrixAxesSerializer(serializers.Serializer):
     rows = serializers.CharField()
 
 
+class QualityReportTargetMetricValuesSerializer(serializers.Serializer):
+    micro = serializers.FloatField(allow_null=True)
+    mean = serializers.FloatField(allow_null=True)
+    label = serializers.FloatField(allow_null=True)
+
+
+class QualityReportTargetMetricSummarySerializer(serializers.Serializer):
+    metric = serializers.ChoiceField(choices=[metric.value for metric in models.QualityMetric])
+    aggregation = serializers.ChoiceField(
+        choices=[aggregation.value for aggregation in models.QualityMetricAggregation]
+    )
+    values = QualityReportTargetMetricValuesSerializer()
+    worst_labels = serializers.ListField(child=serializers.CharField())
+
+
 class QualityReportConfusionMatrixSerializer(serializers.Serializer):
     labels = serializers.ListField(child=serializers.CharField())
     rows = serializers.ListField(child=serializers.ListField(child=serializers.IntegerField()))
@@ -149,6 +164,7 @@ class QualityReportConfusionMatrixSerializer(serializers.Serializer):
     accuracy = serializers.ListField(child=serializers.FloatField(), allow_null=True)
     jaccard_index = serializers.ListField(child=serializers.FloatField(), allow_null=True)
     dice = serializers.ListField(child=serializers.FloatField(), allow_null=True)
+    target_metric_summary = QualityReportTargetMetricSummarySerializer()
 
 
 class QualityReportTargetSerializer(serializers.ChoiceField):

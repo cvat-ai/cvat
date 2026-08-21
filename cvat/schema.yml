@@ -7525,6 +7525,16 @@ components:
           type: boolean
       required:
       - name
+    AggregationEnum:
+      enum:
+      - micro
+      - mean
+      - label
+      type: string
+      description: |-
+        * `micro` - micro
+        * `mean` - mean
+        * `label` - label
     AnnotationConflict:
       type: object
       properties:
@@ -11264,6 +11274,8 @@ components:
             type: number
             format: double
           nullable: true
+        target_metric_summary:
+          $ref: '#/components/schemas/QualityReportTargetMetricSummary'
       required:
       - accuracy
       - axes
@@ -11273,6 +11285,7 @@ components:
       - precision
       - recall
       - rows
+      - target_metric_summary
     QualityReportConfusionMatrixAxes:
       type: object
       properties:
@@ -11444,6 +11457,57 @@ components:
         * `job` - JOB
         * `task` - TASK
         * `project` - PROJECT
+    QualityReportTargetMetricSummary:
+      type: object
+      properties:
+        metric:
+          $ref: '#/components/schemas/QualityReportTargetMetricSummaryMetricEnum'
+        aggregation:
+          $ref: '#/components/schemas/AggregationEnum'
+        values:
+          $ref: '#/components/schemas/QualityReportTargetMetricValues'
+        worst_labels:
+          type: array
+          items:
+            type: string
+      required:
+      - aggregation
+      - metric
+      - values
+      - worst_labels
+    QualityReportTargetMetricSummaryMetricEnum:
+      enum:
+      - accuracy
+      - precision
+      - recall
+      - jaccard_index
+      - dice
+      type: string
+      description: |-
+        * `accuracy` - accuracy
+        * `precision` - precision
+        * `recall` - recall
+        * `jaccard_index` - jaccard_index
+        * `dice` - dice
+    QualityReportTargetMetricValues:
+      type: object
+      properties:
+        micro:
+          type: number
+          format: double
+          nullable: true
+        mean:
+          type: number
+          format: double
+          nullable: true
+        label:
+          type: number
+          format: double
+          nullable: true
+      required:
+      - label
+      - mean
+      - micro
     QualityReportTasksSummary:
       type: object
       properties:

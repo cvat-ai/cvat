@@ -12,7 +12,6 @@ from zipfile import ZipFile
 import pytest
 from cvat_sdk.core.helpers import get_paginated_collection
 from deepdiff import DeepDiff
-
 from rest_api.utils import create_gt_job, create_quality_report, create_task
 from shared.utils.config import (
     delete_method,
@@ -3375,6 +3374,7 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
                         enabled_requirement_name,
                         enabled=True,
                         required_score=0.0,
+                        metric="mean_jaccard_index",
                     ),
                     self._build_requirement_payload(
                         disabled_requirement_name,
@@ -3398,6 +3398,10 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
 
         create_gt_job(admin_user, task["id"])
         report = create_quality_report(user=admin_user, task_id=task["id"])
+        report_data = self._get_report_data(admin_user, report["id"])
+        target_score = report_data["groups"][enabled_requirement_name]["comparison_summary"][
+            "score"
+        ]
 
         response = get_method(admin_user, f"quality/reports/{report['id']}/confusion")
         assert response.status_code == HTTPStatus.OK
@@ -3463,9 +3467,24 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
             "accuracy",
             "jaccard_index",
             "dice",
+            "target_metric_summary",
         }
         for metric in ("precision", "recall", "accuracy", "jaccard_index", "dice"):
             assert enabled_group_matrix[metric][-1] is None
+        target_metric_summary = enabled_group_matrix["target_metric_summary"]
+        assert set(target_metric_summary) == {
+            "metric",
+            "aggregation",
+            "values",
+            "worst_labels",
+        }
+        assert target_metric_summary["metric"] == "jaccard_index"
+        assert target_metric_summary["aggregation"] == "mean"
+        assert set(target_metric_summary["values"]) == {"micro", "mean", "label"}
+        assert target_metric_summary["values"]["mean"] == pytest.approx(target_score)
+        assert 0 <= target_metric_summary["values"]["micro"] <= 1
+        assert 0 <= target_metric_summary["values"]["label"] <= 1
+        assert target_metric_summary["worst_labels"]
 
         response = get_method(
             admin_user,
