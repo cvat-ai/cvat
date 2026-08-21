@@ -681,7 +681,7 @@ export default function QualityRequirementForm(props: Readonly<QualityRequiremen
                         }}
                         rules={[{ required: true, message: 'This field is required' }]}
                     >
-                        <Select>
+                        <Select virtual={false}>
                             {METRIC_OPTION_GROUPS.map((group) => (
                                 <Select.OptGroup key={group.label} label={group.label}>
                                     {group.options.map((value) => (
