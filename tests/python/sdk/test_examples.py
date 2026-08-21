@@ -6,7 +6,9 @@ import os
 import site
 import subprocess
 import sys
+import zipfile
 from pathlib import Path
+from time import sleep
 
 import platformdirs
 import pytest
@@ -102,13 +104,16 @@ class TestExamples:
             resources=resources,
         )
 
-    def make_project_with_task(self) -> Project:
-        project = self.make_project()
-        self.client.tasks.create_from_data(
-            spec=models.TaskWriteRequest(name="Recipe project task", project_id=project.id),
+    def make_task_in_project(self, project: Project, name: str = "Recipe project task") -> Task:
+        return self.client.tasks.create_from_data(
+            spec=models.TaskWriteRequest(name=name, project_id=project.id),
             resource_type=ResourceType.LOCAL,
             resources=sorted(self.make_image_dir().iterdir()),
         )
+
+    def make_project_with_task(self) -> Project:
+        project = self.make_project()
+        self.make_task_in_project(project)
         return project
 
     def test_auth_token(self):
@@ -206,6 +211,7 @@ class TestExamples:
             ],
         )
         assert "Registered cloud storage" in result.stdout
+        assert "Bucket 'test' contains" in result.stdout
         assert "(updated)" in result.stdout
         assert "Deleted cloud storage" in result.stdout
 
@@ -239,6 +245,30 @@ class TestExamples:
         for job in task.get_jobs():
             assert f"job {job.id}:" in result.stdout
 
+    def test_job_list_by_project(self):
+        project = self.make_project_with_task()
+        result = self.run_recipe(
+            "job_list.py",
+            args=["--project-id", str(project.id)],
+            with_cleanup=False,
+        )
+        assert f"Project {project.id}:" in result.stdout
+
+    def test_job_list_csv(self):
+        project = self.make_project_with_task()
+        self.run_recipe(
+            "job_list.py",
+            args=["--project-id", str(project.id), "--csv"],
+            with_cleanup=False,
+        )
+        report = self.tmp_path / "report.csv"
+        assert report.exists()
+        lines = report.read_text().splitlines()
+        assert lines[0] == (
+            "project_id,project_name,task_id,task_name,job_id,stage,state,assignee,frames"
+        )
+        assert len(lines) == 2
+
     def test_job_assign_self(self):
         task = self.make_task()
         result = self.run_recipe(
@@ -268,23 +298,44 @@ class TestExamples:
         for job in task.get_jobs():
             assert self.client.jobs.retrieve(job.id).assignee.id == me.id
 
-    @pytest.mark.with_external_services
     def test_task_inspect_and_export(self):
         task = self.make_task()
         result = self.run_recipe(
             "task_inspect_and_export.py",
-            args=[
-                "--task-id",
-                str(task.id),
-                "--cloud-storage-id",
-                str(IMPORT_EXPORT_BUCKET_ID),
-            ],
+            args=["--task-id", str(task.id)],
             with_cleanup=False,
         )
         assert "labels: ['object']" in result.stdout
         local = self.tmp_path / f"task_{task.id}_dataset.zip"
         assert local.exists() and local.stat().st_size > 0
-        assert f"to cloud storage {IMPORT_EXPORT_BUCKET_ID}" in result.stdout
+        events = self.tmp_path / f"task_{task.id}_events.csv"
+        assert events.exists() and events.stat().st_size > 0
+        assert "0 people currently assigned, 0 reworks" in result.stdout
+
+    def test_task_inspect_and_export_reports_assignment_and_rework(self):
+        task = self.make_task()
+        job = task.get_jobs()[0]
+        me = self.client.users.retrieve_current_user()
+        job.update(models.PatchedJobWriteRequest(assignee=me.id))
+        job.update(models.PatchedJobWriteRequest(state="rejected"))
+
+        # Events reach ClickHouse asynchronously, so retry until the exported
+        # log reflects the assignment and the rework.
+        dataset_path = self.tmp_path / f"task_{task.id}_dataset.zip"
+        events_path = self.tmp_path / f"task_{task.id}_events.csv"
+        for _ in range(20):
+            dataset_path.unlink(missing_ok=True)
+            events_path.unlink(missing_ok=True)
+            result = self.run_recipe(
+                "task_inspect_and_export.py",
+                args=["--task-id", str(task.id)],
+                with_cleanup=False,
+            )
+            if "1 people currently assigned, 1 reworks" in result.stdout:
+                break
+            sleep(1)
+        else:
+            pytest.fail(f"Event log stats never caught up:\n{result.stdout}")
 
     @pytest.mark.with_external_services
     def test_task_create_from_cloud(self):
@@ -337,9 +388,19 @@ class TestExamples:
         )
         assert "each --task must contain at least one non-empty key" in result.stderr
 
+    def test_tasks_bulk_from_cloud_requires_task_or_pattern(self):
+        result = self.run_recipe(
+            "tasks_bulk_from_cloud.py",
+            args=["--cloud-storage-id", "1", "--project-id", "1"],
+            expect_failure=True,
+            with_cleanup=False,
+        )
+        assert "at least one --task or --task-pattern is required" in result.stderr
+
     @pytest.mark.with_external_services
     def test_project_export_dataset(self):
         project = self.make_project_with_task()
+        task = project.get_tasks()[0]
         result = self.run_recipe(
             "project_export_dataset.py",
             args=[
@@ -350,9 +411,33 @@ class TestExamples:
             ],
             with_cleanup=False,
         )
-        local = self.tmp_path / f"project_{project.id}_dataset.zip"
+        local = self.tmp_path / f"task_{task.id}_dataset.zip"
         assert local.exists() and local.stat().st_size > 0
+        with zipfile.ZipFile(local) as archive:
+            assert not any(name.startswith("images/") for name in archive.namelist())
         assert f"to cloud storage {IMPORT_EXPORT_BUCKET_ID}" in result.stdout
+        assert "Exported 1 task dataset(s) from project" in result.stdout
+
+    @pytest.mark.with_external_services
+    def test_project_export_dataset_filters_by_task_id(self):
+        project = self.make_project_with_task()
+        extra_task = self.make_task_in_project(project, name="Extra task")
+        target_task = next(t for t in project.get_tasks() if t.id != extra_task.id)
+        result = self.run_recipe(
+            "project_export_dataset.py",
+            args=[
+                "--project-id",
+                str(project.id),
+                "--cloud-storage-id",
+                str(IMPORT_EXPORT_BUCKET_ID),
+                "--task-id",
+                str(target_task.id),
+            ],
+            with_cleanup=False,
+        )
+        assert (self.tmp_path / f"task_{target_task.id}_dataset.zip").exists()
+        assert not (self.tmp_path / f"task_{extra_task.id}_dataset.zip").exists()
+        assert "Exported 1 task dataset(s) from project" in result.stdout
 
     def test_project_export_dataset_rejects_unknown_format(self):
         project = self.make_project_with_task()
@@ -371,6 +456,23 @@ class TestExamples:
         )
         assert "Unknown export format" in result.stderr
 
+    def test_project_export_dataset_rejects_unknown_task_id(self):
+        project = self.make_project_with_task()
+        result = self.run_recipe(
+            "project_export_dataset.py",
+            args=[
+                "--project-id",
+                str(project.id),
+                "--cloud-storage-id",
+                "1",
+                "--task-id",
+                "999999",
+            ],
+            with_cleanup=False,
+            expect_failure=True,
+        )
+        assert "not found in project" in result.stderr
+
     def test_project_backup_then_restore(self):
         project = self.make_project_with_task()
         backup_result = self.run_recipe(
@@ -388,21 +490,6 @@ class TestExamples:
         )
         assert "Restored a copy as project" in restore_result.stdout
         assert "Deleted restored project" in restore_result.stdout
-
-    def test_project_status_report(self):
-        project = self.make_project_with_task()
-        self.run_recipe(
-            "project_status_report.py",
-            args=["--project-id", str(project.id)],
-            with_cleanup=False,
-        )
-        report = self.tmp_path / "report.csv"
-        assert report.exists()
-        lines = report.read_text().splitlines()
-        assert lines[0] == (
-            "project_id,project_name,task_id,task_name,job_id,stage,state,assignee,frames"
-        )
-        assert len(lines) == 2  # header + one job row
 
     def test_project_create_and_list(self):
         result = self.run_recipe(

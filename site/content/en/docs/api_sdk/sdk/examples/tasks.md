@@ -8,8 +8,8 @@ description: 'Create one task or a batch of tasks from a bucket; inspect and exp
 Three recipes cover the task lifecycle: `task_create_from_cloud.py` creates one
 task from object keys already in a registered bucket,
 `tasks_bulk_from_cloud.py` creates a whole batch of tasks in a project from
-that same bucket, and `task_inspect_and_export.py` inspects an existing task
-and exports its dataset locally + to a bucket.
+that same bucket, and `task_inspect_and_export.py` inspects an existing task,
+exports its dataset locally, and reports analytics from its event log.
 
 ## Create a task from cloud object keys
 
@@ -122,11 +122,14 @@ if __name__ == "__main__":
 ## Bulk-create tasks in a project from a bucket
 
 Creates several tasks in one call, all inside the same project, each reading
-its data from a registered cloud storage. One `--task` flag creates one task;
-its value is a comma-separated list of object keys. A single key makes a video
-(or single-image) task; multiple keys make an image task whose frames are
-those keys in order. Because every task belongs to the project, they share its
-label schema — no `--labels` here.
+its data from a registered cloud storage. Two ways to spell a task's data,
+repeatable and mixable: `--task KEY[,KEY,...]` lists explicit object keys (a
+single key makes a video/single-image task; multiple keys make an image task
+whose frames are those keys in order), and `--task-pattern PATTERN` makes one
+task from every bucket file matching a fnmatch wildcard (e.g. `'batch_a/*.jpg'`),
+resolved from the bucket's manifest instead of listing every key by hand.
+Because every task belongs to the project, they share its label schema — no
+`--labels` here.
 
 | Flag | Required | Meaning |
 | --- | --- | --- |
@@ -134,7 +137,9 @@ label schema — no `--labels` here.
 | `--token` | yes | Personal Access Token |
 | `--cloud-storage-id` | yes | Registered cloud storage id (see `cloud_storage_register.py`) |
 | `--project-id` | yes | Project the tasks are created in; supplies the labels |
-| `--task KEY[,KEY,...]` | yes | One `--task` per task; repeat the flag for more |
+| `--task KEY[,KEY,...]` | one of `--task` / `--task-pattern` | One `--task` per task; repeat the flag for more |
+| `--task-pattern PATTERN` | one of `--task` / `--task-pattern` | One task per wildcard, matched via the bucket's manifest; repeat for more |
+| `--manifest` | no | Manifest object key used to resolve `--task-pattern` (default `'manifest.jsonl'`) |
 | `--name-prefix` | no | Task-name prefix; each task is named `<prefix> N` (default `'Bulk task'`) |
 | `--cleanup` | no | Delete every created task at the end |
 
@@ -149,6 +154,11 @@ python tasks_bulk_from_cloud.py --host 'https://app.cvat.ai' --token '<your toke
     --cloud-storage-id 7 --project-id 42 \
     --task 'batch_a/img_1.jpg,batch_a/img_2.jpg' \
     --task 'batch_b/img_1.jpg,batch_b/img_2.jpg'
+
+# the same two batches, without listing every key: one task per wildcard match
+python tasks_bulk_from_cloud.py --host 'https://app.cvat.ai' --token '<your token>' \
+    --cloud-storage-id 7 --project-id 42 --manifest manifest.jsonl \
+    --task-pattern 'batch_a/*.jpg' --task-pattern 'batch_b/*.jpg'
 ```
 
 ### The script
@@ -157,20 +167,26 @@ python tasks_bulk_from_cloud.py --host 'https://app.cvat.ai' --token '<your toke
 """Bulk-create tasks inside a project, each task's data read from a registered
 cloud storage.
 
-One --task flag creates one task. Its argument is a comma-separated list of
-object keys in the bucket:
-
-  * a single key -> a video task (or a single-image task);
-  * several keys -> an image task whose frames are those keys, in order.
+Two ways to spell a task's data, repeatable and mixable:
+  --task KEY[,KEY,...]    explicit object keys, in order:
+                             * a single key -> a video task (or single-image task);
+                             * several keys -> an image task, in the given order.
+  --task-pattern PATTERN  every bucket file matching a fnmatch wildcard (e.g.
+                           'batch_a/*.jpg'), resolved from the bucket's
+                           manifest instead of being listed one by one.
 
 All tasks land in the same project, so they share its label schema.
 
 Steps:
-  1. For each --task, create a task in --project-id using ResourceType.SHARE.
-  2. Print the created ids and a summary count.
-  3. Optionally delete every created task (--cleanup).
+  1. For each --task, create a task in --project-id from its explicit keys.
+  2. For each --task-pattern, create a task in --project-id from every bucket
+     file the wildcard matches, resolved via the bucket's manifest.
+  3. Print the created ids and a summary count.
+  4. Optionally delete every created task (--cleanup).
 
 Register a bucket first with cloud_storage_register.py to get the storage id.
+A --task-pattern also needs a manifest file already generated for the bucket -
+see "How to generate manifest file" in the CVAT docs on attaching cloud storage.
 
 Usage (run ``python tasks_bulk_from_cloud.py --help`` for the full list of options):
   # three video tasks in project 42
@@ -183,6 +199,11 @@ Usage (run ``python tasks_bulk_from_cloud.py --help`` for the full list of optio
       --cloud-storage-id 7 --project-id 42 \
       --task 'batch_a/img_1.jpg,batch_a/img_2.jpg' \
       --task 'batch_b/img_1.jpg,batch_b/img_2.jpg'
+
+  # the same two batches, without listing every key: one task per wildcard match
+  python tasks_bulk_from_cloud.py --host 'https://app.cvat.ai' --token '<your token>' \
+      --cloud-storage-id 7 --project-id 42 --manifest manifest.jsonl \
+      --task-pattern 'batch_a/*.jpg' --task-pattern 'batch_b/*.jpg'
 """
 
 import argparse
@@ -192,7 +213,7 @@ from cvat_sdk.core.proxies.tasks import ResourceType
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser = argparse.ArgumentParser(description=" ".join(__doc__.splitlines()[:2]))
     parser.add_argument(
         "--host", required=True, help="CVAT server URL, e.g. 'https://app.cvat.ai'"
     )
@@ -217,19 +238,37 @@ def parse_args() -> argparse.Namespace:
         "--task",
         dest="tasks",
         action="append",
-        required=True,
+        default=[],
         metavar="KEY[,KEY,...]",
         help="comma-separated object keys for one task; repeat for more tasks",
     )
     parser.add_argument(
+        "--task-pattern",
+        dest="task_patterns",
+        action="append",
+        default=[],
+        metavar="PATTERN",
+        help="one task from every bucket file matching this fnmatch wildcard "
+        "(e.g. 'batch_a/*.jpg'); repeat for more tasks. Needs --manifest",
+    )
+    parser.add_argument(
+        "--manifest",
+        default="manifest.jsonl",
+        help="manifest object key in the bucket, used to resolve --task-pattern "
+        "(default: '%(default)s')",
+    )
+    parser.add_argument(
         "--name-prefix",
         default="Bulk task",
-        help="task name prefix; each task is named '<prefix> N' (default: 'Bulk task')",
+        help="task name prefix; each task is named '<prefix> N' (default: '%(default)s')",
     )
     parser.add_argument(
         "--cleanup", action="store_true", help="delete every created task at the end"
     )
-    return parser.parse_args()
+    args = parser.parse_args()
+    if not args.tasks and not args.task_patterns:
+        parser.error("at least one --task or --task-pattern is required")
+    return args
 
 
 def main() -> None:
@@ -242,12 +281,12 @@ def main() -> None:
 
     with make_client(args.host, access_token=args.token) as client:
         created = []
-        for i, keys in enumerate(task_key_groups, start=1):
+        for keys in task_key_groups:
             # Tasks in a project inherit the project's labels — do NOT pass labels.
             # ResourceType.SHARE + cloud_storage_id reads the objects from the bucket.
             task = client.tasks.create_from_data(
                 spec=models.TaskWriteRequest(
-                    name=f"{args.name_prefix} {i}", project_id=args.project_id
+                    name=f"{args.name_prefix} {len(created) + 1}", project_id=args.project_id
                 ),
                 resource_type=ResourceType.SHARE,
                 resources=keys,
@@ -255,6 +294,28 @@ def main() -> None:
             )
             created.append(task)
             print(f"Created task {task.id} ({task.size} frames): {args.host}/tasks/{task.id}")
+
+        for pattern in args.task_patterns:
+            # A wildcard task needs the bucket's manifest as its only resource;
+            # the server expands filename_pattern against it (fnmatch syntax).
+            # use_cache=True is required to serve data straight from the bucket.
+            task = client.tasks.create_from_data(
+                spec=models.TaskWriteRequest(
+                    name=f"{args.name_prefix} {len(created) + 1}", project_id=args.project_id
+                ),
+                resource_type=ResourceType.SHARE,
+                resources=[args.manifest],
+                data_params={
+                    "cloud_storage_id": args.cloud_storage_id,
+                    "use_cache": True,
+                    "filename_pattern": pattern,
+                },
+            )
+            created.append(task)
+            print(
+                f"Created task {task.id} ({task.size} frames) from pattern {pattern!r}: "
+                f"{args.host}/tasks/{task.id}"
+            )
 
         print(f"Created {len(created)} tasks in project {args.project_id}")
 
@@ -272,44 +333,50 @@ if __name__ == "__main__":
 
 ## Inspect a task and export its dataset
 
-Prints a summary of an existing task (labels, jobs, frames) and exports its
-dataset both to a local zip and to a registered cloud storage.
+Prints a summary of an existing task (labels, jobs, frames), exports its
+dataset to a local zip, then exports the task's event log and reports two
+analytics computed from it: how many people are currently assigned to a job,
+and how many jobs were rejected in review and sent back for rework.
 
 | Flag | Required | Meaning |
 | --- | --- | --- |
 | `--host` | yes | Server URL |
 | `--token` | yes | Personal Access Token |
 | `--task-id` | yes | Id of the task to inspect and export |
-| `--cloud-storage-id` | yes | Registered cloud storage id |
 | `--export-format` | no | Exporter name (default `'COCO 1.0'`) |
 
 ```bash
 python task_inspect_and_export.py --host 'https://app.cvat.ai' --token '<your token>' \
-    --task-id 42 --cloud-storage-id 7 --export-format 'COCO 1.0'
+    --task-id 42 --export-format 'COCO 1.0'
 ```
 
 ### The script
 
 ```python
-"""Inspect an existing task (labels, jobs, frames) and export its dataset to a
-local zip AND to a registered cloud storage.
+"""Inspect an existing task (labels, jobs, frames), export its dataset to a
+local zip, and export its event log to report quick analytics.
 
 Steps:
   1. Retrieve the task and print a summary: labels, jobs (stage/state), frames.
   2. Fetch the server's export format list and validate --export-format.
-  3. Export to task_<id>_dataset.zip in the current directory.
-  4. Export the same dataset straight to the cloud storage.
+  3. Export the dataset to task_<id>_dataset.zip in the current directory.
+  4. Export the task's event log to task_<id>_events.csv and report two
+     analytics: how many people are currently assigned to a job, and how
+     many jobs were rejected in review and sent back for rework - the second
+     one needs the log, since a job's current state doesn't show its history.
 
 Usage (run ``python task_inspect_and_export.py --help`` for the full list of options):
   python task_inspect_and_export.py --host 'https://app.cvat.ai' --token '<your token>' \
-      --task-id 42 --cloud-storage-id 7 --export-format 'COCO 1.0'
+      --task-id 42 --export-format 'COCO 1.0'
 """
 
 import argparse
+import csv
 import sys
 from pathlib import Path
 
 from cvat_sdk import make_client
+from cvat_sdk.core.downloading import Downloader
 from cvat_sdk.core.proxies.types import Location
 
 
@@ -327,12 +394,6 @@ def parse_args() -> argparse.Namespace:
         "--task-id", type=int, required=True, help="id of an existing task, e.g. 42"
     )
     parser.add_argument(
-        "--cloud-storage-id",
-        type=int,
-        required=True,
-        help="a registered cloud storage id (see cloud_storage_register.py)",
-    )
-    parser.add_argument(
         "--export-format",
         default="COCO 1.0",
         help="exporter name, e.g. 'COCO 1.0' (default: 'COCO 1.0')",
@@ -340,14 +401,30 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
+def count_reworks(events_path: Path) -> int:
+    """Count how many times a job in the log was rejected in review, i.e. sent
+    back to the annotator for rework. A job's current state only shows where
+    it stands now, not how many times it got there, so this needs the log.
+    """
+    with events_path.open(newline="") as f:
+        return sum(
+            1
+            for row in csv.DictReader(f)
+            if row["scope"] == "update:job"
+            and row["obj_name"] == "state"
+            and row["obj_val"] == "rejected"
+        )
+
+
 def main() -> None:
     args = parse_args()
     with make_client(args.host, access_token=args.token) as client:
         # 1. Inspect
         task = client.tasks.retrieve(args.task_id)
+        jobs = task.get_jobs()
         print(f"Task {task.id}: {task.name!r}, {task.size} frames")
         print(f"  labels: {[label.name for label in task.get_labels()]}")
-        for job in task.get_jobs():
+        for job in jobs:
             print(f"  job {job.id}: stage={job.stage}, state={job.state}")
 
         # 2. Validate the export format against the server's list.
@@ -359,23 +436,25 @@ def main() -> None:
                 f"Unknown export format {args.export_format!r}. Choose one of: {', '.join(names)}"
             )
 
-        # 3. Export to a local zip
+        # 3. Export the dataset to a local zip
         local_path = Path(f"task_{task.id}_dataset.zip")
         task.export_dataset(
             args.export_format, local_path, include_images=True, location=Location.LOCAL
         )
         print(f"Exported {local_path.resolve()}")
 
-        # 4. Export straight to the cloud storage
-        remote_name = f"task_{task.id}_dataset.zip"
-        task.export_dataset(
-            args.export_format,
-            remote_name,
-            include_images=True,
-            location=Location.CLOUD_STORAGE,
-            cloud_storage_id=args.cloud_storage_id,
+        # 4. Export the task's event log and report quick analytics.
+        # Low-level API: there is no high-level proxy for events yet.
+        events_path = Path(f"task_{task.id}_events.csv")
+        Downloader(client).prepare_and_download_file_from_endpoint(
+            client.api_client.events_api.create_export_endpoint,
+            events_path,
+            query_params={"task_id": task.id},
         )
-        print(f"Exported {remote_name} to cloud storage {args.cloud_storage_id}")
+        print(f"Exported {events_path.resolve()}")
+
+        assigned = {job.assignee.id for job in jobs if job.assignee}
+        print(f"  {len(assigned)} people currently assigned, {count_reworks(events_path)} reworks")
 
 
 if __name__ == "__main__":
@@ -399,6 +478,8 @@ _Other SDK options:_
 | `Task.export_dataset(..., pbar=ProgressReporter())` | Report local-download progress (a `cvat_sdk.core.progress.ProgressReporter`). |
 | `Task.export_dataset(..., status_check_period=<int seconds>)` | Poll interval (`int`, seconds) between server status checks; defaults to `Config.status_check_period`. |
 | `Task.export_dataset(filename=<directory>)` | Pass a directory as `filename` for a local export and the server-generated file name is used. |
+| `Task.export_dataset(..., location=Location.CLOUD_STORAGE, cloud_storage_id=<int>)` | Export straight to a registered cloud storage instead of downloading locally. |
+| `client.api_client.events_api.create_export(project_id=, job_id=, user_id=, _from=, to=)` | Scope or time-bound the event-log export beyond a single task. |
 
 _Notes:_
 

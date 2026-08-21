@@ -5,20 +5,26 @@
 """Bulk-create tasks inside a project, each task's data read from a registered
 cloud storage.
 
-One --task flag creates one task. Its argument is a comma-separated list of
-object keys in the bucket:
-
-  * a single key -> a video task (or a single-image task);
-  * several keys -> an image task whose frames are those keys, in order.
+Two ways to spell a task's data, repeatable and mixable:
+  --task KEY[,KEY,...]    explicit object keys, in order:
+                             * a single key -> a video task (or single-image task);
+                             * several keys -> an image task, in the given order.
+  --task-pattern PATTERN  every bucket file matching a fnmatch wildcard (e.g.
+                           'batch_a/*.jpg'), resolved from the bucket's
+                           manifest instead of being listed one by one.
 
 All tasks land in the same project, so they share its label schema.
 
 Steps:
-  1. For each --task, create a task in --project-id using ResourceType.SHARE.
-  2. Print the created ids and a summary count.
-  3. Optionally delete every created task (--cleanup).
+  1. For each --task, create a task in --project-id from its explicit keys.
+  2. For each --task-pattern, create a task in --project-id from every bucket
+     file the wildcard matches, resolved via the bucket's manifest.
+  3. Print the created ids and a summary count.
+  4. Optionally delete every created task (--cleanup).
 
 Register a bucket first with cloud_storage_register.py to get the storage id.
+A --task-pattern also needs a manifest file already generated for the bucket -
+see "How to generate manifest file" in the CVAT docs on attaching cloud storage.
 
 Usage (run ``python tasks_bulk_from_cloud.py --help`` for the full list of options):
   # three video tasks in project 42
@@ -31,6 +37,11 @@ Usage (run ``python tasks_bulk_from_cloud.py --help`` for the full list of optio
       --cloud-storage-id 7 --project-id 42 \\
       --task 'batch_a/img_1.jpg,batch_a/img_2.jpg' \\
       --task 'batch_b/img_1.jpg,batch_b/img_2.jpg'
+
+  # the same two batches, without listing every key: one task per wildcard match
+  python tasks_bulk_from_cloud.py --host 'https://app.cvat.ai' --token '<your token>' \\
+      --cloud-storage-id 7 --project-id 42 --manifest manifest.jsonl \\
+      --task-pattern 'batch_a/*.jpg' --task-pattern 'batch_b/*.jpg'
 """
 
 import argparse
@@ -63,19 +74,37 @@ def parse_args() -> argparse.Namespace:
         "--task",
         dest="tasks",
         action="append",
-        required=True,
+        default=[],
         metavar="KEY[,KEY,...]",
         help="comma-separated object keys for one task; repeat for more tasks",
     )
     parser.add_argument(
+        "--task-pattern",
+        dest="task_patterns",
+        action="append",
+        default=[],
+        metavar="PATTERN",
+        help="one task from every bucket file matching this fnmatch wildcard "
+        "(e.g. 'batch_a/*.jpg', (default: '%(default)s')); repeat for more tasks. Needs --manifest",
+    )
+    parser.add_argument(
+        "--manifest",
+        default="manifest.jsonl",
+        help="manifest object key in the bucket, used to resolve --task-pattern "
+        "(default: '%(default)s')",
+    )
+    parser.add_argument(
         "--name-prefix",
         default="Bulk task",
-        help="task name prefix; each task is named '<prefix> N' (default: 'Bulk task')",
+        help="task name prefix; each task is named '<prefix> N' (default: '%(default)s')",
     )
     parser.add_argument(
         "--cleanup", action="store_true", help="delete every created task at the end"
     )
-    return parser.parse_args()
+    args = parser.parse_args()
+    if not args.tasks and not args.task_patterns:
+        parser.error("at least one --task or --task-pattern is required")
+    return args
 
 
 def main() -> None:
@@ -88,12 +117,12 @@ def main() -> None:
 
     with make_client(args.host, access_token=args.token) as client:
         created = []
-        for i, keys in enumerate(task_key_groups, start=1):
+        for keys in task_key_groups:
             # Tasks in a project inherit the project's labels — do NOT pass labels.
             # ResourceType.SHARE + cloud_storage_id reads the objects from the bucket.
             task = client.tasks.create_from_data(
                 spec=models.TaskWriteRequest(
-                    name=f"{args.name_prefix} {i}", project_id=args.project_id
+                    name=f"{args.name_prefix} {len(created) + 1}", project_id=args.project_id
                 ),
                 resource_type=ResourceType.SHARE,
                 resources=keys,
@@ -101,6 +130,25 @@ def main() -> None:
             )
             created.append(task)
             print(f"Created task {task.id} ({task.size} frames): {args.host}/tasks/{task.id}")
+
+        for pattern in args.task_patterns:
+            task = client.tasks.create_from_data(
+                spec=models.TaskWriteRequest(
+                    name=f"{args.name_prefix} {len(created) + 1}", project_id=args.project_id
+                ),
+                resource_type=ResourceType.SHARE,
+                resources=[args.manifest],
+                data_params={
+                    "cloud_storage_id": args.cloud_storage_id,
+                    "use_cache": True,
+                    "filename_pattern": pattern,
+                },
+            )
+            created.append(task)
+            print(
+                f"Created task {task.id} ({task.size} frames) from pattern {pattern!r}: "
+                f"{args.host}/tasks/{task.id}"
+            )
 
         print(f"Created {len(created)} tasks in project {args.project_id}")
 

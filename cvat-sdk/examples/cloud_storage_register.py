@@ -13,8 +13,9 @@ Steps:
   1. Attach the bucket with key/secret credentials to CVAT.
   2. List all registered storages.
   3. Retrieve the new one.
-  4. Update its display name.
-  5. Optionally, detach it from CVAT.
+  4. List the bucket's content, a page at a time.
+  5. Update its display name.
+  6. Optionally, detach it from CVAT.
 
 Usage (run ``python cloud_storage_register.py --help`` for the full list of options):
   python cloud_storage_register.py --host 'https://app.cvat.ai' --token '<your token>' \\
@@ -81,7 +82,22 @@ def main() -> None:
         fetched, _ = api.retrieve(storage.id)
         print(f"Storage {fetched.id}: {fetched.display_name!r} ({fetched.provider_type})")
 
-        # 4. Update the display name (PATCH — only the passed fields change)
+        # 4. List the bucket's content
+        files = []
+        next_token = None
+        while True:
+            content, _ = api.retrieve_content_v2(
+                storage.id, **({"next_token": next_token} if next_token else {})
+            )
+            files.extend(content.content)
+            if not content.next:
+                break
+            next_token = content.next
+        print(f"Bucket {args.bucket!r} contains {len(files)} entries:")
+        for f in files:
+            print(f"  {f.type.value:>3} {f.name}")
+
+        # 5. Update the display name
         updated, _ = api.partial_update(
             storage.id,
             patched_cloud_storage_write_request=models.PatchedCloudStorageWriteRequest(
@@ -90,7 +106,7 @@ def main() -> None:
         )
         print(f"Renamed storage {updated.id} to {updated.display_name!r}")
 
-        # 5. Opt-in cleanup: detaches the bucket from CVAT, never deletes data
+        # 6. Opt-in cleanup: detaches the bucket from CVAT, never deletes data
         if args.cleanup:
             api.destroy(storage.id)
             print(f"Deleted cloud storage {storage.id}")

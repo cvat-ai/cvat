@@ -13,7 +13,8 @@ proxy for cloud storages yet.
 ## Attach a bucket to CVAT
 
 Registers a bucket by key/secret, lists all registered storages, retrieves the
-new one, and renames it — a smoke test that the credentials work.
+new one, lists the bucket's actual content, and renames it — a smoke test that
+the credentials work.
 
 | Flag | Required | Meaning |
 | --- | --- | --- |
@@ -42,11 +43,12 @@ There is no high-level proxy for cloud storages yet, so this recipe uses the
 low-level API (client.api_client.cloudstorages_api).
 
 Steps:
-  1. Register the bucket with key/secret credentials.
+  1. Attach the bucket with key/secret credentials to CVAT.
   2. List all registered storages.
-  3. Retrieve the new one (the server never returns credentials).
-  4. Update its display name.
-  5. Optionally detach it (--cleanup) — the bucket's contents are never touched.
+  3. Retrieve the new one.
+  4. List the bucket's actual content, a page at a time.
+  5. Update its display name.
+  6. Optionally, detach it from CVAT.
 
 Usage (run ``python cloud_storage_register.py --help`` for the full list of options):
   python cloud_storage_register.py --host 'https://app.cvat.ai' --token '<your token>' \
@@ -113,7 +115,23 @@ def main() -> None:
         fetched, _ = api.retrieve(storage.id)
         print(f"Storage {fetched.id}: {fetched.display_name!r} ({fetched.provider_type})")
 
-        # 4. Update the display name (PATCH — only the passed fields change)
+        # 4. List the bucket's actual content (not CVAT's registry - the objects
+        # inside the bucket itself), a page at a time via next_token.
+        files = []
+        next_token = None
+        while True:
+            content, _ = api.retrieve_content_v2(
+                storage.id, **({"next_token": next_token} if next_token else {})
+            )
+            files.extend(content.content)
+            if not content.next:
+                break
+            next_token = content.next
+        print(f"Bucket {args.bucket!r} contains {len(files)} entries:")
+        for f in files:
+            print(f"  {f.type.value:>3} {f.name}")
+
+        # 5. Update the display name (PATCH — only the passed fields change)
         updated, _ = api.partial_update(
             storage.id,
             patched_cloud_storage_write_request=models.PatchedCloudStorageWriteRequest(
@@ -122,7 +140,7 @@ def main() -> None:
         )
         print(f"Renamed storage {updated.id} to {updated.display_name!r}")
 
-        # 5. Opt-in cleanup: detaches the bucket from CVAT, never deletes data
+        # 6. Opt-in cleanup: detaches the bucket from CVAT, never deletes data
         if args.cleanup:
             api.destroy(storage.id)
             print(f"Deleted cloud storage {storage.id}")
@@ -146,6 +164,7 @@ there is no high-level proxy for cloud storages yet.
 | `CloudStorageWriteRequest(session_token=..., connection_string=..., account_name=...)` | Alternative credential fields for other providers (e.g. Azure, temporary S3 sessions). |
 | `cloudstorages_api.retrieve_status(id=...)` | Check whether a registered storage is reachable/healthy. |
 | `cloudstorages_api.retrieve_actions(id: int)` | Return the operations the credentials allow on the bucket (e.g. `"read"` / `"read,write"`) as a string. `id` is the cloud storage id; the string is the returned data (first tuple element). |
+| `cloudstorages_api.retrieve_content_v2(id, prefix=..., manifest_path=..., page_size=...)` | List the bucket's actual files/directories. `prefix` filters to one "directory"; `manifest_path` lists from a manifest instead of a live bucket scan (faster for large buckets). |
 | `cloudstorages_api.retrieve_preview(id: int)` | Fetch a preview image for the storage. `id` is the cloud storage id; the image bytes are on the HTTP response (`response.data`, the second tuple element), not the parsed data. |
 | `PatchedCloudStorageWriteRequest(key=..., secret_key=...)` | Rotate credentials through `partial_update` (any writable field can be patched). |
 | `get_paginated_collection(api.list_endpoint)` | Walk every page of any low-level `*_api.list_endpoint` (tasks, jobs, cloud storages, ...); returns a flat list. |

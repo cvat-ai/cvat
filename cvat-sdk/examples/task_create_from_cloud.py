@@ -47,10 +47,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--name",
         default="Task from cloud storage",
-        help="task name (default: 'Task from cloud storage')",
+        help="task name (default: '%(default)s')",
     )
     parser.add_argument(
-        "--labels", nargs="+", default=["object"], help="label names (default: object)"
+        "--labels", nargs="+", default=["object"], help="label names (default: '%(default)s')"
     )
     parser.add_argument("--cleanup", action="store_true", help="delete the created task at the end")
     return parser.parse_args()

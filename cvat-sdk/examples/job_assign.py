@@ -5,14 +5,16 @@
 """Round-robin the unassigned jobs of a task across a set of annotators and
 write a CSV report of the assignments (job_id, previous_assignee, new_assignee).
 
-The user API supports server-side search, so you rarely need to know user ids —
-pass usernames (or a search query) and let the recipe resolve them.
+The user API supports server-side search within an organization, so you rarely
+need to know user ids — pass usernames, or an organization and search query,
+and let the recipe resolve them.
 
 Steps:
   1. Resolve the assignee pool:
        --assignees USERNAME [USERNAME ...] : look up each username exactly.
-       --search QUERY                      : run client.users.list(search=QUERY),
+       --search QUERY --org SLUG           : search organization members,
                                              print the matches, use them all.
+       --search QUERY --org-id ID          : same, using the organization id.
        neither                             : assign to me (the authenticated user).
   2. Filter the task's unassigned jobs.
   3. Round-robin the jobs across the resolved users.
@@ -24,7 +26,8 @@ Usage (run ``python job_assign.py --help`` for the full list of options):
   python job_assign.py --host 'https://app.cvat.ai' --token '<your token>' \\
       --task-id 42 --assignees alice bob
   python job_assign.py --host 'https://app.cvat.ai' --token '<your token>' \\
-      --task-id 42 --search 'annotator-team'    # pool = every match of the search
+      --task-id 42 --org 'annotators' --search 'annotator-team'
+                                                  # pool = matches in the organization
 """
 
 import argparse
@@ -48,6 +51,13 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--task-id", type=int, required=True, help="id of an existing task, e.g. 42"
     )
+    organization = parser.add_mutually_exclusive_group()
+    organization.add_argument(
+        "--org", metavar="SLUG", help="organization slug to scope user and job queries"
+    )
+    organization.add_argument(
+        "--org-id", type=int, metavar="ID", help="organization id to scope user and job queries"
+    )
     group = parser.add_mutually_exclusive_group()
     group.add_argument(
         "--assignees",
@@ -58,15 +68,27 @@ def parse_args() -> argparse.Namespace:
     group.add_argument(
         "--search",
         metavar="QUERY",
-        help="server-side user search; every match becomes an assignee",
+        help="server-side search within --org/--org-id; every matching member becomes an assignee",
     )
-    return parser.parse_args()
+    args = parser.parse_args()
+    if args.search and args.org is None and args.org_id is None:
+        parser.error("--search requires --org or --org-id")
+    return args
+
+
+def organization_filters(args: argparse.Namespace) -> dict[str, str | int]:
+    if args.org is not None:
+        return {"org": args.org}
+    if args.org_id is not None:
+        return {"org_id": args.org_id}
+    return {}
 
 
 def resolve_pool(client, args: argparse.Namespace) -> list[User]:
     """Resolve --assignees / --search / nothing to a list of User objects."""
+    org_filters = organization_filters(args)
     if args.search:
-        matches = client.users.list(search=args.search)
+        matches = client.users.list(search=args.search, **org_filters)
         if not matches:
             sys.exit(f"No users matched search {args.search!r}")
         print(f"Users matching {args.search!r}:")
@@ -77,7 +99,7 @@ def resolve_pool(client, args: argparse.Namespace) -> list[User]:
     if args.assignees:
         pool: list[User] = []
         for username in args.assignees:
-            found = client.users.list(filter=F.username == username)
+            found = client.users.list(filter=F.username == username, **org_filters)
             if not found:
                 sys.exit(f"User {username!r} not found")
             pool.append(found[0])
@@ -95,7 +117,8 @@ def main() -> None:
         pool = resolve_pool(client, args)
 
         unassigned = client.jobs.list(
-            filter=all_(F.task_id == args.task_id, not_(F.assignee.is_set()))
+            filter=all_(F.task_id == args.task_id, not_(F.assignee.is_set())),
+            **organization_filters(args),
         )
         print(f"Task {args.task_id}: {len(unassigned)} unassigned jobs to distribute")
 
