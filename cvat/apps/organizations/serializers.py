@@ -6,7 +6,6 @@
 from attr.converters import to_bool
 from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.contrib.auth.models import User
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
 from rest_framework import serializers
@@ -124,7 +123,7 @@ class InvitationWriteSerializer(serializers.ModelSerializer):
             user = get_user_model().objects.get(email__iexact=user_email)
             del membership_data["user"]
         except ObjectDoesNotExist:
-            user = User.objects.create_user(username=user_email, email=user_email)
+            user = get_user_model().objects.create_user(username=user_email, email=user_email)
             user.set_unusable_password()
             user.save()
             del membership_data["user"]

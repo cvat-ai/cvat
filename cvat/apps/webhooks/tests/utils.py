@@ -2,9 +2,8 @@
 #
 # SPDX-License-Identifier: MIT
 
-from django.contrib.auth.models import User
-
 from cvat.apps.engine.models import Project
+from cvat.apps.iam.models import User
 from cvat.apps.webhooks.models import (
     Webhook,
     WebhookContentTypeChoice,

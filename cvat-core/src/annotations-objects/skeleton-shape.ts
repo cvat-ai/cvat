@@ -243,76 +243,64 @@ export class SkeletonShape extends Shape {
             return new ObjectState(this.get(frame));
         }
 
-        const updateElements = <K extends 'points' | 'occluded' | 'hidden' | 'lock'>(
-            affectedElements: ObjectState[],
-            action: HistoryActions,
-            property: K,
-        ): void => {
-            const undoSkeletonProperties = this.elements.map((element): Shape[K] => element[property]);
+        const updatedElements = new Map<Shape, ObjectState>();
+        let actionType: HistoryActions | null = null;
+        const { elements } = data;
+        const updates = [
+            ['points', HistoryActions.CHANGED_POINTS],
+            ['occluded', HistoryActions.CHANGED_OCCLUDED],
+            ['hidden', HistoryActions.CHANGED_HIDDEN],
+            ['lock', HistoryActions.CHANGED_LOCK],
+        ] as const;
+
+        elements.forEach((element, index) => {
+            for (const [property, action] of updates) {
+                if (element.updateFlags[property]) {
+                    updatedElements.set(this.elements[index], element);
+
+                    if (actionType === HistoryActions.CHANGED_SKELETON) {
+                        continue;
+                    }
+
+                    if (actionType === null) {
+                        actionType = action;
+                    } else if (actionType !== action) {
+                        actionType = HistoryActions.CHANGED_SKELETON;
+                    }
+                }
+            }
+        });
+
+        if (updatedElements.size && actionType) {
             const undoSource = this.source;
             const redoSource = this.readOnlyFields.includes('source') ? this.source : computeNewSource(this.source);
 
+            this.history.beginTransaction(actionType);
             try {
-                this.history.freeze(true);
-                affectedElements.forEach((element, idx) => {
-                    const annotationContext = this.elements[idx];
-                    annotationContext.save(frame, element);
-                });
+                for (const [element, state] of updatedElements) {
+                    element.save(frame, state);
+                }
+
+                // Add parent update as a part of the same transaction
+                this.history.do(
+                    actionType,
+                    () => {
+                        this.source = undoSource;
+                        this.updated = Date.now();
+                    },
+                    () => {
+                        this.source = redoSource;
+                        this.updated = Date.now();
+                    },
+                    [this.clientID],
+                    frame,
+                );
+            } catch (error: unknown) {
+                this.history.abortTransaction();
+                throw error;
             } finally {
-                this.history.freeze(false);
+                this.history.endTransaction();
             }
-
-            const redoSkeletonProperties = this.elements.map((element): Shape[K] => element[property]);
-
-            this.history.do(
-                action,
-                () => {
-                    for (let i = 0; i < this.elements.length; i++) {
-                        this.elements[i][property] = undoSkeletonProperties[i];
-                        this.elements[i].updated = Date.now();
-                    }
-                    this.source = undoSource;
-                    this.updated = Date.now();
-                },
-                () => {
-                    for (let i = 0; i < this.elements.length; i++) {
-                        this.elements[i][property] = redoSkeletonProperties[i];
-                        this.elements[i].updated = Date.now();
-                    }
-                    this.source = redoSource;
-                    this.updated = Date.now();
-                },
-                [this.clientID, ...affectedElements.map((element) => element.clientID)],
-                frame,
-            );
-        };
-
-        const updatedPoints = data.elements.filter((el) => el.updateFlags.points);
-        const updatedOccluded = data.elements.filter((el) => el.updateFlags.occluded);
-        const updatedHidden = data.elements.filter((el) => el.updateFlags.hidden);
-        const updatedLock = data.elements.filter((el) => el.updateFlags.lock);
-
-        updatedOccluded.forEach((el) => { el.updateFlags.occluded = false; });
-        updatedHidden.forEach((el) => { el.updateFlags.hidden = false; });
-        updatedLock.forEach((el) => { el.updateFlags.lock = false; });
-
-        if (updatedPoints.length) {
-            updateElements(updatedPoints, HistoryActions.CHANGED_POINTS, 'points');
-        }
-
-        if (updatedOccluded.length) {
-            updatedOccluded.forEach((el) => { el.updateFlags.occluded = true; });
-            updateElements(updatedOccluded, HistoryActions.CHANGED_OCCLUDED, 'occluded');
-        }
-
-        if (updatedHidden.length) {
-            updatedHidden.forEach((el) => { el.updateFlags.hidden = true; });
-            updateElements(updatedHidden, HistoryActions.CHANGED_OUTSIDE, 'hidden');
-        }
-
-        if (updatedLock.length) {
-            updatedLock.forEach((el) => { el.updateFlags.lock = true; });
-            updateElements(updatedLock, HistoryActions.CHANGED_LOCK, 'lock');
         }
 
         const result = Shape.prototype.save.call(this, frame, data);

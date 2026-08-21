@@ -5,8 +5,8 @@
 from django.core.management.base import BaseCommand, CommandError
 from rest_framework.exceptions import ValidationError
 
-from cvat.apps.engine.models import User
 from cvat.apps.engine.user_deletion import delete_user_with_cleanup
+from cvat.apps.iam.models import User
 
 
 class Command(BaseCommand):

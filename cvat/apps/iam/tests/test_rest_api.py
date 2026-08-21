@@ -8,7 +8,6 @@ from allauth.account.forms import default_token_generator
 from allauth.account.models import EmailAddress
 from allauth.account.utils import user_pk_to_url_str
 from allauth.account.views import EmailVerificationSentView
-from django.contrib.auth.models import User
 from django.test import override_settings
 from django.urls import path, re_path, reverse
 from rest_framework import status
@@ -16,6 +15,7 @@ from rest_framework.authtoken.models import Token
 
 from cvat.apps.engine.tests.test_rest_api import create_db_users
 from cvat.apps.engine.tests.utils import ApiTestBase
+from cvat.apps.iam.models import User
 from cvat.apps.iam.views import ConfirmEmailViewEx
 from cvat.urls import urlpatterns as original_urlpatterns
 

@@ -14,7 +14,8 @@ from django.db.models import TextChoices
 from django.utils.text import slugify
 
 from cvat.apps.engine import serializers as engine_serializers
-from cvat.apps.engine.models import Job, User
+from cvat.apps.engine.models import Job
+from cvat.apps.iam.models import User
 from cvat.apps.quality_control import models
 from cvat.apps.quality_control.comparison_report import (
     UNMATCHED_LABEL_NAME,

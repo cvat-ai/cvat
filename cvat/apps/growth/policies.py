@@ -6,10 +6,10 @@ from abc import ABC, abstractmethod
 from datetime import datetime
 
 from django.conf import settings
-from django.contrib.auth.models import User
 from django.utils.module_loading import import_string
 from django.utils.timezone import now
 
+from cvat.apps.iam.models import User
 from cvat.apps.organizations.models import Organization
 
 from .models import UserGrowthData
