@@ -50,6 +50,7 @@ export class Shape extends ScoredMixin(Drawn) {
         const result: SerializedShape = {
             type: this.shapeType,
             clientID: this.clientID,
+            uuid: this.uuid,
             occluded: this.occluded,
             outside: this.outside,
             z_order: this.zOrder,

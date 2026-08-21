@@ -270,6 +270,7 @@ export type SerializedAttributes = { spec_id: number; value: string }[];
 export interface SerializedShape {
     id?: number;
     clientID?: number;
+    uuid?: string | null;
     label_id: number;
     group: number;
     frame: number;
@@ -288,6 +289,7 @@ export interface SerializedShape {
 export interface SerializedTrack {
     id?: number;
     clientID?: number;
+    uuid?: string | null;
     label_id: number;
     group: number;
     frame: number;
@@ -310,6 +312,7 @@ export interface SerializedTrack {
 export interface SerializedTag {
     id?: number;
     clientID?: number;
+    uuid?: string | null;
     label_id: number;
     frame: number;
     group: number;
@@ -320,6 +323,7 @@ export interface SerializedTag {
 export interface SerializedInterval {
     id?: number;
     clientID?: number;
+    uuid?: string | null;
     label_id: number;
     start: number;
     stop: number | null;
