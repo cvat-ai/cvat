@@ -29,8 +29,7 @@ they stay in sync with the SDK.
 ## Topics
 
 - [Authenticate](authentication) — `auth_token.py`, `auth_profile.py`, `auth_cli.py`
-- [Projects](projects) — create/list, status report, backup, restore,
-  dataset export
+- [Projects](projects) — create/list, backup, restore, dataset export
 - [Tasks](tasks) — create from a bucket, bulk-create in a project,
   inspect and export
 - [Jobs](jobs) — list jobs, round-robin assignment, batch-advance stages

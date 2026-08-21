@@ -2,10 +2,13 @@
 #
 # SPDX-License-Identifier: MIT
 
+import importlib.util
 import os
+import re
 import site
 import subprocess
 import sys
+import types
 import zipfile
 from pathlib import Path
 from time import sleep
@@ -14,6 +17,7 @@ import platformdirs
 import pytest
 from cvat_sdk import Client, models
 from cvat_sdk.core.auth import AuthStore, ProfileEntry
+from cvat_sdk.core.downloading import Downloader
 from cvat_sdk.core.proxies.projects import Project
 from cvat_sdk.core.proxies.tasks import ResourceType, Task
 
@@ -28,6 +32,19 @@ from shared.utils.helpers import generate_image_file
 
 EXAMPLES_DIR = Path(__file__).parents[3] / "cvat-sdk" / "examples"
 
+# The bucket content summary printed by cloud_storage_register.py.
+BUCKET_CONTENT_RE = re.compile(r"contains (\d+) entries in (\d+) page\(s\)")
+
+
+def load_recipe(name: str) -> types.ModuleType:
+    """Import a recipe as a module, so a test can reuse its own helpers instead
+    of reimplementing (and then drifting from) what the recipe computes.
+    """
+    spec = importlib.util.spec_from_file_location(f"recipe_{Path(name).stem}", EXAMPLES_DIR / name)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
 
 @pytest.fixture(scope="class")
 def fxt_access_token(fxt_login: tuple[Client, str]) -> str:
@@ -40,6 +57,11 @@ def fxt_access_token(fxt_login: tuple[Client, str]) -> str:
     return token.value
 
 
+# Every test here runs a recipe in a fresh interpreter, so it pays for process
+# startup and the SDK import; a recipe that waits on server-side jobs then pays in
+# multiples of the SDK's default 5s poll period, and some run two recipes. That
+# does not fit pytest.ini's global 15s budget, which is sized for in-process tests.
+@pytest.mark.timeout(90)
 class TestExamples:
     @pytest.fixture(autouse=True)
     def setup(self, tmp_path: Path, fxt_login: tuple[Client, str], fxt_access_token: str):
@@ -93,12 +115,19 @@ class TestExamples:
             )
         )
 
-    def make_task(self, name: str = "Recipe task", resources: list[Path] | None = None) -> Task:
+    def make_task(
+        self,
+        name: str = "Recipe task",
+        resources: list[Path] | None = None,
+        segment_size: int | None = None,
+    ) -> Task:
         if resources is None:
             resources = sorted(self.make_image_dir().iterdir())
         return self.client.tasks.create_from_data(
             spec=models.TaskWriteRequest(
-                name=name, labels=[models.PatchedLabelRequest(name="object")]
+                name=name,
+                labels=[models.PatchedLabelRequest(name="object")],
+                **({"segment_size": segment_size} if segment_size else {}),
             ),
             resource_type=ResourceType.LOCAL,
             resources=resources,
@@ -195,25 +224,49 @@ class TestExamples:
         )
         assert f"Authenticated as {self.user}" in result.stdout
 
+    def register_test_bucket(self, page_size: int | None = None) -> subprocess.CompletedProcess:
+        args = [
+            "--bucket",
+            "test",
+            "--access-key",
+            MINIO_KEY,
+            "--secret-key",
+            MINIO_SECRET_KEY,
+            "--endpoint-url",
+            "http://minio:9000",
+        ]
+        if page_size is not None:
+            args += ["--page-size", str(page_size)]
+        return self.run_recipe("cloud_storage_register.py", args=args)
+
+    @staticmethod
+    def parse_bucket_content(stdout: str) -> tuple[int, int]:
+        """The (entries, pages) the recipe reported for the bucket listing."""
+        match = BUCKET_CONTENT_RE.search(stdout)
+        assert match, f"no bucket content summary in:\n{stdout}"
+        return int(match.group(1)), int(match.group(2))
+
     @pytest.mark.with_external_services
     def test_cloud_storage_register(self):
-        result = self.run_recipe(
-            "cloud_storage_register.py",
-            args=[
-                "--bucket",
-                "test",
-                "--access-key",
-                MINIO_KEY,
-                "--secret-key",
-                MINIO_SECRET_KEY,
-                "--endpoint-url",
-                "http://minio:9000",
-            ],
-        )
+        result = self.register_test_bucket()
         assert "Registered cloud storage" in result.stdout
         assert "Bucket 'test' contains" in result.stdout
         assert "(updated)" in result.stdout
         assert "Deleted cloud storage" in result.stdout
+
+    @pytest.mark.with_external_services
+    def test_cloud_storage_register_paginates_bucket_content(self):
+        entries, pages = self.parse_bucket_content(self.register_test_bucket().stdout)
+        assert entries > 1
+        assert pages == 1, "the default page size should cover the test bucket in one page"
+
+        # One entry per request forces the next_token loop to actually loop, and
+        # the walk must still see the same bucket.
+        paged_entries, paged_pages = self.parse_bucket_content(
+            self.register_test_bucket(page_size=1).stdout
+        )
+        assert paged_entries == entries
+        assert paged_pages > 1
 
     def test_job_workflow_advances_completed_jobs(self):
         task = self.make_task()
@@ -269,6 +322,23 @@ class TestExamples:
         )
         assert len(lines) == 2
 
+    def test_job_list_filters_by_stage_and_state(self):
+        # One job per frame, so that a filter has something to exclude.
+        task = self.make_task(segment_size=1)
+        jobs = task.get_jobs()
+        assert len(jobs) == 2
+        moved, kept = jobs
+        moved.update(models.PatchedJobWriteRequest(stage="validation"))
+
+        result = self.run_recipe(
+            "job_list.py",
+            args=["--task-id", str(task.id), "--stage", "annotation", "--state", "new"],
+            with_cleanup=False,
+        )
+        assert f"Task {task.id}: 1 matching jobs" in result.stdout
+        assert f"job {kept.id}: stage=annotation, state=new" in result.stdout
+        assert f"job {moved.id}:" not in result.stdout
+
     def test_job_assign_self(self):
         task = self.make_task()
         result = self.run_recipe(
@@ -298,6 +368,40 @@ class TestExamples:
         for job in task.get_jobs():
             assert self.client.jobs.retrieve(job.id).assignee.id == me.id
 
+    @pytest.mark.parametrize("scope_by_id", [False, True])
+    def test_job_assign_searches_organization_members(self, scope_by_id: bool):
+        me = self.client.users.retrieve_current_user()
+        org = self.client.organizations.create(models.OrganizationWriteRequest(slug="recipesorg"))
+        try:
+            # The task has to live in the organization too: the recipe scopes its
+            # job query by the same --org/--org-id it searches users with.
+            with self.client.organization_context(org.slug):
+                task = self.make_task(name="Org recipe task")
+                jobs = task.get_jobs()
+                org_args = ["--org-id", str(org.id)] if scope_by_id else ["--org", org.slug]
+                result = self.run_recipe(
+                    "job_assign.py",
+                    args=["--task-id", str(task.id), "--search", me.username, *org_args],
+                    with_cleanup=False,
+                )
+                assert f"Users matching {me.username!r}:" in result.stdout
+                assert f"{me.id}\t{me.username}" in result.stdout
+                assert f"Task {task.id}: {len(jobs)} unassigned jobs" in result.stdout
+                for job in jobs:
+                    assert self.client.jobs.retrieve(job.id).assignee.id == me.id
+        finally:
+            # Slugs are unique server-side, and the DB is only restored per class.
+            org.remove()
+
+    def test_job_assign_search_requires_org(self):
+        result = self.run_recipe(
+            "job_assign.py",
+            args=["--task-id", "1", "--search", "annotator-team"],
+            with_cleanup=False,
+            expect_failure=True,
+        )
+        assert "--search requires --org or --org-id" in result.stderr
+
     def test_task_inspect_and_export(self):
         task = self.make_task()
         result = self.run_recipe(
@@ -312,6 +416,9 @@ class TestExamples:
         assert events.exists() and events.stat().st_size > 0
         assert "0 people currently assigned, 0 reworks" in result.stdout
 
+    # The wait for ClickHouse below plus a full recipe run needs more than the
+    # class-wide budget.
+    @pytest.mark.timeout(150)
     def test_task_inspect_and_export_reports_assignment_and_rework(self):
         task = self.make_task()
         job = task.get_jobs()[0]
@@ -319,23 +426,32 @@ class TestExamples:
         job.update(models.PatchedJobWriteRequest(assignee=me.id))
         job.update(models.PatchedJobWriteRequest(state="rejected"))
 
-        # Events reach ClickHouse asynchronously, so retry until the exported
-        # log reflects the assignment and the rework.
-        dataset_path = self.tmp_path / f"task_{task.id}_dataset.zip"
-        events_path = self.tmp_path / f"task_{task.id}_events.csv"
+        # Events reach ClickHouse asynchronously. Retrying the whole recipe would
+        # pay for an interpreter start and a dataset export on every miss, so wait
+        # here on the cheap half only - the event log export - and reuse the
+        # recipe's own counter, so the wait and the recipe agree by construction.
+        # The recipe then runs once, on data already known to be there.
+        recipe = load_recipe("task_inspect_and_export.py")
+        probe_path = self.tmp_path / "events_probe.csv"
         for _ in range(20):
-            dataset_path.unlink(missing_ok=True)
-            events_path.unlink(missing_ok=True)
-            result = self.run_recipe(
-                "task_inspect_and_export.py",
-                args=["--task-id", str(task.id)],
-                with_cleanup=False,
+            probe_path.unlink(missing_ok=True)
+            Downloader(self.client).prepare_and_download_file_from_endpoint(
+                self.client.api_client.events_api.create_export_endpoint,
+                probe_path,
+                query_params={"task_id": task.id},
             )
-            if "1 people currently assigned, 1 reworks" in result.stdout:
+            if recipe.count_reworks(probe_path) == 1:
                 break
             sleep(1)
         else:
-            pytest.fail(f"Event log stats never caught up:\n{result.stdout}")
+            pytest.fail("The exported event log never reported the job's rework")
+
+        result = self.run_recipe(
+            "task_inspect_and_export.py",
+            args=["--task-id", str(task.id)],
+            with_cleanup=False,
+        )
+        assert "1 people currently assigned, 1 reworks" in result.stdout
 
     @pytest.mark.with_external_services
     def test_task_create_from_cloud(self):
@@ -371,6 +487,29 @@ class TestExamples:
         )
         assert "Created 2 tasks in project" in result.stdout
         assert "Deleted 2 tasks" in result.stdout
+
+    @pytest.mark.with_external_services
+    def test_tasks_bulk_from_cloud_task_pattern(self):
+        project = self.make_project()
+        # The bucket ships a manifest next to two .png images; the server expands
+        # the wildcard against it, so one pattern becomes one two-frame task.
+        pattern = "images_with_manifest/*.png"
+        result = self.run_recipe(
+            "tasks_bulk_from_cloud.py",
+            args=[
+                "--cloud-storage-id",
+                str(IMPORT_EXPORT_BUCKET_ID),
+                "--project-id",
+                str(project.id),
+                "--manifest",
+                "images_with_manifest/manifest.jsonl",
+                "--task-pattern",
+                pattern,
+            ],
+        )
+        assert f"(2 frames) from pattern {pattern!r}" in result.stdout
+        assert f"Created 1 tasks in project {project.id}" in result.stdout
+        assert "Deleted 1 tasks" in result.stdout
 
     def test_tasks_bulk_from_cloud_rejects_empty_task(self):
         result = self.run_recipe(

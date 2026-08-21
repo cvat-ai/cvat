@@ -13,7 +13,7 @@ Steps:
   1. Attach the bucket with key/secret credentials to CVAT.
   2. List all registered storages.
   3. Retrieve the new one.
-  4. List the bucket's content, a page at a time.
+  4. List the bucket's actual content, a page at a time.
   5. Update its display name.
   6. Optionally, detach it from CVAT.
 
@@ -44,6 +44,12 @@ def parse_args() -> argparse.Namespace:
         "--endpoint-url",
         required=True,
         help="e.g. 'https://s3.amazonaws.com' or 'http://minio:9000'",
+    )
+    parser.add_argument(
+        "--page-size",
+        type=int,
+        help="entries to fetch per bucket listing request (default: the server's "
+        "maximum, 500); a small value makes the pagination loop visible",
     )
     parser.add_argument(
         "--cleanup",
@@ -82,22 +88,28 @@ def main() -> None:
         fetched, _ = api.retrieve(storage.id)
         print(f"Storage {fetched.id}: {fetched.display_name!r} ({fetched.provider_type})")
 
-        # 4. List the bucket's content
+        # 4. List the bucket's actual content (not CVAT's registry - the objects
+        # inside the bucket itself), a page at a time via next_token.
+        page_params = {"page_size": args.page_size} if args.page_size else {}
         files = []
+        pages = 0
         next_token = None
         while True:
             content, _ = api.retrieve_content_v2(
-                storage.id, **({"next_token": next_token} if next_token else {})
+                storage.id,
+                **page_params,
+                **({"next_token": next_token} if next_token else {}),
             )
             files.extend(content.content)
+            pages += 1
             if not content.next:
                 break
             next_token = content.next
-        print(f"Bucket {args.bucket!r} contains {len(files)} entries:")
+        print(f"Bucket {args.bucket!r} contains {len(files)} entries in {pages} page(s):")
         for f in files:
             print(f"  {f.type.value:>3} {f.name}")
 
-        # 5. Update the display name
+        # 5. Update the display name (PATCH — only the passed fields change)
         updated, _ = api.partial_update(
             storage.id,
             patched_cloud_storage_write_request=models.PatchedCloudStorageWriteRequest(

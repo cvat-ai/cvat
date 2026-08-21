@@ -24,6 +24,7 @@ the credentials work.
 | `--access-key` | yes | Bucket access key id |
 | `--secret-key` | yes | Bucket secret key |
 | `--endpoint-url` | yes | Endpoint URL, e.g. `'https://s3.amazonaws.com'` |
+| `--page-size` | no | Entries per bucket listing request (default: the server maximum, 500) |
 | `--cleanup` | no | Detach the bucket from CVAT at the end (data untouched) |
 
 ```bash
@@ -51,8 +52,8 @@ Steps:
   6. Optionally, detach it from CVAT.
 
 Usage (run ``python cloud_storage_register.py --help`` for the full list of options):
-  python cloud_storage_register.py --host 'https://app.cvat.ai' --token '<your token>' \
-      --bucket 'my-bucket' --access-key '<key>' --secret-key '<secret>' \
+  python cloud_storage_register.py --host 'https://app.cvat.ai' --token '<your token>' \\
+      --bucket 'my-bucket' --access-key '<key>' --secret-key '<secret>' \\
       --endpoint-url 'https://s3.amazonaws.com'
 """
 
@@ -63,10 +64,8 @@ from cvat_sdk.core.helpers import get_paginated_collection
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument(
-        "--host", required=True, help="CVAT server URL, e.g. 'https://app.cvat.ai'"
-    )
+    parser = argparse.ArgumentParser(description=" ".join(__doc__.splitlines()[:3]))
+    parser.add_argument("--host", required=True, help="CVAT server URL, e.g. 'https://app.cvat.ai'")
     parser.add_argument(
         "--token",
         required=True,
@@ -81,7 +80,15 @@ def parse_args() -> argparse.Namespace:
         help="e.g. 'https://s3.amazonaws.com' or 'http://minio:9000'",
     )
     parser.add_argument(
-        "--cleanup", action="store_true", help="detach the storage at the end (data is never touched)"
+        "--page-size",
+        type=int,
+        help="entries to fetch per bucket listing request (default: the server's "
+        "maximum, 500); a small value makes the pagination loop visible",
+    )
+    parser.add_argument(
+        "--cleanup",
+        action="store_true",
+        help="detach the storage at the end (data is never touched)",
     )
     return parser.parse_args()
 
@@ -117,17 +124,22 @@ def main() -> None:
 
         # 4. List the bucket's actual content (not CVAT's registry - the objects
         # inside the bucket itself), a page at a time via next_token.
+        page_params = {"page_size": args.page_size} if args.page_size else {}
         files = []
+        pages = 0
         next_token = None
         while True:
             content, _ = api.retrieve_content_v2(
-                storage.id, **({"next_token": next_token} if next_token else {})
+                storage.id,
+                **page_params,
+                **({"next_token": next_token} if next_token else {}),
             )
             files.extend(content.content)
+            pages += 1
             if not content.next:
                 break
             next_token = content.next
-        print(f"Bucket {args.bucket!r} contains {len(files)} entries:")
+        print(f"Bucket {args.bucket!r} contains {len(files)} entries in {pages} page(s):")
         for f in files:
             print(f"  {f.type.value:>3} {f.name}")
 

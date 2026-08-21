@@ -81,7 +81,7 @@ def write_report(jobs: Iterable[Job], path: Path) -> None:
                     job.stage,
                     job.state,
                     assignee,
-                    job.stop_frame - job.start_frame + 1,
+                    job.frame_count,
                 ]
             )
 

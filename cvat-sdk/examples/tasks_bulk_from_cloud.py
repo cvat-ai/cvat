@@ -85,7 +85,7 @@ def parse_args() -> argparse.Namespace:
         default=[],
         metavar="PATTERN",
         help="one task from every bucket file matching this fnmatch wildcard "
-        "(e.g. 'batch_a/*.jpg', (default: '%(default)s')); repeat for more tasks. Needs --manifest",
+        "(e.g. 'batch_a/*.jpg'); repeat for more tasks. Needs --manifest",
     )
     parser.add_argument(
         "--manifest",
@@ -132,6 +132,9 @@ def main() -> None:
             print(f"Created task {task.id} ({task.size} frames): {args.host}/tasks/{task.id}")
 
         for pattern in args.task_patterns:
+            # A wildcard task needs the bucket's manifest as its only resource;
+            # the server expands filename_pattern against it (fnmatch syntax).
+            # use_cache=True is required to serve data straight from the bucket.
             task = client.tasks.create_from_data(
                 spec=models.TaskWriteRequest(
                     name=f"{args.name_prefix} {len(created) + 1}", project_id=args.project_id

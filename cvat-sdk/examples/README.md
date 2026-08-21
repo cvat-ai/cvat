@@ -30,14 +30,14 @@ Conventions:
 | `project_create_and_list.py` | Create, list, filter, retrieve, rename a project | `--name`, `--labels`, `--cleanup` |
 | `project_backup.py` | Download a backup zip of an existing project | `--project-id`, `--output` |
 | `project_restore.py` | Restore a project from a backup zip | `--backup`, `--cleanup` |
-| `project_export_dataset.py` | Export a project's tasks individually (all, or a `--task-id` list), locally and to a bucket | `--project-id`, `--cloud-storage-id`, `--export-format`, `--task-id` (repeatable, optional) |
+| `project_export_dataset.py` | Export a project's tasks individually (all, or a `--task-id` list), locally and to a bucket | `--project-id`, `--cloud-storage-id`, `--export-format`, `--task-id` (optional, space-separated) |
 | `task_create_from_cloud.py` | Create a task from bucket object keys | `--cloud-storage-id`, `--cloud-keys`, `--cleanup` |
 | `tasks_bulk_from_cloud.py` | Bulk-create tasks in a project, from bucket object keys or wildcard patterns | `--cloud-storage-id`, `--project-id`, `--task` (repeat), `--task-pattern` (repeat), `--manifest`, `--cleanup` |
 | `task_inspect_and_export.py` | Inspect a task; export its dataset and event-log analytics | `--task-id`, `--export-format` |
 | `job_list.py` | List a task's or project's jobs with stage/state/assignee; optional CSV report | `--task-id` or `--project-id`, `--stage`, `--state`, `--csv` |
 | `job_assign.py` | Round-robin assign unassigned jobs; CSV report | `--task-id`, `--org` or `--org-id`, `--assignees` or `--search` |
 | `job_workflow.py` | Batch-advance completed jobs to the next stage | `--from-stage`, `--task-id` |
-| `cloud_storage_register.py` | Attach an S3-compatible bucket to CVAT | `--bucket`, `--access-key`, `--secret-key`, `--endpoint-url`, `--cleanup` |
+| `cloud_storage_register.py` | Attach an S3-compatible bucket to CVAT | `--bucket`, `--access-key`, `--secret-key`, `--endpoint-url`, `--page-size`, `--cleanup` |
 
 Every recipe additionally takes `--host` and `--token`. Wrap values that
 contain URL punctuation in single quotes, e.g. `--host 'https://app.cvat.ai'`.

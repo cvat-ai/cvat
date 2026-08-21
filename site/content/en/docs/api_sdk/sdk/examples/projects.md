@@ -43,7 +43,7 @@ Steps:
   6. Optionally delete it (--cleanup).
 
 Usage (run ``python project_create_and_list.py --help`` for the full list of options):
-  python project_create_and_list.py --host 'https://app.cvat.ai' --token '<your token>' \
+  python project_create_and_list.py --host 'https://app.cvat.ai' --token '<your token>' \\
       --name 'My project' --labels car person
 """
 
@@ -55,22 +55,20 @@ from cvat_sdk.core.filters import F
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument(
-        "--host", required=True, help="CVAT server URL, e.g. 'https://app.cvat.ai'"
-    )
+    parser.add_argument("--host", required=True, help="CVAT server URL, e.g. 'https://app.cvat.ai'")
     parser.add_argument(
         "--token",
         required=True,
         help="Personal Access Token (CVAT UI: Profile -> Security)",
     )
     parser.add_argument(
-        "--name", default="Example project", help="project name (default: 'Example project')"
+        "--name", default="Example project", help="project name (default: '%(default)s')"
     )
     parser.add_argument(
         "--labels",
         nargs="+",
         default=["car", "person"],
-        help="label names (default: car person)",
+        help="label names (default: %(default)s)",
     )
     parser.add_argument(
         "--cleanup", action="store_true", help="delete the created project at the end"
@@ -103,9 +101,7 @@ def main() -> None:
         print(f"Project {fetched.id} labels: {[label.name for label in fetched.get_labels()]}")
 
         # 5. Rename
-        renamed = fetched.update(
-            models.PatchedProjectWriteRequest(name=f"{args.name} (renamed)")
-        )
+        renamed = fetched.update(models.PatchedProjectWriteRequest(name=f"{args.name} (renamed)"))
         print(f"Renamed to: {renamed.name}")
 
         # 6. Opt-in cleanup
@@ -150,7 +146,7 @@ Steps:
   2. Download its backup to --output (default: project_<id>_backup.zip).
 
 Usage (run ``python project_backup.py --help`` for the full list of options):
-  python project_backup.py --host 'https://app.cvat.ai' --token '<your token>' \
+  python project_backup.py --host 'https://app.cvat.ai' --token '<your token>' \\
       --project-id 42
 """
 
@@ -162,9 +158,7 @@ from cvat_sdk import make_client
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument(
-        "--host", required=True, help="CVAT server URL, e.g. 'https://app.cvat.ai'"
-    )
+    parser.add_argument("--host", required=True, help="CVAT server URL, e.g. 'https://app.cvat.ai'")
     parser.add_argument(
         "--token",
         required=True,
@@ -224,7 +218,7 @@ Steps:
      backup file.
 
 Usage (run ``python project_restore.py --help`` for the full list of options):
-  python project_restore.py --host 'https://app.cvat.ai' --token '<your token>' \
+  python project_restore.py --host 'https://app.cvat.ai' --token '<your token>' \\
       --backup './project_42_backup.zip'
 """
 
@@ -237,17 +231,13 @@ from cvat_sdk import make_client
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument(
-        "--host", required=True, help="CVAT server URL, e.g. 'https://app.cvat.ai'"
-    )
+    parser.add_argument("--host", required=True, help="CVAT server URL, e.g. 'https://app.cvat.ai'")
     parser.add_argument(
         "--token",
         required=True,
         help="Personal Access Token (CVAT UI: Profile -> Security)",
     )
-    parser.add_argument(
-        "--backup", type=Path, required=True, help="path to a project backup zip"
-    )
+    parser.add_argument("--backup", type=Path, required=True, help="path to a project backup zip")
     parser.add_argument(
         "--cleanup",
         action="store_true",
@@ -317,11 +307,11 @@ Steps:
 
 Usage (run ``python project_export_dataset.py --help`` for the full list of options):
   # every task in the project
-  python project_export_dataset.py --host 'https://app.cvat.ai' --token '<your token>' \
+  python project_export_dataset.py --host 'https://app.cvat.ai' --token '<your token>' \\
       --project-id 42 --cloud-storage-id 7 --export-format 'COCO 1.0'
 
   # only tasks 10 and 11
-  python project_export_dataset.py --host 'https://app.cvat.ai' --token '<your token>' \
+  python project_export_dataset.py --host 'https://app.cvat.ai' --token '<your token>' \\
       --project-id 42 --cloud-storage-id 7 --task-id 10 11
 """
 
@@ -384,9 +374,7 @@ def main() -> None:
         if args.task_id:
             missing = [str(tid) for tid in args.task_id if tid not in tasks_by_id]
             if missing:
-                sys.exit(
-                    f"Task id(s) {', '.join(missing)} not found in project {project.id}"
-                )
+                sys.exit(f"Task id(s) {', '.join(missing)} not found in project {project.id}")
             tasks = [tasks_by_id[tid] for tid in args.task_id]
         else:
             tasks = list(tasks_by_id.values())

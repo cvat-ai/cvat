@@ -50,7 +50,7 @@ def parse_args() -> argparse.Namespace:
         help="task name (default: '%(default)s')",
     )
     parser.add_argument(
-        "--labels", nargs="+", default=["object"], help="label names (default: '%(default)s')"
+        "--labels", nargs="+", default=["object"], help="label names (default: %(default)s)"
     )
     parser.add_argument("--cleanup", action="store_true", help="delete the created task at the end")
     return parser.parse_args()

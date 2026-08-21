@@ -2,7 +2,7 @@
 title: 'Job recipes'
 linkTitle: 'Jobs'
 weight: 4
-description: 'List a task jobs, round-robin unassigned jobs, batch-advance completed jobs'
+description: "List a task's or project's jobs, round-robin unassigned jobs, batch-advance completed jobs"
 ---
 
 Three recipes: `job_list.py` lists a task's or project's jobs with optional
@@ -55,11 +55,11 @@ Steps:
      assignee, frames).
 
 Usage (run ``python job_list.py --help`` for the full list of options):
-  python job_list.py --host 'https://app.cvat.ai' --token '<your token>' \
+  python job_list.py --host 'https://app.cvat.ai' --token '<your token>' \\
       --task-id 42
-  python job_list.py --host 'https://app.cvat.ai' --token '<your token>' \
+  python job_list.py --host 'https://app.cvat.ai' --token '<your token>' \\
       --task-id 42 --stage annotation --state new
-  python job_list.py --host 'https://app.cvat.ai' --token '<your token>' \
+  python job_list.py --host 'https://app.cvat.ai' --token '<your token>' \\
       --project-id 7 --csv
 """
 
@@ -74,10 +74,8 @@ from cvat_sdk.core.proxies.jobs import Job
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument(
-        "--host", required=True, help="CVAT server URL, e.g. 'https://app.cvat.ai'"
-    )
+    parser = argparse.ArgumentParser(description=" ".join(__doc__.splitlines()[:2]))
+    parser.add_argument("--host", required=True, help="CVAT server URL, e.g. 'https://app.cvat.ai'")
     parser.add_argument(
         "--token",
         required=True,
@@ -122,7 +120,7 @@ def write_report(jobs: Iterable[Job], path: Path) -> None:
                     job.stage,
                     job.state,
                     assignee,
-                    job.stop_frame - job.start_frame + 1,
+                    job.frame_count,
                 ]
             )
 
@@ -162,18 +160,25 @@ if __name__ == "__main__":
 Distributes the unassigned jobs of a task across a resolved user pool and
 writes `assignments.csv` (`job_id, previous_assignee, new_assignee,
 new_assignee_id`). The pool is resolved by looking up usernames exactly with
-`--assignees`, by server-side search with `--search`, or self-assigns if
-neither is passed.
+`--assignees`, by searching an organization's members with `--search`, or
+self-assigns if neither is passed.
 
 | Flag | Required | Meaning |
 | --- | --- | --- |
 | `--host` | yes | Server URL |
 | `--token` | yes | Personal Access Token |
 | `--task-id` | yes | Id of the task |
+| `--org SLUG` | no | Organization slug to scope the user and job queries |
+| `--org-id ID` | no | Organization id, as an alternative to `--org` |
 | `--assignees USERNAME [...]` | no | Usernames to round-robin (exact match) |
-| `--search QUERY` | no | Server-side user search; every match becomes an assignee |
+| `--search QUERY` | no | Search the organization's members; every match becomes an assignee |
 
-`--assignees` and `--search` are mutually exclusive. Omit both to self-assign.
+`--assignees` and `--search` are mutually exclusive, and so are `--org` and
+`--org-id`. Omit both `--assignees` and `--search` to self-assign.
+
+`--search` requires an organization, so pass it together with `--org` or
+`--org-id`. Search matches the `username`, `first_name`, and `last_name`
+fields, which is only meaningful scoped to a team.
 
 ```bash
 # self-assign every unassigned job
@@ -182,9 +187,9 @@ python job_assign.py --host 'https://app.cvat.ai' --token '<your token>' \
 # round-robin across an explicit pool
 python job_assign.py --host 'https://app.cvat.ai' --token '<your token>' \
     --task-id 42 --assignees alice bob
-# pool = every user matching the search
+# pool = every organization member matching the search
 python job_assign.py --host 'https://app.cvat.ai' --token '<your token>' \
-    --task-id 42 --search 'annotator-team'
+    --task-id 42 --org 'annotators' --search 'annotator-team'
 ```
 
 ### The script
@@ -193,26 +198,29 @@ python job_assign.py --host 'https://app.cvat.ai' --token '<your token>' \
 """Round-robin the unassigned jobs of a task across a set of annotators and
 write a CSV report of the assignments (job_id, previous_assignee, new_assignee).
 
-The user API supports server-side search, so you rarely need to know user ids —
-pass usernames (or a search query) and let the recipe resolve them.
+The user API supports server-side search within an organization, so you rarely
+need to know user ids — pass usernames, or an organization and search query,
+and let the recipe resolve them.
 
 Steps:
   1. Resolve the assignee pool:
        --assignees USERNAME [USERNAME ...] : look up each username exactly.
-       --search QUERY                      : run client.users.list(search=QUERY),
+       --search QUERY --org SLUG           : search organization members,
                                              print the matches, use them all.
+       --search QUERY --org-id ID          : same, using the organization id.
        neither                             : assign to me (the authenticated user).
   2. Filter the task's unassigned jobs.
   3. Round-robin the jobs across the resolved users.
   4. Write assignments.csv into the current directory.
 
 Usage (run ``python job_assign.py --help`` for the full list of options):
-  python job_assign.py --host 'https://app.cvat.ai' --token '<your token>' \
+  python job_assign.py --host 'https://app.cvat.ai' --token '<your token>' \\
       --task-id 42                              # self-assign
-  python job_assign.py --host 'https://app.cvat.ai' --token '<your token>' \
+  python job_assign.py --host 'https://app.cvat.ai' --token '<your token>' \\
       --task-id 42 --assignees alice bob
-  python job_assign.py --host 'https://app.cvat.ai' --token '<your token>' \
-      --task-id 42 --search 'annotator-team'    # pool = every match of the search
+  python job_assign.py --host 'https://app.cvat.ai' --token '<your token>' \\
+      --task-id 42 --org 'annotators' --search 'annotator-team'
+                                                  # pool = matches in the organization
 """
 
 import argparse
@@ -226,10 +234,8 @@ from cvat_sdk.core.proxies.users import User
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument(
-        "--host", required=True, help="CVAT server URL, e.g. 'https://app.cvat.ai'"
-    )
+    parser = argparse.ArgumentParser(description=" ".join(__doc__.splitlines()[:2]))
+    parser.add_argument("--host", required=True, help="CVAT server URL, e.g. 'https://app.cvat.ai'")
     parser.add_argument(
         "--token",
         required=True,
@@ -237,6 +243,13 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--task-id", type=int, required=True, help="id of an existing task, e.g. 42"
+    )
+    organization = parser.add_mutually_exclusive_group()
+    organization.add_argument(
+        "--org", metavar="SLUG", help="organization slug to scope user and job queries"
+    )
+    organization.add_argument(
+        "--org-id", type=int, metavar="ID", help="organization id to scope user and job queries"
     )
     group = parser.add_mutually_exclusive_group()
     group.add_argument(
@@ -248,15 +261,27 @@ def parse_args() -> argparse.Namespace:
     group.add_argument(
         "--search",
         metavar="QUERY",
-        help="server-side user search; every match becomes an assignee",
+        help="server-side search within --org/--org-id; every matching member becomes an assignee",
     )
-    return parser.parse_args()
+    args = parser.parse_args()
+    if args.search and args.org is None and args.org_id is None:
+        parser.error("--search requires --org or --org-id")
+    return args
+
+
+def organization_filters(args: argparse.Namespace) -> dict[str, str | int]:
+    if args.org is not None:
+        return {"org": args.org}
+    if args.org_id is not None:
+        return {"org_id": args.org_id}
+    return {}
 
 
 def resolve_pool(client, args: argparse.Namespace) -> list[User]:
     """Resolve --assignees / --search / nothing to a list of User objects."""
+    org_filters = organization_filters(args)
     if args.search:
-        matches = client.users.list(search=args.search)
+        matches = client.users.list(search=args.search, **org_filters)
         if not matches:
             sys.exit(f"No users matched search {args.search!r}")
         print(f"Users matching {args.search!r}:")
@@ -267,7 +292,7 @@ def resolve_pool(client, args: argparse.Namespace) -> list[User]:
     if args.assignees:
         pool: list[User] = []
         for username in args.assignees:
-            found = client.users.list(filter=F.username == username)
+            found = client.users.list(filter=F.username == username, **org_filters)
             if not found:
                 sys.exit(f"User {username!r} not found")
             pool.append(found[0])
@@ -285,7 +310,8 @@ def main() -> None:
         pool = resolve_pool(client, args)
 
         unassigned = client.jobs.list(
-            filter=all_(F.task_id == args.task_id, not_(F.assignee.is_set()))
+            filter=all_(F.task_id == args.task_id, not_(F.assignee.is_set())),
+            **organization_filters(args),
         )
         print(f"Task {args.task_id}: {len(unassigned)} unassigned jobs to distribute")
 
@@ -344,10 +370,10 @@ Steps:
 
 Usage (run ``python job_workflow.py --help`` for the full list of options):
   # Send everything annotators finished into review:
-  python job_workflow.py --host 'https://app.cvat.ai' --token '<your token>' \
+  python job_workflow.py --host 'https://app.cvat.ai' --token '<your token>' \\
       --from-stage annotation
   # Accept everything that passed review, scoped to one task:
-  python job_workflow.py --host 'https://app.cvat.ai' --token '<your token>' \
+  python job_workflow.py --host 'https://app.cvat.ai' --token '<your token>' \\
       --from-stage validation --task-id 42
 """
 
@@ -361,9 +387,7 @@ NEXT_STAGE = {"annotation": "validation", "validation": "acceptance"}
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument(
-        "--host", required=True, help="CVAT server URL, e.g. 'https://app.cvat.ai'"
-    )
+    parser.add_argument("--host", required=True, help="CVAT server URL, e.g. 'https://app.cvat.ai'")
     parser.add_argument(
         "--token",
         required=True,

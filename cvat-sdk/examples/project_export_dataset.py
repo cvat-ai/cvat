@@ -86,9 +86,7 @@ def main() -> None:
         if args.task_id:
             missing = [str(tid) for tid in args.task_id if tid not in tasks_by_id]
             if missing:
-                sys.exit(
-                    f"Task id(s) {', '.join(missing)} not found in project {project.id}"
-                )
+                sys.exit(f"Task id(s) {', '.join(missing)} not found in project {project.id}")
             tasks = [tasks_by_id[tid] for tid in args.task_id]
         else:
             tasks = list(tasks_by_id.values())

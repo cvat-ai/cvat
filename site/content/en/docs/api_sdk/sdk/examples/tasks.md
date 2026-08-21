@@ -46,8 +46,8 @@ Steps:
 Register a bucket first with cloud_storage_register.py to get the storage id.
 
 Usage (run ``python task_create_from_cloud.py --help`` for the full list of options):
-  python task_create_from_cloud.py --host 'https://app.cvat.ai' --token '<your token>' \
-      --cloud-storage-id 7 --cloud-keys 'images/0001.jpg' 'images/0002.jpg' \
+  python task_create_from_cloud.py --host 'https://app.cvat.ai' --token '<your token>' \\
+      --cloud-storage-id 7 --cloud-keys 'images/0001.jpg' 'images/0002.jpg' \\
       --labels car person
 """
 
@@ -58,10 +58,8 @@ from cvat_sdk.core.proxies.tasks import ResourceType
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument(
-        "--host", required=True, help="CVAT server URL, e.g. 'https://app.cvat.ai'"
-    )
+    parser = argparse.ArgumentParser(description=" ".join(__doc__.splitlines()[:2]))
+    parser.add_argument("--host", required=True, help="CVAT server URL, e.g. 'https://app.cvat.ai'")
     parser.add_argument(
         "--token",
         required=True,
@@ -82,14 +80,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--name",
         default="Task from cloud storage",
-        help="task name (default: 'Task from cloud storage')",
+        help="task name (default: '%(default)s')",
     )
     parser.add_argument(
-        "--labels", nargs="+", default=["object"], help="label names (default: object)"
+        "--labels", nargs="+", default=["object"], help="label names (default: %(default)s)"
     )
-    parser.add_argument(
-        "--cleanup", action="store_true", help="delete the created task at the end"
-    )
+    parser.add_argument("--cleanup", action="store_true", help="delete the created task at the end")
     return parser.parse_args()
 
 
@@ -190,19 +186,19 @@ see "How to generate manifest file" in the CVAT docs on attaching cloud storage.
 
 Usage (run ``python tasks_bulk_from_cloud.py --help`` for the full list of options):
   # three video tasks in project 42
-  python tasks_bulk_from_cloud.py --host 'https://app.cvat.ai' --token '<your token>' \
-      --cloud-storage-id 7 --project-id 42 \
+  python tasks_bulk_from_cloud.py --host 'https://app.cvat.ai' --token '<your token>' \\
+      --cloud-storage-id 7 --project-id 42 \\
       --task 'videos/clip_01.mp4' --task 'videos/clip_02.mp4' --task 'videos/clip_03.mp4'
 
   # two image-batch tasks in project 42
-  python tasks_bulk_from_cloud.py --host 'https://app.cvat.ai' --token '<your token>' \
-      --cloud-storage-id 7 --project-id 42 \
-      --task 'batch_a/img_1.jpg,batch_a/img_2.jpg' \
+  python tasks_bulk_from_cloud.py --host 'https://app.cvat.ai' --token '<your token>' \\
+      --cloud-storage-id 7 --project-id 42 \\
+      --task 'batch_a/img_1.jpg,batch_a/img_2.jpg' \\
       --task 'batch_b/img_1.jpg,batch_b/img_2.jpg'
 
   # the same two batches, without listing every key: one task per wildcard match
-  python tasks_bulk_from_cloud.py --host 'https://app.cvat.ai' --token '<your token>' \
-      --cloud-storage-id 7 --project-id 42 --manifest manifest.jsonl \
+  python tasks_bulk_from_cloud.py --host 'https://app.cvat.ai' --token '<your token>' \\
+      --cloud-storage-id 7 --project-id 42 --manifest manifest.jsonl \\
       --task-pattern 'batch_a/*.jpg' --task-pattern 'batch_b/*.jpg'
 """
 
@@ -214,9 +210,7 @@ from cvat_sdk.core.proxies.tasks import ResourceType
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=" ".join(__doc__.splitlines()[:2]))
-    parser.add_argument(
-        "--host", required=True, help="CVAT server URL, e.g. 'https://app.cvat.ai'"
-    )
+    parser.add_argument("--host", required=True, help="CVAT server URL, e.g. 'https://app.cvat.ai'")
     parser.add_argument(
         "--token",
         required=True,
@@ -366,7 +360,7 @@ Steps:
      one needs the log, since a job's current state doesn't show its history.
 
 Usage (run ``python task_inspect_and_export.py --help`` for the full list of options):
-  python task_inspect_and_export.py --host 'https://app.cvat.ai' --token '<your token>' \
+  python task_inspect_and_export.py --host 'https://app.cvat.ai' --token '<your token>' \\
       --task-id 42 --export-format 'COCO 1.0'
 """
 
@@ -381,10 +375,8 @@ from cvat_sdk.core.proxies.types import Location
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument(
-        "--host", required=True, help="CVAT server URL, e.g. 'https://app.cvat.ai'"
-    )
+    parser = argparse.ArgumentParser(description=" ".join(__doc__.splitlines()[:2]))
+    parser.add_argument("--host", required=True, help="CVAT server URL, e.g. 'https://app.cvat.ai'")
     parser.add_argument(
         "--token",
         required=True,
@@ -396,7 +388,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--export-format",
         default="COCO 1.0",
-        help="exporter name, e.g. 'COCO 1.0' (default: 'COCO 1.0')",
+        help="exporter name, e.g. 'COCO 1.0' (default: '%(default)s')",
     )
     return parser.parse_args()
 
@@ -439,7 +431,7 @@ def main() -> None:
         # 3. Export the dataset to a local zip
         local_path = Path(f"task_{task.id}_dataset.zip")
         task.export_dataset(
-            args.export_format, local_path, include_images=True, location=Location.LOCAL
+            args.export_format, local_path, include_images=False, location=Location.LOCAL
         )
         print(f"Exported {local_path.resolve()}")
 

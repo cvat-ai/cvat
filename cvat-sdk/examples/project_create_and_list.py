@@ -32,15 +32,13 @@ def parse_args() -> argparse.Namespace:
         help="Personal Access Token (CVAT UI: Profile -> Security)",
     )
     parser.add_argument(
-        "--name",
-        default="Example project",
-        help="project name (default: '%(default)s')"
+        "--name", default="Example project", help="project name (default: '%(default)s')"
     )
     parser.add_argument(
         "--labels",
         nargs="+",
         default=["car", "person"],
-        help="label names (default: '%(default)s')",
+        help="label names (default: %(default)s)",
     )
     parser.add_argument(
         "--cleanup", action="store_true", help="delete the created project at the end"

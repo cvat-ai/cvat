@@ -86,7 +86,7 @@ def main() -> None:
         # 3. Export the dataset to a local zip
         local_path = Path(f"task_{task.id}_dataset.zip")
         task.export_dataset(
-            args.export_format, local_path, include_images=True, location=Location.LOCAL
+            args.export_format, local_path, include_images=False, location=Location.LOCAL
         )
         print(f"Exported {local_path.resolve()}")
 

@@ -6,9 +6,9 @@
 ``--server-host`` / ``--server-port`` / ``--auth`` / ``--profile`` / ``--insecure`` / ``--organization``.
 
 This is the go-to pattern when your script should feel like an extension of
-``cvat-cli`` — it accepts the same flags, honors the ``CVAT_ACCESS_TOKEN`` env
-variable, and resolves profiles the same way (explicit ``--profile``, else the
-default profile if no host/auth is passed).
+``cvat-cli`` — it accepts the same flags, honors the ``CVAT_ACCESS_TOKEN`` and
+``PASS`` env variables, and resolves profiles the same way (explicit
+``--profile``, else the default profile if no host/auth is passed).
 
 Steps:
   1. Register the shared auth flags with ``configure_client_auth_arguments()``.
