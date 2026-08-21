@@ -379,6 +379,7 @@ class ComparisonReportParameters(ReportNode):
 class ConfusionMatrix(ReportNode):
     labels: list[str] | None
     rows: np.ndarray | None
+    _CACHED_FIELDS: ClassVar[list[str]] = [metric.value for metric in models.QualityMetric]
 
     @property
     def axes(self):
@@ -399,6 +400,7 @@ class ConfusionMatrix(ReportNode):
             self.recall = None
             self.accuracy = None
             self.jaccard_index = None
+            self.dice = None
             return
 
         assert self.rows is not None
@@ -411,6 +413,7 @@ class ConfusionMatrix(ReportNode):
         self.jaccard_index = array_safe_divide(
             matched_ann_counts, ds_ann_counts + gt_ann_counts - matched_ann_counts
         )
+        self.dice = array_safe_divide(2 * matched_ann_counts, ds_ann_counts + gt_ann_counts)
         self.precision = array_safe_divide(matched_ann_counts, ds_ann_counts)
         self.recall = array_safe_divide(matched_ann_counts, gt_ann_counts)
         self.accuracy = (
@@ -420,11 +423,13 @@ class ConfusionMatrix(ReportNode):
             # ... = TP + TN
         ) / (total_annotations_count or 1)
 
-        if labels[-1] == UNMATCHED_LABEL_NAME:
-            self.precision[-1] = np.nan
-            self.recall[-1] = np.nan
-            self.accuracy[-1] = np.nan
-            self.jaccard_index[-1] = np.nan
+        if UNMATCHED_LABEL_NAME in labels:
+            unmatched_idx = labels.index(UNMATCHED_LABEL_NAME)
+            self.precision[unmatched_idx] = np.nan
+            self.recall[unmatched_idx] = np.nan
+            self.accuracy[unmatched_idx] = np.nan
+            self.jaccard_index[unmatched_idx] = np.nan
+            self.dice[unmatched_idx] = np.nan
 
     @cached_property
     def precision(self) -> np.ndarray | None:  # pylint: disable=method-hidden
@@ -446,6 +451,25 @@ class ConfusionMatrix(ReportNode):
         self._update_cached_fields()
         return self.jaccard_index
 
+    @cached_property
+    def dice(self) -> np.ndarray | None:  # pylint: disable=method-hidden
+        self._update_cached_fields()
+        return self.dice
+
+    def get_active_label_indices(self) -> np.ndarray:
+        if not self.labels or self.rows is None:
+            return np.asarray([], dtype=int)
+
+        support = np.sum(self.rows, axis=0) + np.sum(self.rows, axis=1)
+        return np.asarray(
+            [
+                index
+                for index, label in enumerate(self.labels)
+                if label != UNMATCHED_LABEL_NAME and support[index] > 0
+            ],
+            dtype=int,
+        )
+
     def accumulate(self, other: ConfusionMatrix, *, weight: float = 1):
         assert not other.labels or not self.labels or self.labels == other.labels
 
@@ -462,16 +486,18 @@ class ConfusionMatrix(ReportNode):
 
     @classmethod
     def from_dict(cls, d: dict):
+        cached_fields = {
+            field_name: np.asarray(d[field_name]) if field_name in d else None
+            for field_name in cls._CACHED_FIELDS
+            if field_name in d or "rows" not in d
+        }
         return cls(
             # Avoid computing matrix values lazily if they are not in the report.
             # Doing so can result in unexpected extra matrix computations in a get list endpoint
             # TODO: maybe save all the summary output values in the DB as separate fields
             labels=d["labels"],
             rows=np.asarray(d["rows"]) if "rows" in d else None,
-            precision=np.asarray(d["precision"]) if "precision" in d else None,
-            recall=np.asarray(d["recall"]) if "recall" in d else None,
-            accuracy=np.asarray(d["accuracy"]) if "accuracy" in d else None,
-            jaccard_index=np.asarray(d["jaccard_index"]) if "jaccard_index" in d else None,
+            **cached_fields,
         )
 
     @classmethod
@@ -608,6 +634,98 @@ class ComparisonReportAnnotationsSummary(ReportNode):
             gt_count=0,
             confusion_matrix=None,
         )
+
+
+def compute_target_metric(
+    annotations: ComparisonReportAnnotationsSummary,
+    metric: models.QualityTargetMetricType | str,
+) -> float:
+    target_metric = models.QualityTargetMetricType.parse(metric)
+
+    if target_metric.aggregation == models.QualityMetricAggregation.MICRO:
+        if target_metric.metric == models.QualityMetric.ACCURACY:
+            numerator = annotations.valid_count
+            denominator = annotations.total_count
+        elif target_metric.metric == models.QualityMetric.PRECISION:
+            numerator = annotations.valid_count
+            denominator = annotations.ds_count
+        elif target_metric.metric == models.QualityMetric.RECALL:
+            numerator = annotations.valid_count
+            denominator = annotations.gt_count
+        elif target_metric.metric == models.QualityMetric.JACCARD_INDEX:
+            numerator = annotations.valid_count
+            denominator = annotations.ds_count + annotations.gt_count - annotations.valid_count
+        elif target_metric.metric == models.QualityMetric.DICE:
+            numerator = 2 * annotations.valid_count
+            denominator = annotations.ds_count + annotations.gt_count
+        else:
+            raise AssertionError(target_metric.metric)
+
+        return numerator / (denominator or 1)
+
+    confusion_matrix = annotations.confusion_matrix
+    if not confusion_matrix:
+        return 0.0
+
+    active_label_indices = confusion_matrix.get_active_label_indices()
+    metric_values = getattr(confusion_matrix, target_metric.metric.value)
+    if metric_values is None or not len(active_label_indices):
+        return 0.0
+
+    active_metric_values = metric_values[active_label_indices]
+    if target_metric.aggregation == models.QualityMetricAggregation.MEAN:
+        return float(np.mean(active_metric_values))
+    if target_metric.aggregation == models.QualityMetricAggregation.LABEL:
+        return float(np.min(active_metric_values))
+
+    raise AssertionError(target_metric.aggregation)
+
+
+@define(frozen=True)
+class ComputedQualityMetricSummary:
+    metric: models.QualityMetric
+    values: dict[models.QualityMetricAggregation, float]
+    worst_labels: tuple[str, ...]
+
+
+def compute_quality_metric_summary(
+    annotations: ComparisonReportAnnotationsSummary,
+    metric: models.QualityTargetMetricType | models.QualityMetric | str,
+) -> ComputedQualityMetricSummary:
+    base_metric = models.QualityTargetMetricType.parse(metric).metric
+    values = {
+        aggregation: compute_target_metric(
+            annotations,
+            models.QualityTargetMetricType(metric=base_metric, aggregation=aggregation),
+        )
+        for aggregation in models.QualityMetricAggregation
+    }
+
+    confusion_matrix = annotations.confusion_matrix
+    if not confusion_matrix or not confusion_matrix.labels:
+        return ComputedQualityMetricSummary(
+            metric=base_metric,
+            values=values,
+            worst_labels=(),
+        )
+
+    active_label_indices = confusion_matrix.get_active_label_indices()
+    metric_values = getattr(confusion_matrix, base_metric.value)
+    if metric_values is None or not len(active_label_indices):
+        worst_labels = ()
+    else:
+        worst_value = values[models.QualityMetricAggregation.LABEL]
+        worst_labels = tuple(
+            confusion_matrix.labels[index]
+            for index in active_label_indices
+            if np.isclose(metric_values[index], worst_value)
+        )
+
+    return ComputedQualityMetricSummary(
+        metric=base_metric,
+        values=values,
+        worst_labels=worst_labels,
+    )
 
 
 @define(kw_only=True, init=False, slots=False)
@@ -994,7 +1112,7 @@ class ComparisonReportFrameComparisonSummary(ComparisonReportFrameSummary):
     calculation: ComparisonReportRequirementCalculation
     confusion_matrix: ConfusionMatrix | None
     annotation_summary: ComparisonReportAnnotationsSummary
-    metric: str
+    metric: models.QualityTargetMetricType
 
     def _as_dict(self, *, include_fields: list[str] | None = None) -> dict:
         data = super()._as_dict(include_fields=include_fields)
@@ -1003,11 +1121,10 @@ class ComparisonReportFrameComparisonSummary(ComparisonReportFrameSummary):
         return data
 
     def refresh_comparison_fields(self) -> None:
-        score = getattr(self.annotation_summary, self.metric, None)
         self.score = (
             None
             if self.calculation.status == RequirementCalculationStatus.NOT_COMPUTED
-            else float(score) if score is not None else None
+            else compute_target_metric(self.annotation_summary, self.metric)
         )
         self.score_components = self.annotation_summary.to_score_components()
         self.confusion_matrix = self.annotation_summary.confusion_matrix
@@ -1019,7 +1136,7 @@ class ComparisonReportFrameComparisonSummary(ComparisonReportFrameSummary):
         conflicts: list[AnnotationConflict],
         annotation_summary: ComparisonReportAnnotationsSummary,
         calculation: ComparisonReportRequirementCalculation,
-        metric: str,
+        metric: models.QualityTargetMetricType | str,
     ) -> ComparisonReportFrameComparisonSummary:
         instance = cls(
             conflicts=conflicts,
@@ -1028,7 +1145,7 @@ class ComparisonReportFrameComparisonSummary(ComparisonReportFrameSummary):
             calculation=calculation,
             confusion_matrix=None,
             annotation_summary=annotation_summary,
-            metric=metric,
+            metric=models.QualityTargetMetricType.parse(metric),
         )
         instance.refresh_comparison_fields()
         return instance
@@ -1037,12 +1154,15 @@ class ComparisonReportFrameComparisonSummary(ComparisonReportFrameSummary):
     def from_dict(cls, d: dict[str, Any]) -> ComparisonReportFrameComparisonSummary:
         return cls.from_dict_with_metric(
             d,
-            metric=str(models.QualityTargetMetricType.ACCURACY),
+            metric=models.QualityTargetMetricType(metric=models.QualityMetric.ACCURACY),
         )
 
     @classmethod
     def from_dict_with_metric(
-        cls, d: dict[str, Any], *, metric: str
+        cls,
+        d: dict[str, Any],
+        *,
+        metric: models.QualityTargetMetricType | str,
     ) -> ComparisonReportFrameComparisonSummary:
         frame_summary = ComparisonReportFrameSummary.from_dict(d)
         calculation = (
@@ -1094,7 +1214,7 @@ class ComparisonReportFrameComparisonSummary(ComparisonReportFrameSummary):
             calculation=calculation,
             confusion_matrix=confusion_matrix,
             annotation_summary=annotation_summary,
-            metric=metric,
+            metric=models.QualityTargetMetricType.parse(metric),
         )
         if "score" not in d or "score_components" not in d:
             instance.refresh_comparison_fields()
@@ -1120,7 +1240,9 @@ class ComparisonReportRequirementSummary(ReportNode):
     @classmethod
     def from_dict(cls, d: dict[str, Any]) -> ComparisonReportRequirementSummary:
         parameters = d.get("parameters", {})
-        metric = str(parameters.get("metric", models.QualityTargetMetricType.ACCURACY))
+        metric = models.QualityTargetMetricType.parse(
+            parameters.get("metric", models.QualityMetric.ACCURACY)
+        )
         return cls(
             parameters=parameters,
             comparison_summary=ComparisonReportRequirementComparisonSummary.from_dict(

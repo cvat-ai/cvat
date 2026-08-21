@@ -7,9 +7,10 @@ import {
 } from 'cvat-core-wrapper';
 import {
     QualityRequirementAnnotationType, QualityRequirementAttributeComparator,
-    QualityRequirementMetric, QualityRequirementPointSizeBase,
+    QualityMetricAggregation, QualityRequirementMetric, QualityRequirementPointSizeBase,
     SerializedQualityRequirementAttributeComparison,
     SerializedQualityRequirementAttributeRule,
+    serializeQualityTargetMetric,
 } from 'cvat-core/src/quality/server-response-types';
 import {
     buildRequirementsById,
@@ -34,7 +35,29 @@ export const ROOT_DEFAULTS = {
     panopticComparison: true,
 };
 
-export const METRIC_OPTIONS: QualityRequirementMetric[] = Object.values(QualityRequirementMetric);
+export const METRIC_OPTION_GROUPS: Array<{
+    label: string;
+    options: QualityRequirementMetric[];
+}> = [
+    {
+        label: 'Micro / aggregate',
+        options: Object.values(QualityRequirementMetric),
+    },
+    {
+        label: 'Macro average',
+        options: Object.values(QualityRequirementMetric).map((metric) => serializeQualityTargetMetric({
+            metric,
+            aggregation: QualityMetricAggregation.MEAN,
+        })),
+    },
+    {
+        label: 'Worst label',
+        options: Object.values(QualityRequirementMetric).map((metric) => serializeQualityTargetMetric({
+            metric,
+            aggregation: QualityMetricAggregation.LABEL,
+        })),
+    },
+];
 export const POINT_SIZE_BASE_OPTIONS: QualityRequirementPointSizeBase[] = Object.values(
     QualityRequirementPointSizeBase,
 );

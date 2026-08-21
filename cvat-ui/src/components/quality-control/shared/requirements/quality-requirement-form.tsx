@@ -16,6 +16,7 @@ import Select from 'antd/lib/select';
 import Space from 'antd/lib/space';
 import Text from 'antd/lib/typography/Text';
 import CVATTooltip from 'components/common/cvat-tooltip';
+import config from 'config';
 import { QualityRequirement } from 'cvat-core-wrapper';
 import {
     QualityRequirementAnnotationType, QualityRequirementPointSizeBase,
@@ -40,7 +41,7 @@ import {
     getPointSizeBaseDescription,
     hasLocalInheritedField,
     IOU_ANNOTATION_TYPES,
-    METRIC_OPTIONS,
+    METRIC_OPTION_GROUPS,
     OverridableFormFieldName,
     OVERRIDABLE_FORM_FIELDS,
     POINT_ANNOTATION_TYPES,
@@ -52,6 +53,17 @@ import {
     serializeRequirementValues,
     validateJsonLogic,
 } from './quality-requirement-form-utils';
+
+const targetMetricTooltip = (
+    <div>
+        <div>Micro calculates one score from all annotations.</div>
+        <div>Macro mean averages the scores of active labels.</div>
+        <div>Worst label uses the lowest active-label score.</div>
+        <a href={config.QUALITY_TARGET_METRICS_GUIDE_URL} target='_blank' rel='noopener noreferrer'>
+            View metric formulas in the documentation
+        </a>
+    </div>
+);
 
 export default function QualityRequirementForm(props: Readonly<QualityRequirementFormProps>): JSX.Element {
     const {
@@ -663,13 +675,21 @@ export default function QualityRequirementForm(props: Readonly<QualityRequiremen
                     <Form.Item
                         name='metric'
                         label={renderOverrideControl('metric', 'Target metric')}
+                        tooltip={{
+                            title: targetMetricTooltip,
+                            overlayStyle: { maxWidth: 480 },
+                        }}
                         rules={[{ required: true, message: 'This field is required' }]}
                     >
-                        <Select>
-                            {METRIC_OPTIONS.map((value) => (
-                                <Select.Option key={value} value={value}>
-                                    {formatMetric(value)}
-                                </Select.Option>
+                        <Select virtual={false}>
+                            {METRIC_OPTION_GROUPS.map((group) => (
+                                <Select.OptGroup key={group.label} label={group.label}>
+                                    {group.options.map((value) => (
+                                        <Select.Option key={value} value={value}>
+                                            {formatMetric(value)}
+                                        </Select.Option>
+                                    ))}
+                                </Select.OptGroup>
                             ))}
                         </Select>
                     </Form.Item>
