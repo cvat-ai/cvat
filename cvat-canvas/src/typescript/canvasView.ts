@@ -3668,7 +3668,10 @@ export class CanvasViewImpl implements CanvasView, Listener {
                         .addClass('cvat_canvas_text_score');
                 }
                 if (withAttr) {
-                    Object.keys(attributes).forEach((attrID: string, idx: number) => {
+                    const orderedAttrIDs = state.label.attributes
+                        .map((attr) => `${attr.id}`)
+                        .filter((attrID: string): boolean => attrID in attributes);
+                    orderedAttrIDs.forEach((attrID: string, idx: number) => {
                         const values = `${attributes[attrID] === undefinedAttrValue ?
                             '' : attributes[attrID]}`.split('\n');
                         const parent = block.tspan(`${attrNames[attrID]}: `)
