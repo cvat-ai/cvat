@@ -6571,6 +6571,7 @@ __metadata:
     babel-plugin-import: "npm:^1.12.2"
     babel-plugin-istanbul: "npm:^6.0.0"
     bundle-declarations-webpack-plugin: "npm:^3.1.0"
+    classnames: "npm:^2.5.1"
     copy-webpack-plugin: "npm:^11.0.0"
     css-loader: "npm:^6.8.1"
     eslint: "npm:^10.3.0"

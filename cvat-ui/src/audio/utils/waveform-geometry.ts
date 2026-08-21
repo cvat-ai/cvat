@@ -18,6 +18,35 @@ export function computeWaveformZoom(displayZoom: number, durationSec: number, co
     return Math.max(1, (containerWidth / durationSec) * displayZoom);
 }
 
+export function computeFitIntervalPixelsPerSecond(
+    start: number,
+    end: number,
+    duration: number,
+    viewportWidth: number,
+    safeInset: number,
+): number {
+    const intervalDuration = end - start;
+    const centeredPixelsPerSecond = (viewportWidth - safeInset * 2) / intervalDuration;
+    if (
+        start * centeredPixelsPerSecond >= safeInset &&
+        (duration - end) * centeredPixelsPerSecond >= safeInset
+    ) {
+        return centeredPixelsPerSecond;
+    }
+
+    const startEdgePixelsPerSecond = (viewportWidth - safeInset) / end;
+    if ((duration - end) * startEdgePixelsPerSecond >= safeInset) {
+        return startEdgePixelsPerSecond;
+    }
+
+    const endEdgePixelsPerSecond = (viewportWidth - safeInset) / (duration - start);
+    if (start * endEdgePixelsPerSecond >= safeInset) {
+        return endEdgePixelsPerSecond;
+    }
+
+    return viewportWidth / duration;
+}
+
 export function centeredScrollOffsetForTime(
     timeSec: number,
     pixelsPerSecond: number,

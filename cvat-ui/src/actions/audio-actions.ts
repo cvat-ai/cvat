@@ -26,6 +26,8 @@ export enum AudioActionTypes {
     SET_AUDIO_ZOOM = 'SET_AUDIO_ZOOM',
     SET_AUDIO_VOLUME = 'SET_AUDIO_VOLUME',
     SET_AUDIO_LOOP = 'SET_AUDIO_LOOP',
+    FIT_AUDIO_INTERVAL = 'FIT_AUDIO_INTERVAL',
+    COMPLETE_FIT_AUDIO_INTERVAL = 'COMPLETE_FIT_AUDIO_INTERVAL',
     SET_AUDIO_ACTIVE_INTERVAL = 'SET_AUDIO_ACTIVE_INTERVAL',
     SET_AUDIO_HOVERED_INTERVAL = 'SET_AUDIO_HOVERED_INTERVAL',
     SET_AUDIO_INTERACTING_INTERVAL = 'SET_AUDIO_INTERACTING_INTERVAL',
@@ -66,6 +68,12 @@ export const audioActions = {
     ),
     setAudioLoop: (loop: boolean) => (
         createAction(AudioActionTypes.SET_AUDIO_LOOP, { loop })
+    ),
+    fitAudioInterval: (clientID: number) => (
+        createAction(AudioActionTypes.FIT_AUDIO_INTERVAL, { request: { clientID } })
+    ),
+    completeFitAudioInterval: (request: { clientID: number }) => (
+        createAction(AudioActionTypes.COMPLETE_FIT_AUDIO_INTERVAL, { request })
     ),
     setAudioVolume: (volume: number) => (
         createAction(AudioActionTypes.SET_AUDIO_VOLUME, { volume })
@@ -250,6 +258,23 @@ export function findAudioIntervalBoundariesAsync(
         }
 
         return boundaries;
+    };
+}
+
+export function requestSetAudioCaretToIntervalBoundary(clientID: number, boundary: 'start' | 'end'): ThunkAction {
+    return async (dispatch: ThunkDispatch, getState): Promise<void> => {
+        const { intervals, duration } = getState().audio.player;
+        const interval = intervals.find((_interval) => _interval.clientID === clientID);
+        if (!interval) return;
+
+        let time: number;
+        if (boundary === 'start') {
+            time = interval.start / 1000;
+        } else {
+            time = interval.stop ? interval.stop / 1000 : duration;
+        }
+
+        dispatch(audioActions.seekAudio(time));
     };
 }
 
