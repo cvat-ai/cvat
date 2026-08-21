@@ -9,7 +9,7 @@ from django.contrib.auth.models import Group
 from django.utils.translation import gettext_lazy as _
 
 from cvat.apps.engine.models import Profile
-from cvat.apps.iam.models import User
+from cvat.apps.iam.models import User, UserCreatedViaEnum
 
 
 class ProfileInline(admin.StackedInline):
@@ -21,8 +21,9 @@ class ProfileInline(admin.StackedInline):
 class CustomUserAdmin(UserAdmin):
     inlines = (ProfileInline,)
     list_display = ("username", "email", "first_name", "last_name", "is_active", "is_staff")
+    readonly_fields = ("created_via",)
     fieldsets = (
-        (None, {"fields": ("username", "password")}),
+        (None, {"fields": ("username", "password", "created_via")}),
         (_("Personal info"), {"fields": ("first_name", "last_name", "email")}),
         (
             _("Permissions"),
@@ -47,6 +48,11 @@ class CustomUserAdmin(UserAdmin):
         ),
     )
     actions = ["user_activate", "user_deactivate"]
+
+    def save_model(self, request, obj, form, change):
+        if not change:
+            obj.created_via = UserCreatedViaEnum.ADMIN
+        super().save_model(request, obj, form, change)
 
     @admin.action(permissions=["change"], description=_("Mark selected users as active"))
     def user_activate(self, request, queryset):

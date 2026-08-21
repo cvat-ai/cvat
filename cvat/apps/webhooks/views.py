@@ -11,13 +11,14 @@ from drf_spectacular.utils import (
 )
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
+from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import SAFE_METHODS
 from rest_framework.response import Response
 
 from cvat.apps.engine.view_utils import list_action, make_paginated_response
 from cvat.apps.iam.filters import ORGANIZATION_OPEN_API_PARAMETERS
 
-from .event_type import AllEvents, OrganizationEvents, ProjectEvents
+from .event_type import OrganizationEvents, ProjectEvents
 from .models import Webhook, WebhookDelivery, WebhookTypeChoice
 from .permissions import WebhookPermission
 from .serializers import (
@@ -83,7 +84,7 @@ class WebhookViewSet(viewsets.ModelViewSet):
                 return WebhookWriteSerializer
 
     def get_queryset(self):
-        queryset = super().get_queryset()
+        queryset = super().get_queryset().exclude(type=WebhookTypeChoice.INSTANCE)
 
         if self.action == "list":
             perm = WebhookPermission.create_scope_list(self.request)
@@ -105,7 +106,11 @@ class WebhookViewSet(viewsets.ModelViewSet):
                 description="Type of webhook",
                 location=OpenApiParameter.QUERY,
                 type=OpenApiTypes.STR,
-                required=False,
+                required=True,
+                enum=[
+                    WebhookTypeChoice.PROJECT,
+                    WebhookTypeChoice.ORGANIZATION,
+                ],
             )
         ],
         responses={"200": OpenApiResponse(EventsSerializer)},
@@ -117,17 +122,18 @@ class WebhookViewSet(viewsets.ModelViewSet):
         permission_classes=[],
     )
     def events(self, request):
-        webhook_type = request.query_params.get("type", "all")
-        events = None
-        if webhook_type == "all":
-            events = AllEvents
-        elif webhook_type == WebhookTypeChoice.PROJECT:
-            events = ProjectEvents
-        elif webhook_type == WebhookTypeChoice.ORGANIZATION:
-            events = OrganizationEvents
+        webhook_type = request.query_params.get("type")
 
-        if events is None:
-            return Response("Incorrect value of type parameter", status=status.HTTP_400_BAD_REQUEST)
+        if webhook_type is None:
+            raise ValidationError("type query parameter is required")
+
+        match webhook_type:
+            case WebhookTypeChoice.PROJECT:
+                events = ProjectEvents
+            case WebhookTypeChoice.ORGANIZATION:
+                events = OrganizationEvents
+            case _:
+                raise ValidationError(f"Invalid value of type query parameter, got {webhook_type}")
 
         return Response(EventsSerializer().to_representation(events))
 

@@ -10,7 +10,7 @@ import pytest
 from deepdiff import DeepDiff
 
 from shared.fixtures.data import Container
-from shared.fixtures.init import CVAT_ROOT_DIR
+from shared.fixtures.init import CVAT_ROOT_DIR, container_exec_cvat
 from shared.utils.config import delete_method, get_method, patch_method, post_method
 from shared.utils.helpers import generate_image_files
 
@@ -21,6 +21,8 @@ from .utils import (
     create_task,
     export_task_backup,
     export_task_dataset,
+    invite_user_to_org,
+    register_new_user,
 )
 
 # Testing webhook functionality:
@@ -78,6 +80,74 @@ def create_webhook(events, webhook_type, project_id=None, org_id=""):
     return response.json()
 
 
+def create_instance_type_webhook(request: pytest.FixtureRequest, events: list[str]) -> int:
+    events_csv = ",".join(sorted(events))
+    code = (
+        "from cvat.apps.webhooks.models import Webhook, WebhookContentTypeChoice, WebhookTypeChoice; "
+        "webhook = Webhook.objects.create("
+        f"target_url={target_url()!r}, "
+        "type=WebhookTypeChoice.INSTANCE, "
+        "content_type=WebhookContentTypeChoice.JSON, "
+        f"events={events_csv!r}, "
+        "is_active=True, "
+        "enable_ssl=False"
+        "); "
+        "print(webhook.id)"
+    )
+
+    webhook_id = int(container_exec_cvat(request, ["./manage.py", "shell", "-c", code]).strip())
+    return webhook_id
+
+
+def create_email_address(
+    request: pytest.FixtureRequest,
+    *,
+    user_id: int,
+    email: str,
+    primary: bool,
+    verified: bool,
+) -> int:
+    # allauth email addresses are not exposed by the REST API, so they are managed
+    # directly through the Django shell
+    code = (
+        "from allauth.account.models import EmailAddress; "
+        "email_address = EmailAddress.objects.create("
+        f"user_id={int(user_id)}, "
+        f"email={email!r}, "
+        f"primary={bool(primary)!r}, "
+        f"verified={bool(verified)!r}"
+        "); "
+        "print(email_address.id)"
+    )
+
+    return int(container_exec_cvat(request, ["./manage.py", "shell", "-c", code]).strip())
+
+
+def verify_primary_email_address(request: pytest.FixtureRequest, *, user_id: int) -> None:
+    code = (
+        "from allauth.account.models import EmailAddress; "
+        f"email_address = EmailAddress.objects.get(user_id={int(user_id)}, primary=True); "
+        "assert email_address.set_verified()"
+    )
+
+    container_exec_cvat(request, ["./manage.py", "shell", "-c", code])
+
+
+def set_has_analytics_access(
+    request: pytest.FixtureRequest, *, user_id: int, has_analytics_access: bool
+) -> None:
+    # Profile.has_analytics_access is read-only in the REST API, so it is managed
+    # directly through the Django shell
+    code = (
+        "from cvat.apps.engine.models import Profile; "
+        f"profile = Profile.objects.get(user_id={int(user_id)}); "
+        f"profile.has_analytics_access = {bool(has_analytics_access)!r}; "
+        "profile.save()"
+    )
+
+    container_exec_cvat(request, ["./manage.py", "shell", "-c", code])
+
+
 def get_deliveries(webhook_id, expected_count=1, *, timeout: int = 60):
     start_time = time()
 
@@ -98,6 +168,40 @@ def get_deliveries(webhook_id, expected_count=1, *, timeout: int = 60):
         sleep(1)
 
     return deliveries, delivery_response
+
+
+def get_instance_webhook_deliveries(
+    request: pytest.FixtureRequest,
+    webhook_id: int,
+    expected_count: int = 1,
+    *,
+    timeout: int = 60,
+):
+    start_time = time()
+    code = (
+        "import json; "
+        "from cvat.apps.webhooks.models import WebhookDelivery; "
+        f"qs = list(WebhookDelivery.objects.filter(webhook_id={int(webhook_id)}).order_by('-id')); "
+        "print(json.dumps({"
+        "'count': len(qs), "
+        "'results': [{'response': delivery.response} for delivery in qs]"
+        "}))"
+    )
+
+    while True:
+        deliveries = json.loads(
+            container_exec_cvat(request, ["./manage.py", "shell", "-c", code]).strip(),
+        )
+
+        if deliveries["count"] == expected_count:
+            raw_deliver_response = deliveries["results"][0]["response"]
+            delivery_response = json.loads(raw_deliver_response) if raw_deliver_response else {}
+            return deliveries, delivery_response
+
+        if time() - start_time > timeout:
+            raise TimeoutError("Failed to get deliveries within the specified time interval")
+
+        sleep(1)
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
@@ -123,11 +227,6 @@ class TestWebhookProjectEvents:
 
         assert payload["event"] == events[0]
         assert payload["sender"]["username"] == "admin1"
-        assert payload["before_update"]["name"] == project["name"]
-        assert payload["changes"]["name"] == {
-            "from": project["name"],
-            "to": patch_data["name"],
-        }
 
         project.update(patch_data)
         assert (
@@ -212,20 +311,6 @@ class TestWebhookIntersection:
         assert deliveries_1["count"] == deliveries_2["count"] == 1
 
         assert payload_1["project"]["name"] == payload_2["project"]["name"] == patch_data["name"]
-
-        assert (
-            payload_1["before_update"]["name"]
-            == payload_2["before_update"]["name"]
-            == post_data["name"]
-        )
-        assert payload_1["changes"]["name"] == {
-            "from": post_data["name"],
-            "to": patch_data["name"],
-        }
-        assert payload_2["changes"]["name"] == {
-            "from": post_data["name"],
-            "to": patch_data["name"],
-        }
 
         assert payload_1["webhook_id"] == webhook_id_1
         assert payload_2["webhook_id"] == webhook_id_2
@@ -326,11 +411,6 @@ class TestWebhookTaskEvents:
         deliveries, payload = get_deliveries(webhook_id=webhook_id)
 
         assert deliveries["count"] == 1
-        assert payload["before_update"]["assignee_id"] == tasks[task_id]["assignee"]["id"]
-        assert payload["changes"]["assignee_id"] == {
-            "from": tasks[task_id]["assignee"]["id"],
-            "to": assignee_id,
-        }
         assert payload["task"]["assignee"]["id"] == assignee_id
 
     def test_webhook_create_and_delete_task(self, organizations):
@@ -407,11 +487,6 @@ class TestWebhookJobEvents:
         deliveries, payload = get_deliveries(webhook_id)
 
         assert deliveries["count"] == 1
-        assert payload["before_update"]["assignee_id"] is None
-        assert payload["changes"]["assignee_id"] == {
-            "from": None,
-            "to": patch_data["assignee"],
-        }
         assert payload["job"]["assignee"]["id"] == patch_data["assignee"]
 
     def test_webhook_update_job_stage(self, jobs, tasks):
@@ -428,11 +503,6 @@ class TestWebhookJobEvents:
 
         deliveries, payload = get_deliveries(webhook_id)
         assert deliveries["count"] == 1
-        assert payload["before_update"]["stage"] == job["stage"]
-        assert payload["changes"]["stage"] == {
-            "from": job["stage"],
-            "to": patch_data["stage"],
-        }
         assert payload["job"]["stage"] == patch_data["stage"]
 
     def test_webhook_update_job_state(self, jobs, tasks):
@@ -453,11 +523,6 @@ class TestWebhookJobEvents:
 
         deliveries, payload = get_deliveries(webhook_id)
         assert deliveries["count"] == 1
-        assert payload["before_update"]["state"] == job["state"]
-        assert payload["changes"]["state"] == {
-            "from": job["state"],
-            "to": patch_data["state"],
-        }
         assert payload["job"]["state"] == patch_data["state"]
 
 
@@ -481,11 +546,6 @@ class TestWebhookIssueEvents:
         deliveries, payload = get_deliveries(webhook_id)
 
         assert deliveries["count"] == 1
-        assert payload["before_update"]["resolved"] == issue["resolved"]
-        assert payload["changes"]["resolved"] == {
-            "from": issue["resolved"],
-            "to": patch_data["resolved"],
-        }
         assert payload["issue"]["resolved"] == patch_data["resolved"]
 
     def test_webhook_update_issue_position(self, issues, jobs, tasks):
@@ -506,11 +566,6 @@ class TestWebhookIssueEvents:
         deliveries, payload = get_deliveries(webhook_id)
 
         assert deliveries["count"] == 1
-        assert payload["before_update"]["position"] == issue["position"]
-        assert payload["changes"]["position"] == {
-            "from": issue["position"],
-            "to": patch_data["position"],
-        }
         assert payload["issue"]["position"] == patch_data["position"]
 
     @pytest.mark.parametrize("org_id", (2,))
@@ -578,11 +633,6 @@ class TestWebhookMembershipEvents:
         deliveries, payload = get_deliveries(webhook_id)
 
         assert deliveries["count"] == 1
-        assert payload["before_update"]["role"] == membership["role"]
-        assert payload["changes"]["role"] == {
-            "from": membership["role"],
-            "to": patch_data["role"],
-        }
         assert payload["membership"]["role"] == patch_data["role"]
 
     def test_webhook_delete_membership(self, memberships):
@@ -610,6 +660,30 @@ class TestWebhookMembershipEvents:
 
 @pytest.mark.usefixtures("restore_db_per_function")
 class TestWebhookOrganizationEvents:
+    def test_webhook_create_organization(self, request: pytest.FixtureRequest) -> None:
+        webhook_id = create_instance_type_webhook(request, events=["create:organization"])
+
+        post_data = {"slug": "new_org"}
+        response = post_method("admin1", "organizations", post_data)
+        assert response.status_code == HTTPStatus.CREATED
+
+        organization = response.json()
+
+        deliveries, payload = get_instance_webhook_deliveries(request, webhook_id)
+
+        assert deliveries["count"] == 1
+        assert payload["event"] == "create:organization"
+        assert payload["webhook_id"] == webhook_id
+        assert (
+            DeepDiff(
+                payload["organization"],
+                organization,
+                ignore_order=True,
+                exclude_paths=["root['updated_date']"],
+            )
+            == {}
+        )
+
     def test_webhook_update_organization_name(self, organizations):
         org_id = list(organizations)[0]["id"]
 
@@ -621,12 +695,32 @@ class TestWebhookOrganizationEvents:
         deliveries, payload = get_deliveries(webhook_id)
 
         assert deliveries["count"] == 1
-        assert payload["before_update"]["name"] == organizations[org_id]["name"]
-        assert payload["changes"]["name"] == {
-            "from": organizations[org_id]["name"],
-            "to": patch_data["name"],
-        }
         assert payload["organization"]["name"] == patch_data["name"]
+
+    def test_webhook_delete_organization(
+        self, request: pytest.FixtureRequest, organizations
+    ) -> None:
+        organization = list(organizations)[0]
+
+        webhook_id = create_instance_type_webhook(request, events=["delete:organization"])
+
+        response = delete_method("admin1", f"organizations/{organization['id']}")
+        assert response.status_code == HTTPStatus.NO_CONTENT
+
+        deliveries, payload = get_instance_webhook_deliveries(request, webhook_id)
+
+        assert deliveries["count"] == 1
+        assert payload["event"] == "delete:organization"
+        assert payload["webhook_id"] == webhook_id
+        assert (
+            DeepDiff(
+                payload["organization"],
+                organization,
+                ignore_order=True,
+                exclude_paths=["root['updated_date']"],
+            )
+            == {}
+        )
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
@@ -650,11 +744,6 @@ class TestWebhookCommentEvents:
         deliveries, payload = get_deliveries(webhook_id)
 
         assert deliveries["count"] == 1
-        assert payload["before_update"]["message"] == comment["message"]
-        assert payload["changes"]["message"] == {
-            "from": comment["message"],
-            "to": patch_data["message"],
-        }
 
         comment.update(patch_data)
         assert (
@@ -702,6 +791,209 @@ class TestWebhookCommentEvents:
             == delete_payload["comment"]["message"]
             == post_data["message"]
         )
+
+
+@pytest.mark.usefixtures("restore_db_per_function")
+class TestWebhookUserEvents:
+    def test_webhook_create_user(self, request: pytest.FixtureRequest) -> None:
+        webhook_id = create_instance_type_webhook(request, events=["create:user"])
+
+        user = register_new_user("webhook_create_user")
+
+        deliveries, payload = get_instance_webhook_deliveries(request, webhook_id)
+
+        assert deliveries["count"] == 1
+        assert payload["event"] == "create:user"
+        assert payload["webhook_id"] == webhook_id
+        assert payload["user"]["id"] is not None
+        assert payload["user"]["username"] == user["username"]
+        assert payload["user"]["email"] == user["email"]
+        assert payload["user"]["is_active"] is True
+        assert payload["user"]["created_via"] == "email_password"
+
+    def test_webhook_create_user_by_invitation(self, request: pytest.FixtureRequest) -> None:
+        webhook_id = create_instance_type_webhook(request, events=["create:user"])
+
+        invite_user_to_org("webhook_invited_user@email.com", org_id=2, role="worker")
+
+        deliveries, payload = get_instance_webhook_deliveries(request, webhook_id)
+
+        assert deliveries["count"] == 1
+        assert payload["event"] == "create:user"
+        assert payload["user"]["created_via"] == "invitation"
+
+    def test_webhook_update_user(self, request: pytest.FixtureRequest, users) -> None:
+        user = next(user for user in users if user["username"] == "dummy1")
+
+        webhook_id = create_instance_type_webhook(request, events=["update:user"])
+
+        patch_data = {"first_name": "new_first_name"}
+        response = patch_method("admin1", f"users/{user['id']}", patch_data)
+        assert response.status_code == HTTPStatus.OK
+
+        deliveries, payload = get_instance_webhook_deliveries(request, webhook_id)
+
+        assert deliveries["count"] == 1
+        assert payload["event"] == "update:user"
+        assert payload["webhook_id"] == webhook_id
+        assert payload["user"]["first_name"] == patch_data["first_name"]
+        assert payload["user"]["created_via"] == user["created_via"]
+
+    def test_webhook_delete_user(self, request: pytest.FixtureRequest, users) -> None:
+        user = next(user for user in users if user["username"] == "dummy1")
+
+        webhook_id = create_instance_type_webhook(request, events=["delete:user"])
+
+        response = delete_method("admin1", f"users/{user['id']}")
+        assert response.status_code == HTTPStatus.NO_CONTENT
+
+        deliveries, payload = get_instance_webhook_deliveries(request, webhook_id)
+
+        assert deliveries["count"] == 1
+        assert payload["event"] == "delete:user"
+        assert payload["webhook_id"] == webhook_id
+        assert DeepDiff(payload["user"], user, ignore_order=True) == {}
+
+
+@pytest.mark.usefixtures("restore_db_per_function")
+class TestWebhookEmailAddressEvents:
+    def test_webhook_update_user_on_primary_email_address_created(
+        self, request: pytest.FixtureRequest, users
+    ) -> None:
+        # dummy1 has no email addresses at all
+        user = next(user for user in users if user["username"] == "dummy1")
+        assert user["email_verified"] is None
+
+        webhook_id = create_instance_type_webhook(request, events=["update:user"])
+
+        create_email_address(
+            request, user_id=user["id"], email=user["email"], primary=True, verified=True
+        )
+
+        deliveries, payload = get_instance_webhook_deliveries(request, webhook_id)
+
+        assert deliveries["count"] == 1
+        assert payload["event"] == "update:user"
+        assert payload["webhook_id"] == webhook_id
+        assert payload["user"]["id"] == user["id"]
+        assert payload["user"]["email_verified"] is True
+
+    def test_webhook_update_user_on_primary_email_address_verified(
+        self, request: pytest.FixtureRequest, users
+    ) -> None:
+        # lonely_user has a primary, but not yet verified, email address
+        user = next(user for user in users if user["username"] == "lonely_user")
+        assert user["email_verified"] is False
+
+        webhook_id = create_instance_type_webhook(request, events=["update:user"])
+
+        verify_primary_email_address(request, user_id=user["id"])
+
+        deliveries, payload = get_instance_webhook_deliveries(request, webhook_id)
+
+        assert deliveries["count"] == 1
+        assert payload["event"] == "update:user"
+        assert payload["webhook_id"] == webhook_id
+        assert payload["user"]["id"] == user["id"]
+        assert payload["user"]["email_verified"] is True
+
+
+@pytest.mark.usefixtures("restore_db_per_function")
+class TestWebhookProfileEvents:
+    def test_webhook_update_user_on_profile_has_analytics_access_changed(
+        self, request: pytest.FixtureRequest, users
+    ) -> None:
+        user = next(user for user in users if user["username"] == "dummy1")
+        assert user["has_analytics_access"] is False
+
+        webhook_id = create_instance_type_webhook(request, events=["update:user"])
+
+        set_has_analytics_access(request, user_id=user["id"], has_analytics_access=True)
+
+        deliveries, payload = get_instance_webhook_deliveries(request, webhook_id)
+
+        assert deliveries["count"] == 1
+        assert payload["event"] == "update:user"
+        assert payload["webhook_id"] == webhook_id
+        assert payload["user"]["id"] == user["id"]
+        assert payload["user"]["has_analytics_access"] is True
+
+
+@pytest.mark.usefixtures("restore_db_per_function")
+class TestWebhookUserGroupsEvents:
+    def test_webhook_update_user_on_group_added(
+        self, request: pytest.FixtureRequest, users
+    ) -> None:
+        # dummy1 has no groups at all
+        user = next(user for user in users if user["username"] == "dummy1")
+        assert user["groups"] == []
+
+        webhook_id = create_instance_type_webhook(request, events=["update:user"])
+
+        patch_data = {"groups": ["worker"]}
+        response = patch_method("admin1", f"users/{user['id']}", patch_data)
+        assert response.status_code == HTTPStatus.OK
+
+        deliveries, _ = get_instance_webhook_deliveries(request, webhook_id, 2)
+
+        assert deliveries["count"] == 2
+
+        event1 = json.loads(deliveries["results"][0]["response"])
+        assert event1["event"] == "update:user"
+        assert event1["webhook_id"] == webhook_id
+        assert event1["user"]["id"] == user["id"]
+        assert event1["user"]["groups"] == ["worker"]
+
+        event2 = json.loads(deliveries["results"][1]["response"])
+        assert event2["event"] == "update:user"
+        assert event2["webhook_id"] == webhook_id
+        assert event2["user"]["id"] == user["id"]
+        assert event2["user"]["groups"] == []
+
+    def test_webhook_update_user_on_group_removed(
+        self, request: pytest.FixtureRequest, users
+    ) -> None:
+        user = next(user for user in users if user["username"] == "lonely_user")
+        assert user["groups"] == ["user"]
+
+        webhook_id = create_instance_type_webhook(request, events=["update:user"])
+
+        response = patch_method("admin1", f"users/{user['id']}", {"groups": []})
+        assert response.status_code == HTTPStatus.OK
+
+        deliveries, _ = get_instance_webhook_deliveries(request, webhook_id, 2)
+
+        assert deliveries["count"] == 2
+
+        event1 = json.loads(deliveries["results"][0]["response"])
+        assert event1["event"] == "update:user"
+        assert event1["webhook_id"] == webhook_id
+        assert event1["user"]["id"] == user["id"]
+        assert event1["user"]["groups"] == []
+
+        event2 = json.loads(deliveries["results"][1]["response"])
+        assert event2["event"] == "update:user"
+        assert event2["webhook_id"] == webhook_id
+        assert event2["user"]["id"] == user["id"]
+        assert event2["user"]["groups"] == ["user"]
+
+    def test_webhook_not_sent_when_groups_are_unchanged(
+        self, request: pytest.FixtureRequest, users
+    ) -> None:
+        user = next(user for user in users if user["username"] == "lonely_user")
+
+        webhook_id = create_instance_type_webhook(request, events=["update:user"])
+
+        patch_data = {"groups": user["groups"], "first_name": "new_first_name"}
+        response = patch_method("admin1", f"users/{user['id']}", patch_data)
+        assert response.status_code == HTTPStatus.OK
+
+        deliveries, payload = get_instance_webhook_deliveries(request, webhook_id)
+
+        assert deliveries["count"] == 1
+        assert payload["event"] == "update:user"
+        assert payload["user"]["first_name"] == patch_data["first_name"]
+        assert payload["user"]["groups"] == user["groups"]
 
 
 @pytest.mark.usefixtures("restore_db_per_class")
@@ -797,15 +1089,6 @@ class TestWebhookRedelivery:
 
         assert deliveries_1["results"][0]["redelivery"] is False
         assert deliveries_2["results"][0]["redelivery"] is True
-
-        assert payload_1["changes"]["name"] == {
-            "from": project["name"],
-            "to": patch_data["name"],
-        }
-        assert payload_2["changes"]["name"] == {
-            "from": project["name"],
-            "to": patch_data["name"],
-        }
 
         project.update(patch_data)
         assert (

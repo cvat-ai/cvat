@@ -36,6 +36,7 @@ class Event:
 class WebhookTypeChoice(str, Enum):
     ORGANIZATION = "organization"
     PROJECT = "project"
+    INSTANCE = "instance"
 
     @classmethod
     def choices(cls):
@@ -86,13 +87,21 @@ class Webhook(TimestampedModel):
         default_permissions = ()
         constraints = [
             models.CheckConstraint(
-                name="webhooks_project_or_organization",
+                name="webhooks_project_or_organization_or_instance",
                 condition=(
-                    models.Q(type=WebhookTypeChoice.PROJECT.value, project_id__isnull=False)
+                    models.Q(
+                        type=WebhookTypeChoice.PROJECT.value,
+                        project_id__isnull=False,
+                    )
                     | models.Q(
                         type=WebhookTypeChoice.ORGANIZATION.value,
                         project_id__isnull=True,
                         organization_id__isnull=False,
+                    )
+                    | models.Q(
+                        type=WebhookTypeChoice.INSTANCE.value,
+                        project_id__isnull=True,
+                        organization_id__isnull=True,
                     )
                 ),
             )
@@ -112,8 +121,6 @@ class WebhookDelivery(TimestampedModel):
 
     attempt = models.PositiveIntegerField(null=True)
     request_duration = models.PositiveIntegerField(null=True)
-
-    changed_fields = models.CharField(max_length=4096, default="")
 
     request = models.JSONField(default=dict)
     response = models.JSONField(default=dict)

@@ -25,11 +25,12 @@ from typing import Any, cast
 from urllib.parse import urlparse
 
 import django_rq
+from allauth.account.models import EmailAddress
 from django.conf import settings
 from django.contrib.auth.models import Group
 from django.core.files.uploadedfile import UploadedFile
 from django.db import transaction
-from django.db.models import Count, Prefetch, prefetch_related_objects
+from django.db.models import Count, Prefetch, QuerySet, prefetch_related_objects
 from django.utils import timezone
 from django.utils.functional import cached_property
 from drf_spectacular.utils import OpenApiExample, extend_schema_field, extend_schema_serializer
@@ -340,7 +341,9 @@ class UserSerializer(serializers.ModelSerializer):
         source="profile.has_analytics_access",
         required=False,
         read_only=True,
+        allow_null=True,
     )
+    email_verified = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -358,10 +361,33 @@ class UserSerializer(serializers.ModelSerializer):
             "last_login",
             "date_joined",
             "has_analytics_access",
+            "email_verified",
+            "created_via",
         )
-        read_only_fields = ("last_login", "date_joined", "has_analytics_access")
+        read_only_fields = (
+            "last_login",
+            "date_joined",
+            "has_analytics_access",
+            "created_via",
+        )
         write_only_fields = ("password",)
         extra_kwargs = {"last_login": {"allow_null": True}}
+
+    @extend_schema_field(serializers.BooleanField(allow_null=True))
+    def get_email_verified(self, instance: User) -> bool | None:
+        for email_address in cast(QuerySet[EmailAddress], instance.emailaddress_set.all()):
+            if email_address.primary:
+                if email_address.email != instance.email:
+                    slogger.glob.warning(
+                        f"The primary email address {email_address.email!r} "
+                        f"of the user {instance.username} "
+                        f"does not match their User.email {instance.email!r}"
+                    )
+                    return None
+
+                return email_address.verified
+
+        return None
 
 
 class DelimitedStringListField(serializers.ListField):
@@ -1628,9 +1654,7 @@ class JobValidationLayoutWriteSerializer(serializers.Serializer):
             if bulk_context:
                 frame_selector = bulk_context.honeypot_frame_selector
             else:
-                active_validation_frame_counts = {
-                    validation_frame: 0 for validation_frame in task_active_validation_frames
-                }
+                active_validation_frame_counts = dict.fromkeys(task_active_validation_frames, 0)
                 for task_honeypot_frame in task_honeypot_frames:
                     real_frame = _to_rel_frame(db_frames[task_honeypot_frame].real_frame)
                     if real_frame in task_active_validation_frames:
@@ -1871,7 +1895,7 @@ class JobValidationLayoutReadSerializer(serializers.Serializer):
                 if not frame.is_placeholder:
                     continue
 
-                if not frame.frame in segment_frame_set:
+                if frame.frame not in segment_frame_set:
                     continue
 
                 segment_honeypot_frames.append(
@@ -2036,7 +2060,7 @@ class TaskValidationLayoutWriteSerializer(serializers.Serializer):
                 )
         elif frame_selection_method == models.JobFrameSelectionMethod.RANDOM_UNIFORM:
             # Reset distribution for active validation frames
-            active_validation_frame_counts = {f: 0 for f in active_validation_frames}
+            active_validation_frame_counts = dict.fromkeys(active_validation_frames, 0)
             frame_selector = HoneypotFrameSelector(active_validation_frame_counts)
             bulk_context.honeypot_frame_selector = frame_selector
 

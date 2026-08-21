@@ -47,6 +47,11 @@ def select_webhooks(
         )
         selected_webhooks += list(project_webhooks)
 
+    instance_webhooks = queryset.filter(
+        type=WebhookTypeChoice.INSTANCE,
+    )
+    selected_webhooks += list(instance_webhooks)
+
     return selected_webhooks
 
 
@@ -65,7 +70,6 @@ def send_webhook(
         webhook_id=webhook.id,
         event=payload["event"],
         status_code=status_code,
-        changed_fields=",".join(list(payload.get("before_update", {}).keys())),
         redelivery=redelivery,
         request=payload,
         response=response,
@@ -79,7 +83,7 @@ def ping(serializer) -> WebhookDelivery:
     payload = {
         "event": "ping",
         "webhook": serializer.data,
-        "sender": utils.get_sender(instance=webhook),
+        "sender": utils.get_sender(),
     }
     delivery = send_webhook(webhook=webhook, payload=payload, attempt=1)
     return delivery
