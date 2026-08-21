@@ -63,6 +63,7 @@ class _QualityRequirementsTestBase(_PermissionTestBase):
         settings_id: int | None = None,
         enabled: bool = True,
         required_score: float = 0.7,
+        metric: str = "accuracy",
         annotation_type: str | None = "rectangle",
         filter_expression: str | None = None,
         parent_requirement: int | None = None,
@@ -75,7 +76,7 @@ class _QualityRequirementsTestBase(_PermissionTestBase):
     ) -> dict[str, Any]:
         payload = {
             "name": name,
-            "metric": "accuracy",
+            "metric": metric,
             "required_score": required_score,
             "enabled": enabled,
         }
@@ -443,6 +444,64 @@ class _QualityRequirementsTestBase(_PermissionTestBase):
 
 @pytest.mark.usefixtures("restore_db_per_function")
 class TestQualityRequirementsApi(_QualityRequirementsTestBase):
+    def test_all_target_metrics_can_be_created_updated_and_inherited(
+        self, admin_user, find_sandbox_task_without_gt
+    ):
+        metrics = [
+            "accuracy",
+            "precision",
+            "recall",
+            "jaccard_index",
+            "dice",
+            "mean_accuracy",
+            "mean_precision",
+            "mean_recall",
+            "mean_jaccard_index",
+            "mean_dice",
+            "label_accuracy",
+            "label_precision",
+            "label_recall",
+            "label_jaccard_index",
+            "label_dice",
+        ]
+        task, _ = find_sandbox_task_without_gt(True)
+        settings = self._get_task_settings(admin_user, task_id=task["id"])
+
+        created_requirements = []
+        for metric in metrics:
+            requirement, response = self._create_requirement(
+                admin_user,
+                self._build_requirement_payload(
+                    f"metric-{metric}-{task['id']}",
+                    settings_id=settings["id"],
+                    metric=metric,
+                ),
+            )
+            assert response.status_code == HTTPStatus.CREATED
+            assert requirement["metric"] == metric
+            created_requirements.append(requirement)
+
+        updated_requirement, response = self._patch_requirement(
+            admin_user,
+            created_requirements[0]["id"],
+            {"metric": "label_dice"},
+        )
+        assert response.status_code == HTTPStatus.OK
+        assert updated_requirement["metric"] == "label_dice"
+
+        child_payload = self._build_requirement_payload(
+            f"inherited-metric-{task['id']}",
+            settings_id=settings["id"],
+            annotation_type=None,
+            parent_requirement=created_requirements[3]["id"],
+        )
+        child_payload.pop("metric")
+        child_requirement, response = self._create_requirement(admin_user, child_payload)
+
+        assert response.status_code == HTTPStatus.CREATED
+        assert child_requirement["metric"] is None
+        assert child_requirement["effective"]["metric"] == "jaccard_index"
+
     def test_can_bulk_create_requirement_hierarchy(self, admin_user, find_sandbox_task_without_gt):
         task, _ = find_sandbox_task_without_gt(True)
         settings = self._get_task_settings(admin_user, task_id=task["id"])
@@ -1778,6 +1837,123 @@ class TestBaseQualityRequirementsApi(_QualityRequirementsTestBase):
 
 @pytest.mark.usefixtures("restore_db_per_function")
 class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
+    def test_task_report_computes_all_target_metric_aggregations(self, admin_user):
+        task_id, _ = create_task(
+            admin_user,
+            spec={
+                "name": "all-target-metrics-report",
+                "labels": [
+                    {"name": "car", "type": "rectangle"},
+                    {"name": "bus", "type": "rectangle"},
+                ],
+            },
+            data={
+                "image_quality": 70,
+                "client_files": generate_image_files(1),
+            },
+        )
+        settings = self._get_task_settings(admin_user, task_id=task_id)
+        expected_scores = {
+            "accuracy": 1 / 2,
+            "precision": 1 / 2,
+            "recall": 1 / 2,
+            "jaccard_index": 1 / 3,
+            "dice": 1 / 2,
+            "mean_accuracy": 1 / 2,
+            "mean_precision": 1 / 4,
+            "mean_recall": 1 / 2,
+            "mean_jaccard_index": 1 / 4,
+            "mean_dice": 1 / 3,
+            "label_accuracy": 1 / 2,
+            "label_precision": 0,
+            "label_recall": 0,
+            "label_jaccard_index": 0,
+            "label_dice": 0,
+        }
+        requirement_names = {metric: f"target-{metric}-{task_id}" for metric in expected_scores}
+        updated_settings, response = self._patch_settings(
+            admin_user,
+            settings["id"],
+            {
+                "inherit": False,
+                "requirements": [
+                    *self._retained_base_requirement_payloads(settings),
+                    *[
+                        self._build_requirement_payload(
+                            requirement_names[metric],
+                            enabled=True,
+                            required_score=0.4,
+                            metric=metric,
+                        )
+                        for metric in expected_scores
+                    ],
+                ],
+            },
+        )
+        assert response.status_code == HTTPStatus.OK
+
+        gt_job = create_gt_job(admin_user, task_id, complete=False)
+        labels_by_name = self._get_task_labels_by_name(admin_user, task_id=task_id)
+        with make_api_client(admin_user) as api_client:
+            api_client.jobs_api.update_annotations(
+                gt_job.id,
+                labeled_data_request={
+                    "shapes": [
+                        self._build_rectangle_shape(
+                            frame=0,
+                            label_id=labels_by_name["car"].id,
+                            points=[0, 0, 10, 10],
+                        ),
+                        self._build_rectangle_shape(
+                            frame=0,
+                            label_id=labels_by_name["bus"].id,
+                            points=[20, 20, 30, 30],
+                        ),
+                    ]
+                },
+            )
+            api_client.tasks_api.update_annotations(
+                task_id,
+                labeled_data_request={
+                    "shapes": [
+                        self._build_rectangle_shape(
+                            frame=0,
+                            label_id=labels_by_name["car"].id,
+                            points=[0, 0, 10, 10],
+                        ),
+                        self._build_rectangle_shape(
+                            frame=0,
+                            label_id=labels_by_name["car"].id,
+                            points=[20, 20, 30, 30],
+                        ),
+                    ]
+                },
+            )
+        self._complete_job(admin_user, gt_job.id)
+
+        report = create_quality_report(user=admin_user, task_id=task_id)
+        report_data = self._get_report_data(admin_user, report["id"])
+        summary_items = {
+            item["metric"]: item for item in report["summary"]["requirements"]["items"]
+        }
+
+        assert report["summary"]["requirements"]["completed"] == 7
+        for metric, expected_score in expected_scores.items():
+            assert summary_items[metric]["score"] == pytest.approx(expected_score)
+            assert summary_items[metric]["threshold"] == 0.4
+
+            requirement_report = report_data["groups"][requirement_names[metric]]
+            assert requirement_report["comparison_summary"]["score"] == pytest.approx(
+                expected_score
+            )
+            assert requirement_report["frame_results"]["0"]["score"] == pytest.approx(
+                expected_score
+            )
+
+        assert len(updated_settings["requirements"]) == len(settings["requirements"]) + len(
+            expected_scores
+        )
+
     def test_empty_frames_do_not_affect_requirement_metrics(self, admin_user):
         task_id, _ = create_task(
             admin_user,
@@ -3286,8 +3462,9 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
             "recall",
             "accuracy",
             "jaccard_index",
+            "dice",
         }
-        for metric in ("precision", "recall", "accuracy", "jaccard_index"):
+        for metric in ("precision", "recall", "accuracy", "jaccard_index", "dice"):
             assert enabled_group_matrix[metric][-1] is None
 
         response = get_method(

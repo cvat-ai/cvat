@@ -120,7 +120,7 @@ class QualityReportRequirementCalculationSerializer(serializers.Serializer):
 class QualityReportRequirementSummaryItemSerializer(serializers.Serializer):
     requirement_id = serializers.IntegerField(allow_null=True)
     name = serializers.CharField()
-    metric = serializers.CharField()
+    metric = serializers.ChoiceField(choices=models.QUALITY_TARGET_METRIC_CHOICES)
     score = serializers.FloatField(allow_null=True)
     score_components = QualityReportScoreComponentsSerializer()
     calculation = QualityReportRequirementCalculationSerializer()
@@ -148,6 +148,7 @@ class QualityReportConfusionMatrixSerializer(serializers.Serializer):
     recall = serializers.ListField(child=serializers.FloatField(), allow_null=True)
     accuracy = serializers.ListField(child=serializers.FloatField(), allow_null=True)
     jaccard_index = serializers.ListField(child=serializers.FloatField(), allow_null=True)
+    dice = serializers.ListField(child=serializers.FloatField(), allow_null=True)
 
 
 class QualityReportTargetSerializer(serializers.ChoiceField):
@@ -392,7 +393,7 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
     )
     metric = serializers.ChoiceField(
         source="target_metric",
-        choices=models.QualityTargetMetricType.choices(),
+        choices=models.QUALITY_TARGET_METRIC_CHOICES,
         required=False,
         allow_null=True,
         help_text="The primary metric used for quality estimation",

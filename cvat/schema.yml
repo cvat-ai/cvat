@@ -10725,6 +10725,18 @@ components:
             * `accuracy` - ACCURACY
             * `precision` - PRECISION
             * `recall` - RECALL
+            * `jaccard_index` - JACCARD_INDEX
+            * `dice` - DICE
+            * `mean_accuracy` - MEAN_ACCURACY
+            * `mean_precision` - MEAN_PRECISION
+            * `mean_recall` - MEAN_RECALL
+            * `mean_jaccard_index` - MEAN_JACCARD_INDEX
+            * `mean_dice` - MEAN_DICE
+            * `label_accuracy` - LABEL_ACCURACY
+            * `label_precision` - LABEL_PRECISION
+            * `label_recall` - LABEL_RECALL
+            * `label_jaccard_index` - LABEL_JACCARD_INDEX
+            * `label_dice` - LABEL_DICE
           oneOf:
           - $ref: '#/components/schemas/QualityTargetMetric'
           - $ref: '#/components/schemas/NullEnum'
@@ -11246,9 +11258,16 @@ components:
             type: number
             format: double
           nullable: true
+        dice:
+          type: array
+          items:
+            type: number
+            format: double
+          nullable: true
       required:
       - accuracy
       - axes
+      - dice
       - jaccard_index
       - labels
       - precision
@@ -11326,7 +11345,7 @@ components:
         name:
           type: string
         metric:
-          type: string
+          $ref: '#/components/schemas/QualityTargetMetric'
         score:
           type: number
           format: double
@@ -11497,6 +11516,18 @@ components:
             * `accuracy` - ACCURACY
             * `precision` - PRECISION
             * `recall` - RECALL
+            * `jaccard_index` - JACCARD_INDEX
+            * `dice` - DICE
+            * `mean_accuracy` - MEAN_ACCURACY
+            * `mean_precision` - MEAN_PRECISION
+            * `mean_recall` - MEAN_RECALL
+            * `mean_jaccard_index` - MEAN_JACCARD_INDEX
+            * `mean_dice` - MEAN_DICE
+            * `label_accuracy` - LABEL_ACCURACY
+            * `label_precision` - LABEL_PRECISION
+            * `label_recall` - LABEL_RECALL
+            * `label_jaccard_index` - LABEL_JACCARD_INDEX
+            * `label_dice` - LABEL_DICE
           oneOf:
           - $ref: '#/components/schemas/QualityTargetMetric'
           - $ref: '#/components/schemas/NullEnum'
@@ -11658,6 +11689,18 @@ components:
             * `accuracy` - ACCURACY
             * `precision` - PRECISION
             * `recall` - RECALL
+            * `jaccard_index` - JACCARD_INDEX
+            * `dice` - DICE
+            * `mean_accuracy` - MEAN_ACCURACY
+            * `mean_precision` - MEAN_PRECISION
+            * `mean_recall` - MEAN_RECALL
+            * `mean_jaccard_index` - MEAN_JACCARD_INDEX
+            * `mean_dice` - MEAN_DICE
+            * `label_accuracy` - LABEL_ACCURACY
+            * `label_precision` - LABEL_PRECISION
+            * `label_recall` - LABEL_RECALL
+            * `label_jaccard_index` - LABEL_JACCARD_INDEX
+            * `label_dice` - LABEL_DICE
           oneOf:
           - $ref: '#/components/schemas/QualityTargetMetric'
           - $ref: '#/components/schemas/NullEnum'
@@ -11843,6 +11886,18 @@ components:
             * `accuracy` - ACCURACY
             * `precision` - PRECISION
             * `recall` - RECALL
+            * `jaccard_index` - JACCARD_INDEX
+            * `dice` - DICE
+            * `mean_accuracy` - MEAN_ACCURACY
+            * `mean_precision` - MEAN_PRECISION
+            * `mean_recall` - MEAN_RECALL
+            * `mean_jaccard_index` - MEAN_JACCARD_INDEX
+            * `mean_dice` - MEAN_DICE
+            * `label_accuracy` - LABEL_ACCURACY
+            * `label_precision` - LABEL_PRECISION
+            * `label_recall` - LABEL_RECALL
+            * `label_jaccard_index` - LABEL_JACCARD_INDEX
+            * `label_dice` - LABEL_DICE
           oneOf:
           - $ref: '#/components/schemas/QualityTargetMetric'
           - $ref: '#/components/schemas/NullEnum'
@@ -12003,6 +12058,18 @@ components:
             * `accuracy` - ACCURACY
             * `precision` - PRECISION
             * `recall` - RECALL
+            * `jaccard_index` - JACCARD_INDEX
+            * `dice` - DICE
+            * `mean_accuracy` - MEAN_ACCURACY
+            * `mean_precision` - MEAN_PRECISION
+            * `mean_recall` - MEAN_RECALL
+            * `mean_jaccard_index` - MEAN_JACCARD_INDEX
+            * `mean_dice` - MEAN_DICE
+            * `label_accuracy` - LABEL_ACCURACY
+            * `label_precision` - LABEL_PRECISION
+            * `label_recall` - LABEL_RECALL
+            * `label_jaccard_index` - LABEL_JACCARD_INDEX
+            * `label_dice` - LABEL_DICE
           oneOf:
           - $ref: '#/components/schemas/QualityTargetMetric'
           - $ref: '#/components/schemas/NullEnum'
@@ -12155,6 +12222,18 @@ components:
             * `accuracy` - ACCURACY
             * `precision` - PRECISION
             * `recall` - RECALL
+            * `jaccard_index` - JACCARD_INDEX
+            * `dice` - DICE
+            * `mean_accuracy` - MEAN_ACCURACY
+            * `mean_precision` - MEAN_PRECISION
+            * `mean_recall` - MEAN_RECALL
+            * `mean_jaccard_index` - MEAN_JACCARD_INDEX
+            * `mean_dice` - MEAN_DICE
+            * `label_accuracy` - LABEL_ACCURACY
+            * `label_precision` - LABEL_PRECISION
+            * `label_recall` - LABEL_RECALL
+            * `label_jaccard_index` - LABEL_JACCARD_INDEX
+            * `label_dice` - LABEL_DICE
           oneOf:
           - $ref: '#/components/schemas/QualityTargetMetric'
           - $ref: '#/components/schemas/NullEnum'
@@ -12350,11 +12429,35 @@ components:
       - accuracy
       - precision
       - recall
+      - jaccard_index
+      - dice
+      - mean_accuracy
+      - mean_precision
+      - mean_recall
+      - mean_jaccard_index
+      - mean_dice
+      - label_accuracy
+      - label_precision
+      - label_recall
+      - label_jaccard_index
+      - label_dice
       type: string
       description: |-
         * `accuracy` - ACCURACY
         * `precision` - PRECISION
         * `recall` - RECALL
+        * `jaccard_index` - JACCARD_INDEX
+        * `dice` - DICE
+        * `mean_accuracy` - MEAN_ACCURACY
+        * `mean_precision` - MEAN_PRECISION
+        * `mean_recall` - MEAN_RECALL
+        * `mean_jaccard_index` - MEAN_JACCARD_INDEX
+        * `mean_dice` - MEAN_DICE
+        * `label_accuracy` - LABEL_ACCURACY
+        * `label_precision` - LABEL_PRECISION
+        * `label_recall` - LABEL_RECALL
+        * `label_jaccard_index` - LABEL_JACCARD_INDEX
+        * `label_dice` - LABEL_DICE
     ReasonEnum:
       enum:
       - no_annotations

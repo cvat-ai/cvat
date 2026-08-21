@@ -743,7 +743,7 @@ SPECTACULAR_SETTINGS = {
         "AnnotationConflictSeverity": "cvat.apps.quality_control.models.AnnotationConflictSeverity",
         "AnnotationConflictAnnotationType": "cvat.apps.quality_control.models.AnnotationType",
         "MismatchingAnnotationKind": "cvat.apps.quality_control.models.MismatchingAnnotationKind",
-        "QualityTargetMetric": "cvat.apps.quality_control.models.QualityTargetMetricType",
+        "QualityTargetMetric": "cvat.apps.quality_control.models.QUALITY_TARGET_METRIC_CHOICES",
         "QualityPointSizeBase": "cvat.apps.quality_control.models.PointSizeBase",
         "QualityReportTarget": "cvat.apps.quality_control.models.QualityReportTarget",
     },

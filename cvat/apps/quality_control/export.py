@@ -19,12 +19,9 @@ from cvat.apps.quality_control import models
 from cvat.apps.quality_control.comparison_report import (
     UNMATCHED_LABEL_NAME,
     ComparisonReport,
+    ComparisonReportAnnotationsSummary,
     ConfusionMatrix,
-)
-from cvat.apps.quality_control.statistics import (
-    Averaging,
-    compute_accuracy,
-    compute_dice_coefficient,
+    compute_target_metric,
 )
 from cvat.apps.quality_control.utils import is_current_report_data
 
@@ -156,21 +153,23 @@ def _serialize_confusion_matrix_csv(confusion_matrix: ConfusionMatrix) -> str:
     precisions = confusion_matrix.precision
     recalls = confusion_matrix.recall
     jaccards = confusion_matrix.jaccard_index
+    dice_coefficients = confusion_matrix.dice
     assert precisions is not None
     assert recalls is not None
     assert jaccards is not None
+    assert dice_coefficients is not None
 
-    unmatched_label_idx = (
-        labels.index(UNMATCHED_LABEL_NAME) if UNMATCHED_LABEL_NAME in labels else None
+    annotation_summary = ComparisonReportAnnotationsSummary.from_confusion_matrix(confusion_matrix)
+    dataset_accuracy_micro = compute_target_metric(
+        annotation_summary,
+        models.QualityTargetMetricType(metric=models.QualityMetric.ACCURACY),
     )
-    dataset_accuracy_micro, _ = compute_accuracy(
-        rows,
-        excluded_label_idx=unmatched_label_idx,
-    )
-    dataset_dice_coeff_avg_macro, dataset_dice_coeff_by_class, _ = compute_dice_coefficient(
-        rows,
-        averaging=Averaging.macro,
-        excluded_label_idx=unmatched_label_idx,
+    dataset_dice_coeff_avg_macro = compute_target_metric(
+        annotation_summary,
+        models.QualityTargetMetricType(
+            metric=models.QualityMetric.DICE,
+            aggregation=models.QualityMetricAggregation.MEAN,
+        ),
     )
 
     jaccards = jaccards.copy()
@@ -185,7 +184,7 @@ def _serialize_confusion_matrix_csv(confusion_matrix: ConfusionMatrix) -> str:
         writer.writerow([label, *row.tolist(), precision])
 
     writer.writerow(["recall", *recalls.tolist()])
-    writer.writerow(["dice coefficient", *dataset_dice_coeff_by_class.tolist()])
+    writer.writerow(["dice coefficient", *dice_coefficients.tolist()])
     writer.writerow(["jaccard index", *jaccards.tolist()])
     writer.writerow([""])
     writer.writerow(["avg. accuracy (micro)", dataset_accuracy_micro])

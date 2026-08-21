@@ -17,11 +17,59 @@ export enum QualityRequirementAnnotationType {
     ELLIPSE = 'ellipse',
 }
 
-export enum QualityRequirementMetric {
+export enum QualityMetric {
     ACCURACY = 'accuracy',
     PRECISION = 'precision',
     RECALL = 'recall',
+    JACCARD_INDEX = 'jaccard_index',
+    DICE = 'dice',
 }
+
+export enum QualityMetricAggregation {
+    MICRO = 'micro',
+    MEAN = 'mean',
+    LABEL = 'label',
+}
+
+export interface QualityTargetMetric {
+    metric: QualityMetric;
+    aggregation: QualityMetricAggregation;
+}
+
+type PrefixedQualityMetricAggregation = Exclude<
+    QualityMetricAggregation,
+    QualityMetricAggregation.MICRO
+>;
+
+export type QualityRequirementMetric = QualityMetric | `${PrefixedQualityMetricAggregation}_${QualityMetric}`;
+
+// Preserve the existing value-level API for base metrics, e.g. QualityRequirementMetric.ACCURACY.
+export const QualityRequirementMetric = QualityMetric;
+
+export function serializeQualityTargetMetric(targetMetric: QualityTargetMetric): QualityRequirementMetric {
+    const prefix = targetMetric.aggregation === QualityMetricAggregation.MICRO ? '' : `${targetMetric.aggregation}_`;
+    return `${prefix}${targetMetric.metric}` as QualityRequirementMetric;
+}
+
+export function parseQualityTargetMetric(value: QualityRequirementMetric): QualityTargetMetric {
+    const aggregation = Object.values(QualityMetricAggregation).find((candidate) => (
+        candidate !== QualityMetricAggregation.MICRO && value.startsWith(`${candidate}_`)
+    )) ?? QualityMetricAggregation.MICRO;
+    const metric = (
+        aggregation === QualityMetricAggregation.MICRO ?
+            value : value.slice(aggregation.length + 1)
+    ) as QualityMetric;
+
+    return { metric, aggregation };
+}
+
+export const QUALITY_REQUIREMENT_METRICS: QualityRequirementMetric[] = [
+    ...Object.values(QualityMetricAggregation).flatMap((aggregation) => (
+        Object.values(QualityMetric).map((metric) => (
+            serializeQualityTargetMetric({ metric, aggregation })
+        ))
+    )),
+];
 
 export enum QualityReportRequirementCalculationStatus {
     COMPUTED = 'computed',
@@ -178,6 +226,7 @@ export interface SerializedQualityConfusionMatrixData {
     recall: (number | null)[];
     accuracy: (number | null)[];
     jaccard_index: (number | null)[];
+    dice: (number | null)[];
 }
 
 export interface SerializedQualitySettingsData {

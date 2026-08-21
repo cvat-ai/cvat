@@ -4,8 +4,17 @@
 
 import { QualityRequirement } from 'cvat-core-wrapper';
 import {
+    QUALITY_REQUIREMENT_METRICS, QualityMetric, QualityMetricAggregation,
     QualityRequirementAnnotationType, QualityRequirementMetric, SerializedQualityRequirementSaveData,
+    parseQualityTargetMetric,
 } from 'cvat-core/src/quality/server-response-types';
+
+export {
+    parseQualityTargetMetric,
+    QualityMetric,
+    QualityMetricAggregation,
+    QualityRequirementMetric,
+};
 
 export const ANNOTATION_TYPE_LABELS: Record<string, string> = {
     [QualityRequirementAnnotationType.TAG]: 'Tag',
@@ -19,15 +28,33 @@ export const ANNOTATION_TYPE_LABELS: Record<string, string> = {
     [QualityRequirementAnnotationType.ELLIPSE]: 'Ellipse',
 };
 
+const BASE_METRIC_LABELS: Record<QualityMetric, string> = {
+    [QualityMetric.ACCURACY]: 'Accuracy',
+    [QualityMetric.PRECISION]: 'Precision',
+    [QualityMetric.RECALL]: 'Recall',
+    [QualityMetric.JACCARD_INDEX]: 'Jaccard Index',
+    [QualityMetric.DICE]: 'Dice Coefficient',
+};
+
 export const METRIC_LABELS: Record<string, string> = {
-    [QualityRequirementMetric.ACCURACY]: 'Accuracy',
-    [QualityRequirementMetric.PRECISION]: 'Precision',
-    [QualityRequirementMetric.RECALL]: 'Recall',
+    ...Object.fromEntries(QUALITY_REQUIREMENT_METRICS.map((value) => {
+        const { metric, aggregation } = parseQualityTargetMetric(value);
+        const label = BASE_METRIC_LABELS[metric];
+
+        if (aggregation === QualityMetricAggregation.MEAN) {
+            return [value, `Mean ${label} (macro)`];
+        }
+        if (aggregation === QualityMetricAggregation.LABEL) {
+            return [value, `${label} (worst label)`];
+        }
+
+        return [value, label];
+    })),
     f1_score: 'F1 Score',
 };
 
 export const ANNOTATION_TYPES: QualityRequirementAnnotationType[] = Object.values(QualityRequirementAnnotationType);
-export const METRICS: QualityRequirementMetric[] = Object.values(QualityRequirementMetric);
+export const METRICS: QualityRequirementMetric[] = QUALITY_REQUIREMENT_METRICS;
 export const QUALITY_REQUIREMENTS_ENABLED_FIELD = 'requirementsEnabled';
 
 export function buildRequirementsById(requirements: QualityRequirement[]): Map<number, QualityRequirement> {
