@@ -117,26 +117,16 @@ export class OpenCVWrapper {
         }
 
         const decodedScript = new TextDecoder('utf-8').decode(bytes);
-        await new Promise<void>((resolve, reject) => {
-            (window as any).Module = {
-                onRuntimeInitialized: () => {
-                    delete (window as any).Module;
-                    resolve();
-                },
-            };
+        // eslint-disable-next-line no-new-func
+        const OpenCVConstructor = new Function(decodedScript);
+        OpenCVConstructor.call(window);
 
-            try {
-                // Inject OpenCV to DOM
-                // eslint-disable-next-line no-new-func
-                const OpenCVConstructor = new Function(decodedScript);
-                OpenCVConstructor();
-            } catch (error: unknown) {
-                delete (window as any).Module;
-                reject(new Error(`Initialization error: ${error instanceof Error ? error.message : 'unknown'}`));
-            }
-        });
+        const cv = await (window as any).cv;
+        if (!cv || typeof cv.Mat !== 'function') {
+            throw new Error('OpenCV initialization error: module was not found');
+        }
 
-        this.cvInterface = core.opencv.createOpenCVInterface((window as any).cv);
+        this.cvInterface = core.opencv.createOpenCVInterface(cv);
     }
 
     public async initialize(onProgress: (percent: number) => void): Promise<void> {

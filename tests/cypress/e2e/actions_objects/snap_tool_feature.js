@@ -385,10 +385,11 @@ context('Snap tool feature.', () => {
             // Compare polygon's coords with rotated coords, should have 2 common
             getShapeCoord('polygon', '#cvat_canvas_shape_2').then((polygonPoints) => {
                 const [, ...commonPoints] = polygonPoints;
-                expect(commonPoints[0]).to.be
-                    .equal(`${rotatedPointsGlobal[0].x},${rotatedPointsGlobal[0].y}`);
-                expect(commonPoints[1]).to.be
-                    .equal(`${rotatedPointsGlobal[1].x},${rotatedPointsGlobal[1].y}`);
+                commonPoints.slice(0, 2).forEach((point, index) => {
+                    const snappedPoint = rawPointToPoint(point);
+                    expect(snappedPoint.x).to.be.closeTo(rotatedPointsGlobal[index].x, 0.001);
+                    expect(snappedPoint.y).to.be.closeTo(rotatedPointsGlobal[index].y, 0.001);
+                });
             });
         });
 

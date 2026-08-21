@@ -86,7 +86,7 @@ function DrawShapePopoverComponent(props: Props): JSX.Element {
                     />
                 </Col>
             </Row>
-            {is2D && shapeType === ShapeType.RECTANGLE && (
+            {is2D && [ShapeType.RECTANGLE, ShapeType.ELLIPSE].includes(shapeType) && (
                 <>
                     <Row>
                         <Col>
@@ -103,9 +103,27 @@ function DrawShapePopoverComponent(props: Props): JSX.Element {
                                 <Radio value={RectDrawingMethod.CLASSIC} style={{ width: 'auto' }}>
                                     By 2 Points
                                 </Radio>
-                                <Radio value={RectDrawingMethod.EXTREME_POINTS} style={{ width: 'auto' }}>
-                                    By 4 Points
-                                </Radio>
+                                {shapeType === ShapeType.RECTANGLE && (
+                                    <Radio value={RectDrawingMethod.EXTREME_POINTS} style={{ width: 'auto' }}>
+                                        By 4 Points
+                                    </Radio>
+                                )}
+                                <CVATTooltip
+                                    title={
+                                        `Click at least ${shapeType === ShapeType.ELLIPSE ? 'five' : 'three'} contour points. ` +
+                                        'A dashed fitted shape previews the result ' +
+                                        'as points are added or removed; ' +
+                                        `press ${repeatShapeShortcut} or select Done to finish, ` +
+                                        'and right-click to undo the last point.'
+                                    }
+                                >
+                                    <Radio
+                                        value={RectDrawingMethod.ROTATED_POINTS}
+                                        style={{ width: 'auto', alignSelf: 'center' }}
+                                    >
+                                        Rotated
+                                    </Radio>
+                                </CVATTooltip>
                             </Radio.Group>
                         </Col>
                     </Row>
