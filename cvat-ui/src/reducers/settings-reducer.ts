@@ -51,6 +51,7 @@ const defaultState: SettingsState = {
     },
     player: {
         canvasBackgroundColor: '#ffffff',
+        dataQuality: false,
         frameStep: 10,
         frameSpeed: FrameSpeed.Usual,
         resetZoom: false,
@@ -427,6 +428,15 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
                 workspace: {
                     ...state.workspace,
                     showTagsOnFrame: action.payload.showTagsOnFrame,
+                },
+            };
+        }
+        case SettingsActionTypes.SWITCH_DATA_QUALITY: {
+            return {
+                ...state,
+                player: {
+                    ...state.player,
+                    dataQuality: action.payload.dataQuality,
                 },
             };
         }

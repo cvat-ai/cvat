@@ -1073,15 +1073,24 @@ class ZipChunkWriter(IChunkWriter):
     ) -> None:
         with zipfile.ZipFile(chunk_path, "x") as zip_chunk:
             for idx, (image, path) in enumerate(images):
-                ext = os.path.splitext(path)[1].replace(".", "")
+                ext = os.path.splitext(path)[1].replace(".", "") if path else ""
 
                 if self._dimension == DimensionType.DIM_2D:
+                    if isinstance(image, av.VideoFrame):
+                        output = io.BytesIO()
+                        image.to_image().save(
+                            output,
+                            format=self.IMAGE_EXT,
+                            quality=100,
+                            subsampling=0,
+                        )
+                        ext = ext or self.IMAGE_EXT
                     # current version of Pillow applies exif rotation immediately when TIFF image opened
                     # and it removes rotation tag after that
                     # so, has_exif_rotation(image) will return False for TIFF images even if they were actually rotated
                     # and original files will be added to the archive (without applied rotation)
                     # that is why we need the second part of the condition
-                    if isinstance(image, Image.Image) and (
+                    elif isinstance(image, Image.Image) and (
                         has_exif_rotation(image) or image.format == "TIFF"
                     ):
                         output = io.BytesIO()
@@ -1103,8 +1112,22 @@ class ZipChunkWriter(IChunkWriter):
                             rot_image.close()
                     elif isinstance(image, io.IOBase):
                         output = image
+                        ext = ext or self.IMAGE_EXT
                     else:
-                        output = path
+                        if path is None:
+                            output = io.BytesIO()
+                            if isinstance(image, Image.Image):
+                                image.save(
+                                    output,
+                                    format=image.format if image.format else self.IMAGE_EXT,
+                                    quality=100,
+                                    subsampling=0,
+                                )
+                                ext = ext or (image.format.lower() if image.format else self.IMAGE_EXT)
+                            else:
+                                raise TypeError(f"Unsupported frame source for zip chunk: {type(image)}")
+                        else:
+                            output = path
                 else:
                     if isinstance(image, io.BytesIO):
                         output, ext = self._write_pcd_file(image)
@@ -1218,7 +1241,7 @@ class Mpeg4ChunkWriter(IChunkWriter):
     def __init__(self, *, quality: int, dimension: DimensionType) -> None:
         assert dimension == DimensionType.DIM_2D
 
-        # translate inversed range [1:100] to [0:51]
+        # Convert to a scale of 0-51
         quality = round(51 * (100 - quality) / 99)
         super().__init__(quality=quality, dimension=dimension)
 
@@ -1228,15 +1251,15 @@ class Mpeg4ChunkWriter(IChunkWriter):
             self._codec_name = codec.name
             self._codec_opts = {
                 "profile": "constrained_baseline",
-                "qmin": str(self._quality),
-                "qmax": str(self._quality),
+                "qmin": str(quality),
+                "qmax": str(quality),
                 "rc_mode": "buffer",
             }
         except av.codec.codec.UnknownCodecError:
             codec = av.codec.Codec("libx264", "w")
             self._codec_name = codec.name
             self._codec_opts = {
-                "crf": str(self._quality),
+                "crf": str(quality),
                 "preset": "ultrafast",
             }
 
