@@ -27,6 +27,74 @@ export const MIN_ROTATED_RECTANGLE_POINTS = 3;
 export const MIN_FITTED_ELLIPSE_POINTS = 5;
 
 const TOP_EDGE_SWITCH_THRESHOLD = 8;
+const MAX_ELLIPSE_AXIS_TO_CONTOUR_DIAGONAL = 1.5;
+const MAX_ELLIPSE_BOUNDS_OVERSHOOT = 0.15;
+const MAX_ELLIPSE_POINT_ANGLE_GAP = Math.PI;
+
+function isPlausibleEllipseFit(fitted: RotatedShapeFit, contour: [number, number][]): boolean {
+    const values = [
+        fitted.center.x,
+        fitted.center.y,
+        fitted.size.width,
+        fitted.size.height,
+        fitted.angle,
+    ];
+    if (values.some((value: number): boolean => !Number.isFinite(value)) ||
+        fitted.size.width <= 0 || fitted.size.height <= 0) {
+        return false;
+    }
+
+    const xs = contour.map(([x]: [number, number]): number => x);
+    const ys = contour.map(([, y]: [number, number]): number => y);
+    const contourBounds = {
+        minX: Math.min(...xs),
+        minY: Math.min(...ys),
+        maxX: Math.max(...xs),
+        maxY: Math.max(...ys),
+    };
+    const contourDiagonal = Math.hypot(
+        contourBounds.maxX - contourBounds.minX,
+        contourBounds.maxY - contourBounds.minY,
+    );
+    const angleRadians = (fitted.angle * Math.PI) / 180;
+    const ellipseHalfWidth = Math.hypot(
+        (fitted.size.width / 2) * Math.cos(angleRadians),
+        (fitted.size.height / 2) * Math.sin(angleRadians),
+    );
+    const ellipseHalfHeight = Math.hypot(
+        (fitted.size.width / 2) * Math.sin(angleRadians),
+        (fitted.size.height / 2) * Math.cos(angleRadians),
+    );
+    const boundsOvershoot = contourDiagonal * MAX_ELLIPSE_BOUNDS_OVERSHOOT;
+    const ellipseFitsContourBounds = fitted.center.x - ellipseHalfWidth >= contourBounds.minX - boundsOvershoot &&
+        fitted.center.x + ellipseHalfWidth <= contourBounds.maxX + boundsOvershoot &&
+        fitted.center.y - ellipseHalfHeight >= contourBounds.minY - boundsOvershoot &&
+        fitted.center.y + ellipseHalfHeight <= contourBounds.maxY + boundsOvershoot;
+    const contourAngles = contour.map(([x, y]: [number, number]): number => {
+        const relativeX = x - fitted.center.x;
+        const relativeY = y - fitted.center.y;
+        const localX = (relativeX * Math.cos(angleRadians) + relativeY * Math.sin(angleRadians)) /
+            (fitted.size.width / 2);
+        const localY = (-relativeX * Math.sin(angleRadians) + relativeY * Math.cos(angleRadians)) /
+            (fitted.size.height / 2);
+
+        return (Math.atan2(localY, localX) + 2 * Math.PI) % (2 * Math.PI);
+    }).sort((left: number, right: number): number => left - right);
+    const largestAngleGap = contourAngles.reduce((largestGap: number, angle: number, index: number): number => {
+        const nextAngle = index === contourAngles.length - 1 ?
+            contourAngles[0] + 2 * Math.PI : contourAngles[index + 1];
+        return Math.max(largestGap, nextAngle - angle);
+    }, 0);
+    const contourCoversEllipse = largestAngleGap <= MAX_ELLIPSE_POINT_ANGLE_GAP;
+
+    // fitEllipse is a least-squares fit. Sparse points on a line or a small arc
+    // can therefore yield an ellipse far outside the contour or derived from
+    // a single side only. Do not present that unstable result as a preview or
+    // allow it to be finalized.
+    return contourDiagonal > 0 &&
+        Math.max(fitted.size.width, fitted.size.height) <= contourDiagonal * MAX_ELLIPSE_AXIS_TO_CONTOUR_DIAGONAL &&
+        ellipseFitsContourBounds && contourCoversEllipse;
+}
 
 export function withTopEdge(fitted: RotatedShapeFit): RotatedShapeFit {
     const angleRadians = (fitted.angle * Math.PI) / 180;
@@ -65,6 +133,10 @@ export function fitRotatedShape(points: number[], options: FitOptions): RotatedS
     try {
         fitted = useEllipseFit ? fitter.fitEllipse(contour) : fitter.minAreaRect(contour);
     } catch {
+        return null;
+    }
+
+    if (useEllipseFit && !isPlausibleEllipseFit(fitted, contour)) {
         return null;
     }
 

@@ -257,8 +257,14 @@ export class DrawHandlerImpl implements DrawHandler {
     private renderFitPreview(): void {
         const preview = this.rotatedShapePreview;
         preview.animationFrame = null;
-        if (preview.pendingPoints) {
-            preview.targetFit = this.fitRotatedPreview(preview.pendingPoints);
+        const { pendingPoints } = preview;
+        if (pendingPoints) {
+            const fitted = this.fitRotatedPreview(pendingPoints);
+            const hasEnoughPointsForEllipse = this.usesEllipseFit() &&
+                pendingPoints.length >= MIN_FITTED_ELLIPSE_POINTS * 2;
+
+            preview.targetFit = fitted || (hasEnoughPointsForEllipse ?
+                preview.targetFit || preview.displayedFit : null);
             preview.pendingPoints = null;
         }
 
@@ -275,8 +281,15 @@ export class DrawHandlerImpl implements DrawHandler {
                 preview.displayedFit.size.width,
                 preview.displayedFit.size.height,
             ) < consts.SIZE_THRESHOLD;
-        const smoothingFactor = isExpandingFromLine ? 0.02 : 0.1;
-        const topEdgeSmoothingFactor = isExpandingFromLine ? 0.02 : 0.06;
+        let smoothingFactor = 0.1;
+        let topEdgeSmoothingFactor = 0.06;
+        if (isExpandingFromLine) {
+            smoothingFactor = 0.02;
+            topEdgeSmoothingFactor = 0.02;
+        } else if (this.usesEllipseFit()) {
+            smoothingFactor = 0.2;
+            topEdgeSmoothingFactor = 0.12;
+        }
         const nextFit = preview.displayedFit ? interpolateRotatedShapeFit(
             preview.displayedFit,
             targetFit,
