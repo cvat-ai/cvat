@@ -51,7 +51,7 @@ from cvat_sdk.core.proxies.tasks import ResourceType
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description=" ".join(__doc__.splitlines()[:2]))
+    parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     parser.add_argument("--host", required=True, help="CVAT server URL, e.g. 'https://app.cvat.ai'")
     parser.add_argument(
         "--token",
@@ -85,7 +85,8 @@ def parse_args() -> argparse.Namespace:
         default=[],
         metavar="PATTERN",
         help="one task from every bucket file matching this fnmatch wildcard "
-        "(e.g. 'batch_a/*.jpg'); repeat for more tasks. Needs --manifest",
+        "(e.g. 'batch_a/*.jpg'); repeat for more tasks. Needs --manifest. "
+        "(default: '%(default)s')",
     )
     parser.add_argument(
         "--manifest",

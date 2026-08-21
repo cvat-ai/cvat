@@ -47,7 +47,7 @@ Steps:
   1. Attach the bucket with key/secret credentials to CVAT.
   2. List all registered storages.
   3. Retrieve the new one.
-  4. List the bucket's actual content, a page at a time.
+  4. List the bucket's content, a page at a time.
   5. Update its display name.
   6. Optionally, detach it from CVAT.
 
@@ -64,7 +64,7 @@ from cvat_sdk.core.helpers import get_paginated_collection
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description=" ".join(__doc__.splitlines()[:3]))
+    parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     parser.add_argument("--host", required=True, help="CVAT server URL, e.g. 'https://app.cvat.ai'")
     parser.add_argument(
         "--token",
@@ -122,8 +122,7 @@ def main() -> None:
         fetched, _ = api.retrieve(storage.id)
         print(f"Storage {fetched.id}: {fetched.display_name!r} ({fetched.provider_type})")
 
-        # 4. List the bucket's actual content (not CVAT's registry - the objects
-        # inside the bucket itself), a page at a time via next_token.
+        # 4. List the bucket's content, a page at a time via next_token.
         page_params = {"page_size": args.page_size} if args.page_size else {}
         files = []
         pages = 0

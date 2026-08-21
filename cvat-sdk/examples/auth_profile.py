@@ -25,7 +25,7 @@ from cvat_sdk.core.auth import AuthStore
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     parser.add_argument(
         "--profile", help="name of a saved profile; omit to use the default profile"
     )

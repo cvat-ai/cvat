@@ -30,7 +30,7 @@ from cvat_sdk.core.proxies.types import Location
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description=" ".join(__doc__.splitlines()[:2]))
+    parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     parser.add_argument("--host", required=True, help="CVAT server URL, e.g. 'https://app.cvat.ai'")
     parser.add_argument(
         "--token",
@@ -91,7 +91,6 @@ def main() -> None:
         print(f"Exported {local_path.resolve()}")
 
         # 4. Export the task's event log and report quick analytics.
-        # Low-level API: there is no high-level proxy for events yet.
         events_path = Path(f"task_{task.id}_events.csv")
         Downloader(client).prepare_and_download_file_from_endpoint(
             client.api_client.events_api.create_export_endpoint,

@@ -46,7 +46,7 @@ from cvat_sdk import make_client
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     parser.add_argument("--host", required=True, help="CVAT server URL, e.g. 'https://app.cvat.ai'")
     parser.add_argument(
         "--token",
@@ -115,7 +115,7 @@ from cvat_sdk.core.auth import AuthStore
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     parser.add_argument(
         "--profile", help="name of a saved profile; omit to use the default profile"
     )
@@ -208,7 +208,7 @@ from cvat_sdk.core.auth import configure_client_auth_arguments
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description=" ".join(__doc__.splitlines()[:2]))
+    parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     configure_client_auth_arguments(parser)
     # Add your script's own arguments here, e.g.
     # parser.add_argument("--task-id", type=int, required=True)
