@@ -20,9 +20,9 @@ from cvat.apps.engine.models import (
     StageChoice,
     StateChoice,
     Task,
-    User,
     clear_annotations_in_jobs,
 )
+from cvat.apps.iam.models import User
 from cvat.apps.profiler import silk_profile
 from cvat.apps.quality_control.comparison_report import ComparisonParameters
 from cvat.apps.quality_control.data_providers import JobDataProvider

@@ -44,7 +44,9 @@ export class AudioIntervalState {
     public readonly score: number;
     public readonly votes: number;
     public label: Label;
+    /** Start position, frame (ms), including */
     public start: number;
+    /** Stop position, frame (ms), excluding */
     public stop: number | null;
     public color: string;
     public hidden: boolean;

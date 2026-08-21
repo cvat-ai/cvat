@@ -32,10 +32,34 @@ interface Params {
     ready: boolean;
 }
 
+export interface SelectionInteraction {
+    enableSelectionInteraction(): void;
+    disableSelectionInteraction(): void;
+    isSelectionInteractionEnabled(): boolean;
+}
+
 /**
  * Resolves waveform region interactions to audio intervals.
  */
-export function useRegionSelection({ regionRuntime, viewport, ready }: Params): void {
+export function useRegionSelection({
+    regionRuntime, viewport, ready,
+}: Params): SelectionInteraction {
+    const selectionInteractionEnabledRef = useRef(true);
+    const selectionInteractionRef = useRef<SelectionInteraction | null>(null);
+    if (selectionInteractionRef.current === null) {
+        selectionInteractionRef.current = {
+            enableSelectionInteraction: (): void => {
+                selectionInteractionEnabledRef.current = true;
+            },
+            disableSelectionInteraction: (): void => {
+                selectionInteractionEnabledRef.current = false;
+            },
+            isSelectionInteractionEnabled: (): boolean => selectionInteractionEnabledRef.current,
+        };
+    }
+    // Stable ref
+    const selectionInteraction = selectionInteractionRef.current;
+
     const dispatch = useDispatch<ThunkDispatch>();
     const { activeControl, hoveredIntervalID } = useSelector((state: CombinedState) => ({
         activeControl: state.annotation.canvas.activeControl,
@@ -86,7 +110,9 @@ export function useRegionSelection({ regionRuntime, viewport, ready }: Params): 
                 const { state } = await currentJob.annotations.selectInterval(intervalsRef.current, time * 1000);
                 clientID = state?.clientID ?? null;
             }
-            if (selectionGuardRef.current !== guard) return null;
+            if (selectionGuardRef.current !== guard || !selectionInteraction.isSelectionInteractionEnabled()) {
+                return null;
+            }
 
             dispatch(audioActions.setAudioActiveInterval(clientID));
             return clientID;
@@ -102,6 +128,8 @@ export function useRegionSelection({ regionRuntime, viewport, ready }: Params): 
 
         const onRegionClicked = (region: Region, event: MouseEvent): void => {
             if (!isIntervalRegionTarget(region)) return;
+
+            if (!selectionInteraction.isSelectionInteractionEnabled()) return;
 
             event.stopPropagation();
             event.preventDefault();
@@ -119,6 +147,7 @@ export function useRegionSelection({ regionRuntime, viewport, ready }: Params): 
 
         const onRegionDoubleClicked = (region: Region, event: MouseEvent): void => {
             if (!isIntervalRegionTarget(region)) return;
+            if (!selectionInteraction.isSelectionInteractionEnabled()) return;
             event.stopPropagation();
             event.preventDefault();
             selectInterval(region, event).then((clientID) => {
@@ -153,7 +182,10 @@ export function useRegionSelection({ regionRuntime, viewport, ready }: Params): 
         if (!element) return undefined;
 
         const onMouseMove = (event: MouseEvent): void => {
-            if (latestRef.current.activeControl !== ActiveControl.CURSOR) return;
+            if (
+                latestRef.current.activeControl !== ActiveControl.CURSOR ||
+                !selectionInteraction.isSelectionInteractionEnabled()
+            ) return;
             const lastPoint = lastHoverPointRef.current;
             const hoverDelta = lastPoint ?
                 Math.hypot(event.clientX - lastPoint.x, event.clientY - lastPoint.y) : null;
@@ -172,7 +204,11 @@ export function useRegionSelection({ regionRuntime, viewport, ready }: Params): 
             if (!currentJob) return;
             currentJob.annotations.selectInterval(intervalsRef.current, time * 1000).then(({ state }) => {
                 const clientID = state?.clientID ?? null;
-                if (hoverGuardRef.current !== guard || clientID === latestRef.current.hoveredIntervalID) {
+                if (
+                    hoverGuardRef.current !== guard ||
+                    !selectionInteraction.isSelectionInteractionEnabled() ||
+                    clientID === latestRef.current.hoveredIntervalID
+                ) {
                     return;
                 }
 
@@ -195,4 +231,6 @@ export function useRegionSelection({ regionRuntime, viewport, ready }: Params): 
             element.removeEventListener('mouseleave', onMouseLeave);
         };
     }, [ready]);
+
+    return selectionInteraction;
 }

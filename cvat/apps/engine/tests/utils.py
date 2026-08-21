@@ -31,7 +31,7 @@ from rest_framework.response import Response
 from rest_framework.test import APITestCase
 from scipy.optimize import linear_sum_assignment
 
-from cvat.apps.engine.models import User
+from cvat.apps.iam.models import User
 
 T = TypeVar("T")
 
