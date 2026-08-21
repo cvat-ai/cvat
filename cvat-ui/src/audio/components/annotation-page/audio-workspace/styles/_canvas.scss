@@ -61,6 +61,10 @@
     min-width: 0;
     width: 100%;
 
+    ::part(cvat-audio-bulk-edit-boundary) {
+        border-color: #1677ff;
+    }
+
     .cvat-audio-waveform-controls {
         position: absolute;
         z-index: 10;
@@ -88,6 +92,34 @@
 
         *::part(wrapper) {
             overflow: hidden;
+        }
+
+        &.cvat-audio-waveform-interaction-drag {
+            cursor: grabbing;
+
+            *::part(wrapper),
+            *::part(region),
+            *::part(region-handle) {
+                cursor: grabbing !important;
+            }
+        }
+
+        &.cvat-audio-waveform-interaction-resize {
+            cursor: ew-resize;
+
+            *::part(wrapper),
+            *::part(region),
+            *::part(region-handle) {
+                cursor: ew-resize !important;
+            }
+        }
+
+        // The hover timestamp is derived from the last pointer event and lags
+        // behind a stationary pointer while custom resize auto-scrolls.
+        &.cvat-audio-waveform-interaction-auto-scroll {
+            *::part(hover) {
+                visibility: hidden;
+            }
         }
     }
 

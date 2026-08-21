@@ -9,6 +9,7 @@ import Empty from 'antd/lib/empty';
 import Dropdown from 'antd/lib/dropdown';
 import {
     LockFilled, UnlockOutlined,
+    PushpinFilled, PushpinOutlined,
     EyeInvisibleFilled, EyeOutlined,
     MoreOutlined,
 } from '@ant-design/icons';
@@ -55,6 +56,7 @@ interface ItemProps {
     onSetHoveredInterval(clientID: number | null): void;
     onPlayIntervalOnce(clientID: number): void;
     onToggleIntervalLock(clientID: number): void;
+    onToggleIntervalPinned(clientID: number): void;
     onToggleIntervalHidden(clientID: number): void;
     onCopyInterval(clientID: number): void;
     onDeleteInterval(clientID: number): void;
@@ -66,13 +68,14 @@ function AudioRegionItem(props: ItemProps): JSX.Element {
         interval, displayIndex, isActive, itemColor, colorBy,
         activeControl,
         onSetActiveInterval, onSetHoveredInterval, onPlayIntervalOnce,
-        onToggleIntervalLock, onToggleIntervalHidden,
+        onToggleIntervalLock, onToggleIntervalPinned, onToggleIntervalHidden,
         onCopyInterval, onDeleteInterval, onChangeIntervalColor,
     } = props;
 
     const id = intervalID(interval);
     const isHidden = !!interval.hidden;
     const isLocked = !!interval.lock;
+    const isPinned = !!interval.pinned;
     const isCursor = activeControl === ActiveControl.CURSOR;
     const [colorPickerVisible, setColorPickerVisible] = useState(false);
 
@@ -92,6 +95,10 @@ function AudioRegionItem(props: ItemProps): JSX.Element {
         e.stopPropagation();
         onToggleIntervalLock(id);
     }, [onToggleIntervalLock, id]);
+    const handleTogglePinned = useCallback((e: React.MouseEvent | React.KeyboardEvent) => {
+        e.stopPropagation();
+        if (!isLocked) onToggleIntervalPinned(id);
+    }, [onToggleIntervalPinned, id, isLocked]);
     const handleToggleHidden = useCallback((e: React.MouseEvent | React.KeyboardEvent) => {
         e.stopPropagation();
         if (!isLocked) onToggleIntervalHidden(id);
@@ -159,6 +166,18 @@ function AudioRegionItem(props: ItemProps): JSX.Element {
                         'cvat-audio-region-item-action-btn' +
                             `${isLocked ? ' cvat-audio-region-item-action-btn-disabled' : ''}`
                     }
+                    onClick={handleTogglePinned}
+                    onKeyDown={(e) => { if (e.key === 'Enter') handleTogglePinned(e); }}
+                >
+                    {isPinned ? <PushpinFilled /> : <PushpinOutlined />}
+                </span>
+                <span
+                    role='button'
+                    tabIndex={0}
+                    className={
+                        'cvat-audio-region-item-action-btn' +
+                            `${isLocked ? ' cvat-audio-region-item-action-btn-disabled' : ''}`
+                    }
                     onClick={handleToggleHidden}
                     onKeyDown={(e) => { if (e.key === 'Enter') handleToggleHidden(e); }}
                 >
@@ -214,13 +233,16 @@ interface Props {
     colorBy: ColorBy;
     activeControl: ActiveControl;
     switchLockAllShortcut: string;
+    switchPinAllShortcut: string;
     switchHiddenAllShortcut: string;
     onSetActiveInterval(clientID: number | null): void;
     onSetHoveredInterval(clientID: number | null): void;
     onPlayIntervalOnce(clientID: number): void;
     onToggleIntervalLock(clientID: number): void;
+    onToggleIntervalPinned(clientID: number): void;
     onToggleIntervalHidden(clientID: number): void;
     onToggleIntervalsLock(clientIDs: number[], lock: boolean): void;
+    onToggleIntervalsPinned(clientIDs: number[], pinned: boolean): void;
     onToggleIntervalsHidden(clientIDs: number[], hidden: boolean): void;
     onCopyInterval(clientID: number): void;
     onDeleteInterval(clientID: number, force?: boolean): void;
@@ -236,13 +258,16 @@ export default function AudioRegionsList(props: Props): JSX.Element {
         colorBy,
         activeControl,
         switchLockAllShortcut,
+        switchPinAllShortcut,
         switchHiddenAllShortcut,
         onSetActiveInterval,
         onSetHoveredInterval,
         onPlayIntervalOnce,
         onToggleIntervalLock,
+        onToggleIntervalPinned,
         onToggleIntervalHidden,
         onToggleIntervalsLock,
+        onToggleIntervalsPinned,
         onToggleIntervalsHidden,
         onCopyInterval,
         onDeleteInterval,
@@ -263,8 +288,11 @@ export default function AudioRegionsList(props: Props): JSX.Element {
     }, [activeIntervalID]);
 
     const allLocked = intervals.length > 0 && intervals.every((interval) => !!interval.lock);
+    const pinnableIntervals = useMemo(() => intervals.filter((interval) => !interval.lock), [intervals]);
+    const allPinned = pinnableIntervals.length > 0 && pinnableIntervals.every((interval) => !!interval.pinned);
     const allHidden = intervals.length > 0 && intervals.every((interval) => !!interval.hidden);
     const visibleIds = useMemo(() => intervals.map((interval) => intervalID(interval)), [intervals]);
+    const pinnableIds = useMemo(() => pinnableIntervals.map((interval) => intervalID(interval)), [pinnableIntervals]);
 
     const onLockAll = useCallback(() => {
         onToggleIntervalsLock(visibleIds, true);
@@ -272,6 +300,12 @@ export default function AudioRegionsList(props: Props): JSX.Element {
     const onUnlockAll = useCallback(() => {
         onToggleIntervalsLock(visibleIds, false);
     }, [visibleIds, onToggleIntervalsLock]);
+    const onPinAll = useCallback(() => {
+        onToggleIntervalsPinned(pinnableIds, true);
+    }, [pinnableIds, onToggleIntervalsPinned]);
+    const onUnpinAll = useCallback(() => {
+        onToggleIntervalsPinned(pinnableIds, false);
+    }, [pinnableIds, onToggleIntervalsPinned]);
     const onHideAll = useCallback(() => {
         onToggleIntervalsHidden(visibleIds, true);
     }, [visibleIds, onToggleIntervalsHidden]);
@@ -293,12 +327,16 @@ export default function AudioRegionsList(props: Props): JSX.Element {
             count={intervals.length}
             ordering={ordering}
             allLocked={allLocked}
+            allPinned={allPinned}
             allHidden={allHidden}
             switchLockAllShortcut={switchLockAllShortcut}
+            switchPinAllShortcut={switchPinAllShortcut}
             switchHiddenAllShortcut={switchHiddenAllShortcut}
             onChangeOrdering={setOrdering}
             onLockAll={onLockAll}
             onUnlockAll={onUnlockAll}
+            onPinAll={onPinAll}
+            onUnpinAll={onUnpinAll}
             onHideAll={onHideAll}
             onShowAll={onShowAll}
         />
@@ -337,6 +375,7 @@ export default function AudioRegionsList(props: Props): JSX.Element {
                             onSetHoveredInterval={onSetHoveredInterval}
                             onPlayIntervalOnce={onPlayIntervalOnce}
                             onToggleIntervalLock={onToggleIntervalLock}
+                            onToggleIntervalPinned={onToggleIntervalPinned}
                             onToggleIntervalHidden={onToggleIntervalHidden}
                             onCopyInterval={onCopyInterval}
                             onDeleteInterval={onDeleteInterval}

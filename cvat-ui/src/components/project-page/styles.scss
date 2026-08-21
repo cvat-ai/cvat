@@ -49,6 +49,12 @@
     margin: $grid-unit-size * 2 0;
     background: $background-color-1;
 
+    > div:first-child {
+        // title and extras
+        display: flex;
+        align-items: start;
+    }
+
     .cvat-project-name {
         margin: 0;
         margin-bottom: $grid-unit-size * 2;

@@ -11,17 +11,25 @@ import { ChunkQuality } from 'cvat-data';
 import './axios-config';
 import { axiosTusHttpStack } from './axios-tus';
 import {
-    SerializedLabel, SerializedAnnotationFormats, ProjectsFilter,
-    SerializedProject, SerializedTask, TasksFilter, SerializedUser, SerializedOrganization,
+    SerializedLabel, SerializedAnnotationFormats,
+    SerializedProject, SerializedTask, SerializedUser, SerializedOrganization,
     SerializedAbout, SerializedRemoteFile, SerializedUserAgreement, SerializedFunctionRequest,
-    SerializedRegister, JobsFilter, SerializedJob, SerializedGuide, SerializedAsset, SerializedAPISchema,
+    SerializedRegister, SerializedJob, SerializedGuide, SerializedAsset, SerializedAPISchema,
     SerializedInvitationData, SerializedCloudStorage, SerializedFramesMetaData, SerializedCollection,
-    SerializedQualitySettingsData, APIQualitySettingsFilter, SerializedQualityConflictData, APIQualityConflictsFilter,
-    SerializedQualityReportData, APIQualityReportsFilter, APIAnalyticsEventsFilter, APIConsensusSettingsFilter,
     SerializedRequest, SerializedJobValidationLayout, SerializedTaskValidationLayout, SerializedConsensusSettingsData,
-    SerializedApiToken, APIApiTokensFilter,
+    SerializedApiToken, SerializedUserGrowthData,
 } from './server-response-types';
-import { APIApiTokenModifiableFields } from './server-request-types';
+import {
+    SerializedQualityConflictData, SerializedQualityReportData,
+    SerializedQualityRequirementData, SerializedQualityRequirementSaveData,
+    SerializedQualitySettingsData, SerializedQualitySettingsSaveData,
+} from './quality/server-response-types';
+import {
+    APIApiTokenModifiableFields, APIUserGrowthDataModifiableFields,
+    ProjectsFilter, TasksFilter, JobsFilter,
+    APIQualitySettingsFilter, APIQualityConflictsFilter, APIQualityReportsFilter,
+    APIAnalyticsEventsFilter, APIConsensusSettingsFilter, APIApiTokensFilter, APIQualityRequirementsFilter,
+} from './server-request-types';
 import { PaginatedResource, SerializedModel, UpdateStatusData } from './core-types';
 import { Storage } from './storage';
 import { SerializedEvent } from './event';
@@ -1630,6 +1638,34 @@ async function updateUser(id: number, userData: Partial<SerializedUser>): Promis
     return response.data;
 }
 
+async function getGrowthData(userId: number): Promise<SerializedUserGrowthData[]> {
+    const { backendAPI } = config;
+    try {
+        const response = await Axios.get(`${backendAPI}/growth`, {
+            params: { user_id: userId, ...enableOrganization() },
+        });
+        return response.data.results;
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+}
+
+async function updateGrowthData(
+    id: number,
+    growthData: APIUserGrowthDataModifiableFields,
+): Promise<SerializedUserGrowthData> {
+    const { backendAPI } = config;
+
+    try {
+        const response = await Axios.patch(`${backendAPI}/growth/${id}`, growthData, {
+            params: enableOrganization(),
+        });
+        return response.data;
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+}
+
 export const PREVIEW_DEFAULT = Symbol('preview-default');
 export type PreviewResponse = Blob | typeof PREVIEW_DEFAULT | null;
 
@@ -2463,7 +2499,7 @@ async function getQualitySettings(
 
 async function updateQualitySettings(
     settingsID: number,
-    settingsData: SerializedQualitySettingsData,
+    settingsData: SerializedQualitySettingsSaveData,
 ): Promise<SerializedQualitySettingsData> {
     const params = enableOrganization();
     const { backendAPI } = config;
@@ -2474,6 +2510,86 @@ async function updateQualitySettings(
         });
 
         return response.data;
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+}
+
+async function getQualityRequirements(
+    filter: APIQualityRequirementsFilter,
+    aggregate?: boolean,
+): Promise<PaginatedResource<SerializedQualityRequirementData>> {
+    const { backendAPI } = config;
+
+    let response = null;
+    try {
+        if (aggregate) {
+            response = {
+                data: await fetchAll<SerializedQualityRequirementData & { id: number }>(
+                    `${backendAPI}/quality/settings/requirements`, {
+                        ...filter,
+                        ...enableOrganization(),
+                    },
+                ),
+            };
+        } else {
+            response = await Axios.get(`${backendAPI}/quality/settings/requirements`, {
+                params: {
+                    ...filter,
+                },
+            });
+        }
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+
+    response.data.results.count = response.data.count;
+    return response.data.results;
+}
+
+async function createQualityRequirement(
+    requirementData: SerializedQualityRequirementSaveData,
+): Promise<SerializedQualityRequirementData> {
+    const params = enableOrganization();
+    const { backendAPI } = config;
+
+    try {
+        const response = await Axios.post(`${backendAPI}/quality/settings/requirements`, requirementData, {
+            params,
+        });
+
+        return response.data;
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+}
+
+async function updateQualityRequirement(
+    requirementID: number,
+    requirementData: SerializedQualityRequirementSaveData,
+): Promise<SerializedQualityRequirementData> {
+    const params = enableOrganization();
+    const { backendAPI } = config;
+
+    try {
+        const response = await Axios.patch(
+            `${backendAPI}/quality/settings/requirements/${requirementID}`,
+            requirementData,
+            { params },
+        );
+
+        return response.data;
+    } catch (errorData) {
+        throw generateError(errorData);
+    }
+}
+
+async function deleteQualityRequirement(requirementID: number): Promise<void> {
+    const params = enableOrganization();
+    const { backendAPI } = config;
+
+    try {
+        await Axios.delete(`${backendAPI}/quality/settings/requirements/${requirementID}`, { params });
     } catch (errorData) {
         throw generateError(errorData);
     }
@@ -2635,6 +2751,11 @@ export default Object.freeze({
         update: updateUser,
     }),
 
+    growth: Object.freeze({
+        get: getGrowthData,
+        update: updateGrowthData,
+    }),
+
     apiTokens: Object.freeze({
         get: getApiTokens,
         create: createApiToken,
@@ -2733,6 +2854,12 @@ export default Object.freeze({
             settings: Object.freeze({
                 get: getQualitySettings,
                 update: updateQualitySettings,
+            }),
+            requirements: Object.freeze({
+                get: getQualityRequirements,
+                create: createQualityRequirement,
+                update: updateQualityRequirement,
+                delete: deleteQualityRequirement,
             }),
         }),
     }),

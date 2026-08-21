@@ -58,10 +58,14 @@ from utils.dataset_manifest import (
     VideoManifestManager,
     is_manifest,
 )
-from utils.dataset_manifest.core import VideoManifestValidator, is_dataset_manifest
+from utils.dataset_manifest.core import (
+    VideoManifestValidator,
+    is_dataset_manifest,
+    is_video_manifest,
+)
 from utils.dataset_manifest.utils import find_related_images
 
-from .cloud_provider import HeaderFirstMediaDownloader, db_storage_to_storage_instance
+from .cloud_provider import HeaderFirstMediaDownloader
 
 slogger = ServerLogManager(__name__)
 
@@ -442,13 +446,13 @@ def _validate_manifest(
     full_manifest_path = join_untrusted_path(root_dir, manifest_file)
 
     if is_in_cloud and not is_backup_restore:
-        cloud_storage_instance = db_storage_to_storage_instance(db_cloud_storage)
+        storage_client = db_cloud_storage.get_client()
         # check that cloud storage manifest file exists and is up to date
         if not full_manifest_path.exists() or (
             datetime.fromtimestamp(full_manifest_path.stat().st_mtime, tz=timezone.utc)
-            < cloud_storage_instance.get_file_last_modified(manifest_file)
+            < storage_client.get_file_last_modified(manifest_file)
         ):
-            cloud_storage_instance.download_file(manifest_file, full_manifest_path)
+            storage_client.download_file(manifest_file, full_manifest_path)
 
     if not is_manifest(full_manifest_path):
         raise ValidationError("Invalid manifest was uploaded")
@@ -525,15 +529,6 @@ def _download_data(
             local_files[name] = True
 
     return list(local_files.keys())
-
-
-def _download_data_from_cloud_storage(
-    db_storage: models.CloudStorage,
-    files: Sequence[PurePath],
-    upload_dir: Path,
-):
-    cloud_storage_instance = db_storage_to_storage_instance(db_storage)
-    cloud_storage_instance.bulk_download_to_dir(files, upload_dir)
 
 
 def _read_dataset_manifest(path: Path, *, create_index: bool = False) -> ImageManifestManager:
@@ -629,7 +624,7 @@ def _create_task_manifest_from_cloud_data(
     )
     sorted_media = [f for f in sorted_media if f in regular_images]
 
-    storage_client = db_storage_to_storage_instance(db_storage)
+    storage_client = db_storage.get_client()
     content_generator = storage_client.bulk_download_to_memory(
         list(map(os.fspath, sorted_media)),
         object_downloader=HeaderFirstMediaDownloader.create(
@@ -1067,15 +1062,27 @@ def _create_validation_jobs(
         db_gt_job.make_dirs()
 
 
+def _get_dataset_files_from_manifest(
+    manifest: ImageManifestManager | VideoManifestManager,
+) -> list[str]:
+    match manifest:
+        case VideoManifestManager():
+            return [manifest.video_name]
+        case ImageManifestManager():
+            return [image.full_name for _, image in manifest]
+        case _:
+            raise AssertionError(f"Unexpected manifest type '{type(manifest)}'")
+
+
 def _filter_cloud_storage_files(
     cloud_storage: models.CloudStorage,
     data: dict[str, Any],
     *,
     job_file_mapping: JobFileMapping | None,
     cloud_storage_manifest_prefix: str | None,
-    cloud_storage_manifest: ImageManifestManager | None,
+    cloud_storage_manifest: ImageManifestManager | VideoManifestManager | None,
 ) -> None:
-    cloud_storage_instance = db_storage_to_storage_instance(cloud_storage)
+    storage_client = cloud_storage.get_client()
 
     if cloud_storage_manifest and not data["server_files"] and not data["filename_pattern"]:
         # only manifest file was specified in server files by the user
@@ -1087,6 +1094,7 @@ def _filter_cloud_storage_files(
         copy_of_dirs = dirs.copy()
         additional_files = []
         if cloud_storage_manifest:
+            manifest_files = _get_dataset_files_from_manifest(cloud_storage_manifest)
             for directory in dirs:
                 if cloud_storage_manifest_prefix:
                     # cloud_storage_manifest_prefix is a dirname of manifest,
@@ -1094,15 +1102,9 @@ def _filter_cloud_storage_files(
                     directory = directory[len(cloud_storage_manifest_prefix) + 1 :]
 
                 additional_files.extend(
-                    [
-                        x[1].full_name
-                        for x in filter(
-                            lambda x: x[1].full_name.startswith(directory),
-                            cloud_storage_manifest,
-                        )
-                    ]
+                    [f for f in manifest_files if f.startswith(directory)]
                     if directory
-                    else [x[1].full_name for x in cloud_storage_manifest]
+                    else manifest_files
                 )
 
             if cloud_storage_manifest_prefix:
@@ -1112,9 +1114,7 @@ def _filter_cloud_storage_files(
         else:
             while len(dirs):
                 directory = dirs.pop()
-                for f in cloud_storage_instance.list_files(
-                    prefix=directory, _use_flat_listing=True
-                ):
+                for f in storage_client.list_files(prefix=directory, _use_flat_listing=True):
                     if f["type"] == "REG":
                         if problem_with_untrusted_path(f["name"]):
                             continue
@@ -1154,7 +1154,7 @@ def _filter_cloud_storage_files(
             prefix = ""
 
             while True:
-                for f in cloud_storage_instance.list_files(prefix=prefix, _use_flat_listing=True):
+                for f in storage_client.list_files(prefix=prefix, _use_flat_listing=True):
                     if f["type"] == "REG":
                         if problem_with_untrusted_path(f["name"]):
                             continue
@@ -1169,23 +1169,20 @@ def _filter_cloud_storage_files(
             if not data["filename_pattern"] == "*":
                 additional_files = fnmatch.filter(additional_files, data["filename_pattern"])
         else:
-            additional_files = (
-                list(cloud_storage_manifest.data)
-                if not cloud_storage_manifest_prefix
-                else [
-                    os.path.join(cloud_storage_manifest_prefix, f)
-                    for f in cloud_storage_manifest.data
+            additional_files = _get_dataset_files_from_manifest(cloud_storage_manifest)
+            if cloud_storage_manifest_prefix:
+                additional_files = [
+                    os.path.join(cloud_storage_manifest_prefix, f) for f in additional_files
                 ]
-            )
             if not data["filename_pattern"] == "*":
                 additional_files = fnmatch.filter(additional_files, data["filename_pattern"])
 
         data["server_files"].extend(additional_files)
 
-    if cloud_storage_instance.prefix:
+    if storage_client.prefix:
         # filter server_files based on default prefix
         data["server_files"] = list(
-            filter(lambda x: x.startswith(cloud_storage_instance.prefix), data["server_files"])
+            filter(lambda x: x.startswith(storage_client.prefix), data["server_files"])
         )
 
     if job_file_mapping is not None:
@@ -1555,7 +1552,7 @@ def _create_audio_task_media_descriptors(
 
 
 def ensure_task_is_initialized(task: models.Task) -> None:
-    if not task.media_type:
+    if not task.is_initialized:
         raise ValidationError("This task data has not been initialized yet")
 
 
@@ -1567,20 +1564,28 @@ def initialize_task(
     is_backup_restore: bool = False,
 ) -> None:
     if isinstance(db_task, int):
-        db_task = (
-            models.Task.objects.exclude(data=None)
-            .select_related("data")
-            .select_for_update(of=("self", "data"))
-            .get(pk=db_task)
-        )
+        db_task = models.Task.objects.select_for_update().get(pk=db_task)
+
+    slogger.task[db_task.id].info("creating task")
+
+    if db_task.is_initialized:
+        # initialize_task() is supposed to initialize task data layout.
+        # Currently, a task data layout can only be set up once per the lifetime.
+        raise ValidationError("Task data is already initialized")
+
+    # In some cases, e.g. single request data uploading, the task creation function
+    # can be scheduled before the transaction that creates the Data object is committed.
+    # Thus, we should avoid trying to lock the task together with data in a single SELECT query.
+    if not db_task.data_id:
+        raise ValidationError("Task has no source media info")
+    db_data = models.Data.objects.select_for_update(nowait=True).get(pk=db_task.data_id)
+    db_task.data = db_data
 
     if db_task.data.cloud_storage_id is not None:
         db_task.data.cloud_storage = db_utils.get_object_by_id_for_share(
             model=models.CloudStorage,
             object_id=db_task.data.cloud_storage_id,
         )
-
-    slogger.glob.info("create task #{}".format(db_task.id))
 
     job = rq.get_current_job()
     rq_job_meta = ImportRQMeta.for_job(job)
@@ -1595,7 +1600,6 @@ def initialize_task(
         db_task, data, is_backup_restore=is_backup_restore
     )
 
-    db_data = db_task.require_data()
     upload_dir = (
         db_data.get_upload_dirname()
         if db_data.storage != models.StorageChoice.SHARE
@@ -1637,13 +1641,21 @@ def initialize_task(
     )
 
     if is_data_in_cloud and not is_backup_restore:
-        cloud_storage_manifest: ImageManifestManager | None = None
+        cloud_storage_manifest: ImageManifestManager | VideoManifestManager | None = None
         cloud_storage_manifest_prefix: str | None = None
         if manifest_file:
-            cloud_storage_manifest = ImageManifestManager(
-                db_data.cloud_storage.get_storage_dirname() / manifest_file,
-                db_data.cloud_storage.get_storage_dirname(),
+            cloud_storage_manifest_path = (
+                db_data.cloud_storage.get_storage_dirname() / manifest_file
             )
+            if is_video_manifest(cloud_storage_manifest_path):
+                cloud_storage_manifest = VideoManifestManager(cloud_storage_manifest_path)
+            elif is_dataset_manifest(cloud_storage_manifest_path):
+                cloud_storage_manifest = ImageManifestManager(
+                    cloud_storage_manifest_path,
+                    db_data.cloud_storage.get_storage_dirname(),
+                )
+            else:
+                raise ValidationError(f"Can't recognize type of the manifest at '{manifest_file}'")
             cloud_storage_manifest.set_index()
             cloud_storage_manifest_prefix = os.path.dirname(manifest_file)
 
@@ -1693,10 +1705,8 @@ def initialize_task(
         ):
             update_status("Downloading input media")
 
-            _download_data_from_cloud_storage(
-                db_storage=db_data.cloud_storage,
-                files=list(map(PurePosixPath, itertools.chain.from_iterable(media.values()))),
-                upload_dir=upload_dir,
+            db_data.cloud_storage.get_client().bulk_download_to_dir(
+                list(map(PurePosixPath, itertools.chain.from_iterable(media.values()))), upload_dir
             )
 
             is_data_in_cloud = False

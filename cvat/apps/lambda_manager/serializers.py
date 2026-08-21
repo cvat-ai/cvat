@@ -8,7 +8,7 @@ from rest_framework import serializers
 
 class SublabelMappingEntrySerializer(serializers.Serializer):
     name = serializers.CharField()
-    attributes = serializers.DictField(child=serializers.CharField(), required=False)
+    attributes = serializers.DictField(child=serializers.CharField(max_length=64), required=False)
 
 
 class LabelMappingEntrySerializer(serializers.Serializer):

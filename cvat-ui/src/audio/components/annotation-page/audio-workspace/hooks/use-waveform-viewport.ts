@@ -21,12 +21,19 @@ const ZOOM_BASIC_COEF = 6 / 5;
 const ZOOM_ADJUST_COEF = 1 / 10;
 const ZOOM_DELTA_LIMIT = 8;
 
+export interface ViewportTransform {
+    pixelsPerSecond: number;
+    scrollLeft: number;
+}
+
 export interface WaveformViewport {
     /** Bound in AudioCanvas view rendering */
     containerRef: React.RefObject<HTMLDivElement>;
 
     /** Current reactive zoom expressed in pixels per second. */
     pixelsPerSecond: number;
+    /** Full-duration scale in pixels per second, independent of the current zoom. */
+    overviewPixelsPerSecond: number;
     /**
      * Converts clientX coordinate from viewport to semantic timestamp on the current track.
      * Returns the track boundary (start/end correspondingly) if clientX is outside of the container's BB.
@@ -42,6 +49,12 @@ export interface WaveformViewport {
      * Ensures that the given time is visible in the viewport. If it's not, scrolls the canvas to make it visible.
      */
     ensureTimeVisible(time: number): void;
+    /** Scrolls the canvas horizontally and returns the actual applied offset in pixels. */
+    scrollBy(deltaX: number): number;
+    /** Returns the current semantic-to-client horizontal transform. */
+    getTransform(): ViewportTransform | null;
+    /** Subscribes to changes in the client-coordinate-to-time transform. */
+    onTransformChange(listener: (transform: ViewportTransform) => void): () => void;
 }
 
 /**
@@ -62,12 +75,46 @@ export function useWaveformViewport(
     zoomRef.current = zoom;
     const zoomAnchorRef = useRef<{ time: number; x: number } | null>(null);
     const pixelsPerSecond = computeWaveformZoom(zoom, duration, containerWidth);
+    const overviewPixelsPerSecond = duration > 0 ? containerWidth / duration : 0;
     const pixelsPerSecondRef = useRef(pixelsPerSecond);
     pixelsPerSecondRef.current = pixelsPerSecond;
+    const transformListenersRef = useRef(new Set<(transform: ViewportTransform) => void>());
+    const previousTransformRef = useRef<ViewportTransform | null>(null);
 
     const getScrollContainer = useCallback((): HTMLElement | null => (
         runtime.instanceRef.current?.getWrapper()?.parentElement ?? null
     ), [/* must have no deps as almost every hook depends on it and they should be stable */]);
+
+    const getTransform = useCallback((): ViewportTransform | null => {
+        const scrollContainer = getScrollContainer();
+        if (!scrollContainer) return null;
+
+        return {
+            pixelsPerSecond: pixelsPerSecondRef.current,
+            scrollLeft: scrollContainer.scrollLeft,
+        };
+    }, []);
+
+    const emitTransformChange = useCallback((): void => {
+        const transform = getTransform();
+        if (!transform) return;
+
+        const previousTransform = previousTransformRef.current;
+        if (
+            previousTransform?.pixelsPerSecond === transform.pixelsPerSecond &&
+            previousTransform.scrollLeft === transform.scrollLeft
+        ) return;
+
+        previousTransformRef.current = transform;
+        transformListenersRef.current.forEach((listener) => listener(transform));
+    }, []);
+
+    const onTransformChange = useCallback((listener: (transform: ViewportTransform) => void): (() => void) => {
+        transformListenersRef.current.add(listener);
+        return (): void => {
+            transformListenersRef.current.delete(listener);
+        };
+    }, []);
 
     const clientXToTime = useCallback((clientX: number): number | null => {
         const scrollContainer = getScrollContainer();
@@ -114,6 +161,29 @@ export function useWaveformViewport(
         if (x < start) currInstance.setScroll(x);
         else if (x > end) currInstance.setScroll(x - scrollContainer.clientWidth);
     }, []);
+
+    const scrollBy = useCallback((deltaX: number): number => {
+        const currInstance = runtime.instanceRef.current;
+        const scrollContainer = getScrollContainer();
+        if (!currInstance || !scrollContainer || deltaX === 0) return 0;
+
+        const maximumScroll = Math.max(0, scrollContainer.scrollWidth - scrollContainer.clientWidth);
+        const nextScroll = clamp(scrollContainer.scrollLeft + deltaX, 0, maximumScroll);
+        const actualDeltaX = nextScroll - scrollContainer.scrollLeft;
+        if (actualDeltaX !== 0) currInstance.setScroll(nextScroll);
+        return actualDeltaX;
+    }, []);
+
+    useEffect(() => {
+        if (!ready) return undefined;
+
+        const scrollContainer = getScrollContainer();
+        if (!scrollContainer) return undefined;
+
+        scrollContainer.addEventListener('scroll', emitTransformChange);
+        emitTransformChange();
+        return () => scrollContainer.removeEventListener('scroll', emitTransformChange);
+    }, [ready]);
 
     // Container width participates in the reactive pixels-per-second calculation below.
     useLayoutEffect(() => {
@@ -206,19 +276,29 @@ export function useWaveformViewport(
             }
             instance.setScroll(clamp(scrollOffset, 0, maximumScroll));
         }
+        emitTransformChange();
     }, [pixelsPerSecond, ready]);
 
     useLayoutEffect(() => {
-        const { overlay } = runtime.minimap as unknown as { overlay?: HTMLElement };
+        if (!ready) return;
+
+        const minimapPlugin = runtime.minimap?.plugin;
+        if (!minimapPlugin) return;
+
+        const { overlay } = minimapPlugin as unknown as { overlay?: HTMLElement };
         if (overlay) overlay.style.opacity = zoom > ZOOM_MIN ? '1' : '0';
     }, [ready, zoom]);
 
     return {
         containerRef,
         pixelsPerSecond,
+        overviewPixelsPerSecond,
         clientXToTime,
         centerTimeRange,
         centerPlaybackPosition,
         ensureTimeVisible,
+        scrollBy,
+        getTransform,
+        onTransformChange,
     };
 }

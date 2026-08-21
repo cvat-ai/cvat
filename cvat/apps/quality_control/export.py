@@ -2,25 +2,32 @@
 #
 # SPDX-License-Identifier: MIT
 
-
 from __future__ import annotations
 
 import csv
-from io import BytesIO, TextIOWrapper
-from typing import IO
+from io import BytesIO, StringIO
+from typing import IO, Any
+from zipfile import ZIP_DEFLATED, ZipFile
 
-from datumaro.util import dump_json
+from datumaro.util import dump_json, parse_json
 from django.db.models import TextChoices
+from django.utils.text import slugify
 
 from cvat.apps.engine import serializers as engine_serializers
-from cvat.apps.engine.models import Job, User
+from cvat.apps.engine.models import Job
+from cvat.apps.iam.models import User
 from cvat.apps.quality_control import models
-from cvat.apps.quality_control.quality_reports import ComparisonReport
+from cvat.apps.quality_control.comparison_report import (
+    UNMATCHED_LABEL_NAME,
+    ComparisonReport,
+    ConfusionMatrix,
+)
 from cvat.apps.quality_control.statistics import (
     Averaging,
     compute_accuracy,
     compute_dice_coefficient,
 )
+from cvat.apps.quality_control.utils import is_current_report_data
 
 
 class QualityReportExportFormat(TextChoices):
@@ -83,15 +90,17 @@ def prepare_json_report_for_downloading(db_report: models.QualityReport, *, host
         assignee=_serialize_assignee(db_report.assignee),
     )
 
-    comparison_report = ComparisonReport.from_json(db_report.get_report_data())
-    serialized_data.update(comparison_report.to_dict())
-
-    if db_report.project:
-        # project reports should not have per-frame statistics, it's too detailed for this level
-        serialized_data["comparison_summary"].pop("frames")
-        serialized_data.pop("frame_results")
+    stored_report_data = parse_json(db_report.get_report_data())
+    if is_current_report_data(stored_report_data):
+        comparison_report = ComparisonReport.from_dict(stored_report_data)
+        serialized_data.update(comparison_report.to_dict())
     else:
-        for frame_result in serialized_data["frame_results"].values():
+        # Legacy reports cannot be represented by ComparisonReport anymore. Preserve their
+        # original payload so they can still be downloaded after the UI switches formats.
+        serialized_data.update(stored_report_data)
+
+    def _decorate_frame_results(frame_results: dict) -> None:
+        for frame_result in frame_results.values():
             for conflict in frame_result["conflicts"]:
                 for ann_id in conflict["annotation_ids"]:
                     task_id = jobs_to_tasks[ann_id["job_id"]]
@@ -102,92 +111,224 @@ def prepare_json_report_for_downloading(db_report: models.QualityReport, *, host
                         f"&serverID={ann_id['obj_id']}"
                     )
 
-        # String keys are needed for json dumping
-        serialized_data["frame_results"] = {
-            str(k): v for k, v in serialized_data["frame_results"].items()
-        }
+    def _stringify_frame_results(frame_results: dict) -> dict[str, dict]:
+        return {str(k): v for k, v in frame_results.items()}
+
+    if db_report.project:
+        # project reports should not have per-frame statistics, it's too detailed for this level
+        serialized_data["comparison_summary"].pop("frames")
+
+    if frame_results := serialized_data.get("frame_results"):
+        _decorate_frame_results(frame_results)
+        serialized_data["frame_results"] = _stringify_frame_results(frame_results)
+
+    for group in (serialized_data.get("groups") or {}).values():
+        if group.get("frame_results") is None:
+            continue
+
+        _decorate_frame_results(group["frame_results"])
+        group["frame_results"] = _stringify_frame_results(group["frame_results"])
 
     if task_stats := serialized_data["comparison_summary"].get("tasks", {}):
-        for k in ("all", "custom", "not_configured", "excluded"):
-            task_stats[k] = sorted(task_stats[k])
+        for k in ("all", "custom", "not_configured", "excluded", "completed"):
+            if k in task_stats:
+                task_stats[k] = sorted(task_stats[k])
 
     if job_stats := serialized_data["comparison_summary"].get("jobs", {}):
-        for k in ("all", "excluded", "not_checkable"):
-            job_stats[k] = sorted(job_stats[k])
+        for k in ("all", "excluded", "not_checkable", "completed"):
+            if k in job_stats:
+                job_stats[k] = sorted(job_stats[k])
 
     # Add the percent representation for better human readability
-    serialized_data["comparison_summary"]["frame_share_percent"] = (
-        serialized_data["comparison_summary"]["frame_share"] * 100
-    )
+    if "validation_frame_share" in serialized_data["comparison_summary"]:
+        serialized_data["comparison_summary"]["validation_frame_share_percent"] = (
+            serialized_data["comparison_summary"]["validation_frame_share"] * 100
+        )
 
     return BytesIO(dump_json(serialized_data, indent=True, append_newline=True))
 
 
-def prepare_csv_report_for_downloading(db_report: models.QualityReport) -> IO[bytes]:
-    """
-    Create a report with a .csv confusion matrix.
-    """
+def _serialize_confusion_matrix_csv(confusion_matrix: ConfusionMatrix) -> str:
+    assert confusion_matrix.labels is not None
+    assert confusion_matrix.rows is not None
 
-    report_summary = db_report.summary
-    conf_matrix = report_summary.annotations.confusion_matrix
+    labels = list(confusion_matrix.labels)
+    rows = confusion_matrix.rows
+    precisions = confusion_matrix.precision
+    recalls = confusion_matrix.recall
+    jaccards = confusion_matrix.jaccard_index
+    assert precisions is not None
+    assert recalls is not None
+    assert jaccards is not None
 
-    if not conf_matrix:
-        # Old reports can have no matrix included
-        return BytesIO()
-
-    labels = list(conf_matrix.labels)
-    confusion_rows = conf_matrix.rows
-    precisions = conf_matrix.precision
-    recalls = conf_matrix.recall
-
-    # Accuracy per class is Jaccard in Object detection
-    jaccards = conf_matrix.jaccard_index
-    jaccards[-1] = "nan"
-
-    unmatched_label = "unmatched"
-    dataset_accuracy_micro, *_ = compute_accuracy(
-        confusion_rows, excluded_label_idx=labels.index(unmatched_label)
+    unmatched_label_idx = (
+        labels.index(UNMATCHED_LABEL_NAME) if UNMATCHED_LABEL_NAME in labels else None
     )
-    dataset_dice_coeff_avg_macro, dataset_dice_coeff_by_class, *_ = compute_dice_coefficient(
-        confusion_rows,
+    dataset_accuracy_micro, _ = compute_accuracy(
+        rows,
+        excluded_label_idx=unmatched_label_idx,
+    )
+    dataset_dice_coeff_avg_macro, dataset_dice_coeff_by_class, _ = compute_dice_coefficient(
+        rows,
         averaging=Averaging.macro,
-        excluded_label_idx=labels.index(unmatched_label),
+        excluded_label_idx=unmatched_label_idx,
     )
 
-    csv_file = BytesIO()
+    jaccards = jaccards.copy()
+    if unmatched_label_idx is not None:
+        jaccards[unmatched_label_idx] = float("nan")
 
-    csv_text_wrapper = TextIOWrapper(csv_file, write_through=True, newline="")
-    csv_writer = csv.writer(csv_text_wrapper)
-    csv_writer.writerow(["DS (row) \\ GT (col) label"] + labels + ["precision"])
+    output = StringIO(newline="")
+    writer = csv.writer(output)
+    writer.writerow(["DS (row) \\ GT (col) label", *labels, "precision"])
 
-    for confusion_row, label, precision in zip(confusion_rows, labels, precisions):
-        csv_writer.writerow([label] + confusion_row.tolist() + [precision])
+    for row, label, precision in zip(rows, labels, precisions):
+        writer.writerow([label, *row.tolist(), precision])
 
-    csv_writer.writerow(["recall"] + recalls.tolist())
-    csv_writer.writerow(["dice coefficient"] + dataset_dice_coeff_by_class.tolist())
-    csv_writer.writerow(["jaccard index"] + jaccards.tolist())
-    csv_writer.writerow([""])
-    csv_writer.writerow(["avg. accuracy (micro)", dataset_accuracy_micro])
-    csv_writer.writerow(["avg. dice coefficient (macro)", dataset_dice_coeff_avg_macro])
-    csv_text_wrapper.detach()
+    writer.writerow(["recall", *recalls.tolist()])
+    writer.writerow(["dice coefficient", *dataset_dice_coeff_by_class.tolist()])
+    writer.writerow(["jaccard index", *jaccards.tolist()])
+    writer.writerow([""])
+    writer.writerow(["avg. accuracy (micro)", dataset_accuracy_micro])
+    writer.writerow(["avg. dice coefficient (macro)", dataset_dice_coeff_avg_macro])
 
-    csv_file.seek(0)
+    return output.getvalue()
 
-    return csv_file
+
+def _has_downloadable_confusion_matrix(confusion_matrix: ConfusionMatrix | None) -> bool:
+    return (
+        confusion_matrix is not None
+        and confusion_matrix.labels is not None
+        and confusion_matrix.rows is not None
+        and bool(confusion_matrix.labels)
+    )
+
+
+def _get_group_requirement_id(group_report) -> int | None:
+    requirement_id = group_report.parameters.get("requirement_id")
+    return int(requirement_id) if requirement_id is not None else None
+
+
+def _get_requirement_confusion_matrix(
+    db_report: models.QualityReport, *, requirement_id: int
+) -> ConfusionMatrix | None:
+    comparison_report = ComparisonReport.from_json(db_report.get_report_data())
+    groups = comparison_report.groups or {}
+    group_report = next(
+        (
+            group_report
+            for group_report in groups.values()
+            if _get_group_requirement_id(group_report) == requirement_id
+        ),
+        None,
+    )
+
+    if not group_report:
+        return None
+
+    confusion_matrix = group_report.comparison_summary.confusion_matrix
+    if not _has_downloadable_confusion_matrix(confusion_matrix):
+        return None
+
+    return confusion_matrix
+
+
+def prepare_requirement_confusion_matrix_json(
+    db_report: models.QualityReport, *, requirement_id: int
+) -> dict[str, Any] | None:
+    confusion_matrix = _get_requirement_confusion_matrix(
+        db_report,
+        requirement_id=requirement_id,
+    )
+    if confusion_matrix is None:
+        return None
+
+    return confusion_matrix.to_dict()
+
+
+def prepare_requirement_confusion_matrix_for_downloading(
+    db_report: models.QualityReport, *, requirement_id: int
+) -> str | None:
+    confusion_matrix = _get_requirement_confusion_matrix(
+        db_report,
+        requirement_id=requirement_id,
+    )
+    if confusion_matrix is None:
+        return None
+
+    return _serialize_confusion_matrix_csv(confusion_matrix)
+
+
+def _make_unique_group_archive_path(group_name: str, used_paths: set[str]) -> str:
+    base_name = slugify(group_name) or "group"
+    archive_path = f"groups/{base_name}.csv"
+    suffix = 2
+
+    while archive_path in used_paths:
+        archive_path = f"groups/{base_name}-{suffix}.csv"
+        suffix += 1
+
+    used_paths.add(archive_path)
+    return archive_path
+
+
+def prepare_confusion_matrices_archive_for_downloading(db_report: models.QualityReport) -> bytes:
+    comparison_report = ComparisonReport.from_json(db_report.get_report_data())
+    archive_buffer = BytesIO()
+    used_paths = {"manifest.json"}
+    manifest = {
+        "report_id": db_report.id,
+        "target": str(db_report.target),
+        "matrices": [],
+    }
+
+    def _add_matrix_to_archive(
+        archive: ZipFile,
+        *,
+        archive_path: str,
+        scope: str,
+        name: str,
+        confusion_matrix: ConfusionMatrix | None,
+        requirement_id: int | None = None,
+    ) -> None:
+        if not _has_downloadable_confusion_matrix(confusion_matrix):
+            return
+
+        assert confusion_matrix is not None
+        archive.writestr(archive_path, _serialize_confusion_matrix_csv(confusion_matrix))
+        manifest_item = {
+            "scope": scope,
+            "name": name,
+            "path": archive_path,
+            "labels": confusion_matrix.labels,
+        }
+        if requirement_id is not None:
+            manifest_item["requirement_id"] = requirement_id
+        manifest["matrices"].append(manifest_item)
+
+    with ZipFile(archive_buffer, mode="w", compression=ZIP_DEFLATED) as archive:
+        for group_name, group_report in sorted((comparison_report.groups or {}).items()):
+            _add_matrix_to_archive(
+                archive,
+                archive_path=_make_unique_group_archive_path(group_name, used_paths),
+                scope="group",
+                name=group_name,
+                confusion_matrix=group_report.comparison_summary.confusion_matrix,
+                requirement_id=_get_group_requirement_id(group_report),
+            )
+
+        archive.writestr(
+            "manifest.json",
+            dump_json(manifest, indent=True, append_newline=True).decode(),
+        )
+
+    return archive_buffer.getvalue()
 
 
 def prepare_report_for_downloading(
-    db_report: models.QualityReport, *, host: str, export_format: QualityReportExportFormat
+    db_report: models.QualityReport, *, host: str
 ) -> tuple[IO[bytes], str]:
-    if export_format == QualityReportExportFormat.JSON:
-        return (
-            prepare_json_report_for_downloading(db_report=db_report, host=host),
-            "application/json",
-        )
-    elif export_format == QualityReportExportFormat.CSV:
-        return (
-            prepare_csv_report_for_downloading(db_report=db_report),
-            "text/csv",
-        )
-    else:
-        assert False
+    return (
+        prepare_json_report_for_downloading(db_report=db_report, host=host),
+        "application/json",
+    )
