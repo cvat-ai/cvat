@@ -18,7 +18,6 @@ from cvat.apps.engine.models import Job
 from cvat.apps.iam.models import User
 from cvat.apps.quality_control import models
 from cvat.apps.quality_control.comparison_report import (
-    UNMATCHED_LABEL_NAME,
     ComparisonReport,
     ComparisonReportAnnotationsSummary,
     ComparisonReportRequirementSummary,
@@ -175,10 +174,6 @@ def _serialize_confusion_matrix_csv(confusion_matrix: ConfusionMatrix) -> str:
             aggregation=models.QualityMetricAggregation.MEAN,
         ),
     )
-
-    jaccards = jaccards.copy()
-    if unmatched_label_idx is not None:
-        jaccards[unmatched_label_idx] = float("nan")
 
     output = StringIO(newline="")
     writer = csv.writer(output)
