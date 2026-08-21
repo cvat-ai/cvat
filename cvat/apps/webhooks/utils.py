@@ -10,7 +10,8 @@ from http import HTTPStatus
 from typing import TypeVar
 
 import requests
-from crum import get_current_request
+import rq
+from crum import get_current_request, get_current_user
 from django.db import transaction
 from django.db.models import Model
 from rest_framework.serializers import BaseSerializer
@@ -26,7 +27,7 @@ from cvat.apps.engine.models import (
     RequestTarget,
     Task,
 )
-from cvat.apps.engine.rq import ExportRequestId, ImportRequestId
+from cvat.apps.engine.rq import BaseRQMeta, ExportRequestId, ImportRequestId
 from cvat.apps.engine.serializers import BasicUserSerializer, UserSerializer
 from cvat.apps.iam.models import User
 from cvat.apps.organizations.models import Invitation, Membership, Organization
@@ -196,14 +197,17 @@ def retrieve_instance(model: type[ModelT], pk: int) -> ModelT:
     raise ValueError(f"Unsupported model: {model}")
 
 
-def get_sender(instance) -> dict:
-    from cvat.apps.events.handlers import get_request, get_user
+def get_sender() -> dict | None:
+    http_request = get_current_request()
+    if http_request is not None:
+        user = get_current_user()
+        return BasicUserSerializer(user, context={"request": http_request}).data
 
-    user = get_user(instance)
-    if isinstance(user, dict):
-        return user
-
-    return BasicUserSerializer(user, context={"request": get_request(instance)}).data
+    rq_job = rq.get_current_job()
+    if rq_job is not None:
+        user = BaseRQMeta.for_job(rq_job).user
+        if user is not None:
+            return user.to_dict()
 
 
 def perform_webhook_request(webhook: Webhook, payload: dict) -> tuple[int, str]:
@@ -278,7 +282,7 @@ def send_user_update_event(user_id: int) -> None:
     webhook_payload = {
         "event": event_key_,
         resource_name: get_serializer(instance=user).data,
-        "sender": get_sender(instance=user),
+        "sender": get_sender(),
     }
 
     webhook_payload_pairs = [
