@@ -9,20 +9,24 @@ import type { Region, UpdateSide } from 'wavesurfer.js/dist/plugins/regions';
 import { MIN_INTERVAL_DURATION, INTERVAL_BOUNDARY_EPSILON } from 'audio/utils/waveform-geometry';
 import { audioActions, createAudioIntervalAsync, updateAudioIntervalAsync } from 'actions/audio-actions';
 import { ActiveControl, CombinedState } from 'reducers';
+import { clamp } from 'utils/math';
 import { shallowEqual, ThunkDispatch } from 'utils/redux';
 
 import {
-    clientIDFromWaveRegionId, intervalEndSeconds, intervalStartSeconds,
+    clampRange, clientIDFromWaveRegionId, intervalEndSeconds, intervalStartSeconds,
 } from '../utils/audio-interval';
 import { attachRegionResizeAutoScroll } from '../utils/region-resize-auto-scroll';
 import { WaveformRegionRuntime } from './use-audio-waveform';
+import { useBulkBoundariesEditing } from './use-bulk-boundaries-editing';
+import type { RegionHighlighting } from './use-region-projection';
+import type { SelectionInteraction } from './use-region-selection';
 import { WaveformViewport } from './use-waveform-viewport';
 
 const REGION_DRAG_BOUNDS_CONSTRAINT = Symbol('regionDragBoundsConstraint');
 const RESIZE_CURSOR_CLASS = 'cvat-audio-waveform-interaction-resize';
 const AUTO_SCROLL_CLASS = 'cvat-audio-waveform-interaction-auto-scroll';
 
-interface RegionInteraction {
+interface RegionPointerInteraction {
     pointerID: number;
     clientID: number;
 }
@@ -39,6 +43,8 @@ interface ResizeMeta {
 
 interface Params {
     regionRuntime: WaveformRegionRuntime;
+    regionHighlighting: RegionHighlighting;
+    selectionInteraction: SelectionInteraction;
     viewport: WaveformViewport;
     isPreviewRegion(region: Region): boolean;
     durationRef: React.MutableRefObject<number>;
@@ -70,7 +76,7 @@ function installRegionDragBoundsConstraint(region: Region): void {
             return;
         }
         const deltaSeconds = (deltaPx / width) * total;
-        const clampedSeconds = Math.max(-region.start, Math.min(total - region.end, deltaSeconds));
+        const clampedSeconds = clamp(deltaSeconds, -region.start, total - region.end);
         original((clampedSeconds / total) * width, side, startTime);
     };
     /* eslint-enable no-underscore-dangle */
@@ -80,7 +86,8 @@ function installRegionDragBoundsConstraint(region: Region): void {
  * Persists user-created and user-edited waveform regions as audio intervals.
  */
 export function useRegionEditing({
-    regionRuntime, viewport, isPreviewRegion, durationRef, ready,
+    regionRuntime, regionHighlighting, selectionInteraction, viewport,
+    isPreviewRegion, durationRef, ready,
 }: Params): void {
     const dispatch = useDispatch<ThunkDispatch>();
     const { intervals, activeLabelId, activeControl } = useSelector(
@@ -93,6 +100,9 @@ export function useRegionEditing({
     );
     const latestRef = useRef({ intervals, activeLabelId, activeControl });
     latestRef.current = { intervals, activeLabelId, activeControl };
+    useBulkBoundariesEditing({
+        regionRuntime, regionHighlighting, selectionInteraction, viewport, durationRef, ready,
+    });
 
     // setup when runtime is ready
     useEffect(() => {
@@ -109,8 +119,7 @@ export function useRegionEditing({
                 clientID !== null && latestRef.current.intervals.some((interval) => interval.clientID === clientID);
             if (exists) return;
 
-            const start = Math.max(0, region.start);
-            const end = Math.max(start, region.end);
+            const { start, end } = clampRange(region, durationRef.current);
             // remove the source region to get it re-created from redux
             region.remove();
             if (end - start > MIN_INTERVAL_DURATION) {
@@ -135,12 +144,10 @@ export function useRegionEditing({
                 return;
             }
 
-            dispatch(
-                updateAudioIntervalAsync(clientID, {
-                    start: Math.round(region.start * 1000),
-                    stop: Math.round(region.end * 1000),
-                }),
-            );
+            dispatch(updateAudioIntervalAsync(clientID, {
+                start: Math.round(region.start * 1000),
+                stop: Math.round(region.end * 1000),
+            }));
         };
 
         regionsPlugin.getRegions().forEach((region) => {
@@ -168,7 +175,7 @@ export function useRegionEditing({
     useEffect(() => {
         if (!ready) return undefined;
 
-        let interaction: RegionInteraction | null = null;
+        let interaction: RegionPointerInteraction | null = null;
         let resizeMeta: ResizeMeta | null = null;
         let hasResized = false;
         let resizeCursorViewport: HTMLElement | null = null;
@@ -210,13 +217,11 @@ export function useRegionEditing({
             if (time === null || duration <= 0) return false;
 
             const delta = time - resize.startTime;
-            const start = resize.side === 'start' ? Math.max(
-                0,
-                Math.min(resize.start + delta, resize.end - MIN_INTERVAL_DURATION),
+            const start = resize.side === 'start' ? clamp(
+                resize.start + delta, 0, resize.end - MIN_INTERVAL_DURATION,
             ) : resize.start;
-            const end = resize.side === 'end' ? Math.min(
-                duration,
-                Math.max(resize.end + delta, resize.start + MIN_INTERVAL_DURATION),
+            const end = resize.side === 'end' ? clamp(
+                resize.end + delta, resize.start + MIN_INTERVAL_DURATION, duration,
             ) : resize.end;
             if (start === resize.region.start && end === resize.region.end) {
                 return false;

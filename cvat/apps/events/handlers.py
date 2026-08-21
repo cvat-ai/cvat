@@ -27,7 +27,6 @@ from cvat.apps.engine.models import (
     Project,
     ShapeType,
     Task,
-    User,
 )
 from cvat.apps.engine.rq import BaseRQMeta
 from cvat.apps.engine.serializers import (
@@ -41,6 +40,7 @@ from cvat.apps.engine.serializers import (
     TaskReadSerializer,
 )
 from cvat.apps.events import utils
+from cvat.apps.iam.models import User
 from cvat.apps.organizations.models import Invitation, Membership, Organization
 from cvat.apps.organizations.serializers import (
     InvitationReadSerializer,

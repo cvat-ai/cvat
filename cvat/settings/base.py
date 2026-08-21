@@ -150,6 +150,8 @@ INSTALLED_APPS = [
     "cvat.apps.growth",
 ]
 
+AUTH_USER_MODEL = "iam.User"
+
 SITE_ID = 1
 
 

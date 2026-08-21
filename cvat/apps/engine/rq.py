@@ -26,8 +26,7 @@ from cvat.apps.redis_handler.apps import SELECTOR_TO_QUEUE
 from cvat.apps.redis_handler.rq import RequestId, RequestIdWithOptionalSubresource
 
 if TYPE_CHECKING:
-    from django.contrib.auth.models import User
-
+    from cvat.apps.iam.models import User
     from cvat.apps.redis_handler.background import AbstractRequestManager
 
 

@@ -186,7 +186,7 @@
     }
   },
   {
-    "model": "auth.user",
+    "model": "iam.user",
     "pk": 1,
     "fields": {
       "date_joined": "2021-12-14T18:04:57Z",
@@ -208,7 +208,7 @@
     }
   },
   {
-    "model": "auth.user",
+    "model": "iam.user",
     "pk": 2,
     "fields": {
       "date_joined": "2021-12-14T18:21:09Z",
@@ -230,7 +230,7 @@
     }
   },
   {
-    "model": "auth.user",
+    "model": "iam.user",
     "pk": 3,
     "fields": {
       "date_joined": "2021-12-14T18:24:12Z",
@@ -252,7 +252,7 @@
     }
   },
   {
-    "model": "auth.user",
+    "model": "iam.user",
     "pk": 4,
     "fields": {
       "date_joined": "2021-12-14T18:24:39Z",
@@ -274,7 +274,7 @@
     }
   },
   {
-    "model": "auth.user",
+    "model": "iam.user",
     "pk": 5,
     "fields": {
       "date_joined": "2021-12-14T18:25:10Z",
@@ -296,7 +296,7 @@
     }
   },
   {
-    "model": "auth.user",
+    "model": "iam.user",
     "pk": 6,
     "fields": {
       "date_joined": "2021-12-14T18:30:00Z",
@@ -318,7 +318,7 @@
     }
   },
   {
-    "model": "auth.user",
+    "model": "iam.user",
     "pk": 7,
     "fields": {
       "date_joined": "2021-12-14T18:30:43Z",
@@ -340,7 +340,7 @@
     }
   },
   {
-    "model": "auth.user",
+    "model": "iam.user",
     "pk": 8,
     "fields": {
       "date_joined": "2021-12-14T18:31:25Z",
@@ -362,7 +362,7 @@
     }
   },
   {
-    "model": "auth.user",
+    "model": "iam.user",
     "pk": 9,
     "fields": {
       "date_joined": "2021-12-14T18:32:01Z",
@@ -384,7 +384,7 @@
     }
   },
   {
-    "model": "auth.user",
+    "model": "iam.user",
     "pk": 10,
     "fields": {
       "date_joined": "2021-12-14T18:33:06Z",
@@ -406,7 +406,7 @@
     }
   },
   {
-    "model": "auth.user",
+    "model": "iam.user",
     "pk": 11,
     "fields": {
       "date_joined": "2021-12-14T18:34:01Z",
@@ -428,7 +428,7 @@
     }
   },
   {
-    "model": "auth.user",
+    "model": "iam.user",
     "pk": 12,
     "fields": {
       "date_joined": "2021-12-14T18:34:34Z",
@@ -450,7 +450,7 @@
     }
   },
   {
-    "model": "auth.user",
+    "model": "iam.user",
     "pk": 13,
     "fields": {
       "date_joined": "2021-12-14T18:35:15Z",
@@ -472,7 +472,7 @@
     }
   },
   {
-    "model": "auth.user",
+    "model": "iam.user",
     "pk": 14,
     "fields": {
       "date_joined": "2021-12-14T18:36:00Z",
@@ -490,7 +490,7 @@
     }
   },
   {
-    "model": "auth.user",
+    "model": "iam.user",
     "pk": 15,
     "fields": {
       "date_joined": "2021-12-14T18:36:31Z",
@@ -508,7 +508,7 @@
     }
   },
   {
-    "model": "auth.user",
+    "model": "iam.user",
     "pk": 16,
     "fields": {
       "date_joined": "2021-12-14T18:37:09Z",
@@ -526,7 +526,7 @@
     }
   },
   {
-    "model": "auth.user",
+    "model": "iam.user",
     "pk": 17,
     "fields": {
       "date_joined": "2021-12-14T18:37:41Z",
@@ -544,7 +544,7 @@
     }
   },
   {
-    "model": "auth.user",
+    "model": "iam.user",
     "pk": 18,
     "fields": {
       "date_joined": "2021-12-14T18:38:46Z",
@@ -566,7 +566,7 @@
     }
   },
   {
-    "model": "auth.user",
+    "model": "iam.user",
     "pk": 19,
     "fields": {
       "date_joined": "2022-02-24T20:45:07Z",
@@ -588,7 +588,7 @@
     }
   },
   {
-    "model": "auth.user",
+    "model": "iam.user",
     "pk": 20,
     "fields": {
       "date_joined": "2022-02-24T20:45:19Z",
@@ -610,7 +610,7 @@
     }
   },
   {
-    "model": "auth.user",
+    "model": "iam.user",
     "pk": 21,
     "fields": {
       "date_joined": "2023-03-30T09:37:31.615Z",

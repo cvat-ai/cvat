@@ -7,7 +7,6 @@ import re
 import shutil
 
 from django.conf import settings
-from django.contrib.auth.models import User
 from django.db import transaction
 from django.db.models.signals import m2m_changed, post_delete, post_save, pre_delete, pre_save
 from django.dispatch import receiver
@@ -16,6 +15,7 @@ from rest_framework.exceptions import ValidationError
 from cvat.apps.engine.cache import MediaCache
 from cvat.apps.engine.cache_signals import cache_item_created_signal, cache_item_read_signal
 from cvat.apps.events.handlers import handle_cache_item_create, handle_cache_item_read
+from cvat.apps.iam.models import User
 
 from .models import Asset, CloudStorage, Data, Job, JobType, Profile, Project, StatusChoice, Task
 

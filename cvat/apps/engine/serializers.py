@@ -26,7 +26,7 @@ from urllib.parse import urlparse
 
 import django_rq
 from django.conf import settings
-from django.contrib.auth.models import Group, User
+from django.contrib.auth.models import Group
 from django.core.files.uploadedfile import UploadedFile
 from django.db import transaction
 from django.db.models import Count, Prefetch, prefetch_related_objects
@@ -63,6 +63,7 @@ from cvat.apps.engine.utils import (
     parse_specific_attributes,
     take_by,
 )
+from cvat.apps.iam.models import User
 from cvat.apps.iam.permissions import get_iam_context
 from cvat.apps.organizations.models import Organization
 from cvat.apps.webhooks.models import Webhook
