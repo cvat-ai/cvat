@@ -10,10 +10,11 @@ import io
 import json
 import os
 import textwrap
+import time
 from copy import deepcopy
 from datetime import timedelta
 from functools import wraps
-from typing import Any
+from typing import Any, Callable
 
 import datumaro.util.mask_tools as mask_tools
 import django_rq
@@ -23,6 +24,7 @@ import rq
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.core.signing import BadSignature, TimestampSigner
+from django_rq.queues import DjangoRQ
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import (
     OpenApiParameter,
@@ -34,6 +36,8 @@ from drf_spectacular.utils import (
 from PIL import Image
 from rest_framework import serializers, status, viewsets
 from rest_framework.response import Response
+from rq.command import send_stop_job_command
+from rq.exceptions import InvalidJobOperation
 
 import cvat.apps.dataset_manager as dm
 from cvat.apps.dataset_manager.task import PatchAction
@@ -66,6 +70,7 @@ from cvat.apps.lambda_manager.serializers import (
 )
 from cvat.apps.lambda_manager.signals import interactive_function_call_signal
 from cvat.apps.lambda_manager.utils import ROIHelper
+from cvat.apps.redis_handler.utils import can_worker_stop_started_jobs
 from cvat.utils.http import make_requests_session
 
 slogger = ServerLogManager(__name__)
@@ -720,6 +725,11 @@ class LambdaFunction:
 class LambdaQueue:
     RESULT_TTL = timedelta(minutes=30)
     FAILED_TTL = timedelta(hours=3)
+    # How long a DELETE waits for the worker to react to the stop command.
+    # Stopping is normally almost instant: the worker SIGKILLs the work horse
+    # and updates the job status right after waitpid() returns.
+    STOP_TIMEOUT = timedelta(seconds=10)
+    STOP_POLL_INTERVAL = timedelta(milliseconds=100)
 
     def _get_queue(self):
         return django_rq.get_queue(settings.CVAT_QUEUES.AUTO_ANNOTATION.value)
@@ -820,7 +830,7 @@ class LambdaQueue:
 
         return LambdaJob(rq_job)
 
-    def delete_job(self, pk: str) -> None:
+    def delete_job(self, pk: str, *, check_permissions: Callable[[LambdaJob], None]) -> None:
         queue = self._get_queue()
 
         # Use the same (queue, rq_id) lock as enqueue() so a DELETE cannot
@@ -832,25 +842,66 @@ class LambdaQueue:
                     "{} lambda job is not found".format(pk), code=status.HTTP_404_NOT_FOUND
                 )
 
-            job_status = rq_job.get_status(refresh=False)
-            if job_status == rq.job.JobStatus.STARTED:
-                # The work-horse may still be running and writing annotations.
-                # Deleting the hash now would let this RQ id be reused by a
-                # new request while the old execution is still alive, so the
-                # old run's late progress/result could overwrite the new one.
-                raise ValidationError(
-                    "Request #{} is still running and cannot be canceled".format(pk),
-                    code=status.HTTP_409_CONFLICT,
-                )
+            # The job ID is deterministic and can be reused. Check permissions on
+            # the same job instance whose status is inspected and whose hash will
+            # be deleted, while reuse of the ID is prevented by the lock.
+            check_permissions(LambdaJob(rq_job))
 
-            if job_status in (
+            job_status = rq_job.get_status(refresh=False)
+
+            if job_status == rq.job.JobStatus.STARTED:
+                # Deleting the hash of a started job is not enough to stop it: the
+                # work horse keeps running and submitting annotations, while the RQ id
+                # becomes free for a new request for the same task. The old execution
+                # would then overwrite or replay the new one. Terminate the work horse
+                # first and only delete the hash once the job has really left the
+                # started state.
+                self._stop_started_job(queue, rq_job)
+            elif job_status in (
                 rq.job.JobStatus.QUEUED,
                 rq.job.JobStatus.DEFERRED,
                 rq.job.JobStatus.SCHEDULED,
             ):
-                rq_job.cancel()
+                rq_job.cancel(enqueue_dependents=settings.ONE_RUNNING_JOB_IN_QUEUE_PER_USER)
 
             rq_job.delete()
+
+    @classmethod
+    def _stop_started_job(cls, queue: DjangoRQ, rq_job: rq.job.Job) -> None:
+        if not can_worker_stop_started_jobs(rq_job):
+            raise ValidationError(
+                "Request #{} is executed by a worker that cannot stop started requests".format(
+                    rq_job.id
+                ),
+                code=status.HTTP_409_CONFLICT,
+            )
+
+        try:
+            # The worker kills the forked work horse and moves the job to the
+            # stopped state from its own monitoring loop.
+            send_stop_job_command(queue.connection, rq_job.id, serializer=queue.serializer)
+        except InvalidJobOperation as ex:
+            # The job is no longer being executed, e.g. it has just finished.
+            slogger.glob.warning("Failed to stop lambda RQ job %s: %s", rq_job.id, ex)
+
+        cls._wait_until_not_started(rq_job)
+
+    @classmethod
+    def _wait_until_not_started(cls, rq_job: rq.job.Job) -> None:
+        deadline = time.monotonic() + cls.STOP_TIMEOUT.total_seconds()
+
+        while True:
+            # A deleted job reports no status, which also means the work horse is gone.
+            if rq_job.get_status(refresh=True) != rq.job.JobStatus.STARTED:
+                return
+
+            if time.monotonic() >= deadline:
+                raise ValidationError(
+                    "Request #{} could not be stopped in time, please try again".format(rq_job.id),
+                    code=status.HTTP_409_CONFLICT,
+                )
+
+            time.sleep(cls.STOP_POLL_INTERVAL.total_seconds())
 
 
 class DetectionResultConverter:
@@ -1480,9 +1531,7 @@ class FunctionViewSet(viewsets.ViewSet):
         ],
         responses={
             "204": OpenApiResponse(description="The request has been canceled"),
-            "409": OpenApiResponse(
-                description="The request is still running and cannot be canceled"
-            ),
+            "409": OpenApiResponse(description="The request could not be stopped"),
         },
     ),
 )
@@ -1587,6 +1636,7 @@ class RequestViewSet(viewsets.ViewSet):
     @return_response(status.HTTP_204_NO_CONTENT)
     def destroy(self, request, pk):
         queue = LambdaQueue()
-        rq_job = queue.fetch_job(pk)
-        self.check_object_permissions(request, rq_job)
-        queue.delete_job(pk)
+        queue.delete_job(
+            pk,
+            check_permissions=lambda rq_job: self.check_object_permissions(request, rq_job),
+        )
