@@ -40,6 +40,7 @@ Check out:
   - [Create a container](#create-a-container)
   - [Upload data](#upload-data-2)
   - [SAS token and connection string](#sas-token-and-connection-string)
+  - [Service principal certificate](#service-principal-certificate)
   - [Personal use](#personal-use)
   - [Attach Azure Blob Storage](#attach-azure-blob-storage)
   - [Video tutorial: Add Microsoft Azure Blob Storage as Cloud Storage in CVAT](#video-tutorial-add-microsoft-azure-blob-storage-as-cloud-storage-in-cvat)
@@ -524,6 +525,28 @@ To configure the credentials:
 
 ![Microsoft Azure interface with highlighted "SAS token" field](/images/azure_blob_container_tutorial3.jpg)
 
+### Service principal certificate
+
+Unlike SAS tokens, service principal certificates
+do not have to be rotated on a schedule set at token creation time,
+which makes them convenient for long-lived deployments.
+
+To use an [Azure service principal](https://learn.microsoft.com/en-us/cli/azure/azure-cli-sp-tutorial-3)
+with certificate-based authentication:
+
+1. Create a service principal with a certificate,
+   for example with the Azure CLI:
+   `az ad sp create-for-rbac --name myServicePrincipalName --create-cert`.
+   Keep the generated PEM file: it must contain both the certificate and the private key,
+   and the private key must not be encrypted.
+1. Assign the service principal a role that allows blob access on the storage account
+   or container, for example **Storage Blob Data Reader**
+   (see [Assign an Azure role for access to blob data](https://learn.microsoft.com/en-us/azure/storage/blobs/assign-azure-role-data-access)).
+1. When attaching the storage, select
+   **Service principal certificate** as the authentication type and fill in
+   the **Account name**, **Tenant ID**, and **Client ID** fields,
+   then upload the PEM file in the **Certificate file** field.
+
 ### Personal use
 
 For personal use, you can use the **Access Key**
@@ -552,7 +575,7 @@ Fill in the following fields:
 | **Description**         | (Optional) Add description of storage. |
 | **Provider**            | From drop-down list select **Azure Blob Storage**. |
 | **Container name`**     | Name of the cloud storage container. |
-| **Authentication type** | Depends on the container setup. <br>**[Account name and SAS token](https://docs.microsoft.com/en-us/azure/cognitive-services/translator/document-translation/create-sas-tokens?tabs=blobs)**: <ul><li>**Account name** enter storage account name. <li>**SAS token** is located in the **Shared access signature** section of your [Storage account](#sas-token).</ul>. **[Anonymous access](https://docs.microsoft.com/en-us/azure/storage/blobs/anonymous-read-access-configure?tabs=portal)**: for anonymous access **Allow enabling public access on containers** must be enabled. |
+| **Authentication type** | Depends on the container setup. <br>**[Account name and SAS token](https://docs.microsoft.com/en-us/azure/cognitive-services/translator/document-translation/create-sas-tokens?tabs=blobs)**: <ul><li>**Account name** enter storage account name. <li>**SAS token** is located in the **Shared access signature** section of your [Storage account](#sas-token).</ul>. **[Anonymous access](https://docs.microsoft.com/en-us/azure/storage/blobs/anonymous-read-access-configure?tabs=portal)**: for anonymous access **Allow enabling public access on containers** must be enabled. **[Service principal certificate](#service-principal-certificate)**: <ul><li>**Account name** enter storage account name. <li>**Tenant ID** and **Client ID** of the service principal. <li>**Certificate file** upload the PEM file with the certificate and the private key.</ul> |
 | **Prefix**              | (Optional) Used to filter data from the bucket. By setting a default prefix, you ensure that only data from a specific folder in the cloud is used in CVAT. This will affect which files you see when creating a task with cloud data. |
 | **Manifests**           | (Optional) Select **+ Add manifest** and enter the name of the manifest file with an extension. For example: `manifest.jsonl`. |
 

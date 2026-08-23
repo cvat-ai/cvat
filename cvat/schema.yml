@@ -496,6 +496,7 @@ paths:
           - KEY_FILE_PATH
           - ANONYMOUS_ACCESS
           - CONNECTION_STRING
+          - SERVICE_PRINCIPAL_CERT
       - name: filter
         required: false
         in: query
@@ -649,6 +650,19 @@ paths:
                   manifests:
                   - manifest.jsonl
                 summary: Create Azure cloud storage
+              CreateAzureCloudStorageWithAServicePrincipalCertificate:
+                value:
+                  provider_type: AZURE_CONTAINER
+                  resource: somecontainer
+                  display_name: Container
+                  credentials_type: SERVICE_PRINCIPAL_CERT
+                  account_name: someaccount
+                  tenant_id: 00000000-0000-0000-0000-000000000000
+                  client_id: 00000000-0000-0000-0000-000000000000
+                  key_file: file
+                  manifests:
+                  - manifest.jsonl
+                summary: Create Azure cloud storage with a service principal certificate
               CreateGCS:
                 value:
                   provider_type: GOOGLE_CLOUD_STORAGE
@@ -755,6 +769,19 @@ paths:
                   manifests:
                   - manifest.jsonl
                 summary: Create Azure cloud storage
+              CreateAzureCloudStorageWithAServicePrincipalCertificate:
+                value:
+                  provider_type: AZURE_CONTAINER
+                  resource: somecontainer
+                  display_name: Container
+                  credentials_type: SERVICE_PRINCIPAL_CERT
+                  account_name: someaccount
+                  tenant_id: 00000000-0000-0000-0000-000000000000
+                  client_id: 00000000-0000-0000-0000-000000000000
+                  key_file: file
+                  manifests:
+                  - manifest.jsonl
+                summary: Create Azure cloud storage with a service principal certificate
               CreateGCS:
                 value:
                   provider_type: GOOGLE_CLOUD_STORAGE
@@ -7469,6 +7496,12 @@ components:
         account_name:
           type: string
           maxLength: 24
+        tenant_id:
+          type: string
+          maxLength: 36
+        client_id:
+          type: string
+          maxLength: 36
         key:
           type: string
           maxLength: 40
@@ -7573,6 +7606,7 @@ components:
       - KEY_FILE_PATH
       - ANONYMOUS_ACCESS
       - CONNECTION_STRING
+      - SERVICE_PRINCIPAL_CERT
       type: string
       description: |-
         * `KEY_SECRET_KEY_PAIR` - KEY_SECRET_KEY_PAIR
@@ -7580,6 +7614,7 @@ components:
         * `KEY_FILE_PATH` - KEY_FILE_PATH
         * `ANONYMOUS_ACCESS` - ANONYMOUS_ACCESS
         * `CONNECTION_STRING` - CONNECTION_STRING
+        * `SERVICE_PRINCIPAL_CERT` - SERVICE_PRINCIPAL_CERT
     DataMetaRead:
       type: object
       properties:
@@ -9793,6 +9828,12 @@ components:
         account_name:
           type: string
           maxLength: 24
+        tenant_id:
+          type: string
+          maxLength: 36
+        client_id:
+          type: string
+          maxLength: 36
         key:
           type: string
           maxLength: 40

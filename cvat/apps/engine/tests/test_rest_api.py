@@ -52,15 +52,19 @@ from cvat.apps.dataset_manager.util import current_function_name
 from cvat.apps.engine.cache import MediaCache
 from cvat.apps.engine.cloud_provider import (
     AzureBlobCloudStorageClient,
+    Credentials,
     S3CloudStorageClient,
     Status,
+    get_cloud_storage_client,
 )
 from cvat.apps.engine.media_extractors import ValidateDimension, sort
 from cvat.apps.engine.models import (
     AnnotationGuide,
     AttributeSpec,
     AttributeType,
+    CloudProviderChoice,
     CloudStorage,
+    CredentialsTypeChoice,
     Data,
     DimensionType,
     Job,
@@ -8630,3 +8634,120 @@ class TestCloudStorageAzureStatus(SimpleTestCase):
 
         self.storage._head = fake_head
         self.assertEqual(self.storage.get_status(), Status.NOT_FOUND)
+
+
+class TestServicePrincipalCertCredentials(SimpleTestCase):
+    def make_credentials(self, key_file_path="/data/cloud_storages/1/key.pem"):
+        return Credentials(
+            account_name="testaccount",
+            tenant_id="10000000-0000-0000-0000-000000000001",
+            client_id="20000000-0000-0000-0000-000000000002",
+            key_file_path=key_file_path,
+            credentials_type=CredentialsTypeChoice.SERVICE_PRINCIPAL_CERT,
+        )
+
+    def test_can_convert_to_db_and_back(self):
+        original = self.make_credentials()
+
+        restored = Credentials.from_db(
+            CredentialsTypeChoice.SERVICE_PRINCIPAL_CERT, original.convert_to_db()
+        )
+
+        self.assertEqual(restored.account_name, original.account_name)
+        self.assertEqual(restored.tenant_id, original.tenant_id)
+        self.assertEqual(restored.client_id, original.client_id)
+        self.assertEqual(restored.key_file_path, original.key_file_path)
+
+    def test_certificate_path_with_spaces_survives_conversion(self):
+        original = self.make_credentials(key_file_path="/data/cloud storages/1/key.pem")
+
+        restored = Credentials.from_db(
+            CredentialsTypeChoice.SERVICE_PRINCIPAL_CERT, original.convert_to_db()
+        )
+
+        self.assertEqual(restored.key_file_path, original.key_file_path)
+
+    def test_mapping_with_new_values_resets_other_credentials(self):
+        credentials = Credentials(
+            key="key",
+            secret_key="secret_key",
+            credentials_type=CredentialsTypeChoice.KEY_SECRET_KEY_PAIR,
+        )
+
+        credentials.mapping_with_new_values(
+            {
+                "credentials_type": CredentialsTypeChoice.SERVICE_PRINCIPAL_CERT,
+                "account_name": "testaccount",
+                "tenant_id": "10000000-0000-0000-0000-000000000001",
+                "client_id": "20000000-0000-0000-0000-000000000002",
+                "key_file_path": "/data/cloud_storages/1/key.pem",
+            }
+        )
+
+        self.assertEqual(credentials.key, "")
+        self.assertEqual(credentials.secret_key, "")
+        self.assertEqual(credentials.account_name, "testaccount")
+        self.assertEqual(credentials.tenant_id, "10000000-0000-0000-0000-000000000001")
+        self.assertEqual(credentials.client_id, "20000000-0000-0000-0000-000000000002")
+        self.assertEqual(credentials.key_file_path, "/data/cloud_storages/1/key.pem")
+
+
+class TestCloudStorageAzureServicePrincipalCert(SimpleTestCase):
+    @mock.patch("cvat.apps.engine.cloud_provider.BlobServiceClient")
+    @mock.patch("cvat.apps.engine.cloud_provider.CertificateCredential")
+    def test_client_uses_certificate_credential(self, mock_credential, mock_blob_service_client):
+        AzureBlobCloudStorageClient(
+            container="test-container",
+            account_name="testaccount",
+            tenant_id="10000000-0000-0000-0000-000000000001",
+            client_id="20000000-0000-0000-0000-000000000002",
+            certificate_path="/data/cloud_storages/1/key.pem",
+        )
+
+        mock_credential.assert_called_once_with(
+            tenant_id="10000000-0000-0000-0000-000000000001",
+            client_id="20000000-0000-0000-0000-000000000002",
+            certificate_path="/data/cloud_storages/1/key.pem",
+        )
+        mock_blob_service_client.assert_called_once_with(
+            account_url="testaccount.blob.core.windows.net",
+            credential=mock_credential.return_value,
+            proxies=mock.ANY,
+        )
+
+    @mock.patch("cvat.apps.engine.cloud_provider.BlobServiceClient")
+    @mock.patch("cvat.apps.engine.cloud_provider.CertificateCredential")
+    def test_factory_passes_certificate_path_only_for_certificate_credentials(
+        self, mock_credential, mock_blob_service_client
+    ):
+        credentials = Credentials(
+            account_name="testaccount",
+            tenant_id="10000000-0000-0000-0000-000000000001",
+            client_id="20000000-0000-0000-0000-000000000002",
+            key_file_path="/data/cloud_storages/1/key.pem",
+            credentials_type=CredentialsTypeChoice.SERVICE_PRINCIPAL_CERT,
+        )
+
+        get_cloud_storage_client(
+            cloud_provider=CloudProviderChoice.AZURE_BLOB_STORAGE,
+            resource="test-container",
+            credentials=credentials,
+            specific_attributes={},
+        )
+        mock_credential.assert_called_once()
+
+        mock_credential.reset_mock()
+        credentials = Credentials(
+            account_name="testaccount",
+            session_token="sas-token",
+            key_file_path="/data/cloud_storages/1/key.pem",
+            credentials_type=CredentialsTypeChoice.ACCOUNT_NAME_TOKEN_PAIR,
+        )
+
+        get_cloud_storage_client(
+            cloud_provider=CloudProviderChoice.AZURE_BLOB_STORAGE,
+            resource="test-container",
+            credentials=credentials,
+            specific_attributes={},
+        )
+        mock_credential.assert_not_called()

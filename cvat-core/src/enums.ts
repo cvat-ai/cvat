@@ -220,6 +220,7 @@ export enum CloudStorageCredentialsType {
     ANONYMOUS_ACCESS = 'ANONYMOUS_ACCESS',
     CONNECTION_STRING = 'CONNECTION_STRING',
     KEY_FILE_PATH = 'KEY_FILE_PATH',
+    SERVICE_PRINCIPAL_CERT = 'SERVICE_PRINCIPAL_CERT',
 }
 
 export enum CloudStorageStatus {

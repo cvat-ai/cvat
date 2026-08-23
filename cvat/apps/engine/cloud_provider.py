@@ -20,6 +20,7 @@ from typing import Any, BinaryIO, Concatenate, ParamSpec, TypeVar
 
 import boto3
 from azure.core.exceptions import HttpResponseError, ServiceRequestError
+from azure.identity import CertificateCredential
 from azure.storage.blob import BlobServiceClient, ContainerClient
 from azure.storage.blob._list_blobs_helper import BlobPrefix
 from boto3.s3.transfer import TransferConfig
@@ -575,6 +576,13 @@ def get_cloud_storage_client(
             account_name=credentials.account_name,
             sas_token=credentials.session_token,
             connection_string=credentials.connection_string,
+            tenant_id=credentials.tenant_id,
+            client_id=credentials.client_id,
+            certificate_path=(
+                credentials.key_file_path
+                if credentials.credentials_type == CredentialsTypeChoice.SERVICE_PRINCIPAL_CERT
+                else None
+            ),
             prefix=specific_attributes.get("prefix"),
             is_trusted=is_trusted,
         )
@@ -853,6 +861,9 @@ class AzureBlobCloudStorageClient(CloudStorageClient):
         account_name: str | None = None,
         sas_token: str | None = None,
         connection_string: str | None = None,
+        tenant_id: str | None = None,
+        client_id: str | None = None,
+        certificate_path: str | None = None,
         prefix: str | None = None,
         is_trusted: bool = False,
     ):
@@ -861,6 +872,16 @@ class AzureBlobCloudStorageClient(CloudStorageClient):
         if connection_string:
             self._blob_service_client = BlobServiceClient.from_connection_string(
                 connection_string, proxies=self.proxies
+            )
+        elif tenant_id and client_id and certificate_path:
+            self._blob_service_client = BlobServiceClient(
+                account_url=self.account_url,
+                credential=CertificateCredential(
+                    tenant_id=tenant_id,
+                    client_id=client_id,
+                    certificate_path=certificate_path,
+                ),
+                proxies=self.proxies,
             )
         elif sas_token:
             self._blob_service_client = BlobServiceClient(
@@ -1196,6 +1217,8 @@ class Credentials:
         "secret_key",
         "session_token",
         "account_name",
+        "tenant_id",
+        "client_id",
         "key_file_path",
         "credentials_type",
         "connection_string",
@@ -1206,6 +1229,8 @@ class Credentials:
         self.secret_key = credentials.get("secret_key", "")
         self.session_token = credentials.get("session_token", "")
         self.account_name = credentials.get("account_name", "")
+        self.tenant_id = credentials.get("tenant_id", "")
+        self.client_id = credentials.get("client_id", "")
         self.key_file_path = credentials.get("key_file_path", None)
         self.credentials_type = credentials.get("credentials_type", None)
         self.connection_string = credentials.get("connection_string", None)
@@ -1221,6 +1246,9 @@ class Credentials:
                 "" if not self.account_name else self.account_name
             ),
             CredentialsTypeChoice.CONNECTION_STRING: self.connection_string,
+            CredentialsTypeChoice.SERVICE_PRINCIPAL_CERT: " ".join(
+                [self.account_name, self.tenant_id, self.client_id, self.key_file_path or ""]
+            ),
         }
         return converted_credentials[self.credentials_type]
 
@@ -1240,6 +1268,14 @@ class Credentials:
             instance.key_file_path = value
         elif instance.credentials_type == CredentialsTypeChoice.CONNECTION_STRING:
             instance.connection_string = value
+        elif instance.credentials_type == CredentialsTypeChoice.SERVICE_PRINCIPAL_CERT:
+            # the certificate path goes last: it is the only part that may contain spaces
+            (
+                instance.account_name,
+                instance.tenant_id,
+                instance.client_id,
+                instance.key_file_path,
+            ) = value.split(" ", maxsplit=3)
         else:
             raise NotImplementedError(
                 "Found {} not supported credentials type".format(instance.credentials_type)
@@ -1270,6 +1306,12 @@ class Credentials:
         elif self.credentials_type == CredentialsTypeChoice.CONNECTION_STRING:
             self.reset(exclusion={"connection_string"})
             self.connection_string = credentials.get("connection_string", self.connection_string)
+        elif self.credentials_type == CredentialsTypeChoice.SERVICE_PRINCIPAL_CERT:
+            self.reset(exclusion={"account_name", "tenant_id", "client_id", "key_file_path"})
+            self.account_name = credentials.get("account_name", self.account_name)
+            self.tenant_id = credentials.get("tenant_id", self.tenant_id)
+            self.client_id = credentials.get("client_id", self.client_id)
+            self.key_file_path = credentials.get("key_file_path", self.key_file_path)
         else:
             raise NotImplementedError("Mapping credentials: unsupported credentials type")
 
@@ -1279,6 +1321,8 @@ class Credentials:
             self.secret_key,
             self.session_token,
             self.account_name,
+            self.tenant_id,
+            self.client_id,
             self.key_file_path,
         ]
 

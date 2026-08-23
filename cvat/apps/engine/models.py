@@ -276,6 +276,7 @@ class CredentialsTypeChoice(str, Enum):
     KEY_FILE_PATH = "KEY_FILE_PATH"
     ANONYMOUS_ACCESS = "ANONYMOUS_ACCESS"
     CONNECTION_STRING = "CONNECTION_STRING"
+    SERVICE_PRINCIPAL_CERT = "SERVICE_PRINCIPAL_CERT"  # nosec
 
     @classmethod
     def choices(cls):
@@ -342,6 +343,8 @@ class CloudStorage(TimestampedModel):
         return parse_specific_attributes(self.specific_attributes)
 
     def get_key_file_path(self) -> Path:
+        if self.credentials_type == CredentialsTypeChoice.SERVICE_PRINCIPAL_CERT:
+            return self.get_storage_dirname() / "key.pem"
         return self.get_storage_dirname() / "key.json"
 
     @property

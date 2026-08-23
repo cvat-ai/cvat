@@ -4370,6 +4370,21 @@ class CloudStorageReadSerializer(serializers.ModelSerializer):
             request_only=True,
         ),
         OpenApiExample(
+            "Create Azure cloud storage with a service principal certificate",
+            value={
+                "provider_type": models.CloudProviderChoice.AZURE_BLOB_STORAGE,
+                "resource": "somecontainer",
+                "display_name": "Container",
+                "credentials_type": models.CredentialsTypeChoice.SERVICE_PRINCIPAL_CERT,
+                "account_name": "someaccount",
+                "tenant_id": "00000000-0000-0000-0000-000000000000",
+                "client_id": "00000000-0000-0000-0000-000000000000",
+                "key_file": "file",
+                "manifests": ["manifest.jsonl"],
+            },
+            request_only=True,
+        ),
+        OpenApiExample(
             "Create GCS",
             value={
                 "provider_type": models.CloudProviderChoice.GOOGLE_CLOUD_STORAGE,
@@ -4390,6 +4405,8 @@ class CloudStorageWriteSerializer(serializers.ModelSerializer):
     secret_key = serializers.CharField(max_length=64, allow_blank=True, required=False)
     key_file = serializers.FileField(required=False)
     account_name = serializers.CharField(max_length=24, allow_blank=True, required=False)
+    tenant_id = serializers.CharField(max_length=36, allow_blank=True, required=False)
+    client_id = serializers.CharField(max_length=36, allow_blank=True, required=False)
     manifests = ManifestSerializer(many=True, default=[])
     connection_string = serializers.CharField(max_length=1024, allow_blank=True, required=False)
 
@@ -4405,6 +4422,8 @@ class CloudStorageWriteSerializer(serializers.ModelSerializer):
             "updated_date",
             "session_token",
             "account_name",
+            "tenant_id",
+            "client_id",
             "key",
             "secret_key",
             "connection_string",
@@ -4429,11 +4448,22 @@ class CloudStorageWriteSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         provider_type = attrs.get("provider_type")
+        credentials_type = attrs.get("credentials_type")
         if provider_type == models.CloudProviderChoice.AZURE_BLOB_STORAGE:
             if not attrs.get("account_name", "") and not attrs.get("connection_string", ""):
                 raise serializers.ValidationError(
                     "Account name or connection string for Azure container was not specified"
                 )
+            if credentials_type == models.CredentialsTypeChoice.SERVICE_PRINCIPAL_CERT:
+                for field in ("account_name", "tenant_id", "client_id"):
+                    if not attrs.get(field, ""):
+                        raise serializers.ValidationError(
+                            f"The {field} is required for service principal certificate authentication"
+                        )
+                if not self.instance and not attrs.get("key_file"):
+                    raise serializers.ValidationError(
+                        "A certificate file is required for service principal certificate authentication"
+                    )
 
         # Amazon S3: https://docs.aws.amazon.com/AmazonS3/latest/userguide/bucketnamingrules.html?icmpid=docs_amazons3_console
         # ABS: https://learn.microsoft.com/en-us/rest/api/storageservices/naming-and-referencing-containers--blobs--and-metadata#container-names
@@ -4499,6 +4529,8 @@ class CloudStorageWriteSerializer(serializers.ModelSerializer):
             del key_file
         credentials = Credentials(
             account_name=validated_data.pop("account_name", ""),
+            tenant_id=validated_data.pop("tenant_id", ""),
+            client_id=validated_data.pop("client_id", ""),
             key=validated_data.pop("key", ""),
             secret_key=validated_data.pop("secret_key", ""),
             session_token=validated_data.pop("session_token", ""),
@@ -4577,6 +4609,8 @@ class CloudStorageWriteSerializer(serializers.ModelSerializer):
                 "key",
                 "secret_key",
                 "account_name",
+                "tenant_id",
+                "client_id",
                 "session_token",
                 "key_file_path",
                 "credentials_type",

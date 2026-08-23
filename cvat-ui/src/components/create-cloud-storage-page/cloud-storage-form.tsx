@@ -31,8 +31,8 @@ export interface Props {
     cloudStorage?: CombinedState['cloudStorages']['current'][number];
 }
 
-type CredentialsFormNames = 'key' | 'secret_key' | 'account_name' | 'session_token' | 'connection_string';
-type CredentialsCamelCaseNames = 'key' | 'secretKey' | 'accountName' | 'sessionToken' | 'connectionString';
+type CredentialsFormNames = 'key' | 'secret_key' | 'account_name' | 'session_token' | 'connection_string' | 'tenant_id' | 'client_id';
+type CredentialsCamelCaseNames = 'key' | 'secretKey' | 'accountName' | 'sessionToken' | 'connectionString' | 'tenantId' | 'clientId';
 
 interface CloudStorageForm {
     credentials_type: CredentialsType;
@@ -40,6 +40,8 @@ interface CloudStorageForm {
     provider_type: ProviderType;
     resource: string;
     account_name?: string;
+    tenant_id?: string;
+    client_id?: string;
     session_token?: string;
     key?: string;
     secret_key?: string;
@@ -87,6 +89,8 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
         secretKey: 'X'.repeat(40),
         keyFile: new File([], 'fakeKey.json'),
         connectionString: 'X'.repeat(400),
+        tenantId: 'X'.repeat(36),
+        clientId: 'X'.repeat(36),
     };
 
     const [keyVisibility, setKeyVisibility] = useState(false);
@@ -94,6 +98,8 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
     const [sessionTokenVisibility, setSessionTokenVisibility] = useState(false);
     const [accountNameVisibility, setAccountNameVisibility] = useState(false);
     const [connectionStringVisibility, setConnectionStringVisibility] = useState(false);
+    const [tenantIdVisibility, setTenantIdVisibility] = useState(false);
+    const [clientIdVisibility, setClientIdVisibility] = useState(false);
 
     const [manifestNames, setManifestNames] = useState<string[]>([]);
 
@@ -124,6 +130,11 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
             setUploadedKeyFile(fakeCredentialsData.keyFile);
         } else if (cloudStorage.credentialsType === CredentialsType.CONNECTION_STRING) {
             fieldsValue.connection_string = fakeCredentialsData.connectionString;
+        } else if (cloudStorage.credentialsType === CredentialsType.SERVICE_PRINCIPAL_CERT) {
+            fieldsValue.account_name = fakeCredentialsData.accountName;
+            fieldsValue.tenant_id = fakeCredentialsData.tenantId;
+            fieldsValue.client_id = fakeCredentialsData.clientId;
+            setUploadedKeyFile(fakeCredentialsData.keyFile);
         }
 
         if (cloudStorage.specificAttributes) {
@@ -277,6 +288,12 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
             if (cloudStorageData.connection_string === fakeCredentialsData.connectionString) {
                 delete cloudStorageData.connection_string;
             }
+            if (cloudStorageData.tenant_id === fakeCredentialsData.tenantId) {
+                delete cloudStorageData.tenant_id;
+            }
+            if (cloudStorageData.client_id === fakeCredentialsData.clientId) {
+                delete cloudStorageData.client_id;
+            }
             dispatch(updateCloudStorageAsync(cloudStorageData));
         } else {
             dispatch(createCloudStorageAsync(cloudStorageData));
@@ -289,6 +306,8 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
             secret_key: undefined,
             session_token: undefined,
             account_name: undefined,
+            tenant_id: undefined,
+            client_id: undefined,
         });
         setUploadedKeyFile(null);
     };
@@ -444,6 +463,98 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
             );
         }
 
+        if (
+            providerType === ProviderType.AZURE_CONTAINER &&
+            credentialsType === CredentialsType.SERVICE_PRINCIPAL_CERT
+        ) {
+            return (
+                <>
+                    <Form.Item
+                        label='Account name'
+                        name='account_name'
+                        rules={[{ required: true, message: 'Please, specify your account name' }]}
+                        {...internalCommonProps}
+                    >
+                        <Input.Password
+                            minLength={3}
+                            maxLength={24}
+                            visibilityToggle={accountNameVisibility}
+                            onChange={() => setAccountNameVisibility(true)}
+                            onFocus={() => onFocusCredentialsItem('accountName', 'account_name')}
+                            onBlur={() => onBlurCredentialsItem('accountName', 'account_name', setAccountNameVisibility)}
+                        />
+                    </Form.Item>
+                    <Form.Item
+                        label='Tenant ID'
+                        name='tenant_id'
+                        rules={[{ required: true, message: 'Please, specify your tenant ID' }]}
+                        {...internalCommonProps}
+                    >
+                        <Input.Password
+                            maxLength={36}
+                            visibilityToggle={tenantIdVisibility}
+                            onChange={() => setTenantIdVisibility(true)}
+                            onFocus={() => onFocusCredentialsItem('tenantId', 'tenant_id')}
+                            onBlur={() => onBlurCredentialsItem('tenantId', 'tenant_id', setTenantIdVisibility)}
+                        />
+                    </Form.Item>
+                    <Form.Item
+                        label='Client ID'
+                        name='client_id'
+                        rules={[{ required: true, message: 'Please, specify your client ID' }]}
+                        {...internalCommonProps}
+                    >
+                        <Input.Password
+                            maxLength={36}
+                            visibilityToggle={clientIdVisibility}
+                            onChange={() => setClientIdVisibility(true)}
+                            onFocus={() => onFocusCredentialsItem('clientId', 'client_id')}
+                            onBlur={() => onBlurCredentialsItem('clientId', 'client_id', setClientIdVisibility)}
+                        />
+                    </Form.Item>
+                    <Form.Item
+                        name='key_file'
+                        {...internalCommonProps}
+                        label={(
+                            <CVATTooltip title='Upload the service principal certificate as an unencrypted PEM file including the private key'>
+                                Certificate file
+                                <Button
+                                    href='https://learn.microsoft.com/en-us/cli/azure/azure-cli-sp-tutorial-3'
+                                    target='_blank'
+                                    type='link'
+                                    className='cvat-cloud-storage-help-button'
+                                >
+                                    <QuestionCircleOutlined />
+                                </Button>
+                            </CVATTooltip>
+                        )}
+                    >
+                        <Space align='start' className='cvat-cloud-storage-form-item-key-file'>
+                            <Dragger
+                                accept='.pem'
+                                multiple={false}
+                                maxCount={1}
+                                fileList={
+                                    uploadedKeyFile ? [{ uid: '1', name: uploadedKeyFile.name }] : []
+                                }
+                                beforeUpload={(file: RcFile): boolean => {
+                                    setIsFakeKeyFileAttached(false);
+                                    setUploadedKeyFile(file);
+                                    return false;
+                                }}
+                                onRemove={() => setUploadedKeyFile(null)}
+                            >
+                                <Space>
+                                    Attach a file
+                                    <UploadOutlined />
+                                </Space>
+                            </Dragger>
+                        </Space>
+                    </Form.Item>
+                </>
+            );
+        }
+
         if (providerType === ProviderType.GOOGLE_CLOUD_STORAGE && credentialsType === CredentialsType.KEY_FILE_PATH) {
             return (
                 <Form.Item
@@ -568,6 +679,9 @@ export default function CreateCloudStorageForm(props: Props): JSX.Element {
                         </Select.Option>
                         <Select.Option value={CredentialsType.ANONYMOUS_ACCESS}>Anonymous access</Select.Option>
                         <Select.Option value={CredentialsType.CONNECTION_STRING}>Connection string</Select.Option>
+                        <Select.Option value={CredentialsType.SERVICE_PRINCIPAL_CERT}>
+                            Service principal certificate
+                        </Select.Option>
                     </Select>
                 </Form.Item>
 

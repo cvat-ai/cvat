@@ -25,6 +25,8 @@ export default class CloudStorage {
     public displayName: string;
     public description: string;
     public accountName: string;
+    public tenantId: string;
+    public clientId: string;
     public accessKey: string;
     public secretKey: string;
     public token: string;
@@ -50,6 +52,8 @@ export default class CloudStorage {
             provider_type: undefined,
             resource: undefined,
             account_name: undefined,
+            tenant_id: undefined,
+            client_id: undefined,
             key: undefined,
             secret_key: undefined,
             session_token: undefined,
@@ -96,6 +100,20 @@ export default class CloudStorage {
                     set: (value) => {
                         validateNotEmptyString(value);
                         data.account_name = value;
+                    },
+                },
+                tenantId: {
+                    get: () => data.tenant_id,
+                    set: (value) => {
+                        validateNotEmptyString(value);
+                        data.tenant_id = value;
+                    },
+                },
+                clientId: {
+                    get: () => data.client_id,
+                    set: (value) => {
+                        validateNotEmptyString(value);
+                        data.client_id = value;
                     },
                 },
                 accessKey: {
@@ -261,6 +279,14 @@ Object.defineProperties(CloudStorage.prototype.save, {
 
                 if (cloudStorageInstance.accountName) {
                     data.account_name = cloudStorageInstance.accountName;
+                }
+
+                if (cloudStorageInstance.tenantId) {
+                    data.tenant_id = cloudStorageInstance.tenantId;
+                }
+
+                if (cloudStorageInstance.clientId) {
+                    data.client_id = cloudStorageInstance.clientId;
                 }
 
                 if (cloudStorageInstance.accessKey) {

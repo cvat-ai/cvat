@@ -500,6 +500,8 @@ export interface SerializedCloudStorage {
     provider_type?: CloudStorageProviderType;
     resource?: string;
     account_name?: string;
+    tenant_id?: string;
+    client_id?: string;
     key?: string;
     secret_key?: string;
     session_token?: string;
