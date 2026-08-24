@@ -5,16 +5,18 @@
 #
 # SPDX-License-Identifier: MIT
 
+import argparse
 import os
 import shutil
 import subprocess
+import sys
 import tempfile
 from pathlib import Path
 from urllib.parse import urljoin
 
-import git
-import toml
-from packaging import version
+# `git` and `toml` are imported lazily inside the build paths that need them so
+# `--copy-sdk-examples-only` (used from README's "start the site locally") works
+# without the full production-build dependency set.
 
 # Number of most recent tags to build documentation for
 MAX_VERSIONS_TO_BUILD = 6
@@ -25,8 +27,39 @@ BASE_URL = os.getenv("BASE_URL", "/")
 # Hugo binary for documentation builds
 hugo110 = "hugo-0.110"  # used for all documentation builds
 
+# Where SDK example scripts are copied to inside the Hugo site tree so the
+# `include-code` shortcode can embed them at build time. Path is relative to
+# the site (Hugo project) root; the shortcode call sites use the same prefix.
+SDK_EXAMPLES_DEST = Path("assets/sdk-examples")
+# Where the source scripts live in the repository, relative to the repo root.
+SDK_EXAMPLES_SRC = Path("cvat-sdk/examples")
 
-def prepare_tags(repo: git.Repo):
+
+def copy_sdk_examples(repo_root: Path, site_dir: Path) -> None:
+    """Mirror ``cvat-sdk/examples/*.py`` into ``<site>/assets/sdk-examples/``.
+
+    The example markdown pages embed the scripts via a Hugo shortcode that
+    reads them from the site tree; this puts fresh copies where Hugo expects
+    them. If the checkout has no examples dir (e.g. an old tag that predates
+    it), the destination is simply cleared.
+    """
+    src = repo_root / SDK_EXAMPLES_SRC
+    dst = site_dir / SDK_EXAMPLES_DEST
+
+    if dst.exists():
+        shutil.rmtree(dst)
+
+    if not src.is_dir():
+        return
+
+    shutil.copytree(
+        src,
+        dst,
+        ignore=shutil.ignore_patterns("__pycache__", "*.pyc"),
+    )
+
+
+def prepare_tags(repo):
     # Group tags by minor version (major.minor) and keep only the latest patch for each
     minor_versions = {}
     for tag in repo.tags:
@@ -57,7 +90,7 @@ def generate_versioning_config(filename, versions, url_prefix=""):
             write_version_item(f, v, "{}/{}".format(url_prefix, v))
 
 
-def git_checkout(ref: str, temp_repo: git.Repo, temp_dir: Path):
+def git_checkout(ref: str, temp_repo, temp_dir: Path):
     # We need to checkout with submodules, recursively
 
     subdirs = [
@@ -84,6 +117,8 @@ def git_checkout(ref: str, temp_repo: git.Repo, temp_dir: Path):
 
 
 def change_version_menu_toml(filename, version):
+    import toml
+
     data = toml.load(filename)
     data["params"]["version_menu"] = version
 
@@ -91,12 +126,15 @@ def change_version_menu_toml(filename, version):
         toml.dump(data, f)
 
 
-def generate_docs(repo: git.Repo, output_dir: os.PathLike, tags):
+def generate_docs(repo, output_dir: os.PathLike, tags):
+    import git
+
     repo_root = Path(repo.working_tree_dir)
 
     with tempfile.TemporaryDirectory() as temp_dir:
         content_loc = Path(temp_dir, "site")
         shutil.copytree(repo_root / "site", content_loc, symlinks=True)
+        copy_sdk_examples(repo_root, content_loc)
 
         def run_npm_install():
             subprocess.run(["npm", "install"], cwd=content_loc)  # nosec
@@ -140,6 +178,7 @@ def generate_docs(repo: git.Repo, output_dir: os.PathLike, tags):
         generate_versioning_config(versioning_toml_path, (t.name for t in tags), "/..")
         for tag in tags:
             git_checkout(tag.name, temp_repo, Path(temp_dir))
+            copy_sdk_examples(Path(temp_repo.working_tree_dir), content_loc)
             change_version_menu_toml(versioning_toml_path, tag.name)
             run_npm_install()
 
@@ -157,8 +196,30 @@ def validate_env():
         raise Exception(f"Failed to run '{hugo110}', please make sure it exists.") from ex
 
 
+def parse_args(argv=None):
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--copy-sdk-examples-only",
+        action="store_true",
+        help=(
+            "Just mirror cvat-sdk/examples/ into site/assets/sdk-examples/ "
+            "(the tree the include-code shortcode reads from) and exit. "
+            "Use before `hugo server` when working on the docs locally."
+        ),
+    )
+    return parser.parse_args(argv)
+
+
 if __name__ == "__main__":
+    args = parse_args()
     repo_root = Path(__file__).resolve().parents[1]
+
+    if args.copy_sdk_examples_only:
+        copy_sdk_examples(repo_root, repo_root / "site")
+        sys.exit(0)
+
+    import git
+
     output_dir = repo_root / "public"
 
     validate_env()

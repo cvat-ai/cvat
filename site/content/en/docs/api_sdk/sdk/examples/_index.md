@@ -23,8 +23,7 @@ Shared conventions:
 - Missing arguments exit with a friendly message; SDK errors surface as normal
   Python tracebacks.
 
-All recipes are executed end-to-end in CI (`tests/python/sdk/test_examples.py`), so
-they stay in sync with the SDK.
+All examples are tested in the latest SDK version.
 
 ## Topics
 
