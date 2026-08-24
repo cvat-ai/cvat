@@ -13,7 +13,7 @@ import Select from 'antd/lib/select';
 import Spin from 'antd/lib/spin';
 import Popover from 'antd/lib/popover';
 import Icon, {
-    CopyOutlined, DeleteOutlined, UpOutlined,
+    CopyOutlined, DeleteOutlined, LockFilled, PushpinFilled, PushpinOutlined, UnlockOutlined, UpOutlined,
 } from '@ant-design/icons';
 import notification from 'antd/lib/notification';
 import debounce from 'lodash/debounce';
@@ -836,6 +836,44 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
         this.setState({ selectionMenuPosition: null });
     };
 
+    private onSwitchSelectedObjectsLock = async (): Promise<void> => {
+        const {
+            annotations, selectedStatesID, onUpdateAnnotationsBatch,
+        } = this.props;
+        const selectedIDs = new Set(selectedStatesID);
+        const selectedStates = annotations.filter(
+            (state: ObjectState): boolean => selectedIDs.has(state.clientID as number),
+        );
+        if (!selectedStates.length) return;
+        const lock = !selectedStates.every((state: ObjectState): boolean => state.lock);
+        const statesToUpdate = selectedStates.filter((state: ObjectState): boolean => state.lock !== lock);
+
+        for (const state of statesToUpdate) {
+            state.lock = lock;
+        }
+        await onUpdateAnnotationsBatch(statesToUpdate);
+        this.setState({ selectionMenuPosition: null });
+    };
+
+    private onSwitchSelectedObjectsPinned = async (): Promise<void> => {
+        const {
+            annotations, selectedStatesID, onUpdateAnnotationsBatch,
+        } = this.props;
+        const selectedIDs = new Set(selectedStatesID);
+        const selectedStates = annotations.filter(
+            (state: ObjectState): boolean => selectedIDs.has(state.clientID as number),
+        );
+        if (!selectedStates.length) return;
+        const pinned = !selectedStates.every((state: ObjectState): boolean => state.pinned);
+        const statesToUpdate = selectedStates.filter((state: ObjectState): boolean => state.pinned !== pinned);
+
+        for (const state of statesToUpdate) {
+            state.pinned = pinned;
+        }
+        await onUpdateAnnotationsBatch(statesToUpdate);
+        this.setState({ selectionMenuPosition: null });
+    };
+
     private onCanvasWarningOccurrence = (event: any): void => {
         const { message, domain } = event.detail;
         notification.warning({
@@ -1427,6 +1465,17 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
         const labelSelectorDisabledReason = !applicableLabels.length ?
             'No label can be applied to every selected object' :
             'Labels cannot be changed for locked objects or skeletons';
+        const allSelectedLocked = selectedStates.length > 0 && selectedStates.every(
+            (state: ObjectState): boolean => state.lock,
+        );
+        const allSelectedPinned = selectedStates.length > 0 && selectedStates.every(
+            (state: ObjectState): boolean => state.pinned,
+        );
+        const lockSelectionDisabled = selectedStates.some((state: ObjectState): boolean => state.isGroundTruth);
+        const pinSelectionDisabled = selectedStates.some((state: ObjectState): boolean => (
+            state.lock || state.isGroundTruth ||
+            state.objectType === ObjectType.TAG || state.shapeType === ShapeType.POINTS
+        ));
 
         const preventDefault = (event: KeyboardEvent | undefined): void => {
             if (event) {
@@ -1545,6 +1594,36 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
                                                 />
                                             )}
                                         </div>
+                                    ),
+                                },
+                                {
+                                    key: 'switch-lock',
+                                    label: (
+                                        <Button
+                                            type='link'
+                                            disabled={lockSelectionDisabled}
+                                            title={lockSelectionDisabled ?
+                                                'Ground truth objects cannot be locked or unlocked' : undefined}
+                                            icon={allSelectedLocked ? <UnlockOutlined /> : <LockFilled />}
+                                            onClick={this.onSwitchSelectedObjectsLock}
+                                        >
+                                            {allSelectedLocked ? 'Unlock selection' : 'Lock selection'}
+                                        </Button>
+                                    ),
+                                },
+                                {
+                                    key: 'switch-pinned',
+                                    label: (
+                                        <Button
+                                            type='link'
+                                            disabled={pinSelectionDisabled}
+                                            title={pinSelectionDisabled ?
+                                                'Locked, ground truth, tag, and points objects cannot be pinned' : undefined}
+                                            icon={allSelectedPinned ? <PushpinOutlined /> : <PushpinFilled />}
+                                            onClick={this.onSwitchSelectedObjectsPinned}
+                                        >
+                                            {allSelectedPinned ? 'Unpin selection' : 'Pin selection'}
+                                        </Button>
                                     ),
                                 },
                                 {
