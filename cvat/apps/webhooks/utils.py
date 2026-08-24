@@ -209,6 +209,8 @@ def get_sender() -> dict | None:
         if user is not None:
             return user.to_dict()
 
+    return None
+
 
 def perform_webhook_request(webhook: Webhook, payload: dict) -> tuple[int, str]:
     try:
