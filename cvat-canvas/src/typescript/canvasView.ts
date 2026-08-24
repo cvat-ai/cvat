@@ -43,6 +43,7 @@ import {
     DrawData, MergeData, SplitData, Mode, Size, Configuration,
     InteractionResult, InteractionData, ColorBy, HighlightedElements,
     HighlightSeverity, GroupData, SelectData, JoinData, CanvasHint,
+    MultiSelectModifier,
 } from './canvasModel';
 
 const SELECTED_OBJECTS_BOX_PADDING = 6;
@@ -1981,9 +1982,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         }
     }
 
-    // the modifier key (default shift) + left mouse button starts a rubber-band multi-selection
-    private isMultiSelectModifierPressed(event: MouseEvent): boolean {
-        const modifier = this.configuration.multiSelectModifier || 'shift';
+    private isModifierPressed(event: MouseEvent, modifier: MultiSelectModifier): boolean {
         const modifiers = {
             shift: event.shiftKey,
             ctrl: event.ctrlKey,
@@ -1995,10 +1994,20 @@ export class CanvasViewImpl implements CanvasView, Listener {
             .every(([key, pressed]) => key === modifier || !pressed);
     }
 
+    // The selection-box modifier defaults to Shift.
+    private isMultiSelectModifierPressed(event: MouseEvent): boolean {
+        return this.isModifierPressed(event, this.configuration.multiSelectModifier || 'shift');
+    }
+
+    // The modifier for adding or removing one clicked object defaults to Ctrl.
+    private isMultiSelectObjectModifierPressed(event: MouseEvent): boolean {
+        return this.isModifierPressed(event, this.configuration.multiSelectObjectModifier || 'ctrl');
+    }
+
     private onContentMouseDown = (event: MouseEvent): void => {
         let targetShape = (event.target as Element)?.closest?.('.cvat_canvas_shape');
         const targetSelectionBox = (event.target as Element)?.closest?.('.cvat_canvas_selected_objects_box');
-        if (!targetShape && targetSelectionBox && this.isMultiSelectModifierPressed(event)) {
+        if (!targetShape && targetSelectionBox && this.isMultiSelectObjectModifierPressed(event)) {
             targetShape = Array.from(document.elementsFromPoint(event.clientX, event.clientY))
                 .map((element: Element): Element | null => element.closest('.cvat_canvas_shape'))
                 .find((shape: Element | null): boolean => {
@@ -2007,7 +2016,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 }) || null;
         }
         const onBackground = !targetShape;
-        if (event.button === 0 && this.isMultiSelectModifierPressed(event) &&
+        if (event.button === 0 && this.isMultiSelectObjectModifierPressed(event) &&
             [Mode.IDLE, Mode.SELECT].includes(this.mode) && targetShape) {
             const rawClientID = targetShape.getAttribute('clientID') || targetShape.getAttribute('data-client-id');
             const clientID = rawClientID === null ? null : +rawClientID;
@@ -2316,6 +2325,12 @@ export class CanvasViewImpl implements CanvasView, Listener {
             }
         });
         this.canvas.addEventListener('mousedown', this.onContentMouseDown, true);
+        this.canvas.addEventListener('contextmenu', (event: MouseEvent): void => {
+            if (this.isMultiSelectObjectModifierPressed(event)) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+        }, true);
 
         window.document.addEventListener('mouseup', this.onMouseUp);
         window.document.addEventListener('keydown', this.onKeyDown);
@@ -3688,7 +3703,9 @@ export class CanvasViewImpl implements CanvasView, Listener {
             event.stopPropagation();
             this.openSelectedObjectsMenu(event.clientX, event.clientY);
         }).on('beforedrag', (event: CustomEvent): void => {
-            if (this.isMultiSelectModifierPressed(event.detail.event) || !this.getMovableSelectedObjectIDs().length) {
+            if (this.isMultiSelectModifierPressed(event.detail.event) ||
+                this.isMultiSelectObjectModifierPressed(event.detail.event) ||
+                !this.getMovableSelectedObjectIDs().length) {
                 event.preventDefault();
             }
         }).on('dragstart', (event: CustomEvent): void => {

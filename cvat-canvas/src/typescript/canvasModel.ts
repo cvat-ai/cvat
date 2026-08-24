@@ -85,6 +85,7 @@ export interface Configuration {
     smoothImage?: boolean;
     autoborders?: boolean;
     multiSelectModifier?: MultiSelectModifier;
+    multiSelectObjectModifier?: MultiSelectModifier;
     snapToPoint?: boolean;
     adaptiveZoom?: boolean;
     displayAllText?: boolean;
@@ -456,6 +457,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
                 hideEditedObject: false,
                 focusedObjectPadding: 50,
                 multiSelectModifier: 'shift',
+                multiSelectObjectModifier: 'ctrl',
             },
             imageBitmap: false,
             image: null,
@@ -1037,6 +1039,9 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         }
         if (['shift', 'ctrl', 'alt', 'meta'].includes(configuration.multiSelectModifier)) {
             this.data.configuration.multiSelectModifier = configuration.multiSelectModifier;
+        }
+        if (['shift', 'ctrl', 'alt', 'meta'].includes(configuration.multiSelectObjectModifier)) {
+            this.data.configuration.multiSelectObjectModifier = configuration.multiSelectObjectModifier;
         }
 
         if (typeof configuration.undefinedAttrValue === 'string') {

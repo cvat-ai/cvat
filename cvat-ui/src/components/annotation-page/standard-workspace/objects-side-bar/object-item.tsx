@@ -12,7 +12,7 @@ import ItemDetailsContainer from 'containers/annotation-page/standard-workspace/
 import { ColorBy } from 'reducers';
 import { ObjectType, ShapeType } from 'cvat-core-wrapper';
 import { KeyMap } from 'utils/mousetrap-react';
-import { isMultiSelectModifierPressed } from 'utils/multi-selection';
+import { isMultiSelectObjectModifierPressed } from 'utils/multi-selection';
 import ObjectItemElementComponent from './object-item-element';
 import ItemBasics from './object-item-basics';
 
@@ -117,14 +117,14 @@ function ObjectItemComponent(props: Props): JSX.Element {
     }
 
     const activateState = useCallback((event: React.MouseEvent): void => {
-        if (!isMultiSelectModifierPressed(event, keyMap)) {
+        if (!isMultiSelectObjectModifierPressed(event, keyMap)) {
             activate();
         }
     }, [activate, keyMap]);
     const activateAfterElement = useCallback((): void => activate(), [activate]);
 
     const onMouseDown = useCallback((event: React.MouseEvent): void => {
-        if (event.button === 0 && isMultiSelectModifierPressed(event, keyMap)) {
+        if (event.button === 0 && isMultiSelectObjectModifierPressed(event, keyMap)) {
             const interactiveElement = (event.target as Element).closest('button, input, textarea, .ant-select');
             if (!interactiveElement) {
                 event.preventDefault();
@@ -134,8 +134,18 @@ function ObjectItemComponent(props: Props): JSX.Element {
         }
     }, [keyMap, toggleSelection]);
 
+    const onContextMenu = useCallback((event: React.MouseEvent): void => {
+        if (isMultiSelectObjectModifierPressed(event, keyMap)) {
+            const interactiveElement = (event.target as Element).closest('button, input, textarea, .ant-select');
+            if (!interactiveElement) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+        }
+    }, [keyMap]);
+
     const onKeyDown = useCallback((event: React.KeyboardEvent): void => {
-        if (['Enter', ' '].includes(event.key) && isMultiSelectModifierPressed(event, keyMap)) {
+        if (['Enter', ' '].includes(event.key) && isMultiSelectObjectModifierPressed(event, keyMap)) {
             event.preventDefault();
             event.stopPropagation();
             toggleSelection();
@@ -151,6 +161,7 @@ function ObjectItemComponent(props: Props): JSX.Element {
                 tabIndex={0}
                 onMouseEnter={activateState}
                 onMouseDown={onMouseDown}
+                onContextMenu={onContextMenu}
                 onKeyDown={onKeyDown}
                 onDoubleClick={focusAndExpand}
                 id={`cvat-objects-sidebar-state-item-${clientID}`}

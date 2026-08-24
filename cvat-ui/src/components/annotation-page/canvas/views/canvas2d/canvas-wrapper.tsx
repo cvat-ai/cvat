@@ -80,7 +80,12 @@ import { ImageFilter } from 'utils/image-processing';
 import { ShortcutScope } from 'utils/enums';
 import { registerComponentShortcuts } from 'actions/shortcuts-actions';
 import { subKeyMap } from 'utils/component-subkeymap';
-import { isMultiSelectModifierPressed, multiSelectModifierFromKeyMap } from 'utils/multi-selection';
+import {
+    isMultiSelectModifierPressed,
+    isMultiSelectObjectModifierPressed,
+    multiSelectModifierFromKeyMap,
+    multiSelectObjectModifierFromKeyMap,
+} from 'utils/multi-selection';
 import ImageSetupsContent from './image-setups-content';
 import CanvasTipsComponent from './canvas-hints';
 
@@ -341,6 +346,13 @@ const multiSelectShortcut = {
         sequences: ['shift'],
         scope: ShortcutScope.STANDARD_WORKSPACE,
     },
+    CANVAS_MULTI_SELECT_OBJECT_MODIFIER: {
+        name: 'Add/remove selection modifier',
+        description: 'Hold this key and click an object on the canvas or in the Objects sidebar to add or remove it ' +
+            'from the selection (supported: shift, ctrl, alt, meta - other keys are ignored)',
+        sequences: ['ctrl'],
+        scope: ShortcutScope.STANDARD_WORKSPACE,
+    },
 };
 registerComponentShortcuts(multiSelectShortcut);
 
@@ -517,6 +529,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
             resetZoom,
             focusedObjectPadding,
             multiSelectModifier: multiSelectModifierFromKeyMap(this.props.keyMap),
+            multiSelectObjectModifier: multiSelectObjectModifierFromKeyMap(this.props.keyMap),
         });
 
         this.initialSetup();
@@ -586,7 +599,9 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
             prevProps.showGroundTruth !== showGroundTruth ||
             prevProps.resetZoom !== resetZoom ||
             prevProps.focusedObjectPadding !== focusedObjectPadding ||
-            multiSelectModifierFromKeyMap(prevProps.keyMap) !== multiSelectModifierFromKeyMap(this.props.keyMap)
+            multiSelectModifierFromKeyMap(prevProps.keyMap) !== multiSelectModifierFromKeyMap(this.props.keyMap) ||
+            multiSelectObjectModifierFromKeyMap(prevProps.keyMap) !==
+                multiSelectObjectModifierFromKeyMap(this.props.keyMap)
         ) {
             canvasInstance.configure({
                 undefinedAttrValue: config.UNDEFINED_ATTRIBUTE_VALUE,
@@ -609,6 +624,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
                 resetZoom,
                 focusedObjectPadding,
                 multiSelectModifier: multiSelectModifierFromKeyMap(this.props.keyMap),
+                multiSelectObjectModifier: multiSelectObjectModifierFromKeyMap(this.props.keyMap),
             });
         }
 
@@ -962,6 +978,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
         const shapeElement = (e.target as Element)?.closest?.('.cvat_canvas_shape');
         const selectionBox = (e.target as Element)?.closest?.('.cvat_canvas_selected_objects_box');
         const multiSelectModifierPressed = isMultiSelectModifierPressed(e, keyMap);
+        const multiSelectObjectModifierPressed = isMultiSelectObjectModifierPressed(e, keyMap);
 
         if (e.button === 0 && activeControl === ActiveControl.CURSOR &&
             multiSelectModifierPressed && !shapeElement && !selectionBox) {
@@ -969,8 +986,9 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
         }
 
         // a click outside of the selected objects resets the multi-selection
-        // (shift is reserved for making a new selection, a click on a selected shape starts a group drag)
-        if (e.button === 0 && !multiSelectModifierPressed && selectedStatesID.length && !selectionBox) {
+        // Modifier clicks update membership; an unmodified click outside resets the multi-selection.
+        if (e.button === 0 && !multiSelectModifierPressed && !multiSelectObjectModifierPressed &&
+            selectedStatesID.length && !selectionBox) {
             const clickedClientID = shapeElement ? +(shapeElement.getAttribute('clientID') as string) : null;
             if (clickedClientID === null || !selectedStatesID.includes(clickedClientID)) {
                 // Leave grouping mode before the click event so an object outside the group
