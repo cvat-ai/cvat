@@ -26,7 +26,7 @@ context('Audio annotation. Interval navigation and overlap selection.', () => {
             cy.get('.cvat-audio-region-item').should('have.length', 3);
 
             cy.get('.cvat-audio-region-item').eq(1)
-                .find('.cvat-audio-region-item-action-btn').eq(2).click();
+                .find('.cvat-audio-region-item-action-btn:has(.anticon-eye)').click();
             cy.get('.cvat-audio-region-item').eq(1).should('have.class', 'cvat-audio-region-item-hidden');
 
             cy.get('.cvat-audio-region-item').first().click();
