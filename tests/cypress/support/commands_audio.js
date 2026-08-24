@@ -14,9 +14,20 @@ import {
     audioFile as AUDIO_FILE,
 } from './const_audio';
 import { defaultTaskSpec } from './default-specs';
-import { removeAudioAnnotations } from './utils.cy';
 
 const WAVEFORM_TIMEOUT = 30000;
+
+function removeAudioAnnotations({ save = false } = {}) {
+    cy.get('.cvat-audio-regions-list-wrapper').then(($list) => {
+        if ($list.find('.cvat-audio-region-item').length) {
+            cy.removeAnnotations();
+            if (save) {
+                cy.saveJob('PUT');
+            }
+            cy.get('.cvat-audio-region-item').should('have.length', 0);
+        }
+    });
+}
 
 Cypress.Commands.add('ensureAudioTask', () => {
     cy.window().its('cvat', { timeout: 25000 }).should('not.be.undefined');
