@@ -197,6 +197,31 @@
         margin-left: 8px;
     }
 
+    .cvat-audio-region-textarea {
+        position: relative;
+
+        .cvat-audio-region-textarea-bookmark-caret {
+            position: absolute;
+            width: 2px;
+            min-height: 1em;
+            background-color: $player-slider-color;
+            border-radius: 1px;
+            pointer-events: auto;
+            z-index: 1;
+
+            &::after {
+                content: '';
+                position: absolute;
+                top: -3px;
+                left: -2px;
+                width: 6px;
+                height: 6px;
+                border-radius: 50%;
+                background-color: $player-slider-color;
+            }
+        }
+    }
+
     .cvat-audio-region-no-attributes {
         padding: 16px;
         text-align: center;
