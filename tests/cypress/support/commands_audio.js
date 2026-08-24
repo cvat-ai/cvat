@@ -17,6 +17,18 @@ import { defaultTaskSpec } from './default-specs';
 
 const WAVEFORM_TIMEOUT = 30000;
 
+function removeAudioAnnotations({ save = false } = {}) {
+    cy.get('.cvat-audio-regions-list-wrapper').then(($list) => {
+        if ($list.find('.cvat-audio-region-item').length) {
+            cy.removeAnnotations();
+            if (save) {
+                cy.saveJob('PUT');
+            }
+            cy.get('.cvat-audio-region-item').should('have.length', 0);
+        }
+    });
+}
+
 Cypress.Commands.add('ensureAudioTask', () => {
     cy.window().its('cvat', { timeout: 25000 }).should('not.be.undefined');
     cy.window().then((win) => cy.wrap(win.cvat.tasks.get({ search: AUDIO_TASK_NAME }))).then((tasks) => {
@@ -210,29 +222,12 @@ Cypress.Commands.add('audioSliderSetValue', (controlClass, arrowDirection, steps
     cy.get('.cvat-audio-canvas-wrapper').click('topLeft', { force: true });
 });
 
-Cypress.Commands.add('audioSaveAnnotations', () => {
-    cy.get('.cvat-annotation-header-save-button').click();
-    cy.get('.cvat-annotation-header-save-button').should('contain.text', 'Saving...');
-    cy.get('.cvat-annotation-header-save-button').should('contain.text', 'Save');
-});
-
 Cypress.Commands.add('audioClearAnnotations', () => {
-    cy.get('.cvat-audio-regions-list-wrapper').then(($list) => {
-        if ($list.find('.cvat-audio-region-item').length) {
-            cy.removeAnnotations();
-            cy.get('.cvat-audio-region-item').should('have.length', 0);
-        }
-    });
+    removeAudioAnnotations();
 });
 
 Cypress.Commands.add('audioClearAnnotationsAndSave', () => {
-    cy.get('.cvat-audio-regions-list-wrapper').then(($list) => {
-        if ($list.find('.cvat-audio-region-item').length) {
-            cy.removeAnnotations();
-            cy.get('.cvat-audio-region-item').should('have.length', 0);
-            cy.audioSaveAnnotations();
-        }
-    });
+    removeAudioAnnotations({ save: true });
 });
 
 Cypress.Commands.add('audioUndo', () => {
