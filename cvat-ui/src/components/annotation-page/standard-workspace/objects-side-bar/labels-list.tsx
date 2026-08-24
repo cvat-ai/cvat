@@ -10,7 +10,9 @@ import message from 'antd/lib/message';
 
 import { LabelType, ObjectType, ShapeType } from 'cvat-core-wrapper';
 import { CombinedState } from 'reducers';
-import { rememberObject, updateAnnotationsAsync } from 'actions/annotation-actions';
+import {
+    rememberObject, updateAnnotationsAsync, updateAnnotationsBatchAsync,
+} from 'actions/annotation-actions';
 import LabelItemContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/label-item';
 import GlobalHotKeys, { KeyMapItem } from 'utils/mousetrap-react';
 import Text from 'antd/lib/typography/Text';
@@ -19,15 +21,16 @@ import { registerComponentShortcuts } from 'actions/shortcuts-actions';
 import { subKeyMap } from 'utils/component-subkeymap';
 import { useResetShortcutsOnUnmount } from 'utils/hooks';
 import { getCVATStore } from 'cvat-store';
+import { filterApplicableLabels } from 'utils/filter-applicable-labels';
 
 const componentShortcuts: Record<string, KeyMapItem> = {};
 
-const makeKey = (index: number) => `SWITCH_LABEL_${index}`;
+const makeKey = (index: number): string => `SWITCH_LABEL_${index}`;
 
 for (const index of [1, 2, 3, 4, 5, 6, 7, 8, 9, 0]) {
     componentShortcuts[makeKey(index)] = {
         name: 'Switch label',
-        description: 'Change label of a selected object or default label of the next created object if no one object is activated',
+        description: 'Change label of selected objects, an activated object, or the next created object',
         sequences: [`ctrl+${index}`],
         nonActive: true,
         scope: ShortcutScope.OBJECTS_SIDEBAR,
@@ -71,8 +74,8 @@ function LabelsListComponent(): JSX.Element {
                     ...updatedComponentShortcuts[key],
                     nonActive: false,
                     name: `Switch label to ${labelName}`,
-                    description: `Changes the label to ${labelName} for the activated
-                        object or for the next drawn object if no objects are activated`,
+                    description: `Changes the label to ${labelName} for selected objects, the activated
+                        object, or the next drawn object if no objects are selected or activated`,
                 };
             }
         }
@@ -86,10 +89,36 @@ function LabelsListComponent(): JSX.Element {
         const label = labels.find((_label: any) => _label.id === labelID)!;
         if (Number.isInteger(labelID) && label) {
             const relevantAppState = getCVATStore().getState();
-            const { states, activatedStateID } = relevantAppState.annotation.annotations;
+            const {
+                states, activatedStateID, selectedStatesID,
+            } = relevantAppState.annotation.annotations;
             const { activeShapeType, activeObjectType } = relevantAppState.annotation.drawing;
 
-            if (Number.isInteger(activatedStateID)) {
+            if (selectedStatesID.length) {
+                const selectedIDs = new Set(selectedStatesID);
+                const selectedStates = states.filter((state: any): boolean => selectedIDs.has(state.clientID));
+                const labelIsApplicable = selectedStates.length === selectedStatesID.length && selectedStates.every(
+                    (state: any): boolean => (
+                        !state.lock && !state.isGroundTruth &&
+                        state.objectType !== ObjectType.TAG && state.shapeType !== ShapeType.SKELETON &&
+                        filterApplicableLabels(state, labels).some((_label): boolean => _label.id === label.id)
+                    ),
+                );
+
+                if (!labelIsApplicable) {
+                    message.destroy();
+                    message.warning(`Label "${label.name}" cannot be applied to every selected object`);
+                    return;
+                }
+
+                const statesToUpdate = selectedStates.filter((state: any): boolean => state.label.id !== label.id);
+                for (const selectedState of statesToUpdate) {
+                    selectedState.label = label;
+                }
+                if (statesToUpdate.length) {
+                    dispatch(updateAnnotationsBatchAsync(statesToUpdate));
+                }
+            } else if (Number.isInteger(activatedStateID)) {
                 const activatedState = states.filter((state: any) => state.clientID === activatedStateID)[0];
                 const bothAreTags = activatedState.objectType === ObjectType.TAG && label.type === LabelType.TAG;
                 const labelIsApplicable = label.type === LabelType.ANY ||
