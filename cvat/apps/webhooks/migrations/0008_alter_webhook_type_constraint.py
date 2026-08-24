@@ -9,10 +9,10 @@ from django.core.management.base import CommandError
 from django.db import migrations, models
 
 INSTANCE_WEBHOOKS_EXIST_ERROR = """\
-Cannot roll back: {count} webhook(s) with type="instance" exists.
-Nothing was changed.
+Cannot roll back: found {count} webhook(s) with type="instance".
+Nothing was changed. Aborting the migration.
 
-Please review any existing instance webhooks before continuing.
+Please review the existing "instance" webhooks and delete them before continuing.
 """
 
 
