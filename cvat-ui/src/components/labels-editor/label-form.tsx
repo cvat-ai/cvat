@@ -23,7 +23,7 @@ import { ColorizeIcon } from 'icons';
 import patterns from 'utils/validation-patterns';
 import config from 'config';
 import {
-    equalArrayHead, idGenerator, LabelOptColor, SkeletonConfiguration,
+    equalArrayHead, getNumberRangeError, idGenerator, LabelOptColor, SkeletonConfiguration,
 } from './common';
 
 export enum AttributeType {
@@ -337,32 +337,8 @@ export default class LabelForm extends React.Component<Props> {
         const validator = (_: any, strNumbers: string): Promise<void> => {
             if (typeof strNumbers !== 'string') return Promise.resolve();
 
-            const numbers = strNumbers.split(';').map((number): number => Number.parseFloat(number));
-            if (numbers.length !== 3) {
-                return Promise.reject(new Error('Three numbers are expected'));
-            }
-
-            for (const number of numbers) {
-                if (Number.isNaN(number)) {
-                    return Promise.reject(new Error(`"${number}" is not a number`));
-                }
-            }
-
-            const [min, max, step] = numbers;
-
-            if (min >= max) {
-                return Promise.reject(new Error('Minimum must be less than maximum'));
-            }
-
-            if (max - min < step) {
-                return Promise.reject(new Error('Step must be less than minmax difference'));
-            }
-
-            if (step <= 0) {
-                return Promise.reject(new Error('Step must be a positive number'));
-            }
-
-            return Promise.resolve();
+            const error = getNumberRangeError(strNumbers.split(';'));
+            return error ? Promise.reject(new Error(error)) : Promise.resolve();
         };
 
         return (
