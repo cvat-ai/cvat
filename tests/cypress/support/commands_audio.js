@@ -18,15 +18,17 @@ import { defaultTaskSpec } from './default-specs';
 const WAVEFORM_TIMEOUT = 30000;
 
 function removeAudioAnnotations({ save = false } = {}) {
-    cy.get('.cvat-audio-regions-list-wrapper').then(($list) => {
-        if ($list.find('.cvat-audio-region-item').length) {
-            cy.removeAnnotations();
-            if (save) {
-                cy.saveJob('PUT');
+    cy.get('.cvat-audio-regions-list-wrapper')
+        .should('exist').and('be.visible')
+        .then(($list) => {
+            if ($list.find('.cvat-audio-region-item').length) {
+                cy.removeAnnotations();
+                if (save) {
+                    cy.saveJob('PUT');
+                }
+                cy.get('.cvat-audio-region-item').should('have.length', 0);
             }
-            cy.get('.cvat-audio-region-item').should('have.length', 0);
-        }
-    });
+        });
 }
 
 Cypress.Commands.add('ensureAudioTask', () => {
