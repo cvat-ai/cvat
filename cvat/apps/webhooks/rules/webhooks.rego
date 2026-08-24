@@ -6,7 +6,7 @@ import data.utils
 import data.organizations
 
 # input : {
-#     "scope": <"create@project" | "create@organization" | "create@instance" |
+#     "scope": <"create@project" | "create@organization" | "create@server" |
 #         "update" | "delete" | "list" | "view"> or null,
 #     "auth": {
 #         "user": {

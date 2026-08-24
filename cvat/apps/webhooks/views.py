@@ -84,7 +84,7 @@ class WebhookViewSet(viewsets.ModelViewSet):
                 return WebhookWriteSerializer
 
     def get_queryset(self):
-        queryset = super().get_queryset().exclude(type=WebhookTypeChoice.INSTANCE)
+        queryset = super().get_queryset().exclude(type=WebhookTypeChoice.SERVER)
 
         if self.action == "list":
             perm = WebhookPermission.create_scope_list(self.request)

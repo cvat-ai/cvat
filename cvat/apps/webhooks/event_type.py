@@ -88,8 +88,8 @@ class OrganizationEvents:
     ]
 
 
-class InstanceEvents:
-    webhook_type = WebhookTypeChoice.INSTANCE
+class ServerEvents:
+    webhook_type = WebhookTypeChoice.SERVER
     events: list[Event] = [
         *Events.select_by_resources(
             resources=[

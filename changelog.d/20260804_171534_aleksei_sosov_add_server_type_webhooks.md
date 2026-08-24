@@ -1,6 +1,6 @@
 ### Added
 
-- Added instance-level webhooks, configured via Django admin, with
+- Added server-level webhooks, configured via Django admin, with
   `create:user`, `update:user`, `delete:user`, `create:organization`, and
   `delete:organization` events
   (<https://github.com/cvat-ai/cvat/pull/10991>)

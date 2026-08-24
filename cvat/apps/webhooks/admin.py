@@ -7,7 +7,7 @@ from collections import defaultdict
 from django import forms
 from django.contrib import admin
 
-from cvat.apps.webhooks.event_type import Event, InstanceEvents
+from cvat.apps.webhooks.event_type import Event, ServerEvents
 
 from .models import Webhook, WebhookTypeChoice
 
@@ -44,7 +44,7 @@ class EventGroupsFormField(forms.MultipleChoiceField):
 
 class WebhookAdminForm(forms.ModelForm):
     events = EventGroupsFormField(
-        events=InstanceEvents.events,
+        events=ServerEvents.events,
         widget=forms.CheckboxSelectMultiple,
     )
 
@@ -62,7 +62,7 @@ class WebhookAdminForm(forms.ModelForm):
 
     def save(self, commit=True):
         webhook = super().save(commit=False)
-        webhook.type = WebhookTypeChoice.INSTANCE
+        webhook.type = WebhookTypeChoice.SERVER
         webhook.project_id = None
         webhook.organization_id = None
 
@@ -76,7 +76,7 @@ class WebhookAdmin(admin.ModelAdmin):
     form = WebhookAdminForm
 
     def get_queryset(self, request):
-        return super().get_queryset(request).filter(type=WebhookTypeChoice.INSTANCE)
+        return super().get_queryset(request).filter(type=WebhookTypeChoice.SERVER)
 
 
 admin.site.register(Webhook, WebhookAdmin)

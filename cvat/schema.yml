@@ -7108,7 +7108,7 @@ paths:
           enum:
           - organization
           - project
-          - instance
+          - server
       tags:
       - webhooks
       security:
@@ -13560,12 +13560,12 @@ components:
       enum:
       - organization
       - project
-      - instance
+      - server
       type: string
       description: |-
         * `organization` - ORGANIZATION
         * `project` - PROJECT
-        * `instance` - INSTANCE
+        * `server` - SERVER
     WebhookWriteRequest:
       type: object
       properties:

@@ -8,20 +8,20 @@ from django.conf import settings
 from django.core.management.base import CommandError
 from django.db import migrations, models
 
-INSTANCE_WEBHOOKS_EXIST_ERROR = """\
-Cannot roll back: found {count} webhook(s) with type="instance".
+SERVER_WEBHOOKS_EXIST_ERROR = """\
+Cannot roll back: found {count} webhook(s) with type="server".
 Nothing was changed. Aborting the migration.
 
-Please review the existing "instance" webhooks and delete them before continuing.
+Please review the existing "server" webhooks and delete them before continuing.
 """
 
 
-def abort_if_instance_webhooks_exist(apps, schema_editor):
+def abort_if_server_webhooks_exist(apps, schema_editor):
     Webhook = apps.get_model("webhooks", "Webhook")
 
-    count = Webhook.objects.filter(type="instance").count()
+    count = Webhook.objects.filter(type="server").count()
     if count:
-        raise CommandError(INSTANCE_WEBHOOKS_EXIST_ERROR.format(count=count))
+        raise CommandError(SERVER_WEBHOOKS_EXIST_ERROR.format(count=count))
 
 
 class Migration(migrations.Migration):
@@ -45,7 +45,7 @@ class Migration(migrations.Migration):
                 choices=[
                     ("organization", "ORGANIZATION"),
                     ("project", "PROJECT"),
-                    ("instance", "INSTANCE"),
+                    ("server", "SERVER"),
                 ],
                 max_length=16,
             ),
@@ -66,15 +66,15 @@ class Migration(migrations.Migration):
                     models.Q(
                         ("organization_id__isnull", True),
                         ("project_id__isnull", True),
-                        ("type", "instance"),
+                        ("type", "server"),
                     ),
                     _connector="OR",
                 ),
-                name="webhooks_project_or_organization_or_instance",
+                name="webhooks_project_or_organization_or_server",
             ),
         ),
         migrations.RunPython(
             migrations.RunPython.noop,
-            reverse_code=abort_if_instance_webhooks_exist,
+            reverse_code=abort_if_server_webhooks_exist,
         ),
     ]
