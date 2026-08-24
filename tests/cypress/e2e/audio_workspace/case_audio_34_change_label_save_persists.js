@@ -38,7 +38,8 @@ context('Audio annotation. Saving after relabeling persists attributes.', () => 
             cy.reload();
             cy.assertWaveformReady();
             cy.get('.cvat-audio-region-item', { timeout: 15000 }).should('have.length', 1).click();
-            cy.get('.cvat-audio-region-label-trigger').should('contain.text', secondLabelName);
+            cy.get('.cvat-audio-region-details .cvat-audio-region-label-trigger')
+                .should('contain.text', secondLabelName);
             cy.get('.cvat-audio-region-attr-name').should('contain.text', attrName);
             cy.get('.cvat-audio-region-details textarea').should('have.value', secondAttrDefaultValue);
         });
