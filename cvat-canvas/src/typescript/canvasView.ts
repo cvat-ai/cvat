@@ -3861,7 +3861,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
         const title = this.selectedObjectsLabel.querySelector('.cvat_canvas_selected_objects_label_title');
         if (title) {
-            title.textContent = `GROUP (${this.selectedObjects.length})`;
+            title.textContent = `SELECTION (${this.selectedObjects.length})`;
         }
         this.selectedObjectsLabel.title = '';
         this.updateSelectedObjectsLabelPosition();

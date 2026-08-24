@@ -647,6 +647,17 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
         },
     });
 
+    Object.defineProperty(Job.prototype.actions.recordSelection, 'implementation', {
+        value: function recordSelectionActionImplementation(
+            this: JobClass,
+            clientIDs: Parameters<typeof JobClass.prototype.actions.recordSelection>[0],
+            frame: Parameters<typeof JobClass.prototype.actions.recordSelection>[1],
+        ): ReturnType<typeof JobClass.prototype.actions.recordSelection> {
+            getHistory(this).do(HistoryActions.CHANGED_SELECTION, () => {}, () => {}, clientIDs, frame);
+            return Promise.resolve();
+        },
+    });
+
     Object.defineProperty(Job.prototype.actions.freeze, 'implementation', {
         value: function freezeActionsImplementation(
             this: JobClass,
@@ -1472,6 +1483,17 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
             count: Parameters<typeof TaskClass.prototype.actions.redo>[0],
         ): ReturnType<typeof TaskClass.prototype.actions.redo> {
             return getHistory(this).redo(count);
+        },
+    });
+
+    Object.defineProperty(Task.prototype.actions.recordSelection, 'implementation', {
+        value: function recordSelectionActionImplementation(
+            this: TaskClass,
+            clientIDs: Parameters<typeof TaskClass.prototype.actions.recordSelection>[0],
+            frame: Parameters<typeof TaskClass.prototype.actions.recordSelection>[1],
+        ): ReturnType<typeof TaskClass.prototype.actions.recordSelection> {
+            getHistory(this).do(HistoryActions.CHANGED_SELECTION, () => {}, () => {}, clientIDs, frame);
+            return Promise.resolve();
         },
     });
 

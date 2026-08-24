@@ -279,7 +279,7 @@ export default class Collection {
         });
 
         const removedObjects: (Shape | Track | Tag)[] = [];
-        this.history.beginTransaction(HistoryActions.REMOVED_OBJECT);
+        this.history.beginTransaction(HistoryActions.REMOVED_SELECTION);
         try {
             for (let index = 0; index < objectStates.length; index++) {
                 const state = objectStates[index];

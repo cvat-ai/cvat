@@ -637,6 +637,32 @@ export function selectObjects(selectedStatesID: number[]): AnyAction {
     };
 }
 
+export function selectObjectsAsync(selectedStatesID: number[]): ThunkAction {
+    return async (dispatch: ThunkDispatch, getState): Promise<void> => {
+        const {
+            annotations: { selectedStatesID: previousSelection },
+            job: { instance: jobInstance },
+            player: { frame: { number: frame } },
+        } = getState().annotation;
+
+        if (previousSelection.length === selectedStatesID.length &&
+            previousSelection.every((clientID: number): boolean => selectedStatesID.includes(clientID))) {
+            return;
+        }
+
+        let history;
+        if (jobInstance && previousSelection.length && !selectedStatesID.length) {
+            await jobInstance.actions.recordSelection(previousSelection, frame);
+            history = await jobInstance.actions.get();
+        }
+
+        dispatch({
+            type: AnnotationActionTypes.SELECT_OBJECTS,
+            payload: { selectedStatesID, history },
+        });
+    };
+}
+
 export function copySelection(objectStates: any[]): AnyAction {
     const job = getStore().getState().annotation.job.instance;
     job?.logger.log(EventScope.copyObject, { count: objectStates.length });
@@ -1015,14 +1041,18 @@ export function undoActionAsync(): ThunkAction {
                 true,
             );
 
-            await jobInstance.actions.undo();
+            const affectedIDs = await jobInstance.actions.undo();
             await undoLog.close();
 
             if (undoOnFrame !== null && (frame !== undoOnFrame || ['Removed frame', 'Restored frame'].includes(undo[0]))) {
                 // the action below fetches annotations
-                dispatch(changeFrameAsync(undoOnFrame, undefined, undefined, true));
+                await dispatch(changeFrameAsync(undoOnFrame, undefined, undefined, true));
             } else {
-                dispatch(fetchAnnotationsAsync());
+                await dispatch(fetchAnnotationsAsync());
+            }
+
+            if (['Changed selection', 'Removed selection'].includes(undo[0])) {
+                dispatch(selectObjects(affectedIDs));
             }
         } catch (error) {
             dispatch({
@@ -1059,9 +1089,13 @@ export function redoActionAsync(): ThunkAction {
 
             if (redoOnFrame !== null && (frame !== redoOnFrame || ['Removed frame', 'Restored frame'].includes(redo[0]))) {
                 // the action below fetches annotations
-                dispatch(changeFrameAsync(redoOnFrame, undefined, undefined, true));
+                await dispatch(changeFrameAsync(redoOnFrame, undefined, undefined, true));
             } else {
-                dispatch(fetchAnnotationsAsync());
+                await dispatch(fetchAnnotationsAsync());
+            }
+
+            if (['Changed selection', 'Removed selection'].includes(redo[0])) {
+                dispatch(selectObjects([]));
             }
         } catch (error) {
             dispatch({

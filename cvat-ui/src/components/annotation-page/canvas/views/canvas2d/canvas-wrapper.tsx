@@ -47,7 +47,7 @@ import {
     createAnnotationsAsync,
     mergeAnnotationsAsync,
     groupAnnotationsAsync,
-    selectObjects,
+    selectObjectsAsync,
     copySelection,
     removeSelectionAsync,
     joinAnnotationsAsync,
@@ -386,7 +386,7 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
             dispatch(groupAnnotationsAsync(states));
         },
         onSelectObjects(selectedStatesID: number[]): void {
-            dispatch(selectObjects(selectedStatesID));
+            dispatch(selectObjectsAsync(selectedStatesID));
         },
         onCopySelection(states: ObjectState[]): void {
             dispatch(copySelection(states));

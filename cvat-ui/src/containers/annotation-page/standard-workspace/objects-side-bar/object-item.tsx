@@ -18,7 +18,7 @@ import {
     switchSimplifyVisibility as switchSimplifyVisibilityAction,
     removeObject as removeObjectAction,
     collapseObjectItems,
-    selectObjects as selectObjectsAction,
+    selectObjectsAsync,
 } from 'actions/annotation-actions';
 import {
     ActiveControl, CombinedState, ColorBy,
@@ -169,7 +169,7 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
             dispatch(collapseObjectItems([objectState], false));
         },
         selectObjects(selectedStatesID: number[]): void {
-            dispatch(selectObjectsAction(selectedStatesID));
+            dispatch(selectObjectsAsync(selectedStatesID));
         },
     };
 }

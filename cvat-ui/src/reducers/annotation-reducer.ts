@@ -719,12 +719,13 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             };
         }
         case AnnotationActionTypes.SELECT_OBJECTS: {
-            const { selectedStatesID } = action.payload;
+            const { selectedStatesID, history } = action.payload;
             return {
                 ...state,
                 annotations: {
                     ...state.annotations,
                     selectedStatesID,
+                    ...(history ? { history } : {}),
                 },
             };
         }
