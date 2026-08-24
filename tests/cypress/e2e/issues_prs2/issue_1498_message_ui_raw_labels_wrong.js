@@ -183,5 +183,26 @@ context('Message in UI when raw labels are wrong.', () => {
                     cy.task('log', `- "${$explainText}"`);
                 });
         });
+        it('Label "attributes values" is a valid number range with a repeating bound.', () => {
+            // a number attribute keeps [minimum, maximum, step] in "values", so a range
+            // like 1;4;1 repeats a value without being a duplicated option
+            const taskRawNumberRange = JSON.parse(JSON.stringify(taskRaw));
+            taskRawNumberRange[0].type = 'any';
+            taskRawNumberRange[0].attributes[0].input_type = 'number';
+            taskRawNumberRange[0].attributes[0].values = ['1', '4', '1'];
+            const jsonNumberRange = JSON.stringify(taskRawNumberRange);
+            cy.get('#labels').type(jsonNumberRange, { parseSpecialCharSequences: false });
+            cy.get('.ant-form-item-explain-error').should('not.exist');
+        });
+        it('Label "attributes values" is an invalid number range.', () => {
+            const taskRawInvalidRange = JSON.parse(JSON.stringify(taskRaw));
+            taskRawInvalidRange[0].type = 'any';
+            taskRawInvalidRange[0].attributes[0].input_type = 'number';
+            taskRawInvalidRange[0].attributes[0].values = ['4', '1', '1'];
+            const jsonInvalidRange = JSON.stringify(taskRawInvalidRange);
+            cy.get('#labels').type(jsonInvalidRange, { parseSpecialCharSequences: false });
+            cy.get('.ant-form-item-explain-error')
+                .should('contain.text', 'minimum must be less than maximum');
+        });
     });
 });
