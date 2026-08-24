@@ -496,6 +496,41 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
         selectObjects(nextSelection);
     };
 
+    private selectRange = (): void => {
+        const {
+            objectState, selectedStatesID, selectObjects,
+        } = this.props;
+        const clientID = objectState.clientID as number;
+        const renderedIDs = Array.from(document.querySelectorAll(
+            '.cvat-objects-sidebar-states-list [id^="cvat-objects-sidebar-state-item-"]',
+        )).reduce((ids: number[], element: Element): number[] => {
+            const match = element.id.match(/^cvat-objects-sidebar-state-item-(\d+)$/);
+            const id = match ? +match[1] : null;
+            if (id !== null && !ids.includes(id)) ids.push(id);
+            return ids;
+        }, []);
+        const anchorID = [...selectedStatesID].reverse().find((id: number): boolean => renderedIDs.includes(id));
+
+        if (typeof anchorID !== 'number') {
+            selectObjects([...selectedStatesID, clientID]);
+            return;
+        }
+
+        const from = renderedIDs.indexOf(anchorID);
+        const to = renderedIDs.indexOf(clientID);
+        if (from === -1 || to === -1) {
+            selectObjects([...selectedStatesID, clientID]);
+            return;
+        }
+        const range = renderedIDs.slice(Math.min(from, to), Math.max(from, to) + 1);
+        const nextSelection = [...new Set([
+            ...selectedStatesID.filter((id: number): boolean => id !== clientID),
+            ...range.filter((id: number): boolean => id !== clientID),
+            clientID,
+        ])];
+        selectObjects(nextSelection);
+    };
+
     private focusAndExpand = (): void => {
         const {
             objectState, canvasInstance, focusedObjectPadding, expandObject,
@@ -632,6 +667,7 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
                     colorBy={colorBy}
                     activate={this.activate}
                     toggleSelection={this.toggleSelection}
+                    selectRange={this.selectRange}
                     focusAndExpand={this.focusAndExpand}
                     remove={this.remove}
                     copy={this.copy}

@@ -26,6 +26,7 @@ import {
     compactLayersAsync,
     switchZLayer,
     toggleZLayersVisibility,
+    selectObjectsAsync,
 } from 'actions/annotation-actions';
 import {
     changeShowGroundTruth as changeShowGroundTruthAction,
@@ -95,6 +96,7 @@ interface DispatchToProps {
     compactLayers(...args: Parameters<typeof compactLayersAsync>): void;
     selectLayer(...args: Parameters<typeof switchZLayer>): void;
     toggleLayersVisibility(...args: Parameters<typeof toggleZLayersVisibility>): void;
+    selectObjects(...args: Parameters<typeof selectObjectsAsync>): void;
 }
 
 const componentShortcuts = {
@@ -216,6 +218,12 @@ const componentShortcuts = {
         name: 'Simplify polygon',
         description: 'Activate simplification mode for the selected polygon or polyline',
         sequences: [],
+        scope: ShortcutScope.OBJECTS_SIDEBAR,
+    },
+    SELECT_ALL_OBJECTS: {
+        name: 'Select all objects',
+        description: 'Add all objects visible on the canvas to the selection',
+        sequences: ['ctrl+a'],
         scope: ShortcutScope.OBJECTS_SIDEBAR,
     },
 };
@@ -378,6 +386,9 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         },
         toggleLayersVisibility(...args: Parameters<typeof toggleZLayersVisibility>): void {
             dispatch(toggleZLayersVisibility(...args));
+        },
+        selectObjects(...args: Parameters<typeof selectObjectsAsync>): void {
+            dispatch(selectObjectsAsync(...args));
         },
     };
 }
@@ -612,6 +623,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             changeFrame,
             workspace,
             renderData,
+            selectObjects,
         } = this.props;
         const {
             objectStates, sortedStatesID, statesOrdering, filteredStates,
@@ -826,6 +838,16 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                 if (state && [ShapeType.POLYGON, ShapeType.POLYLINE].includes(state.shapeType)) {
                     switchSimplifyVisibility(state.clientID);
                 }
+            },
+            SELECT_ALL_OBJECTS: (event?: KeyboardEvent) => {
+                const target = event?.target as HTMLElement | null;
+                if (target?.closest('input, textarea, [contenteditable]')) return;
+
+                preventDefault(event);
+                selectObjects(filteredStates.filter((state: ObjectState): boolean => (
+                    [ObjectType.SHAPE, ObjectType.TRACK].includes(state.objectType) &&
+                    !state.outside && !state.hidden && !hiddenZLayers.has(state.zOrder)
+                )).map((state: ObjectState): number => state.clientID as number));
             },
         };
 

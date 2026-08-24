@@ -39,6 +39,7 @@ interface Props {
     zOrder: number;
     activate(activeElementID?: number): void;
     toggleSelection(): void;
+    selectRange(): void;
     focusAndExpand(): void;
     copy(): void;
     propagate(): void;
@@ -81,6 +82,7 @@ function ObjectItemComponent(props: Props): JSX.Element {
         isGroundTruth,
         activate,
         toggleSelection,
+        selectRange,
         focusAndExpand,
         copy,
         propagate,
@@ -124,15 +126,19 @@ function ObjectItemComponent(props: Props): JSX.Element {
     const activateAfterElement = useCallback((): void => activate(), [activate]);
 
     const onMouseDown = useCallback((event: React.MouseEvent): void => {
-        if (event.button === 0 && isMultiSelectObjectModifierPressed(event, keyMap)) {
+        if (event.button === 0) {
             const interactiveElement = (event.target as Element).closest('button, input, textarea, .ant-select');
-            if (!interactiveElement) {
+            if (!interactiveElement && event.shiftKey && !event.ctrlKey && !event.altKey && !event.metaKey) {
+                event.preventDefault();
+                event.stopPropagation();
+                selectRange();
+            } else if (!interactiveElement && isMultiSelectObjectModifierPressed(event, keyMap)) {
                 event.preventDefault();
                 event.stopPropagation();
                 toggleSelection();
             }
         }
-    }, [keyMap, toggleSelection]);
+    }, [keyMap, selectRange, toggleSelection]);
 
     const onContextMenu = useCallback((event: React.MouseEvent): void => {
         if (isMultiSelectObjectModifierPressed(event, keyMap)) {
