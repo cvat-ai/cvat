@@ -216,7 +216,7 @@ Cypress.Commands.add('audioClearAnnotations', () => {
 });
 
 Cypress.Commands.add('audioClearAnnotationsAndSave', () => {
-    removeAudioAnnotations({ save: true });
+    removeAudioAnnotations(true);
 });
 
 Cypress.Commands.add('audioUndo', () => {
