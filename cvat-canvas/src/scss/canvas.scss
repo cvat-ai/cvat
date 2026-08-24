@@ -94,6 +94,18 @@ polyline.cvat_shape_drawing_opacity {
     opacity: 0;
 }
 
+.cvat_canvas_shape_selected_object {
+    fill-opacity: var(--cvat-selection-opacity) !important;
+}
+
+image.cvat_canvas_shape_selected_object {
+    opacity: var(--cvat-selection-mask-opacity) !important;
+}
+
+polyline.cvat_canvas_shape_selected_object {
+    fill-opacity: 0 !important;
+}
+
 .cvat_canvas_selected_objects_label {
     position: absolute;
     z-index: 5;

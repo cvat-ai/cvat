@@ -2470,6 +2470,9 @@ export class CanvasViewImpl implements CanvasView, Listener {
             this.configuration = configuration;
             if (withUpdatingShapeViews) {
                 updateShapeViews(Object.values(this.drawnStates));
+                if (this.selectedObjects.length) {
+                    this.setupSelectedObjects();
+                }
             }
 
             if (recreateText) {
@@ -3873,7 +3876,18 @@ export class CanvasViewImpl implements CanvasView, Listener {
             this.content.getElementsByClassName('cvat_canvas_shape_selected_object'),
         )) {
             shape.classList.remove('cvat_canvas_shape_selected_object');
-            (shape as SVGElement).style.removeProperty('--cvat-selection-color');
+            (shape as SVGElement).style.removeProperty('--cvat-selection-opacity');
+            (shape as SVGElement).style.removeProperty('--cvat-selection-mask-opacity');
+        }
+
+        const selectedShapeOpacity = this.configuration.selectedShapeOpacity ?? 0.5;
+        for (const clientID of this.selectedObjects) {
+            const shape = this.svgShapes[clientID]?.node;
+            if (!shape?.isConnected) continue;
+
+            shape.classList.add('cvat_canvas_shape_selected_object');
+            shape.style.setProperty('--cvat-selection-opacity', `${selectedShapeOpacity}`);
+            shape.style.setProperty('--cvat-selection-mask-opacity', `${Math.sqrt(selectedShapeOpacity)}`);
         }
 
         this.updateSelectedObjectsOverlay();
