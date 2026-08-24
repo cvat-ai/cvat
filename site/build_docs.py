@@ -52,6 +52,8 @@ def copy_sdk_examples(repo_root: Path, site_dir: Path) -> None:
 
 
 def prepare_tags(repo):
+    from packaging import version
+
     # Group tags by minor version (major.minor) and keep only the latest patch for each
     minor_versions = {}
     for tag in repo.tags:
