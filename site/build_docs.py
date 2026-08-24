@@ -14,10 +14,6 @@ import tempfile
 from pathlib import Path
 from urllib.parse import urljoin
 
-# `git` and `toml` are imported lazily inside the build paths that need them so
-# `--copy-sdk-examples-only` (used from README's "start the site locally") works
-# without the full production-build dependency set.
-
 # Number of most recent tags to build documentation for
 MAX_VERSIONS_TO_BUILD = 6
 
@@ -27,11 +23,7 @@ BASE_URL = os.getenv("BASE_URL", "/")
 # Hugo binary for documentation builds
 hugo110 = "hugo-0.110"  # used for all documentation builds
 
-# Where SDK example scripts are copied to inside the Hugo site tree so the
-# `include-code` shortcode can embed them at build time. Path is relative to
-# the site (Hugo project) root; the shortcode call sites use the same prefix.
 SDK_EXAMPLES_DEST = Path("assets/sdk-examples")
-# Where the source scripts live in the repository, relative to the repo root.
 SDK_EXAMPLES_SRC = Path("cvat-sdk/examples")
 
 
