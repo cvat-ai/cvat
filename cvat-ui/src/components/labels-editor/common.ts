@@ -54,7 +54,10 @@ function validateParsedAttribute(attr: SerializedAttribute): void {
     }
 
     const attrValues = attr.values.map((value: string) => value.trim());
-    if (new Set(attrValues).size !== attrValues.length) {
+    if (
+        attr.input_type.toLowerCase() !== 'number' &&
+        new Set(attrValues).size !== attrValues.length
+    ) {
         throw new Error(`Attribute: "${attr.name}": attribute values must be unique`);
     }
 
