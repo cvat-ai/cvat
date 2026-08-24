@@ -75,7 +75,7 @@ context('Audio annotation. Interval actions.', () => {
     });
 
     describe(`Testing case "${caseId}"`, () => {
-        it('Moves the caret to the selected interval boundaries with [ and ]', () => {
+        it('Sets playback to the selected interval boundaries with [ and ]', () => {
             createInterval(200, 450);
 
             cy.get('body').type('[');
@@ -109,20 +109,20 @@ context('Audio annotation. Interval actions.', () => {
                 const getAction = (iconSelector) => (
                     cy.get(selector).find(`.cvat-audio-region-item-action-btn:has(${iconSelector})`)
                 );
-                const getCaretAction = (boundary) => {
-                    const caretActions = getAction('.cvat-audio-interval-caret-icon');
-                    return boundary === 'start' ? caretActions.first() : caretActions.last();
+                const getPlaybackAction = (boundary) => {
+                    const playbackActions = getAction('.cvat-audio-interval-playback-icon');
+                    return boundary === 'start' ? playbackActions.first() : playbackActions.last();
                 };
                 const getIntervalAction = (action) => getAction(`.anticon-${actionIcons[action]}`);
                 const clickIntervalAction = (action) => getIntervalAction(action).click();
 
-                it('Moves the caret to the selected interval boundaries from its actions', () => {
+                it('Sets playback to the selected interval boundaries from its actions', () => {
                     createInterval(200, 450);
 
-                    getCaretAction('start').click();
+                    getPlaybackAction('start').click();
                     expectCursorAtIntervalBoundary('start');
 
-                    getCaretAction('end').click();
+                    getPlaybackAction('end').click();
                     expectCursorAtIntervalBoundary('end');
                 });
 

@@ -9,13 +9,13 @@ interface Props extends React.SVGProps<SVGSVGElement> {
     boundary: 'start' | 'end';
 }
 
-export default function AudioIntervalCaretIcon({ boundary, ...props }: Props): JSX.Element {
+export default function AudioIntervalPlaybackIcon({ boundary, ...props }: Props): JSX.Element {
     const isStart = boundary === 'start';
 
     return (
         <svg
             {...props}
-            className={classNames('cvat-audio-interval-caret-icon', props.className)}
+            className={classNames('cvat-audio-interval-playback-icon', props.className)}
             viewBox='0 0 20 16'
             fill='none'
             aria-hidden

@@ -52,9 +52,9 @@ function AudioRegionDetailsWrapper(): JSX.Element | null {
             colorBy={colorBy}
             regionColor={getAudioRegionColor(interval, labels, colorBy, opacity, selectedOpacity, true)}
             intervalActionShortcuts={{
-                setCaretToStart: normalizedKeyMap.AUDIO_SET_CARET_TO_INTERVAL_START ?? '',
+                setPlaybackToStart: normalizedKeyMap.AUDIO_SET_PLAYBACK_TO_INTERVAL_START ?? '',
                 playInterval: normalizedKeyMap.AUDIO_PLAY_INTERVAL_ONCE ?? '',
-                setCaretToEnd: normalizedKeyMap.AUDIO_SET_CARET_TO_INTERVAL_END ?? '',
+                setPlaybackToEnd: normalizedKeyMap.AUDIO_SET_PLAYBACK_TO_INTERVAL_END ?? '',
                 switchLock: normalizedKeyMap.AUDIO_SWITCH_LOCK ?? '',
                 switchPinned: normalizedKeyMap.AUDIO_SWITCH_PINNED ?? '',
                 switchHidden: normalizedKeyMap.AUDIO_SWITCH_HIDDEN ?? '',

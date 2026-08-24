@@ -17,7 +17,7 @@ import {
     audioActions,
     copyAudioIntervalAsync,
     requestPlayAudioIntervalOnce,
-    requestSetAudioCaretToIntervalBoundary,
+    requestSetAudioPlaybackToIntervalBoundary,
     removeAudioIntervalAsync,
     updateAudioIntervalAsync,
 } from 'actions/audio-actions';
@@ -26,7 +26,7 @@ import ColorPicker from 'components/annotation-page/standard-workspace/objects-s
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { ThunkDispatch } from 'utils/redux';
 import AudioRegionItemMenu from './audio-region-item-menu';
-import AudioIntervalCaretIcon from './audio-interval-caret-icon';
+import AudioIntervalPlaybackIcon from './audio-interval-playback-icon';
 import AudioIntervalPlayIcon from './audio-interval-play-icon';
 import { copyAudioIntervalURL, intervalID } from './utils/audio-interval';
 
@@ -38,9 +38,9 @@ interface Props {
 }
 
 export interface AudioIntervalActionShortcuts {
-    setCaretToStart: string;
+    setPlaybackToStart: string;
     playInterval: string;
-    setCaretToEnd: string;
+    setPlaybackToEnd: string;
     switchLock: string;
     switchPinned: string;
     switchHidden: string;
@@ -139,15 +139,15 @@ export default function AudioIntervalActions({
         dispatch(updateAudioIntervalAsync(id, { color }));
     }, [dispatch, id]);
 
-    const handleSetCaret = useCallback((boundary: 'start' | 'end'): void => {
-        dispatch(requestSetAudioCaretToIntervalBoundary(id, boundary));
+    const handleSetPlayback = useCallback((boundary: 'start' | 'end'): void => {
+        dispatch(requestSetAudioPlaybackToIntervalBoundary(id, boundary));
     }, [dispatch, id]);
-    const handleSetCaretToStart = useCallback((): void => {
-        handleSetCaret('start');
-    }, [handleSetCaret]);
-    const handleSetCaretToEnd = useCallback((): void => {
-        handleSetCaret('end');
-    }, [handleSetCaret]);
+    const handleSetPlaybackToStart = useCallback((): void => {
+        handleSetPlayback('start');
+    }, [handleSetPlayback]);
+    const handleSetPlaybackToEnd = useCallback((): void => {
+        handleSetPlayback('end');
+    }, [handleSetPlayback]);
 
     const handleFitInterval = useCallback((): void => {
         dispatch(audioActions.fitAudioInterval(id));
@@ -180,11 +180,11 @@ export default function AudioIntervalActions({
     return (
         <div className='cvat-audio-interval-header-actions'>
             <AudioIntervalActionButton
-                title={`Set caret to interval start ${shortcuts.setCaretToStart}`}
+                title={`Set playback to interval start ${shortcuts.setPlaybackToStart}`}
                 className={actionClassName}
-                onAction={handleSetCaretToStart}
+                onAction={handleSetPlaybackToStart}
             >
-                <AudioIntervalCaretIcon boundary='start' />
+                <AudioIntervalPlaybackIcon boundary='start' />
             </AudioIntervalActionButton>
             <AudioIntervalActionButton
                 title={`Play interval as range ${shortcuts.playInterval}`}
@@ -194,11 +194,11 @@ export default function AudioIntervalActions({
                 <AudioIntervalPlayIcon />
             </AudioIntervalActionButton>
             <AudioIntervalActionButton
-                title={`Set caret to interval end ${shortcuts.setCaretToEnd}`}
+                title={`Set playback to interval end ${shortcuts.setPlaybackToEnd}`}
                 className={actionClassName}
-                onAction={handleSetCaretToEnd}
+                onAction={handleSetPlaybackToEnd}
             >
-                <AudioIntervalCaretIcon boundary='end' />
+                <AudioIntervalPlaybackIcon boundary='end' />
             </AudioIntervalActionButton>
             <AudioIntervalActionButton
                 title={`${locked ? 'Unlock interval' : 'Lock interval'} ${shortcuts.switchLock}`}

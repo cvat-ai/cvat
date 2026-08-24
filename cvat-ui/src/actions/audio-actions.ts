@@ -261,7 +261,7 @@ export function findAudioIntervalBoundariesAsync(
     };
 }
 
-export function requestSetAudioCaretToIntervalBoundary(clientID: number, boundary: 'start' | 'end'): ThunkAction {
+export function requestSetAudioPlaybackToIntervalBoundary(clientID: number, boundary: 'start' | 'end'): ThunkAction {
     return async (dispatch: ThunkDispatch, getState): Promise<void> => {
         const { intervals, duration } = getState().audio.player;
         const interval = intervals.find((_interval) => _interval.clientID === clientID);

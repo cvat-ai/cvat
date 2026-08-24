@@ -12,7 +12,7 @@ import {
     audioActions,
     changeAudioIntervalLabelAsync,
     requestPlayAudioIntervalOnce,
-    requestSetAudioCaretToIntervalBoundary,
+    requestSetAudioPlaybackToIntervalBoundary,
     removeAudioIntervalAsync,
     updateAudioIntervalAsync,
     updateAudioIntervalsAsync,
@@ -66,15 +66,15 @@ const componentShortcuts = {
         sequences: ['del', 'shift+del'],
         scope: ShortcutScope.OBJECTS_SIDEBAR,
     },
-    AUDIO_SET_CARET_TO_INTERVAL_START: {
-        name: 'Set caret to interval start',
-        description: 'Seek to the selected interval start without changing playback',
+    AUDIO_SET_PLAYBACK_TO_INTERVAL_START: {
+        name: 'Set playback to interval start',
+        description: 'Set the playback position to the selected interval start without starting or stopping playback',
         sequences: ['['],
         scope: ShortcutScope.OBJECTS_SIDEBAR,
     },
-    AUDIO_SET_CARET_TO_INTERVAL_END: {
-        name: 'Set caret to interval end',
-        description: 'Seek to the selected interval end without changing playback',
+    AUDIO_SET_PLAYBACK_TO_INTERVAL_END: {
+        name: 'Set playback to interval end',
+        description: 'Set the playback position to the selected interval end without starting or stopping playback',
         sequences: [']'],
         scope: ShortcutScope.OBJECTS_SIDEBAR,
     },
@@ -117,7 +117,7 @@ interface DispatchToProps {
     onToggleIntervalsPinned(clientIDs: number[], pinned: boolean): void;
     onToggleIntervalsHidden(clientIDs: number[], hidden: boolean): void;
     onDeleteInterval(clientID: number, force?: boolean): void;
-    onSetCaret(clientID: number, boundary: 'start' | 'end'): void;
+    onSetPlayback(clientID: number, boundary: 'start' | 'end'): void;
     onFitInterval(clientID: number): void;
     onChangeLabel(clientID: number, labelID: number): void;
 }
@@ -171,8 +171,8 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         onDeleteInterval(clientID: number, force = false): void {
             dispatch(removeAudioIntervalAsync(clientID, force));
         },
-        onSetCaret(clientID: number, boundary: 'start' | 'end'): void {
-            dispatch(requestSetAudioCaretToIntervalBoundary(clientID, boundary));
+        onSetPlayback(clientID: number, boundary: 'start' | 'end'): void {
+            dispatch(requestSetAudioPlaybackToIntervalBoundary(clientID, boundary));
         },
         onFitInterval(clientID: number): void {
             dispatch(audioActions.fitAudioInterval(clientID));
@@ -193,7 +193,7 @@ function AudioRegionsListContainer(props: Props): JSX.Element {
         onSetActiveInterval, onSetHoveredInterval, onPlayIntervalOnce,
         onToggleIntervalLock, onToggleIntervalPinned, onToggleIntervalHidden,
         onToggleIntervalsLock, onToggleIntervalsPinned, onToggleIntervalsHidden,
-        onDeleteInterval, onSetCaret, onChangeLabel,
+        onDeleteInterval, onSetPlayback, onChangeLabel,
         onFitInterval,
     } = props;
 
@@ -242,15 +242,15 @@ function AudioRegionsListContainer(props: Props): JSX.Element {
             if (activeInterval.lock && !force) return;
             onDeleteInterval(intervalID(activeInterval), force);
         },
-        AUDIO_SET_CARET_TO_INTERVAL_START: (e) => {
+        AUDIO_SET_PLAYBACK_TO_INTERVAL_START: (e) => {
             preventDefault(e);
             if (!activeInterval) return;
-            onSetCaret(intervalID(activeInterval), 'start');
+            onSetPlayback(intervalID(activeInterval), 'start');
         },
-        AUDIO_SET_CARET_TO_INTERVAL_END: (e) => {
+        AUDIO_SET_PLAYBACK_TO_INTERVAL_END: (e) => {
             preventDefault(e);
             if (!activeInterval) return;
-            onSetCaret(intervalID(activeInterval), 'end');
+            onSetPlayback(intervalID(activeInterval), 'end');
         },
         AUDIO_PLAY_INTERVAL_ONCE: (e) => {
             preventDefault(e);
@@ -276,9 +276,9 @@ function AudioRegionsListContainer(props: Props): JSX.Element {
                 colorBy={colorBy}
                 activeControl={activeControl}
                 intervalActionShortcuts={{
-                    setCaretToStart: normalizedKeyMap.AUDIO_SET_CARET_TO_INTERVAL_START ?? '',
+                    setPlaybackToStart: normalizedKeyMap.AUDIO_SET_PLAYBACK_TO_INTERVAL_START ?? '',
                     playInterval: normalizedKeyMap.AUDIO_PLAY_INTERVAL_ONCE ?? '',
-                    setCaretToEnd: normalizedKeyMap.AUDIO_SET_CARET_TO_INTERVAL_END ?? '',
+                    setPlaybackToEnd: normalizedKeyMap.AUDIO_SET_PLAYBACK_TO_INTERVAL_END ?? '',
                     switchLock: normalizedKeyMap.AUDIO_SWITCH_LOCK ?? '',
                     switchPinned: normalizedKeyMap.AUDIO_SWITCH_PINNED ?? '',
                     switchHidden: normalizedKeyMap.AUDIO_SWITCH_HIDDEN ?? '',
