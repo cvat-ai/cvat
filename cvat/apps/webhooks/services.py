@@ -75,6 +75,7 @@ def send_webhook(
         response=response,
         attempt=attempt,
         request_duration=request_duration,
+        changed_fields="",
     )
 
 

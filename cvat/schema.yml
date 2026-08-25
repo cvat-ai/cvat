@@ -13490,6 +13490,10 @@ components:
           readOnly: true
         response:
           readOnly: true
+        changed_fields:
+          type: string
+          readOnly: true
+          deprecated: true
     WebhookRead:
       type: object
       properties:

@@ -125,5 +125,8 @@ class WebhookDelivery(TimestampedModel):
     request = models.JSONField(default=dict)
     response = models.JSONField(default=dict)
 
+    # deprecated, kept for historical deliveries
+    changed_fields = models.CharField(default="", max_length=4096)
+
     class Meta:
         default_permissions = ()

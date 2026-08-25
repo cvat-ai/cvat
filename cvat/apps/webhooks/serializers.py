@@ -180,6 +180,7 @@ class WebhookWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
         return db_webhook
 
 
+@extend_schema_serializer(deprecate_fields=["changed_fields"])
 class WebhookDeliveryReadSerializer(serializers.ModelSerializer):
     webhook_id = serializers.IntegerField(read_only=True)
 
@@ -197,5 +198,6 @@ class WebhookDeliveryReadSerializer(serializers.ModelSerializer):
             "updated_date",
             "request",
             "response",
+            "changed_fields",
         )
         read_only_fields = fields
