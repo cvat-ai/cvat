@@ -75,20 +75,20 @@ context('Audio annotation. Interval actions.', () => {
     });
 
     describe(`Testing case "${caseId}"`, () => {
-        it('Sets playback to the selected interval boundaries with [ and ]', () => {
+        it('Sets playback to the selected interval boundaries with Shift+D and Shift+F', () => {
             createInterval(200, 450);
 
-            cy.get('body').type('[');
+            cy.realPress(['Shift', 'D']);
             expectCursorAtIntervalBoundary('start');
 
-            cy.get('body').type(']');
+            cy.realPress(['Shift', 'F']);
             expectCursorAtIntervalBoundary('end');
         });
 
-        it('Plays the selected interval once with \\', () => {
+        it('Plays the selected interval once with Shift+Space', () => {
             createInterval(100, 112);
 
-            cy.get('body').type('\\');
+            cy.realPress(['Shift', 'Space']);
             cy.get('.cvat-player-pause-button').should('exist');
             cy.get('.cvat-player-play-button', { timeout: 8000 }).should('exist');
         });

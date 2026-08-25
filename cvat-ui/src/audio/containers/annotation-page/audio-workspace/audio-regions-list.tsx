@@ -69,19 +69,19 @@ const componentShortcuts = {
     AUDIO_SET_PLAYBACK_TO_INTERVAL_START: {
         name: 'Set playback to interval start',
         description: 'Set the playback position to the selected interval start without starting or stopping playback',
-        sequences: ['['],
+        sequences: ['shift+d'],
         scope: ShortcutScope.OBJECTS_SIDEBAR,
     },
     AUDIO_SET_PLAYBACK_TO_INTERVAL_END: {
         name: 'Set playback to interval end',
         description: 'Set the playback position to the selected interval end without starting or stopping playback',
-        sequences: [']'],
+        sequences: ['shift+f'],
         scope: ShortcutScope.OBJECTS_SIDEBAR,
     },
     AUDIO_PLAY_INTERVAL_ONCE: {
         name: 'Play interval as range',
         description: 'Play the active audio interval once',
-        sequences: ['\\'],
+        sequences: ['shift+space'],
         scope: ShortcutScope.OBJECTS_SIDEBAR,
     },
     AUDIO_FIT_INTERVAL: {
