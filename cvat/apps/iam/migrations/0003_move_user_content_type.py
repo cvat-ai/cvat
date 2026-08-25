@@ -2,11 +2,17 @@
 #
 # SPDX-License-Identifier: MIT
 
+from pathlib import Path
+from time import monotonic
+
 from django.core.management.base import CommandError
 from django.db import migrations
 
+from cvat.apps.engine.log import get_migration_logger
+
 OLD_APP_LABEL = "auth"
 NEW_APP_LABEL = "iam"
+_MIGRATION_NAME = f"iam_{Path(__file__).stem}"
 
 CONFLICTING_USER_CONTENT_TYPE_ERROR = """\
 Cannot re-label the user content type: the "{db_table}" table holds both
@@ -43,38 +49,50 @@ To continue:
 
 
 def move_user_content_type(apps, schema_editor):
-    ContentType = apps.get_model("contenttypes", "ContentType")
-    rows = ContentType.objects.filter(model="user")
+    started_at = monotonic()
+    with get_migration_logger(_MIGRATION_NAME) as logger:
+        logger.info("Forward migration has started.")
+        ContentType = apps.get_model("contenttypes", "ContentType")
+        rows = ContentType.objects.filter(model="user")
 
-    old_content_type_row = rows.filter(app_label=OLD_APP_LABEL).first()
-    if not old_content_type_row:
-        # Fresh installation - auth.User is swapped out, so auth|user is never created and
-        # there is nothing to migrate.
-        return
-
-    new_content_type_row = rows.filter(app_label=NEW_APP_LABEL).first()
-    if new_content_type_row:
-        raise CommandError(
-            CONFLICTING_USER_CONTENT_TYPE_ERROR.format(
-                db_table=ContentType._meta.db_table,
-                old_label=OLD_APP_LABEL,
-                new_label=NEW_APP_LABEL,
-                old_id=old_content_type_row.pk,
-                new_id=new_content_type_row.pk,
+        old_content_type_row = rows.filter(app_label=OLD_APP_LABEL).first()
+        if not old_content_type_row:
+            # Fresh installation - auth.User is swapped out, so auth|user is never created and
+            # there is nothing to migrate.
+            logger.info(
+                "Nothing to migrate. Forward migration has finished in %.3f seconds.",
+                monotonic() - started_at,
             )
-        )
+            return
 
-    rows.filter(pk=old_content_type_row.pk).update(app_label=NEW_APP_LABEL)
-    ContentType.objects.clear_cache()
+        new_content_type_row = rows.filter(app_label=NEW_APP_LABEL).first()
+        if new_content_type_row:
+            raise CommandError(
+                CONFLICTING_USER_CONTENT_TYPE_ERROR.format(
+                    db_table=ContentType._meta.db_table,
+                    old_label=OLD_APP_LABEL,
+                    new_label=NEW_APP_LABEL,
+                    old_id=old_content_type_row.pk,
+                    new_id=new_content_type_row.pk,
+                )
+            )
+
+        rows.filter(pk=old_content_type_row.pk).update(app_label=NEW_APP_LABEL)
+        ContentType.objects.clear_cache()
+        logger.info("Forward migration has finished in %.3f seconds.", monotonic() - started_at)
 
 
 def restore_user_content_type(apps, schema_editor):
-    ContentType = apps.get_model("contenttypes", "ContentType")
+    started_at = monotonic()
+    with get_migration_logger(_MIGRATION_NAME) as logger:
+        logger.info("Reverse migration has started.")
+        ContentType = apps.get_model("contenttypes", "ContentType")
 
-    ContentType.objects.filter(app_label=NEW_APP_LABEL, model="user").update(
-        app_label=OLD_APP_LABEL
-    )
-    ContentType.objects.clear_cache()
+        ContentType.objects.filter(app_label=NEW_APP_LABEL, model="user").update(
+            app_label=OLD_APP_LABEL
+        )
+        ContentType.objects.clear_cache()
+        logger.info("Reverse migration has finished in %.3f seconds.", monotonic() - started_at)
 
 
 class Migration(migrations.Migration):

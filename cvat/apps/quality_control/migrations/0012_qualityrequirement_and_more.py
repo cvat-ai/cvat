@@ -1,12 +1,16 @@
 from collections.abc import Iterator
+from pathlib import Path
+from time import monotonic
 from typing import Any
 
 import django.db.models.deletion
 from django.db import migrations, models
 
+from cvat.apps.engine.log import get_migration_logger
 from cvat.apps.engine.utils import take_by
 
 _BATCH_SIZE = 1000
+_MIGRATION_NAME = f"quality_control_{Path(__file__).stem}"
 
 _BASE_REQUIREMENT_ANNOTATION_TYPES = (
     "tag",
@@ -44,30 +48,44 @@ def _base_requirement_name(annotation_type: str) -> str:
 
 
 def _ensure_base_quality_requirements(apps, _schema_editor):
-    QualitySettings = apps.get_model("quality_control", "QualitySettings")
-    QualityRequirement = apps.get_model("quality_control", "QualityRequirement")
-
-    def make_requirements() -> Iterator[Any]:
-        settings_ids = QualitySettings.objects.values_list("id", flat=True).iterator(
-            chunk_size=_BATCH_SIZE
+    started_at = monotonic()
+    with get_migration_logger(_MIGRATION_NAME) as logger:
+        QualitySettings = apps.get_model("quality_control", "QualitySettings")
+        QualityRequirement = apps.get_model("quality_control", "QualityRequirement")
+        settings_count = QualitySettings.objects.count()
+        requirements_count = settings_count * len(_BASE_REQUIREMENT_ANNOTATION_TYPES)
+        logger.info(
+            "Migration has started. Need to create %d requirements for %d quality settings.",
+            requirements_count,
+            settings_count,
         )
-        for settings_id in settings_ids:
-            for sort_order, annotation_type in enumerate(_BASE_REQUIREMENT_ANNOTATION_TYPES):
-                yield QualityRequirement(
-                    settings_id=settings_id,
-                    name=_base_requirement_name(annotation_type),
-                    sort_order=sort_order,
-                    filter="",
-                    enabled=False,
-                    annotation_type=annotation_type,
-                    parent_id=None,
-                    **_BASE_REQUIREMENT_DEFAULTS,
-                )
 
-    for requirements_batch in take_by(make_requirements(), chunk_size=_BATCH_SIZE):
-        QualityRequirement.objects.bulk_create(
-            requirements_batch,
-            batch_size=_BATCH_SIZE,
+        def make_requirements() -> Iterator[Any]:
+            settings_ids = QualitySettings.objects.values_list("id", flat=True).iterator(
+                chunk_size=_BATCH_SIZE
+            )
+            for settings_id in settings_ids:
+                for sort_order, annotation_type in enumerate(_BASE_REQUIREMENT_ANNOTATION_TYPES):
+                    yield QualityRequirement(
+                        settings_id=settings_id,
+                        name=_base_requirement_name(annotation_type),
+                        sort_order=sort_order,
+                        filter="",
+                        enabled=False,
+                        annotation_type=annotation_type,
+                        parent_id=None,
+                        **_BASE_REQUIREMENT_DEFAULTS,
+                    )
+
+        for requirements_batch in take_by(make_requirements(), chunk_size=_BATCH_SIZE):
+            QualityRequirement.objects.bulk_create(
+                requirements_batch,
+                batch_size=_BATCH_SIZE,
+            )
+
+        logger.info(
+            "Migration has finished in %.3f seconds.",
+            monotonic() - started_at,
         )
 
 
