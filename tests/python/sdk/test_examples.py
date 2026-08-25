@@ -2,13 +2,19 @@
 #
 # SPDX-License-Identifier: MIT
 
+import hashlib
+import hmac
 import importlib.util
+import json
 import os
 import re
 import site
+import socket
 import subprocess
 import sys
 import types
+import urllib.error
+import urllib.request
 import zipfile
 from pathlib import Path
 from time import sleep
@@ -31,6 +37,19 @@ from shared.utils.config import (
 from shared.utils.helpers import generate_image_file
 
 EXAMPLES_DIR = Path(__file__).parents[3] / "cvat-sdk" / "examples"
+
+
+def receiver_target_url() -> str:
+    """The in-docker webhook receiver's URL, as the CVAT server sees it —
+    the same service the rest_api webhook tests deliver to.
+    """
+    env = {}
+    receiver_env = Path(__file__).parents[1] / "webhook_receiver" / ".env"
+    for line in receiver_env.read_text().splitlines():
+        name, _, value = line.strip().partition("=")
+        env[name] = value
+    return f"http://{env['SERVER_HOST']}:{env['SERVER_PORT']}/{env['PAYLOAD_ENDPOINT']}"
+
 
 # The bucket content summary printed by cloud_storage_register.py.
 BUCKET_CONTENT_RE = re.compile(r"contains (\d+) entries in (\d+) page\(s\)")
@@ -108,10 +127,12 @@ class TestExamples:
             path.write_bytes(generate_image_file(filename=str(path), size=(5, 10)).getvalue())
         return image_dir
 
-    def make_project(self, name: str = "Recipe project") -> Project:
+    def make_project(
+        self, name: str = "Recipe project", labels: tuple[str, ...] = ("object",)
+    ) -> Project:
         return self.client.projects.create(
             models.ProjectWriteRequest(
-                name=name, labels=[models.PatchedLabelRequest(name="object")]
+                name=name, labels=[models.PatchedLabelRequest(name=label) for label in labels]
             )
         )
 
@@ -120,13 +141,14 @@ class TestExamples:
         name: str = "Recipe task",
         resources: list[Path] | None = None,
         segment_size: int | None = None,
+        labels: tuple[str, ...] = ("object",),
     ) -> Task:
         if resources is None:
             resources = sorted(self.make_image_dir().iterdir())
         return self.client.tasks.create_from_data(
             spec=models.TaskWriteRequest(
                 name=name,
-                labels=[models.PatchedLabelRequest(name="object")],
+                labels=[models.PatchedLabelRequest(name=label) for label in labels],
                 **({"segment_size": segment_size} if segment_size else {}),
             ),
             resource_type=ResourceType.LOCAL,
@@ -402,6 +424,96 @@ class TestExamples:
         )
         assert "--search requires --org or --org-id" in result.stderr
 
+    def seed_rectangle(self, task: Task, *, label_id: int | None = None, frame: int = 0) -> None:
+        """Put one rectangle on a task, so annotation recipes have data to work on."""
+        if label_id is None:
+            label_id = task.get_labels()[0].id
+        task.set_annotations(
+            models.LabeledDataRequest(
+                shapes=[
+                    models.LabeledShapeRequest(
+                        frame=frame, label_id=label_id, type="rectangle", points=[1, 1, 3, 4]
+                    )
+                ]
+            )
+        )
+
+    def test_task_import_annotations(self):
+        # Round trip: export a seeded task's annotations, wipe them, and let the
+        # recipe bring them back from the exported file.
+        task = self.make_task()
+        self.seed_rectangle(task)
+        exported = self.tmp_path / "annotations.zip"
+        task.export_dataset("COCO 1.0", exported, include_images=False)
+        task.remove_annotations()
+        assert not task.get_annotations().shapes
+
+        result = self.run_recipe(
+            "task_import_annotations.py",
+            args=["--task-id", str(task.id), "--annotations-file", str(exported)],
+            with_cleanup=False,
+        )
+        assert f"Task {task.id}: 0 objects before import" in result.stdout
+        assert f"Task {task.id}: 1 objects after import" in result.stdout
+        assert len(task.get_annotations().shapes) == 1
+
+    def test_task_import_annotations_rejects_unknown_format(self):
+        task = self.make_task()
+        annotations_file = self.tmp_path / "annotations.zip"
+        annotations_file.write_bytes(b"")
+        result = self.run_recipe(
+            "task_import_annotations.py",
+            args=[
+                "--task-id",
+                str(task.id),
+                "--annotations-file",
+                str(annotations_file),
+                "--import-format",
+                "Bogus 9.9",
+            ],
+            with_cleanup=False,
+            expect_failure=True,
+        )
+        assert "Unknown import format" in result.stderr
+
+    def test_task_edit_annotations_relabel(self):
+        task = self.make_task(labels=("object", "defect"))
+        labels = {label.name: label.id for label in task.get_labels()}
+        self.seed_rectangle(task, label_id=labels["object"])
+
+        result = self.run_recipe(
+            "task_edit_annotations.py",
+            args=["--task-id", str(task.id), "--relabel", "object", "defect"],
+            with_cleanup=False,
+        )
+        assert "object: 1 -> 0" in result.stdout
+        assert "defect: 0 -> 1" in result.stdout
+        shapes = task.get_annotations().shapes
+        assert [shape.label_id for shape in shapes] == [labels["defect"]]
+
+    def test_task_edit_annotations_delete_label(self):
+        task = self.make_task(labels=("object", "defect"))
+        labels = {label.name: label.id for label in task.get_labels()}
+        self.seed_rectangle(task, label_id=labels["object"])
+
+        result = self.run_recipe(
+            "task_edit_annotations.py",
+            args=["--task-id", str(task.id), "--delete-label", "object"],
+            with_cleanup=False,
+        )
+        assert "object: 1 -> 0" in result.stdout
+        assert not task.get_annotations().shapes
+
+    def test_task_edit_annotations_rejects_unknown_label(self):
+        task = self.make_task()
+        result = self.run_recipe(
+            "task_edit_annotations.py",
+            args=["--task-id", str(task.id), "--relabel", "bogus", "object"],
+            with_cleanup=False,
+            expect_failure=True,
+        )
+        assert "Label 'bogus' not found in task" in result.stderr
+
     def test_task_inspect_and_export(self):
         task = self.make_task()
         result = self.run_recipe(
@@ -639,3 +751,264 @@ class TestExamples:
         assert "Renamed to: Recipes CI project (renamed)" in result.stdout
         assert "Deleted project" in result.stdout
         assert all(p.name != "Recipes CI project (renamed)" for p in self.client.projects.list())
+
+    def test_project_add_labels(self):
+        project = self.make_project()
+        result = self.run_recipe(
+            "project_add_labels.py",
+            args=["--project-id", str(project.id), "--labels", "car", "person"],
+            with_cleanup=False,
+        )
+        assert f"Added 2 labels to project {project.id}" in result.stdout
+        names = {label.name for label in project.get_labels()}
+        assert {"object", "car", "person"} <= names
+
+    def test_project_add_labels_with_attributes(self):
+        project = self.make_project()
+        self.run_recipe(
+            "project_add_labels.py",
+            args=[
+                "--project-id",
+                str(project.id),
+                "--labels",
+                "car",
+                "--attr",
+                "car",
+                "color",
+                "red",
+                "green",
+                "blue",
+            ],
+            with_cleanup=False,
+        )
+        car = next(label for label in project.get_labels() if label.name == "car")
+        assert len(car.attributes) == 1
+        attribute = car.attributes[0]
+        assert attribute.name == "color"
+        assert attribute.values == ["red", "green", "blue"]
+
+    def test_project_add_labels_skips_existing(self):
+        project = self.make_project()
+        result = self.run_recipe(
+            "project_add_labels.py",
+            args=["--project-id", str(project.id), "--labels", "object", "car"],
+            with_cleanup=False,
+        )
+        assert "Label 'object' already exists, skipping" in result.stdout
+        assert f"Added 1 labels to project {project.id}" in result.stdout
+
+    def test_project_add_labels_rejects_attr_for_unlisted_label(self):
+        result = self.run_recipe(
+            "project_add_labels.py",
+            args=[
+                "--project-id",
+                "1",
+                "--labels",
+                "car",
+                "--attr",
+                "person",
+                "age",
+                "young",
+                "old",
+            ],
+            with_cleanup=False,
+            expect_failure=True,
+        )
+        assert "--attr refers to label 'person', which is not in --labels" in result.stderr
+
+    def test_project_annotation_stats(self):
+        project = self.make_project(labels=("object", "defect"))
+        task = self.make_task_in_project(project, name="Stats recipe task")
+        labels = {label.name: label.id for label in project.get_labels()}
+        task.set_annotations(
+            models.LabeledDataRequest(
+                shapes=[
+                    models.LabeledShapeRequest(
+                        frame=0, label_id=labels["object"], type="rectangle", points=[1, 1, 3, 4]
+                    ),
+                    models.LabeledShapeRequest(
+                        frame=0,
+                        label_id=labels["object"],
+                        type="polygon",
+                        points=[1, 1, 3, 1, 3, 4],
+                    ),
+                    models.LabeledShapeRequest(
+                        frame=1, label_id=labels["defect"], type="rectangle", points=[2, 2, 4, 5]
+                    ),
+                ],
+                tags=[models.LabeledImageRequest(frame=0, label_id=labels["defect"])],
+            )
+        )
+
+        result = self.run_recipe(
+            "project_annotation_stats.py",
+            args=["--project-id", str(project.id)],
+            with_cleanup=False,
+        )
+        assert f"Project {project.id}: 4 objects across 1 tasks" in result.stdout
+
+        report = self.tmp_path / "annotation_stats.csv"
+        assert report.exists()
+        rows = report.read_text().splitlines()
+        assert rows[0] == "task_id,task_name,label,type,count"
+        body = {tuple(row.split(",")) for row in rows[1:]}
+        assert (str(task.id), "Stats recipe task", "object", "rectangle", "1") in body
+        assert (str(task.id), "Stats recipe task", "object", "polygon", "1") in body
+        assert (str(task.id), "Stats recipe task", "defect", "rectangle", "1") in body
+        assert (str(task.id), "Stats recipe task", "defect", "tag", "1") in body
+
+    @pytest.mark.with_external_services
+    def test_webhook_register(self):
+        project = self.make_project()
+        result = self.run_recipe(
+            "webhook_register.py",
+            args=[
+                "--project-id",
+                str(project.id),
+                "--target-url",
+                receiver_target_url(),
+                "--secret",
+                "recipe-secret",
+            ],
+        )
+        assert "Created webhook" in result.stdout
+        assert "Ping delivery: HTTP 200" in result.stdout
+        assert "1 deliveries, by status: 200 x1" in result.stdout
+        assert "Deleted webhook" in result.stdout
+
+    @pytest.mark.with_external_services
+    def test_webhook_register_organization(self):
+        org = self.client.organizations.create(models.OrganizationWriteRequest(slug="recipeswhorg"))
+        try:
+            result = self.run_recipe(
+                "webhook_register.py",
+                args=[
+                    "--org",
+                    org.slug,
+                    "--target-url",
+                    receiver_target_url(),
+                    "--secret",
+                    "recipe-secret",
+                ],
+            )
+            assert f"Created webhook" in result.stdout
+            assert f"organization {org.slug!r}" in result.stdout
+            assert "Deleted webhook" in result.stdout
+        finally:
+            org.remove()
+
+    def test_webhook_register_requires_scope(self):
+        result = self.run_recipe(
+            "webhook_register.py",
+            args=["--target-url", "http://example.com/payload", "--secret", "s"],
+            with_cleanup=False,
+            expect_failure=True,
+        )
+        assert "one of the arguments --project-id --org is required" in result.stderr
+
+    def post_webhook_event(
+        self, port: int, payload: dict, secret: str | None = "recipe-secret"
+    ) -> int:
+        """POST a payload to the monitor recipe's receiver the way the CVAT server
+        would: JSON body signed with HMAC-SHA256 in X-Signature-256. Pass
+        secret=None to send an unsigned (forged) delivery.
+        """
+        body = json.dumps(payload).encode()
+        if secret is not None:
+            signature = (
+                "sha256=" + hmac.new(secret.encode(), body, digestmod=hashlib.sha256).hexdigest()
+            )
+        else:
+            signature = "sha256=" + "0" * 64
+        request = urllib.request.Request(
+            f"http://localhost:{port}/payload",
+            data=body,
+            headers={"Content-Type": "application/json", "X-Signature-256": signature},
+        )
+        try:
+            with urllib.request.urlopen(request) as response:
+                return response.status
+        except urllib.error.HTTPError as error:
+            return error.code
+
+    def test_webhook_monitor(self):
+        project = self.make_project()
+        with socket.socket() as probe:
+            probe.bind(("", 0))
+            port = probe.getsockname()[1]
+
+        process = subprocess.Popen(
+            [
+                sys.executable,
+                str(EXAMPLES_DIR / "webhook_monitor.py"),
+                "--host",
+                BASE_URL,
+                "--token",
+                self.token,
+                "--project-id",
+                str(project.id),
+                "--public-url",
+                f"http://host.docker.internal:{port}/payload",
+                "--port",
+                str(port),
+                "--secret",
+                "recipe-secret",
+                "--max-events",
+                "2",
+                "--cleanup",
+            ],
+            cwd=self.tmp_path,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+        try:
+            for _ in range(200):
+                if process.poll() is not None:
+                    break
+                try:
+                    with socket.create_connection(("localhost", port), timeout=0.1):
+                        break
+                except OSError:
+                    sleep(0.1)
+            else:
+                pytest.fail("The recipe's receiver never started listening")
+
+            assert self.post_webhook_event(port, {"event": "ping"}, secret=None) == 403
+            assert (
+                self.post_webhook_event(
+                    port,
+                    {
+                        "event": "update:task",
+                        "task": {"id": 1, "name": "Monitored", "status": "validation"},
+                        "before_update": {"status": "annotation"},
+                        "sender": {"username": "worker"},
+                    },
+                )
+                == 200
+            )
+            assert (
+                self.post_webhook_event(
+                    port,
+                    {
+                        "event": "update:task",
+                        "task": {"id": 1, "name": "Monitored", "status": "completed"},
+                        "before_update": {"status": "validation"},
+                        "sender": {"username": "worker"},
+                    },
+                )
+                == 200
+            )
+            stdout, stderr = process.communicate(timeout=60)
+        finally:
+            process.kill()
+
+        assert process.returncode == 0, f"stdout:\n{stdout}\nstderr:\n{stderr}"
+        assert "task 1: annotation -> validation" in stdout
+        assert "task 1: validation -> completed" in stdout
+        assert "Received 2 events: update:task x2" in stdout
+        assert "Task status changes: completed x1, validation x1" in stdout
+        assert "Rejected 1 deliveries with a bad signature" in stdout
+        assert "Deleted webhook" in stdout
+        hooks, _ = self.client.api_client.webhooks_api.list(project_id=project.id)
+        assert not hooks.results
