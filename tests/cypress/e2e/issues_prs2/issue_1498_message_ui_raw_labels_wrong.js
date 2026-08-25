@@ -195,14 +195,21 @@ context('Message in UI when raw labels are wrong.', () => {
             cy.get('.ant-form-item-explain-error').should('not.exist');
         });
         it('Label "attributes values" is an invalid number range.', () => {
+            const invalidRanges = [
+                [['4', '1', '1'], 'minimum must be less than maximum'],
+                [['1', '4', '5'], 'step must be less than minmax difference'],
+                [['1', '4', '0'], 'step must be a positive number'],
+            ];
             const taskRawInvalidRange = JSON.parse(JSON.stringify(taskRaw));
             taskRawInvalidRange[0].type = 'any';
             taskRawInvalidRange[0].attributes[0].input_type = 'number';
-            taskRawInvalidRange[0].attributes[0].values = ['4', '1', '1'];
-            const jsonInvalidRange = JSON.stringify(taskRawInvalidRange);
-            cy.get('#labels').type(jsonInvalidRange, { parseSpecialCharSequences: false });
-            cy.get('.ant-form-item-explain-error')
-                .should('contain.text', 'minimum must be less than maximum');
+            for (const [values, message] of invalidRanges) {
+                taskRawInvalidRange[0].attributes[0].values = values;
+                const jsonInvalidRange = JSON.stringify(taskRawInvalidRange);
+                cy.get('#labels').type(jsonInvalidRange, { parseSpecialCharSequences: false });
+                cy.get('.ant-form-item-explain-error').should('contain.text', message);
+                cy.get('#labels').clear();
+            }
         });
     });
 });
