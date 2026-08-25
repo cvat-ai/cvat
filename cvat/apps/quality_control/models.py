@@ -9,11 +9,12 @@ from enum import Enum
 from functools import cached_property
 from typing import TYPE_CHECKING, Any
 
+from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.forms.models import model_to_dict
 
-from cvat.apps.engine.models import Job, JobType, Project, ShapeType, Task, TimestampedModel, User
+from cvat.apps.engine.models import Job, JobType, Project, ShapeType, Task, TimestampedModel
 from cvat.apps.quality_control.utils import is_current_report_data
 from cvat.utils import django_database as db_utils
 
@@ -113,7 +114,11 @@ class QualityReport(models.Model):
     gt_last_updated = models.DateTimeField(null=True)
 
     assignee = models.ForeignKey(
-        User, on_delete=models.SET_NULL, related_name="quality_reports", null=True, blank=True
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        related_name="quality_reports",
+        null=True,
+        blank=True,
     )
     assignee_last_updated = models.DateTimeField(null=True)
 

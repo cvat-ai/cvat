@@ -11,7 +11,7 @@ from cvat.apps.engine.utils import take_by
 
 
 def create_growth_data_for_existing_users(apps, schema_editor):
-    User = apps.get_model("auth", "User")
+    User = apps.get_model(settings.AUTH_USER_MODEL)
     UserGrowthData = apps.get_model("growth", "UserGrowthData")
     current_time = now()
     user_ids = User.objects.values_list("id", flat=True).iterator(chunk_size=1000)

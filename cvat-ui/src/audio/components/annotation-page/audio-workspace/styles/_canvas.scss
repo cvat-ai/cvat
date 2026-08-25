@@ -61,6 +61,10 @@
     min-width: 0;
     width: 100%;
 
+    ::part(cvat-audio-bulk-edit-boundary) {
+        border-color: #1677ff;
+    }
+
     .cvat-audio-waveform-controls {
         position: absolute;
         z-index: 10;

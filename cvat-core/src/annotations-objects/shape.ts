@@ -202,14 +202,14 @@ export class Shape extends ScoredMixin(Drawn) {
         const redoSource = this.readOnlyFields.includes('source') ? this.source : computeNewSource(this.source);
 
         this.history.do(
-            HistoryActions.CHANGED_OCCLUDED,
+            HistoryActions.CHANGED_OUTSIDE,
             () => {
                 this.outside = undoOutside;
                 this.source = undoSource;
                 this.updated = Date.now();
             },
             () => {
-                this.occluded = redoOutside;
+                this.outside = redoOutside;
                 this.source = redoSource;
                 this.updated = Date.now();
             },

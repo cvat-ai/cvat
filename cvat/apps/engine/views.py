@@ -21,7 +21,6 @@ from typing import Any, cast
 import django_rq
 from attr.converters import to_bool
 from django.conf import settings
-from django.contrib.auth.models import User
 from django.core.files.storage import storages
 from django.db import IntegrityError, transaction
 from django.db.models.query import Prefetch, prefetch_related_objects
@@ -39,7 +38,7 @@ from rest_framework import mixins, serializers, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import APIException, NotFound, PermissionDenied, ValidationError
 from rest_framework.parsers import MultiPartParser
-from rest_framework.permissions import SAFE_METHODS, IsAuthenticated
+from rest_framework.permissions import SAFE_METHODS
 from rest_framework.response import Response
 from rest_framework.settings import api_settings
 from rq.job import Job as RQJob
@@ -154,7 +153,7 @@ from cvat.apps.engine.view_utils import (
     tus_chunk_action,
 )
 from cvat.apps.iam.filters import ORGANIZATION_OPEN_API_PARAMETERS
-from cvat.apps.iam.permissions import IsAuthenticatedOrReadPublicResource
+from cvat.apps.iam.models import User
 from cvat.apps.redis_handler.serializers import RqIdSerializer
 from cvat.utils import django_database as db_utils
 from cvat.utils.paths import join_untrusted_path, problem_with_untrusted_path
@@ -3682,16 +3681,6 @@ class AssetsViewSet(
 
     def check_object_permissions(self, request: ExtendedRequest, obj):
         super().check_object_permissions(request, obj.guide)
-
-    def get_permissions(self):
-        permissions = super().get_permissions()
-
-        if self.action == "retrieve":
-            permissions = [IsAuthenticatedOrReadPublicResource()] + [
-                p for p in permissions if not isinstance(p, IsAuthenticated)
-            ]
-
-        return permissions
 
     def get_serializer_class(self):
         if self.request.method in SAFE_METHODS:
