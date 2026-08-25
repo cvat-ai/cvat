@@ -17,6 +17,9 @@ context('Audio annotation. Interval actions.', () => {
     };
 
     const actionIcons = {
+        setPlaybackToStart: 'seek-to-start',
+        playInterval: 'play-range',
+        setPlaybackToEnd: 'seek-to-end',
         // note: lock and unlock icons show current state rather than action
         // that's gonna be performed hence they are intentionally inverted
         lock: 'unlock',
@@ -25,6 +28,7 @@ context('Audio annotation. Interval actions.', () => {
         unpin: 'pushpin',
         hide: 'eye',
         show: 'eye-invisible',
+        more: 'more',
     };
 
     const actionParents = [
@@ -109,27 +113,23 @@ context('Audio annotation. Interval actions.', () => {
                 const getAction = (iconSelector) => (
                     cy.get(selector).find(`.cvat-audio-region-item-action-btn:has(${iconSelector})`)
                 );
-                const getPlaybackAction = (boundary) => {
-                    const playbackActions = getAction('.cvat-audio-interval-playback-icon');
-                    return boundary === 'start' ? playbackActions.first() : playbackActions.last();
-                };
-                const getIntervalAction = (action) => getAction(`.anticon-${actionIcons[action]}`);
+                const getIntervalAction = (action) => getAction(`[data-icon="${actionIcons[action]}"]`);
                 const clickIntervalAction = (action) => getIntervalAction(action).click();
 
                 it('Sets playback to the selected interval boundaries from its actions', () => {
                     createInterval(200, 450);
 
-                    getPlaybackAction('start').click();
+                    getIntervalAction('setPlaybackToStart').click();
                     expectCursorAtIntervalBoundary('start');
 
-                    getPlaybackAction('end').click();
+                    getIntervalAction('setPlaybackToEnd').click();
                     expectCursorAtIntervalBoundary('end');
                 });
 
                 it('Plays the selected interval once from its action', () => {
                     createInterval(100, 112);
 
-                    getAction('.cvat-audio-interval-play-icon').click();
+                    clickIntervalAction('playInterval');
                     cy.get('.cvat-player-pause-button').should('exist');
                     cy.get('.cvat-player-play-button', { timeout: 8000 }).should('exist');
                 });
@@ -141,7 +141,7 @@ context('Audio annotation. Interval actions.', () => {
                         cy.wrap($scroll).scrollTo($scroll[0].scrollWidth, 0);
                     });
 
-                    getAction('.anticon-more').click();
+                    clickIntervalAction('more');
                     cy.get('.cvat-audio-region-item-menu').contains('button', 'Fit interval').click();
                     expectIntervalFitsViewport();
                 });

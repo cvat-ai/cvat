@@ -3,7 +3,7 @@
     SPDX-License-Identifier: MIT
 -->
 
-<svg viewBox="0 0 20 16" width="1em" height="1em" fill="none" xmlns="http://www.w3.org/2000/svg">
+<svg data-icon="seek-to-start" viewBox="0 0 20 16" width="1em" height="1em" fill="none" xmlns="http://www.w3.org/2000/svg">
     <g transform="translate(-1.5 -1.2) scale(1.15)">
         <path d="M6 2H3V14H6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
         <path d="M13.5 4.2L6 8L13.5 11.8V4.2Z" fill="currentColor"/>
