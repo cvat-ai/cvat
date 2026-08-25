@@ -484,6 +484,21 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
         }
     };
 
+    private activateSingle = (): void => {
+        const {
+            objectState, ready, activeControl, activateObject, selectObjects,
+            updateActiveControl, canvasInstance,
+        } = this.props;
+        if (!ready) return;
+
+        if (canvasInstance instanceof Canvas && activeControl === ActiveControl.SELECT) {
+            canvasInstance.selectObjects({ enabled: false });
+            updateActiveControl(ActiveControl.CURSOR);
+        }
+        selectObjects([]);
+        activateObject(objectState.clientID, null);
+    };
+
     private toggleSelection = (): void => {
         const {
             objectState, selectedStatesID, selectObjects,
@@ -632,6 +647,7 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
             attributes,
             activated,
             multiSelected,
+            selectedStatesID,
             colorBy,
             normalizedKeyMap,
             keyMap,
@@ -651,6 +667,7 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
                     zLayerDragging={zLayerDragging}
                     activated={activated}
                     multiSelected={multiSelected}
+                    selectionActive={selectedStatesID.length > 0}
                     objectType={objectState.objectType}
                     shapeType={objectState.shapeType}
                     clientID={objectState.clientID as number}
@@ -666,6 +683,7 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
                     labels={labels}
                     colorBy={colorBy}
                     activate={this.activate}
+                    activateSingle={this.activateSingle}
                     toggleSelection={this.toggleSelection}
                     selectRange={this.selectRange}
                     focusAndExpand={this.focusAndExpand}

@@ -21,6 +21,7 @@ interface Props {
     keyMap: KeyMap;
     activated: boolean;
     multiSelected: boolean;
+    selectionActive: boolean;
     objectType: ObjectType;
     shapeType: ShapeType;
     clientID: number;
@@ -38,6 +39,7 @@ interface Props {
     zLayerDragging?: boolean;
     zOrder: number;
     activate(activeElementID?: number): void;
+    activateSingle(): void;
     toggleSelection(): void;
     selectRange(): void;
     focusAndExpand(): void;
@@ -64,6 +66,7 @@ function ObjectItemComponent(props: Props): JSX.Element {
     const {
         activated,
         multiSelected,
+        selectionActive,
         objectType,
         shapeType,
         clientID,
@@ -81,6 +84,7 @@ function ObjectItemComponent(props: Props): JSX.Element {
         keyMap,
         isGroundTruth,
         activate,
+        activateSingle,
         toggleSelection,
         selectRange,
         focusAndExpand,
@@ -119,10 +123,10 @@ function ObjectItemComponent(props: Props): JSX.Element {
     }
 
     const activateState = useCallback((event: React.MouseEvent): void => {
-        if (!isMultiSelectObjectModifierPressed(event, keyMap)) {
+        if (!selectionActive && !isMultiSelectObjectModifierPressed(event, keyMap)) {
             activate();
         }
-    }, [activate, keyMap]);
+    }, [activate, keyMap, selectionActive]);
     const activateAfterElement = useCallback((): void => activate(), [activate]);
 
     const onMouseDown = useCallback((event: React.MouseEvent): void => {
@@ -136,9 +140,13 @@ function ObjectItemComponent(props: Props): JSX.Element {
                 event.preventDefault();
                 event.stopPropagation();
                 toggleSelection();
+            } else if (!interactiveElement && selectionActive) {
+                event.preventDefault();
+                event.stopPropagation();
+                activateSingle();
             }
         }
-    }, [keyMap, selectRange, toggleSelection]);
+    }, [activateSingle, keyMap, selectRange, selectionActive, toggleSelection]);
 
     const onContextMenu = useCallback((event: React.MouseEvent): void => {
         if (isMultiSelectObjectModifierPressed(event, keyMap)) {
