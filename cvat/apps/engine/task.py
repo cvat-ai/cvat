@@ -2062,7 +2062,11 @@ def initialize_task(
     if not (is_data_in_cloud and is_backup_restore):
         _create_task_preview(db_task)
 
-    _move_to_backing_cs_if_configured(db_data)
+    # TODO: remove the condition.
+    # We don't yet have production experience with videos in backing CS,
+    # so let's be cautious and not move them automatically.
+    if db_task.mode != models.TaskMode.INTERPOLATION:
+        _move_to_backing_cs_if_configured(db_data)
 
 
 def _create_task_preview(db_task: models.Task):
