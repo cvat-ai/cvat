@@ -10,8 +10,8 @@ import {
     QualityMetricAggregation, QualityRequirementMetric, QualityRequirementPointSizeBase,
     SerializedQualityRequirementAttributeComparison,
     SerializedQualityRequirementAttributeRule,
-    serializeQualityTargetMetric,
 } from 'cvat-core/src/quality/server-response-types';
+import { serializeQualityTargetMetric } from 'cvat-core/src/quality/quality-requirement-utils';
 import {
     buildRequirementsById,
     getRequirementEffectiveField,
@@ -40,11 +40,11 @@ export const METRIC_OPTION_GROUPS: Array<{
     options: QualityRequirementMetric[];
 }> = [
     {
-        label: 'Micro / aggregate',
+        label: 'Micro / Aggregate',
         options: Object.values(QualityRequirementMetric),
     },
     {
-        label: 'Macro average',
+        label: 'Macro average / Mean',
         options: Object.values(QualityRequirementMetric).map((metric) => serializeQualityTargetMetric({
             metric,
             aggregation: QualityMetricAggregation.MEAN,

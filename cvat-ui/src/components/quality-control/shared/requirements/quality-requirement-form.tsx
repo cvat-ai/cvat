@@ -24,6 +24,7 @@ import {
 import {
     ANNOTATION_TYPES,
     formatAnnotationType,
+    formatBaseMetric,
     formatMetric,
 } from './quality-requirements-utils';
 import QualityRequirementFilter from './quality-requirement-filter';
@@ -681,12 +682,16 @@ export default function QualityRequirementForm(props: Readonly<QualityRequiremen
                         }}
                         rules={[{ required: true, message: 'This field is required' }]}
                     >
-                        <Select virtual={false}>
+                        <Select
+                            optionLabelProp='label'
+                            popupClassName='cvat-quality-target-metric-dropdown'
+                            virtual={false}
+                        >
                             {METRIC_OPTION_GROUPS.map((group) => (
                                 <Select.OptGroup key={group.label} label={group.label}>
                                     {group.options.map((value) => (
-                                        <Select.Option key={value} value={value}>
-                                            {formatMetric(value)}
+                                        <Select.Option key={value} label={formatMetric(value)} value={value}>
+                                            {formatBaseMetric(value)}
                                         </Select.Option>
                                     ))}
                                 </Select.OptGroup>
