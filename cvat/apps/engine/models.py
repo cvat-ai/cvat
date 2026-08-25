@@ -634,15 +634,22 @@ class Data(models.Model):
 
         return None
 
-    def supports_backing_cs(self) -> bool:
-        return (
-            self.storage == StorageChoice.LOCAL
-            and self.storage_method == StorageMethodChoice.CACHE
-            and self.images.exists()
-        )
+    def supports_backing_cs(self, db_storage: CloudStorage) -> bool:
+        if not (
+            self.storage == StorageChoice.LOCAL and self.storage_method == StorageMethodChoice.CACHE
+        ):
+            return False
+
+        if self.images.exists():
+            return True
+
+        if hasattr(self, "video") and db_storage.get_client().supports_streaming:
+            return True
+
+        return False
 
     def move_to_backing_cs(self, backing_cs: CloudStorage) -> None:
-        assert self.supports_backing_cs()
+        assert self.supports_backing_cs(backing_cs)
         assert not self.local_storage_backing_cs_id
 
         self.local_storage_backing_cs = backing_cs

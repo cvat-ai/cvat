@@ -2236,9 +2236,9 @@ def _create_static_chunks(
                 progress_updater.update_progress(segment_idx / len(db_segments))
 
 
-def _move_to_backing_cs_if_configured(db_data):
+def _move_to_backing_cs_if_configured(db_data: models.Data) -> None:
     backing_cs_id = settings.DEFAULT_BACKING_CS_ID
-    if backing_cs_id is not None and db_data.supports_backing_cs():
+    if backing_cs_id is not None:
         try:
             backing_cs = models.CloudStorage.objects.get(pk=backing_cs_id)
         except models.CloudStorage.DoesNotExist:
@@ -2246,4 +2246,5 @@ def _move_to_backing_cs_if_configured(db_data):
                 f"Cloud storage #{backing_cs_id} (configured as default backing CS) does not exist"
             )
         else:
-            db_data.move_to_backing_cs(backing_cs)
+            if db_data.supports_backing_cs(backing_cs):
+                db_data.move_to_backing_cs(backing_cs)
