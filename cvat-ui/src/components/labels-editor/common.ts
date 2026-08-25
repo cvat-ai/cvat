@@ -19,34 +19,32 @@ const core = getCore();
 let id = 0;
 
 // Number attributes store a [minimum, maximum, step] triple in "values"
-// instead of a list of options. Returns the problem with the triple, or null.
-export function getNumberRangeError(values: string[]): string | null {
+// instead of a list of options.
+export function validateNumberAttributeValues(values: string[]): void {
     if (values.length !== 3) {
-        return 'three numbers are expected';
+        throw new Error('three numbers are expected');
     }
 
     const trimmed = values.map((value: string) => value.trim());
     const numbers = trimmed.map((value: string): number => (value.length ? Number(value) : NaN));
     const invalidIndex = numbers.findIndex((number: number) => !Number.isFinite(number));
     if (invalidIndex !== -1) {
-        return `"${trimmed[invalidIndex]}" is not a number`;
+        throw new Error(`"${trimmed[invalidIndex]}" is not a number`);
     }
 
     const [min, max, step] = numbers;
 
     if (min >= max) {
-        return 'minimum must be less than maximum';
+        throw new Error('minimum must be less than maximum');
     }
 
     if (max - min < step) {
-        return 'step must be less than minmax difference';
+        throw new Error('step must be less than minmax difference');
     }
 
     if (step <= 0) {
-        return 'step must be a positive number';
+        throw new Error('step must be a positive number');
     }
-
-    return null;
 }
 
 function validateParsedAttribute(attr: SerializedAttribute): void {
@@ -86,9 +84,10 @@ function validateParsedAttribute(attr: SerializedAttribute): void {
 
     const attrValues = attr.values.map((value: string) => value.trim());
     if (attr.input_type.toLowerCase() === 'number') {
-        const rangeError = getNumberRangeError(attrValues);
-        if (rangeError) {
-            throw new Error(`Attribute: "${attr.name}": ${rangeError}`);
+        try {
+            validateNumberAttributeValues(attrValues);
+        } catch (error: any) {
+            throw new Error(`Attribute: "${attr.name}": ${error.message}`);
         }
     } else if (new Set(attrValues).size !== attrValues.length) {
         throw new Error(`Attribute: "${attr.name}": attribute values must be unique`);

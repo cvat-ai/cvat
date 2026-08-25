@@ -23,7 +23,7 @@ import { ColorizeIcon } from 'icons';
 import patterns from 'utils/validation-patterns';
 import config from 'config';
 import {
-    equalArrayHead, getNumberRangeError, idGenerator, LabelOptColor, SkeletonConfiguration,
+    equalArrayHead, idGenerator, LabelOptColor, SkeletonConfiguration, validateNumberAttributeValues,
 } from './common';
 
 export enum AttributeType {
@@ -337,8 +337,13 @@ export default class LabelForm extends React.Component<Props> {
         const validator = (_: any, strNumbers: string): Promise<void> => {
             if (typeof strNumbers !== 'string') return Promise.resolve();
 
-            const error = getNumberRangeError(strNumbers.split(';'));
-            return error ? Promise.reject(new Error(error)) : Promise.resolve();
+            try {
+                validateNumberAttributeValues(strNumbers.split(';'));
+            } catch (error) {
+                return Promise.reject(error);
+            }
+
+            return Promise.resolve();
         };
 
         return (
