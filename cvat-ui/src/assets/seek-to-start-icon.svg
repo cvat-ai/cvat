@@ -1,0 +1,9 @@
+<!--
+    Copyright (C) CVAT.ai Corporation
+    SPDX-License-Identifier: MIT
+-->
+
+<svg viewBox="0 0 20 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M6 2H3V14H6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M13.5 4.2L6 8L13.5 11.8V4.2Z" fill="currentColor"/>
+</svg>
