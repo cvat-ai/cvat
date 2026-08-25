@@ -17,7 +17,6 @@ import ControlVisibilityObserver, { ExtraControlsControl } from 'components/anno
 
 import AudioCursorControl, { Props as CursorControlProps } from './cursor-control';
 import IntervalRegionControl, { Props as IntervalRegionControlProps } from './interval-region-control';
-import EditRegionControl, { Props as EditRegionControlProps } from './edit-region-control';
 import LoopControl, { Props as LoopControlProps } from './loop-control';
 import ZoomControl, { Props as ZoomControlProps } from './zoom-control';
 import SpeedControl, { Props as SpeedControlProps } from './speed-control';
@@ -25,7 +24,6 @@ import VolumeControl, { Props as VolumeControlProps } from './volume-control';
 
 const ObservedCursorControl = ControlVisibilityObserver<CursorControlProps>(AudioCursorControl, 'audioCursorControl');
 const ObservedIntervalRegionControl = ControlVisibilityObserver<IntervalRegionControlProps>(IntervalRegionControl, 'audioIntervalRegionControl');
-const ObservedEditRegionControl = ControlVisibilityObserver<EditRegionControlProps>(EditRegionControl, 'audioEditRegionControl');
 const ObservedLoopControl = ControlVisibilityObserver<LoopControlProps>(LoopControl, 'audioLoopControl');
 const ObservedZoomControl = ControlVisibilityObserver<ZoomControlProps>(ZoomControl, 'audioZoomControl');
 const ObservedSpeedControl = ControlVisibilityObserver<SpeedControlProps>(SpeedControl, 'audioSpeedControl');
@@ -80,11 +78,6 @@ export default function AudioControlsSideBarComponent(): JSX.Element {
             <ObservedCursorControl
                 cursorShortkey={normalizedKeyMap.CANCEL_AUDIO}
                 activeControl={activeControl}
-                updateActiveControl={updateAudioActiveControl}
-            />
-            <ObservedEditRegionControl
-                activeControl={activeControl}
-                editRegionShortkey={normalizedKeyMap.EDIT_AUDIO_REGION}
                 updateActiveControl={updateAudioActiveControl}
             />
             <hr />

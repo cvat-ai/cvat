@@ -2,11 +2,11 @@
 //
 // SPDX-License-Identifier: MIT
 
-import _ from 'lodash';
 import { SerializedConsensusSettingsData } from './server-response-types';
 import PluginRegistry from './plugins';
 import serverProxy from './server-proxy';
 import { convertDescriptions, getServerAPISchema } from './server-schema';
+import { fieldsToCamelCase } from './common';
 
 export default class ConsensusSettings {
     #id: number;
@@ -38,13 +38,7 @@ export default class ConsensusSettings {
     }
 
     get descriptions(): Record<string, string> {
-        const descriptions: Record<string, string> = Object.keys(this.#descriptions).reduce((acc, key) => {
-            const camelCaseKey = _.camelCase(key);
-            acc[camelCaseKey] = this.#descriptions[key];
-            return acc;
-        }, {});
-
-        return descriptions;
+        return fieldsToCamelCase(this.#descriptions);
     }
 
     public toJSON(): SerializedConsensusSettingsData {

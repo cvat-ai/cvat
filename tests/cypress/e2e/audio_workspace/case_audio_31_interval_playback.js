@@ -15,7 +15,7 @@ context('Audio annotation. Interval playback behavior.', () => {
     });
 
     afterEach(() => {
-        cy.audioClearAnnotationsAndSave();
+        cy.audioClearAnnotations();
     });
 
     const createShortInterval = (start = 100, end = 112) => {

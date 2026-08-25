@@ -7,7 +7,6 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 from uuid import UUID
 
-from django.contrib.auth.models import User
 from django.db.models import Model
 
 from cvat.apps.engine.rq import (
@@ -18,6 +17,7 @@ from cvat.apps.engine.rq import (
 )
 
 if TYPE_CHECKING:
+    from cvat.apps.iam.models import User
     from cvat.apps.redis_handler.background import AbstractRequestManager
 
 

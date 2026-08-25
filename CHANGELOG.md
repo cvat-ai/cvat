@@ -16,6 +16,98 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.73.0'></a>
+## \[2.73.0\] - 2026-08-12
+
+### Added
+
+- \[CLI\] New `--file` option on `cvat-cli profile create` that reads the
+  PAT from a plain-text file or from the JSON envelope
+  (<https://github.com/cvat-ai/cvat/pull/10896>)
+
+- Added webhooks for async requests
+  (<https://github.com/cvat-ai/cvat/pull/10897>)
+
+- \[Server API\] Added a `changes` field to update webhook payloads
+  (<https://github.com/cvat-ai/cvat/pull/10897>)
+
+- \[Server API\] `GET /api/webhooks/events` now returns objects with `key` and
+  `group.display_name` instead of plain event key strings
+  (<https://github.com/cvat-ai/cvat/pull/10897>)
+
+- Added a new button on the Waveform to quickly navigate to the current playback position.
+  (<https://github.com/cvat-ai/cvat/pull/10965>)
+
+- Added outlines to interactor mask previews to make mask boundaries easier to distinguish.
+  (<https://github.com/cvat-ai/cvat/pull/10966>)
+
+- Added local undo and redo for brush, eraser, and polygon actions while drawing
+  or editing masks.
+  (<https://github.com/cvat-ai/cvat/pull/10984>)
+
+- Added timeline to the audio canvas waveform minimap
+  (<https://github.com/cvat-ai/cvat/pull/11010>)
+
+### Changed
+
+- Dataset and annotation import error messages now include the underlying
+  reason (e.g. the missing file or the invalid annotation value) instead of
+  only a generic "Failed to import dataset" text
+  (<https://github.com/cvat-ai/cvat/pull/10946>)
+
+- Updated the audio interval creation UX to always switch to "Cursor" mode and
+  automatically make the newly added interval active
+  (<https://github.com/cvat-ai/cvat/pull/11013>)
+
+### Removed
+
+- \[Server API\] Removed the unusable `delete:organization` webhook event
+  (<https://github.com/cvat-ai/cvat/pull/10897>)
+
+- \[Server API\] The `create:export` and `create:backup` webhook events
+  were renamed to `completed:request[export:{dataset,annotations,backup}]`.
+  The existing clients must be updated for compatibility.
+  (<https://github.com/cvat-ai/cvat/pull/10897>)
+
+### Fixed
+
+- Task creation from a cloud storage video with a manifest failed with
+  `InvalidManifestError` when a directory was selected or `filename_pattern`
+  was used, because the video manifest was parsed as an image manifest
+  (<https://github.com/cvat-ai/cvat/pull/10916>)
+
+- Fixed raw label editor action states and prevented label values from briefly
+  reverting while changes are saved or reset. Also made the label type dropdown
+  wide enough to display complete option names.
+  (<https://github.com/cvat-ai/cvat/pull/10952>)
+
+- Help link on the task creation page ("Connected file share" tab) now opens in a
+  new tab, preventing loss of in-progress form data
+  (<https://github.com/cvat-ai/cvat/pull/10969>)
+
+- Fixed audio playback and waveform synchronization in the audio annotation workspace
+  (<https://github.com/cvat-ai/cvat/pull/10980>)
+
+- Fixed saving annotations after expanding/moving an interval to the end of the track
+  (<https://github.com/cvat-ai/cvat/pull/10948>)
+
+- Removed audio annotation option from workspace selector for non-audio jobs
+  (<https://github.com/cvat-ai/cvat/pull/10965>)
+
+- Fixed scroll jumping to waveform playback cursor when resizing the window
+  (<https://github.com/cvat-ai/cvat/pull/10995>)
+
+- Fixed duplicate accounts from mixed-case invitation emails.
+  (<https://github.com/cvat-ai/cvat/pull/10997>)
+
+- Unexpected task creation failures with the message
+  `Task.DoesNotExist: Task matching query does not exist`
+  (<https://github.com/cvat-ai/cvat/pull/11003>)
+
+- Persistent `429 Too Many Requests` API errors on chunk retrieval for jobs
+  with honeypots after partial honeypot updates
+  (<https://github.com/cvat-ai/cvat/pull/11007>)
+
 <a id='changelog-2.72.0'></a>
 ## \[2.72.0\] - 2026-07-29
 

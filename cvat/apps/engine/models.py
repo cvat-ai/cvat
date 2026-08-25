@@ -18,7 +18,6 @@ from typing import TYPE_CHECKING, Any, ClassVar
 
 from dirtyfields import DirtyFieldsMixin
 from django.conf import settings
-from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.core.files.storage import FileSystemStorage
 from django.db import IntegrityError, models, transaction
@@ -37,7 +36,7 @@ from cvat.apps.events.utils import cache_deleted
 from cvat.utils import django_database as db_utils
 
 if TYPE_CHECKING:
-    from cvat.apps.engine.cloud_provider import AbstractCloudStorage
+    from cvat.apps.engine.cloud_provider import CloudStorageClient
     from cvat.apps.organizations.models import Organization
 
 
@@ -306,7 +305,7 @@ class CloudStorage(TimestampedModel):
     resource = models.CharField(max_length=222)
     display_name = models.CharField(max_length=63)
     owner = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         null=True,
         blank=True,
         on_delete=models.SET_NULL,
@@ -347,6 +346,17 @@ class CloudStorage(TimestampedModel):
     @property
     def has_at_least_one_manifest(self) -> bool:
         return self.manifests.exists()
+
+    def get_client(self, *, is_trusted: bool = False) -> CloudStorageClient:
+        from .cloud_provider import Credentials, get_cloud_storage_client
+
+        return get_cloud_storage_client(
+            cloud_provider=self.provider_type,
+            is_trusted=is_trusted,
+            resource=self.resource,
+            credentials=Credentials.from_db(self.credentials_type, self.credentials),
+            specific_attributes=self.get_specific_attributes(),
+        )
 
 
 class Location(str, Enum):
@@ -599,19 +609,19 @@ class Data(models.Model):
                 PurePath(f.path) for f in self.related_files.all()
             ]
 
-    def get_cloud_storage_instance(self) -> AbstractCloudStorage | None:
-        from .cloud_provider import SubdirectoryCloudStorage, db_storage_to_storage_instance
+    def get_cloud_storage_client(self) -> CloudStorageClient | None:
+        from .cloud_provider import SubdirectoryCloudStorageClient
 
         if self.storage == StorageChoice.CLOUD_STORAGE:
-            if self.cloud_storage_id is None:
+            if self.cloud_storage is None:
                 raise CloudStorageMissingError("Task is not connected to cloud storage")
 
-            return db_storage_to_storage_instance(self.cloud_storage)
+            return self.cloud_storage.get_client()
 
         if self.storage == StorageChoice.LOCAL and self.local_storage_backing_cs:
-            return SubdirectoryCloudStorage(
+            return SubdirectoryCloudStorageClient(
                 # We can trust backing cloud storage, since only an admin can set it.
-                db_storage_to_storage_instance(self.local_storage_backing_cs, is_trusted=True),
+                self.local_storage_backing_cs.get_client(is_trusted=True),
                 f"data/{self.id}/raw",
             )
 
@@ -630,14 +640,14 @@ class Data(models.Model):
 
         self.local_storage_backing_cs = backing_cs
 
-        cloud_storage_instance = self.get_cloud_storage_instance()
-        assert cloud_storage_instance
+        storage_client = self.get_cloud_storage_client()
+        assert storage_client
 
         upload_dir = self.get_upload_dirname()
 
         rel_paths_to_move = self.get_all_media_rel_paths()
 
-        cloud_storage_instance.bulk_upload_from_dir(rel_paths_to_move, upload_dir)
+        storage_client.bulk_upload_from_dir(rel_paths_to_move, upload_dir)
 
         self.save(update_fields=["local_storage_backing_cs"])
 
@@ -662,20 +672,20 @@ class Data(models.Model):
     def move_from_backing_cs(self) -> None:
         assert self.local_storage_backing_cs_id
 
-        cloud_storage_instance = self.get_cloud_storage_instance()
-        assert cloud_storage_instance
+        storage_client = self.get_cloud_storage_client()
+        assert storage_client
 
         upload_dir = self.get_upload_dirname()
 
         rel_paths_to_move = self.get_all_media_rel_paths()
 
-        cloud_storage_instance.bulk_download_to_dir(rel_paths_to_move, upload_dir)
+        storage_client.bulk_download_to_dir(rel_paths_to_move, upload_dir)
 
         self.local_storage_backing_cs = None
         self.save(update_fields=["local_storage_backing_cs"])
 
         def clear_original_files() -> None:
-            cloud_storage_instance.bulk_delete([p.as_posix() for p in rel_paths_to_move])
+            storage_client.bulk_delete([p.as_posix() for p in rel_paths_to_move])
 
         transaction.on_commit(clear_original_files, robust=True)
 
@@ -715,7 +725,7 @@ class Image(models.Model):
 
 class AssignableModel(models.Model):
     assignee = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         null=True,
         blank=True,
         on_delete=models.SET_NULL,
@@ -804,7 +814,7 @@ def clear_annotations_on_frames_in_honeypot_task(db_task: Task, frames: Sequence
 class Project(DirtyFieldsMixin, TimestampedModel, AssignableModel, FileSystemRelatedModel):
     name = SafeCharField(max_length=256)
     owner = models.ForeignKey(
-        User, null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
     )
 
     bug_tracker = models.CharField(max_length=2000, blank=True, default="")
@@ -929,7 +939,7 @@ class Task(DirtyFieldsMixin, TimestampedModel, AssignableModel, FileSystemRelate
     )
     name = SafeCharField(max_length=256)
     owner = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         null=True,
         blank=True,
         on_delete=models.SET_NULL,
@@ -1060,6 +1070,10 @@ class Task(DirtyFieldsMixin, TimestampedModel, AssignableModel, FileSystemRelate
         return self.segment_set.aggregate(chunks_updated_date=models.Max("chunks_updated_date"))[
             "chunks_updated_date"
         ]
+
+    @property
+    def is_initialized(self) -> bool:
+        return bool(self.media_type)
 
 
 # Redefined a couple of operation for FileSystemStorage to avoid renaming
@@ -1667,7 +1681,9 @@ class TrackedShapeAttributeVal(AttributeVal):
 
 class LabeledInterval(Annotation, ScoredAnnotationMixin):
     start = models.PositiveIntegerField()
+    "Must be within the task frame bounds."
     stop = models.PositiveIntegerField(null=True)
+    "Exclusive interval end. May be one greater than the task stop frame."
 
 
 class LabeledIntervalAttributeVal(AttributeVal):
@@ -1680,7 +1696,7 @@ class LabeledIntervalAttributeVal(AttributeVal):
 
 
 class Profile(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     rating = models.FloatField(default=0.0)
     last_activity_date = models.DateTimeField(null=True, blank=True, default=None)
     has_analytics_access = models.BooleanField(
@@ -1697,7 +1713,7 @@ class Issue(DirtyFieldsMixin, TimestampedModel, AssignableModel):
         Job, related_name="issues", related_query_name="issue", on_delete=models.CASCADE
     )
     owner = models.ForeignKey(
-        User, null=True, blank=True, related_name="+", on_delete=models.SET_NULL
+        settings.AUTH_USER_MODEL, null=True, blank=True, related_name="+", on_delete=models.SET_NULL
     )
     resolved = models.BooleanField(default=False)
 
@@ -1722,7 +1738,9 @@ class Comment(DirtyFieldsMixin, TimestampedModel):
     issue = models.ForeignKey(
         Issue, related_name="comments", related_query_name="comment", on_delete=models.CASCADE
     )
-    owner = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL)
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL
+    )
     message = models.TextField(default="")
 
     def get_project_id(self):
@@ -1764,7 +1782,6 @@ class AnnotationGuide(TimestampedModel):
         Project, null=True, blank=True, on_delete=models.CASCADE, related_name="annotation_guide"
     )
     markdown = models.TextField(blank=True, default="")
-    is_public = models.BooleanField(default=False)
 
     @property
     def target(self) -> Task | Project:
@@ -1787,7 +1804,7 @@ class Asset(models.Model):
     filename = models.CharField(max_length=1024)
     created_date = models.DateTimeField(auto_now_add=True)
     owner = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         null=True,
         blank=True,
         on_delete=models.SET_NULL,
