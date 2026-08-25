@@ -99,8 +99,7 @@ function LabelsListComponent(): JSX.Element {
                 const selectedStates = states.filter((state: any): boolean => selectedIDs.has(state.clientID));
                 const labelIsApplicable = selectedStates.length === selectedStatesID.length && selectedStates.every(
                     (state: any): boolean => (
-                        !state.lock && !state.isGroundTruth &&
-                        state.objectType !== ObjectType.TAG && state.shapeType !== ShapeType.SKELETON &&
+                        !state.lock && !state.isGroundTruth && state.shapeType !== ShapeType.SKELETON &&
                         filterApplicableLabels(state, labels).some((_label): boolean => _label.id === label.id)
                     ),
                 );

@@ -1460,11 +1460,13 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
             (state: ObjectState): boolean => state.label.id === selectedStates[0].label.id,
         ) ? selectedStates[0].label.id : null;
         const labelSelectorDisabled = !applicableLabels.length || selectedStates.some(
-            (state: ObjectState): boolean => state.lock || state.shapeType === ShapeType.SKELETON,
+            (state: ObjectState): boolean => (
+                state.lock || state.isGroundTruth || state.shapeType === ShapeType.SKELETON
+            ),
         );
         const labelSelectorDisabledReason = !applicableLabels.length ?
             'No label can be applied to every selected object' :
-            'Labels cannot be changed for locked objects or skeletons';
+            'Labels cannot be changed for locked, ground truth, or skeleton objects';
         const allSelectedLocked = selectedStates.length > 0 && selectedStates.every(
             (state: ObjectState): boolean => state.lock,
         );

@@ -133,7 +133,7 @@ export class ObjectSelectorImpl implements ObjectSelector {
             const intersect = !!this.selectionFilter?.intersect;
             let newStates = [];
             for (const shape of shapes) {
-                const bbox = shape.bbox();
+                const bbox = shape.rbox(this.canvas);
                 const clientID = shape.attr('clientID');
                 const contained = bbox.x >= box.xtl &&
                     bbox.y >= box.ytl &&
@@ -155,12 +155,10 @@ export class ObjectSelectorImpl implements ObjectSelector {
             }
 
             newStates = this.filterObjects(newStates);
-            if (newStates.length) {
-                newStates.forEach((_state) => {
-                    this.selectedObjects[_state.clientID] = _state;
-                });
-                this.onSelectCallback(Object.values(this.selectedObjects));
-            }
+            newStates.forEach((_state) => {
+                this.selectedObjects[_state.clientID] = _state;
+            });
+            this.onSelectCallback(Object.values(this.selectedObjects));
         }
     };
 

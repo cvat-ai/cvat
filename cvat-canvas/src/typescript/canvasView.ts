@@ -2012,7 +2012,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 .map((element: Element): Element | null => element.closest('.cvat_canvas_shape'))
                 .find((shape: Element | null): boolean => {
                     const rawClientID = shape?.getAttribute('clientID') || shape?.getAttribute('data-client-id');
-                    return rawClientID !== null && this.selectedObjects.includes(+rawClientID);
+                    return rawClientID !== null && Number.isInteger(+rawClientID);
                 }) || null;
         }
         const onBackground = !targetShape;

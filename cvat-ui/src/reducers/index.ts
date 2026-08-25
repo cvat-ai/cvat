@@ -952,7 +952,7 @@ export interface AnnotationState {
         activeLabelID: number | null;
         activeObjectType: ObjectType;
         activeInitialState?: any;
-        copiedStates?: any[];
+        copiedStates?: import('cvat-core-wrapper').SerializedData[];
         activeSimplifyPoly?: boolean;
     };
     editing: EditingState;

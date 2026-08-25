@@ -227,8 +227,14 @@ export default class Collection {
         const clientIDs = new Set<number>();
         const objects = objectStates.map((state) => {
             const object = this.objects[state.clientID];
-            if (!(object instanceof Shape || object instanceof Track) || object.removed) {
+            if (!(object instanceof Shape || object instanceof Track || object instanceof Tag) || object.removed) {
                 throw new ArgumentError(`Object with client ID ${state.clientID} cannot be updated`);
+            }
+            if (object instanceof Tag && ![
+                HistoryActions.CHANGED_LABEL,
+                HistoryActions.CHANGED_LOCK,
+            ].includes(action)) {
+                throw new ArgumentError(`Object with client ID ${state.clientID} does not support this change`);
             }
             const unlocking = object.lock && state.updateFlags.lock && !state.lock;
             if ((object.lock && !unlocking) || state.isGroundTruth) {
@@ -270,6 +276,9 @@ export default class Collection {
             }
             if (object.lock && !force) {
                 throw new ArgumentError(`Object with client ID ${state.clientID} is locked`);
+            }
+            if (state.isGroundTruth) {
+                throw new ArgumentError(`Ground truth object with client ID ${state.clientID} cannot be removed`);
             }
             if (clientIDs.has(state.clientID)) {
                 throw new ArgumentError(`Object with client ID ${state.clientID} is duplicated`);
