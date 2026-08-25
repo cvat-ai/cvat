@@ -9,7 +9,7 @@ from rest_framework import serializers
 from cvat.apps.engine.models import Project
 from cvat.apps.engine.serializers import BasicUserSerializer, WriteOnceMixin
 
-from .event_type import EventKeyChoice, OrganizationEvents, ProjectEvents
+from .event_type import AllEvents, EventKeyChoice, OrganizationEvents, ProjectEvents, ServerEvents
 from .models import Webhook, WebhookContentTypeChoice, WebhookDelivery, WebhookTypeChoice
 
 
@@ -22,20 +22,21 @@ class EventKeysValidator:
         return attrs.get("type")
 
     def __call__(self, attrs, serializer):
-        if attrs.get("type") is not None:
-            if attrs["type"] not in (WebhookTypeChoice.PROJECT, WebhookTypeChoice.ORGANIZATION):
-                raise serializers.ValidationError(f"Invalid type, got {attrs['type']}")
-
         if attrs.get("events") is not None:
             webhook_type = self.get_webhook_type(attrs, serializer)
+
+            match webhook_type:
+                case WebhookTypeChoice.PROJECT:
+                    allowed_events = ProjectEvents.events
+                case WebhookTypeChoice.ORGANIZATION:
+                    allowed_events = OrganizationEvents.events
+                case WebhookTypeChoice.SERVER:
+                    allowed_events = ServerEvents.events
+                case _:
+                    raise serializers.ValidationError(f"Unknown webhook type {webhook_type}")
+
             events_keys = set(EventKeysField().to_representation(attrs["events"]))
-            if (
-                webhook_type == WebhookTypeChoice.PROJECT
-                and not events_keys.issubset({event.key for event in ProjectEvents.events})
-            ) or (
-                webhook_type == WebhookTypeChoice.ORGANIZATION
-                and not events_keys.issubset({event.key for event in OrganizationEvents.events})
-            ):
+            if not events_keys.issubset({event.key for event in allowed_events}):
                 raise serializers.ValidationError(f"Invalid events list for {webhook_type} webhook")
 
 
@@ -64,7 +65,9 @@ class EventSerializer(serializers.Serializer):
 
 
 class EventsSerializer(serializers.Serializer):
-    webhook_type = serializers.ChoiceField(choices=WebhookTypeChoice.choices())
+    webhook_type = serializers.ChoiceField(
+        choices=(*WebhookTypeChoice.choices(), (AllEvents.webhook_type, "ALL"))
+    )
     events = EventSerializer(many=True, read_only=True)
 
 
@@ -165,8 +168,13 @@ class WebhookWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
         validators = [EventKeysValidator()]
 
     def create(self, validated_data):
-        if (project_id := validated_data.get("project_id")) is not None:
-            validated_data["organization"] = Project.objects.get(pk=project_id).organization
+        match validated_data.get("type"):
+            case WebhookTypeChoice.PROJECT:
+                if (project_id := validated_data.get("project_id")) is not None:
+                    validated_data["organization"] = Project.objects.get(pk=project_id).organization
+            case WebhookTypeChoice.SERVER:
+                validated_data["organization"] = None
+                validated_data["project_id"] = None
 
         db_webhook = Webhook.objects.create(**validated_data)
         return db_webhook

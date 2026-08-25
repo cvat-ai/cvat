@@ -48,6 +48,11 @@ class EventKeyChoice:
         return sorted((event.key, event.key.upper()) for event in Events.as_list())
 
 
+class AllEvents:
+    webhook_type = "all"
+    events: list[Event] = Events.as_list()
+
+
 class ProjectEvents:
     webhook_type = WebhookTypeChoice.PROJECT
     events: list[Event] = [

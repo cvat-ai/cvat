@@ -1,8 +1,8 @@
 ### Added
 
-- Added server-level webhooks, configured via Django admin, with
-  `create:user`, `update:user`, `delete:user`, `create:organization`, and
-  `delete:organization` events
+- Added server-level webhooks with `create:user`, `update:user`,
+  `delete:user`, `create:organization`, and `delete:organization` events.
+  They are managed by admins through the REST API or the Django admin site
   (<https://github.com/cvat-ai/cvat/pull/10991>)
 
 - \[Server API\] Added a read-only `email_verified` field to user
@@ -14,9 +14,8 @@
 
 ### Changed
 
-- \[Server API\] `GET /api/webhooks/events` now requires a `type` query
-  parameter (`project` or `organization`); the previous default `all`
-  catalog was removed
+- \[Server API\] `GET /api/webhooks/events` now accepts `server` as a `type`
+  query parameter value
   (<https://github.com/cvat-ai/cvat/pull/10991>)
 
 ### Removed

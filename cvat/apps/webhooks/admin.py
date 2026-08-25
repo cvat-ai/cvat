@@ -10,6 +10,7 @@ from django.contrib import admin
 from cvat.apps.webhooks.event_type import Event, ServerEvents
 
 from .models import Webhook, WebhookTypeChoice
+from .serializers import WebhookWriteSerializer
 
 
 class EventGroupsFormField(forms.MultipleChoiceField):
@@ -59,6 +60,26 @@ class WebhookAdminForm(forms.ModelForm):
             "is_active",
             "events",
         )
+
+    def clean(self):
+        cleaned_data = super().clean()
+        if self.errors:
+            return cleaned_data
+
+        serializer = WebhookWriteSerializer(
+            instance=self.instance if self.instance.pk else None,
+            data={
+                **cleaned_data,
+                "type": WebhookTypeChoice.SERVER.value,
+                "events": cleaned_data["events"].split(","),
+            },
+        )
+        if not serializer.is_valid():
+            raise forms.ValidationError(
+                [message for messages in serializer.errors.values() for message in messages]
+            )
+
+        return cleaned_data
 
     def save(self, commit=True):
         webhook = super().save(commit=False)

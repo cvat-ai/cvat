@@ -7415,11 +7415,7 @@ paths:
         name: type
         schema:
           type: string
-          enum:
-          - organization
-          - project
         description: Type of webhook
-        required: true
       tags:
       - webhooks
       security:
@@ -8643,7 +8639,7 @@ components:
       type: object
       properties:
         webhook_type:
-          $ref: '#/components/schemas/WebhookType'
+          $ref: '#/components/schemas/WebhookTypeEnum'
         events:
           type: array
           items:
@@ -13566,6 +13562,18 @@ components:
         * `organization` - ORGANIZATION
         * `project` - PROJECT
         * `server` - SERVER
+    WebhookTypeEnum:
+      enum:
+      - organization
+      - project
+      - server
+      - all
+      type: string
+      description: |-
+        * `organization` - ORGANIZATION
+        * `project` - PROJECT
+        * `server` - SERVER
+        * `all` - ALL
     WebhookWriteRequest:
       type: object
       properties:

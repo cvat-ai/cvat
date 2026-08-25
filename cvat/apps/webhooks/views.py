@@ -18,7 +18,7 @@ from rest_framework.response import Response
 from cvat.apps.engine.view_utils import list_action, make_paginated_response
 from cvat.apps.iam.filters import ORGANIZATION_OPEN_API_PARAMETERS
 
-from .event_type import OrganizationEvents, ProjectEvents
+from .event_type import AllEvents, OrganizationEvents, ProjectEvents, ServerEvents
 from .models import Webhook, WebhookDelivery, WebhookTypeChoice
 from .permissions import WebhookPermission
 from .serializers import (
@@ -84,7 +84,7 @@ class WebhookViewSet(viewsets.ModelViewSet):
                 return WebhookWriteSerializer
 
     def get_queryset(self):
-        queryset = super().get_queryset().exclude(type=WebhookTypeChoice.SERVER)
+        queryset = super().get_queryset()
 
         if self.action == "list":
             perm = WebhookPermission.create_scope_list(self.request)
@@ -106,11 +106,7 @@ class WebhookViewSet(viewsets.ModelViewSet):
                 description="Type of webhook",
                 location=OpenApiParameter.QUERY,
                 type=OpenApiTypes.STR,
-                required=True,
-                enum=[
-                    WebhookTypeChoice.PROJECT,
-                    WebhookTypeChoice.ORGANIZATION,
-                ],
+                required=False,
             )
         ],
         responses={"200": OpenApiResponse(EventsSerializer)},
@@ -122,16 +118,17 @@ class WebhookViewSet(viewsets.ModelViewSet):
         permission_classes=[],
     )
     def events(self, request):
-        webhook_type = request.query_params.get("type")
-
-        if webhook_type is None:
-            raise ValidationError("type query parameter is required")
+        webhook_type = request.query_params.get("type", "all")
 
         match webhook_type:
             case WebhookTypeChoice.PROJECT:
                 events = ProjectEvents
             case WebhookTypeChoice.ORGANIZATION:
                 events = OrganizationEvents
+            case WebhookTypeChoice.SERVER:
+                events = ServerEvents
+            case "all":
+                events = AllEvents
             case _:
                 raise ValidationError(f"Invalid value of type query parameter, got {webhook_type}")
 
