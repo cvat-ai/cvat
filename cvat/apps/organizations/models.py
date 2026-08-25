@@ -6,8 +6,8 @@
 from datetime import timedelta
 
 from allauth.account.adapter import get_adapter
+from dirtyfields import DirtyFieldsMixin
 from django.conf import settings
-from django.contrib.auth import get_user_model
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.exceptions import ImproperlyConfigured
 from django.db import models
@@ -18,14 +18,14 @@ from drf_spectacular.utils import extend_schema_field
 from cvat.apps.engine.models import TimestampedModel
 
 
-class Organization(TimestampedModel):
+class Organization(DirtyFieldsMixin, TimestampedModel):
     slug = models.SlugField(max_length=16, blank=False, unique=True)
     name = models.CharField(max_length=64, blank=True)
     description = models.TextField(blank=True)
     contact = models.JSONField(blank=True, default=dict)
 
     owner = models.ForeignKey(
-        get_user_model(), null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
     )
 
     def __str__(self):
@@ -35,14 +35,14 @@ class Organization(TimestampedModel):
         default_permissions = ()
 
 
-class Membership(models.Model):
+class Membership(DirtyFieldsMixin, models.Model):
     WORKER = "worker"
     SUPERVISOR = "supervisor"
     MAINTAINER = "maintainer"
     OWNER = "owner"
 
     user = models.ForeignKey(
-        get_user_model(), on_delete=models.CASCADE, null=True, related_name="memberships"
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True, related_name="memberships"
     )
     organization = models.ForeignKey(Organization, on_delete=models.CASCADE, related_name="members")
     is_active = models.BooleanField(default=False)
@@ -63,11 +63,11 @@ class Membership(models.Model):
 
 
 # Inspired by https://github.com/bee-keeper/django-invitations
-class Invitation(models.Model):
+class Invitation(DirtyFieldsMixin, models.Model):
     key = models.CharField(max_length=64, primary_key=True)
     created_date = models.DateTimeField(auto_now_add=True)
     sent_date = models.DateTimeField(null=True)
-    owner = models.ForeignKey(get_user_model(), null=True, on_delete=models.SET_NULL)
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL)
     membership = models.OneToOneField(Membership, on_delete=models.CASCADE)
 
     @property

@@ -21,12 +21,13 @@ const defaultState: AudioState = {
         intervals: [],
         activeIntervalID: null,
         hoveredIntervalID: null,
+        interactingIntervalID: null,
         contextMenu: {
             top: 0,
             left: 0,
             clientID: null,
         },
-        audioUrl: null,
+        audioDataToken: null,
         audioLoading: false,
         audioError: null,
         waveformReady: false,
@@ -164,6 +165,15 @@ export default function audioReducer(state: AudioState = defaultState, action: A
                 },
             };
         }
+        case AudioActionTypes.SET_AUDIO_INTERACTING_INTERVAL: {
+            return {
+                ...state,
+                player: {
+                    ...state.player,
+                    interactingIntervalID: action.payload.clientID,
+                },
+            };
+        }
         case AudioActionTypes.UPDATE_AUDIO_CONTEXT_MENU: {
             const {
                 left, top, clientID,
@@ -189,7 +199,7 @@ export default function audioReducer(state: AudioState = defaultState, action: A
                     audioLoading: true,
                     audioError: null,
                     waveformReady: false,
-                    audioUrl: null,
+                    audioDataToken: null,
                     audioLoadRequest: action.payload.request,
                     seekRequest: null,
                     playIntervalOnceRequest: null,
@@ -203,7 +213,7 @@ export default function audioReducer(state: AudioState = defaultState, action: A
                 ...state,
                 player: {
                     ...state.player,
-                    audioUrl: action.payload.audioUrl,
+                    audioDataToken: action.payload.audioDataToken,
                     audioLoadRequest: null,
                     audioLoading: false,
                     audioError: null,
@@ -223,12 +233,18 @@ export default function audioReducer(state: AudioState = defaultState, action: A
             };
         }
         case AudioActionTypes.SET_WAVEFORM_READY: {
-            if (state.player.audioUrl !== action.payload.sourceURL) return state;
+            if (state.player.audioDataToken !== action.payload.sourceToken) return state;
             return {
                 ...state,
                 player: {
                     ...state.player,
                     waveformReady: action.payload.ready,
+                    ...(action.payload.ready ? {} : {
+                        audioDataToken: null,
+                        playing: false,
+                        currentTime: 0,
+                        duration: 0,
+                    }),
                 },
             };
         }
@@ -277,6 +293,7 @@ export default function audioReducer(state: AudioState = defaultState, action: A
                     ...state.player,
                     activeIntervalID: null,
                     hoveredIntervalID: null,
+                    interactingIntervalID: null,
                     playIntervalOnceRequest: null,
                     contextMenu: defaultState.player.contextMenu,
                 },
@@ -290,6 +307,10 @@ export default function audioReducer(state: AudioState = defaultState, action: A
                 (interval) => interval.clientID === state.player.hoveredIntervalID,
             ) ?
                 state.player.hoveredIntervalID : null;
+            const interactingIntervalID = intervals.some(
+                (interval) => interval.clientID === state.player.interactingIntervalID,
+            ) ?
+                state.player.interactingIntervalID : null;
             const contextMenuClientID = intervals.some(
                 (interval) => interval.clientID === state.player.contextMenu.clientID,
             ) ?
@@ -305,6 +326,7 @@ export default function audioReducer(state: AudioState = defaultState, action: A
                     intervals,
                     activeIntervalID,
                     hoveredIntervalID,
+                    interactingIntervalID,
                     contextMenu: {
                         ...state.player.contextMenu,
                         clientID: contextMenuClientID,

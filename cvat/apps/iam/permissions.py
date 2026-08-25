@@ -10,12 +10,12 @@ from abc import ABCMeta, abstractmethod
 from collections.abc import Sequence
 from functools import cached_property, reduce
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, TypeAlias, TypeVar
+from typing import TYPE_CHECKING, Any, TypeAlias
 
 from attrs import define, field
 from django.apps import AppConfig
 from django.conf import settings
-from django.db.models import Model, Q, Value
+from django.db.models import Q, Value
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import BasePermission
 
@@ -308,13 +308,6 @@ class OpenPolicyAgentPermission(metaclass=ABCMeta):
         return scopes
 
 
-T = TypeVar("T", bound=Model)
-
-
-def is_public_obj(obj: T) -> bool:
-    return getattr(obj, "is_public", False)
-
-
 class PolicyEnforcer(BasePermission):
     def _check_permission(
         self, request: ExtendedRequest, view: ViewSet, obj
@@ -325,7 +318,7 @@ class PolicyEnforcer(BasePermission):
             # request and replace the http method). To avoid handling
             # ('POST', 'metadata') and ('PUT', 'metadata') in every request,
             # the condition below is enough.
-            if self.is_metadata_request(request, view) or obj and is_public_obj(obj):
+            if self.is_metadata_request(request, view):
                 return True
 
             assert hasattr(
@@ -363,14 +356,6 @@ class PolicyEnforcer(BasePermission):
     def is_metadata_request(request, view):
         return request.method == "OPTIONS" or (
             request.method == "POST" and view.action == "metadata" and len(request.data) == 0
-        )
-
-
-class IsAuthenticatedOrReadPublicResource(BasePermission):
-    def has_object_permission(self, request, view, obj) -> bool:
-        return bool(
-            (request.user and request.user.is_authenticated)
-            or (request.method == "GET" and is_public_obj(obj))
         )
 
 

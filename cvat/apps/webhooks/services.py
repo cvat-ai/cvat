@@ -4,6 +4,8 @@
 
 import time
 
+from django.db.models import Q
+
 from . import utils
 from .dispatch import add_to_queue
 from .models import (
@@ -15,7 +17,7 @@ from .models import (
 
 def select_webhooks(
     *,
-    event: str,
+    event_key: str,
     organization_id: int | None,
     project_id: int | None,
     select_for_org: bool = True,
@@ -23,23 +25,27 @@ def select_webhooks(
 ) -> list[Webhook]:
     selected_webhooks = []
 
+    queryset = Webhook.objects.filter(
+        Q(events=event_key)
+        | Q(events__startswith=f"{event_key},")
+        | Q(events__endswith=f",{event_key}")
+        | Q(events__contains=f",{event_key},"),
+        is_active=True,
+    )
+
     if select_for_org and organization_id is not None:
-        webhooks = Webhook.objects.filter(
-            is_active=True,
-            events__contains=event,
+        organization_webhooks = queryset.filter(
             type=WebhookTypeChoice.ORGANIZATION,
             organization=organization_id,
         )
-        selected_webhooks += list(webhooks)
+        selected_webhooks += list(organization_webhooks)
 
     if select_for_project and project_id is not None:
-        webhooks = Webhook.objects.filter(
-            is_active=True,
-            events__contains=event,
+        project_webhooks = queryset.filter(
             type=WebhookTypeChoice.PROJECT,
             project=project_id,
         )
-        selected_webhooks += list(webhooks)
+        selected_webhooks += list(project_webhooks)
 
     return selected_webhooks
 

@@ -23,7 +23,7 @@ import { ColorizeIcon } from 'icons';
 import patterns from 'utils/validation-patterns';
 import config from 'config';
 import {
-    equalArrayHead, idGenerator, LabelOptColor, SkeletonConfiguration,
+    equalArrayHead, idGenerator, LabelOptColor, SkeletonConfiguration, validateNumberAttributeValues,
 } from './common';
 
 export enum AttributeType {
@@ -337,29 +337,10 @@ export default class LabelForm extends React.Component<Props> {
         const validator = (_: any, strNumbers: string): Promise<void> => {
             if (typeof strNumbers !== 'string') return Promise.resolve();
 
-            const numbers = strNumbers.split(';').map((number): number => Number.parseFloat(number));
-            if (numbers.length !== 3) {
-                return Promise.reject(new Error('Three numbers are expected'));
-            }
-
-            for (const number of numbers) {
-                if (Number.isNaN(number)) {
-                    return Promise.reject(new Error(`"${number}" is not a number`));
-                }
-            }
-
-            const [min, max, step] = numbers;
-
-            if (min >= max) {
-                return Promise.reject(new Error('Minimum must be less than maximum'));
-            }
-
-            if (max - min < step) {
-                return Promise.reject(new Error('Step must be less than minmax difference'));
-            }
-
-            if (step <= 0) {
-                return Promise.reject(new Error('Step must be a positive number'));
+            try {
+                validateNumberAttributeValues(strNumbers.split(';'));
+            } catch (error) {
+                return Promise.reject(error);
             }
 
             return Promise.resolve();
@@ -538,7 +519,13 @@ export default class LabelForm extends React.Component<Props> {
 
         return (
             <Form.Item name='type'>
-                <Select className='cvat-label-type-input' disabled={isSkeleton || locked} showSearch={false}>
+                <Select
+                    className='cvat-label-type-input'
+                    disabled={isSkeleton || locked}
+                    showSearch={false}
+                    popupMatchSelectWidth={false}
+                    dropdownStyle={{ minWidth: '150px' }}
+                >
                     {isSkeleton ? (
                         <Select.Option
                             className='cvat-label-type-option-skeleton'
