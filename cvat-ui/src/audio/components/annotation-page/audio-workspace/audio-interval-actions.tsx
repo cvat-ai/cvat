@@ -191,29 +191,21 @@ export default function AudioIntervalActions({
                             className={actionClassName}
                             onAction={handleSetPlaybackToStart}
                         >
-                            <Icon
-                                className='cvat-audio-interval-playback-icon'
-                                component={SeekToStartIcon}
-                                aria-hidden
-                            />
+                            <Icon component={SeekToStartIcon} aria-hidden />
                         </AudioIntervalActionButton>
                         <AudioIntervalActionButton
                             title={`Play interval as range ${shortcuts.playInterval}`}
                             className={playActionClassName}
                             onAction={handlePlayInterval}
                         >
-                            <Icon className='cvat-audio-interval-play-icon' component={PlayRangeIcon} aria-hidden />
+                            <Icon component={PlayRangeIcon} aria-hidden />
                         </AudioIntervalActionButton>
                         <AudioIntervalActionButton
                             title={`Set playback to interval end ${shortcuts.setPlaybackToEnd}`}
                             className={actionClassName}
                             onAction={handleSetPlaybackToEnd}
                         >
-                            <Icon
-                                className='cvat-audio-interval-playback-icon'
-                                component={SeekToEndIcon}
-                                aria-hidden
-                            />
+                            <Icon component={SeekToEndIcon} aria-hidden />
                         </AudioIntervalActionButton>
                     </Row>
                 </Col>
