@@ -34,10 +34,15 @@ See:
   - [For organization](#for-organization)
   - [Webhooks forms](#webhooks-forms)
   - [List of events](#list-of-events)
+    - [Entities](#entities)
+    - [Requests](#requests)
 - [Payloads](#payloads)
-  - [Create event](#create-event)
-  - [Update event](#update-event)
-  - [Delete event](#delete-event)
+  - [Entities](#payload-entities)
+    - [Create event](#create-event)
+    - [Update event](#update-event)
+    - [Delete event](#delete-event)
+  - [Requests](#payload-requests)
+    - [Completed event](#completed-event)
 - [Webhook secret](#webhook-secret)
 - [Ping Webhook](#ping-webhook)
 - [Webhooks with API calls](#webhooks-with-api-calls)
@@ -74,7 +79,13 @@ To create a webhook for **Organization**, do the following:
 
 The **Setup a webhook** forms look like the following.
 
-![Create Project And Org Webhook Forms ](/images/webhook_form_project_org.jpg)
+**Project**
+
+![Project webhook form](/images/webhook_form_project.png)
+
+**Organization**
+
+![Organization webhook form](/images/webhook_form_organization.png)
 
 Forms have the following fields:
 
@@ -88,11 +99,13 @@ Forms have the following fields:
 | Enable SSL                | A checkbox for enabling or disabling [SSL verification](https://en.wikipedia.org/wiki/Public_key_certificate).                                                   |
 | Active                    | Uncheck this box if you want to stop the delivery of specific webhook payloads.                                                                                  |
 | Send everything           | Check this box to send all event types through the webhook.                                                                                                      |
-| Specify individual events | Choose this option to send only certain event types. <br>Refer to the [List of available events](#list-of-available-events) for more information on event types. |
+| Specify individual events | Choose this option to send only certain event types. <br>Refer to the [List of available events](#list-of-events) for more information on event types. |
 
 ### List of events
 
 The following events are available for webhook alerts.
+
+#### Entities
 
 | Resource     | Create | Update | Delete | Description                                                                         |
 | ------------ | ------ | ------ | ------ | ----------------------------------------------------------------------------------- |
@@ -105,9 +118,27 @@ The following events are available for webhook alerts.
 | Issue        | ✅     | ✅     | ✅     | Alerts for any activities involving issues.                                         |
 | Comment      | ✅     | ✅     | ✅     | Alerts for actions involving comments, such as creation, deletion, or modification. |
 
+#### Requests
+
+The following events are sent when a
+{{< ilink "/docs/workspace/requests-page" "request" >}}
+finishes, whether it succeeded or failed.
+
+| Resource                 | Completed | Description                                                          |
+| ------------------------ | --------- | -------------------------------------------------------------------- |
+| Dataset export           | ✅        | Alerts when a dataset or annotations export request completes.       |
+| Backup export            | ✅        | Alerts when a project or task backup export request completes.       |
+| Task data creation       | ✅        | Alerts when a task data creation request completes.                  |
+| Consensus merge          | ✅        | Alerts when a consensus merge request completes.                     |
+| Quality report creation  | ✅        | Alerts when a quality report creation request completes.             |
+
 ## Payloads
 
-### Create event
+### Entities {#payload-entities}
+
+Webhook payloads for create, update, and delete events on resources.
+
+#### Create event
 
 Webhook payload object for `create:<resource>` events:
 
@@ -180,7 +211,7 @@ An example of payload for the `create:task` event:
 }
 {{< /scroll-code >}}
 
-### Update event
+#### Update event
 
 Webhook payload object for `update:<resource>` events:
 
@@ -278,7 +309,7 @@ An example of `update:<resource>` event:
 }
 {{< /scroll-code >}}
 
-### Delete event
+#### Delete event
 
 Webhook payload object for `delete:<resource>` events:
 
@@ -348,6 +379,55 @@ Here is an example of the payload for the `delete:task` event:
         "first_name": "Admin",
         "last_name": "First"
     }
+}
+{{< /scroll-code >}}
+
+### Requests {#payload-requests}
+
+Webhook payloads for completed request events.
+
+#### Completed event
+
+Webhook payload object for `completed:<resource>` events:
+
+| Key          | Type      | Description |
+| ------------ | --------- | ----------- |
+| `event`      | `string`  | Identifies the event that triggered the webhook, following the `completed:<resource>` pattern. |
+| `request`    | `object`  | Complete information about the request. Same structure as the retrieve response in the [Swagger](#webhooks-with-api-calls) docs. |
+| `webhook_id` | `integer` | The identifier for the webhook that sends the payload. |
+
+An example of payload for a completed task data creation request:
+
+{{< scroll-code lang="json" >}}
+{
+    "event": "completed:request[create:task]",
+    "request": {
+        "status": "finished",
+        "message": "",
+        "id": "action=create&target=task&target_id=1",
+        "operation": {
+            "type": "create:task",
+            "target": "task",
+            "project_id": 2,
+            "task_id": 1,
+            "job_id": null,
+            "org_id": 1,
+            "format": null,
+            "lightweight": null
+        },
+        "progress": 0.0,
+        "created_date": "2026-08-17T08:16:17.540858Z",
+        "started_date": "2026-08-17T08:16:17.551124Z",
+        "finished_date": "2026-08-17T08:16:17.866904Z",
+        "expiry_date": "2026-08-17T08:24:37.866904Z",
+        "owner": {
+            "id": 1,
+            "username": "demo_user"
+        },
+        "result_url": null,
+        "result_id": null
+    },
+    "webhook_id": 1
 }
 {{< /scroll-code >}}
 

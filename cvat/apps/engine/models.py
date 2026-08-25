@@ -18,7 +18,6 @@ from typing import TYPE_CHECKING, Any, ClassVar
 
 from dirtyfields import DirtyFieldsMixin
 from django.conf import settings
-from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.core.files.storage import FileSystemStorage
 from django.db import IntegrityError, models, transaction
@@ -306,7 +305,7 @@ class CloudStorage(TimestampedModel):
     resource = models.CharField(max_length=222)
     display_name = models.CharField(max_length=63)
     owner = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         null=True,
         blank=True,
         on_delete=models.SET_NULL,
@@ -726,7 +725,7 @@ class Image(models.Model):
 
 class AssignableModel(models.Model):
     assignee = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         null=True,
         blank=True,
         on_delete=models.SET_NULL,
@@ -815,7 +814,7 @@ def clear_annotations_on_frames_in_honeypot_task(db_task: Task, frames: Sequence
 class Project(DirtyFieldsMixin, TimestampedModel, AssignableModel, FileSystemRelatedModel):
     name = SafeCharField(max_length=256)
     owner = models.ForeignKey(
-        User, null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
     )
 
     bug_tracker = models.CharField(max_length=2000, blank=True, default="")
@@ -940,7 +939,7 @@ class Task(DirtyFieldsMixin, TimestampedModel, AssignableModel, FileSystemRelate
     )
     name = SafeCharField(max_length=256)
     owner = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         null=True,
         blank=True,
         on_delete=models.SET_NULL,
@@ -1071,6 +1070,10 @@ class Task(DirtyFieldsMixin, TimestampedModel, AssignableModel, FileSystemRelate
         return self.segment_set.aggregate(chunks_updated_date=models.Max("chunks_updated_date"))[
             "chunks_updated_date"
         ]
+
+    @property
+    def is_initialized(self) -> bool:
+        return bool(self.media_type)
 
 
 # Redefined a couple of operation for FileSystemStorage to avoid renaming
@@ -1693,7 +1696,7 @@ class LabeledIntervalAttributeVal(AttributeVal):
 
 
 class Profile(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     rating = models.FloatField(default=0.0)
     last_activity_date = models.DateTimeField(null=True, blank=True, default=None)
     has_analytics_access = models.BooleanField(
@@ -1710,7 +1713,7 @@ class Issue(DirtyFieldsMixin, TimestampedModel, AssignableModel):
         Job, related_name="issues", related_query_name="issue", on_delete=models.CASCADE
     )
     owner = models.ForeignKey(
-        User, null=True, blank=True, related_name="+", on_delete=models.SET_NULL
+        settings.AUTH_USER_MODEL, null=True, blank=True, related_name="+", on_delete=models.SET_NULL
     )
     resolved = models.BooleanField(default=False)
 
@@ -1735,7 +1738,9 @@ class Comment(DirtyFieldsMixin, TimestampedModel):
     issue = models.ForeignKey(
         Issue, related_name="comments", related_query_name="comment", on_delete=models.CASCADE
     )
-    owner = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL)
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL
+    )
     message = models.TextField(default="")
 
     def get_project_id(self):
@@ -1777,7 +1782,6 @@ class AnnotationGuide(TimestampedModel):
         Project, null=True, blank=True, on_delete=models.CASCADE, related_name="annotation_guide"
     )
     markdown = models.TextField(blank=True, default="")
-    is_public = models.BooleanField(default=False)
 
     @property
     def target(self) -> Task | Project:
@@ -1800,7 +1804,7 @@ class Asset(models.Model):
     filename = models.CharField(max_length=1024)
     created_date = models.DateTimeField(auto_now_add=True)
     owner = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         null=True,
         blank=True,
         on_delete=models.SET_NULL,

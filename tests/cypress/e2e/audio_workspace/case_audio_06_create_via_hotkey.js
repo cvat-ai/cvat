@@ -19,6 +19,8 @@ context('Audio annotation. Create region via hotkey.', () => {
             cy.get('.cvat-audio-region-item').should('have.length', 0);
             cy.audioCreateRegionViaHotkey(80, 220);
             cy.get('.cvat-audio-region-item', { timeout: 5000 }).should('have.length', 1);
+            cy.get('.cvat-cursor-control').should('have.class', 'cvat-active-canvas-control');
+            cy.get('.cvat-audio-region-item').first().should('have.class', 'cvat-audio-region-item-active');
         });
     });
 });
