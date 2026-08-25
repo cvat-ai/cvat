@@ -6,11 +6,13 @@
 import React from 'react';
 
 import { connect } from 'react-redux';
+import message from 'antd/lib/message';
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 
 import ObjectsListComponent from 'components/annotation-page/standard-workspace/objects-side-bar/objects-list';
 import {
     updateAnnotationsAsync,
+    updateAnnotationsBatchAsync,
     changeFrameAsync,
     collapseObjectItems,
     changeGroupColorAsync,
@@ -81,6 +83,7 @@ interface StateToProps {
 
 interface DispatchToProps {
     updateAnnotations(...args: Parameters<typeof updateAnnotationsAsync>): void;
+    updateAnnotationsBatch(...args: Parameters<typeof updateAnnotationsBatchAsync>): void;
     collapseStates(...args: Parameters<typeof collapseObjectItems>): void;
     removeObject(...args: Parameters<typeof removeObjectAction>): void;
     removeSelection(...args: Parameters<typeof removeSelectionAsync>): void;
@@ -112,6 +115,12 @@ const componentShortcuts = {
         sequences: ['l'],
         scope: ShortcutScope.OBJECTS_SIDEBAR,
     },
+    SWITCH_SELECTION_LOCK: {
+        name: 'Lock/unlock selected objects',
+        description: 'Change locked state for all selected objects',
+        sequences: ['s l'],
+        scope: ShortcutScope.OBJECTS_SIDEBAR,
+    },
     SWITCH_ALL_HIDDEN: {
         name: 'Hide/show all objects',
         description: 'Change hidden state for objects in the side bar',
@@ -134,6 +143,12 @@ const componentShortcuts = {
         name: 'Switch pinned property',
         description: 'Change pinned property for an active object',
         sequences: ['p'],
+        scope: ShortcutScope.OBJECTS_SIDEBAR,
+    },
+    SWITCH_SELECTION_PINNED: {
+        name: 'Pin/unpin selected objects',
+        description: 'Change pinned state for all selected objects',
+        sequences: ['s p'],
         scope: ShortcutScope.OBJECTS_SIDEBAR,
     },
     SWITCH_KEYFRAME: {
@@ -341,6 +356,9 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         updateAnnotations(...args: Parameters<typeof updateAnnotationsAsync>): void {
             dispatch(updateAnnotationsAsync(...args));
         },
+        updateAnnotationsBatch(...args: Parameters<typeof updateAnnotationsBatchAsync>): void {
+            dispatch(updateAnnotationsBatchAsync(...args));
+        },
         collapseStates(...args: Parameters<typeof collapseObjectItems>): void {
             dispatch(collapseObjectItems(...args));
         },
@@ -497,6 +515,51 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
 
     private onUnlockAllStates = (): void => {
         this.lockAllStates(false);
+    };
+
+    private switchSelectionLock = (): void => {
+        const {
+            objectStates, selectedStatesID, updateAnnotationsBatch,
+        } = this.props;
+        const selectedIDs = new Set(selectedStatesID);
+        const selectedStates = objectStates.filter(
+            (state: ObjectState): boolean => selectedIDs.has(state.clientID as number),
+        );
+        if (!selectedStates.length) return;
+        if (selectedStates.some((state: ObjectState): boolean => state.isGroundTruth)) {
+            message.destroy();
+            message.warning('Ground truth objects cannot be locked or unlocked');
+            return;
+        }
+
+        const lock = !selectedStates.every((state: ObjectState): boolean => state.lock);
+        const statesToUpdate = selectedStates.filter((state: ObjectState): boolean => state.lock !== lock);
+        for (const state of statesToUpdate) state.lock = lock;
+        updateAnnotationsBatch(statesToUpdate);
+    };
+
+    private switchSelectionPinned = (): void => {
+        const {
+            objectStates, selectedStatesID, updateAnnotationsBatch,
+        } = this.props;
+        const selectedIDs = new Set(selectedStatesID);
+        const selectedStates = objectStates.filter(
+            (state: ObjectState): boolean => selectedIDs.has(state.clientID as number),
+        );
+        if (!selectedStates.length) return;
+        if (selectedStates.some((state: ObjectState): boolean => (
+            state.lock || state.isGroundTruth ||
+            state.objectType === ObjectType.TAG || state.shapeType === ShapeType.POINTS
+        ))) {
+            message.destroy();
+            message.warning('Locked, ground truth, tag, and points objects cannot be pinned');
+            return;
+        }
+
+        const pinned = !selectedStates.every((state: ObjectState): boolean => state.pinned);
+        const statesToUpdate = selectedStates.filter((state: ObjectState): boolean => state.pinned !== pinned);
+        for (const state of statesToUpdate) state.pinned = pinned;
+        updateAnnotationsBatch(statesToUpdate);
     };
 
     private onCollapseAllStates = (): void => {
@@ -659,11 +722,16 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             },
             SWITCH_LOCK: (event?: KeyboardEvent) => {
                 preventDefault(event);
+                if (this.props.selectedStatesID.length) return;
                 const state = activatedState();
                 if (state) {
                     state.lock = !state.lock;
                     updateAnnotations([state]);
                 }
+            },
+            SWITCH_SELECTION_LOCK: (event?: KeyboardEvent) => {
+                preventDefault(event);
+                this.switchSelectionLock();
             },
             SWITCH_ALL_HIDDEN: (event?: KeyboardEvent) => {
                 preventDefault(event);
@@ -694,11 +762,16 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             },
             SWITCH_PINNED: (event?: KeyboardEvent) => {
                 preventDefault(event);
+                if (this.props.selectedStatesID.length) return;
                 const state = activatedState(true);
                 if (state) {
                     state.pinned = !state.pinned;
                     updateAnnotations([state]);
                 }
+            },
+            SWITCH_SELECTION_PINNED: (event?: KeyboardEvent) => {
+                preventDefault(event);
+                this.switchSelectionPinned();
             },
             SWITCH_KEYFRAME: (event?: KeyboardEvent) => {
                 preventDefault(event);
