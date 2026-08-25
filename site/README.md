@@ -61,7 +61,24 @@ By default `npm` installs tools under the directory where you run `npm install`.
 The full documentation is available
 [here](https://www.docsy.dev/docs/get-started/other-options/#for-an-existing-site).
 
-4. To preview your site locally, use:
+4. Populate the SDK examples tree
+
+Several docs pages embed scripts from `cvat-sdk/examples/` via the
+`include-code` Hugo shortcode, which reads them from
+`site/assets/sdk-examples/`. That directory is gitignored, so before
+running `hugo server` you need to populate it — otherwise the embedded
+code blocks will be empty.
+
+Copy the scripts in (requires the site's Python deps):
+
+```bash
+python -m pip install -r site/requirements.txt
+python site/build_docs.py --copy-sdk-examples-only
+```
+
+Re-run the copy command whenever you edit an example script.
+
+5. To preview your site locally, use:
 
 ```bash
 (cd site/ && hugo server)
