@@ -76,7 +76,7 @@ Read more about Ground Truth management [here](#ground-truth-job-management).
 ## Configuring quality estimation
 
 There are 2 key components related to quality estimation configuration:
-Ground Truth jobs and Quality settings. Ground Truth jobs are configured at the Task level.
+Ground Truth jobs and quality requirements. Ground Truth jobs are configured at the Task level.
 In this section, we explain how to set up a Ground Truth job.
 Read more about quality settings [here](#annotation-quality-settings).
 
@@ -101,7 +101,7 @@ A _configured_ Ground Truth job is required for all quality computations in CVAT
 6. Upload or create Ground Truth annotations in the Ground Truth job in the task
 7. Switch the Ground Truth job into the `acceptance` stage and `completed` state
 
-  ![Set job status](/images/honeypot10.jpg)
+  ![Set job status](/images/honeypot10.webp)
 {{% /tab %}}
 
 {{%tab header="In an existing task" %}}
@@ -113,11 +113,11 @@ to use Honeypots for your task, you will need to recreate the task.
 1. Open the task page
 2. Click **+**.
 
-  ![Create job](/images/honeypot01.jpg)
+  ![Create job](/images/honeypot01.webp)
 
 3. In the **Add new job** window, fill in the following fields:
 
-  ![Configure job parameters](/images/honeypot02.jpg)
+  ![Configure job parameters](/images/honeypot02.webp)
 
 - **Job type**: Use the default parameter **Ground truth**.
 - **Frame selection method**: Use the default parameter **Random**.
@@ -134,12 +134,12 @@ to use Honeypots for your task, you will need to recreate the task.
 
 The **Ground truth** job will appear in the jobs list.
 
-  ![Ground Truth job](/images/honeypot03.jpg)
+  ![Ground Truth job](/images/honeypot03.webp)
 
 5. Annotate frames and save your work or upload annotations.
 6. Switch the Ground Truth job into the `acceptance` stage and `completed` state
 
-  ![Set job status](/images/honeypot10.jpg)
+  ![Set job status](/images/honeypot10.webp)
 {{% /tab %}}
 
 {{< /tabpane >}}
@@ -369,72 +369,125 @@ Import, Export, and Delete options are available from the Ground Truth job Actio
 
 ### Annotation quality settings
 
-Quality settings provide options to tweak some aspects of annotation comparisons and
-quality estimation in general. For instance, you can configure which annotation overlap
-should be considered good enough or how specific annotation types must be compared.
+Quality settings can be set up at the task or project level. If a task is not bound to a
+project, it uses its own settings. Tasks inside a project can use individual settings or
+inherit the project settings. Read more about project settings [here](#project-quality-settings).
 
-Quality settings can be set up at the Task or the Project level.
-If a task is not bound to a project, it uses its own quality settings.
-Tasks inside a project can use individual quality settings or inherit settings
-from the project they belong to. Read more about quality settings in projects
-[here](#project-quality-settings).
-
-To set up quality settings, open the **Quality Settings** tab on the **Quality Control** page
-for a task or project, available in the **Actions** menu.
+To configure them, open a task or project **Actions** menu, select **Quality control**,
+and open the **Settings** tab.
 
 ![Quality control button in the task actions menu](/images/quality-control-actions-button.png)
 
-There is a number of parameters available for configuration.
-Hover the mouse over a **?** mark to display a description for a setting.
+The **Settings** tab has the following sections:
 
-![Quality settings page](/images/quality-settings-overview.png)
+- **General** contains the **Job selection filter**. Only matching annotation and
+  consensus-replica jobs are included in the next quality report.
+- **Job validation** contains **Max validations per job**. A value above zero enables
+  {{< ilink "/docs/qa-analytics/immediate-feedback" "Immediate feedback" >}} for the task.
+- **Requirements configuration** defines the criteria used to evaluate annotations.
 
-After the settings are updated, remember to save the values using the **Save** button.
-The updated settings will take effect on the next quality update.
+#### Requirements configuration
 
-Annotation quality settings have the following parameters:
+Each enabled quality requirement has its own annotation type, target metric, threshold,
+filter, and comparison options. CVAT provides non-removable base requirements for supported
+annotation types. You can rename a base requirement, change its settings, or disable it.
 
-| **Parameter** | **Description** |
-| - | - |
-| _General reporting_ |
-| Target metric | The primary metric used for quality estimation. It affects which metric is displayed in the UI and used for overall quality estimation. |
-| Job selection filter | The filter for the jobs included in quality computation. Only jobs matching the filter criteria will be included in the quality results. |
+<!-- Add a screenshot of the Requirements configuration table here. -->
 
-| _Immediate feedback_ | |
-| - | - |
-| Max validations per job | Configures maximum job validations per assignment for the {{< ilink "/docs/qa-analytics/immediate-feedback" "Immediate feedback" >}} feature. |
-| Target metric threshold | Defines the minimal quality requirements in terms of the selected target metric. Serves as an acceptance threshold for the {{< ilink "/docs/qa-analytics/immediate-feedback" "Immediate feedback" >}} feature. |
+The table shows the requirement hierarchy, target annotation type, metric, threshold, and
+enabled state. Use the arrow beside a row to expand its child requirements. The actions in
+each row let you create a child rule, edit the rule, and, for custom rules, copy or delete it.
 
-| _Shape matching_ | |
-| - | - |
-| Min overlap threshold | Min overlap threshold used for the distinction between matched and unmatched shapes. Used to match all types of annotations. It corresponds to the Intersection over union (IoU) for spatial annotations, such as bounding boxes and masks. |
-| Low overlap threshold | Low overlap threshold used for the distinction between strong and weak matches. Only affects _Low overlap_ warnings. It's supposed that _Min similarity threshold_ <= _Low overlap threshold_. |
-| Empty frames are annotated | Consider frames annotated as "empty" if there are no annotations on a frame. If a frame is empty in both GT and job annotations, it will be considered a matching annotation. |
+##### Base requirements and custom rules
 
-| _Point and Skeleton matching_ | |
-| - | - |
-| OKS Sigma | Relative size of points. The percent of the bbox side, used as the radius of the circle around the GT point, where the checked point is expected to be. For boxes with different width and height, the "side" is computed as a geometric mean of the width and height. |
+Base requirements are the roots of the hierarchy. CVAT creates one for every supported
+annotation type, and they cannot be deleted. They are useful as broad defaults, such as
+"all rectangles must reach 70% accuracy". Disable a base requirement when that annotation
+type must not participate in the report or immediate feedback.
 
-| _Point matching_ | |
-| - | - |
-| Point size base | When comparing point annotations (including both separate points and point groups), the OKS sigma parameter defines a matching area for each GT point based on the object size. The point size base parameter allows configuring how to determine the object size. If set to _image_size_, the image size is used. Useful if each point annotation represents a separate object or boxes grouped with points do not represent object boundaries. If set to _group_bbox_size_, the object size is based on the point group bounding box size. Useful if each point group represents an object or there is a bbox grouped with points, representing the object size. |
+Use **Add rule** on a base or custom requirement to add a child. The parent and target
+annotation type are fixed for a child rule. Give the child a descriptive name and use its
+filter and comparison options to define a narrower check. For example, a rectangle base
+requirement can have a child rule for the `vehicle` label with a higher score threshold.
+Custom requirements can be copied when you need a similar rule and deleted when no longer
+needed.
 
-| _Polyline matching_ | |
-| - | - |
-| Relative thickness | Thickness of polylines, relative to the (image area) ^ 0.5. The distance to the boundary around the GT line inside of which the checked line points should be. |
-| Check orientation | Indicates that polylines have direction. Used to produce _Mismatching direction_ warnings |
-| Min similarity gain (%) | The minimal gain in IoU between the given and reversed line directions to consider the line inverted. Only useful with the _Check orientation_ parameter. |
+<!-- Add a screenshot of a child requirement form here. -->
 
-| _Group matching_ | |
-| - | - |
-| Compare groups | Enables or disables annotation group checks. This check will produce _Group mismatch_ warnings for grouped annotations, if the annotation groups do not match with the specified threshold. Each annotation within a group is expected to match with a corresponding annotation in a GT group. |
-| Min group match threshold | Minimal IoU for groups to be considered matching, used when _Compare groups_ is enabled. |
+##### Inheritance
 
-| _Mask and polygon matching_ | |
-| - | - |
-| Check object visibility | Check for partially-covered annotations. Masks and polygons will be compared to each other. |
-| Min visibility threshold | Minimal visible area percent of the mask annotations (polygons, masks). Used for reporting _Covered annotation_ warnings, useful with the _Check object visibility_ option. |
-| Match only visible parts | Use only the visible part of the masks and polygons in comparisons. |
+Children inherit their target annotation type, target metric, threshold, comparison options,
+and attribute-comparison configuration from their parent. This avoids repeating the same
+comparison policy for every label or subset of annotations.
+
+Change a value in a parent to update the effective value for descendants that have not
+overridden it. A child can override its metric, threshold, and applicable comparison options
+when it needs a more specific policy. Overridden fields show a revert control; use it to
+return to the parent value. A child requirement always keeps its parent and annotation type.
+
+##### Annotation filters
+
+The **Filter** control selects the annotations evaluated by a requirement. Use it to narrow a
+rule by label, annotation type, area, source, visibility, track properties, or label-specific
+attributes. Combine rules in the filter builder to describe the subset that the requirement
+must evaluate.
+
+Parent filters are displayed alongside the current filter. They are always applied to child
+requirements, so a child can only narrow its parent's scope. For example, a parent filtered
+to `vehicle` annotations can have a child filtered to `vehicle` annotations with a specific
+attribute value; the child cannot include annotations outside the parent's filter.
+
+<!-- Add a screenshot of the requirement Filter builder here. -->
+
+##### Attribute rules
+
+Use **Attribute comparison** when matching annotations must also verify attribute values.
+Enable **Match unspecified attributes exactly** to compare every attribute without a custom
+rule using the Exact comparator. This is useful when all attributes are part of the expected
+annotation result.
+
+Add an **Attribute rule** when one attribute needs different handling. Select the attribute,
+enable or disable its comparison, then choose either **Exact** or **Levenshtein**. The
+Levenshtein comparator accepts similar text values and exposes a normalized similarity
+threshold from 0 to 1. Attribute rules, like the rest of the comparison configuration, can
+be inherited and overridden by child requirements.
+
+<!-- Add a screenshot of the Attribute comparison section and its rule table here. -->
+
+##### Comparison options
+
+When editing a requirement, set its **Target metric** and **Target metric threshold**
+to define its completion condition. The remaining form sections configure comparison
+behavior for shapes, groups, object visibility, points and skeletons, polylines, and
+attributes. Inherited controls can be overridden or reverted to the parent value. Hover
+the **?** icon next to a control for a detailed description.
+
+The available controls depend on the requirement target:
+
+| Group | Parameter | Description |
+| - | - | - |
+| General | Name | A unique name for the requirement. |
+| General | Target | The annotation type that the requirement evaluates. Child requirements inherit this from their parent. |
+| General | Filter | Limits the annotations evaluated by the requirement. Child filters are applied in addition to their parent filters. |
+| General | Target metric | The metric used to evaluate the requirement. |
+| General | Target metric threshold | The minimum target-metric score required to complete the requirement. |
+| General | Enabled | Includes or excludes the requirement from reports and immediate feedback. |
+| Shape comparison | IoU threshold | The minimum overlap used to distinguish matching and unmatched spatial annotations. Applies to rectangles, ellipses, polygons, masks, and polylines. |
+| Shape comparison | Point size | The relative size of the area used to match points and skeleton keypoints. |
+| Shape comparison | Point size base | Uses either the image size or the group bounding-box size as the reference for point size. |
+| Shape comparison | Line thickness | The relative thickness of the area used to match polylines. |
+| Shape comparison | Panoptic comparison | Enables panoptic comparison for masks and polygons. |
+| Polyline comparison | Match orientation | Checks whether matching polylines have the same direction. |
+| Polyline comparison | Line orientation threshold | The minimum directional similarity used when matching polyline orientation. |
+| Visibility comparison | Check covered annotations | Checks for partially covered polygon and mask annotations. |
+| Visibility comparison | Object visibility threshold | The minimum visible area for polygon and mask annotations. |
+| Group comparison | Match groups | Enables annotation-group matching. |
+| Group comparison | Min group match threshold | The minimum score required for groups to be considered matching. |
+| Attribute comparison | Match unspecified attributes exactly | Matches every attribute without an explicit rule using the Exact comparator. |
+| Attribute comparison | Attribute rules | Configures a comparator for individual attributes. The Levenshtein comparator also has a similarity threshold. |
+
+Save the settings after editing them. Changes apply when the next quality report is
+calculated; they do not alter existing reports.
 
 ### Project quality settings
 
@@ -550,46 +603,40 @@ and shapes.
 
 ## Quality Analytics
 
-Once the quality estimation is [enabled in a task](#configuring-quality-estimation)
-and the Ground Truth job is configured, quality analytics becomes available
-for the task and its jobs.
+Once quality estimation is [enabled in a task](#configuring-quality-estimation) and its
+Ground Truth job is configured, quality reports are available for the task and its jobs.
+Projects can also have an aggregated report for their tasks and jobs.
 
-When you open the Quality Analytics page, it displays quality metrics from the most recent quality estimation.
-If it's your first time accessing the page, no quality report will be available yet.
-The date of the last computation is shown next to the report download button.
-
-If you want to request updating of quality metrics in a task (e.g. after the settings were changed),
-you can do this by pressing the **Refresh** button on the
-task **Quality Management** > **Analytics** page.
+Open the task or project **Actions** menu > **Quality control** and select the
+**Requirements** tab. Select **Calculate a new quality report**. If no report has been
+calculated yet, the page shows a prompt instead of an empty table. The date of the most
+recent report and a download action appear after the report is available.
 
 {{% alert title="Note" color="primary" %}}
 The process of quality calculation may take up to several hours, depending on
 the amount of data and labeled objects, and is **not updated immediately** after task updates.
 {{% /alert %}}
 
-![Quality Analytics page - refresh button](/images/honeypot11.jpg)
-
-Once quality metrics are computed, they are available for detailed review on this page.
-Conflicts can be reviewed in the [Review mode of jobs](#reviewing-gt-conflicts).
-A job must have at least 1 validation frame (shown in the **Frame intersection** column) to
-be included in quality computation.
-
 ### Analytics page contents
 
-The Analytics page has the following elements:
+The **Requirements** tab shows every enabled requirement, its target metric, score, and
+whether it meets the threshold. A score of **N/A** with a warning icon means CVAT could
+not calculate that requirement, for example because there were no applicable annotations.
+Hover the icon to see the reason. A requirement that cannot be calculated is not treated
+as failed.
 
-![Quality Analytics page](/images/honeypot05.png)
+Use the confusion-matrix action next to a requirement to inspect its results, select another
+requirement, or download the selected matrix as CSV or JSON.
 
-| Field | Description |
-| - | - |
-| Mean annotation quality | Displays the average quality of annotations, which includes: counts of the accurate annotations, total task annotations, ground truth annotations, accuracy, precision, and recall. The currently selected _Target metric_ is displayed as the primary score. |
-| GT Conflicts | Conflicts identified during quality assessment, including extra or missing annotations. Mouse over the **?** icon for a detailed conflict report on your dataset. |
-| Issues | Number of {{< ilink "/docs/qa-analytics/manual-qa" "opened issues" >}}. If no issues were reported, 0 will be shown. |
-| Quality report | Quality report in JSON format. |
-| Ground truth job data | Information about ground truth job, including date, time, and number of issues. |
-| List of jobs | List of all the jobs in the task  |
+The **Jobs** tab lists evaluated jobs and their completion rate. It shows the visible
+requirement scores; use the table controls to reveal other requirement columns, filter,
+sort, or download the data. In a project, the **Tasks** tab provides the same
+requirement-oriented overview for tasks. Use the arrow action in a task or requirement row
+to open the related filtered list of jobs.
 
-![Jobs list](/images/honeypot12.jpg)
+For tasks with a configured Ground Truth job, the **Management** tab controls validation
+frames and the Ground Truth job. The **Settings** tab is available for tasks and projects
+whether or not a report has been calculated.
 
 ### Problem Reporting
 
@@ -600,28 +647,25 @@ requirements.
 
 | **Problem** | **Type** | **Description** |
 | - | - | - |
-| Missing annotation | error | No matching annotation found in the regular job annotations. [Configured](#annotation-quality-settings) by _Min overlap threshold_ and shape type-specific parameters. |
-| Extra annotation | error | No matching annotation found in the GT job annotations. [Configured](#annotation-quality-settings) by _Min overlap threshold_ and shape type-specific parameters. |
+| Missing annotation | error | No matching annotation found in the regular job annotations. Configured by the requirement's comparison settings. |
+| Extra annotation | error | No matching annotation found in the GT job annotations. Configured by the requirement's comparison settings. |
 | Mismatching label | error | A GT and a regular job annotations match, but their labels are different. |
-| Low overlap | warning | A GT and a regular job annotations match, but the similarity is low. [Configured](#annotation-quality-settings) by _Low overlap threshold_. |
-| Mismatching direction | warning | A GT and a regular lines match, but the lines have different direction. [Configured](#annotation-quality-settings) by _Compare orientation_. |
-| Mismatching attributes | warning | A GT and a regular annotations match, but their attributes are different. [Configured](#annotation-quality-settings) by _Compare attributes_. |
-| Mismatching groups | warning | A GT and a regular annotation groups do not match. [Configured](#annotation-quality-settings) by _Compare groups_. |
-| Covered annotation | warning | The visible part of a regular mask or polygon annotation is too small. The visibility is determined by arranging mask and polygon shapes on the frame in the specified _z order_. [Configured](#annotation-quality-settings) by _Check object visibility_. |
+| Low overlap | warning | A GT and a regular job annotations match, but the similarity is low. Configured by the requirement's comparison settings. |
+| Mismatching direction | warning | A GT and a regular lines match, but the lines have different direction. Configured by the requirement's comparison settings. |
+| Mismatching attributes | warning | A GT and a regular annotations match, but their attributes are different. Configured by the requirement's attribute comparison settings. |
+| Mismatching groups | warning | A GT and a regular annotation groups do not match. Configured by the requirement's group matching settings. |
+| Covered annotation | warning | The visible part of a regular mask or polygon annotation is too small. The visibility is determined by arranging mask and polygon shapes on the frame in the specified _z order_. Configured by the requirement's visibility settings. |
 
 ### Quality Reports
 
-For each job included in quality computation there is a quality report downloading button on
-the [Analytics page](#analytics-page-contents). There is also a button to download the aggregated
-task quality report. These buttons provide an option to download a Quality Report for a task or job
-in JSON format. Such reports can be useful if you want to process quality reported by CVAT
-automatically in your scripts etc.
+Use **Download** in the report header to download the task or project quality report in
+JSON format. Each job row also provides a download action for its report. These files are
+useful for processing quality results in scripts.
 
 ![Download report](/images/quality_download_report.png)
 
-Quality Reports contain quality metrics and conflicts, and include all the information
-available on the quality analytics page. You can find additional quality metrics in these reports,
-such as _mean_iou_ for shapes, confusion matrices, per-label and per-frame quality estimations.
+Quality reports contain the requirement scores, metrics, and conflicts shown in the UI,
+along with detailed per-label and per-frame results.
 
 Additional information on how to compute and use various metrics for dataset
 quality estimation is available [here](https://en.wikipedia.org/wiki/Confusion_matrix).
