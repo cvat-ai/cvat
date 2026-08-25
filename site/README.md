@@ -69,14 +69,14 @@ Several docs pages embed scripts from `cvat-sdk/examples/` via the
 running `hugo server` you need to populate it — otherwise the embedded
 code blocks will be empty.
 
-Copy the scripts in (requires the site's Python deps):
+Symlink the examples directory into the site tree:
 
 ```bash
-python -m pip install -r site/requirements.txt
-python site/build_docs.py --copy-sdk-examples-only
+ln -s ../../cvat-sdk/examples site/assets/sdk-examples
 ```
 
-Re-run the copy command whenever you edit an example script.
+Edits to the example scripts are then picked up automatically on the
+next `hugo server` refresh.
 
 5. To preview your site locally, use:
 

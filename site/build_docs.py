@@ -5,14 +5,16 @@
 #
 # SPDX-License-Identifier: MIT
 
-import argparse
 import os
 import shutil
 import subprocess
-import sys
 import tempfile
 from pathlib import Path
 from urllib.parse import urljoin
+
+import git
+import toml
+from packaging import version
 
 # Number of most recent tags to build documentation for
 MAX_VERSIONS_TO_BUILD = 6
@@ -52,8 +54,6 @@ def copy_sdk_examples(repo_root: Path, site_dir: Path) -> None:
 
 
 def prepare_tags(repo):
-    from packaging import version
-
     # Group tags by minor version (major.minor) and keep only the latest patch for each
     minor_versions = {}
     for tag in repo.tags:
@@ -111,8 +111,6 @@ def git_checkout(ref: str, temp_repo, temp_dir: Path):
 
 
 def change_version_menu_toml(filename, version):
-    import toml
-
     data = toml.load(filename)
     data["params"]["version_menu"] = version
 
@@ -121,8 +119,6 @@ def change_version_menu_toml(filename, version):
 
 
 def generate_docs(repo, output_dir: os.PathLike, tags):
-    import git
-
     repo_root = Path(repo.working_tree_dir)
 
     with tempfile.TemporaryDirectory() as temp_dir:
@@ -190,30 +186,8 @@ def validate_env():
         raise Exception(f"Failed to run '{hugo110}', please make sure it exists.") from ex
 
 
-def parse_args(argv=None):
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument(
-        "--copy-sdk-examples-only",
-        action="store_true",
-        help=(
-            "Just mirror cvat-sdk/examples/ into site/assets/sdk-examples/ "
-            "(the tree the include-code shortcode reads from) and exit. "
-            "Use before `hugo server` when working on the docs locally."
-        ),
-    )
-    return parser.parse_args(argv)
-
-
 if __name__ == "__main__":
-    args = parse_args()
     repo_root = Path(__file__).resolve().parents[1]
-
-    if args.copy_sdk_examples_only:
-        copy_sdk_examples(repo_root, repo_root / "site")
-        sys.exit(0)
-
-    import git
-
     output_dir = repo_root / "public"
 
     validate_env()
