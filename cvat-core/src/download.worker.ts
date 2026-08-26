@@ -95,17 +95,6 @@ function headersToObject(headers: Headers): Record<string, string> {
     return Object.fromEntries([...headers.entries()]);
 }
 
-function getExpectedSize(headers: Record<string, string>): number | null {
-    // X-Chunk-Size describes the decoded chunk assembled by this worker and is not affected by HTTP compression.
-    const chunkSize = headers['x-chunk-size'];
-    if (typeof chunkSize === 'undefined') {
-        return null;
-    }
-
-    const parsedChunkSize = Number(chunkSize);
-    return Number.isInteger(parsedChunkSize) && parsedChunkSize >= 0 ? parsedChunkSize : null;
-}
-
 function getChunkIdentity(headers: Record<string, string>): ChunkIdentity {
     // The update date identifies the chunk generation, while the checksum also guards against stale cached content.
     const checksum = headers['x-checksum'];
@@ -175,9 +164,9 @@ async function fetchData(url: string, requestConfig): Promise<{
         const receivedBytesBeforeRequest = receivedBytes;
         try {
             const headers = new Headers(requestConfig.headers ?? {});
-            if (receivedBytes) {
-                headers.set('Range', `bytes=${receivedBytes}-`);
-            }
+            // Request the entire chunk as an open-ended range on the first attempt as well. This makes the server
+            // provide the full decoded chunk size in Content-Range independently of HTTP content encoding.
+            headers.set('Range', `bytes=${receivedBytes}-`);
 
             response = await fetch(requestUrl, {
                 method: 'GET',
@@ -197,22 +186,15 @@ async function fetchData(url: string, requestConfig): Promise<{
                 throw new DownloadError(await response.text(), response.status);
             }
 
-            if (receivedBytes) {
-                if (response.status === 206) {
-                    const contentRange = parseContentRange(response.headers.get('content-range'));
-                    if (!contentRange || contentRange.start !== receivedBytes) {
-                        throw new Error('Unexpected Content-Range header');
-                    }
-
-                    expectedSize = contentRange.total;
-                } else {
-                    throw new Error(`Unexpected response status: ${response.status}`);
-                }
-            } else {
-                // A truncated initial response can end without a stream read error. Keep the full chunk size so
-                // the incomplete response is resumed instead of being accepted as a successful download.
-                expectedSize = getExpectedSize(responseHeaders);
+            if (response.status !== 206) {
+                throw new Error(`Unexpected response status: ${response.status}`);
             }
+
+            const contentRange = parseContentRange(responseHeaders['content-range'] ?? null);
+            if (!contentRange || contentRange.start !== receivedBytes || contentRange.total === null) {
+                throw new Error('Unexpected Content-Range header');
+            }
+            expectedSize = contentRange.total;
 
             const responseChunkIdentity = getChunkIdentity(responseHeaders);
             if (chunkIdentity && !isSameChunk(chunkIdentity, responseChunkIdentity)) {
@@ -251,12 +233,12 @@ async function fetchData(url: string, requestConfig): Promise<{
                 throw new Error(`Received fewer bytes than expected: ${receivedBytes}/${expectedSize}`);
             }
 
-            if (expectedSize === null || receivedBytes === expectedSize) {
+            if (receivedBytes === expectedSize) {
                 return {
                     data: mergeChunks(chunks, receivedBytes),
                     headers: {
                         ...responseHeaders,
-                        ...(expectedSize !== null ? { 'content-length': `${expectedSize}` } : {}),
+                        'content-length': `${expectedSize}`,
                     },
                 };
             }

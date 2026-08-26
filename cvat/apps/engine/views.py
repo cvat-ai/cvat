@@ -167,7 +167,6 @@ slogger = ServerLogManager(__name__)
 _UPLOAD_PARSER_CLASSES = api_settings.DEFAULT_PARSER_CLASSES + [MultiPartParser]
 
 _DATA_CHECKSUM_HEADER_NAME = "X-Checksum"
-_DATA_SIZE_HEADER_NAME = "X-Chunk-Size"
 _DATA_UPDATED_DATE_HEADER_NAME = "X-Updated-Date"
 _RETRY_AFTER_TIMEOUT = 10
 
@@ -874,10 +873,6 @@ class _DataGetter(metaclass=ABCMeta):
     _CHUNK_HEADER_BYTES_LENGTH = 1000
     "The number of significant bytes from the chunk header, used for checksum computation"
 
-    def _get_chunk_size(self, chunk_data: DataWithMeta) -> int:
-        """Return the decoded chunk size exposed to clients independently of HTTP compression."""
-        return len(chunk_data.data.getbuffer())
-
     def _get_chunk_checksum(self, chunk_data: DataWithMeta) -> str:
         data = chunk_data.data.getbuffer()
         size_checksum = zlib.crc32(str(len(data)).encode())
@@ -885,13 +880,11 @@ class _DataGetter(metaclass=ABCMeta):
 
     def _make_chunk_response_headers(
         self,
-        size: int,
         checksum: str,
         updated_date: datetime,
     ) -> dict[str, str]:
         return {
             _DATA_CHECKSUM_HEADER_NAME: str(checksum or ""),
-            _DATA_SIZE_HEADER_NAME: str(size),
             _DATA_UPDATED_DATE_HEADER_NAME: serializers.DateTimeField().to_representation(
                 updated_date
             ),
@@ -931,7 +924,6 @@ class _TaskDataGetter(_DataGetter):
 
     def _get_chunk_response_headers(self, chunk_data: DataWithMeta) -> dict[str, str]:
         return self._make_chunk_response_headers(
-            self._get_chunk_size(chunk_data),
             self._get_chunk_checksum(chunk_data),
             self._db_task.get_chunks_updated_date(),
         )
@@ -1007,9 +999,7 @@ class _JobDataGetter(_DataGetter):
 
     def _get_chunk_response_headers(self, chunk_data: DataWithMeta) -> dict[str, str]:
         return self._make_chunk_response_headers(
-            self._get_chunk_size(chunk_data),
-            self._get_chunk_checksum(chunk_data),
-            self._db_job.segment.chunks_updated_date,
+            self._get_chunk_checksum(chunk_data), self._db_job.segment.chunks_updated_date
         )
 
 
@@ -1608,14 +1598,6 @@ class TaskViewSet(
                 required=False,
                 response=[200, 206],
                 description="Data checksum, applicable for chunks only",
-            ),
-            OpenApiParameter(
-                _DATA_SIZE_HEADER_NAME,
-                location=OpenApiParameter.HEADER,
-                type=OpenApiTypes.INT,
-                required=False,
-                response=[200, 206],
-                description="Full data size in bytes, applicable for chunks only",
             ),
             OpenApiParameter(
                 _DATA_UPDATED_DATE_HEADER_NAME,
