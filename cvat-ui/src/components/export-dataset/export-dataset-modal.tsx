@@ -29,6 +29,7 @@ import { makeBulkOperationAsync } from 'actions/bulk-actions';
 import {
     Dumper, ProjectOrTaskOrJob, Job, Project,
     Storage, StorageData, StorageLocation, Task,
+    DimensionType,
 } from 'cvat-core-wrapper';
 
 type FormValues = {
@@ -335,16 +336,19 @@ function ExportDatasetModal(props: Readonly<StateToProps>): JSX.Element {
                             )}
                     </Select>
                 </Form.Item>
-                <Space>
-                    <Form.Item
-                        className='cvat-modal-export-switch-use-default-storage'
-                        name='saveImages'
-                        valuePropName='checked'
-                    >
-                        <Switch className='cvat-modal-export-save-images' />
-                    </Form.Item>
-                    <Text strong>Save images</Text>
-                </Space>
+                {
+                    instance?.dimension !== DimensionType.DIMENSION_1D &&
+                    <Space>
+                        <Form.Item
+                            className='cvat-modal-export-switch-use-default-storage'
+                            name='saveImages'
+                            valuePropName='checked'
+                        >
+                            <Switch className='cvat-modal-export-save-images' />
+                        </Form.Item>
+                        <Text strong>Save images</Text>
+                    </Space>
+                }
                 {isBulkMode ? (
                     <Form.Item label={<Text strong>Name template</Text>} required>
                         <Input
