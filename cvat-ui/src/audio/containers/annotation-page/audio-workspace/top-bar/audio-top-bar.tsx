@@ -261,6 +261,11 @@ class AudioTopBarContainer extends React.PureComponent<Props> {
                 redoAction={redoAction}
                 undoShortcut={normalizedKeyMap.AUDIO_UNDO ?? normalizedKeyMap.UNDO ?? ''}
                 redoShortcut={normalizedKeyMap.AUDIO_REDO ?? normalizedKeyMap.REDO ?? ''}
+                playPauseShortcut={normalizedKeyMap.PLAY_PAUSE_AUDIO ?? ''}
+                backwardShortcut={normalizedKeyMap.AUDIO_BACKWARD ?? ''}
+                forwardShortcut={normalizedKeyMap.AUDIO_FORWARD ?? ''}
+                fastBackwardShortcut={normalizedKeyMap.AUDIO_FAST_BACKWARD ?? ''}
+                fastForwardShortcut={normalizedKeyMap.AUDIO_FAST_FORWARD ?? ''}
                 audioDuration={audioDuration ?? 0}
                 annotationFilters={annotationFilters}
                 initialOpenGuide={initialOpenGuide}
