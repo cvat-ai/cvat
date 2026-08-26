@@ -82,7 +82,7 @@ class DeliveryHandler(BaseHTTPRequestHandler):
     status_changes: Counter
     rejected: int = 0
 
-    def log_message(self, format: str, *log_args) -> None:
+    def log_message(self, fmt: str, *log_args) -> None:
         pass  # the tallies below replace the default per-request log line
 
     def do_POST(self) -> None:
