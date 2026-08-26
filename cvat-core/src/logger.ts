@@ -33,25 +33,6 @@ interface IgnoreRule {
     update: (previousEvent: Event, currentPayload: JSONEventPayload) => JSONEventPayload;
 }
 
-interface BandwidthInfo {
-    totalDownloadBytes: number;
-    totalDownloadTimeMs: number;
-    totalDownloadRetries: number;
-}
-
-function makeBandwidthPayload(bandwidthInfo: BandwidthInfo): JSONEventPayload {
-    const totalDownloadedMegabits = (bandwidthInfo.totalDownloadBytes * 8) / 1_000_000;
-    const totalDownloadTimeSeconds = bandwidthInfo.totalDownloadTimeMs / 1000;
-
-    return {
-        obj_name: 'chunk_download_bandwidth',
-        ...bandwidthInfo,
-        ...(bandwidthInfo.totalDownloadTimeMs ? {
-            bandwidthMbps: totalDownloadedMegabits / totalDownloadTimeSeconds,
-        } : {}),
-    };
-}
-
 function clientIdGen(): string {
     let val = null;
     try {
@@ -165,7 +146,8 @@ class Logger {
         }
 
         const event = makeEvent(EventScope.debugInfo, {
-            ...makeBandwidthPayload(bandwidthInfo),
+            obj_name: 'chunk_download_bandwidth',
+            ...bandwidthInfo,
             client_id: this.clientID,
             is_active: this.isActiveChecker(),
         });
