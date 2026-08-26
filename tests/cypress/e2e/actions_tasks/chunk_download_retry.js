@@ -102,10 +102,14 @@ context('Retry chunk downloads on annotation page', () => {
                 req.continue((res) => {
                     const responseSize = res.body.byteLength ?? res.body.length;
                     truncatedSize = Math.floor(responseSize / 2);
-                    // eslint-disable-next-line no-param-reassign
-                    res.body = res.body.slice(0, truncatedSize);
-                    // eslint-disable-next-line no-param-reassign
-                    res.headers['content-length'] = `${truncatedSize}`;
+                    res.send({
+                        statusCode: res.statusCode,
+                        body: res.body.slice(0, truncatedSize),
+                        headers: {
+                            ...res.headers,
+                            'content-length': `${truncatedSize}`,
+                        },
+                    });
                 });
             } else {
                 expect(req.headers.range).to.equal(`bytes=${truncatedSize}-`);
@@ -145,10 +149,14 @@ context('Retry chunk downloads on annotation page', () => {
                 req.continue((res) => {
                     const responseSize = res.body.byteLength ?? res.body.length;
                     truncatedSize = Math.floor(responseSize / 2);
-                    // eslint-disable-next-line no-param-reassign
-                    res.body = res.body.slice(0, truncatedSize);
-                    // eslint-disable-next-line no-param-reassign
-                    res.headers['content-length'] = `${truncatedSize}`;
+                    res.send({
+                        statusCode: res.statusCode,
+                        body: res.body.slice(0, truncatedSize),
+                        headers: {
+                            ...res.headers,
+                            'content-length': `${truncatedSize}`,
+                        },
+                    });
                 });
             } else if (chunkRequests === 2) {
                 expect(req.headers.range).to.equal(`bytes=${truncatedSize}-`);
