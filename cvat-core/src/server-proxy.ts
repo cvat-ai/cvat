@@ -52,6 +52,12 @@ type Params = {
 
 type HealthCheckResponse = Record<string, string>;
 
+const totalBandwidthInfo = {
+    totalDownloadBytes: 0,
+    totalDownloadTimeMs: 0,
+    totalDownloadRetries: 0,
+};
+
 tus.defaultOptions.storeFingerprintForResuming = false;
 
 function enableOrganization(): { org: string } {
@@ -304,7 +310,11 @@ class WorkerWrappedAxios {
             if (e.data.id in requests) {
                 try {
                     if (e.data.isSuccess) {
-                        requests[e.data.id].resolve({ data: e.data.responseData, headers: e.data.headers });
+                        requests[e.data.id].resolve({
+                            data: e.data.responseData,
+                            headers: e.data.headers,
+                            telemetry: e.data.telemetry,
+                        });
                     } else {
                         let response: AxiosResponse | undefined;
                         let code: AxiosError['code'];
@@ -1733,10 +1743,26 @@ async function getData(jid: number, chunk: number, quality: ChunkQuality): Promi
             responseType: 'arraybuffer',
         });
 
+        if (response.telemetry) {
+            totalBandwidthInfo.totalDownloadBytes += response.telemetry.chunkSizeBytes;
+            totalBandwidthInfo.totalDownloadTimeMs += response.telemetry.downloadTimeMs;
+            totalBandwidthInfo.totalDownloadRetries += response.telemetry.retries;
+        }
+
         return response.data;
     } catch (errorData) {
         throw generateError(errorData);
     }
+}
+
+function getAndResetBandwidthInfo(): typeof totalBandwidthInfo {
+    const result = { ...totalBandwidthInfo };
+
+    totalBandwidthInfo.totalDownloadBytes = 0;
+    totalBandwidthInfo.totalDownloadTimeMs = 0;
+    totalBandwidthInfo.totalDownloadRetries = 0;
+
+    return result;
 }
 
 interface AudioChunkResponse {
@@ -1900,13 +1926,17 @@ async function uploadAnnotations(
 
 async function saveEvents(events: {
     events: SerializedEvent[];
-    previous_event?: SerializedEvent;
     timestamp: string;
-}): Promise<void> {
+    previous_event?: SerializedEvent;
+}, options: { keepalive?: boolean } = {}): Promise<void> {
     const { backendAPI } = config;
 
     try {
-        await Axios.post(`${backendAPI}/events`, events);
+        await Axios.post(`${backendAPI}/events`, events, options.keepalive ? {
+            // The fetch adapter can keep this best-effort request alive while the page is being unloaded.
+            adapter: 'fetch',
+            fetchOptions: { keepalive: true },
+        } : undefined);
     } catch (errorData) {
         throw generateError(errorData);
     }
@@ -2700,6 +2730,7 @@ export default Object.freeze({
         userAgreements,
         installedApps,
         apiSchema: getApiSchema,
+        getAndResetBandwidthInfo,
     }),
 
     projects: Object.freeze({
