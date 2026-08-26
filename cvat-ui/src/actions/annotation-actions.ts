@@ -937,6 +937,7 @@ export function changeFrameAsync(
     fillBuffer?: boolean,
     frameStep?: number,
     forceUpdate?: boolean,
+    skipSelectionHistory?: boolean,
 ): ThunkAction {
     return async (dispatch: ThunkDispatch, getState: () => CombinedState): Promise<void> => {
         const { jobInstance: job, frame } = receiveAnnotationsParameters();
@@ -997,7 +998,13 @@ export function changeFrameAsync(
                 Math.round(1000 / frameSpeed) - currentTime + (state.annotation.player.frame.changeTime as number),
             );
 
-            const { states, history } = await fetchAnnotations(toFrame);
+            const { selectedStatesID } = state.annotation.annotations;
+            const { states, history: fetchedHistory } = await fetchAnnotations(toFrame);
+            let history = fetchedHistory;
+            if (!skipSelectionHistory && selectedStatesID.length) {
+                await job.actions.recordSelection(selectedStatesID, [], frame);
+                history = await job.actions.get();
+            }
 
             if (state.annotation.workspace === Workspace.REVIEW) {
                 userUnlockedInReviewMode.clear();
@@ -1055,7 +1062,7 @@ export function undoActionAsync(): ThunkAction {
 
             if (undoOnFrame !== null && (frame !== undoOnFrame || ['Removed frame', 'Restored frame'].includes(undo[0]))) {
                 // the action below fetches annotations
-                await dispatch(changeFrameAsync(undoOnFrame, undefined, undefined, true));
+                await dispatch(changeFrameAsync(undoOnFrame, undefined, undefined, true, true));
             } else {
                 await dispatch(fetchAnnotationsAsync());
             }
@@ -1098,7 +1105,7 @@ export function redoActionAsync(): ThunkAction {
 
             if (redoOnFrame !== null && (frame !== redoOnFrame || ['Removed frame', 'Restored frame'].includes(redo[0]))) {
                 // the action below fetches annotations
-                await dispatch(changeFrameAsync(redoOnFrame, undefined, undefined, true));
+                await dispatch(changeFrameAsync(redoOnFrame, undefined, undefined, true, true));
             } else {
                 await dispatch(fetchAnnotationsAsync());
             }
