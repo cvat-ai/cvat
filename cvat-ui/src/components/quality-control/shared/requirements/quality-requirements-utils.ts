@@ -57,7 +57,6 @@ export const METRIC_LABELS: Record<string, string> = {
 
         return [value, `${label} (micro)`];
     })),
-    f1_score: 'F1 Score',
 };
 
 export const ANNOTATION_TYPES: QualityRequirementAnnotationType[] = Object.values(QualityRequirementAnnotationType);
