@@ -27,6 +27,11 @@ class DownloadReadError extends Error {
     }
 }
 
+interface ChunkIdentity {
+    checksum: string;
+    updatedDate: string;
+}
+
 function sleep(timeout: number): Promise<void> {
     return new Promise((resolve) => {
         setTimeout(resolve, timeout);
@@ -90,6 +95,21 @@ function headersToObject(headers: Headers): Record<string, string> {
     return Object.fromEntries([...headers.entries()]);
 }
 
+function getChunkIdentity(headers: Record<string, string>): ChunkIdentity {
+    // The update date identifies the chunk generation, while the checksum also guards against stale cached content.
+    const checksum = headers['x-checksum'];
+    const updatedDate = headers['x-updated-date'];
+    if (!checksum || !updatedDate) {
+        throw new Error('Missing chunk identity headers');
+    }
+
+    return { checksum, updatedDate };
+}
+
+function isSameChunk(first: ChunkIdentity, second: ChunkIdentity): boolean {
+    return first.checksum === second.checksum && first.updatedDate === second.updatedDate;
+}
+
 function mergeChunks(chunks: Uint8Array[], totalLength: number): ArrayBuffer {
     const data = new Uint8Array(totalLength);
     let offset = 0;
@@ -132,10 +152,11 @@ async function fetchData(url: string, requestConfig): Promise<{
     headers: Record<string, string>;
 }> {
     const requestUrl = appendParams(url, requestConfig.params);
-    const chunks: Uint8Array[] = [];
+    let chunks: Uint8Array[] = [];
     let receivedBytes = 0;
     let responseHeaders: Record<string, string> = {};
     let expectedSize: number | null = null;
+    let chunkIdentity: ChunkIdentity | null = null;
 
     let retry = 0;
     while (retry <= MAX_NO_PROGRESS_RETRIES) {
@@ -143,9 +164,9 @@ async function fetchData(url: string, requestConfig): Promise<{
         const receivedBytesBeforeRequest = receivedBytes;
         try {
             const headers = new Headers(requestConfig.headers ?? {});
-            if (receivedBytes) {
-                headers.set('Range', `bytes=${receivedBytes}-`);
-            }
+            // Request the entire chunk as an open-ended range on the first attempt as well. This makes the server
+            // provide the full decoded chunk size in Content-Range independently of HTTP content encoding.
+            headers.set('Range', `bytes=${receivedBytes}-`);
 
             response = await fetch(requestUrl, {
                 method: 'GET',
@@ -165,21 +186,31 @@ async function fetchData(url: string, requestConfig): Promise<{
                 throw new DownloadError(await response.text(), response.status);
             }
 
-            if (receivedBytes) {
-                if (response.status === 206) {
-                    const contentRange = parseContentRange(response.headers.get('content-range'));
-                    if (!contentRange || contentRange.start !== receivedBytes) {
-                        throw new Error('Unexpected Content-Range header');
-                    }
-
-                    expectedSize = contentRange.total;
-                } else {
-                    throw new Error(`Unexpected response status: ${response.status}`);
-                }
-            } else {
-                expectedSize = null;
+            if (response.status !== 206) {
+                throw new Error(`Unexpected response status: ${response.status}`);
             }
 
+            const contentRange = parseContentRange(responseHeaders['content-range'] ?? null);
+            if (!contentRange || contentRange.start !== receivedBytes || contentRange.total === null) {
+                throw new Error('Unexpected Content-Range header');
+            }
+            expectedSize = contentRange.total;
+
+            const responseChunkIdentity = getChunkIdentity(responseHeaders);
+            if (chunkIdentity && !isSameChunk(chunkIdentity, responseChunkIdentity)) {
+                // The partial bytes and retry history belong to an outdated chunk. Discard them and immediately
+                // start a new full download; waiting or applying the previous retry count would only delay recovery.
+                await response.body?.cancel();
+                chunks = [];
+                receivedBytes = 0;
+                responseHeaders = {};
+                expectedSize = null;
+                chunkIdentity = null;
+                retry = 0;
+                continue;
+            }
+
+            chunkIdentity = responseChunkIdentity;
             receivedBytes = await readResponse(response, chunks, receivedBytes);
 
             if (expectedSize !== null && receivedBytes > expectedSize) {
@@ -202,12 +233,12 @@ async function fetchData(url: string, requestConfig): Promise<{
                 throw new Error(`Received fewer bytes than expected: ${receivedBytes}/${expectedSize}`);
             }
 
-            if (expectedSize === null || receivedBytes === expectedSize) {
+            if (receivedBytes === expectedSize) {
                 return {
                     data: mergeChunks(chunks, receivedBytes),
                     headers: {
                         ...responseHeaders,
-                        ...(expectedSize !== null ? { 'content-length': `${expectedSize}` } : {}),
+                        'content-length': `${expectedSize}`,
                     },
                 };
             }

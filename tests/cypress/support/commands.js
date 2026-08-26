@@ -538,6 +538,11 @@ Cypress.Commands.add('saveJob', (method = 'PATCH', status = 200, as = 'saveJob')
     cy.wait(`@${as}`).its('response.statusCode').should('equal', status);
 });
 
+Cypress.Commands.add('clearAnnotationsAndSave', (method = 'PUT', status = 200, as = 'saveRemoveAnnotations') => {
+    cy.removeAnnotations();
+    cy.saveJob(method, status, as);
+});
+
 Cypress.Commands.add('getJobIdFromIdx', (jobIdx) => {
     const jobsKey = [];
     cy.document().then((doc) => {
