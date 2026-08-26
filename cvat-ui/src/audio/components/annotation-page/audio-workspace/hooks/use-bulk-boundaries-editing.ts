@@ -21,7 +21,7 @@ import { WaveformViewport } from './use-waveform-viewport';
 
 const BOUNDARY_TOLERANCE_MS = 50;
 const BULK_EDIT_BOUNDARY_PART = 'cvat-audio-bulk-edit-boundary';
-const RESIZE_CURSOR_CLASS = 'cvat-audio-waveform-interaction-resize';
+const BULK_RESIZE_CURSOR_CLASS = 'cvat-audio-waveform-bulk-resize';
 
 interface Boundary {
     regionClientID: number;
@@ -111,26 +111,19 @@ export function useBulkBoundariesEditing({
     const activeControlRef = useRef(activeControl);
     const hoveredRef = useRef<HoveredBoundaries>({ boundaries: [], time: null });
     const bulkDragRef = useRef<BulkDragStatus | null>(null);
-    const previousCursorRef = useRef('');
     activeControlRef.current = activeControl;
 
     const clearHoveredBoundaries = (): void => {
-        viewport.containerRef.current?.classList.remove(RESIZE_CURSOR_CLASS);
+        viewport.containerRef.current?.classList.remove(BULK_RESIZE_CURSOR_CLASS);
         hoveredRef.current.boundaries.forEach((boundary) => setBoundaryIndicator(boundary, false));
         regionHighlighting.removeHighlightedRegionIDs(
             new Set(hoveredRef.current.boundaries.map((boundary) => boundary.regionClientID)),
         );
         hoveredRef.current = { boundaries: [], time: null };
-        document.body.style.cursor = previousCursorRef.current;
     };
 
     const setHoveredBoundaries = (boundaries: Boundary[], time: number | null): void => {
-        viewport.containerRef.current?.classList.toggle(RESIZE_CURSOR_CLASS, !!boundaries.length);
-        document.body.style.cursor = previousCursorRef.current;
-        if (boundaries.length) {
-            previousCursorRef.current = document.body.style.cursor;
-            document.body.style.cursor = 'ew-resize';
-        }
+        viewport.containerRef.current?.classList.toggle(BULK_RESIZE_CURSOR_CLASS, !!boundaries.length);
         const previousRegionIDs = new Set(hoveredRef.current.boundaries.map((boundary) => boundary.regionClientID));
         const nextRegionIDs = new Set(boundaries.map((boundary) => boundary.regionClientID));
         regionHighlighting.removeHighlightedRegionIDs(

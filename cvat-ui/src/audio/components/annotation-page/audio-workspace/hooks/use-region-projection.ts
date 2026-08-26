@@ -15,7 +15,10 @@ import {
     clientIDFromWaveRegionId, intervalEndSeconds, intervalStartSeconds,
 } from '../utils/audio-interval';
 import type { AudioTimeRange } from '../utils/audio-interval';
+import { addPart, removePart } from '../utils/shadow-dom';
 import { WaveformRegionRuntime } from './use-audio-waveform';
+
+const HIDDEN_REGION_RESIZE_HANDLES_PART = 'cvat-audio-region-resize-handles-hidden';
 
 interface Params {
     regionRuntime: WaveformRegionRuntime;
@@ -149,11 +152,23 @@ export function useRegionProjection({ regionRuntime, ready }: Params): RegionHig
             region.setOptions({
                 color: getAudioRegionColor(interval, labels, colorBy, opacity, selectedOpacity, isActive),
                 drag: canEdit,
-                resize: canEdit && isHighlighted,
+                // Keep handles mounted for every editable region so their pointer targets
+                // take precedence over dragging as soon as the pointer reaches a boundary.
+                resize: canEdit,
             });
 
             const { element } = region;
             if (!element) return;
+
+            // Hidden handles remain interactive, giving unselected intervals an immediate
+            // resize cursor at their boundaries without showing the handles until hover.
+            element.querySelectorAll<HTMLElement>('[part*="region-handle"]').forEach((handle) => {
+                if (isHighlighted) {
+                    removePart(handle, HIDDEN_REGION_RESIZE_HANDLES_PART);
+                } else {
+                    addPart(handle, HIDDEN_REGION_RESIZE_HANDLES_PART);
+                }
+            });
 
             const selectionDisabled = activeControl === ActiveControl.AUDIO_REGION_CREATE ||
                 activeControl === ActiveControl.AUDIO_REGION_RECORD;
