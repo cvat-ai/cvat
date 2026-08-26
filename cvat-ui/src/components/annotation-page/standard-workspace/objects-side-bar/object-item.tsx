@@ -16,6 +16,8 @@ import { isMultiSelectObjectModifierPressed } from 'utils/multi-selection';
 import ObjectItemElementComponent from './object-item-element';
 import ItemBasics from './object-item-basics';
 
+const INTERACTIVE_ELEMENT_SELECTOR = 'a, button, input, textarea, [role="button"], .ant-select, .anticon';
+
 interface Props {
     normalizedKeyMap: Record<string, string>;
     keyMap: KeyMap;
@@ -131,7 +133,7 @@ function ObjectItemComponent(props: Props): JSX.Element {
 
     const onMouseDown = useCallback((event: React.MouseEvent): void => {
         if (event.button === 0) {
-            const interactiveElement = (event.target as Element).closest('button, input, textarea, .ant-select');
+            const interactiveElement = (event.target as Element).closest(INTERACTIVE_ELEMENT_SELECTOR);
             if (!interactiveElement && event.shiftKey && !event.ctrlKey && !event.altKey && !event.metaKey) {
                 event.preventDefault();
                 event.stopPropagation();
@@ -150,7 +152,7 @@ function ObjectItemComponent(props: Props): JSX.Element {
 
     const onContextMenu = useCallback((event: React.MouseEvent): void => {
         if (isMultiSelectObjectModifierPressed(event, keyMap)) {
-            const interactiveElement = (event.target as Element).closest('button, input, textarea, .ant-select');
+            const interactiveElement = (event.target as Element).closest(INTERACTIVE_ELEMENT_SELECTOR);
             if (!interactiveElement) {
                 event.preventDefault();
                 event.stopPropagation();
