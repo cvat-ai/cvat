@@ -28,6 +28,7 @@ export interface ObjectSelector {
     transform(geometry: Geometry): void;
     push(state: ObjectState): void;
     setSelected(states: ObjectState[]): void;
+    move(event: MouseEvent): void;
     disable(): void;
     resetSelected(): void;
 }
@@ -316,6 +317,10 @@ export class ObjectSelectorImpl implements ObjectSelector {
             this.selectedObjects = Object.fromEntries(states.map((state) => [state.clientID, state]));
             this.onSelectCallback(states);
         }
+    }
+
+    public move(event: MouseEvent): void {
+        this.onMouseMove(event);
     }
 
     public transform(geometry: Geometry): void {

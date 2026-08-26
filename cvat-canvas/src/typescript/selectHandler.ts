@@ -9,6 +9,7 @@ export interface SelectHandler {
     select(selectData: SelectData, selectionFilter: SelectionFilter, initialEvent?: MouseEvent): void;
     push(state: any): void;
     setSelected(states: any[]): void;
+    move(event: MouseEvent): void;
     cancel(): void;
 }
 
@@ -68,6 +69,10 @@ export class SelectHandlerImpl implements SelectHandler {
 
     public setSelected(states: any[]): void {
         this.selector.setSelected(states);
+    }
+
+    public move(event: MouseEvent): void {
+        this.selector.move(event);
     }
 
     public cancel(): void {

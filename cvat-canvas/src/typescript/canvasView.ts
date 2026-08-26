@@ -2044,7 +2044,19 @@ export class CanvasViewImpl implements CanvasView, Listener {
         if (event.button === 0 && this.isMultiSelectModifierPressed(event) &&
             this.mode === Mode.IDLE && onBackground) {
             this.pendingSelectionEvent = event;
+        }
+    };
+
+    private onContentMouseMove = (event: MouseEvent): void => {
+        if (this.pendingSelectionEvent && this.mode === Mode.IDLE) {
+            const distance = Math.hypot(
+                event.clientX - this.pendingSelectionEvent.clientX,
+                event.clientY - this.pendingSelectionEvent.clientY,
+            );
+            if (distance < 3) return;
+
             this.controller.selectObjects({ enabled: true });
+            this.selectHandler.move(event);
             this.pendingSelectionEvent = null;
         }
     };
@@ -2104,6 +2116,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
     };
 
     private onMouseUp = (event: MouseEvent): void => {
+        this.pendingSelectionEvent = null;
         if (event.button === 0 || event.button === 1) {
             this.controller.disableDrag();
         }
@@ -2325,8 +2338,9 @@ export class CanvasViewImpl implements CanvasView, Listener {
             }
         });
         this.canvas.addEventListener('mousedown', this.onContentMouseDown, true);
+        this.canvas.addEventListener('mousemove', this.onContentMouseMove, true);
         this.canvas.addEventListener('contextmenu', (event: MouseEvent): void => {
-            if (this.isMultiSelectObjectModifierPressed(event)) {
+            if (event.button !== 2 && this.isMultiSelectObjectModifierPressed(event)) {
                 event.preventDefault();
                 event.stopPropagation();
             }
@@ -2856,6 +2870,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             window.document.removeEventListener('keyup', this.onKeyUp);
             window.document.removeEventListener('mouseup', this.onMouseUp);
             this.canvas.removeEventListener('mousedown', this.onContentMouseDown, true);
+            this.canvas.removeEventListener('mousemove', this.onContentMouseMove, true);
             this.interactionHandler.destroy();
         }
 

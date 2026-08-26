@@ -999,11 +999,6 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
         const multiSelectModifierPressed = isMultiSelectModifierPressed(e, keyMap);
         const multiSelectObjectModifierPressed = isMultiSelectObjectModifierPressed(e, keyMap);
 
-        if (e.button === 0 && activeControl === ActiveControl.CURSOR &&
-            multiSelectModifierPressed && !shapeElement && !selectionBox) {
-            updateActiveControl(ActiveControl.SELECT);
-        }
-
         // a click outside of the selected objects resets the multi-selection
         // Modifier clicks update membership; an unmodified click outside resets the multi-selection.
         if (e.button === 0 && !multiSelectModifierPressed && !multiSelectObjectModifierPressed &&
