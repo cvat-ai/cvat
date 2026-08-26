@@ -289,7 +289,7 @@ Actions menu.
 In the Honeypots mode, it's not possible to add or remove the GT job, so it's not possible to
 add more validation frames.
 
-![Ground truth job actions](/images/honeypot04.jpg)
+![Ground truth job actions](/images/honeypot04.webp)
 
 ### Create
 
@@ -391,8 +391,7 @@ The **Settings** tab has the following sections:
 Each enabled quality requirement has its own annotation type, target metric, threshold,
 filter, and comparison options. CVAT provides non-removable base requirements for supported
 annotation types. You can rename a base requirement, change its settings, or disable it.
-
-<!-- Add a screenshot of the Requirements configuration table here. -->
+![Requirements configuration table](/images/requirement-table.webp)
 
 The table shows the requirement hierarchy, target annotation type, metric, threshold, and
 enabled state. Use the arrow beside a row to expand its child requirements. The actions in
@@ -405,14 +404,14 @@ annotation type, and they cannot be deleted. They are useful as broad defaults, 
 "all rectangles must reach 70% accuracy". Disable a base requirement when that annotation
 type must not participate in the report or immediate feedback.
 
-Use **Add rule** on a base or custom requirement to add a child. The parent and target
+Use **+** button on a base or custom requirement to add a child. The parent and target
 annotation type are fixed for a child rule. Give the child a descriptive name and use its
 filter and comparison options to define a narrower check. For example, a rectangle base
 requirement can have a child rule for the `vehicle` label with a higher score threshold.
 Custom requirements can be copied when you need a similar rule and deleted when no longer
 needed.
 
-<!-- Add a screenshot of a child requirement form here. -->
+![Create a child requirement](/images/create-child-requirement.webp)
 
 ##### Inheritance
 
@@ -424,6 +423,8 @@ Change a value in a parent to update the effective value for descendants that ha
 overridden it. A child can override its metric, threshold, and applicable comparison options
 when it needs a more specific policy. Overridden fields show a revert control; use it to
 return to the parent value. A child requirement always keeps its parent and annotation type.
+
+![Requirement form](/images/requirement-form.webp)
 
 ##### Annotation filters
 
@@ -437,7 +438,7 @@ requirements, so a child can only narrow its parent's scope. For example, a pare
 to `vehicle` annotations can have a child filtered to `vehicle` annotations with a specific
 attribute value; the child cannot include annotations outside the parent's filter.
 
-<!-- Add a screenshot of the requirement Filter builder here. -->
+![Requirement annotations filter](/images/requirement-annotations-filter.webp)
 
 ##### Attribute rules
 
@@ -452,7 +453,7 @@ Levenshtein comparator accepts similar text values and exposes a normalized simi
 threshold from 0 to 1. Attribute rules, like the rest of the comparison configuration, can
 be inherited and overridden by child requirements.
 
-<!-- Add a screenshot of the Attribute comparison section and its rule table here. -->
+![Requirement attribute configuration](/images/requirement-attribute-configuration.webp)
 
 ##### Comparison options
 
@@ -624,15 +625,18 @@ whether it meets the threshold. A score of **N/A** with a warning icon means CVA
 not calculate that requirement, for example because there were no applicable annotations.
 Hover the icon to see the reason. A requirement that cannot be calculated is not treated
 as failed.
+  ![Requirements result table](/images/requirements-result-table.webp)
 
 Use the confusion-matrix action next to a requirement to inspect its results, select another
 requirement, or download the selected matrix as CSV or JSON.
+  ![Requirements confusion matrix](/images/requirements-confusion-matrix.webp)
 
 The **Jobs** tab lists evaluated jobs and their completion rate. It shows the visible
 requirement scores; use the table controls to reveal other requirement columns, filter,
 sort, or download the data. In a project, the **Tasks** tab provides the same
 requirement-oriented overview for tasks. Use the arrow action in a task or requirement row
 to open the related filtered list of jobs.
+  ![Requirements confusion matrix](/images/requirement-jobs-table.webp)
 
 For tasks with a configured Ground Truth job, the **Management** tab controls validation
 frames and the Ground Truth job. The **Settings** tab is available for tasks and projects
