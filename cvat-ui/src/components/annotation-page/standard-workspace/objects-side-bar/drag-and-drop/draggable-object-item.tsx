@@ -13,6 +13,7 @@ import { objectDragID } from './index';
 interface Props {
     objectStates: ObjectState[];
     clientID: number;
+    visibleObjectIDs: number[];
     draggable: boolean;
     visibleSkeletonElements: Record<number, number[]>;
 }
@@ -20,7 +21,7 @@ interface Props {
 // Wraps an object item with dnd-kit drag behavior while preserving the original object item rendering.
 function DraggableObjectItem(props: Props): JSX.Element {
     const {
-        objectStates, clientID, draggable, visibleSkeletonElements,
+        objectStates, clientID, visibleObjectIDs, draggable, visibleSkeletonElements,
     } = props;
 
     const {
@@ -45,6 +46,7 @@ function DraggableObjectItem(props: Props): JSX.Element {
             <ObjectItemContainer
                 objectStates={objectStates}
                 clientID={clientID}
+                visibleObjectIDs={visibleObjectIDs}
                 visibleSkeletonElements={visibleSkeletonElements}
                 allowSimplifyLifecycle
                 zLayerDragging={isDragging}

@@ -41,6 +41,7 @@ import { KeyMap } from 'utils/mousetrap-react';
 interface OwnProps {
     clientID: number;
     objectStates: ObjectState[];
+    visibleObjectIDs?: number[];
     visibleSkeletonElements?: Record<number, number[]>;
     allowSimplifyLifecycle?: boolean;
     zLayerDragProps?: React.HTMLAttributes<HTMLElement>;
@@ -513,31 +514,28 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
 
     private selectRange = (): void => {
         const {
-            objectState, selectedStatesID, selectObjects,
+            objectState, objectStates, selectedStatesID, visibleObjectIDs: orderedObjectIDs, selectObjects,
         } = this.props;
+        const visibleObjectIDs = orderedObjectIDs || objectStates.map(
+            (state: ObjectState): number => state.clientID as number,
+        );
         const clientID = objectState.clientID as number;
-        const renderedIDs = Array.from(document.querySelectorAll(
-            '.cvat-objects-sidebar-states-list [id^="cvat-objects-sidebar-state-item-"]',
-        )).reduce((ids: number[], element: Element): number[] => {
-            const match = element.id.match(/^cvat-objects-sidebar-state-item-(\d+)$/);
-            const id = match ? +match[1] : null;
-            if (id !== null && !ids.includes(id)) ids.push(id);
-            return ids;
-        }, []);
-        const anchorID = [...selectedStatesID].reverse().find((id: number): boolean => renderedIDs.includes(id));
+        const anchorID = [...selectedStatesID].reverse().find(
+            (id: number): boolean => visibleObjectIDs.includes(id),
+        );
 
         if (typeof anchorID !== 'number') {
             selectObjects([...selectedStatesID, clientID]);
             return;
         }
 
-        const from = renderedIDs.indexOf(anchorID);
-        const to = renderedIDs.indexOf(clientID);
+        const from = visibleObjectIDs.indexOf(anchorID);
+        const to = visibleObjectIDs.indexOf(clientID);
         if (from === -1 || to === -1) {
             selectObjects([...selectedStatesID, clientID]);
             return;
         }
-        const range = renderedIDs.slice(Math.min(from, to), Math.max(from, to) + 1);
+        const range = visibleObjectIDs.slice(Math.min(from, to), Math.max(from, to) + 1);
         const nextSelection = [...new Set([
             ...selectedStatesID.filter((id: number): boolean => id !== clientID),
             ...range.filter((id: number): boolean => id !== clientID),

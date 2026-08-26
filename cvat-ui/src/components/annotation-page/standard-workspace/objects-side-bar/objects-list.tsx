@@ -278,6 +278,9 @@ function ObjectListComponent(props: Props): JSX.Element {
     const toggleLayerVisibility = (zOrder: number, includeLower: boolean): void => {
         toggleLayersVisibility(includeLower ? [zOrder, ...zLayers.filter((layer) => layer < zOrder)] : [zOrder]);
     };
+    const visibleObjectIDs = statesOrdering === StatesOrdering.LAYER ? zLayers
+        .filter((zOrder: number): boolean => !collapsedLayers.has(zOrder))
+        .flatMap((zOrder: number): number[] => objectIdsByLayer[zOrder] || []) : sortedStatesID;
 
     const renderDragOverlay = (): JSX.Element | null => {
         if (!activeDragID) {
@@ -292,6 +295,7 @@ function ObjectListComponent(props: Props): JSX.Element {
                     <ObjectItemContainer
                         objectStates={objectStates}
                         clientID={clientID}
+                        visibleObjectIDs={visibleObjectIDs}
                         visibleSkeletonElements={visibleSkeletonElements}
                         allowSimplifyLifecycle
                         zLayerDragging
@@ -385,6 +389,7 @@ function ObjectListComponent(props: Props): JSX.Element {
                                             <LayerSection
                                                 zOrder={zOrder}
                                                 layerObjectIds={objectIdsByLayer[zOrder] || []}
+                                                visibleObjectIDs={visibleObjectIDs}
                                                 objectStates={layerObjectStates}
                                                 visibleSkeletonElements={visibleSkeletonElements}
                                                 selected={zOrder === currentLayer}
@@ -420,6 +425,7 @@ function ObjectListComponent(props: Props): JSX.Element {
                         key={id}
                         objectStates={objectStates}
                         clientID={id}
+                        visibleObjectIDs={visibleObjectIDs}
                         visibleSkeletonElements={visibleSkeletonElements}
                         allowSimplifyLifecycle
                     />

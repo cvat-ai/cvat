@@ -85,6 +85,9 @@ import {
     isMultiSelectObjectModifierPressed,
     multiSelectModifierFromKeyMap,
     multiSelectObjectModifierFromKeyMap,
+    getSelectedStates,
+    getSelectionToggleState,
+    prepareSelectionToggle,
 } from 'utils/multi-selection';
 import ImageSetupsContent from './image-setups-content';
 import CanvasTipsComponent from './canvas-hints';
@@ -792,10 +795,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
         const {
             annotations, selectedStatesID, onUpdateAnnotationsBatch,
         } = this.props;
-        const selectedIDs = new Set(selectedStatesID);
-        const selectedStates = annotations.filter(
-            (state: ObjectState): boolean => selectedIDs.has(state.clientID as number),
-        );
+        const selectedStates = getSelectedStates(annotations, selectedStatesID);
 
         for (const selectedState of selectedStates) {
             selectedState.label = label;
@@ -821,10 +821,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
         const {
             annotations, selectedStatesID, onCopySelection,
         } = this.props;
-        const selectedIDs = new Set(selectedStatesID);
-        const selectedStates = annotations.filter(
-            (state: ObjectState): boolean => selectedIDs.has(state.clientID as number),
-        );
+        const selectedStates = getSelectedStates(annotations, selectedStatesID);
 
         if (selectedStates.length) {
             onCopySelection(selectedStates);
@@ -840,17 +837,9 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
         const {
             annotations, selectedStatesID, onUpdateAnnotationsBatch,
         } = this.props;
-        const selectedIDs = new Set(selectedStatesID);
-        const selectedStates = annotations.filter(
-            (state: ObjectState): boolean => selectedIDs.has(state.clientID as number),
-        );
-        if (!selectedStates.length) return;
-        const lock = !selectedStates.every((state: ObjectState): boolean => state.lock);
-        const statesToUpdate = selectedStates.filter((state: ObjectState): boolean => state.lock !== lock);
-
-        for (const state of statesToUpdate) {
-            state.lock = lock;
-        }
+        const selectedStates = getSelectedStates(annotations, selectedStatesID);
+        const statesToUpdate = prepareSelectionToggle(selectedStates, 'lock');
+        if (!statesToUpdate.length) return;
         await onUpdateAnnotationsBatch(statesToUpdate);
         this.setState({ selectionMenuPosition: null });
     };
@@ -859,17 +848,9 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
         const {
             annotations, selectedStatesID, onUpdateAnnotationsBatch,
         } = this.props;
-        const selectedIDs = new Set(selectedStatesID);
-        const selectedStates = annotations.filter(
-            (state: ObjectState): boolean => selectedIDs.has(state.clientID as number),
-        );
-        if (!selectedStates.length) return;
-        const pinned = !selectedStates.every((state: ObjectState): boolean => state.pinned);
-        const statesToUpdate = selectedStates.filter((state: ObjectState): boolean => state.pinned !== pinned);
-
-        for (const state of statesToUpdate) {
-            state.pinned = pinned;
-        }
+        const selectedStates = getSelectedStates(annotations, selectedStatesID);
+        const statesToUpdate = prepareSelectionToggle(selectedStates, 'pinned');
+        if (!statesToUpdate.length) return;
         await onUpdateAnnotationsBatch(statesToUpdate);
         this.setState({ selectionMenuPosition: null });
     };
@@ -1235,8 +1216,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
         // so the selection can be grabbed and dragged as a group (e.g. right after paste)
         let result = null;
         if (selectedStatesID.length > 1) {
-            const selectedCandidates = e.detail.states
-                .filter((state: ObjectState) => selectedStatesID.includes(state.clientID as number));
+            const selectedCandidates = getSelectedStates(e.detail.states, selectedStatesID);
             if (selectedCandidates.length) {
                 result = await jobInstance.annotations.select(selectedCandidates, e.detail.x, e.detail.y);
             }
@@ -1447,10 +1427,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
         } = this.props;
         const { canvasInstance } = this.props as { canvasInstance: Canvas };
         const { selectionMenuPosition } = this.state;
-        const selectedIDs = new Set(selectedStatesID);
-        const selectedStates = annotations.filter(
-            (state: ObjectState): boolean => selectedIDs.has(state.clientID as number),
-        );
+        const selectedStates = getSelectedStates(annotations, selectedStatesID);
         const applicableLabels = labels.filter((label: Label): boolean => selectedStates.every(
             (state: ObjectState): boolean => filterApplicableLabels(state, labels).some(
                 (applicableLabel: Label): boolean => applicableLabel.id === label.id,
@@ -1467,17 +1444,8 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
         const labelSelectorDisabledReason = !applicableLabels.length ?
             'No label can be applied to every selected object' :
             'Labels cannot be changed for locked, ground truth, or skeleton objects';
-        const allSelectedLocked = selectedStates.length > 0 && selectedStates.every(
-            (state: ObjectState): boolean => state.lock,
-        );
-        const allSelectedPinned = selectedStates.length > 0 && selectedStates.every(
-            (state: ObjectState): boolean => state.pinned,
-        );
-        const lockSelectionDisabled = selectedStates.some((state: ObjectState): boolean => state.isGroundTruth);
-        const pinSelectionDisabled = selectedStates.some((state: ObjectState): boolean => (
-            state.lock || state.isGroundTruth ||
-            state.objectType === ObjectType.TAG || state.shapeType === ShapeType.POINTS
-        ));
+        const lockSelection = getSelectionToggleState(selectedStates, 'lock');
+        const pinSelection = getSelectionToggleState(selectedStates, 'pinned');
 
         const preventDefault = (event: KeyboardEvent | undefined): void => {
             if (event) {
@@ -1603,13 +1571,12 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
                                     label: (
                                         <Button
                                             type='link'
-                                            disabled={lockSelectionDisabled}
-                                            title={lockSelectionDisabled ?
-                                                'Ground truth objects cannot be locked or unlocked' : undefined}
-                                            icon={allSelectedLocked ? <UnlockOutlined /> : <LockFilled />}
+                                            disabled={!!lockSelection.disabledReason}
+                                            title={lockSelection.disabledReason || undefined}
+                                            icon={lockSelection.active ? <UnlockOutlined /> : <LockFilled />}
                                             onClick={this.onSwitchSelectedObjectsLock}
                                         >
-                                            {allSelectedLocked ? 'Unlock selection' : 'Lock selection'}
+                                            {lockSelection.active ? 'Unlock selection' : 'Lock selection'}
                                         </Button>
                                     ),
                                 },
@@ -1618,13 +1585,12 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
                                     label: (
                                         <Button
                                             type='link'
-                                            disabled={pinSelectionDisabled}
-                                            title={pinSelectionDisabled ?
-                                                'Locked, ground truth, tag, and points objects cannot be pinned' : undefined}
-                                            icon={allSelectedPinned ? <PushpinOutlined /> : <PushpinFilled />}
+                                            disabled={!!pinSelection.disabledReason}
+                                            title={pinSelection.disabledReason || undefined}
+                                            icon={pinSelection.active ? <PushpinOutlined /> : <PushpinFilled />}
                                             onClick={this.onSwitchSelectedObjectsPinned}
                                         >
-                                            {allSelectedPinned ? 'Unpin selection' : 'Pin selection'}
+                                            {pinSelection.active ? 'Unpin selection' : 'Pin selection'}
                                         </Button>
                                     ),
                                 },

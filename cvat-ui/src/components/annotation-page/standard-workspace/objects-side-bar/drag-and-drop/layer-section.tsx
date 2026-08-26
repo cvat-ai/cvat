@@ -14,6 +14,7 @@ import LayerHeader from './layer-header';
 interface LayerSectionProps {
     zOrder: number;
     layerObjectIds: number[];
+    visibleObjectIDs: number[];
     objectStates: ObjectState[];
     visibleSkeletonElements: Record<number, number[]>;
     selected: boolean;
@@ -27,7 +28,7 @@ interface LayerSectionProps {
 // Owns a complete layer block: drop target, header, and draggable object rows.
 function LayerSection(props: LayerSectionProps): JSX.Element {
     const {
-        zOrder, layerObjectIds, objectStates, visibleSkeletonElements,
+        zOrder, layerObjectIds, visibleObjectIDs, objectStates, visibleSkeletonElements,
         selected, visible, collapsed, selectLayer,
         toggleLayerCollapsed, toggleLayerVisibility,
     } = props;
@@ -57,6 +58,7 @@ function LayerSection(props: LayerSectionProps): JSX.Element {
                         key={id}
                         objectStates={objectStates}
                         clientID={id}
+                        visibleObjectIDs={visibleObjectIDs}
                         visibleSkeletonElements={visibleSkeletonElements}
                         draggable={!!object && isLayerState(object) && !object.lock}
                     />

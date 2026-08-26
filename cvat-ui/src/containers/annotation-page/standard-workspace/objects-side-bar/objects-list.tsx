@@ -52,6 +52,11 @@ import {
 } from 'components/annotation-page/standard-workspace/objects-side-bar/drag-and-drop';
 import { openAnnotationsActionModal } from 'components/annotation-page/annotations-actions/annotations-actions-modal';
 import { OBJECTS_SIDEBAR_OPEN_Z_LAYER_EVENT } from 'utils/objects-sidebar';
+import {
+    getSelectedStates,
+    getSelectionToggleState,
+    prepareSelectionToggle,
+} from 'utils/multi-selection';
 
 interface StateToProps {
     jobInstance: any;
@@ -521,20 +526,16 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
         const {
             objectStates, selectedStatesID, updateAnnotationsBatch,
         } = this.props;
-        const selectedIDs = new Set(selectedStatesID);
-        const selectedStates = objectStates.filter(
-            (state: ObjectState): boolean => selectedIDs.has(state.clientID as number),
-        );
+        const selectedStates = getSelectedStates(objectStates, selectedStatesID);
         if (!selectedStates.length) return;
-        if (selectedStates.some((state: ObjectState): boolean => state.isGroundTruth)) {
+        const { disabledReason } = getSelectionToggleState(selectedStates, 'lock');
+        if (disabledReason) {
             message.destroy();
-            message.warning('Ground truth objects cannot be locked or unlocked');
+            message.warning(disabledReason);
             return;
         }
 
-        const lock = !selectedStates.every((state: ObjectState): boolean => state.lock);
-        const statesToUpdate = selectedStates.filter((state: ObjectState): boolean => state.lock !== lock);
-        for (const state of statesToUpdate) state.lock = lock;
+        const statesToUpdate = prepareSelectionToggle(selectedStates, 'lock');
         updateAnnotationsBatch(statesToUpdate);
     };
 
@@ -542,23 +543,16 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
         const {
             objectStates, selectedStatesID, updateAnnotationsBatch,
         } = this.props;
-        const selectedIDs = new Set(selectedStatesID);
-        const selectedStates = objectStates.filter(
-            (state: ObjectState): boolean => selectedIDs.has(state.clientID as number),
-        );
+        const selectedStates = getSelectedStates(objectStates, selectedStatesID);
         if (!selectedStates.length) return;
-        if (selectedStates.some((state: ObjectState): boolean => (
-            state.lock || state.isGroundTruth ||
-            state.objectType === ObjectType.TAG || state.shapeType === ShapeType.POINTS
-        ))) {
+        const { disabledReason } = getSelectionToggleState(selectedStates, 'pinned');
+        if (disabledReason) {
             message.destroy();
-            message.warning('Locked, ground truth, tag, and points objects cannot be pinned');
+            message.warning(disabledReason);
             return;
         }
 
-        const pinned = !selectedStates.every((state: ObjectState): boolean => state.pinned);
-        const statesToUpdate = selectedStates.filter((state: ObjectState): boolean => state.pinned !== pinned);
-        for (const state of statesToUpdate) state.pinned = pinned;
+        const statesToUpdate = prepareSelectionToggle(selectedStates, 'pinned');
         updateAnnotationsBatch(statesToUpdate);
     };
 
@@ -857,8 +851,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             COPY_SHAPE: () => {
                 // with an active multi-selection the whole selection is copied
                 if (selectedStatesID.length) {
-                    const selectedStates = objectStates
-                        .filter((objectState: ObjectState) => selectedStatesID.includes(objectState.clientID));
+                    const selectedStates = getSelectedStates(objectStates, selectedStatesID);
                     if (selectedStates.length) {
                         copySelection(selectedStates);
                         return;

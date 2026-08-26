@@ -8,7 +8,9 @@ import { useDispatch, useSelector } from 'react-redux';
 import { shallowEqual } from 'utils/redux';
 import message from 'antd/lib/message';
 
-import { LabelType, ObjectType, ShapeType } from 'cvat-core-wrapper';
+import {
+    LabelType, ObjectState, ObjectType, ShapeType,
+} from 'cvat-core-wrapper';
 import { CombinedState } from 'reducers';
 import {
     rememberObject, updateAnnotationsAsync, updateAnnotationsBatchAsync,
@@ -22,6 +24,7 @@ import { subKeyMap } from 'utils/component-subkeymap';
 import { useResetShortcutsOnUnmount } from 'utils/hooks';
 import { getCVATStore } from 'cvat-store';
 import { filterApplicableLabels } from 'utils/filter-applicable-labels';
+import { getSelectedStates } from 'utils/multi-selection';
 
 const componentShortcuts: Record<string, KeyMapItem> = {};
 
@@ -95,10 +98,9 @@ function LabelsListComponent(): JSX.Element {
             const { activeShapeType, activeObjectType } = relevantAppState.annotation.drawing;
 
             if (selectedStatesID.length) {
-                const selectedIDs = new Set(selectedStatesID);
-                const selectedStates = states.filter((state: any): boolean => selectedIDs.has(state.clientID));
+                const selectedStates = getSelectedStates(states, selectedStatesID);
                 const labelIsApplicable = selectedStates.length === selectedStatesID.length && selectedStates.every(
-                    (state: any): boolean => (
+                    (state: ObjectState): boolean => (
                         !state.lock && !state.isGroundTruth && state.shapeType !== ShapeType.SKELETON &&
                         filterApplicableLabels(state, labels).some((_label): boolean => _label.id === label.id)
                     ),
@@ -110,7 +112,9 @@ function LabelsListComponent(): JSX.Element {
                     return;
                 }
 
-                const statesToUpdate = selectedStates.filter((state: any): boolean => state.label.id !== label.id);
+                const statesToUpdate = selectedStates.filter(
+                    (state: ObjectState): boolean => state.label.id !== label.id,
+                );
                 for (const selectedState of statesToUpdate) {
                     selectedState.label = label;
                 }
