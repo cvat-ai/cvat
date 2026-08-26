@@ -18,6 +18,7 @@ const defaultState: AudioState = {
         zoom: 1,
         volume: 1,
         loop: false,
+        fitIntervalRequest: null,
         intervals: [],
         activeIntervalID: null,
         hoveredIntervalID: null,
@@ -140,6 +141,26 @@ export default function audioReducer(state: AudioState = defaultState, action: A
                 player: {
                     ...state.player,
                     loop: action.payload.loop,
+                },
+            };
+        }
+        case AudioActionTypes.FIT_AUDIO_INTERVAL: {
+            return {
+                ...state,
+                player: {
+                    ...state.player,
+                    fitIntervalRequest: action.payload.request,
+                },
+            };
+        }
+        case AudioActionTypes.COMPLETE_FIT_AUDIO_INTERVAL: {
+            if (state.player.fitIntervalRequest !== action.payload.request) return state;
+
+            return {
+                ...state,
+                player: {
+                    ...state.player,
+                    fitIntervalRequest: null,
                 },
             };
         }

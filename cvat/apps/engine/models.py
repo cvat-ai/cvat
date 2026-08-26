@@ -38,6 +38,7 @@ from cvat.utils import django_database as db_utils
 if TYPE_CHECKING:
     from cvat.apps.engine.cloud_provider import CloudStorageClient
     from cvat.apps.organizations.models import Organization
+    from utils.dataset_manifest.utils import NamedOpenable
 
 
 class SafeCharField(models.CharField):
@@ -545,6 +546,12 @@ class Data(models.Model):
     def get_static_cache_dirname(self, quality: FrameQuality) -> Path:
         return self.get_data_dirname() / quality.name.lower()
 
+    def get_openable(self, rel_path: str) -> NamedOpenable:
+        if storage_client := self.get_cloud_storage_client():
+            return storage_client.get_openable(rel_path)
+
+        return self.get_raw_data_dirname() / rel_path
+
     def get_chunk_type(self, quality: FrameQuality) -> DataChoice:
         if quality == FrameQuality.ORIGINAL:
             chunk_type = self.original_chunk_type
@@ -627,15 +634,29 @@ class Data(models.Model):
 
         return None
 
-    def supports_backing_cs(self) -> bool:
-        return (
-            self.storage == StorageChoice.LOCAL
-            and self.storage_method == StorageMethodChoice.CACHE
-            and self.images.exists()
-        )
+    def supports_backing_cs(self, db_storage: CloudStorage) -> bool:
+        if not (
+            self.storage == StorageChoice.LOCAL and self.storage_method == StorageMethodChoice.CACHE
+        ):
+            return False
+
+        if self.images.exists():
+            return True
+
+        # Video tasks without manifests technically work with backing CS too,
+        # but reading the video from the beginning each time is too slow in practice,
+        # so we disallow it.
+        if (
+            hasattr(self, "video")
+            and db_storage.get_client().supports_streaming
+            and self.get_manifest_path().exists()
+        ):
+            return True
+
+        return False
 
     def move_to_backing_cs(self, backing_cs: CloudStorage) -> None:
-        assert self.supports_backing_cs()
+        assert self.supports_backing_cs(backing_cs)
         assert not self.local_storage_backing_cs_id
 
         self.local_storage_backing_cs = backing_cs
@@ -1782,7 +1803,6 @@ class AnnotationGuide(TimestampedModel):
         Project, null=True, blank=True, on_delete=models.CASCADE, related_name="annotation_guide"
     )
     markdown = models.TextField(blank=True, default="")
-    is_public = models.BooleanField(default=False)
 
     @property
     def target(self) -> Task | Project:
