@@ -322,23 +322,27 @@ Cypress.Commands.add('headlessLogin', ({
 } = {}) => {
     cy.window().its('cvat', { timeout: 25000 }).should('not.be.undefined');
     return cy.window().then((win) => (
-        cy.headlessLogout().then(() => (
-            win.cvat.server.login(
-                username || Cypress.env('user'),
-                password || Cypress.env('password'),
-            ).then(() => win.cvat.users.get({ self: true }).then((users) => {
-                if (nextURL) {
-                    cy.intercept('GET', nextURL).as('nextPage');
-                    cy.visit(nextURL);
-                    return cy.wait('@nextPage').then(() => {
-                        cy.url().should('include', nextURL);
-                        cy.get('.cvat-spinner').should('not.exist');
-                    }).then(() => users[0]);
-                }
+        // Preserve the CSRF cookie while switching users. Clearing all cookies here can leave
+        // an active session without the CSRF token required for login when UI requests are still in flight.
+        cy.clearCookie('sessionid')
+            .then(() => cy.clearCookie('sessionfresh'))
+            .then(() => (
+                win.cvat.server.login(
+                    username || Cypress.env('user'),
+                    password || Cypress.env('password'),
+                ).then(() => win.cvat.users.get({ self: true }).then((users) => {
+                    if (nextURL) {
+                        cy.intercept('GET', nextURL).as('nextPage');
+                        cy.visit(nextURL);
+                        return cy.wait('@nextPage').then(() => {
+                            cy.url().should('include', nextURL);
+                            cy.get('.cvat-spinner').should('not.exist');
+                        }).then(() => users[0]);
+                    }
 
-                return users[0];
-            }))
-        ))
+                    return users[0];
+                }))
+            ))
     ));
 });
 
