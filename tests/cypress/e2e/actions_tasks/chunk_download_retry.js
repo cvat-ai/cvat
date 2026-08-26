@@ -17,6 +17,11 @@ context('Retry chunk downloads on annotation page', () => {
         cy.visit('/auth/login');
         cy.login();
         cy.url().should('contain', '/tasks');
+    });
+
+    beforeEach(() => {
+        taskId = null;
+        jobId = null;
         cy.headlessCreateTask({
             labels: [{ name: labelName, attributes: [], type: 'any' }],
             name: taskName,
@@ -35,7 +40,7 @@ context('Retry chunk downloads on annotation page', () => {
         });
     });
 
-    after(() => {
+    afterEach(() => {
         if (taskId) {
             cy.headlessDeleteTask(taskId);
         }
