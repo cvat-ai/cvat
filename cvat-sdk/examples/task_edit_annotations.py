@@ -100,7 +100,10 @@ def main() -> None:
             )
             print(f"Moved {matched} objects from {source!r} to {args.relabel[1]!r}")
         else:
-            task.remove_annotations(ids=[obj.id for obj in [*tags, *shapes, *tracks]])
+            # An empty id list would make remove_annotations() drop *all* the task
+            # annotations, so skip the request when the label has no objects.
+            if matched:
+                task.remove_annotations(ids=[obj.id for obj in [*tags, *shapes, *tracks]])
             print(f"Deleted {matched} objects with label {source!r}")
 
         after = label_counts(task.get_annotations(), label_names)
