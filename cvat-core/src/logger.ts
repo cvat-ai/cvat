@@ -33,6 +33,25 @@ interface IgnoreRule {
     update: (previousEvent: Event, currentPayload: JSONEventPayload) => JSONEventPayload;
 }
 
+interface BandwidthInfo {
+    totalDownloadBytes: number;
+    totalDownloadTimeMs: number;
+    totalDownloadRetries: number;
+}
+
+function makeBandwidthPayload(bandwidthInfo: BandwidthInfo): JSONEventPayload {
+    const totalDownloadedMegabits = (bandwidthInfo.totalDownloadBytes * 8) / 1_000_000;
+    const totalDownloadTimeSeconds = bandwidthInfo.totalDownloadTimeMs / 1000;
+
+    return {
+        obj_name: 'chunk_download_bandwidth',
+        ...bandwidthInfo,
+        ...(bandwidthInfo.totalDownloadTimeMs ? {
+            bandwidthMbps: totalDownloadedMegabits / totalDownloadTimeSeconds,
+        } : {}),
+    };
+}
+
 function clientIdGen(): string {
     let val = null;
     try {
@@ -135,6 +154,28 @@ class Logger {
         const result = await PluginRegistry.apiWrapper.call(this, Logger.prototype.save);
         return result;
     }
+
+    public saveCriticalEvents(): void {
+        // Critical page-exit delivery must start synchronously, so this path intentionally bypasses plugin wrappers
+        // and does not read or update the regular event collection, save lock, or lastSentEvent chain.
+
+        const bandwidthInfo = serverProxy.server.getAndResetBandwidthInfo();
+        if (!bandwidthInfo.totalDownloadBytes) {
+            return;
+        }
+
+        const event = makeEvent(EventScope.debugInfo, {
+            ...makeBandwidthPayload(bandwidthInfo),
+            client_id: this.clientID,
+            is_active: this.isActiveChecker(),
+        });
+        event.validatePayload();
+
+        serverProxy.events.save({
+            events: [event.dump()],
+            timestamp: new Date().toISOString(),
+        }, { keepalive: true }).catch(() => {});
+    }
 }
 
 Object.defineProperties(Logger.prototype.configure, {
@@ -157,7 +198,7 @@ Object.defineProperties(Logger.prototype.log, {
     implementation: {
         writable: false,
         enumerable: false,
-        value: async function implementation(
+        value: function implementation(
             this: Logger,
             scope: EventScope,
             payload: JSONEventPayload,
@@ -228,13 +269,14 @@ Object.defineProperties(Logger.prototype.save, {
             }
 
             const collectionToSend = [...this.collection];
+
             try {
                 this.saving = true;
                 this.collection = [];
                 await serverProxy.events.save({
                     events: collectionToSend.map((event) => event.dump()),
-                    previous_event: this.lastSentEvent?.dump(),
                     timestamp: new Date().toISOString(),
+                    previous_event: this.lastSentEvent?.dump(),
                 });
 
                 this.lastSentEvent = collectionToSend[collectionToSend.length - 1];
