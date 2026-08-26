@@ -20,10 +20,10 @@ context('Audio annotation. Region details panel shows active region info.', () =
             cy.audioCreateRegionViaButton(firstLabelName, 120, 280);
             cy.clickRegionOnWaveform((120 + 280) / 2);
             cy.get('.cvat-audio-region-details', { timeout: 5000 }).should('be.visible');
-            cy.get('.cvat-audio-region-details-time-range').should('not.be.empty');
-            cy.get('.cvat-audio-region-details-duration').should('not.be.empty');
-            cy.get('.cvat-audio-region-label-trigger').should('contain.text', firstLabelName);
-            cy.get('.cvat-audio-region-details-index').should('contain.text', '1');
+            cy.get('.cvat-audio-region-details .cvat-audio-interval-header-time').should('not.be.empty');
+            cy.get('.cvat-audio-region-details .cvat-audio-region-label-trigger')
+                .should('contain.text', firstLabelName);
+            cy.get('.cvat-audio-region-details .cvat-audio-interval-header-index').should('contain.text', '1');
         });
     });
 });
