@@ -26,8 +26,11 @@ export enum AudioActionTypes {
     SET_AUDIO_ZOOM = 'SET_AUDIO_ZOOM',
     SET_AUDIO_VOLUME = 'SET_AUDIO_VOLUME',
     SET_AUDIO_LOOP = 'SET_AUDIO_LOOP',
+    FIT_AUDIO_INTERVAL = 'FIT_AUDIO_INTERVAL',
+    COMPLETE_FIT_AUDIO_INTERVAL = 'COMPLETE_FIT_AUDIO_INTERVAL',
     SET_AUDIO_ACTIVE_INTERVAL = 'SET_AUDIO_ACTIVE_INTERVAL',
     SET_AUDIO_HOVERED_INTERVAL = 'SET_AUDIO_HOVERED_INTERVAL',
+    SET_AUDIO_INTERACTING_INTERVAL = 'SET_AUDIO_INTERACTING_INTERVAL',
     UPDATE_AUDIO_CONTEXT_MENU = 'UPDATE_AUDIO_CONTEXT_MENU',
     LOAD_AUDIO_DATA = 'LOAD_AUDIO_DATA',
     LOAD_AUDIO_DATA_SUCCESS = 'LOAD_AUDIO_DATA_SUCCESS',
@@ -66,6 +69,12 @@ export const audioActions = {
     setAudioLoop: (loop: boolean) => (
         createAction(AudioActionTypes.SET_AUDIO_LOOP, { loop })
     ),
+    fitAudioInterval: (clientID: number) => (
+        createAction(AudioActionTypes.FIT_AUDIO_INTERVAL, { request: { clientID } })
+    ),
+    completeFitAudioInterval: (request: { clientID: number }) => (
+        createAction(AudioActionTypes.COMPLETE_FIT_AUDIO_INTERVAL, { request })
+    ),
     setAudioVolume: (volume: number) => (
         createAction(AudioActionTypes.SET_AUDIO_VOLUME, { volume })
     ),
@@ -74,6 +83,9 @@ export const audioActions = {
     ),
     setAudioHoveredInterval: (clientID: number | null) => (
         createAction(AudioActionTypes.SET_AUDIO_HOVERED_INTERVAL, { clientID })
+    ),
+    setAudioInteractingInterval: (clientID: number | null) => (
+        createAction(AudioActionTypes.SET_AUDIO_INTERACTING_INTERVAL, { clientID })
     ),
     updateAudioContextMenu: (left: number, top: number, clientID: number | null = null) => (
         createAction(AudioActionTypes.UPDATE_AUDIO_CONTEXT_MENU, {
@@ -129,8 +141,13 @@ const AUDIO_LONG_JUMP_FRACTION = 0.05;
 
 type AudioIntervalPatch = Partial<Pick<
     AudioIntervalState,
-    'start' | 'stop' | 'label' | 'attributes' | 'lock' | 'hidden' | 'color'
+    'start' | 'stop' | 'label' | 'attributes' | 'lock' | 'pinned' | 'hidden' | 'color'
 >>;
+
+export interface AudioIntervalBoundary {
+    state: AudioIntervalState;
+    side: 'start' | 'end';
+}
 
 function applyIntervalPatch(interval: AudioIntervalState, patch: AudioIntervalPatch): void {
     const target = interval;
@@ -139,6 +156,7 @@ function applyIntervalPatch(interval: AudioIntervalState, patch: AudioIntervalPa
     if (patch.label) target.label = patch.label;
     if (patch.attributes) target.attributes = patch.attributes;
     if (typeof patch.lock === 'boolean') target.lock = patch.lock;
+    if (typeof patch.pinned === 'boolean') target.pinned = patch.pinned;
     if (typeof patch.hidden === 'boolean') target.hidden = patch.hidden;
     if (typeof patch.color === 'string') target.color = patch.color;
 }
@@ -219,6 +237,47 @@ export function requestPlayAudioIntervalOnce(clientID: number): ThunkAction {
     };
 }
 
+export function findAudioIntervalBoundariesAsync(
+    positionMs: number, deltaMs: number,
+): ThunkAction<Promise<AudioIntervalBoundary[]>> {
+    return async (_dispatch, getState): Promise<AudioIntervalBoundary[]> => {
+        const { intervals } = getState().audio.player;
+        const { instance: job } = getState().annotation.job;
+        if (!job) return [];
+
+        const boundaries: AudioIntervalBoundary[] = [];
+        for (const state of intervals) {
+            if (state.hidden) continue;
+
+            if (Math.abs(positionMs - state.start) <= deltaMs) {
+                boundaries.push({ state, side: 'start' });
+            }
+            if (Math.abs(positionMs - (state.stop ?? job.stopFrame + 1)) <= deltaMs) {
+                boundaries.push({ state, side: 'end' });
+            }
+        }
+
+        return boundaries;
+    };
+}
+
+export function requestSetAudioPlaybackToIntervalBoundary(clientID: number, boundary: 'start' | 'end'): ThunkAction {
+    return async (dispatch: ThunkDispatch, getState): Promise<void> => {
+        const { intervals, duration } = getState().audio.player;
+        const interval = intervals.find((_interval) => _interval.clientID === clientID);
+        if (!interval) return;
+
+        let time: number;
+        if (boundary === 'start') {
+            time = interval.start / 1000;
+        } else {
+            time = interval.stop ? interval.stop / 1000 : duration;
+        }
+
+        dispatch(audioActions.seekAudio(time));
+    };
+}
+
 export function createAudioIntervalAsync(start: number, stop: number, labelID: number | null): ThunkAction {
     return async (dispatch: ThunkDispatch, getState): Promise<void> => {
         const { labels } = getState().annotation.job;
@@ -282,8 +341,10 @@ export function updateAudioIntervalsAsync(
         for (const interval of targets) {
             const patch = typeof patcher === 'function' ? patcher(interval) : patcher;
             applyIntervalPatch(interval, patch);
-            await interval.save();
         }
+        const job = getState().annotation.job.instance;
+        if (!job) return;
+        await job.annotations.bulkSave(targets);
         await dispatchFetchAnnotations(dispatch);
     };
 }

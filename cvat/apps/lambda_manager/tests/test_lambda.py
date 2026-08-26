@@ -12,7 +12,6 @@ from itertools import groupby
 from unittest import mock, skip
 
 import requests
-from django.contrib.auth.models import User
 from django.core.signing import TimestampSigner
 from django.http import HttpResponseNotFound, HttpResponseServerError
 from PIL import Image
@@ -26,6 +25,7 @@ from cvat.apps.engine.tests.utils import (
     generate_image_file,
     get_paginated_collection,
 )
+from cvat.apps.iam.models import User
 
 LAMBDA_ROOT_PATH = "/api/lambda"
 LAMBDA_FUNCTIONS_PATH = f"{LAMBDA_ROOT_PATH}/functions"

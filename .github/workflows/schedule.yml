@@ -62,7 +62,7 @@ jobs:
           key: ${{ runner.os }}-build-ui-${{ needs.search_cache.outputs.sha }}
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4.2.0
+        uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4.3.0
 
       - name: Create artifact directories
         run: |
@@ -270,7 +270,7 @@ jobs:
           DJANGO_SU_EMAIL: "admin@localhost.company"
           DJANGO_SU_PASSWORD: "12qwaszx"
         run: |
-          docker exec -i cvat_server /bin/bash -c "echo \"from django.contrib.auth.models import User; User.objects.create_superuser('${DJANGO_SU_NAME}', '${DJANGO_SU_EMAIL}', '${DJANGO_SU_PASSWORD}')\" | python3 ~/manage.py shell"
+          docker exec -i cvat_server /bin/bash -c "echo \"from django.contrib.auth import get_user_model; get_user_model().objects.create_superuser('${DJANGO_SU_NAME}', '${DJANGO_SU_EMAIL}', '${DJANGO_SU_PASSWORD}')\" | python3 ~/manage.py shell"
 
       - name: Run tests
         run: |
@@ -300,7 +300,7 @@ jobs:
           echo "CYPRESS_ARGS=${CYPRESS_ARGS[*]}"
 
           yarn cypress run --headless "${CYPRESS_ARGS[@]}" --env coverage=false --spec "$CYPRESS_SETUP_SPECS" # if fail, further behavior is unpredictable
-          yarn cypress run --headed "${CYPRESS_ARGS[@]}" --spec "${CYPRESS_SETUP_SPECS},${CYPRESS_SPECS}"
+          yarn cypress run --headed "${CYPRESS_ARGS[@]}" --spec "${CYPRESS_SPECS}"
 
       - name: Creating a log file from "cvat" container logs
         if: failure()

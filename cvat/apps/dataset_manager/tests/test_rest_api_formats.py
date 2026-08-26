@@ -30,7 +30,7 @@ import numpy as np
 from attr import define, field
 from datumaro.components.comparator import EqualityComparator
 from datumaro.components.dataset import Dataset
-from django.contrib.auth.models import Group, User
+from django.contrib.auth.models import Group
 from PIL import Image
 from rest_framework import status
 
@@ -52,6 +52,7 @@ from cvat.apps.engine.tests.utils import (
     ImportApiTestBase,
     get_paginated_collection,
 )
+from cvat.apps.iam.models import User
 
 projects_path = osp.join(osp.dirname(__file__), "assets", "projects.json")
 with open(projects_path) as file:
@@ -2542,7 +2543,7 @@ class ProjectDumpUpload(_DbTestBase):
 
 
 class ImportErrorMessageTest(_DbTestBase):
-    def test_import_error_message_includes_underlying_reason(self):
+    def test_api_v2_can_include_underlying_reason_in_import_error_message(self):
         # A YOLO 1.1 archive that passes format detection (obj.data is present)
         # but fails during import (obj.names is missing): the reported message
         # must contain the underlying reason, not only the generic
@@ -2551,15 +2552,13 @@ class ImportErrorMessageTest(_DbTestBase):
         task = self._create_task(tasks["main"], images)
 
         with TemporaryDirectory() as tmp_dir:
-            with open(osp.join(tmp_dir, "obj.data"), "w") as f:
-                f.write("classes = 1\ntrain = train.txt\nnames = obj.names\nbackup = backup/\n")
-            with open(osp.join(tmp_dir, "train.txt"), "w") as f:
-                f.write("obj_train_data/image_0.jpg\n")
-
             archive_path = osp.join(tmp_dir, "dataset.zip")
             with zipfile.ZipFile(archive_path, "w") as archive:
-                for filename in ("obj.data", "train.txt"):
-                    archive.write(osp.join(tmp_dir, filename), filename)
+                archive.writestr(
+                    "obj.data",
+                    "classes = 1\ntrain = train.txt\nnames = obj.names\nbackup = backup/\n",
+                )
+                archive.writestr("train.txt", "obj_train_data/image_0.jpg\n")
 
             with self.assertRaisesRegex(dm.bindings.CvatImportError, "obj\\.names"):
                 dm.task.import_task_annotations(

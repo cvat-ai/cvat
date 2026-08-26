@@ -15,7 +15,7 @@ context('Audio annotation. Interval playback behavior.', () => {
     });
 
     afterEach(() => {
-        cy.audioClearAnnotationsAndSave();
+        cy.audioClearAnnotations();
     });
 
     const createShortInterval = (start = 100, end = 112) => {
@@ -26,7 +26,8 @@ context('Audio annotation. Interval playback behavior.', () => {
     describe(`Testing case "${caseId}"`, () => {
         it('Plays an interval once from a sidebar double-click', () => {
             createShortInterval();
-            cy.get('.cvat-audio-region-item').first().dblclick();
+            cy.get('.cvat-audio-region-item').first()
+                .find('.cvat-audio-interval-header-index').dblclick();
 
             cy.get('.cvat-player-pause-button').should('exist');
             cy.get('.cvat-player-play-button', { timeout: 8000 }).should('exist');
@@ -43,7 +44,8 @@ context('Audio annotation. Interval playback behavior.', () => {
 
         it('Preserves play-once bounds across pause and resume', () => {
             createShortInterval();
-            cy.get('.cvat-audio-region-item').first().dblclick();
+            cy.get('.cvat-audio-region-item').first()
+                .find('.cvat-audio-interval-header-index').dblclick();
             cy.get('.cvat-player-pause-button').should('exist').click();
             cy.get('.cvat-player-play-button').should('exist').click();
 

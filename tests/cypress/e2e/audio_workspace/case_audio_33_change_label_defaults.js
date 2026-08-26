@@ -17,13 +17,14 @@ context('Audio annotation. Relabeling restores label defaults.', () => {
     });
 
     after(() => {
-        cy.audioClearAnnotationsAndSave();
+        cy.audioClearAnnotations();
     });
 
     describe(`Testing case "${caseId}"`, () => {
         it('Drops old attributes and restores defaults when changing labels', () => {
             cy.audioCreateRegionViaButton(firstLabelName, 100, 250);
-            cy.get('.cvat-audio-region-item').first().click();
+            cy.get('.cvat-audio-region-item').first()
+                .find('.cvat-audio-interval-header-index').click();
             cy.get('.cvat-audio-region-details').should('be.visible');
             cy.get('.cvat-audio-region-attr-name').should('contain.text', attrName);
             cy.get('.cvat-audio-region-details textarea').clear();

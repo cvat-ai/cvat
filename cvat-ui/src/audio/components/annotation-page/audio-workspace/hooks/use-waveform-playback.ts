@@ -74,6 +74,9 @@ export function useWaveformPlayback(runtime: WaveSurferRuntime): WaveformPlaybac
             // See: https://github.com/katspaugh/wavesurfer.js/issues/4347
             // Its player clock remains correct, so use it as the source of truth.
             const currentTime = instance.getCurrentTime();
+            // The minimap subscribes to the stale timeupdate payload directly, so
+            // restore its progress from the player clock as well.
+            runtime.minimap.instanceRef.current?.setTime(currentTime);
             dispatch(audioActions.reportAudioCurrentTime(currentTime));
             listenersRef.current.forEach((listener) => listener(currentTime));
         };

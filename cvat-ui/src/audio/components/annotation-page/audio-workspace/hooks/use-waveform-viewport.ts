@@ -13,13 +13,21 @@ import { shallowEqual, ThunkDispatch } from 'utils/redux';
 import { clamp } from 'utils/math';
 import { AudioTimeRange } from '../utils/audio-interval';
 import {
-    computeWaveformZoom, centeredScrollOffsetForTime, limitZoom, ZOOM_MIN,
+    computeFitIntervalPixelsPerSecond, computeWaveformZoom,
+    centeredScrollOffsetForTime, limitZoom, ZOOM_MIN,
 } from '../../../../utils/waveform-geometry';
 import type { WaveSurferRuntime } from './use-audio-waveform';
 
 const ZOOM_BASIC_COEF = 6 / 5;
 const ZOOM_ADJUST_COEF = 1 / 10;
 const ZOOM_DELTA_LIMIT = 8;
+const FIT_INTERVAL_SAFE_INSET_PX = 64;
+const FIT_INTERVAL_SAFE_INSET_RATIO = 0.1;
+
+export interface ViewportTransform {
+    pixelsPerSecond: number;
+    scrollLeft: number;
+}
 
 export interface WaveformViewport {
     /** Bound in AudioCanvas view rendering */
@@ -44,6 +52,12 @@ export interface WaveformViewport {
      * Ensures that the given time is visible in the viewport. If it's not, scrolls the canvas to make it visible.
      */
     ensureTimeVisible(time: number): void;
+    /** Scrolls the canvas horizontally and returns the actual applied offset in pixels. */
+    scrollBy(deltaX: number): number;
+    /** Returns the current semantic-to-client horizontal transform. */
+    getTransform(): ViewportTransform | null;
+    /** Subscribes to changes in the client-coordinate-to-time transform. */
+    onTransformChange(listener: (transform: ViewportTransform) => void): () => void;
 }
 
 /**
@@ -54,10 +68,20 @@ export function useWaveformViewport(
     containerRef: React.RefObject<HTMLDivElement>,
 ): WaveformViewport {
     const dispatch = useDispatch<ThunkDispatch>();
-    const { zoom, duration } = useSelector((state: CombinedState) => ({
-        zoom: state.audio.player.zoom,
-        duration: state.audio.player.duration,
-    }), shallowEqual);
+    const {
+        zoom, duration, fitIntervalRequest, fitInterval,
+    } = useSelector((state: CombinedState) => {
+        const { player } = state.audio;
+        const fitRequest = player.fitIntervalRequest;
+
+        return {
+            zoom: player.zoom,
+            duration: player.duration,
+            fitIntervalRequest: fitRequest,
+            fitInterval: fitRequest ?
+                player.intervals.find((interval) => interval.clientID === fitRequest.clientID) : null,
+        };
+    }, shallowEqual);
     const { ready } = runtime;
     const [containerWidth, setContainerWidth] = useState(0);
     const zoomRef = useRef(zoom);
@@ -67,10 +91,49 @@ export function useWaveformViewport(
     const overviewPixelsPerSecond = duration > 0 ? containerWidth / duration : 0;
     const pixelsPerSecondRef = useRef(pixelsPerSecond);
     pixelsPerSecondRef.current = pixelsPerSecond;
+    const transformListenersRef = useRef(new Set<(transform: ViewportTransform) => void>());
+    const previousTransformRef = useRef<ViewportTransform | null>(null);
+    const synchronouslyAppliedZoomRef = useRef<{
+        zoom: number;
+        duration: number;
+        containerWidth: number;
+        pixelsPerSecond: number;
+    } | null>(null);
 
     const getScrollContainer = useCallback((): HTMLElement | null => (
         runtime.instanceRef.current?.getWrapper()?.parentElement ?? null
     ), [/* must have no deps as almost every hook depends on it and they should be stable */]);
+
+    const getTransform = useCallback((): ViewportTransform | null => {
+        const scrollContainer = getScrollContainer();
+        if (!scrollContainer) return null;
+
+        return {
+            pixelsPerSecond: pixelsPerSecondRef.current,
+            scrollLeft: scrollContainer.scrollLeft,
+        };
+    }, []);
+
+    const emitTransformChange = useCallback((): void => {
+        const transform = getTransform();
+        if (!transform) return;
+
+        const previousTransform = previousTransformRef.current;
+        if (
+            previousTransform?.pixelsPerSecond === transform.pixelsPerSecond &&
+            previousTransform.scrollLeft === transform.scrollLeft
+        ) return;
+
+        previousTransformRef.current = transform;
+        transformListenersRef.current.forEach((listener) => listener(transform));
+    }, []);
+
+    const onTransformChange = useCallback((listener: (transform: ViewportTransform) => void): (() => void) => {
+        transformListenersRef.current.add(listener);
+        return (): void => {
+            transformListenersRef.current.delete(listener);
+        };
+    }, []);
 
     const clientXToTime = useCallback((clientX: number): number | null => {
         const scrollContainer = getScrollContainer();
@@ -118,6 +181,57 @@ export function useWaveformViewport(
         else if (x > end) currInstance.setScroll(x - scrollContainer.clientWidth);
     }, []);
 
+    const scrollBy = useCallback((deltaX: number): number => {
+        const currInstance = runtime.instanceRef.current;
+        const scrollContainer = getScrollContainer();
+        if (!currInstance || !scrollContainer || deltaX === 0) return 0;
+
+        const maximumScroll = Math.max(0, scrollContainer.scrollWidth - scrollContainer.clientWidth);
+        const nextScroll = clamp(scrollContainer.scrollLeft + deltaX, 0, maximumScroll);
+        const actualDeltaX = nextScroll - scrollContainer.scrollLeft;
+        if (actualDeltaX !== 0) currInstance.setScroll(nextScroll);
+        return actualDeltaX;
+    }, []);
+
+    const applyZoomAndScroll = useCallback((
+        targetZoom: number,
+        targetPixelsPerSecond: number,
+        targetScroll: number,
+    ): void => {
+        const instance = runtime.instanceRef.current;
+        const scrollContainer = getScrollContainer();
+        if (!instance || !scrollContainer) return;
+
+        const zoomChanged = targetZoom !== zoom;
+        if (zoomChanged) {
+            synchronouslyAppliedZoomRef.current = {
+                zoom: targetZoom,
+                duration,
+                containerWidth,
+                pixelsPerSecond: targetPixelsPerSecond,
+            };
+        }
+
+        const maximumScroll = Math.max(0, duration * targetPixelsPerSecond - scrollContainer.clientWidth);
+        instance.zoom(targetPixelsPerSecond);
+        instance.setScroll(clamp(targetScroll, 0, maximumScroll));
+
+        if (zoomChanged) {
+            dispatch(audioActions.setAudioZoom(targetZoom));
+        }
+    }, [containerWidth, duration, zoom]);
+
+    useEffect(() => {
+        if (!ready) return undefined;
+
+        const scrollContainer = getScrollContainer();
+        if (!scrollContainer) return undefined;
+
+        scrollContainer.addEventListener('scroll', emitTransformChange);
+        emitTransformChange();
+        return () => scrollContainer.removeEventListener('scroll', emitTransformChange);
+    }, [ready]);
+
     // Container width participates in the reactive pixels-per-second calculation below.
     useLayoutEffect(() => {
         const element = containerRef.current;
@@ -138,8 +252,8 @@ export function useWaveformViewport(
         const onWheel = (event: WheelEvent): void => {
             event.preventDefault();
             const scrollContainer = getScrollContainer();
-            // Handle horizontal scroll when shift is pressed
-            if (event.shiftKey) {
+            // Support horizontal input from Shift+wheel, touchpads, and touch mice.
+            if (event.shiftKey || event.deltaX !== 0) {
                 zoomAnchorRef.current = null;
                 if (!scrollContainer) return;
                 const maximumScroll = Math.max(0, scrollContainer.scrollWidth - scrollContainer.clientWidth);
@@ -181,6 +295,15 @@ export function useWaveformViewport(
     // when it is visible; otherwise retain the current viewport's left edge.
     // Wheel zoom retain the timestamp under the pointer.
     useLayoutEffect(() => {
+        const synchronouslyAppliedZoom = synchronouslyAppliedZoomRef.current;
+        // Consume the acknowledgement even when the next commit is not the expected zoom update.
+        // A later matching update must be applied normally rather than skipping a stale acknowledgement.
+        synchronouslyAppliedZoomRef.current = null;
+        const zoomWasAppliedSynchronously =
+            synchronouslyAppliedZoom?.zoom === zoom &&
+            synchronouslyAppliedZoom.duration === duration &&
+            synchronouslyAppliedZoom.containerWidth === containerWidth &&
+            synchronouslyAppliedZoom.pixelsPerSecond === pixelsPerSecond;
         const instance = runtime.instanceRef.current;
         const scrollContainer = getScrollContainer();
         if (!instance || !scrollContainer) return;
@@ -197,18 +320,21 @@ export function useWaveformViewport(
         const currentTime = instance.getCurrentTime();
         const cursorOffset = currentTime * previousZoom - scrollContainer.scrollLeft;
         const cursorIsVisible = cursorOffset >= 0 && cursorOffset <= scrollContainer.clientWidth;
-        instance.zoom(pixelsPerSecond);
-        if (anchor) {
-            instance.setScroll(clamp(anchor.time * pixelsPerSecond - anchor.x, 0, maximumScroll));
-        } else if (containerResized) {
-            instance.setScroll(clamp(visibleStartTime * pixelsPerSecond, 0, maximumScroll));
-        } else if (pixelsPerSecond !== previousZoom) {
-            let scrollOffset = visibleStartTime * pixelsPerSecond;
-            if (cursorIsVisible) {
-                scrollOffset = currentTime * pixelsPerSecond - cursorOffset;
+        if (!zoomWasAppliedSynchronously) {
+            instance.zoom(pixelsPerSecond);
+            if (anchor) {
+                instance.setScroll(clamp(anchor.time * pixelsPerSecond - anchor.x, 0, maximumScroll));
+            } else if (containerResized) {
+                instance.setScroll(clamp(visibleStartTime * pixelsPerSecond, 0, maximumScroll));
+            } else if (pixelsPerSecond !== previousZoom) {
+                let scrollOffset = visibleStartTime * pixelsPerSecond;
+                if (cursorIsVisible) {
+                    scrollOffset = currentTime * pixelsPerSecond - cursorOffset;
+                }
+                instance.setScroll(clamp(scrollOffset, 0, maximumScroll));
             }
-            instance.setScroll(clamp(scrollOffset, 0, maximumScroll));
         }
+        emitTransformChange();
     }, [pixelsPerSecond, ready]);
 
     useLayoutEffect(() => {
@@ -221,6 +347,46 @@ export function useWaveformViewport(
         if (overlay) overlay.style.opacity = zoom > ZOOM_MIN ? '1' : '0';
     }, [ready, zoom]);
 
+    // Fits interval into the current viewport, preserving a 10%/64px safe inset wherever
+    // there is track space available.
+    useEffect(() => {
+        if (!ready || !fitIntervalRequest || duration <= 0) return;
+
+        const instance = runtime.instanceRef.current;
+        const scrollContainer = getScrollContainer();
+        if (!fitInterval || !instance || !scrollContainer || scrollContainer.clientWidth <= 0) {
+            dispatch(audioActions.completeFitAudioInterval(fitIntervalRequest));
+            return;
+        }
+
+        const start = fitInterval.start / 1000;
+        const end = fitInterval.stop === null ? duration : fitInterval.stop / 1000;
+        const intervalDuration = end - start;
+
+        const safeInset = Math.max(
+            scrollContainer.clientWidth * FIT_INTERVAL_SAFE_INSET_RATIO, FIT_INTERVAL_SAFE_INSET_PX);
+        const availableWidth = scrollContainer.clientWidth - safeInset * 2;
+
+        if (intervalDuration <= 0 || availableWidth <= 0) {
+            dispatch(audioActions.completeFitAudioInterval(fitIntervalRequest));
+            return;
+        }
+
+        const targetPixelsPerSecond = computeFitIntervalPixelsPerSecond(
+            start,
+            end,
+            duration,
+            scrollContainer.clientWidth,
+            safeInset,
+        );
+        const targetZoom = limitZoom((targetPixelsPerSecond * duration) / scrollContainer.clientWidth);
+        const actualPixelsPerSecond = computeWaveformZoom(targetZoom, duration, scrollContainer.clientWidth);
+        const startInset = Math.min(safeInset, start * actualPixelsPerSecond);
+
+        applyZoomAndScroll(targetZoom, actualPixelsPerSecond, start * actualPixelsPerSecond - startInset);
+        dispatch(audioActions.completeFitAudioInterval(fitIntervalRequest));
+    }, [ready, fitIntervalRequest, fitInterval, duration, applyZoomAndScroll]);
+
     return {
         containerRef,
         pixelsPerSecond,
@@ -229,5 +395,8 @@ export function useWaveformViewport(
         centerTimeRange,
         centerPlaybackPosition,
         ensureTimeVisible,
+        scrollBy,
+        getTransform,
+        onTransformChange,
     };
 }

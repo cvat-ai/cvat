@@ -53,7 +53,7 @@ jobs:
           key: ${{ runner.os }}-build-ui-${{ needs.search_cache.outputs.sha }}
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4.2.0
+        uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4.3.0
 
       - name: Create artifact directories
         run: |
@@ -146,14 +146,14 @@ jobs:
       matrix:
         include:
           - pattern: "test_task_data"
-            allow_cache: 'true'
+            static_cache: 'on'
           - pattern: "test_task_data"
-            allow_cache: 'no'
+            static_cache: 'off'
           - pattern: "not test_task_data"
-            allow_cache: 'no'
+            static_cache: 'off'
           - pattern: "not test_task_data"
-            allow_cache: 'true'
-    name: rest_api_testing [${{ matrix.pattern }}, cache-${{ matrix.allow_cache }}]
+            static_cache: 'on'
+    name: rest_api_testing [${{ matrix.pattern }},static_cache=${{ matrix.static_cache }}]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -197,7 +197,7 @@ jobs:
         id: run_tests
         env:
           COVERAGE_PROCESS_START: ".coveragerc"
-          CVAT_ALLOW_STATIC_CACHE: ${{ matrix.allow_cache }}
+          CVAT_ALLOW_STATIC_CACHE: ${{ matrix.static_cache }}
         run: |
           pytest tests/python/ -k "${{ matrix.pattern }}" --cov --cov-report=json --alluredir=tests/python/allure-results
           for COVERAGE_FILE in `find -name "coverage*.json" -type f -printf "%f\n"`; do mv ${COVERAGE_FILE} "${COVERAGE_FILE%%.*}_0.json"; done
@@ -207,8 +207,8 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: ${{format(
-            'coverage_results_rest_api-{0}-cache-{1}',
-            matrix.pattern, matrix.allow_cache
+            'coverage_results_rest_api-{0}-static_cache={1}',
+            matrix.pattern, matrix.static_cache
             )}}
           path: |
             coverage*.json
@@ -242,8 +242,8 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: ${{format(
-              'rest_api_container_logs-{0}-cache-{1}',
-              matrix.pattern, matrix.allow_cache
+              'rest_api_container_logs-{0}-static_cache={1}',
+              matrix.pattern, matrix.static_cache
             )}}
           path: "${{ github.workspace }}/rest_api_testing"
 
@@ -252,8 +252,8 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: ${{format(
-              'allure-results-tests-api-{0}-cache-{1}',
-              matrix.pattern,matrix.allow_cache
+              'allure-results-tests-api-{0}-static_cache={1}',
+              matrix.pattern,matrix.static_cache
             )}}
           path: tests/python/allure-results
 
@@ -391,7 +391,7 @@ jobs:
           DJANGO_SU_PASSWORD: '12qwaszx'
 
         run: |
-          docker exec -i cvat_server /bin/bash -c "echo \"from django.contrib.auth.models import User; User.objects.create_superuser('${DJANGO_SU_NAME}', '${DJANGO_SU_EMAIL}', '${DJANGO_SU_PASSWORD}')\" | python3 ~/manage.py shell"
+          docker exec -i cvat_server /bin/bash -c "echo \"from django.contrib.auth import get_user_model; get_user_model().objects.create_superuser('${DJANGO_SU_NAME}', '${DJANGO_SU_EMAIL}', '${DJANGO_SU_PASSWORD}')\" | python3 ~/manage.py shell"
           cd ./tests
           corepack enable yarn
           yarn --immutable
@@ -591,7 +591,7 @@ jobs:
           docker load --input /tmp/cvat_ui/image.tar
 
       - name: Login to Docker Hub
-        uses: docker/login-action@371161bbe7024a29a25c5e19bfcbc0804fe9ad2c # v4.5.2
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
