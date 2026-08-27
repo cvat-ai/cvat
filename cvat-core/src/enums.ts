@@ -158,6 +158,7 @@ export enum HistoryActions {
     JOINED_OBJECTS = 'Joined objects',
     SLICED_OBJECT = 'Sliced object',
     SPLITTED_TRACK = 'Splitted track',
+    SPLIT_INTERVAL = 'Split interval',
     GROUPED_OBJECTS = 'Grouped objects',
     CREATED_OBJECTS = 'Created objects',
     REMOVED_OBJECT = 'Removed object',

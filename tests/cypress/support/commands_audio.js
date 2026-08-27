@@ -99,6 +99,14 @@ Cypress.Commands.add('getAudioRegion', () => (
     cy.getAudioWaveformHost().shadow().find('[part~="region"]')
 ));
 
+Cypress.Commands.add('getAudioRegionRects', () => (
+    cy.getAudioRegion().then(($regions) => (
+        Array.from($regions)
+            .map((region) => region.getBoundingClientRect())
+            .sort((left, right) => left.left - right.left)
+    ))
+));
+
 Cypress.Commands.add('getAudioRegionHandle', (side) => (
     cy.getAudioWaveformHost().shadow().find(`[part~="region-handle-${side}"]`)
 ));
@@ -135,6 +143,16 @@ Cypress.Commands.add('audioActivateCreate', (labelName) => {
     }
     cy.get('.cvat-audio-interval-region-popover-content').contains('button', 'Draw').click();
     cy.get('.cvat-audio-interval-region-control').should('have.class', 'cvat-active-canvas-control');
+});
+
+Cypress.Commands.add('clickAudioWaveform', (x) => {
+    cy.getAudioWaveformViewport().first().then(($waveform) => {
+        const y = $waveform[0].getBoundingClientRect().height / 2;
+        cy.getAudioWaveformViewport().first().realClick({
+            position: { x, y },
+            button: 'left',
+        });
+    });
 });
 
 Cypress.Commands.add('clickRegionOnWaveform', (x) => {

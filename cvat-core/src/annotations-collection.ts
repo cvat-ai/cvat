@@ -1614,6 +1614,48 @@ export default class Collection {
         };
     }
 
+    public splitInterval(state: AudioIntervalState, position: number): number | null {
+        checkObjectType('interval state', state, null, { cls: AudioIntervalState, name: 'AudioIntervalState' });
+        checkObjectType('interval position', position, 'number', null);
+
+        const { clientID } = state;
+        const interval = clientID === null ? null : this.objects[clientID];
+        if (!(interval instanceof AudioInterval) || interval.lock || interval.pinned || interval.hidden) {
+            return null;
+        }
+
+        const currentState = interval.get();
+        const stop = currentState.stop ?? this.stopFrame + 1;
+        if (position <= currentState.start || position >= stop) {
+            return null;
+        }
+
+        const right = AudioIntervalState.create({
+            label: currentState.label,
+            start: position,
+            stop,
+            source: currentState.source,
+        });
+        right.attributes = { ...currentState.attributes };
+        right.color = currentState.color;
+
+        this.history.beginTransaction(HistoryActions.SPLIT_INTERVAL);
+        try {
+            // update current as left
+            const updatedState = interval.get();
+            updatedState.stop = position;
+            interval.save(updatedState);
+
+            const [nextClientID] = this.put([right]);
+            return nextClientID;
+        } catch (error: unknown) {
+            this.history.abortTransaction();
+            throw error;
+        } finally {
+            this.history.endTransaction();
+        }
+    }
+
     public bulkSave(states: AudioIntervalState[]): void {
         this.history.beginTransaction(HistoryActions.CHANGED_AUDIO_INTERVALS);
         try {
