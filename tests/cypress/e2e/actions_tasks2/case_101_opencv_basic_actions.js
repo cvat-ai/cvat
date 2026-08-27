@@ -84,6 +84,7 @@ context('OpenCV. Intelligent scissors. Histogram Equalization. TrackerMIL.', () 
     describe(`Testing case "${caseId}"`, () => {
         it('Load OpenCV.', () => {
             cy.interactOpenCVControlButton();
+            cy.hideTooltips(); // only appears on first interaction
             cy.get('.cvat-opencv-control-popover').within(() => {
                 cy.contains('OpenCV is loading').should('not.exist');
             });

@@ -10,8 +10,9 @@ import { intervalID } from 'audio/components/annotation-page/audio-workspace/uti
 import { ActiveControl, ColorBy, CombinedState } from 'reducers';
 import {
     audioActions,
-    copyAudioIntervalAsync,
+    changeAudioIntervalLabelAsync,
     requestPlayAudioIntervalOnce,
+    requestSetAudioPlaybackToIntervalBoundary,
     removeAudioIntervalAsync,
     updateAudioIntervalAsync,
     updateAudioIntervalsAsync,
@@ -35,6 +36,18 @@ const componentShortcuts = {
         sequences: ['l'],
         scope: ShortcutScope.OBJECTS_SIDEBAR,
     },
+    AUDIO_SWITCH_ALL_PINNED: {
+        name: 'Pin/unpin all intervals',
+        description: 'Change pinned state for all unlocked audio intervals in the side bar',
+        sequences: ['t p'],
+        scope: ShortcutScope.OBJECTS_SIDEBAR,
+    },
+    AUDIO_SWITCH_PINNED: {
+        name: 'Pin/unpin an interval',
+        description: 'Change pinned state for the active audio interval',
+        sequences: ['p'],
+        scope: ShortcutScope.OBJECTS_SIDEBAR,
+    },
     AUDIO_SWITCH_ALL_HIDDEN: {
         name: 'Hide/show all intervals',
         description: 'Change hidden state for all audio intervals in the side bar',
@@ -53,6 +66,30 @@ const componentShortcuts = {
         sequences: ['del', 'shift+del'],
         scope: ShortcutScope.OBJECTS_SIDEBAR,
     },
+    AUDIO_SET_PLAYBACK_TO_INTERVAL_START: {
+        name: 'Set playback to interval start',
+        description: 'Set the playback position to the selected interval start without starting or stopping playback',
+        sequences: ['shift+d'],
+        scope: ShortcutScope.OBJECTS_SIDEBAR,
+    },
+    AUDIO_SET_PLAYBACK_TO_INTERVAL_END: {
+        name: 'Set playback to interval end',
+        description: 'Set the playback position to the selected interval end without starting or stopping playback',
+        sequences: ['shift+f'],
+        scope: ShortcutScope.OBJECTS_SIDEBAR,
+    },
+    AUDIO_PLAY_INTERVAL_ONCE: {
+        name: 'Play interval as range',
+        description: 'Play the active audio interval once',
+        sequences: ['shift+space'],
+        scope: ShortcutScope.OBJECTS_SIDEBAR,
+    },
+    AUDIO_FIT_INTERVAL: {
+        name: 'Fit interval',
+        description: 'Fit the active audio interval into the waveform viewport',
+        sequences: ['i'],
+        scope: ShortcutScope.OBJECTS_SIDEBAR,
+    },
 };
 
 registerComponentShortcuts(componentShortcuts);
@@ -61,6 +98,7 @@ interface StateToProps {
     intervals: AudioIntervalState[];
     filtersActive: boolean;
     activeIntervalID: number | null;
+    hoveredIntervalID: number | null;
     labels: Label[];
     colorBy: ColorBy;
     activeControl: ActiveControl;
@@ -73,12 +111,15 @@ interface DispatchToProps {
     onSetHoveredInterval(clientID: number | null): void;
     onPlayIntervalOnce(clientID: number): void;
     onToggleIntervalLock(clientID: number): void;
+    onToggleIntervalPinned(clientID: number): void;
     onToggleIntervalHidden(clientID: number): void;
     onToggleIntervalsLock(clientIDs: number[], lock: boolean): void;
+    onToggleIntervalsPinned(clientIDs: number[], pinned: boolean): void;
     onToggleIntervalsHidden(clientIDs: number[], hidden: boolean): void;
-    onCopyInterval(clientID: number): void;
     onDeleteInterval(clientID: number, force?: boolean): void;
-    onChangeIntervalColor(clientID: number, color: string): void;
+    onSetPlayback(clientID: number, boundary: 'start' | 'end'): void;
+    onFitInterval(clientID: number): void;
+    onChangeLabel(clientID: number, labelID: number): void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -89,6 +130,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         intervals: player.intervals,
         filtersActive: filters.length > 0,
         activeIntervalID: player.activeIntervalID,
+        hoveredIntervalID: player.hoveredIntervalID,
         labels,
         colorBy: state.settings.shapes.colorBy,
         activeControl: state.annotation.canvas.activeControl,
@@ -111,23 +153,32 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         onToggleIntervalLock(clientID: number): void {
             dispatch(updateAudioIntervalAsync(clientID, (interval) => ({ lock: !interval.lock })));
         },
+        onToggleIntervalPinned(clientID: number): void {
+            dispatch(updateAudioIntervalAsync(clientID, (interval) => ({ pinned: !interval.pinned })));
+        },
         onToggleIntervalHidden(clientID: number): void {
             dispatch(updateAudioIntervalAsync(clientID, (interval) => ({ hidden: !interval.hidden })));
         },
         onToggleIntervalsLock(clientIDs: number[], lock: boolean): void {
             dispatch(updateAudioIntervalsAsync(clientIDs, { lock }));
         },
+        onToggleIntervalsPinned(clientIDs: number[], pinned: boolean): void {
+            dispatch(updateAudioIntervalsAsync(clientIDs, { pinned }));
+        },
         onToggleIntervalsHidden(clientIDs: number[], hidden: boolean): void {
             dispatch(updateAudioIntervalsAsync(clientIDs, { hidden }));
-        },
-        onCopyInterval(clientID: number): void {
-            dispatch(copyAudioIntervalAsync(clientID));
         },
         onDeleteInterval(clientID: number, force = false): void {
             dispatch(removeAudioIntervalAsync(clientID, force));
         },
-        onChangeIntervalColor(clientID: number, color: string): void {
-            dispatch(updateAudioIntervalAsync(clientID, { color }));
+        onSetPlayback(clientID: number, boundary: 'start' | 'end'): void {
+            dispatch(requestSetAudioPlaybackToIntervalBoundary(clientID, boundary));
+        },
+        onFitInterval(clientID: number): void {
+            dispatch(audioActions.fitAudioInterval(clientID));
+        },
+        onChangeLabel(clientID: number, labelID: number): void {
+            dispatch(changeAudioIntervalLabelAsync(clientID, labelID));
         },
     };
 }
@@ -136,12 +187,14 @@ type Props = StateToProps & DispatchToProps;
 
 function AudioRegionsListContainer(props: Props): JSX.Element {
     const {
-        intervals, filtersActive, activeIntervalID, labels, colorBy,
+        intervals, filtersActive, activeIntervalID, hoveredIntervalID, labels, colorBy,
         activeControl,
         keyMap, normalizedKeyMap,
         onSetActiveInterval, onSetHoveredInterval, onPlayIntervalOnce,
-        onToggleIntervalLock, onToggleIntervalHidden, onToggleIntervalsLock, onToggleIntervalsHidden,
-        onCopyInterval, onDeleteInterval, onChangeIntervalColor,
+        onToggleIntervalLock, onToggleIntervalPinned, onToggleIntervalHidden,
+        onToggleIntervalsLock, onToggleIntervalsPinned, onToggleIntervalsHidden,
+        onDeleteInterval, onSetPlayback, onChangeLabel,
+        onFitInterval,
     } = props;
 
     const preventDefault = (e?: KeyboardEvent): void => {
@@ -151,8 +204,11 @@ function AudioRegionsListContainer(props: Props): JSX.Element {
     const activeInterval = activeIntervalID !== null ?
         intervals.find((interval) => interval.clientID === activeIntervalID) ?? null : null;
     const allLocked = intervals.length > 0 && intervals.every((interval) => !!interval.lock);
+    const pinnableIntervals = intervals.filter((interval) => !interval.lock);
+    const allPinned = pinnableIntervals.length > 0 && pinnableIntervals.every((interval) => !!interval.pinned);
     const allHidden = intervals.length > 0 && intervals.every((interval) => !!interval.hidden);
     const allIds = intervals.map((interval) => intervalID(interval));
+    const pinnableIds = pinnableIntervals.map((interval) => intervalID(interval));
 
     const handlers: Record<keyof typeof componentShortcuts, (e?: KeyboardEvent) => void> = {
         AUDIO_SWITCH_ALL_LOCK: (e) => {
@@ -162,6 +218,14 @@ function AudioRegionsListContainer(props: Props): JSX.Element {
         AUDIO_SWITCH_LOCK: (e) => {
             preventDefault(e);
             if (activeInterval) onToggleIntervalLock(intervalID(activeInterval));
+        },
+        AUDIO_SWITCH_ALL_PINNED: (e) => {
+            preventDefault(e);
+            onToggleIntervalsPinned(pinnableIds, !allPinned);
+        },
+        AUDIO_SWITCH_PINNED: (e) => {
+            preventDefault(e);
+            if (activeInterval && !activeInterval.lock) onToggleIntervalPinned(intervalID(activeInterval));
         },
         AUDIO_SWITCH_ALL_HIDDEN: (e) => {
             preventDefault(e);
@@ -178,6 +242,26 @@ function AudioRegionsListContainer(props: Props): JSX.Element {
             if (activeInterval.lock && !force) return;
             onDeleteInterval(intervalID(activeInterval), force);
         },
+        AUDIO_SET_PLAYBACK_TO_INTERVAL_START: (e) => {
+            preventDefault(e);
+            if (!activeInterval) return;
+            onSetPlayback(intervalID(activeInterval), 'start');
+        },
+        AUDIO_SET_PLAYBACK_TO_INTERVAL_END: (e) => {
+            preventDefault(e);
+            if (!activeInterval) return;
+            onSetPlayback(intervalID(activeInterval), 'end');
+        },
+        AUDIO_PLAY_INTERVAL_ONCE: (e) => {
+            preventDefault(e);
+            if (!activeInterval || activeInterval.hidden) return;
+            onPlayIntervalOnce(intervalID(activeInterval));
+        },
+        AUDIO_FIT_INTERVAL: (e) => {
+            preventDefault(e);
+            if (!activeInterval) return;
+            onFitInterval(intervalID(activeInterval));
+        },
     };
 
     return (
@@ -187,21 +271,28 @@ function AudioRegionsListContainer(props: Props): JSX.Element {
                 intervals={intervals}
                 filtersActive={filtersActive}
                 activeIntervalID={activeIntervalID}
+                hoveredIntervalID={hoveredIntervalID}
                 labels={labels}
                 colorBy={colorBy}
                 activeControl={activeControl}
+                intervalActionShortcuts={{
+                    setPlaybackToStart: normalizedKeyMap.AUDIO_SET_PLAYBACK_TO_INTERVAL_START ?? '',
+                    playInterval: normalizedKeyMap.AUDIO_PLAY_INTERVAL_ONCE ?? '',
+                    setPlaybackToEnd: normalizedKeyMap.AUDIO_SET_PLAYBACK_TO_INTERVAL_END ?? '',
+                    switchLock: normalizedKeyMap.AUDIO_SWITCH_LOCK ?? '',
+                    switchPinned: normalizedKeyMap.AUDIO_SWITCH_PINNED ?? '',
+                    switchHidden: normalizedKeyMap.AUDIO_SWITCH_HIDDEN ?? '',
+                }}
                 switchLockAllShortcut={normalizedKeyMap.AUDIO_SWITCH_ALL_LOCK ?? ''}
+                switchPinAllShortcut={normalizedKeyMap.AUDIO_SWITCH_ALL_PINNED ?? ''}
                 switchHiddenAllShortcut={normalizedKeyMap.AUDIO_SWITCH_ALL_HIDDEN ?? ''}
                 onSetActiveInterval={onSetActiveInterval}
                 onSetHoveredInterval={onSetHoveredInterval}
                 onPlayIntervalOnce={onPlayIntervalOnce}
-                onToggleIntervalLock={onToggleIntervalLock}
-                onToggleIntervalHidden={onToggleIntervalHidden}
                 onToggleIntervalsLock={onToggleIntervalsLock}
+                onToggleIntervalsPinned={onToggleIntervalsPinned}
                 onToggleIntervalsHidden={onToggleIntervalsHidden}
-                onCopyInterval={onCopyInterval}
-                onDeleteInterval={onDeleteInterval}
-                onChangeIntervalColor={onChangeIntervalColor}
+                onChangeLabel={onChangeLabel}
             />
         </>
     );

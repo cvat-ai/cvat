@@ -16,7 +16,7 @@ classifiers = [
 ]
 requires-python = ">=3.10"
 dependencies = [
-    "cvat-sdk==2.72.1",
+    "cvat-sdk==2.74.1",
 
     "attrs>=24.2.0",
     "json-with-comments==1.2.10",

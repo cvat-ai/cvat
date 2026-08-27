@@ -34,7 +34,7 @@ import numpy as np
 from azure.core.exceptions import HttpResponseError, ServiceRequestError
 from botocore.exceptions import ClientError, EndpointConnectionError
 from django.conf import settings
-from django.contrib.auth.models import Group, User
+from django.contrib.auth.models import Group
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.management import CommandError, call_command
 from django.http import FileResponse, HttpResponse
@@ -50,7 +50,11 @@ from rq.queue import Queue as RQQueue
 from cvat.apps.dataset_manager.tests.utils import TestDir
 from cvat.apps.dataset_manager.util import current_function_name
 from cvat.apps.engine.cache import MediaCache
-from cvat.apps.engine.cloud_provider import AzureBlobCloudStorage, S3CloudStorage, Status
+from cvat.apps.engine.cloud_provider import (
+    AzureBlobCloudStorageClient,
+    S3CloudStorageClient,
+    Status,
+)
 from cvat.apps.engine.media_extractors import ValidateDimension, sort
 from cvat.apps.engine.models import (
     AnnotationGuide,
@@ -82,6 +86,7 @@ from cvat.apps.engine.tests.utils import (
     get_paginated_collection,
 )
 from cvat.apps.engine.utils import extract_with_patool
+from cvat.apps.iam.models import User
 from cvat.apps.redis_handler.serializers import RequestStatus
 from utils.dataset_manifest import ImageManifestManager, VideoManifestManager
 from utils.dataset_manifest.utils import MemOpenable, PcdReader, find_related_images
@@ -1873,7 +1878,7 @@ class _CloudStorageTestBase(ApiTestBase):
 
     @classmethod
     def _start_aws_patch(cls):
-        class MockS3(S3CloudStorage):
+        class MockS3Client(S3CloudStorageClient):
             _files = {}
 
             def get_status(self):
@@ -1902,6 +1907,11 @@ class _CloudStorageTestBase(ApiTestBase):
 
             def upload_file(self, file_path: Path, key: str | None = None, /) -> None:
                 self._files[key] = file_path.read_bytes()
+
+            def get_file_stream(self, key: str, /, *, offset: int) -> tuple[BytesIO, int]:
+                stream = io.BytesIO(self._files[key])
+                stream.seek(offset)
+                return stream, len(self._files[key])
 
             def bulk_delete(self, files: Sequence[str]) -> None:
                 for key in files:
@@ -1938,10 +1948,12 @@ class _CloudStorageTestBase(ApiTestBase):
                     "next": str(next_page_start) if next_page_start < len(entries) else None,
                 }
 
-        cls._aws_patch = mock.patch("cvat.apps.engine.cloud_provider.S3CloudStorage", MockS3)
+        cls._aws_patch = mock.patch(
+            "cvat.apps.engine.cloud_provider.S3CloudStorageClient", MockS3Client
+        )
         cls._aws_patch.start()
 
-        return MockS3
+        return MockS3Client
 
     @classmethod
     def _stop_aws_patch(cls):
@@ -2095,10 +2107,12 @@ class ProjectCloudBackupAPINoStaticChunksTestCase(ProjectBackupAPITestCase, _Clo
         if cls.MAKE_LIGHTWEIGHT_BACKUP or settings.MEDIA_CACHE_ALLOW_STATIC_CACHE:
             # should not load anything from CS anymore
 
-            def disabled(*args):
+            def disabled(*args, **kwargs):
                 raise RuntimeError("Disabled!")
 
             cls.mock_aws._download_fileobj_to_stream = disabled
+            cls.mock_aws._download_range_of_bytes = disabled
+            cls.mock_aws.get_file_stream = disabled
 
     def _compare_tasks(self, original_task, imported_task):
         super()._compare_tasks(original_task, imported_task)
@@ -8192,6 +8206,7 @@ class TaskChangeCloudStorageTestCase(_CloudStorageTestBase):
 
 class TaskBackingCloudStorageTestCase(_CloudStorageTestBase, ExportApiTestBase):
     _IMAGE_PATHS = ["test_1.jpg", "test_2.jpg", "related_images/test_1_jpg/context_1.jpg"]
+    _VIDEO_PATH = "test.mp4"
 
     @classmethod
     def setUpTestData(cls):
@@ -8199,7 +8214,7 @@ class TaskBackingCloudStorageTestCase(_CloudStorageTestBase, ExportApiTestBase):
         cls.client = APIClient()
         cls.cloud_storage_id = cls._create_cloud_storage()
 
-    def _create_local_task(self):
+    def _create_local_task(self, *, mode=TaskMode.ANNOTATION):
         data = {
             "name": "my local task #1",
             "owner_id": self.owner.id,
@@ -8208,61 +8223,74 @@ class TaskBackingCloudStorageTestCase(_CloudStorageTestBase, ExportApiTestBase):
             "labels": [{"name": "person"}],
         }
 
-        f = io.BytesIO()
-        with zipfile.ZipFile(f, "w") as zip_file:
-            for p in self._IMAGE_PATHS:
-                zip_file.writestr(p, generate_random_image_file(p)[1].getbuffer())
+        if mode == TaskMode.ANNOTATION:
+            media_file = io.BytesIO()
+            with zipfile.ZipFile(media_file, "w") as zip_file:
+                for p in self._IMAGE_PATHS:
+                    zip_file.writestr(p, generate_random_image_file(p)[1].getbuffer())
 
-        f.seek(0)
-        f.name = "test.zip"
+            media_file.seek(0)
+            media_file.name = "test.zip"
+        else:
+            self.assertEqual(mode, TaskMode.INTERPOLATION)
+            media_file = generate_video_file(self._VIDEO_PATH)[1]
 
-        image_data = {"client_files[0]": f, "image_quality": 75}
+        image_data = {"client_files[0]": media_file, "image_quality": 75}
         return self._create_task(data, image_data)
 
     def test_can_move_to_backing_cs(self):
-        # Set up task.
-        task = self._create_local_task()
-        task_id = task["id"]
+        for mode in (TaskMode.ANNOTATION, TaskMode.INTERPOLATION):
+            with self.subTest(mode=mode):
+                # Set up task.
+                task = self._create_local_task(mode=mode)
+                task_id = task["id"]
 
-        data = Data.objects.get(task__id=task_id)
-        upload_dir = data.get_upload_dirname()
+                data = Data.objects.get(task__id=task_id)
+                upload_dir = data.get_upload_dirname()
 
-        self.assertTrue(data.images.exists())
-        self.assertTrue(data.related_files.exists())
+                def local_path(rel_path):
+                    return upload_dir / rel_path
 
-        def local_path(rel_path):
-            return upload_dir / rel_path
+                def cloud_key(rel_path):
+                    return PurePath(f"data/{data.id}/raw", rel_path).as_posix()
 
-        def cloud_key(rel_path):
-            return PurePath(f"data/{data.id}/raw", rel_path).as_posix()
+                if mode == TaskMode.ANNOTATION:
+                    self.assertTrue(data.images.exists())
+                    self.assertTrue(data.related_files.exists())
+                    media = [(p, local_path(p).read_bytes()) for p in self._IMAGE_PATHS]
+                else:
+                    self.assertTrue(hasattr(data, "video"))
+                    media = [(self._VIDEO_PATH, local_path(self._VIDEO_PATH).read_bytes())]
 
-        images = [(p, local_path(p).read_bytes()) for p in self._IMAGE_PATHS]
-        self.assertTrue(local_path(Data.MANIFEST_FILENAME).exists())
+                self.assertTrue(local_path(Data.MANIFEST_FILENAME).exists())
 
-        # Move the task to backing cloud storage.
-        with self.captureOnCommitCallbacks(execute=True):
-            data.move_to_backing_cs(CloudStorage.objects.get(id=self.cloud_storage_id))
+                # Move the task to backing cloud storage.
+                with self.captureOnCommitCallbacks(execute=True):
+                    data.move_to_backing_cs(CloudStorage.objects.get(id=self.cloud_storage_id))
 
-        self.assertEqual(data.local_storage_backing_cs_id, self.cloud_storage_id)
+                self.assertEqual(data.local_storage_backing_cs_id, self.cloud_storage_id)
 
-        for image_rel_path, image_bytes in images:
-            self.assertFalse(local_path(image_rel_path).exists())
-            self.assertEqual(self.mock_aws.retrieve_file(cloud_key(image_rel_path)), image_bytes)
-        self.assertFalse(local_path("related_images").exists())
+                for media_rel_path, media_bytes in media:
+                    self.assertFalse(local_path(media_rel_path).exists())
+                    self.assertEqual(
+                        self.mock_aws.retrieve_file(cloud_key(media_rel_path)), media_bytes
+                    )
 
-        # The manifest should still be in the local FS.
-        self.assertTrue(local_path(Data.MANIFEST_FILENAME).exists())
-        self.assertFalse(self.mock_aws.file_exists(cloud_key(Data.MANIFEST_FILENAME)))
+                self.assertFalse(local_path("related_images").exists())
 
-        # Move the task back.
-        with self.captureOnCommitCallbacks(execute=True):
-            data.move_from_backing_cs()
+                # The manifest should still be in the local FS.
+                self.assertTrue(local_path(Data.MANIFEST_FILENAME).exists())
+                self.assertFalse(self.mock_aws.file_exists(cloud_key(Data.MANIFEST_FILENAME)))
 
-        self.assertEqual(data.local_storage_backing_cs_id, None)
+                # Move the task back.
+                with self.captureOnCommitCallbacks(execute=True):
+                    data.move_from_backing_cs()
 
-        for image_rel_path, image_bytes in images:
-            self.assertEqual(local_path(image_rel_path).read_bytes(), image_bytes)
-            self.assertFalse(self.mock_aws.file_exists(cloud_key(image_rel_path)))
+                self.assertEqual(data.local_storage_backing_cs_id, None)
+
+                for media_rel_path, media_bytes in media:
+                    self.assertEqual(local_path(media_rel_path).read_bytes(), media_bytes)
+                    self.assertFalse(self.mock_aws.file_exists(cloud_key(media_rel_path)))
 
     def test_creation_with_default_backing_cs(self):
         with (
@@ -8548,7 +8576,7 @@ class TaskJobLimitAPITestCase(ApiTestBase):
 
 class TestCloudStorageS3Status(SimpleTestCase):
     def setUp(self):
-        self.storage = S3CloudStorage(
+        self.storage = S3CloudStorageClient(
             bucket="test-bucket",
             access_key_id="test-key",
             secret_key="test-secret",
@@ -8587,7 +8615,7 @@ class TestCloudStorageS3Status(SimpleTestCase):
 
 class TestCloudStorageAzureStatus(SimpleTestCase):
     def setUp(self):
-        self.storage = AzureBlobCloudStorage(
+        self.storage = AzureBlobCloudStorageClient(
             container="test-container",
             account_name="test-account",
             sas_token="test-sas-token",

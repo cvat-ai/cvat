@@ -18,9 +18,11 @@ const defaultState: AudioState = {
         zoom: 1,
         volume: 1,
         loop: false,
+        fitIntervalRequest: null,
         intervals: [],
         activeIntervalID: null,
         hoveredIntervalID: null,
+        interactingIntervalID: null,
         contextMenu: {
             top: 0,
             left: 0,
@@ -142,6 +144,26 @@ export default function audioReducer(state: AudioState = defaultState, action: A
                 },
             };
         }
+        case AudioActionTypes.FIT_AUDIO_INTERVAL: {
+            return {
+                ...state,
+                player: {
+                    ...state.player,
+                    fitIntervalRequest: action.payload.request,
+                },
+            };
+        }
+        case AudioActionTypes.COMPLETE_FIT_AUDIO_INTERVAL: {
+            if (state.player.fitIntervalRequest !== action.payload.request) return state;
+
+            return {
+                ...state,
+                player: {
+                    ...state.player,
+                    fitIntervalRequest: null,
+                },
+            };
+        }
         case AudioActionTypes.SET_AUDIO_ACTIVE_INTERVAL: {
             const playIntervalOnceRequest =
                 state.player.playIntervalOnceRequest?.intervalID === action.payload.clientID ?
@@ -161,6 +183,15 @@ export default function audioReducer(state: AudioState = defaultState, action: A
                 player: {
                     ...state.player,
                     hoveredIntervalID: action.payload.clientID,
+                },
+            };
+        }
+        case AudioActionTypes.SET_AUDIO_INTERACTING_INTERVAL: {
+            return {
+                ...state,
+                player: {
+                    ...state.player,
+                    interactingIntervalID: action.payload.clientID,
                 },
             };
         }
@@ -283,6 +314,7 @@ export default function audioReducer(state: AudioState = defaultState, action: A
                     ...state.player,
                     activeIntervalID: null,
                     hoveredIntervalID: null,
+                    interactingIntervalID: null,
                     playIntervalOnceRequest: null,
                     contextMenu: defaultState.player.contextMenu,
                 },
@@ -296,6 +328,10 @@ export default function audioReducer(state: AudioState = defaultState, action: A
                 (interval) => interval.clientID === state.player.hoveredIntervalID,
             ) ?
                 state.player.hoveredIntervalID : null;
+            const interactingIntervalID = intervals.some(
+                (interval) => interval.clientID === state.player.interactingIntervalID,
+            ) ?
+                state.player.interactingIntervalID : null;
             const contextMenuClientID = intervals.some(
                 (interval) => interval.clientID === state.player.contextMenu.clientID,
             ) ?
@@ -311,6 +347,7 @@ export default function audioReducer(state: AudioState = defaultState, action: A
                     intervals,
                     activeIntervalID,
                     hoveredIntervalID,
+                    interactingIntervalID,
                     contextMenu: {
                         ...state.player.contextMenu,
                         clientID: contextMenuClientID,
