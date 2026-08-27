@@ -16,6 +16,97 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.74.0'></a>
+## \[2.74.0\] - 2026-08-26
+
+### Added
+
+- GitHub star banner that will be shown occasionally to support the CVAT repository
+  (<https://github.com/cvat-ai/cvat/pull/10959>)
+
+- Added Shift-assisted bulk boundary editing for audio regions.
+  (<https://github.com/cvat-ai/cvat/pull/11024>)
+
+- Added "Pin" function to audio intervals.
+  (<https://github.com/cvat-ai/cvat/pull/11031>)
+
+- \[Server API\] Added configurable, hierarchical quality requirements for tasks
+  and projects. Requirements can select annotation subsets with filters, inherit
+  comparison settings, and define metric thresholds and attribute comparison
+  rules. Quality reports now include per-requirement results and downloadable
+  confusion matrices.
+  (<https://github.com/cvat-ai/cvat/pull/10436>)
+
+- SDK: New CVAT SDK usage examples under `cvat-sdk/examples/`.
+  (<https://github.com/cvat-ai/cvat/pull/11049>)
+
+- Added UI for configuring hierarchical quality requirements
+  (<https://github.com/cvat-ai/cvat/pull/10704>)
+
+- Added new "Set playback to interval start/end", "Fit Interval" audio interval actions
+  (<https://github.com/cvat-ai/cvat/pull/11076>)
+
+- S3-like cloud storages can now be used as backing cloud storage for
+  video tasks
+  (<https://github.com/cvat-ai/cvat/pull/11087>)
+
+### Changed
+
+- Replaced active-layer filtering with per-layer visibility controls. All layers
+  are visible by default, and Shift-clicking a layer visibility button toggles
+  that layer and layers with lower z-orders.
+  (<https://github.com/cvat-ai/cvat/pull/10989>)
+
+- CVAT now uses its own user model instead of Django's default one.
+  Existing users, permissions, and data are unchanged
+  (<https://github.com/cvat-ai/cvat/pull/11023>)
+
+- \[Server API\] Restricted maximum attribute name length in label mapping
+  for lambda function calls
+  (<https://github.com/cvat-ai/cvat/pull/11033>)
+
+- Merged the audio workspace’s Edit and Cursor modes into one Cursor mode.
+  (<https://github.com/cvat-ai/cvat/pull/11031>)
+
+- \[Server API\] Quality comparison parameters now belong to individual
+  requirements instead of the quality settings object, and quality report
+  summaries and data use the new requirement-based format.
+  (<https://github.com/cvat-ai/cvat/pull/10436>)
+
+### Fixed
+
+- Fixed Switch label shortcut customizations being reset to defaults on page reload
+  (<https://github.com/cvat-ai/cvat/pull/10556>)
+
+- Fixed cursor position jumping after moving/resizing an audio region
+  (<https://github.com/cvat-ai/cvat/pull/11002>)
+
+- Slightly improved error messages on failed dataset imports
+  (<https://github.com/cvat-ai/cvat/pull/11029>)
+
+- Fixed the label mapping list height in the model runner dialog, allowing long lists to be scrolled
+  (<https://github.com/cvat-ai/cvat/pull/11045>)
+
+- Numerical attributes are no longer rejected by the raw label editor when their
+  minimum, maximum and step are not all distinct
+  (<https://github.com/cvat-ai/cvat/pull/11047>)
+
+- Fixed resource list pagination resetting when returning via browser navigation with a predefined filter applied
+  (<https://github.com/cvat-ai/cvat/pull/11061>)
+
+- Fixed undo and redo for outside state changes on skeleton points so they no
+  longer modify the occluded state
+  (<https://github.com/cvat-ai/cvat/pull/11063>)
+
+- Excessive memory usage when deleting projects with many tasks backed by cloud storage
+  (<https://github.com/cvat-ai/cvat/pull/11078>)
+
+- Fixed waveform minimap playback cursor position after playing and pausing audio track
+  (<https://github.com/cvat-ai/cvat/pull/11079>)
+
+- Fixed corrupted annotation chunks after interrupted or resumed downloads
+  (<https://github.com/cvat-ai/cvat/pull/11083>)
+
 <a id='changelog-2.73.0'></a>
 ## \[2.73.0\] - 2026-08-12
 
