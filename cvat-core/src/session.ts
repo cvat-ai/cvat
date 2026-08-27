@@ -140,6 +140,15 @@ function buildDuplicatedAPI(prototype): void {
                     return result;
                 },
 
+                async bulkSaveObjects(states) {
+                    const result = await PluginRegistry.apiWrapper.call(
+                        this,
+                        prototype.annotations.bulkSaveObjects,
+                        states,
+                    );
+                    return result;
+                },
+
                 async merge(objectStates) {
                     const result = await PluginRegistry.apiWrapper.call(
                         this,
@@ -454,6 +463,7 @@ export class Session {
             state: AudioIntervalState | null,
             distance: number | null,
         }>;
+        bulkSaveObjects: (states: ObjectState[]) => Promise<void>;
         bulkSave: (states: AudioIntervalState[]) => Promise<void>;
         import: (data: SerializedCollection) => Promise<void>;
         export: () => Promise<SerializedCollection>;
@@ -539,6 +549,7 @@ export class Session {
             upload: Object.getPrototypeOf(this).annotations.upload.bind(this),
             select: Object.getPrototypeOf(this).annotations.select.bind(this),
             selectInterval: Object.getPrototypeOf(this).annotations.selectInterval.bind(this),
+            bulkSaveObjects: Object.getPrototypeOf(this).annotations.bulkSaveObjects.bind(this),
             bulkSave: Object.getPrototypeOf(this).annotations.bulkSave.bind(this),
             import: Object.getPrototypeOf(this).annotations.import.bind(this),
             export: Object.getPrototypeOf(this).annotations.export.bind(this),

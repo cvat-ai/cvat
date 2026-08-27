@@ -535,6 +535,16 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
         },
     });
 
+    Object.defineProperty(Job.prototype.annotations.bulkSaveObjects, 'implementation', {
+        value: function bulkSaveObjectsImplementation(
+            this: JobClass,
+            states: Parameters<typeof JobClass.prototype.annotations.bulkSaveObjects>[0],
+        ): ReturnType<typeof JobClass.prototype.annotations.bulkSaveObjects> {
+            getCollection(this).bulkSaveObjects(states);
+            return Promise.resolve();
+        },
+    });
+
     Object.defineProperty(Job.prototype.annotations.statistics, 'implementation', {
         value: function statisticsImplementation(
             this: JobClass,
@@ -1340,6 +1350,16 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
             states: Parameters<typeof TaskClass.prototype.annotations.bulkSave>[0],
         ): ReturnType<typeof TaskClass.prototype.annotations.bulkSave> {
             getCollection(this).bulkSave(states);
+            return Promise.resolve();
+        },
+    });
+
+    Object.defineProperty(Task.prototype.annotations.bulkSaveObjects, 'implementation', {
+        value: function bulkSaveObjectsImplementation(
+            this: TaskClass,
+            states: Parameters<typeof TaskClass.prototype.annotations.bulkSaveObjects>[0],
+        ): ReturnType<typeof TaskClass.prototype.annotations.bulkSaveObjects> {
+            getCollection(this).bulkSaveObjects(states);
             return Promise.resolve();
         },
     });

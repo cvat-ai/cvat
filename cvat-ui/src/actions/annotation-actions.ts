@@ -1252,7 +1252,7 @@ async function updateObjectsLayers(
     }
 }
 
-export function updateAnnotationsAsync(statesToUpdate: ObjectState[]): ThunkAction {
+export function updateAnnotationsAsync(statesToUpdate: ObjectState[], batch = false): ThunkAction {
     return async (dispatch: ThunkDispatch): Promise<void> => {
         const { jobInstance, workspace } = receiveAnnotationsParameters();
         try {
@@ -1263,6 +1263,12 @@ export function updateAnnotationsAsync(statesToUpdate: ObjectState[]): ThunkActi
 
             const statesToSave = statesToUpdate.filter((objectState) => !objectState.isGroundTruth);
             if (!statesToSave.length) {
+                return;
+            }
+
+            if (batch) {
+                await jobInstance.annotations.bulkSaveObjects(statesToSave);
+                dispatch(fetchAnnotationsAsync());
                 return;
             }
 
@@ -1849,7 +1855,7 @@ export function restoreFrameAsync(frame: number): ThunkAction {
     };
 }
 
-export function changeHideActiveObjectAsync(hide: boolean): ThunkAction {
+export function changeHideActiveObjectAsync(hide: boolean, save = true): ThunkAction {
     return async (dispatch: ThunkDispatch, getState): Promise<void> => {
         const state = getState();
         const { instance: canvas } = state.annotation.canvas;
@@ -1859,7 +1865,7 @@ export function changeHideActiveObjectAsync(hide: boolean): ThunkAction {
             });
 
             const { objectState } = state.annotation.editing;
-            if (objectState) {
+            if (objectState && save) {
                 objectState.hidden = hide;
                 await dispatch(updateAnnotationsAsync([objectState]));
             }
