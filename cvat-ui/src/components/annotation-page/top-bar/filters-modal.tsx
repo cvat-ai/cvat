@@ -26,7 +26,13 @@ import Modal from 'antd/lib/modal';
 import Typography from 'antd/lib/typography';
 import { CombinedState } from 'reducers';
 import { Label } from 'cvat-core-wrapper';
-import { changeAnnotationsFilters, fetchAnnotationsAsync, showFilters, switchFilterFrames, switchFilterAnnotations } from 'actions/annotation-actions';
+import {
+    changeAnnotationsFilters,
+    fetchAnnotationsAsync,
+    showFilters,
+    switchFilterFrames,
+    switchFilterAnnotations,
+} from 'actions/annotation-actions';
 
 const { FieldDropdown } = AntdWidgets;
 
@@ -135,7 +141,9 @@ const getKeypointAttributesSubfields = (labels: Label[]): Record<string, any> =>
 };
 
 function FiltersModalComponent(): JSX.Element {
-    const { labels, activeFilters, visible, filterFrames, filterAnnotations } = useSelector(
+    const {
+        labels, activeFilters, visible, filterFrames, filterAnnotations,
+    } = useSelector(
         (state: CombinedState) => ({
             labels: state.annotation.job.labels,
             activeFilters: state.annotation.annotations.filters,

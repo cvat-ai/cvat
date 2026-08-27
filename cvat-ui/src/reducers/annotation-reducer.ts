@@ -404,6 +404,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             if (!hiddenByFrame.has(number)) {
                 hiddenByFrame.set(number, new Set<number>());
             }
+            const displayFilters = state.annotations.filterAnnotations ? state.annotations.filters : [];
 
             return {
                 ...state,
@@ -426,7 +427,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     highlightedConflict: null,
                     states,
                     initialized: true,
-                    renderData: getAnnotationsRenderData(states, state.annotations.filters),
+                    renderData: getAnnotationsRenderData(states, displayFilters),
                     history,
                     zLayer: {
                         ...state.annotations.zLayer,
@@ -660,6 +661,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 }
             }
             const [minZ, maxZ] = computeZRange(nextStates);
+            const displayFilters = state.annotations.filterAnnotations ? state.annotations.filters : [];
 
             return {
                 ...state,
@@ -671,7 +673,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                         max: maxZ,
                     },
                     states: nextStates,
-                    renderData: getAnnotationsRenderData(nextStates, state.annotations.filters),
+                    renderData: getAnnotationsRenderData(nextStates, displayFilters),
                     history,
                 },
             };
@@ -758,6 +760,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             const nextStates = state.annotations.states.filter(
                 (_objectState: ObjectState) => _objectState.clientID !== objectState.clientID,
             );
+            const displayFilters = state.annotations.filterAnnotations ? state.annotations.filters : [];
 
             return {
                 ...state,
@@ -766,7 +769,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     history,
                     activatedStateID: null,
                     states: nextStates,
-                    renderData: getAnnotationsRenderData(nextStates, state.annotations.filters),
+                    renderData: getAnnotationsRenderData(nextStates, displayFilters),
                 },
                 canvas: {
                     ...state.canvas,
@@ -930,13 +933,14 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             };
         }
         case AnnotationActionTypes.UPLOAD_JOB_ANNOTATIONS_SUCCESS: {
+            const displayFilters = state.annotations.filterAnnotations ? state.annotations.filters : [];
             return {
                 ...state,
                 annotations: {
                     ...state.annotations,
                     history: { undo: [], redo: [] },
                     states: [],
-                    renderData: getAnnotationsRenderData([], state.annotations.filters),
+                    renderData: getAnnotationsRenderData([], displayFilters),
                     activatedStateID: null,
                     activatedElementID: null,
                     activatedAttributeID: null,
@@ -1182,6 +1186,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 return state;
             }
             const nextStates = state.annotations.states.filter((_state) => !_state.isGroundTruth);
+            const displayFilters = state.annotations.filterAnnotations ? state.annotations.filters : [];
 
             return {
                 ...state,
@@ -1189,7 +1194,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 annotations: {
                     ...state.annotations,
                     states: nextStates,
-                    renderData: getAnnotationsRenderData(nextStates, state.annotations.filters),
+                    renderData: getAnnotationsRenderData(nextStates, displayFilters),
                     activatedStateID: null,
                     activatedAttributeID: null,
 

@@ -1534,8 +1534,13 @@ export function searchAnnotationsAsync(
                 };
             } = {
                 allowDeletedFrames: showDeletedFrames,
-                ...(generalFilters ? { generalFilters } : (filterFrames ? { annotationsFilters: filters } : {})),
             };
+
+            if (generalFilters) {
+                searchParameters.generalFilters = generalFilters;
+            } else if (filterFrames) {
+                searchParameters.annotationsFilters = filters;
+            }
 
             const frame = await sessionInstance.annotations.search(frameFrom, frameTo, searchParameters);
             if (frame !== null) {
