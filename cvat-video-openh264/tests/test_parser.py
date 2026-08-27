@@ -48,7 +48,7 @@ def test_non_constrained_baseline_profile_is_rejected_via_public_api(
         list(reader.iter_frames(chunk_path))
 
 
-def test_decoded_frame_count_mismatch_is_reported(
+def test_decoder_no_picture_is_reported(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -58,7 +58,7 @@ def test_decoded_frame_count_mismatch_is_reported(
 
     with pytest.raises(
         UnsupportedVideoChunkError,
-        match="Decoded 0 frames from 1 AVC samples",
+        match="OpenH264 produced no picture",
     ):
         list(reader.iter_frames(chunk_path))
 

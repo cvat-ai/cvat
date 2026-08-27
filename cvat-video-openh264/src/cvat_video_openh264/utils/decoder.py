@@ -103,8 +103,13 @@ class OpenH264Decoder:
                 f"OpenH264 decoder initialization failed with code {result}"
             )
 
-    def decode(self, access_unit: bytes) -> PIL.Image.Image | None:
-        """Decode one Annex-B access unit, returning a frame when one is available."""
+    def decode(self, access_unit: bytes) -> PIL.Image.Image:
+        """Decode one Annex-B access unit into a frame.
+
+        Per H.264, decoding an access unit always yields a decoded picture, and CVAT
+        chunks are constrained-baseline (no reordering), so each access unit must
+        produce exactly one frame. A missing picture is treated as a decoder failure.
+        """
 
         source = (ctypes.c_ubyte * len(access_unit)).from_buffer_copy(access_unit)
         planes = (ctypes.c_void_p * 3)()
@@ -121,7 +126,9 @@ class OpenH264Decoder:
                 f"OpenH264 failed to decode the video chunk (state 0x{state:x})"
             )
         if not buffer_info.buffer_status:
-            return None
+            raise UnsupportedVideoChunkError(
+                "OpenH264 produced no picture for a CVAT access unit"
+            )
 
         return i420_to_rgb(planes, buffer_info)
 

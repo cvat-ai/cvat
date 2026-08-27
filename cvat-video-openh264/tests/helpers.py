@@ -10,7 +10,7 @@ import PIL.Image
 import pytest
 
 import cvat_video_openh264.reader as reader
-from cvat_video_openh264 import DecoderInfo
+from cvat_video_openh264 import DecoderInfo, UnsupportedVideoChunkError
 from cvat_video_openh264.ctypes_structs import BufferInfo
 from cvat_video_openh264.utils.i420 import i420_to_rgb
 
@@ -51,9 +51,13 @@ def install_fake_decoder(
         def __init__(self, decoder_info: DecoderInfo, library: ctypes.CDLL | None = None) -> None:
             assert decoder_info.library_path == "fake-openh264"
 
-        def decode(self, access_unit: bytes) -> PIL.Image.Image | None:
+        def decode(self, access_unit: bytes) -> PIL.Image.Image:
             if captured_units is not None:
                 captured_units.append(access_unit)
+            if decode_result is None:
+                raise UnsupportedVideoChunkError(
+                    "OpenH264 produced no picture for a CVAT access unit"
+                )
             return decode_result
 
         def close(self) -> None:
