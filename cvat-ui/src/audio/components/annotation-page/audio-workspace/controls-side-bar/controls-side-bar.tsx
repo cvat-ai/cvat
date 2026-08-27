@@ -76,16 +76,16 @@ export default function AudioControlsSideBarComponent(): JSX.Element {
     return (
         <Layout.Sider className='cvat-canvas-controls-sidebar' theme='light' width={44}>
             <ObservedCursorControl
-                cursorShortkey={normalizedKeyMap.CANCEL_AUDIO ?? ''}
+                cursorShortkey={normalizedKeyMap.CANCEL_AUDIO}
                 activeControl={activeControl}
                 updateActiveControl={updateAudioActiveControl}
             />
             <hr />
             <ObservedIntervalRegionControl
                 activeControl={activeControl}
-                createRegionShortkey={normalizedKeyMap.CREATE_AUDIO_REGION ?? ''}
-                recordRegionShortkey={normalizedKeyMap.RECORD_AUDIO_REGION ?? ''}
-                extendRegionShortkey={normalizedKeyMap.EXTEND_AUDIO_REGION_FROM_LAST ?? ''}
+                createRegionShortkey={normalizedKeyMap.CREATE_AUDIO_REGION}
+                recordRegionShortkey={normalizedKeyMap.RECORD_AUDIO_REGION}
+                extendRegionShortkey={normalizedKeyMap.EXTEND_AUDIO_REGION_FROM_LAST}
                 labels={labels}
                 activeLabelId={activeLabelId}
                 onExtendRegion={onExtendRegion}
@@ -95,7 +95,7 @@ export default function AudioControlsSideBarComponent(): JSX.Element {
             <hr />
             <ObservedLoopControl
                 loop={loop}
-                loopShortcut={normalizedKeyMap.TOGGLE_AUDIO_LOOP ?? ''}
+                loopShortcut={normalizedKeyMap.TOGGLE_AUDIO_LOOP}
                 onLoopChange={onLoopChange}
             />
             <hr />
