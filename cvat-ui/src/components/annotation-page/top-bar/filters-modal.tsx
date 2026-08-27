@@ -21,11 +21,12 @@ import { DownOutlined } from '@ant-design/icons';
 import Popover from 'antd/lib/popover';
 import Menu from 'antd/lib/menu';
 import Button from 'antd/lib/button';
+import Checkbox from 'antd/lib/checkbox';
 import Modal from 'antd/lib/modal';
 import Typography from 'antd/lib/typography';
 import { CombinedState } from 'reducers';
 import { Label } from 'cvat-core-wrapper';
-import { changeAnnotationsFilters, fetchAnnotationsAsync, showFilters } from 'actions/annotation-actions';
+import { changeAnnotationsFilters, fetchAnnotationsAsync, showFilters, switchFilterFrames, switchFilterAnnotations } from 'actions/annotation-actions';
 
 const { FieldDropdown } = AntdWidgets;
 
@@ -134,11 +135,13 @@ const getKeypointAttributesSubfields = (labels: Label[]): Record<string, any> =>
 };
 
 function FiltersModalComponent(): JSX.Element {
-    const { labels, activeFilters, visible } = useSelector(
+    const { labels, activeFilters, visible, filterFrames, filterAnnotations } = useSelector(
         (state: CombinedState) => ({
             labels: state.annotation.job.labels,
             activeFilters: state.annotation.annotations.filters,
             visible: state.annotation.filtersPanelVisible,
+            filterFrames: state.annotation.annotations.filterFrames,
+            filterAnnotations: state.annotation.annotations.filterAnnotations,
         }),
         shallowEqual,
     );
@@ -347,6 +350,10 @@ function FiltersModalComponent(): JSX.Element {
     }, [visible]);
 
     const applyFilters = (filtersData: object[]): void => {
+        if (!filtersData.length) {
+            dispatch(switchFilterFrames(true));
+            dispatch(switchFilterAnnotations(true));
+        }
         dispatch(changeAnnotationsFilters(filtersData));
         dispatch(fetchAnnotationsAsync());
         dispatch(showFilters(false));
@@ -499,6 +506,26 @@ function FiltersModalComponent(): JSX.Element {
                         <DownOutlined />
                     </Button>
                 </Popover>
+            </div>
+            <div className='cvat-filters-modal-options' style={{ marginBottom: 16 }}>
+                <Checkbox
+                    checked={filterFrames}
+                    onChange={(event) => dispatch(switchFilterFrames(event.target.checked))}
+                    disabled={!isModalConfirmable()}
+                >
+                    Filter frames
+                </Checkbox>
+                <Checkbox
+                    checked={filterAnnotations}
+                    onChange={(event) => {
+                        dispatch(switchFilterAnnotations(event.target.checked));
+                        dispatch(fetchAnnotationsAsync());
+                    }}
+                    disabled={!isModalConfirmable()}
+                    style={{ marginLeft: 16 }}
+                >
+                    Filter annotations
+                </Checkbox>
             </div>
             {!!config.fields && (
                 <>

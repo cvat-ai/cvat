@@ -964,6 +964,8 @@ export interface AnnotationState {
         collapsedAll: boolean;
         states: any[];
         filters: object[];
+        filterFrames: boolean;
+        filterAnnotations: boolean;
         renderData: RenderData;
         resetGroupFlag: boolean;
         initialized: boolean;

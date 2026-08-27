@@ -150,6 +150,8 @@ const defaultState: AnnotationState = {
         collapsedAll: true,
         states: [],
         filters: [],
+        filterFrames: true,
+        filterAnnotations: true,
         renderData: {
             visibleSkeletonElements: {},
         },
@@ -292,6 +294,8 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 annotations: {
                     ...state.annotations,
                     filters,
+                    filterFrames: true,
+                    filterAnnotations: true,
                     initialized: false,
                     zLayer: {
                         ...state.annotations.zLayer,
@@ -992,6 +996,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             const { states, history } = action.payload;
             const [minZ, maxZ] = computeZRange(states);
             const currentZLayer = state.annotations.initialized ? state.annotations.zLayer.cur : maxZ;
+            const displayFilters = state.annotations.filterAnnotations ? state.annotations.filters : [];
 
             return {
                 ...state,
@@ -999,7 +1004,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     ...state.annotations,
                     activatedStateID: updateActivatedStateID(states, activatedStateID),
                     states,
-                    renderData: getAnnotationsRenderData(states, state.annotations.filters),
+                    renderData: getAnnotationsRenderData(states, displayFilters),
                     history,
                     initialized: true,
                     zLayer: {
@@ -1022,12 +1027,35 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
         }
         case AnnotationActionTypes.CHANGE_ANNOTATIONS_FILTERS: {
             const { filters } = action.payload;
+            const displayFilters = state.annotations.filterAnnotations ? filters : [];
             return {
                 ...state,
                 annotations: {
                     ...state.annotations,
                     filters,
-                    renderData: getAnnotationsRenderData(state.annotations.states, filters),
+                    renderData: getAnnotationsRenderData(state.annotations.states, displayFilters),
+                },
+            };
+        }
+        case AnnotationActionTypes.SWITCH_FILTER_FRAMES: {
+            const { checked } = action.payload;
+            return {
+                ...state,
+                annotations: {
+                    ...state.annotations,
+                    filterFrames: checked,
+                },
+            };
+        }
+        case AnnotationActionTypes.SWITCH_FILTER_ANNOTATIONS: {
+            const { checked } = action.payload;
+            const displayFilters = checked ? state.annotations.filters : [];
+            return {
+                ...state,
+                annotations: {
+                    ...state.annotations,
+                    filterAnnotations: checked,
+                    renderData: getAnnotationsRenderData(state.annotations.states, displayFilters),
                 },
             };
         }

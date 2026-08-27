@@ -34,6 +34,8 @@ import { loadAudioDataAsync } from './audio-actions';
 
 interface AnnotationsParameters {
     filters: object[];
+    filterFrames: boolean;
+    filterAnnotations: boolean;
     frame: number;
     showAllInterpolationTracks: boolean;
     showGroundTruth: boolean;
@@ -57,7 +59,7 @@ export function receiveAnnotationsParameters(): AnnotationsParameters {
     const state: CombinedState = getStore().getState();
     const {
         annotation: {
-            annotations: { filters },
+            annotations: { filters, filterFrames, filterAnnotations },
             player: {
                 frame: { number: frame },
             },
@@ -72,6 +74,8 @@ export function receiveAnnotationsParameters(): AnnotationsParameters {
 
     return {
         filters,
+        filterFrames,
+        filterAnnotations,
         frame,
         jobInstance: jobInstance as Job,
         groundTruthInstance,
@@ -142,6 +146,8 @@ export enum AnnotationActionTypes {
     UNDO_ACTION_FAILED = 'UNDO_ACTION_FAILED',
     REDO_ACTION_FAILED = 'REDO_ACTION_FAILED',
     CHANGE_ANNOTATIONS_FILTERS = 'CHANGE_ANNOTATIONS_FILTERS',
+    SWITCH_FILTER_FRAMES = 'SWITCH_FILTER_FRAMES',
+    SWITCH_FILTER_ANNOTATIONS = 'SWITCH_FILTER_ANNOTATIONS',
     CHANGE_SHOW_SEARCH_FRAMES_MODAL = 'CHANGE_SHOW_SEARCH_FRAMES_MODAL',
     FETCH_ANNOTATIONS_SUCCESS = 'FETCH_ANNOTATIONS_SUCCESS',
     FETCH_ANNOTATIONS_FAILED = 'FETCH_ANNOTATIONS_FAILED',
@@ -331,13 +337,14 @@ async function fetchAnnotations(predefinedFrame?: number): Promise<{
     history: CombinedState['annotation']['annotations']['history'];
 }> {
     const {
-        filters, frame, showAllInterpolationTracks, jobInstance,
+        filters, filterAnnotations, frame, showAllInterpolationTracks, jobInstance,
         showGroundTruth, groundTruthInstance, validationLayout,
         workspace,
     } = receiveAnnotationsParameters();
 
     const fetchFrame = typeof predefinedFrame === 'undefined' ? frame : predefinedFrame;
-    let states = await jobInstance.annotations.get(fetchFrame, showAllInterpolationTracks, filters);
+    const displayFilters = filterAnnotations ? filters : [];
+    let states = await jobInstance.annotations.get(fetchFrame, showAllInterpolationTracks, displayFilters);
 
     if (jobInstance.type !== JobType.GROUND_TRUTH && showGroundTruth && groundTruthInstance) {
         let gtFrame: number | null = fetchFrame;
@@ -347,7 +354,7 @@ async function fetchAnnotations(predefinedFrame?: number): Promise<{
         }
 
         if (gtFrame !== null) {
-            let gtStates = await groundTruthInstance.annotations.get(gtFrame, showAllInterpolationTracks, filters);
+            let gtStates = await groundTruthInstance.annotations.get(gtFrame, showAllInterpolationTracks, displayFilters);
 
             if (workspace === Workspace.REVIEW) {
                 gtStates = presentStatesAsGroundTruth(gtStates);
@@ -362,7 +369,7 @@ async function fetchAnnotations(predefinedFrame?: number): Promise<{
     }
 
     const intervals = jobInstance.dimension === DimensionType.DIMENSION_1D ?
-        await jobInstance.annotations.intervals(filters) : [];
+        await jobInstance.annotations.intervals(displayFilters) : [];
     const history = await jobInstance.actions.get();
 
     return {
@@ -400,6 +407,20 @@ export function changeAnnotationsFilters(filters: object[]): AnyAction {
     return {
         type: AnnotationActionTypes.CHANGE_ANNOTATIONS_FILTERS,
         payload: { filters },
+    };
+}
+
+export function switchFilterFrames(checked: boolean): AnyAction {
+    return {
+        type: AnnotationActionTypes.SWITCH_FILTER_FRAMES,
+        payload: { checked },
+    };
+}
+
+export function switchFilterAnnotations(checked: boolean): AnyAction {
+    return {
+        type: AnnotationActionTypes.SWITCH_FILTER_ANNOTATIONS,
+        payload: { checked },
     };
 }
 
@@ -1501,21 +1522,22 @@ export function searchAnnotationsAsync(
                     player: { showDeletedFrames },
                 },
                 annotation: {
-                    annotations: { filters },
+                    annotations: { filters, filterFrames },
                 },
             } = getState();
 
-            const frame = await sessionInstance.annotations
-                .search(
-                    frameFrom,
-                    frameTo,
-                    {
-                        allowDeletedFrames: showDeletedFrames,
-                        ...(
-                            generalFilters ? { generalFilters } : { annotationsFilters: filters }
-                        ),
-                    },
-                );
+            const searchParameters: {
+                allowDeletedFrames: boolean;
+                annotationsFilters?: object[];
+                generalFilters?: {
+                    isEmptyFrame: boolean;
+                };
+            } = {
+                allowDeletedFrames: showDeletedFrames,
+                ...(generalFilters ? { generalFilters } : (filterFrames ? { annotationsFilters: filters } : {})),
+            };
+
+            const frame = await sessionInstance.annotations.search(frameFrom, frameTo, searchParameters);
             if (frame !== null) {
                 dispatch(changeFrameAsync(frame));
             }
