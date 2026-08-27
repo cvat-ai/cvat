@@ -84,7 +84,7 @@ def test_sample_offset_arithmetic_is_checked() -> None:
         mp4.build_samples(
             sample_sizes=(8,),
             chunk_offsets=(13,),
-            sample_to_chunk=((1, 1, 1),),
+            sample_to_chunk=(mp4.SampleToChunkEntry(1, 1, 1),),
             file_size=20,
         )
 
@@ -101,5 +101,30 @@ def test_sample_size_limit_is_enforced() -> None:
     payload = bytes(4) + struct.pack(">II", mp4.MAX_SAMPLE_SIZE + 1, 1)
     box = Box(type=b"stsz", offset=0, payload_offset=0, end_offset=len(payload))
 
-    with pytest.raises(UnsupportedVideoChunkError, match="invalid AVC sample size"):
+    with pytest.raises(UnsupportedVideoChunkError, match="invalid sample size"):
+        mp4.parse_sample_sizes(io.BytesIO(payload), box)
+
+
+def test_hdlr_non_zero_version_is_rejected(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    chunk_path = tmp_path / "0.mp4"
+    chunk_path.write_bytes(make_cvat_chunk(hdlr_version=1))
+    install_fake_decoder(monkeypatch)
+
+    with pytest.raises(UnsupportedVideoChunkError, match="handler-reference box version"):
+        list(reader.iter_frames(chunk_path))
+
+
+def test_sample_size_table_trailing_data_is_rejected() -> None:
+    payload = (
+        bytes(4)
+        + struct.pack(">II", 0, 1)  # common_sample_size=0 -> table branch, sample_count=1
+        + struct.pack(">I", 8)  # one 4-byte table entry
+        + b"\x00"  # trailing byte that must be rejected
+    )
+    box = Box(type=b"stsz", offset=0, payload_offset=0, end_offset=len(payload))
+
+    with pytest.raises(UnsupportedVideoChunkError, match="unexpected trailing data"):
         mp4.parse_sample_sizes(io.BytesIO(payload), box)

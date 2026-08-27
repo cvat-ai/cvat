@@ -32,7 +32,7 @@ def make_avc_configuration(*, profile: int = 66) -> bytes:
     )
 
 
-def make_cvat_chunk(*, profile: int = 66) -> bytes:
+def make_cvat_chunk(*, profile: int = 66, hdlr_version: int = 0) -> bytes:
     """Build a one-sample CVAT-style MP4 parser fixture (constrained baseline by default)."""
 
     nal_unit = b"\x65\x88\x84"
@@ -56,7 +56,7 @@ def make_cvat_chunk(*, profile: int = 66) -> bytes:
         sample_description + sample_sizes + sample_to_chunk + chunk_offsets,
     )
     media_information = _box(b"minf", sample_table)
-    handler = _box(b"hdlr", bytes(8) + b"vide")
+    handler = _box(b"hdlr", bytes((hdlr_version,)) + bytes(7) + b"vide")
     media = _box(b"mdia", handler + media_information)
     track = _box(b"trak", media)
     movie = _box(b"moov", track)

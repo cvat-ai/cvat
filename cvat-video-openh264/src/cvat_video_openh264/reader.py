@@ -46,17 +46,12 @@ def iter_frames(
 
     chunk_path = Path(path)
 
-    try:
-        file_size = chunk_path.stat().st_size
-        file = chunk_path.open("rb")
-    except OSError as exc:
-        raise UnsupportedVideoChunkError(
-            f"Could not read video chunk {chunk_path!s}: {exc}"
-        ) from exc
+    file_size = chunk_path.stat().st_size
+    file = chunk_path.open("rb")
 
     # Parsing and access-unit streaming intentionally share this handle. Closing the
     # returned generator exits this context and releases both the decoder and the file.
-    with contextlib.closing(file):
+    with file:
         track = read_video_track_from_stream(file, file_size)
         decoder_info, library = resolve_decoder_and_library(library_path)
         decoder = OpenH264Decoder(decoder_info, library=library)

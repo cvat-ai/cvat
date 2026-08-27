@@ -9,7 +9,7 @@ from __future__ import annotations
 import itertools
 import struct
 from collections.abc import Iterator
-from typing import BinaryIO
+from typing import BinaryIO, NamedTuple
 
 from ..errors import UnsupportedVideoChunkError
 from ..models import AvcConfiguration, Box, Sample, VideoTrack
@@ -20,6 +20,12 @@ _VISUAL_SAMPLE_ENTRY_SIZE = 78
 MAX_SAMPLE_COUNT = 1_000_000
 MAX_SAMPLE_SIZE = 256 * 1024 * 1024
 ANNEX_B_START_CODE = b"\x00\x00\x00\x01"
+
+
+class SampleToChunkEntry(NamedTuple):
+    first_chunk: int
+    samples_per_chunk: int
+    sample_description_index: int
 
 
 def read_exact(file: BinaryIO, size: int) -> bytes:
@@ -37,6 +43,29 @@ def read_at(file: BinaryIO, offset: int, size: int) -> bytes:
 
     file.seek(offset)
     return read_exact(file, size)
+
+
+def read_in_box(file: BinaryIO, box: Box, rel_offset: int, size: int) -> bytes:
+    """Read a byte range relative to ``box``'s payload, bounds-checked against the box."""
+
+    if rel_offset < 0 or size < 0 or box.payload_offset + rel_offset + size > box.end_offset:
+        raise UnsupportedVideoChunkError("An MP4 box field points outside the box")
+
+    return read_at(file, box.payload_offset + rel_offset, size)
+
+
+def read_in_box_exact(file: BinaryIO, box: Box, rel_offset: int, size: int) -> bytes:
+    """Read a byte range that must consume the rest of ``box``'s payload.
+
+    Like :func:`read_in_box`, but also rejects trailing bytes past the read.
+    Use for the final read in a parser where the box has no legitimate
+    trailing data.
+    """
+
+    if box.payload_offset + rel_offset + size != box.end_offset:
+        raise UnsupportedVideoChunkError("An MP4 box has unexpected trailing data")
+
+    return read_in_box(file, box, rel_offset, size)
 
 
 def read_u32(data: bytes, offset: int = 0) -> int:
@@ -90,20 +119,22 @@ def iter_boxes(file: BinaryIO, start: int, end: int) -> Iterator[Box]:
         offset += box_size
 
 
-def find_box(file: BinaryIO, parent: Box, box_type: bytes) -> Box:
-    """Find the single child of ``parent`` with the requested type."""
+def find_one(children: list[Box], box_type: bytes) -> Box:
+    """Find the single box of ``box_type`` within an already-parsed list of children."""
 
-    matches = [
-        box
-        for box in iter_boxes(file, parent.payload_offset, parent.end_offset)
-        if box.type == box_type
-    ]
+    matches = [box for box in children if box.type == box_type]
     if len(matches) != 1:
         raise UnsupportedVideoChunkError(
             f"Expected exactly one {box_type.decode('ascii', 'replace')!r} MP4 box"
         )
 
     return matches[0]
+
+
+def find_box(file: BinaryIO, parent: Box, box_type: bytes) -> Box:
+    """Find the single child of ``parent`` with the requested type."""
+
+    return find_one(list(iter_boxes(file, parent.payload_offset, parent.end_offset)), box_type)
 
 
 def parse_avcc(data: bytes) -> AvcConfiguration:
@@ -162,7 +193,10 @@ def parse_avcc(data: bytes) -> AvcConfiguration:
 def parse_sample_description(file: BinaryIO, stsd: Box) -> AvcConfiguration:
     """Read the single supported ``avc1`` sample-description entry."""
 
-    header = read_at(file, stsd.payload_offset, 8)
+    header = read_in_box(file, stsd, 0, 8)
+    if header[0] != 0:
+        raise UnsupportedVideoChunkError("Unsupported MP4 sample-description box version")
+
     entry_count = read_u32(header, 4)
     if entry_count != 1:
         raise UnsupportedVideoChunkError("Expected exactly one MP4 sample description")
@@ -191,9 +225,18 @@ def parse_sample_description(file: BinaryIO, stsd: Box) -> AvcConfiguration:
 
 
 def parse_sample_sizes(file: BinaryIO, stsz: Box) -> tuple[int, ...]:
-    """Parse and bound-check the MP4 sample-size table."""
+    """Parse and bound-check the MP4 sample-size table.
 
-    header = read_at(file, stsz.payload_offset, 12)
+    Only the ``stsz`` box is supported. The ``stz2`` variant is intentionally
+    out of scope: CVAT's muxer emits ``stsz`` exclusively, and keeping this
+    library thin and easy to maintain outweighs supporting a box we never
+    produce.
+    """
+
+    header = read_in_box(file, stsz, 0, 12)
+    if header[0] != 0:
+        raise UnsupportedVideoChunkError("Unsupported MP4 sample-size box version")
+
     common_sample_size = read_u32(header, 4)
     sample_count = read_u32(header, 8)
 
@@ -201,91 +244,88 @@ def parse_sample_sizes(file: BinaryIO, stsz: Box) -> tuple[int, ...]:
         raise UnsupportedVideoChunkError(f"Unsupported MP4 sample count: {sample_count}")
 
     if common_sample_size:
+        if stsz.payload_offset + 12 != stsz.end_offset:
+            raise UnsupportedVideoChunkError("An MP4 box has unexpected trailing data")
         sample_sizes = (common_sample_size,) * sample_count
     else:
         table_size = sample_count * 4
-        if stsz.end_offset - (stsz.payload_offset + 12) != table_size:
-            raise UnsupportedVideoChunkError("The MP4 sample-size table is invalid")
-
-        table = read_at(file, stsz.payload_offset + 12, table_size)
+        table = read_in_box_exact(file, stsz, 12, table_size)
         sample_sizes = struct.unpack(f">{sample_count}I", table)
 
     if any(not size or size > MAX_SAMPLE_SIZE for size in sample_sizes):
-        raise UnsupportedVideoChunkError("The MP4 chunk contains an invalid AVC sample size")
+        raise UnsupportedVideoChunkError("The MP4 chunk contains an invalid sample size")
 
-    return tuple(sample_sizes)
+    return sample_sizes
 
 
 def parse_chunk_offsets(file: BinaryIO, box: Box) -> tuple[int, ...]:
     """Parse an ``stco`` or ``co64`` chunk-offset table."""
 
-    entry_count = read_u32(read_at(file, box.payload_offset, 8), 4)
+    header = read_in_box(file, box, 0, 8)
+    if header[0] != 0:
+        raise UnsupportedVideoChunkError("Unsupported MP4 chunk-offset box version")
+
+    entry_count = read_u32(header, 4)
     entry_size = 4 if box.type == b"stco" else 8
     table_size = entry_count * entry_size
 
-    if not entry_count or box.end_offset - (box.payload_offset + 8) != table_size:
+    if not entry_count:
         raise UnsupportedVideoChunkError("The MP4 chunk-offset table is invalid")
 
-    table = read_at(file, box.payload_offset + 8, table_size)
+    table = read_in_box_exact(file, box, 8, table_size)
     format_character = "I" if entry_size == 4 else "Q"
     return tuple(struct.unpack(f">{entry_count}{format_character}", table))
 
 
-def parse_sample_to_chunk(file: BinaryIO, stsc: Box) -> tuple[tuple[int, int, int], ...]:
+def parse_sample_to_chunk(file: BinaryIO, stsc: Box) -> tuple[SampleToChunkEntry, ...]:
     """Parse and validate the MP4 sample-to-chunk mapping."""
 
-    entry_count = read_u32(read_at(file, stsc.payload_offset, 8), 4)
+    header = read_in_box(file, stsc, 0, 8)
+    if header[0] != 0:
+        raise UnsupportedVideoChunkError("Unsupported MP4 sample-to-chunk box version")
+
+    entry_count = read_u32(header, 4)
     table_size = entry_count * 12
 
-    if not entry_count or stsc.end_offset - (stsc.payload_offset + 8) != table_size:
+    if not entry_count:
         raise UnsupportedVideoChunkError("The MP4 sample-to-chunk table is invalid")
 
-    table = read_at(file, stsc.payload_offset + 8, table_size)
-    entries = tuple(struct.iter_unpack(">III", table))
+    table = read_in_box_exact(file, stsc, 8, table_size)
+    entries = tuple(SampleToChunkEntry(*entry) for entry in struct.iter_unpack(">III", table))
     if (
-        entries[0][0] != 1
+        entries[0].first_chunk != 1
         or any(
-            samples_per_chunk == 0 or description_index != 1
-            for _, samples_per_chunk, description_index in entries
+            entry.samples_per_chunk == 0 or entry.sample_description_index != 1
+            for entry in entries
         )
-        or any(current[0] >= following[0] for current, following in itertools.pairwise(entries))
+        or any(
+            current.first_chunk >= following.first_chunk
+            for current, following in itertools.pairwise(entries)
+        )
     ):
         raise UnsupportedVideoChunkError("The MP4 sample-to-chunk mapping is unsupported")
 
     return entries
 
 
-def validate_composition_offsets(file: BinaryIO, stbl: Box) -> None:
-    """Reject composition offsets that would require display-order reordering."""
+def reject_composition_offsets(stbl_children: list[Box]) -> None:
+    """Reject a chunk containing a composition-offset table.
 
-    composition_offset_boxes = [
-        box for box in iter_boxes(file, stbl.payload_offset, stbl.end_offset) if box.type == b"ctts"
-    ]
-    if not composition_offset_boxes:
-        return
-    if len(composition_offset_boxes) != 1:
-        raise UnsupportedVideoChunkError("The MP4 chunk has multiple composition-offset tables")
+    Constrained-baseline H.264 has no B-frames, so presentation order equals decode
+    order and CVAT's muxer never emits a ``ctts`` box. Its presence signals a
+    non-conforming chunk.
+    """
 
-    ctts = composition_offset_boxes[0]
-    header = read_at(file, ctts.payload_offset, 8)
-    version = header[0]
-    entry_count = read_u32(header, 4)
-    table_size = entry_count * 8
-    if version not in (0, 1) or ctts.end_offset - (ctts.payload_offset + 8) != table_size:
-        raise UnsupportedVideoChunkError("The MP4 composition-offset table is invalid")
-
-    table = read_at(file, ctts.payload_offset + 8, table_size)
-    offset_format = "i" if version == 1 else "I"
-    if any(offset for _, offset in struct.iter_unpack(f">I{offset_format}", table)):
+    if any(box.type == b"ctts" for box in stbl_children):
         raise UnsupportedVideoChunkError(
-            "H.264 chunks with display-order reordering are not supported"
+            "H.264 chunks with composition-offset tables are not supported"
         )
 
 
 def build_samples(
     sample_sizes: tuple[int, ...],
     chunk_offsets: tuple[int, ...],
-    sample_to_chunk: tuple[tuple[int, int, int], ...],
+    sample_to_chunk: tuple[SampleToChunkEntry, ...],
     file_size: int,
 ) -> tuple[Sample, ...]:
     """Build checked byte ranges from the MP4 sample tables."""
@@ -297,11 +337,11 @@ def build_samples(
     for chunk_number, chunk_offset in enumerate(chunk_offsets, start=1):
         if (
             mapping_index + 1 < len(sample_to_chunk)
-            and chunk_number >= sample_to_chunk[mapping_index + 1][0]
+            and chunk_number >= sample_to_chunk[mapping_index + 1].first_chunk
         ):
             mapping_index += 1
 
-        samples_per_chunk = sample_to_chunk[mapping_index][1]
+        samples_per_chunk = sample_to_chunk[mapping_index].samples_per_chunk
         sample_offset = chunk_offset
 
         for _ in range(samples_per_chunk):
@@ -327,25 +367,25 @@ def parse_video_track(file: BinaryIO, trak: Box, file_size: int) -> VideoTrack |
 
     mdia = find_box(file, trak, b"mdia")
     hdlr = find_box(file, mdia, b"hdlr")
-    hdlr_header = read_at(file, hdlr.payload_offset, 12)
+    hdlr_header = read_in_box(file, hdlr, 0, 12)
+    if hdlr_header[0] != 0:
+        raise UnsupportedVideoChunkError("Unsupported MP4 handler-reference box version")
     if hdlr_header[8:12] != b"vide":
         return None
 
     minf = find_box(file, mdia, b"minf")
     stbl = find_box(file, minf, b"stbl")
-    stsd = find_box(file, stbl, b"stsd")
-    stsz = find_box(file, stbl, b"stsz")
-    stsc = find_box(file, stbl, b"stsc")
+    stbl_children = list(iter_boxes(file, stbl.payload_offset, stbl.end_offset))
 
-    chunk_offset_boxes = [
-        box
-        for box in iter_boxes(file, stbl.payload_offset, stbl.end_offset)
-        if box.type in (b"stco", b"co64")
-    ]
+    reject_composition_offsets(stbl_children)
+
+    stsd = find_one(stbl_children, b"stsd")
+    stsz = find_one(stbl_children, b"stsz")
+    stsc = find_one(stbl_children, b"stsc")
+    chunk_offset_boxes = [box for box in stbl_children if box.type in (b"stco", b"co64")]
     if len(chunk_offset_boxes) != 1:
         raise UnsupportedVideoChunkError("Expected one MP4 chunk-offset table")
 
-    validate_composition_offsets(file, stbl)
     sample_sizes = parse_sample_sizes(file, stsz)
     chunk_offsets = parse_chunk_offsets(file, chunk_offset_boxes[0])
     sample_to_chunk = parse_sample_to_chunk(file, stsc)
@@ -359,8 +399,7 @@ def parse_video_track(file: BinaryIO, trak: Box, file_size: int) -> VideoTrack |
 def read_video_track_from_stream(file: BinaryIO, file_size: int) -> VideoTrack:
     """Read the single supported H.264 video track from an open chunk stream."""
 
-    top_level_boxes = list(iter_boxes(file, 0, file_size))
-    moov_boxes = [box for box in top_level_boxes if box.type == b"moov"]
+    moov_boxes = [box for box in iter_boxes(file, 0, file_size) if box.type == b"moov"]
     if len(moov_boxes) != 1:
         raise UnsupportedVideoChunkError("Expected exactly one MP4 movie box")
 
