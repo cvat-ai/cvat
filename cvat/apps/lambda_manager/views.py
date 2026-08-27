@@ -695,7 +695,7 @@ class LambdaFunction:
             org_id = getattr(request.iam_context["organization"], "id", None)
             internal_ai_agent_function_call_signal.send(
                 sender=self,
-                user_id=None if org_id is not None else request.user.id,
+                user_id=request.user.id,
                 org_id=org_id,
             )
 
@@ -1287,7 +1287,7 @@ class LambdaJob:
             rq_job_meta = LambdaRQMeta.for_job(rq.get_current_job())
             internal_ai_agent_function_call_signal.send(
                 sender=function,
-                user_id=None if rq_job_meta.org_id is not None else rq_job_meta.user.id,
+                user_id=rq_job_meta.user.id,
                 org_id=rq_job_meta.org_id,
                 count=count,
             )
