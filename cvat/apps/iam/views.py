@@ -7,7 +7,8 @@ import functools
 
 from allauth.account import app_settings as allauth_settings
 from allauth.account.internal.flows.email_verification import send_verification_email_for_user
-from allauth.account.utils import complete_signup, has_verified_email
+from allauth.account.models import EmailAddress
+from allauth.account.utils import complete_signup
 from allauth.account.views import ConfirmEmailView
 from dj_rest_auth.app_settings import api_settings as dj_rest_auth_settings
 from dj_rest_auth.registration.views import RegisterView
@@ -59,7 +60,7 @@ class LoginViewEx(LoginView):
 
             # Check that user's email is verified.
             # If not, send a verification email.
-            if has_verified_email(user):
+            if EmailAddress.objects.filter(user=user, primary=True, verified=True).exists():
                 raise
 
             send_verification_email_for_user(request, user)
