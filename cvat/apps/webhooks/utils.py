@@ -10,7 +10,11 @@ from http import HTTPStatus
 from typing import TypeVar
 
 import requests
+import rq
+from crum import get_current_request, get_current_user
+from django.db import transaction
 from django.db.models import Model
+from rest_framework.serializers import BaseSerializer
 
 from cvat.apps.consensus.rq import ConsensusRequestId
 from cvat.apps.engine.models import (
@@ -23,8 +27,9 @@ from cvat.apps.engine.models import (
     RequestTarget,
     Task,
 )
-from cvat.apps.engine.rq import ExportRequestId, ImportRequestId
-from cvat.apps.engine.serializers import BasicUserSerializer
+from cvat.apps.engine.rq import BaseRQMeta, ExportRequestId, ImportRequestId
+from cvat.apps.engine.serializers import BasicUserSerializer, UserSerializer
+from cvat.apps.iam.models import User
 from cvat.apps.organizations.models import Invitation, Membership, Organization
 from cvat.apps.quality_control.rq import QualityRequestId
 from cvat.utils.http import PROXIES_FOR_UNTRUSTED_URLS, make_requests_session
@@ -90,6 +95,21 @@ REQUEST_COMPLETION_RESOURCES: tuple[tuple[str, EventGroup], ...] = (
         EventGroup(display_name="Quality report creation"),
     ),
 )
+
+
+def get_serializer(instance: Model) -> BaseSerializer | None:
+    # NOTE: @sosov this overrides events.get_serializer to provide a custom serializer for User
+    # instances
+    from cvat.apps.events.handlers import (
+        get_serializer,
+    )
+
+    context = {"request": get_current_request()}
+
+    if isinstance(instance, User):
+        return UserSerializer(instance=instance, context=context)
+
+    return get_serializer(instance=instance)
 
 
 def retrieve_instance(model: type[ModelT], pk: int) -> ModelT:
@@ -167,17 +187,29 @@ def retrieve_instance(model: type[ModelT], pk: int) -> ModelT:
     if model is Membership:
         return Membership.objects.select_related("invitation", "user").get(pk=pk)
 
+    if model is User:
+        return (
+            User.objects.select_related("profile")
+            .prefetch_related("groups", "emailaddress_set")
+            .get(pk=pk)
+        )
+
     raise ValueError(f"Unsupported model: {model}")
 
 
-def get_sender(instance) -> dict:
-    from cvat.apps.events.handlers import get_request, get_user
+def get_sender() -> dict | None:
+    http_request = get_current_request()
+    if http_request is not None:
+        user = get_current_user()
+        return BasicUserSerializer(user, context={"request": http_request}).data
 
-    user = get_user(instance)
-    if isinstance(user, dict):
-        return user
+    rq_job = rq.get_current_job()
+    if rq_job is not None:
+        user = BaseRQMeta.for_job(rq_job).user
+        if user is not None:
+            return user.to_dict()
 
-    return BasicUserSerializer(user, context={"request": get_request(instance)}).data
+    return None
 
 
 def perform_webhook_request(webhook: Webhook, payload: dict) -> tuple[int, str]:
@@ -225,3 +257,41 @@ def recreate_old_instance(instance: ModelT, dirty_fields: dict) -> ModelT:
         setattr(old_instance, field, value["saved"])
 
     return old_instance
+
+
+def send_user_update_event(user_id: int) -> None:
+    """Emit update:user for a change that happened outside the auth_user row."""
+
+    from .dispatch import batch_add_webhooks_to_queue
+    from .event_type import event_key
+    from .services import select_webhooks
+
+    resource_name = User.__name__.lower()
+
+    event_key_ = event_key(action="update", resource=resource_name)
+
+    webhooks = select_webhooks(
+        event_key=event_key_,
+        organization_id=None,
+        project_id=None,
+    )
+
+    if not webhooks:
+        return
+
+    user = retrieve_instance(model=User, pk=user_id)
+
+    webhook_payload = {
+        "event": event_key_,
+        resource_name: get_serializer(instance=user).data,
+        "sender": get_sender(),
+    }
+
+    webhook_payload_pairs = [
+        (webhook, {**webhook_payload, "webhook_id": webhook.id}) for webhook in webhooks
+    ]
+
+    transaction.on_commit(
+        lambda: batch_add_webhooks_to_queue(webhook_payload_pairs=webhook_payload_pairs),
+        robust=True,
+    )
