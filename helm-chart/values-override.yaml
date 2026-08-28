@@ -1,0 +1,47 @@
+
+## To work with cloudpirates redis
+cvat:
+  backend:
+    redisInmemHostOverride: "cvat-redis"
+
+## Move PVC from bitnami to cloudpirates
+redis:
+  persistence:
+    existingClaim: redis-data-cvat-redis-master-0
+
+traefik:
+  enabled: true
+# On macos need tunnel, todo add this to the docs.
+#  service:
+#    externalIPs:
+#      - 192.168.49.2
+
+#Q: how we configure traefik if it has enabled = false by default?
+# need to check that and update the docs.
+#A:
+# This must be added to override values.yaml file. This is a part of cvat.values.yaml BUT DOCS doesnt say that explicitly.
+#ingress:
+#  enabled: true
+#
+#traefik:
+#  enabled: true
+
+postgresql:
+  secret:
+    password: cvat
+    postgres_password: cvat
+    replication_password: cvat
+
+ingress:
+  enabled: true
+
+
+# todo add this to the docs.
+# fix for Traefik missing CRDs if you have installed chart w/o Traefik enabled and enabled it later.
+# helm upgrade will not install CRDs
+#➜  helm-chart git:(DEV-1054) ✗ helm show crds ./charts/traefik-37.3.0.tgz > /tmp/traefik-crds.yaml
+#➜  helm-chart git:(DEV-1054) ✗ kubectl apply --server-side -f /tmp/traefik-crds.yaml
+
+# Minio access
+smokescreen:
+  opts: '--allow-address=localhost:9000'

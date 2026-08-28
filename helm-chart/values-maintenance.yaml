@@ -1,0 +1,34 @@
+cvat:
+
+## Scale down redis to 0, Bitnami version
+#  redis:
+#    master:
+#      replicas: 0
+
+  frontend:
+    replicas: 0
+
+  backend:
+    initializer:
+      enabled: false
+
+    server:
+      replicas: 0
+
+    worker:
+      annotation:
+        replicas: 0
+      chunks:
+        replicas: 0
+      consensus:
+        replicas: 0
+      export:
+        replicas: 0
+      import:
+        replicas: 0
+      qualityreports:
+        replicas: 0
+      utils:
+        replicas: 0
+      webhooks:
+        replicas: 0

@@ -58,12 +58,24 @@ The name of the service account to use for backend pods
 {{- end }}
 
 {{- define "cvat.sharedBackendEnv" }}
+{{- if .Values.cvat.backend.redisInmemHostOverride }}
+- name: CVAT_REDIS_INMEM_HOST
+  value: "{{ .Values.cvat.backend.redisInmemHostOverride }}"
+{{- else }}
 {{- if .Values.redis.enabled }}
 - name: CVAT_REDIS_INMEM_HOST
+{{/*
+Service name is release-redis-master for replication architecture and if Sentinel enabled with masterService enabled. Otherwise, it is release-redis.
+*/}}
+{{- if and (eq .Values.redis.architecture "replication") (or (not .Values.redis.sentinel.enabled) .Values.redis.sentinel.masterService.enabled) }}
   value: "{{ .Release.Name }}-redis-master"
+{{- else }}
+  value: "{{ .Release.Name }}-redis"
+{{- end }}
 {{- else }}
 - name: CVAT_REDIS_INMEM_HOST
   value: "{{ .Values.redis.external.host }}"
+{{- end }}
 {{- end }}
 - name: CVAT_REDIS_INMEM_PORT
   value: "6379"
