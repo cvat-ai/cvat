@@ -474,16 +474,16 @@ The available controls depend on the requirement target:
 | General | Target metric threshold | The minimum target-metric score required to complete the requirement. |
 | General | Enabled | Includes or excludes the requirement from reports and immediate feedback. |
 | Shape comparison | IoU threshold | The minimum overlap used to distinguish matching and unmatched spatial annotations. Applies to rectangles, ellipses, polygons, masks, and polylines. |
-| Shape comparison | Point size | The relative size of the area used to match points and skeleton keypoints. |
+| Shape comparison | Point size | The relative radius of the region used to match points and skeleton keypoints. |
 | Shape comparison | Point size base | Uses either the image size or the group bounding-box size as the reference for point size. |
 | Shape comparison | Line thickness | The relative thickness of the area used to match polylines. |
-| Shape comparison | Panoptic comparison | Enables panoptic comparison for masks and polygons. |
+| Shape comparison | Panoptic comparison | Uses only the visible parts of masks and polygons for comparison. |
 | Polyline comparison | Match orientation | Checks whether matching polylines have the same direction. |
-| Polyline comparison | Line orientation threshold | The minimum directional similarity used when matching polyline orientation. |
+| Polyline comparison | Line orientation threshold | The minimum IoU gain between the original and reversed line directions required to report an orientation mismatch. |
 | Visibility comparison | Check covered annotations | Checks for partially covered polygon and mask annotations. |
 | Visibility comparison | Object visibility threshold | The minimum visible area for polygon and mask annotations. |
 | Group comparison | Match groups | Enables annotation-group matching. |
-| Group comparison | Min group match threshold | The minimum score required for groups to be considered matching. |
+| Group comparison | Min group match threshold | The minimum IoU required for groups to be considered matching. |
 | Attribute comparison | Match unspecified attributes exactly | Matches every attribute without an explicit rule using the Exact comparator. |
 | Attribute comparison | Attribute rules | Configures a comparator for individual attributes. The Levenshtein comparator also has a similarity threshold. |
 
@@ -553,12 +553,12 @@ Each shape type can have their own spatial matching details. Specifically:
 - polygons, masks - IoU. Polygons and masks are considered interchangeable,
   which means a mask can be matched with a polygon and vice versa. Polygons and masks in groups
   are merged into a single object first.
-  If the [_Match only visible parts_](#annotation-quality-settings) option is enabled,
+  If [_Panoptic comparison_](#annotation-quality-settings) is enabled,
   objects will be cut to only the visible (non-covered) parts only, which is determined by the
   shape z order.
 - skeletons - The OKS metric [from the COCO](https://cocodataset.org/#keypoints-eval)
   dataset is used. Briefly, each skeleton point gets a circular area around,
-  determined by the _object size_ (bounding box side) and _relative point size_ (_sigma_) values,
+  determined by the _object size_ (bounding box side) and _Point size_ values,
   where this point can be matched with the specified probability. If a bounding box is grouped
   with the skeleton, it is used for object size computation, otherwise a bounding box of
   visible points of the skeleton is used.
@@ -567,18 +567,17 @@ Each shape type can have their own spatial matching details. Specifically:
 
   ![Skeleton OKS](/images/quality_comparison_skeleton1.svg)
 
-  In this example, the _Sigma_ parameter is `0.05` (5%) of the bbox side.
+  In this example, the _Point size_ parameter is `0.05` (5%) of the bbox side.
   Areas shown in the green color cover ~68.2% (1 sigma) of the points,
   corresponding to each GT point. A point on the boundary of such an area will have ~88% of
   probability to be correct. The blue-colored zone contains ~95% (2 sigma) of the correct points
   for the corresponding GT point. A point on the boundary of such an area will have ~60% of
   probability to be correct. These probabilities are then averaged over the visible points of the
-  skeleton, and the resulting values are compared against the _Min similarity threshold_
-  to determine whether the skeletons are matching. _Sigma_ corresponds to one
-  from the [normal distribution](https://en.wikipedia.org/wiki/Normal_distribution).
+  skeleton to calculate their similarity. The point-size value corresponds to one standard
+  deviation in the [normal distribution](https://en.wikipedia.org/wiki/Normal_distribution).
 
 - points - The OKS metric is used for each point group annotation. Same as for skeletons,
-  _OKS Sigma_ determines relative point sizes. The _Point size base_ setting allows
+  _Point size_ determines relative point sizes. The _Point size base_ setting allows
   configuring whether points in point groups should use the group bounding box or the image space.
   Using image space for object size can be useful if you want to treat each point
   as a separate annotation.
@@ -589,7 +588,7 @@ Each shape type can have their own spatial matching details. Specifically:
 
   ![Polyline thickness and hull](/images/quality_comparison_polylines1.png)
 
-  The line thickness can be configured via the _Relative thickness_ setting.
+  The line thickness can be configured via the _Line thickness_ setting.
   The value is relative to the image side and determines a half of the hull width.
 - ellipses - IoU, described in more detail above.
 
@@ -636,7 +635,7 @@ requirement scores; use the table controls to reveal other requirement columns, 
 sort, or download the data. In a project, the **Tasks** tab provides the same
 requirement-oriented overview for tasks. Use the arrow action in a task or requirement row
 to open the related filtered list of jobs.
-  ![Requirements confusion matrix](/images/requirement-jobs-table.webp)
+  ![Requirement scores for jobs](/images/requirement-jobs-table.webp)
 
 For tasks with a configured Ground Truth job, the **Management** tab controls validation
 frames and the Ground Truth job. The **Settings** tab is available for tasks and projects
@@ -644,21 +643,18 @@ whether or not a report has been calculated.
 
 ### Problem Reporting
 
-CVAT reports 2 possible error types: errors and warnings. Errors affect the resulting quality
-scores and highlight significant problems in annotations. Warnings do not affect the resulting
-quality metrics, but they still can highlight significant problems, depending on the project
-requirements.
+CVAT reports the following error types. Each error affects the resulting quality scores and
+highlights a significant problem in annotations.
 
-| **Problem** | **Type** | **Description** |
-| - | - | - |
-| Missing annotation | error | No matching annotation found in the regular job annotations. Configured by the requirement's comparison settings. |
-| Extra annotation | error | No matching annotation found in the GT job annotations. Configured by the requirement's comparison settings. |
-| Mismatching label | error | A GT and a regular job annotations match, but their labels are different. |
-| Low overlap | warning | A GT and a regular job annotations match, but the similarity is low. Configured by the requirement's comparison settings. |
-| Mismatching direction | warning | A GT and a regular lines match, but the lines have different direction. Configured by the requirement's comparison settings. |
-| Mismatching attributes | warning | A GT and a regular annotations match, but their attributes are different. Configured by the requirement's attribute comparison settings. |
-| Mismatching groups | warning | A GT and a regular annotation groups do not match. Configured by the requirement's group matching settings. |
-| Covered annotation | warning | The visible part of a regular mask or polygon annotation is too small. The visibility is determined by arranging mask and polygon shapes on the frame in the specified _z order_. Configured by the requirement's visibility settings. |
+| **Problem** | **Description** |
+| - | - |
+| Missing annotation | No matching annotation found in the regular job annotations. Configured by the requirement's comparison settings. |
+| Extra annotation | No matching annotation found in the GT job annotations. Configured by the requirement's comparison settings. |
+| Mismatching label | A GT and a regular job annotations match, but their labels are different. |
+| Mismatching direction | A GT and a regular lines match, but the lines have different direction. Configured by the requirement's comparison settings. |
+| Mismatching attributes | A GT and a regular annotations match, but their attributes are different. Configured by the requirement's attribute comparison settings. |
+| Mismatching groups | A GT and a regular annotation groups do not match. Configured by the requirement's group matching settings. |
+| Covered annotation | The visible part of a regular mask or polygon annotation is too small. The visibility is determined by arranging mask and polygon shapes on the frame in the specified _z order_. Configured by the requirement's visibility settings. |
 
 ### Quality Reports
 
