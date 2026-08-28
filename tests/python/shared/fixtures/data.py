@@ -626,3 +626,13 @@ def access_tokens_by_username(raw_access_tokens_by_username):
 @pytest.fixture(scope="session")
 def fxt_local_audio_file_path() -> Generator[Path, None, None]:
     yield SHARE_DIR / "audio" / "sample1.mp3"
+
+@pytest.fixture(
+        scope="session",
+        autouse=False,
+        params=[True, False],
+        ids=["static_cache=on", "static_cache=off"]
+)
+def fxt_use_cache(request: pytest.FixtureRequest) -> bool:
+    # can be (un)selected with `pytest -k "static_cache=on"`
+    return request.param

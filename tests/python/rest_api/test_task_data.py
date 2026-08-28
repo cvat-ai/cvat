@@ -32,6 +32,7 @@ from pytest_cases import fixture, fixture_ref, parametrize
 import shared.utils.s3 as s3
 from rest_api._test_base import TestTasksBase
 from rest_api.utils import create_task, get_cloud_storage_content, wait_until_task_is_created
+from shared.fixtures.data import fxt_use_cache
 from shared.tasks.enums import SourceDataType
 from shared.tasks.interface import ITaskSpec
 from shared.tasks.types import ImagesTaskSpec
@@ -181,7 +182,7 @@ class TestPostTaskData:
                             assert im.height == 640 and im.width == 480
                             assert im.getexif().get(274, 1) == 1
 
-    def test_can_create_task_with_big_images(self):
+    def test_can_create_task_with_big_images(self, fxt_use_cache):
         # Checks for regressions about the issue
         # https://github.com/cvat-ai/cvat/issues/6878
         # In the case of big files (>2.5 MB by default),
@@ -201,7 +202,7 @@ class TestPostTaskData:
         task_data = {
             "client_files": [image_file],
             "image_quality": 70,
-            "use_cache": False,
+            "use_cache": fxt_use_cache,
             "use_zip_chunks": True,
         }
 
@@ -223,7 +224,7 @@ class TestPostTaskData:
             chunk_image = chunk_zip.read(infos[0])
             assert chunk_image == image_bytes
 
-    def test_can_create_task_with_exif_rotated_tif_image(self):
+    def test_can_create_task_with_exif_rotated_tif_image(self, fxt_use_cache):
         task_spec = {
             "name": f"test {self._USERNAME} to create a task with exif rotated tif image",
         }
@@ -233,7 +234,7 @@ class TestPostTaskData:
             "server_files": image_files,
             "image_quality": 70,
             "segment_size": 500,
-            "use_cache": False,
+            "use_cache": fxt_use_cache,
             "sorting_method": "natural",
         }
 
@@ -501,7 +502,7 @@ class TestPostTaskData:
     )
     def test_create_task_with_cloud_storage_files(
         self,
-        use_cache: bool,
+        use_cache,
         cloud_storage_id: int,
         cloud_storages,
         manifest: str,
@@ -1127,6 +1128,7 @@ class TestPostTaskData:
         org: str,
         cloud_storages,
         request,
+        fxt_use_cache,
     ):
         cloud_storage = cloud_storages[cloud_storage_id]
 
@@ -1140,7 +1142,7 @@ class TestPostTaskData:
             request=request,
             cloud_storage=cloud_storage,
             use_manifest=False,
-            use_cache=False,
+            use_cache=fxt_use_cache,
             server_files=["test/video/video.mkv"],
             org=org,
             data_spec_kwargs=data_spec,

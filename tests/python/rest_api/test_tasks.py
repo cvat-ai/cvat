@@ -1570,7 +1570,7 @@ class TestTaskBackups:
 
     @pytest.mark.with_external_services
     @pytest.mark.parametrize("lightweight_backup", [True, False])
-    def test_can_export_and_import_backup_task_with_cloud_storage(self, lightweight_backup):
+    def test_can_export_and_import_backup_task_with_cloud_storage(self, lightweight_backup, fxt_use_cache):
         task_spec = {
             "name": "Task with files from cloud storage",
             "labels": [
@@ -1581,7 +1581,7 @@ class TestTaskBackups:
         }
         data_spec = {
             "image_quality": 75,
-            "use_cache": False,
+            "use_cache": fxt_use_cache,
             "cloud_storage_id": 1,
             "server_files": [f"images/image_{i}.jpg" for i in range(0, 6)],
             "start_frame": 1,

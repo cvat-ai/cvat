@@ -15,6 +15,7 @@ from pytest_cases import fixture, fixture_ref, parametrize
 import shared.utils.s3 as s3
 from rest_api.utils import calc_end_frame, create_task, iter_exclude, unique
 from shared.fixtures.init import container_exec_cvat
+from shared.fixtures.data import fxt_use_cache
 from shared.tasks.enums import SourceDataType
 from shared.tasks.interface import ITaskSpec
 from shared.tasks.types import ImagesTaskSpec, VideoTaskSpec
@@ -123,8 +124,8 @@ class TestTasksBase:
         )
 
     @pytest.fixture(scope="class")
-    def fxt_uploaded_images_task(self, request: pytest.FixtureRequest) -> tuple[ITaskSpec, int]:
-        return self._image_task_fxt_base(request=request)
+    def fxt_uploaded_images_task(self, request: pytest.FixtureRequest, fxt_use_cache) -> tuple[ITaskSpec, int]:
+        return self._image_task_fxt_base(request=request, use_cache=fxt_use_cache)
 
     @pytest.fixture(scope="class")
     def fxt_uploaded_images_task_with_segments(
@@ -740,8 +741,9 @@ class TestTasksBase:
     def fxt_uploaded_video_task(
         self,
         request: pytest.FixtureRequest,
+        fxt_use_cache: bool,
     ) -> tuple[ITaskSpec, int]:
-        return self._uploaded_video_task_fxt_base(request=request)
+        return self._uploaded_video_task_fxt_base(request=request, use_cache=fxt_use_cache)
 
     @pytest.fixture(scope="class")
     def fxt_uploaded_video_task_without_manifest(
