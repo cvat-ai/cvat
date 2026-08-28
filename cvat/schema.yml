@@ -13449,6 +13449,7 @@ components:
         changed_fields:
           type: string
           readOnly: true
+          deprecated: true
         request:
           readOnly: true
         response:
