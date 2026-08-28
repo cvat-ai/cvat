@@ -147,7 +147,7 @@ jobs:
         include:
           - pattern: "test_task_data"
           - pattern: "not test_task_data"
-    name: rest_api_testing [${{ matrix.pattern }}]
+    name: "rest_api_testing [${{ matrix.pattern }}]"
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:

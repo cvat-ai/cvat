@@ -2070,7 +2070,7 @@ class TestTaskData(TestTasksBase):
         return task_spec, task_id
 
     @pytest.mark.timeout(300)
-    @pytest.mark.parametrize("use_cache", CACHE_OFF)
+    @pytest.mark.parametrize("use_cache", CACHE_ON)
     def test_all_job_chunks_available_after_honeypot_frame_change(
         self, request: pytest.FixtureRequest, use_cache
     ):

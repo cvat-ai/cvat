@@ -636,7 +636,7 @@ def _cache_param(value: bool):
         ex: @pytest.mark.parametrize("use_cache", CACHE_ON)
     '''
     state = CacheState.ON if value else CacheState.OFF
-    return pytest.param(state, id=state, marks=getattr(pytest.mark, state))
+    return pytest.param(value, id=state, marks=getattr(pytest.mark, state))
 
 CACHE_ON = [_cache_param(True)]
 CACHE_OFF = [_cache_param(False)]
