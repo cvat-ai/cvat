@@ -29,52 +29,42 @@ context('Filters functionality. Filter by source.', () => {
         sorting_method: 'lexicographical',
     };
 
+    const sourceCoordinates = {
+        manual: [100, 100],
+        auto: [300, 300],
+        'semi-auto': [500, 500],
+    };
+
     function seedAnnotations() {
-        const shapes = [{
+        const shapes = Object.entries(sourceCoordinates).map(([source, [x, y]]) => ({
             type: 'rectangle',
             occluded: false,
             outside: false,
             z_order: 0,
-            points: [100, 100, 200, 200],
+            points: [x, y, x + 100, y + 100],
             rotation: 0,
             attributes: [],
             elements: [],
             frame: 0,
             label_id: labelId,
             group: 0,
-            source: 'manual',
-        }, {
-            type: 'rectangle',
-            occluded: false,
-            outside: false,
-            z_order: 0,
-            points: [300, 300, 400, 400],
-            rotation: 0,
-            attributes: [],
-            elements: [],
-            frame: 0,
-            label_id: labelId,
-            group: 0,
-            source: 'auto',
-        }, {
-            type: 'rectangle',
-            occluded: false,
-            outside: false,
-            z_order: 0,
-            points: [500, 500, 600, 600],
-            rotation: 0,
-            attributes: [],
-            elements: [],
-            frame: 0,
-            label_id: labelId,
-            group: 0,
-            source: 'semi-auto',
-        }];
+            source,
+        }));
 
         return cy.window().then((window) => window.cvat.server.request(`/api/jobs/${jobId}/annotations`, {
             method: 'PUT',
             data: { shapes, tracks: [], tags: [] },
         }));
+    }
+
+    function assertVisibleObjects(amount, source = null) {
+        cy.get('.cvat_canvas_shape').should('have.length', amount);
+        cy.get('.cvat-objects-sidebar-state-item').should('have.length', amount);
+
+        if (source) {
+            cy.get('.cvat_canvas_shape').trigger('mousemove');
+            cy.get('#cvat_canvas_text_content').should('contain.text', `(${source})`);
+        }
     }
 
     before(() => {
@@ -89,24 +79,27 @@ context('Filters functionality. Filter by source.', () => {
             cy.visit(`/tasks/${taskId}/jobs/${jobId}`);
             cy.wait('@getJobLabels').then((interception) => {
                 [{ id: labelId }] = interception.response.body.results;
-            }).then(() => seedAnnotations());
+            }).then(() => seedAnnotations()).then(() => {
+                cy.reload();
+                cy.get('.cvat-spinner').should('not.exist');
+                cy.get('.cvat-canvas-container').should('exist').and('be.visible');
+                assertVisibleObjects(3);
+            });
         });
     });
 
-    beforeEach(() => {
-        cy.visit(`/tasks/${taskId}/jobs/${jobId}`);
-        cy.get('.cvat-canvas-container').should('exist').and('be.visible');
-    });
-
     describe('Testing filter by source', () => {
+        afterEach(() => {
+            cy.clearFilters();
+            assertVisibleObjects(3);
+        });
+
         it('Filter: source == "auto". Only the auto-sourced shape exists.', () => {
             cy.addFiltersRule(0);
             cy.setFilter({
                 groupIndex: 0, ruleIndex: 0, field: 'Source', operator: '==', value: 'auto', submit: true,
             });
-            cy.get('.cvat_canvas_shape').should('have.length', 1);
-            cy.get('.cvat-objects-sidebar-state-item').should('have.length', 1);
-            cy.clearFilters();
+            assertVisibleObjects(1, 'auto');
         });
 
         it('Filter: source == "manual". Only the manual-sourced shape exists.', () => {
@@ -114,9 +107,7 @@ context('Filters functionality. Filter by source.', () => {
             cy.setFilter({
                 groupIndex: 0, ruleIndex: 0, field: 'Source', operator: '==', value: 'manual', submit: true,
             });
-            cy.get('.cvat_canvas_shape').should('have.length', 1);
-            cy.get('.cvat-objects-sidebar-state-item').should('have.length', 1);
-            cy.clearFilters();
+            assertVisibleObjects(1, 'manual');
         });
 
         it('Filter: source == "semi-auto". Only the semi-auto-sourced shape exists.', () => {
@@ -124,9 +115,7 @@ context('Filters functionality. Filter by source.', () => {
             cy.setFilter({
                 groupIndex: 0, ruleIndex: 0, field: 'Source', operator: '==', value: 'semi-auto', submit: true,
             });
-            cy.get('.cvat_canvas_shape').should('have.length', 1);
-            cy.get('.cvat-objects-sidebar-state-item').should('have.length', 1);
-            cy.clearFilters();
+            assertVisibleObjects(1, 'semi-auto');
         });
     });
 
