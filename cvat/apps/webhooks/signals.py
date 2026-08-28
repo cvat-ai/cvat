@@ -120,7 +120,7 @@ def post_save_resource_event(
 
     _webhook_payload = {
         resource_name: get_serializer(instance=retrieved_instance).data,
-        "sender": utils.get_sender(instance=instance),
+        "sender": utils.get_sender(),
     }
 
     webhook_payload_pairs = [
@@ -192,7 +192,7 @@ def post_delete_resource_event(sender: type[ModelT], instance: ModelT, **kwargs)
     webhook_payload = {
         "event": event_key_,
         resource_name: deleted_instance_snapshot,
-        "sender": utils.get_sender(instance=instance),
+        "sender": utils.get_sender(),
     }
 
     webhook_payload_pairs = [
