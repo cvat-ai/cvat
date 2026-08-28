@@ -10,6 +10,10 @@ class SourceDataType(Enum):
     video = "video"
 
 
-class CacheState(StrEnum):
-    ON = "static_cache_on"
-    OFF = "static_cache_off"
+class CacheMode(Enum):
+    DYNAMIC = "dynamic_cache"
+    STATIC = "static_cache"
+
+    @property
+    def use_cache(self) -> bool:
+        return self is CacheMode.DYNAMIC

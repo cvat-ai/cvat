@@ -12,7 +12,7 @@ from pathlib import Path
 import pytest
 
 from shared.utils.config import ASSETS_DIR, SHARE_DIR
-from shared.tasks.enums import CacheState
+from shared.tasks.enums import CacheMode
 
 
 class Container:
@@ -630,21 +630,20 @@ def fxt_local_audio_file_path() -> Generator[Path, None, None]:
 
 
 
-def _cache_param(value: bool):
+def _cache_param(mode: CacheMode):
     '''
         For explicit test-level use with @pytest.mark.parametrize
         ex: @pytest.mark.parametrize("use_cache", CACHE_ON)
     '''
-    state = CacheState.ON if value else CacheState.OFF
-    return pytest.param(value, id=state, marks=getattr(pytest.mark, state))
+    return pytest.param(mode.use_cache, id=mode.value, marks=getattr(pytest.mark, mode.value))
 
-CACHE_ON = [_cache_param(True)]
-CACHE_OFF = [_cache_param(False)]
+DYNAMIC_CACHE = [_cache_param(CacheMode.DYNAMIC)]
+STATIC_CACHE = [_cache_param(CacheMode.STATIC)]
 
 @pytest.fixture(
         scope="session",
         autouse=False,
-        params=CACHE_ON + CACHE_OFF,
+        params=DYNAMIC_CACHE + STATIC_CACHE,
 )
 def fxt_use_cache(request: pytest.FixtureRequest) -> bool:
     '''Parametrize by both cache values'''
