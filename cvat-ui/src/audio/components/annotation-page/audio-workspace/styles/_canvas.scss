@@ -94,6 +94,10 @@
             overflow: hidden;
         }
 
+        *::part(cvat-audio-region-resize-handles-hidden) {
+            opacity: 0;
+        }
+
         &.cvat-audio-waveform-interaction-drag {
             cursor: grabbing;
 
@@ -104,7 +108,8 @@
             }
         }
 
-        &.cvat-audio-waveform-interaction-resize {
+        &.cvat-audio-waveform-interaction-resize,
+        &.cvat-audio-waveform-bulk-resize {
             cursor: ew-resize;
 
             *::part(wrapper),

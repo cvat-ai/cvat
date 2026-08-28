@@ -53,7 +53,7 @@ function AudioSaveAnnotationsButton(): JSX.Element {
     return (
         <>
             <GlobalHotKeys keyMap={subKeyMap(componentShortcuts, keyMap)} handlers={handlers} />
-            <CVATTooltip overlay={`Save current changes ${normKeyMap.SAVE_JOB ?? ''}`}>
+            <CVATTooltip overlay={`Save current changes ${normKeyMap.SAVE_JOB}`}>
                 <Button
                     type='link'
                     onClick={trySave}
