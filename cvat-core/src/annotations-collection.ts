@@ -208,6 +208,8 @@ export default class Collection {
                 if (!updated) return;
                 if (property === 'points') {
                     actions.add(HistoryActions.CHANGED_POINTS);
+                } else if (property === 'attributes') {
+                    actions.add(HistoryActions.CHANGED_ATTRIBUTES);
                 } else if (property === 'label') {
                     actions.add(HistoryActions.CHANGED_LABEL);
                 } else if (property === 'lock') {
@@ -231,6 +233,7 @@ export default class Collection {
                 throw new ArgumentError(`Object with client ID ${state.clientID} cannot be updated`);
             }
             if (object instanceof Tag && ![
+                HistoryActions.CHANGED_ATTRIBUTES,
                 HistoryActions.CHANGED_LABEL,
                 HistoryActions.CHANGED_LOCK,
             ].includes(action)) {

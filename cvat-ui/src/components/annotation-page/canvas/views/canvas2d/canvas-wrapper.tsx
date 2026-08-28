@@ -13,7 +13,7 @@ import Select from 'antd/lib/select';
 import Spin from 'antd/lib/spin';
 import Popover from 'antd/lib/popover';
 import Icon, {
-    CopyOutlined, DeleteOutlined, GroupOutlined, LockFilled, PushpinFilled, PushpinOutlined,
+    CopyOutlined, DeleteOutlined, FormOutlined, GroupOutlined, LockFilled, PushpinFilled, PushpinOutlined,
     UngroupOutlined, UnlockOutlined, UpOutlined,
 } from '@ant-design/icons';
 import notification from 'antd/lib/notification';
@@ -87,6 +87,7 @@ import {
     isMultiSelectObjectModifierPressed,
     multiSelectModifierFromKeyMap,
     multiSelectObjectModifierFromKeyMap,
+    getSelectionAttributeState,
     getSelectedStates,
     getSelectionGroupState,
     getSelectionToggleState,
@@ -94,6 +95,7 @@ import {
 } from 'utils/multi-selection';
 import ImageSetupsContent from './image-setups-content';
 import CanvasTipsComponent from './canvas-hints';
+import SelectionAttributesEditor from './selection-attributes-editor';
 
 const cvat = getCore();
 const MAX_DISTANCE_TO_OPEN_SHAPE = 50;
@@ -479,11 +481,13 @@ interface State {
         left: number;
         top: number;
     } | null;
+    selectionAttributesVisible: boolean;
 }
 
 class CanvasWrapperComponent extends React.PureComponent<Props, State> {
     public state: State = {
         selectionMenuPosition: null,
+        selectionAttributesVisible: false,
     };
 
     private debouncedUpdate = debounce(this.updateCanvas.bind(this), 250, { leading: true });
@@ -650,8 +654,11 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
             // reflect the multi-selection (shift + left-mousedown) on the canvas:
             // drives the persistent selection visual and enables live group drag
             canvasInstance.setSelectedObjects(selectedStatesID);
-            if (this.state.selectionMenuPosition) {
-                this.setState({ selectionMenuPosition: null });
+            if (this.state.selectionMenuPosition || this.state.selectionAttributesVisible) {
+                this.setState({
+                    selectionMenuPosition: null,
+                    selectionAttributesVisible: false,
+                });
             }
         }
 
@@ -866,6 +873,30 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
         const { onGroupSelection } = this.props;
         onGroupSelection(reset);
         this.setState({ selectionMenuPosition: null });
+    };
+
+    private onOpenSelectedObjectsAttributes = (): void => {
+        this.setState({
+            selectionMenuPosition: null,
+            selectionAttributesVisible: true,
+        });
+    };
+
+    private onCloseSelectedObjectsAttributes = (): void => {
+        this.setState({ selectionAttributesVisible: false });
+    };
+
+    private onApplySelectedObjectsAttributes = async (values: Record<number, string>): Promise<void> => {
+        const {
+            annotations, selectedStatesID, onUpdateAnnotationsBatch,
+        } = this.props;
+        const selectedStates = getSelectedStates(annotations, selectedStatesID);
+        const statesToUpdate = selectedStates.filter((state: ObjectState): boolean => (
+            Object.entries(values).some(([attributeID, value]) => state.attributes[+attributeID] !== value)
+        ));
+        for (const state of statesToUpdate) state.attributes = values;
+        if (statesToUpdate.length) await onUpdateAnnotationsBatch(statesToUpdate);
+        this.setState({ selectionAttributesVisible: false });
     };
 
     private onCanvasWarningOccurrence = (event: any): void => {
@@ -1434,8 +1465,9 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
             onExpandObject,
         } = this.props;
         const { canvasInstance } = this.props as { canvasInstance: Canvas };
-        const { selectionMenuPosition } = this.state;
+        const { selectionMenuPosition, selectionAttributesVisible } = this.state;
         const selectedStates = getSelectedStates(annotations, selectedStatesID);
+        const selectionAttributeState = getSelectionAttributeState(selectedStates);
         const applicableLabels = labels.filter((label: Label): boolean => selectedStates.every(
             (state: ObjectState): boolean => filterApplicableLabels(state, labels).some(
                 (applicableLabel: Label): boolean => applicableLabel.id === label.id,
@@ -1580,6 +1612,20 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
                                     ),
                                 },
                                 {
+                                    key: 'edit-attributes',
+                                    label: (
+                                        <Button
+                                            type='link'
+                                            disabled={!selectionAttributeState.enabled}
+                                            title={selectionAttributeState.disabledReason || undefined}
+                                            icon={<FormOutlined />}
+                                            onClick={this.onOpenSelectedObjectsAttributes}
+                                        >
+                                            Edit attributes
+                                        </Button>
+                                    ),
+                                },
+                                {
                                     key: 'switch-lock',
                                     label: (
                                         <Button
@@ -1676,6 +1722,14 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
                         />
                     </Dropdown>
                 )}
+
+                <SelectionAttributesEditor
+                    open={selectionAttributesVisible}
+                    states={selectedStates}
+                    attributes={selectionAttributeState.attributes}
+                    onApply={this.onApplySelectedObjectsAttributes}
+                    onClose={this.onCloseSelectedObjectsAttributes}
+                />
 
                 <Popover
                     destroyTooltipOnHide

@@ -3,7 +3,9 @@
 // SPDX-License-Identifier: MIT
 
 import { KeyMap } from 'utils/mousetrap-react';
-import { ObjectState, ObjectType, ShapeType } from 'cvat-core-wrapper';
+import {
+    Attribute, ObjectState, ObjectType, ShapeType,
+} from 'cvat-core-wrapper';
 
 type MultiSelectModifier = 'shift' | 'ctrl' | 'alt' | 'meta';
 type ModifierEvent = Pick<MouseEvent, 'shiftKey' | 'ctrlKey' | 'altKey' | 'metaKey'>;
@@ -18,6 +20,12 @@ interface SelectionGroupState {
     canGroup: boolean;
     canUngroup: boolean;
     alreadyInSameGroup: boolean;
+}
+
+interface SelectionAttributeState {
+    enabled: boolean;
+    disabledReason: string | null;
+    attributes: Attribute[];
 }
 
 const LOCK_DISABLED_REASON = 'Ground truth objects cannot be locked or unlocked';
@@ -70,6 +78,27 @@ export function getSelectionGroupState(states: ObjectState[]): SelectionGroupSta
         canGroup: states.length > 1 && !alreadyInSameGroup,
         canUngroup: states.some((state: ObjectState): boolean => !!state.group?.id),
         alreadyInSameGroup,
+    };
+}
+
+export function getSelectionAttributeState(states: ObjectState[]): SelectionAttributeState {
+    let disabledReason: string | null = null;
+    if (!states.length) {
+        disabledReason = 'Select at least one object';
+    } else if (states.some((state: ObjectState): boolean => state.lock)) {
+        disabledReason = 'Attributes cannot be changed for locked objects';
+    } else if (states.some((state: ObjectState): boolean => state.isGroundTruth)) {
+        disabledReason = 'Ground truth objects cannot be updated';
+    } else if (states.some((state: ObjectState): boolean => state.label.id !== states[0].label.id)) {
+        disabledReason = 'Selected objects have different labels';
+    } else if (!states[0].label.attributes.length) {
+        disabledReason = 'The selected label has no attributes';
+    }
+
+    return {
+        enabled: disabledReason === null,
+        disabledReason,
+        attributes: disabledReason === null ? [...states[0].label.attributes] : [],
     };
 }
 
