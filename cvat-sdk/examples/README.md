@@ -42,8 +42,8 @@ Conventions:
 | `job_assign.py` | Round-robin assign unassigned jobs; CSV report | `--task-id`, `--org` or `--org-id`, `--assignees` or `--search` |
 | `job_workflow.py` | Batch-advance completed jobs to the next stage | `--from-stage`, `--task-id` |
 | `cloud_storage_register.py` | Attach an S3-compatible bucket to CVAT | `--bucket`, `--access-key`, `--secret-key`, `--endpoint-url`, `--page-size`, `--cleanup` |
-| `webhook_register.py` | Register a webhook for task events; ping it and summarize deliveries | `--project-id` or `--org`, `--target-url`, `--secret`, `--events`, `--cleanup` |
-| `webhook_monitor.py` | Receive webhook deliveries locally and aggregate task status changes | `--project-id`, `--public-url`, `--port`, `--secret`, `--max-events`, `--cleanup` |
+| `register_webhook.py` | Register a project- or organization-scoped webhook, ping it, and summarize deliveries | `--project-id` or `--org`, `--target-url`, `--secret`, `--events`, `--content-type`, `--cleanup` |
+| `webhook_resource_monitoring.py` | Receive webhook deliveries locally and tally `create:task` events | `--project-id`, `--public-url`, `--port`, `--secret`, `--max-events`, `--cleanup` |
 
 Every recipe additionally takes `--host` and `--token`. Wrap values that
 contain URL punctuation in single quotes, e.g. `--host 'https://app.cvat.ai'`.

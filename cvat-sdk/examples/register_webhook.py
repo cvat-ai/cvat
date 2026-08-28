@@ -2,27 +2,25 @@
 #
 # SPDX-License-Identifier: MIT
 
-"""Register a webhook for task events on a project or an organization, send a
-test ping, and summarize the webhook's recorded deliveries.
+"""Register a project- or organization-scoped webhook, send a test ping, and
+verify the ping shows up in the webhook's recorded deliveries.
 
 The server signs every delivery with the webhook secret (HMAC-SHA256 in the
 'X-Signature-256' header), so the receiver can verify the payload really came
-from CVAT — see webhook_monitor.py for the receiving side.
+from CVAT — see webhook_resource_monitoring.py for the receiving side.
 
 Steps:
   1. Create the webhook: scoped to a project (--project-id) or to a whole
-     organization (--org). Low-level API: there is no high-level proxy for
-     webhooks yet.
+     organization (--org).
   2. Send a ping — the server POSTs a test payload to --target-url and records
      the delivery.
-  3. List all recorded deliveries with get_paginated_collection() and print
-     how many there are per HTTP status.
+  3. List all recorded deliveries and print how many there are per HTTP status.
   4. Optionally delete the webhook (--cleanup).
 
-Usage (run ``python webhook_register.py --help`` for the full list of options):
-  python webhook_register.py --host 'https://app.cvat.ai' --token '<your token>' \\
+Usage (run ``python register_webhook.py --help`` for the full list of options):
+  python register_webhook.py --host 'https://app.cvat.ai' --token '<your token>' \\
       --project-id 7 --target-url 'https://ci.example.com/cvat-events' --secret 'w3bh00k'
-  python webhook_register.py --host 'https://app.cvat.ai' --token '<your token>' \\
+  python register_webhook.py --host 'https://app.cvat.ai' --token '<your token>' \\
       --org 'annotators' --target-url 'https://ci.example.com/cvat-events' --secret 'w3bh00k'
 """
 
@@ -60,6 +58,12 @@ def parse_args() -> argparse.Namespace:
         help="events to subscribe to (default: %(default)s)",
     )
     parser.add_argument(
+        "--content-type",
+        default="application/json",
+        choices=["application/json", "application/x-www-form-urlencoded"],
+        help="payload content type the server sends (default: %(default)s)",
+    )
+    parser.add_argument(
         "--cleanup", action="store_true", help="delete the created webhook at the end"
     )
     return parser.parse_args()
@@ -76,7 +80,7 @@ def main() -> None:
                 target_url=args.target_url,
                 type=models.WebhookType("organization"),
                 events=[models.EventsEnum(event) for event in args.events],
-                content_type=models.WebhookContentType("application/json"),
+                content_type=models.WebhookContentType(args.content_type),
                 secret=args.secret,
             )
             scope_label = f"organization {args.org!r}"
@@ -86,7 +90,7 @@ def main() -> None:
                 target_url=args.target_url,
                 type=models.WebhookType("project"),
                 events=[models.EventsEnum(event) for event in args.events],
-                content_type=models.WebhookContentType("application/json"),
+                content_type=models.WebhookContentType(args.content_type),
                 secret=args.secret,
                 project_id=args.project_id,
             )
@@ -101,8 +105,7 @@ def main() -> None:
             print(f"Ping delivery: HTTP {delivery.status_code or 'failed'}")
 
             # A busy webhook accumulates pages of deliveries; the list endpoint
-            # is paginated like every list in the API, and
-            # get_paginated_collection() walks all the pages for you.
+            # is paginated like every list in the API, so walk all the pages.
             deliveries = get_paginated_collection(
                 webhooks_api.list_deliveries_endpoint, id=webhook.id
             )

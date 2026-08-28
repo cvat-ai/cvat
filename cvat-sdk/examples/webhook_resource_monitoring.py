@@ -2,9 +2,9 @@
 #
 # SPDX-License-Identifier: MIT
 
-"""Monitor task status changes in a project live: register a webhook pointing
-at this machine, receive the deliveries with a local HTTP server, and
-aggregate the task status changes.
+"""Watch a project for newly created tasks via a webhook: register the webhook
+pointing at this machine, receive the deliveries with a local HTTP server, and
+tally each 'create:task' event.
 
 The server signs every delivery with the webhook secret (HMAC-SHA256 of the
 request body in the 'X-Signature-256' header). The receiver recomputes the
@@ -15,14 +15,14 @@ receiver listens locally.
 
 Steps:
   1. Start an HTTP server on --port.
-  2. Register a webhook for the project's task events, targeting --public-url.
-  3. For every delivery: verify the signature, then tally the event and, for
-     task updates, the status change.
+  2. Register a webhook for the project's 'create:task' events, targeting
+     --public-url.
+  3. For every delivery: verify the signature, then tally the event.
   4. On Ctrl-C (or after --max-events deliveries), print the tallies.
   5. Optionally delete the webhook (--cleanup).
 
-Usage (run ``python webhook_monitor.py --help`` for the full list of options):
-  python webhook_monitor.py --host 'https://app.cvat.ai' --token '<your token>' \\
+Usage (run ``python webhook_resource_monitoring.py --help`` for the full list of options):
+  python webhook_resource_monitoring.py --host 'https://app.cvat.ai' --token '<your token>' \\
       --project-id 7 --public-url 'https://my-tunnel.example.com/payload' \\
       --port 8000 --secret 'w3bh00k'
 """
@@ -36,7 +36,7 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 
 from cvat_sdk import make_client, models
 
-MONITORED_EVENTS = ["create:task", "update:task", "delete:task"]
+MONITORING_EVENTS = ["create:task"]
 
 
 def parse_args() -> argparse.Namespace:
@@ -78,8 +78,7 @@ class DeliveryHandler(BaseHTTPRequestHandler):
 
     # Set on the subclass by make_handler()
     secret: bytes
-    events: Counter
-    status_changes: Counter
+    event_counter: Counter
     rejected: int = 0
 
     def log_message(self, format: str, *args) -> None:  # pylint: disable=redefined-builtin
@@ -99,26 +98,22 @@ class DeliveryHandler(BaseHTTPRequestHandler):
         self.end_headers()
 
         payload = json.loads(body)
-        event = payload.get("event", "<unknown>")
-        if event == "ping":
+        event_type = payload["event"]
+        if event_type == "ping":
             print("Ping from the server", flush=True)
             return
 
-        type(self).events[event] += 1
-        if event == "update:task":
-            task = payload.get("task", {})
-            before = payload.get("before_update", {}).get("status")
-            after = task.get("status")
-            if before is not None and after is not None and before != after:
-                type(self).status_changes[after] += 1
-                print(f"  task {task.get('id')}: {before} -> {after}", flush=True)
+        type(self).event_counter[event_type] += 1
+        if event_type == "create:task":
+            task = payload["task"]
+            print(f"  new task {task['id']}: {task.get('name')!r}", flush=True)
 
 
 def make_handler(secret: str) -> type:
     return type(
         "Handler",
         (DeliveryHandler,),
-        {"secret": secret.encode(), "events": Counter(), "status_changes": Counter()},
+        {"secret": secret.encode(), "event_counter": Counter()},
     )
 
 
@@ -136,7 +131,7 @@ def main() -> None:
                 models.WebhookWriteRequest(
                     target_url=args.public_url,
                     type=models.WebhookType("project"),
-                    events=[models.EventsEnum(event) for event in MONITORED_EVENTS],
+                    events=[models.EventsEnum(event) for event in MONITORING_EVENTS],
                     content_type=models.WebhookContentType("application/json"),
                     secret=args.secret,
                     project_id=args.project_id,
@@ -146,13 +141,18 @@ def main() -> None:
             print(f"Listening on port {args.port}; press Ctrl-C to stop", flush=True)
 
             try:
-                while args.max_events is None or sum(handler.events.values()) < args.max_events:
+                while (
+                    args.max_events is None
+                    or sum(handler.event_counter.values()) < args.max_events
+                ):
                     receiver.handle_request()
             except KeyboardInterrupt:
                 pass
 
-        print(f"Received {sum(handler.events.values())} events: {summarize(handler.events)}")
-        print(f"Task status changes: {summarize(handler.status_changes)}")
+        print(
+            f"Received {sum(handler.event_counter.values())} events: "
+            f"{summarize(handler.event_counter)}"
+        )
         print(f"Rejected {handler.rejected} deliveries with a bad signature")
 
         if args.cleanup:

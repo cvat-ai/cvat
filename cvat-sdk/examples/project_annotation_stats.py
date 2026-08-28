@@ -11,11 +11,11 @@ Steps:
   3. Count objects per (label, type), where the type is a shape type such as
      'rectangle' or 'polygon', 'tag' for tags, or 'track' for tracks.
   4. Print a per-task breakdown with per-label project totals, and write
-     annotation_stats.csv into the current directory.
+     the CSV report to --output.
 
 Usage (run ``python project_annotation_stats.py --help`` for the full list of options):
   python project_annotation_stats.py --host 'https://app.cvat.ai' --token '<your token>' \\
-      --project-id 7
+      --project-id 7 --output annotation_stats.csv
 """
 
 import argparse
@@ -37,6 +37,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--project-id", type=int, required=True, help="id of an existing project, e.g. 7"
     )
+    parser.add_argument(
+        "--output",
+        type=Path,
+        default=Path("annotation_stats.csv"),
+        help="path to write the CSV report to (default: %(default)s)",
+    )
     return parser.parse_args()
 
 
@@ -55,7 +61,7 @@ def task_counts(task, label_names: dict[int, str]) -> Counter:
 
 def main() -> None:
     args = parse_args()
-    report_path = Path("annotation_stats.csv")
+    report_path = args.output
     with make_client(args.host, access_token=args.token) as client:
         project = client.projects.retrieve(args.project_id)
         label_names = {label.id: label.name for label in project.get_labels()}

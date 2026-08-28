@@ -858,10 +858,10 @@ class TestExamples:
         assert (str(task.id), "Stats recipe task", "defect", "tag", "1") in body
 
     @pytest.mark.with_external_services
-    def test_webhook_register(self):
+    def test_register_webhook(self):
         project = self.make_project()
         result = self.run_recipe(
-            "webhook_register.py",
+            "register_webhook.py",
             args=[
                 "--project-id",
                 str(project.id),
@@ -877,11 +877,11 @@ class TestExamples:
         assert "Deleted webhook" in result.stdout
 
     @pytest.mark.with_external_services
-    def test_webhook_register_organization(self):
+    def test_register_webhook_organization(self):
         org = self.client.organizations.create(models.OrganizationWriteRequest(slug="recipeswhorg"))
         try:
             result = self.run_recipe(
-                "webhook_register.py",
+                "register_webhook.py",
                 args=[
                     "--org",
                     org.slug,
@@ -897,9 +897,9 @@ class TestExamples:
         finally:
             org.remove()
 
-    def test_webhook_register_requires_scope(self):
+    def test_register_webhook_requires_scope(self):
         result = self.run_recipe(
-            "webhook_register.py",
+            "register_webhook.py",
             args=["--target-url", "http://example.com/payload", "--secret", "s"],
             with_cleanup=False,
             expect_failure=True,
@@ -931,7 +931,7 @@ class TestExamples:
         except urllib.error.HTTPError as error:
             return error.code
 
-    def test_webhook_monitor(self):
+    def test_webhook_resource_monitoring(self):
         project = self.make_project()
         with socket.socket() as probe:
             probe.bind(("", 0))
@@ -940,7 +940,7 @@ class TestExamples:
         process = subprocess.Popen(
             [
                 sys.executable,
-                str(EXAMPLES_DIR / "webhook_monitor.py"),
+                str(EXAMPLES_DIR / "webhook_resource_monitoring.py"),
                 "--host",
                 BASE_URL,
                 "--token",
@@ -979,9 +979,8 @@ class TestExamples:
                 self.post_webhook_event(
                     port,
                     {
-                        "event": "update:task",
-                        "task": {"id": 1, "name": "Monitored", "status": "validation"},
-                        "before_update": {"status": "annotation"},
+                        "event": "create:task",
+                        "task": {"id": 1, "name": "Monitored"},
                         "sender": {"username": "worker"},
                     },
                 )
@@ -991,9 +990,8 @@ class TestExamples:
                 self.post_webhook_event(
                     port,
                     {
-                        "event": "update:task",
-                        "task": {"id": 1, "name": "Monitored", "status": "completed"},
-                        "before_update": {"status": "validation"},
+                        "event": "create:task",
+                        "task": {"id": 2, "name": "Also monitored"},
                         "sender": {"username": "worker"},
                     },
                 )
@@ -1004,10 +1002,9 @@ class TestExamples:
             process.kill()
 
         assert process.returncode == 0, f"stdout:\n{stdout}\nstderr:\n{stderr}"
-        assert "task 1: annotation -> validation" in stdout
-        assert "task 1: validation -> completed" in stdout
-        assert "Received 2 events: update:task x2" in stdout
-        assert "Task status changes: completed x1, validation x1" in stdout
+        assert "new task 1: 'Monitored'" in stdout
+        assert "new task 2: 'Also monitored'" in stdout
+        assert "Received 2 events: create:task x2" in stdout
         assert "Rejected 1 deliveries with a bad signature" in stdout
         assert "Deleted webhook" in stdout
         hooks, _ = self.client.api_client.webhooks_api.list(project_id=project.id)
