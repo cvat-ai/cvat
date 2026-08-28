@@ -47,6 +47,11 @@ def select_webhooks(
         )
         selected_webhooks += list(project_webhooks)
 
+    server_webhooks = queryset.filter(
+        type=WebhookTypeChoice.SERVER,
+    )
+    selected_webhooks += list(server_webhooks)
+
     return selected_webhooks
 
 
@@ -70,6 +75,7 @@ def send_webhook(
         response=response,
         attempt=attempt,
         request_duration=request_duration,
+        changed_fields="",
     )
 
 

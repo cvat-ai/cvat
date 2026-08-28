@@ -4,17 +4,16 @@
 
 from typing import TypeVar
 
+from allauth.account.models import EmailAddress
 from django.db import transaction
 from django.db.models import Model
-from django.db.models.signals import post_delete, post_save, pre_delete
+from django.db.models.signals import m2m_changed, post_delete, post_save, pre_delete
 from django.dispatch import receiver
 
-from cvat.apps.engine.models import Comment, Issue, Job, Project, Task
-from cvat.apps.events.handlers import (
-    get_serializer,
-)
+from cvat.apps.engine.models import Comment, Issue, Job, Profile, Project, Task
 from cvat.apps.events.handlers import organization_id as resolve_organization_id
 from cvat.apps.events.handlers import project_id as resolve_project_id
+from cvat.apps.iam.models import User
 from cvat.apps.organizations.models import Invitation, Membership, Organization
 from cvat.apps.webhooks import utils
 from cvat.apps.webhooks.event_type import EventKeyChoice, event_key
@@ -33,6 +32,7 @@ ModelT = TypeVar("ModelT", bound=Model)
 @receiver(post_save, sender=Organization)
 @receiver(post_save, sender=Invitation)
 @receiver(post_save, sender=Membership)
+@receiver(post_save, sender=User)
 def post_save_resource_event(
     sender: type[ModelT],
     instance: ModelT,
@@ -69,7 +69,6 @@ def post_save_resource_event(
 
         old_instance = utils.recreate_old_instance(instance=instance, dirty_fields=dirty_fields)
 
-        # consider task and project transfers as deletion in one organization and creation in another
         if resolve_organization_id(instance) != resolve_organization_id(old_instance):
             new_org_id = resolve_organization_id(instance)
             old_org_id = resolve_organization_id(old_instance)
@@ -119,7 +118,7 @@ def post_save_resource_event(
     retrieved_instance = utils.retrieve_instance(model=sender, pk=instance.pk)
 
     _webhook_payload = {
-        resource_name: get_serializer(instance=retrieved_instance).data,
+        resource_name: utils.get_serializer(instance=retrieved_instance).data,
         "sender": utils.get_sender(),
     }
 
@@ -142,6 +141,50 @@ def post_save_resource_event(
     )
 
 
+@receiver(post_save, sender=EmailAddress)
+def post_save_email_address_event(
+    sender: type[EmailAddress],
+    instance: EmailAddress,
+    raw: bool,
+    **kwargs,
+):
+    if raw:
+        return
+
+    if not instance.primary:
+        return
+
+    utils.send_user_update_event(user_id=instance.user_id)
+
+
+@receiver(post_save, sender=Profile)
+def post_save_profile_event(
+    sender: type[Profile],
+    instance: Profile,
+    raw: bool,
+    **kwargs,
+):
+    if raw:
+        return
+
+    utils.send_user_update_event(user_id=instance.user_id)
+
+
+@receiver(m2m_changed, sender=User.groups.through)
+def m2m_changed_user_groups_event(
+    sender: type[Model],
+    instance: User,
+    action: str,
+    reverse: bool,
+    **kwargs,
+):
+    if reverse:
+        return
+
+    if action in ("post_add", "post_remove", "post_clear"):
+        utils.send_user_update_event(user_id=instance.pk)
+
+
 @receiver(pre_delete, sender=Project)
 @receiver(pre_delete, sender=Task)
 @receiver(pre_delete, sender=Job)
@@ -149,6 +192,8 @@ def post_save_resource_event(
 @receiver(pre_delete, sender=Comment)
 @receiver(pre_delete, sender=Invitation)
 @receiver(pre_delete, sender=Membership)
+@receiver(pre_delete, sender=Organization)
+@receiver(pre_delete, sender=User)
 def pre_delete_resource_event(sender: type[ModelT], instance: ModelT, **kwargs):
     resource_name = instance.__class__.__name__.lower()
 
@@ -158,7 +203,7 @@ def pre_delete_resource_event(sender: type[ModelT], instance: ModelT, **kwargs):
 
     retrieved_instance = utils.retrieve_instance(model=sender, pk=instance.pk)
 
-    instance._deleted_instance_snapshot = get_serializer(instance=retrieved_instance).data
+    instance._deleted_instance_snapshot = utils.get_serializer(instance=retrieved_instance).data
 
 
 @receiver(post_delete, sender=Project)
@@ -168,6 +213,8 @@ def pre_delete_resource_event(sender: type[ModelT], instance: ModelT, **kwargs):
 @receiver(post_delete, sender=Comment)
 @receiver(post_delete, sender=Invitation)
 @receiver(post_delete, sender=Membership)
+@receiver(post_delete, sender=Organization)
+@receiver(post_delete, sender=User)
 def post_delete_resource_event(sender: type[ModelT], instance: ModelT, **kwargs):
     resource_name = instance.__class__.__name__.lower()
 
