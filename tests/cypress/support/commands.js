@@ -1692,6 +1692,21 @@ Cypress.Commands.add('drawMask', (instructions) => {
                 cy.get('input').clear();
                 cy.get('input').type(`${value}`);
             });
+        } else if (method === 'underlying-pixels') {
+            const { value } = instruction;
+            cy.get('.cvat-brush-tools-underlying-pixels').then(($btn) => {
+                const isActive = $btn.hasClass('cvat-brush-tools-active-tool');
+                if (Boolean(value) !== isActive) {
+                    cy.wrap($btn).click();
+                }
+            });
+            if (value) {
+                cy.get('.cvat-brush-tools-underlying-pixels')
+                    .should('have.class', 'cvat-brush-tools-active-tool');
+            } else {
+                cy.get('.cvat-brush-tools-underlying-pixels')
+                    .should('not.have.class', 'cvat-brush-tools-active-tool');
+            }
         } else {
             const { coordinates } = instruction;
             if (['brush', 'eraser'].includes(method)) {

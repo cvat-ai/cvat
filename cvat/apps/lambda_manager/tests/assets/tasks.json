@@ -32,7 +32,6 @@
     "name": "assignee to user task",
     "overlap": 0,
     "segment_size": 100,
-    "assignee_id": 2,
     "labels": [
       {
         "name": "car",

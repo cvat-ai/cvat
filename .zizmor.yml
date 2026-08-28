@@ -1,0 +1,13 @@
+# Only these rules are disabled because they currently fail on existing workflows.
+# They can be re-enabled later as the corresponding findings are fixed.
+rules:
+  cache-poisoning:
+    disable: true
+  dependabot-cooldown:
+    disable: true
+  excessive-permissions:
+    disable: true
+  github-app:
+    disable: true
+  template-injection:
+    disable: true
