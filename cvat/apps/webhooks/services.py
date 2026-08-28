@@ -78,7 +78,7 @@ def ping(serializer) -> WebhookDelivery:
     payload = {
         "event": "ping",
         "webhook": serializer.data,
-        "sender": utils.get_sender(instance=webhook),
+        "sender": utils.get_sender(),
     }
     delivery = send_webhook(webhook=webhook, payload=payload, attempt=1)
     return delivery
