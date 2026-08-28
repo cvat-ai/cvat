@@ -5699,6 +5699,39 @@ class TaskDataAPITestCase(ApiTestBase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         assert b"not in canonical form" in response.content
 
+    def test_cache_mode_selection(self):
+        cases = (
+            # allow_static_cache, use_cache, expected storage method
+            (False, False, StorageMethodChoice.CACHE),
+            (True, True, StorageMethodChoice.CACHE),
+            (True, False, StorageMethodChoice.FILE_SYSTEM),
+        )
+
+        for allow_static_cache, use_cache, expected_method in cases:
+            with self.subTest(
+                allow_static_cache=allow_static_cache,
+                use_cache=use_cache,
+            ):
+                with override_settings(
+                    MEDIA_CACHE_ALLOW_STATIC_CACHE=allow_static_cache,
+                ):
+                    self._test_api_v2_tasks_id_data_spec(
+                        self.admin,
+                        {
+                            "name": "cache mode selection",
+                            "labels": [{"name": "car"}],
+                        },
+                        {
+                            "client_files[0]": generate_image_file("image.jpg"),
+                            "image_quality": 75,
+                            "use_cache": use_cache,
+                        },
+                        self.ChunkType.IMAGESET,
+                        self.ChunkType.IMAGESET,
+                        [(100, 100)],
+                        expected_storage_method=expected_method,
+                    )
+
 
 class JobAnnotationAPITestCase(ApiTestBase):
     @classmethod
@@ -8633,36 +8666,4 @@ class TestCloudStorageAzureStatus(SimpleTestCase):
         self.assertEqual(self.storage.get_status(), Status.NOT_FOUND)
 
 
-class TestCacheOverride(TaskDataAPITestCase):
-    def test_cache_mode_selection(self):
-        cases = (
-            # allow_static_cache, use_cache, expected storage method
-            (False, False, StorageMethodChoice.CACHE),
-            (True, True, StorageMethodChoice.CACHE),
-            (True, False, StorageMethodChoice.FILE_SYSTEM),
-        )
-
-        for allow_static_cache, use_cache, expected_method in cases:
-            with self.subTest(
-                allow_static_cache=allow_static_cache,
-                use_cache=use_cache,
-            ):
-                with override_settings(
-                    MEDIA_CACHE_ALLOW_STATIC_CACHE=allow_static_cache,
-                ):
-                    self._test_api_v2_tasks_id_data_spec(
-                        self.admin,
-                        {
-                            "name": "cache mode selection",
-                            "labels": [{"name": "car"}],
-                        },
-                        {
-                            "client_files[0]": generate_image_file("image.jpg"),
-                            "image_quality": 75,
-                            "use_cache": use_cache,
-                        },
-                        self.ChunkType.IMAGESET,
-                        self.ChunkType.IMAGESET,
-                        [(100, 100)],
-                        expected_storage_method=expected_method,
-                    )
+class TestCacheOverride(TaskDataAPITestCase): ...
