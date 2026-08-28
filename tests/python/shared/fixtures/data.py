@@ -12,6 +12,7 @@ from pathlib import Path
 import pytest
 
 from shared.utils.config import ASSETS_DIR, SHARE_DIR
+from shared.tasks.enums import CacheState
 
 
 class Container:
@@ -627,12 +628,24 @@ def access_tokens_by_username(raw_access_tokens_by_username):
 def fxt_local_audio_file_path() -> Generator[Path, None, None]:
     yield SHARE_DIR / "audio" / "sample1.mp3"
 
+
+
+def _cache_param(value: bool):
+    '''
+        For explicit test-level use with @pytest.mark.parametrize
+        ex: @pytest.mark.parametrize("use_cache", CACHE_ON)
+    '''
+    state = CacheState.ON if value else CacheState.OFF
+    return pytest.param(state, id=state, marks=getattr(pytest.mark, state))
+
+CACHE_ON = [_cache_param(True)]
+CACHE_OFF = [_cache_param(False)]
+
 @pytest.fixture(
         scope="session",
         autouse=False,
-        params=[True, False],
-        ids=["static_cache=on", "static_cache=off"]
+        params=CACHE_ON + CACHE_OFF,
 )
 def fxt_use_cache(request: pytest.FixtureRequest) -> bool:
-    # can be (un)selected with `pytest -k "static_cache=on"`
+    '''Parametrize by both cache values'''
     return request.param

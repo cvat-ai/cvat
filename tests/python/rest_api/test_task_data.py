@@ -32,7 +32,7 @@ from pytest_cases import fixture, fixture_ref, parametrize
 import shared.utils.s3 as s3
 from rest_api._test_base import TestTasksBase
 from rest_api.utils import create_task, get_cloud_storage_content, wait_until_task_is_created
-from shared.fixtures.data import fxt_use_cache
+from shared.fixtures.data import CACHE_ON, CACHE_OFF
 from shared.tasks.enums import SourceDataType
 from shared.tasks.interface import ITaskSpec
 from shared.tasks.types import ImagesTaskSpec
@@ -549,12 +549,9 @@ class TestPostTaskData:
 
     @pytest.mark.with_external_services
     @pytest.mark.timeout(60)
-    @pytest.mark.skipif(
-        to_bool(os.getenv("CVAT_ALLOW_STATIC_CACHE", False)) is False,
-        reason="requires CVAT_ALLOW_STATIC_CACHE=true on the worker",
-    )
+    @pytest.mark.parametrize("use_cache", CACHE_OFF)
     def test_cannot_create_task_with_cloud_storage_without_cache_when_server_file_is_missing(
-        self, cloud_storages
+        self, cloud_storages, use_cache
     ):
         cloud_storage = cloud_storages[1]
         missing_key = "this_file_does_not_exist_for_full_download.png"
@@ -562,7 +559,7 @@ class TestPostTaskData:
         task_spec = {"name": "missing key, no cache", "labels": [{"name": "car"}]}
         data_spec = {
             "image_quality": 75,
-            "use_cache": False,
+            "use_cache": use_cache,
             "cloud_storage_id": cloud_storage["id"],
             "server_files": [missing_key],
         }
@@ -574,9 +571,10 @@ class TestPostTaskData:
         assert f"The file '{missing_key}' not found" in message, message
 
     @pytest.mark.with_external_services
+    @pytest.mark.parametrize("use_cache", CACHE_ON)
     @pytest.mark.timeout(60)
     def test_can_create_task_with_cloud_storage_and_manifest_when_manifest_references_missing_file(
-        self, request, cloud_storages
+        self, request, cloud_storages, use_cache
     ):
         cloud_storage = cloud_storages[1]
         s3_client = s3.make_client(bucket=cloud_storage["resource"])
@@ -601,7 +599,7 @@ class TestPostTaskData:
         task_spec = {"name": "manifest lies", "labels": [{"name": "car"}]}
         data_spec = {
             "image_quality": 75,
-            "use_cache": True,
+            "use_cache": use_cache,
             "cloud_storage_id": cloud_storage["id"],
             "chunk_size": 1,
             "server_files": [
@@ -619,9 +617,10 @@ class TestPostTaskData:
         assert task.size == 2, task.size
 
     @pytest.mark.with_external_services
+    @pytest.mark.parametrize("use_cache", CACHE_ON)
     @pytest.mark.timeout(60)
     def test_cannot_create_task_with_cloud_storage_without_manifest_when_server_file_is_missing(
-        self, cloud_storages
+        self, cloud_storages, use_cache
     ):
         cloud_storage = cloud_storages[1]
         missing_key = "this_file_does_not_exist_for_header_download.png"
@@ -629,7 +628,7 @@ class TestPostTaskData:
         task_spec = {"name": "missing key, cache, no manifest", "labels": [{"name": "car"}]}
         data_spec = {
             "image_quality": 75,
-            "use_cache": True,
+            "use_cache": use_cache,
             "cloud_storage_id": cloud_storage["id"],
             "server_files": [missing_key],
         }
@@ -2071,15 +2070,12 @@ class TestTaskData(TestTasksBase):
         return task_spec, task_id
 
     @pytest.mark.timeout(300)
-    @pytest.mark.skipif(
-        to_bool(os.getenv("CVAT_ALLOW_STATIC_CACHE", False)),
-        reason="This test covers only the dynamic cache.",
-    )
+    @pytest.mark.parametrize("use_cache", CACHE_OFF)
     def test_all_job_chunks_available_after_honeypot_frame_change(
-        self, request: pytest.FixtureRequest
+        self, request: pytest.FixtureRequest, use_cache
     ):
         task_spec, task_id = self._image_task_with_honeypots_and_mixed_job_chunk_counts_base(
-            request
+            request, use_cache=use_cache
         )
 
         with make_api_client(self._USERNAME) as api_client:

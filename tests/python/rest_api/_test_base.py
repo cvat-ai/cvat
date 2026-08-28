@@ -741,7 +741,7 @@ class TestTasksBase:
     def fxt_uploaded_video_task(
         self,
         request: pytest.FixtureRequest,
-        fxt_use_cache: bool,
+        fxt_use_cache,
     ) -> tuple[ITaskSpec, int]:
         return self._uploaded_video_task_fxt_base(request=request, use_cache=fxt_use_cache)
 
