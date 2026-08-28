@@ -142,8 +142,7 @@ def main() -> None:
 
             try:
                 while (
-                    args.max_events is None
-                    or sum(handler.event_counter.values()) < args.max_events
+                    args.max_events is None or sum(handler.event_counter.values()) < args.max_events
                 ):
                     receiver.handle_request()
             except KeyboardInterrupt:
