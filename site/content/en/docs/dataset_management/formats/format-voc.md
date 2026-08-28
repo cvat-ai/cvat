@@ -103,7 +103,7 @@ There are 2 options:
 
 1. Zip the corresponding annotation files
 
-1. Click `Upload annotation` button, choose `Pascal VOC ZIP 1.1`
+1. Click `Upload annotation` button, choose `PASCAL VOC 1.1`
 
    and select the zip file with annotations from previous step.
    It may take some time.
