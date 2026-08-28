@@ -95,6 +95,7 @@ export default function AudioControlsSideBarComponent(): JSX.Element {
             <hr />
             <ObservedLoopControl
                 loop={loop}
+                loopShortcut={normalizedKeyMap.TOGGLE_AUDIO_LOOP}
                 onLoopChange={onLoopChange}
             />
             <hr />
