@@ -1145,3 +1145,34 @@ class TestDeleteWebhooks:
 
         response = get_method(username, f"webhooks/{webhook_id}", org_id=org_id)
         assert response.status_code == HTTPStatus.NOT_FOUND
+
+
+class TestGetWebhookEvents:
+    def _get_events(self, **kwargs):
+        response = get_method("admin1", "webhooks/events", **kwargs)
+        assert response.status_code == HTTPStatus.OK
+        return response.json()
+
+    @pytest.mark.parametrize("webhook_type", ["project", "organization", "server"])
+    def test_can_get_events_of_each_type(self, webhook_type):
+        events = self._get_events(type=webhook_type)
+
+        assert events["webhook_type"] == webhook_type
+        assert events["events"]
+
+    def test_all_type_returns_events_of_every_type(self):
+        events_by_type = {
+            webhook_type: self._get_events(type=webhook_type)["events"]
+            for webhook_type in ["project", "organization", "server"]
+        }
+        expected_keys = {event["key"] for events in events_by_type.values() for event in events}
+
+        all_events = self._get_events(type="all")
+
+        assert all_events["webhook_type"] == "all"
+        assert {event["key"] for event in all_events["events"]} == expected_keys
+
+    def test_cannot_get_events_of_unknown_type(self):
+        response = get_method("admin1", "webhooks/events", type="unknown")
+
+        assert response.status_code == HTTPStatus.BAD_REQUEST
