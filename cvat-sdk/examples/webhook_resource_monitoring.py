@@ -31,6 +31,7 @@ import argparse
 import hashlib
 import hmac
 import json
+import urllib.parse
 from collections import Counter
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
@@ -61,6 +62,12 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--secret", required=True, help="secret the server signs the deliveries with"
+    )
+    parser.add_argument(
+        "--content-type",
+        default="application/json",
+        choices=["application/json", "application/x-www-form-urlencoded"],
+        help="payload content type the server sends (default: %(default)s)",
     )
     parser.add_argument(
         "--max-events",
@@ -97,7 +104,14 @@ class DeliveryHandler(BaseHTTPRequestHandler):
         self.send_response(200)
         self.end_headers()
 
-        payload = json.loads(body)
+        # For application/x-www-form-urlencoded, CVAT sends the JSON body under
+        # the 'payload' form field; for application/json, the body is the JSON.
+        content_type = self.headers.get("Content-Type", "").split(";", 1)[0].strip()
+        if content_type == "application/x-www-form-urlencoded":
+            form = urllib.parse.parse_qs(body.decode("utf-8"))
+            payload = json.loads(form["payload"][0])
+        else:
+            payload = json.loads(body)
         event_type = payload["event"]
         if event_type == "ping":
             print("Ping from the server", flush=True)
@@ -132,7 +146,7 @@ def main() -> None:
                     target_url=args.public_url,
                     type=models.WebhookType("project"),
                     events=[models.EventsEnum(event) for event in MONITORING_EVENTS],
-                    content_type=models.WebhookContentType("application/json"),
+                    content_type=models.WebhookContentType(args.content_type),
                     secret=args.secret,
                     project_id=args.project_id,
                 )
