@@ -5,6 +5,7 @@
 
 import React from 'react';
 import Layout from 'antd/lib/layout';
+import message from 'antd/lib/message';
 
 import {
     ActiveControl, Rotation, CombinedState,
@@ -54,6 +55,9 @@ interface Props {
     frameData: any;
     hasCopiedSelection: boolean;
     hasSelectedObjects: boolean;
+    selectedObjectsCount: number;
+    hasGroupedSelectedObjects: boolean;
+    selectedObjectsInSameGroup: boolean;
 
     updateActiveControl(activeControl: ActiveControl): void;
     rotateFrame(rotation: Rotation): void;
@@ -62,6 +66,7 @@ interface Props {
     pasteSelection(): void;
     resetGroup(): void;
     redrawShape(): void;
+    groupSelection(reset?: boolean): void;
 }
 
 const componentShortcuts = {
@@ -167,6 +172,10 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
         frameData,
         hasCopiedSelection,
         hasSelectedObjects,
+        selectedObjectsCount,
+        hasGroupedSelectedObjects,
+        selectedObjectsInSameGroup,
+        groupSelection,
     } = props;
 
     const controlsDisabled = !labels.length || frameData.deleted;
@@ -235,23 +244,38 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
                 },
             };
 
-    const dynamicGroupIconProps =
-        activeControl === ActiveControl.GROUP ?
-            {
-                className: 'cvat-group-control cvat-active-canvas-control',
-                onClick: (): void => {
-                    canvasInstance.group({ enabled: false });
-                    updateActiveControl(ActiveControl.CURSOR);
-                },
-            } :
-            {
-                className: 'cvat-group-control',
-                onClick: (): void => {
-                    canvasInstance.cancel();
-                    canvasInstance.group({ enabled: true });
-                    updateActiveControl(ActiveControl.GROUP);
-                },
-            };
+    let dynamicGroupIconProps;
+    if (activeControl === ActiveControl.GROUP) {
+        dynamicGroupIconProps = {
+            className: 'cvat-group-control cvat-active-canvas-control',
+            onClick: (): void => {
+                canvasInstance.group({ enabled: false });
+                updateActiveControl(ActiveControl.CURSOR);
+            },
+        };
+    } else if (hasSelectedObjects) {
+        dynamicGroupIconProps = {
+            className: 'cvat-group-control',
+            onClick: (): void => {
+                if (selectedObjectsCount < 2) {
+                    message.warning('Select at least two objects to group');
+                } else if (selectedObjectsInSameGroup) {
+                    message.warning('Selected objects are already in the same group');
+                } else {
+                    groupSelection();
+                }
+            },
+        };
+    } else {
+        dynamicGroupIconProps = {
+            className: 'cvat-group-control',
+            onClick: (): void => {
+                canvasInstance.cancel();
+                canvasInstance.group({ enabled: true });
+                updateActiveControl(ActiveControl.GROUP);
+            },
+        };
+    }
 
     const dynamicTrackIconProps = activeControl === ActiveControl.SPLIT ?
         {
@@ -284,6 +308,14 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
         },
         RESET_GROUP_STANDARD_CONTROLS: (event: KeyboardEvent | undefined): void => {
             event?.preventDefault();
+            if (hasSelectedObjects) {
+                if (hasGroupedSelectedObjects) {
+                    groupSelection(true);
+                } else {
+                    message.warning('No selected objects are grouped');
+                }
+                return;
+            }
             const grouping = activeControl === ActiveControl.GROUP;
             if (!grouping) {
                 return;

@@ -14,10 +14,12 @@ import {
     pasteShapeAsync,
     pasteSelectionAsync,
     resetAnnotationsGroup,
+    groupSelectedAnnotationsAsync,
 } from 'actions/annotation-actions';
 import ControlsSideBarComponent from 'components/annotation-page/standard-workspace/controls-side-bar/controls-side-bar';
 import { ActiveControl, CombinedState, Rotation } from 'reducers';
 import { KeyMap } from 'utils/mousetrap-react';
+import { getSelectionGroupState } from 'utils/multi-selection';
 
 interface StateToProps {
     canvasInstance: Canvas;
@@ -29,6 +31,9 @@ interface StateToProps {
     frameData: any;
     hasCopiedSelection: boolean;
     hasSelectedObjects: boolean;
+    selectedObjectsCount: number;
+    hasGroupedSelectedObjects: boolean;
+    selectedObjectsInSameGroup: boolean;
 }
 
 interface DispatchToProps {
@@ -39,6 +44,7 @@ interface DispatchToProps {
     pasteShape(): void;
     pasteSelection(): void;
     redrawShape(): void;
+    groupSelection(reset?: boolean): void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -50,13 +56,16 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 frame: { data: frameData },
             },
             drawing: { copiedStates },
-            annotations: { selectedStatesID },
+            annotations: { states, selectedStatesID },
         },
         settings: {
             player: { rotateAll },
         },
         shortcuts: { keyMap, normalizedKeyMap },
     } = state;
+    const selectedIDs = new Set(selectedStatesID);
+    const selectedStates = states.filter((objectState) => selectedIDs.has(objectState.clientID));
+    const selectionGroupState = getSelectionGroupState(selectedStates);
 
     return {
         rotateAll,
@@ -68,6 +77,9 @@ function mapStateToProps(state: CombinedState): StateToProps {
         frameData,
         hasCopiedSelection: !!copiedStates && copiedStates.length > 0,
         hasSelectedObjects: selectedStatesID.length > 0,
+        selectedObjectsCount: selectedStates.length,
+        hasGroupedSelectedObjects: selectionGroupState.canUngroup,
+        selectedObjectsInSameGroup: selectionGroupState.alreadyInSameGroup,
     };
 }
 
@@ -93,6 +105,9 @@ function dispatchToProps(dispatch: any): DispatchToProps {
         },
         redrawShape(): void {
             dispatch(redrawShapeAsync());
+        },
+        groupSelection(reset = false): void {
+            dispatch(groupSelectedAnnotationsAsync(reset));
         },
     };
 }

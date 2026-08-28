@@ -1619,11 +1619,12 @@ export function resetAnnotationsGroup(): AnyAction {
     };
 }
 
-export function groupAnnotationsAsync(statesToGroup: any[]): ThunkAction {
+export function groupAnnotationsAsync(statesToGroup: any[], resetOverride?: boolean): ThunkAction {
     return async (dispatch: ThunkDispatch): Promise<void> => {
         try {
             const { jobInstance } = receiveAnnotationsParameters();
-            const reset = getStore().getState().annotation.annotations.resetGroupFlag;
+            const reset = typeof resetOverride === 'boolean' ?
+                resetOverride : getStore().getState().annotation.annotations.resetGroupFlag;
 
             // The action below set resetFlag to false
             dispatch({
@@ -1641,6 +1642,22 @@ export function groupAnnotationsAsync(statesToGroup: any[]): ThunkAction {
                 },
             });
         }
+    };
+}
+
+export function groupSelectedAnnotationsAsync(reset = false): ThunkAction {
+    return async (dispatch: ThunkDispatch, getState): Promise<void> => {
+        const { states, selectedStatesID } = getState().annotation.annotations;
+        const selectedIDs = new Set(selectedStatesID);
+        const selectedStates = states.filter((state: ObjectState): boolean => (
+            selectedIDs.has(state.clientID as number)
+        ));
+        if ((reset && !selectedStates.some((state: ObjectState): boolean => !!state.group?.id)) ||
+            (!reset && selectedStates.length < 2)) {
+            return;
+        }
+
+        await dispatch(groupAnnotationsAsync(selectedStates, reset));
     };
 }
 

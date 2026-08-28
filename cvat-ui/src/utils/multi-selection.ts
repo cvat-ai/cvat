@@ -14,6 +14,12 @@ interface SelectionToggleState {
     disabledReason: string | null;
 }
 
+interface SelectionGroupState {
+    canGroup: boolean;
+    canUngroup: boolean;
+    alreadyInSameGroup: boolean;
+}
+
 const LOCK_DISABLED_REASON = 'Ground truth objects cannot be locked or unlocked';
 const PIN_DISABLED_REASON = 'Locked, ground truth, tag, and points objects cannot be pinned';
 
@@ -53,6 +59,18 @@ export function prepareSelectionToggle(
     const statesToUpdate = states.filter((state: ObjectState): boolean => state[property] === active);
     for (const state of statesToUpdate) state[property] = !active;
     return statesToUpdate;
+}
+
+export function getSelectionGroupState(states: ObjectState[]): SelectionGroupState {
+    const groupID = states[0]?.group?.id || 0;
+    const alreadyInSameGroup = states.length > 1 && !!groupID &&
+        states.every((state: ObjectState): boolean => state.group?.id === groupID);
+
+    return {
+        canGroup: states.length > 1 && !alreadyInSameGroup,
+        canUngroup: states.some((state: ObjectState): boolean => !!state.group?.id),
+        alreadyInSameGroup,
+    };
 }
 
 function modifierFromKeyMap(

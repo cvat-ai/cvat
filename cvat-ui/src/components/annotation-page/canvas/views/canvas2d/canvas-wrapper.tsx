@@ -13,7 +13,8 @@ import Select from 'antd/lib/select';
 import Spin from 'antd/lib/spin';
 import Popover from 'antd/lib/popover';
 import Icon, {
-    CopyOutlined, DeleteOutlined, LockFilled, PushpinFilled, PushpinOutlined, UnlockOutlined, UpOutlined,
+    CopyOutlined, DeleteOutlined, GroupOutlined, LockFilled, PushpinFilled, PushpinOutlined,
+    UngroupOutlined, UnlockOutlined, UpOutlined,
 } from '@ant-design/icons';
 import notification from 'antd/lib/notification';
 import debounce from 'lodash/debounce';
@@ -47,6 +48,7 @@ import {
     createAnnotationsAsync,
     mergeAnnotationsAsync,
     groupAnnotationsAsync,
+    groupSelectedAnnotationsAsync,
     selectObjectsAsync,
     copySelection,
     removeSelectionAsync,
@@ -86,6 +88,7 @@ import {
     multiSelectModifierFromKeyMap,
     multiSelectObjectModifierFromKeyMap,
     getSelectedStates,
+    getSelectionGroupState,
     getSelectionToggleState,
     prepareSelectionToggle,
 } from 'utils/multi-selection';
@@ -163,6 +166,7 @@ interface DispatchToProps {
     onMergeAnnotations(states: ObjectState[]): void;
     onSplitAnnotations(state: ObjectState): void;
     onGroupAnnotations(states: ObjectState[]): void;
+    onGroupSelection(reset?: boolean): void;
     onSelectObjects(selectedStatesID: number[]): void;
     onCopySelection(states: ObjectState[]): void;
     onRemoveSelection(): Promise<void>;
@@ -387,6 +391,9 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         },
         onGroupAnnotations(states: ObjectState[]): void {
             dispatch(groupAnnotationsAsync(states));
+        },
+        onGroupSelection(reset = false): void {
+            dispatch(groupSelectedAnnotationsAsync(reset));
         },
         onSelectObjects(selectedStatesID: number[]): void {
             dispatch(selectObjectsAsync(selectedStatesID));
@@ -852,6 +859,12 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
         const statesToUpdate = prepareSelectionToggle(selectedStates, 'pinned');
         if (!statesToUpdate.length) return;
         await onUpdateAnnotationsBatch(statesToUpdate);
+        this.setState({ selectionMenuPosition: null });
+    };
+
+    private onGroupSelectedObjects = (reset = false): void => {
+        const { onGroupSelection } = this.props;
+        onGroupSelection(reset);
         this.setState({ selectionMenuPosition: null });
     };
 
@@ -1441,6 +1454,11 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
             'Labels cannot be changed for locked, ground truth, or skeleton objects';
         const lockSelection = getSelectionToggleState(selectedStates, 'lock');
         const pinSelection = getSelectionToggleState(selectedStates, 'pinned');
+        const selectionGroupState = getSelectionGroupState(selectedStates);
+        const groupSelectionDisabled = !selectionGroupState.canGroup;
+        const groupSelectionDisabledReason = selectionGroupState.alreadyInSameGroup ?
+            'Selected objects are already in the same group' : 'Select at least two objects to group';
+        const ungroupSelectionDisabled = !selectionGroupState.canUngroup;
 
         const preventDefault = (event: KeyboardEvent | undefined): void => {
             if (event) {
@@ -1598,6 +1616,35 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
                                             onClick={this.onCopySelectedObjects}
                                         >
                                             Copy selection
+                                        </Button>
+                                    ),
+                                },
+                                {
+                                    key: 'group',
+                                    label: (
+                                        <Button
+                                            type='link'
+                                            disabled={groupSelectionDisabled}
+                                            title={groupSelectionDisabled ? groupSelectionDisabledReason : undefined}
+                                            icon={<GroupOutlined />}
+                                            onClick={(): void => this.onGroupSelectedObjects()}
+                                        >
+                                            Group selection
+                                        </Button>
+                                    ),
+                                },
+                                {
+                                    key: 'ungroup',
+                                    label: (
+                                        <Button
+                                            type='link'
+                                            disabled={ungroupSelectionDisabled}
+                                            title={ungroupSelectionDisabled ?
+                                                'No selected objects are grouped' : undefined}
+                                            icon={<UngroupOutlined />}
+                                            onClick={(): void => this.onGroupSelectedObjects(true)}
+                                        >
+                                            Ungroup selection
                                         </Button>
                                     ),
                                 },
