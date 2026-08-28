@@ -21,7 +21,7 @@ from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
 from cvat.apps.iam.forms import ResetPasswordFormEx
-from cvat.apps.iam.models import User
+from cvat.apps.iam.models import User, UserCreatedViaEnum
 from cvat.apps.iam.password_validation import (
     DEFAULT_MAX_PASSWORD_LENGTH,
     DEFAULT_MIN_PASSWORD_LENGTH,
@@ -102,8 +102,11 @@ class RegisterSerializerEx(RegisterSerializer):
                 _("A user is already registered with this e-mail address.")
             )
 
-        # Allow to overwrite data for dummy users
-        user = dummy_user or adapter.new_user(request)
+        if dummy_user:
+            user = dummy_user
+        else:
+            user = adapter.new_user(request)
+            user.created_via = UserCreatedViaEnum.EMAIL_PASSWORD
 
         user = adapter.save_user(request, user, self, commit=False)
         if "password1" in self.cleaned_data:
