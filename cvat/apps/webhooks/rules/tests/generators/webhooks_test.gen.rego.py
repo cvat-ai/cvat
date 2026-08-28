@@ -52,33 +52,59 @@ def RESOURCES(scope):
         return [
             {
                 "owner": {"id": random.randrange(100, 200)},
-                "assignee": {"id": random.randrange(200, 300)},
                 "organization": {"id": random.randrange(300, 400)},
                 "project": {"owner": {"id": random.randrange(400, 500)}},
-                "num_resources": count,
             }
-            for count in (0, 3, 10)
         ]
     elif scope == "create@organization":
         return [
             {
                 "owner": {"id": random.randrange(100, 200)},
-                "assignee": {"id": random.randrange(200, 300)},
                 "organization": {"id": random.randrange(300, 400)},
                 "project": None,
-                "num_resources": count,
             }
-            for count in (0, 3, 10)
         ]
-    else:
+    elif scope == "create@server":
+        return [
+            {
+                "owner": {"id": random.randrange(100, 200)},
+                "organization": None,
+                "project": None,
+            }
+        ]
+    elif scope in ("view", "update", "delete"):
         return [
             {
                 "id": random.randrange(100, 200),
                 "owner": {"id": random.randrange(200, 300)},
                 "organization": {"id": random.randrange(300, 400)},
                 "project": {"owner": {"id": random.randrange(400, 500)}},
-            }
+                "type": "project",
+            },
+            {
+                "id": random.randrange(100, 200),
+                "owner": {"id": random.randrange(200, 300)},
+                "organization": {"id": None},
+                "project": {"owner": {"id": random.randrange(400, 500)}},
+                "type": "project",
+            },
+            {
+                "id": random.randrange(100, 200),
+                "owner": {"id": random.randrange(200, 300)},
+                "organization": {"id": random.randrange(300, 400)},
+                "project": None,
+                "type": "organization",
+            },
+            {
+                "id": random.randrange(100, 200),
+                "owner": {"id": random.randrange(200, 300)},
+                "organization": {"id": None},
+                "project": None,
+                "type": "server",
+            },
         ]
+    else:
+        raise ValueError(f"Unknown scope: {scope}")
 
 
 def is_same_org(org1, org2):
@@ -113,8 +139,9 @@ def eval_rule(scope, context, ownership, privilege, membership, data):
         filter(lambda r: not r["limit"] or eval(r["limit"], {"resource": resource}), rules)
     )
     if (
-        not is_same_org(data["auth"]["organization"], data["resource"]["organization"])
-        and context != "sandbox"
+        context != "sandbox"
+        and resource is not None
+        and not is_same_org(data["auth"]["organization"], resource["organization"])
     ):
         return False
     return bool(rules)
@@ -144,7 +171,7 @@ def get_data(scope, context, ownership, privilege, membership, resource, same_or
         org_id = data["auth"]["organization"]["id"]
         if data["auth"]["organization"]["user"]["role"] == "owner":
             data["auth"]["organization"]["owner"]["id"] = user_id
-        if same_org:
+        if same_org and resource is not None:
             data["resource"]["organization"]["id"] = org_id
 
     if ownership == "owner":
@@ -163,7 +190,9 @@ def _get_name(prefix, **kwargs):
         if isinstance(v, dict):
             if "id" in v:
                 v = v.copy()
-                v.pop("id")
+                _id = v.pop("id")
+                if _id is None:
+                    name += f"{prefix}_NONE"
             if v:
                 name += _get_name(prefix, **v)
         else:
@@ -181,12 +210,24 @@ def get_name(scope, context, ownership, privilege, membership, resource, same_or
 def is_valid(scope, context, ownership, privilege, membership, resource, same_org):
     if context == "sandbox" and membership:
         return False
-    if scope == "list" and ownership != "None":
+    if scope == "list" and ownership != "none":
         return False
     if context == "sandbox" and not same_org:
         return False
-    if scope.startswith("create") and ownership != "None":
+    if scope.startswith("create") and ownership != "none":
         return False
+    if resource is not None:
+        # a resource without a project cannot have a project owner
+        if resource.get("project") is None and ownership == "project:owner":
+            return False
+
+        # a resource without an organization can never belong to the auth organization
+        if (
+            context == "organization"
+            and same_org
+            and (resource.get("organization") or {}).get("id") is None
+        ):
+            return False
 
     return True
 
