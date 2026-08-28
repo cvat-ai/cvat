@@ -7463,6 +7463,7 @@ paths:
           enum:
           - organization
           - project
+          - server
       tags:
       - webhooks
       security:
@@ -9011,7 +9012,7 @@ components:
       type: object
       properties:
         webhook_type:
-          $ref: '#/components/schemas/WebhookType'
+          $ref: '#/components/schemas/WebhookTypeEnum'
         events:
           type: array
           items:
@@ -9033,15 +9034,19 @@ components:
       - create:issue
       - create:job
       - create:membership
+      - create:organization
       - create:project
       - create:task
+      - create:user
       - delete:comment
       - delete:invitation
       - delete:issue
       - delete:job
       - delete:membership
+      - delete:organization
       - delete:project
       - delete:task
+      - delete:user
       - update:comment
       - update:issue
       - update:job
@@ -9049,6 +9054,7 @@ components:
       - update:organization
       - update:project
       - update:task
+      - update:user
       type: string
       description: |-
         * `completed:request[calculate:quality]` - COMPLETED:REQUEST[CALCULATE:QUALITY]
@@ -9063,15 +9069,19 @@ components:
         * `create:issue` - CREATE:ISSUE
         * `create:job` - CREATE:JOB
         * `create:membership` - CREATE:MEMBERSHIP
+        * `create:organization` - CREATE:ORGANIZATION
         * `create:project` - CREATE:PROJECT
         * `create:task` - CREATE:TASK
+        * `create:user` - CREATE:USER
         * `delete:comment` - DELETE:COMMENT
         * `delete:invitation` - DELETE:INVITATION
         * `delete:issue` - DELETE:ISSUE
         * `delete:job` - DELETE:JOB
         * `delete:membership` - DELETE:MEMBERSHIP
+        * `delete:organization` - DELETE:ORGANIZATION
         * `delete:project` - DELETE:PROJECT
         * `delete:task` - DELETE:TASK
+        * `delete:user` - DELETE:USER
         * `update:comment` - UPDATE:COMMENT
         * `update:issue` - UPDATE:ISSUE
         * `update:job` - UPDATE:JOB
@@ -9079,6 +9089,7 @@ components:
         * `update:organization` - UPDATE:ORGANIZATION
         * `update:project` - UPDATE:PROJECT
         * `update:task` - UPDATE:TASK
+        * `update:user` - UPDATE:USER
     FileInfo:
       type: object
       properties:
@@ -13858,6 +13869,11 @@ components:
         has_analytics_access:
           type: boolean
           readOnly: true
+          nullable: true
+        email_verified:
+          type: boolean
+          nullable: true
+          readOnly: true
         created_via:
           readOnly: true
           nullable: true
@@ -14074,10 +14090,24 @@ components:
       enum:
       - organization
       - project
+      - server
       type: string
       description: |-
         * `organization` - ORGANIZATION
         * `project` - PROJECT
+        * `server` - SERVER
+    WebhookTypeEnum:
+      enum:
+      - organization
+      - project
+      - server
+      - all
+      type: string
+      description: |-
+        * `organization` - ORGANIZATION
+        * `project` - PROJECT
+        * `server` - SERVER
+        * `all` - ALL
     WebhookWriteRequest:
       type: object
       properties:
