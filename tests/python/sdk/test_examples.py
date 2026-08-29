@@ -21,12 +21,6 @@ from time import sleep
 
 import platformdirs
 import pytest
-from cvat_sdk import Client, models
-from cvat_sdk.core.auth import AuthStore, ProfileEntry
-from cvat_sdk.core.downloading import Downloader
-from cvat_sdk.core.proxies.projects import Project
-from cvat_sdk.core.proxies.tasks import ResourceType, Task
-
 from shared.utils.config import (
     BASE_URL,
     IMPORT_EXPORT_BUCKET_ID,
@@ -35,6 +29,12 @@ from shared.utils.config import (
     USER_PASS,
 )
 from shared.utils.helpers import generate_image_file
+
+from cvat_sdk import Client, models
+from cvat_sdk.core.auth import AuthStore, ProfileEntry
+from cvat_sdk.core.downloading import Downloader
+from cvat_sdk.core.proxies.projects import Project
+from cvat_sdk.core.proxies.tasks import ResourceType, Task
 
 EXAMPLES_DIR = Path(__file__).parents[3] / "cvat-sdk" / "examples"
 
@@ -166,6 +166,70 @@ class TestExamples:
         project = self.make_project()
         self.make_task_in_project(project)
         return project
+
+    def run_incremental(self, project_id: int, *, extra: list[str] | None = None):
+        return self.run_recipe(
+            "dataset_incremental_download.py",
+            args=["--project-id", str(project_id), "--state", "state.json"] + list(extra or []),
+            with_cleanup=False,
+        )
+
+    def test_incremental_download_first_run_exports_every_task(self):
+        project = self.make_project()
+        first = self.make_task_in_project(project, name="Incremental A")
+        second = self.make_task_in_project(project, name="Incremental B")
+
+        result = self.run_incremental(project.id)
+
+        assert f"Exported task {first.id}" in result.stdout
+        assert f"Exported task {second.id}" in result.stdout
+        assert "Downloaded 2 task dataset(s)" in result.stdout
+        for task in (first, second):
+            assert (self.tmp_path / "datasets" / f"task_{task.id}.zip").is_file()
+
+    def test_incremental_download_second_run_exports_nothing(self):
+        project = self.make_project_with_task()
+        self.run_incremental(project.id)
+
+        result = self.run_incremental(project.id)
+
+        assert "Nothing changed since" in result.stdout
+        assert "Exported task" not in result.stdout
+
+    def test_incremental_download_reexports_only_the_changed_task(self):
+        project = self.make_project()
+        untouched = self.make_task_in_project(project, name="Untouched")
+        touched = self.make_task_in_project(project, name="Touched")
+        self.run_incremental(project.id)
+
+        touched.update(models.PatchedTaskWriteRequest(name="Touched again"))
+
+        result = self.run_incremental(project.id)
+        assert f"Exported task {touched.id}" in result.stdout
+        assert f"Exported task {untouched.id}" not in result.stdout
+        assert "Downloaded 1 task dataset(s)" in result.stdout
+
+    def test_incremental_download_rejects_state_of_another_project(self):
+        first = self.make_project_with_task()
+        second = self.make_project_with_task()
+        self.run_incremental(first.id)
+
+        result = self.run_recipe(
+            "dataset_incremental_download.py",
+            args=["--project-id", str(second.id), "--state", "state.json"],
+            with_cleanup=False,
+            expect_failure=True,
+        )
+        assert "belongs to project" in result.stderr
+
+    def test_incremental_download_reports_deleted_tasks(self):
+        project = self.make_project()
+        task = self.make_task_in_project(project, name="Doomed")
+        self.run_incremental(project.id)
+        task.remove()
+
+        result = self.run_incremental(project.id)
+        assert f"Task {task.id} no longer exists on the server" in result.stdout
 
     def test_auth_token(self):
         result = self.run_recipe("auth_token.py", with_cleanup=False)
