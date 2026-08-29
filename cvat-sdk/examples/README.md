@@ -30,6 +30,7 @@ Conventions:
 | `project_create_and_list.py` | Create, list, filter, retrieve, rename a project | `--name`, `--labels`, `--cleanup` |
 | `project_add_labels.py` | Add labels (optionally with attributes) to an existing project | `--project-id`, `--labels`, `--attr` (repeat) |
 | `project_annotation_stats.py` | Aggregate object counts per label/type across a project's tasks; CSV report | `--project-id` |
+| `project_data_lint.py` | Lint a project's annotations: out-of-bounds shapes, tiny boxes, duplicates, empty frames/jobs, unused labels | `--project-id`, `--task-id`, `--min-box-area`, `--output`, `--no-fail` |
 | `project_backup.py` | Download a backup zip of an existing project | `--project-id`, `--output` |
 | `project_restore.py` | Restore a project from a backup zip | `--backup`, `--cleanup` |
 | `project_export_dataset.py` | Export a project's tasks individually (all, or a `--task-id` list), locally and to a bucket | `--project-id`, `--cloud-storage-id`, `--export-format`, `--task-id` (optional, space-separated) |

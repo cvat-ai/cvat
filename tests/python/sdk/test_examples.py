@@ -593,6 +593,116 @@ class TestExamples:
         assert self.gt_job_of(task.id) is None
         assert self.client.tasks.retrieve(task.id).id == task.id
 
+    def seed_lint_project(self):
+        """A project whose single task has one good box, one out-of-bounds box,
+        one zero-area box, and an unused label. Images are 5x10 (w x h).
+        """
+        project = self.make_project(name="Lint project", labels=("object", "unused"))
+        task = self.make_task_in_project(project, name="Lint task")
+        label_id = {label.name: label.id for label in task.get_labels()}["object"]
+        task.set_annotations(
+            models.LabeledDataRequest(
+                shapes=[
+                    models.LabeledShapeRequest(
+                        type="rectangle", frame=0, label_id=label_id, points=[1.0, 1.0, 4.0, 8.0]
+                    ),
+                    models.LabeledShapeRequest(
+                        type="rectangle", frame=0, label_id=label_id, points=[1.0, 1.0, 99.0, 8.0]
+                    ),
+                    models.LabeledShapeRequest(
+                        type="rectangle", frame=0, label_id=label_id, points=[2.0, 2.0, 2.0, 2.0]
+                    ),
+                ]
+            )
+        )
+        return project, task
+
+    def test_data_lint_reports_geometry_errors_and_fails(self):
+        project, task = self.seed_lint_project()
+
+        result = self.run_recipe(
+            "project_data_lint.py",
+            args=["--project-id", str(project.id)],
+            with_cleanup=False,
+            expect_failure=True,
+        )
+
+        assert "error out-of-bounds" in result.stdout
+        assert "error degenerate-box" in result.stdout
+        assert "info unused-label" in result.stdout
+        rows = self.read_manifest("data_lint.csv")
+        checks = {row["check"] for row in rows}
+        assert {"out-of-bounds", "degenerate-box", "unused-label"} <= checks
+        assert all(int(row["task_id"]) == task.id for row in rows if row["task_id"])
+
+    def test_data_lint_no_fail_exits_zero(self):
+        project, _ = self.seed_lint_project()
+
+        result = self.run_recipe(
+            "project_data_lint.py",
+            args=["--project-id", str(project.id), "--no-fail"],
+            with_cleanup=False,
+        )
+        assert "error out-of-bounds" in result.stdout
+
+    def test_data_lint_reports_empty_frames_on_a_clean_project(self):
+        project = self.make_project(name="Clean project")
+        task = self.make_task_in_project(project, name="Clean task")
+        label_id = task.get_labels()[0].id
+        task.set_annotations(
+            models.LabeledDataRequest(
+                shapes=[
+                    models.LabeledShapeRequest(
+                        type="rectangle",
+                        frame=frame,
+                        label_id=label_id,
+                        points=[1.0, 1.0, 4.0, 8.0],
+                    )
+                    for frame in range(task.size)
+                ]
+            )
+        )
+
+        result = self.run_recipe(
+            "project_data_lint.py",
+            args=["--project-id", str(project.id)],
+            with_cleanup=False,
+        )
+
+        assert "0 error(s)" in result.stdout
+        assert "empty-frame" not in result.stdout
+
+    def test_data_lint_detects_duplicate_objects(self):
+        project = self.make_project(name="Duplicate project")
+        task = self.make_task_in_project(project, name="Duplicate task")
+        label_id = task.get_labels()[0].id
+        box = dict(type="rectangle", frame=0, label_id=label_id, points=[1.0, 1.0, 4.0, 8.0])
+        task.set_annotations(
+            models.LabeledDataRequest(
+                shapes=[models.LabeledShapeRequest(**box), models.LabeledShapeRequest(**box)]
+            )
+        )
+
+        result = self.run_recipe(
+            "project_data_lint.py",
+            args=["--project-id", str(project.id)],
+            with_cleanup=False,
+            expect_failure=True,
+        )
+        assert "error duplicate-object" in result.stdout
+
+    def test_data_lint_rejects_a_task_outside_the_project(self):
+        project = self.make_project_with_task()
+        stranger = self.make_task(name="Stranger")
+
+        result = self.run_recipe(
+            "project_data_lint.py",
+            args=["--project-id", str(project.id), "--task-id", str(stranger.id)],
+            with_cleanup=False,
+            expect_failure=True,
+        )
+        assert "not found in project" in result.stderr
+
     def test_auth_token(self):
         result = self.run_recipe("auth_token.py", with_cleanup=False)
         assert f"Authenticated as {self.user}" in result.stdout
