@@ -55,6 +55,9 @@ def receiver_target_url() -> str:
 # The bucket content summary printed by cloud_storage_register.py.
 BUCKET_CONTENT_RE = re.compile(r"contains (\d+) entries in (\d+) page\(s\)")
 
+# The id line printed by the task-creating recipes.
+CREATED_TASK_RE = re.compile(r"Created task (\d+)")
+
 
 def load_recipe(name: str) -> types.ModuleType:
     """Import a recipe as a module, so a test can reuse its own helpers instead
@@ -318,6 +321,108 @@ class TestExamples:
             expect_failure=True,
         )
         assert "Select what to export" in result.stderr
+
+    def created_task_id(self, stdout: str) -> int:
+        match = CREATED_TASK_RE.search(stdout)
+        assert match, f"no created-task line in:\n{stdout}"
+        return int(match.group(1))
+
+    def make_gt_annotations_file(self, image_dir: Path) -> Path:
+        """A CVAT-format annotations archive with one box on img_0.png, built by
+        annotating a throwaway task made from the same files (so the frame names match).
+        """
+        source = self.make_task(name="GT source", resources=sorted(image_dir.iterdir()))
+        label_id = source.get_labels()[0].id
+        source.set_annotations(
+            models.LabeledDataRequest(
+                shapes=[
+                    models.LabeledShapeRequest(
+                        type="rectangle", frame=0, label_id=label_id, points=[1.0, 1.0, 4.0, 4.0]
+                    )
+                ]
+            )
+        )
+        path = self.tmp_path / "gt_annotations.zip"
+        source.export_dataset("CVAT for images 1.1", path, include_images=False)
+        return path
+
+    @pytest.mark.timeout(180)
+    def test_validation_task_uses_the_requested_frames(self):
+        image_dir = self.make_image_dir(4)
+
+        result = self.run_recipe(
+            "task_create_with_validation.py",
+            args=[
+                "--image-dir",
+                str(image_dir),
+                "--validation-frame",
+                "img_0.png",
+                "img_2.png",
+            ],
+            with_cleanup=False,
+        )
+
+        assert "Ground truth job" in result.stdout
+        task_id = self.created_task_id(result.stdout)
+        gt_jobs = self.client.jobs.list(task_id=task_id, type="ground_truth")
+        assert len(gt_jobs) == 1
+        # The GT job's own frame list is padded with placeholders to mirror the
+        # task's full frame range; the real validation frames come from the layout.
+        layout, _ = self.client.api_client.tasks_api.retrieve_validation_layout(task_id)
+        task_frames = self.client.tasks.retrieve(task_id).get_frames_info()
+        names = sorted(task_frames[index].name for index in layout.validation_frames)
+        assert names == ["img_0.png", "img_2.png"]
+        self.client.tasks.retrieve(task_id).remove()
+
+    @pytest.mark.timeout(180)
+    def test_validation_task_random_frame_count(self):
+        image_dir = self.make_image_dir(4)
+
+        result = self.run_recipe(
+            "task_create_with_validation.py",
+            args=["--image-dir", str(image_dir), "--frame-count", "2", "--random-seed", "42"],
+        )
+
+        assert "Ground truth job" in result.stdout
+        assert ": 2 frames" in result.stdout
+        assert "Deleted task" in result.stdout
+
+    @pytest.mark.timeout(180)
+    def test_validation_task_imports_ground_truth_annotations(self):
+        image_dir = self.make_image_dir(4)
+        annotations = self.make_gt_annotations_file(image_dir)
+
+        result = self.run_recipe(
+            "task_create_with_validation.py",
+            args=[
+                "--image-dir",
+                str(image_dir),
+                "--validation-frame",
+                "img_0.png",
+                "--gt-annotations",
+                str(annotations),
+                "--gt-format",
+                "CVAT 1.1",
+            ],
+            with_cleanup=False,
+        )
+
+        task_id = self.created_task_id(result.stdout)
+        gt_job = self.client.jobs.list(task_id=task_id, type="ground_truth")[0]
+        annotations_read = gt_job.get_annotations()
+        assert len(annotations_read.shapes) == 1
+        assert f"Imported 1 objects into ground truth job {gt_job.id}" in result.stdout
+        self.client.tasks.retrieve(task_id).remove()
+
+    def test_validation_task_rejects_unknown_frame(self):
+        image_dir = self.make_image_dir(2)
+
+        result = self.run_recipe(
+            "task_create_with_validation.py",
+            args=["--image-dir", str(image_dir), "--validation-frame", "nope.png"],
+            expect_failure=True,
+        )
+        assert "not in" in result.stderr
 
     def test_auth_token(self):
         result = self.run_recipe("auth_token.py", with_cleanup=False)

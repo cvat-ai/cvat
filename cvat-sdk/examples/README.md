@@ -40,6 +40,7 @@ Conventions:
 | `task_inspect_and_export.py` | Inspect a task; export its dataset and event-log analytics | `--task-id`, `--export-format` |
 | `task_import_annotations.py` | Import an annotations file into an existing task | `--task-id`, `--annotations-file`, `--import-format` |
 | `task_edit_annotations.py` | Bulk-edit a task's annotations: relabel or delete objects by label | `--task-id`, `--relabel` or `--delete-label` |
+| `task_create_with_validation.py` | Create a task with a ground truth validation set and upload the ground truth into it | `--image-dir`, `--validation-frame` or `--frame-count`, `--gt-annotations`, `--gt-format`, `--cleanup` |
 | `job_list.py` | List a task's or project's jobs with stage/state/assignee; optional CSV report | `--task-id` or `--project-id`, `--stage`, `--state`, `--csv` |
 | `job_assign.py` | Round-robin assign unassigned jobs; CSV report | `--task-id`, `--org` or `--org-id`, `--assignees` or `--search` |
 | `job_workflow.py` | Batch-advance completed jobs to the next stage | `--from-stage`, `--task-id` |
