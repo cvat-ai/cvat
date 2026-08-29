@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+import csv
 import hashlib
 import hmac
 import importlib.util
@@ -230,6 +231,93 @@ class TestExamples:
 
         result = self.run_incremental(project.id)
         assert f"Task {task.id} no longer exists on the server" in result.stdout
+
+    def read_manifest(self, name: str = "bulk_export.csv") -> list[dict]:
+        with (self.tmp_path / name).open(newline="") as f:
+            return list(csv.DictReader(f))
+
+    def test_bulk_export_exports_every_task_of_a_project(self):
+        project = self.make_project()
+        first = self.make_task_in_project(project, name="Bulk A")
+        second = self.make_task_in_project(project, name="Bulk B")
+
+        result = self.run_recipe(
+            "dataset_bulk_export.py",
+            args=["--project-id", str(project.id), "--output-dir", "out"],
+            with_cleanup=False,
+        )
+
+        assert "Exported 2 of 2 task(s)" in result.stdout
+        for task in (first, second):
+            assert (self.tmp_path / "out" / f"task_{task.id}.zip").is_file()
+        rows = self.read_manifest()
+        assert {int(row["task_id"]) for row in rows} == {first.id, second.id}
+        assert all(row["error"] == "" for row in rows)
+
+    def test_bulk_export_explicit_task_ids(self):
+        project = self.make_project()
+        wanted = self.make_task_in_project(project, name="Wanted")
+        other = self.make_task_in_project(project, name="Other")
+
+        self.run_recipe(
+            "dataset_bulk_export.py",
+            args=["--task-id", str(wanted.id), "--output-dir", "out"],
+            with_cleanup=False,
+        )
+
+        assert (self.tmp_path / "out" / f"task_{wanted.id}.zip").is_file()
+        assert not (self.tmp_path / "out" / f"task_{other.id}.zip").exists()
+
+    def test_bulk_export_skips_existing(self):
+        project = self.make_project_with_task()
+        args = ["--project-id", str(project.id), "--output-dir", "out", "--skip-existing"]
+        self.run_recipe("dataset_bulk_export.py", args=args, with_cleanup=False)
+
+        result = self.run_recipe("dataset_bulk_export.py", args=args, with_cleanup=False)
+        assert "Skipped task" in result.stdout
+        assert "Exported 0 of 1 task(s)" in result.stdout
+
+    def test_bulk_export_continues_after_a_failure(self):
+        project = self.make_project()
+        good = self.make_task_in_project(project, name="Good")
+        missing_id = 10**9
+
+        result = self.run_recipe(
+            "dataset_bulk_export.py",
+            args=["--task-id", str(good.id), str(missing_id), "--output-dir", "out"],
+            with_cleanup=False,
+            expect_failure=True,
+        )
+
+        assert f"Exported task {good.id}" in result.stdout
+        assert f"FAILED task {missing_id}" in result.stdout
+        assert (self.tmp_path / "out" / f"task_{good.id}.zip").is_file()
+        errors = [row for row in self.read_manifest() if row["error"]]
+        assert len(errors) == 1
+
+    @pytest.mark.timeout(180)
+    def test_bulk_export_with_two_workers(self):
+        project = self.make_project()
+        tasks = [self.make_task_in_project(project, name=f"Worker {i}") for i in range(2)]
+
+        result = self.run_recipe(
+            "dataset_bulk_export.py",
+            args=["--project-id", str(project.id), "--output-dir", "out", "--jobs", "2"],
+            with_cleanup=False,
+        )
+
+        assert "Exported 2 of 2 task(s)" in result.stdout
+        for task in tasks:
+            assert (self.tmp_path / "out" / f"task_{task.id}.zip").is_file()
+
+    def test_bulk_export_requires_a_selector(self):
+        result = self.run_recipe(
+            "dataset_bulk_export.py",
+            args=["--output-dir", "out"],
+            with_cleanup=False,
+            expect_failure=True,
+        )
+        assert "Select what to export" in result.stderr
 
     def test_auth_token(self):
         result = self.run_recipe("auth_token.py", with_cleanup=False)
