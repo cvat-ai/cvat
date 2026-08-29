@@ -1,4 +1,4 @@
-### feature
+### Added
 
 - Add "Filter frames" and "Filter annotations" checkboxes to the annotation filters modal.
   When "Filter annotations" is disabled, navigation still uses the configured filters
