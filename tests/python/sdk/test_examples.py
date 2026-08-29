@@ -424,6 +424,84 @@ class TestExamples:
         )
         assert "not in" in result.stderr
 
+    @pytest.mark.timeout(180)
+    def test_honeypot_task_injects_pool_frames_into_every_job(self):
+        image_dir = self.make_image_dir(6)
+
+        result = self.run_recipe(
+            "task_create_with_honeypots.py",
+            args=[
+                "--image-dir",
+                str(image_dir),
+                "--pool-frame-count",
+                "2",
+                "--honeypots-per-job",
+                "1",
+                "--segment-size",
+                "2",
+            ],
+            with_cleanup=False,
+        )
+
+        task_id = self.created_task_id(result.stdout)
+        layout, _ = self.client.api_client.tasks_api.retrieve_validation_layout(task_id)
+        assert str(layout.mode) == "gt_pool"
+        assert len(layout.validation_frames) == 2
+        annotation_jobs = self.client.jobs.list(task_id=task_id, type="annotation")
+        assert len(layout.honeypot_frames) == len(annotation_jobs)
+        for job in annotation_jobs:
+            assert f"job {job.id} frames" in result.stdout
+        self.client.tasks.retrieve(task_id).remove()
+
+    @pytest.mark.timeout(180)
+    def test_honeypot_refresh_changes_the_mapping(self):
+        image_dir = self.make_image_dir(6)
+        result = self.run_recipe(
+            "task_create_with_honeypots.py",
+            args=[
+                "--image-dir",
+                str(image_dir),
+                "--pool-frame-count",
+                "2",
+                "--honeypots-per-job",
+                "1",
+                "--segment-size",
+                "2",
+                "--refresh",
+            ],
+            with_cleanup=False,
+        )
+
+        assert "Refreshed the honeypots" in result.stdout
+        assert result.stdout.count("Validation pool frames:") == 2
+        self.client.tasks.retrieve(self.created_task_id(result.stdout)).remove()
+
+    @pytest.mark.timeout(180)
+    def test_honeypot_disable_frame(self):
+        image_dir = self.make_image_dir(6)
+
+        # The pool is appended after the original frames, so with 6 images and a
+        # 2-frame pool the pool always lands at indexes 6-7 - deterministic, unlike
+        # --pool-frame-count's own random selection of *which* images join the pool.
+        result = self.run_recipe(
+            "task_create_with_honeypots.py",
+            args=[
+                "--image-dir",
+                str(image_dir),
+                "--pool-frame",
+                "img_0.png",
+                "img_1.png",
+                "--honeypots-per-job",
+                "1",
+                "--segment-size",
+                "2",
+                "--disable-frame",
+                "6",
+            ],
+        )
+        assert "Disabled frames: [6]" in result.stdout
+        assert "Deleted task" in result.stdout
+
     def test_auth_token(self):
         result = self.run_recipe("auth_token.py", with_cleanup=False)
         assert f"Authenticated as {self.user}" in result.stdout
