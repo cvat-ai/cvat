@@ -38,6 +38,7 @@ Conventions:
 | `dataset_bulk_export.py` | Export many tasks at once, locally and/or to a bucket, with a CSV manifest | `--project-id` and/or `--task-id`, `--status`, `--output-dir`, `--cloud-storage-id`, `--jobs`, `--skip-existing` |
 | `task_create_from_cloud.py` | Create a task from bucket object keys | `--cloud-storage-id`, `--cloud-keys`, `--cleanup` |
 | `tasks_bulk_from_cloud.py` | Bulk-create tasks in a project, from bucket object keys or wildcard patterns | `--cloud-storage-id`, `--project-id`, `--task` (repeat), `--task-pattern` (repeat), `--manifest`, `--cleanup` |
+| `task_create_subtasks.py` | Create one task per object type / label group over the same images | `--image-dir`, `--subtask` (repeat), `--segment-size`, `--cleanup` |
 | `task_inspect_and_export.py` | Inspect a task; export its dataset and event-log analytics | `--task-id`, `--export-format` |
 | `task_import_annotations.py` | Import an annotations file into an existing task | `--task-id`, `--annotations-file`, `--import-format` |
 | `task_edit_annotations.py` | Bulk-edit a task's annotations: relabel or delete objects by label | `--task-id`, `--relabel` or `--delete-label` |

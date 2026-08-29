@@ -703,6 +703,66 @@ class TestExamples:
         )
         assert "not found in project" in result.stderr
 
+    @pytest.mark.timeout(180)
+    def test_subtasks_create_one_task_per_label_group(self):
+        image_dir = self.make_image_dir(2)
+
+        result = self.run_recipe(
+            "task_create_subtasks.py",
+            args=[
+                "--image-dir",
+                str(image_dir),
+                "--subtask",
+                "boxes:rectangle:car,person",
+                "--subtask",
+                "roads:polygon:road",
+            ],
+            with_cleanup=False,
+        )
+
+        assert "Created 2 subtask(s)" in result.stdout
+        ids = [int(match) for match in re.findall(r"as task (\d+)", result.stdout)]
+        assert len(ids) == 2
+        boxes, roads = (self.client.tasks.retrieve(task_id) for task_id in ids)
+        assert sorted((label.name, str(label.type)) for label in boxes.get_labels()) == [
+            ("car", "rectangle"),
+            ("person", "rectangle"),
+        ]
+        assert [(label.name, str(label.type)) for label in roads.get_labels()] == [
+            ("road", "polygon")
+        ]
+        for task_id in ids:
+            self.client.tasks.retrieve(task_id).remove()
+
+    def test_subtasks_reject_unknown_label_type(self):
+        image_dir = self.make_image_dir(2)
+
+        result = self.run_recipe(
+            "task_create_subtasks.py",
+            args=["--image-dir", str(image_dir), "--subtask", "boxes:square:car"],
+            expect_failure=True,
+        )
+        assert "square" in result.stderr
+        assert "Created subtask" not in result.stdout
+
+    def test_subtasks_reject_malformed_spec(self):
+        image_dir = self.make_image_dir(2)
+
+        result = self.run_recipe(
+            "task_create_subtasks.py",
+            args=["--image-dir", str(image_dir), "--subtask", "boxes-rectangle-car"],
+            expect_failure=True,
+        )
+        assert "NAME:TYPE:label" in result.stderr
+
+    def test_subtasks_parse_spec_helper(self):
+        recipe = load_recipe("task_create_subtasks.py")
+        assert recipe.parse_subtask("boxes:rectangle:car, person") == (
+            "boxes",
+            "rectangle",
+            ["car", "person"],
+        )
+
     def test_auth_token(self):
         result = self.run_recipe("auth_token.py", with_cleanup=False)
         assert f"Authenticated as {self.user}" in result.stdout

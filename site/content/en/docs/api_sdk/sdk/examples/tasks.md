@@ -5,11 +5,14 @@ weight: 3
 description: 'Create one task or a batch of tasks from a bucket; inspect and export existing tasks'
 ---
 
-Three recipes cover the task lifecycle: `task_create_from_cloud.py` creates one
+Five recipes cover the task lifecycle: `task_create_from_cloud.py` creates one
 task from object keys already in a registered bucket,
 `tasks_bulk_from_cloud.py` creates a whole batch of tasks in a project from
-that same bucket, and `task_inspect_and_export.py` inspects an existing task,
-exports its dataset locally, and reports analytics from its event log.
+that same bucket, `task_inspect_and_export.py` inspects an existing task,
+exports its dataset locally, and reports analytics from its event log,
+`task_create_subtasks.py` splits one set of images into subtasks by object
+type, and `task_create_job_mapping.py` creates a task with an explicit
+file-to-job mapping.
 
 ## Create a task from cloud object keys
 
@@ -103,6 +106,43 @@ python task_inspect_and_export.py --host 'https://app.cvat.ai' --token '<your to
 ### The script
 
 {{< include-code "assets/sdk-examples/task_inspect_and_export.py" >}}
+
+## Split work into subtasks by object type
+
+Creates one task per `--subtask 'NAME:TYPE:label1,label2'` spec over the same
+images, with that spec's labels typed to its shape type. Boxes, polygons, and
+tags then get annotated in parallel, each in a task that shows only the labels
+its annotator needs.
+
+The subtasks are **standalone tasks, not tasks inside one project**: tasks in a
+project share the project's label set, so a per-subtask label set cannot exist
+inside a single project — the SDK rejects labels on a task that has a
+`project_id`. Every spec is validated before anything is created, and
+`--cleanup` deletes the subtasks created so far even if a later one fails.
+
+| Flag | Required | Meaning |
+| --- | --- | --- |
+| `--host` | yes | Server URL |
+| `--token` | yes | Personal Access Token |
+| `--image-dir` | yes | Directory with the images to split |
+| `--subtask NAME:TYPE:LABELS` | yes | One subtask; repeat for more |
+| `--segment-size` | no | Frames per job, in every subtask |
+| `--cleanup` | no | Delete the created subtasks at the end |
+
+`TYPE` is one of `rectangle`, `polygon`, `polyline`, `points`, `ellipse`,
+`cuboid`, `mask`, `tag`, `any`.
+
+```bash
+python task_create_subtasks.py --host 'https://app.cvat.ai' --token '<your token>' \
+    --image-dir ./images \
+    --subtask 'boxes:rectangle:car,person' \
+    --subtask 'roads:polygon:road,lane' \
+    --subtask 'weather:tag:rain,snow'
+```
+
+### The script
+
+{{< include-code "assets/sdk-examples/task_create_subtasks.py" >}}
 
 _Other SDK options:_
 
