@@ -85,3 +85,56 @@ python task_create_with_honeypots.py --host 'https://app.cvat.ai' --token '<your
 ### The script
 
 {{< include-code "assets/sdk-examples/task_create_with_honeypots.py" >}}
+
+## Choose exactly which frames are ground truth
+
+Adds a ground truth job to a task that already exists, with the frames you
+name — by index (`--frame`) or by file name (`--frame-name`, resolved through
+the task's frame list). A task can hold one ground truth job, so the recipe
+refuses to overwrite an existing one unless `--replace` is passed: deleting a
+ground truth job discards its annotations. Afterwards it reads the task's
+validation layout back, so the printed frame list is the server's.
+
+| Flag | Required | Meaning |
+| --- | --- | --- |
+| `--host` | yes | Server URL |
+| `--token` | yes | Personal Access Token |
+| `--task-id` | yes | Id of the task to add the ground truth job to |
+| `--frame N [N ...]` | one of `--frame` / `--frame-name` | Frame indexes |
+| `--frame-name NAME [NAME ...]` | one of `--frame` / `--frame-name` | Frame file names |
+| `--replace` | no | Delete an existing ground truth job first |
+| `--cleanup` | no | Delete the created ground truth job at the end (never the task) |
+
+```bash
+python task_add_gt_frames.py --host 'https://app.cvat.ai' --token '<your token>' \
+    --task-id 42 --frame 0 17 42
+```
+
+### The script
+
+{{< include-code "assets/sdk-examples/task_add_gt_frames.py" >}}
+
+_Other SDK options:_
+
+| SDK method / parameter | What it adds |
+| --- | --- |
+| `validation_params={"mode": "gt", "frame_selection_method": "random_per_job", "frames_per_job_count": N}` | Sample validation frames per annotation job instead of task-wide. |
+| `validation_params={..., "frame_share": 0.1}` / `"frames_per_job_share"` | Express the sample as a share instead of a count. |
+| `JobWriteRequest(type="ground_truth", frame_selection_method="random_uniform", frame_count=N)` | Add a ground truth job with a random sample to an existing task. |
+| `jobs_api.partial_update_validation_layout(job_id, ...)` | Change the honeypots of one annotation job instead of the whole task. |
+| `tasks_api.retrieve_validation_layout(task_id)` | Read the pool, honeypots, and disabled frames at any time. |
+| `Job.import_annotations(format_name, path)` | Upload ground truth into a ground truth job. |
+
+_Notes:_
+
+- `gt` mode moves the validation frames into a separate ground truth job;
+  `gt_pool` mode copies pool frames into the annotation jobs. Only `gt_pool`
+  makes annotators encounter validation frames while working.
+- Validation frames are referenced by **file name** in `validation_params` and by
+  **frame index** in `JobWriteRequest` and the validation layout API.
+- Quality reports use whatever the ground truth job holds, so upload the ground
+  truth before comparing.
+- Full recipes:
+  [`task_create_with_validation.py`](https://github.com/cvat-ai/cvat/tree/develop/cvat-sdk/examples/task_create_with_validation.py),
+  [`task_create_with_honeypots.py`](https://github.com/cvat-ai/cvat/tree/develop/cvat-sdk/examples/task_create_with_honeypots.py),
+  [`task_add_gt_frames.py`](https://github.com/cvat-ai/cvat/tree/develop/cvat-sdk/examples/task_add_gt_frames.py).

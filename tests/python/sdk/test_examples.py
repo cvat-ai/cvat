@@ -502,6 +502,97 @@ class TestExamples:
         assert "Disabled frames: [6]" in result.stdout
         assert "Deleted task" in result.stdout
 
+    def gt_job_of(self, task_id: int):
+        jobs = self.client.jobs.list(task_id=task_id, type="ground_truth")
+        return jobs[0] if jobs else None
+
+    @pytest.mark.timeout(120)
+    def test_add_gt_frames_by_index(self):
+        task = self.make_task(
+            name="GT frames by index", resources=sorted(self.make_image_dir(4).iterdir())
+        )
+
+        result = self.run_recipe(
+            "task_add_gt_frames.py",
+            args=["--task-id", str(task.id), "--frame", "0", "2"],
+            with_cleanup=False,
+        )
+
+        assert "Created ground truth job" in result.stdout
+        layout, _ = self.client.api_client.tasks_api.retrieve_validation_layout(task.id)
+        assert sorted(layout.validation_frames) == [0, 2]
+
+    @pytest.mark.timeout(120)
+    def test_add_gt_frames_by_name(self):
+        task = self.make_task(
+            name="GT frames by name", resources=sorted(self.make_image_dir(4).iterdir())
+        )
+
+        self.run_recipe(
+            "task_add_gt_frames.py",
+            args=["--task-id", str(task.id), "--frame-name", "img_1.png", "img_3.png"],
+            with_cleanup=False,
+        )
+
+        layout, _ = self.client.api_client.tasks_api.retrieve_validation_layout(task.id)
+        assert sorted(layout.validation_frames) == [1, 3]
+
+    @pytest.mark.timeout(120)
+    def test_add_gt_frames_refuses_to_overwrite(self):
+        task = self.make_task(
+            name="GT frames twice", resources=sorted(self.make_image_dir(4).iterdir())
+        )
+        self.run_recipe(
+            "task_add_gt_frames.py",
+            args=["--task-id", str(task.id), "--frame", "0"],
+            with_cleanup=False,
+        )
+
+        refused = self.run_recipe(
+            "task_add_gt_frames.py",
+            args=["--task-id", str(task.id), "--frame", "1"],
+            with_cleanup=False,
+            expect_failure=True,
+        )
+        assert "already has a ground truth job" in refused.stderr
+
+        replaced = self.run_recipe(
+            "task_add_gt_frames.py",
+            args=["--task-id", str(task.id), "--frame", "1", "--replace"],
+            with_cleanup=False,
+        )
+        assert "Created ground truth job" in replaced.stdout
+        layout, _ = self.client.api_client.tasks_api.retrieve_validation_layout(task.id)
+        assert sorted(layout.validation_frames) == [1]
+
+    def test_add_gt_frames_rejects_out_of_range(self):
+        task = self.make_task(
+            name="GT frames range", resources=sorted(self.make_image_dir(2).iterdir())
+        )
+
+        result = self.run_recipe(
+            "task_add_gt_frames.py",
+            args=["--task-id", str(task.id), "--frame", "99"],
+            with_cleanup=False,
+            expect_failure=True,
+        )
+        assert "out of range" in result.stderr
+
+    @pytest.mark.timeout(120)
+    def test_add_gt_frames_cleanup_removes_only_the_job(self):
+        task = self.make_task(
+            name="GT frames cleanup", resources=sorted(self.make_image_dir(3).iterdir())
+        )
+
+        result = self.run_recipe(
+            "task_add_gt_frames.py",
+            args=["--task-id", str(task.id), "--frame", "0"],
+        )
+
+        assert "Deleted ground truth job" in result.stdout
+        assert self.gt_job_of(task.id) is None
+        assert self.client.tasks.retrieve(task.id).id == task.id
+
     def test_auth_token(self):
         result = self.run_recipe("auth_token.py", with_cleanup=False)
         assert f"Authenticated as {self.user}" in result.stdout
