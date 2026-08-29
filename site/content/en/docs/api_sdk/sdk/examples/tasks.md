@@ -144,6 +144,42 @@ python task_create_subtasks.py --host 'https://app.cvat.ai' --token '<your token
 
 {{< include-code "assets/sdk-examples/task_create_subtasks.py" >}}
 
+## Decide which files go into which job
+
+Normally CVAT cuts a task into jobs of `segment_size` frames. The
+`job_file_mapping` data parameter replaces that with an explicit grouping: one
+job per camera, per scene, or per delivery batch. Group the files yourself with
+repeated `--job` flags, or chunk the directory with `--files-per-job N`.
+
+Every file in `--image-dir` must belong to exactly one job — unknown files,
+duplicates, and leftovers are rejected before the task is created. Afterwards
+the recipe reads the jobs back from the server and writes
+`job_file_mapping.csv`, so the mapping you see is the one that exists.
+
+`job_file_mapping` implies predefined file ordering and works with images, not
+video.
+
+| Flag | Required | Meaning |
+| --- | --- | --- |
+| `--host` | yes | Server URL |
+| `--token` | yes | Personal Access Token |
+| `--image-dir` | yes | Directory with the task's images |
+| `--job FILE [FILE ...]` | one of `--job` / `--files-per-job` | The files of one job; repeat for more |
+| `--files-per-job N` | one of `--job` / `--files-per-job` | Chunk the directory into jobs of N files |
+| `--name`, `--labels` | no | Task name and labels |
+| `--output` | no | Mapping CSV path (default `job_file_mapping.csv`) |
+| `--cleanup` | no | Delete the created task at the end |
+
+```bash
+python task_create_job_mapping.py --host 'https://app.cvat.ai' --token '<your token>' \
+    --image-dir ./images \
+    --job 'cam1_001.png' 'cam1_002.png' --job 'cam2_001.png' 'cam2_002.png'
+```
+
+### The script
+
+{{< include-code "assets/sdk-examples/task_create_job_mapping.py" >}}
+
 _Other SDK options:_
 
 | SDK method / parameter | What it adds |
@@ -163,6 +199,9 @@ _Other SDK options:_
 | `Task.export_dataset(filename=<directory>)` | Pass a directory as `filename` for a local export and the server-generated file name is used. |
 | `Task.export_dataset(..., location=Location.CLOUD_STORAGE, cloud_storage_id=<int>)` | Export straight to a registered cloud storage instead of downloading locally. |
 | `client.api_client.events_api.create_export(project_id=, job_id=, user_id=, _from=, to=)` | Scope or time-bound the event-log export beyond a single task. |
+| `data_params={"job_file_mapping": [[...], [...]]}` | Define each job's files explicitly instead of using `segment_size`. |
+| `PatchedLabelRequest(name=..., type="polygon")` | Restrict a label to one shape type, as the subtask recipe does. |
+| `Job.get_frames_info()` | The frames a job really holds, names included. |
 
 _Notes:_
 
@@ -176,4 +215,6 @@ _Notes:_
 - Full recipes:
   [`task_create_from_cloud.py`](https://github.com/cvat-ai/cvat/tree/develop/cvat-sdk/examples/task_create_from_cloud.py),
   [`tasks_bulk_from_cloud.py`](https://github.com/cvat-ai/cvat/tree/develop/cvat-sdk/examples/tasks_bulk_from_cloud.py),
-  [`task_inspect_and_export.py`](https://github.com/cvat-ai/cvat/tree/develop/cvat-sdk/examples/task_inspect_and_export.py).
+  [`task_inspect_and_export.py`](https://github.com/cvat-ai/cvat/tree/develop/cvat-sdk/examples/task_inspect_and_export.py),
+  [`task_create_subtasks.py`](https://github.com/cvat-ai/cvat/tree/develop/cvat-sdk/examples/task_create_subtasks.py),
+  [`task_create_job_mapping.py`](https://github.com/cvat-ai/cvat/tree/develop/cvat-sdk/examples/task_create_job_mapping.py).

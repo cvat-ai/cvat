@@ -763,6 +763,79 @@ class TestExamples:
             ["car", "person"],
         )
 
+    @pytest.mark.timeout(180)
+    def test_job_mapping_explicit_groups(self):
+        image_dir = self.make_image_dir(4)
+
+        result = self.run_recipe(
+            "task_create_job_mapping.py",
+            args=[
+                "--image-dir",
+                str(image_dir),
+                "--job",
+                "img_0.png",
+                "img_1.png",
+                "--job",
+                "img_2.png",
+                "--job",
+                "img_3.png",
+            ],
+            with_cleanup=False,
+        )
+
+        task_id = self.created_task_id(result.stdout)
+        task = self.client.tasks.retrieve(task_id)
+        jobs = sorted(task.get_jobs(), key=lambda job: job.start_frame)
+        assert [len(job.get_frames_info()) for job in jobs] == [2, 1, 1]
+        rows = self.read_manifest("job_file_mapping.csv")
+        assert [row["file_name"] for row in rows] == [
+            "img_0.png",
+            "img_1.png",
+            "img_2.png",
+            "img_3.png",
+        ]
+        task.remove()
+
+    @pytest.mark.timeout(180)
+    def test_job_mapping_files_per_job(self):
+        image_dir = self.make_image_dir(5)
+
+        result = self.run_recipe(
+            "task_create_job_mapping.py",
+            args=["--image-dir", str(image_dir), "--files-per-job", "2"],
+        )
+
+        assert result.stdout.count("job ") >= 3
+        assert "Deleted task" in result.stdout
+
+    def test_job_mapping_rejects_unassigned_files(self):
+        image_dir = self.make_image_dir(3)
+
+        result = self.run_recipe(
+            "task_create_job_mapping.py",
+            args=["--image-dir", str(image_dir), "--job", "img_0.png"],
+            expect_failure=True,
+        )
+        assert "not assigned to any job" in result.stderr
+
+    def test_job_mapping_rejects_unknown_file(self):
+        image_dir = self.make_image_dir(2)
+
+        result = self.run_recipe(
+            "task_create_job_mapping.py",
+            args=[
+                "--image-dir",
+                str(image_dir),
+                "--job",
+                "img_0.png",
+                "img_1.png",
+                "--job",
+                "ghost.png",
+            ],
+            expect_failure=True,
+        )
+        assert "ghost.png" in result.stderr
+
     def test_auth_token(self):
         result = self.run_recipe("auth_token.py", with_cleanup=False)
         assert f"Authenticated as {self.user}" in result.stdout
