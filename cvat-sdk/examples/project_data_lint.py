@@ -29,8 +29,6 @@ from pathlib import Path
 
 from cvat_sdk import make_client
 
-# Shapes whose points are plain x/y pairs. Masks carry RLE data and skeletons carry
-# their points in sub-elements, so the geometry checks skip them.
 GEOMETRY_TYPES = {"rectangle", "polygon", "polyline", "points"}
 SEVERITY_ORDER = {"error": 0, "warning": 1, "info": 2}
 
@@ -39,7 +37,6 @@ SEVERITY_ORDER = {"error": 0, "warning": 1, "info": 2}
 class Finding:
     severity: str
     check: str
-    # Project-wide findings leave the location fields empty, hence the str union.
     task_id: int | str
     job_id: int | str
     frame: int | str

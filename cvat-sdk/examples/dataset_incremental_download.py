@@ -118,8 +118,6 @@ def main() -> None:
         args.output_dir.mkdir(parents=True, exist_ok=True)
         for task in selected:
             path = args.output_dir / f"task_{task.id}.zip"
-            # A re-export replaces the previous file; the downloader refuses to
-            # write over an existing one.
             path.unlink(missing_ok=True)
             task.export_dataset(
                 args.export_format,

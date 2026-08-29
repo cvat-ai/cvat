@@ -2,8 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-"""Add a ground truth job to an existing task with an exact frame list - the
-frames you choose, not a random sample.
+"""Add a ground truth job to an existing task with an exact frame list you choose.
 
 Steps:
   1. Retrieve the task and resolve the requested frames: indexes (--frame) or

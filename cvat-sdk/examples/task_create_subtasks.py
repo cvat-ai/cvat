@@ -35,7 +35,6 @@ from cvat_sdk import make_client, models
 from cvat_sdk.core.proxies.tasks import ResourceType
 
 IMAGE_SUFFIXES = {".jpg", ".jpeg", ".png", ".bmp", ".webp"}
-# Skeletons need sub-labels, which a one-line spec cannot express.
 LABEL_TYPES = {
     "any",
     "cuboid",

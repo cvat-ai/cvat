@@ -35,7 +35,6 @@ from pathlib import Path
 from cvat_sdk import make_client
 from cvat_sdk.core.proxies.types import Location
 
-# One client per worker thread, created on first use in that thread.
 _thread_state = threading.local()
 
 
@@ -102,9 +101,6 @@ def select_tasks(client, args: argparse.Namespace) -> list:
             tasks = [by_id[tid] for tid in args.task_id]
         return [(task.id, task.name, str(task.status)) for task in tasks]
 
-    # A bare --task-id may name an id that does not exist (or does not match
-    # --status): that must surface as one failed export in the manifest, the
-    # same way a bad id in export_one does, not as a crash during selection.
     selected = []
     for task_id in args.task_id:
         try:

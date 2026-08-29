@@ -126,9 +126,6 @@ def main() -> None:
         if not gt_jobs:
             sys.exit(f"Task {task.id} has no ground truth job; check validation_params")
         gt_job = gt_jobs[0]
-        # The GT job's own frame list is padded with "placeholder.jpg" entries to
-        # mirror the task's full frame range, so the real validation frames come
-        # from the validation layout instead.
         layout, _ = client.api_client.tasks_api.retrieve_validation_layout(task.id)
         task_frames = task.get_frames_info()
         frame_names = [task_frames[index].name for index in layout.validation_frames]

@@ -1,7 +1,7 @@
 ---
 title: 'Cloud storage recipes'
 linkTitle: 'Cloud storage'
-weight: 6
+weight: 8
 description: 'Attach an S3-compatible bucket to CVAT via the low-level cloud storages API'
 ---
 
