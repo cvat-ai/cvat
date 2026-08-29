@@ -20,7 +20,8 @@ context('Audio annotation. Undo restores deleted region.', () => {
                 const initial = $body.find('.cvat-audio-region-item').length;
                 cy.audioCreateRegionViaButton(firstLabelName, 100, 250);
                 cy.get('.cvat-audio-region-item').should('have.length', initial + 1);
-                cy.get('.cvat-audio-region-item').last().click();
+                cy.get('.cvat-audio-region-item').last()
+                    .find('.cvat-audio-interval-header-index').click();
                 cy.get('body').type('{del}');
                 cy.get('.cvat-audio-region-item').should('have.length', initial);
                 cy.audioUndo();

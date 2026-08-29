@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: MIT
 
 import io
+import itertools
 import mimetypes
 import os
 import re
@@ -522,8 +523,6 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
                 assert False, f"Unknown media type '{media_type}' with mode '{mode}'"
 
     def _write_data_from_cloud_storage(self, zip_object: ZipFile, target_dir: str) -> None:
-        assert not hasattr(self._db_data, "video"), "Only images can be stored in cloud storage"
-
         target_data_dir = os.path.join(target_dir, self.DATA_DIRNAME)
         data_dir = self._db_data.get_upload_dirname()
 
@@ -532,7 +531,10 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
         files_for_local_copy = []
 
         media_files_to_download: list[PurePath] = []
-        for media_file in self._db_data.related_files.all():
+        for media_file in itertools.chain(
+            self._db_data.related_files.all(),
+            [self._db_data.video] if hasattr(self._db_data, "video") else [],
+        ):
             media_path = PurePath(media_file.path)
 
             local_path = os.path.join(data_dir, media_path)
