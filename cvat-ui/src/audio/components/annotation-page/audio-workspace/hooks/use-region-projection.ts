@@ -173,6 +173,18 @@ export function useRegionProjection({ regionRuntime, ready }: Params): RegionHig
             const selectionDisabled = activeControl === ActiveControl.AUDIO_REGION_CREATE ||
                 activeControl === ActiveControl.AUDIO_REGION_RECORD;
             element.style.pointerEvents = selectionDisabled ? 'none' : 'all';
+            // Regions are appended in their creation order, so a newer overlapping region would otherwise
+            // intercept events intended for the semantically selected one. Keep the semantic target above
+            // the rest; a hovered target must take precedence over an active target that is elsewhere.
+            let zIndex = 0;
+            if (isActive) {
+                zIndex = 1;
+            } else if (isHovered) {
+                zIndex = 2;
+            } else if (isInteracting) {
+                zIndex = 3;
+            }
+            element.style.zIndex = String(zIndex);
             const borderColor = getRegionItemColor(interval, labels, colorBy);
             // A border changes the region's padding box. WaveSurfer anchors resize handles
             // to that box, which shifts their hit areas inward from the displayed boundaries.

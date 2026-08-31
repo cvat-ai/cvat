@@ -51,5 +51,35 @@ context('Audio annotation. Interval navigation and overlap selection.', () => {
             cy.get('.cvat-audio-region-item').first().should('have.class', 'cvat-audio-region-item-active');
             cy.get('.cvat-audio-region-item').eq(1).should('not.have.class', 'cvat-audio-region-item-active');
         });
+
+        it('Drags the Core-chosen interval when it is fully covered by a later created interval', () => {
+            const getRegionBoundaries = () => cy.getAudioRegion().should('have.length', 2).then(($regions) => (
+                Array.from($regions, (region) => ({
+                    left: Number.parseFloat(region.style.left),
+                    rightInset: Number.parseFloat(region.style.right),
+                }))
+            ));
+
+            cy.audioCreateRegionViaButton(firstLabelName, 200, 300);
+            cy.audioCreateRegionViaButton(secondLabelName, 100, 400);
+            getRegionBoundaries().then((before) => {
+                cy.getAudioWaveformViewport().then(($viewport) => {
+                    const yOffset = $viewport[0].getBoundingClientRect().height / 2;
+                    cy.wrap($viewport).realMouseMove(250, yOffset);
+                    cy.wrap($viewport).realMouseDown({
+                        position: { x: 250, y: yOffset },
+                        button: 'left',
+                    });
+                    cy.wrap($viewport).realMouseMove(300, yOffset);
+                    cy.wrap($viewport).realMouseUp({ button: 'left' });
+                });
+
+                getRegionBoundaries().should((after) => {
+                    expect(after[0].left).to.be.greaterThan(before[0].left);
+                    expect(after[0].rightInset).to.be.lessThan(before[0].rightInset);
+                    expect(after[1]).to.deep.equal(before[1]);
+                });
+            });
+        });
     });
 });
