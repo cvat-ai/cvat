@@ -397,16 +397,16 @@ The table shows the requirement hierarchy, target annotation type, metric, thres
 enabled state. Use the arrow beside a row to expand its child requirements. The actions in
 each row let you create a child rule, edit the rule, and, for custom rules, copy or delete it.
 
-##### Base requirements and custom rules
+##### Root requirements and custom rules
 
-Base requirements are the roots of the hierarchy. CVAT creates one for every supported
+Root requirements are at the top of the hierarchy. CVAT creates one for every supported
 annotation type, and they cannot be deleted. They are useful as broad defaults, such as
-"all rectangles must reach 70% accuracy". Disable a base requirement when that annotation
+"all rectangles must reach 70% accuracy". Disable a root requirement when that annotation
 type must not participate in the report or immediate feedback.
 
-Use **+** button on a base or custom requirement to add a child. The parent and target
+Use **+** button on a root or custom requirement to add a child. The parent and target
 annotation type are fixed for a child rule. Give the child a descriptive name and use its
-filter and comparison options to define a narrower check. For example, a rectangle base
+filter and comparison options to define a narrower check. For example, a root rectangle
 requirement can have a child rule for the `vehicle` label with a higher score threshold.
 Custom requirements can be copied when you need a similar rule and deleted when no longer
 needed.
@@ -643,8 +643,7 @@ whether or not a report has been calculated.
 
 ### Problem Reporting
 
-CVAT reports the following error types. Each error affects the resulting quality scores and
-highlights a significant problem in annotations.
+All currently reported conflicts have error severity.
 
 | **Problem** | **Description** |
 | - | - |
