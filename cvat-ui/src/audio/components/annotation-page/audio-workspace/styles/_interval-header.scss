@@ -7,9 +7,6 @@
     min-width: 0;
 
     .cvat-audio-interval-header-top {
-        display: flex;
-        align-items: center;
-        gap: $grid-unit-size * 0.5;
         min-width: 0;
     }
 
@@ -24,51 +21,33 @@
         border-radius: $grid-unit-size * 0.5;
         background: rgba(255,255,255,72%);
         color: #303030;
-        font-size: 12px;
+        font-size: $grid-unit-size * 1.5;
         font-weight: 600;
     }
 
     .cvat-audio-interval-header-label {
-        display: flex;
-        flex: 1 1 0;
-        flex-wrap: nowrap;
-        align-items: center;
-        gap: $grid-unit-size * 0.5;
         min-width: 0;
         color: $text-color;
-        font-size: 12px;
+        font-size: $grid-unit-size * 1.5;
         font-weight: 500;
-    }
 
-    .cvat-audio-region-label-trigger {
-        display: flex;
-        align-items: center;
-        gap: $grid-unit-size * 0.75;
-        min-width: 0;
-        padding: $grid-unit-size * 0.5 $grid-unit-size * 0.75;
-        border-radius: $grid-unit-size * 0.5;
-        cursor: pointer;
-
-        &:hover { background: rgba(0, 0, 0, 6%); }
-
-        .cvat-audio-region-label-color {
-            width: $grid-unit-size;
-            height: $grid-unit-size;
-            flex: 0 0 auto;
-            border: 1px solid rgba(0, 0, 0, 6%);
-            border-radius: 50%;
+        .cvat-audio-interval-header-label-row {
+            min-width: 0;
         }
 
-        .cvat-audio-region-label-trigger-name {
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-         }
+        .cvat-audio-interval-header-label-col {
+            max-width: $grid-unit-size * 30;
+            min-width: 0;
+        }
 
-        .cvat-audio-region-label-edit-icon {
-            flex: 0 0 auto;
-            color: rgba(0, 0, 0, 45%);
-            font-size: 12px;
+        .cvat-audio-interval-header-label-selector {
+            max-width: 100%;
+
+            .ant-select-selector {
+                border-color: rgba(0, 0, 0, 12%);
+                border-radius: $border-radius-base;
+                background: rgba(255, 255, 255, 82%);
+            }
         }
     }
 
@@ -78,23 +57,28 @@
         text-transform: lowercase;
     }
 
-    .cvat-audio-interval-header-actions {
+    .cvat-audio-interval-header-compact-actions {
+        margin-top: $grid-unit-size;
+        padding-top: $grid-unit-size * 0.5;
+        border-top: 1px solid rgba(0, 0, 0, 7%);
+    }
+
+    .cvat-audio-interval-header-actions,
+    .cvat-audio-interval-header-more-actions {
         display: flex;
-        flex: 0 0 auto;
         align-items: center;
-        margin-left: auto;
 
         .cvat-audio-region-item-action-btn {
             display: flex;
             align-items: center;
             justify-content: center;
-            width: $grid-unit-size * 2.75;
-            height: $grid-unit-size * 2.75;
+            width: $grid-unit-size * 3;
+            height: $grid-unit-size * 3;
             border: 1px solid transparent;
             border-radius: $border-radius-base;
             color: rgba(0, 0, 0, 62%);
-            font-size: 15px;
-            line-height: $grid-unit-size * 2.75;
+            font-size: $grid-unit-size * 2;
+            line-height: $grid-unit-size * 3;
             cursor: pointer;
             transition:
                 background-color $box-shadow-transition,
@@ -120,9 +104,19 @@
     }
 
     .cvat-audio-interval-header-time {
-        margin-top: $grid-unit-size * 0.5;
+        margin-top: $grid-unit-size;
         color: rgba(0, 0, 0, 60%);
-        font-size: 12px;
+        font-size: $grid-unit-size * 1.5;
         line-height: $grid-unit-size * 2.25;
     }
+
+    &.cvat-audio-interval-header-compact {
+        .cvat-audio-interval-header-time {
+            padding-left: 0;
+        }
+    }
+}
+
+.cvat-audio-interval-header-label-dropdown {
+    max-width: $grid-unit-size * 30;
 }

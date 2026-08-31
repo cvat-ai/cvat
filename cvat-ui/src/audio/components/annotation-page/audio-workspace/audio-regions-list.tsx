@@ -11,7 +11,7 @@ import { ActiveControl, ColorBy } from 'reducers';
 import { AudioIntervalState, Label } from 'cvat-core-wrapper';
 import { hexToRgbComponents } from 'audio/utils/hex-color';
 import { getRegionItemColor } from './audio-region-colors';
-import AudioIntervalActions, { AudioIntervalActionShortcuts } from './audio-interval-actions';
+import { AudioIntervalActionShortcuts } from './audio-interval-actions';
 import AudioIntervalHeader from './audio-interval-header';
 import AudioRegionsListHeader, { AudioRegionsOrdering } from './audio-regions-list-header';
 import { intervalID } from './utils/audio-interval';
@@ -96,14 +96,12 @@ function AudioRegionItem(props: ItemProps): JSX.Element {
                 intervalIndex={displayIndex}
                 labels={labels}
                 isReadonly={isLocked}
-                showSource={false}
+                showSource
+                colorBy={colorBy}
+                shortcuts={intervalActionShortcuts}
+                isCompact
+                canPlayInterval={isCursor}
                 onChangeLabel={(labelID) => onChangeLabel(id, labelID)}
-                actions={<AudioIntervalActions
-                    interval={interval}
-                    colorBy={colorBy}
-                    canPlayInterval={isCursor}
-                    shortcuts={intervalActionShortcuts}
-                />}
             />
         </div>
     );

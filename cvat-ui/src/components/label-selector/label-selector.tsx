@@ -4,6 +4,7 @@
 // SPDX-License-Identifier: MIT
 
 import React, { useEffect, useState } from 'react';
+import Text from 'antd/lib/typography/Text';
 import Select, { SelectProps } from 'antd/lib/select';
 
 interface Props extends SelectProps<string> {
@@ -80,7 +81,7 @@ export default function LabelSelector(props: Props): JSX.Element {
                 <Select.Option title={label.name} key={label.id} value={label.id}>
                     <span className='cvat-label-selector-option'>
                         <LabelColorDot color={label.color} />
-                        {label.name}
+                        <Text ellipsis>{label.name}</Text>
                     </span>
                 </Select.Option>
             ))}

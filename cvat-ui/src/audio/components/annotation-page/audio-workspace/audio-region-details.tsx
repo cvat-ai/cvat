@@ -15,7 +15,7 @@ import TextArea from 'antd/lib/input/TextArea';
 import { AudioIntervalState, Label, Attribute } from 'cvat-core-wrapper';
 import { clamp } from 'utils/math';
 import { ColorBy } from 'reducers';
-import AudioIntervalActions, { AudioIntervalActionShortcuts } from './audio-interval-actions';
+import { AudioIntervalActionShortcuts } from './audio-interval-actions';
 import AudioIntervalHeader from './audio-interval-header';
 
 interface AudioRegionDetailsProps {
@@ -191,12 +191,10 @@ function AudioRegionDetails(props: AudioRegionDetailsProps): JSX.Element {
                 labels={labels}
                 isReadonly={isReadonly}
                 showSource
+                colorBy={colorBy}
+                shortcuts={intervalActionShortcuts}
+                isCompact={false}
                 onChangeLabel={onChangeLabel}
-                actions={<AudioIntervalActions
-                    interval={interval}
-                    colorBy={colorBy}
-                    shortcuts={intervalActionShortcuts}
-                />}
             />
 
             <div className='cvat-audio-region-details-content'>

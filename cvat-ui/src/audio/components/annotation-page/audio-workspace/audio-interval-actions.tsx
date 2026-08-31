@@ -2,12 +2,11 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useCallback, useMemo, useState } from 'react';
-import Dropdown from 'antd/lib/dropdown';
+import React, { useCallback } from 'react';
 import { Row, Col } from 'antd/lib/grid';
 import Icon, {
     EyeInvisibleFilled, EyeOutlined, LockFilled,
-    MoreOutlined, PushpinFilled, PushpinOutlined,
+    PushpinFilled, PushpinOutlined,
     UnlockOutlined,
 } from '@ant-design/icons';
 import classNames from 'classnames';
@@ -15,15 +14,10 @@ import { useDispatch } from 'react-redux';
 
 import { AudioIntervalState } from 'cvat-core-wrapper';
 import {
-    audioActions,
-    copyAudioIntervalAsync,
     requestPlayAudioIntervalOnce,
     requestSetAudioPlaybackToIntervalBoundary,
-    removeAudioIntervalAsync,
     updateAudioIntervalAsync,
 } from 'actions/audio-actions';
-import { ColorBy } from 'reducers';
-import ColorPicker from 'components/annotation-page/standard-workspace/objects-side-bar/color-picker';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { ThunkDispatch } from 'utils/redux';
 import {
@@ -31,14 +25,13 @@ import {
     SeekToEndIcon,
     SeekToStartIcon,
 } from 'icons';
-import AudioRegionItemMenu from './audio-region-item-menu';
-import { copyAudioIntervalURL, intervalID } from './utils/audio-interval';
+import { intervalID } from './utils/audio-interval';
 
 interface Props {
     interval: AudioIntervalState;
-    colorBy: ColorBy;
     canPlayInterval?: boolean;
     shortcuts: AudioIntervalActionShortcuts;
+    more?: React.ReactNode;
 }
 
 export interface AudioIntervalActionShortcuts {
@@ -91,12 +84,11 @@ function AudioIntervalActionButton({
 
 export default function AudioIntervalActions({
     interval,
-    colorBy,
     canPlayInterval = true,
     shortcuts,
+    more,
 }: Props): JSX.Element {
     const dispatch = useDispatch<ThunkDispatch>();
-    const [colorPickerVisible, setColorPickerVisible] = useState(false);
 
     const id = intervalID(interval);
     const locked = !!interval.lock;
@@ -106,7 +98,7 @@ export default function AudioIntervalActions({
         'cvat-audio-region-item-action-btn-disabled': locked,
     });
     const playActionClassName = classNames(actionClassName, {
-        'cvat-audio-region-item-action-btn-disabled': hidden,
+        'cvat-audio-region-item-action-btn-disabled': !canPlayInterval || hidden,
     });
 
     const handlePlayInterval = useCallback((): void => {
@@ -131,18 +123,6 @@ export default function AudioIntervalActions({
         dispatch(updateAudioIntervalAsync(id, (item) => ({ hidden: !item.hidden })));
     }, [dispatch, id, locked]);
 
-    const handleCopyInterval = useCallback((): void => {
-        dispatch(copyAudioIntervalAsync(id));
-    }, [dispatch, id]);
-
-    const handleDeleteInterval = useCallback((): void => {
-        dispatch(removeAudioIntervalAsync(id));
-    }, [dispatch, id]);
-
-    const handleChangeColor = useCallback((color: string): void => {
-        dispatch(updateAudioIntervalAsync(id, { color }));
-    }, [dispatch, id]);
-
     const handleSetPlayback = useCallback((boundary: 'start' | 'end'): void => {
         dispatch(requestSetAudioPlaybackToIntervalBoundary(id, boundary));
     }, [dispatch, id]);
@@ -153,119 +133,72 @@ export default function AudioIntervalActions({
         handleSetPlayback('end');
     }, [handleSetPlayback]);
 
-    const handleFitInterval = useCallback((): void => {
-        dispatch(audioActions.fitAudioInterval(id));
-    }, [dispatch, id]);
-
-    const menu = useMemo(() => (
-        AudioRegionItemMenu({
-            serverID: interval.serverID ?? undefined,
-            locked,
-            colorBy,
-            onCreateURL: () => copyAudioIntervalURL(interval.serverID),
-            onCopy: handleCopyInterval,
-            onChangeColorClick: () => setColorPickerVisible(true),
-            onRemove: handleDeleteInterval,
-            onFitInterval: handleFitInterval,
-        })
-    ), [
-        colorBy,
-        interval.serverID,
-        locked,
-        handleCopyInterval,
-        handleDeleteInterval,
-        handleFitInterval,
-    ]);
-
-    const stopPropagation = (event: React.MouseEvent | React.KeyboardEvent): void => {
-        event.stopPropagation();
-    };
-
     return (
         <div className='cvat-audio-interval-header-actions'>
-            <Row gutter={4}>
+            <Row gutter={8}>
                 <Col>
-                    <Row>
-                        <AudioIntervalActionButton
-                            title={`Set playback to interval start ${shortcuts.setPlaybackToStart}`}
-                            className={actionClassName}
-                            onAction={handleSetPlaybackToStart}
-                        >
-                            <Icon component={SeekToStartIcon} aria-hidden />
-                        </AudioIntervalActionButton>
-                        <AudioIntervalActionButton
-                            title={`Play interval as range ${shortcuts.playInterval}`}
-                            className={playActionClassName}
-                            onAction={handlePlayInterval}
-                        >
-                            <Icon component={PlayRangeIcon} aria-hidden />
-                        </AudioIntervalActionButton>
-                        <AudioIntervalActionButton
-                            title={`Set playback to interval end ${shortcuts.setPlaybackToEnd}`}
-                            className={actionClassName}
-                            onAction={handleSetPlaybackToEnd}
-                        >
-                            <Icon component={SeekToEndIcon} aria-hidden />
-                        </AudioIntervalActionButton>
+                    <Row gutter={4}>
+                        <Col>
+                            <AudioIntervalActionButton
+                                title={`Set playback to interval start ${shortcuts.setPlaybackToStart}`}
+                                className={actionClassName}
+                                onAction={handleSetPlaybackToStart}
+                            >
+                                <Icon component={SeekToStartIcon} aria-hidden />
+                            </AudioIntervalActionButton>
+                        </Col>
+                        <Col>
+                            <AudioIntervalActionButton
+                                title={`Play interval as range ${shortcuts.playInterval}`}
+                                className={playActionClassName}
+                                onAction={handlePlayInterval}
+                            >
+                                <Icon component={PlayRangeIcon} aria-hidden />
+                            </AudioIntervalActionButton>
+                        </Col>
+                        <Col>
+                            <AudioIntervalActionButton
+                                title={`Set playback to interval end ${shortcuts.setPlaybackToEnd}`}
+                                className={actionClassName}
+                                onAction={handleSetPlaybackToEnd}
+                            >
+                                <Icon component={SeekToEndIcon} aria-hidden />
+                            </AudioIntervalActionButton>
+                        </Col>
                     </Row>
                 </Col>
                 <Col>
-                    <Row>
-                        <AudioIntervalActionButton
-                            title={`${locked ? 'Unlock interval' : 'Lock interval'} ${shortcuts.switchLock}`}
-                            className={actionClassName}
-                            onAction={handleToggleLock}
-                        >
-                            {locked ? <LockFilled /> : <UnlockOutlined />}
-                        </AudioIntervalActionButton>
-                        <AudioIntervalActionButton
-                            title={`${interval.pinned ? 'Unpin interval' : 'Pin interval'} ${shortcuts.switchPinned}`}
-                            className={lockableActionClassName}
-                            onAction={handleTogglePinned}
-                        >
-                            {interval.pinned ? <PushpinFilled /> : <PushpinOutlined />}
-                        </AudioIntervalActionButton>
-                        <AudioIntervalActionButton
-                            title={`${interval.hidden ? 'Show interval' : 'Hide interval'} ${shortcuts.switchHidden}`}
-                            className={lockableActionClassName}
-                            onAction={handleToggleHidden}
-                        >
-                            {interval.hidden ? <EyeInvisibleFilled /> : <EyeOutlined />}
-                        </AudioIntervalActionButton>
+                    <Row gutter={4}>
+                        <Col>
+                            <AudioIntervalActionButton
+                                title={`${locked ? 'Unlock interval' : 'Lock interval'} ${shortcuts.switchLock}`}
+                                className={actionClassName}
+                                onAction={handleToggleLock}
+                            >
+                                {locked ? <LockFilled /> : <UnlockOutlined />}
+                            </AudioIntervalActionButton>
+                        </Col>
+                        <Col>
+                            <AudioIntervalActionButton
+                                title={`${interval.pinned ? 'Unpin interval' : 'Pin interval'} ${shortcuts.switchPinned}`}
+                                className={lockableActionClassName}
+                                onAction={handleTogglePinned}
+                            >
+                                {interval.pinned ? <PushpinFilled /> : <PushpinOutlined />}
+                            </AudioIntervalActionButton>
+                        </Col>
+                        <Col>
+                            <AudioIntervalActionButton
+                                title={`${interval.hidden ? 'Show interval' : 'Hide interval'} ${shortcuts.switchHidden}`}
+                                className={lockableActionClassName}
+                                onAction={handleToggleHidden}
+                            >
+                                {interval.hidden ? <EyeInvisibleFilled /> : <EyeOutlined />}
+                            </AudioIntervalActionButton>
+                        </Col>
                     </Row>
                 </Col>
-                <Col>
-                    {colorPickerVisible ? (
-                        <ColorPicker
-                            visible
-                            value={interval.color ?? ''}
-                            onVisibleChange={setColorPickerVisible}
-                            onChange={handleChangeColor}
-                        >
-                            <span
-                                role='button'
-                                tabIndex={0}
-                                className={actionClassName}
-                                onClick={stopPropagation}
-                                onKeyDown={stopPropagation}
-                            >
-                                <MoreOutlined />
-                            </span>
-                        </ColorPicker>
-                    ) : (
-                        <Dropdown destroyPopupOnHide placement='bottomRight' trigger={['click']} menu={menu}>
-                            <span
-                                role='button'
-                                tabIndex={0}
-                                className={actionClassName}
-                                onClick={stopPropagation}
-                                onKeyDown={stopPropagation}
-                            >
-                                <MoreOutlined />
-                            </span>
-                        </Dropdown>
-                    )}
-                </Col>
+                {more && <Col>{more}</Col>}
             </Row>
         </div>
     );

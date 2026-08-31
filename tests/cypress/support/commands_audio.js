@@ -187,11 +187,10 @@ Cypress.Commands.add('audioCreateRegionViaHotkey', (xStart, xEnd) => {
 });
 
 Cypress.Commands.add('audioChangeSelectedRegionLabel', (labelName) => {
-    cy.get('.cvat-audio-region-details .cvat-audio-region-label-trigger').click();
-    cy.get('.cvat-audio-region-label-popover').filter(':visible').contains(
-        '.cvat-audio-region-label-option', labelName,
-    ).click();
-    cy.get('.cvat-audio-region-details .cvat-audio-region-label-trigger').should('contain.text', labelName);
+    const labelSelector = '.cvat-audio-region-details .cvat-audio-interval-header-label-selector';
+    cy.get(labelSelector).click();
+    cy.get('.ant-select-dropdown').filter(':visible').contains('.ant-select-item-option', labelName).click();
+    cy.get(labelSelector).should('contain.text', labelName);
 });
 
 Cypress.Commands.add('audioExtendViaButton', (labelName) => {

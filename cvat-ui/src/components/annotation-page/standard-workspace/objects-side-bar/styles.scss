@@ -345,6 +345,10 @@
     }
 }
 
+.cvat-objects-sidebar-state-item-label-dropdown {
+    max-width: $grid-unit-size * 30;
+}
+
 .cvat-objects-sidebar-z-layers-panel {
     display: flex;
     flex-direction: column;
