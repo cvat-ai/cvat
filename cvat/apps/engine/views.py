@@ -1154,7 +1154,7 @@ class TaskViewSet(
         "dimension",
         "validation_mode",
     )
-    filter_fields = (*simple_filters, "id", "updated_date")
+    filter_fields = (*simple_filters, "id", "updated_date", "created_date")
     filter_description = textwrap.dedent("""
 
         There are few examples for complex filtering tasks:\n
