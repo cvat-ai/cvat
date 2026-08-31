@@ -58,8 +58,8 @@ def load_library(library_path: str) -> ctypes.CDLL:
         ) from exc
 
     try:
-        library.WelsCreateDecoder
-        library.WelsDestroyDecoder
+        getattr(library, "WelsCreateDecoder")
+        getattr(library, "WelsDestroyDecoder")
     except AttributeError as exc:
         # The library loaded but is not OpenH264; release the handle before failing so a
         # rejected candidate does not leak a loader reference.

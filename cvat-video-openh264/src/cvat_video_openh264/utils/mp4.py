@@ -295,8 +295,7 @@ def parse_sample_to_chunk(file: BinaryIO, stsc: Box) -> tuple[SampleToChunkEntry
     if (
         entries[0].first_chunk != 1
         or any(
-            entry.samples_per_chunk == 0 or entry.sample_description_index != 1
-            for entry in entries
+            entry.samples_per_chunk == 0 or entry.sample_description_index != 1 for entry in entries
         )
         or any(
             current.first_chunk >= following.first_chunk

@@ -23,7 +23,6 @@ from cvat_video_openh264 import (
     VideoDecoderUnavailableError,
 )
 from cvat_video_openh264.ctypes_structs import (
-    BufferInfo,
     DecoderVTable,
     _DecodeFrameNoDelay,
     _InitializeDecoder,
@@ -60,9 +59,9 @@ class FakeOpenH264Library:
         def _destroy(_handle: int | None) -> None:
             self.events["destroy"] += 1
 
-        self.WelsCreateDecoder = ctypes.CFUNCTYPE(
-            ctypes.c_long, ctypes.POINTER(ctypes.c_void_p)
-        )(_create)
+        self.WelsCreateDecoder = ctypes.CFUNCTYPE(ctypes.c_long, ctypes.POINTER(ctypes.c_void_p))(
+            _create
+        )
         self.WelsDestroyDecoder = ctypes.CFUNCTYPE(None, ctypes.c_void_p)(_destroy)
         self._keepalive += [self.WelsCreateDecoder, self.WelsDestroyDecoder]
 
@@ -98,7 +97,15 @@ class FakeOpenH264Library:
         vtable_ptr = ctypes.pointer(vtable)
         # An ISVCDecoder handle is a pointer to a pointer-to-vtable; expose &vtable_ptr.
         handle_slot = ctypes.pointer(vtable_ptr)
-        self._keepalive += [init_cb, uninit_cb, unused_cb, decode_cb, vtable, vtable_ptr, handle_slot]
+        self._keepalive += [
+            init_cb,
+            uninit_cb,
+            unused_cb,
+            decode_cb,
+            vtable,
+            vtable_ptr,
+            handle_slot,
+        ]
         return ctypes.cast(handle_slot, ctypes.c_void_p).value
 
 
