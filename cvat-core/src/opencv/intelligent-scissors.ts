@@ -159,8 +159,8 @@ export default class IntelligentScissorsImplementation implements IntelligentSci
         if (!state.blocked) {
             try {
                 tool.getContour(new cv.Point(curPoint.x, curPoint.y), contour);
-                for (let index = 0; index < contour.data32S.length; index += 2) {
-                    curSegment.push(contour.data32S[index] / xScale, contour.data32S[index + 1] / yScale);
+                for (let row = 0; row < contour.rows; row++) {
+                    curSegment.push(contour.intAt(row, 0) / xScale, contour.intAt(row, 1) / yScale);
                 }
             } finally {
                 contour.delete();

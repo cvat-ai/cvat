@@ -7,12 +7,27 @@
 import { createOpenCVInterface } from './opencv/opencv-interface';
 import type { OpenCVInterface } from './opencv/opencv-interface';
 
-export async function initializeOpenCVInWorker(opencvPath: string): Promise<OpenCVInterface> {
-    (self as any).importScripts(opencvPath);
-    const cv = await (self as any).cv;
-    if (!cv || typeof cv.Mat !== 'function') {
-        throw new Error('OpenCV failed to initialize');
-    }
+export function initializeOpenCVInWorker(opencvPath: string): Promise<OpenCVInterface> {
+    return new Promise((resolve, reject) => {
+        (self as any).Module = {
+            onRuntimeInitialized: () => {
+                const { cv } = self as any;
+                if (!cv) {
+                    reject(new Error('OpenCV failed to initialize'));
+                    return;
+                }
 
-    return createOpenCVInterface(cv);
+                const cvInterface = createOpenCVInterface(cv);
+                delete (self as any).Module;
+                resolve(cvInterface);
+            },
+        };
+
+        try {
+            (self as any).importScripts(opencvPath);
+        } catch (error: unknown) {
+            delete (self as any).Module;
+            reject(error);
+        }
+    });
 }
