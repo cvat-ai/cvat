@@ -8664,6 +8664,3 @@ class TestCloudStorageAzureStatus(SimpleTestCase):
 
         self.storage._head = fake_head
         self.assertEqual(self.storage.get_status(), Status.NOT_FOUND)
-
-
-class TestCacheOverride(TaskDataAPITestCase): ...
