@@ -12,6 +12,7 @@ from pathlib import Path
 
 import PIL.Image
 
+from .errors import UnsupportedVideoChunkError
 from .models import DecoderInfo
 from .utils import (
     OpenH264Decoder,
@@ -53,9 +54,17 @@ def iter_frames(
         track = read_video_track_from_stream(file, file_size)
         decoder_info, library = resolve_decoder_and_library(library_path)
         decoder = OpenH264Decoder(decoder_info, library=library)
+        decoded_frame_count = 0
 
         try:
             for access_unit in iter_access_units_from_stream(file, track):
-                yield decoder.decode(access_unit)
+                image = decoder.decode(access_unit)
+                decoded_frame_count += 1
+                yield image
         finally:
             decoder.close()
+
+    if decoded_frame_count != len(track.samples):
+        raise UnsupportedVideoChunkError(
+            f"Decoded {decoded_frame_count} frames from {len(track.samples)} AVC samples"
+        )
