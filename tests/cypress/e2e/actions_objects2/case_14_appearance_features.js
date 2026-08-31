@@ -14,7 +14,7 @@ context('Appearance features', () => {
     let fill = '';
     let fillOpacity = '';
     const createRectangleShape2Points = {
-        points: 'By 2 Points',
+        points: '2 Points',
         type: 'Shape',
         labelName,
         firstX: 100,
@@ -210,7 +210,7 @@ context('Appearance features', () => {
             // affect opacity level
             testDrawShapeCheckOpacity({
                 shape: 'rectangle',
-                drawingMethod: 'By 2 Points',
+                drawingMethod: '2 Points',
                 shapeType: 'Shape',
                 fillOpacityBefore: 0,
                 fillOpacityAfter: 1,
@@ -218,7 +218,7 @@ context('Appearance features', () => {
             // not affect opacity level
             testDrawShapeCheckOpacity({
                 shape: 'rectangle',
-                drawingMethod: 'By 4 Points',
+                drawingMethod: '4 Points',
                 shapeType: 'Shape',
                 opacityBefore: 0,
                 opacityAfter: 0,

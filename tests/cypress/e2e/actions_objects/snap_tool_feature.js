@@ -18,7 +18,7 @@ import { checkAutoborderPointsCount, getShapeCoord } from '../../support/utils.c
 
 context('Snap tool feature.', () => {
     const createRectangleShape2Points = {
-        points: 'By 2 Points',
+        points: '2 Points',
         type: 'Shape',
         labelName,
         firstX: 400,
@@ -136,7 +136,7 @@ context('Snap tool feature.', () => {
 
     describe('Testing "Snap to Contour"', () => {
         const createRectangleShape2PointsSec = {
-            points: 'By 2 Points',
+            points: '2 Points',
             type: 'Shape',
             labelName,
             firstX: 600,
@@ -414,7 +414,7 @@ context('Snap tool feature.', () => {
 
     context('Regression tests', () => {
         const createRectangleShape2PointsHidden = {
-            points: 'By 2 Points',
+            points: '2 Points',
             type: 'Shape',
             labelName,
             firstX: 200,

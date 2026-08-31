@@ -27,7 +27,7 @@ context('Tooltip does not interfere with interaction with elements.', () => {
             // Move away as a user would when selecting another drawing method.
             // The tooltip must then stop covering the radio group by itself.
             cy.contains('Shape').trigger('mouseout', 'top');
-            cy.contains('By 4 Points').click();
+            cy.contains('4 Points').click();
         });
     });
 });

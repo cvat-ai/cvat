@@ -93,20 +93,20 @@ function DrawShapePopoverComponent(props: Props): JSX.Element {
                             <Text className='cvat-text-color'> Drawing method </Text>
                         </Col>
                     </Row>
-                    <Row justify='space-around'>
-                        <Col>
+                    <Row className='cvat-draw-shape-popover-drawing-method'>
+                        <Col span={24}>
                             <Radio.Group
-                                style={{ display: 'flex' }}
+                                className='cvat-draw-shape-popover-drawing-method-selector'
                                 value={rectDrawingMethod}
                                 onChange={onChangeRectDrawingMethod}
                             >
-                                <Radio value={RectDrawingMethod.CLASSIC} style={{ width: 'auto' }}>
-                                    By 2 Points
-                                </Radio>
+                                <Radio.Button value={RectDrawingMethod.CLASSIC}>
+                                    2 Points
+                                </Radio.Button>
                                 {shapeType === ShapeType.RECTANGLE && (
-                                    <Radio value={RectDrawingMethod.EXTREME_POINTS} style={{ width: 'auto' }}>
-                                        By 4 Points
-                                    </Radio>
+                                    <Radio.Button value={RectDrawingMethod.EXTREME_POINTS}>
+                                        4 Points
+                                    </Radio.Button>
                                 )}
                                 <CVATTooltip
                                     title={
@@ -117,12 +117,11 @@ function DrawShapePopoverComponent(props: Props): JSX.Element {
                                         'and right-click to undo the last point.'
                                     }
                                 >
-                                    <Radio
+                                    <Radio.Button
                                         value={RectDrawingMethod.ROTATED_POINTS}
-                                        style={{ width: 'auto', alignSelf: 'center' }}
                                     >
                                         Rotated
-                                    </Radio>
+                                    </Radio.Button>
                                 </CVATTooltip>
                             </Radio.Group>
                         </Col>
