@@ -19,6 +19,7 @@ from .utils import (
     iter_access_units_from_stream,
     read_video_track_from_stream,
     resolve_decoder_and_library,
+    unload_library,
 )
 
 __all__ = ["DecoderInfo", "iter_frames", "resolve_decoder"]
@@ -27,7 +28,8 @@ __all__ = ["DecoderInfo", "iter_frames", "resolve_decoder"]
 def resolve_decoder(*, library_path: os.PathLike[str] | str | None = None) -> DecoderInfo:
     """Resolve an explicit, configured, or system OpenH264 library without downloading it."""
 
-    info, _ = resolve_decoder_and_library(library_path)
+    info, library = resolve_decoder_and_library(library_path)
+    unload_library(library)
     return info
 
 
@@ -53,16 +55,21 @@ def iter_frames(
     with file:
         track = read_video_track_from_stream(file, file_size)
         decoder_info, library = resolve_decoder_and_library(library_path)
-        decoder = OpenH264Decoder(decoder_info, library=library)
         decoded_frame_count = 0
 
         try:
-            for access_unit in iter_access_units_from_stream(file, track):
-                image = decoder.decode(access_unit)
-                decoded_frame_count += 1
-                yield image
+            # Construct inside the try so a decoder creation/initialization failure still
+            # releases the library handle loaded for this chunk (no leaked loader reference).
+            decoder = OpenH264Decoder(decoder_info, library=library)
+            try:
+                for access_unit in iter_access_units_from_stream(file, track):
+                    image = decoder.decode(access_unit)
+                    decoded_frame_count += 1
+                    yield image
+            finally:
+                decoder.close()
         finally:
-            decoder.close()
+            unload_library(library)
 
     if decoded_frame_count != len(track.samples):
         raise UnsupportedVideoChunkError(

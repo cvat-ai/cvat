@@ -18,12 +18,53 @@ def test_ensure_supported_version_accepts_supported(version: tuple[int, int, int
     ensure_supported_version(version, "/opt/codecs/libopenh264.so")
 
 
-@pytest.mark.parametrize("version", [None, (0, 9, 9)])
-def test_ensure_supported_version_rejects_unreadable_or_old(
+@pytest.mark.parametrize(
+    "version",
+    [
+        None,
+        (0, 9, 9),
+        # 1.0-1.5 carry an extra SDecodingParam field the bindings do not model.
+        (1, 5, 0),
+        # Unknown future major whose ABI this adapter has not been validated against.
+        (3, 0, 0),
+    ],
+)
+def test_ensure_supported_version_rejects_unreadable_or_out_of_window(
     version: tuple[int, int, int] | None,
 ) -> None:
     with pytest.raises(DecoderVersionMismatchError):
         ensure_supported_version(version, "/opt/codecs/libopenh264.so")
+
+
+def test_unload_library_releases_handle(monkeypatch: pytest.MonkeyPatch) -> None:
+    released: list[int] = []
+    primitive = "FreeLibrary" if decoder.os.name == "nt" else "dlclose"
+    monkeypatch.setattr(decoder._ctypes, primitive, released.append, raising=False)
+
+    class FakeLibrary:
+        _handle = 0xABCD
+
+    decoder.unload_library(FakeLibrary())
+
+    assert released == [0xABCD]
+
+
+def test_unload_library_ignores_none() -> None:
+    decoder.unload_library(None)
+
+
+def test_resolve_unloads_library_on_version_rejection(monkeypatch: pytest.MonkeyPatch) -> None:
+    unloaded: list[object] = []
+    sentinel_library = object()
+    monkeypatch.setattr(decoder, "_discover_library_path", lambda _p: "/opt/libopenh264.so")
+    monkeypatch.setattr(decoder, "load_library", lambda _p: sentinel_library)
+    monkeypatch.setattr(decoder, "_probe_version", lambda _lib: (1, 0, 0))
+    monkeypatch.setattr(decoder, "unload_library", unloaded.append)
+
+    with pytest.raises(DecoderVersionMismatchError):
+        decoder.resolve_decoder_and_library(None)
+
+    assert unloaded == [sentinel_library]
 
 
 def test_explicit_path_takes_precedence(monkeypatch: pytest.MonkeyPatch) -> None:

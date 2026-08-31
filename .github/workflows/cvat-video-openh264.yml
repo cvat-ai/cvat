@@ -1,0 +1,59 @@
+# Copyright (C) CVAT.ai Corporation
+#
+# SPDX-License-Identifier: MIT
+
+name: cvat-video-openh264
+on:
+  push:
+    branches:
+      - 'master'
+      - 'develop'
+  pull_request:
+    types: [ready_for_review, opened, synchronize, reopened]
+    paths:
+      - 'cvat-video-openh264/**'
+      - '.github/workflows/cvat-video-openh264.yml'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  unit_testing:
+    if: |
+      github.event.pull_request.draft == false &&
+      !startsWith(github.event.pull_request.title, '[WIP]') &&
+      !startsWith(github.event.pull_request.title, '[Dependent]')
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.10', '3.12']
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install the standalone adapter and test dependencies
+        # pip's PEP 735 --group support is newer than the bundled pip, so upgrade first.
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --editable ./cvat-video-openh264 \
+            --group cvat-video-openh264/pyproject.toml:test
+
+      - name: Run package tests
+        # These exercise the ctypes ABI bindings, version gate, and I420 conversion
+        # without depending on PyAV or a codec binary.
+        run: python -m pytest cvat-video-openh264/tests
+
+      - name: Build the pure-Python artifacts
+        run: |
+          python -m pip install build
+          python -m build --outdir /tmp/cvat-video-openh264-dist ./cvat-video-openh264
+
+      - name: Enforce the pure-Python artifact boundary
+        run: python cvat-video-openh264/scripts/check_artifacts.py /tmp/cvat-video-openh264-dist/*
