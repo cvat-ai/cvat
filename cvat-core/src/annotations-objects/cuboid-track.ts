@@ -14,7 +14,7 @@ export class CuboidTrack extends Track {
     constructor(data: SerializedTrack, clientID: number, color: string, injection: AnnotationInjection) {
         super(data, clientID, color, injection);
         this.shapeType = ShapeType.CUBOID;
-        this.pinned = false;
+        this.pinned = data.pinned ?? false;
         for (const shape of Object.values(this.shapes)) {
             checkNumberOfPoints(this.shapeType, shape.points);
             shape.rotation = 0; // is not supported

@@ -671,14 +671,11 @@ function snapshotSelectionState(state: ObjectState): SerializedData {
         descriptions: [...(serialized.descriptions || [])],
         points: serialized.points ? [...serialized.points] : undefined,
         elements: state.elements.map(snapshotSelectionState),
+        group: serialized.group ? { ...serialized.group } : undefined,
         clientID: undefined,
         serverID: undefined,
         parentID: undefined,
         keyframes: undefined,
-        group: undefined,
-        lock: false,
-        hidden: false,
-        pinned: false,
     };
 }
 
@@ -767,42 +764,131 @@ function translateSelectionState(
     };
 }
 
-export function pasteSelectionAsync(): ThunkAction {
+function placeCopiedStatesAsync(
+    copiedStates: SerializedData[],
+    dx: number,
+    dy: number,
+    selectCreated: boolean,
+): ThunkAction {
     return async (dispatch: ThunkDispatch): Promise<void> => {
         const {
             job: { instance: jobInstance },
             player: { frame: { number: frameNumber } },
-            drawing: { copiedStates },
             annotations: { zLayer: { cur: currentZOrder } },
         } = getStore().getState().annotation;
-
-        if (!jobInstance || !copiedStates || !copiedStates.length) {
+        if (!jobInstance || !copiedStates.length) {
             return;
         }
 
-        // small constant offset so pasted objects do not perfectly overlap the originals
-        const offset = 20;
-        const statesToCreate = copiedStates.map((state): ObjectState => (
-            new cvat.classes.ObjectState(translateSelectionState(
+        const statesToCreate = copiedStates.map((state): ObjectState => new cvat.classes.ObjectState(
+            translateSelectionState(
                 state,
                 frameNumber,
-                state.objectType === ObjectType.TAG ? 0 : offset,
-                state.objectType === ObjectType.TAG ? 0 : offset,
+                state.objectType === ObjectType.TAG ? 0 : dx,
+                state.objectType === ObjectType.TAG ? 0 : dy,
                 currentZOrder,
-            ))
+            ),
         ));
 
         try {
-            // a single put() records one CREATED_OBJECTS history action -> one undo step
             const clientIDs: number[] = await jobInstance.annotations.put(statesToCreate);
+            await jobInstance.logger.log(EventScope.pasteObject, { count: clientIDs.length });
             await dispatch(fetchAnnotationsAsync());
-            // select the freshly pasted objects so the whole group can be moved into place
-            dispatch(selectObjects(clientIDs));
+            if (selectCreated) {
+                dispatch(selectObjects(clientIDs));
+            }
         } catch (error) {
             dispatch({
                 type: AnnotationActionTypes.CREATE_ANNOTATIONS_FAILED,
                 payload: { error },
             });
+        }
+    };
+}
+
+export const ShapeTypeToControl: Record<ShapeType, ActiveControl> = {
+    [ShapeType.RECTANGLE]: ActiveControl.DRAW_RECTANGLE,
+    [ShapeType.POLYLINE]: ActiveControl.DRAW_POLYLINE,
+    [ShapeType.POLYGON]: ActiveControl.DRAW_POLYGON,
+    [ShapeType.POINTS]: ActiveControl.DRAW_POINTS,
+    [ShapeType.CUBOID]: ActiveControl.DRAW_CUBOID,
+    [ShapeType.ELLIPSE]: ActiveControl.DRAW_ELLIPSE,
+    [ShapeType.SKELETON]: ActiveControl.DRAW_SKELETON,
+    [ShapeType.MASK]: ActiveControl.DRAW_MASK,
+};
+
+function startPastePlacementAsync(copiedStates: SerializedData[], selectCreated: boolean): ThunkAction {
+    return async (dispatch: ThunkDispatch): Promise<void> => {
+        const {
+            canvas: { instance: canvasInstance },
+            player: { frame: { number: frameNumber } },
+            annotations: { zLayer: { cur: currentZOrder } },
+        } = getStore().getState().annotation;
+
+        if (!copiedStates.length || !(canvasInstance instanceof Canvas)) {
+            return;
+        }
+
+        const shapes = copiedStates.filter((state): boolean => state.objectType !== ObjectType.TAG);
+        if (!shapes.length) {
+            dispatch(placeCopiedStatesAsync(copiedStates, 0, 0, selectCreated));
+            return;
+        }
+
+        let previewClientID = -1;
+        const withPreviewIDs = (state: SerializedData, parentID: number | null = null): SerializedData => {
+            const clientID = previewClientID--;
+            return {
+                ...state,
+                clientID,
+                parentID,
+                group: state.group || { id: 0, color: '#000000' },
+                elements: state.elements?.map((element) => withPreviewIDs(element, clientID)) || [],
+            };
+        };
+        const initialStates = shapes.map((state): ObjectState => new cvat.classes.ObjectState(withPreviewIDs(
+            translateSelectionState(state, frameNumber, 0, 0, currentZOrder),
+        )));
+
+        canvasInstance.cancel();
+        dispatch({
+            type: AnnotationActionTypes.PASTE_SHAPE,
+            payload: {
+                activeControl: selectCreated ?
+                    ActiveControl.PASTE_SELECTION :
+                    ShapeTypeToControl[shapes[0].shapeType as ShapeType] || ActiveControl.CURSOR,
+            },
+        });
+        canvasInstance.draw({
+            enabled: true,
+            initialStates,
+            onDrawDone: (
+                { offset }: { offset: { x: number; y: number } },
+                _duration?: number,
+                continueDraw?: boolean,
+            ): void => {
+                dispatch(placeCopiedStatesAsync(
+                    copiedStates,
+                    offset.x,
+                    offset.y,
+                    selectCreated && !continueDraw,
+                ));
+                if (!continueDraw) {
+                    dispatch({
+                        type: AnnotationActionTypes.UPDATE_ACTIVE_CONTROL,
+                        payload: { activeControl: ActiveControl.CURSOR },
+                    });
+                }
+            },
+        });
+    };
+}
+
+export function pasteSelectionAsync(): ThunkAction {
+    return async (dispatch: ThunkDispatch): Promise<void> => {
+        const { copiedStates } = getStore().getState().annotation.drawing;
+        if (copiedStates?.length) {
+            dispatch(startPastePlacementAsync(copiedStates, true));
         }
     };
 }
@@ -1812,54 +1898,11 @@ export function searchChaptersAsync(
     };
 }
 
-export const ShapeTypeToControl: Record<ShapeType, ActiveControl> = {
-    [ShapeType.RECTANGLE]: ActiveControl.DRAW_RECTANGLE,
-    [ShapeType.POLYLINE]: ActiveControl.DRAW_POLYLINE,
-    [ShapeType.POLYGON]: ActiveControl.DRAW_POLYGON,
-    [ShapeType.POINTS]: ActiveControl.DRAW_POINTS,
-    [ShapeType.CUBOID]: ActiveControl.DRAW_CUBOID,
-    [ShapeType.ELLIPSE]: ActiveControl.DRAW_ELLIPSE,
-    [ShapeType.SKELETON]: ActiveControl.DRAW_SKELETON,
-    [ShapeType.MASK]: ActiveControl.DRAW_MASK,
-};
-
 export function pasteShapeAsync(): ThunkAction {
     return async (dispatch: ThunkDispatch): Promise<void> => {
-        const {
-            canvas: { instance: canvasInstance },
-            player: {
-                frame: { number: frameNumber },
-            },
-            drawing: { activeInitialState: initialState },
-        } = getStore().getState().annotation;
-
-        if (initialState && canvasInstance) {
-            const activeControl = ShapeTypeToControl[initialState.shapeType as ShapeType] || ActiveControl.CURSOR;
-
-            canvasInstance.cancel();
-            dispatch({
-                type: AnnotationActionTypes.PASTE_SHAPE,
-                payload: {
-                    activeControl,
-                },
-            });
-
-            if (initialState.objectType === ObjectType.TAG) {
-                const objectState = new cvat.classes.ObjectState({
-                    objectType: ObjectType.TAG,
-                    label: initialState.label,
-                    attributes: initialState.attributes,
-                    frame: frameNumber,
-                });
-                dispatch(createAnnotationsAsync([objectState]));
-            } else {
-                canvasInstance.draw({
-                    enabled: true,
-                    initialState,
-                    ...(initialState.shapeType === ShapeType.SKELETON ?
-                        { skeletonSVG: initialState.label.structure.svg } : {}),
-                });
-            }
+        const { activeInitialState } = getStore().getState().annotation.drawing;
+        if (activeInitialState) {
+            dispatch(startPastePlacementAsync([snapshotSelectionState(activeInitialState)], false));
         }
     };
 }

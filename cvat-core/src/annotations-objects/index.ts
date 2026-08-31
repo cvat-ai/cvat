@@ -49,7 +49,7 @@ export function shapeFactory(
     injection: AnnotationInjection,
 ): Shape {
     const { type } = data;
-    const color = colors[clientID % colors.length];
+    const color = data.color ?? colors[clientID % colors.length];
 
     let shapeModel = null;
     switch (type) {
@@ -91,7 +91,7 @@ export function trackFactory(
 ): Track {
     if (trackData.shapes.length) {
         const { type } = trackData.shapes[0];
-        const color = colors[clientID % colors.length];
+        const color = trackData.color ?? colors[clientID % colors.length];
 
         let trackModel = null;
         switch (type) {

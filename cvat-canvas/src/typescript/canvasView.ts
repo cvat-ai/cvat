@@ -105,6 +105,11 @@ export class CanvasViewImpl implements CanvasView, Listener {
     private selectedObjects: number[];
     private selectedObjectsBox: SVG.Rect | null;
     private selectedObjectsLabel: HTMLDivElement | null;
+    private selectionPasteData: DrawData | null;
+    private selectionPasteStates: any[];
+    private selectionPasteOffset: { x: number; y: number };
+    private selectionPasteCenter: { x: number; y: number } | null;
+    private selectionPasteStartedAt: number;
     private innerObjectsFlags: {
         drawHidden: Record<number, boolean>;
         editHidden: Record<number, boolean>;
@@ -2024,6 +2029,13 @@ export class CanvasViewImpl implements CanvasView, Listener {
     }
 
     private onContentMouseDown = (event: MouseEvent): void => {
+        if (this.selectionPasteData && event.button === 0 && !event.altKey) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            this.placeSelectionPaste(event);
+            return;
+        }
+
         let targetShape = (event.target as Element)?.closest?.('.cvat_canvas_shape');
         const targetSelectionBox = (event.target as Element)?.closest?.('.cvat_canvas_selected_objects_box');
         if (!targetShape && targetSelectionBox && this.isMultiSelectObjectModifierPressed(event)) {
@@ -2067,6 +2079,12 @@ export class CanvasViewImpl implements CanvasView, Listener {
     };
 
     private onContentMouseMove = (event: MouseEvent): void => {
+        this.updateSelectedObjectsBoxCursor(event);
+        if (this.selectionPasteData) {
+            this.moveSelectionPastePreview(event.clientX, event.clientY);
+            return;
+        }
+
         if (this.pendingSelectionEvent && this.mode === Mode.IDLE) {
             const distance = Math.hypot(
                 event.clientX - this.pendingSelectionEvent.clientX,
@@ -2168,6 +2186,11 @@ export class CanvasViewImpl implements CanvasView, Listener {
         this.selectedObjects = [];
         this.selectedObjectsBox = null;
         this.selectedObjectsLabel = null;
+        this.selectionPasteData = null;
+        this.selectionPasteStates = [];
+        this.selectionPasteOffset = { x: 0, y: 0 };
+        this.selectionPasteCenter = null;
+        this.selectionPasteStartedAt = 0;
         this.innerObjectsFlags = {
             drawHidden: {},
             editHidden: {},
@@ -2363,7 +2386,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
         this.canvas.addEventListener('mousedown', this.onContentMouseDown, true);
         this.canvas.addEventListener('mousemove', this.onContentMouseMove, true);
         this.canvas.addEventListener('contextmenu', (event: MouseEvent): void => {
-            if (event.button !== 2 && this.isMultiSelectObjectModifierPressed(event)) {
+            // On macOS Ctrl+click may report the generated contextmenu event as button 2.
+            if (this.isMultiSelectObjectModifierPressed(event)) {
                 event.preventDefault();
                 event.stopPropagation();
             }
@@ -2635,6 +2659,9 @@ export class CanvasViewImpl implements CanvasView, Listener {
             }
             // re-apply the multi-selection visual, lost when shapes are redrawn
             this.setupSelectedObjects();
+            if (this.mode === Mode.DRAW && this.selectionPasteData) {
+                this.renderSelectionPastePreview();
+            }
             if (this.mode === Mode.MERGE) {
                 this.mergeHandler.repeatSelection();
             }
@@ -2723,7 +2750,9 @@ export class CanvasViewImpl implements CanvasView, Listener {
         } else if (reason === UpdateReasons.DRAW) {
             const data: DrawData = this.controller.drawData;
             if (data.enabled && [Mode.IDLE, Mode.DRAW].includes(this.mode)) {
-                if (data.shapeType !== 'mask') {
+                if (data.initialStates?.length) {
+                    this.startSelectionPaste(data);
+                } else if (data.shapeType !== 'mask') {
                     this.drawHandler.draw(data, this.geometry);
                 } else {
                     this.masksHandler.draw(data);
@@ -2749,7 +2778,9 @@ export class CanvasViewImpl implements CanvasView, Listener {
             } else if (this.mode !== Mode.IDLE) {
                 this.canvas.style.cursor = '';
                 this.mode = Mode.IDLE;
-                if (this.masksHandler.enabled) {
+                if (this.selectionPasteData) {
+                    this.clearSelectionPastePreview();
+                } else if (this.masksHandler.enabled) {
                     this.masksHandler.draw(data);
                 } else {
                     this.drawHandler.draw(data, this.geometry);
@@ -2837,6 +2868,9 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 this.selectHandler.setSelected(states, false);
             }
             this.setupSelectedObjects();
+            if (this.mode === Mode.DRAW && this.selectionPasteData) {
+                this.renderSelectionPastePreview();
+            }
         } else if (reason === UpdateReasons.SELECT) {
             this.objectSelector.push(this.controller.selected);
             if (this.mode === Mode.MERGE) {
@@ -2848,7 +2882,9 @@ export class CanvasViewImpl implements CanvasView, Listener {
             }
         } else if (reason === UpdateReasons.CANCEL) {
             if (this.mode === Mode.DRAW) {
-                if (this.masksHandler.enabled) {
+                if (this.selectionPasteData) {
+                    this.clearSelectionPastePreview();
+                } else if (this.masksHandler.enabled) {
                     this.masksHandler.cancel();
                 } else {
                     this.drawHandler.cancel();
@@ -3696,6 +3732,103 @@ export class CanvasViewImpl implements CanvasView, Listener {
         }
     }
 
+    private clearSelectionPastePreview(): void {
+        if (this.selectionPasteStates.length) {
+            this.deleteObjects(this.selectionPasteStates);
+        }
+        this.selectionPasteData = null;
+        this.selectionPasteStates = [];
+        this.selectionPasteOffset = { x: 0, y: 0 };
+        this.selectionPasteCenter = null;
+        this.selectionPasteStartedAt = 0;
+    }
+
+    private renderSelectionPastePreview(): void {
+        if (!this.selectionPasteData || !this.selectionPasteStates.length ||
+            this.selectionPasteStates.every((state: any): boolean => !!this.svgShapes[state.clientID])) {
+            return;
+        }
+
+        this.addObjects(this.selectionPasteStates);
+        const boxes = this.selectionPasteStates
+            .map((state: any): SVG.RBox | null => this.svgShapes[state.clientID]?.rbox(this.adoptedContent) || null)
+            .filter((box: SVG.RBox | null): box is SVG.RBox => box !== null);
+        if (!boxes.length) {
+            return;
+        }
+
+        const left = Math.min(...boxes.map((box: SVG.RBox): number => box.x));
+        const top = Math.min(...boxes.map((box: SVG.RBox): number => box.y));
+        const right = Math.max(...boxes.map((box: SVG.RBox): number => box.x2));
+        const bottom = Math.max(...boxes.map((box: SVG.RBox): number => box.y2));
+        this.selectionPasteCenter = {
+            x: (left + right) / 2,
+            y: (top + bottom) / 2,
+        };
+
+        for (const state of this.selectionPasteStates) {
+            const shape = this.svgShapes[state.clientID];
+            shape?.addClass('cvat_canvas_shape_drawing cvat_canvas_shape_pasting').attr('pointer-events', 'none');
+            if (state.shapeType === 'points') {
+                shape?.remember('_selectHandler')?.nested?.addClass('cvat_canvas_shape_pasting');
+            }
+            if (this.svgTexts[state.clientID]) {
+                this.deleteText(state.clientID);
+            }
+            if (this.selectionPasteOffset.x || this.selectionPasteOffset.y) {
+                shape?.dmove(this.selectionPasteOffset.x, this.selectionPasteOffset.y);
+            }
+        }
+    }
+
+    private startSelectionPaste(data: DrawData): void {
+        this.clearSelectionPastePreview();
+        this.selectionPasteData = data;
+        this.selectionPasteStates = data.initialStates || [];
+        this.selectionPasteStartedAt = Date.now();
+        this.renderSelectionPastePreview();
+    }
+
+    private moveSelectionPastePreview(clientX: number, clientY: number): void {
+        if (!this.selectionPasteData || !this.selectionPasteCenter) {
+            return;
+        }
+
+        const [x, y] = translateToSVG(
+            this.content,
+            [clientX, clientY],
+        );
+        const dx = x - this.selectionPasteCenter.x - this.selectionPasteOffset.x;
+        const dy = y - this.selectionPasteCenter.y - this.selectionPasteOffset.y;
+        if (!dx && !dy) {
+            return;
+        }
+
+        for (const state of this.selectionPasteStates) {
+            this.svgShapes[state.clientID]?.dmove(dx, dy);
+        }
+        this.selectionPasteOffset.x += dx;
+        this.selectionPasteOffset.y += dy;
+    }
+
+    private placeSelectionPaste(event: MouseEvent): void {
+        if (!this.selectionPasteData || !this.selectionPasteStates.length ||
+            !this.areShapesInsideFrame(this.selectionPasteStates.map((state: any): number => state.clientID))) {
+            return;
+        }
+
+        this.selectionPasteData.onDrawDone?.(
+            { offset: { ...this.selectionPasteOffset } },
+            Date.now() - this.selectionPasteStartedAt,
+            event.ctrlKey,
+            this.selectionPasteData,
+        );
+        this.selectionPasteStartedAt = Date.now();
+        if (!event.ctrlKey) {
+            this.controller.draw({ enabled: false });
+        }
+    }
+
     private translateStatePoints(state: any, dx: number, dy: number): number[] {
         const points = [...state.points];
         if (state.shapeType === 'mask') {
@@ -3847,13 +3980,14 @@ export class CanvasViewImpl implements CanvasView, Listener {
         });
     }
 
-    private openSelectedObjectsMenu(left: number, top: number): void {
+    private openSelectedObjectsMenu(left: number, top: number, toggle = false): void {
         this.canvas.dispatchEvent(new CustomEvent('canvas.selectionmenu', {
             bubbles: false,
             cancelable: true,
             detail: {
                 left,
                 top,
+                toggle,
             },
         }));
     }
@@ -3926,17 +4060,42 @@ export class CanvasViewImpl implements CanvasView, Listener {
             menuButton.title = 'Selection actions';
             menuButton.setAttribute('aria-label', 'Open selection actions');
             menuButton.textContent = '...';
+            label.addEventListener('mousedown', (event: MouseEvent): void => {
+                if (event.button !== 0 || this.isMultiSelectModifierPressed(event) ||
+                    this.isMultiSelectObjectModifierPressed(event) ||
+                    !this.getMovableSelectedObjectIDs().length || !this.selectedObjectsBox) {
+                    return;
+                }
+
+                event.preventDefault();
+                event.stopPropagation();
+                this.selectedObjectsBox.node.dispatchEvent(new MouseEvent('mousedown', {
+                    bubbles: true,
+                    cancelable: true,
+                    view: window,
+                    button: 0,
+                    buttons: 1,
+                    clientX: event.clientX,
+                    clientY: event.clientY,
+                    screenX: event.screenX,
+                    screenY: event.screenY,
+                }));
+            });
             menuButton.addEventListener('mousedown', (event: MouseEvent): void => event.stopPropagation());
             menuButton.addEventListener('click', (event: MouseEvent): void => {
                 event.stopPropagation();
                 const buttonBox = menuButton.getBoundingClientRect();
-                this.openSelectedObjectsMenu(buttonBox.left, buttonBox.bottom);
+                this.openSelectedObjectsMenu(buttonBox.left, buttonBox.bottom, true);
             });
 
             label.append(title, menuButton);
             this.canvas.appendChild(label);
             this.selectedObjectsLabel = label;
         }
+        this.selectedObjectsLabel.classList.toggle(
+            'cvat_canvas_selected_objects_label_not_draggable',
+            !this.getMovableSelectedObjectIDs().length,
+        );
 
         const title = this.selectedObjectsLabel.querySelector('.cvat_canvas_selected_objects_label_title');
         if (title) {

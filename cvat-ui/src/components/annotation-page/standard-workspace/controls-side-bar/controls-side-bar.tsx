@@ -345,6 +345,7 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
             ActiveControl.DRAW_ELLIPSE,
             ActiveControl.DRAW_SKELETON,
             ActiveControl.DRAW_MASK,
+            ActiveControl.PASTE_SELECTION,
             ActiveControl.AI_TOOLS,
             ActiveControl.OPENCV_TOOLS,
         ].includes(activeControl);

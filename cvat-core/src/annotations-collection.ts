@@ -203,7 +203,7 @@ export default class Collection {
         checkObjectType('objectStates', objectStates, null, { cls: Array, name: 'Array' });
 
         const actions = new Set<HistoryActions>();
-        objectStates.forEach((state) => {
+        const collectActions = (state: ObjectState): void => {
             Object.entries(state.updateFlags).forEach(([property, updated]) => {
                 if (!updated) return;
                 if (property === 'points') {
@@ -220,7 +220,9 @@ export default class Collection {
                     throw new ArgumentError(`Batch update does not support "${property}" changes`);
                 }
             });
-        });
+            state.elements.forEach(collectActions);
+        };
+        objectStates.forEach(collectActions);
         if (actions.size !== 1) {
             throw new ArgumentError('Batch update must contain exactly one supported change type');
         }
@@ -1387,8 +1389,12 @@ export default class Collection {
                         attributes,
                         descriptions: state.descriptions,
                         frame: state.frame,
-                        group: 0,
+                        group: state.group?.id || 0,
                         label_id: state.label.id,
+                        lock: state.lock,
+                        hidden: state.hidden,
+                        pinned: state.pinned,
+                        color: state.color,
                         outside: state.outside || false,
                         occluded: state.occluded || false,
                         points: state.shapeType === 'mask' ? (() => {
@@ -1404,6 +1410,10 @@ export default class Collection {
                             frame: element.frame,
                             group: 0,
                             label_id: element.label.id,
+                            lock: element.lock,
+                            hidden: element.hidden,
+                            pinned: element.pinned,
+                            color: element.color,
                             points: [...element.points],
                             rotation: 0,
                             type: element.shapeType,
@@ -1417,7 +1427,11 @@ export default class Collection {
                         attributes: attributes.filter((attr) => !labelAttributes[attr.spec_id].mutable),
                         descriptions: state.descriptions,
                         frame: state.frame,
-                        group: 0,
+                        group: state.group?.id || 0,
+                        lock: state.lock,
+                        hidden: state.hidden,
+                        pinned: state.pinned,
+                        color: state.color,
                         source: state.source,
                         label_id: state.label.id,
                         shapes: [

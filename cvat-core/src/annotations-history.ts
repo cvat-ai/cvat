@@ -80,6 +80,10 @@ export default class AnnotationHistory {
         };
     }
 
+    public get transactionActive(): boolean {
+        return this.transaction !== null;
+    }
+
     public do(
         action: HistoryActions,
         undo: ActionItem['undo'],

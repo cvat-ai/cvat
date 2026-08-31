@@ -22,7 +22,7 @@ export class Drawn extends PinnableMixin(ImageObject) {
     constructor(data, clientID: number, color: string, injection: AnnotationInjection) {
         super(data, clientID, color, injection);
         this.descriptions = data.descriptions || [];
-        this.pinned = true;
+        this.pinned = data.pinned ?? true;
         this.shapeType = null;
     }
 

@@ -127,11 +127,12 @@ export interface DrawData {
     skeletonSVG?: SVGSVGElement;
     numberOfPoints?: number;
     initialState?: any;
+    initialStates?: any[];
     crosshair?: boolean;
     brushTool?: BrushTool;
     redraw?: number;
     simplifyPoly?: boolean;
-    onDrawDone?: (data: object) => void;
+    onDrawDone?: (data: object, duration?: number, continueDraw?: boolean, drawData?: DrawData) => void;
     onUpdateConfiguration?: (configuration: { brushTool?: Pick<BrushTool, 'size'> }) => void;
 }
 
@@ -800,7 +801,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
                 throw new Error('Skeleton template must be specified when drawing a skeleton');
             }
 
-            if (!drawData.shapeType && !drawData.initialState) {
+            if (!drawData.shapeType && !drawData.initialState && !drawData.initialStates?.length) {
                 throw new Error('A shape type is not specified');
             }
 

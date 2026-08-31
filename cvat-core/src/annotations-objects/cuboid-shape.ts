@@ -14,7 +14,7 @@ export class CuboidShape extends Shape {
         super(data, clientID, color, injection);
         this.rotation = 0;
         this.shapeType = ShapeType.CUBOID;
-        this.pinned = false;
+        this.pinned = data.pinned ?? false;
         checkNumberOfPoints(this.shapeType, this.points);
     }
 
