@@ -38,7 +38,7 @@ def test_ensure_supported_version_rejects_unreadable_or_out_of_window(
 
 def test_unload_library_releases_handle(monkeypatch: pytest.MonkeyPatch) -> None:
     released: list[int] = []
-    primitive = "FreeLibrary" if decoder.os.name == "nt" else "dlclose"
+    primitive = "dlclose" if decoder.os.name == "posix" else "FreeLibrary"
     monkeypatch.setattr(decoder._ctypes, primitive, released.append, raising=False)
 
     class FakeLibrary:

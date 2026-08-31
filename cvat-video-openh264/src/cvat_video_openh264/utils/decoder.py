@@ -48,10 +48,10 @@ def load_library(library_path: str) -> ctypes.CDLL:
     """Load a shared library and verify the required OpenH264 entry points."""
 
     try:
-        if os.name == "nt":
-            library = ctypes.CDLL(library_path, winmode=_WINDOWS_SAFE_LOAD_FLAGS)
-        else:
+        if os.name == "posix":
             library = ctypes.CDLL(library_path)
+        else:
+            library = ctypes.CDLL(library_path, winmode=_WINDOWS_SAFE_LOAD_FLAGS)
     except OSError as exc:
         raise VideoDecoderUnavailableError(
             f"Could not load a compatible OpenH264 library from {library_path!r}: {exc}"
@@ -84,10 +84,10 @@ def unload_library(library: ctypes.CDLL | None) -> None:
         return
 
     handle = library._handle
-    if os.name == "nt":
-        _ctypes.FreeLibrary(handle)
-    else:
+    if os.name == "posix":
         _ctypes.dlclose(handle)
+    else:
+        _ctypes.FreeLibrary(handle)
 
 
 def _discover_library_path(library_path: os.PathLike[str] | str | None) -> str:
@@ -113,14 +113,14 @@ def _discover_library_path(library_path: os.PathLike[str] | str | None) -> str:
         )
 
     if configured_path:
-        if os.name == "nt" and not os.path.isabs(configured_path):
+        if os.name != "posix" and not os.path.isabs(configured_path):
             raise VideoDecoderUnavailableError(
                 "An explicit OpenH264 library path must be absolute on Windows so the "
                 "current working directory and PATH never influence codec selection."
             )
         return configured_path
 
-    resolved_path = None if os.name == "nt" else ctypes.util.find_library("openh264")
+    resolved_path = ctypes.util.find_library("openh264") if os.name == "posix" else None
     if not resolved_path:
         raise VideoDecoderUnavailableError(
             "OpenH264 is required for video chunks. Set CVAT_OPENH264_LIBRARY to a compatible "
