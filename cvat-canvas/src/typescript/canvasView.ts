@@ -1988,7 +1988,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         }
     }
 
-    private isModifierPressed(event: MouseEvent, modifier: MultiSelectModifier): boolean {
+    private isModifierPressed(event: MouseEvent | KeyboardEvent, modifier: MultiSelectModifier): boolean {
         const modifiers = {
             shift: event.shiftKey,
             ctrl: event.ctrlKey,
@@ -2001,13 +2001,26 @@ export class CanvasViewImpl implements CanvasView, Listener {
     }
 
     // The selection-box modifier defaults to Shift.
-    private isMultiSelectModifierPressed(event: MouseEvent): boolean {
+    private isMultiSelectModifierPressed(event: MouseEvent | KeyboardEvent): boolean {
         return this.isModifierPressed(event, this.configuration.multiSelectModifier || 'shift');
     }
 
     // The modifier for adding or removing one clicked object defaults to Ctrl.
-    private isMultiSelectObjectModifierPressed(event: MouseEvent): boolean {
+    private isMultiSelectObjectModifierPressed(event: MouseEvent | KeyboardEvent): boolean {
         return this.isModifierPressed(event, this.configuration.multiSelectObjectModifier || 'ctrl');
+    }
+
+    private updateSelectedObjectsBoxCursor(event: MouseEvent | KeyboardEvent): void {
+        const modifierPressed = this.isMultiSelectModifierPressed(event) ||
+            this.isMultiSelectObjectModifierPressed(event);
+        this.selectedObjectsBox?.node.classList.toggle(
+            'cvat_canvas_selected_objects_box_modifier_pressed',
+            modifierPressed,
+        );
+        this.selectedObjectsLabel?.classList.toggle(
+            'cvat_canvas_selected_objects_label_modifier_pressed',
+            modifierPressed,
+        );
     }
 
     private onContentMouseDown = (event: MouseEvent): void => {
@@ -2068,6 +2081,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
     };
 
     private onKeyDown = (e: KeyboardEvent): void => {
+        this.updateSelectedObjectsBoxCursor(e);
+
         if (e.repeat) {
             return;
         }
@@ -2097,6 +2112,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
     };
 
     private onKeyUp = (e: KeyboardEvent): void => {
+        this.updateSelectedObjectsBoxCursor(e);
+
         const code = (e.code ?? '').toLowerCase();
 
         if (code.includes('shift') && this.activeElement) {
@@ -3890,6 +3907,10 @@ export class CanvasViewImpl implements CanvasView, Listener {
             .size(right - left + padding * 2, bottom - top + padding * 2)
             .attr('stroke-width', SELECTED_OBJECTS_BOX_STROKE_WIDTH / this.geometry.scale)
             .front();
+        this.selectedObjectsBox.node.classList.toggle(
+            'cvat_canvas_selected_objects_box_not_draggable',
+            !this.getMovableSelectedObjectIDs().length,
+        );
 
         this.selectedObjectsBox.node.setAttribute('aria-label', 'Move selection');
 

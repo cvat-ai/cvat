@@ -90,6 +90,11 @@ polyline.cvat_shape_drawing_opacity {
     cursor: move;
 }
 
+.cvat_canvas_selected_objects_box_modifier_pressed,
+.cvat_canvas_selected_objects_box_not_draggable {
+    cursor: default;
+}
+
 .cvat_canvas_selected_objects_box_dragging {
     opacity: 0;
 }
