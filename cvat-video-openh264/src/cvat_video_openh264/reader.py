@@ -12,7 +12,6 @@ from pathlib import Path
 
 import PIL.Image
 
-from .errors import UnsupportedVideoChunkError
 from .models import DecoderInfo
 from .utils import (
     OpenH264Decoder,
@@ -42,9 +41,6 @@ def iter_frames(
     Decode a CVAT-generated constrained-baseline MP4 chunk sequentially.
 
     This adapter deliberately has no codec downloader or general-purpose media fallback.
-    Per H.264, decoding an access unit always yields a decoded picture; combined with
-    the one-access-unit-per-sample guarantee from ``iter_access_units_from_stream``,
-    the decoder is expected to emit exactly ``len(track.samples)`` frames.
     """
 
     chunk_path = Path(path)
@@ -55,7 +51,6 @@ def iter_frames(
     with file:
         track = read_video_track_from_stream(file, file_size)
         decoder_info, library = resolve_decoder_and_library(library_path)
-        decoded_frame_count = 0
 
         try:
             # Construct inside the try so a decoder creation/initialization failure still
@@ -63,15 +58,8 @@ def iter_frames(
             decoder = OpenH264Decoder(decoder_info, library=library)
             try:
                 for access_unit in iter_access_units_from_stream(file, track):
-                    image = decoder.decode(access_unit)
-                    decoded_frame_count += 1
-                    yield image
+                    yield decoder.decode(access_unit)
             finally:
                 decoder.close()
         finally:
             unload_library(library)
-
-    if decoded_frame_count != len(track.samples):
-        raise UnsupportedVideoChunkError(
-            f"Decoded {decoded_frame_count} frames from {len(track.samples)} AVC samples"
-        )
