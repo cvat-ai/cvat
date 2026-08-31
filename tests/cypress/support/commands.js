@@ -629,7 +629,7 @@ Cypress.Commands.add('createRectangle', (createRectangleParams) => {
     });
     cy.get('.cvat-canvas-container').click(createRectangleParams.firstX, createRectangleParams.firstY);
     cy.get('.cvat-canvas-container').click(createRectangleParams.secondX, createRectangleParams.secondY);
-    if (createRectangleParams.points === 'By 4 Points') {
+    if (createRectangleParams.points === '4 Points') {
         cy.get('.cvat-canvas-container')
             .click(createRectangleParams.thirdX, createRectangleParams.thirdY);
         cy.get('.cvat-canvas-container')

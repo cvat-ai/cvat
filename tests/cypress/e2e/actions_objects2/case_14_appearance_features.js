@@ -186,7 +186,9 @@ context('Appearance features', () => {
                 cy.interactControlButton(`draw-${shape}`);
                 cy.get(`.cvat-draw-${shape}-popover`).within(() => {
                     if (drawingMethod) {
-                        cy.contains('.ant-radio-wrapper', drawingMethod).click();
+                        const drawingMethodSelector = shape === 'rectangle' ?
+                            '.ant-radio-button-wrapper' : '.ant-radio-wrapper';
+                        cy.contains(drawingMethodSelector, drawingMethod).click();
                     }
                     cy.contains('button', shapeType).click();
                 });
