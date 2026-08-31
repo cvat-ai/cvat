@@ -115,15 +115,9 @@ const componentShortcuts = {
         scope: ShortcutScope.OBJECTS_SIDEBAR,
     },
     SWITCH_LOCK: {
-        name: 'Lock/unlock an object',
-        description: 'Change locked state for an active object',
+        name: 'Lock/unlock objects',
+        description: 'Change locked state for selected objects or an active object',
         sequences: ['l'],
-        scope: ShortcutScope.OBJECTS_SIDEBAR,
-    },
-    SWITCH_SELECTION_LOCK: {
-        name: 'Lock/unlock selected objects',
-        description: 'Change locked state for all selected objects',
-        sequences: ['s l'],
         scope: ShortcutScope.OBJECTS_SIDEBAR,
     },
     SWITCH_ALL_HIDDEN: {
@@ -146,14 +140,8 @@ const componentShortcuts = {
     },
     SWITCH_PINNED: {
         name: 'Switch pinned property',
-        description: 'Change pinned property for an active object',
+        description: 'Change pinned state for selected objects or an active object',
         sequences: ['p'],
-        scope: ShortcutScope.OBJECTS_SIDEBAR,
-    },
-    SWITCH_SELECTION_PINNED: {
-        name: 'Pin/unpin selected objects',
-        description: 'Change pinned state for all selected objects',
-        sequences: ['s p'],
         scope: ShortcutScope.OBJECTS_SIDEBAR,
     },
     SWITCH_KEYFRAME: {
@@ -716,16 +704,15 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             },
             SWITCH_LOCK: (event?: KeyboardEvent) => {
                 preventDefault(event);
-                if (this.props.selectedStatesID.length) return;
+                if (selectedStatesID.length) {
+                    this.switchSelectionLock();
+                    return;
+                }
                 const state = activatedState();
                 if (state) {
                     state.lock = !state.lock;
                     updateAnnotations([state]);
                 }
-            },
-            SWITCH_SELECTION_LOCK: (event?: KeyboardEvent) => {
-                preventDefault(event);
-                this.switchSelectionLock();
             },
             SWITCH_ALL_HIDDEN: (event?: KeyboardEvent) => {
                 preventDefault(event);
@@ -756,16 +743,15 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             },
             SWITCH_PINNED: (event?: KeyboardEvent) => {
                 preventDefault(event);
-                if (this.props.selectedStatesID.length) return;
+                if (selectedStatesID.length) {
+                    this.switchSelectionPinned();
+                    return;
+                }
                 const state = activatedState(true);
                 if (state) {
                     state.pinned = !state.pinned;
                     updateAnnotations([state]);
                 }
-            },
-            SWITCH_SELECTION_PINNED: (event?: KeyboardEvent) => {
-                preventDefault(event);
-                this.switchSelectionPinned();
             },
             SWITCH_KEYFRAME: (event?: KeyboardEvent) => {
                 preventDefault(event);
