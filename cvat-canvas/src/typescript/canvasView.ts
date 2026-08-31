@@ -1668,54 +1668,27 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 const dx2 = (startCenter.x - cx) ** 2;
                 const dy2 = (startCenter.y - cy) ** 2;
                 if (Math.sqrt(dx2 + dy2) > 0) {
-                    let draggedPoints: number[];
-                    if (state.shapeType === 'mask') {
-                        const { points } = state;
-                        const x = Math.trunc(shape.x()) - this.geometry.offset;
-                        const y = Math.trunc(shape.y()) - this.geometry.offset;
-                        points.splice(-4);
-                        points.push(x, y, x + shape.width() - 1, y + shape.height() - 1);
-                        draggedPoints = points;
-                    } else if (state.shapeType === 'skeleton') {
-                        const points = [];
-                        state.elements.forEach((element: any) => {
-                            const elementShape = (shape as SVG.G).children()
-                                .find((child: SVG.Shape) => (
-                                    child.id() === `cvat_canvas_shape_${element.clientID}`
-                                ));
-
-                            if (elementShape) {
-                                points.push(...this.translateFromCanvas(readPointsFromShape(elementShape)));
-                            }
-                        });
-                        draggedPoints = points;
-                    } else {
-                        // these points does not take into account possible transformations, applied on the element
-                        // so, if any (like rotation) we need to map them to canvas coordinate space
-                        let points = readPointsFromShape(shape);
-                        const { rotation } = shape.transform();
-                        if (rotation) {
-                            points = this.translatePointsFromRotatedShape(shape, points);
+                    if (groupDragging && !this.areShapesInsideFrame([state.clientID, ...groupSiblingIDs])) {
+                        this.resetViewPosition(state.clientID);
+                        for (const siblingID of groupSiblingIDs) {
+                            this.resetViewPosition(siblingID);
                         }
-
-                        draggedPoints = this.translateFromCanvas(points);
+                        this.setSelectedObjectsOverlayDragging(false);
+                        this.updateSelectedObjectsOverlay();
+                        return;
                     }
 
                     if (groupDragging) {
                         // Move all editable members together and record them as a single change.
                         const totalDx = cx - startCenter.x;
                         const totalDy = cy - startCenter.y;
-                        const movedStates = [{ state, points: draggedPoints }];
-                        for (const siblingID of groupSiblingIDs) {
-                            const sibling = this.controller.objects
-                                .find((obj: any) => obj.clientID === siblingID);
-                            if (sibling) {
-                                movedStates.push({
-                                    state: sibling,
-                                    points: this.translateStatePoints(sibling, totalDx, totalDy),
-                                });
-                            }
-                        }
+                        const movedIDs = [state.clientID, ...groupSiblingIDs];
+                        const movedStates = this.controller.objects
+                            .filter((movedState: any): boolean => movedIDs.includes(movedState.clientID))
+                            .map((movedState: any) => ({
+                                state: movedState,
+                                points: this.translateStatePoints(movedState, totalDx, totalDy),
+                            }));
 
                         movedStates.forEach(({ state: movedState }) => this.markStateEdited(movedState));
                         this.canvas.style.cursor = '';
@@ -1731,6 +1704,39 @@ export class CanvasViewImpl implements CanvasView, Listener {
                             }),
                         );
                     } else {
+                        let draggedPoints: number[];
+                        if (state.shapeType === 'mask') {
+                            const points = [...state.points];
+                            const x = Math.trunc(shape.x()) - this.geometry.offset;
+                            const y = Math.trunc(shape.y()) - this.geometry.offset;
+                            points.splice(-4);
+                            points.push(x, y, x + shape.width() - 1, y + shape.height() - 1);
+                            draggedPoints = points;
+                        } else if (state.shapeType === 'skeleton') {
+                            const points = [];
+                            state.elements.forEach((element: any) => {
+                                const elementShape = (shape as SVG.G).children()
+                                    .find((child: SVG.Shape) => (
+                                        child.id() === `cvat_canvas_shape_${element.clientID}`
+                                    ));
+
+                                if (elementShape) {
+                                    points.push(...this.translateFromCanvas(readPointsFromShape(elementShape)));
+                                }
+                            });
+                            draggedPoints = points;
+                        } else {
+                            // these points does not take into account possible transformations, applied on the element
+                            // so, if any (like rotation) we need to map them to canvas coordinate space
+                            let points = readPointsFromShape(shape);
+                            const { rotation } = shape.transform();
+                            if (rotation) {
+                                points = this.translatePointsFromRotatedShape(shape, points);
+                            }
+
+                            draggedPoints = this.translateFromCanvas(points);
+                        }
+
                         this.onEditDone(state, draggedPoints);
                     }
 
@@ -3693,7 +3699,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
     }
 
     private isStateMovableInSelection(state: any): boolean {
-        return !!state && !state.lock && !state.pinned && !state.isGroundTruth && state.shapeType !== 'skeleton';
+        return !!state && !state.lock && !state.pinned && !state.isGroundTruth;
     }
 
     private getMovableSelectedObjectIDs(): number[] {
@@ -3702,6 +3708,22 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 this.selectedObjects.includes(state.clientID) && this.isStateMovableInSelection(state)
             ))
             .map((state: any): number => state.clientID);
+    }
+
+    private areShapesInsideFrame(clientIDs: number[]): boolean {
+        const { offset, image } = this.geometry;
+        const { width, height } = image;
+        return clientIDs.every((clientID: number): boolean => {
+            const shape = this.svgShapes[clientID];
+            if (!shape) {
+                return false;
+            }
+
+            const {
+                x, y, x2, y2,
+            } = shape.rbox(this.adoptedContent);
+            return x >= offset && y >= offset && x2 <= offset + width && y2 <= offset + height;
+        });
     }
 
     private setSelectedObjectsOverlayDragging(dragging: boolean): void {
@@ -3773,24 +3795,30 @@ export class CanvasViewImpl implements CanvasView, Listener {
             const dx = cx - startCenter.x;
             const dy = cy - startCenter.y;
             if (dx !== 0 || dy !== 0) {
-                const movedStates = this.controller.objects
-                    .filter((state: any) => movableIDs.includes(state.clientID))
-                    .map((state: any) => ({
-                        state,
-                        points: this.translateStatePoints(state, dx, dy),
-                    }));
+                if (!this.areShapesInsideFrame(movableIDs)) {
+                    for (const clientID of movableIDs) {
+                        this.resetViewPosition(clientID);
+                    }
+                } else {
+                    const movedStates = this.controller.objects
+                        .filter((state: any) => movableIDs.includes(state.clientID))
+                        .map((state: any) => ({
+                            state,
+                            points: this.translateStatePoints(state, dx, dy),
+                        }));
 
-                movedStates.forEach(({ state }) => this.markStateEdited(state));
-                this.canvas.dispatchEvent(
-                    new CustomEvent('canvas.groupmoved', {
-                        bubbles: false,
-                        cancelable: true,
-                        detail: {
-                            states: movedStates,
-                            duration: Date.now() - startedAt,
-                        },
-                    }),
-                );
+                    movedStates.forEach(({ state }) => this.markStateEdited(state));
+                    this.canvas.dispatchEvent(
+                        new CustomEvent('canvas.groupmoved', {
+                            bubbles: false,
+                            cancelable: true,
+                            detail: {
+                                states: movedStates,
+                                duration: Date.now() - startedAt,
+                            },
+                        }),
+                    );
+                }
             }
 
             dragging = false;
