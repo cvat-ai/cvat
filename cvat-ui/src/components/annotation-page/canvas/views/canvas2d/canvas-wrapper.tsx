@@ -1036,25 +1036,18 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
     private onCanvasMouseDown = (e: MouseEvent): void => {
         const {
             workspace, activatedStateID, selectedStatesID, onActivateObject, onSelectObjects, keyMap, activeControl,
-            updateActiveControl, canvasInstance,
         } = this.props;
         const shapeElement = (e.target as Element)?.closest?.('.cvat_canvas_shape');
         const selectionBox = (e.target as Element)?.closest?.('.cvat_canvas_selected_objects_box');
         const multiSelectModifierPressed = isMultiSelectModifierPressed(e, keyMap);
         const multiSelectObjectModifierPressed = isMultiSelectObjectModifierPressed(e, keyMap);
 
-        // a click outside of the selected objects resets the multi-selection
-        // Modifier clicks update membership; an unmodified click outside resets the multi-selection.
+        // Outside Select mode, an unmodified click outside the selection resets it.
+        // In Select mode the selector owns regular clicks and updates membership.
         if (e.button === 0 && !multiSelectModifierPressed && !multiSelectObjectModifierPressed &&
-            selectedStatesID.length && !selectionBox) {
+            activeControl !== ActiveControl.SELECT && selectedStatesID.length && !selectionBox) {
             const clickedClientID = shapeElement ? +(shapeElement.getAttribute('clientID') as string) : null;
             if (clickedClientID === null || !selectedStatesID.includes(clickedClientID)) {
-                // Leave grouping mode before the click event so an object outside the group
-                // can become active immediately with the same user action.
-                if (canvasInstance instanceof Canvas && activeControl === ActiveControl.SELECT) {
-                    canvasInstance.selectObjects({ enabled: false });
-                    updateActiveControl(ActiveControl.CURSOR);
-                }
                 onSelectObjects([]);
             }
         }

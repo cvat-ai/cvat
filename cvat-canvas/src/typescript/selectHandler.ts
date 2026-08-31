@@ -8,7 +8,7 @@ import { ObjectSelector, SelectionFilter } from './objectSelector';
 export interface SelectHandler {
     select(selectData: SelectData, selectionFilter: SelectionFilter, initialEvent?: MouseEvent): void;
     push(state: any): void;
-    setSelected(states: any[]): void;
+    setSelected(states: any[], notify?: boolean): void;
     move(event: MouseEvent): void;
     cancel(): void;
 }
@@ -67,8 +67,9 @@ export class SelectHandlerImpl implements SelectHandler {
         this.selector.push(objectState);
     }
 
-    public setSelected(states: any[]): void {
-        this.selector.setSelected(states);
+    public setSelected(states: any[], notify = true): void {
+        this.selectedStates = states;
+        this.selector.setSelected(states, notify);
     }
 
     public move(event: MouseEvent): void {

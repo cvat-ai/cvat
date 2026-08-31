@@ -2602,8 +2602,14 @@ export class CanvasViewImpl implements CanvasView, Listener {
         } else if (reason === UpdateReasons.IMAGE_MOVED) {
             this.moveCanvas();
         } else if (reason === UpdateReasons.OBJECTS_UPDATED) {
-            this.objectSelector.resetSelected();
+            if (this.mode !== Mode.SELECT) this.objectSelector.resetSelected();
             this.setupObjects(this.controller.objects);
+            if (this.mode === Mode.SELECT) {
+                const states = this.controller.objects.filter((state: any): boolean => (
+                    this.selectedObjects.includes(state.clientID)
+                ));
+                this.selectHandler.setSelected(states, false);
+            }
             // re-apply the multi-selection visual, lost when shapes are redrawn
             this.setupSelectedObjects();
             if (this.mode === Mode.MERGE) {
@@ -2801,6 +2807,12 @@ export class CanvasViewImpl implements CanvasView, Listener {
             }
         } else if (reason === UpdateReasons.SELECTED_OBJECTS_UPDATED) {
             this.selectedObjects = this.controller.selectedObjects;
+            if (this.mode === Mode.SELECT) {
+                const states = this.controller.objects.filter((state: any): boolean => (
+                    this.selectedObjects.includes(state.clientID)
+                ));
+                this.selectHandler.setSelected(states, false);
+            }
             this.setupSelectedObjects();
         } else if (reason === UpdateReasons.SELECT) {
             this.objectSelector.push(this.controller.selected);
