@@ -13,7 +13,7 @@ import Select from 'antd/lib/select';
 import Spin from 'antd/lib/spin';
 import Popover from 'antd/lib/popover';
 import Icon, {
-    CopyOutlined, DeleteOutlined, FormOutlined, GroupOutlined, LockFilled, PushpinFilled, PushpinOutlined,
+    CopyOutlined, DeleteOutlined, GroupOutlined, LockFilled, PushpinFilled, PushpinOutlined,
     UngroupOutlined, UnlockOutlined, UpOutlined,
 } from '@ant-design/icons';
 import notification from 'antd/lib/notification';
@@ -29,7 +29,7 @@ import {
 } from 'cvat-canvas-wrapper';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import {
-    AnnotationConflict, Label, ObjectState, ObjectType, ShapeType, QualityConflict, getCore,
+    AnnotationConflict, Label, ObjectState, ObjectType, ShapeType, QualityConflict, Source, getCore,
 } from 'cvat-core-wrapper';
 import { openZLayerInObjectsSidebar, scrollAndExpandState } from 'utils/objects-sidebar';
 import { filterApplicableLabels } from 'utils/filter-applicable-labels';
@@ -37,6 +37,7 @@ import getHiddenZLayers from 'utils/get-hidden-z-layers';
 import config from 'config';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import LabelSelector from 'components/label-selector/label-selector';
+import ObjectItemDetails from 'components/annotation-page/standard-workspace/objects-side-bar/object-item-details';
 import FrameTags from 'components/annotation-page/tag-annotation-workspace/frame-tags';
 import { LayerStackIcon } from 'icons';
 import {
@@ -51,6 +52,7 @@ import {
     groupSelectedAnnotationsAsync,
     selectObjectsAsync,
     copySelection,
+    pasteSelectionAsync,
     removeSelectionAsync,
     joinAnnotationsAsync,
     sliceAnnotationsAsync,
@@ -95,7 +97,6 @@ import {
 } from 'utils/multi-selection';
 import ImageSetupsContent from './image-setups-content';
 import CanvasTipsComponent from './canvas-hints';
-import SelectionAttributesEditor from './selection-attributes-editor';
 
 const cvat = getCore();
 const MAX_DISTANCE_TO_OPEN_SHAPE = 50;
@@ -170,7 +171,7 @@ interface DispatchToProps {
     onGroupAnnotations(states: ObjectState[]): void;
     onGroupSelection(reset?: boolean): void;
     onSelectObjects(selectedStatesID: number[]): void;
-    onCopySelection(states: ObjectState[]): void;
+    onMakeCopySelection(states: ObjectState[]): void;
     onRemoveSelection(): Promise<void>;
     onJoinAnnotations(states: ObjectState[], points: number[][]): void;
     onSliceAnnotations(state: ObjectState, results: number[][]): void;
@@ -400,8 +401,9 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         onSelectObjects(selectedStatesID: number[]): void {
             dispatch(selectObjectsAsync(selectedStatesID));
         },
-        onCopySelection(states: ObjectState[]): void {
+        onMakeCopySelection(states: ObjectState[]): void {
             dispatch(copySelection(states));
+            dispatch(pasteSelectionAsync());
         },
         onRemoveSelection(): Promise<void> {
             return dispatch(removeSelectionAsync(false));
@@ -481,17 +483,18 @@ interface State {
         left: number;
         top: number;
     } | null;
-    selectionAttributesVisible: boolean;
+    selectionAttributesCollapsed: boolean;
 }
 
 class CanvasWrapperComponent extends React.PureComponent<Props, State> {
     public state: State = {
         selectionMenuPosition: null,
-        selectionAttributesVisible: false,
+        selectionAttributesCollapsed: true,
     };
 
     private debouncedUpdate = debounce(this.updateCanvas.bind(this), 250, { leading: true });
     private canvasTipsRef = React.createRef<CanvasTipsComponent>();
+    private selectionMenuOpenFrame: number | null = null;
 
     public componentDidMount(): void {
         const {
@@ -654,10 +657,16 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
             // reflect the multi-selection (shift + left-mousedown) on the canvas:
             // drives the persistent selection visual and enables live group drag
             canvasInstance.setSelectedObjects(selectedStatesID);
-            if (this.state.selectionMenuPosition || this.state.selectionAttributesVisible) {
+            if (!selectedStatesID.length &&
+                (this.state.selectionMenuPosition || !this.state.selectionAttributesCollapsed ||
+                    this.selectionMenuOpenFrame !== null)) {
+                if (this.selectionMenuOpenFrame !== null) {
+                    cancelAnimationFrame(this.selectionMenuOpenFrame);
+                    this.selectionMenuOpenFrame = null;
+                }
                 this.setState({
                     selectionMenuPosition: null,
-                    selectionAttributesVisible: false,
+                    selectionAttributesCollapsed: true,
                 });
             }
         }
@@ -741,6 +750,9 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
 
     public componentWillUnmount(): void {
         const { canvasInstance } = this.props as { canvasInstance: Canvas };
+        if (this.selectionMenuOpenFrame !== null) {
+            cancelAnimationFrame(this.selectionMenuOpenFrame);
+        }
 
         canvasInstance.html().removeEventListener('mousedown', this.onCanvasMouseDown);
         canvasInstance.html().removeEventListener('click', this.onCanvasClicked);
@@ -795,14 +807,26 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
         const { canvasInstance } = this.props as { canvasInstance: Canvas };
         const canvasGridItem = canvasInstance.html().parentElement?.parentElement;
         const gridItemBox = canvasGridItem?.getBoundingClientRect();
-        const { left, top } = event.detail;
+        const { left, top, toggle } = event.detail;
 
-        this.setState({
-            selectionMenuPosition: {
-                left: left - (gridItemBox?.left || 0),
-                top: top - (gridItemBox?.top || 0),
-            },
-        });
+        const selectionMenuPosition = {
+            left: left - (gridItemBox?.left || 0),
+            top: top - (gridItemBox?.top || 0),
+        };
+        if (toggle && (this.state.selectionMenuPosition || this.selectionMenuOpenFrame !== null)) {
+            if (this.selectionMenuOpenFrame !== null) {
+                cancelAnimationFrame(this.selectionMenuOpenFrame);
+                this.selectionMenuOpenFrame = null;
+            }
+            this.setState({ selectionMenuPosition: null });
+        } else if (toggle) {
+            this.selectionMenuOpenFrame = requestAnimationFrame((): void => {
+                this.selectionMenuOpenFrame = null;
+                this.setState({ selectionMenuPosition });
+            });
+        } else {
+            this.setState({ selectionMenuPosition });
+        }
     };
 
     private onChangeSelectedObjectsLabel = (label: Label): void => {
@@ -831,18 +855,14 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
         this.setState({ selectionMenuPosition: null });
     };
 
-    private onCopySelectedObjects = (): void => {
+    private onMakeCopySelectedObjects = (): void => {
         const {
-            annotations, selectedStatesID, onCopySelection,
+            annotations, selectedStatesID, onMakeCopySelection,
         } = this.props;
         const selectedStates = getSelectedStates(annotations, selectedStatesID);
 
         if (selectedStates.length) {
-            onCopySelection(selectedStates);
-            notification.success({
-                message: `${selectedStates.length} objects copied`,
-                duration: 2,
-            });
+            onMakeCopySelection(selectedStates);
         }
         this.setState({ selectionMenuPosition: null });
     };
@@ -875,28 +895,16 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
         this.setState({ selectionMenuPosition: null });
     };
 
-    private onOpenSelectedObjectsAttributes = (): void => {
-        this.setState({
-            selectionMenuPosition: null,
-            selectionAttributesVisible: true,
-        });
-    };
-
-    private onCloseSelectedObjectsAttributes = (): void => {
-        this.setState({ selectionAttributesVisible: false });
-    };
-
-    private onApplySelectedObjectsAttributes = async (values: Record<number, string>): Promise<void> => {
+    private onChangeSelectedObjectsAttribute = async (attributeID: number, value: string): Promise<void> => {
         const {
             annotations, selectedStatesID, onUpdateAnnotationsBatch,
         } = this.props;
         const selectedStates = getSelectedStates(annotations, selectedStatesID);
-        const statesToUpdate = selectedStates.filter((state: ObjectState): boolean => (
-            Object.entries(values).some(([attributeID, value]) => state.attributes[+attributeID] !== value)
-        ));
-        for (const state of statesToUpdate) state.attributes = values;
+        const statesToUpdate = selectedStates.filter(
+            (state: ObjectState): boolean => state.attributes[attributeID] !== value,
+        );
+        for (const state of statesToUpdate) state.attributes = { [attributeID]: value };
         if (statesToUpdate.length) await onUpdateAnnotationsBatch(statesToUpdate);
-        this.setState({ selectionAttributesVisible: false });
     };
 
     private onCanvasWarningOccurrence = (event: any): void => {
@@ -1458,9 +1466,19 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
             onExpandObject,
         } = this.props;
         const { canvasInstance } = this.props as { canvasInstance: Canvas };
-        const { selectionMenuPosition, selectionAttributesVisible } = this.state;
+        const { selectionMenuPosition, selectionAttributesCollapsed } = this.state;
         const selectedStates = getSelectedStates(annotations, selectedStatesID);
         const selectionAttributeState = getSelectionAttributeState(selectedStates);
+        const selectionAttributeValues: Record<number, string> = {};
+        const mixedSelectionAttributeIDs = new Set<number>();
+        for (const attribute of selectionAttributeState.attributes) {
+            const attributeID = attribute.id as number;
+            const value = selectedStates[0]?.attributes[attributeID] || '';
+            selectionAttributeValues[attributeID] = value;
+            if (selectedStates.some((state: ObjectState): boolean => state.attributes[attributeID] !== value)) {
+                mixedSelectionAttributeIDs.add(attributeID);
+            }
+        }
         const applicableLabels = labels.filter((label: Label): boolean => selectedStates.every(
             (state: ObjectState): boolean => filterApplicableLabels(state, labels).some(
                 (applicableLabel: Label): boolean => applicableLabel.id === label.id,
@@ -1578,44 +1596,32 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
                                 {
                                     key: 'change-label',
                                     label: (
-                                        <div
-                                            className='cvat-canvas-selected-objects-label-selector'
-                                            title={labelSelectorDisabled ? labelSelectorDisabledReason : undefined}
+                                        <CVATTooltip
+                                            title={labelSelectorDisabled ? labelSelectorDisabledReason : null}
                                         >
-                                            {applicableLabels.length ? (
-                                                <LabelSelector
-                                                    disabled={labelSelectorDisabled}
-                                                    size='small'
-                                                    labels={applicableLabels}
-                                                    value={selectedLabelID}
-                                                    placeholder={selectedLabelID === null ? 'Multiple labels' : 'Select label'}
-                                                    onChange={this.onChangeSelectedObjectsLabel}
-                                                    getPopupContainer={
-                                                        (triggerNode): HTMLElement => triggerNode.parentElement!
-                                                    }
-                                                />
-                                            ) : (
-                                                <Select
-                                                    disabled
-                                                    size='small'
-                                                    placeholder='No common labels'
-                                                />
-                                            )}
-                                        </div>
-                                    ),
-                                },
-                                {
-                                    key: 'edit-attributes',
-                                    label: (
-                                        <Button
-                                            type='link'
-                                            disabled={!selectionAttributeState.enabled}
-                                            title={selectionAttributeState.disabledReason || undefined}
-                                            icon={<FormOutlined />}
-                                            onClick={this.onOpenSelectedObjectsAttributes}
-                                        >
-                                            Edit attributes
-                                        </Button>
+                                            <div className='cvat-canvas-selected-objects-label-selector'>
+                                                {applicableLabels.length ? (
+                                                    <LabelSelector
+                                                        disabled={labelSelectorDisabled}
+                                                        size='small'
+                                                        labels={applicableLabels}
+                                                        value={selectedLabelID}
+                                                        placeholder={selectedLabelID === null ?
+                                                            'Multiple labels' : 'Select label'}
+                                                        onChange={this.onChangeSelectedObjectsLabel}
+                                                        getPopupContainer={
+                                                            (triggerNode): HTMLElement => triggerNode.parentElement!
+                                                        }
+                                                    />
+                                                ) : (
+                                                    <Select
+                                                        disabled
+                                                        size='small'
+                                                        placeholder='No common labels'
+                                                    />
+                                                )}
+                                            </div>
+                                        </CVATTooltip>
                                     ),
                                 },
                                 {
@@ -1652,9 +1658,9 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
                                         <Button
                                             type='link'
                                             icon={<CopyOutlined />}
-                                            onClick={this.onCopySelectedObjects}
+                                            onClick={this.onMakeCopySelectedObjects}
                                         >
-                                            Copy selection
+                                            Make a copy
                                         </Button>
                                     ),
                                 },
@@ -1699,6 +1705,35 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
                                         </Button>
                                     ),
                                 },
+                                ...(selectionAttributeState.attributes.length ? [{
+                                    key: 'attributes',
+                                    className: 'cvat-canvas-selected-objects-attributes-item',
+                                    label: (
+                                        <div
+                                            className='cvat-canvas-selected-objects-attributes'
+                                            title={selectionAttributeState.disabledReason || undefined}
+                                        >
+                                            <ObjectItemDetails
+                                                readonly={!selectionAttributeState.enabled}
+                                                collapsed={selectionAttributesCollapsed}
+                                                collapse={(): void => this.setState({
+                                                    selectionAttributesCollapsed: !selectionAttributesCollapsed,
+                                                })}
+                                                changeAttribute={this.onChangeSelectedObjectsAttribute}
+                                                values={selectionAttributeValues}
+                                                mixedAttributeIDs={mixedSelectionAttributeIDs}
+                                                attributes={selectionAttributeState.attributes}
+                                                changeSize={(): void => {}}
+                                                sizeParams={null}
+                                                source={selectedStates[0]?.source || Source.MANUAL}
+                                                score={selectedStates[0]?.score || 0}
+                                                votes={selectedStates[0]?.votes || 0}
+                                                textContent=''
+                                                detailsLabel='Details'
+                                            />
+                                        </div>
+                                    ),
+                                }] : []),
                             ],
                         }}
                     >
@@ -1715,14 +1750,6 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
                         />
                     </Dropdown>
                 )}
-
-                <SelectionAttributesEditor
-                    open={selectionAttributesVisible}
-                    states={selectedStates}
-                    attributes={selectionAttributeState.attributes}
-                    onApply={this.onApplySelectedObjectsAttributes}
-                    onClose={this.onCloseSelectedObjectsAttributes}
-                />
 
                 <Popover
                     destroyTooltipOnHide

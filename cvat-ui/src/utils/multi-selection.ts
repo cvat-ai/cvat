@@ -82,6 +82,10 @@ export function getSelectionGroupState(states: ObjectState[]): SelectionGroupSta
 }
 
 export function getSelectionAttributeState(states: ObjectState[]): SelectionAttributeState {
+    const sameLabel = states.length > 0 && states.every(
+        (state: ObjectState): boolean => state.label.id === states[0].label.id,
+    );
+    const attributes = sameLabel ? [...states[0].label.attributes] : [];
     let disabledReason: string | null = null;
     if (!states.length) {
         disabledReason = 'Select at least one object';
@@ -89,16 +93,16 @@ export function getSelectionAttributeState(states: ObjectState[]): SelectionAttr
         disabledReason = 'Attributes cannot be changed for locked objects';
     } else if (states.some((state: ObjectState): boolean => state.isGroundTruth)) {
         disabledReason = 'Ground truth objects cannot be updated';
-    } else if (states.some((state: ObjectState): boolean => state.label.id !== states[0].label.id)) {
+    } else if (!sameLabel) {
         disabledReason = 'Selected objects have different labels';
-    } else if (!states[0].label.attributes.length) {
+    } else if (!attributes.length) {
         disabledReason = 'The selected label has no attributes';
     }
 
     return {
         enabled: disabledReason === null,
         disabledReason,
-        attributes: disabledReason === null ? [...states[0].label.attributes] : [],
+        attributes,
     };
 }
 
