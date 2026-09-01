@@ -440,7 +440,9 @@ export interface AudioSplitContext {
 
 export function getAudioSplitContextAtPlaybackPosition(): ThunkAction<AudioSplitContext | null> {
     return (_dispatch, getState): AudioSplitContext | null => {
-        const { intervals, currentTime, duration } = getState().audio.player;
+        const {
+            intervals, currentTime, duration, activeIntervalID,
+        } = getState().audio.player;
         if (duration <= 0) return null;
 
         const playbackPosition = Math.round(clamp(currentTime, 0, duration) * 1000);
@@ -450,7 +452,12 @@ export function getAudioSplitContextAtPlaybackPosition(): ThunkAction<AudioSplit
         ));
         if (!candidates.length) return null;
 
-        return { playbackPosition, duration, candidates };
+        const activeCandidate = candidates.find((interval) => interval.clientID === activeIntervalID);
+        return {
+            playbackPosition,
+            duration,
+            candidates: activeCandidate ? [activeCandidate] : candidates,
+        };
     };
 }
 

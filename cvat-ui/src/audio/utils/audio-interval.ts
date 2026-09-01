@@ -21,6 +21,6 @@ export function isAudioIntervalSplittableAtPlaybackPosition(
     duration: number,
     playbackPosition: number,
 ): boolean {
-    return !interval.hidden && !interval.lock && !interval.pinned &&
+    return !interval.hidden && !interval.lock &&
         isAudioIntervalWithinSplitRange(interval, duration, playbackPosition);
 }

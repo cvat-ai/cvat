@@ -1620,7 +1620,7 @@ export default class Collection {
 
         const { clientID } = state;
         const interval = clientID === null ? null : this.objects[clientID];
-        if (!(interval instanceof AudioInterval) || interval.lock || interval.pinned || interval.hidden) {
+        if (!(interval instanceof AudioInterval) || interval.lock || interval.hidden) {
             return null;
         }
 

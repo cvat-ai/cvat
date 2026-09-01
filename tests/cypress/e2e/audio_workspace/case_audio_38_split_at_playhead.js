@@ -20,7 +20,7 @@ context('Audio annotation. Split interval at playhead.', () => {
     });
 
     describe(`Testing case "${caseId}"`, () => {
-        it('Splits the only interval at the playhead from the button and with S', () => {
+        it('Splits the only interval at the playhead from the button and with Alt+M', () => {
             let originalIntervalBounds;
             let firstSplitPosition;
 
@@ -62,19 +62,17 @@ context('Audio annotation. Split interval at playhead.', () => {
             });
 
             cy.clickAudioWaveform(325);
-            cy.realPress('s');
+            cy.realPress(['Alt', 'M']);
             cy.get('.cvat-audio-region-item', { timeout: 5000 }).should('have.length', 3);
 
             cy.audioUndo();
             cy.get('.cvat-audio-region-item', { timeout: 5000 }).should('have.length', 2);
         });
 
-        it('Lets the user choose an overlapping interval', () => {
+        it('Splits the selected interval without opening the chooser when intervals overlap', () => {
             let splitPosition;
             let selectedIntervalBounds;
             let otherIntervalBounds;
-            let selectedIntervalId;
-            let otherIntervalId;
 
             cy.audioCreateRegionViaButton(firstLabelName, 100, 400);
             cy.audioCreateRegionViaButton(secondLabelName, 200, 500);
@@ -101,40 +99,11 @@ context('Audio annotation. Split interval at playhead.', () => {
                 });
             });
 
+            cy.get('.cvat-audio-region-item').first().find('.cvat-audio-interval-header-index').click();
+            cy.get('.cvat-audio-region-item').first().should('have.class', 'cvat-audio-region-item-active');
             cy.get('.cvat-audio-split-control').click();
-            cy.get('.cvat-audio-split-option').should('have.length', 2);
-            cy.get('.cvat-audio-split-option').then(($options) => {
-                const selectedOption = Array.from($options).find((option) => (
-                    option.textContent?.includes(firstLabelName)
-                ));
-                const otherOption = Array.from($options).find((option) => (
-                    option !== selectedOption
-                ));
-
-                selectedIntervalId = selectedOption?.getAttribute('data-interval-id');
-                otherIntervalId = otherOption?.getAttribute('data-interval-id');
-
-                expect(selectedIntervalId).to.be.a('string').and.not.be.empty;
-                expect(otherIntervalId).to.be.a('string').and.not.be.empty;
-            });
-            cy.then(() => {
-                cy.get(`.cvat-audio-split-option[data-interval-id="${selectedIntervalId}"]`)
-                    .trigger('mouseover');
-                cy.get('.cvat-audio-region-item').filter(`[data-interval-id="${selectedIntervalId}"]`)
-                    .should('have.class', 'cvat-audio-region-item-hovered');
-            });
-            cy.then(() => {
-                cy.get(`.cvat-audio-split-option[data-interval-id="${selectedIntervalId}"]`).click();
-            });
-
-            cy.get('.cvat-audio-split-option').should('not.be.visible');
+            cy.get('.cvat-audio-split-option').should('not.exist');
             cy.get('.cvat-audio-region-item', { timeout: 5000 }).should('have.length', 3);
-            cy.then(() => {
-                cy.get(`.cvat-audio-region-item[data-interval-id="${selectedIntervalId}"]`)
-                    .should('have.length', 1);
-                cy.get(`.cvat-audio-region-item[data-interval-id="${otherIntervalId}"]`)
-                    .should('have.length', 1);
-            });
             cy.getAudioWaveformWrapper().then(($wrapper) => {
                 const wrapperLeft = $wrapper[0].getBoundingClientRect().left;
                 cy.getAudioRegionRects().then((regions) => {
@@ -156,6 +125,34 @@ context('Audio annotation. Split interval at playhead.', () => {
                     ))).to.be.true;
                 });
             });
+        });
+
+        it('Lets the user choose an overlapping interval when another interval is active', () => {
+            cy.audioCreateRegionViaButton(firstLabelName, 100, 400);
+            cy.audioCreateRegionViaButton(secondLabelName, 200, 500);
+            cy.audioCreateRegionViaButton(firstLabelName, 600, 700);
+            cy.get('.cvat-audio-region-item', { timeout: 5000 }).should('have.length', 3);
+
+            cy.clickAudioWaveform(250);
+            cy.get('.cvat-audio-region-item').last().find('.cvat-audio-interval-header-index').click();
+            cy.get('.cvat-audio-region-item').last().should('have.class', 'cvat-audio-region-item-active');
+
+            cy.get('.cvat-audio-split-control').click();
+            cy.get('.cvat-audio-split-option').should('have.length', 2);
+            cy.contains('.cvat-audio-split-option', firstLabelName).click();
+            cy.get('.cvat-audio-split-option').should('not.be.visible');
+            cy.get('.cvat-audio-region-item', { timeout: 5000 }).should('have.length', 4);
+        });
+
+        it('Splits a pinned interval', () => {
+            cy.audioCreateRegionViaButton(firstLabelName, 100, 400);
+            cy.get('.cvat-audio-region-item')
+                .find('.cvat-audio-region-item-action-btn:has([data-icon="pushpin"])')
+                .click();
+            cy.clickAudioWaveform(250);
+
+            cy.get('.cvat-audio-split-control').click();
+            cy.get('.cvat-audio-region-item', { timeout: 5000 }).should('have.length', 2);
         });
     });
 });

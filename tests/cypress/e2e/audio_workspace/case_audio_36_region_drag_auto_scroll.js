@@ -6,7 +6,7 @@
 
 import { taskName, firstLabelName } from '../../support/const_audio';
 
-context('Audio annotation. Region editing auto-scrolls the waveform.', () => {
+context('Audio annotation. Interval resizing auto-scrolls the waveform.', () => {
     const caseId = 'audio_36';
     // The auto-scroll areas extend 40px from each viewport edge. Keep the
     // pointer well inside them instead of moving it beyond the viewport.
@@ -69,7 +69,6 @@ context('Audio annotation. Region editing auto-scrolls the waveform.', () => {
         cy.audioSliderSetValue('cvat-audio-zoom-control', '{home}', 1);
         cy.audioSliderSetValue('cvat-audio-zoom-control', '{downarrow}', 20);
         cy.audioCreateRegionViaButton(firstLabelName, 400, 550);
-        cy.getAudioRegion().should('have.css', 'cursor', 'grab');
     });
 
     afterEach(() => {

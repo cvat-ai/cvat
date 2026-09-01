@@ -41,7 +41,7 @@ const componentShortcuts = {
     SPLIT_AUDIO_INTERVAL_AT_PLAYBACK_POSITION: {
         name: 'Split audio interval at playback position',
         description: 'Split the interval at the current playback position',
-        sequences: ['s'],
+        sequences: ['alt+m'],
         scope: ShortcutScope.AUDIO_WORKSPACE_CONTROLS,
     },
 };
