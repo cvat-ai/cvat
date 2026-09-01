@@ -719,7 +719,11 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             };
         }
         case AnnotationActionTypes.SELECT_OBJECTS: {
-            const { selectedStatesID, history } = action.payload;
+            const { selectedStatesID: requestedStatesID, history } = action.payload;
+            const tagIDs = new Set(state.annotations.states
+                .filter((objectState: ObjectState): boolean => objectState.objectType === ObjectType.TAG)
+                .map((objectState: ObjectState): number => objectState.clientID as number));
+            const selectedStatesID = requestedStatesID.filter((clientID: number): boolean => !tagIDs.has(clientID));
             return {
                 ...state,
                 annotations: {

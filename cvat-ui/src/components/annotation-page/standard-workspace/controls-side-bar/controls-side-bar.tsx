@@ -413,7 +413,6 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
                 <ObservedSelectControl
                     canvasInstance={canvasInstance}
                     activeControl={activeControl}
-                    hasSelectedObjects={hasSelectedObjects}
                     disabled={controlsDisabled}
                     updateActiveControl={updateActiveControl}
                 />

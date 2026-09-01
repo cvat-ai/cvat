@@ -2057,33 +2057,19 @@ export class CanvasViewImpl implements CanvasView, Listener {
             return;
         }
 
-        let targetShape = (event.target as Element)?.closest?.('.cvat_canvas_shape');
-        const targetSelectionBox = (event.target as Element)?.closest?.('.cvat_canvas_selected_objects_box');
-        if (!targetShape && targetSelectionBox && this.isMultiSelectObjectModifierPressed(event)) {
-            targetShape = Array.from(document.elementsFromPoint(event.clientX, event.clientY))
-                .map((element: Element): Element | null => element.closest('.cvat_canvas_shape'))
-                .find((shape: Element | null): boolean => {
-                    const rawClientID = shape?.getAttribute('clientID') || shape?.getAttribute('data-client-id');
-                    return rawClientID !== null && Number.isInteger(+rawClientID);
-                }) || null;
-        }
-        const onBackground = !targetShape;
         if (event.button === 0 && this.isMultiSelectObjectModifierPressed(event) &&
-            [Mode.IDLE, Mode.SELECT].includes(this.mode) && targetShape) {
-            const rawClientID = targetShape.getAttribute('clientID') || targetShape.getAttribute('data-client-id');
-            const clientID = rawClientID === null ? null : +rawClientID;
-            if (clientID === null || !Number.isInteger(clientID)) {
-                return;
-            }
-            const nextSelection = this.selectedObjects.includes(clientID) ?
-                this.selectedObjects.filter((id) => id !== clientID) :
-                [...this.selectedObjects, clientID];
-            const states = this.controller.objects.filter((state: any) => nextSelection.includes(state.clientID));
-            if (this.mode === Mode.SELECT) {
-                this.selectHandler.setSelected(states);
-            } else {
-                this.onSelectObjectsDone(states);
-            }
+            [Mode.IDLE, Mode.SELECT].includes(this.mode)) {
+            const { offset } = this.controller.geometry;
+            const [x, y] = translateToSVG(this.content, [event.clientX, event.clientY]);
+            this.canvas.dispatchEvent(new CustomEvent('canvas.selectionrequested', {
+                bubbles: false,
+                cancelable: true,
+                detail: {
+                    x: x - offset,
+                    y: y - offset,
+                    states: this.controller.objects,
+                },
+            }));
             this.canvas.addEventListener('click', (clickEvent: MouseEvent) => {
                 clickEvent.preventDefault();
                 clickEvent.stopPropagation();
@@ -2093,6 +2079,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
             return;
         }
 
+        const targetShape = (event.target as Element)?.closest?.('.cvat_canvas_shape');
+        const onBackground = !targetShape;
         if (event.button === 0 && this.isMultiSelectModifierPressed(event) &&
             this.mode === Mode.IDLE && onBackground) {
             this.pendingSelectionEvent = event;

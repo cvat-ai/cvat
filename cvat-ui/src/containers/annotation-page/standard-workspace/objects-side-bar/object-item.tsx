@@ -504,6 +504,7 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
         const {
             objectState, selectedStatesID, selectObjects,
         } = this.props;
+        if (objectState.objectType === ObjectType.TAG) return;
         const clientID = objectState.clientID as number;
         const nextSelection = selectedStatesID.includes(clientID) ?
             selectedStatesID.filter((selectedClientID: number): boolean => selectedClientID !== clientID) :
@@ -516,6 +517,7 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
         const {
             objectState, objectStates, selectedStatesID, visibleObjectIDs: orderedObjectIDs, selectObjects,
         } = this.props;
+        if (objectState.objectType === ObjectType.TAG) return;
         const visibleObjectIDs = orderedObjectIDs || objectStates.map(
             (state: ObjectState): number => state.clientID as number,
         );

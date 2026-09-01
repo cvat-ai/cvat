@@ -134,11 +134,16 @@ function ObjectItemComponent(props: Props): JSX.Element {
     const onMouseDown = useCallback((event: React.MouseEvent): void => {
         if (event.button === 0) {
             const interactiveElement = (event.target as Element).closest(INTERACTIVE_ELEMENT_SELECTOR);
-            if (!interactiveElement && event.shiftKey && !event.ctrlKey && !event.altKey && !event.metaKey) {
+            const rangeModifier = event.shiftKey && !event.ctrlKey && !event.altKey && !event.metaKey;
+            const objectModifier = isMultiSelectObjectModifierPressed(event, keyMap);
+            if (!interactiveElement && objectType === ObjectType.TAG && (rangeModifier || objectModifier)) {
+                event.preventDefault();
+                event.stopPropagation();
+            } else if (!interactiveElement && rangeModifier) {
                 event.preventDefault();
                 event.stopPropagation();
                 selectRange();
-            } else if (!interactiveElement && isMultiSelectObjectModifierPressed(event, keyMap)) {
+            } else if (!interactiveElement && objectModifier) {
                 event.preventDefault();
                 event.stopPropagation();
                 toggleSelection();
@@ -148,7 +153,7 @@ function ObjectItemComponent(props: Props): JSX.Element {
                 activateSingle();
             }
         }
-    }, [activateSingle, keyMap, selectRange, selectionActive, toggleSelection]);
+    }, [activateSingle, keyMap, objectType, selectRange, selectionActive, toggleSelection]);
 
     const onContextMenu = useCallback((event: React.MouseEvent): void => {
         if (isMultiSelectObjectModifierPressed(event, keyMap)) {
@@ -164,9 +169,11 @@ function ObjectItemComponent(props: Props): JSX.Element {
         if (['Enter', ' '].includes(event.key) && isMultiSelectObjectModifierPressed(event, keyMap)) {
             event.preventDefault();
             event.stopPropagation();
-            toggleSelection();
+            if (objectType !== ObjectType.TAG) {
+                toggleSelection();
+            }
         }
-    }, [keyMap, toggleSelection]);
+    }, [keyMap, objectType, toggleSelection]);
 
     return (
         <div style={{ display: 'flex', marginBottom: '1px' }}>

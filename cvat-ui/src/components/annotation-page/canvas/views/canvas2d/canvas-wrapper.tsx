@@ -769,6 +769,9 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
         canvasInstance.html().removeEventListener('canvas.find', this.onCanvasFindObject);
         canvasInstance.html().removeEventListener('canvas.deactivated', this.onCanvasShapeDeactivated);
         canvasInstance.html().removeEventListener('canvas.moved', this.onCanvasCursorMoved);
+        canvasInstance.html().removeEventListener(
+            'canvas.selectionrequested', this.onCanvasSelectionRequested as EventListener,
+        );
 
         canvasInstance.html().removeEventListener('canvas.zoom', this.onCanvasZoomChanged);
         canvasInstance.html().removeEventListener('canvas.fit', this.onCanvasImageFitted);
@@ -1044,18 +1047,22 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
     private onCanvasMouseDown = (e: MouseEvent): void => {
         const {
             workspace, activatedStateID, selectedStatesID, onActivateObject, onSelectObjects, keyMap, activeControl,
+            updateActiveControl, canvasInstance,
         } = this.props;
         const shapeElement = (e.target as Element)?.closest?.('.cvat_canvas_shape');
         const selectionBox = (e.target as Element)?.closest?.('.cvat_canvas_selected_objects_box');
         const multiSelectModifierPressed = isMultiSelectModifierPressed(e, keyMap);
         const multiSelectObjectModifierPressed = isMultiSelectObjectModifierPressed(e, keyMap);
 
-        // Outside Select mode, an unmodified click outside the selection resets it.
-        // In Select mode the selector owns regular clicks and updates membership.
+        // An unmodified click outside the selected objects returns to regular single-object interaction.
         if (e.button === 0 && !multiSelectModifierPressed && !multiSelectObjectModifierPressed &&
-            activeControl !== ActiveControl.SELECT && selectedStatesID.length && !selectionBox) {
+            selectedStatesID.length && !selectionBox) {
             const clickedClientID = shapeElement ? +(shapeElement.getAttribute('clientID') as string) : null;
             if (clickedClientID === null || !selectedStatesID.includes(clickedClientID)) {
+                if (canvasInstance instanceof Canvas && activeControl === ActiveControl.SELECT) {
+                    canvasInstance.selectObjects({ enabled: false });
+                    updateActiveControl(ActiveControl.CURSOR);
+                }
                 onSelectObjects([]);
             }
         }
@@ -1145,9 +1152,33 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
         }
     };
 
+    private resolveCanvasObject = async (states: ObjectState[], x: number, y: number): Promise<any | null> => {
+        const { jobInstance } = this.props;
+        const result = await jobInstance.annotations.select(states, x, y);
+        if (result?.state && [ShapeType.POLYLINE, ShapeType.POINTS].includes(result.state.shapeType) &&
+            result.distance > MAX_DISTANCE_TO_OPEN_SHAPE) {
+            return null;
+        }
+        return result?.state ? result : null;
+    };
+
+    private onCanvasSelectionRequested = async (event: CustomEvent): Promise<void> => {
+        const { states, x, y } = event.detail;
+        const result = await this.resolveCanvasObject(states, x, y);
+        if (!result?.state) {
+            return;
+        }
+
+        const { selectedStatesID, onSelectObjects } = this.props;
+        const clientID = result.state.clientID as number;
+        onSelectObjects(selectedStatesID.includes(clientID) ?
+            selectedStatesID.filter((selectedID: number): boolean => selectedID !== clientID) :
+            [...selectedStatesID, clientID]);
+    };
+
     private onCanvasCursorMoved = async (event: any): Promise<void> => {
         const {
-            jobInstance, activatedStateID, activatedElementID, workspace, onActivateObject, selectedStatesID,
+            activatedStateID, activatedElementID, workspace, onActivateObject, selectedStatesID,
         } = this.props;
 
         if (![Workspace.STANDARD, Workspace.REVIEW, Workspace.SINGLE_SHAPE].includes(workspace)) {
@@ -1158,20 +1189,14 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
             return;
         }
 
-        const result = await jobInstance.annotations.select(event.detail.states, event.detail.x, event.detail.y);
+        const result = await this.resolveCanvasObject(event.detail.states, event.detail.x, event.detail.y);
 
         // Selection may have become active while the asynchronous hit test was running.
         if (this.props.selectedStatesID.length) {
             return;
         }
 
-        if (result && result.state) {
-            if ([ShapeType.POLYLINE, ShapeType.POINTS].includes(result.state.shapeType)) {
-                if (result.distance > MAX_DISTANCE_TO_OPEN_SHAPE) {
-                    return;
-                }
-            }
-
+        if (result?.state) {
             const newActivatedElement = event.detail.activatedElementID || null;
             if (activatedStateID !== result.state.clientID || activatedElementID !== newActivatedElement) {
                 onActivateObject(result.state.clientID, event.detail.activatedElementID || null);
@@ -1249,7 +1274,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
     };
 
     private onCanvasFindObject = async (e: any): Promise<void> => {
-        const { jobInstance, selectedStatesID } = this.props;
+        const { selectedStatesID } = this.props;
         const { canvasInstance } = this.props as { canvasInstance: Canvas };
 
         // when shapes overlap, prefer members of the multi-selection under the cursor
@@ -1258,21 +1283,15 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
         if (selectedStatesID.length > 1) {
             const selectedCandidates = getSelectedStates(e.detail.states, selectedStatesID);
             if (selectedCandidates.length) {
-                result = await jobInstance.annotations.select(selectedCandidates, e.detail.x, e.detail.y);
+                result = await this.resolveCanvasObject(selectedCandidates, e.detail.x, e.detail.y);
             }
         }
 
         if (!result || !result.state) {
-            result = await jobInstance.annotations.select(e.detail.states, e.detail.x, e.detail.y);
+            result = await this.resolveCanvasObject(e.detail.states, e.detail.x, e.detail.y);
         }
 
-        if (result && result.state) {
-            if (['polyline', 'points'].includes(result.state.shapeType)) {
-                if (result.distance > MAX_DISTANCE_TO_OPEN_SHAPE) {
-                    return;
-                }
-            }
-
+        if (result?.state) {
             canvasInstance.select(result.state);
         }
     };
@@ -1421,6 +1440,9 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
         canvasInstance.html().addEventListener('canvas.find', this.onCanvasFindObject);
         canvasInstance.html().addEventListener('canvas.deactivated', this.onCanvasShapeDeactivated);
         canvasInstance.html().addEventListener('canvas.moved', this.onCanvasCursorMoved);
+        canvasInstance.html().addEventListener(
+            'canvas.selectionrequested', this.onCanvasSelectionRequested as EventListener,
+        );
 
         canvasInstance.html().addEventListener('canvas.zoom', this.onCanvasZoomChanged);
         canvasInstance.html().addEventListener('canvas.fit', this.onCanvasImageFitted);
