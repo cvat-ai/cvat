@@ -12,6 +12,7 @@ import { CombinedState } from 'reducers';
 import { shallowEqual, ThunkDispatch } from 'utils/redux';
 import { clamp } from 'utils/math';
 
+import { useAudioMediaSession } from './use-audio-media-session';
 import type { WaveSurferRuntime } from './use-audio-waveform';
 
 export interface WaveformPlayback {
@@ -41,16 +42,15 @@ export function useWaveformPlayback(runtime: WaveSurferRuntime): WaveformPlaybac
     }), shallowEqual);
     const listenersRef = useRef(new Set<(time: number) => void>());
     const { ready } = runtime;
+    useAudioMediaSession(runtime);
 
     const play = useCallback((): void => {
         const instance = runtime.instanceRef.current;
         if (!instance) return;
         instance.play().catch(() => {});
-        dispatch(audioActions.switchAudioPlay(true));
     }, []);
     const pause = useCallback((): void => {
         runtime.instanceRef.current?.pause();
-        dispatch(audioActions.switchAudioPlay(false));
     }, []);
     const seek = useCallback((time: number): void => {
         const instance = runtime.instanceRef.current;
@@ -63,11 +63,17 @@ export function useWaveformPlayback(runtime: WaveSurferRuntime): WaveformPlaybac
         return () => listenersRef.current.delete(listener);
     }, []);
 
-    // Sync timeupdate and finish events from the WaveSurfer instance to redux
+    // Sync WaveSurfer transport events to Redux.
     useEffect(() => {
         const instance = runtime.instanceRef.current;
         if (!instance) return undefined;
 
+        const onPlay = (): void => {
+            dispatch(audioActions.switchAudioPlay(true));
+        };
+        const onPause = (): void => {
+            dispatch(audioActions.switchAudioPlay(false));
+        };
         const onTimeUpdate = (): void => {
             // With the WebAudio backend, a timeupdate emitted after pausing can
             // carry WaveSurfer's stale reactive time (the previous seek position).
@@ -83,9 +89,13 @@ export function useWaveformPlayback(runtime: WaveSurferRuntime): WaveformPlaybac
         const onFinish = (): void => {
             dispatch(audioActions.switchAudioPlay(false));
         };
+        instance.on('play', onPlay);
+        instance.on('pause', onPause);
         instance.on('timeupdate', onTimeUpdate);
         instance.on('finish', onFinish);
         return () => {
+            instance.un('play', onPlay);
+            instance.un('pause', onPause);
             instance.un('timeupdate', onTimeUpdate);
             instance.un('finish', onFinish);
         };
