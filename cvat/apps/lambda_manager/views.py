@@ -1071,7 +1071,7 @@ class LambdaJob:
         roi: list | None = None,
     ) -> int:
         collector = DetectionResultCollector(db_task, db_job)
-        processed_frames = 0
+        invocation_count = 0
 
         converter = DetectionResultConverter(db_task)
 
@@ -1094,12 +1094,13 @@ class LambdaJob:
                 converter=converter,
             )
 
+            invocation_count += 1
             progress = (frame + 1) / db_task.data.size
             if not cls._update_progress(progress):
                 break
 
             collector.add(annotations)
-            processed_frames += 1
+
 
             # Accumulate data during 100 frames before submitting results.
             # It is optimization to make fewer calls to our server. Also
@@ -1108,7 +1109,7 @@ class LambdaJob:
                 collector.submit()
 
         collector.submit()
-        return processed_frames
+        return invocation_count
 
     @staticmethod
     # progress is in [0, 1] range
