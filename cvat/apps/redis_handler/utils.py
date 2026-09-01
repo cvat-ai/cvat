@@ -100,9 +100,7 @@ def send_request_failed_signal(
         return
 
     request_manager_cls_path = BaseRQMeta.for_job(rq_job).request_manager_cls
-    sender = (
-        get_class_from_full_path(request_manager_cls_path) if request_manager_cls_path else None
-    )
+    sender = get_class_from_full_path(full_path=request_manager_cls_path)
 
     _ = signals.request_failed.send_robust(
         sender=sender,

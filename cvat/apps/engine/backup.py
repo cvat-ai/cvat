@@ -42,9 +42,7 @@ from cvat.apps.dataset_manager.util import (
 from cvat.apps.dataset_manager.views import (
     EXPORT_CACHE_LOCK_ACQUISITION_TIMEOUT,
     EXPORT_CACHE_LOCK_TTL,
-    EXPORT_LOCKED_RETRY_INTERVAL,
     LockNotAvailableError,
-    retry_current_rq_job,
 )
 from cvat.apps.engine import models
 from cvat.apps.engine.cache import MediaCache
@@ -124,7 +122,7 @@ def _read_annotation_guide(zip_object, guide_filename, assets_dirname):
         assets = [(x, zip_object.read(x)) for x in assets]
 
         if len(assets) > settings.ASSET_MAX_COUNT_PER_GUIDE:
-            raise ValidationError(f"Maximum number of assets per guide reached")
+            raise ValidationError("Maximum number of assets per guide reached")
         for asset in assets:
             if len(asset[1]) / (1024 * 1024) > settings.ASSET_MAX_SIZE_MB:
                 raise ValidationError(f"Maximum size of asset is {settings.ASSET_MAX_SIZE_MB} MB")
@@ -1172,7 +1170,7 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
                     raise ValidationError(f"Unsafe file path in manifest: {problem}")
         else:
             if data_serializer.initial_data["storage"] != StorageChoice.LOCAL:
-                raise ValidationError(f"Unexpected storage type in the backup files")
+                raise ValidationError("Unexpected storage type in the backup files")
 
             db_data.storage = StorageChoice.LOCAL
 
@@ -1509,13 +1507,7 @@ def create_backup(
                 f"and available for downloading for the next {cache_ttl}."
             )
     except LockNotAvailableError:
-        # Need to retry later if the lock was not available
-        retry_current_rq_job(EXPORT_LOCKED_RETRY_INTERVAL)
-        logger.info(
-            "Failed to acquire export cache lock. Retrying in {}".format(
-                EXPORT_LOCKED_RETRY_INTERVAL
-            )
-        )
+        logger.info("Failed to acquire export cache lock")
         raise
 
     return output_path
