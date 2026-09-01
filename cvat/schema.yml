@@ -3337,7 +3337,7 @@ paths:
         name: func_id
         schema:
           type: string
-          pattern: ^[a-zA-Z0-9_.-]+$
+          pattern: ^[a-zA-Z0-9][a-zA-Z0-9_.-]*$
         required: true
       tags:
       - lambda
@@ -3370,7 +3370,7 @@ paths:
         name: func_id
         schema:
           type: string
-          pattern: ^[a-zA-Z0-9_.-]+$
+          pattern: ^[a-zA-Z0-9][a-zA-Z0-9_.-]*$
         required: true
       tags:
       - lambda
@@ -13447,6 +13447,7 @@ components:
         changed_fields:
           type: string
           readOnly: true
+          deprecated: true
         request:
           readOnly: true
         response:
