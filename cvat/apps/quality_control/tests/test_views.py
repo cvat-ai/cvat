@@ -66,4 +66,3 @@ class TestQualityReportViewSet(unittest.TestCase):
 
         self.assertIn('"quality_control_qualityreport"."project_id" = %s', sql)
         self.assertNotIn('JOIN "engine_project"', sql)
-
