@@ -18,6 +18,8 @@ const defaultState: AudioState = {
         zoom: 1,
         volume: 1,
         loop: false,
+        playbackRange: null,
+        playbackRangeSource: null,
         fitIntervalRequest: null,
         intervals: [],
         activeIntervalID: null,
@@ -34,7 +36,6 @@ const defaultState: AudioState = {
         waveformReady: false,
         audioLoadRequest: null,
         seekRequest: null,
-        playIntervalOnceRequest: null,
         activeLabelId: null,
     },
 };
@@ -67,7 +68,6 @@ export default function audioReducer(state: AudioState = defaultState, action: A
                 player: {
                     ...state.player,
                     playing: true,
-                    playIntervalOnceRequest: null,
                 },
             };
         }
@@ -144,6 +144,62 @@ export default function audioReducer(state: AudioState = defaultState, action: A
                 },
             };
         }
+        case AudioActionTypes.SET_AUDIO_PLAYBACK_RANGE: {
+            return {
+                ...state,
+                player: {
+                    ...state.player,
+                    playbackRange: action.payload.range,
+                },
+            };
+        }
+        case AudioActionTypes.UPDATE_AUDIO_PLAYBACK_RANGE: {
+            if (state.player.playbackRange?.id !== action.payload.range.id) return state;
+
+            return {
+                ...state,
+                player: {
+                    ...state.player,
+                    playbackRange: action.payload.range,
+                },
+            };
+        }
+        case AudioActionTypes.CLEAR_AUDIO_PLAYBACK_RANGE: {
+            if (action.payload.id && state.player.playbackRange?.id !== action.payload.id) return state;
+
+            return {
+                ...state,
+                player: {
+                    ...state.player,
+                    playbackRange: null,
+                },
+            };
+        }
+        case AudioActionTypes.SET_AUDIO_INTERVAL_PLAYBACK_SOURCE: {
+            if (state.player.playbackRange?.id !== action.payload.rangeID) return state;
+
+            return {
+                ...state,
+                player: {
+                    ...state.player,
+                    playbackRangeSource: {
+                        rangeID: action.payload.rangeID,
+                        intervalID: action.payload.intervalID,
+                    },
+                },
+            };
+        }
+        case AudioActionTypes.CLEAR_AUDIO_INTERVAL_PLAYBACK_SOURCE: {
+            if (state.player.playbackRangeSource?.rangeID !== action.payload.rangeID) return state;
+
+            return {
+                ...state,
+                player: {
+                    ...state.player,
+                    playbackRangeSource: null,
+                },
+            };
+        }
         case AudioActionTypes.FIT_AUDIO_INTERVAL: {
             return {
                 ...state,
@@ -165,15 +221,11 @@ export default function audioReducer(state: AudioState = defaultState, action: A
             };
         }
         case AudioActionTypes.SET_AUDIO_ACTIVE_INTERVAL: {
-            const playIntervalOnceRequest =
-                state.player.playIntervalOnceRequest?.intervalID === action.payload.clientID ?
-                    state.player.playIntervalOnceRequest : null;
             return {
                 ...state,
                 player: {
                     ...state.player,
                     activeIntervalID: action.payload.clientID,
-                    playIntervalOnceRequest,
                 },
             };
         }
@@ -223,7 +275,8 @@ export default function audioReducer(state: AudioState = defaultState, action: A
                     audioDataToken: null,
                     audioLoadRequest: action.payload.request,
                     seekRequest: null,
-                    playIntervalOnceRequest: null,
+                    playbackRange: null,
+                    playbackRangeSource: null,
                     contextMenu: defaultState.player.contextMenu,
                 },
             };
@@ -269,27 +322,6 @@ export default function audioReducer(state: AudioState = defaultState, action: A
                 },
             };
         }
-        case AudioActionTypes.PLAY_AUDIO_INTERVAL_ONCE: {
-            return {
-                ...state,
-                player: {
-                    ...state.player,
-                    activeIntervalID: action.payload.request.intervalID,
-                    playIntervalOnceRequest: action.payload.request,
-                },
-            };
-        }
-        case AudioActionTypes.COMPLETE_PLAY_AUDIO_INTERVAL_ONCE: {
-            // request object used as an identity for the play-once operation, so we can ignore stale requests
-            if (state.player.playIntervalOnceRequest !== action.payload.request) return state;
-            return {
-                ...state,
-                player: {
-                    ...state.player,
-                    playIntervalOnceRequest: null,
-                },
-            };
-        }
         case AudioActionTypes.SET_AUDIO_ACTIVE_LABEL: {
             return {
                 ...state,
@@ -315,7 +347,8 @@ export default function audioReducer(state: AudioState = defaultState, action: A
                     activeIntervalID: null,
                     hoveredIntervalID: null,
                     interactingIntervalID: null,
-                    playIntervalOnceRequest: null,
+                    playbackRange: null,
+                    playbackRangeSource: null,
                     contextMenu: defaultState.player.contextMenu,
                 },
             };
@@ -336,10 +369,6 @@ export default function audioReducer(state: AudioState = defaultState, action: A
                 (interval) => interval.clientID === state.player.contextMenu.clientID,
             ) ?
                 state.player.contextMenu.clientID : null;
-            const playIntervalOnceRequest = intervals.some(
-                (interval) => interval.clientID === state.player.playIntervalOnceRequest?.intervalID,
-            ) ? state.player.playIntervalOnceRequest : null;
-
             return {
                 ...state,
                 player: {
@@ -352,7 +381,6 @@ export default function audioReducer(state: AudioState = defaultState, action: A
                         ...state.player.contextMenu,
                         clientID: contextMenuClientID,
                     },
-                    playIntervalOnceRequest,
                 },
             };
         }
