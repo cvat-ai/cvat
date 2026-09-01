@@ -60,7 +60,6 @@ EXPORT_CACHE_LOCK_ACQUISITION_TIMEOUT = timedelta(
     seconds=settings.EXPORT_CACHE_LOCK_ACQUISITION_TIMEOUT
 )
 EXPORT_CACHE_LOCK_TTL = timedelta(seconds=settings.EXPORT_CACHE_LOCK_TTL)
-EXPORT_LOCKED_RETRY_INTERVAL = timedelta(seconds=settings.EXPORT_LOCKED_RETRY_INTERVAL)
 
 
 def get_export_cache_ttl(
@@ -73,52 +72,6 @@ def get_export_cache_ttl(
         db_instance = db_instance.__class__.__name__
 
     return TTL_CONSTS[db_instance.lower()]
-
-
-def _patch_scheduled_job_status(job: rq.job.Job):
-    # NOTE: rq scheduler < 0.14 does not set the appropriate
-    # job status (SCHEDULED). This has been fixed in the 0.14 version.
-    # https://github.com/rq/rq-scheduler/blob/f7d5787c5f94b5517e209c612ef648f4bfc44f9e/rq_scheduler/scheduler.py#L148
-    # FUTURE-TODO: delete manual status setting after upgrading to 0.14
-    if job.get_status(refresh=False) != rq.job.JobStatus.SCHEDULED:
-        job.set_status(rq.job.JobStatus.SCHEDULED)
-
-
-def retry_current_rq_job(time_delta: timedelta) -> rq.job.Job:
-    # TODO: implement using retries once we move from rq_scheduler to builtin RQ scheduler
-    # for better reliability and error reporting
-
-    # This implementation can potentially lead to 2 jobs with the same name running in parallel,
-    # if the retry is enqueued immediately.
-    assert time_delta.total_seconds() > 0
-
-    current_rq_job = rq.get_current_job()
-
-    def _patched_retry(*_1, **_2):
-        scheduler: Scheduler = django_rq.get_scheduler(settings.CVAT_QUEUES.EXPORT_DATA.value)
-
-        rq_job_meta = ExportRQMeta.for_job(current_rq_job)
-        user_id = rq_job_meta.user.id or -1
-
-        with get_rq_lock_by_user(settings.CVAT_QUEUES.EXPORT_DATA.value, user_id):
-            scheduled_rq_job: rq.job.Job = scheduler.enqueue_in(
-                time_delta,
-                current_rq_job.func,
-                *current_rq_job.args,
-                **current_rq_job.kwargs,
-                job_id=current_rq_job.id,
-                meta=rq_job_meta.get_meta_on_retry(),
-                job_ttl=current_rq_job.ttl,
-                job_result_ttl=current_rq_job.result_ttl,
-                job_description=current_rq_job.description,
-                on_success=current_rq_job.success_callback,
-                on_failure=current_rq_job.failure_callback,
-            )
-            _patch_scheduled_job_status(scheduled_rq_job)
-
-    current_rq_job.retries_left = 1
-    setattr(current_rq_job, "retry", _patched_retry)
-    return current_rq_job
 
 
 def export(
@@ -207,13 +160,7 @@ def export(
             f"{cache_ttl.total_seconds()} seconds. "
         )
     except LockNotAvailableError:
-        # Need to retry later if the lock was not available
-        retry_current_rq_job(EXPORT_LOCKED_RETRY_INTERVAL)
-        logger.info(
-            "Failed to acquire export cache lock. Retrying in {}".format(
-                EXPORT_LOCKED_RETRY_INTERVAL
-            )
-        )
+        logger.info("Failed to acquire export cache lock.")
         raise
 
     return output_path

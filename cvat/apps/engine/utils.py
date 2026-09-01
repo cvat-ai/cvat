@@ -235,20 +235,6 @@ def get_list_view_name(model):
     return "%(model_name)s-list" % {"model_name": model._meta.object_name.lower()}
 
 
-def import_resource_with_clean_up_after(
-    func: Callable[[str, int, int], int] | Callable[[str, int, str, bool], None],
-    filename: str,
-    *args,
-    **kwargs,
-) -> Any:
-    try:
-        result = func(filename, *args, **kwargs)
-    finally:
-        with suppress(FileNotFoundError):
-            os.remove(filename)
-    return result
-
-
 def get_cpu_number() -> int:
     cpu_number = None
     try:

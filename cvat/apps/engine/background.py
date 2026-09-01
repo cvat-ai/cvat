@@ -75,7 +75,6 @@ from cvat.apps.engine.utils import (
     build_annotations_file_name,
     build_backup_file_name,
     get_rq_lock_for_job,
-    import_resource_with_clean_up_after,
     is_dataset_export,
     sendfile,
 )
@@ -183,7 +182,7 @@ class BaseResourceExporter(AbstractRequestManager):
 
     @property
     def job_retry(self) -> Retry | None:
-        return Retry(max=3, interval=[10, 20, 30])
+        return Retry(max=3, interval=[60, 60, 60])
 
     @abstractmethod
     def get_result_filename(self) -> str: ...
@@ -504,7 +503,7 @@ class BaseResourceImporter(AbstractRequestManager):
 
     @property
     def job_retry(self) -> Retry | None:
-        return Retry(max=3, interval=[10, 20, 30])
+        return Retry(max=3, interval=[60, 60, 60])
 
     def init_request_args(self):
         try:
@@ -592,9 +591,6 @@ class BaseResourceImporter(AbstractRequestManager):
                 *self.callback_args[1:],
             )
             self.callback = import_resource_from_cloud_storage
-
-        self.callback_args = (self.callback, *self.callback_args)
-        self.callback = import_resource_with_clean_up_after
 
 
 class DatasetImporter(BaseResourceImporter):
