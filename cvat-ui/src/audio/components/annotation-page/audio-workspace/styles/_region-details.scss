@@ -17,10 +17,6 @@
         padding: $grid-unit-size $grid-unit-size $grid-unit-size $grid-unit-size * 2;
         background-color: var(--region-item-color);
         border-bottom: 1px solid #e5e7eb;
-
-        .cvat-audio-interval-header-time {
-            padding-left: $grid-unit-size * 3.75;
-        }
     }
 
     .cvat-audio-region-details-content {

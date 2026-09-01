@@ -9,7 +9,6 @@ import classNames from 'classnames';
 import { AudioIntervalState, Label } from 'cvat-core-wrapper';
 import { formatMilliseconds, formatTimeShort } from 'audio/utils/format-audio-time';
 import { ColorBy } from 'reducers';
-import CVATTooltip from 'components/common/cvat-tooltip';
 import LabelSelector from 'components/label-selector/label-selector';
 import AudioIntervalActions, { AudioIntervalActionShortcuts } from './audio-interval-actions';
 import AudioIntervalMoreActions from './audio-interval-more-actions';
@@ -48,22 +47,20 @@ export default function AudioIntervalHeader({
     const duration = intervalDurationSeconds(interval);
 
     const labelSelector = (
-        <CVATTooltip title='Change current label'>
-            <LabelSelector
-                size='small'
-                className='cvat-audio-interval-header-label-selector'
-                popupClassName='cvat-audio-interval-header-label-dropdown'
-                popupMatchSelectWidth={false}
-                labels={labels}
-                value={interval.label.id ?? null}
-                disabled={isReadonly}
-                onChange={(label: Label) => {
-                    if (label.id != null) {
-                        onChangeLabel(label.id);
-                    }
-                }}
-            />
-        </CVATTooltip>
+        <LabelSelector
+            size='small'
+            className='cvat-audio-interval-header-label-selector'
+            popupClassName='cvat-audio-interval-header-label-dropdown'
+            popupMatchSelectWidth={false}
+            labels={labels}
+            value={interval.label.id ?? null}
+            disabled={isReadonly}
+            onChange={(label: Label) => {
+                if (label.id != null) {
+                    onChangeLabel(label.id);
+                }
+            }}
+        />
     );
     const sourceLabel = source ? (
         <span className='cvat-audio-interval-header-source' title={`Source: ${source}`}>

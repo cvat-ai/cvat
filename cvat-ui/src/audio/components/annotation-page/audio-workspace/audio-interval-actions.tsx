@@ -135,7 +135,7 @@ export default function AudioIntervalActions({
 
     return (
         <div className='cvat-audio-interval-header-actions'>
-            <Row gutter={8}>
+            <Row gutter={24}>
                 <Col>
                     <Row gutter={4}>
                         <Col>

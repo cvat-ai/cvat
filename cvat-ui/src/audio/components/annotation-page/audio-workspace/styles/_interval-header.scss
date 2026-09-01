@@ -109,12 +109,6 @@
         font-size: $grid-unit-size * 1.5;
         line-height: $grid-unit-size * 2.25;
     }
-
-    &.cvat-audio-interval-header-compact {
-        .cvat-audio-interval-header-time {
-            padding-left: 0;
-        }
-    }
 }
 
 .cvat-audio-interval-header-label-dropdown {
