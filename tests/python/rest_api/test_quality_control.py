@@ -545,11 +545,10 @@ class TestSimpleQualityReportsFilters(CollectionSimpleFilterTestBase):
 
         if field == "parent_id":
             project_report = next(r for r in self.samples if r["target"] == "project")
-            task_reports = [
-                r
-                for r in self.samples
-                if r["target"] == "task" and r["parent_id"] == project_report["id"]
-            ]
+            # Task reports can be shared by several project reports, while the serialized
+            # parent_id contains only the first parent. Get the complete direct-child set
+            # from the endpoint before checking the nested job reports.
+            task_reports = self._retrieve_collection(parent_id=project_report["id"], target="task")
             task_report_ids = {r["id"] for r in task_reports}
             project_job_reports = [
                 r
@@ -558,17 +557,29 @@ class TestSimpleQualityReportsFilters(CollectionSimpleFilterTestBase):
             ]
 
             self._compare_results(
-                task_reports,
-                self._retrieve_collection(parent_id=project_report["id"], target="task"),
-            )
-            self._compare_results(
                 project_job_reports,
                 self._retrieve_collection(parent_id=project_report["id"], target="job"),
             )
 
             assert task_reports
             assert project_job_reports
-            task_report = task_reports[0]
+            project_task_ids = {
+                task["id"]
+                for task in self.task_samples
+                if task["project_id"] == project_report["project_id"]
+            }
+            assert all(
+                report["target"] == "task" and report["task_id"] in project_task_ids
+                for report in task_reports
+            )
+
+            task_report = next(
+                report
+                for report in task_reports
+                if any(
+                    job_report["parent_id"] == report["id"] for job_report in project_job_reports
+                )
+            )
             self._compare_results(
                 [r for r in project_job_reports if r["parent_id"] == task_report["id"]],
                 self._retrieve_collection(parent_id=task_report["id"], target="job"),
@@ -598,14 +609,9 @@ class TestSimpleQualityReportsFilters(CollectionSimpleFilterTestBase):
         if target is not None:
             request_params["target"] = target
 
-        with make_api_client(self.user) as api_client:
-            _, response = api_client.quality_api.list_reports(
-                **request_params,
-                _parse_response=False,
-                _check_status=False,
-            )
+        response = get_method(self.user, "quality/reports", **request_params)
 
-        assert response.status == HTTPStatus.BAD_REQUEST
+        assert response.status_code == HTTPStatus.BAD_REQUEST
 
     @pytest.mark.parametrize("field", ("project_id", "task_id"))
     def test_target_is_required_for_object_filter(self, field):
