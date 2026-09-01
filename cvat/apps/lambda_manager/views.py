@@ -1101,7 +1101,6 @@ class LambdaJob:
 
             collector.add(annotations)
 
-
             # Accumulate data during 100 frames before submitting results.
             # It is optimization to make fewer calls to our server. Also
             # it isn't possible to keep all results in memory.
