@@ -643,8 +643,7 @@ Cypress.Commands.add('switchLabel', (labelName, objectType) => {
     cy.get(`.cvat-${objectType}-popover`).find('.ant-select-selection-item').click();
     cy.get('.ant-select-dropdown')
         .not('.ant-select-dropdown-hidden')
-        .find('.ant-select-item-option')
-        .filter((_index, option) => option.textContent === labelName)
+        .find(`.ant-select-item-option[data-label="${labelName}"]`)
         .click();
 });
 
@@ -838,8 +837,7 @@ Cypress.Commands.add('changeLabelAAM', (labelName) => {
                 .not('.ant-select-dropdown-hidden')
                 .first()
                 .should('be.visible')
-                .find('.ant-select-item-option')
-                .filter((_index, option) => option.textContent === labelName)
+                .find(`.ant-select-item-option[data-label="${labelName}"]`)
                 .click();
         }
     });

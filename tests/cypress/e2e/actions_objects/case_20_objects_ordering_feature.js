@@ -66,7 +66,7 @@ context('Objects ordering feature', () => {
                 for (let i = 0; i < $cvatObjectsSidebarStateItemId.length; i++) {
                     cvatObjectsSidebarStateItemIdList1.push(
                         ordering === 'label-name' ?
-                            $cvatObjectsSidebarStateItemId[i].getAttribute('title') :
+                            $cvatObjectsSidebarStateItemId[i].textContent :
                             Number($cvatObjectsSidebarStateItemId[i].id.match(/\d+$/)),
                     );
                 }

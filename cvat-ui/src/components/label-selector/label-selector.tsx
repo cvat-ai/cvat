@@ -82,7 +82,7 @@ export default function LabelSelector(props: Props): JSX.Element {
             showSearch
             filterOption={(input: string, option) => {
                 if (option) {
-                    const { labelName } = option.props;
+                    const labelName = option.props['data-label'];
                     if (typeof labelName === 'string') {
                         return labelName.toLowerCase().includes(input.toLowerCase());
                     }
@@ -113,7 +113,7 @@ export default function LabelSelector(props: Props): JSX.Element {
                 <Select.Option
                     key={label.id}
                     value={label.id}
-                    labelName={label.name}
+                    data-label={label.name}
                     label={<LabelContent label={label} />}
                 >
                     <LabelContent label={label} tooltip={label.name} />
