@@ -46,11 +46,11 @@ context('Test annotations saving works correctly', () => {
         cy.intercept('POST', '/api/tasks**').as('createTaskRequest');
         cy.intercept('GET', '/api/jobs**').as('getJobsRequest');
         cy.contains('button', 'Submit & Continue').click();
-        cy.wait('@createTaskRequest', { timeout: 20000 }).then((interception) => {
+        cy.wait('@createTaskRequest', { requestTimeout: 20_000 }).then((interception) => {
             expect(interception.response.statusCode).to.equal(201);
             taskId = interception.response.body.id;
         });
-        cy.wait('@getJobsRequest', { timeout: 20000 }).then((interception) => {
+        cy.wait('@getJobsRequest', { requestTimeout: 20_000 }).then((interception) => {
             expect(interception.response.statusCode).to.equal(200);
             jobId = interception.response.body.results[0].id;
 
