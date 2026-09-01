@@ -233,6 +233,7 @@ class QualityReportViewSet(
             query_serializer = QualityReportListQuerySerializer(data=self.request.query_params)
             query_serializer.is_valid(raise_exception=True)
             iam_context = None
+            target = self.request.query_params.get(REPORT_TARGET_PARAM_NAME, None)
 
             # NOTE: the parent_id filter requires a different queryset
             if parent_id := self.request.query_params.get("parent_id", None):
@@ -256,7 +257,16 @@ class QualityReportViewSet(
                 self.check_object_permissions(self.request, task)
                 iam_context = get_iam_context(self.request, task)
 
-                queryset = queryset.filter(Q(job__segment__task__id=task_id) | Q(task__id=task_id))
+                if target == QualityReportTarget.JOB:
+                    queryset = queryset.filter(job__segment__task_id=task_id)
+                elif target == QualityReportTarget.TASK:
+                    queryset = queryset.filter(task_id=task_id)
+                elif target == QualityReportTarget.PROJECT:
+                    queryset = queryset.none()
+                else:
+                    queryset = queryset.filter(
+                        Q(job__segment__task_id=task_id) | Q(task_id=task_id)
+                    )
 
             if project_id := self.request.query_params.get("project_id", None):
                 # NOTE: This filter is too complex to be implemented by other means
@@ -264,16 +274,23 @@ class QualityReportViewSet(
                 self.check_object_permissions(self.request, project)
                 iam_context = get_iam_context(self.request, project)
 
-                queryset = queryset.filter(
-                    Q(job__segment__task__project__id=project_id)
-                    | Q(task__project__id=project_id)
-                    | Q(project__id=project_id)
-                )
+                if target == QualityReportTarget.JOB:
+                    queryset = queryset.filter(job__segment__task__project_id=project_id)
+                elif target == QualityReportTarget.TASK:
+                    queryset = queryset.filter(task__project_id=project_id)
+                elif target == QualityReportTarget.PROJECT:
+                    queryset = queryset.filter(project_id=project_id)
+                else:
+                    queryset = queryset.filter(
+                        Q(job__segment__task__project_id=project_id)
+                        | Q(task__project_id=project_id)
+                        | Q(project_id=project_id)
+                    )
 
             perm = QualityReportPermission.create_scope_list(self.request, iam_context=iam_context)
             queryset = perm.filter(queryset)
 
-            if target := self.request.query_params.get(REPORT_TARGET_PARAM_NAME, None):
+            if target:
                 if target == QualityReportTarget.JOB:
                     queryset = queryset.filter(job__isnull=False)
                 elif target == QualityReportTarget.TASK:
