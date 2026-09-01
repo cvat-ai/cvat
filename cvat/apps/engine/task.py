@@ -1675,17 +1675,13 @@ def initialize_task(
     if job_file_mapping is not None and detected_mode != models.TaskMode.ANNOTATION:
         raise ValidationError("job_file_mapping can't be used with sequence-based data like videos")
 
+    db_data.storage_method = _resolve_static_cache(db_data.storage_method)
+
     if (
-        (
-            db_data.storage_method == models.StorageMethodChoice.FILE_SYSTEM
-            and not settings.MEDIA_CACHE_ALLOW_STATIC_CACHE
-        )
-        or (
             # static cache can not be initialized on lightweight backup restore
             is_data_in_cloud
             and is_backup_restore
             and db_data.storage_method == models.StorageMethodChoice.FILE_SYSTEM
-        )
         or (
             # TODO: Not supported yet, maybe implement later
             media["audio"]
@@ -2247,3 +2243,14 @@ def _move_to_backing_cs_if_configured(db_data):
             )
         else:
             db_data.move_to_backing_cs(backing_cs)
+
+def _resolve_static_cache(
+    storage_method: models.StorageMethodChoice
+) -> models.StorageMethodChoice:
+    if (
+        storage_method == models.StorageMethodChoice.FILE_SYSTEM
+        and not settings.MEDIA_CACHE_ALLOW_STATIC_CACHE
+    ):
+        return models.StorageMethodChoice.CACHE
+
+    return storage_method
