@@ -22,6 +22,7 @@ from rest_framework import serializers, status
 from rest_framework.exceptions import MethodNotAllowed
 from rest_framework.response import Response
 from rest_framework.reverse import reverse
+from rq import Retry
 from rq.job import JobStatus as RQJobStatus
 
 import cvat.apps.dataset_manager as dm
@@ -179,6 +180,10 @@ class BaseResourceExporter(AbstractRequestManager):
     @property
     def job_failed_ttl(self):
         return self.job_result_ttl
+
+    @property
+    def job_retry(self) -> Retry | None:
+        return Retry(max=3, interval=[10, 20, 30])
 
     @abstractmethod
     def get_result_filename(self) -> str: ...
@@ -496,6 +501,10 @@ class BaseResourceImporter(AbstractRequestManager):
     @property
     def job_failed_ttl(self):
         return int(settings.IMPORT_CACHE_FAILED_TTL.total_seconds())
+
+    @property
+    def job_retry(self) -> Retry | None:
+        return Retry(max=3, interval=[10, 20, 30])
 
     def init_request_args(self):
         try:
