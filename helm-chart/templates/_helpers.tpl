@@ -57,6 +57,10 @@ The name of the service account to use for backend pods
 {{- default "default" .Values.cvat.backend.serviceAccount.name }}
 {{- end }}
 
+{{/*
+Shared environment variables for backend pods
+*/}}
+
 {{- define "cvat.sharedBackendEnv" }}
 {{- if .Values.redis.enabled }}
 - name: CVAT_REDIS_INMEM_HOST
@@ -174,6 +178,14 @@ The name of the service account to use for backend pods
 - name: {{ $envName | toYaml }}
   value: {{ tpl $envValueTemplate $ | toYaml }}
 {{- end }}
+- name: POD_NAME
+  valueFrom:
+    fieldRef:
+      fieldPath: metadata.name
+- name: POD_NAMESPACE
+  valueFrom:
+    fieldRef:
+      fieldPath: metadata.namespace
 {{- end }}
 
 {{- define "cvat.backend.initContainers" -}}
