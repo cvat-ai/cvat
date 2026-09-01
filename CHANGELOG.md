@@ -16,6 +16,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.74.1'></a>
+## \[2.74.1\] - 2026-09-01
+
+### Fixed
+
+- Annotation images failing to load when a server or proxy ignores a chunk range request
+  (<https://github.com/cvat-ai/cvat/pull/11121>)
+
+- \[Server API\] Improved performance when filtering quality reports by task or
+  project and report target. The `target` parameter is now required when filtering
+  by `task_id` or `project_id`
+  (<https://github.com/cvat-ai/cvat/pull/11120>)
+
 <a id='changelog-2.74.0'></a>
 ## \[2.74.0\] - 2026-08-26
 
