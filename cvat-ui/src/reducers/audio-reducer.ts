@@ -347,6 +347,8 @@ export default function audioReducer(state: AudioState = defaultState, action: A
                     activeIntervalID: null,
                     hoveredIntervalID: null,
                     interactingIntervalID: null,
+                    playbackRange: null,
+                    playbackRangeSource: null,
                     contextMenu: defaultState.player.contextMenu,
                 },
             };
