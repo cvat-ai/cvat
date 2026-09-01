@@ -95,6 +95,7 @@ context('Audio annotation. Interval actions.', () => {
             cy.realPress(['Shift', 'Space']);
             cy.get('.cvat-player-pause-button').should('exist');
             cy.get('.cvat-player-play-button', { timeout: 8000 }).should('exist');
+            expectCursorAtIntervalBoundary('end');
         });
 
         it('Fits the selected interval into the waveform viewport with I', () => {
@@ -132,6 +133,7 @@ context('Audio annotation. Interval actions.', () => {
                     clickIntervalAction('playInterval');
                     cy.get('.cvat-player-pause-button').should('exist');
                     cy.get('.cvat-player-play-button', { timeout: 8000 }).should('exist');
+                    expectCursorAtIntervalBoundary('end');
                 });
 
                 it('Fits the selected interval into the waveform viewport from the menu', () => {
