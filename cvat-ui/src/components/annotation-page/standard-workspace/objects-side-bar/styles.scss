@@ -817,6 +817,27 @@
 
     button[class^='cvat-object-item-menu-orientation'] {
         color: $text-color;
+
+        &:not(:disabled):hover {
+            color: $slider-color;
+        }
+    }
+
+    .cvat-object-item-menu-orientation-icon {
+        font-size: 16px;
+
+        > svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        > svg path {
+            fill: currentColor;
+        }
+
+        &.clockwise > svg {
+            transform: scaleX(-1);
+        }
     }
 }
 

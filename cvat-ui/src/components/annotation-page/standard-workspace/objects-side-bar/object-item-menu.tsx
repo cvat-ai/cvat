@@ -8,12 +8,12 @@ import Button from 'antd/lib/button';
 import { MenuProps } from 'antd/lib/menu';
 import Icon, {
     LinkOutlined, CopyOutlined, BlockOutlined, RetweetOutlined, DeleteOutlined, EditOutlined,
-    FunctionOutlined, VerticalAlignBottomOutlined, RedoOutlined, UndoOutlined,
+    FunctionOutlined, VerticalAlignBottomOutlined,
 } from '@ant-design/icons';
 
 import {
     BackgroundIcon, ForegroundIcon, ResetPerspectiveIcon, ColorizeIcon, SliceIcon,
-    OneLayerBackwardIcon, OneLayerForwardIcon, SimplifyIcon,
+    OneLayerBackwardIcon, OneLayerForwardIcon, SimplifyIcon, RotateIcon,
 } from 'icons';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { ColorBy } from 'reducers';
@@ -68,9 +68,18 @@ interface ItemProps {
 }
 
 const ORIENTATION_OPTIONS: Record<OrientationAngle, { icon: JSX.Element; label: string }> = {
-    90: { icon: <RedoOutlined />, label: '90°' },
-    '-90': { icon: <UndoOutlined />, label: '90°' },
-    180: { icon: <RetweetOutlined />, label: '180°' },
+    90: {
+        icon: <Icon component={RotateIcon} className='cvat-object-item-menu-orientation-icon clockwise' />,
+        label: '90°',
+    },
+    '-90': {
+        icon: <Icon component={RotateIcon} className='cvat-object-item-menu-orientation-icon' />,
+        label: '90°',
+    },
+    180: {
+        icon: <RetweetOutlined className='cvat-object-item-menu-orientation-icon' />,
+        label: '180°',
+    },
 };
 
 function CreateURLItem(props: ItemProps): JSX.Element {
