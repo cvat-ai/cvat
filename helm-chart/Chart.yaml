@@ -56,7 +56,14 @@ dependencies:
     repository: https://helm.traefik.io/traefik
     condition: traefik.enabled
 
+## Bitnami
+#  - name: redis
+#    version: "19.6.4"
+#    repository: https://charts.bitnami.com/bitnami
+#    condition: redis.enabled
+
+# CloudPirates
   - name: redis
-    version: "19.6.4"
-    repository: https://charts.bitnami.com/bitnami
+    version: "0.32.4"
+    repository: https://cloudpirates-io.github.io/helm-charts
     condition: redis.enabled
