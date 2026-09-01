@@ -911,6 +911,7 @@ export interface AnnotationState {
             initialOpenGuide: boolean;
             defaultLabel: string | null;
             defaultPointsCount: number | null;
+            defaultRotated: boolean;
         };
         groundTruthInfo: {
             validationLayout: JobValidationLayout | null;

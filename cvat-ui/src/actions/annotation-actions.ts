@@ -1003,6 +1003,7 @@ export function getJobAsync({
         initialWorkspace: Workspace | null;
         defaultLabel: string | null;
         defaultPointsCount: number | null;
+        defaultRotated: boolean;
     }
 }): ThunkAction {
     return async (dispatch: ThunkDispatch, getState): Promise<void> => {
