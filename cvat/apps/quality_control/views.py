@@ -149,10 +149,8 @@ REPORT_TARGET_PARAM_NAME = "target"
     list=extend_schema(
         summary="Method returns a paginated list of quality reports.",
         description=textwrap.dedent("""\
-            Please note that children reports are included by default
-            if the "task_id", "project_id" filters are used.
-            If you want to restrict the list of results to a specific report type,
-            use the "{}" parameter.
+            The "{}" parameter is required when the "task_id" or "project_id"
+            filter is used.
 
             The "parent_id" filter includes all the nested reports recursively.
             For instance, if the "parent_id" is a project report,
