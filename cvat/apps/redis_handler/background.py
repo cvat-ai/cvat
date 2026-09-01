@@ -9,7 +9,7 @@ from typing import Any, ClassVar
 import django_rq
 from django.conf import settings
 from django.db.models import Model
-from django_rq.queues import DjangoRQ, DjangoScheduler
+from django_rq.queues import DjangoRQ
 from rest_framework import status
 from rest_framework.response import Response
 from rq import Callback, Retry
@@ -43,6 +43,8 @@ class AbstractRequestManager(metaclass=ABCMeta):
 
     job_on_success_callback: Callback | None
     job_on_failure_callback: Callback | None
+
+    rq_meta_cls: ClassVar[type[BaseRQMeta]] = BaseRQMeta
 
     def __init__(
         self,
@@ -154,11 +156,7 @@ class AbstractRequestManager(metaclass=ABCMeta):
                 status=status.HTTP_409_CONFLICT,
             )
 
-        # RQ jobs can be scheduled only by CVAT internal logic, in that case job has no dependencies
         if job_status == RQJobStatus.SCHEDULED:
-            scheduler: DjangoScheduler = django_rq.get_scheduler(queue.name, queue=queue)
-            # remove the job id from the set with scheduled keys
-            scheduler.cancel(job)
             job.cancel(enqueue_dependents=settings.ONE_RUNNING_JOB_IN_QUEUE_PER_USER)
 
         job.delete()

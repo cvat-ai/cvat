@@ -61,6 +61,7 @@ from cvat.apps.engine.rq import (
     ExportRequestId,
     ExportRQMeta,
     ImportRequestId,
+    ImportRQMeta,
 )
 from cvat.apps.engine.serializers import (
     AnnotationFileSerializer,
@@ -91,6 +92,8 @@ LOCK_ACQUIRE_TIMEOUT = LOCK_TTL - 5
 
 
 class BaseResourceExporter(AbstractRequestManager):
+    rq_meta_cls = ExportRQMeta
+
     class Downloader:
         def __init__(
             self,
@@ -183,7 +186,7 @@ class BaseResourceExporter(AbstractRequestManager):
 
     @property
     def job_retry(self) -> Retry | None:
-        return Retry(max=3, interval=[10, 20, 30])
+        return Retry(max=5, interval=[60] * 5)
 
     @abstractmethod
     def get_result_filename(self) -> str: ...
@@ -478,6 +481,7 @@ class BackupExporter(BaseResourceExporter):
 
 class BaseResourceImporter(AbstractRequestManager):
     QUEUE_NAME = settings.CVAT_QUEUES.IMPORT_DATA.value
+    rq_meta_cls = ImportRQMeta
 
     @dataclass
     class ImportArgs:

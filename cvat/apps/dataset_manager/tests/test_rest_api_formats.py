@@ -22,7 +22,7 @@ from tempfile import TemporaryDirectory
 from time import sleep
 from typing import Any, ClassVar, overload
 from unittest.mock import DEFAULT as MOCK_DEFAULT
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import av
 import datumaro
@@ -1996,30 +1996,6 @@ class ExportBehaviorTest(_DbTestBase):
             lock_time = 2
             with get_export_cache_lock("test_export_path", ttl=lock_time, acquire_timeout=5):
                 sleep(lock_time + 1)
-
-    def test_export_can_request_retry_on_locking_failure(self):
-        format_name = "CVAT for images 1.1"
-        task = self._setup_task_with_annotations(format_name=format_name)
-        task_id = task["id"]
-
-        from cvat.apps.dataset_manager.util import LockNotAvailableError
-
-        with (
-            patch(
-                "cvat.apps.dataset_manager.views.get_export_cache_lock",
-                side_effect=LockNotAvailableError,
-            ) as mock_get_export_cache_lock,
-            patch("cvat.apps.dataset_manager.views.rq.get_current_job") as mock_rq_get_current_job,
-            patch("cvat.apps.dataset_manager.views.django_rq.get_scheduler"),
-            self.assertRaises(LockNotAvailableError),
-        ):
-            mock_rq_job = MagicMock(timeout=5)
-            mock_rq_get_current_job.return_value = mock_rq_job
-
-            export(dst_format=format_name, task_id=task_id)
-
-        mock_get_export_cache_lock.assert_called()
-        self.assertEqual(mock_rq_job.retries_left, 1)
 
     def test_export_can_reuse_older_file_if_still_relevant(self):
         format_name = "CVAT for images 1.1"
