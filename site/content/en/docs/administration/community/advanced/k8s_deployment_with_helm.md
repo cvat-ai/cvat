@@ -376,6 +376,10 @@ kubectl delete deployments --namespace=foo -l app=cvat-app
 It is assumed that you have created a PersistentVolumeClaim named `my-claim-name`
 and a PersistentVolume that backing the claim.
 Claims must exist in the same namespace as the Pod using the claim.
+The same claim can be mounted concurrently by several CVAT backend Pods. If these
+Pods can be scheduled on different nodes, the backing volume must support the
+`ReadWriteMany` (RWX) access mode. `ReadWriteOnce` (RWO) can be used only when all
+Pods using the claim are scheduled on the same node.
 For details [see](https://kubernetes.io/docs/concepts/storage/persistent-volumes).
 Add these values in the `values.override.yaml`:
 ```yaml
