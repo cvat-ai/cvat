@@ -917,6 +917,8 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                     statesOrdering={statesOrdering}
                     currentLayer={currentZLayer}
                     hiddenLayers={hiddenZLayers}
+                    selectedStatesID={selectedStatesID}
+                    keyMap={keyMap}
                     sortedStatesID={sortedStatesID}
                     showGroundTruth={showGroundTruth}
                     objectStates={filteredStates}
@@ -936,6 +938,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                     hideAllStates={this.onHideAllStates}
                     showAllStates={this.onShowAllStates}
                     changeShowGroundTruth={this.changeShowGroundTruth}
+                    selectObjects={selectObjects}
                 />
             </>
         );

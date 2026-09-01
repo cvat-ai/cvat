@@ -20,6 +20,10 @@ interface LayerSectionProps {
     selected: boolean;
     visible: boolean;
     collapsed: boolean;
+    multiSelected: boolean;
+    onMouseDown(event: React.MouseEvent): void;
+    onKeyDown(event: React.KeyboardEvent): void;
+    onContextMenu(event: React.MouseEvent): void;
     selectLayer(zOrder: number): void;
     toggleLayerVisibility(zOrder: number, includeLower: boolean): void;
     toggleLayerCollapsed(zOrder: number): void;
@@ -29,7 +33,7 @@ interface LayerSectionProps {
 function LayerSection(props: LayerSectionProps): JSX.Element {
     const {
         zOrder, layerObjectIds, visibleObjectIDs, objectStates, visibleSkeletonElements,
-        selected, visible, collapsed, selectLayer,
+        selected, visible, collapsed, multiSelected, selectLayer, onMouseDown, onKeyDown, onContextMenu,
         toggleLayerCollapsed, toggleLayerVisibility,
     } = props;
 
@@ -38,7 +42,11 @@ function LayerSection(props: LayerSectionProps): JSX.Element {
     return (
         <div
             ref={setNodeRef}
-            className={`cvat-objects-sidebar-z-layer${isOver ? ' cvat-objects-sidebar-z-layer-active' : ''}`}
+            className={[
+                'cvat-objects-sidebar-z-layer',
+                isOver ? 'cvat-objects-sidebar-z-layer-active' : '',
+                multiSelected ? 'cvat-objects-sidebar-z-layer-multi-selected' : '',
+            ].join(' ')}
             data-z-order={zOrder}
         >
             <LayerHeader
@@ -46,9 +54,13 @@ function LayerSection(props: LayerSectionProps): JSX.Element {
                 selected={selected}
                 visible={visible}
                 collapsed={collapsed}
+                multiSelected={multiSelected}
                 selectLayer={selectLayer}
                 toggleLayerVisibility={toggleLayerVisibility}
                 toggleLayerCollapsed={toggleLayerCollapsed}
+                onMouseDown={onMouseDown}
+                onKeyDown={onKeyDown}
+                onContextMenu={onContextMenu}
             />
             {!collapsed && layerObjectIds.map((id: number): JSX.Element => {
                 const object = objectStates.find((state: ObjectState): boolean => state.clientID === id);

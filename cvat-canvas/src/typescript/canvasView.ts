@@ -1673,21 +1673,42 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 const dx2 = (startCenter.x - cx) ** 2;
                 const dy2 = (startCenter.y - cy) ** 2;
                 if (Math.sqrt(dx2 + dy2) > 0) {
-                    if (groupDragging && !this.areShapesInsideFrame([state.clientID, ...groupSiblingIDs])) {
+                    if (!groupDragging && !this.areShapesInsideFrame([state.clientID])) {
                         this.resetViewPosition(state.clientID);
-                        for (const siblingID of groupSiblingIDs) {
-                            this.resetViewPosition(siblingID);
+                        if (this.svgTexts[state.clientID]) {
+                            this.updateTextPosition(this.svgTexts[state.clientID]);
                         }
-                        this.setSelectedObjectsOverlayDragging(false);
-                        this.updateSelectedObjectsOverlay();
                         return;
                     }
 
                     if (groupDragging) {
                         // Move all editable members together and record them as a single change.
-                        const totalDx = cx - startCenter.x;
-                        const totalDy = cy - startCenter.y;
                         const movedIDs = [state.clientID, ...groupSiblingIDs];
+                        const { dx: totalDx, dy: totalDy } = this.normalizeSelectionTranslation(
+                            movedIDs,
+                            cx - startCenter.x,
+                            cy - startCenter.y,
+                        );
+                        const correctionX = totalDx - (cx - startCenter.x);
+                        const correctionY = totalDy - (cy - startCenter.y);
+                        if (correctionX || correctionY) {
+                            for (const clientID of movedIDs) {
+                                this.svgShapes[clientID]?.dmove(correctionX, correctionY);
+                            }
+                        }
+                        if (!totalDx && !totalDy) {
+                            this.setSelectedObjectsOverlayDragging(false);
+                            this.updateSelectedObjectsOverlay();
+                            return;
+                        }
+                        if (!this.areShapesInsideFrame(movedIDs)) {
+                            for (const clientID of movedIDs) {
+                                this.resetViewPosition(clientID);
+                            }
+                            this.setSelectedObjectsOverlayDragging(false);
+                            this.updateSelectedObjectsOverlay();
+                            return;
+                        }
                         const movedStates = this.controller.objects
                             .filter((movedState: any): boolean => movedIDs.includes(movedState.clientID))
                             .map((movedState: any) => ({
@@ -3834,10 +3855,12 @@ export class CanvasViewImpl implements CanvasView, Listener {
         if (state.shapeType === 'mask') {
             // mask points are [...rle, left, top, right, bottom]; shift the bounding box
             const n = points.length;
-            points[n - 4] += dx;
-            points[n - 3] += dy;
-            points[n - 2] += dx;
-            points[n - 1] += dy;
+            const shiftX = Math.round(dx);
+            const shiftY = Math.round(dy);
+            points[n - 4] += shiftX;
+            points[n - 3] += shiftY;
+            points[n - 2] += shiftX;
+            points[n - 1] += shiftY;
             return points;
         }
 
@@ -3858,6 +3881,13 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 this.selectedObjects.includes(state.clientID) && this.isStateMovableInSelection(state)
             ))
             .map((state: any): number => state.clientID);
+    }
+
+    private normalizeSelectionTranslation(clientIDs: number[], dx: number, dy: number): { dx: number; dy: number } {
+        const includesMask = this.controller.objects.some((state: any): boolean => (
+            clientIDs.includes(state.clientID) && state.shapeType === 'mask'
+        ));
+        return includesMask ? { dx: Math.round(dx), dy: Math.round(dy) } : { dx, dy };
     }
 
     private areShapesInsideFrame(clientIDs: number[]): boolean {
@@ -3942,8 +3972,17 @@ export class CanvasViewImpl implements CanvasView, Listener {
             }
 
             const { cx, cy } = this.selectedObjectsBox.bbox();
-            const dx = cx - startCenter.x;
-            const dy = cy - startCenter.y;
+            const rawDx = cx - startCenter.x;
+            const rawDy = cy - startCenter.y;
+            const { dx, dy } = this.normalizeSelectionTranslation(movableIDs, rawDx, rawDy);
+            const correctionX = dx - rawDx;
+            const correctionY = dy - rawDy;
+            if (correctionX || correctionY) {
+                this.selectedObjectsBox.dmove(correctionX, correctionY);
+                for (const clientID of movableIDs) {
+                    this.svgShapes[clientID]?.dmove(correctionX, correctionY);
+                }
+            }
             if (dx !== 0 || dy !== 0) {
                 if (!this.areShapesInsideFrame(movableIDs)) {
                     for (const clientID of movableIDs) {
@@ -4519,6 +4558,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
         const colorization = this.getShapeColorization(state);
         const color = fabric.Color.fromHex(colorization.fill).getSource();
         const [left, top, right, bottom] = points.slice(-4);
+        const width = right - left + 1;
+        const height = bottom - top + 1;
         const imageBitmap = RLEToImageData(color[0], color[1], color[2], points);
 
         const image = this.adoptedContent.image().attr({
@@ -4531,12 +4572,14 @@ export class CanvasViewImpl implements CanvasView, Listener {
             opacity: Math.sqrt(colorization['fill-opacity']),
             stroke: colorization.stroke,
         }).addClass('cvat_canvas_shape');
-        image.move(this.geometry.offset + left, this.geometry.offset + top);
+        image
+            .move(this.geometry.offset + left, this.geometry.offset + top)
+            .size(width, height);
 
         imageDataToDataURL(
             imageBitmap,
-            right - left + 1,
-            bottom - top + 1,
+            width,
+            height,
             (dataURL: string): void => {
                 const destroy = (): void => URL.revokeObjectURL(dataURL);
                 if (image.parent() !== null) {

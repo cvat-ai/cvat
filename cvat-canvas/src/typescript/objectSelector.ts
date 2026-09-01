@@ -98,6 +98,9 @@ export class ObjectSelectorImpl implements ObjectSelector {
         }
 
         for (const state of states) {
+            if (state.hidden || state.outside) {
+                continue;
+            }
             const { objectType, shapeType } = state;
             const objectTypes = this.selectionFilter.objectType || [objectType];
             const shapeTypes = effectiveShapeTypes || [shapeType];
@@ -314,8 +317,9 @@ export class ObjectSelectorImpl implements ObjectSelector {
 
     public setSelected(states: ObjectState[], notify = true): void {
         if (this.isEnabled) {
-            this.selectedObjects = Object.fromEntries(states.map((state) => [state.clientID, state]));
-            if (notify) this.onSelectCallback(states);
+            const visibleStates = states.filter((state) => !state.hidden && !state.outside);
+            this.selectedObjects = Object.fromEntries(visibleStates.map((state) => [state.clientID, state]));
+            if (notify) this.onSelectCallback(visibleStates);
         }
     }
 

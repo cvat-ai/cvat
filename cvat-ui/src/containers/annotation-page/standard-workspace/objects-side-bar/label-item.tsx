@@ -13,6 +13,9 @@ import { ObjectType } from 'cvat-core-wrapper';
 
 interface OwnProps {
     labelID: number;
+    multiSelected: boolean;
+    onMouseDown(event: React.MouseEvent): void;
+    onContextMenu(event: React.MouseEvent): void;
 }
 
 interface StateToProps {
@@ -149,7 +152,9 @@ class LabelItemContainer extends React.PureComponent<Props, State> {
     }
 
     public render(): JSX.Element {
-        const { labelName, labelColor } = this.props;
+        const {
+            labelName, labelColor, multiSelected, onMouseDown, onContextMenu,
+        } = this.props;
         const { visible, statesHidden, statesLocked } = this.state;
 
         return (
@@ -159,6 +164,9 @@ class LabelItemContainer extends React.PureComponent<Props, State> {
                 visible={visible}
                 statesHidden={statesHidden}
                 statesLocked={statesLocked}
+                multiSelected={multiSelected}
+                onMouseDown={onMouseDown}
+                onContextMenu={onContextMenu}
                 hideStates={this.hideStates}
                 showStates={this.showStates}
                 lockStates={this.lockStates}

@@ -6,6 +6,7 @@
 import { AnyAction, Store } from 'redux';
 import { ThunkAction, ThunkDispatch } from 'utils/redux';
 import isAbleToChangeFrame from 'utils/is-able-to-change-frame';
+import getHiddenZLayers from 'utils/get-hidden-z-layers';
 import { CanvasMode as Canvas3DMode } from 'cvat-canvas3d-wrapper';
 import {
     RectDrawingMethod, CuboidDrawingMethod, Canvas, CanvasMode as Canvas2DMode,
@@ -628,6 +629,17 @@ export function copyShape(objectState: any): AnyAction {
     };
 }
 
+function sanitizeSelectedObjectIDs(state: CombinedState, requestedStatesID: number[]): number[] {
+    const hiddenZLayers = getHiddenZLayers(state);
+    const selectableIDs = new Set(state.annotation.annotations.states
+        .filter((objectState: ObjectState): boolean => (
+            [ObjectType.SHAPE, ObjectType.TRACK].includes(objectState.objectType) &&
+            !objectState.hidden && !objectState.outside && !hiddenZLayers.has(objectState.zOrder)
+        ))
+        .map((objectState: ObjectState): number => objectState.clientID as number));
+    return [...new Set(requestedStatesID)].filter((clientID: number): boolean => selectableIDs.has(clientID));
+}
+
 export function selectObjects(selectedStatesID: number[]): AnyAction {
     return {
         type: AnnotationActionTypes.SELECT_OBJECTS,
@@ -637,13 +649,15 @@ export function selectObjects(selectedStatesID: number[]): AnyAction {
     };
 }
 
-export function selectObjectsAsync(selectedStatesID: number[]): ThunkAction {
+export function selectObjectsAsync(requestedStatesID: number[]): ThunkAction {
     return async (dispatch: ThunkDispatch, getState): Promise<void> => {
+        const state = getState();
         const {
             annotations: { selectedStatesID: previousSelection },
             job: { instance: jobInstance },
             player: { frame: { number: frame } },
-        } = getState().annotation;
+        } = state.annotation;
+        const selectedStatesID = sanitizeSelectedObjectIDs(state, requestedStatesID);
 
         if (previousSelection.length === selectedStatesID.length &&
             previousSelection.every((clientID: number): boolean => selectedStatesID.includes(clientID))) {

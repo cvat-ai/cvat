@@ -23,6 +23,8 @@ import CVATTooltip from 'components/common/cvat-tooltip';
 import {
     OBJECTS_SIDEBAR_EXPAND_Z_LAYER_EVENT,
 } from 'utils/objects-sidebar';
+import { KeyMap } from 'utils/mousetrap-react';
+import { isMultiSelectObjectModifierPressed } from 'utils/multi-selection';
 
 import ObjectListHeader from './objects-list-header';
 import {
@@ -47,6 +49,8 @@ interface Props {
     statesOrdering: StatesOrdering;
     currentLayer: number;
     hiddenLayers: Set<number>;
+    selectedStatesID: number[];
+    keyMap: KeyMap;
     sortedStatesID: number[];
     objectStates: ObjectState[];
     visibleSkeletonElements: Record<number, number[]>;
@@ -66,6 +70,7 @@ interface Props {
     hideAllStates(): void;
     showAllStates(): void;
     changeShowGroundTruth(): void;
+    selectObjects(clientIDs: number[]): void;
 }
 
 function ObjectListComponent(props: Props): JSX.Element {
@@ -77,6 +82,8 @@ function ObjectListComponent(props: Props): JSX.Element {
         statesOrdering,
         currentLayer,
         hiddenLayers,
+        selectedStatesID,
+        keyMap,
         sortedStatesID,
         objectStates,
         visibleSkeletonElements,
@@ -96,6 +103,7 @@ function ObjectListComponent(props: Props): JSX.Element {
         hideAllStates,
         showAllStates,
         changeShowGroundTruth,
+        selectObjects,
     } = props;
 
     const sensors = useSensors(useSensor(PointerSensor, {
@@ -109,6 +117,7 @@ function ObjectListComponent(props: Props): JSX.Element {
     const [activeDragID, setActiveDragID] = useState<string | null>(null);
     const [dragPointerPosition, setDragPointerPosition] = useState<PointerPosition | null>(null);
     const [pendingExpandedLayerItemID, setPendingExpandedLayerItemID] = useState<string | null>(null);
+    const [selectionAnchorLayer, setSelectionAnchorLayer] = useState<number | null>(null);
     const layerObjectStates = objectStates.filter(isLayerState);
     const zLayers = Array.from(
         new Set(layerObjectStates.map((state) => state.zOrder)),
@@ -226,16 +235,20 @@ function ObjectListComponent(props: Props): JSX.Element {
         const sourceZOrder = parseLayerDragID(String(active.id));
         const zOrder = parseLayerDropID(String(over.id));
         const placement = parseLayerInsertDropID(String(over.id));
+        let moved = false;
 
         if (clientID !== null && zOrder !== null) {
             // Dropping an object onto an existing layer moves it into that layer.
             moveObjectsToLayer({ clientID }, zOrder);
+            moved = true;
         } else if (clientID !== null && placement !== null) {
             // Dropping an object between layers creates a new layer before/after a layout boundary.
             moveObjectsOnNewLayer({ clientID }, placement);
+            moved = true;
         } else if (sourceZOrder !== null && zOrder !== null) {
             // Dropping a layer onto an existing layer merges both layers.
             moveObjectsToLayer({ zOrder: sourceZOrder }, zOrder);
+            moved = true;
         } else if (sourceZOrder !== null && placement !== null) {
             if (isLayerDroppedBesideItself(sourceZOrder, placement)) {
                 return;
@@ -243,8 +256,13 @@ function ObjectListComponent(props: Props): JSX.Element {
 
             // Dropping a layer between layers creates a new layer before/after a layout boundary.
             moveObjectsOnNewLayer({ zOrder: sourceZOrder }, placement);
+            moved = true;
         }
-    }, [moveObjectsOnNewLayer, moveObjectsToLayer]);
+
+        if (moved) {
+            selectObjects([]);
+        }
+    }, [moveObjectsOnNewLayer, moveObjectsToLayer, selectObjects]);
 
     const onDragStart = useCallback((event: DragStartEvent): void => {
         setDragActive(true);
@@ -277,6 +295,50 @@ function ObjectListComponent(props: Props): JSX.Element {
 
     const toggleLayerVisibility = (zOrder: number, includeLower: boolean): void => {
         toggleLayersVisibility(includeLower ? [zOrder, ...zLayers.filter((layer) => layer < zOrder)] : [zOrder]);
+        selectObjects([]);
+    };
+    const compactLayerStack = (): void => {
+        compactLayers();
+        selectObjects([]);
+    };
+    const selectLayerObjects = (event: React.MouseEvent | React.KeyboardEvent, zOrder: number): void => {
+        if (('button' in event && event.button !== 0) ||
+            ('key' in event && !['Enter', ' '].includes(event.key)) ||
+            (event.target as Element).closest('button, [role="button"]')) {
+            return;
+        }
+
+        let affectedLayers: number[] = [];
+        if (event.shiftKey && !event.ctrlKey && !event.altKey && !event.metaKey) {
+            const anchorIndex = selectionAnchorLayer === null ? -1 : zLayers.indexOf(selectionAnchorLayer);
+            const currentIndex = zLayers.indexOf(zOrder);
+            affectedLayers = anchorIndex === -1 ? [zOrder] : zLayers.slice(
+                Math.min(anchorIndex, currentIndex),
+                Math.max(anchorIndex, currentIndex) + 1,
+            );
+        } else if (isMultiSelectObjectModifierPressed(event, keyMap)) {
+            affectedLayers = [zOrder];
+        } else {
+            return;
+        }
+
+        event.preventDefault();
+        event.stopPropagation();
+        setSelectionAnchorLayer(zOrder);
+        const affectedIDs = affectedLayers.flatMap((layer: number): number[] => objectIdsByLayer[layer] || []);
+        const selectedIDs = new Set(selectedStatesID);
+        const remove = affectedLayers.length === 1 && affectedIDs.length > 0 &&
+            affectedIDs.every((clientID: number): boolean => selectedIDs.has(clientID));
+        selectObjects(remove ?
+            selectedStatesID.filter((clientID: number): boolean => !affectedIDs.includes(clientID)) :
+            [...new Set([...selectedStatesID, ...affectedIDs])]);
+    };
+    const suppressModifierContextMenu = (event: React.MouseEvent): void => {
+        if (isMultiSelectObjectModifierPressed(event, keyMap) &&
+            !(event.target as Element).closest('button, [role="button"]')) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
     };
     const visibleObjectIDs = statesOrdering === StatesOrdering.LAYER ? zLayers
         .filter((zOrder: number): boolean => !collapsedLayers.has(zOrder))
@@ -354,7 +416,7 @@ function ObjectListComponent(props: Props): JSX.Element {
                                     type='text'
                                     size='small'
                                     icon={<VerticalAlignMiddleOutlined />}
-                                    onClick={compactLayers}
+                                    onClick={compactLayerStack}
                                 />
                             </CVATTooltip>
                             <CVATTooltip title={allLayersCollapsed ? 'Expand all layers' : 'Collapse all layers'}>
@@ -393,11 +455,22 @@ function ObjectListComponent(props: Props): JSX.Element {
                                                 objectStates={layerObjectStates}
                                                 visibleSkeletonElements={visibleSkeletonElements}
                                                 selected={zOrder === currentLayer}
+                                                multiSelected={!!objectIdsByLayer[zOrder]?.length &&
+                                                    objectIdsByLayer[zOrder].every((clientID: number): boolean => (
+                                                        selectedStatesID.includes(clientID)
+                                                    ))}
                                                 visible={!hiddenLayers.has(zOrder)}
                                                 collapsed={collapsedLayers.has(zOrder)}
                                                 selectLayer={selectLayer}
                                                 toggleLayerVisibility={toggleLayerVisibility}
                                                 toggleLayerCollapsed={toggleLayerCollapsed}
+                                                onMouseDown={(event: React.MouseEvent): void => (
+                                                    selectLayerObjects(event, zOrder)
+                                                )}
+                                                onKeyDown={(event: React.KeyboardEvent): void => (
+                                                    selectLayerObjects(event, zOrder)
+                                                )}
+                                                onContextMenu={suppressModifierContextMenu}
                                             />
                                         </React.Fragment>
                                     );
