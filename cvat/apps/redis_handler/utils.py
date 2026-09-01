@@ -70,11 +70,8 @@ def send_request_succeeded_signal(
     from cvat.apps.engine.rq import BaseRQMeta
 
     request_manager_cls_path = BaseRQMeta.for_job(rq_job).request_manager_cls
-    sender = (
-        get_class_from_full_path(full_path=request_manager_cls_path)
-        if request_manager_cls_path
-        else None
-    )
+
+    sender = get_class_from_full_path(full_path=request_manager_cls_path)
 
     _ = signals.request_succeeded.send_robust(
         sender=sender,
