@@ -25,11 +25,13 @@ cvat:
 
     additionalVolumes: []
     additionalVolumeMounts: []
+    redisInmemHostOverride: "cvat-redis-master"
     # -- The service account the backend pods will use to interact with the Kubernetes API
     serviceAccount:
       name: default
 
     initializer:
+      enabled: true
       labels: {}
       annotations: {}
       resources: {}
@@ -381,27 +383,61 @@ postgresql:
     postgres_password: cvat_postgresql_postgres
     replication_password: cvat_postgresql_replica
 
-# https://artifacthub.io/packages/helm/bitnami/redis
+## https://artifacthub.io/packages/helm/bitnami/redis
+#redis:
+#  enabled: true
+#  image:
+#    registry: public.ecr.aws
+#    repository: docker/library/redis
+#    tag: 7.2.11
+#  global:
+#    security:
+#      allowInsecureImages: true
+#  external:
+#    host: 127.0.0.1
+#  architecture: standalone
+#  auth:
+#    existingSecret: "{{ .Release.Name }}-redis-secret"
+#    existingSecretPasswordKey: password
+#  secret:
+#    create: true
+#    name: "{{ .Release.Name }}-redis-secret"
+#    password: cvat_redis
+#  # TODO: persistence options
+
 redis:
-  enabled: true
+  enabled: true # to enable subchart usage in Chart.yaml
+
+  # !NB - fully supported
   image:
     registry: public.ecr.aws
     repository: docker/library/redis
     tag: 7.2.11
-  global:
-    security:
-      allowInsecureImages: true
+  # note - is this even used?
+  # care: it is not used
+#  global:
+#    security:
+#      allowInsecureImages: true
+
+  # !NB - used in main chart helpers.tpl to set CVAT_REDIS_INMEM_HOST env var
   external:
     host: 127.0.0.1
+
+  # !NB - fully supported
   architecture: standalone
+
+  # !NB - fully supported
   auth:
     existingSecret: "{{ .Release.Name }}-redis-secret"
     existingSecretPasswordKey: password
+
+# !NB - used in helpers.tpl to set CVAT_REDIS_INMEM_PASSWORD env var (value from secret)
+# and .create -> name + password are used in cvat-redis-secret.yml
   secret:
     create: true
     name: "{{ .Release.Name }}-redis-secret"
     password: cvat_redis
-  # TODO: persistence options
+
 
 nuclio:
   enabled: false
