@@ -436,9 +436,9 @@ class TestListQualityReports(_PermissionTestBase):
         create_gt_job(admin_user, task["id"])
         report = create_quality_report(user=admin_user, task_id=task["id"])
         if allow:
-            self._test_list_reports_200(user=user["username"], parent_id=report["id"])
+            self._test_list_reports_200(user=user["username"], parent_id=report["id"], target="job")
         else:
-            self._test_list_reports_403(user=user["username"], parent_id=report["id"])
+            self._test_list_reports_403(user=user["username"], parent_id=report["id"], target="job")
 
     @pytest.mark.usefixtures("restore_db_per_function")
     @pytest.mark.parametrize(*_PermissionTestBase._default_org_cases)
@@ -454,9 +454,9 @@ class TestListQualityReports(_PermissionTestBase):
         create_gt_job(admin_user, task["id"])
         report = create_quality_report(user=admin_user, task_id=task["id"])
         if allow:
-            self._test_list_reports_200(user=user["username"], parent_id=report["id"])
+            self._test_list_reports_200(user=user["username"], parent_id=report["id"], target="job")
         else:
-            self._test_list_reports_403(user=user["username"], parent_id=report["id"])
+            self._test_list_reports_403(user=user["username"], parent_id=report["id"], target="job")
 
 
 class TestSimpleQualityReportsFilters(CollectionSimpleFilterTestBase):
@@ -531,7 +531,69 @@ class TestSimpleQualityReportsFilters(CollectionSimpleFilterTestBase):
         ("project_id", "task_id", "job_id", "parent_id", "target", "org_id"),
     )
     def test_can_use_simple_filter_for_object_list(self, field):
+        if field == "parent_id":
+            project_report = next(r for r in self.samples if r["target"] == "project")
+            task_reports = [
+                r
+                for r in self.samples
+                if r["target"] == "task" and r["parent_id"] == project_report["id"]
+            ]
+            task_report_ids = {r["id"] for r in task_reports}
+            project_job_reports = [
+                r
+                for r in self.samples
+                if r["target"] == "job" and r["parent_id"] in task_report_ids
+            ]
+
+            self._compare_results(
+                task_reports,
+                self._retrieve_collection(parent_id=project_report["id"], target="task"),
+            )
+            self._compare_results(
+                project_job_reports,
+                self._retrieve_collection(parent_id=project_report["id"], target="job"),
+            )
+
+            assert task_reports
+            assert project_job_reports
+            task_report = task_reports[0]
+            self._compare_results(
+                [r for r in project_job_reports if r["parent_id"] == task_report["id"]],
+                self._retrieve_collection(parent_id=task_report["id"], target="job"),
+            )
+            return
+
         return super()._test_can_use_simple_filter_for_object_list(field)
+
+    @pytest.mark.parametrize(
+        ("parent_target", "target"),
+        [
+            ("job", None),
+            ("job", "job"),
+            ("job", "task"),
+            ("job", "project"),
+            ("task", None),
+            ("task", "task"),
+            ("task", "project"),
+            ("project", None),
+            ("project", "project"),
+            ("project", "unknown"),
+        ],
+    )
+    def test_cannot_use_invalid_parent_target_combination(self, parent_target, target):
+        parent_report = next(r for r in self.samples if r["target"] == parent_target)
+        request_params = {"parent_id": parent_report["id"]}
+        if target is not None:
+            request_params["target"] = target
+
+        with make_api_client(self.user) as api_client:
+            _, response = api_client.quality_api.list_reports(
+                **request_params,
+                _parse_response=False,
+                _check_status=False,
+            )
+
+        assert response.status == HTTPStatus.BAD_REQUEST
 
 
 @pytest.mark.usefixtures("restore_db_per_class")
@@ -770,7 +832,7 @@ class TestGetQualityReportData(_PermissionTestBase):
 
         with make_api_client(admin_user) as api_client:
             job_report = api_client.quality_api.list_reports(
-                job_id=normal_job["id"], parent_id=task_report["id"]
+                job_id=normal_job["id"], parent_id=task_report["id"], target="job"
             )[0].results[0]
 
         report_data = json.loads(self._test_get_report_data_200(admin_user, job_report["id"]).data)

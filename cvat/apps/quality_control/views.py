@@ -154,15 +154,15 @@ REPORT_TARGET_PARAM_NAME = "target"
             If you want to restrict the list of results to a specific report type,
             use the "{}" parameter.
 
-            The "parent_id" filter includes all the nested reports recursively.
-            For instance, if the "parent_id" is a project report,
-            all the related task and job reports will be returned.
+            The "parent_id" filter requires the "{}" parameter. Valid parent
+            report target to requested target combinations are: task to job,
+            project to task, and project to job.
 
             Please note that a report can be reused in several parent reports,
             but the "parent_id" field in responses will include only the first parent report id.
-            The "parent_id" filter still returns all the relevant nested reports,
-            even though the response "parent_id" values may be different from the requested one.
-        """).format(REPORT_TARGET_PARAM_NAME),
+            Filtering project report children with target "job" still returns all the relevant
+            nested job reports, even though their response "parent_id" values refer to task reports.
+        """).format(REPORT_TARGET_PARAM_NAME, REPORT_TARGET_PARAM_NAME),
         parameters=[
             # These filters are implemented differently from others
             OpenApiParameter(
@@ -176,7 +176,7 @@ REPORT_TARGET_PARAM_NAME = "target"
             OpenApiParameter(
                 "parent_id",
                 type=OpenApiTypes.INT,
-                description="A simple equality filter for parent id",
+                description="A parent report id filter. Requires a compatible target filter",
             ),
             OpenApiParameter(
                 REPORT_TARGET_PARAM_NAME,
@@ -233,6 +233,7 @@ class QualityReportViewSet(
             query_serializer = QualityReportListQuerySerializer(data=self.request.query_params)
             query_serializer.is_valid(raise_exception=True)
             iam_context = None
+            target = self.request.query_params.get(REPORT_TARGET_PARAM_NAME, None)
 
             # NOTE: the parent_id filter requires a different queryset
             if parent_id := self.request.query_params.get("parent_id", None):
@@ -240,10 +241,19 @@ class QualityReportViewSet(
                 self.check_object_permissions(self.request, parent_report)
                 iam_context = get_iam_context(self.request, parent_report)
 
-                # For m2m relations this is actually "in"
-                queryset = queryset.filter(
-                    Q(parents=parent_report) | Q(parents__parents=parent_report)
-                )
+                parent_filter = {
+                    (QualityReportTarget.TASK, QualityReportTarget.JOB): "parents",
+                    (QualityReportTarget.PROJECT, QualityReportTarget.TASK): "parents",
+                    (QualityReportTarget.PROJECT, QualityReportTarget.JOB): "parents__parents",
+                }.get((parent_report.target, target))
+                if parent_filter is None:
+                    raise ValidationError(
+                        "Invalid combination of 'parent_id' and 'target' filters. "
+                        "Valid parent target to requested target combinations are: "
+                        "task to job, project to task, project to job."
+                    )
+
+                queryset = queryset.filter(**{parent_filter: parent_report})
 
             if job_id := self.request.query_params.get("job_id", None):
                 job = db_utils.get_or_404(Job, job_id)
@@ -273,7 +283,7 @@ class QualityReportViewSet(
             perm = QualityReportPermission.create_scope_list(self.request, iam_context=iam_context)
             queryset = perm.filter(queryset)
 
-            if target := self.request.query_params.get(REPORT_TARGET_PARAM_NAME, None):
+            if target is not None:
                 if target == QualityReportTarget.JOB:
                     queryset = queryset.filter(job__isnull=False)
                 elif target == QualityReportTarget.TASK:
