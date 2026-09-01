@@ -55,7 +55,7 @@ function LabelContent({ label, tooltip }: LabelContentProps): JSX.Element {
 
 export default function LabelSelector(props: Props): JSX.Element {
     const {
-        labels, value, onChange, onEnterPress, onDropdownVisibleChange, tooltip = 'Change current label', ...rest
+        labels, value, onChange, onEnterPress, onDropdownVisibleChange, tooltip, ...rest
     } = props;
     const dynamicProps = value ?
         {

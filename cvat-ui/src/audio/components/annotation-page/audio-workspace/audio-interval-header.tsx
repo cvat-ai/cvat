@@ -55,6 +55,7 @@ export default function AudioIntervalHeader({
             labels={labels}
             value={interval.label.id ?? null}
             disabled={isReadonly}
+            tooltip='Change current label'
             onChange={(label: Label) => {
                 if (label.id != null) {
                     onChangeLabel(label.id);
