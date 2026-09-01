@@ -28,9 +28,8 @@ export function useAudioIntervalAnnotations({ waveform }: Params): AudioInterval
         durationRef: waveform.durationRef,
     });
     useIntervalPlayback({
-        regionRuntime: waveform.regionRuntime,
-        playback: waveform.playback,
-        ready: waveform.ready,
+        getCurrentTime: waveform.playback.getCurrentTime,
+        durationRef: waveform.durationRef,
     });
     useAudioRecording({ playback: waveform.playback, regions, ready: waveform.ready });
     const navigation = useIntervalNavigation({ viewport: waveform.viewport });
