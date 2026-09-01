@@ -40,7 +40,6 @@ Sets the frequency of checking the readiness of the chunk
 default_export_cache_ttl = 60 * 60 * 24
 default_export_cache_lock_ttl = 30
 default_export_cache_lock_acquisition_timeout = 50
-default_export_locked_retry_interval = 60
 
 EXPORT_CACHE_TTL = os.getenv("CVAT_DATASET_CACHE_TTL")
 "Base lifetime for cached export files, in seconds"
@@ -86,20 +85,6 @@ else:
 
 if EXPORT_CACHE_LOCK_ACQUISITION_TIMEOUT <= EXPORT_CACHE_LOCK_TTL:
     raise ImproperlyConfigured("Lock acquisition timeout must be more than lock TTL")
-
-EXPORT_LOCKED_RETRY_INTERVAL = os.getenv("CVAT_DATASET_EXPORT_LOCKED_RETRY_INTERVAL")
-"Retry interval for cases the export cache lock was unavailable, in seconds"
-
-if EXPORT_LOCKED_RETRY_INTERVAL is not None:
-    EXPORT_LOCKED_RETRY_INTERVAL = int(EXPORT_LOCKED_RETRY_INTERVAL)
-    logger.warning(
-        "The CVAT_DATASET_EXPORT_LOCKED_RETRY_INTERVAL is deprecated, "
-        "use CVAT_EXPORT_LOCKED_RETRY_INTERVAL instead",
-    )
-else:
-    EXPORT_LOCKED_RETRY_INTERVAL = int(
-        os.getenv("CVAT_EXPORT_LOCKED_RETRY_INTERVAL", default_export_locked_retry_interval)
-    )
 
 MAX_CONSENSUS_REPLICAS = int(os.getenv("CVAT_MAX_CONSENSUS_REPLICAS", 11))
 if MAX_CONSENSUS_REPLICAS < 1:
