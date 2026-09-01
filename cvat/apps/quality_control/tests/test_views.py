@@ -8,6 +8,8 @@ import unittest
 from types import SimpleNamespace
 from unittest import mock
 
+from rest_framework.exceptions import ValidationError
+
 from cvat.apps.quality_control.models import QualityReportTarget
 from cvat.apps.quality_control.permissions import QualityReportPermission
 from cvat.apps.quality_control.views import QualityReportViewSet
@@ -47,14 +49,10 @@ class TestQualityReportViewSet(unittest.TestCase):
         self.assertNotIn('"engine_segment"."task_id" = %s', sql)
         self.assertNotIn('JOIN "engine_job"', sql)
 
-    def test_task_filter_without_target_includes_job_reports(self) -> None:
-        queryset = self._get_list_queryset(task_id=123)
-
-        sql, _ = queryset.query.sql_with_params()
-
-        self.assertIn('"engine_segment"."task_id" = %s', sql)
-        self.assertIn('"quality_control_qualityreport"."task_id" = %s', sql)
-        self.assertIn('JOIN "engine_job"', sql)
+    def test_invalid_task_report_target_is_rejected(self) -> None:
+        for target in (None, "unknown"):
+            with self.subTest(target=target), self.assertRaises(ValidationError):
+                self._get_list_queryset(task_id=123, target=target)
 
     def test_project_target_uses_direct_project_filter(self) -> None:
         queryset = self._get_list_queryset(

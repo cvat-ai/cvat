@@ -264,8 +264,12 @@ class QualityReportViewSet(
                 elif target == QualityReportTarget.PROJECT:
                     queryset = queryset.none()
                 else:
-                    queryset = queryset.filter(
-                        Q(job__segment__task_id=task_id) | Q(task_id=task_id)
+                    raise ValidationError(
+                        "Unexpected '{}' filter value '{}'. Valid values are: {}".format(
+                            REPORT_TARGET_PARAM_NAME,
+                            target,
+                            ", ".join(m[0] for m in QualityReportTarget.choices()),
+                        )
                     )
 
             if project_id := self.request.query_params.get("project_id", None):
@@ -281,16 +285,18 @@ class QualityReportViewSet(
                 elif target == QualityReportTarget.PROJECT:
                     queryset = queryset.filter(project_id=project_id)
                 else:
-                    queryset = queryset.filter(
-                        Q(job__segment__task__project_id=project_id)
-                        | Q(task__project_id=project_id)
-                        | Q(project_id=project_id)
+                    raise ValidationError(
+                        "Unexpected '{}' filter value '{}'. Valid values are: {}".format(
+                            REPORT_TARGET_PARAM_NAME,
+                            target,
+                            ", ".join(m[0] for m in QualityReportTarget.choices()),
+                        )
                     )
 
             perm = QualityReportPermission.create_scope_list(self.request, iam_context=iam_context)
             queryset = perm.filter(queryset)
 
-            if target:
+            if target is not None:
                 if target == QualityReportTarget.JOB:
                     queryset = queryset.filter(job__isnull=False)
                 elif target == QualityReportTarget.TASK:
