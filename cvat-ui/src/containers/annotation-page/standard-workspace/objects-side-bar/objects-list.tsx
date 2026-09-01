@@ -47,7 +47,6 @@ import {
 } from 'components/annotation-page/standard-workspace/objects-side-bar/drag-and-drop';
 import { openAnnotationsActionModal } from 'components/annotation-page/annotations-actions/annotations-actions-modal';
 import { OBJECTS_SIDEBAR_OPEN_Z_LAYER_EVENT } from 'utils/objects-sidebar';
-import changeObjectOrientation, { type OrientationAngle } from 'utils/change-object-orientation';
 
 interface StateToProps {
     jobInstance: any;
@@ -211,24 +210,6 @@ const componentShortcuts = {
     SIMPLIFY_POLYGON: {
         name: 'Simplify polygon',
         description: 'Activate simplification mode for the selected polygon or polyline',
-        sequences: [],
-        scope: ShortcutScope.OBJECTS_SIDEBAR,
-    },
-    CHANGE_OBJECT_ORIENTATION_CLOCKWISE: {
-        name: 'Change orientation clockwise',
-        description: 'Change orientation of an active rectangle or ellipse clockwise by 90°',
-        sequences: [],
-        scope: ShortcutScope.OBJECTS_SIDEBAR,
-    },
-    CHANGE_OBJECT_ORIENTATION_COUNTERCLOCKWISE: {
-        name: 'Change orientation counterclockwise',
-        description: 'Change orientation of an active rectangle or ellipse counterclockwise by 90°',
-        sequences: [],
-        scope: ShortcutScope.OBJECTS_SIDEBAR,
-    },
-    CHANGE_OBJECT_ORIENTATION_180: {
-        name: 'Change orientation by 180°',
-        description: 'Change orientation of an active rectangle or ellipse by 180°',
         sequences: [],
         scope: ShortcutScope.OBJECTS_SIDEBAR,
     },
@@ -618,14 +599,6 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             return null;
         };
 
-        const changeActiveObjectOrientation = (degrees: OrientationAngle, event?: KeyboardEvent): void => {
-            preventDefault(event);
-            const state = activatedState(true);
-            if (state && !state.lock && changeObjectOrientation(state, degrees)) {
-                updateAnnotations([state]);
-            }
-        };
-
         const handlers: Record<keyof typeof componentShortcuts, (event?: KeyboardEvent) => void> = {
             SWITCH_ALL_LOCK: (event?: KeyboardEvent) => {
                 preventDefault(event);
@@ -796,15 +769,6 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                 if (state && [ShapeType.POLYGON, ShapeType.POLYLINE].includes(state.shapeType)) {
                     switchSimplifyVisibility(state.clientID);
                 }
-            },
-            CHANGE_OBJECT_ORIENTATION_CLOCKWISE: (event?: KeyboardEvent) => {
-                changeActiveObjectOrientation(90, event);
-            },
-            CHANGE_OBJECT_ORIENTATION_COUNTERCLOCKWISE: (event?: KeyboardEvent) => {
-                changeActiveObjectOrientation(-90, event);
-            },
-            CHANGE_OBJECT_ORIENTATION_180: (event?: KeyboardEvent) => {
-                changeActiveObjectOrientation(180, event);
             },
         };
 
