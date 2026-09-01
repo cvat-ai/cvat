@@ -836,9 +836,9 @@ Cypress.Commands.add('changeLabelAAM', (labelName) => {
             cy.get('.ant-select-dropdown')
                 .not('.ant-select-dropdown-hidden')
                 .first()
-                .should('be.visible')
-                .find(`.ant-select-item-option[data-label="${labelName}"]`)
-                .click();
+                .within(() => {
+                    cy.get(`.ant-select-item-option[data-label="${labelName}"]`).click();
+                });
         }
     });
 });
