@@ -149,10 +149,8 @@ REPORT_TARGET_PARAM_NAME = "target"
     list=extend_schema(
         summary="Method returns a paginated list of quality reports.",
         description=textwrap.dedent("""\
-            Please note that children reports are included by default
-            if the "task_id", "project_id" filters are used.
-            If you want to restrict the list of results to a specific report type,
-            use the "{}" parameter.
+            The "{}" parameter is required when the "task_id" or "project_id"
+            filter is used.
 
             The "parent_id" filter requires the "{}" parameter. Valid parent
             report target to requested target combinations are: task to job,
@@ -266,7 +264,20 @@ class QualityReportViewSet(
                 self.check_object_permissions(self.request, task)
                 iam_context = get_iam_context(self.request, task)
 
-                queryset = queryset.filter(Q(job__segment__task__id=task_id) | Q(task__id=task_id))
+                if target == QualityReportTarget.JOB:
+                    queryset = queryset.filter(job__segment__task_id=task_id)
+                elif target == QualityReportTarget.TASK:
+                    queryset = queryset.filter(task_id=task_id)
+                elif target == QualityReportTarget.PROJECT:
+                    queryset = queryset.none()
+                else:
+                    raise ValidationError(
+                        "Unexpected '{}' filter value '{}'. Valid values are: {}".format(
+                            REPORT_TARGET_PARAM_NAME,
+                            target,
+                            ", ".join(m[0] for m in QualityReportTarget.choices()),
+                        )
+                    )
 
             if project_id := self.request.query_params.get("project_id", None):
                 # NOTE: This filter is too complex to be implemented by other means
@@ -274,11 +285,20 @@ class QualityReportViewSet(
                 self.check_object_permissions(self.request, project)
                 iam_context = get_iam_context(self.request, project)
 
-                queryset = queryset.filter(
-                    Q(job__segment__task__project__id=project_id)
-                    | Q(task__project__id=project_id)
-                    | Q(project__id=project_id)
-                )
+                if target == QualityReportTarget.JOB:
+                    queryset = queryset.filter(job__segment__task__project_id=project_id)
+                elif target == QualityReportTarget.TASK:
+                    queryset = queryset.filter(task__project_id=project_id)
+                elif target == QualityReportTarget.PROJECT:
+                    queryset = queryset.filter(project_id=project_id)
+                else:
+                    raise ValidationError(
+                        "Unexpected '{}' filter value '{}'. Valid values are: {}".format(
+                            REPORT_TARGET_PARAM_NAME,
+                            target,
+                            ", ".join(m[0] for m in QualityReportTarget.choices()),
+                        )
+                    )
 
             perm = QualityReportPermission.create_scope_list(self.request, iam_context=iam_context)
             queryset = perm.filter(queryset)

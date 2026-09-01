@@ -3337,7 +3337,7 @@ paths:
         name: func_id
         schema:
           type: string
-          pattern: ^[a-zA-Z0-9_.-]+$
+          pattern: ^[a-zA-Z0-9][a-zA-Z0-9_.-]*$
         required: true
       tags:
       - lambda
@@ -3370,7 +3370,7 @@ paths:
         name: func_id
         schema:
           type: string
-          pattern: ^[a-zA-Z0-9_.-]+$
+          pattern: ^[a-zA-Z0-9][a-zA-Z0-9_.-]*$
         required: true
       tags:
       - lambda
@@ -4518,10 +4518,8 @@ paths:
     get:
       operationId: quality_list_reports
       description: |
-        Please note that children reports are included by default
-        if the "task_id", "project_id" filters are used.
-        If you want to restrict the list of results to a specific report type,
-        use the "target" parameter.
+        The "target" parameter is required when the "task_id" or "project_id"
+        filter is used.
 
         The "parent_id" filter requires the "target" parameter. Valid parent
         report target to requested target combinations are: task to job,

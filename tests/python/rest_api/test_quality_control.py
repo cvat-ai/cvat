@@ -531,6 +531,18 @@ class TestSimpleQualityReportsFilters(CollectionSimpleFilterTestBase):
         ("project_id", "task_id", "job_id", "parent_id", "target", "org_id"),
     )
     def test_can_use_simple_filter_for_object_list(self, field):
+        if field in {"project_id", "task_id"}:
+            value, expected_reports = self._get_field_samples(field)
+
+            for target in ("project", "task", "job"):
+                received_reports = self._retrieve_collection(**{field: value, "target": target})
+                self._compare_results(
+                    [report for report in expected_reports if report["target"] == target],
+                    received_reports,
+                )
+
+            return
+
         if field == "parent_id":
             project_report = next(r for r in self.samples if r["target"] == "project")
             task_reports = [
@@ -594,6 +606,15 @@ class TestSimpleQualityReportsFilters(CollectionSimpleFilterTestBase):
             )
 
         assert response.status == HTTPStatus.BAD_REQUEST
+
+    @pytest.mark.parametrize("field", ("project_id", "task_id"))
+    def test_target_is_required_for_object_filter(self, field):
+        value, _ = self._get_field_samples(field)
+
+        response = get_method(self.user, "quality/reports", **{field: value})
+
+        assert response.status_code == HTTPStatus.BAD_REQUEST
+        assert "target" in response.json()[0]
 
 
 @pytest.mark.usefixtures("restore_db_per_class")
@@ -726,7 +747,12 @@ class TestGetQualityReportData(_PermissionTestBase):
         fixture_report = next(report for report in quality_reports if report["target"] == "task")
         report_id = fixture_report["id"]
 
-        response = get_method(admin_user, "quality/reports", task_id=fixture_report["task_id"])
+        response = get_method(
+            admin_user,
+            "quality/reports",
+            task_id=fixture_report["task_id"],
+            target="task",
+        )
         assert response.status_code == HTTPStatus.OK
         assert all(report["id"] != report_id for report in response.json()["results"])
 
@@ -738,6 +764,7 @@ class TestGetQualityReportData(_PermissionTestBase):
             admin_user,
             "quality/reports",
             task_id=fixture_report["task_id"],
+            target="task",
             include_legacy="true",
         )
         assert response.status_code == HTTPStatus.OK

@@ -9,6 +9,7 @@ import base64
 import io
 import json
 import os
+import re
 import textwrap
 from copy import deepcopy
 from datetime import timedelta
@@ -1321,7 +1322,7 @@ def return_response(success_code=status.HTTP_200_OK):
     ),
 )
 class FunctionViewSet(viewsets.ViewSet):
-    lookup_value_regex = "[a-zA-Z0-9_.-]+"
+    lookup_value_regex = "[a-zA-Z0-9][a-zA-Z0-9_.-]*"
     lookup_field = "func_id"
     iam_supports_organization_params = False
     iam_permission_class = LambdaPermission
@@ -1498,6 +1499,9 @@ class RequestViewSet(viewsets.ViewSet):
                 + "with wrong arguments ({})".format(str(err)),
                 code=status.HTTP_400_BAD_REQUEST,
             )
+
+        if not re.fullmatch(FunctionViewSet.lookup_value_regex, function):
+            raise serializers.ValidationError("Function ID is invalid")
 
         db_task = Task.objects.get(pk=task)
 

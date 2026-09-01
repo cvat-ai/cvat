@@ -17,19 +17,7 @@ from cvat.apps.quality_control.views import QualityReportViewSet
 
 class TestQualityReportViewSet(unittest.TestCase):
     @staticmethod
-    def _get_parent_list_queryset(
-        *, parent_target: QualityReportTarget, target: QualityReportTarget | str | None
-    ):
-        parent_report_kwargs = {
-            f"{parent_target.value}_id": 123,
-            "id": 456,
-        }
-        parent_report = QualityReport(**parent_report_kwargs)
-
-        query_params = {"parent_id": parent_report.id}
-        if target is not None:
-            query_params["target"] = target
-
+    def _get_list_queryset(*, parent_report: QualityReport | None = None, **query_params):
         view = QualityReportViewSet()
         view.action = "list"
         view.request = SimpleNamespace(query_params=query_params)
@@ -51,6 +39,48 @@ class TestQualityReportViewSet(unittest.TestCase):
             ),
         ):
             return view.get_queryset()
+
+    @classmethod
+    def _get_parent_list_queryset(
+        cls, *, parent_target: QualityReportTarget, target: QualityReportTarget | str | None
+    ):
+        parent_report = QualityReport(
+            id=456,
+            **{f"{parent_target.value}_id": 123},
+        )
+        query_params = {"parent_id": parent_report.id}
+        if target is not None:
+            query_params["target"] = target
+
+        return cls._get_list_queryset(parent_report=parent_report, **query_params)
+
+    def test_task_target_uses_direct_task_filter(self) -> None:
+        queryset = self._get_list_queryset(
+            task_id=123,
+            target=QualityReportTarget.TASK,
+        )
+
+        sql, _ = queryset.query.sql_with_params()
+
+        self.assertIn('"quality_control_qualityreport"."task_id" = %s', sql)
+        self.assertNotIn('"engine_segment"."task_id" = %s', sql)
+        self.assertNotIn('JOIN "engine_job"', sql)
+
+    def test_invalid_task_report_target_is_rejected(self) -> None:
+        for target in (None, "unknown"):
+            with self.subTest(target=target), self.assertRaises(ValidationError):
+                self._get_list_queryset(task_id=123, target=target)
+
+    def test_project_target_uses_direct_project_filter(self) -> None:
+        queryset = self._get_list_queryset(
+            project_id=456,
+            target=QualityReportTarget.PROJECT,
+        )
+
+        sql, _ = queryset.query.sql_with_params()
+
+        self.assertIn('"quality_control_qualityreport"."project_id" = %s', sql)
+        self.assertNotIn('JOIN "engine_project"', sql)
 
     def test_task_parent_job_target_uses_direct_parent_filter(self) -> None:
         queryset = self._get_parent_list_queryset(
