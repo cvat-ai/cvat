@@ -55,6 +55,12 @@ function ProjectActionsComponent(props: Readonly<Props>): JSX.Element {
     }), shallowEqual);
 
     const isBulkMode = selectedIds.length > 1;
+    const isExportDatasetDisabled = isBulkMode &&
+        new Set(
+            currentProjects
+                .filter((project) => selectedIds.includes(project.id))
+                .map((project) => project.dimension),
+        ).size > 1;
     const {
         dropdownOpen,
         editField,
@@ -217,6 +223,7 @@ function ProjectActionsComponent(props: Readonly<Props>): JSX.Element {
             onBackupProject,
             onDeleteProject,
             selectedIds,
+            isExportDatasetDisabled,
         }, props);
     }
 

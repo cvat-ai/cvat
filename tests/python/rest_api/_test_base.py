@@ -674,6 +674,7 @@ class TestTasksBase:
         start_frame: int | None = None,
         stop_frame: int | None = None,
         step: int | None = None,
+        use_cache: bool | None = None,
         video_file: IO[bytes] | None = None,
         chapters: Sequence[dict] | None = None,
     ) -> tuple[VideoTaskSpec, int]:
@@ -721,6 +722,9 @@ class TestTasksBase:
 
         if step is not None:
             data_params["frame_filter"] = f"step={step}"
+
+        if use_cache is not None:
+            data_params["use_cache"] = use_cache
 
         def get_video_file() -> io.BytesIO:
             return io.BytesIO(video_data)
@@ -776,6 +780,24 @@ class TestTasksBase:
             stop_frame=stop_frame,
             step=step,
         )
+
+    @fixture(scope="class")
+    @parametrize(
+        "cloud_storage_id",
+        [pytest.param(5, marks=[pytest.mark.with_external_services])],
+    )
+    def fxt_backing_cs_video_task(
+        self,
+        request: pytest.FixtureRequest,
+        cloud_storage_id: int,
+    ) -> tuple[ITaskSpec, int]:
+        spec, task_id = self._uploaded_video_task_fxt_base(request=request, use_cache=True)
+
+        container_exec_cvat(
+            request, ["./manage.py", "movetasktobackingcs", str(task_id), str(cloud_storage_id)]
+        )
+
+        return spec, task_id
 
     def _compute_annotation_segment_params(self, task_spec: ITaskSpec) -> list[tuple[int, int]]:
         segment_params = []
@@ -893,6 +915,7 @@ class TestTasksBase:
             fixture_ref("fxt_uploaded_video_task_without_manifest"),
             fixture_ref("fxt_uploaded_video_task_with_segments"),
             fixture_ref("fxt_uploaded_video_task_with_segments_start_stop_step"),
+            fixture_ref("fxt_backing_cs_video_task"),
         ]
         + _tasks_with_honeypots_cases
         + _tasks_with_simple_gt_job_cases
