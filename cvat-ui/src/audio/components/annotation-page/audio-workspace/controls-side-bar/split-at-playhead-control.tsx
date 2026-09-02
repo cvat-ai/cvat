@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import React, { useCallback, useState } from 'react';
-import Icon, { LockFilled, PushpinFilled } from '@ant-design/icons';
+import Icon, { LockFilled } from '@ant-design/icons';
 import Button from 'antd/lib/button';
 import { Col, Row } from 'antd/lib/grid';
 import Popover from 'antd/lib/popover';
@@ -167,12 +167,11 @@ function SplitAtPlayheadControl({ shortcut }: Props): JSX.Element {
                                             <Col className='cvat-audio-split-option-time'>
                                                 {`${formatMilliseconds(interval.start)} – ${formatMilliseconds(stop)}`}
                                             </Col>
-                                            <Col className='cvat-audio-split-option-status'>
-                                                <Row gutter={4} wrap={false}>
-                                                    {interval.lock && <Col><LockFilled aria-label='Locked interval' /></Col>}
-                                                    {interval.pinned && <Col><PushpinFilled aria-label='Pinned interval' /></Col>}
-                                                </Row>
-                                            </Col>
+                                            {interval.lock && (
+                                                <Col className='cvat-audio-split-option-status'>
+                                                    <LockFilled aria-label='Locked interval' />
+                                                </Col>
+                                            )}
                                         </Row>
                                     </Button>
                                 </Col>
