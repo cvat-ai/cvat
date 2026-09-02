@@ -19,6 +19,7 @@ interface MenuItemsData {
     onDeleteProject: () => void;
     selectedIds: number[];
     isExportDatasetDisabled: boolean;
+    isQualityControlDisabled: boolean;
 }
 
 export default function ProjectActionsItems(
@@ -35,6 +36,7 @@ export default function ProjectActionsItems(
         onDeleteProject,
         selectedIds = [],
         isExportDatasetDisabled,
+        isQualityControlDisabled,
     } = menuItemsData;
 
     const isBulkMode = selectedIds.length > 1;
@@ -81,7 +83,7 @@ export default function ProjectActionsItems(
     menuItems.push([{
         key: 'quality-control',
         label: <Link to={`/projects/${projectId}/quality-control`}>Quality control</Link>,
-        disabled: isDisabled('quality-control'),
+        disabled: isDisabled('quality-control') || isQualityControlDisabled,
     }, 50]);
 
     menuItems.push([{

@@ -13,6 +13,12 @@ import { clamp } from 'utils/math';
 import {
     cacheAudioData, removeCachedAudioData,
 } from 'audio/utils/audio-data-cache';
+import {
+    isAudioIntervalSplittableAtPlaybackPosition,
+    isAudioIntervalWithinSplitRange,
+} from 'audio/utils/audio-interval';
+import type { AudioPlaybackRange } from 'audio/components/annotation-page/audio-workspace/utils/audio-interval';
+
 import { updateActiveControl } from './annotation-actions';
 
 export enum AudioActionTypes {
@@ -26,6 +32,11 @@ export enum AudioActionTypes {
     SET_AUDIO_ZOOM = 'SET_AUDIO_ZOOM',
     SET_AUDIO_VOLUME = 'SET_AUDIO_VOLUME',
     SET_AUDIO_LOOP = 'SET_AUDIO_LOOP',
+    SET_AUDIO_PLAYBACK_RANGE = 'SET_AUDIO_PLAYBACK_RANGE',
+    UPDATE_AUDIO_PLAYBACK_RANGE = 'UPDATE_AUDIO_PLAYBACK_RANGE',
+    CLEAR_AUDIO_PLAYBACK_RANGE = 'CLEAR_AUDIO_PLAYBACK_RANGE',
+    SET_AUDIO_INTERVAL_PLAYBACK_SOURCE = 'SET_AUDIO_INTERVAL_PLAYBACK_SOURCE',
+    CLEAR_AUDIO_INTERVAL_PLAYBACK_SOURCE = 'CLEAR_AUDIO_INTERVAL_PLAYBACK_SOURCE',
     FIT_AUDIO_INTERVAL = 'FIT_AUDIO_INTERVAL',
     COMPLETE_FIT_AUDIO_INTERVAL = 'COMPLETE_FIT_AUDIO_INTERVAL',
     SET_AUDIO_ACTIVE_INTERVAL = 'SET_AUDIO_ACTIVE_INTERVAL',
@@ -37,8 +48,6 @@ export enum AudioActionTypes {
     LOAD_AUDIO_DATA_FAILED = 'LOAD_AUDIO_DATA_FAILED',
     SET_WAVEFORM_READY = 'SET_WAVEFORM_READY',
     SET_AUDIO_ACTIVE_LABEL = 'SET_AUDIO_ACTIVE_LABEL',
-    PLAY_AUDIO_INTERVAL_ONCE = 'PLAY_AUDIO_INTERVAL_ONCE',
-    COMPLETE_PLAY_AUDIO_INTERVAL_ONCE = 'COMPLETE_PLAY_AUDIO_INTERVAL_ONCE',
     AUDIO_UNDO = 'AUDIO_UNDO',
     AUDIO_REDO = 'AUDIO_REDO',
 }
@@ -68,6 +77,21 @@ export const audioActions = {
     ),
     setAudioLoop: (loop: boolean) => (
         createAction(AudioActionTypes.SET_AUDIO_LOOP, { loop })
+    ),
+    setAudioPlaybackRange: (range: AudioPlaybackRange) => (
+        createAction(AudioActionTypes.SET_AUDIO_PLAYBACK_RANGE, { range })
+    ),
+    updateAudioPlaybackRange: (range: AudioPlaybackRange) => (
+        createAction(AudioActionTypes.UPDATE_AUDIO_PLAYBACK_RANGE, { range })
+    ),
+    clearAudioPlaybackRange: (id: object | null = null) => (
+        createAction(AudioActionTypes.CLEAR_AUDIO_PLAYBACK_RANGE, { id })
+    ),
+    setAudioIntervalPlaybackSource: (rangeID: object, intervalID: number) => (
+        createAction(AudioActionTypes.SET_AUDIO_INTERVAL_PLAYBACK_SOURCE, { rangeID, intervalID })
+    ),
+    clearAudioIntervalPlaybackSource: (rangeID: object) => (
+        createAction(AudioActionTypes.CLEAR_AUDIO_INTERVAL_PLAYBACK_SOURCE, { rangeID })
     ),
     fitAudioInterval: (clientID: number) => (
         createAction(AudioActionTypes.FIT_AUDIO_INTERVAL, { request: { clientID } })
@@ -107,12 +131,6 @@ export const audioActions = {
     setAudioActiveLabel: (labelId: number | null) => (
         createAction(AudioActionTypes.SET_AUDIO_ACTIVE_LABEL, { labelId })
     ),
-    playAudioIntervalOnce: (request: { intervalID: number }) => (
-        createAction(AudioActionTypes.PLAY_AUDIO_INTERVAL_ONCE, { request })
-    ),
-    completePlayAudioIntervalOnce: (request: { intervalID: number }) => (
-        createAction(AudioActionTypes.COMPLETE_PLAY_AUDIO_INTERVAL_ONCE, { request })
-    ),
     audioUndo: () => createAction(AudioActionTypes.AUDIO_UNDO),
     audioRedo: () => createAction(AudioActionTypes.AUDIO_REDO),
 };
@@ -121,10 +139,12 @@ export type AudioActions = ActionUnion<typeof audioActions>;
 
 export function toggleAudioPlayback(): ThunkAction {
     return async (dispatch: ThunkDispatch, getState): Promise<void> => {
-        const { playing, playIntervalOnceRequest } = getState().audio.player;
+        const {
+            playing, playbackRange,
+        } = getState().audio.player;
         if (playing) {
             dispatch(audioActions.switchAudioPlay(false));
-        } else if (playIntervalOnceRequest) {
+        } else if (playbackRange) {
             dispatch(audioActions.switchAudioPlay(true));
         } else {
             dispatch(audioActions.playFullAudio());
@@ -230,10 +250,22 @@ export function requestAudioSeekByIntent(intent: AudioSeekIntent): ThunkAction {
 
 export function requestPlayAudioIntervalOnce(clientID: number): ThunkAction {
     return async (dispatch: ThunkDispatch, getState): Promise<void> => {
-        const interval = getState().audio.player.intervals.find((_interval) => _interval.clientID === clientID);
+        const interval = getState().audio.player.intervals.find((item) => item.clientID === clientID);
         if (!interval) return;
 
-        dispatch(audioActions.playAudioIntervalOnce({ intervalID: clientID }));
+        const { duration } = getState().audio.player;
+
+        const range = {
+            id: {},
+            start: interval.start / 1000,
+            end: interval.stop ? interval.stop / 1000 : duration,
+        };
+        if (range.end <= range.start) return;
+
+        dispatch(audioActions.setAudioActiveInterval(clientID));
+        dispatch(audioActions.setAudioPlaybackRange(range));
+        dispatch(audioActions.setAudioIntervalPlaybackSource(range.id, clientID));
+        dispatch(audioActions.switchAudioPlay(true));
     };
 }
 
@@ -397,6 +429,56 @@ export function extendAudioIntervalFromLastAsync(labelID: number | null): ThunkA
         if (end - start <= 0.001) return;
 
         await dispatch(createAudioIntervalAsync(start, end, label.id ?? null));
+    };
+}
+
+export interface AudioSplitContext {
+    playbackPosition: number;
+    duration: number;
+    candidates: AudioIntervalState[];
+}
+
+export function getAudioSplitContextAtPlaybackPosition(): ThunkAction<AudioSplitContext | null> {
+    return (_dispatch, getState): AudioSplitContext | null => {
+        const {
+            intervals, currentTime, duration, activeIntervalID,
+        } = getState().audio.player;
+        if (duration <= 0) return null;
+
+        const playbackPosition = Math.round(clamp(currentTime, 0, duration) * 1000);
+        const candidates = intervals.filter((interval) => (
+            !interval.hidden && interval.clientID !== null &&
+            isAudioIntervalWithinSplitRange(interval, duration, playbackPosition)
+        ));
+        if (!candidates.length) return null;
+
+        const activeCandidate = candidates.find((interval) => interval.clientID === activeIntervalID);
+        return {
+            playbackPosition,
+            duration,
+            candidates: activeCandidate ? [activeCandidate] : candidates,
+        };
+    };
+}
+
+export function splitAudioIntervalAtPlaybackPositionAsync(
+    intervalClientID: number,
+    playbackPosition: number,
+): ThunkAction {
+    return async (dispatch: ThunkDispatch, getState): Promise<void> => {
+        const { intervals, duration } = getState().audio.player;
+        const { instance: job } = getState().annotation.job;
+        if (!job || duration <= 0) return;
+
+        const interval = intervals.find((candidate) => candidate.clientID === intervalClientID);
+        const position = Math.round(clamp(playbackPosition, 0, duration * 1000));
+        if (!interval || !isAudioIntervalSplittableAtPlaybackPosition(interval, duration, position)) return;
+
+        const nextClientID = await job.annotations.splitInterval(interval, position);
+        if (nextClientID === null) return;
+
+        await dispatchFetchAnnotations(dispatch);
+        dispatch(audioActions.setAudioActiveInterval(nextClientID));
     };
 }
 
