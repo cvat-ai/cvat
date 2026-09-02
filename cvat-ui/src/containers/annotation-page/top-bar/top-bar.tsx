@@ -736,6 +736,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
             switchShowSearchPallet,
             showSearchFrameByName,
         } = this.props;
+        const maskDrawing = activeControl === ActiveControl.DRAW_MASK;
 
         return (
             <AnnotationTopBarComponent
@@ -776,8 +777,8 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
                 frameFilename={frameFilename}
                 frameDeleted={frameIsDeleted}
                 inputFrameRef={this.inputFrameRef}
-                undoAction={undoAction}
-                redoAction={redoAction}
+                undoAction={undoAction || (maskDrawing ? 'mask drawing' : undefined)}
+                redoAction={redoAction || (maskDrawing ? 'mask drawing' : undefined)}
                 undoShortcut={normalizedKeyMap.UNDO}
                 redoShortcut={normalizedKeyMap.REDO}
                 drawShortcut={normalizedKeyMap.SWITCH_DRAW_MODE_STANDARD_CONTROLS}

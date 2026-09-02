@@ -801,6 +801,13 @@ export class MasksHandlerImpl implements MasksHandler {
                 this.drawnObjects.splice(index, 1);
             }
         }
+
+        if (!this.undoStack.length && this.isDrawing) {
+            this.releaseDraw();
+            this.onDrawDone(null);
+            return true;
+        }
+
         this.redoStack.push(action);
         this.canvas.renderAll();
 
