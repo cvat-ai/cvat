@@ -1614,6 +1614,40 @@ export default class Collection {
         };
     }
 
+    public bulkSaveObjects(states: ObjectState[]): void {
+        const actions = new Set<HistoryActions>();
+        states.forEach((state) => {
+            Object.entries(state.updateFlags).forEach(([property, updated]) => {
+                if (!updated) return;
+                if (property === 'hidden') {
+                    actions.add(HistoryActions.CHANGED_HIDDEN);
+                } else if (property === 'lock') {
+                    actions.add(HistoryActions.CHANGED_LOCK);
+                } else {
+                    throw new ArgumentError(`Bulk save does not support "${property}" changes`);
+                }
+            });
+        });
+        if (actions.size !== 1) {
+            throw new ArgumentError('Bulk save must contain exactly one supported change type');
+        }
+        const [action] = actions;
+        this.history.beginTransaction(action);
+        try {
+            states.forEach((state) => {
+                const object = state.clientID === null ? null : this.objects[state.clientID];
+                if (object instanceof Shape || object instanceof Track || object instanceof Tag) {
+                    object.save(state.frame, state);
+                }
+            });
+        } catch (error: unknown) {
+            this.history.abortTransaction();
+            throw error;
+        } finally {
+            this.history.endTransaction();
+        }
+    }
+
     public bulkSave(states: AudioIntervalState[]): void {
         this.history.beginTransaction(HistoryActions.CHANGED_AUDIO_INTERVALS);
         try {
