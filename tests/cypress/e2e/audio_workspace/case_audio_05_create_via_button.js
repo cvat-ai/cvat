@@ -46,11 +46,21 @@ context('Audio annotation. Create region via toolbar button.', () => {
 
     describe(`Testing case "${caseId}"`, () => {
         it('Creates regions by dragging in both directions and previews their boundaries', () => {
+            let playbackCursorPosition;
+
             cy.get('.cvat-audio-region-item').should('have.length', 0);
+            cy.getAudioWaveformCursor().then(($cursor) => {
+                playbackCursorPosition = $cursor[0].getBoundingClientRect().left;
+            });
+
             cy.audioActivateCreate(firstLabelName);
             drawAndAssertPreview(100, 250);
             cy.get('.cvat-audio-region-item', { timeout: 5000 }).should('have.length', 1);
             cy.get('.cvat-cursor-control').should('have.class', 'cvat-active-canvas-control');
+            cy.getAudioWaveformCursor().then(($cursor) => {
+                expect($cursor[0].getBoundingClientRect().left)
+                    .to.be.closeTo(playbackCursorPosition, REGION_POSITION_TOLERANCE_PX);
+            });
             cy.get('.cvat-audio-region-item').first()
                 .should('contain.text', firstLabelName)
                 .and('have.class', 'cvat-audio-region-item-active');

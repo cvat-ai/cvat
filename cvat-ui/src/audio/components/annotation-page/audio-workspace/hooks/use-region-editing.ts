@@ -184,6 +184,7 @@ export function useRegionEditing({
     }, [ready]);
 
     const isCreating = activeControl === ActiveControl.AUDIO_REGION_CREATE;
+
     // Own pointer interactions so their boundaries are always derived from the
     // original range and pointer time, rather than accumulated deltas.
     useEffect(() => {
@@ -470,8 +471,19 @@ export function useRegionEditing({
             updateResizing(event);
         };
 
+        const suppressReleasedDrawClick = (): void => {
+            const onClick = (event: MouseEvent): void => {
+                document.removeEventListener('click', onClick, true);
+                event.preventDefault();
+                event.stopPropagation();
+            };
+
+            document.addEventListener('click', onClick, true);
+        };
+
         const onPointerUp = (event: PointerEvent): void => {
             if (drawing) {
+                suppressReleasedDrawClick();
                 finishDrawing(event, latestRef.current.activeControl === ActiveControl.AUDIO_REGION_CREATE);
                 return;
             }
