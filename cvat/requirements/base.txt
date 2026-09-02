@@ -43,7 +43,7 @@ contourpy==1.2.1
     # via matplotlib
 crontab==1.0.4
     # via rq-scheduler
-cryptography==49.0.0
+cryptography==50.0.1
     # via
     #   azure-storage-blob
     #   datumaro
@@ -179,7 +179,7 @@ networkx==3.4.2
     # via datumaro
 nibabel==5.3.2
     # via datumaro
-nltk==3.10.0
+nltk==3.10.3
     # via datumaro
 oauthlib==3.3.1
     # via django-allauth
@@ -217,7 +217,7 @@ psycopg2-binary==2.9.12
     # via -r cvat/requirements/base.in
 pyarrow==24.0.0
     # via datumaro
-pyasn1==0.6.3
+pyasn1==0.6.4
     # via
     #   pyasn1-modules
     #   python-ldap
@@ -307,7 +307,7 @@ shapely==2.1.2
     #   datumaro
 six==1.17.0
     # via python-dateutil
-sqlparse==0.5.3
+sqlparse==0.6.0
     # via django
 tabulate==0.9.0
     # via datumaro
