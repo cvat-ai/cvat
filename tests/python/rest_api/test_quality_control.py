@@ -436,9 +436,9 @@ class TestListQualityReports(_PermissionTestBase):
         create_gt_job(admin_user, task["id"])
         report = create_quality_report(user=admin_user, task_id=task["id"])
         if allow:
-            self._test_list_reports_200(user=user["username"], parent_id=report["id"])
+            self._test_list_reports_200(user=user["username"], parent_id=report["id"], target="job")
         else:
-            self._test_list_reports_403(user=user["username"], parent_id=report["id"])
+            self._test_list_reports_403(user=user["username"], parent_id=report["id"], target="job")
 
     @pytest.mark.usefixtures("restore_db_per_function")
     @pytest.mark.parametrize(*_PermissionTestBase._default_org_cases)
@@ -454,9 +454,9 @@ class TestListQualityReports(_PermissionTestBase):
         create_gt_job(admin_user, task["id"])
         report = create_quality_report(user=admin_user, task_id=task["id"])
         if allow:
-            self._test_list_reports_200(user=user["username"], parent_id=report["id"])
+            self._test_list_reports_200(user=user["username"], parent_id=report["id"], target="job")
         else:
-            self._test_list_reports_403(user=user["username"], parent_id=report["id"])
+            self._test_list_reports_403(user=user["username"], parent_id=report["id"], target="job")
 
 
 class TestSimpleQualityReportsFilters(CollectionSimpleFilterTestBase):
@@ -543,7 +543,75 @@ class TestSimpleQualityReportsFilters(CollectionSimpleFilterTestBase):
 
             return
 
+        if field == "parent_id":
+            project_report = next(r for r in self.samples if r["target"] == "project")
+            # Task reports can be shared by several project reports, while the serialized
+            # parent_id contains only the first parent. Get the complete direct-child set
+            # from the endpoint before checking the nested job reports.
+            task_reports = self._retrieve_collection(parent_id=project_report["id"], target="task")
+            task_report_ids = {r["id"] for r in task_reports}
+            project_job_reports = [
+                r
+                for r in self.samples
+                if r["target"] == "job" and r["parent_id"] in task_report_ids
+            ]
+
+            self._compare_results(
+                project_job_reports,
+                self._retrieve_collection(parent_id=project_report["id"], target="job"),
+            )
+
+            assert task_reports
+            assert project_job_reports
+            project_task_ids = {
+                task["id"]
+                for task in self.task_samples
+                if task["project_id"] == project_report["project_id"]
+            }
+            assert all(
+                report["target"] == "task" and report["task_id"] in project_task_ids
+                for report in task_reports
+            )
+
+            task_report = next(
+                report
+                for report in task_reports
+                if any(
+                    job_report["parent_id"] == report["id"] for job_report in project_job_reports
+                )
+            )
+            self._compare_results(
+                [r for r in project_job_reports if r["parent_id"] == task_report["id"]],
+                self._retrieve_collection(parent_id=task_report["id"], target="job"),
+            )
+            return
+
         return super()._test_can_use_simple_filter_for_object_list(field)
+
+    @pytest.mark.parametrize(
+        ("parent_target", "target"),
+        [
+            ("job", None),
+            ("job", "job"),
+            ("job", "task"),
+            ("job", "project"),
+            ("task", None),
+            ("task", "task"),
+            ("task", "project"),
+            ("project", None),
+            ("project", "project"),
+            ("project", "unknown"),
+        ],
+    )
+    def test_cannot_use_invalid_parent_target_combination(self, parent_target, target):
+        parent_report = next(r for r in self.samples if r["target"] == parent_target)
+        request_params = {"parent_id": parent_report["id"]}
+        if target is not None:
+            request_params["target"] = target
+
+        response = get_method(self.user, "quality/reports", **request_params)
+
+        assert response.status_code == HTTPStatus.BAD_REQUEST
 
     @pytest.mark.parametrize("field", ("project_id", "task_id"))
     def test_target_is_required_for_object_filter(self, field):
@@ -797,7 +865,7 @@ class TestGetQualityReportData(_PermissionTestBase):
 
         with make_api_client(admin_user) as api_client:
             job_report = api_client.quality_api.list_reports(
-                job_id=normal_job["id"], parent_id=task_report["id"]
+                job_id=normal_job["id"], parent_id=task_report["id"], target="job"
             )[0].results[0]
 
         report_data = json.loads(self._test_get_report_data_200(admin_user, job_report["id"]).data)
