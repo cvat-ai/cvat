@@ -35,6 +35,8 @@ export interface WaveformRegions {
      * Creates a preview region on the waveform. A preview region is a temporary not interactive region.
      */
     createPreview(options: RegionPreviewOptions): RegionPreviewHandle | null;
+    /** A reactive cursor class for the waveform container. */
+    cursorClassName: string;
 }
 
 interface Params {
@@ -45,7 +47,8 @@ interface Params {
     durationRef: React.MutableRefObject<number>;
 }
 
-interface PreviewCapability extends WaveformRegions {
+interface PreviewCapability {
+    createPreview(options: RegionPreviewOptions): RegionPreviewHandle | null;
     isPreviewRegion(region: Region): boolean;
 }
 
@@ -103,7 +106,7 @@ export function useWaveformRegions({
     const previewCapability = useRegionPreviewCapability(regionRuntime, readyRef, durationRef);
     const regionSelection = useRegionSelection({ regionRuntime, viewport, ready });
     const regionHighlighting = useRegionProjection({ regionRuntime, ready });
-    useRegionEditing({
+    const editing = useRegionEditing({
         regionRuntime,
         regionHighlighting,
         regionSelection,
@@ -114,5 +117,6 @@ export function useWaveformRegions({
     });
     return {
         createPreview: previewCapability.createPreview,
+        cursorClassName: editing.cursorClassName,
     };
 }

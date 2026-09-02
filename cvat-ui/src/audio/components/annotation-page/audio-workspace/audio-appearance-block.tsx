@@ -22,6 +22,8 @@ import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import { ShortcutScope } from 'utils/enums';
 import { subKeyMap } from 'utils/component-subkeymap';
 
+import { AUDIO_MIN_OPACITY } from './audio-region-colors';
+
 const componentShortcuts = {
     SWITCH_COLOR_BY_APPEARANCE_AUDIO: {
         name: 'Switch objects appearance setting "Color by" (audio)',
@@ -145,7 +147,7 @@ function AudioAppearanceBlock(props: Props): JSX.Element {
                             className='cvat-appearance-opacity-slider'
                             onChange={changeShapesOpacity}
                             value={opacity}
-                            min={0}
+                            min={AUDIO_MIN_OPACITY}
                             max={100}
                         />
                         <Text type='secondary'>Selected opacity</Text>
@@ -153,7 +155,7 @@ function AudioAppearanceBlock(props: Props): JSX.Element {
                             className='cvat-appearance-selected-opacity-slider'
                             onChange={changeSelectedShapesOpacity}
                             value={selectedOpacity}
-                            min={0}
+                            min={AUDIO_MIN_OPACITY}
                             max={100}
                         />
                     </div>

@@ -12,6 +12,7 @@ import { ActiveControl, CombinedState } from 'reducers';
 import { clamp } from 'utils/math';
 import { shallowEqual, ThunkDispatch } from 'utils/redux';
 
+import { getAudioLabelPreviewColor } from '../audio-region-colors';
 import {
     clampRange, clientIDFromWaveRegionId, intervalEndSeconds, intervalStartSeconds,
 } from '../utils/audio-interval';
@@ -51,6 +52,10 @@ interface Params {
     ready: boolean;
 }
 
+export interface RegionEditing {
+    cursorClassName: string;
+}
+
 /**
  * Installs a constraint on the region's drag behavior to ensure that
  * it cannot be dragged outside of the waveform's bounds.
@@ -88,16 +93,21 @@ function installRegionDragBoundsConstraint(region: Region): void {
 export function useRegionEditing({
     regionRuntime, regionHighlighting, regionSelection, viewport,
     isPreviewRegion, durationRef, ready,
-}: Params): void {
+}: Params): RegionEditing {
     const dispatch = useDispatch<ThunkDispatch>();
-    const { intervals, activeLabelId, activeControl } = useSelector(
+    const {
+        intervals, activeLabelId, activeControl, labels, opacity,
+    } = useSelector(
         (state: CombinedState) => ({
             intervals: state.audio.player.intervals,
             activeLabelId: state.audio.player.activeLabelId,
             activeControl: state.annotation.canvas.activeControl,
+            labels: state.annotation.job.labels,
+            opacity: state.settings.shapes.opacity,
         }),
         shallowEqual,
     );
+    const labelPreviewColor = getAudioLabelPreviewColor(activeLabelId, labels, opacity);
     const latestRef = useRef({ intervals, activeLabelId, activeControl });
     latestRef.current = { intervals, activeLabelId, activeControl };
     useBulkBoundariesEditing({
@@ -167,8 +177,8 @@ export function useRegionEditing({
     const isCreating = activeControl === ActiveControl.AUDIO_REGION_CREATE;
     useEffect(() => {
         if (!ready || !isCreating) return undefined;
-        return regionRuntime.regionsPlugin.enableDragSelection({});
-    }, [isCreating, ready]);
+        return regionRuntime.regionsPlugin.enableDragSelection({ color: labelPreviewColor });
+    }, [isCreating, labelPreviewColor, ready]);
 
     // Own resize interactions so the handle position is always derived from
     // the original range and pointer time, rather than accumulated deltas.
@@ -384,4 +394,8 @@ export function useRegionEditing({
             document.removeEventListener('pointercancel', onPointerCancel);
         };
     }, [ready]);
+
+    return {
+        cursorClassName: isCreating ? 'cvat-audio-waveform-interaction-create' : '',
+    };
 }

@@ -15,7 +15,7 @@ import {
 const defaultState: SettingsState = {
     shapes: {
         colorBy: ColorBy.LABEL,
-        opacity: 3,
+        opacity: 20,
         selectedOpacity: 30,
         outlined: false,
         outlineColor: '#000000',
