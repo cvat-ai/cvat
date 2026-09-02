@@ -494,7 +494,6 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
 
     private debouncedUpdate = debounce(this.updateCanvas.bind(this), 250, { leading: true });
     private canvasTipsRef = React.createRef<CanvasTipsComponent>();
-    private selectionMenuOpenFrame: number | null = null;
 
     public componentDidMount(): void {
         const {
@@ -658,12 +657,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
             // drives the persistent selection visual and enables live group drag
             canvasInstance.setSelectedObjects(selectedStatesID);
             if (!selectedStatesID.length &&
-                (this.state.selectionMenuPosition || !this.state.selectionAttributesCollapsed ||
-                    this.selectionMenuOpenFrame !== null)) {
-                if (this.selectionMenuOpenFrame !== null) {
-                    cancelAnimationFrame(this.selectionMenuOpenFrame);
-                    this.selectionMenuOpenFrame = null;
-                }
+                (this.state.selectionMenuPosition || !this.state.selectionAttributesCollapsed)) {
                 this.setState({
                     selectionMenuPosition: null,
                     selectionAttributesCollapsed: true,
@@ -750,9 +744,6 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
 
     public componentWillUnmount(): void {
         const { canvasInstance } = this.props as { canvasInstance: Canvas };
-        if (this.selectionMenuOpenFrame !== null) {
-            cancelAnimationFrame(this.selectionMenuOpenFrame);
-        }
 
         canvasInstance.html().removeEventListener('mousedown', this.onCanvasMouseDown);
         canvasInstance.html().removeEventListener('click', this.onCanvasClicked);
@@ -807,29 +798,32 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
     };
 
     private onCanvasSelectionMenu = (event: CustomEvent): void => {
+        if (event.detail.close) {
+            this.setState({ selectionMenuPosition: null });
+            return;
+        }
+
         const { canvasInstance } = this.props as { canvasInstance: Canvas };
         const canvasGridItem = canvasInstance.html().parentElement?.parentElement;
         const gridItemBox = canvasGridItem?.getBoundingClientRect();
-        const { left, top, toggle } = event.detail;
+        const {
+            left, top, toggle, reposition,
+        } = event.detail;
 
         const selectionMenuPosition = {
             left: left - (gridItemBox?.left || 0),
             top: top - (gridItemBox?.top || 0),
         };
-        if (toggle && (this.state.selectionMenuPosition || this.selectionMenuOpenFrame !== null)) {
-            if (this.selectionMenuOpenFrame !== null) {
-                cancelAnimationFrame(this.selectionMenuOpenFrame);
-                this.selectionMenuOpenFrame = null;
-            }
-            this.setState({ selectionMenuPosition: null });
-        } else if (toggle) {
-            this.selectionMenuOpenFrame = requestAnimationFrame((): void => {
-                this.selectionMenuOpenFrame = null;
-                this.setState({ selectionMenuPosition });
-            });
-        } else {
-            this.setState({ selectionMenuPosition });
+        if (reposition) {
+            this.setState((state) => (
+                state.selectionMenuPosition ? { selectionMenuPosition } : null
+            ));
+            return;
         }
+
+        this.setState((state) => ({
+            selectionMenuPosition: toggle && state.selectionMenuPosition ? null : selectionMenuPosition,
+        }));
     };
 
     private onChangeSelectedObjectsLabel = (label: Label): void => {
@@ -1243,6 +1237,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
     };
     private onCanvasDragStart = (): void => {
         const { updateActiveControl } = this.props;
+        this.setState({ selectionMenuPosition: null });
         updateActiveControl(ActiveControl.DRAG_CANVAS);
     };
 
@@ -1601,6 +1596,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
 
                 {selectionMenuPosition && (
                     <Dropdown
+                        key={`${selectionMenuPosition.left}:${selectionMenuPosition.top}`}
                         destroyPopupOnHide
                         open
                         placement='bottomLeft'
@@ -1653,7 +1649,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
                                             type='link'
                                             disabled={!!lockSelection.disabledReason}
                                             title={lockSelection.disabledReason || undefined}
-                                            icon={lockSelection.active ? <UnlockOutlined /> : <LockFilled />}
+                                            icon={lockSelection.active ? <LockFilled /> : <UnlockOutlined />}
                                             onClick={this.onSwitchSelectedObjectsLock}
                                         >
                                             {lockSelection.active ? 'Unlock selection' : 'Lock selection'}
@@ -1667,7 +1663,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
                                             type='link'
                                             disabled={!!pinSelection.disabledReason}
                                             title={pinSelection.disabledReason || undefined}
-                                            icon={pinSelection.active ? <PushpinOutlined /> : <PushpinFilled />}
+                                            icon={pinSelection.active ? <PushpinFilled /> : <PushpinOutlined />}
                                             onClick={this.onSwitchSelectedObjectsPinned}
                                         >
                                             {pinSelection.active ? 'Unpin selection' : 'Pin selection'}

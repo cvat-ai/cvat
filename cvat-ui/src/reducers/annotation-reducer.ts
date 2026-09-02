@@ -729,6 +729,11 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 annotations: {
                     ...state.annotations,
                     selectedStatesID,
+                    ...(selectedStatesID.length ? {
+                        activatedStateID: null,
+                        activatedElementID: null,
+                        activatedAttributeID: null,
+                    } : {}),
                     ...(history ? { history } : {}),
                 },
             };

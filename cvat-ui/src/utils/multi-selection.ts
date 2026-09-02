@@ -29,7 +29,7 @@ interface SelectionAttributeState {
 }
 
 const LOCK_DISABLED_REASON = 'Ground truth objects cannot be locked or unlocked';
-const PIN_DISABLED_REASON = 'Locked, ground truth, tag, and points objects cannot be pinned';
+const PIN_DISABLED_REASON = 'Locked, ground truth, tag, and skeleton element objects cannot be pinned';
 
 export function getSelectedStates(states: ObjectState[], selectedStatesID: number[]): ObjectState[] {
     const selectedIDs = new Set(selectedStatesID);
@@ -46,7 +46,8 @@ export function getSelectionToggleState(
         disabledReason = LOCK_DISABLED_REASON;
     } else if (property === 'pinned' && states.some((state: ObjectState): boolean => (
         state.lock || state.isGroundTruth ||
-        state.objectType === ObjectType.TAG || state.shapeType === ShapeType.POINTS
+        state.objectType === ObjectType.TAG ||
+        (state.shapeType === ShapeType.POINTS && Number.isInteger(state.parentID))
     ))) {
         disabledReason = PIN_DISABLED_REASON;
     }
