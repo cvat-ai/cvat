@@ -35,8 +35,8 @@ export interface WaveformRegions {
      * Creates a preview region on the waveform. A preview region is a temporary not interactive region.
      */
     createPreview(options: RegionPreviewOptions): RegionPreviewHandle | null;
-    /** A reactive cursor class for the waveform container. */
-    cursorClassName: string;
+    /** A reactive class for the waveform wrapper. */
+    wrapperClassName: string;
 }
 
 interface Params {
@@ -117,6 +117,6 @@ export function useWaveformRegions({
     });
     return {
         createPreview: previewCapability.createPreview,
-        cursorClassName: editing.cursorClassName,
+        wrapperClassName: editing.wrapperClassName,
     };
 }

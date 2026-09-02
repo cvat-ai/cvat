@@ -53,7 +53,7 @@ interface Params {
 }
 
 export interface RegionEditing {
-    cursorClassName: string;
+    wrapperClassName: string;
 }
 
 /**
@@ -396,6 +396,6 @@ export function useRegionEditing({
     }, [ready]);
 
     return {
-        cursorClassName: isCreating ? 'cvat-audio-waveform-interaction-create' : '',
+        wrapperClassName: isCreating ? 'cvat-audio-waveform-interaction-create' : '',
     };
 }
