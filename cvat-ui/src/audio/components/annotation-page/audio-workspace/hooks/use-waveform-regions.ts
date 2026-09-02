@@ -3,7 +3,6 @@
 // SPDX-License-Identifier: MIT
 
 import { useCallback } from 'react';
-import type { Region } from 'wavesurfer.js/dist/plugins/regions';
 
 import { AudioTimeRange, clampRange } from '../utils/audio-interval';
 import { WaveformRegionRuntime } from './use-audio-waveform';
@@ -49,11 +48,6 @@ interface Params {
 
 interface PreviewCapability {
     createPreview(options: RegionPreviewOptions): RegionPreviewHandle | null;
-    isPreviewRegion(region: Region): boolean;
-}
-
-function isPreviewRegion(region: Region): boolean {
-    return region.id.startsWith(PREVIEW_REGION_PREFIX);
 }
 
 function generatePreviewRegionId(): string {
@@ -88,13 +82,19 @@ function useRegionPreviewCapability(
         return {
             updateRange: (nextRange: AudioTimeRange): void => {
                 if (removed || !regionsPlugin.getRegions().includes(region)) return;
-                region.setOptions(clampRange(nextRange, durationRef.current));
+                const next = clampRange(nextRange, durationRef.current);
+                region.setOptions(next);
+                if (!region.element) return;
+
+                const isMarker = next.start === next.end;
+                region.element.style.backgroundColor = isMarker ? 'none' : options.color;
+                region.element.style.borderLeft = isMarker ? `2px solid ${options.color}` : 'none';
             },
             remove,
         };
     }, []);
 
-    return { createPreview, isPreviewRegion };
+    return { createPreview };
 }
 
 /**
@@ -112,7 +112,7 @@ export function useWaveformRegions({
         regionSelection,
         viewport,
         durationRef,
-        isPreviewRegion: previewCapability.isPreviewRegion,
+        createPreview: previewCapability.createPreview,
         ready,
     });
     return {
