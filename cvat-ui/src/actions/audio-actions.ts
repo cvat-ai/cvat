@@ -13,7 +13,12 @@ import { clamp } from 'utils/math';
 import {
     cacheAudioData, removeCachedAudioData,
 } from 'audio/utils/audio-data-cache';
+import {
+    isAudioIntervalSplittableAtPlaybackPosition,
+    isAudioIntervalWithinSplitRange,
+} from 'audio/utils/audio-interval';
 import type { AudioPlaybackRange } from 'audio/components/annotation-page/audio-workspace/utils/audio-interval';
+
 import { updateActiveControl } from './annotation-actions';
 
 export enum AudioActionTypes {
@@ -424,6 +429,56 @@ export function extendAudioIntervalFromLastAsync(labelID: number | null): ThunkA
         if (end - start <= 0.001) return;
 
         await dispatch(createAudioIntervalAsync(start, end, label.id ?? null));
+    };
+}
+
+export interface AudioSplitContext {
+    playbackPosition: number;
+    duration: number;
+    candidates: AudioIntervalState[];
+}
+
+export function getAudioSplitContextAtPlaybackPosition(): ThunkAction<AudioSplitContext | null> {
+    return (_dispatch, getState): AudioSplitContext | null => {
+        const {
+            intervals, currentTime, duration, activeIntervalID,
+        } = getState().audio.player;
+        if (duration <= 0) return null;
+
+        const playbackPosition = Math.round(clamp(currentTime, 0, duration) * 1000);
+        const candidates = intervals.filter((interval) => (
+            !interval.hidden && interval.clientID !== null &&
+            isAudioIntervalWithinSplitRange(interval, duration, playbackPosition)
+        ));
+        if (!candidates.length) return null;
+
+        const activeCandidate = candidates.find((interval) => interval.clientID === activeIntervalID);
+        return {
+            playbackPosition,
+            duration,
+            candidates: activeCandidate ? [activeCandidate] : candidates,
+        };
+    };
+}
+
+export function splitAudioIntervalAtPlaybackPositionAsync(
+    intervalClientID: number,
+    playbackPosition: number,
+): ThunkAction {
+    return async (dispatch: ThunkDispatch, getState): Promise<void> => {
+        const { intervals, duration } = getState().audio.player;
+        const { instance: job } = getState().annotation.job;
+        if (!job || duration <= 0) return;
+
+        const interval = intervals.find((candidate) => candidate.clientID === intervalClientID);
+        const position = Math.round(clamp(playbackPosition, 0, duration * 1000));
+        if (!interval || !isAudioIntervalSplittableAtPlaybackPosition(interval, duration, position)) return;
+
+        const nextClientID = await job.annotations.splitInterval(interval, position);
+        if (nextClientID === null) return;
+
+        await dispatchFetchAnnotations(dispatch);
+        dispatch(audioActions.setAudioActiveInterval(nextClientID));
     };
 }
 
