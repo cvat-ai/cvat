@@ -8190,20 +8190,18 @@ components:
           description: Pairwise annotation matching IoU threshold
     CreatedViaEnum:
       enum:
-      - email_password
+      - registration
       - social
       - sso
       - ldap
       - invitation
-      - system
       type: string
       description: |-
-        * `email_password` - EMAIL_PASSWORD
-        * `social` - SOCIAL
+        * `registration` - Registration
+        * `social` - Social
         * `sso` - SSO
         * `ldap` - LDAP
-        * `invitation` - INVITATION
-        * `system` - SYSTEM
+        * `invitation` - Invitation
     CredentialsTypeEnum:
       enum:
       - KEY_SECRET_KEY_PAIR

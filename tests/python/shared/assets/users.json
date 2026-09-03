@@ -4,7 +4,7 @@
   "previous": null,
   "results": [
     {
-      "created_via": "email_password",
+      "created_via": null,
       "date_joined": "2023-03-30T09:37:31.615000Z",
       "email": "lonely_user@cvat.org",
       "first_name": "Lonely",
@@ -58,7 +58,7 @@
       "username": "user5"
     },
     {
-      "created_via": "email_password",
+      "created_via": null,
       "date_joined": "2021-12-14T18:38:46Z",
       "email": "admin2@cvat.org",
       "first_name": "Admin",
@@ -356,7 +356,7 @@
       "username": "user1"
     },
     {
-      "created_via": "email_password",
+      "created_via": null,
       "date_joined": "2021-12-14T18:04:57Z",
       "email": "admin1@cvat.org",
       "first_name": "Admin",

@@ -40,10 +40,9 @@ if settings.IAM_TYPE == "BASIC":
 elif settings.IAM_TYPE == "LDAP":
 
     def create_user(sender, user=None, ldap_user=None, **kwargs):
-        from cvat.apps.iam.models import UserCreatedViaEnum
+        from cvat.apps.iam.models import UserCreationMethod
 
-        if user.pk is None:
-            user.created_via = UserCreatedViaEnum.LDAP
+        user.created_via = UserCreationMethod.LDAP
 
         user_groups = []
         for role in settings.IAM_ROLES:
