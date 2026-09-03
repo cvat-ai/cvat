@@ -42,6 +42,11 @@ context('Audio annotation. Interval actions.', () => {
         cy.getAudioRegionHandle('right').should(exists ? 'exist' : 'not.exist');
     };
 
+    const expectRegionResizeControls = (exists) => {
+        cy.getAudioRegionHandle('left').should(exists ? 'exist' : 'not.exist');
+        cy.getAudioRegionHandle('right').should(exists ? 'exist' : 'not.exist');
+    };
+
     const expectCursorAtIntervalBoundary = (boundary) => {
         cy.getAudioWaveformCursor().then(($cursor) => {
             cy.getAudioRegion().should('have.length', 1).then(($region) => {
@@ -182,7 +187,8 @@ context('Audio annotation. Interval actions.', () => {
                         clickIntervalAction('pin');
                         getIntervalAction('unpin')
                             .find('.anticon-pushpin').invoke('html').should('not.equal', outlinedMarkup);
-                        expectRegionEditingControls(false);
+                        cy.getAudioRegion().should('not.have.css', 'cursor', 'grab');
+                        expectRegionResizeControls(true);
 
                         cy.get('body').type('p');
                         getIntervalAction('pin').find('.anticon-pushpin').invoke('html').should('equal', outlinedMarkup);

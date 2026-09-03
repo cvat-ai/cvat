@@ -63,7 +63,7 @@ context('Test annotations saving works correctly', () => {
         it('Create different objects, save twice. Update, delete. Export hash works as expected', () => {
             // client id 1
             cy.createRectangle({
-                points: 'By 2 Points',
+                points: '2 Points',
                 type: 'Shape',
                 labelName: generalLabel.name,
                 firstX: 150,
@@ -74,7 +74,7 @@ context('Test annotations saving works correctly', () => {
 
             // client id 2
             cy.createRectangle({
-                points: 'By 2 Points',
+                points: '2 Points',
                 type: 'Track',
                 labelName: generalLabel.name,
                 firstX: 200,

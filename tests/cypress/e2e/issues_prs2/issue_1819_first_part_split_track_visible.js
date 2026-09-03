@@ -10,7 +10,7 @@ import { taskName, advancedConfigurationParams, labelName } from '../../support/
 context('First part of a split track is visible', () => {
     const issueId = '1819';
     const createRectangleTrack2Points = {
-        points: 'By 2 Points',
+        points: '2 Points',
         type: 'Track',
         labelName,
         firstX: 250,

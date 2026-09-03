@@ -116,7 +116,7 @@ context('Review pipeline feature', () => {
             cy.openJobFromJobsPage(jobIds[0]);
             for (let i = 0; i < 4; i++) {
                 cy.createRectangle({
-                    points: 'By 2 Points',
+                    points: '2 Points',
                     type: 'Shape',
                     labelName: taskSpec.labels[0].name,
                     firstX: 400,
