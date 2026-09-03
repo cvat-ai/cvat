@@ -48,7 +48,7 @@ def iter_frames(
 
     with file:
         track = read_video_track_from_stream(file, file_size)
-        _decoder_info, library = resolve_decoder_and_library(library_path)
+        _info, library = resolve_decoder_and_library(library_path)
 
         with OpenH264Decoder(library) as decoder:
             for access_unit in iter_access_units_from_stream(file, track):
