@@ -21,7 +21,7 @@ from shared.tasks.types import ImagesTaskSpec, VideoTaskSpec
 from shared.tasks.utils import parse_frame_step
 from shared.utils.config import SHARE_DIR, make_api_client
 from shared.utils.helpers import generate_image_files, generate_video_file
-from shared.fixtures.params import DYNAMIC_CACHE, STATIC_CACHE
+from shared.fixtures.params import DYNAMIC_CACHE, CACHE_MODES
 
 
 def read_share_file(path: str) -> io.BytesIO:
@@ -123,11 +123,12 @@ class TestTasksBase:
             task_id,
         )
 
-    @pytest.fixture(scope="class")
-    def fxt_uploaded_images_task(self, request: pytest.FixtureRequest, fxt_use_cache) -> tuple[ITaskSpec, int]:
-        return self._image_task_fxt_base(request=request, use_cache=fxt_use_cache)
+    @fixture(scope="class")
+    @parametrize("use_cache", CACHE_MODES)
+    def fxt_uploaded_images_task(self, request: pytest.FixtureRequest, use_cache: bool) -> tuple[ITaskSpec, int]:
+        return self._image_task_fxt_base(request, use_cache=use_cache)
 
-    @pytest.fixture(scope="class")
+    @fixture(scope="class")
     def fxt_uploaded_images_task_with_segments(
         self, request: pytest.FixtureRequest
     ) -> tuple[ITaskSpec, int]:
@@ -149,7 +150,7 @@ class TestTasksBase:
             step=step,
         )
 
-    @pytest.fixture(scope="class")
+    @fixture(scope="class")
     def fxt_uploaded_images_task_with_segments_and_consensus(
         self, request: pytest.FixtureRequest
     ) -> tuple[ITaskSpec, int]:
@@ -390,7 +391,7 @@ class TestTasksBase:
             job_replication=job_replication,
         )
 
-    @pytest.fixture(scope="class")
+    @fixture(scope="class")
     def fxt_uploaded_images_task_with_gt_and_segments_and_consensus(
         self, request: pytest.FixtureRequest
     ) -> tuple[ITaskSpec, int]:
@@ -742,15 +743,15 @@ class TestTasksBase:
             task_id,
         )
 
-    @pytest.fixture(scope="class")
+    @fixture(scope="class")
+    @parametrize("use_cache", CACHE_MODES)
     def fxt_uploaded_video_task(
         self,
-        request: pytest.FixtureRequest,
-        fxt_use_cache,
+        request: pytest.FixtureRequest, use_cache: bool,
     ) -> tuple[ITaskSpec, int]:
-        return self._uploaded_video_task_fxt_base(request=request, use_cache=fxt_use_cache)
+        return self._uploaded_video_task_fxt_base(request=request, use_cache=use_cache)
 
-    @pytest.fixture(scope="class")
+    @fixture(scope="class")
     def fxt_uploaded_video_task_without_manifest(
         self,
         request: pytest.FixtureRequest,
@@ -760,7 +761,7 @@ class TestTasksBase:
             request=request, video_file=video_file, chapters=[]
         )
 
-    @pytest.fixture(scope="class")
+    @fixture(scope="class")
     def fxt_uploaded_video_task_with_segments(
         self, request: pytest.FixtureRequest
     ) -> tuple[ITaskSpec, int]:

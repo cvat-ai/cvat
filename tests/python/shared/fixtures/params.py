@@ -14,3 +14,4 @@ def _cache_param(mode: CacheMode):
 
 DYNAMIC_CACHE = (_cache_param(CacheMode.DYNAMIC),)
 STATIC_CACHE = (_cache_param(CacheMode.STATIC),)
+CACHE_MODES = DYNAMIC_CACHE + STATIC_CACHE
