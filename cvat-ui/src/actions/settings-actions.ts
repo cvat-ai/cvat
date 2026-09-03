@@ -24,6 +24,7 @@ export enum SettingsActionTypes {
     CHANGE_GRID_COLOR = 'CHANGE_GRID_COLOR',
     CHANGE_GRID_OPACITY = 'CHANGE_GRID_OPACITY',
     CHANGE_SHAPES_OPACITY = 'CHANGE_SHAPES_OPACITY',
+    CHANGE_INTERVALS_OPACITY = 'CHANGE_INTERVALS_OPACITY',
     CHANGE_SELECTED_SHAPES_OPACITY = 'CHANGE_SELECTED_SHAPES_OPACITY',
     CHANGE_SHAPES_COLOR_BY = 'CHANGE_SHAPES_COLOR_BY',
     CHANGE_SHAPES_OUTLINED_BORDERS = 'CHANGE_SHAPES_OUTLINED_BORDERS',
@@ -66,6 +67,15 @@ export enum SettingsActionTypes {
 export function changeShapesOpacity(opacity: number): AnyAction {
     return {
         type: SettingsActionTypes.CHANGE_SHAPES_OPACITY,
+        payload: {
+            opacity,
+        },
+    };
+}
+
+export function changeIntervalsOpacity(opacity: number): AnyAction {
+    return {
+        type: SettingsActionTypes.CHANGE_INTERVALS_OPACITY,
         payload: {
             opacity,
         },

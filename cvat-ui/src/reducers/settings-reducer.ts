@@ -15,7 +15,7 @@ import {
 const defaultState: SettingsState = {
     shapes: {
         colorBy: ColorBy.LABEL,
-        opacity: 20,
+        opacity: 3,
         selectedOpacity: 30,
         outlined: false,
         outlineColor: '#000000',
@@ -27,6 +27,9 @@ const defaultState: SettingsState = {
             y: false,
             z: false,
         },
+    },
+    intervals: {
+        opacity: 20,
     },
     workspace: {
         autoSave: false,
@@ -139,6 +142,15 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
                 ...state,
                 shapes: {
                     ...state.shapes,
+                    opacity: action.payload.opacity,
+                },
+            };
+        }
+        case SettingsActionTypes.CHANGE_INTERVALS_OPACITY: {
+            return {
+                ...state,
+                intervals: {
+                    ...state.intervals,
                     opacity: action.payload.opacity,
                 },
             };

@@ -113,7 +113,7 @@ export function useRegionEditing({
             activeLabelId: state.audio.player.activeLabelId,
             activeControl: state.annotation.canvas.activeControl,
             labels: state.annotation.job.labels,
-            opacity: state.settings.shapes.opacity,
+            opacity: state.settings.intervals.opacity,
         }),
         shallowEqual,
     );

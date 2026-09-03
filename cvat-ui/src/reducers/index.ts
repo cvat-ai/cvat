@@ -1097,8 +1097,13 @@ export interface ShapesSettingsState {
     orientationVisibility: OrientationVisibility;
 }
 
+export interface IntervalsSettingsState {
+    opacity: number;
+}
+
 export interface SettingsState {
     shapes: ShapesSettingsState;
+    intervals: IntervalsSettingsState;
     workspace: WorkspaceSettingsState;
     player: PlayerSettingsState;
     imageFilters: ImageFilter[];
