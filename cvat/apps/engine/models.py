@@ -1610,6 +1610,9 @@ class Annotation(models.Model):
     source = models.CharField(
         max_length=16, choices=SourceType.choices(), default=str(SourceType.MANUAL), null=True
     )
+    # Client-generated idempotency key for create retries after lost responses.
+    # Null for legacy / imported annotations that did not provide one.
+    uuid = models.UUIDField(null=True, blank=True)
 
     class Meta:
         abstract = True
@@ -1642,7 +1645,13 @@ class ScoredAnnotationMixin(models.Model):
 
 
 class LabeledImage(Annotation, FrameAnnotationMixin):
-    pass
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["job", "uuid"],
+                name="engine_labeledimage_unique_job_uuid",
+            )
+        ]
 
 
 class LabeledImageAttributeVal(AttributeVal):
@@ -1659,6 +1668,14 @@ class LabeledShape(Annotation, FrameAnnotationMixin, ShapeAnnotationMixin, Score
         "self", on_delete=models.DO_NOTHING, null=True, related_name="elements"
     )
 
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["job", "uuid"],
+                name="engine_labeledshape_unique_job_uuid",
+            )
+        ]
+
 
 class LabeledShapeAttributeVal(AttributeVal):
     shape = models.ForeignKey(
@@ -1673,6 +1690,14 @@ class LabeledTrack(Annotation, FrameAnnotationMixin):
     parent = models.ForeignKey(
         "self", on_delete=models.DO_NOTHING, null=True, related_name="elements"
     )
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["job", "uuid"],
+                name="engine_labeledtrack_unique_job_uuid",
+            )
+        ]
 
 
 class LabeledTrackAttributeVal(AttributeVal):
@@ -1705,6 +1730,14 @@ class LabeledInterval(Annotation, ScoredAnnotationMixin):
     "Must be within the task frame bounds."
     stop = models.PositiveIntegerField(null=True)
     "Exclusive interval end. May be one greater than the task stop frame."
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["job", "uuid"],
+                name="engine_labeledinterval_unique_job_uuid",
+            )
+        ]
 
 
 class LabeledIntervalAttributeVal(AttributeVal):

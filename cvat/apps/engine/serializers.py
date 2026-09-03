@@ -3895,6 +3895,8 @@ class AnnotationSerializer(serializers.Serializer):
         # when SDK can compare string enum values without explicit .value access
         default=models.SourceType.MANUAL
     )
+    # Optional client-generated idempotency key for create retries.
+    uuid = serializers.UUIDField(required=False, allow_null=True, default=None)
 
     def _validate_id_absent(self, value):
         if value is not None:
@@ -4065,7 +4067,16 @@ class LabeledShapeSerializer(SubLabeledShapeSerializer):
 
 
 def _convert_annotation(obj, keys):
-    d = OrderedDict([(key, obj[key]) for key in keys])
+    d = OrderedDict()
+    for key in keys:
+        if key == "uuid":
+            try:
+                uuid_value = obj[key]
+            except (KeyError, AttributeError, TypeError):
+                uuid_value = None
+            d[key] = str(uuid_value) if uuid_value is not None else None
+        else:
+            d[key] = obj[key]
 
     if "group" in d:
         # backward compatibility; TODO: disallow null on the DB level
@@ -4084,7 +4095,7 @@ class LabeledImageSerializerFromDB(serializers.BaseSerializer):
     # Because default DRF serializer is too slow on huge collections
     def to_representation(self, instance):
         def convert_tag(tag):
-            result = _convert_annotation(tag, ["id", "label_id", "frame", "group", "source"])
+            result = _convert_annotation(tag, ["id", "label_id", "frame", "group", "source", "uuid"])
             result["attributes"] = _convert_attributes(tag["attributes"])
             return result
 
@@ -4111,6 +4122,7 @@ class LabeledShapeSerializerFromDB(serializers.BaseSerializer):
                     "z_order",
                     "rotation",
                     "points",
+                    "uuid",
                 ],
             )
             result["attributes"] = _convert_attributes(shape["attributes"])
@@ -4137,7 +4149,7 @@ class LabeledTrackSerializerFromDB(serializers.BaseSerializer):
                 "points",
                 "attributes",
             ]
-            result = _convert_annotation(track, ["id", "label_id", "frame", "group", "source"])
+            result = _convert_annotation(track, ["id", "label_id", "frame", "group", "source", "uuid"])
             result["shapes"] = [_convert_annotation(shape, shape_keys) for shape in track["shapes"]]
             result["attributes"] = _convert_attributes(track["attributes"])
             for shape in result["shapes"]:
@@ -4164,6 +4176,7 @@ class LabeledIntervalSerializerFromDB(serializers.BaseSerializer):
                     "group",
                     "source",
                     "score",
+                    "uuid",
                 ],
             )
             result["attributes"] = _convert_attributes(interval["attributes"])
