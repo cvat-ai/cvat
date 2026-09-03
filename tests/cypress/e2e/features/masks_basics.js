@@ -125,6 +125,48 @@ context('Manipulations with masks', { scrollBehavior: false }, () => {
             cy.removeAnnotations();
         });
 
+        it('Updates toolbar undo and redo state while drawing a mask', () => {
+            const undoButton = '.cvat-annotation-header-undo-button';
+            const redoButton = '.cvat-annotation-header-redo-button';
+            const polygonAction = [{
+                method: 'polygon-plus',
+                coordinates: [[300, 300], [400, 300], [400, 400], [300, 400]],
+            }, {
+                method: 'brush-size',
+                value: 10,
+            }];
+            const brushStroke = [{
+                method: 'brush',
+                coordinates: [[500, 500], [600, 500]],
+            }];
+
+            cy.startMaskDrawing();
+            cy.get(undoButton).should('have.css', 'pointer-events', 'none');
+            cy.get(redoButton).should('have.css', 'pointer-events', 'none');
+
+            cy.drawMask(polygonAction);
+            cy.get(undoButton).should('not.have.css', 'pointer-events', 'none').trigger('mouseover');
+            cy.get('.ant-tooltip-inner').should('contain.text', 'Undo: mask stroke');
+            cy.get(redoButton).should('have.css', 'pointer-events', 'none');
+
+            cy.drawMask(brushStroke);
+            cy.get(undoButton).click();
+            cy.get('.cvat-brush-tools-toolbox').should('be.visible');
+            cy.get(undoButton).should('not.have.css', 'pointer-events', 'none');
+            cy.get(redoButton).should('not.have.css', 'pointer-events', 'none');
+
+            cy.get(undoButton).click();
+            cy.get('.cvat-brush-tools-toolbox').should('be.visible');
+            cy.get(undoButton).should('have.css', 'pointer-events', 'none');
+            cy.get(redoButton).should('not.have.css', 'pointer-events', 'none').trigger('mouseover');
+            cy.get('.ant-tooltip-inner').should('contain.text', 'Redo: mask stroke');
+
+            cy.get(redoButton).click();
+            cy.get(undoButton).should('not.have.css', 'pointer-events', 'none');
+            cy.get('body').type('{esc}');
+            cy.get('.cvat-brush-tools-toolbox').should('not.be.visible');
+        });
+
         it('Propagate mask to another frame', () => {
             cy.startMaskDrawing();
             cy.drawMask(drawingActions);
