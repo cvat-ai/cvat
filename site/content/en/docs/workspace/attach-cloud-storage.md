@@ -8,7 +8,7 @@ aliases:
 ---
 
 In CVAT, you can use **Amazon S3**, **Azure Blob Storage**, **Backblaze B2**,
-and **Google Cloud Storage** storages to import and export image datasets for your tasks.
+**Tigris**, and **Google Cloud Storage** storages to import and export image datasets for your tasks.
 
 Check out:
 
@@ -27,6 +27,12 @@ Check out:
   - [Upload data](#upload-data-b2)
   - [Access permissions](#access-permissions-b2)
   - [Attach Backblaze B2 storage](#attach-backblaze-b2-storage)
+- [Tigris](#tigris)
+  - [Create a bucket](#create-a-bucket-tigris)
+  - [Upload data](#upload-data-tigris)
+  - [Access permissions](#access-permissions-tigris)
+  - [Attach Tigris storage](#attach-tigris-storage)
+  - [Dataset versioning with snapshots and forks](#snapshots-and-forks-tigris)
 - [Google Cloud Storage](#google-cloud-storage)
   - [Create a bucket](#create-a-bucket-1)
   - [Upload data](#upload-data-1)
@@ -306,6 +312,105 @@ This tells CVAT to connect to Backblaze instead of Amazon S3.
 {{% /alert %}}
 
 After filling in all the fields, select **Submit**.
+
+## Tigris
+
+[Tigris](https://www.tigrisdata.com) is an S3-compatible, globally distributed
+object storage service with no egress fees.
+It can be used in CVAT by selecting **Amazon S3** as the provider
+and specifying the Tigris endpoint (`https://t3.storage.dev`).
+
+### <a name="create-a-bucket-tigris">Create a bucket</a>
+
+To create a Tigris bucket, do the following:
+
+1. Create a [Tigris account](https://storage.new) or log into an existing one.
+1. In the [Tigris Dashboard](https://console.storage.dev), go to **Buckets**.
+1. Select **Create Bucket** and enter a globally unique name for your bucket.
+1. Create the bucket. Buckets are private by default.
+
+The new bucket will appear in your buckets list.
+For more information, consult
+[Creating a bucket](https://www.tigrisdata.com/docs/buckets/create-bucket/).
+
+### <a name="upload-data-tigris">Upload data</a>
+
+{{% alert title="Note" color="primary" %}}
+The manifest file is optional.
+{{% /alert %}}
+
+You need to upload data for annotation and optionally the `manifest.jsonl` file.
+
+1. Prepare data.
+   For more information,
+   refer on how to [prepare the dataset](#prepare-the-dataset).
+1. Open the bucket in the Tigris Dashboard and upload your files and folders.
+
+Alternatively, you can use any S3-compatible tool configured with the
+Tigris endpoint, as described in the
+[Tigris documentation](https://www.tigrisdata.com/docs/sdks/s3/aws-cli/).
+
+### <a name="access-permissions-tigris">Access permissions</a>
+
+To access your Tigris bucket from CVAT, you need to create an access key:
+
+1. In the [Tigris Dashboard](https://console.storage.dev), go to **Access Keys**.
+1. Create a new access key with a descriptive name (e.g., "CVAT Access").
+   You can limit the key to specific buckets and grant read-only or
+   editor permissions.
+1. **Important**: Save the **Access Key ID** and **Secret Access Key**
+   immediately. The secret is only shown once and cannot be retrieved later.
+
+For more information, consult
+[Tigris IAM](https://www.tigrisdata.com/docs/iam/).
+
+### Attach Tigris storage
+
+To attach Tigris storage to CVAT, do the following:
+
+1. Log into CVAT.
+1. In CVAT, on the top menu select **Cloud storages** > on the opened page select **+**.
+
+Fill in the following fields:
+
+| **CVAT field**          | **Tigris value** |
+| ------------------------ | ---------------- |
+| **Display name**         | Preferred display name for your storage. |
+| **Description**          | (Optional) Add a description of the storage. |
+| **Provider**             | From the drop-down list, select **Amazon S3** (Tigris is S3-compatible). |
+| **Bucket name**          | Name of your Tigris bucket. |
+| **Authentication type**  | Select **Key ID and secret access key pair**. |
+| **Access key ID**        | Enter the **Access Key ID** from your [Tigris access key](#access-permissions-tigris). |
+| **Secret access key**    | Enter the **Secret Access Key** from your [Tigris access key](#access-permissions-tigris). |
+| **Endpoint URL**         | **Required for Tigris**: Enter `https://t3.storage.dev`. |
+| **Prefix**               | (Optional) Use to limit CVAT to a specific folder within the bucket. |
+| **Manifests**            | (Optional) Select **+ Add manifest** and specify a manifest file name such as `manifest.jsonl`. |
+
+{{% alert title="Important" color="primary" %}}
+When using Tigris, you **must** specify the **Endpoint URL** field
+with `https://t3.storage.dev`.
+This tells CVAT to connect to Tigris instead of Amazon S3.
+Tigris automatically routes requests to the region closest to CVAT,
+so no region selection is needed.
+{{% /alert %}}
+
+After filling in all the fields, select **Submit**.
+
+### <a name="snapshots-and-forks-tigris">Dataset versioning with snapshots and forks</a>
+
+Tigris buckets support snapshots and zero-copy forks, which can be used to
+version annotation datasets:
+
+- **Snapshots** capture the state of a bucket at a point in time.
+  Take a snapshot before a bulk re-annotation or dataset cleanup,
+  so you can restore the previous state if needed.
+- **Forks** create a writable copy of a bucket without duplicating the data.
+  Fork a dataset bucket to try a different labeling scheme or task setup,
+  and attach the fork to CVAT as a separate cloud storage — the original
+  dataset stays untouched.
+
+For more information, consult
+[Snapshots and forks](https://www.tigrisdata.com/docs/buckets/snapshots-and-forks/).
 
 ## Google Cloud Storage
 
