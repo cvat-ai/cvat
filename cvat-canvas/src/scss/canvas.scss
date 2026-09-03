@@ -109,6 +109,19 @@ image.cvat_canvas_shape_selected_object {
 
 polyline.cvat_canvas_shape_selected_object {
     fill-opacity: 0 !important;
+    stroke-opacity: 1;
+    stroke-width: var(--cvat-selection-stroke-width) !important;
+}
+
+g.cvat_canvas_shape_selected_object {
+    > circle {
+        stroke-width: var(--cvat-selection-point-stroke-width) !important;
+    }
+
+    > .cvat_canvas_skeleton_edge {
+        stroke-opacity: 1;
+        stroke-width: var(--cvat-selection-stroke-width) !important;
+    }
 }
 
 .cvat_canvas_selected_objects_label {

@@ -4156,16 +4156,28 @@ export class CanvasViewImpl implements CanvasView, Listener {
             shape.classList.remove('cvat_canvas_shape_selected_object');
             (shape as SVGElement).style.removeProperty('--cvat-selection-opacity');
             (shape as SVGElement).style.removeProperty('--cvat-selection-mask-opacity');
+            (shape as SVGElement).style.removeProperty('--cvat-selection-stroke-width');
+            (shape as SVGElement).style.removeProperty('--cvat-selection-point-stroke-width');
         }
 
         const selectedShapeOpacity = this.configuration.selectedShapeOpacity ?? 0.5;
         for (const clientID of this.selectedObjects) {
-            const shape = this.svgShapes[clientID]?.node;
-            if (!shape?.isConnected) continue;
+            const shape = this.svgShapes[clientID];
+            const state = this.drawnStates[clientID];
+            const visualShape = state?.shapeType === 'points' ? shape?.remember('_selectHandler')?.nested?.node : shape?.node;
+            if (!visualShape?.isConnected) continue;
 
-            shape.classList.add('cvat_canvas_shape_selected_object');
-            shape.style.setProperty('--cvat-selection-opacity', `${selectedShapeOpacity}`);
-            shape.style.setProperty('--cvat-selection-mask-opacity', `${Math.sqrt(selectedShapeOpacity)}`);
+            visualShape.classList.add('cvat_canvas_shape_selected_object');
+            visualShape.style.setProperty('--cvat-selection-opacity', `${selectedShapeOpacity}`);
+            visualShape.style.setProperty('--cvat-selection-mask-opacity', `${Math.sqrt(selectedShapeOpacity)}`);
+            visualShape.style.setProperty(
+                '--cvat-selection-stroke-width',
+                `${(2 * consts.BASE_STROKE_WIDTH) / this.geometry.scale}`,
+            );
+            visualShape.style.setProperty(
+                '--cvat-selection-point-stroke-width',
+                `${consts.POINTS_SELECTED_STROKE_WIDTH / this.geometry.scale}`,
+            );
         }
 
         this.updateSelectedObjectsOverlay();
