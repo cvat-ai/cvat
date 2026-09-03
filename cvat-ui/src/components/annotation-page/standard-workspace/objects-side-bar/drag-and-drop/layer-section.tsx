@@ -20,6 +20,7 @@ interface LayerSectionProps {
     visible: boolean;
     collapsed: boolean;
     selectLayer(zOrder: number): void;
+    toggleLayerVisibility(zOrder: number, includeLower: boolean): void;
     toggleLayerCollapsed(zOrder: number): void;
 }
 
@@ -28,7 +29,7 @@ function LayerSection(props: LayerSectionProps): JSX.Element {
     const {
         zOrder, layerObjectIds, objectStates, visibleSkeletonElements,
         selected, visible, collapsed, selectLayer,
-        toggleLayerCollapsed,
+        toggleLayerCollapsed, toggleLayerVisibility,
     } = props;
 
     const { isOver, setNodeRef } = useDroppable({ id: layerDropID(zOrder) });
@@ -45,6 +46,7 @@ function LayerSection(props: LayerSectionProps): JSX.Element {
                 visible={visible}
                 collapsed={collapsed}
                 selectLayer={selectLayer}
+                toggleLayerVisibility={toggleLayerVisibility}
                 toggleLayerCollapsed={toggleLayerCollapsed}
             />
             {!collapsed && layerObjectIds.map((id: number): JSX.Element => {

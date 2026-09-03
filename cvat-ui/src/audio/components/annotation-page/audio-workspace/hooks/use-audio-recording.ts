@@ -7,11 +7,11 @@ import {
 } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 
-import { audioActions, createAudioIntervalAsync } from 'actions/audio-actions';
-import { updateActiveControl } from 'actions/annotation-actions';
+import { createAudioIntervalAsync } from 'actions/audio-actions';
 import { ActiveControl, CombinedState } from 'reducers';
 import { AudioIntervalState, Source } from 'cvat-core-wrapper';
 import { shallowEqual, ThunkDispatch } from 'utils/redux';
+import { usePrevious } from 'utils/hooks';
 import { MIN_INTERVAL_DURATION, MIN_RECORDING_DURATION } from 'audio/utils/waveform-geometry';
 
 import { getAudioRegionColor } from '../audio-region-colors';
@@ -57,7 +57,7 @@ export function useAudioRecording({ playback, regions, ready }: Params): void {
         duration, labels, activeLabelID, colorBy, opacity, selectedOpacity,
     };
     const sessionRef = useRef<RecordingSession | null>(null);
-    const wasPlayingRef = useRef(playing);
+    const prevPlaying = usePrevious(playing);
 
     const startSession = useCallback((): void => {
         if (sessionRef.current) return;
@@ -105,8 +105,6 @@ export function useAudioRecording({ playback, regions, ready }: Params): void {
         sessionRef.current = null;
         if (end - session.start < MIN_RECORDING_DURATION) return;
 
-        // TODO: is dropping active interval needed here?
-        dispatch(audioActions.setAudioActiveInterval(null));
         dispatch(createAudioIntervalAsync(session.start, end, session.labelID));
     }, []);
 
@@ -131,12 +129,12 @@ export function useAudioRecording({ playback, regions, ready }: Params): void {
     }, [activeControl, ready]);
 
     useEffect(() => {
-        const wasPlaying = wasPlayingRef.current;
-        wasPlayingRef.current = playing;
-        if (wasPlaying && !playing && activeControl === ActiveControl.AUDIO_REGION_RECORD) {
-            dispatch(updateActiveControl(ActiveControl.CURSOR));
+        if (activeControl !== ActiveControl.AUDIO_REGION_RECORD) return;
+
+        if (prevPlaying && !playing) {
+            finishSession();
         }
-    }, [activeControl, playing]);
+    }, [activeControl, playing, prevPlaying]);
 
     // update preview region along with playback time updates
     useEffect(() => subscribeTimeUpdates(updateSession), []);

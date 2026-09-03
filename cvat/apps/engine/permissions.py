@@ -36,12 +36,12 @@ from .models import (
     Location,
     Project,
     Task,
-    User,
 )
 
 if TYPE_CHECKING:
     from rest_framework.viewsets import ViewSet
 
+    from cvat.apps.iam.models import User
     from cvat.apps.iam.permissions import IamContext
 
 

@@ -13,7 +13,7 @@ import {
     QualityConflict, FramesMetaData, RQStatus, Event, Invitation, SerializedAPISchema,
     Request, JobValidationLayout, QualitySettings, TaskValidationLayout, ObjectState,
     ConsensusSettings, AboutData, ShapeType, ObjectType, ApiToken, AudioIntervalState,
-    Membership, AnnotationFormats, CloudStorage,
+    Membership, AnnotationFormats, CloudStorage, UserGrowthData,
 } from 'cvat-core-wrapper';
 
 import type { IntelligentScissors, OpenCVTracker } from 'utils/opencv-wrapper/opencv-wrapper';
@@ -29,9 +29,20 @@ export interface AudioState {
         zoom: number;
         volume: number;
         loop: boolean;
+        playbackRange: {
+            id: object;
+            start: number;
+            end: number;
+        } | null;
+        playbackRangeSource: {
+            rangeID: object;
+            intervalID: number;
+        } | null;
+        fitIntervalRequest: { clientID: number } | null;
         intervals: AudioIntervalState[];
         activeIntervalID: number | null;
         hoveredIntervalID: number | null;
+        interactingIntervalID: number | null;
         contextMenu: {
             top: number;
             left: number;
@@ -44,7 +55,6 @@ export interface AudioState {
         activeLabelId: number | null;
         audioLoadRequest: object | null;
         seekRequest: { time: number } | null;
-        playIntervalOnceRequest: { intervalID: number } | null;
     };
 }
 
@@ -59,6 +69,12 @@ export interface AuthState {
         current: ApiToken[];
         count: number;
     };
+}
+
+export interface GrowthState {
+    data: UserGrowthData | null;
+    fetching: boolean;
+    initialized: boolean;
 }
 
 export interface ChangePasswordData {
@@ -377,7 +393,7 @@ export interface PluginsState {
         };
         qualityControlPage: {
             task: {
-                overviewTab: ((props: {
+                requirementsTab: ((props: {
                     instance: Task;
                     qualitySettings: {
                         settings: QualitySettings | null;
@@ -397,7 +413,7 @@ export interface PluginsState {
                     }) => JSX.Element)[];
             }
             project : {
-                overviewTab: ((props: {
+                requirementsTab: ((props: {
                     instance: Project;
                     qualitySettings: {
                         settings: QualitySettings | null;
@@ -416,6 +432,11 @@ export interface PluginsState {
         };
     },
     components: {
+        qualityControlPage: {
+            tabs: {
+                items: PluginComponent[];
+            };
+        };
         header: {
             userMenu: {
                 items: PluginComponent[];
@@ -432,6 +453,20 @@ export interface PluginsState {
                 items: PluginComponent[];
             };
         }
+        taskPage: {
+            details: {
+                topBar: {
+                    extras: PluginComponent[];
+                };
+            };
+        };
+        projectPage: {
+            details: {
+                topBar: {
+                    extras: PluginComponent[];
+                };
+            };
+        };
         modelsPage: {
             topBar: {
                 items: PluginComponent[];
@@ -814,7 +849,6 @@ export enum ActiveControl {
     AI_TOOLS = 'ai_tools',
     OPENCV_TOOLS = 'opencv_tools',
     AUDIO_REGION_CREATE = 'audio_region_create',
-    AUDIO_REGION_EDIT = 'audio_region_edit',
     AUDIO_REGION_RECORD = 'audio_region_record',
 }
 
@@ -953,6 +987,7 @@ export interface AnnotationState {
             min: number;
             max: number;
             cur: number;
+            hiddenByFrame: Map<number, Set<number>>;
         };
     };
     remove: {
@@ -1202,6 +1237,7 @@ export interface NavigationState {
 
 export interface CombinedState {
     auth: AuthState;
+    growth: GrowthState;
     projects: ProjectsState;
     jobs: JobsState;
     tasks: TasksState;

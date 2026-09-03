@@ -101,16 +101,17 @@ export function useWaveformRegions({
     regionRuntime, viewport, ready, readyRef, durationRef,
 }: Params): WaveformRegions {
     const previewCapability = useRegionPreviewCapability(regionRuntime, readyRef, durationRef);
-
+    const regionSelection = useRegionSelection({ regionRuntime, viewport, ready });
+    const regionHighlighting = useRegionProjection({ regionRuntime, ready });
     useRegionEditing({
         regionRuntime,
+        regionHighlighting,
+        regionSelection,
         viewport,
+        durationRef,
         isPreviewRegion: previewCapability.isPreviewRegion,
         ready,
     });
-    useRegionSelection({ regionRuntime, viewport, ready });
-    useRegionProjection({ regionRuntime, ready });
-
     return {
         createPreview: previewCapability.createPreview,
     };

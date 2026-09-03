@@ -4,8 +4,8 @@
 
 import {
     AnalyticsEventsFilter, QualityConflictsFilter, QualityReportsFilter,
-    QualitySettingsFilter, ConsensusSettingsFilter, ApiTokensFilter,
-} from './server-response-types';
+    QualitySettingsFilter, QualityRequirementsFilter, ConsensusSettingsFilter, ApiTokensFilter,
+} from './server-request-types';
 import PluginRegistry from './plugins';
 import serverProxy from './server-proxy';
 import lambdaManager from './lambda-manager';
@@ -30,12 +30,13 @@ import { FrameData, FramesMetaData } from './frames';
 import CloudStorage from './cloud-storage';
 import Organization, { Invitation } from './organization';
 import Webhook from './webhook';
-import QualityReport from './quality-report';
-import QualityConflict from './quality-conflict';
-import QualitySettings from './quality-settings';
+import {
+    QualityConflict, QualityReport, QualityRequirement, QualitySettings,
+} from './quality';
 import ConsensusSettings from './consensus-settings';
 import AnnotationGuide from './guide';
 import ApiToken from './api-token';
+import UserGrowthData from './growth';
 import { JobValidationLayout, TaskValidationLayout } from './validation-layout';
 import { Request } from './request';
 import AboutData from './about';
@@ -99,6 +100,9 @@ export default interface CVATCore {
     users: {
         get: any;
     };
+    growth: {
+        get: (userId: number) => Promise<UserGrowthData[]>;
+    };
     apiTokens: {
         get: (filter: ApiTokensFilter) => Promise<PaginatedResource<ApiToken>>;
     };
@@ -110,6 +114,7 @@ export default interface CVATCore {
             search?: string;
             jobID?: number;
             taskID?: number;
+            projectID?: number;
             type?: string;
         }, aggregate?: boolean) => Promise<PaginatedResource<Job>>;
     };
@@ -169,6 +174,12 @@ export default interface CVATCore {
                     filter: QualitySettingsFilter,
                     aggregate?: boolean,
                 ) => Promise<PaginatedResource<QualitySettings>>;
+            };
+            requirements: {
+                get: (
+                    filter: QualityRequirementsFilter,
+                    aggregate?: boolean,
+                ) => Promise<PaginatedResource<QualityRequirement>>;
             };
         };
         events: {
@@ -243,6 +254,7 @@ export default interface CVATCore {
         QualityReport: typeof QualityReport;
         QualityConflict: typeof QualityConflict;
         QualitySettings: typeof QualitySettings;
+        QualityRequirement: typeof QualityRequirement;
         ApiToken: typeof ApiToken;
         Request: typeof Request;
         FramesMetaData: typeof FramesMetaData;

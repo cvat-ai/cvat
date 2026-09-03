@@ -31,6 +31,7 @@ import {
     ActiveControl,
     ColorBy, CombinedState, ContextMenuType, Workspace,
 } from 'reducers';
+import getHiddenZLayers from 'utils/get-hidden-z-layers';
 import { shallowEqual } from 'utils/redux';
 import {
     OrientationVisibility, CameraAction, Canvas3d, ViewsDOM,
@@ -140,6 +141,7 @@ interface StateToProps {
     jobInstance: Job;
     frameData: any;
     annotations: ObjectState[];
+    hiddenZLayers: Set<number>;
     contextMenuVisibility: boolean;
     activeLabelID: number | null;
     activatedStateID: number | null;
@@ -203,6 +205,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         frameData,
         contextMenuVisibility,
         annotations,
+        hiddenZLayers: getHiddenZLayers(state),
         frameFetching,
         frame,
         opacity,
@@ -294,7 +297,7 @@ export const PerspectiveViewComponent = React.memo(
             normalizedKeyMap,
             annotations,
             activatedStateID,
-            curZLayer,
+            hiddenZLayers,
         } = useSelector((state: CombinedState) => ({
             canvas: state.annotation.canvas.instance as Canvas3d,
             canvasIsReady: state.annotation.canvas.ready,
@@ -302,7 +305,7 @@ export const PerspectiveViewComponent = React.memo(
             normalizedKeyMap: state.shortcuts.normalizedKeyMap,
             annotations: state.annotation.annotations.states as ObjectState[],
             activatedStateID: state.annotation.annotations.activatedStateID,
-            curZLayer: state.annotation.annotations.zLayer.cur,
+            hiddenZLayers: getHiddenZLayers(state),
         }), shallowEqual);
 
         const screenKeyControl = (code: CameraAction, altKey: boolean, shiftKey: boolean): void => {
@@ -311,7 +314,7 @@ export const PerspectiveViewComponent = React.memo(
 
         const navigateObject = (step: number): void => {
             const filteredStates = annotations.filter(
-                (state) => !state.outside && !state.hidden && state.zOrder <= curZLayer,
+                (state) => !state.outside && !state.hidden && !hiddenZLayers.has(state.zOrder),
             );
 
             if (!filteredStates.length) {
@@ -595,6 +598,7 @@ const Canvas3DWrapperComponent = React.memo((props: Props): null => {
         contextMenuVisibility,
         frameData,
         annotations,
+        hiddenZLayers,
         frame,
         jobInstance,
         activeLabelID,
@@ -646,7 +650,9 @@ const Canvas3DWrapperComponent = React.memo((props: Props): null => {
         if (frameData !== null) {
             canvasInstance.setup(
                 frameData,
-                annotations.filter((e) => e.objectType !== ObjectType.TAG),
+                annotations.filter((state) => (
+                    state.objectType !== ObjectType.TAG && !hiddenZLayers.has(state.zOrder)
+                )),
             );
         }
     };
@@ -866,7 +872,7 @@ const Canvas3DWrapperComponent = React.memo((props: Props): null => {
             canvasInstanceDOM.perspective.removeEventListener('canvas.splitted', onCanvasTrackSplitted as EventListener);
             canvasInstanceDOM.perspective.removeEventListener('canvas.doubleclicked', onCanvasDoubleClicked as EventListener);
         };
-    }, [frameData, annotations, activeLabelID, contextMenuVisibility, activeObjectType]);
+    }, [frameData, annotations, hiddenZLayers, activeLabelID, contextMenuVisibility, activeObjectType]);
 
     return null;
 });
