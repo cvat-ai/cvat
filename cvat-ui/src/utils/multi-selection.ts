@@ -70,6 +70,25 @@ export function prepareSelectionToggle(
     return statesToUpdate;
 }
 
+export function prepareSelectionZOrder(
+    states: ObjectState[],
+    resolveZOrder: (state: ObjectState) => number,
+): ObjectState[] {
+    const statesToUpdate: ObjectState[] = [];
+    for (const state of states) {
+        if (state.lock || state.isGroundTruth || ![ObjectType.SHAPE, ObjectType.TRACK].includes(state.objectType)) {
+            continue;
+        }
+
+        const zOrder = resolveZOrder(state);
+        if (zOrder !== state.zOrder) {
+            state.zOrder = zOrder;
+            statesToUpdate.push(state);
+        }
+    }
+    return statesToUpdate;
+}
+
 export function getSelectionGroupState(states: ObjectState[]): SelectionGroupState {
     const groupID = states[0]?.group?.id || 0;
     const alreadyInSameGroup = states.length > 1 && !!groupID &&

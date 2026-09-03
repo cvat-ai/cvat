@@ -55,6 +55,7 @@ import { OBJECTS_SIDEBAR_OPEN_Z_LAYER_EVENT } from 'utils/objects-sidebar';
 import {
     getSelectedStates,
     getSelectionToggleState,
+    prepareSelectionZOrder,
     prepareSelectionToggle,
 } from 'utils/multi-selection';
 
@@ -657,6 +658,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             statesCollapsedAll,
             showGroundTruth,
             updateAnnotations,
+            updateAnnotationsBatch,
             changeGroupColor,
             removeObject,
             removeSelection,
@@ -678,6 +680,19 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             if (event) {
                 event.preventDefault();
             }
+        };
+
+        const updateSelectedZOrder = (resolveZOrder: (state: ObjectState) => number): boolean => {
+            if (!selectedStatesID.length) {
+                return false;
+            }
+
+            const selectedStates = getSelectedStates(objectStates, selectedStatesID);
+            const statesToUpdate = prepareSelectionZOrder(selectedStates, resolveZOrder);
+            if (statesToUpdate.length) {
+                updateAnnotationsBatch(statesToUpdate);
+            }
+            return true;
         };
 
         const activatedState = (ignoreElements = false): ObjectState | null => {
@@ -804,6 +819,9 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             },
             TO_BACKGROUND: (event?: KeyboardEvent) => {
                 preventDefault(event);
+                if (updateSelectedZOrder((): number => minZLayer - 1)) {
+                    return;
+                }
                 const state = activatedState(true);
                 if (state && isLayerState(state)) {
                     state.zOrder = minZLayer - 1;
@@ -812,6 +830,9 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             },
             TO_FOREGROUND: (event?: KeyboardEvent) => {
                 preventDefault(event);
+                if (updateSelectedZOrder((): number => maxZLayer + 1)) {
+                    return;
+                }
                 const state = activatedState(true);
                 if (state && isLayerState(state)) {
                     state.zOrder = maxZLayer + 1;
@@ -820,6 +841,9 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             },
             TO_ONE_LAYER_BACKWARD: (event?: KeyboardEvent) => {
                 preventDefault(event);
+                if (updateSelectedZOrder((state: ObjectState): number => state.zOrder - 1)) {
+                    return;
+                }
                 const state = activatedState(true);
                 if (state && isLayerState(state)) {
                     state.zOrder -= 1;
@@ -828,6 +852,9 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             },
             TO_ONE_LAYER_FORWARD: (event?: KeyboardEvent) => {
                 preventDefault(event);
+                if (updateSelectedZOrder((state: ObjectState): number => state.zOrder + 1)) {
+                    return;
+                }
                 const state = activatedState(true);
                 if (state && isLayerState(state)) {
                     state.zOrder += 1;
@@ -850,6 +877,14 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                 }
             },
             RUN_ANNOTATIONS_ACTION: () => {
+                if (selectedStatesID.length) {
+                    const selectedStates = getSelectedStates(objectStates, selectedStatesID);
+                    if (selectedStates.length) {
+                        openAnnotationsActionModal({ defaultObjectStates: selectedStates });
+                        return;
+                    }
+                }
+
                 const state = activatedState(true);
                 if (state) {
                     openAnnotationsActionModal({ defaultObjectState: state });

@@ -216,6 +216,8 @@ export default class Collection {
                     actions.add(HistoryActions.CHANGED_LOCK);
                 } else if (property === 'pinned') {
                     actions.add(HistoryActions.CHANGED_PINNED);
+                } else if (property === 'zOrder') {
+                    actions.add(HistoryActions.CHANGED_ZORDER);
                 } else {
                     throw new ArgumentError(`Batch update does not support "${property}" changes`);
                 }

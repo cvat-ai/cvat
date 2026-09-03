@@ -14,7 +14,7 @@ import Spin from 'antd/lib/spin';
 import Popover from 'antd/lib/popover';
 import Icon, {
     CopyOutlined, DeleteOutlined, GroupOutlined, LockFilled, PushpinFilled, PushpinOutlined,
-    UngroupOutlined, UnlockOutlined, UpOutlined,
+    FunctionOutlined, UngroupOutlined, UnlockOutlined, UpOutlined, VerticalAlignBottomOutlined,
 } from '@ant-design/icons';
 import notification from 'antd/lib/notification';
 import debounce from 'lodash/debounce';
@@ -38,8 +38,12 @@ import config from 'config';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import LabelSelector from 'components/label-selector/label-selector';
 import ObjectItemDetails from 'components/annotation-page/standard-workspace/objects-side-bar/object-item-details';
+import { LayerPicker } from 'components/annotation-page/standard-workspace/objects-side-bar/object-item-basics';
+import { openAnnotationsActionModal } from 'components/annotation-page/annotations-actions/annotations-actions-modal';
 import FrameTags from 'components/annotation-page/tag-annotation-workspace/frame-tags';
-import { LayerStackIcon } from 'icons';
+import {
+    BackgroundIcon, ForegroundIcon, LayerStackIcon, OneLayerBackwardIcon, OneLayerForwardIcon,
+} from 'icons';
 import {
     confirmCanvasReadyAsync,
     resetCanvas,
@@ -93,6 +97,7 @@ import {
     getSelectedStates,
     getSelectionGroupState,
     getSelectionToggleState,
+    prepareSelectionZOrder,
     prepareSelectionToggle,
 } from 'utils/multi-selection';
 import ImageSetupsContent from './image-setups-content';
@@ -142,6 +147,8 @@ interface StateToProps {
     showAllInterpolationTracks: boolean;
     workspace: Workspace;
     currentZLayer: number;
+    minZLayer: number;
+    maxZLayer: number;
     hiddenZLayers: Set<number>;
     sidebarCollapsed: boolean;
     automaticBordering: boolean;
@@ -211,7 +218,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 activatedElementID,
                 activatedAttributeID,
                 selectedStatesID,
-                zLayer: { cur: currentZLayer },
+                zLayer: { cur: currentZLayer, min: minZLayer, max: maxZLayer },
                 highlightedConflict,
                 renderData,
             },
@@ -294,6 +301,8 @@ function mapStateToProps(state: CombinedState): StateToProps {
         showAllInterpolationTracks,
         showTagsOnFrame,
         currentZLayer,
+        minZLayer,
+        maxZLayer,
         hiddenZLayers: getHiddenZLayers(state),
         sidebarCollapsed,
         automaticBordering,
@@ -484,12 +493,14 @@ interface State {
         top: number;
     } | null;
     selectionAttributesCollapsed: boolean;
+    selectionLayerPickerVisible: boolean;
 }
 
 class CanvasWrapperComponent extends React.PureComponent<Props, State> {
     public state: State = {
         selectionMenuPosition: null,
         selectionAttributesCollapsed: true,
+        selectionLayerPickerVisible: false,
     };
 
     private debouncedUpdate = debounce(this.updateCanvas.bind(this), 250, { leading: true });
@@ -661,6 +672,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
                 this.setState({
                     selectionMenuPosition: null,
                     selectionAttributesCollapsed: true,
+                    selectionLayerPickerVisible: false,
                 });
             }
         }
@@ -862,6 +874,30 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
             onMakeCopySelection(selectedStates);
         }
         this.setState({ selectionMenuPosition: null });
+    };
+
+    private onRunAnnotationActionForSelectedObjects = (): void => {
+        const { annotations, selectedStatesID } = this.props;
+        const selectedStates = getSelectedStates(annotations, selectedStatesID);
+        if (selectedStates.length) {
+            openAnnotationsActionModal({ defaultObjectStates: selectedStates });
+        }
+        this.setState({ selectionMenuPosition: null });
+    };
+
+    private updateSelectedObjectsZOrder = async (
+        resolveZOrder: (state: ObjectState) => number,
+    ): Promise<void> => {
+        const { annotations, selectedStatesID, onUpdateAnnotationsBatch } = this.props;
+        const selectedStates = getSelectedStates(annotations, selectedStatesID);
+        const statesToUpdate = prepareSelectionZOrder(selectedStates, resolveZOrder);
+        if (statesToUpdate.length) {
+            await onUpdateAnnotationsBatch(statesToUpdate);
+        }
+        this.setState({
+            selectionMenuPosition: null,
+            selectionLayerPickerVisible: false,
+        });
     };
 
     private onSwitchSelectedObjectsLock = async (): Promise<void> => {
@@ -1463,6 +1499,8 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
     public render(): JSX.Element {
         const {
             currentZLayer,
+            minZLayer,
+            maxZLayer,
             hiddenZLayers,
             sidebarCollapsed,
             keyMap,
@@ -1482,7 +1520,9 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
             onExpandObject,
         } = this.props;
         const { canvasInstance } = this.props as { canvasInstance: Canvas };
-        const { selectionMenuPosition, selectionAttributesCollapsed } = this.state;
+        const {
+            selectionMenuPosition, selectionAttributesCollapsed, selectionLayerPickerVisible,
+        } = this.state;
         const selectedStates = getSelectedStates(annotations, selectedStatesID);
         const selectionAttributeState = getSelectionAttributeState(selectedStates);
         const selectionAttributeValues: Record<number, string> = {};
@@ -1518,6 +1558,9 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
         const groupSelectionDisabledReason = selectionGroupState.alreadyInSameGroup ?
             'Selected objects are already in the same group' : 'Select at least two objects to group';
         const ungroupSelectionDisabled = !selectionGroupState.canUngroup;
+        const selectionLayerActionsDisabled = !selectedStates.some((state: ObjectState): boolean => (
+            !state.lock && !state.isGroundTruth && [ObjectType.SHAPE, ObjectType.TRACK].includes(state.objectType)
+        ));
 
         const preventDefault = (event: KeyboardEvent | undefined): void => {
             if (event) {
@@ -1602,7 +1645,10 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
                         trigger={[]}
                         onOpenChange={(open: boolean, info): void => {
                             if (!open && info.source !== 'menu') {
-                                this.setState({ selectionMenuPosition: null });
+                                this.setState({
+                                    selectionMenuPosition: null,
+                                    selectionLayerPickerVisible: false,
+                                });
                             }
                         }}
                         menu={{
@@ -1679,6 +1725,101 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
                                         >
                                             Make a copy
                                         </Button>
+                                    ),
+                                },
+                                {
+                                    key: 'run-annotation-action',
+                                    label: (
+                                        <Button
+                                            type='link'
+                                            icon={<FunctionOutlined />}
+                                            onClick={this.onRunAnnotationActionForSelectedObjects}
+                                        >
+                                            Run annotation action
+                                        </Button>
+                                    ),
+                                },
+                                {
+                                    key: 'to-background',
+                                    label: (
+                                        <Button
+                                            type='link'
+                                            disabled={selectionLayerActionsDisabled}
+                                            icon={<Icon component={BackgroundIcon} />}
+                                            onClick={(): Promise<void> => this.updateSelectedObjectsZOrder(
+                                                (): number => minZLayer - 1,
+                                            )}
+                                        >
+                                            To background
+                                        </Button>
+                                    ),
+                                },
+                                {
+                                    key: 'to-foreground',
+                                    label: (
+                                        <Button
+                                            type='link'
+                                            disabled={selectionLayerActionsDisabled}
+                                            icon={<Icon component={ForegroundIcon} />}
+                                            onClick={(): Promise<void> => this.updateSelectedObjectsZOrder(
+                                                (): number => maxZLayer + 1,
+                                            )}
+                                        >
+                                            To foreground
+                                        </Button>
+                                    ),
+                                },
+                                {
+                                    key: 'one-layer-backward',
+                                    label: (
+                                        <Button
+                                            type='link'
+                                            disabled={selectionLayerActionsDisabled}
+                                            icon={<Icon component={OneLayerBackwardIcon} />}
+                                            onClick={(): Promise<void> => this.updateSelectedObjectsZOrder(
+                                                (state: ObjectState): number => state.zOrder - 1,
+                                            )}
+                                        >
+                                            To one layer backward
+                                        </Button>
+                                    ),
+                                },
+                                {
+                                    key: 'one-layer-forward',
+                                    label: (
+                                        <Button
+                                            type='link'
+                                            disabled={selectionLayerActionsDisabled}
+                                            icon={<Icon component={OneLayerForwardIcon} />}
+                                            onClick={(): Promise<void> => this.updateSelectedObjectsZOrder(
+                                                (state: ObjectState): number => state.zOrder + 1,
+                                            )}
+                                        >
+                                            To one layer forward
+                                        </Button>
+                                    ),
+                                },
+                                {
+                                    key: 'move-to-layer',
+                                    label: (
+                                        <LayerPicker
+                                            visible={selectionLayerPickerVisible}
+                                            value={selectedStates[0]?.zOrder ?? 0}
+                                            onVisibleChange={(visible: boolean): void => this.setState({
+                                                selectionLayerPickerVisible: visible,
+                                            })}
+                                            onChange={(zOrder: number): Promise<void> => (
+                                                this.updateSelectedObjectsZOrder((): number => zOrder)
+                                            )}
+                                        >
+                                            <Button
+                                                type='link'
+                                                disabled={selectionLayerActionsDisabled}
+                                                icon={<VerticalAlignBottomOutlined />}
+                                            >
+                                                Move to layer ...
+                                            </Button>
+                                        </LayerPicker>
                                     ),
                                 },
                                 {

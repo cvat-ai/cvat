@@ -28,7 +28,7 @@ interface LayerPickerProps {
     onVisibleChange(visible: boolean): void;
 }
 
-function LayerPicker(props: LayerPickerProps): JSX.Element {
+export function LayerPicker(props: LayerPickerProps): JSX.Element {
     const {
         children, value, visible, onChange, onVisibleChange,
     } = props;
