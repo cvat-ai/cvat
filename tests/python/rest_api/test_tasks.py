@@ -650,7 +650,7 @@ class TestPatchTaskAnnotations:
 
         return get_data
 
-    @pytest.mark.parametrize("org", ["''"])
+    @pytest.mark.parametrize("org", [""])
     @pytest.mark.parametrize(
         "privilege, task_staff, is_allow",
         [
@@ -1570,6 +1570,7 @@ class TestTaskBackups:
 
         self._test_can_restore_task_from_backup(task_id)
 
+    @pytest.mark.timeout(20)
     @pytest.mark.with_external_services
     @pytest.mark.parametrize("lightweight_backup", [True, False])
     def test_can_export_and_import_backup_task_with_cloud_storage(self, lightweight_backup, fxt_use_cache):
@@ -1609,7 +1610,7 @@ class TestTaskBackups:
             expected_media.update(["images/image_1.jpg", "images/image_3.jpg"])
         assert files_in_data == expected_media
 
-        self._test_can_restore_task_from_backup(task_id, lightweight_backup=lightweight_backup)
+        self._test_can_restore_task_from_backup(task_id, lightweight_backup=lightweight_backup, backup_file=filename)
 
     @pytest.mark.parametrize("mode", ["annotation", "interpolation"])
     def test_can_import_backup(self, tasks, mode):
