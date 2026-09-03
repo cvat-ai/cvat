@@ -13,6 +13,7 @@ import { ColorBy } from 'reducers';
 import { ObjectType, ShapeType } from 'cvat-core-wrapper';
 import { KeyMap } from 'utils/mousetrap-react';
 import { isMultiSelectObjectModifierPressed } from 'utils/multi-selection';
+import type { OrientationAngle } from 'utils/change-object-orientation';
 import ObjectItemElementComponent from './object-item-element';
 import ItemBasics from './object-item-basics';
 
@@ -48,6 +49,7 @@ interface Props {
     copy(): void;
     propagate(): void;
     switchOrientation(): void;
+    changeOrientation(degrees: OrientationAngle): void;
     createURL(): void;
     toBackground(): void;
     toForeground(): void;
@@ -94,6 +96,7 @@ function ObjectItemComponent(props: Props): JSX.Element {
         propagate,
         createURL,
         switchOrientation,
+        changeOrientation,
         toBackground,
         toForeground,
         toOneLayerForward,
@@ -223,6 +226,7 @@ function ObjectItemComponent(props: Props): JSX.Element {
                     propagate={propagate}
                     createURL={createURL}
                     switchOrientation={switchOrientation}
+                    changeOrientation={changeOrientation}
                     toBackground={toBackground}
                     toForeground={toForeground}
                     toOneLayerBackward={toOneLayerBackward}

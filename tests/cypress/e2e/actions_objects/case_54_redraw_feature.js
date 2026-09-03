@@ -10,7 +10,7 @@ import { taskName, labelName } from '../../support/const';
 context('Redraw feature.', () => {
     const caseId = '54';
     const createRectangleShape2Points = {
-        points: 'By 2 Points',
+        points: '2 Points',
         type: 'Shape',
         labelName,
         firstX: 150,
@@ -154,6 +154,25 @@ context('Redraw feature.', () => {
             cy.get('.cvat-objects-sidebar-state-item').then(($sidebarItem) => {
                 expect($sidebarItem.length).to.be.equal(5);
             });
+        });
+
+        it('Restores a shape after canceling a partial redraw.', () => {
+            cy.removeAnnotations();
+            cy.createRectangle(createRectangleShape2Points);
+            cy.get('.cvat-canvas-container').trigger('mousemove', 200, 400);
+            cy.get('.cvat_canvas_shape').should('have.class', 'cvat_canvas_shape_activated');
+
+            cy.get('body').trigger('keydown', { keyCode: keyCodeN, code: 'KeyN', shiftKey: true });
+            cy.get('.cvat-canvas-container').click(
+                createRectangleShape2Points.firstX,
+                createRectangleShape2Points.firstY - 50,
+            );
+            cy.get('body').type('{esc}');
+
+            cy.get('.cvat_canvas_shape')
+                .should('have.length', 1)
+                .and('be.visible')
+                .and('not.have.class', 'cvat_canvas_hidden');
         });
     });
 });

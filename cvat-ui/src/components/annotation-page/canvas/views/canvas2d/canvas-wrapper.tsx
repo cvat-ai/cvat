@@ -1209,10 +1209,9 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
             activeControl, onUpdateAnnotations, updateActiveControl, onUpdateEditedObject,
         } = this.props;
         const { state, points, rotation } = event.detail;
+        state.points = points;
         if (state.rotation !== rotation) {
             state.rotation = rotation;
-        } else {
-            state.points = points;
         }
 
         if (activeControl !== ActiveControl.CURSOR) {

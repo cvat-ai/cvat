@@ -61,6 +61,7 @@ interface Props {
 
     updateActiveControl(activeControl: ActiveControl): void;
     rotateFrame(rotation: Rotation): void;
+    rotateActiveObjectOrFrame(rotation: Rotation): void;
     repeatDrawShape(): void;
     pasteShape(): void;
     pasteSelection(): void;
@@ -72,13 +73,13 @@ interface Props {
 const componentShortcuts = {
     CLOCKWISE_ROTATION_STANDARD_CONTROLS: {
         name: 'Rotate clockwise',
-        description: 'Change image angle (add 90 degrees)',
+        description: 'Change active rectangle or ellipse orientation clockwise by 90°, or rotate the image if none is active',
         sequences: ['ctrl+r'],
         scope: ShortcutScope.STANDARD_WORKSPACE_CONTROLS,
     },
     ANTICLOCKWISE_ROTATION_STANDARD_CONTROLS: {
         name: 'Rotate anticlockwise',
-        description: 'Change image angle (subtract 90 degrees)',
+        description: 'Change active rectangle or ellipse orientation counterclockwise by 90°, or rotate the image if none is active',
         sequences: ['ctrl+shift+r'],
         scope: ShortcutScope.STANDARD_WORKSPACE_CONTROLS,
     },
@@ -164,6 +165,7 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
         labels,
         updateActiveControl,
         rotateFrame,
+        rotateActiveObjectOrFrame,
         repeatDrawShape,
         pasteShape,
         pasteSelection,
@@ -296,11 +298,11 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
     let handlers: Partial<Record<keyof typeof componentShortcuts, (event?: KeyboardEvent) => void>> = {
         CLOCKWISE_ROTATION_STANDARD_CONTROLS: (event: KeyboardEvent | undefined) => {
             event?.preventDefault();
-            rotateFrame(Rotation.CLOCKWISE90);
+            rotateActiveObjectOrFrame(Rotation.CLOCKWISE90);
         },
         ANTICLOCKWISE_ROTATION_STANDARD_CONTROLS: (event: KeyboardEvent | undefined) => {
             event?.preventDefault();
-            rotateFrame(Rotation.ANTICLOCKWISE90);
+            rotateActiveObjectOrFrame(Rotation.ANTICLOCKWISE90);
         },
         SWITCH_GROUP_MODE_STANDARD_CONTROLS: (event: KeyboardEvent | undefined): void => {
             event?.preventDefault();

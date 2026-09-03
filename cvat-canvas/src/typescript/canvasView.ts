@@ -282,6 +282,14 @@ export class CanvasViewImpl implements CanvasView, Listener {
         this.canvas.dispatchEvent(event);
     }
 
+    private restoreDrawHiddenObjects(): void {
+        const hiddenBecauseOfDraw = Object.keys(this.innerObjectsFlags.drawHidden)
+            .map((_clientID): number => +_clientID);
+        for (const clientID of hiddenBecauseOfDraw) {
+            this.setupInnerFlags(clientID, 'drawHidden', false);
+        }
+    }
+
     private resetViewPosition(clientID: number): void {
         const drawnState = this.drawnStates[clientID];
         const drawnShape = this.svgShapes[clientID];
@@ -360,13 +368,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         continueDraw?: boolean,
         prevDrawData?: DrawData,
     ): void => {
-        const hiddenBecauseOfDraw = Object.keys(this.innerObjectsFlags.drawHidden)
-            .map((_clientID): number => +_clientID);
-        if (hiddenBecauseOfDraw.length) {
-            for (const hidden of hiddenBecauseOfDraw) {
-                this.setupInnerFlags(hidden, 'drawHidden', false);
-            }
-        }
+        this.restoreDrawHiddenObjects();
 
         if (data) {
             const { clientID, elements } = data as any;
@@ -374,7 +376,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
             if (typeof clientID === 'number') {
                 const [state] = this.controller.objects
                     .filter((_state: any): boolean => _state.clientID === clientID);
-                this.onEditDone(state, points);
+
+                this.onEditDone(state, points, data.rotation);
                 this.dispatchCanceledEvent();
                 return;
             }
@@ -2891,6 +2894,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 } else {
                     this.drawHandler.cancel();
                 }
+                this.restoreDrawHiddenObjects();
             } else if (this.mode === Mode.INTERACT) {
                 this.interactionHandler.cancel();
             } else if (this.mode === Mode.MERGE) {
