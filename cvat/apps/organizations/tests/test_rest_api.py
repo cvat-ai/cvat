@@ -2,14 +2,20 @@
 #
 # SPDX-License-Identifier: MIT
 
+from unittest import mock
+
+from django.contrib.auth import get_user_model
 from django.core import mail
+from django.core.cache import caches
 from django.test import override_settings
 from django.urls import reverse
 from rest_framework import status
 
 from cvat.apps.engine.tests.test_rest_api import create_db_users
 from cvat.apps.engine.tests.utils import ApiTestBase, ForceLogin
+from cvat.apps.iam.exceptions import RetryableRequestDomainStatusApiException
 from cvat.apps.iam.models import User, UserCreationMethod
+from cvat.apps.iam.utils import DisposableEmailResultEnum
 
 
 class OrganizationCreateAPITestCase(ApiTestBase):
@@ -88,3 +94,81 @@ class InvitationCreateAPITestCase(ApiTestBase):
         user = User.objects.get(id=invited_user_id)
         self.assertEqual(user.email, "invited@test.com")
         self.assertEqual(user.created_via, UserCreationMethod.REGISTRATION)
+
+
+class InvitationDisposableEmailAPITestCase(ApiTestBase):
+    org_slug = "testorg"
+    invited_email = "invited_user@somedomain.com"
+    cache_key = "disposable_email_domain:somedomain.com"
+
+    @classmethod
+    def setUpTestData(cls):
+        create_db_users(cls)
+
+    def setUp(self):
+        super().setUp()
+        response = self._post_request(
+            "/api/organizations", self.admin, data={"slug": self.org_slug}
+        )
+        assert response.status_code == status.HTTP_201_CREATED, response.content
+
+    def _run_api(self):
+        return self._post_request(
+            "/api/invitations",
+            self.admin,
+            data={"role": "worker", "email": self.invited_email},
+            query_params={"org": self.org_slug},
+        )
+
+    @override_settings(
+        DISPOSABLE_EMAIL_CHECK_ENABLED=True,
+        EMAIL_BACKEND="django.core.mail.backends.console.EmailBackend",
+    )
+    def test_cannot_invite_user_with_disposable_email(self):
+        for result in [
+            DisposableEmailResultEnum.DISPOSABLE,
+            DisposableEmailResultEnum.DEAD_SERVER,
+            DisposableEmailResultEnum.INVALID_MX,
+        ]:
+            with self.subTest(result=result):
+                caches["default"].delete(self.cache_key)
+                with mock.patch(
+                    "cvat.apps.iam.serializers.request_domain_status_via_emaillistverify",
+                    return_value=result,
+                ) as mock_check:
+                    response = self._run_api()
+                self.assertEqual(
+                    response.status_code, status.HTTP_400_BAD_REQUEST, response.content
+                )
+                self.assertFalse(get_user_model().objects.filter(email=self.invited_email).exists())
+                mock_check.assert_called_once_with("somedomain.com")
+                self.assertIs(caches["default"].get(self.cache_key), True)
+
+    @override_settings(
+        DISPOSABLE_EMAIL_CHECK_ENABLED=True,
+        EMAIL_BACKEND="django.core.mail.backends.console.EmailBackend",
+    )
+    @mock.patch(
+        "cvat.apps.iam.serializers.request_domain_status_via_emaillistverify",
+        return_value=DisposableEmailResultEnum.OK,
+    )
+    def test_can_invite_user_with_non_disposable_email(self, mock_check):
+        response = self._run_api()
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED, response.content)
+        self.assertTrue(get_user_model().objects.filter(email=self.invited_email).exists())
+        self.assertIs(caches["default"].get(self.cache_key), False)
+        mock_check.assert_called_once_with("somedomain.com")
+
+    @override_settings(
+        DISPOSABLE_EMAIL_CHECK_ENABLED=True,
+        EMAIL_BACKEND="django.core.mail.backends.console.EmailBackend",
+    )
+    @mock.patch(
+        "cvat.apps.iam.serializers.request_domain_status_via_emaillistverify",
+        side_effect=RetryableRequestDomainStatusApiException("the verification service is down"),
+    )
+    def test_can_invite_user_when_disposable_email_check_fails(self, mock_check):
+        response = self._run_api()
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED, response.content)
+        self.assertTrue(get_user_model().objects.filter(email=self.invited_email).exists())
+        self.assertIsNone(caches["default"].get(self.cache_key))

@@ -6,12 +6,14 @@
 from attr.converters import to_bool
 from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
 from rest_framework import serializers
 
 from cvat.apps.engine.serializers import BasicUserSerializer
 from cvat.apps.iam.models import UserCreationMethod
+from cvat.apps.iam.serializers import (
+    ensure_email_is_not_disposable,
+)
 from cvat.apps.iam.utils import get_dummy_or_regular_user
 
 from .models import Invitation, Membership, Organization
@@ -115,33 +117,46 @@ class InvitationWriteSerializer(serializers.ModelSerializer):
         fields = ["key", "created_date", "owner", "role", "organization", "email"]
         read_only_fields = ["key", "created_date", "owner", "organization"]
 
-    @transaction.atomic
     def create(self, validated_data):
         membership_data = validated_data.pop("membership")
         organization = validated_data.pop("organization")
         user_email = membership_data["user"]["email"].lower()
-        try:
-            user = get_user_model().objects.get(email__iexact=user_email)
-            del membership_data["user"]
-        except ObjectDoesNotExist:
-            user = get_user_model().objects.create_user(
-                username=user_email,
-                email=user_email,
-                created_via=UserCreationMethod.INVITATION,
-            )
-            user.set_unusable_password()
-            user.save()
-            del membership_data["user"]
-        membership, created = Membership.objects.get_or_create(
-            defaults=membership_data, user=user, organization=organization
-        )
-        if not created:
-            raise serializers.ValidationError(
-                "The user is a member of " "the organization already."
-            )
-        invitation = Invitation.objects.create(**validated_data, membership=membership)
 
-        return invitation
+        user = get_user_model().objects.filter(email__iexact=user_email).first()
+
+        if user is None:
+            ensure_email_is_not_disposable(email=user_email)
+
+        del membership_data["user"]
+
+        with transaction.atomic():
+            if user is None:
+                user, user_created = get_user_model().objects.get_or_create(
+                    email__iexact=user_email,
+                    defaults={
+                        "username": user_email,
+                        "email": user_email,
+                        "created_via": UserCreationMethod.INVITATION,
+                    },
+                )
+                if user_created:
+                    user.set_unusable_password()
+                    user.save()
+
+            membership, membership_created = Membership.objects.get_or_create(
+                defaults=membership_data,
+                user=user,
+                organization=organization,
+            )
+
+            if not membership_created:
+                raise serializers.ValidationError(
+                    "The user is a member of " "the organization already."
+                )
+
+            invitation = Invitation.objects.create(**validated_data, membership=membership)
+
+            return invitation
 
     def save(self, request, **kwargs):
         invitation = super().save(**kwargs)

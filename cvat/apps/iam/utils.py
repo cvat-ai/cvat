@@ -3,10 +3,16 @@ import hashlib
 import importlib
 import io
 import tarfile
+from enum import StrEnum, auto
 from pathlib import Path
 
+import requests
 from django.conf import settings
 from django.contrib.sessions.backends.base import SessionBase
+from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_random_exponential
+
+from cvat.apps.iam import exceptions
+from cvat.utils.http import make_requests_session
 
 _OPA_RULES_PATHS = {
     Path(__file__).parent / "rules",
@@ -73,3 +79,56 @@ def is_signup_email_required() -> bool:
 def clean_up_sessions() -> None:
     SessionStore: type[SessionBase] = importlib.import_module(settings.SESSION_ENGINE).SessionStore
     SessionStore.clear_expired()
+
+
+class DisposableEmailResultEnum(StrEnum):
+    DISPOSABLE = auto()
+    OK = auto()
+    DEAD_SERVER = auto()
+    INVALID_MX = auto()
+    UNKNOWN = auto()
+
+
+@retry(
+    retry=retry_if_exception_type(exceptions.RetryableRequestDomainStatusApiException),
+    stop=stop_after_attempt(3),
+    wait=wait_random_exponential(multiplier=0.1, max=0.9),
+    reraise=True,
+)
+def request_domain_status_via_emaillistverify(domain: str) -> DisposableEmailResultEnum:
+    try:
+        with make_requests_session() as session:
+            response = session.post(
+                settings.DISPOSABLE_EMAIL_CHECK_API_URL,
+                params={"domain": domain},
+                headers={"x-api-key": settings.DISPOSABLE_EMAIL_CHECK_API_KEY},
+                timeout=3,
+            )
+    except requests.RequestException as e:
+        raise exceptions.RetryableRequestDomainStatusApiException(
+            f"Disposable domain check for {domain!r} failed: {e}"
+        ) from e
+
+    if response.status_code >= 500 or response.status_code in (408, 429):
+        raise exceptions.RetryableRequestDomainStatusApiException(
+            f"Disposable domain check for {domain!r} failed: HTTP {response.status_code}"
+        )
+
+    match response.status_code:
+        case 201:
+            result = DisposableEmailResultEnum(response.json()["result"])
+
+            if result == DisposableEmailResultEnum.UNKNOWN:
+                raise exceptions.RetryableRequestDomainStatusApiException(
+                    f"Could not verify email domain {domain!r}"
+                )
+
+            return result
+        case 401:
+            raise exceptions.NonRetryableRequestDomainStatusApiException("Invalid API key")
+        case 403:
+            raise exceptions.NonRetryableRequestDomainStatusApiException("Not enough credits")
+        case _:
+            raise exceptions.NonRetryableRequestDomainStatusApiException(
+                f"Unknown error: HTTP {response.status_code}"
+            )

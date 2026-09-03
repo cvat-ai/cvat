@@ -830,6 +830,13 @@ EMAIL_BACKEND = None
 
 ONE_RUNNING_JOB_IN_QUEUE_PER_USER = to_bool(os.getenv("ONE_RUNNING_JOB_IN_QUEUE_PER_USER", False))
 
+DISPOSABLE_EMAIL_CHECK_ENABLED = False
+DISPOSABLE_EMAIL_CHECK_API_URL = os.getenv("DISPOSABLE_EMAIL_CHECK_API_URL", "")
+DISPOSABLE_EMAIL_CHECK_API_KEY = os.getenv("DISPOSABLE_EMAIL_CHECK_API_KEY", "")
+DISPOSABLE_EMAIL_CHECK_CACHE_TTL = timedelta(
+    seconds=int(os.getenv("DISPOSABLE_EMAIL_CHECK_CACHE_TTL", 2 * 60 * 60))
+)
+
 # How many chunks can be prepared simultaneously during task creation in case the cache is not used
 CVAT_CONCURRENT_CHUNK_PROCESSING = int(os.getenv("CVAT_CONCURRENT_CHUNK_PROCESSING", 1))
 

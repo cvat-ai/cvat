@@ -3,11 +3,13 @@
 #
 # SPDX-License-Identifier: MIT
 import base64
+from unittest import mock
 
 from allauth.account.forms import default_token_generator
 from allauth.account.models import EmailAddress
 from allauth.account.utils import user_pk_to_url_str
 from allauth.account.views import EmailVerificationSentView
+from django.core.cache import caches
 from django.test import override_settings
 from django.urls import path, re_path, reverse
 from rest_framework import status
@@ -15,7 +17,9 @@ from rest_framework.authtoken.models import Token
 
 from cvat.apps.engine.tests.test_rest_api import create_db_users
 from cvat.apps.engine.tests.utils import ApiTestBase
+from cvat.apps.iam.exceptions import RetryableRequestDomainStatusApiException
 from cvat.apps.iam.models import User
+from cvat.apps.iam.utils import DisposableEmailResultEnum
 from cvat.apps.iam.views import ConfirmEmailViewEx
 from cvat.urls import urlpatterns as original_urlpatterns
 
@@ -98,6 +102,49 @@ class UserRegisterAPITestCase(ApiTestBase):
             },
         )
         self.assertTrue(User.objects.filter(email="test_email@test.com").exists())
+
+    @override_settings(ACCOUNT_EMAIL_VERIFICATION="none", DISPOSABLE_EMAIL_CHECK_ENABLED=True)
+    def test_api_v2_user_register_with_disposable_email(self):
+        for result in [
+            DisposableEmailResultEnum.DISPOSABLE,
+            DisposableEmailResultEnum.DEAD_SERVER,
+            DisposableEmailResultEnum.INVALID_MX,
+        ]:
+            with self.subTest(result=result):
+                caches["default"].delete("disposable_email_domain:test.com")
+                with mock.patch(
+                    "cvat.apps.iam.serializers.request_domain_status_via_emaillistverify",
+                    return_value=result,
+                ) as mock_check:
+                    response = self._run_api_v2_user_register(self.user_data)
+                self.assertEqual(
+                    response.status_code, status.HTTP_400_BAD_REQUEST, response.content
+                )
+                self.assertFalse(User.objects.filter(email=self.user_data["email"]).exists())
+                mock_check.assert_called_once_with("test.com")
+                self.assertIs(caches["default"].get("disposable_email_domain:test.com"), True)
+
+    @override_settings(ACCOUNT_EMAIL_VERIFICATION="none", DISPOSABLE_EMAIL_CHECK_ENABLED=True)
+    @mock.patch(
+        "cvat.apps.iam.serializers.request_domain_status_via_emaillistverify",
+        return_value=DisposableEmailResultEnum.OK,
+    )
+    def test_api_v2_user_register_with_non_disposable_email(self, mock_check):
+        response = self._run_api_v2_user_register(self.user_data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED, response.content)
+        self.assertTrue(User.objects.filter(email=self.user_data["email"]).exists())
+        self.assertIs(caches["default"].get("disposable_email_domain:test.com"), False)
+
+    @override_settings(ACCOUNT_EMAIL_VERIFICATION="none", DISPOSABLE_EMAIL_CHECK_ENABLED=True)
+    @mock.patch(
+        "cvat.apps.iam.serializers.request_domain_status_via_emaillistverify",
+        side_effect=RetryableRequestDomainStatusApiException("the verification service is down"),
+    )
+    def test_api_v2_user_register_when_disposable_email_check_fails(self, mock_check):
+        response = self._run_api_v2_user_register(self.user_data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED, response.content)
+        self.assertTrue(User.objects.filter(email=self.user_data["email"]).exists())
+        self.assertIsNone(caches["default"].get("disposable_email_domain:test.com"))
 
     # Since URLConf is executed before running the tests, so we have to manually configure the url patterns for
     # the tests and pass it using ROOT_URLCONF in the override settings decorator
