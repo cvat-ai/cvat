@@ -8,7 +8,7 @@ from dataclasses import dataclass
 @dataclass(frozen=True)
 class DecoderInfo:
     library_path: str
-    version: tuple[int, int, int] | None
+    version: tuple[int, int, int]
 
 
 @dataclass(frozen=True)

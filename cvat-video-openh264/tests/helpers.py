@@ -46,10 +46,18 @@ def install_fake_decoder(
     """Replace decoder discovery and construction with an in-process test double."""
 
     state = {"closed": False}
+    fake_library = object()
 
     class FakeDecoder:
-        def __init__(self, decoder_info: DecoderInfo, library: ctypes.CDLL | None = None) -> None:
-            assert decoder_info.library_path == "fake-openh264"
+        def __init__(self, library: ctypes.CDLL) -> None:
+            # The reader must hand the decoder the library it just resolved.
+            assert library is fake_library
+
+        def __enter__(self) -> "FakeDecoder":
+            return self
+
+        def __exit__(self, *_exception_info: object) -> None:
+            self.close()
 
         def decode(self, access_unit: bytes) -> PIL.Image.Image:
             if captured_units is not None:
@@ -66,7 +74,10 @@ def install_fake_decoder(
     monkeypatch.setattr(
         reader,
         "resolve_decoder_and_library",
-        lambda _library_path: (DecoderInfo(library_path="fake-openh264", version=None), None),
+        lambda _library_path: (
+            DecoderInfo(library_path="fake-openh264", version=(1, 6, 0)),
+            fake_library,
+        ),
     )
     monkeypatch.setattr(reader, "OpenH264Decoder", FakeDecoder)
     return state

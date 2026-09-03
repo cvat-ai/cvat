@@ -18,11 +18,11 @@ import ctypes
 import pytest
 
 from cvat_video_openh264 import (
-    DecoderInfo,
     UnsupportedVideoChunkError,
     VideoDecoderUnavailableError,
 )
 from cvat_video_openh264.ctypes_structs import (
+    DecoderHandle,
     DecoderVTable,
     _DecodeFrameNoDelay,
     _InitializeDecoder,
@@ -31,11 +31,9 @@ from cvat_video_openh264.ctypes_structs import (
 )
 from cvat_video_openh264.utils.decoder import OpenH264Decoder
 
-_INFO = DecoderInfo(library_path="fake-openh264", version=(2, 4, 1))
-
 
 class FakeOpenH264Library:
-    """In-process stand-in exposing the two Wels* entry points the adapter binds."""
+    """In-process stand-in exposing the two Wels* entry points ``OpenH264Decoder`` calls."""
 
     def __init__(
         self,
@@ -48,8 +46,9 @@ class FakeOpenH264Library:
     ) -> None:
         self._keepalive: list[object] = []
         self.events = {"init": 0, "uninit": 0, "destroy": 0, "decode": 0}
+        self.decoded: list[bytes] = []
 
-        def _create(pp: ctypes.Array) -> int:
+        def _create(pp: object) -> int:
             if create_result == 0:
                 pp[0] = self._make_decoder_handle(
                     init_result, decode_state, buffer_status, pixel_format
@@ -59,7 +58,7 @@ class FakeOpenH264Library:
         def _destroy(_handle: int | None) -> None:
             self.events["destroy"] += 1
 
-        self.WelsCreateDecoder = ctypes.CFUNCTYPE(ctypes.c_long, ctypes.POINTER(ctypes.c_void_p))(
+        self.WelsCreateDecoder = ctypes.CFUNCTYPE(ctypes.c_long, ctypes.POINTER(DecoderHandle))(
             _create
         )
         self.WelsDestroyDecoder = ctypes.CFUNCTYPE(None, ctypes.c_void_p)(_destroy)
@@ -67,7 +66,7 @@ class FakeOpenH264Library:
 
     def _make_decoder_handle(
         self, init_result: int, decode_state: int, buffer_status: int, pixel_format: int | None
-    ) -> int:
+    ) -> DecoderHandle:
         def _init(_decoder: int | None, _params: object) -> int:
             self.events["init"] += 1
             return init_result
@@ -78,12 +77,13 @@ class FakeOpenH264Library:
 
         def _decode(
             _decoder: int | None,
-            _data: object,
-            _length: int,
+            data: object,
+            length: int,
             _planes: object,
             info: object,
         ) -> int:
             self.events["decode"] += 1
+            self.decoded.append(bytes(data[:length]))
             info.contents.buffer_status = buffer_status
             if pixel_format is not None:
                 info.contents.user_data.system_buffer.format = pixel_format
@@ -106,13 +106,13 @@ class FakeOpenH264Library:
             vtable_ptr,
             handle_slot,
         ]
-        return ctypes.cast(handle_slot, ctypes.c_void_p).value
+        return handle_slot
 
 
 def test_construction_traverses_vtable_and_close_releases_once() -> None:
     library = FakeOpenH264Library()
 
-    decoder = OpenH264Decoder(_INFO, library=library)
+    decoder = OpenH264Decoder(library)
     assert library.events["init"] == 1
 
     decoder.close()
@@ -129,7 +129,7 @@ def test_initialization_failure_destroys_decoder_and_raises() -> None:
     library = FakeOpenH264Library(init_result=1)
 
     with pytest.raises(VideoDecoderUnavailableError, match="initialization failed"):
-        OpenH264Decoder(_INFO, library=library)
+        OpenH264Decoder(library)
 
     # The half-created decoder must be destroyed even though construction failed.
     assert library.events["destroy"] == 1
@@ -139,38 +139,54 @@ def test_creation_failure_raises() -> None:
     library = FakeOpenH264Library(create_result=3)
 
     with pytest.raises(VideoDecoderUnavailableError, match="creation failed"):
-        OpenH264Decoder(_INFO, library=library)
+        OpenH264Decoder(library)
+
+
+def test_leaving_the_context_manager_releases_the_decoder() -> None:
+    library = FakeOpenH264Library()
+
+    with OpenH264Decoder(library) as decoder:
+        assert library.events["init"] == 1
+        assert library.events["destroy"] == 0
+        assert isinstance(decoder, OpenH264Decoder)
+
+    assert library.events["uninit"] == 1
+    assert library.events["destroy"] == 1
+
+
+def test_decode_passes_the_access_unit_through_unchanged() -> None:
+    library = FakeOpenH264Library(decode_state=0, buffer_status=0)
+    access_unit = b"\x00\x00\x00\x01\x67\x42\xc0\x1e"
+
+    with OpenH264Decoder(library) as decoder:
+        with pytest.raises(UnsupportedVideoChunkError, match="produced no picture"):
+            decoder.decode(access_unit)
+
+    # The adapter hands OpenH264 a pointer into the caller's bytes rather than a copy, so
+    # the bytes the codec sees must still match what was passed in.
+    assert library.decoded == [access_unit]
 
 
 def test_decode_rejects_error_state() -> None:
     # 0x02 is an error bit outside the 0x01 frame-pending mask.
     library = FakeOpenH264Library(decode_state=0x02)
-    decoder = OpenH264Decoder(_INFO, library=library)
-    try:
+    with OpenH264Decoder(library) as decoder:
         with pytest.raises(UnsupportedVideoChunkError, match="failed to decode"):
             decoder.decode(b"\x00\x00\x00\x01")
-    finally:
-        decoder.close()
 
 
 def test_decode_rejects_missing_picture() -> None:
     library = FakeOpenH264Library(decode_state=0, buffer_status=0)
-    decoder = OpenH264Decoder(_INFO, library=library)
-    try:
+    with OpenH264Decoder(library) as decoder:
         with pytest.raises(UnsupportedVideoChunkError, match="produced no picture"):
             decoder.decode(b"\x00\x00\x00\x01")
-    finally:
-        decoder.close()
 
 
 def test_decode_rejects_unsupported_pixel_format() -> None:
     library = FakeOpenH264Library(decode_state=1, buffer_status=1, pixel_format=99)
-    decoder = OpenH264Decoder(_INFO, library=library)
-    try:
+    with OpenH264Decoder(library) as decoder:
         with pytest.raises(UnsupportedVideoChunkError, match="unsupported pixel format"):
             decoder.decode(b"\x00\x00\x00\x01")
-    finally:
-        decoder.close()
 
 
 @pytest.mark.parametrize("empty", ["", "   "])

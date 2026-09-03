@@ -74,3 +74,9 @@ class DecoderVTable(ctypes.Structure):
         ("decode_frame", _UnusedDecoderMethod),
         ("decode_frame_no_delay", _DecodeFrameNoDelay),
     ]
+
+
+# An ``ISVCDecoder *`` handle. The object it points at begins with its vtable pointer, so
+# declaring the handle this way lets ``handle.contents.contents`` reach the vtable without
+# casting an opaque ``void *``.
+DecoderHandle = ctypes.POINTER(ctypes.POINTER(DecoderVTable))

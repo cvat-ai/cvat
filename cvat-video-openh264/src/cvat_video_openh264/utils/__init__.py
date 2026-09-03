@@ -8,7 +8,6 @@ from .decoder import (
     OpenH264Decoder,
     load_library,
     resolve_decoder_and_library,
-    unload_library,
 )
 from .i420 import copy_plane, i420_to_rgb
 from .mp4 import (
@@ -36,5 +35,4 @@ __all__ = [
     "parse_sample_sizes",
     "read_video_track_from_stream",
     "resolve_decoder_and_library",
-    "unload_library",
 ]
