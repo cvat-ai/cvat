@@ -71,6 +71,10 @@ context('Manipulations with masks', { scrollBehavior: false }, () => {
         });
     });
 
+    beforeEach(() => {
+        cy.get('.cvat-fit-control').click();
+    });
+
     describe('Tests to make sure that basic features work with masks', () => {
         beforeEach(() => {
             cy.removeAnnotations();
@@ -264,8 +268,6 @@ context('Manipulations with masks', { scrollBehavior: false }, () => {
                     });
                 });
             });
-
-            cy.get('#cvat_canvas_content').dblclick();
         });
 
         it('Underlying pixels are removed on enabling "Remove underlying pixels" tool', () => {
