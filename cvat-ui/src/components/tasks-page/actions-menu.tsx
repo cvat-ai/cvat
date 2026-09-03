@@ -10,7 +10,7 @@ import Modal from 'antd/lib/modal';
 import Dropdown from 'antd/lib/dropdown';
 
 import {
-    RQStatus, Task, User, Organization,
+    RQStatus, Task, User, Organization, DimensionType,
 } from 'cvat-core-wrapper';
 import { useDropdownEditField, usePlugins } from 'utils/hooks';
 
@@ -275,6 +275,7 @@ function TaskActionsComponent(props: Readonly<Props>): JSX.Element {
             onDeleteTask,
             selectedIds,
             isExportDatasetDisabled,
+            isQualityControlDisabled: taskInstance.dimension === DimensionType.DIMENSION_1D,
         }, props);
     }
 
