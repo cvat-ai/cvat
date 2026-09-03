@@ -17,9 +17,8 @@ from rest_framework.authtoken.models import Token
 
 from cvat.apps.engine.tests.test_rest_api import create_db_users
 from cvat.apps.engine.tests.utils import ApiTestBase
-from cvat.apps.iam.exceptions import RetryableRequestDomainStatusApiException
 from cvat.apps.iam.models import User
-from cvat.apps.iam.utils import DisposableEmailResultEnum
+from cvat.apps.iam.utils import IDisposableDomainService
 from cvat.apps.iam.views import ConfirmEmailViewEx
 from cvat.urls import urlpatterns as original_urlpatterns
 
@@ -35,6 +34,11 @@ urlpatterns = original_urlpatterns + [
         name="account_email_verification_sent",
     ),
 ]
+
+
+class MockDisposableDomainService(IDisposableDomainService):
+    def check_domain_is_disposable(self, domain: str) -> bool:
+        raise NotImplementedError
 
 
 class UserRegisterAPITestCase(ApiTestBase):
@@ -103,31 +107,26 @@ class UserRegisterAPITestCase(ApiTestBase):
         )
         self.assertTrue(User.objects.filter(email="test_email@test.com").exists())
 
-    @override_settings(ACCOUNT_EMAIL_VERIFICATION="none", DISPOSABLE_EMAIL_CHECK_ENABLED=True)
-    def test_api_v2_user_register_with_disposable_email(self):
-        for result in [
-            DisposableEmailResultEnum.DISPOSABLE,
-            DisposableEmailResultEnum.DEAD_SERVER,
-            DisposableEmailResultEnum.INVALID_MX,
-        ]:
-            with self.subTest(result=result):
-                caches["default"].delete("disposable_email_domain:test.com")
-                with mock.patch(
-                    "cvat.apps.iam.serializers.request_domain_status_via_emaillistverify",
-                    return_value=result,
-                ) as mock_check:
-                    response = self._run_api_v2_user_register(self.user_data)
-                self.assertEqual(
-                    response.status_code, status.HTTP_400_BAD_REQUEST, response.content
-                )
-                self.assertFalse(User.objects.filter(email=self.user_data["email"]).exists())
-                mock_check.assert_called_once_with("test.com")
-                self.assertIs(caches["default"].get("disposable_email_domain:test.com"), True)
+    @override_settings(
+        ACCOUNT_EMAIL_VERIFICATION="none",
+        DISPOSABLE_EMAIL_CHECK_ENABLED=True,
+        DISPOSABLE_DOMAIN_SERVICE="cvat.apps.iam.tests.test_rest_api.MockDisposableDomainService",
+    )
+    @mock.patch.object(MockDisposableDomainService, "check_domain_is_disposable", return_value=True)
+    def test_api_v2_user_register_with_disposable_email(self, mock_check):
+        response = self._run_api_v2_user_register(self.user_data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST, response.content)
+        self.assertFalse(User.objects.filter(email=self.user_data["email"]).exists())
+        mock_check.assert_called_once_with(domain="test.com")
+        self.assertIs(caches["default"].get("disposable_email_domain:test.com"), True)
 
-    @override_settings(ACCOUNT_EMAIL_VERIFICATION="none", DISPOSABLE_EMAIL_CHECK_ENABLED=True)
-    @mock.patch(
-        "cvat.apps.iam.serializers.request_domain_status_via_emaillistverify",
-        return_value=DisposableEmailResultEnum.OK,
+    @override_settings(
+        ACCOUNT_EMAIL_VERIFICATION="none",
+        DISPOSABLE_EMAIL_CHECK_ENABLED=True,
+        DISPOSABLE_DOMAIN_SERVICE="cvat.apps.iam.tests.test_rest_api.MockDisposableDomainService",
+    )
+    @mock.patch.object(
+        MockDisposableDomainService, "check_domain_is_disposable", return_value=False
     )
     def test_api_v2_user_register_with_non_disposable_email(self, mock_check):
         response = self._run_api_v2_user_register(self.user_data)
@@ -135,10 +134,15 @@ class UserRegisterAPITestCase(ApiTestBase):
         self.assertTrue(User.objects.filter(email=self.user_data["email"]).exists())
         self.assertIs(caches["default"].get("disposable_email_domain:test.com"), False)
 
-    @override_settings(ACCOUNT_EMAIL_VERIFICATION="none", DISPOSABLE_EMAIL_CHECK_ENABLED=True)
-    @mock.patch(
-        "cvat.apps.iam.serializers.request_domain_status_via_emaillistverify",
-        side_effect=RetryableRequestDomainStatusApiException("the verification service is down"),
+    @override_settings(
+        ACCOUNT_EMAIL_VERIFICATION="none",
+        DISPOSABLE_EMAIL_CHECK_ENABLED=True,
+        DISPOSABLE_DOMAIN_SERVICE="cvat.apps.iam.tests.test_rest_api.MockDisposableDomainService",
+    )
+    @mock.patch.object(
+        MockDisposableDomainService,
+        "check_domain_is_disposable",
+        side_effect=RuntimeError("the verification service is down"),
     )
     def test_api_v2_user_register_when_disposable_email_check_fails(self, mock_check):
         response = self._run_api_v2_user_register(self.user_data)

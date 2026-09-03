@@ -19,6 +19,7 @@ from dj_rest_auth.serializers import (
 from django.conf import settings
 from django.core.cache import caches
 from django.core.exceptions import ValidationError as DjangoValidationError
+from django.utils.module_loading import import_string
 from django.utils.translation import gettext_lazy as _
 from drf_spectacular.utils import extend_schema_field, extend_schema_serializer
 from rest_framework import serializers
@@ -31,10 +32,9 @@ from cvat.apps.iam.password_validation import (
     DEFAULT_MIN_PASSWORD_LENGTH,
 )
 from cvat.apps.iam.utils import (
-    DisposableEmailResultEnum,
+    IDisposableDomainService,
     get_dummy_or_regular_user,
     is_signup_email_required,
-    request_domain_status_via_emaillistverify,
 )
 
 logger = logging.getLogger(__name__)
@@ -55,8 +55,13 @@ def check_email_is_disposable(email: str) -> bool:
     if cached_result is not None:
         return cached_result
 
+    service_class: type[IDisposableDomainService] = import_string(
+        settings.DISPOSABLE_DOMAIN_SERVICE
+    )
+    service: IDisposableDomainService = service_class()
+
     try:
-        domain_status = request_domain_status_via_emaillistverify(domain)
+        is_email_disposable = service.check_domain_is_disposable(domain=domain)
     except Exception:
         logger.warning(
             "Disposable email check failed for domain %r, letting the email through",
@@ -64,14 +69,6 @@ def check_email_is_disposable(email: str) -> bool:
             exc_info=True,
         )
         return False
-
-    # NOTE @sosov:
-    # Decision: emails that are not OK, such as:
-    # - DEAD_SERVER
-    # - INVALID_MX
-    # - DISPOSABLE
-    # are considered disposable
-    is_email_disposable = domain_status != DisposableEmailResultEnum.OK
 
     try:
         cache.set(
@@ -91,7 +88,7 @@ def ensure_email_is_not_disposable(email: str) -> None:
 
     is_email_disposable = check_email_is_disposable(email)
 
-    if is_email_disposable is True:
+    if is_email_disposable:
         raise serializers.ValidationError(
             "Disposable email addresses are not allowed. Please use a different email address."
         )

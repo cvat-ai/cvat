@@ -1,6 +1,6 @@
-class RetryableRequestDomainStatusApiException(Exception):
+class RetryableCheckDomainIsDisposableApiException(Exception):
     pass
 
 
-class NonRetryableRequestDomainStatusApiException(Exception):
+class NonRetryableCheckDomainIsDisposableApiException(Exception):
     pass
