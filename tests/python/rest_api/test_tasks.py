@@ -1425,6 +1425,8 @@ class TestPatchTaskLabel:
 class TestWorkWithTask:
     _USERNAME = "admin1"
 
+    # Tests negatively for cloud data corruption, so timeout can be greater
+    @pytest.mark.timeout(25)
     @pytest.mark.with_external_services
     @pytest.mark.parametrize(
         "cloud_storage_id, manifest",
