@@ -263,7 +263,17 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
 }
 
 type Props = StateToProps & DispatchToProps & RouteComponentProps;
-class AnnotationTopBarContainer extends React.PureComponent<Props> {
+interface State {
+    maskUndoAvailable: boolean;
+    maskRedoAvailable: boolean;
+}
+
+class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
+    public state: State = {
+        maskUndoAvailable: false,
+        maskRedoAvailable: false,
+    };
+
     private inputFrameRef: React.RefObject<HTMLInputElement>;
     private autoSaveInterval: number | undefined;
     private isWaitingForPlayDelay: boolean;
@@ -275,9 +285,19 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
         this.inputFrameRef = React.createRef<HTMLInputElement>();
     }
 
+    private onCanvasHistoryChanged = (event: Event): void => {
+        const { undoAvailable, redoAvailable } = (
+            event as CustomEvent<{ undoAvailable: boolean; redoAvailable: boolean }>
+        ).detail;
+        this.setState({
+            maskUndoAvailable: undoAvailable,
+            maskRedoAvailable: redoAvailable,
+        });
+    };
+
     public componentDidMount(): void {
         const {
-            autoSaveInterval, history, jobInstance, setForceExitAnnotationFlag,
+            autoSaveInterval, history, jobInstance, setForceExitAnnotationFlag, canvasInstance,
         } = this.props;
         this.autoSaveInterval = window.setInterval(this.autoSave.bind(this), autoSaveInterval);
 
@@ -304,6 +324,9 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
         });
 
         window.addEventListener('beforeunload', this.beforeUnloadCallback);
+        if (canvasInstance instanceof Canvas) {
+            canvasInstance.html().addEventListener('canvas.historychanged', this.onCanvasHistoryChanged);
+        }
     }
 
     public componentDidUpdate(prevProps: Props): void {
@@ -317,8 +340,12 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
     }
 
     public componentWillUnmount(): void {
+        const { canvasInstance } = this.props;
         window.clearInterval(this.autoSaveInterval);
         window.removeEventListener('beforeunload', this.beforeUnloadCallback);
+        if (canvasInstance instanceof Canvas) {
+            canvasInstance.html().removeEventListener('canvas.historychanged', this.onCanvasHistoryChanged);
+        }
         this.unblock();
     }
 
@@ -740,7 +767,14 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
             switchShowSearchPallet,
             showSearchFrameByName,
         } = this.props;
+        const { maskUndoAvailable, maskRedoAvailable } = this.state;
         const maskDrawing = activeControl === ActiveControl.DRAW_MASK;
+        let availableUndoAction = undoAction;
+        let availableRedoAction = redoAction;
+        if (maskDrawing) {
+            availableUndoAction = maskUndoAvailable ? 'mask stroke' : undefined;
+            availableRedoAction = maskRedoAvailable ? 'mask stroke' : undefined;
+        }
 
         return (
             <AnnotationTopBarComponent
@@ -781,8 +815,8 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
                 frameFilename={frameFilename}
                 frameDeleted={frameIsDeleted}
                 inputFrameRef={this.inputFrameRef}
-                undoAction={undoAction || (maskDrawing ? 'mask drawing' : undefined)}
-                redoAction={redoAction || (maskDrawing ? 'mask drawing' : undefined)}
+                undoAction={availableUndoAction}
+                redoAction={availableRedoAction}
                 undoShortcut={normalizedKeyMap.UNDO}
                 redoShortcut={normalizedKeyMap.REDO}
                 drawShortcut={normalizedKeyMap.SWITCH_DRAW_MODE_STANDARD_CONTROLS}
