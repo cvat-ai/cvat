@@ -190,6 +190,22 @@ context('Manipulations with masks', { scrollBehavior: false }, () => {
             cy.finishMaskDrawing();
         });
 
+        it('Restores a mask after canceling redraw', () => {
+            cy.startMaskDrawing();
+            cy.drawMask(drawingActions);
+            cy.finishMaskDrawing();
+            cy.get('.cvat-canvas-container').trigger('mousemove', 450, 300);
+            cy.get('#cvat_canvas_shape_1').should('have.class', 'cvat_canvas_shape_activated');
+
+            cy.get('body').trigger('keydown', { keyCode: 78, code: 'KeyN', shiftKey: true });
+            cy.get('.cvat-brush-tools-toolbox').should('exist').and('be.visible');
+            cy.get('body').type('{esc}');
+
+            cy.get('#cvat_canvas_shape_1')
+                .should('be.visible')
+                .and('not.have.class', 'cvat_canvas_hidden');
+        });
+
         it('Moving a mask completely outside the image is canceled', () => {
             cy.startMaskDrawing();
             cy.drawMask(drawingActions);
