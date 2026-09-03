@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-from enum import Enum, StrEnum
+from enum import Enum
 
 
 class SourceDataType(Enum):
