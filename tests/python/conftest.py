@@ -101,7 +101,7 @@ def pytest_configure(config):
     def timestamped_locationline(nodeid, *args, **kwargs):
         timestamp = started_at.setdefault(
             nodeid,
-            datetime.now(timezone.utc).strftime("%Y-%d-%mT%H:%M:%SZ"),
+            datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         )
         return f"[{timestamp}] {original_locationline(nodeid, *args, **kwargs)}"
 
