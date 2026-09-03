@@ -11,21 +11,21 @@
 
 .cvat-audio-regions-list-header {
     flex: 0 0 auto;
-    padding: 8px 12px;
+    padding: $grid-unit-size $grid-unit-size * 1.5;
     border-bottom: 1px solid #e5e7eb;
     background-color: #bebebe;
 
     .cvat-audio-regions-list-header-actions {
         display: flex;
         align-items: center;
-        gap: 12px;
+        gap: $grid-unit-size * 1.5;
     }
 
     .cvat-audio-regions-list-ordering {
-        margin-top: 6px;
+        margin-top: $grid-unit-size * 0.75;
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: $grid-unit-size;
         flex-wrap: nowrap;
 
         .cvat-audio-regions-list-ordering-selector {
@@ -34,7 +34,7 @@
     }
 
     .anticon {
-        font-size: 16px;
+        font-size: $grid-unit-size * 2;
         color: #595959;
         cursor: pointer;
 
@@ -53,15 +53,11 @@
 }
 
 .cvat-audio-regions-list-empty {
-    padding: 24px 12px;
+    padding: $grid-unit-size * 3 $grid-unit-size * 1.5;
 }
 
 .cvat-audio-region-item {
-    display: flex;
-    align-items: flex-start;
-    box-sizing: border-box;
     width: 100%;
-    gap: $grid-unit-size;
     padding: $grid-unit-size * 0.75;
     background-color: rgba(var(--region-item-color), 0.53);
     border: 2px solid rgba(0, 0, 0, 8%);
@@ -83,7 +79,8 @@
         margin-bottom: $grid-unit-size * 0.5;
     }
 
-    &:hover {
+    &:hover,
+    &.cvat-audio-region-item-hovered {
         border-color: rgba(0, 0, 0, 42%);
         box-shadow: 0 2px 8px rgba(0, 0, 0, 12%);
     }
@@ -93,111 +90,5 @@
         box-shadow: 0 3px 10px rgba(0, 0, 0, 14%);
     }
 
-    .cvat-audio-region-item-actions {
-        display: flex;
-        align-items: center;
-        gap: $grid-unit-size * 0.5;
-        margin-left: auto;
-        flex-shrink: 0;
-    }
-
-    .cvat-audio-region-item-action-btn {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        width: $grid-unit-size * 2.75;
-        height: $grid-unit-size * 2.75;
-        border: 1px solid transparent;
-        border-radius: $border-radius-base;
-        color: rgba(0, 0, 0, 62%);
-        font-size: 15px;
-        line-height: $grid-unit-size * 2.75;
-        cursor: pointer;
-        transition:
-            background-color $box-shadow-transition,
-            color $box-shadow-transition,
-            opacity $box-shadow-transition;
-
-        &:hover {
-            background-color: rgba(0, 0, 0, 8%);
-            opacity: 0.82;
-        }
-
-        &.cvat-audio-region-item-action-btn-disabled {
-            color: rgba(0, 0, 0, 25%);
-            cursor: not-allowed;
-            opacity: 0.5;
-
-            &:hover {
-                background-color: transparent;
-                opacity: 0.5;
-            }
-        }
-    }
-
-    .cvat-audio-region-item-index {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        flex: 0 0 auto;
-        min-width: $grid-unit-size * 3;
-        max-width: $grid-unit-size * 6;
-        height: $grid-unit-size * 2.5;
-        padding: 0 $grid-unit-size * 0.5;
-        border-radius: $border-radius-base;
-        background: rgba(255, 255, 255, 72%);
-        color: $text-color;
-        font-size: 11px;
-        font-weight: 600;
-        line-height: $grid-unit-size * 2.5;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-    }
-
-    .cvat-audio-region-item-info {
-        flex: 1;
-        min-width: 0;
-        display: flex;
-        flex-direction: column;
-        gap: $grid-unit-size * 0.25;
-    }
-
-    .cvat-audio-region-item-label {
-        color: $text-color;
-        font-size: 12px;
-        font-weight: 500;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-
-        &--none {
-            color: #ef4444;
-            font-style: italic;
-        }
-    }
-
-    .cvat-audio-region-item-time {
-        display: flex;
-        align-items: center;
-        max-width: 100%;
-        gap: $grid-unit-size * 0.5;
-        color: $text-color;
-        font-size: 11px;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-    }
-
-    .cvat-audio-region-item-separator {
-        color: $text-color;
-    }
-
-    .cvat-audio-region-item-duration {
-        color: $text-color-secondary;
-        font-size: 10px;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-    }
+    .cvat-audio-interval-header-time { padding-left: $grid-unit-size * 3.25; }
 }

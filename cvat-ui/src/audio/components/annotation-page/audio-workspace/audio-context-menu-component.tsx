@@ -23,6 +23,7 @@ interface Props {
     onCopyInterval(): void;
     onDeleteInterval(): void;
     onChangeIntervalColor(color: string): void;
+    onFitInterval(): void;
 }
 
 export default function AudioContextMenuComponent(props: Props): JSX.Element {
@@ -36,6 +37,7 @@ export default function AudioContextMenuComponent(props: Props): JSX.Element {
         onCopyInterval,
         onDeleteInterval,
         onChangeIntervalColor,
+        onFitInterval,
     } = props;
 
     const menuRef = useRef<HTMLDivElement>(null);
@@ -117,6 +119,7 @@ export default function AudioContextMenuComponent(props: Props): JSX.Element {
         onCopy: () => runAndClose(onCopyInterval),
         onRemove: () => runAndClose(onDeleteInterval),
         onChangeColorClick: () => setColorPickerVisible(true),
+        onFitInterval: () => runAndClose(onFitInterval),
     });
 
     return ReactDOM.createPortal(

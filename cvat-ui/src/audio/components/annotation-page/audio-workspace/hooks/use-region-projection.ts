@@ -15,7 +15,10 @@ import {
     clientIDFromWaveRegionId, intervalEndSeconds, intervalStartSeconds,
 } from '../utils/audio-interval';
 import type { AudioTimeRange } from '../utils/audio-interval';
+import { addPart, removePart } from '../utils/shadow-dom';
 import { WaveformRegionRuntime } from './use-audio-waveform';
+
+const HIDDEN_REGION_RESIZE_HANDLES_PART = 'cvat-audio-region-resize-handles-hidden';
 
 interface Params {
     regionRuntime: WaveformRegionRuntime;
@@ -145,19 +148,44 @@ export function useRegionProjection({ regionRuntime, ready }: Params): RegionHig
             const isInteracting = clientID === interactingIntervalID;
             const isHovered = interactingIntervalID === null && clientID === hoveredIntervalID;
             const isHighlighted = isActive || isInteracting || isHovered || highlightedRegionIDs.has(clientID);
-            const canEdit = activeControl === ActiveControl.CURSOR && !interval.lock && !interval.pinned;
+            const canDrag = activeControl === ActiveControl.CURSOR && !interval.lock && !interval.pinned;
+            const canResize = activeControl === ActiveControl.CURSOR && !interval.lock;
             region.setOptions({
                 color: getAudioRegionColor(interval, labels, colorBy, opacity, selectedOpacity, isActive),
-                drag: canEdit,
-                resize: canEdit && isHighlighted,
+                drag: canDrag,
+                // Keep handles mounted for every editable region so their pointer targets
+                // take precedence over dragging as soon as the pointer reaches a boundary.
+                resize: canResize,
             });
 
             const { element } = region;
             if (!element) return;
 
+            // Hidden handles remain interactive, giving unselected intervals an immediate
+            // resize cursor at their boundaries without showing the handles until hover.
+            element.querySelectorAll<HTMLElement>('[part*="region-handle"]').forEach((handle) => {
+                if (isHighlighted) {
+                    removePart(handle, HIDDEN_REGION_RESIZE_HANDLES_PART);
+                } else {
+                    addPart(handle, HIDDEN_REGION_RESIZE_HANDLES_PART);
+                }
+            });
+
             const selectionDisabled = activeControl === ActiveControl.AUDIO_REGION_CREATE ||
                 activeControl === ActiveControl.AUDIO_REGION_RECORD;
             element.style.pointerEvents = selectionDisabled ? 'none' : 'all';
+            // Regions are appended in their creation order, so a newer overlapping region would otherwise
+            // intercept events intended for the semantically selected one. Keep the semantic target above
+            // the rest; a hovered target must take precedence over an active target that is elsewhere.
+            let zIndex = 0;
+            if (isActive) {
+                zIndex = 1;
+            } else if (isHovered) {
+                zIndex = 2;
+            } else if (isInteracting) {
+                zIndex = 3;
+            }
+            element.style.zIndex = String(zIndex);
             const borderColor = getRegionItemColor(interval, labels, colorBy);
             // A border changes the region's padding box. WaveSurfer anchors resize handles
             // to that box, which shifts their hit areas inward from the displayed boundaries.

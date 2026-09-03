@@ -29,6 +29,16 @@ export interface AudioState {
         zoom: number;
         volume: number;
         loop: boolean;
+        playbackRange: {
+            id: object;
+            start: number;
+            end: number;
+        } | null;
+        playbackRangeSource: {
+            rangeID: object;
+            intervalID: number;
+        } | null;
+        fitIntervalRequest: { clientID: number } | null;
         intervals: AudioIntervalState[];
         activeIntervalID: number | null;
         hoveredIntervalID: number | null;
@@ -45,7 +55,6 @@ export interface AudioState {
         activeLabelId: number | null;
         audioLoadRequest: object | null;
         seekRequest: { time: number } | null;
-        playIntervalOnceRequest: { intervalID: number } | null;
     };
 }
 
