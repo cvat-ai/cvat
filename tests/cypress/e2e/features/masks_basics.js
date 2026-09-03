@@ -190,6 +190,36 @@ context('Manipulations with masks', { scrollBehavior: false }, () => {
             cy.finishMaskDrawing();
         });
 
+        it('Moving a mask completely outside the image is canceled', () => {
+            cy.startMaskDrawing();
+            cy.drawMask(drawingActions);
+            cy.finishMaskDrawing();
+
+            cy.get('#cvat_canvas_shape_1').then(([$mask]) => {
+                const initialBox = $mask.getBoundingClientRect();
+                const centerX = initialBox.x + initialBox.width / 2;
+                const centerY = initialBox.y + initialBox.height / 2;
+                const targetX = -initialBox.width;
+                const targetY = -initialBox.height;
+
+                cy.get('#cvat_canvas_shape_1').trigger('mousemove');
+                cy.get('#cvat_canvas_shape_1').trigger('mouseover');
+                cy.get('#cvat_canvas_shape_1').should('have.class', 'cvat_canvas_shape_activated');
+                cy.get('#cvat_canvas_shape_1')
+                    .trigger('mousedown', { clientX: centerX, clientY: centerY, button: 0 });
+                cy.get('body').trigger('mousemove', { clientX: targetX, clientY: targetY });
+                cy.get('body').trigger('mouseup', { clientX: targetX, clientY: targetY });
+
+                cy.get('#cvat_canvas_shape_1').should(($updatedMask) => {
+                    const updatedBox = $updatedMask[0].getBoundingClientRect();
+                    expect(updatedBox.x).to.be.closeTo(initialBox.x, 1);
+                    expect(updatedBox.y).to.be.closeTo(initialBox.y, 1);
+                    expect(updatedBox.width).to.be.closeTo(initialBox.width, 1);
+                    expect(updatedBox.height).to.be.closeTo(initialBox.height, 1);
+                });
+            });
+        });
+
         it('Underlying pixels are removed on enabling "Remove underlying pixels" tool', () => {
             const mask1 = [{
                 method: 'brush',
