@@ -40,7 +40,7 @@ json-stream>=2.5.1,<3
 # archives. Don't use as a python module because it has GPL license.
 patool~=4.0
 
-pdf2image==1.14.0
+pdf2image==1.17.0
 Pillow>=12.3.0
 pottery~=3.0
 psutil==7.2.2
