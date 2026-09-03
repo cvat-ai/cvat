@@ -662,7 +662,7 @@ context('Manipulations with masks', { scrollBehavior: false }, () => {
                 coordinates: [[450, 250], [600, 400], [450, 550], [300, 400]],
             }, {
                 method: 'polygon-minus',
-                coordinates: [[100, 100], [700, 100], [700, 700], [100, 700]],
+                coordinates: [[50, 50], [750, 50], [750, 650], [50, 650]],
             }];
 
             cy.startMaskDrawing();
