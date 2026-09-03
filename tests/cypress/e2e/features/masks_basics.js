@@ -195,6 +195,14 @@ context('Manipulations with masks', { scrollBehavior: false }, () => {
             cy.drawMask(drawingActions);
             cy.finishMaskDrawing();
 
+            cy.get('#cvat-objects-sidebar-state-item-1').within(() => {
+                cy.get('.cvat-object-item-button-pinned-enabled').click();
+            });
+            cy.get('#cvat-objects-sidebar-state-item-1').trigger('mouseenter');
+            cy.get('#cvat_canvas_shape_1')
+                .should('have.class', 'cvat_canvas_shape_activated')
+                .and('have.class', 'cvat_canvas_shape_draggable');
+
             cy.get('#cvat_canvas_shape_1').then(([$mask]) => {
                 const initialBox = $mask.getBoundingClientRect();
                 const centerX = initialBox.x + initialBox.width / 2;
@@ -202,9 +210,6 @@ context('Manipulations with masks', { scrollBehavior: false }, () => {
                 const targetX = -initialBox.width;
                 const targetY = -initialBox.height;
 
-                cy.get('#cvat_canvas_shape_1').trigger('mousemove');
-                cy.get('#cvat_canvas_shape_1').trigger('mouseover');
-                cy.get('#cvat_canvas_shape_1').should('have.class', 'cvat_canvas_shape_activated');
                 cy.get('#cvat_canvas_shape_1')
                     .trigger('mousedown', { clientX: centerX, clientY: centerY, button: 0 });
                 cy.get('body').trigger('mousemove', { clientX: targetX, clientY: targetY });
