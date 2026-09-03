@@ -103,6 +103,6 @@ def pytest_configure(config):
             nodeid,
             datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         )
-        return f"[{timestamp}] {original_locationline(nodeid, *args, **kwargs)}"
+        return f"{timestamp} —– {original_locationline(nodeid, *args, **kwargs)}"
 
     reporter._locationline = timestamped_locationline
