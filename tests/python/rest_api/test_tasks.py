@@ -23,6 +23,7 @@ from pathlib import Path, PurePosixPath
 from tempfile import NamedTemporaryFile, TemporaryDirectory
 from time import sleep, time
 from typing import Any
+from shared.fixtures.params import DYNAMIC_CACHE
 
 import numpy as np
 import pytest
@@ -649,7 +650,7 @@ class TestPatchTaskAnnotations:
 
         return get_data
 
-    @pytest.mark.parametrize("org", [""])
+    @pytest.mark.parametrize("org", ["''"])
     @pytest.mark.parametrize(
         "privilege, task_staff, is_allow",
         [
@@ -1429,8 +1430,9 @@ class TestWorkWithTask:
         "cloud_storage_id, manifest",
         [(1, "images_with_manifest/manifest.jsonl")],  # public bucket
     )
+    @pytest.mark.parametrize("use_cache", DYNAMIC_CACHE)
     def test_work_with_task_containing_non_stable_cloud_storage_files(
-        self, cloud_storage_id, manifest, cloud_storages, request
+        self, cloud_storage_id, manifest, use_cache, cloud_storages, request
     ):
         image_name = "images_with_manifest/image_case_65_1.png"
         cloud_storage_content = [image_name, manifest]
@@ -1441,7 +1443,7 @@ class TestWorkWithTask:
 
         data_spec = {
             "image_quality": 75,
-            "use_cache": True,
+            "use_cache": use_cache,
             "cloud_storage_id": cloud_storage_id,
             "server_files": cloud_storage_content,
         }
@@ -1725,11 +1727,12 @@ class TestTaskBackups:
         self._test_can_restore_task_from_backup(task.id, backup_file=backup_path)
 
     @pytest.mark.with_external_services
-    def test_can_export_and_import_backup_with_images_in_backing_cs(self, request, cloud_storages):
+    @pytest.mark.parametrize("use_cache", DYNAMIC_CACHE)
+    def test_can_export_and_import_backup_with_images_in_backing_cs(self, request, cloud_storages, use_cache):
         task = self.client.tasks.create_from_data(
             models.TaskWriteRequest(name="Canvas3D"),
             [SHARE_DIR / "test_canvas3d.zip"],
-            data_params={"use_cache": True},
+            data_params={"use_cache": use_cache},
         )
 
         self._test_can_export_and_import_backup_with_backing_cs(
@@ -3052,8 +3055,9 @@ class TestPatchTask:
         ],
     )
     @pytest.mark.parametrize("field", ["source_storage", "target_storage"])
+    @pytest.mark.parametrize("use_cache", DYNAMIC_CACHE)
     def test_user_cannot_update_task_with_cloud_storage_without_access(
-        self, storage_id, field, regular_lonely_user
+        self, storage_id, field, use_cache, regular_lonely_user
     ):
         user = regular_lonely_user
 
@@ -3062,7 +3066,7 @@ class TestPatchTask:
         }
         data_spec = {
             "image_quality": 75,
-            "use_cache": True,
+            "use_cache": use_cache,
             "server_files": ["images/image_1.jpg"],
         }
         task_id, _ = create_task(user, task_spec, data_spec)
@@ -3275,10 +3279,12 @@ class TestPatchTask:
             (False, True),
         ],
     )
+    @pytest.mark.parametrize("use_cache", DYNAMIC_CACHE)
     def test_task_can_be_transferred_to_different_workspace(
         self,
         from_org: bool,
         to_org: bool,
+        use_cache: bool,
         organizations,
         find_users,
     ):
@@ -3320,7 +3326,7 @@ class TestPatchTask:
         }
         data_spec = {
             "image_quality": 75,
-            "use_cache": True,
+            "use_cache": use_cache,
             "server_files": ["images/image_1.jpg"],
         }
         task_id, _ = create_task(

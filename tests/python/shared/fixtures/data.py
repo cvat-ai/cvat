@@ -12,7 +12,7 @@ from pathlib import Path
 import pytest
 
 from shared.utils.config import ASSETS_DIR, SHARE_DIR
-from shared.tasks.enums import CacheMode
+from shared.fixtures.params import DYNAMIC_CACHE, STATIC_CACHE
 
 
 class Container:
@@ -38,6 +38,7 @@ class Container:
         if isinstance(key, slice):
             return self.raw_data[key]
         return self.map_data[key]
+
 
 
 @pytest.fixture(scope="session")
@@ -629,22 +630,12 @@ def fxt_local_audio_file_path() -> Generator[Path, None, None]:
     yield SHARE_DIR / "audio" / "sample1.mp3"
 
 
-
-def _cache_param(mode: CacheMode):
-    '''
-        For explicit test-level use with @pytest.mark.parametrize
-        ex: @pytest.mark.parametrize("use_cache", CACHE_ON)
-    '''
-    return pytest.param(mode.use_cache, id=mode.value, marks=getattr(pytest.mark, mode.value))
-
-DYNAMIC_CACHE = [_cache_param(CacheMode.DYNAMIC)]
-STATIC_CACHE = [_cache_param(CacheMode.STATIC)]
-
 @pytest.fixture(
         scope="session",
         autouse=False,
-        params=DYNAMIC_CACHE + STATIC_CACHE,
+        params=DYNAMIC_CACHE + STATIC_CACHE
 )
 def fxt_use_cache(request: pytest.FixtureRequest) -> bool:
     '''Parametrize by both cache values'''
     return request.param
+

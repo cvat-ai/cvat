@@ -19,6 +19,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Any
 
+import allure
 import numpy as np
 import pytest
 from attrs.converters import to_bool
@@ -32,7 +33,7 @@ from pytest_cases import fixture, fixture_ref, parametrize
 import shared.utils.s3 as s3
 from rest_api._test_base import TestTasksBase
 from rest_api.utils import create_task, get_cloud_storage_content, wait_until_task_is_created
-from shared.fixtures.data import CACHE_ON, CACHE_OFF
+from shared.fixtures.data import STATIC_CACHE, DYNAMIC_CACHE
 from shared.tasks.enums import SourceDataType
 from shared.tasks.interface import ITaskSpec
 from shared.tasks.types import ImagesTaskSpec
@@ -149,7 +150,8 @@ class TestPostTaskData:
 
             assert [(j.start_frame, j.stop_frame) for j in jobs] == expected_segments
 
-    def test_can_create_task_with_exif_rotated_images(self):
+    @pytest.mark.parametrize("use_cache", DYNAMIC_CACHE)
+    def test_can_create_task_with_exif_rotated_images(self, use_cache: bool):
         task_spec = {
             "name": f"test {self._USERNAME} to create a task with exif rotated images",
         }
@@ -159,7 +161,7 @@ class TestPostTaskData:
             "server_files": image_files,
             "image_quality": 70,
             "segment_size": 500,
-            "use_cache": True,
+            "use_cache": use_cache,
             "sorting_method": "natural",
         }
 
@@ -182,6 +184,7 @@ class TestPostTaskData:
                             assert im.height == 640 and im.width == 480
                             assert im.getexif().get(274, 1) == 1
 
+    @allure.issue('https://github.com/cvat-ai/cvat/issues/6878', 'Image upload inconsistent between SDK and web')
     def test_can_create_task_with_big_images(self, fxt_use_cache):
         # Checks for regressions about the issue
         # https://github.com/cvat-ai/cvat/issues/6878
@@ -490,14 +493,14 @@ class TestPostTaskData:
     @pytest.mark.parametrize(
         "use_cache, cloud_storage_id, manifest, use_bucket_content",
         [
-            (True, 1, "images_with_manifest/manifest.jsonl", False),  # public bucket
-            (True, 2, "sub/images_with_manifest/manifest.jsonl", True),  # private bucket
-            (False, 1, "images_with_manifest/manifest.jsonl", False),  # public bucket
-            (False, 2, "sub/images_with_manifest/manifest.jsonl", True),  # private bucket
-            (True, 1, None, False),
-            (True, 2, None, True),
-            (False, 1, None, False),
-            (False, 2, None, True),
+            (DYNAMIC_CACHE, 1, "images_with_manifest/manifest.jsonl", False),  # public bucket
+            (DYNAMIC_CACHE, 2, "sub/images_with_manifest/manifest.jsonl", True),  # private bucket
+            (STATIC_CACHE, 1, "images_with_manifest/manifest.jsonl", False),  # public bucket
+            (STATIC_CACHE, 2, "sub/images_with_manifest/manifest.jsonl", True),  # private bucket
+            (DYNAMIC_CACHE, 1, None, False),
+            (DYNAMIC_CACHE, 2, None, True),
+            (STATIC_CACHE, 1, None, False),
+            (STATIC_CACHE, 2, None, True),
         ],
     )
     def test_create_task_with_cloud_storage_files(
@@ -549,7 +552,7 @@ class TestPostTaskData:
 
     @pytest.mark.with_external_services
     @pytest.mark.timeout(60)
-    @pytest.mark.parametrize("use_cache", CACHE_OFF)
+    @pytest.mark.parametrize("use_cache", STATIC_CACHE)
     def test_cannot_create_task_with_cloud_storage_without_cache_when_server_file_is_missing(
         self, cloud_storages, use_cache
     ):
@@ -571,7 +574,7 @@ class TestPostTaskData:
         assert f"The file '{missing_key}' not found" in message, message
 
     @pytest.mark.with_external_services
-    @pytest.mark.parametrize("use_cache", CACHE_ON)
+    @pytest.mark.parametrize("use_cache", DYNAMIC_CACHE)
     @pytest.mark.timeout(60)
     def test_can_create_task_with_cloud_storage_and_manifest_when_manifest_references_missing_file(
         self, request, cloud_storages, use_cache
@@ -617,7 +620,7 @@ class TestPostTaskData:
         assert task.size == 2, task.size
 
     @pytest.mark.with_external_services
-    @pytest.mark.parametrize("use_cache", CACHE_ON)
+    @pytest.mark.parametrize("use_cache", DYNAMIC_CACHE)
     @pytest.mark.timeout(60)
     def test_cannot_create_task_with_cloud_storage_without_manifest_when_server_file_is_missing(
         self, cloud_storages, use_cache
@@ -743,15 +746,15 @@ class TestPostTaskData:
     @pytest.mark.parametrize(
         "use_cache, use_manifest, server_files, server_files_exclude, task_size",
         [
-            (True, False, ["test/"], None, 6),
-            (True, False, ["test/sub_0/", "test/sub_1/"], None, 6),
-            (True, False, ["test/"], ["test/sub_0/", "test/sub_1/img_1.jpeg"], 2),
-            (True, True, ["test/"], None, 6),
-            (True, True, ["test/sub_0/", "test/sub_1/"], None, 6),
-            (True, True, ["test/"], ["test/sub_0/", "test/sub_1/img_1.jpeg"], 2),
-            (False, False, ["test/"], None, 6),
-            (False, False, ["test/sub_0/", "test/sub_1/"], None, 6),
-            (False, False, ["test/"], ["test/sub_0/", "test/sub_1/img_1.jpeg"], 2),
+            (DYNAMIC_CACHE, False, ["test/"], None, 6),
+            (DYNAMIC_CACHE, False, ["test/sub_0/", "test/sub_1/"], None, 6),
+            (DYNAMIC_CACHE, False, ["test/"], ["test/sub_0/", "test/sub_1/img_1.jpeg"], 2),
+            (DYNAMIC_CACHE, True, ["test/"], None, 6),
+            (DYNAMIC_CACHE, True, ["test/sub_0/", "test/sub_1/"], None, 6),
+            (DYNAMIC_CACHE, True, ["test/"], ["test/sub_0/", "test/sub_1/img_1.jpeg"], 2),
+            (STATIC_CACHE, False, ["test/"], None, 6),
+            (STATIC_CACHE, False, ["test/sub_0/", "test/sub_1/"], None, 6),
+            (STATIC_CACHE, False, ["test/"], ["test/sub_0/", "test/sub_1/img_1.jpeg"], 2),
         ],
     )
     @pytest.mark.parametrize("org", [""])
@@ -842,8 +845,9 @@ class TestPostTaskData:
             ("data", "cloud_storage_id"),
         ],
     )
+    @pytest.mark.parametrize("use_cache", DYNAMIC_CACHE)
     def test_user_cannot_create_task_with_cloud_storage_without_access(
-        self, storage_id, spec, field, manifest, regular_lonely_user
+        self, storage_id, spec, field, manifest, regular_lonely_user, use_cache
     ):
         user = regular_lonely_user
 
@@ -853,7 +857,7 @@ class TestPostTaskData:
 
         data_spec = {
             "image_quality": 75,
-            "use_cache": True,
+            "use_cache": use_cache,
         }
 
         if spec == "spec":
@@ -906,6 +910,7 @@ class TestPostTaskData:
             (None, "[e-z]*.jpeg", False, 0, "No media data found"),
         ],
     )
+    @pytest.mark.parametrize("use_cache", DYNAMIC_CACHE)
     def test_create_task_with_file_pattern(
         self,
         cloud_storage_id,
@@ -916,6 +921,7 @@ class TestPostTaskData:
         expected_error,
         cloud_storages,
         request,
+        use_cache,
     ):
         # prepare dataset on the bucket
         prefixes = ("test_image_",) * 3 if sub_dir else ("a_", "b_", "d_")
@@ -966,7 +972,7 @@ class TestPostTaskData:
 
         data_spec = {
             "image_quality": 75,
-            "use_cache": True,
+            "use_cache": use_cache,
             "cloud_storage_id": cloud_storage_id,
             "filename_pattern": filename_pattern,
         }
@@ -998,11 +1004,13 @@ class TestPostTaskData:
             (["videos/manifest.jsonl"], None),
         ],
     )
+    @pytest.mark.parametrize("use_cache", DYNAMIC_CACHE)
     def test_create_task_with_video_and_manifest_in_cloud_storage_directory(
         self,
         cloud_storage_id: int,
         server_files: list[str],
         filename_pattern: str | None,
+        use_cache: bool,
     ):
         # videos/manifest.jsonl is a video manifest describing videos/video_1.mp4;
         # it must not be parsed as an image manifest when the directory or the
@@ -1016,7 +1024,7 @@ class TestPostTaskData:
 
         data_spec = {
             "image_quality": 75,
-            "use_cache": True,
+            "use_cache": use_cache,
             "cloud_storage_id": cloud_storage_id,
             "server_files": server_files,
         }
@@ -1033,7 +1041,6 @@ class TestPostTaskData:
 
     @pytest.mark.with_external_services
     @pytest.mark.parametrize("use_manifest", [True, False])
-    @pytest.mark.parametrize("use_cache", [True, False])
     @pytest.mark.parametrize(
         "sorting_method", ["natural", "predefined", "lexicographical", "random"]
     )
@@ -1045,8 +1052,8 @@ class TestPostTaskData:
     )
     def test_create_task_with_cloud_storage_and_retrieve_data(
         self,
+        fxt_use_cache: bool,
         use_manifest: bool,
-        use_cache: bool,
         sorting_method: str,
         cloud_storage_id: int,
         org: str,
@@ -1059,7 +1066,7 @@ class TestPostTaskData:
             cloud_storage=cloud_storage,
             # manifest file should not be uploaded if random sorting is used or if cache is not used
             use_manifest=use_manifest and use_cache and (sorting_method != "random"),
-            use_cache=use_cache,
+            use_cache=fxt_use_cache,
             server_files=[f"test/sub_{i}/img_{j}.jpeg" for i in range(2) for j in range(3)],
             org=org,
             sorting_method=sorting_method,
@@ -1086,6 +1093,7 @@ class TestPostTaskData:
             (1, ""),
         ],
     )
+    @pytest.mark.parametrize("use_cache", DYNAMIC_CACHE)
     def test_create_task_with_cloud_storage_and_check_data_sorting(
         self,
         filenames: list[str],
@@ -1094,6 +1102,7 @@ class TestPostTaskData:
         org: str,
         cloud_storages,
         request,
+        use_cache: bool,
     ):
         cloud_storage = cloud_storages[cloud_storage_id]
 
@@ -1101,7 +1110,7 @@ class TestPostTaskData:
             request=request,
             cloud_storage=cloud_storage,
             use_manifest=False,
-            use_cache=True,
+            use_cache=use_cache,
             server_files=["test/sub_0/" + f for f in filenames],
             org=org,
             sorting_method=sorting_method,
@@ -2025,6 +2034,7 @@ class TestTaskData(TestTasksBase):
                 f"got job chunk counts {sorted(chunk_counts)}"
             )
 
+    @allure.issue("https://github.com/cvat-ai/cvat/issues/11006", 'Persistent HTTP 429 on honeypot updates')
     def _image_task_with_honeypots_and_mixed_job_chunk_counts_base(
         self, request: pytest.FixtureRequest, **kwargs
     ) -> tuple[ITaskSpec, int]:
@@ -2041,22 +2051,7 @@ class TestTaskData(TestTasksBase):
         return task_spec, task_id
 
     @fixture(scope="class")
-    @parametrize(
-        "static_cache_enabled",
-        [
-            pytest.param(
-                to_bool(os.getenv("CVAT_ALLOW_STATIC_CACHE", False)),
-                marks=[
-                    pytest.mark.skipif(
-                        not to_bool(os.getenv("CVAT_ALLOW_STATIC_CACHE", False)),
-                        reason="This test covers only the static cache."
-                        "Check test_all_job_chunks_available_after_honeypot_frame_change()"
-                        "for the dynamic cache case.",
-                    )
-                ],
-            ),
-        ],
-    )
+    @parametrize("static_cache_enabled", STATIC_CACHE)
     def fxt_uploaded_images_task_with_honeypots_mixed_job_chunk_counts_and_changed_honeypots(
         self, request: pytest.FixtureRequest, *, static_cache_enabled: bool
     ) -> tuple[ITaskSpec, int]:
@@ -2070,7 +2065,7 @@ class TestTaskData(TestTasksBase):
         return task_spec, task_id
 
     @pytest.mark.timeout(300)
-    @pytest.mark.parametrize("use_cache", CACHE_ON)
+    @pytest.mark.parametrize("use_cache", DYNAMIC_CACHE)
     def test_all_job_chunks_available_after_honeypot_frame_change(
         self, request: pytest.FixtureRequest, use_cache
     ):

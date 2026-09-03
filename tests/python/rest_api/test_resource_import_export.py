@@ -17,6 +17,7 @@ from cvat_sdk.core.uploading import Uploader
 from pytest_cases import fixture, fixture_ref, parametrize
 
 from shared.fixtures.data import Container
+from shared.fixtures.params import DYNAMIC_CACHE
 from shared.utils.config import get_method, make_sdk_client, post_method
 from shared.utils.resource_import_export import (
     _CloudStorageResourceTest,
@@ -139,8 +140,9 @@ class TestExportResourceToS3(_S3ResourceTest):
             ("jobs", "dataset"),
         ],
     )
+    @pytest.mark.parametrize("use_cache", DYNAMIC_CACHE)
     def test_user_cannot_export_to_cloud_storage_with_specific_location_without_access(
-        self, storage_id, regular_lonely_user, obj, resource
+        self, storage_id, regular_lonely_user, obj, resource, use_cache,
     ):
         user = regular_lonely_user
 
@@ -153,7 +155,7 @@ class TestExportResourceToS3(_S3ResourceTest):
         }
         data_spec = {
             "image_quality": 75,
-            "use_cache": True,
+            "use_cache": use_cache,
             "server_files": ["images/image_1.jpg"],
             "project_id": project_id,
         }
@@ -295,8 +297,9 @@ class TestImportResourceFromS3(_S3ResourceTest):
             ("projects", "backup"),
         ],
     )
+    @pytest.mark.parametrize("use_cache", DYNAMIC_CACHE)
     def test_user_cannot_import_from_cloud_storage_with_specific_location_without_access(
-        self, storage_id, regular_lonely_user, obj, resource, cloud_storages
+        self, storage_id, regular_lonely_user, obj, resource, cloud_storages, use_cache,
     ):
         user = regular_lonely_user
 
@@ -309,7 +312,7 @@ class TestImportResourceFromS3(_S3ResourceTest):
         }
         data_spec = {
             "image_quality": 75,
-            "use_cache": True,
+            "use_cache": use_cache,
             "server_files": ["images/image_1.jpg"],
             "project_id": project_id,
         }

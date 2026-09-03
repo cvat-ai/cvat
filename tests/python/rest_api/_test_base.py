@@ -15,13 +15,13 @@ from pytest_cases import fixture, fixture_ref, parametrize
 import shared.utils.s3 as s3
 from rest_api.utils import calc_end_frame, create_task, iter_exclude, unique
 from shared.fixtures.init import container_exec_cvat
-from shared.fixtures.data import fxt_use_cache
 from shared.tasks.enums import SourceDataType
 from shared.tasks.interface import ITaskSpec
 from shared.tasks.types import ImagesTaskSpec, VideoTaskSpec
 from shared.tasks.utils import parse_frame_step
 from shared.utils.config import SHARE_DIR, make_api_client
 from shared.utils.helpers import generate_image_files, generate_video_file
+from shared.fixtures.params import DYNAMIC_CACHE, STATIC_CACHE
 
 
 def read_share_file(path: str) -> io.BytesIO:
@@ -594,13 +594,14 @@ class TestTasksBase:
         "cloud_storage_id",
         [pytest.param(5, marks=[pytest.mark.with_external_services])],
     )
+    @parametrize("use_cache", DYNAMIC_CACHE)
     def fxt_backing_cs_images_task_with_related_images(
-        self, request: pytest.FixtureRequest, cloud_storage_id: int
+        self, request: pytest.FixtureRequest, cloud_storage_id: int, use_cache: bool,
     ) -> tuple[ITaskSpec, int]:
         # The simplest way to get a task with local storage and subdirectories is to use the share
         # with copy_data.
         task_spec, task_id = self._share_images_task_with_related_images(
-            request, copy_data=True, use_cache=True
+            request, copy_data=True, use_cache=use_cache
         )
         container_exec_cvat(
             request, ["./manage.py", "movetasktobackingcs", str(task_id), str(cloud_storage_id)]
@@ -786,12 +787,14 @@ class TestTasksBase:
         "cloud_storage_id",
         [pytest.param(5, marks=[pytest.mark.with_external_services])],
     )
+    @parametrize("use_cache", DYNAMIC_CACHE)
     def fxt_backing_cs_video_task(
         self,
         request: pytest.FixtureRequest,
         cloud_storage_id: int,
+        use_cache: bool,
     ) -> tuple[ITaskSpec, int]:
-        spec, task_id = self._uploaded_video_task_fxt_base(request=request, use_cache=True)
+        spec, task_id = self._uploaded_video_task_fxt_base(request=request, use_cache=use_cache)
 
         container_exec_cvat(
             request, ["./manage.py", "movetasktobackingcs", str(task_id), str(cloud_storage_id)]

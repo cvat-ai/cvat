@@ -2248,6 +2248,7 @@ def _move_to_backing_cs_if_configured(db_data: models.Data) -> None:
         else:
             db_data.move_to_backing_cs(backing_cs)
 
+
 def _resolve_static_cache(
     storage_method: models.StorageMethodChoice
 ) -> models.StorageMethodChoice:
