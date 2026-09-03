@@ -14,6 +14,8 @@ import { Shape } from './shape';
 import { computeNewSource } from './utils';
 import type { AnnotationInjection } from './types';
 
+type ValidatedMaskPoints = number[] & { initialPoints: number[] };
+
 export class MaskShape extends Shape {
     public left: number;
     public top: number;
@@ -34,11 +36,14 @@ export class MaskShape extends Shape {
 
     protected validateStateBeforeSave(data: ObjectState, updated: ObjectState['updateFlags'], frame?: number): number[] {
         super.validateStateBeforeSave(data, updated, frame);
+        const maskPoints: ValidatedMaskPoints = Object.assign([], { initialPoints: data.points });
+        // Cropping can change the RLE when a mask is dragged outside the frame. Keep the original points
+        // temporarily so savePoints can distinguish translation of unchanged pixels from an actual redraw.
         if (updated.points) {
             const { width, height } = this.framesInfo[frame];
-            return cropMask(data.points, width, height);
+            maskPoints.push(...cropMask(data.points, width, height));
         }
-        return [];
+        return maskPoints;
     }
 
     public removeUnderlyingPixels(frame: number):
@@ -149,6 +154,18 @@ export class MaskShape extends Shape {
     }
 
     protected savePoints(maskPoints: number[], frame: number): void {
+        const validatedMaskPoints = maskPoints as ValidatedMaskPoints;
+        const { initialPoints } = validatedMaskPoints;
+        delete validatedMaskPoints.initialPoints;
+
+        const [initialLeft, initialTop, initialRight, initialBottom] = initialPoints.slice(-4);
+        const initialRLE = initialPoints.slice(0, -4);
+        const isTranslation =
+            initialRight - initialLeft === this.right - this.left &&
+            initialBottom - initialTop === this.bottom - this.top &&
+            initialRLE.length === this.points.length &&
+            initialRLE.every((value, index) => value === this.points[index]);
+
         const undoPoints = this.points;
         const undoLeft = this.left;
         const undoRight = this.right;
@@ -183,7 +200,7 @@ export class MaskShape extends Shape {
         };
 
         redo();
-        if (config.removeUnderlyingMaskPixels.enabled) {
+        if (config.removeUnderlyingMaskPixels.enabled && !isTranslation) {
             const {
                 clientIDs,
                 emptyMaskOccurred,
