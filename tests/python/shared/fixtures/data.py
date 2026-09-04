@@ -11,6 +11,7 @@ from pathlib import Path
 
 import pytest
 
+from shared.fixtures.params import DYNAMIC_CACHE, STATIC_CACHE
 from shared.utils.config import ASSETS_DIR, SHARE_DIR
 
 
@@ -626,3 +627,9 @@ def access_tokens_by_username(raw_access_tokens_by_username):
 @pytest.fixture(scope="session")
 def fxt_local_audio_file_path() -> Generator[Path, None, None]:
     yield SHARE_DIR / "audio" / "sample1.mp3"
+
+
+@pytest.fixture(scope="session", autouse=False, params=DYNAMIC_CACHE + STATIC_CACHE)
+def fxt_use_cache(request: pytest.FixtureRequest) -> bool:
+    """Parametrize by both cache values"""
+    return request.param

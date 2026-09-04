@@ -2,6 +2,8 @@
 #
 # SPDX-License-Identifier: MIT
 
+from datetime import datetime, timezone
+
 import pytest
 from pytest_cases import NOT_USED
 
@@ -88,3 +90,19 @@ def pytest_collection_modifyitems(items):
         for argname, value in callspec.params.items():
             if value is NOT_USED:
                 callspec.indices[argname] = _NOT_USED_PARAM_INDEX
+
+
+@pytest.hookimpl(trylast=True)
+def pytest_configure(config):
+    reporter = config.pluginmanager.get_plugin("terminalreporter")
+    original_locationline = reporter._locationline
+    started_at = {}
+
+    def timestamped_locationline(nodeid, *args, **kwargs):
+        timestamp = started_at.setdefault(
+            nodeid,
+            datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        )
+        return f"{timestamp} —– {original_locationline(nodeid, *args, **kwargs)}"
+
+    reporter._locationline = timestamped_locationline

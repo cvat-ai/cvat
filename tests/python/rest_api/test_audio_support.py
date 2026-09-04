@@ -84,7 +84,6 @@ class TestAudioTasks:
         assert task.size > 0
 
     @pytest.mark.with_external_services
-    @parametrize("use_cache", [True, False])
     @parametrize(
         "cloud_storage_id",
         [
@@ -97,7 +96,7 @@ class TestAudioTasks:
         fxt_test_name: str,
         fxt_uploaded_s3_file,
         fxt_local_audio_file_path: Path,
-        use_cache: bool,
+        fxt_use_cache: bool,
         cloud_storage_id: int,
         cloud_storages,
         organizations,
@@ -121,7 +120,7 @@ class TestAudioTasks:
                 resource_type=ResourceType.SHARE,
                 data_params={
                     "cloud_storage_id": cloud_storage_id,
-                    "use_cache": use_cache,
+                    "use_cache": fxt_use_cache,
                 },
             )
 

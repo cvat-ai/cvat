@@ -146,14 +146,8 @@ jobs:
       matrix:
         include:
           - pattern: "test_task_data"
-            static_cache: 'on'
-          - pattern: "test_task_data"
-            static_cache: 'off'
           - pattern: "not test_task_data"
-            static_cache: 'off'
-          - pattern: "not test_task_data"
-            static_cache: 'on'
-    name: rest_api_testing [${{ matrix.pattern }},static_cache=${{ matrix.static_cache }}]
+    name: "rest_api_testing [${{ matrix.pattern }}]"
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -197,19 +191,15 @@ jobs:
         id: run_tests
         env:
           COVERAGE_PROCESS_START: ".coveragerc"
-          CVAT_ALLOW_STATIC_CACHE: ${{ matrix.static_cache }}
         run: |
-          pytest tests/python/ -k "${{ matrix.pattern }}" --cov --cov-report=json --alluredir=tests/python/allure-results
+          CVAT_ALLOW_STATIC_CACHE="true" pytest tests/python/ -k "${{ matrix.pattern }}" --cov --cov-report=json --alluredir=tests/python/allure-results
           for COVERAGE_FILE in `find -name "coverage*.json" -type f -printf "%f\n"`; do mv ${COVERAGE_FILE} "${COVERAGE_FILE%%.*}_0.json"; done
 
 
       - name: Uploading code coverage results as an artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: ${{format(
-            'coverage_results_rest_api-{0}-static_cache={1}',
-            matrix.pattern, matrix.static_cache
-            )}}
+          name: "coverage_results_rest_api-${{ matrix.pattern }}"
           path: |
             coverage*.json
 
@@ -241,20 +231,14 @@ jobs:
         if: failure() && steps.run_tests.conclusion == 'failure'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: ${{format(
-              'rest_api_container_logs-{0}-static_cache={1}',
-              matrix.pattern, matrix.static_cache
-            )}}
+          name: "rest_api_container_logs-${{ matrix.pattern }}"
           path: "${{ github.workspace }}/rest_api_testing"
 
       - name: Upload allure results
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: ${{format(
-              'allure-results-tests-api-{0}-static_cache={1}',
-              matrix.pattern,matrix.static_cache
-            )}}
+          name: "allure-results-tests-api-${{ matrix.pattern }}"
           path: tests/python/allure-results
 
   unit_testing:

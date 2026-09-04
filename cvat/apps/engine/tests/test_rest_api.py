@@ -76,6 +76,7 @@ from cvat.apps.engine.models import (
     Task,
     TaskMode,
 )
+from cvat.apps.engine.task import _resolve_static_cache
 from cvat.apps.engine.tests.utils import (
     ApiTestBase,
     ExportApiTestBase,
@@ -8652,3 +8653,44 @@ class TestCloudStorageAzureStatus(SimpleTestCase):
 
         self.storage._head = fake_head
         self.assertEqual(self.storage.get_status(), Status.NOT_FOUND)
+
+
+class StaticCachePolicyTest(SimpleTestCase):
+    def test_cache_mode_selection(self):
+        cases: tuple[bool, StorageMethodChoice, StorageMethodChoice] = (
+            # allow_static_cache, requested method, expected method
+            (
+                False,
+                StorageMethodChoice.CACHE,
+                StorageMethodChoice.CACHE,
+            ),
+            (
+                False,
+                StorageMethodChoice.FILE_SYSTEM,
+                StorageMethodChoice.CACHE,
+            ),
+            (
+                True,
+                StorageMethodChoice.CACHE,
+                StorageMethodChoice.CACHE,
+            ),
+            (
+                True,
+                StorageMethodChoice.FILE_SYSTEM,
+                StorageMethodChoice.FILE_SYSTEM,
+            ),
+        )
+
+        for allow_static_cache, requested_method, expected_method in cases:
+            with (
+                self.subTest(
+                    allow_static_cache=allow_static_cache, requested_method=requested_method
+                ),
+                override_settings(
+                    MEDIA_CACHE_ALLOW_STATIC_CACHE=allow_static_cache,
+                ),
+            ):
+                self.assertEqual(
+                    _resolve_static_cache(requested_method),
+                    expected_method,
+                )
