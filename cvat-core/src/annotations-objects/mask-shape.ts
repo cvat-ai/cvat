@@ -36,14 +36,19 @@ export class MaskShape extends Shape {
 
     protected validateStateBeforeSave(data: ObjectState, updated: ObjectState['updateFlags'], frame?: number): number[] {
         super.validateStateBeforeSave(data, updated, frame);
-        const maskPoints: ValidatedMaskPoints = Object.assign([], { initialPoints: data.points });
-        // Cropping can change the RLE when a mask is dragged outside the frame. Keep the original points
-        // temporarily so savePoints can distinguish translation of unchanged pixels from an actual redraw.
+        let maskPoints: number[] = [];
         if (updated.points) {
             const { width, height } = this.framesInfo[frame];
-            maskPoints.push(...cropMask(data.points, width, height));
+            maskPoints = cropMask(data.points, width, height);
+            if (maskPoints.length < 6) {
+                // empty RLE after cropping (e.g. mask moved is outside of the frame) is invalid result
+                maskPoints = [];
+            }
         }
-        return maskPoints;
+
+        // keep original points to distinguish between redraw and drag feature
+        // they use similar update path, but the second should not apply removing underlying pixels
+        return Object.assign(maskPoints, { initialPoints: data.points });
     }
 
     public removeUnderlyingPixels(frame: number):

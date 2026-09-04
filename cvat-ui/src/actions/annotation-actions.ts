@@ -17,6 +17,7 @@ import {
 } from 'cvat-core-wrapper';
 import logger, { EventScope } from 'cvat-logger';
 import { getCVATStore } from 'cvat-store';
+import changeObjectOrientation from 'utils/change-object-orientation';
 
 import {
     ActiveControl,
@@ -1003,6 +1004,7 @@ export function getJobAsync({
         initialWorkspace: Workspace | null;
         defaultLabel: string | null;
         defaultPointsCount: number | null;
+        defaultRotated: boolean;
     }
 }): ThunkAction {
     return async (dispatch: ThunkDispatch, getState): Promise<void> => {
@@ -1288,6 +1290,30 @@ export function updateAnnotationsAsync(statesToUpdate: ObjectState[]): ThunkActi
             });
             dispatch(fetchAnnotationsAsync());
         }
+    };
+}
+
+export function rotateActiveObjectOrFrame(rotation: Rotation): ThunkAction {
+    return async (dispatch: ThunkDispatch): Promise<void> => {
+        const state: CombinedState = getStore().getState();
+        const {
+            annotation: {
+                annotations: { activatedStateID, states },
+            },
+        } = state;
+
+        const activatedState = states.find((objectState) => objectState.clientID === activatedStateID);
+        const degrees = rotation === Rotation.CLOCKWISE90 ? 90 : -90;
+
+        if (activatedState) {
+            if (!activatedState.isGroundTruth && !activatedState.lock &&
+                changeObjectOrientation(activatedState, degrees)) {
+                dispatch(updateAnnotationsAsync([activatedState]));
+            }
+            return;
+        }
+
+        dispatch(rotateCurrentFrame(rotation));
     };
 }
 
@@ -1718,6 +1744,7 @@ export function redrawShapeAsync(): ThunkAction {
         const {
             annotations: { activatedStateID, states },
             canvas: { instance: canvasInstance },
+            drawing: { activeRectDrawingMethod },
         } = getStore().getState().annotation;
 
         if (activatedStateID !== null) {
@@ -1740,6 +1767,7 @@ export function redrawShapeAsync(): ThunkAction {
                     enabled: true,
                     redraw: activatedStateID,
                     shapeType: state.shapeType,
+                    rectDrawingMethod: activeRectDrawingMethod,
                     crosshair: [ShapeType.RECTANGLE, ShapeType.CUBOID, ShapeType.ELLIPSE].includes(state.shapeType),
                 });
             }

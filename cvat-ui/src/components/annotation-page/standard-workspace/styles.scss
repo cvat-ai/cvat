@@ -337,6 +337,34 @@
     }
 }
 
+.cvat-draw-shape-popover-drawing-method-selector {
+    display: flex;
+    width: 100%;
+
+    .ant-radio-button-wrapper {
+        flex: 1;
+        height: $grid-unit-size * 4;
+        line-height: $grid-unit-size * 4 - 2;
+        padding: 0 $grid-unit-size;
+        text-align: center;
+
+        &::before {
+            background-color: #d9d9d9;
+        }
+
+        &.ant-radio-button-wrapper-checked {
+            z-index: 1;
+            color: $notification-border-color-1;
+            border-color: $notification-border-color-1;
+            box-shadow: none;
+
+            &::before {
+                background-color: $notification-border-color-1;
+            }
+        }
+    }
+}
+
 .cvat-propagate-confirm {
     > .ant-row {
         align-items: flex-start;

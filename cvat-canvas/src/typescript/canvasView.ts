@@ -361,7 +361,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
             if (typeof clientID === 'number') {
                 const [state] = this.controller.objects
                     .filter((_state: any): boolean => _state.clientID === clientID);
-                this.onEditDone(state, points);
+
+                this.onEditDone(state, points, data.rotation);
                 this.dispatchCanceledEvent();
                 return;
             }

@@ -9,7 +9,7 @@ import { taskName, labelName } from '../../support/const';
 context('Undo/redo feature', () => {
     const caseId = '27';
     const firstRectangleShape2Points = {
-        points: 'By 2 Points',
+        points: '2 Points',
         type: 'Shape',
         labelName,
         firstX: 100,
@@ -18,7 +18,7 @@ context('Undo/redo feature', () => {
         secondY: 150,
     };
     const secondRectangleShape2Points = {
-        points: 'By 2 Points',
+        points: '2 Points',
         type: 'Shape',
         labelName,
         firstX: 150,
@@ -27,7 +27,7 @@ context('Undo/redo feature', () => {
         secondY: 200,
     };
     const thirdRectangleShape2Points = {
-        points: 'By 2 Points',
+        points: '2 Points',
         type: 'Shape',
         labelName,
         firstX: 200,
