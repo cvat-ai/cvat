@@ -15,8 +15,9 @@ import Pagination from 'antd/lib/pagination';
 import Empty from 'antd/lib/empty';
 import Button from 'antd/lib/button';
 import { PlusOutlined } from '@ant-design/icons';
-import { Task, Job } from 'cvat-core-wrapper';
+import { Task, Job, FramesMetaData } from 'cvat-core-wrapper';
 import JobItem from 'components/job-item/job-item';
+import FrameSearch from 'components/task-page/frame-search';
 import {
     SortingComponent, ResourceFilterHOC, defaultVisibility, updateHistoryFromQuery, ResourceSelectionInfo,
 } from 'components/resource-sorting-filtering';
@@ -34,6 +35,7 @@ const FilteringComponent = ResourceFilterHOC(
 
 interface Props {
     task: Task;
+    taskMeta: FramesMetaData | null;
     onJobUpdate(job: Job, data: Parameters<Job['save']>[0]): void;
 }
 
@@ -73,7 +75,7 @@ function setUpJobsList(jobs: Job[], newPage: number, pageSize: number): Job[] {
 }
 
 function JobListComponent(props: Readonly<Props>): JSX.Element {
-    const { task: taskInstance, onJobUpdate } = props;
+    const { task: taskInstance, taskMeta, onJobUpdate } = props;
     const [visibility, setVisibility] = useState(defaultVisibility);
 
     const history = useHistory();
@@ -128,10 +130,13 @@ function JobListComponent(props: Readonly<Props>): JSX.Element {
     return (
         <>
             <div className='cvat-jobs-list-wrapper'>
-                <Row>
+                <Row justify='space-between' align='middle'>
                     <Col>
                         <Text className='cvat-text-color cvat-jobs-header'> Jobs </Text>
                         <ResourceSelectionInfo selectedCount={selectedCount} onSelectAll={onSelectAll} />
+                    </Col>
+                    <Col>
+                        <FrameSearch task={taskInstance} taskMeta={taskMeta} />
                     </Col>
                 </Row>
                 <Row>
