@@ -22,7 +22,6 @@ from typing import Any
 import allure
 import numpy as np
 import pytest
-from attrs.converters import to_bool
 from cvat_sdk import exceptions
 from cvat_sdk.api_client import models
 from cvat_sdk.core.helpers import get_paginated_collection
@@ -33,7 +32,7 @@ from pytest_cases import fixture, fixture_ref, parametrize
 import shared.utils.s3 as s3
 from rest_api._test_base import TestTasksBase
 from rest_api.utils import create_task, get_cloud_storage_content, wait_until_task_is_created
-from shared.fixtures.data import STATIC_CACHE, DYNAMIC_CACHE
+from shared.fixtures.params import CACHE_MODES, DYNAMIC_CACHE, STATIC_CACHE
 from shared.tasks.enums import SourceDataType
 from shared.tasks.interface import ITaskSpec
 from shared.tasks.types import ImagesTaskSpec
@@ -490,17 +489,23 @@ class TestPostTaskData:
         assert response.status_code == HTTPStatus.OK
 
     @pytest.mark.with_external_services
+    @pytest.mark.timeout(20)
+    @pytest.mark.parametrize("use_cache", CACHE_MODES)
     @pytest.mark.parametrize(
-        "use_cache, cloud_storage_id, manifest, use_bucket_content",
+        "cloud_storage_id, manifest, use_bucket_content",
         [
-            (DYNAMIC_CACHE, 1, "images_with_manifest/manifest.jsonl", False),  # public bucket
-            (DYNAMIC_CACHE, 2, "sub/images_with_manifest/manifest.jsonl", True),  # private bucket
-            (STATIC_CACHE, 1, "images_with_manifest/manifest.jsonl", False),  # public bucket
-            (STATIC_CACHE, 2, "sub/images_with_manifest/manifest.jsonl", True),  # private bucket
-            (DYNAMIC_CACHE, 1, None, False),
-            (DYNAMIC_CACHE, 2, None, True),
-            (STATIC_CACHE, 1, None, False),
-            (STATIC_CACHE, 2, None, True),
+            pytest.param(1, "images_with_manifest/manifest.jsonl", False,
+                id="public-with-manifest"
+            ),
+            pytest.param(2, "sub/images_with_manifest/manifest.jsonl", True,
+                id="private-with-manifest"
+            ),
+            pytest.param(1, None, False,
+                id="public-without-manifest"
+            ),
+            pytest.param(2, None, True,
+                id="private-without-manifest"
+            ),
         ],
     )
     def test_create_task_with_cloud_storage_files(
