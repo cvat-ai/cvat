@@ -3,6 +3,9 @@
 #
 # SPDX-License-Identifier: MIT
 
+
+import logging
+
 from allauth.account import app_settings as allauth_settings
 from allauth.account.adapter import get_adapter
 from allauth.account.utils import filter_users_by_email, setup_user_email
@@ -14,7 +17,9 @@ from dj_rest_auth.serializers import (
     PasswordResetSerializer,
 )
 from django.conf import settings
+from django.core.cache import caches
 from django.core.exceptions import ValidationError as DjangoValidationError
+from django.utils.module_loading import import_string
 from django.utils.translation import gettext_lazy as _
 from drf_spectacular.utils import extend_schema_field, extend_schema_serializer
 from rest_framework import serializers
@@ -26,7 +31,69 @@ from cvat.apps.iam.password_validation import (
     DEFAULT_MAX_PASSWORD_LENGTH,
     DEFAULT_MIN_PASSWORD_LENGTH,
 )
-from cvat.apps.iam.utils import get_dummy_or_regular_user, is_signup_email_required
+from cvat.apps.iam.utils import (
+    IDisposableDomainService,
+    get_dummy_or_regular_user,
+    is_signup_email_required,
+)
+
+logger = logging.getLogger(__name__)
+
+
+def check_email_is_disposable(email: str) -> bool:
+    domain = email.rsplit("@", 1)[-1].lower()
+
+    cache = caches["default"]
+
+    cache_key = f"disposable_email_domain:{domain}"
+
+    try:
+        cached_result = cache.get(key=cache_key)
+    except Exception:
+        cached_result = None
+
+    if cached_result is not None:
+        return cached_result
+
+    service_class: type[IDisposableDomainService] = import_string(
+        settings.DISPOSABLE_DOMAIN_SERVICE
+    )
+    service: IDisposableDomainService = service_class()
+
+    try:
+        is_email_disposable = service.check_domain_is_disposable(domain=domain)
+    except Exception:
+        logger.warning(
+            "Disposable email check failed for domain %r, letting the email through",
+            domain,
+            exc_info=True,
+        )
+        return False
+
+    try:
+        cache.set(
+            key=cache_key,
+            value=is_email_disposable,
+            timeout=settings.DISPOSABLE_EMAIL_CHECK_CACHE_TTL.total_seconds(),
+        )
+    except Exception:  # nosec B110
+        pass
+
+    return is_email_disposable
+
+
+def ensure_email_is_not_disposable(email: str) -> None:
+    if not settings.DISPOSABLE_EMAIL_CHECK_ENABLED:
+        return None
+
+    is_email_disposable = check_email_is_disposable(email)
+
+    if is_email_disposable:
+        raise serializers.ValidationError(
+            "Disposable email addresses are not allowed. Please use a different email address."
+        )
+
+    return None
 
 
 class RegisterSerializerEx(RegisterSerializer):
@@ -101,6 +168,9 @@ class RegisterSerializerEx(RegisterSerializer):
             raise serializers.ValidationError(
                 _("A user is already registered with this e-mail address.")
             )
+
+        if not dummy_user:
+            ensure_email_is_not_disposable(email=self.cleaned_data["email"])
 
         # Allow to overwrite data for dummy users
         user = dummy_user or adapter.new_user(request)

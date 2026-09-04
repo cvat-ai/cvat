@@ -3,6 +3,7 @@ import hashlib
 import importlib
 import io
 import tarfile
+from abc import ABC, abstractmethod
 from pathlib import Path
 
 from django.conf import settings
@@ -73,3 +74,9 @@ def is_signup_email_required() -> bool:
 def clean_up_sessions() -> None:
     SessionStore: type[SessionBase] = importlib.import_module(settings.SESSION_ENGINE).SessionStore
     SessionStore.clear_expired()
+
+
+class IDisposableDomainService(ABC):
+    @abstractmethod
+    def check_domain_is_disposable(self, domain: str) -> bool:
+        raise NotImplementedError
