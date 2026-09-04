@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 from datetime import datetime, timezone
+
 import pytest
 from pytest_cases import NOT_USED
 

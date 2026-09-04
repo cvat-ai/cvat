@@ -11,8 +11,8 @@ from pathlib import Path
 
 import pytest
 
-from shared.utils.config import ASSETS_DIR, SHARE_DIR
 from shared.fixtures.params import DYNAMIC_CACHE, STATIC_CACHE
+from shared.utils.config import ASSETS_DIR, SHARE_DIR
 
 
 class Container:

@@ -76,6 +76,7 @@ from cvat.apps.engine.models import (
     Task,
     TaskMode,
 )
+from cvat.apps.engine.task import _resolve_static_cache
 from cvat.apps.engine.tests.utils import (
     ApiTestBase,
     ExportApiTestBase,
@@ -86,7 +87,6 @@ from cvat.apps.engine.tests.utils import (
     get_paginated_collection,
 )
 from cvat.apps.engine.utils import extract_with_patool
-from cvat.apps.engine.task import _resolve_static_cache
 from cvat.apps.iam.models import User
 from cvat.apps.redis_handler.serializers import RequestStatus
 from utils.dataset_manifest import ImageManifestManager, VideoManifestManager

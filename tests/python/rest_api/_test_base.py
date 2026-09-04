@@ -15,13 +15,13 @@ from pytest_cases import fixture, fixture_ref, parametrize
 import shared.utils.s3 as s3
 from rest_api.utils import calc_end_frame, create_task, iter_exclude, unique
 from shared.fixtures.init import container_exec_cvat
+from shared.fixtures.params import CACHE_MODES, DYNAMIC_CACHE
 from shared.tasks.enums import SourceDataType
 from shared.tasks.interface import ITaskSpec
 from shared.tasks.types import ImagesTaskSpec, VideoTaskSpec
 from shared.tasks.utils import parse_frame_step
 from shared.utils.config import SHARE_DIR, make_api_client
 from shared.utils.helpers import generate_image_files, generate_video_file
-from shared.fixtures.params import DYNAMIC_CACHE, CACHE_MODES
 
 
 def read_share_file(path: str) -> io.BytesIO:

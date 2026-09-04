@@ -23,7 +23,6 @@ from pathlib import Path, PurePosixPath
 from tempfile import NamedTemporaryFile, TemporaryDirectory
 from time import sleep, time
 from typing import Any
-from shared.fixtures.params import DYNAMIC_CACHE
 
 import numpy as np
 import pytest
@@ -56,6 +55,7 @@ from rest_api.utils import (
     import_task_annotations,
 )
 from shared.fixtures.init import container_exec_cvat
+from shared.fixtures.params import DYNAMIC_CACHE
 from shared.tasks.interface import ITaskSpec
 from shared.tasks.types import SourceDataType
 from shared.tasks.utils import parse_frame_step, to_rel_frames
