@@ -4,8 +4,7 @@
 
 /* eslint-disable no-restricted-globals */
 
-// Progress-making attempts reset this counter; it limits repeated failures that do not add bytes.
-const MAX_NO_PROGRESS_RETRIES = 10;
+const MAX_RETRIES = 10;
 const BASE_RETRY_DELAY_MS = 1000;
 const MAX_RETRY_DELAY_MS = 60000;
 const MIN_CHUNK_SIZE_FOR_TELEMETRY_BYTES = 2 * 1024 * 1024;
@@ -84,20 +83,38 @@ function appendParams(url: string, params: Record<string, string | number | bool
     return result.toString();
 }
 
-function parseContentRange(value: string | null): { start: number; total: number | null } | null {
+function parseContentRange(headers: Record<string, string>): { start: number } | null {
+    const value = headers['content-range'];
     if (!value) {
         return null;
     }
 
-    const matched = /^bytes\s+(\d+)-(\d+)\/(\d+|\*)$/i.exec(value);
+    const matched = /^bytes\s+(\d+)-\d+\/(?:\d+|\*)$/i.exec(value);
     if (!matched) {
         return null;
     }
 
     return {
         start: +matched[1],
-        total: matched[3] === '*' ? null : +matched[3],
     };
+}
+
+function getChunkSize(headers: Record<string, string>): number | null {
+    const value = headers['x-chunk-size'];
+    if (value === undefined) {
+        return null;
+    }
+
+    if (!/^\d+$/.test(value)) {
+        throw new Error('Unexpected X-Chunk-Size header');
+    }
+
+    const size = Number(value);
+    if (!Number.isSafeInteger(size)) {
+        throw new Error('Unexpected X-Chunk-Size header');
+    }
+
+    return size;
 }
 
 function headersToObject(headers: Headers): Record<string, string> {
@@ -165,33 +182,53 @@ async function readResponse(
     }
 }
 
+/*
+ * Initial GET (no Range)
+ *          |
+ *          v
+ *        200 OK
+ *          |
+ *          +-- X-Chunk-Size is missing --> accept the completed stream for backward compatibility
+ *          |
+ *          +-- received bytes == X-Chunk-Size --> done
+ *          |
+ *          `-- received bytes < X-Chunk-Size
+ *                         |
+ *                         v
+ *              GET Range: bytes=<received>-
+ *                         |
+ *                         +-- 206 Partial Content --> validate and append the remaining bytes
+ *                         |
+ *                         `-- 200 OK --> Range was ignored; discard partial bytes and download from byte 0
+ */
 async function fetchData(url: string, requestConfig): Promise<{
     data: ArrayBuffer;
     headers: Record<string, string>;
     telemetry?: DownloadTelemetry;
 }> {
     const requestUrl = appendParams(url, requestConfig.params);
-    const chunks: Uint8Array[] = [];
+    let chunks: Uint8Array[] = [];
     let receivedBytes = 0;
+    let expectedSize: number | null = null;
     let chunkIdentity: ChunkIdentity | null = null;
     let requestCount = 0;
     let bodyDownloadTimeMs = 0;
 
     let retry = 0;
-    while (retry <= MAX_NO_PROGRESS_RETRIES) {
+    while (retry <= MAX_RETRIES) {
+        const rangeRequested = receivedBytes > 0;
         let response: Response | null = null;
-        const receivedBytesBeforeRequest = receivedBytes;
 
         requestCount++;
         try {
             const headers = new Headers(requestConfig.headers ?? {});
-            // Request the entire chunk as an open-ended range on the first attempt as well. This makes the server
-            // provide the full decoded chunk size in Content-Range independently of HTTP content encoding.
-            headers.set('Range', `bytes=${receivedBytes}-`);
+            if (rangeRequested) {
+                headers.set('Range', `bytes=${receivedBytes}-`);
+            }
 
             response = await fetch(requestUrl, { method: 'GET', credentials: 'include', headers });
             if (!response.ok) {
-                if (retry < MAX_NO_PROGRESS_RETRIES && shouldRetry(response)) {
+                if (retry < MAX_RETRIES && shouldRetry(response)) {
                     await sleep(getRetryDelay(response, retry));
                     retry++;
                     continue;
@@ -201,65 +238,52 @@ async function fetchData(url: string, requestConfig): Promise<{
             }
 
             const responseHeaders = headersToObject(response.headers);
-            if (response.status === 200 && receivedBytes === 0) {
-                chunkIdentity = getChunkIdentity(responseHeaders);
-                const readResult = await readResponse(response, chunks, receivedBytes);
-                receivedBytes = readResult.receivedBytes;
-                bodyDownloadTimeMs += readResult.downloadTimeMs;
+            const responseChunkIdentity = getChunkIdentity(responseHeaders);
+            const responseChunkSize = getChunkSize(responseHeaders);
 
-                const telemetry = receivedBytes >= MIN_CHUNK_SIZE_FOR_TELEMETRY_BYTES ? {
-                    chunkSizeBytes: receivedBytes,
-                    downloadTimeMs: bodyDownloadTimeMs,
-                    retries: requestCount - 1,
-                } : undefined;
+            if (!rangeRequested) {
+                if (response.status !== 200) {
+                    throw new Error(`Unexpected response status: ${response.status}`);
+                }
 
-                return {
-                    data: mergeChunks(chunks, receivedBytes),
-                    headers: {
-                        ...responseHeaders,
-                        'content-length': `${receivedBytes}`,
-                    },
-                    telemetry,
-                };
-            }
+                chunkIdentity = responseChunkIdentity;
+            } else if (response.status === 206) {
+                const contentRange = parseContentRange(responseHeaders);
+                if (!contentRange || contentRange.start !== receivedBytes) {
+                    throw new Error('Unexpected Content-Range header');
+                }
 
-            if (response.status !== 206) {
-                throw new Error(`Unexpected response status: ${response.status}`);
-            }
-
-            const contentRange = parseContentRange(responseHeaders['content-range'] ?? null);
-            if (!contentRange || contentRange.start !== receivedBytes || contentRange.total === null) {
-                throw new Error('Unexpected Content-Range header');
-            }
-            const expectedSize = contentRange.total;
-
-            if (chunkIdentity) {
-                if (!isSameChunk(chunkIdentity, getChunkIdentity(responseHeaders))) {
-                    // Start a new download immediately because partial data, retries,
-                    // and timing belong to an old chunk.
+                if (chunkIdentity && !isSameChunk(chunkIdentity, responseChunkIdentity)) {
                     await response.body?.cancel();
                     return fetchData(url, requestConfig);
                 }
+
+                chunkIdentity = responseChunkIdentity;
+            } else if (response.status === 200) {
+                // A proxy ignored or removed Range. This is a complete representation starting at byte 0,
+                // so previously received bytes must not be combined with it.
+                chunks = [];
+                receivedBytes = 0;
+                chunkIdentity = responseChunkIdentity;
+                expectedSize = null;
             } else {
-                chunkIdentity = getChunkIdentity(responseHeaders);
+                throw new Error(`Unexpected response status: ${response.status}`);
+            }
+
+            if (responseChunkSize !== null) {
+                expectedSize = responseChunkSize;
             }
 
             const readResult = await readResponse(response, chunks, receivedBytes);
             receivedBytes = readResult.receivedBytes;
             bodyDownloadTimeMs += readResult.downloadTimeMs;
 
-            if (receivedBytes > expectedSize) {
+            if (expectedSize !== null && receivedBytes > expectedSize) {
                 throw new Error(`Received more bytes than expected: ${receivedBytes}/${expectedSize}`);
             }
 
-            if (receivedBytes < expectedSize) {
-                if (receivedBytes > receivedBytesBeforeRequest) {
-                    retry = 0;
-                    await sleep(getRetryDelay(response, retry));
-                    continue;
-                }
-
-                if (retry < MAX_NO_PROGRESS_RETRIES) {
+            if (expectedSize !== null && receivedBytes < expectedSize) {
+                if (retry < MAX_RETRIES) {
                     await sleep(getRetryDelay(response, retry));
                     retry++;
                     continue;
@@ -268,10 +292,10 @@ async function fetchData(url: string, requestConfig): Promise<{
                 throw new Error(`Received fewer bytes than expected: ${receivedBytes}/${expectedSize}`);
             }
 
-            if (receivedBytes === expectedSize) {
+            if (expectedSize === null || receivedBytes === expectedSize) {
                 const telemetry = receivedBytes >= MIN_CHUNK_SIZE_FOR_TELEMETRY_BYTES ? {
                     chunkSizeBytes: receivedBytes,
-                    // Includes body reading across resumed requests because every received part belongs to the chunk.
+                    // Includes body reading across resumed and restarted requests.
                     downloadTimeMs: bodyDownloadTimeMs,
                     retries: requestCount - 1,
                 } : undefined;
@@ -280,7 +304,7 @@ async function fetchData(url: string, requestConfig): Promise<{
                     data: mergeChunks(chunks, receivedBytes),
                     headers: {
                         ...responseHeaders,
-                        'content-length': `${expectedSize}`,
+                        'content-length': `${expectedSize ?? receivedBytes}`,
                     },
                     telemetry,
                 };
@@ -292,14 +316,9 @@ async function fetchData(url: string, requestConfig): Promise<{
                 bodyDownloadTimeMs += error.downloadTimeMs;
             }
 
-            if (retry < MAX_NO_PROGRESS_RETRIES && (error instanceof DownloadReadError || shouldRetry(response))) {
-                const madeProgress = receivedBytes > receivedBytesBeforeRequest;
-                await sleep(getRetryDelay(response, madeProgress ? 0 : retry));
-                if (madeProgress) {
-                    retry = 0;
-                } else {
-                    retry++;
-                }
+            if (retry < MAX_RETRIES && (error instanceof DownloadReadError || shouldRetry(response))) {
+                await sleep(getRetryDelay(response, retry));
+                retry++;
                 continue;
             }
 
@@ -307,7 +326,7 @@ async function fetchData(url: string, requestConfig): Promise<{
         }
     }
 
-    throw new Error('Maximum download retries without progress exceeded');
+    throw new Error('Maximum download retries exceeded');
 }
 
 onmessage = (e) => {
