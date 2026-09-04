@@ -34,13 +34,13 @@ const componentShortcuts = {
     AUDIO_UNDO: {
         name: 'Undo audio action',
         description: 'Cancel the latest action related to audio regions',
-        sequences: ['ctrl+z'],
+        sequences: ['mod+z'],
         scope: ShortcutScope.AUDIO_WORKSPACE_CONTROLS,
     },
     AUDIO_REDO: {
         name: 'Redo audio action',
         description: 'Cancel undo of audio action',
-        sequences: ['ctrl+shift+z', 'ctrl+y'],
+        sequences: ['mod+shift+z', 'ctrl+y'],
         scope: ShortcutScope.AUDIO_WORKSPACE_CONTROLS,
     },
 };

@@ -22,7 +22,7 @@ context('Canvas 3D functionality. Make a copy.', () => {
         cy.openTask(taskName);
         cy.addNewLabel({ name: secondLabel });
         cy.openJob();
-        // eslint-disable-next-line cypress/no-unnecessary-waiting
+
         cy.wait(1000); // Waiting for the point cloud to display
         cy.create3DCuboid(cuboidCreationParams);
     });
@@ -37,7 +37,7 @@ context('Canvas 3D functionality. Make a copy.', () => {
                 .trigger('mouseout');
             cy.interactAnnotationObjectMenu('#cvat-objects-sidebar-state-item-1', 'Make a copy');
             cy.get('.cvat-canvas3d-perspective').trigger('mousemove', 360, 270);
-            // eslint-disable-next-line cypress/no-unnecessary-waiting
+
             cy.wait(500); // Waiting for mousemove have effect
             cy.get('.cvat-canvas3d-perspective').dblclick(360, 270);
             cy.get('#cvat-objects-sidebar-state-item-1')
@@ -49,12 +49,12 @@ context('Canvas 3D functionality. Make a copy.', () => {
 
         it('Make a copy via hot keys.', () => {
             cy.get('.cvat-canvas3d-perspective').trigger('mousemove', 360, 270);
-            // eslint-disable-next-line cypress/no-unnecessary-waiting
+
             cy.wait(500); // Waiting for mousemove have effect
-            cy.get('body').type('{Ctrl}c');
-            cy.get('body').type('{Ctrl}v');
+            cy.pressWithPlatformModifier('c');
+            cy.pressWithPlatformModifier('v');
             cy.get('.cvat-canvas3d-perspective').trigger('mousemove', 360, 200);
-            // eslint-disable-next-line cypress/no-unnecessary-waiting
+
             cy.wait(500); // Waiting for mousemove have effect
             cy.get('.cvat-canvas3d-perspective').dblclick(360, 200);
             cy.get('.cvat-objects-sidebar-state-item').then((sideBarItems) => {
@@ -69,16 +69,16 @@ context('Canvas 3D functionality. Make a copy.', () => {
 
         it('Copy a cuboid to an another frame.', () => {
             cy.get('.cvat-canvas3d-perspective').trigger('mousemove', 360, 270);
-            // eslint-disable-next-line cypress/no-unnecessary-waiting
+
             cy.wait(500); // Waiting for mousemove have effect
             cy.get('#cvat-objects-sidebar-state-item-2').should('have.class', 'cvat-objects-sidebar-state-active-item');
-            cy.get('body').type('{Ctrl}c');
+            cy.pressWithPlatformModifier('c');
             cy.get('.cvat-player-next-button').click();
-            // eslint-disable-next-line cypress/no-unnecessary-waiting
+
             cy.wait(1000);
-            cy.get('body').type('{Ctrl}v');
+            cy.pressWithPlatformModifier('v');
             cy.get('.cvat-canvas3d-perspective').trigger('mousemove', 360, 320);
-            // eslint-disable-next-line cypress/no-unnecessary-waiting
+
             cy.wait(500); // Waiting for mousemove have effect
             cy.get('.cvat-canvas3d-perspective').dblclick(360, 320);
             cy.get('.cvat-objects-sidebar-state-item').then((sideBarItems) => {

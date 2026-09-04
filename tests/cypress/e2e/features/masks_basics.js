@@ -150,7 +150,7 @@ context('Manipulations with masks', { scrollBehavior: false }, () => {
             cy.finishMaskDrawing();
 
             cy.interactAnnotationObjectMenu('#cvat-objects-sidebar-state-item-1', 'Make a copy');
-            cy.get('body').type('{ctrl}z');
+            cy.pressWithPlatformModifier('z');
             cy.get('#cvat_canvas_shape_1').should('exist').and('be.visible');
             cy.goCheckFrameNumber(serverFiles.length - 1);
             cy.get('.cvat-canvas-container').click();
@@ -548,12 +548,12 @@ context('Manipulations with masks', { scrollBehavior: false }, () => {
             readTemporaryMaskPixelAlpha(350, 500).should('be.greaterThan', 0);
             readTemporaryMaskPixelAlpha(650, 500).should('be.greaterThan', 0);
 
-            cy.get('body').type('{ctrl}z');
+            cy.pressWithPlatformModifier('z');
             cy.get('#cvat_canvas_shape_1').should('exist').and('be.visible');
             readTemporaryMaskPixelAlpha(350, 500).should('be.greaterThan', 0);
             readTemporaryMaskPixelAlpha(650, 500).should('equal', 0);
 
-            cy.get('body').type('{ctrl}{shift}z');
+            cy.pressWithPlatformModifier('{shift}z');
             readTemporaryMaskPixelAlpha(650, 500).should('be.greaterThan', 0);
 
             cy.get('.cvat-canvas-container').trigger('mousemove', {
@@ -565,7 +565,7 @@ context('Manipulations with masks', { scrollBehavior: false }, () => {
             cy.get('.cvat-canvas-container').trigger('mousemove', {
                 clientX: 400, clientY: 600, bubbles: true,
             });
-            cy.get('body').type('{ctrl}z');
+            cy.pressWithPlatformModifier('z');
             readTemporaryMaskPixelAlpha(650, 500).should('equal', 0);
             readTemporaryMaskPixelAlpha(350, 600).should('be.greaterThan', 0);
             cy.get('.cvat-canvas-container').trigger('mouseup', { bubbles: true });

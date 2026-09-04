@@ -51,7 +51,7 @@ const componentShortcuts: Record<string, KeyMapItem> = {
     PASTE_SHAPE: {
         name: 'Paste shape',
         description: 'Paste a shape from internal CVAT clipboard',
-        sequences: ['ctrl+v'],
+        sequences: ['mod+v'],
         scope: ShortcutScope.OBJECTS_SIDEBAR,
     },
     SWITCH_DRAW_MODE_STANDARD_3D_CONTROLS: {
