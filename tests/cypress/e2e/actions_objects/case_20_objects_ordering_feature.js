@@ -43,7 +43,7 @@ context('Objects ordering feature', () => {
     let jobId = null;
 
     const createRectangle = (labelName, offsetX = 0, offsetY = 0) => ({
-        points: 'By 2 Points',
+        points: '2 Points',
         type: 'Shape',
         labelName,
         firstX: 250 + offsetX,

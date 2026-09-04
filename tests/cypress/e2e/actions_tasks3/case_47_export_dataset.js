@@ -11,7 +11,7 @@ context('Export task dataset.', () => {
     const caseId = '47';
     const exportFormat = 'CVAT for images';
     const rectangleShape2Points = {
-        points: 'By 2 Points',
+        points: '2 Points',
         type: 'Shape',
         labelName,
         firstX: 400,

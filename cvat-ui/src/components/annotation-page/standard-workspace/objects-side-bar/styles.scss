@@ -786,6 +786,25 @@
         padding: 0;
     }
 
+    > li.ant-dropdown-menu-submenu {
+        padding: 0;
+
+        > .ant-dropdown-menu-submenu-title {
+            padding: 0;
+            display: flex;
+            align-items: center;
+
+            > button {
+                flex: 1;
+            }
+
+            > .ant-dropdown-menu-submenu-arrow {
+                top: 50%;
+                transform: translateY(-50%);
+            }
+        }
+    }
+
     button {
         &:not(:disabled) {
             color: $text-color;
@@ -794,6 +813,31 @@
         width: 100%;
         height: 100%;
         text-align: left;
+    }
+
+    button[class^='cvat-object-item-menu-orientation'] {
+        color: $text-color;
+
+        &:not(:disabled):hover {
+            color: $slider-color;
+        }
+    }
+
+    .cvat-object-item-menu-orientation-icon {
+        font-size: 16px;
+
+        > svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        > svg path {
+            fill: currentColor;
+        }
+
+        &.clockwise > svg {
+            transform: scaleX(-1);
+        }
     }
 }
 

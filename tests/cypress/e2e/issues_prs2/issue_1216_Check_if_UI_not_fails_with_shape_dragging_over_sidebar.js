@@ -10,7 +10,7 @@ import { taskName, labelName } from '../../support/const';
 context('Check if UI not fails with shape dragging over sidebar', () => {
     const issueId = '1216';
     const createRectangleShape2Points = {
-        points: 'By 2 Points',
+        points: '2 Points',
         type: 'Shape',
         labelName,
         firstX: 250,
@@ -19,7 +19,7 @@ context('Check if UI not fails with shape dragging over sidebar', () => {
         secondY: 450,
     };
     const createRectangleShape2PointsSecond = {
-        points: 'By 2 Points',
+        points: '2 Points',
         type: 'Shape',
         labelName,
         firstX: createRectangleShape2Points.firstX,

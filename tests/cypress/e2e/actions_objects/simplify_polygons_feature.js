@@ -303,9 +303,13 @@ context('Simplify polygons feature', { scrollBehavior: false }, () => {
         let originalArea;
 
         function checkAreaProgression(refObjectArea, refObjectId, [stats1, stats2, stats3]) {
-            // Verify area progression: copy1Area < copy2Area < copy3Area
-            expect(stats1.area).to.be.lessThan(stats2.area);
-            expect(stats2.area).to.be.lessThan(stats3.area);
+            // Douglas-Peucker does not guarantee a monotonic change in polygon area.
+            // Increasing distance must reduce the contour detail while keeping valid shapes.
+            expect(stats1.pointsCount).to.be.greaterThan(stats2.pointsCount);
+            expect(stats2.pointsCount).to.be.greaterThan(stats3.pointsCount);
+            expect(stats1.area).to.be.greaterThan(0);
+            expect(stats2.area).to.be.greaterThan(0);
+            expect(stats3.area).to.be.greaterThan(0);
 
             // Verify original polygon unchanged
             return getPolygonStats(refObjectId).then((finalOriginalStats) => {

@@ -97,6 +97,7 @@ const defaultState: AnnotationState = {
             initialOpenGuide: false,
             defaultLabel: null,
             defaultPointsCount: null,
+            defaultRotated: false,
         },
         groundTruthInfo: {
             validationLayout: null,
@@ -287,6 +288,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                         initialOpenGuide: queryParameters.initialOpenGuide,
                         defaultLabel: queryParameters.defaultLabel,
                         defaultPointsCount: queryParameters.defaultPointsCount,
+                        defaultRotated: queryParameters.defaultRotated,
                     },
                 },
                 annotations: {
