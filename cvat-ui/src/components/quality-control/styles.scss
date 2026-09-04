@@ -4,6 +4,13 @@
 
 @import 'base';
 
+.cvat-quality-target-metric-dropdown {
+    .ant-select-item-group {
+        color: $validation-progress-color;
+        font-weight: 600;
+    }
+}
+
 .cvat-quality-control-inner {
     @include cvat-management-page-inner;
 }

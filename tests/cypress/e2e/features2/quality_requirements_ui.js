@@ -303,6 +303,42 @@ context('Quality requirements UI', () => {
         requirementRow(grandchildRequirementName).should('be.visible');
     });
 
+    it('Selects Jaccard Index and propagates it to inheritors', () => {
+        openSettingsTab();
+
+        clickRowAction(defaultRectangleRequirementName, 'edit');
+        cy.get('.cvat-quality-requirement-form').should('be.visible');
+        cy.contains('.ant-form-item', 'Target metric').find('.ant-form-item-tooltip').trigger('mouseover');
+        cy.get('.ant-tooltip').contains('View metric formulas in the documentation')
+            .should('have.attr', 'href')
+            .and('include', '/docs/qa-analytics/auto-qa/#quality-target-metrics');
+        cy.contains('.ant-form-item', 'Target metric').find('.ant-select-selector').click();
+        cy.get('.ant-select-dropdown').within(() => {
+            cy.contains('.ant-select-item-group', 'Micro / Aggregate').should('exist');
+            cy.contains('.ant-select-item-group', 'Macro average / Mean')
+                .should('have.css', 'color', 'rgb(24, 144, 255)');
+            cy.contains('.ant-select-item-group', 'Worst label').should('exist');
+            cy.contains('.ant-select-item-option-content', /\((micro|macro\/mean|worst label)\)/)
+                .should('not.exist');
+            cy.contains('.ant-select-item-group', 'Macro average / Mean')
+                .nextAll('.ant-select-item-option')
+                .contains('.ant-select-item-option-content', /^Jaccard Index$/)
+                .first()
+                .click();
+        });
+        cy.contains('.ant-form-item', 'Target metric').find('.ant-select-selection-item')
+            .should('have.text', 'Jaccard Index (macro/mean)');
+        submitForm();
+
+        expectNotification('Requirement has been updated');
+        cy.get('.cvat-quality-requirements-configuration-table').should('be.visible');
+        requirementRow(defaultRectangleRequirementName).contains('Jaccard Index (macro/mean)').should('exist');
+        ensureRowExpanded(defaultRectangleRequirementName);
+        requirementRow(childRequirementName).contains('Jaccard Index (macro/mean)').should('exist');
+        ensureRowExpanded(childRequirementName);
+        requirementRow(grandchildRequirementName).contains('Jaccard Index (macro/mean)').should('exist');
+    });
+
     it('Renames a base requirement without sending empty inherited fields', () => {
         openSettingsTab();
 

@@ -490,6 +490,54 @@ The available controls depend on the requirement target:
 Save the settings after editing them. Changes apply when the next quality report is
 calculated; they do not alter existing reports.
 
+#### Quality target metrics
+
+A quality requirement can use Accuracy, Precision, Recall, Jaccard Index, or Dice Coefficient
+as its target metric. CVAT first matches dataset annotations with ground-truth annotations and
+then calculates the selected metric from the resulting confusion matrix.
+
+For micro aggregation, let:
+
+- `V` be the number of valid annotations;
+- `D` be the number of dataset annotations;
+- `G` be the number of ground-truth annotations;
+- `T` be the total number of annotation comparison outcomes in the confusion matrix.
+
+The micro target metric is calculated as follows:
+
+| Metric | Formula |
+| - | - |
+| Accuracy | `V / T` |
+| Precision | `V / D` |
+| Recall | `V / G` |
+| Jaccard Index | `V / (D + G - V)` |
+| Dice Coefficient | `2 * V / (D + G)` |
+
+CVAT also calculates each metric for individual active labels. For a label, let `TP`, `TN`,
+`FP`, and `FN` have their standard one-vs-rest confusion-matrix meanings. The per-label formulas
+are:
+
+| Metric | Formula |
+| - | - |
+| Accuracy | `(TP + TN) / (TP + TN + FP + FN)` |
+| Precision | `TP / (TP + FP)` |
+| Recall | `TP / (TP + FN)` |
+| Jaccard Index | `TP / (TP + FP + FN)` |
+| Dice Coefficient | `2 * TP / (2 * TP + FP + FN)` |
+
+The aggregation determines how these values become the requirement score:
+
+- **Micro / aggregate** calculates one metric from the combined annotation counts. Micro is the
+  default aggregation and has no prefix in the API value, for example, `jaccard_index`.
+- **Macro mean** is the arithmetic mean of per-label values, for example,
+  `mean_jaccard_index`.
+- **Worst label** is the minimum per-label value, for example, `label_jaccard_index`.
+
+Only labels present in the dataset annotations or ground truth participate in macro mean and
+worst-label aggregation. If annotations are available but a metric denominator is zero, CVAT uses
+a score of `0`. If there is no applicable annotation sample, the requirement is reported as
+`not_computed` instead.
+
 ### Project quality settings
 
 In CVAT, it is possible to group tasks into projects to share common configurations or establish
