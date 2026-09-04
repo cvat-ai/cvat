@@ -482,9 +482,12 @@ paths:
       parameters:
       - name: X-Organization
         in: header
-        description: Organization unique slug
+        description: Organization unique slug. If omitted, results from all organizations
+          available to the user are returned (unfiltered). An empty value ("") selects the
+          personal sandbox workspace only. A non-empty value selects that organization.
         schema:
           type: string
+        allowEmptyValue: true
       - name: credentials_type
         in: query
         description: A simple equality filter for the credentials_type field
@@ -519,12 +522,17 @@ paths:
           type: string
       - name: org
         in: query
-        description: Organization unique slug
+        description: Organization unique slug. If omitted, results from all organizations
+          available to the user are returned (unfiltered). An empty value ("") selects the
+          personal sandbox workspace only. A non-empty value selects that organization.
         schema:
           type: string
+        allowEmptyValue: true
       - name: org_id
         in: query
-        description: Organization identifier
+        description: Organization identifier. If omitted, results from all organizations
+          available to the user are returned (unfiltered). An empty value ("") selects the
+          personal sandbox workspace only. A positive integer selects that organization.
         schema:
           type: integer
       - name: owner
@@ -597,17 +605,25 @@ paths:
         name: X-Organization
         schema:
           type: string
-        description: Organization unique slug
+        allowEmptyValue: true
+        description: Organization unique slug. If omitted, results from all organizations
+          available to the user are returned (unfiltered). An empty value ("") selects the
+          personal sandbox workspace only. A non-empty value selects that organization.
       - in: query
         name: org
         schema:
           type: string
-        description: Organization unique slug
+        allowEmptyValue: true
+        description: Organization unique slug. If omitted, results from all organizations
+          available to the user are returned (unfiltered). An empty value ("") selects the
+          personal sandbox workspace only. A non-empty value selects that organization.
       - in: query
         name: org_id
         schema:
           type: integer
-        description: Organization identifier
+        description: Organization identifier. If omitted, results from all organizations
+          available to the user are returned (unfiltered). An empty value ("") selects
+          the personal sandbox workspace only. A positive integer selects that organization.
       tags:
       - cloudstorages
       requestBody:
@@ -944,9 +960,12 @@ paths:
       parameters:
       - name: X-Organization
         in: header
-        description: Organization unique slug
+        description: Organization unique slug. If omitted, results from all organizations
+          available to the user are returned (unfiltered). An empty value ("") selects the
+          personal sandbox workspace only. A non-empty value selects that organization.
         schema:
           type: string
+        allowEmptyValue: true
       - name: filter
         required: false
         in: query
@@ -980,12 +999,17 @@ paths:
           type: integer
       - name: org
         in: query
-        description: Organization unique slug
+        description: Organization unique slug. If omitted, results from all organizations
+          available to the user are returned (unfiltered). An empty value ("") selects the
+          personal sandbox workspace only. A non-empty value selects that organization.
         schema:
           type: string
+        allowEmptyValue: true
       - name: org_id
         in: query
-        description: Organization identifier
+        description: Organization identifier. If omitted, results from all organizations
+          available to the user are returned (unfiltered). An empty value ("") selects the
+          personal sandbox workspace only. A positive integer selects that organization.
         schema:
           type: integer
       - name: owner
@@ -1042,17 +1066,25 @@ paths:
         name: X-Organization
         schema:
           type: string
-        description: Organization unique slug
+        allowEmptyValue: true
+        description: Organization unique slug. If omitted, results from all organizations
+          available to the user are returned (unfiltered). An empty value ("") selects the
+          personal sandbox workspace only. A non-empty value selects that organization.
       - in: query
         name: org
         schema:
           type: string
-        description: Organization unique slug
+        allowEmptyValue: true
+        description: Organization unique slug. If omitted, results from all organizations
+          available to the user are returned (unfiltered). An empty value ("") selects the
+          personal sandbox workspace only. A non-empty value selects that organization.
       - in: query
         name: org_id
         schema:
           type: integer
-        description: Organization identifier
+        description: Organization identifier. If omitted, results from all organizations
+          available to the user are returned (unfiltered). An empty value ("") selects
+          the personal sandbox workspace only. A positive integer selects that organization.
       tags:
       - comments
       requestBody:
@@ -1191,9 +1223,12 @@ paths:
       parameters:
       - name: X-Organization
         in: header
-        description: Organization unique slug
+        description: Organization unique slug. If omitted, results from all organizations
+          available to the user are returned (unfiltered). An empty value ("") selects the
+          personal sandbox workspace only. A non-empty value selects that organization.
         schema:
           type: string
+        allowEmptyValue: true
       - name: filter
         required: false
         in: query
@@ -1212,12 +1247,17 @@ paths:
           type: string
       - name: org
         in: query
-        description: Organization unique slug
+        description: Organization unique slug. If omitted, results from all organizations
+          available to the user are returned (unfiltered). An empty value ("") selects the
+          personal sandbox workspace only. A non-empty value selects that organization.
         schema:
           type: string
+        allowEmptyValue: true
       - name: org_id
         in: query
-        description: Organization identifier
+        description: Organization identifier. If omitted, results from all organizations
+          available to the user are returned (unfiltered). An empty value ("") selects the
+          personal sandbox workspace only. A positive integer selects that organization.
         schema:
           type: integer
       - name: page
@@ -1406,17 +1446,25 @@ paths:
         name: X-Organization
         schema:
           type: string
-        description: Organization unique slug
+        allowEmptyValue: true
+        description: Organization unique slug. If omitted, results from all organizations
+          available to the user are returned (unfiltered). An empty value ("") selects the
+          personal sandbox workspace only. A non-empty value selects that organization.
       - in: query
         name: org
         schema:
           type: string
-        description: Organization unique slug
+        allowEmptyValue: true
+        description: Organization unique slug. If omitted, results from all organizations
+          available to the user are returned (unfiltered). An empty value ("") selects the
+          personal sandbox workspace only. A non-empty value selects that organization.
       - in: query
         name: org_id
         schema:
           type: integer
-        description: Organization identifier
+        description: Organization identifier. If omitted, results from all organizations
+          available to the user are returned (unfiltered). An empty value ("") selects
+          the personal sandbox workspace only. A positive integer selects that organization.
       tags:
       - events
       requestBody:
@@ -1743,9 +1791,12 @@ paths:
       parameters:
       - name: X-Organization
         in: header
-        description: Organization unique slug
+        description: Organization unique slug. If omitted, results from all organizations
+          available to the user are returned (unfiltered). An empty value ("") selects the
+          personal sandbox workspace only. A non-empty value selects that organization.
         schema:
           type: string
+        allowEmptyValue: true
       - name: accepted
         in: query
         description: A simple equality filter for the accepted field
@@ -1769,12 +1820,17 @@ paths:
           type: string
       - name: org
         in: query
-        description: Organization unique slug
+        description: Organization unique slug. If omitted, results from all organizations
+          available to the user are returned (unfiltered). An empty value ("") selects the
+          personal sandbox workspace only. A non-empty value selects that organization.
         schema:
           type: string
+        allowEmptyValue: true
       - name: org_id
         in: query
-        description: Organization identifier
+        description: Organization identifier. If omitted, results from all organizations
+          available to the user are returned (unfiltered). An empty value ("") selects the
+          personal sandbox workspace only. A positive integer selects that organization.
         schema:
           type: integer
       - name: owner
@@ -1836,17 +1892,25 @@ paths:
         name: X-Organization
         schema:
           type: string
-        description: Organization unique slug
+        allowEmptyValue: true
+        description: Organization unique slug. If omitted, results from all organizations
+          available to the user are returned (unfiltered). An empty value ("") selects the
+          personal sandbox workspace only. A non-empty value selects that organization.
       - in: query
         name: org
         schema:
           type: string
-        description: Organization unique slug
+        allowEmptyValue: true
+        description: Organization unique slug. If omitted, results from all organizations
+          available to the user are returned (unfiltered). An empty value ("") selects the
+          personal sandbox workspace only. A non-empty value selects that organization.
       - in: query
         name: org_id
         schema:
           type: integer
-        description: Organization identifier
+        description: Organization identifier. If omitted, results from all organizations
+          available to the user are returned (unfiltered). An empty value ("") selects
+          the personal sandbox workspace only. A positive integer selects that organization.
       tags:
       - invitations
       requestBody:
@@ -2002,9 +2066,12 @@ paths:
       parameters:
       - name: X-Organization
         in: header
-        description: Organization unique slug
+        description: Organization unique slug. If omitted, results from all organizations
+          available to the user are returned (unfiltered). An empty value ("") selects the
+          personal sandbox workspace only. A non-empty value selects that organization.
         schema:
           type: string
+        allowEmptyValue: true
       - name: assignee
         in: query
         description: A simple equality filter for the assignee field
@@ -2038,12 +2105,17 @@ paths:
           type: integer
       - name: org
         in: query
-        description: Organization unique slug
+        description: Organization unique slug. If omitted, results from all organizations
+          available to the user are returned (unfiltered). An empty value ("") selects the
+          personal sandbox workspace only. A non-empty value selects that organization.
         schema:
           type: string
+        allowEmptyValue: true
       - name: org_id
         in: query
-        description: Organization identifier
+        description: Organization identifier. If omitted, results from all organizations
+          available to the user are returned (unfiltered). An empty value ("") selects the
+          personal sandbox workspace only. A positive integer selects that organization.
         schema:
           type: integer
       - name: owner
@@ -2111,17 +2183,25 @@ paths:
         name: X-Organization
         schema:
           type: string
-        description: Organization unique slug
+        allowEmptyValue: true
+        description: Organization unique slug. If omitted, results from all organizations
+          available to the user are returned (unfiltered). An empty value ("") selects the
+          personal sandbox workspace only. A non-empty value selects that organization.
       - in: query
         name: org
         schema:
           type: string
-        description: Organization unique slug
+        allowEmptyValue: true
+        description: Organization unique slug. If omitted, results from all organizations
+          available to the user are returned (unfiltered). An empty value ("") selects the
+          personal sandbox workspace only. A non-empty value selects that organization.
       - in: query
         name: org_id
         schema:
           type: integer
-        description: Organization identifier
+        description: Organization identifier. If omitted, results from all organizations
+          available to the user are returned (unfiltered). An empty value ("") selects
+          the personal sandbox workspace only. A positive integer selects that organization.
       tags:
       - issues
       requestBody:
@@ -2231,9 +2311,12 @@ paths:
       parameters:
       - name: X-Organization
         in: header
-        description: Organization unique slug
+        description: Organization unique slug. If omitted, results from all organizations
+          available to the user are returned (unfiltered). An empty value ("") selects the
+          personal sandbox workspace only. A non-empty value selects that organization.
         schema:
           type: string
+        allowEmptyValue: true
       - name: assignee
         in: query
         description: A simple equality filter for the assignee field
@@ -2283,12 +2366,17 @@ paths:
           - interpolation
       - name: org
         in: query
-        description: Organization unique slug
+        description: Organization unique slug. If omitted, results from all organizations
+          available to the user are returned (unfiltered). An empty value ("") selects the
+          personal sandbox workspace only. A non-empty value selects that organization.
         schema:
           type: string
+        allowEmptyValue: true
       - name: org_id
         in: query
-        description: Organization identifier
+        description: Organization identifier. If omitted, results from all organizations
+          available to the user are returned (unfiltered). An empty value ("") selects the
+          personal sandbox workspace only. A positive integer selects that organization.
         schema:
           type: integer
       - name: page
@@ -3108,7 +3196,10 @@ paths:
         name: X-Organization
         schema:
           type: string
-        description: Organization unique slug
+        allowEmptyValue: true
+        description: Organization unique slug. If omitted, results from all organizations
+          available to the user are returned (unfiltered). An empty value ("") selects the
+          personal sandbox workspace only. A non-empty value selects that organization.
       - name: color
         in: query
         description: A simple equality filter for the color field
@@ -3144,12 +3235,17 @@ paths:
         name: org
         schema:
           type: string
-        description: Organization unique slug
+        allowEmptyValue: true
+        description: Organization unique slug. If omitted, results from all organizations
+          available to the user are returned (unfiltered). An empty value ("") selects the
+          personal sandbox workspace only. A non-empty value selects that organization.
       - in: query
         name: org_id
         schema:
           type: integer
-        description: Organization identifier
+        description: Organization identifier. If omitted, results from all organizations
+          available to the user are returned (unfiltered). An empty value ("") selects
+          the personal sandbox workspace only. A positive integer selects that organization.
       - name: page
         required: false
         in: query
@@ -3419,17 +3515,25 @@ paths:
         name: X-Organization
         schema:
           type: string
-        description: Organization unique slug
+        allowEmptyValue: true
+        description: Organization unique slug. If omitted, results from all organizations
+          available to the user are returned (unfiltered). An empty value ("") selects the
+          personal sandbox workspace only. A non-empty value selects that organization.
       - in: query
         name: org
         schema:
           type: string
-        description: Organization unique slug
+        allowEmptyValue: true
+        description: Organization unique slug. If omitted, results from all organizations
+          available to the user are returned (unfiltered). An empty value ("") selects the
+          personal sandbox workspace only. A non-empty value selects that organization.
       - in: query
         name: org_id
         schema:
           type: integer
-        description: Organization identifier
+        description: Organization identifier. If omitted, results from all organizations
+          available to the user are returned (unfiltered). An empty value ("") selects
+          the personal sandbox workspace only. A positive integer selects that organization.
       tags:
       - lambda
       requestBody:
@@ -3508,9 +3612,12 @@ paths:
       parameters:
       - name: X-Organization
         in: header
-        description: Organization unique slug
+        description: Organization unique slug. If omitted, results from all organizations
+          available to the user are returned (unfiltered). An empty value ("") selects the
+          personal sandbox workspace only. A non-empty value selects that organization.
         schema:
           type: string
+        allowEmptyValue: true
       - name: filter
         required: false
         in: query
@@ -3529,12 +3636,17 @@ paths:
           type: string
       - name: org
         in: query
-        description: Organization unique slug
+        description: Organization unique slug. If omitted, results from all organizations
+          available to the user are returned (unfiltered). An empty value ("") selects the
+          personal sandbox workspace only. A non-empty value selects that organization.
         schema:
           type: string
+        allowEmptyValue: true
       - name: org_id
         in: query
-        description: Organization identifier
+        description: Organization identifier. If omitted, results from all organizations
+          available to the user are returned (unfiltered). An empty value ("") selects the
+          personal sandbox workspace only. A positive integer selects that organization.
         schema:
           type: integer
       - name: page
@@ -3863,9 +3975,12 @@ paths:
       parameters:
       - name: X-Organization
         in: header
-        description: Organization unique slug
+        description: Organization unique slug. If omitted, results from all organizations
+          available to the user are returned (unfiltered). An empty value ("") selects the
+          personal sandbox workspace only. A non-empty value selects that organization.
         schema:
           type: string
+        allowEmptyValue: true
       - name: assignee
         in: query
         description: A simple equality filter for the assignee field
@@ -3894,12 +4009,17 @@ paths:
           type: string
       - name: org
         in: query
-        description: Organization unique slug
+        description: Organization unique slug. If omitted, results from all organizations
+          available to the user are returned (unfiltered). An empty value ("") selects the
+          personal sandbox workspace only. A non-empty value selects that organization.
         schema:
           type: string
+        allowEmptyValue: true
       - name: org_id
         in: query
-        description: Organization identifier
+        description: Organization identifier. If omitted, results from all organizations
+          available to the user are returned (unfiltered). An empty value ("") selects the
+          personal sandbox workspace only. A positive integer selects that organization.
         schema:
           type: integer
       - name: owner
@@ -3966,17 +4086,25 @@ paths:
         name: X-Organization
         schema:
           type: string
-        description: Organization unique slug
+        allowEmptyValue: true
+        description: Organization unique slug. If omitted, results from all organizations
+          available to the user are returned (unfiltered). An empty value ("") selects the
+          personal sandbox workspace only. A non-empty value selects that organization.
       - in: query
         name: org
         schema:
           type: string
-        description: Organization unique slug
+        allowEmptyValue: true
+        description: Organization unique slug. If omitted, results from all organizations
+          available to the user are returned (unfiltered). An empty value ("") selects the
+          personal sandbox workspace only. A non-empty value selects that organization.
       - in: query
         name: org_id
         schema:
           type: integer
-        description: Organization identifier
+        description: Organization identifier. If omitted, results from all organizations
+          available to the user are returned (unfiltered). An empty value ("") selects
+          the personal sandbox workspace only. A positive integer selects that organization.
       tags:
       - projects
       requestBody:
@@ -4343,7 +4471,10 @@ paths:
         name: X-Organization
         schema:
           type: string
-        description: Organization unique slug
+        allowEmptyValue: true
+        description: Organization unique slug. If omitted, results from all organizations
+          available to the user are returned (unfiltered). An empty value ("") selects the
+          personal sandbox workspace only. A non-empty value selects that organization.
       - in: query
         name: cloud_storage_id
         schema:
@@ -4367,12 +4498,17 @@ paths:
         name: org
         schema:
           type: string
-        description: Organization unique slug
+        allowEmptyValue: true
+        description: Organization unique slug. If omitted, results from all organizations
+          available to the user are returned (unfiltered). An empty value ("") selects the
+          personal sandbox workspace only. A non-empty value selects that organization.
       - in: query
         name: org_id
         schema:
           type: integer
-        description: Organization identifier
+        description: Organization identifier. If omitted, results from all organizations
+          available to the user are returned (unfiltered). An empty value ("") selects
+          the personal sandbox workspace only. A positive integer selects that organization.
       tags:
       - projects
       requestBody:
@@ -4404,9 +4540,12 @@ paths:
       parameters:
       - name: X-Organization
         in: header
-        description: Organization unique slug
+        description: Organization unique slug. If omitted, results from all organizations
+          available to the user are returned (unfiltered). An empty value ("") selects the
+          personal sandbox workspace only. A non-empty value selects that organization.
         schema:
           type: string
+        allowEmptyValue: true
       - name: filter
         required: false
         in: query
@@ -4435,12 +4574,17 @@ paths:
           type: integer
       - name: org
         in: query
-        description: Organization unique slug
+        description: Organization unique slug. If omitted, results from all organizations
+          available to the user are returned (unfiltered). An empty value ("") selects the
+          personal sandbox workspace only. A non-empty value selects that organization.
         schema:
           type: string
+        allowEmptyValue: true
       - name: org_id
         in: query
-        description: Organization identifier
+        description: Organization identifier. If omitted, results from all organizations
+          available to the user are returned (unfiltered). An empty value ("") selects the
+          personal sandbox workspace only. A positive integer selects that organization.
         schema:
           type: integer
       - name: page
@@ -4533,9 +4677,12 @@ paths:
       parameters:
       - name: X-Organization
         in: header
-        description: Organization unique slug
+        description: Organization unique slug. If omitted, results from all organizations
+          available to the user are returned (unfiltered). An empty value ("") selects the
+          personal sandbox workspace only. A non-empty value selects that organization.
         schema:
           type: string
+        allowEmptyValue: true
       - name: filter
         required: false
         in: query
@@ -4565,12 +4712,17 @@ paths:
           type: integer
       - name: org
         in: query
-        description: Organization unique slug
+        description: Organization unique slug. If omitted, results from all organizations
+          available to the user are returned (unfiltered). An empty value ("") selects the
+          personal sandbox workspace only. A non-empty value selects that organization.
         schema:
           type: string
+        allowEmptyValue: true
       - name: org_id
         in: query
-        description: Organization identifier
+        description: Organization identifier. If omitted, results from all organizations
+          available to the user are returned (unfiltered). An empty value ("") selects the
+          personal sandbox workspace only. A positive integer selects that organization.
         schema:
           type: integer
       - name: page
@@ -4829,9 +4981,12 @@ paths:
       parameters:
       - name: X-Organization
         in: header
-        description: Organization unique slug
+        description: Organization unique slug. If omitted, results from all organizations
+          available to the user are returned (unfiltered). An empty value ("") selects the
+          personal sandbox workspace only. A non-empty value selects that organization.
         schema:
           type: string
+        allowEmptyValue: true
       - name: filter
         required: false
         in: query
@@ -4855,12 +5010,17 @@ paths:
           type: boolean
       - name: org
         in: query
-        description: Organization unique slug
+        description: Organization unique slug. If omitted, results from all organizations
+          available to the user are returned (unfiltered). An empty value ("") selects the
+          personal sandbox workspace only. A non-empty value selects that organization.
         schema:
           type: string
+        allowEmptyValue: true
       - name: org_id
         in: query
-        description: Organization identifier
+        description: Organization identifier. If omitted, results from all organizations
+          available to the user are returned (unfiltered). An empty value ("") selects the
+          personal sandbox workspace only. A positive integer selects that organization.
         schema:
           type: integer
       - name: page
@@ -5312,6 +5472,7 @@ paths:
         description: A simple equality filter for the org field
         schema:
           type: string
+        allowEmptyValue: true
       - name: org_id
         in: query
         description: A simple equality filter for the org_id field
@@ -5675,9 +5836,12 @@ paths:
       parameters:
       - name: X-Organization
         in: header
-        description: Organization unique slug
+        description: Organization unique slug. If omitted, results from all organizations
+          available to the user are returned (unfiltered). An empty value ("") selects the
+          personal sandbox workspace only. A non-empty value selects that organization.
         schema:
           type: string
+        allowEmptyValue: true
       - name: assignee
         in: query
         description: A simple equality filter for the assignee field
@@ -5739,12 +5903,17 @@ paths:
           type: string
       - name: org
         in: query
-        description: Organization unique slug
+        description: Organization unique slug. If omitted, results from all organizations
+          available to the user are returned (unfiltered). An empty value ("") selects the
+          personal sandbox workspace only. A non-empty value selects that organization.
         schema:
           type: string
+        allowEmptyValue: true
       - name: org_id
         in: query
-        description: Organization identifier
+        description: Organization identifier. If omitted, results from all organizations
+          available to the user are returned (unfiltered). An empty value ("") selects the
+          personal sandbox workspace only. A positive integer selects that organization.
         schema:
           type: integer
       - name: owner
@@ -5844,17 +6013,25 @@ paths:
         name: X-Organization
         schema:
           type: string
-        description: Organization unique slug
+        allowEmptyValue: true
+        description: Organization unique slug. If omitted, results from all organizations
+          available to the user are returned (unfiltered). An empty value ("") selects the
+          personal sandbox workspace only. A non-empty value selects that organization.
       - in: query
         name: org
         schema:
           type: string
-        description: Organization unique slug
+        allowEmptyValue: true
+        description: Organization unique slug. If omitted, results from all organizations
+          available to the user are returned (unfiltered). An empty value ("") selects the
+          personal sandbox workspace only. A non-empty value selects that organization.
       - in: query
         name: org_id
         schema:
           type: integer
-        description: Organization identifier
+        description: Organization identifier. If omitted, results from all organizations
+          available to the user are returned (unfiltered). An empty value ("") selects
+          the personal sandbox workspace only. A positive integer selects that organization.
       tags:
       - tasks
       requestBody:
@@ -6767,7 +6944,10 @@ paths:
         name: X-Organization
         schema:
           type: string
-        description: Organization unique slug
+        allowEmptyValue: true
+        description: Organization unique slug. If omitted, results from all organizations
+          available to the user are returned (unfiltered). An empty value ("") selects the
+          personal sandbox workspace only. A non-empty value selects that organization.
       - in: query
         name: cloud_storage_id
         schema:
@@ -6791,12 +6971,17 @@ paths:
         name: org
         schema:
           type: string
-        description: Organization unique slug
+        allowEmptyValue: true
+        description: Organization unique slug. If omitted, results from all organizations
+          available to the user are returned (unfiltered). An empty value ("") selects the
+          personal sandbox workspace only. A non-empty value selects that organization.
       - in: query
         name: org_id
         schema:
           type: integer
-        description: Organization identifier
+        description: Organization identifier. If omitted, results from all organizations
+          available to the user are returned (unfiltered). An empty value ("") selects
+          the personal sandbox workspace only. A positive integer selects that organization.
       tags:
       - tasks
       requestBody:
@@ -6828,9 +7013,12 @@ paths:
       parameters:
       - name: X-Organization
         in: header
-        description: Organization unique slug
+        description: Organization unique slug. If omitted, results from all organizations
+          available to the user are returned (unfiltered). An empty value ("") selects the
+          personal sandbox workspace only. A non-empty value selects that organization.
         schema:
           type: string
+        allowEmptyValue: true
       - name: filter
         required: false
         in: query
@@ -6864,12 +7052,17 @@ paths:
           type: string
       - name: org
         in: query
-        description: Organization unique slug
+        description: Organization unique slug. If omitted, results from all organizations
+          available to the user are returned (unfiltered). An empty value ("") selects the
+          personal sandbox workspace only. A non-empty value selects that organization.
         schema:
           type: string
+        allowEmptyValue: true
       - name: org_id
         in: query
-        description: Organization identifier
+        description: Organization identifier. If omitted, results from all organizations
+          available to the user are returned (unfiltered). An empty value ("") selects the
+          personal sandbox workspace only. A positive integer selects that organization.
         schema:
           type: integer
       - name: page
@@ -7027,9 +7220,12 @@ paths:
       parameters:
       - name: X-Organization
         in: header
-        description: Organization unique slug
+        description: Organization unique slug. If omitted, results from all organizations
+          available to the user are returned (unfiltered). An empty value ("") selects the
+          personal sandbox workspace only. A non-empty value selects that organization.
         schema:
           type: string
+        allowEmptyValue: true
       - name: filter
         required: false
         in: query
@@ -7048,12 +7244,17 @@ paths:
           type: string
       - name: org
         in: query
-        description: Organization unique slug
+        description: Organization unique slug. If omitted, results from all organizations
+          available to the user are returned (unfiltered). An empty value ("") selects the
+          personal sandbox workspace only. A non-empty value selects that organization.
         schema:
           type: string
+        allowEmptyValue: true
       - name: org_id
         in: query
-        description: Organization identifier
+        description: Organization identifier. If omitted, results from all organizations
+          available to the user are returned (unfiltered). An empty value ("") selects the
+          personal sandbox workspace only. A positive integer selects that organization.
         schema:
           type: integer
       - name: owner
@@ -7130,17 +7331,25 @@ paths:
         name: X-Organization
         schema:
           type: string
-        description: Organization unique slug
+        allowEmptyValue: true
+        description: Organization unique slug. If omitted, results from all organizations
+          available to the user are returned (unfiltered). An empty value ("") selects the
+          personal sandbox workspace only. A non-empty value selects that organization.
       - in: query
         name: org
         schema:
           type: string
-        description: Organization unique slug
+        allowEmptyValue: true
+        description: Organization unique slug. If omitted, results from all organizations
+          available to the user are returned (unfiltered). An empty value ("") selects the
+          personal sandbox workspace only. A non-empty value selects that organization.
       - in: query
         name: org_id
         schema:
           type: integer
-        description: Organization identifier
+        description: Organization identifier. If omitted, results from all organizations
+          available to the user are returned (unfiltered). An empty value ("") selects
+          the personal sandbox workspace only. A positive integer selects that organization.
       tags:
       - webhooks
       requestBody:
