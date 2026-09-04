@@ -4,8 +4,14 @@
 # SPDX-License-Identifier: MIT
 
 import os
+from typing import Optional
 
+from kubernetes import client as k8s_client
+from kubernetes import config as k8s_config
+from kubernetes.config.config_exception import ConfigException
+from redis.client import Pipeline
 from rq import Worker
+from rq.worker import WorkerStatus
 
 import cvat.utils.remote_debugger as debug
 
@@ -52,6 +58,56 @@ class SimpleWorker(Worker):
         db.connections.close_all()
 
         return self.perform_job(*args, **kwargs)
+
+
+class DeletionCostReportingWorker(Worker):
+
+    WORKER_STATE_TO_PDF_COST: dict[WorkerStatus, int] = {
+        WorkerStatus.STARTED: 0,
+        WorkerStatus.IDLE: 0,
+        WorkerStatus.BUSY: 1000,
+        WorkerStatus.SUSPENDED: 0,
+    }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        try:
+            k8s_config.load_incluster_config()
+        except ConfigException as e:
+            raise RuntimeError(
+                (
+                    "Failed to load k8s incluster config. "
+                    "Make sure the worker is running in a kubernetes cluster."
+                )
+            ) from e
+
+        self._k8s_core_v1 = k8s_client.CoreV1Api()
+
+    def set_state(self, state: str, pipeline: Optional["Pipeline"] = None):
+        super().set_state(state, pipeline)
+
+        try:
+            cost = self.WORKER_STATE_TO_PDF_COST[state]
+        except KeyError as e:
+            raise ValueError(f"No pod deletion cost defined for worker state {state!r}") from e
+
+        try:
+            self._update_pod_deletion_cost(cost=cost)
+        except Exception:
+            self.log.exception("Failed to update pod deletion cost to %s", cost)
+
+    def _update_pod_deletion_cost(self, cost: int) -> None:
+        self._k8s_core_v1.patch_namespaced_pod(
+            name=os.environ["POD_NAME"],
+            namespace=os.environ["POD_NAMESPACE"],
+            body={
+                "metadata": {
+                    "annotations": {"controller.kubernetes.io/pod-deletion-cost": str(cost)}
+                }
+            },
+            _request_timeout=(3, 10),
+        )
 
 
 if debug.is_debugging_enabled():
