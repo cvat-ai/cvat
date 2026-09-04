@@ -36,7 +36,11 @@ export class MaskShape extends Shape {
         super.validateStateBeforeSave(data, updated, frame);
         if (updated.points) {
             const { width, height } = this.framesInfo[frame];
-            return cropMask(data.points, width, height);
+            const croppedPoints = cropMask(data.points, width, height);
+
+            // Reject an edit that moves the whole mask outside the image instead of
+            // replacing it with the empty-mask sentinel at the top-left corner.
+            return croppedPoints.length < 6 ? [] : croppedPoints;
         }
         return [];
     }
