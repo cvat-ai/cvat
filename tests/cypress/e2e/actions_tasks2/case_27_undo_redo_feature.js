@@ -65,7 +65,7 @@ context('Undo/redo feature', () => {
             cy.contains('.cvat-annotation-header-button', 'Undo').click();
             checkExistObject('exist', 'not.exist', 'not.exist');
 
-            cy.get('body').type('{ctrl}{z}');
+            cy.pressWithPlatformModifier('z');
             checkExistObject('not.exist', 'not.exist', 'not.exist');
         });
 
@@ -73,7 +73,7 @@ context('Undo/redo feature', () => {
             cy.contains('.cvat-annotation-header-button', 'Redo').click();
             checkExistObject('exist', 'not.exist', 'not.exist');
 
-            cy.get('body').type('{ctrl}{shift}{z}');
+            cy.pressWithPlatformModifier('{shift}z');
             checkExistObject('exist', 'exist', 'not.exist');
 
             cy.get('body').type('{ctrl}{y}');
