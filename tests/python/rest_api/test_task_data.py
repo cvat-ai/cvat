@@ -183,7 +183,10 @@ class TestPostTaskData:
                             assert im.height == 640 and im.width == 480
                             assert im.getexif().get(274, 1) == 1
 
-    @allure.issue('https://github.com/cvat-ai/cvat/issues/6878', 'Image upload inconsistent between SDK and web')
+    @allure.issue(
+        "https://github.com/cvat-ai/cvat/issues/6878",
+        "Image upload inconsistent between SDK and web",
+    )
     def test_can_create_task_with_big_images(self, fxt_use_cache):
         # Checks for regressions about the issue
         # https://github.com/cvat-ai/cvat/issues/6878
@@ -494,18 +497,14 @@ class TestPostTaskData:
     @pytest.mark.parametrize(
         "cloud_storage_id, manifest, use_bucket_content",
         [
-            pytest.param(1, "images_with_manifest/manifest.jsonl", False,
-                id="public-with-manifest"
+            pytest.param(
+                1, "images_with_manifest/manifest.jsonl", False, id="public-with-manifest"
             ),
-            pytest.param(2, "sub/images_with_manifest/manifest.jsonl", True,
-                id="private-with-manifest"
+            pytest.param(
+                2, "sub/images_with_manifest/manifest.jsonl", True, id="private-with-manifest"
             ),
-            pytest.param(1, None, False,
-                id="public-without-manifest"
-            ),
-            pytest.param(2, None, True,
-                id="private-without-manifest"
-            ),
+            pytest.param(1, None, False, id="public-without-manifest"),
+            pytest.param(2, None, True, id="private-without-manifest"),
         ],
     )
     def test_create_task_with_cloud_storage_files(
@@ -752,15 +751,21 @@ class TestPostTaskData:
         # three valid cache/manifest combinations
         "use_cache, use_manifest",
         [
-            pytest.param(True, False,
+            pytest.param(
+                True,
+                False,
                 marks=pytest.mark.dynamic_cache,
                 id="dynamic_cache-without_manifest",
             ),
-            pytest.param(True, True,
+            pytest.param(
+                True,
+                True,
                 marks=pytest.mark.dynamic_cache,
                 id="dynamic_cache-with_manifest",
             ),
-            pytest.param(False, False,
+            pytest.param(
+                False,
+                False,
                 marks=pytest.mark.static_cache,
                 id="static_cache-without_manifest",
             ),
@@ -769,13 +774,22 @@ class TestPostTaskData:
     @pytest.mark.parametrize(
         "server_files, server_files_exclude, task_size",
         [
-            pytest.param(["test/"], None, 6,
+            pytest.param(
+                ["test/"],
+                None,
+                6,
                 id="root",
             ),
-            pytest.param(["test/sub_0/", "test/sub_1/"], None, 6,
+            pytest.param(
+                ["test/sub_0/", "test/sub_1/"],
+                None,
+                6,
                 id="subdirs",
             ),
-            pytest.param(["test/"], ["test/sub_0/", "test/sub_1/img_1.jpeg"], 2,
+            pytest.param(
+                ["test/"],
+                ["test/sub_0/", "test/sub_1/img_1.jpeg"],
+                2,
                 id="with_exclusions",
             ),
         ],
@@ -2058,7 +2072,9 @@ class TestTaskData(TestTasksBase):
                 f"got job chunk counts {sorted(chunk_counts)}"
             )
 
-    @allure.issue("https://github.com/cvat-ai/cvat/issues/11006", 'Persistent HTTP 429 on honeypot updates')
+    @allure.issue(
+        "https://github.com/cvat-ai/cvat/issues/11006", "Persistent HTTP 429 on honeypot updates"
+    )
     def _image_task_with_honeypots_and_mixed_job_chunk_counts_base(
         self, request: pytest.FixtureRequest, **kwargs
     ) -> tuple[ITaskSpec, int]:
@@ -2077,9 +2093,7 @@ class TestTaskData(TestTasksBase):
     @fixture(scope="class")
     @parametrize("use_cache", STATIC_CACHE)
     def fxt_uploaded_images_task_with_honeypots_mixed_job_chunk_counts_and_changed_honeypots(
-        self, request: pytest.FixtureRequest,
-        *,
-        use_cache: bool
+        self, request: pytest.FixtureRequest, *, use_cache: bool
     ) -> tuple[ITaskSpec, int]:
         "The task to check for regressions on https://github.com/cvat-ai/cvat/issues/11006"
 
