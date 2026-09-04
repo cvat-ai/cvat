@@ -28,6 +28,9 @@ const defaultState: SettingsState = {
             z: false,
         },
     },
+    intervals: {
+        opacity: 20,
+    },
     workspace: {
         autoSave: false,
         autoSaveInterval: 15 * 60 * 1000,
@@ -139,6 +142,15 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
                 ...state,
                 shapes: {
                     ...state.shapes,
+                    opacity: action.payload.opacity,
+                },
+            };
+        }
+        case SettingsActionTypes.CHANGE_INTERVALS_OPACITY: {
+            return {
+                ...state,
+                intervals: {
+                    ...state.intervals,
                     opacity: action.payload.opacity,
                 },
             };

@@ -51,6 +51,7 @@
 .cvat-audio-waveform-wrapper {
     $control-background: rgb(209, 208, 240, 80%);
     $control-hover-background: rgb(209, 208, 240, 95%);
+    $draw-mode-guide-color: red;
 
     position: relative;
     background-color: white;
@@ -116,6 +117,20 @@
             *::part(region),
             *::part(region-handle) {
                 cursor: ew-resize !important;
+            }
+        }
+
+        &.cvat-audio-waveform-interaction-create {
+            cursor: text;
+
+            *::part(hover) {
+                border-color: $draw-mode-guide-color;
+            }
+
+            *::part(wrapper),
+            *::part(region),
+            *::part(region-handle) {
+                cursor: text;
             }
         }
 
