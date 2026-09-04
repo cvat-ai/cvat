@@ -2075,15 +2075,17 @@ class TestTaskData(TestTasksBase):
         return task_spec, task_id
 
     @fixture(scope="class")
-    @parametrize("static_cache_enabled", STATIC_CACHE)
+    @parametrize("use_cache", STATIC_CACHE)
     def fxt_uploaded_images_task_with_honeypots_mixed_job_chunk_counts_and_changed_honeypots(
-        self, request: pytest.FixtureRequest, *, static_cache_enabled: bool
+        self, request: pytest.FixtureRequest,
+        *,
+        use_cache: bool
     ) -> tuple[ITaskSpec, int]:
         "The task to check for regressions on https://github.com/cvat-ai/cvat/issues/11006"
 
-        assert static_cache_enabled
+        assert not use_cache, "fixture must exercise static FILE_SYSTEM storage"
         task_spec, task_id = self._image_task_with_honeypots_and_mixed_job_chunk_counts_base(
-            request
+            request, use_cache=use_cache
         )
         self._rotate_all_task_honeypots(task_spec, task_id)
         return task_spec, task_id
