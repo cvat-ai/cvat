@@ -1040,6 +1040,7 @@ class TestPostTaskData:
             assert task.mode == "interpolation"
 
     @pytest.mark.with_external_services
+    @pytest.mark.timeout(20)
     @pytest.mark.parametrize("use_manifest", [True, False])
     @pytest.mark.parametrize(
         "sorting_method", ["natural", "predefined", "lexicographical", "random"]
@@ -1065,7 +1066,7 @@ class TestPostTaskData:
             request=request,
             cloud_storage=cloud_storage,
             # manifest file should not be uploaded if random sorting is used or if cache is not used
-            use_manifest=use_manifest and use_cache and (sorting_method != "random"),
+            use_manifest=use_manifest and fxt_use_cache and (sorting_method != "random"),
             use_cache=fxt_use_cache,
             server_files=[f"test/sub_{i}/img_{j}.jpeg" for i in range(2) for j in range(3)],
             org=org,
