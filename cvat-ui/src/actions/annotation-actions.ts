@@ -29,7 +29,7 @@ import {
     Rotation,
     Workspace,
 } from 'reducers';
-import { switchToolsBlockerState } from './settings-actions';
+import { switchDataQuality, switchToolsBlockerState } from './settings-actions';
 import { updateJobAsync } from './jobs-actions';
 import { loadAudioDataAsync } from './audio-actions';
 
@@ -783,7 +783,9 @@ export function changeFrameAsync(
                 return;
             }
 
-            const data = await job.frames.get(toFrame, fillBuffer, frameStep);
+            // pass dataQuality from settings to request original or compressed frames
+            const useOriginalQuality = getState().settings.player.dataQuality;
+            const data = await job.frames.get(toFrame, fillBuffer, frameStep, useOriginalQuality);
 
             dispatch({
                 type: AnnotationActionTypes.CHANGE_FRAME,
@@ -838,7 +840,7 @@ export function changeFrameAsync(
                 },
             });
         } catch (error) {
-            if (error !== 'not needed') {
+            if (error !== 'not needed' && typeof error !== 'number') {
                 dispatch({
                     type: AnnotationActionTypes.CHANGE_FRAME_FAILED,
                     payload: {
@@ -1014,7 +1016,7 @@ export function getJobAsync({
 
             const {
                 settings: {
-                    player: { showDeletedFrames },
+                    player: { showDeletedFrames, dataQuality },
                 },
             } = state;
 
@@ -1051,7 +1053,7 @@ export function getJobAsync({
                 )) || job.startFrame;
 
             const isAudio = job.dimension === DimensionType.DIMENSION_1D;
-            const frameData = isAudio ? null : await job.frames.get(frameNumber);
+            const frameData = isAudio ? null : await job.frames.get(frameNumber, false, 1, dataQuality);
             const jobMeta = await cvat.frames.getMeta('job', job.id);
             const frameNumbers = await job.frames.frameNumbers();
             if (frameData) {
