@@ -2392,7 +2392,8 @@ export class CanvasViewImpl implements CanvasView, Listener {
         this.canvas.addEventListener('mousemove', this.onContentMouseMove, true);
         this.canvas.addEventListener('contextmenu', (event: MouseEvent): void => {
             // On macOS Ctrl+click may report the generated contextmenu event as button 2.
-            if (this.isMultiSelectObjectModifierPressed(event)) {
+            const onControlPoint = (event.target as Element | null)?.classList.contains('svg_select_points');
+            if (this.isMultiSelectObjectModifierPressed(event) && !onControlPoint) {
                 event.preventDefault();
                 event.stopPropagation();
             }
