@@ -22,6 +22,7 @@ from rest_framework import serializers, status
 from rest_framework.exceptions import MethodNotAllowed
 from rest_framework.response import Response
 from rest_framework.reverse import reverse
+from rq import Retry
 from rq.job import JobStatus as RQJobStatus
 
 import cvat.apps.dataset_manager as dm
@@ -74,7 +75,6 @@ from cvat.apps.engine.utils import (
     build_annotations_file_name,
     build_backup_file_name,
     get_rq_lock_for_job,
-    import_resource_with_clean_up_after,
     is_dataset_export,
     sendfile,
 )
@@ -179,6 +179,10 @@ class BaseResourceExporter(AbstractRequestManager):
     @property
     def job_failed_ttl(self):
         return self.job_result_ttl
+
+    @property
+    def job_retry(self) -> Retry | None:
+        return Retry(max=3, interval=[60, 60, 60])
 
     @abstractmethod
     def get_result_filename(self) -> str: ...
@@ -497,6 +501,10 @@ class BaseResourceImporter(AbstractRequestManager):
     def job_failed_ttl(self):
         return int(settings.IMPORT_CACHE_FAILED_TTL.total_seconds())
 
+    @property
+    def job_retry(self) -> Retry | None:
+        return Retry(max=3, interval=[60, 60, 60])
+
     def init_request_args(self):
         try:
             location_config = get_location_configuration(
@@ -583,9 +591,6 @@ class BaseResourceImporter(AbstractRequestManager):
                 *self.callback_args[1:],
             )
             self.callback = import_resource_from_cloud_storage
-
-        self.callback_args = (self.callback, *self.callback_args)
-        self.callback = import_resource_with_clean_up_after
 
 
 class DatasetImporter(BaseResourceImporter):

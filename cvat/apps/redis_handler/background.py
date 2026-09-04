@@ -12,7 +12,7 @@ from django.db.models import Model
 from django_rq.queues import DjangoRQ, DjangoScheduler
 from rest_framework import status
 from rest_framework.response import Response
-from rq import Callback
+from rq import Callback, Retry
 from rq.job import Job as RQJob
 from rq.job import JobStatus as RQJobStatus
 
@@ -76,6 +76,13 @@ class AbstractRequestManager(metaclass=ABCMeta):
         """
         Time to live for failures in seconds,
         if not set, the default failure TTL will be used
+        """
+        return None
+
+    @property
+    def job_retry(self) -> Retry | None:
+        """
+        Retry policy for the job, if not set, the job will not be retried
         """
         return None
 
@@ -176,6 +183,7 @@ class AbstractRequestManager(metaclass=ABCMeta):
                 depends_on=define_dependent_job(queue, self.user_id, rq_id=request_id),
                 result_ttl=self.job_result_ttl,
                 failure_ttl=self.job_failed_ttl,
+                retry=self.job_retry,
                 on_success=self.job_on_success_callback,
                 on_failure=self.job_on_failure_callback,
                 **kwargs,
