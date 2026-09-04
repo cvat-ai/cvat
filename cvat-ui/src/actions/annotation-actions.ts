@@ -7,7 +7,7 @@ import { AnyAction, Store } from 'redux';
 import { ThunkAction, ThunkDispatch } from 'utils/redux';
 import isAbleToChangeFrame from 'utils/is-able-to-change-frame';
 import getHiddenZLayers from 'utils/get-hidden-z-layers';
-import { Canvas3d, CanvasMode as Canvas3DMode } from 'cvat-canvas3d-wrapper';
+import { CanvasMode as Canvas3DMode } from 'cvat-canvas3d-wrapper';
 import {
     RectDrawingMethod, CuboidDrawingMethod, Canvas, CanvasMode as Canvas2DMode,
 } from 'cvat-canvas-wrapper';
@@ -1960,42 +1960,37 @@ export function pasteShapeAsync(): ThunkAction {
     return async (dispatch: ThunkDispatch): Promise<void> => {
         const {
             canvas: { instance: canvasInstance },
-            player: { frame: { number: frameNumber } },
-            drawing: { activeInitialState },
+            player: {
+                frame: { number: frameNumber },
+            },
+            drawing: { activeInitialState: initialState },
         } = getStore().getState().annotation;
 
-        if (!activeInitialState || !canvasInstance) {
-            return;
-        }
-
-        if (canvasInstance instanceof Canvas) {
-            dispatch(startPastePlacementAsync([snapshotSelectionState(activeInitialState)], false));
-            return;
-        }
-
-        if (canvasInstance instanceof Canvas3d) {
-            const activeControl = ShapeTypeToControl[activeInitialState.shapeType as ShapeType] || ActiveControl.CURSOR;
+        if (initialState && canvasInstance) {
+            const activeControl = ShapeTypeToControl[initialState.shapeType as ShapeType] || ActiveControl.CURSOR;
 
             canvasInstance.cancel();
             dispatch({
                 type: AnnotationActionTypes.PASTE_SHAPE,
-                payload: { activeControl },
+                payload: {
+                    activeControl,
+                },
             });
 
-            if (activeInitialState.objectType === ObjectType.TAG) {
+            if (initialState.objectType === ObjectType.TAG) {
                 const objectState = new cvat.classes.ObjectState({
                     objectType: ObjectType.TAG,
-                    label: activeInitialState.label,
-                    attributes: activeInitialState.attributes,
+                    label: initialState.label,
+                    attributes: initialState.attributes,
                     frame: frameNumber,
                 });
                 dispatch(createAnnotationsAsync([objectState]));
             } else {
                 canvasInstance.draw({
                     enabled: true,
-                    initialState: activeInitialState,
-                    ...(activeInitialState.shapeType === ShapeType.SKELETON ?
-                        { skeletonSVG: activeInitialState.label.structure.svg } : {}),
+                    initialState,
+                    ...(initialState.shapeType === ShapeType.SKELETON ?
+                        { skeletonSVG: initialState.label.structure.svg } : {}),
                 });
             }
         }
