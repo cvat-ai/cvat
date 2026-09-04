@@ -749,17 +749,35 @@ class TestPostTaskData:
     @pytest.mark.with_external_services
     @pytest.mark.parametrize("cloud_storage_id", [2])
     @pytest.mark.parametrize(
-        "use_cache, use_manifest, server_files, server_files_exclude, task_size",
+        # three valid cache/manifest combinations
+        "use_cache, use_manifest",
         [
-            (DYNAMIC_CACHE, False, ["test/"], None, 6),
-            (DYNAMIC_CACHE, False, ["test/sub_0/", "test/sub_1/"], None, 6),
-            (DYNAMIC_CACHE, False, ["test/"], ["test/sub_0/", "test/sub_1/img_1.jpeg"], 2),
-            (DYNAMIC_CACHE, True, ["test/"], None, 6),
-            (DYNAMIC_CACHE, True, ["test/sub_0/", "test/sub_1/"], None, 6),
-            (DYNAMIC_CACHE, True, ["test/"], ["test/sub_0/", "test/sub_1/img_1.jpeg"], 2),
-            (STATIC_CACHE, False, ["test/"], None, 6),
-            (STATIC_CACHE, False, ["test/sub_0/", "test/sub_1/"], None, 6),
-            (STATIC_CACHE, False, ["test/"], ["test/sub_0/", "test/sub_1/img_1.jpeg"], 2),
+            pytest.param(True, False,
+                marks=pytest.mark.dynamic_cache,
+                id="dynamic_cache-without_manifest",
+            ),
+            pytest.param(True, True,
+                marks=pytest.mark.dynamic_cache,
+                id="dynamic_cache-with_manifest",
+            ),
+            pytest.param(False, False,
+                marks=pytest.mark.static_cache,
+                id="static_cache-without_manifest",
+            ),
+        ],
+    )
+    @pytest.mark.parametrize(
+        "server_files, server_files_exclude, task_size",
+        [
+            pytest.param(["test/"], None, 6,
+                id="root",
+            ),
+            pytest.param(["test/sub_0/", "test/sub_1/"], None, 6,
+                id="subdirs",
+            ),
+            pytest.param(["test/"], ["test/sub_0/", "test/sub_1/img_1.jpeg"], 2,
+                id="with_exclusions",
+            ),
         ],
     )
     @pytest.mark.parametrize("org", [""])
