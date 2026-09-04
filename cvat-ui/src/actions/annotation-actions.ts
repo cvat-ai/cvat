@@ -779,6 +779,24 @@ function translateSelectionState(
     };
 }
 
+function createCopiedObjectState(serialized: SerializedData): ObjectState {
+    const objectState = new cvat.classes.ObjectState(serialized);
+    const preservePinned = (state: ObjectState, source: SerializedData): void => {
+        if (typeof source.pinned === 'boolean') {
+            Object.assign(state, { pinned: source.pinned });
+        }
+        state.elements.forEach((element, index) => {
+            const sourceElement = source.elements?.[index];
+            if (sourceElement) {
+                preservePinned(element, sourceElement);
+            }
+        });
+    };
+
+    preservePinned(objectState, serialized);
+    return objectState;
+}
+
 function placeCopiedStatesAsync(
     copiedStates: SerializedData[],
     dx: number,
@@ -795,7 +813,7 @@ function placeCopiedStatesAsync(
             return;
         }
 
-        const statesToCreate = copiedStates.map((state): ObjectState => new cvat.classes.ObjectState(
+        const statesToCreate = copiedStates.map((state): ObjectState => createCopiedObjectState(
             translateSelectionState(
                 state,
                 frameNumber,
@@ -861,7 +879,7 @@ function startPastePlacementAsync(copiedStates: SerializedData[], selectCreated:
                 elements: state.elements?.map((element) => withPreviewIDs(element, clientID)) || [],
             };
         };
-        const initialStates = shapes.map((state): ObjectState => new cvat.classes.ObjectState(withPreviewIDs(
+        const initialStates = shapes.map((state): ObjectState => createCopiedObjectState(withPreviewIDs(
             translateSelectionState(state, frameNumber, 0, 0, currentZOrder),
         )));
 
