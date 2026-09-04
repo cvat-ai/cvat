@@ -562,6 +562,25 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
         },
     });
 
+    Object.defineProperty(Job.prototype.annotations.updateBatch, 'implementation', {
+        value: function updateBatchAnnotationsImplementation(
+            this: JobClass,
+            objectStates: Parameters<typeof JobClass.prototype.annotations.updateBatch>[0],
+        ): ReturnType<typeof JobClass.prototype.annotations.updateBatch> {
+            return Promise.resolve(getCollection(this).updateBatch(objectStates));
+        },
+    });
+
+    Object.defineProperty(Job.prototype.annotations.removeBatch, 'implementation', {
+        value: function removeBatchAnnotationsImplementation(
+            this: JobClass,
+            objectStates: Parameters<typeof JobClass.prototype.annotations.removeBatch>[0],
+            force: Parameters<typeof JobClass.prototype.annotations.removeBatch>[1],
+        ): ReturnType<typeof JobClass.prototype.annotations.removeBatch> {
+            return Promise.resolve(getCollection(this).removeBatch(objectStates, force ?? false));
+        },
+    });
+
     Object.defineProperty(Job.prototype.annotations.import, 'implementation', {
         value: function importAnnotationsImplementation(
             this: JobClass,
@@ -635,6 +654,24 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
             count: Parameters<typeof JobClass.prototype.actions.redo>[0],
         ): ReturnType<typeof JobClass.prototype.actions.redo> {
             return getHistory(this).redo(count);
+        },
+    });
+
+    Object.defineProperty(Job.prototype.actions.recordSelection, 'implementation', {
+        value: function recordSelectionActionImplementation(
+            this: JobClass,
+            previousClientIDs: Parameters<typeof JobClass.prototype.actions.recordSelection>[0],
+            nextClientIDs: Parameters<typeof JobClass.prototype.actions.recordSelection>[1],
+            frame: Parameters<typeof JobClass.prototype.actions.recordSelection>[2],
+        ): ReturnType<typeof JobClass.prototype.actions.recordSelection> {
+            getHistory(this).do(
+                HistoryActions.CHANGED_SELECTION,
+                () => [...previousClientIDs],
+                () => [...nextClientIDs],
+                [...new Set([...previousClientIDs, ...nextClientIDs])],
+                frame,
+            );
+            return Promise.resolve();
         },
     });
 
@@ -1381,6 +1418,25 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
         },
     });
 
+    Object.defineProperty(Task.prototype.annotations.updateBatch, 'implementation', {
+        value: function updateBatchAnnotationsImplementation(
+            this: TaskClass,
+            objectStates: Parameters<typeof TaskClass.prototype.annotations.updateBatch>[0],
+        ): ReturnType<typeof TaskClass.prototype.annotations.updateBatch> {
+            return Promise.resolve(getCollection(this).updateBatch(objectStates));
+        },
+    });
+
+    Object.defineProperty(Task.prototype.annotations.removeBatch, 'implementation', {
+        value: function removeBatchAnnotationsImplementation(
+            this: TaskClass,
+            objectStates: Parameters<typeof TaskClass.prototype.annotations.removeBatch>[0],
+            force: Parameters<typeof TaskClass.prototype.annotations.removeBatch>[1],
+        ): ReturnType<typeof TaskClass.prototype.annotations.removeBatch> {
+            return Promise.resolve(getCollection(this).removeBatch(objectStates, force ?? false));
+        },
+    });
+
     Object.defineProperty(Task.prototype.annotations.upload, 'implementation', {
         value: async function uploadAnnotationsImplementation(
             this: TaskClass,
@@ -1454,6 +1510,24 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
             count: Parameters<typeof TaskClass.prototype.actions.redo>[0],
         ): ReturnType<typeof TaskClass.prototype.actions.redo> {
             return getHistory(this).redo(count);
+        },
+    });
+
+    Object.defineProperty(Task.prototype.actions.recordSelection, 'implementation', {
+        value: function recordSelectionActionImplementation(
+            this: TaskClass,
+            previousClientIDs: Parameters<typeof TaskClass.prototype.actions.recordSelection>[0],
+            nextClientIDs: Parameters<typeof TaskClass.prototype.actions.recordSelection>[1],
+            frame: Parameters<typeof TaskClass.prototype.actions.recordSelection>[2],
+        ): ReturnType<typeof TaskClass.prototype.actions.recordSelection> {
+            getHistory(this).do(
+                HistoryActions.CHANGED_SELECTION,
+                () => [...previousClientIDs],
+                () => [...nextClientIDs],
+                [...new Set([...previousClientIDs, ...nextClientIDs])],
+                frame,
+            );
+            return Promise.resolve();
         },
     });
 

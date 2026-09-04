@@ -829,6 +829,7 @@ export interface NotificationsState {
 
 export enum ActiveControl {
     CURSOR = 'cursor',
+    SELECT = 'select',
     DRAG_CANVAS = 'drag_canvas',
     ZOOM_CANVAS = 'zoom_canvas',
     DRAW_RECTANGLE = 'draw_rectangle',
@@ -839,6 +840,7 @@ export enum ActiveControl {
     DRAW_MASK = 'draw_mask',
     DRAW_CUBOID = 'draw_cuboid',
     DRAW_SKELETON = 'draw_skeleton',
+    PASTE_SELECTION = 'paste_selection',
     GROUP = 'group',
     MERGE = 'merge',
     JOIN = 'join',
@@ -961,6 +963,7 @@ export interface AnnotationState {
         activeLabelID: number | null;
         activeObjectType: ObjectType;
         activeInitialState?: any;
+        copiedStates?: import('cvat-core-wrapper').SerializedData[];
         activeSimplifyPoly?: boolean;
     };
     editing: EditingState;
@@ -968,6 +971,7 @@ export interface AnnotationState {
         activatedStateID: number | null;
         activatedElementID: number | null;
         activatedAttributeID: number | null;
+        selectedStatesID: number[];
         highlightedConflict: QualityConflict | null;
         collapsed: Record<number, boolean>;
         collapsedAll: boolean;

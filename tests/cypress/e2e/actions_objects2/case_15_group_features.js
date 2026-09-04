@@ -149,6 +149,38 @@ context('Group features', () => {
             });
         });
 
+        it('Group and ungroup a persistent selection.', () => {
+            for (const sidebarItem of shapeSidebarItemArray) {
+                cy.get(sidebarItem).click({ ctrlKey: true });
+                cy.get(sidebarItem).should('have.class', 'cvat-objects-sidebar-state-item-multi-selected');
+            }
+
+            cy.get('.cvat-group-control').click();
+            testShapesFillEquality(false);
+            shapeSidebarItemArray.forEach((sidebarItem) => {
+                cy.get(sidebarItem).should('have.class', 'cvat-objects-sidebar-state-item-multi-selected');
+            });
+
+            cy.contains('.cvat-annotation-header-button', 'Undo').click();
+            testShapesFillEquality(true);
+            cy.contains('.cvat-annotation-header-button', 'Redo').click();
+            testShapesFillEquality(false);
+
+            cy.get('button[aria-label="Open selection actions"]').click();
+            cy.contains('button', 'Ungroup selection').click();
+            testShapesFillEquality(true);
+
+            cy.get('body').type('g');
+            testShapesFillEquality(false);
+            cy.get('body').type('{Shift}g');
+            testShapesFillEquality(true);
+
+            cy.get('body').type('{Esc}');
+            shapeSidebarItemArray.forEach((sidebarItem) => {
+                cy.get(sidebarItem).should('not.have.class', 'cvat-objects-sidebar-state-item-multi-selected');
+            });
+        });
+
         it('With group button unite two shapes. They have corresponding colors.', () => {
             testGroupObjects(shapeArray, true); // Reset grouping
             testShapesFillEquality(true);

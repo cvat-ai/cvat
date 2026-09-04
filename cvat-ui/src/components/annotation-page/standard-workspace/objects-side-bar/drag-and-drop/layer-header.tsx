@@ -20,6 +20,10 @@ interface LayerHeaderProps {
     selected: boolean;
     visible: boolean;
     collapsed: boolean;
+    multiSelected: boolean;
+    onMouseDown(event: React.MouseEvent): void;
+    onKeyDown(event: React.KeyboardEvent): void;
+    onContextMenu(event: React.MouseEvent): void;
     selectLayer(zOrder: number): void;
     toggleLayerVisibility(zOrder: number, includeLower: boolean): void;
     toggleLayerCollapsed(zOrder: number): void;
@@ -28,7 +32,8 @@ interface LayerHeaderProps {
 // Renders layer controls and exposes the layer itself as a draggable handle target.
 function LayerHeader(props: LayerHeaderProps): JSX.Element {
     const {
-        zOrder, selected, visible, collapsed, selectLayer, toggleLayerCollapsed, toggleLayerVisibility,
+        zOrder, selected, visible, collapsed, multiSelected, selectLayer, toggleLayerCollapsed,
+        toggleLayerVisibility, onMouseDown, onKeyDown, onContextMenu,
     } = props;
 
     const {
@@ -50,6 +55,12 @@ function LayerHeader(props: LayerHeaderProps): JSX.Element {
             ref={setNodeRef}
             className={className}
             style={style}
+            role='option'
+            tabIndex={0}
+            aria-selected={multiSelected}
+            onMouseDown={onMouseDown}
+            onKeyDown={onKeyDown}
+            onContextMenu={onContextMenu}
         >
             <div>
                 <CVATTooltip title={collapsed ? 'Expand layer' : 'Collapse layer'}>

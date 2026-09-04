@@ -481,6 +481,11 @@
     box-shadow: 0 0 0 1px rgba($color: $completed-progress-color, $alpha: 10%);
 }
 
+.cvat-objects-sidebar-z-layer-multi-selected {
+    border: 2px solid rgba(0, 0, 0, 66%);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 14%);
+}
+
 .cvat-objects-sidebar-z-layer-dragging {
     opacity: 0.55;
     position: relative;
@@ -518,6 +523,12 @@
 .cvat-objects-sidebar-state-item.cvat-objects-sidebar-state-active-item {
     box-shadow: 0 3px 10px rgba(0, 0, 0, 14%);
     border: 2px solid rgba(0, 0, 0, 66%);
+}
+
+// objects that are part of the canvas multi-selection
+.cvat-objects-sidebar-state-item.cvat-objects-sidebar-state-item-multi-selected {
+    border: 2px solid rgba(0, 0, 0, 66%);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 14%);
 }
 
 .cvat-objects-sidebar-state-item {
@@ -700,6 +711,11 @@
 
 .cvat-objects-sidebar-label-active-item {
     background: rgba(255, 255, 255, 92%);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 14%);
+    border: 2px solid rgba(0, 0, 0, 66%);
+}
+
+.cvat-objects-sidebar-label-item.cvat-objects-sidebar-label-item-multi-selected {
     box-shadow: 0 3px 10px rgba(0, 0, 0, 14%);
     border: 2px solid rgba(0, 0, 0, 66%);
 }

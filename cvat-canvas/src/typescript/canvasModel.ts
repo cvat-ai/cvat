@@ -93,9 +93,13 @@ export enum ColorBy {
     LABEL = 'Label',
 }
 
+export type MultiSelectModifier = 'shift' | 'ctrl' | 'alt' | 'meta';
+
 export interface Configuration {
     smoothImage?: boolean;
     autoborders?: boolean;
+    multiSelectModifier?: MultiSelectModifier;
+    multiSelectObjectModifier?: MultiSelectModifier;
     snapToPoint?: boolean;
     adaptiveZoom?: boolean;
     displayAllText?: boolean;
@@ -138,11 +142,12 @@ export interface DrawData {
     skeletonSVG?: SVGSVGElement;
     numberOfPoints?: number;
     initialState?: any;
+    initialStates?: any[];
     crosshair?: boolean;
     brushTool?: BrushTool;
     redraw?: number;
     simplifyPoly?: boolean;
-    onDrawDone?: (data: object) => void;
+    onDrawDone?: (data: object, duration?: number, continueDraw?: boolean, drawData?: DrawData) => void;
     onUpdateConfiguration?: (configuration: { brushTool?: Pick<BrushTool, 'size'> }) => void;
 }
 
@@ -187,6 +192,11 @@ export interface MasksEditData {
 
 export interface GroupData {
     enabled: boolean;
+}
+
+export interface SelectData {
+    enabled: boolean;
+    once?: boolean;
 }
 
 export interface MergeData {
@@ -237,6 +247,8 @@ export enum UpdateReasons {
     JOIN = 'join',
     SLICE = 'slice',
     SELECT = 'select',
+    SELECT_OBJECTS = 'select_objects',
+    SELECTED_OBJECTS_UPDATED = 'selected_objects_updated',
     CANCEL = 'cancel',
     BITMAP = 'bitmap',
     SELECT_REGION = 'select_region',
@@ -259,6 +271,7 @@ export enum Mode {
     JOIN = 'join',
     SLICE = 'slice',
     INTERACT = 'interact',
+    SELECT = 'select',
     SELECT_REGION = 'select_region',
     DRAG_CANVAS = 'drag_canvas',
     ZOOM_CANVAS = 'zoom_canvas',
@@ -283,6 +296,8 @@ export interface CanvasModel {
     readonly groupData: GroupData;
     readonly joinData: JoinData;
     readonly sliceData: SliceData;
+    readonly selectData: SelectData;
+    readonly selectedObjects: number[];
     readonly configuration: Configuration;
     readonly selected: any;
     geometry: Geometry;
@@ -309,6 +324,8 @@ export interface CanvasModel {
     split(splitData: SplitData): void;
     merge(mergeData: MergeData): void;
     select(objectState: any): void;
+    selectObjects(selectData: SelectData): void;
+    setSelectedObjects(clientIDs: number[]): void;
     interact(interactionData: InteractionData): void;
 
     fitCanvas(width: number, height: number): void;
@@ -337,6 +354,9 @@ const defaultData = {
         enabled: false,
     },
     groupData: {
+        enabled: false,
+    },
+    selectData: {
         enabled: false,
     },
     splitData: {
@@ -400,10 +420,12 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         interactionData: InteractionData;
         mergeData: MergeData;
         groupData: GroupData;
+        selectData: SelectData;
         joinData: JoinData;
         sliceData: SliceData;
         splitData: SplitData;
         selected: any;
+        selectedObjects: number[];
         mode: Mode;
         exception: Error | null;
     };
@@ -450,6 +472,8 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
                 undefinedAttrValue: consts.DEFAULT_UNDEFINED_ATTR_VALUE,
                 hideEditedObject: false,
                 focusedObjectPadding: 50,
+                multiSelectModifier: 'shift',
+                multiSelectObjectModifier: 'ctrl',
             },
             imageBitmap: false,
             image: null,
@@ -477,6 +501,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
             left: 0,
             fittedScale: 0,
             selected: null,
+            selectedObjects: [],
             mode: Mode.IDLE,
             exception: null,
             ...defaultData,
@@ -793,7 +818,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
                 throw new Error('Skeleton template must be specified when drawing a skeleton');
             }
 
-            if (!drawData.shapeType && !drawData.initialState) {
+            if (!drawData.shapeType && !drawData.initialState && !drawData.initialStates?.length) {
                 throw new Error('A shape type is not specified');
             }
 
@@ -912,6 +937,26 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         this.notify(UpdateReasons.GROUP);
     }
 
+    public selectObjects(selectData: SelectData): void {
+        if (![Mode.IDLE, Mode.SELECT].includes(this.data.mode)) {
+            throw Error(`Canvas is busy. Action: ${this.data.mode}`);
+        }
+
+        if ((this.data.selectData.enabled && selectData.enabled) || (
+            !this.data.selectData.enabled && !selectData.enabled
+        )) {
+            return;
+        }
+
+        this.data.selectData = { ...selectData };
+        this.notify(UpdateReasons.SELECT_OBJECTS);
+    }
+
+    public setSelectedObjects(clientIDs: number[]): void {
+        this.data.selectedObjects = [...clientIDs];
+        this.notify(UpdateReasons.SELECTED_OBJECTS_UPDATED);
+    }
+
     public join(joinData: JoinData): void {
         if (![Mode.IDLE, Mode.JOIN].includes(this.data.mode)) {
             throw Error(`Canvas is busy. Action: ${this.data.mode}`);
@@ -1011,6 +1056,13 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         if (typeof configuration.smoothImage === 'boolean') {
             this.data.configuration.smoothImage = configuration.smoothImage;
         }
+        if (['shift', 'ctrl', 'alt', 'meta'].includes(configuration.multiSelectModifier)) {
+            this.data.configuration.multiSelectModifier = configuration.multiSelectModifier;
+        }
+        if (['shift', 'ctrl', 'alt', 'meta'].includes(configuration.multiSelectObjectModifier)) {
+            this.data.configuration.multiSelectObjectModifier = configuration.multiSelectObjectModifier;
+        }
+
         if (typeof configuration.undefinedAttrValue === 'string') {
             this.data.configuration.undefinedAttrValue = configuration.undefinedAttrValue;
         }
@@ -1188,6 +1240,14 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
 
     public get groupData(): GroupData {
         return { ...this.data.groupData };
+    }
+
+    public get selectData(): SelectData {
+        return { ...this.data.selectData };
+    }
+
+    public get selectedObjects(): number[] {
+        return [...this.data.selectedObjects];
     }
 
     public get selected(): any {

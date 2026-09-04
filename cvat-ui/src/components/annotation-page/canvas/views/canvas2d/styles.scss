@@ -4,6 +4,52 @@
 
 @import 'base';
 
+.cvat-canvas-selected-objects-label-selector {
+    width: $grid-unit-size * 30;
+    padding: $grid-unit-size * 2;
+
+    > .ant-select {
+        width: 100%;
+    }
+}
+
+.cvat-canvas-selected-objects-attributes {
+    width: $grid-unit-size * 30;
+    padding: 0 $grid-unit-size * 2;
+
+    .cvat-objects-sidebar-state-item-collapse > .ant-collapse-item > .ant-collapse-header {
+        align-items: center;
+        padding-left: 0;
+        padding-top: 0;
+
+        .ant-collapse-arrow {
+            color: $text-color !important;
+            opacity: 1 !important;
+            visibility: visible !important;
+            top: auto;
+        }
+
+        .ant-collapse-header-text {
+            margin-left: -2px;
+        }
+    }
+}
+
+.cvat-canvas-selected-objects-attributes-item.ant-dropdown-menu-item {
+    display: flex;
+    align-items: center;
+    padding-top: 5px !important;
+    padding-bottom: 5px !important;
+
+    > .ant-dropdown-menu-title-content {
+        width: 100%;
+    }
+
+    .ant-collapse-header-text .ant-typography {
+        font-size: 14px !important;
+    }
+}
+
 .cvat-image-setups-filters {
     margin-bottom: $grid-unit-size * 3;
 }

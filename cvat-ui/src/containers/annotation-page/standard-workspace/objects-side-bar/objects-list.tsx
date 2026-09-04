@@ -6,24 +6,29 @@
 import React from 'react';
 
 import { connect } from 'react-redux';
+import message from 'antd/lib/message';
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 
 import ObjectsListComponent from 'components/annotation-page/standard-workspace/objects-side-bar/objects-list';
 import {
     updateAnnotationsAsync,
+    updateAnnotationsBatchAsync,
     changeFrameAsync,
     collapseObjectItems,
     changeGroupColorAsync,
     copyShape as copyShapeAction,
+    copySelection as copySelectionAction,
     switchPropagateVisibility as switchPropagateVisibilityAction,
     switchSimplifyVisibility as switchSimplifyVisibilityAction,
     removeObject as removeObjectAction,
+    removeSelectionAsync,
     fetchAnnotationsAsync,
     changeHideActiveObjectAsync,
     updateLayerAsync,
     compactLayersAsync,
     switchZLayer,
     toggleZLayersVisibility,
+    selectObjectsAsync,
 } from 'actions/annotation-actions';
 import {
     changeShowGroundTruth as changeShowGroundTruthAction,
@@ -47,6 +52,12 @@ import {
 } from 'components/annotation-page/standard-workspace/objects-side-bar/drag-and-drop';
 import { openAnnotationsActionModal } from 'components/annotation-page/annotations-actions/annotations-actions-modal';
 import { OBJECTS_SIDEBAR_OPEN_Z_LAYER_EVENT } from 'utils/objects-sidebar';
+import {
+    getSelectedStates,
+    getSelectionToggleState,
+    prepareSelectionZOrder,
+    prepareSelectionToggle,
+} from 'utils/multi-selection';
 
 interface StateToProps {
     jobInstance: any;
@@ -62,6 +73,7 @@ interface StateToProps {
     colorBy: ColorBy;
     activatedStateID: number | null;
     activatedElementID: number | null;
+    selectedStatesID: number[];
     minZLayer: number;
     maxZLayer: number;
     currentZLayer: number;
@@ -77,9 +89,12 @@ interface StateToProps {
 
 interface DispatchToProps {
     updateAnnotations(...args: Parameters<typeof updateAnnotationsAsync>): void;
+    updateAnnotationsBatch(...args: Parameters<typeof updateAnnotationsBatchAsync>): void;
     collapseStates(...args: Parameters<typeof collapseObjectItems>): void;
     removeObject(...args: Parameters<typeof removeObjectAction>): void;
+    removeSelection(...args: Parameters<typeof removeSelectionAsync>): void;
     copyShape(...args: Parameters<typeof copyShapeAction>): void;
+    copySelection(...args: Parameters<typeof copySelectionAction>): void;
     switchPropagateVisibility(...args: Parameters<typeof switchPropagateVisibilityAction>): void;
     switchSimplifyVisibility(...args: Parameters<typeof switchSimplifyVisibilityAction>): void;
     changeFrame(...args: Parameters<typeof changeFrameAsync>): void;
@@ -90,6 +105,7 @@ interface DispatchToProps {
     compactLayers(...args: Parameters<typeof compactLayersAsync>): void;
     selectLayer(...args: Parameters<typeof switchZLayer>): void;
     toggleLayersVisibility(...args: Parameters<typeof toggleZLayersVisibility>): void;
+    selectObjects(...args: Parameters<typeof selectObjectsAsync>): void;
 }
 
 const componentShortcuts = {
@@ -100,8 +116,8 @@ const componentShortcuts = {
         scope: ShortcutScope.OBJECTS_SIDEBAR,
     },
     SWITCH_LOCK: {
-        name: 'Lock/unlock an object',
-        description: 'Change locked state for an active object',
+        name: 'Lock/unlock objects',
+        description: 'Change locked state for selected objects or an active object',
         sequences: ['l'],
         scope: ShortcutScope.OBJECTS_SIDEBAR,
     },
@@ -125,7 +141,7 @@ const componentShortcuts = {
     },
     SWITCH_PINNED: {
         name: 'Switch pinned property',
-        description: 'Change pinned property for an active object',
+        description: 'Change pinned state for selected objects or an active object',
         sequences: ['p'],
         scope: ShortcutScope.OBJECTS_SIDEBAR,
     },
@@ -144,7 +160,7 @@ const componentShortcuts = {
     DELETE_OBJECT_STANDARD_WORKSPACE: {
         name: 'Delete object',
         description: 'Delete an active object. Use shift to force delete of locked objects',
-        sequences: ['del', 'shift+del'],
+        sequences: ['del', 'backspace', 'shift+del', 'shift+backspace'],
         scope: ShortcutScope.OBJECTS_SIDEBAR,
     },
     TO_BACKGROUND: {
@@ -213,9 +229,40 @@ const componentShortcuts = {
         sequences: [],
         scope: ShortcutScope.OBJECTS_SIDEBAR,
     },
+    SELECT_ALL_OBJECTS: {
+        name: 'Select all objects',
+        description: 'Add all objects visible on the canvas to the selection',
+        sequences: ['ctrl+a'],
+        scope: ShortcutScope.OBJECTS_SIDEBAR,
+    },
 };
 
 registerComponentShortcuts(componentShortcuts);
+
+function withDeleteKeyAliases(keyMap: KeyMap): KeyMap {
+    const deleteShortcut = keyMap.DELETE_OBJECT_STANDARD_WORKSPACE;
+    if (!deleteShortcut) {
+        return keyMap;
+    }
+
+    const sequences = new Set(deleteShortcut.sequences);
+    deleteShortcut.sequences.forEach((sequence) => {
+        const keys = sequence.split('+');
+        const key = keys.at(-1);
+        if (key === 'del' || key === 'backspace') {
+            keys[keys.length - 1] = key === 'del' ? 'backspace' : 'del';
+            sequences.add(keys.join('+'));
+        }
+    });
+
+    return {
+        ...keyMap,
+        DELETE_OBJECT_STANDARD_WORKSPACE: {
+            ...deleteShortcut,
+            sequences: [...sequences],
+        },
+    };
+}
 
 function mapStateToProps(state: CombinedState): StateToProps {
     const {
@@ -228,6 +275,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 collapsedAll,
                 activatedStateID,
                 activatedElementID,
+                selectedStatesID,
                 zLayer: {
                     min: minZLayer, max: maxZLayer, cur: currentZLayer,
                 },
@@ -282,6 +330,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         colorBy,
         activatedStateID,
         activatedElementID,
+        selectedStatesID,
         minZLayer,
         maxZLayer,
         currentZLayer,
@@ -301,11 +350,20 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         updateAnnotations(...args: Parameters<typeof updateAnnotationsAsync>): void {
             dispatch(updateAnnotationsAsync(...args));
         },
+        updateAnnotationsBatch(...args: Parameters<typeof updateAnnotationsBatchAsync>): void {
+            dispatch(updateAnnotationsBatchAsync(...args));
+        },
         collapseStates(...args: Parameters<typeof collapseObjectItems>): void {
             dispatch(collapseObjectItems(...args));
         },
         removeObject(...args: Parameters<typeof removeObjectAction>): void {
             dispatch(removeObjectAction(...args));
+        },
+        removeSelection(...args: Parameters<typeof removeSelectionAsync>): void {
+            dispatch(removeSelectionAsync(...args));
+        },
+        copySelection(...args: Parameters<typeof copySelectionAction>): void {
+            dispatch(copySelectionAction(...args));
         },
         copyShape(...args: Parameters<typeof copyShapeAction>): void {
             dispatch(copyShapeAction(...args));
@@ -340,6 +398,9 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         },
         toggleLayersVisibility(...args: Parameters<typeof toggleZLayersVisibility>): void {
             dispatch(toggleZLayersVisibility(...args));
+        },
+        selectObjects(...args: Parameters<typeof selectObjectsAsync>): void {
+            dispatch(selectObjectsAsync(...args));
         },
     };
 }
@@ -448,6 +509,40 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
 
     private onUnlockAllStates = (): void => {
         this.lockAllStates(false);
+    };
+
+    private switchSelectionLock = (): void => {
+        const {
+            objectStates, selectedStatesID, updateAnnotationsBatch,
+        } = this.props;
+        const selectedStates = getSelectedStates(objectStates, selectedStatesID);
+        if (!selectedStates.length) return;
+        const { disabledReason } = getSelectionToggleState(selectedStates, 'lock');
+        if (disabledReason) {
+            message.destroy();
+            message.warning(disabledReason);
+            return;
+        }
+
+        const statesToUpdate = prepareSelectionToggle(selectedStates, 'lock');
+        updateAnnotationsBatch(statesToUpdate);
+    };
+
+    private switchSelectionPinned = (): void => {
+        const {
+            objectStates, selectedStatesID, updateAnnotationsBatch,
+        } = this.props;
+        const selectedStates = getSelectedStates(objectStates, selectedStatesID);
+        if (!selectedStates.length) return;
+        const { disabledReason } = getSelectionToggleState(selectedStates, 'pinned');
+        if (disabledReason) {
+            message.destroy();
+            message.warning(disabledReason);
+            return;
+        }
+
+        const statesToUpdate = prepareSelectionToggle(selectedStates, 'pinned');
+        updateAnnotationsBatch(statesToUpdate);
     };
 
     private onCollapseAllStates = (): void => {
@@ -563,14 +658,19 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             statesCollapsedAll,
             showGroundTruth,
             updateAnnotations,
+            updateAnnotationsBatch,
             changeGroupColor,
             removeObject,
+            removeSelection,
             copyShape,
+            copySelection,
+            selectedStatesID,
             switchPropagateVisibility,
             switchSimplifyVisibility,
             changeFrame,
             workspace,
             renderData,
+            selectObjects,
         } = this.props;
         const {
             objectStates, sortedStatesID, statesOrdering, filteredStates,
@@ -580,6 +680,19 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             if (event) {
                 event.preventDefault();
             }
+        };
+
+        const updateSelectedZOrder = (resolveZOrder: (state: ObjectState) => number): boolean => {
+            if (!selectedStatesID.length) {
+                return false;
+            }
+
+            const selectedStates = getSelectedStates(objectStates, selectedStatesID);
+            const statesToUpdate = prepareSelectionZOrder(selectedStates, resolveZOrder);
+            if (statesToUpdate.length) {
+                updateAnnotationsBatch(statesToUpdate);
+            }
+            return true;
         };
 
         const activatedState = (ignoreElements = false): ObjectState | null => {
@@ -606,6 +719,10 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             },
             SWITCH_LOCK: (event?: KeyboardEvent) => {
                 preventDefault(event);
+                if (selectedStatesID.length) {
+                    this.switchSelectionLock();
+                    return;
+                }
                 const state = activatedState();
                 if (state) {
                     state.lock = !state.lock;
@@ -641,6 +758,10 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             },
             SWITCH_PINNED: (event?: KeyboardEvent) => {
                 preventDefault(event);
+                if (selectedStatesID.length) {
+                    this.switchSelectionPinned();
+                    return;
+                }
                 const state = activatedState(true);
                 if (state) {
                     state.pinned = !state.pinned;
@@ -668,6 +789,12 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             },
             DELETE_OBJECT_STANDARD_WORKSPACE: (event?: KeyboardEvent) => {
                 preventDefault(event);
+                // with an active multi-selection the whole selection is removed
+                if (selectedStatesID.length) {
+                    removeSelection(event ? event.shiftKey : false);
+                    return;
+                }
+
                 const state = activatedState(true);
                 if (state) {
                     removeObject(state, event ? event.shiftKey : false);
@@ -692,6 +819,9 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             },
             TO_BACKGROUND: (event?: KeyboardEvent) => {
                 preventDefault(event);
+                if (updateSelectedZOrder((): number => minZLayer - 1)) {
+                    return;
+                }
                 const state = activatedState(true);
                 if (state && isLayerState(state)) {
                     state.zOrder = minZLayer - 1;
@@ -700,6 +830,9 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             },
             TO_FOREGROUND: (event?: KeyboardEvent) => {
                 preventDefault(event);
+                if (updateSelectedZOrder((): number => maxZLayer + 1)) {
+                    return;
+                }
                 const state = activatedState(true);
                 if (state && isLayerState(state)) {
                     state.zOrder = maxZLayer + 1;
@@ -708,6 +841,9 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             },
             TO_ONE_LAYER_BACKWARD: (event?: KeyboardEvent) => {
                 preventDefault(event);
+                if (updateSelectedZOrder((state: ObjectState): number => state.zOrder - 1)) {
+                    return;
+                }
                 const state = activatedState(true);
                 if (state && isLayerState(state)) {
                     state.zOrder -= 1;
@@ -716,6 +852,9 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             },
             TO_ONE_LAYER_FORWARD: (event?: KeyboardEvent) => {
                 preventDefault(event);
+                if (updateSelectedZOrder((state: ObjectState): number => state.zOrder + 1)) {
+                    return;
+                }
                 const state = activatedState(true);
                 if (state && isLayerState(state)) {
                     state.zOrder += 1;
@@ -723,12 +862,29 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                 }
             },
             COPY_SHAPE: () => {
+                // with an active multi-selection the whole selection is copied
+                if (selectedStatesID.length) {
+                    const selectedStates = getSelectedStates(objectStates, selectedStatesID);
+                    if (selectedStates.length) {
+                        copySelection(selectedStates);
+                        return;
+                    }
+                }
+
                 const state = activatedState(true);
                 if (state) {
                     copyShape(state);
                 }
             },
             RUN_ANNOTATIONS_ACTION: () => {
+                if (selectedStatesID.length) {
+                    const selectedStates = getSelectedStates(objectStates, selectedStatesID);
+                    if (selectedStates.length) {
+                        openAnnotationsActionModal({ defaultObjectStates: selectedStates });
+                        return;
+                    }
+                }
+
                 const state = activatedState(true);
                 if (state) {
                     openAnnotationsActionModal({ defaultObjectState: state });
@@ -770,11 +926,24 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                     switchSimplifyVisibility(state.clientID);
                 }
             },
+            SELECT_ALL_OBJECTS: (event?: KeyboardEvent) => {
+                const target = event?.target as HTMLElement | null;
+                if (target?.closest('input, textarea, [contenteditable]')) return;
+
+                preventDefault(event);
+                selectObjects(filteredStates.filter((state: ObjectState): boolean => (
+                    [ObjectType.SHAPE, ObjectType.TRACK].includes(state.objectType) &&
+                    !state.outside && !state.hidden && !hiddenZLayers.has(state.zOrder)
+                )).map((state: ObjectState): number => state.clientID as number));
+            },
         };
 
         return (
             <>
-                <GlobalHotKeys keyMap={subKeyMap(componentShortcuts, keyMap)} handlers={handlers} />
+                <GlobalHotKeys
+                    keyMap={withDeleteKeyAliases(subKeyMap(componentShortcuts, keyMap))}
+                    handlers={handlers}
+                />
                 <ObjectsListComponent
                     statesHidden={statesHidden}
                     statesLocked={statesLocked}
@@ -783,6 +952,8 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                     statesOrdering={statesOrdering}
                     currentLayer={currentZLayer}
                     hiddenLayers={hiddenZLayers}
+                    selectedStatesID={selectedStatesID}
+                    keyMap={keyMap}
                     sortedStatesID={sortedStatesID}
                     showGroundTruth={showGroundTruth}
                     objectStates={filteredStates}
@@ -802,6 +973,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                     hideAllStates={this.onHideAllStates}
                     showAllStates={this.onShowAllStates}
                     changeShowGroundTruth={this.changeShowGroundTruth}
+                    selectObjects={selectObjects}
                 />
             </>
         );

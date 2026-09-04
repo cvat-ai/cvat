@@ -5,6 +5,7 @@
 
 import React from 'react';
 import Layout from 'antd/lib/layout';
+import message from 'antd/lib/message';
 
 import {
     ActiveControl, Rotation, CombinedState,
@@ -21,6 +22,7 @@ import ControlVisibilityObserver, {
 } from './control-visibility-observer';
 import RotateControl, { Props as RotateControlProps } from './rotate-control';
 import CursorControl, { Props as CursorControlProps } from './cursor-control';
+import SelectControl, { Props as SelectControlProps } from './select-control';
 import MoveControl, { Props as MoveControlProps } from './move-control';
 import FitControl, { Props as FitControlProps } from './fit-control';
 import ResizeControl, { Props as ResizeControlProps } from './resize-control';
@@ -51,14 +53,21 @@ interface Props {
     normalizedKeyMap: Record<string, string>;
     labels: Label[];
     frameData: any;
+    hasCopiedSelection: boolean;
+    hasSelectedObjects: boolean;
+    selectedObjectsCount: number;
+    hasGroupedSelectedObjects: boolean;
+    selectedObjectsInSameGroup: boolean;
 
     updateActiveControl(activeControl: ActiveControl): void;
     rotateFrame(rotation: Rotation): void;
     rotateActiveObjectOrFrame(rotation: Rotation): void;
     repeatDrawShape(): void;
     pasteShape(): void;
+    pasteSelection(): void;
     resetGroup(): void;
     redrawShape(): void;
+    groupSelection(reset?: boolean): void;
 }
 
 const componentShortcuts = {
@@ -124,6 +133,7 @@ registerComponentShortcuts(componentShortcuts);
 // We use the observer to see if these controls are in the scopeport
 // They automatically put to extra if not
 const ObservedCursorControl = ControlVisibilityObserver<CursorControlProps>(CursorControl, 'CursorControl');
+const ObservedSelectControl = ControlVisibilityObserver<SelectControlProps>(SelectControl, 'SelectControl');
 const ObservedMoveControl = ControlVisibilityObserver<MoveControlProps>(MoveControl, 'MoveControl');
 const ObservedRotateControl = ControlVisibilityObserver<RotateControlProps>(RotateControl, 'RotateControl');
 const ObservedFitControl = ControlVisibilityObserver<FitControlProps>(FitControl, 'FitControl');
@@ -158,9 +168,16 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
         rotateActiveObjectOrFrame,
         repeatDrawShape,
         pasteShape,
+        pasteSelection,
         resetGroup,
         redrawShape,
         frameData,
+        hasCopiedSelection,
+        hasSelectedObjects,
+        selectedObjectsCount,
+        hasGroupedSelectedObjects,
+        selectedObjectsInSameGroup,
+        groupSelection,
     } = props;
 
     const controlsDisabled = !labels.length || frameData.deleted;
@@ -229,23 +246,38 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
                 },
             };
 
-    const dynamicGroupIconProps =
-        activeControl === ActiveControl.GROUP ?
-            {
-                className: 'cvat-group-control cvat-active-canvas-control',
-                onClick: (): void => {
-                    canvasInstance.group({ enabled: false });
-                    updateActiveControl(ActiveControl.CURSOR);
-                },
-            } :
-            {
-                className: 'cvat-group-control',
-                onClick: (): void => {
-                    canvasInstance.cancel();
-                    canvasInstance.group({ enabled: true });
-                    updateActiveControl(ActiveControl.GROUP);
-                },
-            };
+    let dynamicGroupIconProps;
+    if (activeControl === ActiveControl.GROUP) {
+        dynamicGroupIconProps = {
+            className: 'cvat-group-control cvat-active-canvas-control',
+            onClick: (): void => {
+                canvasInstance.group({ enabled: false });
+                updateActiveControl(ActiveControl.CURSOR);
+            },
+        };
+    } else if (hasSelectedObjects) {
+        dynamicGroupIconProps = {
+            className: 'cvat-group-control',
+            onClick: (): void => {
+                if (selectedObjectsCount < 2) {
+                    message.warning('Select at least two objects to group');
+                } else if (selectedObjectsInSameGroup) {
+                    message.warning('Selected objects are already in the same group');
+                } else {
+                    groupSelection();
+                }
+            },
+        };
+    } else {
+        dynamicGroupIconProps = {
+            className: 'cvat-group-control',
+            onClick: (): void => {
+                canvasInstance.cancel();
+                canvasInstance.group({ enabled: true });
+                updateActiveControl(ActiveControl.GROUP);
+            },
+        };
+    }
 
     const dynamicTrackIconProps = activeControl === ActiveControl.SPLIT ?
         {
@@ -278,6 +310,14 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
         },
         RESET_GROUP_STANDARD_CONTROLS: (event: KeyboardEvent | undefined): void => {
             event?.preventDefault();
+            if (hasSelectedObjects) {
+                if (hasGroupedSelectedObjects) {
+                    groupSelection(true);
+                } else {
+                    message.warning('No selected objects are grouped');
+                }
+                return;
+            }
             const grouping = activeControl === ActiveControl.GROUP;
             if (!grouping) {
                 return;
@@ -307,6 +347,7 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
             ActiveControl.DRAW_ELLIPSE,
             ActiveControl.DRAW_SKELETON,
             ActiveControl.DRAW_MASK,
+            ActiveControl.PASTE_SELECTION,
             ActiveControl.AI_TOOLS,
             ActiveControl.OPENCV_TOOLS,
         ].includes(activeControl);
@@ -346,7 +387,12 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
             PASTE_SHAPE: (event: KeyboardEvent | undefined) => {
                 event?.preventDefault();
                 canvasInstance.cancel();
-                pasteShape();
+                // paste the whole multi-selection when it is on the clipboard, else a single shape
+                if (hasCopiedSelection) {
+                    pasteSelection();
+                } else {
+                    pasteShape();
+                }
             },
             SWITCH_DRAW_MODE_STANDARD_CONTROLS: (event: KeyboardEvent | undefined) => {
                 handleDrawMode(event, 'draw');
@@ -365,6 +411,12 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
                     cursorShortkey={normalizedKeyMap.CANCEL}
                     canvasInstance={canvasInstance}
                     activeControl={activeControl}
+                />
+                <ObservedSelectControl
+                    canvasInstance={canvasInstance}
+                    activeControl={activeControl}
+                    disabled={controlsDisabled}
+                    updateActiveControl={updateActiveControl}
                 />
                 <ObservedMoveControl canvasInstance={canvasInstance} activeControl={activeControl} />
                 <ObservedRotateControl

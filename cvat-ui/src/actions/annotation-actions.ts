@@ -6,6 +6,7 @@
 import { AnyAction, Store } from 'redux';
 import { ThunkAction, ThunkDispatch } from 'utils/redux';
 import isAbleToChangeFrame from 'utils/is-able-to-change-frame';
+import getHiddenZLayers from 'utils/get-hidden-z-layers';
 import { CanvasMode as Canvas3DMode } from 'cvat-canvas3d-wrapper';
 import {
     RectDrawingMethod, CuboidDrawingMethod, Canvas, CanvasMode as Canvas2DMode,
@@ -13,7 +14,7 @@ import {
 import {
     getCore, MLModel, JobType, Job, QualityConflict,
     ObjectState, ObjectType, ShapeType, JobState, JobValidationLayout,
-    DimensionType, Source, AudioIntervalState,
+    DimensionType, Source, AudioIntervalState, HistoryActions, SerializedData,
 } from 'cvat-core-wrapper';
 import logger, { EventScope } from 'cvat-logger';
 import { getCVATStore } from 'cvat-store';
@@ -120,6 +121,8 @@ export enum AnnotationActionTypes {
     COLLAPSE_APPEARANCE = 'COLLAPSE_APPEARANCE',
     COLLAPSE_OBJECT_ITEMS = 'COLLAPSE_OBJECT_ITEMS',
     ACTIVATE_OBJECT = 'ACTIVATE_OBJECT',
+    SELECT_OBJECTS = 'SELECT_OBJECTS',
+    COPY_SELECTION = 'COPY_SELECTION',
     UPDATE_EDITED_STATE = 'UPDATE_EDITED_STATE',
     HIDE_ACTIVE_OBJECT = 'HIDE_ACTIVE_OBJECT',
     REMOVE_OBJECT = 'REMOVE_OBJECT',
@@ -627,6 +630,302 @@ export function copyShape(objectState: any): AnyAction {
     };
 }
 
+function sanitizeSelectedObjectIDs(state: CombinedState, requestedStatesID: number[]): number[] {
+    const hiddenZLayers = getHiddenZLayers(state);
+    const selectableIDs = new Set(state.annotation.annotations.states
+        .filter((objectState: ObjectState): boolean => (
+            [ObjectType.SHAPE, ObjectType.TRACK].includes(objectState.objectType) &&
+            !objectState.hidden && !objectState.outside && !hiddenZLayers.has(objectState.zOrder)
+        ))
+        .map((objectState: ObjectState): number => objectState.clientID as number));
+    return [...new Set(requestedStatesID)].filter((clientID: number): boolean => selectableIDs.has(clientID));
+}
+
+export function selectObjects(selectedStatesID: number[]): AnyAction {
+    return {
+        type: AnnotationActionTypes.SELECT_OBJECTS,
+        payload: {
+            selectedStatesID,
+        },
+    };
+}
+
+export function selectObjectsAsync(requestedStatesID: number[]): ThunkAction {
+    return async (dispatch: ThunkDispatch, getState): Promise<void> => {
+        const state = getState();
+        const {
+            annotations: { selectedStatesID: previousSelection },
+            job: { instance: jobInstance },
+            player: { frame: { number: frame } },
+        } = state.annotation;
+        const selectedStatesID = sanitizeSelectedObjectIDs(state, requestedStatesID);
+
+        if (previousSelection.length === selectedStatesID.length &&
+            previousSelection.every((clientID: number): boolean => selectedStatesID.includes(clientID))) {
+            return;
+        }
+
+        let history;
+        if (jobInstance) {
+            await jobInstance.actions.recordSelection(previousSelection, selectedStatesID, frame);
+            history = await jobInstance.actions.get();
+        }
+
+        dispatch({
+            type: AnnotationActionTypes.SELECT_OBJECTS,
+            payload: { selectedStatesID, history },
+        });
+    };
+}
+
+function snapshotSelectionState(state: ObjectState): SerializedData {
+    const serialized = state.serialize();
+    return {
+        ...serialized,
+        attributes: { ...serialized.attributes },
+        descriptions: [...(serialized.descriptions || [])],
+        points: serialized.points ? [...serialized.points] : undefined,
+        elements: state.elements.map(snapshotSelectionState),
+        group: serialized.group ? { ...serialized.group } : undefined,
+        clientID: undefined,
+        serverID: undefined,
+        parentID: undefined,
+        keyframes: undefined,
+    };
+}
+
+export function copySelection(objectStates: ObjectState[]): AnyAction {
+    const job = getStore().getState().annotation.job.instance;
+    job?.logger.log(EventScope.copyObject, { count: objectStates.length });
+
+    return {
+        type: AnnotationActionTypes.COPY_SELECTION,
+        payload: {
+            copiedStates: objectStates.map(snapshotSelectionState),
+        },
+    };
+}
+
+// removes the whole multi-selection as a single undoable change
+export function removeSelectionAsync(force: boolean): ThunkAction {
+    return async (dispatch: ThunkDispatch): Promise<void> => {
+        const {
+            job: { instance: jobInstance },
+            annotations: { states, selectedStatesID },
+        } = getStore().getState().annotation;
+
+        const selectedStates = states
+            .filter((state: any) => selectedStatesID.includes(state.clientID));
+        if (!jobInstance || !selectedStates.length) {
+            return;
+        }
+
+        if (selectedStates.some((state: ObjectState): boolean => state.isGroundTruth)) {
+            dispatch({
+                type: AnnotationActionTypes.REMOVE_OBJECT_FAILED,
+                payload: { error: new Error('Ground truth objects cannot be removed') },
+            });
+            return;
+        }
+
+        try {
+            const removedIDs: number[] = await jobInstance.annotations.removeBatch(selectedStates, force);
+            if (removedIDs.length) {
+                await jobInstance.logger.log(EventScope.deleteObject, { count: removedIDs.length });
+                dispatch(selectObjects([]));
+                await dispatch(fetchAnnotationsAsync());
+            }
+        } catch (error) {
+            dispatch({
+                type: AnnotationActionTypes.REMOVE_OBJECT_FAILED,
+                payload: { error },
+            });
+        }
+    };
+}
+
+function translateSelectionState(
+    state: SerializedData,
+    frame: number,
+    dx: number,
+    dy: number,
+    zOrder: number,
+): SerializedData {
+    const offsetPoints = (points: number[] | undefined, shapeType?: ShapeType): number[] | undefined => {
+        if (!points) {
+            return points;
+        }
+        if (shapeType === ShapeType.MASK) {
+            // [...rle, left, top, right, bottom]
+            const shifted = [...points];
+            const n = shifted.length;
+            shifted[n - 4] += dx;
+            shifted[n - 3] += dy;
+            shifted[n - 2] += dx;
+            shifted[n - 1] += dy;
+            return shifted;
+        }
+        return points.map((value, index) => value + (index % 2 === 0 ? dx : dy));
+    };
+
+    return {
+        ...state,
+        attributes: { ...state.attributes },
+        descriptions: [...(state.descriptions || [])],
+        points: state.shapeType === ShapeType.SKELETON ? undefined : offsetPoints(state.points, state.shapeType),
+        zOrder,
+        frame,
+        elements: state.elements?.map((element) => translateSelectionState(element, frame, dx, dy, zOrder)) || [],
+    };
+}
+
+function createCopiedObjectState(serialized: SerializedData): ObjectState {
+    const objectState = new cvat.classes.ObjectState(serialized);
+    const preservePinned = (state: ObjectState, source: SerializedData): void => {
+        if (typeof source.pinned === 'boolean') {
+            Object.assign(state, { pinned: source.pinned });
+        }
+        state.elements.forEach((element, index) => {
+            const sourceElement = source.elements?.[index];
+            if (sourceElement) {
+                preservePinned(element, sourceElement);
+            }
+        });
+    };
+
+    preservePinned(objectState, serialized);
+    return objectState;
+}
+
+function placeCopiedStatesAsync(
+    copiedStates: SerializedData[],
+    dx: number,
+    dy: number,
+    selectCreated: boolean,
+): ThunkAction {
+    return async (dispatch: ThunkDispatch): Promise<void> => {
+        const {
+            job: { instance: jobInstance },
+            player: { frame: { number: frameNumber } },
+            annotations: { zLayer: { cur: currentZOrder } },
+        } = getStore().getState().annotation;
+        if (!jobInstance || !copiedStates.length) {
+            return;
+        }
+
+        const statesToCreate = copiedStates.map((state): ObjectState => createCopiedObjectState(
+            translateSelectionState(
+                state,
+                frameNumber,
+                state.objectType === ObjectType.TAG ? 0 : dx,
+                state.objectType === ObjectType.TAG ? 0 : dy,
+                currentZOrder,
+            ),
+        ));
+
+        try {
+            const clientIDs: number[] = await jobInstance.annotations.put(statesToCreate);
+            await jobInstance.logger.log(EventScope.pasteObject, { count: clientIDs.length });
+            await dispatch(fetchAnnotationsAsync());
+            if (selectCreated) {
+                dispatch(selectObjects(clientIDs));
+            }
+        } catch (error) {
+            dispatch({
+                type: AnnotationActionTypes.CREATE_ANNOTATIONS_FAILED,
+                payload: { error },
+            });
+        }
+    };
+}
+
+export const ShapeTypeToControl: Record<ShapeType, ActiveControl> = {
+    [ShapeType.RECTANGLE]: ActiveControl.DRAW_RECTANGLE,
+    [ShapeType.POLYLINE]: ActiveControl.DRAW_POLYLINE,
+    [ShapeType.POLYGON]: ActiveControl.DRAW_POLYGON,
+    [ShapeType.POINTS]: ActiveControl.DRAW_POINTS,
+    [ShapeType.CUBOID]: ActiveControl.DRAW_CUBOID,
+    [ShapeType.ELLIPSE]: ActiveControl.DRAW_ELLIPSE,
+    [ShapeType.SKELETON]: ActiveControl.DRAW_SKELETON,
+    [ShapeType.MASK]: ActiveControl.DRAW_MASK,
+};
+
+function startPastePlacementAsync(copiedStates: SerializedData[], selectCreated: boolean): ThunkAction {
+    return async (dispatch: ThunkDispatch): Promise<void> => {
+        const {
+            canvas: { instance: canvasInstance },
+            player: { frame: { number: frameNumber } },
+            annotations: { zLayer: { cur: currentZOrder } },
+        } = getStore().getState().annotation;
+
+        if (!copiedStates.length || !(canvasInstance instanceof Canvas)) {
+            return;
+        }
+
+        const shapes = copiedStates.filter((state): boolean => state.objectType !== ObjectType.TAG);
+        if (!shapes.length) {
+            dispatch(placeCopiedStatesAsync(copiedStates, 0, 0, selectCreated));
+            return;
+        }
+
+        let previewClientID = -1;
+        const withPreviewIDs = (state: SerializedData, parentID: number | null = null): SerializedData => {
+            const clientID = previewClientID--;
+            return {
+                ...state,
+                clientID,
+                parentID,
+                group: state.group || { id: 0, color: '#000000' },
+                elements: state.elements?.map((element) => withPreviewIDs(element, clientID)) || [],
+            };
+        };
+        const initialStates = shapes.map((state): ObjectState => createCopiedObjectState(withPreviewIDs(
+            translateSelectionState(state, frameNumber, 0, 0, currentZOrder),
+        )));
+
+        canvasInstance.cancel();
+        dispatch({
+            type: AnnotationActionTypes.PASTE_SHAPE,
+            payload: {
+                activeControl: selectCreated ?
+                    ActiveControl.PASTE_SELECTION :
+                    ShapeTypeToControl[shapes[0].shapeType as ShapeType] || ActiveControl.CURSOR,
+            },
+        });
+        canvasInstance.draw({
+            enabled: true,
+            initialStates,
+            onDrawDone: (
+                { offset }: { offset: { x: number; y: number } },
+                _duration?: number,
+                continueDraw?: boolean,
+            ): void => {
+                dispatch(placeCopiedStatesAsync(
+                    copiedStates,
+                    offset.x,
+                    offset.y,
+                    selectCreated && !continueDraw,
+                ));
+                if (!continueDraw) {
+                    dispatch({
+                        type: AnnotationActionTypes.UPDATE_ACTIVE_CONTROL,
+                        payload: { activeControl: ActiveControl.CURSOR },
+                    });
+                }
+            },
+        });
+    };
+}
+
+export function pasteSelectionAsync(): ThunkAction {
+    return async (dispatch: ThunkDispatch): Promise<void> => {
+        const { copiedStates } = getStore().getState().annotation.drawing;
+        if (copiedStates?.length) {
+            dispatch(startPastePlacementAsync(copiedStates, true));
+        }
+    };
+}
+
 export function activateObject(
     activatedStateID: number | null,
     activatedElementID: number | null,
@@ -757,6 +1056,7 @@ export function changeFrameAsync(
     fillBuffer?: boolean,
     frameStep?: number,
     forceUpdate?: boolean,
+    skipSelectionHistory?: boolean,
 ): ThunkAction {
     return async (dispatch: ThunkDispatch, getState: () => CombinedState): Promise<void> => {
         const { jobInstance: job, frame } = receiveAnnotationsParameters();
@@ -817,7 +1117,13 @@ export function changeFrameAsync(
                 Math.round(1000 / frameSpeed) - currentTime + (state.annotation.player.frame.changeTime as number),
             );
 
-            const { states, history } = await fetchAnnotations(toFrame);
+            const { selectedStatesID } = state.annotation.annotations;
+            const { states, history: fetchedHistory } = await fetchAnnotations(toFrame);
+            let history = fetchedHistory;
+            if (!skipSelectionHistory && selectedStatesID.length) {
+                await job.actions.recordSelection(selectedStatesID, [], frame);
+                history = await job.actions.get();
+            }
 
             if (state.annotation.workspace === Workspace.REVIEW) {
                 userUnlockedInReviewMode.clear();
@@ -870,14 +1176,18 @@ export function undoActionAsync(): ThunkAction {
                 true,
             );
 
-            await jobInstance.actions.undo();
+            const affectedIDs = await jobInstance.actions.undo();
             await undoLog.close();
 
             if (undoOnFrame !== null && (frame !== undoOnFrame || ['Removed frame', 'Restored frame'].includes(undo[0]))) {
                 // the action below fetches annotations
-                dispatch(changeFrameAsync(undoOnFrame, undefined, undefined, true));
+                await dispatch(changeFrameAsync(undoOnFrame, undefined, undefined, true, true));
             } else {
-                dispatch(fetchAnnotationsAsync());
+                await dispatch(fetchAnnotationsAsync());
+            }
+
+            if (undo[0] === HistoryActions.CHANGED_SELECTION || undo[0] === HistoryActions.REMOVED_SELECTION) {
+                dispatch(selectObjects(affectedIDs));
             }
         } catch (error) {
             dispatch({
@@ -909,14 +1219,20 @@ export function redoActionAsync(): ThunkAction {
                 true,
             );
 
-            await jobInstance.actions.redo();
+            const affectedIDs = await jobInstance.actions.redo();
             await redoLog.close();
 
             if (redoOnFrame !== null && (frame !== redoOnFrame || ['Removed frame', 'Restored frame'].includes(redo[0]))) {
                 // the action below fetches annotations
-                dispatch(changeFrameAsync(redoOnFrame, undefined, undefined, true));
+                await dispatch(changeFrameAsync(redoOnFrame, undefined, undefined, true, true));
             } else {
-                dispatch(fetchAnnotationsAsync());
+                await dispatch(fetchAnnotationsAsync());
+            }
+
+            if (redo[0] === HistoryActions.CHANGED_SELECTION) {
+                dispatch(selectObjects(affectedIDs));
+            } else if (redo[0] === HistoryActions.REMOVED_SELECTION) {
+                dispatch(selectObjects([]));
             }
         } catch (error) {
             dispatch({
@@ -1293,6 +1609,39 @@ export function updateAnnotationsAsync(statesToUpdate: ObjectState[]): ThunkActi
     };
 }
 
+// Updates several objects at once and records the change as a single undo step
+// (used when a multi-selection is moved together).
+export function updateAnnotationsBatchAsync(statesToUpdate: ObjectState[]): ThunkAction {
+    return async (dispatch: ThunkDispatch): Promise<void> => {
+        const { jobInstance } = receiveAnnotationsParameters();
+        try {
+            if (!statesToUpdate.length) {
+                return;
+            }
+            if (statesToUpdate.some((objectState) => objectState.isGroundTruth)) {
+                throw new Error('Ground truth objects cannot be updated');
+            }
+
+            const states = await jobInstance.annotations.updateBatch(statesToUpdate);
+
+            const needToUpdateAll = states
+                .some((state) => state.shapeType === ShapeType.MASK || state.parentID !== null);
+            if (needToUpdateAll) {
+                dispatch(fetchAnnotationsAsync());
+                return;
+            }
+
+            dispatchAnnotationsUpdate(dispatch, states, await jobInstance.actions.get());
+        } catch (error) {
+            dispatch({
+                type: AnnotationActionTypes.UPDATE_ANNOTATIONS_FAILED,
+                payload: { error },
+            });
+            dispatch(fetchAnnotationsAsync());
+        }
+    };
+}
+
 export function rotateActiveObjectOrFrame(rotation: Rotation): ThunkAction {
     return async (dispatch: ThunkDispatch): Promise<void> => {
         const state: CombinedState = getStore().getState();
@@ -1414,11 +1763,12 @@ export function resetAnnotationsGroup(): AnyAction {
     };
 }
 
-export function groupAnnotationsAsync(statesToGroup: any[]): ThunkAction {
+export function groupAnnotationsAsync(statesToGroup: any[], resetOverride?: boolean): ThunkAction {
     return async (dispatch: ThunkDispatch): Promise<void> => {
         try {
             const { jobInstance } = receiveAnnotationsParameters();
-            const reset = getStore().getState().annotation.annotations.resetGroupFlag;
+            const reset = typeof resetOverride === 'boolean' ?
+                resetOverride : getStore().getState().annotation.annotations.resetGroupFlag;
 
             // The action below set resetFlag to false
             dispatch({
@@ -1436,6 +1786,22 @@ export function groupAnnotationsAsync(statesToGroup: any[]): ThunkAction {
                 },
             });
         }
+    };
+}
+
+export function groupSelectedAnnotationsAsync(reset = false): ThunkAction {
+    return async (dispatch: ThunkDispatch, getState): Promise<void> => {
+        const { states, selectedStatesID } = getState().annotation.annotations;
+        const selectedIDs = new Set(selectedStatesID);
+        const selectedStates = states.filter((state: ObjectState): boolean => (
+            selectedIDs.has(state.clientID as number)
+        ));
+        if ((reset && !selectedStates.some((state: ObjectState): boolean => !!state.group?.id)) ||
+            (!reset && selectedStates.length < 2)) {
+            return;
+        }
+
+        await dispatch(groupAnnotationsAsync(selectedStates, reset));
     };
 }
 
@@ -1589,17 +1955,6 @@ export function searchChaptersAsync(
         }
     };
 }
-
-export const ShapeTypeToControl: Record<ShapeType, ActiveControl> = {
-    [ShapeType.RECTANGLE]: ActiveControl.DRAW_RECTANGLE,
-    [ShapeType.POLYLINE]: ActiveControl.DRAW_POLYLINE,
-    [ShapeType.POLYGON]: ActiveControl.DRAW_POLYGON,
-    [ShapeType.POINTS]: ActiveControl.DRAW_POINTS,
-    [ShapeType.CUBOID]: ActiveControl.DRAW_CUBOID,
-    [ShapeType.ELLIPSE]: ActiveControl.DRAW_ELLIPSE,
-    [ShapeType.SKELETON]: ActiveControl.DRAW_SKELETON,
-    [ShapeType.MASK]: ActiveControl.DRAW_MASK,
-};
 
 export function pasteShapeAsync(): ThunkAction {
     return async (dispatch: ThunkDispatch): Promise<void> => {

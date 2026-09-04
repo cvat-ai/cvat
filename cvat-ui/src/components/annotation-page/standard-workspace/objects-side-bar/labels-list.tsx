@@ -3,14 +3,18 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { shallowEqual } from 'utils/redux';
 import message from 'antd/lib/message';
 
-import { LabelType, ObjectType, ShapeType } from 'cvat-core-wrapper';
+import {
+    LabelType, ObjectState, ObjectType, ShapeType,
+} from 'cvat-core-wrapper';
 import { CombinedState } from 'reducers';
-import { rememberObject, updateAnnotationsAsync } from 'actions/annotation-actions';
+import {
+    rememberObject, selectObjectsAsync, updateAnnotationsAsync, updateAnnotationsBatchAsync,
+} from 'actions/annotation-actions';
 import LabelItemContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/label-item';
 import GlobalHotKeys, { KeyMapItem } from 'utils/mousetrap-react';
 import Text from 'antd/lib/typography/Text';
@@ -19,15 +23,21 @@ import { registerComponentShortcuts } from 'actions/shortcuts-actions';
 import { subKeyMap } from 'utils/component-subkeymap';
 import { useResetShortcutsOnUnmount } from 'utils/hooks';
 import { getCVATStore } from 'cvat-store';
+import { filterApplicableLabels } from 'utils/filter-applicable-labels';
+import { getSelectedStates, isMultiSelectObjectModifierPressed } from 'utils/multi-selection';
+import { filterAnnotations } from 'utils/filter-annotations';
+import getHiddenZLayers from 'utils/get-hidden-z-layers';
+
+const INTERACTIVE_ELEMENT_SELECTOR = 'a, button, input, textarea, [role="button"], .ant-select, .anticon';
 
 const componentShortcuts: Record<string, KeyMapItem> = {};
 
-const makeKey = (index: number) => `SWITCH_LABEL_${index}`;
+const makeKey = (index: number): string => `SWITCH_LABEL_${index}`;
 
 for (const index of [1, 2, 3, 4, 5, 6, 7, 8, 9, 0]) {
     componentShortcuts[makeKey(index)] = {
         name: 'Switch label',
-        description: 'Change label of a selected object or default label of the next created object if no one object is activated',
+        description: 'Change label of selected objects, an activated object, or the next created object',
         sequences: [`ctrl+${index}`],
         nonActive: true,
         scope: ShortcutScope.OBJECTS_SIDEBAR,
@@ -39,12 +49,33 @@ registerComponentShortcuts(componentShortcuts);
 function LabelsListComponent(): JSX.Element {
     const dispatch = useDispatch();
 
-    const { labels, keyMap } = useSelector((state: CombinedState) => ({
+    const {
+        labels, keyMap, objectStates, selectedStatesID, frame, workspace, hiddenZLayers,
+    } = useSelector((state: CombinedState) => ({
         labels: state.annotation.job.labels,
         keyMap: state.shortcuts.keyMap,
+        objectStates: state.annotation.annotations.states,
+        selectedStatesID: state.annotation.annotations.selectedStatesID,
+        frame: state.annotation.player.frame.number,
+        workspace: state.annotation.workspace,
+        hiddenZLayers: getHiddenZLayers(state),
     }), shallowEqual);
 
     const labelIDs = labels.map((label: any): number => label.id);
+    const selectionAnchorLabelID = useRef<number | null>(null);
+    const selectedIDs = new Set(selectedStatesID);
+    const selectableStates = filterAnnotations(objectStates, { frame, workspace }).filter(
+        (state: ObjectState): boolean => (
+            [ObjectType.SHAPE, ObjectType.TRACK].includes(state.objectType) &&
+            !state.outside && !state.hidden && !hiddenZLayers.has(state.zOrder)
+        ),
+    );
+    const selectableIDsByLabel = Object.fromEntries(labelIDs.map((labelID: number) => [
+        labelID,
+        selectableStates
+            .filter((state: ObjectState): boolean => state.label.id === labelID)
+            .map((state: ObjectState): number => state.clientID as number),
+    ])) as Record<number, number[]>;
 
     useResetShortcutsOnUnmount(componentShortcuts);
 
@@ -71,8 +102,8 @@ function LabelsListComponent(): JSX.Element {
                     ...updatedComponentShortcuts[key],
                     nonActive: false,
                     name: `Switch label to ${labelName}`,
-                    description: `Changes the label to ${labelName} for the activated
-                        object or for the next drawn object if no objects are activated`,
+                    description: `Changes the label to ${labelName} for selected objects, the activated
+                        object, or the next drawn object if no objects are selected or activated`,
                 };
             }
         }
@@ -86,10 +117,37 @@ function LabelsListComponent(): JSX.Element {
         const label = labels.find((_label: any) => _label.id === labelID)!;
         if (Number.isInteger(labelID) && label) {
             const relevantAppState = getCVATStore().getState();
-            const { states, activatedStateID } = relevantAppState.annotation.annotations;
+            const {
+                states, activatedStateID, selectedStatesID: currentSelectedStatesID,
+            } = relevantAppState.annotation.annotations;
             const { activeShapeType, activeObjectType } = relevantAppState.annotation.drawing;
 
-            if (Number.isInteger(activatedStateID)) {
+            if (currentSelectedStatesID.length) {
+                const selectedStates = getSelectedStates(states, currentSelectedStatesID);
+                const labelIsApplicable = selectedStates.length === currentSelectedStatesID.length &&
+                    selectedStates.every(
+                        (state: ObjectState): boolean => (
+                            !state.lock && !state.isGroundTruth && state.shapeType !== ShapeType.SKELETON &&
+                            filterApplicableLabels(state, labels).some((_label): boolean => _label.id === label.id)
+                        ),
+                    );
+
+                if (!labelIsApplicable) {
+                    message.destroy();
+                    message.warning(`Label "${label.name}" cannot be applied to every selected object`);
+                    return;
+                }
+
+                const statesToUpdate = selectedStates.filter(
+                    (state: ObjectState): boolean => state.label.id !== label.id,
+                );
+                for (const selectedState of statesToUpdate) {
+                    selectedState.label = label;
+                }
+                if (statesToUpdate.length) {
+                    dispatch(updateAnnotationsBatchAsync(statesToUpdate));
+                }
+            } else if (Number.isInteger(activatedStateID)) {
                 const activatedState = states.filter((state: any) => state.clientID === activatedStateID)[0];
                 const bothAreTags = activatedState.objectType === ObjectType.TAG && label.type === LabelType.TAG;
                 const labelIsApplicable = label.type === LabelType.ANY ||
@@ -131,6 +189,45 @@ function LabelsListComponent(): JSX.Element {
         };
     }
 
+    const selectLabels = (event: React.MouseEvent, labelID: number): void => {
+        if (event.button !== 0 || (event.target as Element).closest(INTERACTIVE_ELEMENT_SELECTOR)) {
+            return;
+        }
+
+        let affectedLabelIDs: number[] = [];
+        if (event.shiftKey && !event.ctrlKey && !event.altKey && !event.metaKey) {
+            const anchorIndex = selectionAnchorLabelID.current === null ?
+                -1 : labelIDs.indexOf(selectionAnchorLabelID.current);
+            const currentIndex = labelIDs.indexOf(labelID);
+            affectedLabelIDs = anchorIndex === -1 ? [labelID] : labelIDs.slice(
+                Math.min(anchorIndex, currentIndex),
+                Math.max(anchorIndex, currentIndex) + 1,
+            );
+        } else if (isMultiSelectObjectModifierPressed(event, keyMap)) {
+            affectedLabelIDs = [labelID];
+        } else {
+            return;
+        }
+
+        event.preventDefault();
+        event.stopPropagation();
+        selectionAnchorLabelID.current = labelID;
+        const affectedIDs = affectedLabelIDs.flatMap((id: number): number[] => selectableIDsByLabel[id]);
+        const remove = affectedLabelIDs.length === 1 && affectedIDs.length > 0 &&
+            affectedIDs.every((clientID: number): boolean => selectedIDs.has(clientID));
+        const nextSelection = remove ?
+            selectedStatesID.filter((clientID: number): boolean => !affectedIDs.includes(clientID)) :
+            [...new Set([...selectedStatesID, ...affectedIDs])];
+        dispatch(selectObjectsAsync(nextSelection));
+    };
+    const suppressModifierContextMenu = (event: React.MouseEvent): void => {
+        if (isMultiSelectObjectModifierPressed(event, keyMap) &&
+            !(event.target as Element).closest(INTERACTIVE_ELEMENT_SELECTOR)) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+    };
+
     return (
         <div className='cvat-objects-sidebar-labels-list'>
             <GlobalHotKeys keyMap={subKeyMap(componentShortcuts, keyMap)} handlers={handlers} />
@@ -139,7 +236,16 @@ function LabelsListComponent(): JSX.Element {
             </div>
             {labelIDs.map(
                 (labelID: number): JSX.Element => (
-                    <LabelItemContainer key={labelID} labelID={labelID} />
+                    <LabelItemContainer
+                        key={labelID}
+                        labelID={labelID}
+                        multiSelected={!!selectableIDsByLabel[labelID].length &&
+                            selectableIDsByLabel[labelID].every((clientID: number): boolean => (
+                                selectedIDs.has(clientID)
+                            ))}
+                        onMouseDown={(event: React.MouseEvent): void => selectLabels(event, labelID)}
+                        onContextMenu={suppressModifierContextMenu}
+                    />
                 ),
             )}
         </div>

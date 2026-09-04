@@ -24,7 +24,7 @@ export class SkeletonTrack extends Track {
         super(data, clientID, color, injection);
         this.shapeType = ShapeType.SKELETON;
         this.readOnlyFields = ['points', 'label', 'occluded', 'outside'];
-        this.pinned = false;
+        this.pinned = data.pinned ?? false;
 
         const [cx, cy] = data.elements.reduce((acc, element, idx) => {
             const shape = element.shapes[0];

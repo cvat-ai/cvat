@@ -219,6 +219,25 @@ function buildDuplicatedAPI(prototype): void {
                     return result;
                 },
 
+                async updateBatch(objectStates) {
+                    const result = await PluginRegistry.apiWrapper.call(
+                        this,
+                        prototype.annotations.updateBatch,
+                        objectStates,
+                    );
+                    return result;
+                },
+
+                async removeBatch(objectStates, force = false) {
+                    const result = await PluginRegistry.apiWrapper.call(
+                        this,
+                        prototype.annotations.removeBatch,
+                        objectStates,
+                        force,
+                    );
+                    return result;
+                },
+
                 async import(data) {
                     const result = await PluginRegistry.apiWrapper.call(this, prototype.annotations.import, data);
                     return result;
@@ -391,6 +410,16 @@ function buildDuplicatedAPI(prototype): void {
                     const result = await PluginRegistry.apiWrapper.call(this, prototype.actions.redo, count);
                     return result;
                 },
+                async recordSelection(previousClientIDs, nextClientIDs, frame) {
+                    const result = await PluginRegistry.apiWrapper.call(
+                        this,
+                        prototype.actions.recordSelection,
+                        previousClientIDs,
+                        nextClientIDs,
+                        frame,
+                    );
+                    return result;
+                },
                 async freeze(frozen) {
                     const result = await PluginRegistry.apiWrapper.call(this, prototype.actions.freeze, frozen);
                     return result;
@@ -425,6 +454,8 @@ export class Session {
             objectStates: ObjectState[],
         ) => Promise<ObjectState[]>;
         compactLayers: (frame: number) => Promise<ObjectState[]>;
+        updateBatch: (objectStates: ObjectState[]) => Promise<ObjectState[]>;
+        removeBatch: (objectStates: ObjectState[], force?: boolean) => Promise<number[]>;
         clear: (options?: {
             reload?: boolean;
             from?: number;
@@ -487,6 +518,7 @@ export class Session {
     public actions: {
         undo: (count?: number) => Promise<number[]>;
         redo: (count?: number) => Promise<number[]>;
+        recordSelection: (previousClientIDs: number[], nextClientIDs: number[], frame: number) => Promise<void>;
         freeze: (frozen: boolean) => Promise<void>;
         clear: () => Promise<void>;
         get: () => Promise<{
@@ -545,6 +577,8 @@ export class Session {
             slice: Object.getPrototypeOf(this).annotations.slice.bind(this),
             updateLayer: Object.getPrototypeOf(this).annotations.updateLayer.bind(this),
             compactLayers: Object.getPrototypeOf(this).annotations.compactLayers.bind(this),
+            updateBatch: Object.getPrototypeOf(this).annotations.updateBatch.bind(this),
+            removeBatch: Object.getPrototypeOf(this).annotations.removeBatch.bind(this),
             clear: Object.getPrototypeOf(this).annotations.clear.bind(this),
             search: Object.getPrototypeOf(this).annotations.search.bind(this),
             upload: Object.getPrototypeOf(this).annotations.upload.bind(this),
@@ -563,6 +597,7 @@ export class Session {
         this.actions = {
             undo: Object.getPrototypeOf(this).actions.undo.bind(this),
             redo: Object.getPrototypeOf(this).actions.redo.bind(this),
+            recordSelection: Object.getPrototypeOf(this).actions.recordSelection.bind(this),
             freeze: Object.getPrototypeOf(this).actions.freeze.bind(this),
             clear: Object.getPrototypeOf(this).actions.clear.bind(this),
             get: Object.getPrototypeOf(this).actions.get.bind(this),

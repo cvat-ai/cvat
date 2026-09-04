@@ -82,6 +82,100 @@ polyline.cvat_shape_drawing_opacity {
     fill: #fcfbfc;
 }
 
+.cvat_canvas_selected_objects_box {
+    fill: none;
+    stroke: #1f1f1f;
+    stroke-opacity: 1;
+    pointer-events: all;
+    cursor: move;
+}
+
+.cvat_canvas_selected_objects_box_modifier_pressed,
+.cvat_canvas_selected_objects_box_not_draggable {
+    cursor: default;
+}
+
+.cvat_canvas_selected_objects_box_dragging {
+    opacity: 0;
+}
+
+.cvat_canvas_shape_selected_object {
+    fill-opacity: var(--cvat-selection-opacity) !important;
+}
+
+image.cvat_canvas_shape_selected_object {
+    opacity: var(--cvat-selection-mask-opacity) !important;
+}
+
+polyline.cvat_canvas_shape_selected_object {
+    fill-opacity: 0 !important;
+    stroke-opacity: 1;
+    stroke-width: var(--cvat-selection-stroke-width) !important;
+}
+
+g.cvat_canvas_shape_selected_object {
+    > circle {
+        stroke-width: var(--cvat-selection-point-stroke-width) !important;
+    }
+
+    > .cvat_canvas_skeleton_edge {
+        stroke-opacity: 1;
+        stroke-width: var(--cvat-selection-stroke-width) !important;
+    }
+}
+
+.cvat_canvas_selected_objects_label {
+    position: absolute;
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    min-height: 24px;
+    padding: 2px 4px 2px 8px;
+    color: white;
+    background: rgba(31, 31, 31, 88%);
+    border: 1px solid rgba(255, 255, 255, 35%);
+    border-radius: 2px;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 20px;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 45%));
+    pointer-events: auto;
+    cursor: move;
+}
+
+.cvat_canvas_selected_objects_label_modifier_pressed,
+.cvat_canvas_selected_objects_label_not_draggable {
+    cursor: default;
+}
+
+.cvat_canvas_selected_objects_label_title {
+    white-space: nowrap;
+}
+
+.cvat_canvas_selected_objects_label_dragging {
+    visibility: hidden;
+}
+
+.cvat_canvas_selected_objects_menu_button {
+    width: 20px;
+    height: 20px;
+    margin-left: 6px;
+    padding: 0 0 4px;
+    color: white;
+    background: transparent;
+    border: 0;
+    cursor: pointer;
+    font-size: 18px;
+    font-weight: bold;
+    line-height: 20px;
+    pointer-events: auto;
+
+    &:hover,
+    &:focus-visible {
+        color: #40a9ff;
+    }
+}
+
 image.cvat_canvas_shape_selection {
     visibility: hidden;
 }
@@ -89,7 +183,7 @@ image.cvat_canvas_shape_selection {
 .cvat_canvas_selection_box {
     fill: white;
     fill-opacity: 0.1;
-    stroke: white;
+    stroke: #1f1f1f;
 }
 
 .cvat_canvas_shape_region_selection {
@@ -152,6 +246,22 @@ polyline.cvat_canvas_shape_splitting {
     @extend .cvat_shape_drawing_opacity;
 
     fill: white;
+}
+
+.cvat_canvas_shape_pasting {
+    pointer-events: none !important;
+    stroke: black !important;
+    fill: white !important;
+    fill-opacity: 0.3 !important;
+
+    * {
+        pointer-events: none !important;
+        stroke: black !important;
+    }
+}
+
+image.cvat_canvas_shape_pasting {
+    opacity: 0.3 !important;
 }
 
 .cvat_canvas_zoom_selection {

@@ -13,7 +13,7 @@ export class RectangleShape extends Shape {
     constructor(data: SerializedShape, clientID: number, color: string, injection: AnnotationInjection) {
         super(data, clientID, color, injection);
         this.shapeType = ShapeType.RECTANGLE;
-        this.pinned = false;
+        this.pinned = data.pinned ?? false;
         checkNumberOfPoints(this.shapeType, this.points);
     }
 

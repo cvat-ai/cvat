@@ -61,7 +61,7 @@ export default function LabelSelector(props: Props): JSX.Element {
 
                 return false;
             }}
-            defaultValue={labels[0].id}
+            defaultValue={value === null ? undefined : labels[0].id}
             onChange={(newValue: string) => {
                 const [label] = labels.filter((_label: any): boolean => _label.id === +newValue);
                 if (label) {

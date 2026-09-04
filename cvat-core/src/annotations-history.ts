@@ -11,8 +11,8 @@ interface ActionItem {
     action: HistoryActions;
     clientIds: number[];
     frame: number | null;
-    undo: () => void;
-    redo: () => void;
+    undo: () => void | number[] | Promise<void | number[]>;
+    redo: () => void | number[] | Promise<void | number[]>;
 }
 
 class HistoryTransaction implements ActionItem {
@@ -80,10 +80,14 @@ export default class AnnotationHistory {
         };
     }
 
+    public get transactionActive(): boolean {
+        return this.transaction !== null;
+    }
+
     public do(
         action: HistoryActions,
-        undo: () => void,
-        redo: () => void,
+        undo: ActionItem['undo'],
+        redo: ActionItem['redo'],
         clientIds: number[],
         frame: number | null,
     ): void {
@@ -133,9 +137,9 @@ export default class AnnotationHistory {
         for (let i = 0; i < count; i++) {
             const action = this._undo.pop();
             if (action) {
-                await action.undo();
+                const clientIds = await action.undo();
                 this._redo.push(action);
-                affectedObjects.push(...action.clientIds);
+                affectedObjects.push(...(clientIds || action.clientIds));
             } else {
                 break;
             }
@@ -149,9 +153,9 @@ export default class AnnotationHistory {
         for (let i = 0; i < count; i++) {
             const action = this._redo.pop();
             if (action) {
-                await action.redo();
+                const clientIds = await action.redo();
                 this._undo.push(action);
-                affectedObjects.push(...action.clientIds);
+                affectedObjects.push(...(clientIds || action.clientIds));
             } else {
                 break;
             }
