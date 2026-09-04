@@ -21,8 +21,9 @@ class ProfileInline(admin.StackedInline):
 class CustomUserAdmin(UserAdmin):
     inlines = (ProfileInline,)
     list_display = ("username", "email", "first_name", "last_name", "is_active", "is_staff")
+    readonly_fields = ("created_via",)
     fieldsets = (
-        (None, {"fields": ("username", "password")}),
+        (None, {"fields": ("username", "password", "created_via")}),
         (_("Personal info"), {"fields": ("first_name", "last_name", "email")}),
         (
             _("Permissions"),
