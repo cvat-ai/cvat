@@ -249,5 +249,5 @@ Cypress.Commands.add('audioClearAnnotationsAndSave', () => {
 });
 
 Cypress.Commands.add('audioUndo', () => {
-    cy.get('body').type('{ctrl}z');
+    cy.pressWithPlatformModifier('z');
 });

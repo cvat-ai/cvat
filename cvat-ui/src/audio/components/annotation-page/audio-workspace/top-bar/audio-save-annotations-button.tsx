@@ -21,7 +21,7 @@ const componentShortcuts = {
     SAVE_JOB: {
         name: 'Save the job',
         description: 'Submit unsaved changes of annotations to the server',
-        sequences: ['ctrl+s'],
+        sequences: ['mod+s'],
         scope: ShortcutScope.ANNOTATION_PAGE,
     },
 };
