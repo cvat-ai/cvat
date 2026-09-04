@@ -125,7 +125,9 @@ class TestTasksBase:
 
     @fixture(scope="class")
     @parametrize("use_cache", CACHE_MODES)
-    def fxt_uploaded_images_task(self, request: pytest.FixtureRequest, use_cache: bool) -> tuple[ITaskSpec, int]:
+    def fxt_uploaded_images_task(
+        self, request: pytest.FixtureRequest, use_cache: bool
+    ) -> tuple[ITaskSpec, int]:
         return self._image_task_fxt_base(request, use_cache=use_cache)
 
     @fixture(scope="class")
@@ -597,7 +599,10 @@ class TestTasksBase:
     )
     @parametrize("use_cache", DYNAMIC_CACHE)
     def fxt_backing_cs_images_task_with_related_images(
-        self, request: pytest.FixtureRequest, cloud_storage_id: int, use_cache: bool,
+        self,
+        request: pytest.FixtureRequest,
+        cloud_storage_id: int,
+        use_cache: bool,
     ) -> tuple[ITaskSpec, int]:
         # The simplest way to get a task with local storage and subdirectories is to use the share
         # with copy_data.
@@ -747,7 +752,8 @@ class TestTasksBase:
     @parametrize("use_cache", CACHE_MODES)
     def fxt_uploaded_video_task(
         self,
-        request: pytest.FixtureRequest, use_cache: bool,
+        request: pytest.FixtureRequest,
+        use_cache: bool,
     ) -> tuple[ITaskSpec, int]:
         return self._uploaded_video_task_fxt_base(request=request, use_cache=use_cache)
 

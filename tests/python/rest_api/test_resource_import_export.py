@@ -142,7 +142,12 @@ class TestExportResourceToS3(_S3ResourceTest):
     )
     @pytest.mark.parametrize("use_cache", DYNAMIC_CACHE)
     def test_user_cannot_export_to_cloud_storage_with_specific_location_without_access(
-        self, storage_id, regular_lonely_user, obj, resource, use_cache,
+        self,
+        storage_id,
+        regular_lonely_user,
+        obj,
+        resource,
+        use_cache,
     ):
         user = regular_lonely_user
 
@@ -299,7 +304,13 @@ class TestImportResourceFromS3(_S3ResourceTest):
     )
     @pytest.mark.parametrize("use_cache", DYNAMIC_CACHE)
     def test_user_cannot_import_from_cloud_storage_with_specific_location_without_access(
-        self, storage_id, regular_lonely_user, obj, resource, cloud_storages, use_cache,
+        self,
+        storage_id,
+        regular_lonely_user,
+        obj,
+        resource,
+        cloud_storages,
+        use_cache,
     ):
         user = regular_lonely_user
 

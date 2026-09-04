@@ -40,7 +40,6 @@ class Container:
         return self.map_data[key]
 
 
-
 @pytest.fixture(scope="session")
 def users():
     with open(ASSETS_DIR / "users.json") as f:
@@ -630,12 +629,7 @@ def fxt_local_audio_file_path() -> Generator[Path, None, None]:
     yield SHARE_DIR / "audio" / "sample1.mp3"
 
 
-@pytest.fixture(
-        scope="session",
-        autouse=False,
-        params=DYNAMIC_CACHE + STATIC_CACHE
-)
+@pytest.fixture(scope="session", autouse=False, params=DYNAMIC_CACHE + STATIC_CACHE)
 def fxt_use_cache(request: pytest.FixtureRequest) -> bool:
-    '''Parametrize by both cache values'''
+    """Parametrize by both cache values"""
     return request.param
-

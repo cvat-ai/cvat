@@ -91,7 +91,6 @@ def pytest_collection_modifyitems(items):
                 callspec.indices[argname] = _NOT_USED_PARAM_INDEX
 
 
-
 @pytest.hookimpl(trylast=True)
 def pytest_configure(config):
     reporter = config.pluginmanager.get_plugin("terminalreporter")

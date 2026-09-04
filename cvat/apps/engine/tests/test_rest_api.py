@@ -5708,7 +5708,6 @@ class TaskDataAPITestCase(ApiTestBase):
         assert b"not in canonical form" in response.content
 
 
-
 class JobAnnotationAPITestCase(ApiTestBase):
     @classmethod
     def setUpTestData(cls):
@@ -8685,14 +8684,13 @@ class StaticCachePolicyTest(SimpleTestCase):
         for allow_static_cache, requested_method, expected_method in cases:
             with (
                 self.subTest(
-                    allow_static_cache=allow_static_cache,
-                    requested_method=requested_method
+                    allow_static_cache=allow_static_cache, requested_method=requested_method
                 ),
                 override_settings(
                     MEDIA_CACHE_ALLOW_STATIC_CACHE=allow_static_cache,
                 ),
             ):
-                    self.assertEqual(
-                        _resolve_static_cache(requested_method),
-                        expected_method,
+                self.assertEqual(
+                    _resolve_static_cache(requested_method),
+                    expected_method,
                 )

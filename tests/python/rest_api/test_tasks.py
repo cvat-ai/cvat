@@ -1575,7 +1575,9 @@ class TestTaskBackups:
     @pytest.mark.timeout(20)
     @pytest.mark.with_external_services
     @pytest.mark.parametrize("lightweight_backup", [True, False])
-    def test_can_export_and_import_backup_task_with_cloud_storage(self, lightweight_backup, fxt_use_cache):
+    def test_can_export_and_import_backup_task_with_cloud_storage(
+        self, lightweight_backup, fxt_use_cache
+    ):
         task_spec = {
             "name": "Task with files from cloud storage",
             "labels": [
@@ -1612,7 +1614,9 @@ class TestTaskBackups:
             expected_media.update(["images/image_1.jpg", "images/image_3.jpg"])
         assert files_in_data == expected_media
 
-        self._test_can_restore_task_from_backup(task_id, lightweight_backup=lightweight_backup, backup_file=filename)
+        self._test_can_restore_task_from_backup(
+            task_id, lightweight_backup=lightweight_backup, backup_file=filename
+        )
 
     @pytest.mark.parametrize("mode", ["annotation", "interpolation"])
     def test_can_import_backup(self, tasks, mode):
@@ -1731,7 +1735,9 @@ class TestTaskBackups:
 
     @pytest.mark.with_external_services
     @pytest.mark.parametrize("use_cache", DYNAMIC_CACHE)
-    def test_can_export_and_import_backup_with_images_in_backing_cs(self, request, cloud_storages, use_cache):
+    def test_can_export_and_import_backup_with_images_in_backing_cs(
+        self, request, cloud_storages, use_cache
+    ):
         task = self.client.tasks.create_from_data(
             models.TaskWriteRequest(name="Canvas3D"),
             [SHARE_DIR / "test_canvas3d.zip"],

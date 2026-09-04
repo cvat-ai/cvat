@@ -1678,10 +1678,10 @@ def initialize_task(
     db_data.storage_method = _resolve_static_cache(db_data.storage_method)
 
     if (
-            # static cache can not be initialized on lightweight backup restore
-            is_data_in_cloud
-            and is_backup_restore
-            and db_data.storage_method == models.StorageMethodChoice.FILE_SYSTEM
+        # static cache can not be initialized on lightweight backup restore
+        is_data_in_cloud
+        and is_backup_restore
+        and db_data.storage_method == models.StorageMethodChoice.FILE_SYSTEM
         or (
             # TODO: Not supported yet, maybe implement later
             media["audio"]
@@ -2249,9 +2249,7 @@ def _move_to_backing_cs_if_configured(db_data: models.Data) -> None:
             db_data.move_to_backing_cs(backing_cs)
 
 
-def _resolve_static_cache(
-    storage_method: models.StorageMethodChoice
-) -> models.StorageMethodChoice:
+def _resolve_static_cache(storage_method: models.StorageMethodChoice) -> models.StorageMethodChoice:
     if (
         storage_method == models.StorageMethodChoice.FILE_SYSTEM
         and not settings.MEDIA_CACHE_ALLOW_STATIC_CACHE
