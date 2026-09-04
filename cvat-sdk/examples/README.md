@@ -30,14 +30,22 @@ Conventions:
 | `project_create_and_list.py` | Create, list, filter, retrieve, rename a project | `--name`, `--labels`, `--cleanup` |
 | `project_add_labels.py` | Add labels (optionally with attributes) to an existing project | `--project-id`, `--labels`, `--attr` (repeat) |
 | `project_annotation_stats.py` | Aggregate object counts per label/type across a project's tasks; CSV report | `--project-id` |
+| `project_data_lint.py` | Lint a project's annotations: out-of-bounds shapes, tiny boxes, duplicates, empty frames/jobs, unused labels | `--project-id`, `--task-id`, `--min-box-area`, `--output`, `--no-fail` |
 | `project_backup.py` | Download a backup zip of an existing project | `--project-id`, `--output` |
 | `project_restore.py` | Restore a project from a backup zip | `--backup`, `--cleanup` |
 | `project_export_dataset.py` | Export a project's tasks individually (all, or a `--task-id` list), locally and to a bucket | `--project-id`, `--cloud-storage-id`, `--export-format`, `--task-id` (optional, space-separated) |
+| `dataset_incremental_download.py` | Export only the project tasks that changed since the previous run | `--project-id`, `--state`, `--output-dir`, `--export-format`, `--with-images` |
+| `dataset_bulk_export.py` | Export many tasks at once, locally and/or to a bucket, with a CSV manifest | `--project-id` and/or `--task-id`, `--status`, `--output-dir`, `--cloud-storage-id`, `--jobs`, `--skip-existing` |
 | `task_create_from_cloud.py` | Create a task from bucket object keys | `--cloud-storage-id`, `--cloud-keys`, `--cleanup` |
 | `tasks_bulk_from_cloud.py` | Bulk-create tasks in a project, from bucket object keys or wildcard patterns | `--cloud-storage-id`, `--project-id`, `--task` (repeat), `--task-pattern` (repeat), `--manifest`, `--cleanup` |
+| `task_create_subtasks.py` | Create one task per object type / label group over the same images | `--image-dir`, `--subtask` (repeat), `--segment-size`, `--cleanup` |
+| `task_create_job_mapping.py` | Create a task with an explicit file-to-job mapping and verify it from the server | `--image-dir`, `--job` (repeat) or `--files-per-job`, `--output`, `--cleanup` |
 | `task_inspect_and_export.py` | Inspect a task; export its dataset and event-log analytics | `--task-id`, `--export-format` |
 | `task_import_annotations.py` | Import an annotations file into an existing task | `--task-id`, `--annotations-file`, `--import-format` |
 | `task_edit_annotations.py` | Bulk-edit a task's annotations: relabel or delete objects by label | `--task-id`, `--relabel` or `--delete-label` |
+| `task_create_with_validation.py` | Create a task with a ground truth validation set and upload the ground truth into it | `--image-dir`, `--validation-frame` or `--frame-count`, `--gt-annotations`, `--gt-format`, `--cleanup` |
+| `task_create_with_honeypots.py` | Create a task whose annotation jobs carry ground truth frames; refresh or retire them | `--image-dir`, `--pool-frame` or `--pool-frame-count`, `--honeypots-per-job`, `--refresh`, `--disable-frame`, `--cleanup` |
+| `task_add_gt_frames.py` | Add a ground truth job with an exact frame list to an existing task | `--task-id`, `--frame` or `--frame-name`, `--replace`, `--cleanup` |
 | `job_list.py` | List a task's or project's jobs with stage/state/assignee; optional CSV report | `--task-id` or `--project-id`, `--stage`, `--state`, `--csv` |
 | `job_assign.py` | Round-robin assign unassigned jobs; CSV report | `--task-id`, `--org` or `--org-id`, `--assignees` or `--search` |
 | `job_workflow.py` | Batch-advance completed jobs to the next stage | `--from-stage`, `--task-id` |

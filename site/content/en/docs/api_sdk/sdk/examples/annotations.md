@@ -2,14 +2,15 @@
 title: 'Annotation recipes'
 linkTitle: 'Annotations'
 weight: 5
-description: 'Import annotations into a task, edit them in bulk, and aggregate annotation statistics over a project'
+description: 'Import annotations into a task, edit them in bulk, aggregate statistics, and lint a project'
 ---
 
-Three recipes: `task_import_annotations.py` loads an annotation file into an
+Four recipes: `task_import_annotations.py` loads an annotation file into an
 existing task, `task_edit_annotations.py` reads a task's annotations, applies
 a bulk edit, and writes it back, and `project_annotation_stats.py` walks a
 project's tasks and aggregates object counts per label and type into a CSV
-report.
+report, and `project_data_lint.py` checks a project's annotations for broken
+geometry, duplicates, and empty work before you export it.
 
 ## Import annotations into a task
 
@@ -85,6 +86,38 @@ python project_annotation_stats.py --host 'https://app.cvat.ai' --token '<your t
 
 {{< include-code "assets/sdk-examples/project_annotation_stats.py" >}}
 
+## Lint a project's data and annotations
+
+Walks a project's tasks and reports six classes of problem, each with a
+severity: shapes that leave the frame, rectangles with (almost) no area, and
+duplicated objects are errors; frames nobody annotated and jobs marked
+completed with nothing in them are warnings; labels nobody used are info.
+Findings are printed grouped by severity and written to `data_lint.csv`. The
+script exits 1 when any error exists, so it can gate an export pipeline —
+`--no-fail` turns that off.
+
+Masks and skeletons are skipped by the geometry checks (their points are not
+plain x/y pairs), and objects marked `outside` are skipped everywhere.
+
+| Flag | Required | Meaning |
+| --- | --- | --- |
+| `--host` | yes | Server URL |
+| `--token` | yes | Personal Access Token |
+| `--project-id` | yes | Id of the project to lint |
+| `--task-id ID [ID ...]` | no | Lint only these tasks of the project |
+| `--min-box-area` | no | Rectangles below this many px² are errors (default `4`) |
+| `--output` | no | CSV report path (default `data_lint.csv`) |
+| `--no-fail` | no | Exit 0 even when errors were found |
+
+```bash
+python project_data_lint.py --host 'https://app.cvat.ai' --token '<your token>' \
+    --project-id 7 --min-box-area 16
+```
+
+### The script
+
+{{< include-code "assets/sdk-examples/project_data_lint.py" >}}
+
 _Other SDK options:_
 
 | SDK method / parameter | What it adds |
@@ -97,6 +130,8 @@ _Other SDK options:_
 | `Task.update_annotations(PatchedLabeledDataRequest(...), action=AnnotationUpdateAction.CREATE \| UPDATE \| DELETE)` | Partial update: create, update, or delete only the objects in the request. |
 | `Task.remove_annotations(ids=[...])` | Delete specific objects by id — or all of them when `ids` is omitted. |
 | `Project.get_annotations()` | Read the annotations of every task in a project in one call. |
+| `Task.get_frames_info()` | Frame names and sizes — what the geometry checks compare against. |
+| `Task.get_jobs()` | Job frame ranges and states, so a finding can name the job to fix. |
 
 _Notes:_
 
@@ -104,7 +139,9 @@ _Notes:_
   `task.get_labels()` maps names to ids.
 - Both editing recipes re-read the annotations after writing, so the printed
   "after" counts show the server's state, not the client's intention.
+- The linter reads only; fix what it reports with `task_edit_annotations.py` or in the UI.
 - Full recipes:
   [`task_import_annotations.py`](https://github.com/cvat-ai/cvat/tree/develop/cvat-sdk/examples/task_import_annotations.py),
   [`task_edit_annotations.py`](https://github.com/cvat-ai/cvat/tree/develop/cvat-sdk/examples/task_edit_annotations.py),
-  [`project_annotation_stats.py`](https://github.com/cvat-ai/cvat/tree/develop/cvat-sdk/examples/project_annotation_stats.py).
+  [`project_annotation_stats.py`](https://github.com/cvat-ai/cvat/tree/develop/cvat-sdk/examples/project_annotation_stats.py),
+  [`project_data_lint.py`](https://github.com/cvat-ai/cvat/tree/develop/cvat-sdk/examples/project_data_lint.py).
