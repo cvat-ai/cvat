@@ -2076,6 +2076,13 @@ export class CanvasViewImpl implements CanvasView, Listener {
             this.onEditDone,
             this.drawHandler,
             this.masksContent,
+            (undoAvailable: boolean, redoAvailable: boolean): void => {
+                this.canvas.dispatchEvent(new CustomEvent('canvas.historychanged', {
+                    bubbles: false,
+                    cancelable: true,
+                    detail: { undoAvailable, redoAvailable },
+                }));
+            },
         );
         this.editHandler = new EditHandlerImpl(this.onEditDone, this.adoptedContent, this.autoborderHandler);
         this.mergeHandler = new MergeHandlerImpl(

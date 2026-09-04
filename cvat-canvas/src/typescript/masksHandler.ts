@@ -23,6 +23,7 @@ interface WrappingBBox {
 
 type DrawnObject = fabric.Polygon | fabric.Circle | fabric.Rect | fabric.Line | fabric.Image;
 type HistoryAction = DrawnObject[];
+type HistoryChangedCallback = (undoAvailable: boolean, redoAvailable: boolean) => void;
 
 export interface MasksHandler {
     draw(drawData: DrawData): void;
@@ -45,6 +46,7 @@ export class MasksHandlerImpl implements MasksHandler {
     private onDrawRepeat: (data: DrawData) => void;
     private onEditStart: (state: any) => void;
     private onEditDone: (state: any, points: number[]) => void;
+    private onHistoryChanged: HistoryChangedCallback;
     private vectorDrawHandler: DrawHandler;
 
     private redraw: number | null;
@@ -238,9 +240,13 @@ export class MasksHandlerImpl implements MasksHandler {
     }
 
     private clearHistory(): void {
+        const historyChanged = !!this.undoStack?.length || !!this.redoStack?.length;
         this.undoStack = [];
         this.redoStack = [];
         this.activeHistoryAction = null;
+        if (historyChanged) {
+            this.onHistoryChanged(false, false);
+        }
     }
 
     private startHistoryAction(): void {
@@ -255,6 +261,7 @@ export class MasksHandlerImpl implements MasksHandler {
         if (this.activeHistoryAction?.length) {
             this.undoStack.push(this.activeHistoryAction);
             this.redoStack = [];
+            this.onHistoryChanged(true, false);
         }
         this.activeHistoryAction = null;
     }
@@ -398,6 +405,7 @@ export class MasksHandlerImpl implements MasksHandler {
         onEditDone: MasksHandlerImpl['onEditDone'],
         vectorDrawHandler: DrawHandler,
         canvas: HTMLCanvasElement,
+        onHistoryChanged: HistoryChangedCallback,
     ) {
         this.redraw = null;
         this.isDrawing = false;
@@ -415,6 +423,7 @@ export class MasksHandlerImpl implements MasksHandler {
         this.onDrawRepeat = onDrawRepeat;
         this.onEditDone = onEditDone;
         this.onEditStart = onEditStart;
+        this.onHistoryChanged = onHistoryChanged;
         this.vectorDrawHandler = vectorDrawHandler;
         this.canvas = new fabric.Canvas(canvas, {
             containerClass: 'cvat_masks_canvas_wrapper',
@@ -801,8 +810,10 @@ export class MasksHandlerImpl implements MasksHandler {
                 this.drawnObjects.splice(index, 1);
             }
         }
+
         this.redoStack.push(action);
         this.canvas.renderAll();
+        this.onHistoryChanged(!!this.undoStack.length, true);
 
         return true;
     }
@@ -823,6 +834,7 @@ export class MasksHandlerImpl implements MasksHandler {
         }
         this.undoStack.push(action);
         this.canvas.renderAll();
+        this.onHistoryChanged(true, !!this.redoStack.length);
 
         return true;
     }
