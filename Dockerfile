@@ -15,9 +15,6 @@ RUN apt-get update && \
         libldap2-dev \
         libmp3lame-dev \
         libsasl2-dev \
-        libxml2-dev \
-        libxmlsec1-dev \
-        libxmlsec1-openssl \
         make \
         nasm \
         pkg-config \
@@ -78,10 +75,9 @@ RUN sed -i '/^av==/d' /tmp/utils/dataset_manifest/requirements.txt
 
 ARG CVAT_CONFIGURATION="production"
 
-# https://github.com/SAML-Toolkits/python3-saml#note
-# Building from source is recommended for lxml and xmlsec to avoid libxml2 version conflicts
+# The lxml and xmlsec wheels must bundle compatible libxml2 versions.
 RUN --mount=type=cache,target=/root/.cache/pip/http-v2 \
-    DATUMARO_HEADLESS=1 python3 -m pip wheel --no-deps --no-binary lxml,xmlsec \
+    DATUMARO_HEADLESS=1 python3 -m pip wheel --no-deps --only-binary lxml,xmlsec \
     -r /tmp/cvat/requirements/${CVAT_CONFIGURATION}.txt \
     -w /tmp/wheelhouse
 
@@ -125,9 +121,6 @@ RUN apt-get update && \
         libmp3lame0 \
         libpython3.12t64 \
         libsasl2-2 \
-        libxml2 \
-        libxmlsec1 \
-        libxmlsec1-openssl \
         nginx \
         p7zip-full \
         poppler-utils \

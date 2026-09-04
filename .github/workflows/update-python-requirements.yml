@@ -43,9 +43,6 @@ jobs:
             libldap2-dev \
             libmp3lame-dev \
             libsasl2-dev \
-            libxml2-dev \
-            libxmlsec1-dev \
-            libxmlsec1-openssl \
             make \
             nasm \
             pkg-config \
