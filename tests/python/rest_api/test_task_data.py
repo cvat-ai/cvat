@@ -573,6 +573,154 @@ class TestPostTaskData:
         assert f"The file '{missing_key}' not found" in message, message
 
     @pytest.mark.with_external_services
+    @pytest.mark.timeout(120)
+    @pytest.mark.skipif(
+        to_bool(os.getenv("CVAT_ALLOW_STATIC_CACHE", False)) is False,
+        reason="regression for https://github.com/cvat-ai/cvat/issues/9021 requires static cache",
+    )
+    @pytest.mark.parametrize(
+        "use_manifest, sorting_method",
+        [
+            # Core reproduction from https://github.com/cvat-ai/cvat/issues/9021
+            (False, "random"),
+            # Manifest must stay aligned with the downloaded subset (Codex P1)
+            (True, "natural"),
+        ],
+    )
+    def test_can_create_cloud_task_with_frame_filter_random_sort_and_static_cache(
+        self, request, cloud_storages, use_manifest: bool, sorting_method: str
+    ):
+        """
+        Regression for https://github.com/cvat-ai/cvat/issues/9021.
+
+        Without the fix, cloud downloads were filtered before sorting while the extractor
+        sorted then filtered, so frame filter + static cache failed (especially with random
+        sorting and honeypots). With a manifest, the full upload list also mismatched the
+        downloaded subset.
+        """
+        cloud_storage = cloud_storages[2]
+        image_count = 14
+        start_frame = 2
+        frame_step = 2
+        stop_frame = 13
+        expected_filtered_size = len(range(start_frame, stop_frame + 1, frame_step))
+
+        s3_client = s3.make_client(bucket=cloud_storage["resource"])
+        image_files = generate_image_files(image_count)
+        server_files = []
+        for image in image_files:
+            image.name = f"test_9021/{image.name}"
+            image.seek(0)
+            s3_client.create_file(data=image, filename=image.name)
+            request.addfinalizer(partial(s3_client.remove_file, filename=image.name))
+            server_files.append(image.name)
+
+        if use_manifest:
+            with TemporaryDirectory() as tmp_dir:
+                for image in image_files:
+                    image.seek(0)
+                    local_path = Path(tmp_dir) / image.name
+                    local_path.parent.mkdir(parents=True, exist_ok=True)
+                    local_path.write_bytes(image.getvalue())
+
+                generate_manifest(osp.join(tmp_dir, "test_9021"))
+                manifest_key = "test_9021/manifest.jsonl"
+                with open(osp.join(tmp_dir, manifest_key), mode="rb") as manifest_file:
+                    s3_client.create_file(data=manifest_file.read(), filename=manifest_key)
+                request.addfinalizer(partial(s3_client.remove_file, filename=manifest_key))
+                server_files = server_files + [manifest_key]
+
+        task_spec = {
+            "name": "cloud static cache frame filter regression 9021",
+            "labels": [{"name": "cat"}],
+            "segment_size": 3,
+        }
+        data_spec = {
+            "image_quality": 70,
+            "cloud_storage_id": cloud_storage["id"],
+            "server_files": server_files,
+            "sorting_method": sorting_method,
+            "start_frame": start_frame,
+            "stop_frame": stop_frame,
+            "frame_filter": f"step={frame_step}",
+            "use_cache": False,
+            "validation_params": {
+                "mode": "gt_pool",
+                "frame_selection_method": "random_uniform",
+                "frame_count": 3,
+                "frames_per_job_count": 2,
+                "random_seed": 42,
+            },
+        }
+
+        task_id, _ = create_task(self._USERNAME, task_spec, data_spec)
+
+        with make_api_client(self._USERNAME) as api_client:
+            task, response = api_client.tasks_api.retrieve(task_id)
+            assert response.status == HTTPStatus.OK
+            # GT pool expands the frame set with honeypots; size must at least cover the filter.
+            assert task.size >= expected_filtered_size
+
+            meta, _ = api_client.tasks_api.retrieve_data_meta(task_id)
+            assert meta.size == task.size
+            # GT pool clears source-frame filter metadata after layout rewrite.
+            assert meta.start_frame == 0
+            assert meta.frame_filter == ""
+
+            _, chunk_response = api_client.tasks_api.retrieve_data(
+                task_id, type="chunk", quality="compressed", number=0
+            )
+            assert chunk_response.status == HTTPStatus.OK
+
+    @pytest.mark.with_external_services
+    @pytest.mark.timeout(60)
+    @pytest.mark.skipif(
+        to_bool(os.getenv("CVAT_ALLOW_STATIC_CACHE", False)) is False,
+        reason="regression for https://github.com/cvat-ai/cvat/issues/9021 requires static cache",
+    )
+    def test_cloud_static_cache_preserves_frame_filter_metadata_without_gt_pool(
+        self, request, cloud_storages
+    ):
+        """Ordinary (non-GT-pool) tasks must keep start_frame/frame_filter after prefiltering."""
+        cloud_storage = cloud_storages[2]
+        start_frame = 2
+        frame_step = 2
+        stop_frame = 9
+        expected_size = len(range(start_frame, stop_frame + 1, frame_step))
+
+        s3_client = s3.make_client(bucket=cloud_storage["resource"])
+        image_files = generate_image_files(10)
+        server_files = []
+        for image in image_files:
+            image.name = f"test_9021_meta/{image.name}"
+            image.seek(0)
+            s3_client.create_file(data=image, filename=image.name)
+            request.addfinalizer(partial(s3_client.remove_file, filename=image.name))
+            server_files.append(image.name)
+
+        task_id, _ = create_task(
+            self._USERNAME,
+            {"name": "cloud static cache metadata 9021", "labels": [{"name": "cat"}]},
+            {
+                "image_quality": 70,
+                "cloud_storage_id": cloud_storage["id"],
+                "server_files": server_files,
+                "sorting_method": "natural",
+                "start_frame": start_frame,
+                "stop_frame": stop_frame,
+                "frame_filter": f"step={frame_step}",
+                "use_cache": False,
+            },
+        )
+
+        with make_api_client(self._USERNAME) as api_client:
+            meta, _ = api_client.tasks_api.retrieve_data_meta(task_id)
+            assert meta.size == expected_size
+            assert meta.start_frame == start_frame
+            assert meta.stop_frame == stop_frame
+            assert meta.frame_filter == f"step={frame_step}"
+
+    @pytest.mark.with_external_services
     @pytest.mark.timeout(60)
     def test_can_create_task_with_cloud_storage_and_manifest_when_manifest_references_missing_file(
         self, request, cloud_storages
