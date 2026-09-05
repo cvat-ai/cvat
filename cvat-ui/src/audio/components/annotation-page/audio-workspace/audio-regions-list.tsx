@@ -6,27 +6,15 @@ import React, {
     useCallback, useEffect, useMemo, useRef, useState,
 } from 'react';
 import Empty from 'antd/lib/empty';
-import Dropdown from 'antd/lib/dropdown';
-import {
-    LockFilled, UnlockOutlined,
-    EyeInvisibleFilled, EyeOutlined,
-    MoreOutlined,
-} from '@ant-design/icons';
+import classNames from 'classnames';
 import { ActiveControl, ColorBy } from 'reducers';
 import { AudioIntervalState, Label } from 'cvat-core-wrapper';
-import { formatTimeShort } from 'audio/utils/format-audio-time';
 import { hexToRgbComponents } from 'audio/utils/hex-color';
-import ColorPicker from 'components/annotation-page/standard-workspace/objects-side-bar/color-picker';
 import { getRegionItemColor } from './audio-region-colors';
-import AudioRegionItemMenu from './audio-region-item-menu';
+import AudioIntervalActions, { AudioIntervalActionShortcuts } from './audio-interval-actions';
+import AudioIntervalHeader from './audio-interval-header';
 import AudioRegionsListHeader, { AudioRegionsOrdering } from './audio-regions-list-header';
-import {
-    copyAudioIntervalURL,
-    intervalDurationSeconds,
-    intervalEndSeconds,
-    intervalID,
-    intervalStartSeconds,
-} from './utils/audio-interval';
+import { intervalDurationSeconds, intervalEndSeconds, intervalID } from './utils/audio-interval';
 
 function sortIntervals(
     intervals: AudioIntervalState[],
@@ -34,11 +22,18 @@ function sortIntervals(
 ): AudioIntervalState[] {
     const copy = [...intervals];
     switch (ordering) {
+        case AudioRegionsOrdering.ID_ASCENT:
+            return copy.sort((a, b) => intervalID(a) - intervalID(b));
+        case AudioRegionsOrdering.ID_DESCENT:
+            return copy.sort((a, b) => intervalID(b) - intervalID(a));
         case AudioRegionsOrdering.START_TIME:
             return copy.sort((a, b) => a.start - b.start);
+        case AudioRegionsOrdering.END_TIME:
+            return copy.sort((a, b) => intervalEndSeconds(a) - intervalEndSeconds(b));
+        case AudioRegionsOrdering.DURATION:
+            return copy.sort((a, b) => intervalDurationSeconds(a) - intervalDurationSeconds(b));
         case AudioRegionsOrdering.LABEL_NAME:
             return copy.sort((a, b) => a.label.name.localeCompare(b.label.name));
-        case AudioRegionsOrdering.INSERTION:
         default:
             return copy;
     }
@@ -46,40 +41,38 @@ function sortIntervals(
 
 interface ItemProps {
     interval: AudioIntervalState;
+    labels: Label[];
     displayIndex: number;
     isActive: boolean;
+    isHovered: boolean;
     itemColor: string;
     colorBy: ColorBy;
     activeControl: ActiveControl;
+    intervalActionShortcuts: AudioIntervalActionShortcuts;
     onSetActiveInterval(clientID: number | null): void;
     onSetHoveredInterval(clientID: number | null): void;
     onPlayIntervalOnce(clientID: number): void;
-    onToggleIntervalLock(clientID: number): void;
-    onToggleIntervalHidden(clientID: number): void;
-    onCopyInterval(clientID: number): void;
-    onDeleteInterval(clientID: number): void;
-    onChangeIntervalColor(clientID: number, color: string): void;
+    onChangeLabel(clientID: number, labelID: number): void;
 }
 
 function AudioRegionItem(props: ItemProps): JSX.Element {
     const {
-        interval, displayIndex, isActive, itemColor, colorBy,
-        activeControl,
+        interval, labels, displayIndex, isActive, isHovered, itemColor, colorBy,
+        activeControl, intervalActionShortcuts,
         onSetActiveInterval, onSetHoveredInterval, onPlayIntervalOnce,
-        onToggleIntervalLock, onToggleIntervalHidden,
-        onCopyInterval, onDeleteInterval, onChangeIntervalColor,
+        onChangeLabel,
     } = props;
 
     const id = intervalID(interval);
     const isHidden = !!interval.hidden;
     const isLocked = !!interval.lock;
     const isCursor = activeControl === ActiveControl.CURSOR;
-    const [colorPickerVisible, setColorPickerVisible] = useState(false);
 
     const handleMouseEnter = useCallback(() => onSetHoveredInterval(id), [onSetHoveredInterval, id]);
     const handleMouseLeave = useCallback(() => onSetHoveredInterval(null), [onSetHoveredInterval]);
     const handleClick = useCallback(() => {
-        if (isCursor) onSetActiveInterval(id);
+        if (!isCursor) return;
+        onSetActiveInterval(id);
     }, [isCursor, onSetActiveInterval, id]);
     const handleDoubleClick = useCallback(() => {
         if (!isCursor) return;
@@ -88,39 +81,16 @@ function AudioRegionItem(props: ItemProps): JSX.Element {
     const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
         if (isCursor && (e.key === 'Enter' || e.key === ' ')) onSetActiveInterval(id);
     }, [isCursor, onSetActiveInterval, id]);
-    const handleToggleLock = useCallback((e: React.MouseEvent | React.KeyboardEvent) => {
-        e.stopPropagation();
-        onToggleIntervalLock(id);
-    }, [onToggleIntervalLock, id]);
-    const handleToggleHidden = useCallback((e: React.MouseEvent | React.KeyboardEvent) => {
-        e.stopPropagation();
-        if (!isLocked) onToggleIntervalHidden(id);
-    }, [onToggleIntervalHidden, id, isLocked]);
-
-    const menu = useMemo(() => AudioRegionItemMenu({
-        serverID: interval.serverID ?? undefined,
-        locked: isLocked,
-        colorBy,
-        onCreateURL: () => copyAudioIntervalURL(interval.serverID),
-        onCopy: () => onCopyInterval(id),
-        onChangeColorClick: () => setColorPickerVisible(true),
-        onRemove: () => onDeleteInterval(id),
-    }), [
-        id, interval.serverID,
-        isLocked, colorBy,
-        onCopyInterval, onDeleteInterval,
-    ]);
-
     return (
         <div
             role='button'
             tabIndex={0}
             data-interval-id={id}
-            className={
-                'cvat-audio-region-item' +
-                `${isActive ? ' cvat-audio-region-item-active' : ''}` +
-                `${isHidden ? ' cvat-audio-region-item-hidden' : ''}`
-            }
+            className={classNames('cvat-audio-region-item', {
+                'cvat-audio-region-item-active': isActive,
+                'cvat-audio-region-item-hovered': isHovered,
+                'cvat-audio-region-item-hidden': isHidden,
+            })}
             style={{ '--region-item-color': hexToRgbComponents(itemColor) } as React.CSSProperties}
             onMouseEnter={handleMouseEnter}
             onMouseLeave={handleMouseLeave}
@@ -128,78 +98,20 @@ function AudioRegionItem(props: ItemProps): JSX.Element {
             onDoubleClick={handleDoubleClick}
             onKeyDown={handleKeyDown}
         >
-            <div className='cvat-audio-region-item-index'>{displayIndex + 1}</div>
-            <div className='cvat-audio-region-item-info'>
-                <div className='cvat-audio-region-item-label'>
-                    {interval.label.name}
-                </div>
-                <div className='cvat-audio-region-item-time'>
-                    <span>{formatTimeShort(intervalStartSeconds(interval))}</span>
-                    <span className='cvat-audio-region-item-separator'>&rarr;</span>
-                    <span>{formatTimeShort(intervalEndSeconds(interval))}</span>
-                </div>
-                <div className='cvat-audio-region-item-duration'>
-                    {formatTimeShort(intervalDurationSeconds(interval))}
-                </div>
-            </div>
-            <div className='cvat-audio-region-item-actions'>
-                <span
-                    role='button'
-                    tabIndex={0}
-                    className='cvat-audio-region-item-action-btn'
-                    onClick={handleToggleLock}
-                    onKeyDown={(e) => { if (e.key === 'Enter') handleToggleLock(e); }}
-                >
-                    {isLocked ? <LockFilled /> : <UnlockOutlined />}
-                </span>
-                <span
-                    role='button'
-                    tabIndex={0}
-                    className={
-                        'cvat-audio-region-item-action-btn' +
-                            `${isLocked ? ' cvat-audio-region-item-action-btn-disabled' : ''}`
-                    }
-                    onClick={handleToggleHidden}
-                    onKeyDown={(e) => { if (e.key === 'Enter') handleToggleHidden(e); }}
-                >
-                    {isHidden ? <EyeInvisibleFilled /> : <EyeOutlined />}
-                </span>
-                {colorPickerVisible ? (
-                    <ColorPicker
-                        visible
-                        value={interval.color ?? ''}
-                        onVisibleChange={setColorPickerVisible}
-                        onChange={(color: string) => onChangeIntervalColor(id, color)}
-                    >
-                        <span
-                            role='button'
-                            tabIndex={0}
-                            className='cvat-audio-region-item-action-btn'
-                            onClick={(e) => e.stopPropagation()}
-                            onKeyDown={(e) => e.stopPropagation()}
-                        >
-                            <MoreOutlined />
-                        </span>
-                    </ColorPicker>
-                ) : (
-                    <Dropdown
-                        destroyPopupOnHide
-                        placement='bottomRight'
-                        trigger={['click']}
-                        menu={menu}
-                    >
-                        <span
-                            role='button'
-                            tabIndex={0}
-                            className='cvat-audio-region-item-action-btn'
-                            onClick={(e) => e.stopPropagation()}
-                            onKeyDown={(e) => e.stopPropagation()}
-                        >
-                            <MoreOutlined />
-                        </span>
-                    </Dropdown>
-                )}
-            </div>
+            <AudioIntervalHeader
+                interval={interval}
+                intervalIndex={displayIndex}
+                labels={labels}
+                isReadonly={isLocked}
+                showSource={false}
+                onChangeLabel={(labelID) => onChangeLabel(id, labelID)}
+                actions={<AudioIntervalActions
+                    interval={interval}
+                    colorBy={colorBy}
+                    canPlayInterval={isCursor}
+                    shortcuts={intervalActionShortcuts}
+                />}
+            />
         </div>
     );
 }
@@ -210,21 +122,21 @@ interface Props {
     intervals: AudioIntervalState[];
     filtersActive: boolean;
     activeIntervalID: number | null;
+    hoveredIntervalID: number | null;
     labels: Label[];
     colorBy: ColorBy;
     activeControl: ActiveControl;
+    intervalActionShortcuts: AudioIntervalActionShortcuts;
     switchLockAllShortcut: string;
+    switchPinAllShortcut: string;
     switchHiddenAllShortcut: string;
     onSetActiveInterval(clientID: number | null): void;
     onSetHoveredInterval(clientID: number | null): void;
     onPlayIntervalOnce(clientID: number): void;
-    onToggleIntervalLock(clientID: number): void;
-    onToggleIntervalHidden(clientID: number): void;
     onToggleIntervalsLock(clientIDs: number[], lock: boolean): void;
+    onToggleIntervalsPinned(clientIDs: number[], pinned: boolean): void;
     onToggleIntervalsHidden(clientIDs: number[], hidden: boolean): void;
-    onCopyInterval(clientID: number): void;
-    onDeleteInterval(clientID: number, force?: boolean): void;
-    onChangeIntervalColor(clientID: number, color: string): void;
+    onChangeLabel(clientID: number, labelID: number): void;
 }
 
 export default function AudioRegionsList(props: Props): JSX.Element {
@@ -232,24 +144,24 @@ export default function AudioRegionsList(props: Props): JSX.Element {
         intervals,
         filtersActive,
         activeIntervalID,
+        hoveredIntervalID,
         labels,
         colorBy,
         activeControl,
+        intervalActionShortcuts,
         switchLockAllShortcut,
+        switchPinAllShortcut,
         switchHiddenAllShortcut,
         onSetActiveInterval,
         onSetHoveredInterval,
         onPlayIntervalOnce,
-        onToggleIntervalLock,
-        onToggleIntervalHidden,
         onToggleIntervalsLock,
+        onToggleIntervalsPinned,
         onToggleIntervalsHidden,
-        onCopyInterval,
-        onDeleteInterval,
-        onChangeIntervalColor,
+        onChangeLabel,
     } = props;
 
-    const [ordering, setOrdering] = useState<AudioRegionsOrdering>(AudioRegionsOrdering.INSERTION);
+    const [ordering, setOrdering] = useState<AudioRegionsOrdering>(AudioRegionsOrdering.ID_ASCENT);
     const listRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -263,8 +175,11 @@ export default function AudioRegionsList(props: Props): JSX.Element {
     }, [activeIntervalID]);
 
     const allLocked = intervals.length > 0 && intervals.every((interval) => !!interval.lock);
+    const pinnableIntervals = useMemo(() => intervals.filter((interval) => !interval.lock), [intervals]);
+    const allPinned = pinnableIntervals.length > 0 && pinnableIntervals.every((interval) => !!interval.pinned);
     const allHidden = intervals.length > 0 && intervals.every((interval) => !!interval.hidden);
     const visibleIds = useMemo(() => intervals.map((interval) => intervalID(interval)), [intervals]);
+    const pinnableIds = useMemo(() => pinnableIntervals.map((interval) => intervalID(interval)), [pinnableIntervals]);
 
     const onLockAll = useCallback(() => {
         onToggleIntervalsLock(visibleIds, true);
@@ -272,6 +187,12 @@ export default function AudioRegionsList(props: Props): JSX.Element {
     const onUnlockAll = useCallback(() => {
         onToggleIntervalsLock(visibleIds, false);
     }, [visibleIds, onToggleIntervalsLock]);
+    const onPinAll = useCallback(() => {
+        onToggleIntervalsPinned(pinnableIds, true);
+    }, [pinnableIds, onToggleIntervalsPinned]);
+    const onUnpinAll = useCallback(() => {
+        onToggleIntervalsPinned(pinnableIds, false);
+    }, [pinnableIds, onToggleIntervalsPinned]);
     const onHideAll = useCallback(() => {
         onToggleIntervalsHidden(visibleIds, true);
     }, [visibleIds, onToggleIntervalsHidden]);
@@ -293,12 +214,16 @@ export default function AudioRegionsList(props: Props): JSX.Element {
             count={intervals.length}
             ordering={ordering}
             allLocked={allLocked}
+            allPinned={allPinned}
             allHidden={allHidden}
             switchLockAllShortcut={switchLockAllShortcut}
+            switchPinAllShortcut={switchPinAllShortcut}
             switchHiddenAllShortcut={switchHiddenAllShortcut}
             onChangeOrdering={setOrdering}
             onLockAll={onLockAll}
             onUnlockAll={onUnlockAll}
+            onPinAll={onPinAll}
+            onUnpinAll={onUnpinAll}
             onHideAll={onHideAll}
             onShowAll={onShowAll}
         />
@@ -328,19 +253,18 @@ export default function AudioRegionsList(props: Props): JSX.Element {
                         <MemoAudioRegionItem
                             key={id}
                             interval={interval}
+                            labels={labels}
                             displayIndex={indexById.get(id) ?? 0}
                             isActive={id === activeIntervalID}
+                            isHovered={id === hoveredIntervalID}
                             itemColor={getRegionItemColor(interval, labels, colorBy)}
                             colorBy={colorBy}
                             activeControl={activeControl}
+                            intervalActionShortcuts={intervalActionShortcuts}
                             onSetActiveInterval={onSetActiveInterval}
                             onSetHoveredInterval={onSetHoveredInterval}
                             onPlayIntervalOnce={onPlayIntervalOnce}
-                            onToggleIntervalLock={onToggleIntervalLock}
-                            onToggleIntervalHidden={onToggleIntervalHidden}
-                            onCopyInterval={onCopyInterval}
-                            onDeleteInterval={onDeleteInterval}
-                            onChangeIntervalColor={onChangeIntervalColor}
+                            onChangeLabel={onChangeLabel}
                         />
                     );
                 })}

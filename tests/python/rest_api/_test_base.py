@@ -246,12 +246,8 @@ class TestTasksBase:
             request, start_frame=start_frame, step=step
         )
 
-    def _images_task_with_honeypots_and_changed_real_frames_base(
-        self, request: pytest.FixtureRequest, **kwargs
-    ):
-        task_spec, task_id = self._image_task_with_honeypots_and_segments_base(
-            request, start_frame=2, step=3, **kwargs
-        )
+    def _rotate_all_task_honeypots(self, task_spec: ITaskSpec, task_id: int) -> None:
+        "Updates the passed task and task spec inplace"
 
         with make_api_client(self._USERNAME) as api_client:
             validation_layout, _ = api_client.tasks_api.retrieve_validation_layout(task_id)
@@ -277,7 +273,16 @@ class TestTasksBase:
             _get_frame = task_spec._get_frame
             task_spec._get_frame = lambda i: _get_frame(frame_map.get(i, i))
 
-            return task_spec, task_id
+    def _images_task_with_honeypots_and_changed_real_frames_base(
+        self, request: pytest.FixtureRequest, **kwargs
+    ):
+        task_spec, task_id = self._image_task_with_honeypots_and_segments_base(
+            request, start_frame=2, step=3, **kwargs
+        )
+
+        self._rotate_all_task_honeypots(task_spec=task_spec, task_id=task_id)
+
+        return task_spec, task_id
 
     @fixture(scope="class")
     @parametrize("random_seed", [1, 2, 5])
@@ -665,6 +670,7 @@ class TestTasksBase:
         start_frame: int | None = None,
         stop_frame: int | None = None,
         step: int | None = None,
+        use_cache: bool | None = None,
         video_file: IO[bytes] | None = None,
         chapters: Sequence[dict] | None = None,
     ) -> tuple[VideoTaskSpec, int]:
@@ -712,6 +718,9 @@ class TestTasksBase:
 
         if step is not None:
             data_params["frame_filter"] = f"step={step}"
+
+        if use_cache is not None:
+            data_params["use_cache"] = use_cache
 
         def get_video_file() -> io.BytesIO:
             return io.BytesIO(video_data)
@@ -766,6 +775,24 @@ class TestTasksBase:
             stop_frame=stop_frame,
             step=step,
         )
+
+    @fixture(scope="class")
+    @parametrize(
+        "cloud_storage_id",
+        [pytest.param(5, marks=[pytest.mark.with_external_services])],
+    )
+    def fxt_backing_cs_video_task(
+        self,
+        request: pytest.FixtureRequest,
+        cloud_storage_id: int,
+    ) -> tuple[ITaskSpec, int]:
+        spec, task_id = self._uploaded_video_task_fxt_base(request=request, use_cache=True)
+
+        container_exec_cvat(
+            request, ["./manage.py", "movetasktobackingcs", str(task_id), str(cloud_storage_id)]
+        )
+
+        return spec, task_id
 
     def _compute_annotation_segment_params(self, task_spec: ITaskSpec) -> list[tuple[int, int]]:
         segment_params = []
@@ -883,6 +910,7 @@ class TestTasksBase:
             fixture_ref("fxt_uploaded_video_task_without_manifest"),
             fixture_ref("fxt_uploaded_video_task_with_segments"),
             fixture_ref("fxt_uploaded_video_task_with_segments_start_stop_step"),
+            fixture_ref("fxt_backing_cs_video_task"),
         ]
         + _tasks_with_honeypots_cases
         + _tasks_with_simple_gt_job_cases

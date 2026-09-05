@@ -17,6 +17,7 @@ import {
 } from 'cvat-core-wrapper';
 import logger, { EventScope } from 'cvat-logger';
 import { getCVATStore } from 'cvat-store';
+import changeObjectOrientation from 'utils/change-object-orientation';
 
 import {
     ActiveControl,
@@ -147,6 +148,8 @@ export enum AnnotationActionTypes {
     FETCH_ANNOTATIONS_FAILED = 'FETCH_ANNOTATIONS_FAILED',
     ROTATE_FRAME = 'ROTATE_FRAME',
     SWITCH_Z_LAYER = 'SWITCH_Z_LAYER',
+    SHOW_Z_LAYERS = 'SHOW_Z_LAYERS',
+    TOGGLE_Z_LAYERS_VISIBILITY = 'TOGGLE_Z_LAYERS_VISIBILITY',
     SEARCH_ANNOTATIONS_FAILED = 'SEARCH_ANNOTATIONS_FAILED',
     SEARCH_CHAPTERS_FAILED = 'SEARCH_CHAPTERS_FAILED',
     CHANGE_WORKSPACE = 'CHANGE_WORKSPACE',
@@ -229,11 +232,29 @@ export function canvasErrorOccurred(error: Error): AnyAction {
     };
 }
 
+export function toggleZLayersVisibility(zOrders: number[]): AnyAction {
+    return {
+        type: AnnotationActionTypes.TOGGLE_Z_LAYERS_VISIBILITY,
+        payload: {
+            zOrders,
+        },
+    };
+}
+
 export function switchZLayer(cur: number): AnyAction {
     return {
         type: AnnotationActionTypes.SWITCH_Z_LAYER,
         payload: {
             cur,
+        },
+    };
+}
+
+export function showZLayers(zOrders: number[]): AnyAction {
+    return {
+        type: AnnotationActionTypes.SHOW_Z_LAYERS,
+        payload: {
+            zOrders,
         },
     };
 }
@@ -983,6 +1004,7 @@ export function getJobAsync({
         initialWorkspace: Workspace | null;
         defaultLabel: string | null;
         defaultPointsCount: number | null;
+        defaultRotated: boolean;
     }
 }): ThunkAction {
     return async (dispatch: ThunkDispatch, getState): Promise<void> => {
@@ -1271,6 +1293,30 @@ export function updateAnnotationsAsync(statesToUpdate: ObjectState[]): ThunkActi
     };
 }
 
+export function rotateActiveObjectOrFrame(rotation: Rotation): ThunkAction {
+    return async (dispatch: ThunkDispatch): Promise<void> => {
+        const state: CombinedState = getStore().getState();
+        const {
+            annotation: {
+                annotations: { activatedStateID, states },
+            },
+        } = state;
+
+        const activatedState = states.find((objectState) => objectState.clientID === activatedStateID);
+        const degrees = rotation === Rotation.CLOCKWISE90 ? 90 : -90;
+
+        if (activatedState) {
+            if (!activatedState.isGroundTruth && !activatedState.lock &&
+                changeObjectOrientation(activatedState, degrees)) {
+                dispatch(updateAnnotationsAsync([activatedState]));
+            }
+            return;
+        }
+
+        dispatch(rotateCurrentFrame(rotation));
+    };
+}
+
 export function updateLayerAsync(
     frame: number,
     placement: { exact: number } | { before: number } | { after: number },
@@ -1314,17 +1360,24 @@ export function changeWorkspaceAsync(workspace: Workspace): ThunkAction {
 export function createAnnotationsAsync(
     statesToCreate: (ObjectState | AudioIntervalState)[],
     source: AnnotationSource = AnnotationSource.OTHER,
-): ThunkAction {
-    return async (dispatch: ThunkDispatch): Promise<void> => {
+): ThunkAction<Promise<number[]>> {
+    return async (dispatch: ThunkDispatch): Promise<number[]> => {
         try {
             const { jobInstance } = receiveAnnotationsParameters();
             const clientIds = await jobInstance.annotations.put(statesToCreate);
+            // Reveal layers after creation so newly created objects are immediately visible.
+            const createdZLayers = Array.from(new Set(statesToCreate.flatMap((state) => (
+                'zOrder' in state && typeof state.zOrder === 'number' ? [state.zOrder] : []
+            ))));
+            dispatch(showZLayers(createdZLayers));
             await dispatch(fetchAnnotationsAsync());
 
             if (source === AnnotationSource.DRAW_SIMPLIFIED_POLY && statesToCreate.length === 1) {
                 const [clientId] = clientIds;
                 dispatch(switchSimplifyVisibility(clientId));
             }
+
+            return clientIds;
         } catch (error) {
             dispatch({
                 type: AnnotationActionTypes.CREATE_ANNOTATIONS_FAILED,
@@ -1332,6 +1385,7 @@ export function createAnnotationsAsync(
                     error,
                 },
             });
+            return [];
         }
     };
 }
@@ -1690,6 +1744,7 @@ export function redrawShapeAsync(): ThunkAction {
         const {
             annotations: { activatedStateID, states },
             canvas: { instance: canvasInstance },
+            drawing: { activeRectDrawingMethod },
         } = getStore().getState().annotation;
 
         if (activatedStateID !== null) {
@@ -1712,6 +1767,7 @@ export function redrawShapeAsync(): ThunkAction {
                     enabled: true,
                     redraw: activatedStateID,
                     shapeType: state.shapeType,
+                    rectDrawingMethod: activeRectDrawingMethod,
                     crosshair: [ShapeType.RECTANGLE, ShapeType.CUBOID, ShapeType.ELLIPSE].includes(state.shapeType),
                 });
             }

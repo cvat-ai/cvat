@@ -27,7 +27,7 @@ from cvat_sdk.api_client import models
 from cvat_sdk.core.helpers import get_paginated_collection
 from deepdiff import DeepDiff
 from PIL import Image
-from pytest_cases import parametrize
+from pytest_cases import fixture, fixture_ref, parametrize
 
 import shared.utils.s3 as s3
 from rest_api._test_base import TestTasksBase
@@ -573,6 +573,154 @@ class TestPostTaskData:
         assert f"The file '{missing_key}' not found" in message, message
 
     @pytest.mark.with_external_services
+    @pytest.mark.timeout(120)
+    @pytest.mark.skipif(
+        to_bool(os.getenv("CVAT_ALLOW_STATIC_CACHE", False)) is False,
+        reason="regression for https://github.com/cvat-ai/cvat/issues/9021 requires static cache",
+    )
+    @pytest.mark.parametrize(
+        "use_manifest, sorting_method",
+        [
+            # Core reproduction from https://github.com/cvat-ai/cvat/issues/9021
+            (False, "random"),
+            # Manifest must stay aligned with the downloaded subset (Codex P1)
+            (True, "natural"),
+        ],
+    )
+    def test_can_create_cloud_task_with_frame_filter_random_sort_and_static_cache(
+        self, request, cloud_storages, use_manifest: bool, sorting_method: str
+    ):
+        """
+        Regression for https://github.com/cvat-ai/cvat/issues/9021.
+
+        Without the fix, cloud downloads were filtered before sorting while the extractor
+        sorted then filtered, so frame filter + static cache failed (especially with random
+        sorting and honeypots). With a manifest, the full upload list also mismatched the
+        downloaded subset.
+        """
+        cloud_storage = cloud_storages[2]
+        image_count = 14
+        start_frame = 2
+        frame_step = 2
+        stop_frame = 13
+        expected_filtered_size = len(range(start_frame, stop_frame + 1, frame_step))
+
+        s3_client = s3.make_client(bucket=cloud_storage["resource"])
+        image_files = generate_image_files(image_count)
+        server_files = []
+        for image in image_files:
+            image.name = f"test_9021/{image.name}"
+            image.seek(0)
+            s3_client.create_file(data=image, filename=image.name)
+            request.addfinalizer(partial(s3_client.remove_file, filename=image.name))
+            server_files.append(image.name)
+
+        if use_manifest:
+            with TemporaryDirectory() as tmp_dir:
+                for image in image_files:
+                    image.seek(0)
+                    local_path = Path(tmp_dir) / image.name
+                    local_path.parent.mkdir(parents=True, exist_ok=True)
+                    local_path.write_bytes(image.getvalue())
+
+                generate_manifest(osp.join(tmp_dir, "test_9021"))
+                manifest_key = "test_9021/manifest.jsonl"
+                with open(osp.join(tmp_dir, manifest_key), mode="rb") as manifest_file:
+                    s3_client.create_file(data=manifest_file.read(), filename=manifest_key)
+                request.addfinalizer(partial(s3_client.remove_file, filename=manifest_key))
+                server_files = server_files + [manifest_key]
+
+        task_spec = {
+            "name": "cloud static cache frame filter regression 9021",
+            "labels": [{"name": "cat"}],
+            "segment_size": 3,
+        }
+        data_spec = {
+            "image_quality": 70,
+            "cloud_storage_id": cloud_storage["id"],
+            "server_files": server_files,
+            "sorting_method": sorting_method,
+            "start_frame": start_frame,
+            "stop_frame": stop_frame,
+            "frame_filter": f"step={frame_step}",
+            "use_cache": False,
+            "validation_params": {
+                "mode": "gt_pool",
+                "frame_selection_method": "random_uniform",
+                "frame_count": 3,
+                "frames_per_job_count": 2,
+                "random_seed": 42,
+            },
+        }
+
+        task_id, _ = create_task(self._USERNAME, task_spec, data_spec)
+
+        with make_api_client(self._USERNAME) as api_client:
+            task, response = api_client.tasks_api.retrieve(task_id)
+            assert response.status == HTTPStatus.OK
+            # GT pool expands the frame set with honeypots; size must at least cover the filter.
+            assert task.size >= expected_filtered_size
+
+            meta, _ = api_client.tasks_api.retrieve_data_meta(task_id)
+            assert meta.size == task.size
+            # GT pool clears source-frame filter metadata after layout rewrite.
+            assert meta.start_frame == 0
+            assert meta.frame_filter == ""
+
+            _, chunk_response = api_client.tasks_api.retrieve_data(
+                task_id, type="chunk", quality="compressed", number=0
+            )
+            assert chunk_response.status == HTTPStatus.OK
+
+    @pytest.mark.with_external_services
+    @pytest.mark.timeout(60)
+    @pytest.mark.skipif(
+        to_bool(os.getenv("CVAT_ALLOW_STATIC_CACHE", False)) is False,
+        reason="regression for https://github.com/cvat-ai/cvat/issues/9021 requires static cache",
+    )
+    def test_cloud_static_cache_preserves_frame_filter_metadata_without_gt_pool(
+        self, request, cloud_storages
+    ):
+        """Ordinary (non-GT-pool) tasks must keep start_frame/frame_filter after prefiltering."""
+        cloud_storage = cloud_storages[2]
+        start_frame = 2
+        frame_step = 2
+        stop_frame = 9
+        expected_size = len(range(start_frame, stop_frame + 1, frame_step))
+
+        s3_client = s3.make_client(bucket=cloud_storage["resource"])
+        image_files = generate_image_files(10)
+        server_files = []
+        for image in image_files:
+            image.name = f"test_9021_meta/{image.name}"
+            image.seek(0)
+            s3_client.create_file(data=image, filename=image.name)
+            request.addfinalizer(partial(s3_client.remove_file, filename=image.name))
+            server_files.append(image.name)
+
+        task_id, _ = create_task(
+            self._USERNAME,
+            {"name": "cloud static cache metadata 9021", "labels": [{"name": "cat"}]},
+            {
+                "image_quality": 70,
+                "cloud_storage_id": cloud_storage["id"],
+                "server_files": server_files,
+                "sorting_method": "natural",
+                "start_frame": start_frame,
+                "stop_frame": stop_frame,
+                "frame_filter": f"step={frame_step}",
+                "use_cache": False,
+            },
+        )
+
+        with make_api_client(self._USERNAME) as api_client:
+            meta, _ = api_client.tasks_api.retrieve_data_meta(task_id)
+            assert meta.size == expected_size
+            assert meta.start_frame == start_frame
+            assert meta.stop_frame == stop_frame
+            assert meta.frame_filter == f"step={frame_step}"
+
+    @pytest.mark.with_external_services
     @pytest.mark.timeout(60)
     def test_can_create_task_with_cloud_storage_and_manifest_when_manifest_references_missing_file(
         self, request, cloud_storages
@@ -983,6 +1131,53 @@ class TestPostTaskData:
         else:
             rq_job_details = self._test_cannot_create_task(self._USERNAME, task_spec, data_spec)
             assert expected_error and expected_error in rq_job_details.message
+
+    @pytest.mark.with_external_services
+    @pytest.mark.parametrize("cloud_storage_id", [1])
+    @pytest.mark.parametrize(
+        "server_files, filename_pattern",
+        [
+            # a directory can be selected explicitly or sent by the UI
+            # when all the files inside it are selected
+            (["videos/", "videos/manifest.jsonl"], None),
+            (["videos/manifest.jsonl"], "videos/*"),
+            (["videos/manifest.jsonl"], "*"),
+            # only a manifest is specified, filename_pattern is set to "*" implicitly
+            (["videos/manifest.jsonl"], None),
+        ],
+    )
+    def test_create_task_with_video_and_manifest_in_cloud_storage_directory(
+        self,
+        cloud_storage_id: int,
+        server_files: list[str],
+        filename_pattern: str | None,
+    ):
+        # videos/manifest.jsonl is a video manifest describing videos/video_1.mp4;
+        # it must not be parsed as an image manifest when the directory or the
+        # filename pattern is resolved into files
+        expected_frame_count = 3
+
+        task_spec = {
+            "name": "Task with a video and a manifest in a cloud storage directory",
+            "labels": [{"name": "car"}],
+        }
+
+        data_spec = {
+            "image_quality": 75,
+            "use_cache": True,
+            "cloud_storage_id": cloud_storage_id,
+            "server_files": server_files,
+        }
+        if filename_pattern:
+            data_spec["filename_pattern"] = filename_pattern
+
+        task_id, _ = create_task(self._USERNAME, task_spec, data_spec)
+
+        with make_api_client(self._USERNAME) as api_client:
+            task, response = api_client.tasks_api.retrieve(task_id)
+            assert response.status == HTTPStatus.OK
+            assert task.size == expected_frame_count
+            assert task.mode == "interpolation"
 
     @pytest.mark.with_external_services
     @pytest.mark.parametrize("use_manifest", [True, False])
@@ -1824,9 +2019,9 @@ class TestPostTaskData:
 
 @pytest.mark.usefixtures("restore_db_per_class")
 @pytest.mark.usefixtures("restore_cvat_data_per_class")
-@pytest.mark.usefixtures("restore_redis_ondisk_per_function")
+@pytest.mark.usefixtures("restore_redis_ondisk_per_class")
 @pytest.mark.usefixtures("restore_redis_ondisk_after_class")
-@pytest.mark.usefixtures("restore_redis_inmem_per_function")
+@pytest.mark.usefixtures("restore_redis_inmem_per_class")
 class TestTaskData(TestTasksBase):
     @staticmethod
     def _retrieve_data_with_range(
@@ -1916,9 +2111,8 @@ class TestTaskData(TestTasksBase):
             f"bytes 0-{len(full_chunk) - 1}/{len(full_chunk)}"
         )
 
-    def test_can_get_data_chunk_byte_ranges(self, fxt_uploaded_images_task: tuple[ITaskSpec, int]):
-        _, task_id = fxt_uploaded_images_task
-
+    @parametrize("task_spec, task_id", [fixture_ref("fxt_uploaded_images_task")])
+    def test_can_get_data_chunk_byte_ranges(self, task_spec: ITaskSpec, task_id: int):
         with make_api_client(self._USERNAME) as api_client:
             _, task_chunk_response = api_client.tasks_api.retrieve_data(
                 task_id, type="chunk", quality="compressed", number=0, _parse_response=False
@@ -1954,6 +2148,126 @@ class TestTaskData(TestTasksBase):
                 quality="compressed",
                 index=0,
             )
+
+    def _ensure_task_has_mixed_job_chunk_counts(self, task_id: int) -> None:
+        "Check the task has both jobs with both 1 and multiple chunks"
+
+        with make_api_client(self._USERNAME) as api_client:
+            annotation_jobs = [
+                job
+                for job in get_paginated_collection(
+                    api_client.jobs_api.list_endpoint, task_id=task_id
+                )
+                if job.type == "annotation"
+            ]
+            assert annotation_jobs
+
+            chunk_counts = set()
+            for job in annotation_jobs:
+                job_meta, _ = api_client.jobs_api.retrieve_data_meta(job.id)
+                chunk_counts.add(math.ceil(job_meta.size / job_meta.chunk_size))
+
+            assert min(chunk_counts) == 1 and max(chunk_counts) > 1, (
+                "The task must have both single-chunk and multi-chunk jobs, "
+                f"got job chunk counts {sorted(chunk_counts)}"
+            )
+
+    def _image_task_with_honeypots_and_mixed_job_chunk_counts_base(
+        self, request: pytest.FixtureRequest, **kwargs
+    ) -> tuple[ITaskSpec, int]:
+        "The task to check for regressions on https://github.com/cvat-ai/cvat/issues/11006"
+
+        # The chunk size is picked so that the task has both single-chunk and multi-chunk jobs:
+        # the regular jobs have 4 + 2 honeypot frames, and the last one has 2 + 2.
+        # Honeypots are placed randomly inside a job, so both the first and the last chunk
+        # of a job can contain them.
+        task_spec, task_id = self._image_task_with_honeypots_and_segments_base(
+            request, chunk_size=4, **kwargs
+        )
+        self._ensure_task_has_mixed_job_chunk_counts(task_id)
+        return task_spec, task_id
+
+    @fixture(scope="class")
+    @parametrize(
+        "static_cache_enabled",
+        [
+            pytest.param(
+                to_bool(os.getenv("CVAT_ALLOW_STATIC_CACHE", False)),
+                marks=[
+                    pytest.mark.skipif(
+                        not to_bool(os.getenv("CVAT_ALLOW_STATIC_CACHE", False)),
+                        reason="This test covers only the static cache."
+                        "Check test_all_job_chunks_available_after_honeypot_frame_change()"
+                        "for the dynamic cache case.",
+                    )
+                ],
+            ),
+        ],
+    )
+    def fxt_uploaded_images_task_with_honeypots_mixed_job_chunk_counts_and_changed_honeypots(
+        self, request: pytest.FixtureRequest, *, static_cache_enabled: bool
+    ) -> tuple[ITaskSpec, int]:
+        "The task to check for regressions on https://github.com/cvat-ai/cvat/issues/11006"
+
+        assert static_cache_enabled
+        task_spec, task_id = self._image_task_with_honeypots_and_mixed_job_chunk_counts_base(
+            request
+        )
+        self._rotate_all_task_honeypots(task_spec, task_id)
+        return task_spec, task_id
+
+    @pytest.mark.timeout(300)
+    @pytest.mark.skipif(
+        to_bool(os.getenv("CVAT_ALLOW_STATIC_CACHE", False)),
+        reason="This test covers only the dynamic cache.",
+    )
+    def test_all_job_chunks_available_after_honeypot_frame_change(
+        self, request: pytest.FixtureRequest
+    ):
+        task_spec, task_id = self._image_task_with_honeypots_and_mixed_job_chunk_counts_base(
+            request
+        )
+
+        with make_api_client(self._USERNAME) as api_client:
+            annotation_jobs = sorted(
+                (
+                    job
+                    for job in get_paginated_collection(
+                        api_client.jobs_api.list_endpoint, task_id=task_id
+                    )
+                    if job.type == "annotation"
+                ),
+                key=lambda job: job.start_frame,
+            )
+
+            job_chunk_ids: dict[int, Sequence[int]] = {}
+            for job in annotation_jobs:
+                job_meta, _ = api_client.jobs_api.retrieve_data_meta(job.id)
+                job_chunk_ids[job.id] = range(math.ceil(job_meta.size / job_meta.chunk_size))
+
+            def _read_all_chunks():
+                for job_id, chunk_ids in job_chunk_ids.items():
+                    for chunk_id, quality in product(chunk_ids, ("original", "compressed")):
+                        _, response = api_client.jobs_api.retrieve_data(
+                            job_id,
+                            type="chunk",
+                            quality=quality,
+                            index=chunk_id,
+                            _check_status=False,
+                            _parse_response=False,
+                        )
+                        assert (
+                            response.status == HTTPStatus.OK
+                        ), f"{job_id=}, {chunk_id=} of {sorted(chunk_ids)}, {quality=}"
+
+            # Initialize chunks in the cache
+            _read_all_chunks()
+
+            # Update honeypots
+            self._rotate_all_task_honeypots(task_spec, task_id)
+
+            # Check all the chunks are still available
+            _read_all_chunks()
 
     @parametrize("task_spec, task_id", TestTasksBase._all_task_cases)
     def test_can_get_task_meta(self, task_spec: ITaskSpec, task_id: int):
@@ -2347,7 +2661,15 @@ class TestTaskData(TestTasksBase):
         # This test has to check all the job frames availability, it can make many requests
         timeout=300
     )
-    @parametrize("task_spec, task_id", TestTasksBase._2d_task_cases)
+    @parametrize(
+        "task_spec, task_id",
+        TestTasksBase._2d_task_cases
+        + [
+            fixture_ref(
+                fxt_uploaded_images_task_with_honeypots_mixed_job_chunk_counts_and_changed_honeypots
+            )
+        ],
+    )
     def test_can_get_job_frames(self, task_spec: ITaskSpec, task_id: int):
         with make_api_client(self._USERNAME) as api_client:
             jobs = sorted(

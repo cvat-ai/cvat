@@ -8,7 +8,7 @@ from enum import Enum
 from functools import cached_property
 
 import attrs
-from django.contrib.auth.models import User
+from django.conf import settings
 from django.db import models
 
 from cvat.apps.engine.models import Project, TimestampedModel
@@ -73,7 +73,7 @@ class Webhook(TimestampedModel):
     enable_ssl = models.BooleanField(default=True)
 
     owner = models.ForeignKey(
-        User, null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
     )
     project = models.ForeignKey(Project, null=True, on_delete=models.CASCADE, related_name="+")
     organization = models.ForeignKey(
@@ -113,6 +113,7 @@ class WebhookDelivery(TimestampedModel):
     attempt = models.PositiveIntegerField(null=True)
     request_duration = models.PositiveIntegerField(null=True)
 
+    # deprecated, kept for historical deliveries
     changed_fields = models.CharField(max_length=4096, default="")
 
     request = models.JSONField(default=dict)

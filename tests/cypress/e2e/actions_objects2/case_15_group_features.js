@@ -10,7 +10,7 @@ import { taskName, labelName } from '../../support/const';
 context('Group features', () => {
     const caseId = '15';
     const createRectangleShape2Points = {
-        points: 'By 2 Points',
+        points: '2 Points',
         type: 'Shape',
         labelName,
         firstX: 250,
@@ -19,7 +19,7 @@ context('Group features', () => {
         secondY: 450,
     };
     const createRectangleShape2PointsSecond = {
-        points: 'By 2 Points',
+        points: '2 Points',
         type: 'Shape',
         labelName,
         firstX: createRectangleShape2Points.firstX + 300,
@@ -28,7 +28,7 @@ context('Group features', () => {
         secondY: createRectangleShape2Points.secondY,
     };
     const createRectangleTrack2Points = {
-        points: 'By 2 Points',
+        points: '2 Points',
         type: 'Track',
         labelName,
         firstX: 250,
@@ -37,7 +37,7 @@ context('Group features', () => {
         secondY: 700,
     };
     const createRectangleTrack2PointsSecond = {
-        points: 'By 2 Points',
+        points: '2 Points',
         type: 'Track',
         labelName,
         firstX: createRectangleTrack2Points.firstX + 300,

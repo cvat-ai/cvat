@@ -9,7 +9,9 @@ import { useHistory } from 'react-router';
 import Dropdown from 'antd/lib/dropdown';
 import Modal from 'antd/lib/modal';
 
-import { Organization, Project, User } from 'cvat-core-wrapper';
+import {
+    DimensionType, Organization, Project, User,
+} from 'cvat-core-wrapper';
 import { useDropdownEditField, usePlugins } from 'utils/hooks';
 import { CombinedState } from 'reducers';
 import { deleteProjectAsync, getProjectsAsync, updateProjectAsync } from 'actions/projects-actions';
@@ -55,6 +57,12 @@ function ProjectActionsComponent(props: Readonly<Props>): JSX.Element {
     }), shallowEqual);
 
     const isBulkMode = selectedIds.length > 1;
+    const isExportDatasetDisabled = isBulkMode &&
+        new Set(
+            currentProjects
+                .filter((project) => selectedIds.includes(project.id))
+                .map((project) => project.dimension),
+        ).size > 1;
     const {
         dropdownOpen,
         editField,
@@ -217,6 +225,8 @@ function ProjectActionsComponent(props: Readonly<Props>): JSX.Element {
             onBackupProject,
             onDeleteProject,
             selectedIds,
+            isExportDatasetDisabled,
+            isQualityControlDisabled: projectInstance.dimension === DimensionType.DIMENSION_1D,
         }, props);
     }
 

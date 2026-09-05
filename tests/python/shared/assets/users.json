@@ -4,6 +4,7 @@
   "previous": null,
   "results": [
     {
+      "created_via": null,
       "date_joined": "2023-03-30T09:37:31.615000Z",
       "email": "lonely_user@cvat.org",
       "first_name": "Lonely",
@@ -21,6 +22,7 @@
       "username": "lonely_user"
     },
     {
+      "created_via": null,
       "date_joined": "2022-02-24T20:45:19Z",
       "email": "user6@cvat.org",
       "first_name": "User",
@@ -38,6 +40,7 @@
       "username": "user6"
     },
     {
+      "created_via": null,
       "date_joined": "2022-02-24T20:45:07Z",
       "email": "user5@cvat.org",
       "first_name": "User",
@@ -55,6 +58,7 @@
       "username": "user5"
     },
     {
+      "created_via": null,
       "date_joined": "2021-12-14T18:38:46Z",
       "email": "admin2@cvat.org",
       "first_name": "Admin",
@@ -72,6 +76,7 @@
       "username": "admin2"
     },
     {
+      "created_via": null,
       "date_joined": "2021-12-14T18:37:41Z",
       "email": "dummy4@cvat.org",
       "first_name": "Dummy",
@@ -87,6 +92,7 @@
       "username": "dummy4"
     },
     {
+      "created_via": null,
       "date_joined": "2021-12-14T18:37:09Z",
       "email": "dummy3@cvat.org",
       "first_name": "Dummy",
@@ -102,6 +108,7 @@
       "username": "dummy3"
     },
     {
+      "created_via": null,
       "date_joined": "2021-12-14T18:36:31Z",
       "email": "dummy2@cvat.org",
       "first_name": "Dummy",
@@ -117,6 +124,7 @@
       "username": "dummy2"
     },
     {
+      "created_via": null,
       "date_joined": "2021-12-14T18:36:00Z",
       "email": "dummy1@cvat.org",
       "first_name": "Dummy",
@@ -132,6 +140,7 @@
       "username": "dummy1"
     },
     {
+      "created_via": null,
       "date_joined": "2021-12-14T18:35:15Z",
       "email": "user10@cvat.org",
       "first_name": "User",
@@ -149,6 +158,7 @@
       "username": "user10"
     },
     {
+      "created_via": null,
       "date_joined": "2021-12-14T18:34:34Z",
       "email": "user9@cvat.org",
       "first_name": "User",
@@ -166,6 +176,7 @@
       "username": "user9"
     },
     {
+      "created_via": null,
       "date_joined": "2021-12-14T18:34:01Z",
       "email": "user8@cvat.org",
       "first_name": "User",
@@ -183,6 +194,7 @@
       "username": "user8"
     },
     {
+      "created_via": null,
       "date_joined": "2021-12-14T18:33:06Z",
       "email": "user7@cvat.org",
       "first_name": "User",
@@ -200,6 +212,7 @@
       "username": "user7"
     },
     {
+      "created_via": null,
       "date_joined": "2021-12-14T18:32:01Z",
       "email": "worker4@cvat.org",
       "first_name": "Worker",
@@ -217,6 +230,7 @@
       "username": "worker4"
     },
     {
+      "created_via": null,
       "date_joined": "2021-12-14T18:31:25Z",
       "email": "worker3@cvat.org",
       "first_name": "Worker",
@@ -234,6 +248,7 @@
       "username": "worker3"
     },
     {
+      "created_via": null,
       "date_joined": "2021-12-14T18:30:43Z",
       "email": "worker2@cvat.org",
       "first_name": "Worker",
@@ -251,6 +266,7 @@
       "username": "worker2"
     },
     {
+      "created_via": null,
       "date_joined": "2021-12-14T18:30:00Z",
       "email": "worker1@cvat.org",
       "first_name": "Worker",
@@ -268,6 +284,7 @@
       "username": "worker1"
     },
     {
+      "created_via": null,
       "date_joined": "2021-12-14T18:25:10Z",
       "email": "user4@cvat.org",
       "first_name": "User",
@@ -285,6 +302,7 @@
       "username": "user4"
     },
     {
+      "created_via": null,
       "date_joined": "2021-12-14T18:24:39Z",
       "email": "user3@cvat.org",
       "first_name": "User",
@@ -302,6 +320,7 @@
       "username": "user3"
     },
     {
+      "created_via": null,
       "date_joined": "2021-12-14T18:24:12Z",
       "email": "user2@cvat.org",
       "first_name": "User",
@@ -319,6 +338,7 @@
       "username": "user2"
     },
     {
+      "created_via": null,
       "date_joined": "2021-12-14T18:21:09Z",
       "email": "user1@cvat.org",
       "first_name": "User",
@@ -336,6 +356,7 @@
       "username": "user1"
     },
     {
+      "created_via": null,
       "date_joined": "2021-12-14T18:04:57Z",
       "email": "admin1@cvat.org",
       "first_name": "Admin",

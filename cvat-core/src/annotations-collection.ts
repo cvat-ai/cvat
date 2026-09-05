@@ -157,41 +157,9 @@ export default class Collection {
         };
     }
 
-    private _captureZOrderRestore(object: Shape | Track, frame: number): () => void {
-        if (object instanceof Track) {
-            const wasKeyframe = frame in object.shapes;
-            const shape = wasKeyframe ? object.shapes[frame] : undefined;
-            const { source } = object;
-
-            return (): void => {
-                object.source = source;
-                object.updated = Date.now();
-                if (shape) {
-                    object.shapes[frame] = shape;
-                } else {
-                    delete object.shapes[frame];
-                }
-            };
-        }
-
-        const { zOrder, source } = object;
-        return (): void => {
-            object.source = source;
-            object.updated = Date.now();
-            object.zOrder = zOrder;
-        };
-    }
-
     private _applyZOrderUpdates(frame: number, zOrders: Map<number, number>): ObjectState[] {
         const updatedStates: ObjectState[] = [];
-        const snapshots: {
-            clientID: number;
-            undo: () => void;
-            redo: () => void;
-        }[] = [];
-
-        // Prevent each individual object.save() from creating its own history item.
-        this.history.freeze(true);
+        this.history.beginTransaction(HistoryActions.CHANGED_ZORDER);
 
         try {
             for (const [clientID, zOrder] of zOrders) {
@@ -215,35 +183,17 @@ export default class Collection {
                     continue;
                 }
 
-                const undo = this._captureZOrderRestore(object, frame);
                 currentState.zOrder = zOrder;
                 object.save(frame, currentState);
-                const redo = this._captureZOrderRestore(object, frame);
 
                 const updatedState = new ObjectState(object.get(frame));
-                snapshots.push({ clientID: object.clientID, undo, redo });
                 updatedStates.push(updatedState);
             }
         } catch (error: unknown) {
-            snapshots.forEach(({ undo }) => undo());
+            this.history.abortTransaction();
             throw error;
         } finally {
-            this.history.freeze(false);
-        }
-
-        if (snapshots.length) {
-            // Store the whole layer operation as one undo/redo item after all objects are updated.
-            this.history.do(
-                HistoryActions.CHANGED_ZORDER,
-                () => {
-                    snapshots.forEach(({ undo }) => undo());
-                },
-                () => {
-                    snapshots.forEach(({ redo }) => redo());
-                },
-                snapshots.map(({ clientID }) => clientID),
-                frame,
-            );
+            this.history.endTransaction();
         }
 
         return updatedStates;
@@ -1284,7 +1234,7 @@ export default class Collection {
                 constructed.intervals.push({
                     attributes,
                     start: state.start,
-                    stop: Math.min(state.stop ?? this.stopFrame, this.stopFrame),
+                    stop: Math.min(state.stop ?? this.stopFrame + 1, this.stopFrame + 1),
                     label_id: state.label.id,
                     group: 0,
                     source: state.source,
@@ -1651,7 +1601,7 @@ export default class Collection {
                 continue;
             }
 
-            const distance = AudioInterval.distance(state.start, state.stop ?? this.stopFrame, position);
+            const distance = AudioInterval.distance(state.start, state.stop ?? this.stopFrame + 1, position);
             if (distance !== null && (minimumDistance === null || distance < minimumDistance)) {
                 minimumDistance = distance;
                 minimumState = state;
@@ -1662,6 +1612,65 @@ export default class Collection {
             state: minimumState,
             distance: minimumDistance,
         };
+    }
+
+    public splitInterval(state: AudioIntervalState, position: number): number | null {
+        checkObjectType('interval state', state, null, { cls: AudioIntervalState, name: 'AudioIntervalState' });
+        checkObjectType('interval position', position, 'number', null);
+
+        const { clientID } = state;
+        const interval = clientID === null ? null : this.objects[clientID];
+        if (!(interval instanceof AudioInterval) || interval.lock || interval.hidden) {
+            return null;
+        }
+
+        const currentState = interval.get();
+        const stop = currentState.stop ?? this.stopFrame + 1;
+        if (position <= currentState.start || position >= stop) {
+            return null;
+        }
+
+        const right = AudioIntervalState.create({
+            label: currentState.label,
+            start: position,
+            stop,
+            source: currentState.source,
+        });
+        right.attributes = { ...currentState.attributes };
+        right.color = currentState.color;
+
+        this.history.beginTransaction(HistoryActions.SPLIT_INTERVAL);
+        try {
+            // update current as left
+            const updatedState = interval.get();
+            updatedState.stop = position;
+            interval.save(updatedState);
+
+            const [nextClientID] = this.put([right]);
+            return nextClientID;
+        } catch (error: unknown) {
+            this.history.abortTransaction();
+            throw error;
+        } finally {
+            this.history.endTransaction();
+        }
+    }
+
+    public bulkSave(states: AudioIntervalState[]): void {
+        this.history.beginTransaction(HistoryActions.CHANGED_AUDIO_INTERVALS);
+        try {
+            states.forEach((state) => {
+                const interval = state.clientID === null ? null : this.objects[state.clientID];
+                if (!(interval instanceof AudioInterval)) return;
+
+                interval.save(state);
+            });
+        } catch (error: unknown) {
+            this.history.abortTransaction();
+            throw error;
+        } finally {
+            this.history.endTransaction();
+        }
     }
 
     private _searchEmpty(

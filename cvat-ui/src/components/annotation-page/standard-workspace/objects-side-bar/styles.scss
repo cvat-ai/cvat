@@ -164,8 +164,8 @@
 
 .cvat-objects-sidebar-issues-list {
     background-color: $background-color-2;
-    height: calc(100% - $grid-unit-size * 4);
-    overflow: hidden auto;
+    height: calc(100% - $grid-unit-size * 9);
+    overflow-y: auto;
     padding: $grid-unit-size * 0.5;
 }
 
@@ -426,6 +426,7 @@
 
 .cvat-objects-sidebar-z-layer-collapse-button,
 .cvat-objects-sidebar-z-layer-select-button,
+.cvat-objects-sidebar-z-layer-visibility-indicator,
 .cvat-objects-sidebar-z-layer-drag-handle {
     display: inline-flex;
     align-items: center;
@@ -435,6 +436,7 @@
 }
 
 .cvat-objects-sidebar-z-layer-select-button[disabled] {
+    color: $completed-progress-color;
     opacity: 1;
 }
 
@@ -784,6 +786,25 @@
         padding: 0;
     }
 
+    > li.ant-dropdown-menu-submenu {
+        padding: 0;
+
+        > .ant-dropdown-menu-submenu-title {
+            padding: 0;
+            display: flex;
+            align-items: center;
+
+            > button {
+                flex: 1;
+            }
+
+            > .ant-dropdown-menu-submenu-arrow {
+                top: 50%;
+                transform: translateY(-50%);
+            }
+        }
+    }
+
     button {
         &:not(:disabled) {
             color: $text-color;
@@ -792,6 +813,31 @@
         width: 100%;
         height: 100%;
         text-align: left;
+    }
+
+    button[class^='cvat-object-item-menu-orientation'] {
+        color: $text-color;
+
+        &:not(:disabled):hover {
+            color: $slider-color;
+        }
+    }
+
+    .cvat-object-item-menu-orientation-icon {
+        font-size: 16px;
+
+        > svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        > svg path {
+            fill: currentColor;
+        }
+
+        &.clockwise > svg {
+            transform: scaleX(-1);
+        }
     }
 }
 

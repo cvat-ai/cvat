@@ -49,6 +49,10 @@
 }
 
 .cvat-audio-waveform-wrapper {
+    $control-background: rgb(209, 208, 240, 80%);
+    $control-hover-background: rgb(209, 208, 240, 95%);
+
+    position: relative;
     background-color: white;
     border-radius: 8px;
     margin-bottom: 20px;
@@ -57,6 +61,30 @@
     min-width: 0;
     width: 100%;
 
+    ::part(cvat-audio-bulk-edit-boundary) {
+        border-color: #1677ff;
+    }
+
+    .cvat-audio-waveform-controls {
+        position: absolute;
+        z-index: 10;
+        top: 8px;
+        right: 8px;
+        display: flex;
+        gap: 4px;
+
+        .ant-btn.cvat-audio-btn {
+            background-color: $control-background;
+            pointer-events: auto;
+
+            &:hover,
+            &:focus {
+                opacity: 1;
+                background-color: $control-hover-background;
+            }
+        }
+    }
+
     > div:first-child {
         display: grid;
         grid-template-columns: minmax(0, 1fr);
@@ -64,6 +92,39 @@
 
         *::part(wrapper) {
             overflow: hidden;
+        }
+
+        *::part(cvat-audio-region-resize-handles-hidden) {
+            opacity: 0;
+        }
+
+        &.cvat-audio-waveform-interaction-drag {
+            cursor: grabbing;
+
+            *::part(wrapper),
+            *::part(region),
+            *::part(region-handle) {
+                cursor: grabbing !important;
+            }
+        }
+
+        &.cvat-audio-waveform-interaction-resize,
+        &.cvat-audio-waveform-bulk-resize {
+            cursor: ew-resize;
+
+            *::part(wrapper),
+            *::part(region),
+            *::part(region-handle) {
+                cursor: ew-resize !important;
+            }
+        }
+
+        // The hover timestamp is derived from the last pointer event and lags
+        // behind a stationary pointer while custom resize auto-scrolls.
+        &.cvat-audio-waveform-interaction-auto-scroll {
+            *::part(hover) {
+                visibility: hidden;
+            }
         }
     }
 

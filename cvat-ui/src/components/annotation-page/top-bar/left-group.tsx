@@ -12,6 +12,7 @@ import Text from 'antd/lib/typography/Text';
 
 import { UndoIcon, RedoIcon } from 'icons';
 import { ActiveControl, ToolsBlockerState } from 'reducers';
+import { RectDrawingMethod } from 'cvat-canvas-wrapper';
 import { registerComponentShortcuts } from 'actions/shortcuts-actions';
 import AnnotationMenuComponent from 'components/annotation-page/top-bar/annotation-menu';
 import CVATTooltip from 'components/common/cvat-tooltip';
@@ -31,6 +32,7 @@ interface Props {
     switchToolsBlockerShortcut: string;
     toolsBlockerState: ToolsBlockerState;
     activeControl: ActiveControl;
+    rectDrawingMethod?: RectDrawingMethod;
     keyMap: KeyMap;
     onUndoClick(): void;
     onRedoClick(): void;
@@ -72,6 +74,7 @@ function LeftGroup(props: Props): JSX.Element {
         drawShortcut,
         switchToolsBlockerShortcut,
         activeControl,
+        rectDrawingMethod,
         toolsBlockerState,
         onUndoClick,
         onRedoClick,
@@ -79,7 +82,7 @@ function LeftGroup(props: Props): JSX.Element {
         onSwitchToolsBlockerState,
     } = props;
 
-    const includesDoneButton = finishDrawAvailable(activeControl);
+    const includesDoneButton = finishDrawAvailable(activeControl, rectDrawingMethod);
 
     const includesToolsBlockerButton =
         [ActiveControl.OPENCV_TOOLS, ActiveControl.AI_TOOLS].includes(activeControl) && toolsBlockerState.buttonVisible;
@@ -87,15 +90,11 @@ function LeftGroup(props: Props): JSX.Element {
     const handlers: Record<keyof typeof componentShortcuts, (event?: KeyboardEvent) => void> = {
         UNDO: (event: KeyboardEvent | undefined) => {
             event?.preventDefault();
-            if (undoAction) {
-                onUndoClick();
-            }
+            onUndoClick();
         },
         REDO: (event: KeyboardEvent | undefined) => {
             event?.preventDefault();
-            if (redoAction) {
-                onRedoClick();
-            }
+            onRedoClick();
         },
         SWITCH_TOOLS_BLOCKER_STATE: (event: KeyboardEvent | undefined) => {
             event?.preventDefault();

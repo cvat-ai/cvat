@@ -28,7 +28,7 @@ context('Lock/hide features.', () => {
         numberOfPoints: null,
     };
     const createRectangleTrack2Points = {
-        points: 'By 2 Points',
+        points: '2 Points',
         type: 'Track',
         labelName,
         firstX: 260,
@@ -68,7 +68,7 @@ context('Lock/hide features.', () => {
         numberOfPoints: null,
     };
     const createRectangleShape4Points = {
-        points: 'By 4 Points',
+        points: '4 Points',
         type: 'Shape',
         labelName: newLabelName3,
         firstX: 550,

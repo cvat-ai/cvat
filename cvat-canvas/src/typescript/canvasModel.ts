@@ -66,6 +66,20 @@ export interface HighlightedElements {
 export enum RectDrawingMethod {
     CLASSIC = 'By 2 points',
     EXTREME_POINTS = 'By 4 points',
+    ROTATED_POINTS = 'Rotated points',
+}
+
+export interface RotatedShapeFitter {
+    minAreaRect(points: [number, number][]): {
+        center: { x: number; y: number };
+        size: { width: number; height: number };
+        angle: number;
+    };
+    fitEllipse(points: [number, number][]): {
+        center: { x: number; y: number };
+        size: { width: number; height: number };
+        angle: number;
+    };
 }
 
 export enum CuboidDrawingMethod {
@@ -119,6 +133,7 @@ export interface DrawData {
     continue?: boolean;
     shapeType?: string;
     rectDrawingMethod?: RectDrawingMethod;
+    rotatedShapeFitter?: RotatedShapeFitter;
     cuboidDrawingMethod?: CuboidDrawingMethod;
     skeletonSVG?: SVGSVGElement;
     numberOfPoints?: number;
@@ -138,6 +153,7 @@ export interface InteractionData {
         shapes: {
             shapeType: string;
             points: ArrayLike<number>;
+            maskOutlines?: ArrayLike<number>[];
         }[];
     };
     settings?: {
@@ -763,6 +779,8 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
     }
 
     public draw(drawData: DrawData): void {
+        const rotatedShapeFitter = drawData.rotatedShapeFitter ?? this.data.drawData.rotatedShapeFitter;
+
         const supportedShapes = [
             'rectangle', 'polygon', 'polyline', 'points', 'ellipse', 'cuboid', 'skeleton', 'mask',
         ];
@@ -797,7 +815,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
             const [state] = this.data.objects.filter((_state: any): boolean => _state.clientID === clientID);
 
             if (state) {
-                this.data.drawData = { ...drawData };
+                this.data.drawData = { ...drawData, rotatedShapeFitter };
                 this.data.drawData.shapeType = state.shapeType;
             } else {
                 return;
@@ -808,7 +826,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
                 return;
             }
 
-            this.data.drawData = { ...drawData };
+            this.data.drawData = { ...drawData, rotatedShapeFitter };
             if (this.data.drawData.initialState) {
                 this.data.drawData.shapeType = this.data.drawData.initialState.shapeType;
             }
@@ -820,7 +838,8 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
                 this.data.drawData.rectDrawingMethod = drawData.rectDrawingMethod || RectDrawingMethod.CLASSIC;
             }
             if (drawData.shapeType === 'cuboid') {
-                this.data.drawData.cuboidDrawingMethod = drawData.cuboidDrawingMethod || CuboidDrawingMethod.CLASSIC;
+                this.data.drawData.cuboidDrawingMethod = drawData.cuboidDrawingMethod ||
+                    CuboidDrawingMethod.CLASSIC;
             }
         }
 
@@ -1049,9 +1068,14 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
     }
 
     public cancel(): void {
+        const { rotatedShapeFitter } = this.data.drawData;
         this.data = {
             ...this.data,
             ...defaultData,
+            drawData: {
+                ...defaultData.drawData,
+                rotatedShapeFitter,
+            },
         };
         this.notify(UpdateReasons.CANCEL);
     }

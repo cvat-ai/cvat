@@ -26,6 +26,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          persist-credentials: false
           ref: ${{ inputs.ref }}
 
       - name: CVAT server. Getting cache from the default branch
@@ -41,7 +42,7 @@ jobs:
           key: ${{ runner.os }}-build-ui-${{ needs.search_cache.outputs.sha }}
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4.2.0
+        uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4.3.0
 
       - name: Create artifact directories
         run: |
@@ -98,6 +99,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          persist-credentials: false
           ref: ${{ inputs.ref }}
 
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
@@ -189,6 +191,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          persist-credentials: false
           ref: ${{ inputs.ref }}
 
       - name: Download CVAT server image
@@ -210,9 +213,6 @@ jobs:
             cvat_opa test cvat/apps/*/rules
 
       - name: Running unit tests
-        env:
-          HOST_COVERAGE_DATA_DIR: ${{ github.workspace }}
-          CONTAINER_COVERAGE_DATA_DIR: "/coverage_data"
         run: |
           docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d cvat_opa cvat_server cvat_db
 
@@ -253,6 +253,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          persist-credentials: false
           ref: ${{ inputs.ref }}
 
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
@@ -308,7 +309,7 @@ jobs:
           DJANGO_SU_EMAIL: 'admin@localhost.company'
           DJANGO_SU_PASSWORD: '12qwaszx'
         run: |
-          docker exec -i cvat_server /bin/bash -c "echo \"from django.contrib.auth.models import User; User.objects.create_superuser('${DJANGO_SU_NAME}', '${DJANGO_SU_EMAIL}', '${DJANGO_SU_PASSWORD}')\" | python3 ~/manage.py shell"
+          docker exec -i cvat_server /bin/bash -c "echo \"from django.contrib.auth import get_user_model; get_user_model().objects.create_superuser('${DJANGO_SU_NAME}', '${DJANGO_SU_EMAIL}', '${DJANGO_SU_PASSWORD}')\" | python3 ~/manage.py shell"
           cd ./tests
           corepack enable yarn
           yarn --immutable
