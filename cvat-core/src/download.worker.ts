@@ -245,8 +245,6 @@ async function fetchData(url: string, requestConfig): Promise<{
                 if (response.status !== 200) {
                     throw new Error(`Unexpected response status: ${response.status}`);
                 }
-
-                chunkIdentity = responseChunkIdentity;
             } else if (response.status === 206) {
                 const contentRange = parseContentRange(responseHeaders);
                 if (!contentRange || contentRange.start !== receivedBytes) {
@@ -257,24 +255,21 @@ async function fetchData(url: string, requestConfig): Promise<{
                     await response.body?.cancel();
                     return fetchData(url, requestConfig);
                 }
-
-                chunkIdentity = responseChunkIdentity;
             } else if (response.status === 200) {
                 // A proxy ignored or removed Range. This is a complete representation starting at byte 0,
                 // so previously received bytes must not be combined with it.
                 chunks = [];
                 receivedBytes = 0;
-                chunkIdentity = responseChunkIdentity;
                 expectedSize = null;
             } else {
                 throw new Error(`Unexpected response status: ${response.status}`);
             }
 
-            if (responseChunkSize !== null) {
-                expectedSize = responseChunkSize;
-            }
+            chunkIdentity = responseChunkIdentity;
+            expectedSize = responseChunkSize ?? expectedSize;
 
             const readResult = await readResponse(response, chunks, receivedBytes);
+            const receivedBytesBefore = receivedBytes;
             receivedBytes = readResult.receivedBytes;
             bodyDownloadTimeMs += readResult.downloadTimeMs;
 
@@ -285,7 +280,12 @@ async function fetchData(url: string, requestConfig): Promise<{
             if (expectedSize !== null && receivedBytes < expectedSize) {
                 if (retry < MAX_RETRIES) {
                     await sleep(getRetryDelay(response, retry));
-                    retry++;
+
+                    if (response.status !== 206 || receivedBytesBefore === receivedBytes) {
+                        // do not increase retry count
+                        // if at least some bytes were received during retry
+                        retry++;
+                    }
                     continue;
                 }
 
