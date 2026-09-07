@@ -4097,6 +4097,10 @@ export class CanvasViewImpl implements CanvasView, Listener {
             menuButton.setAttribute('aria-label', 'Open selection actions');
             menuButton.textContent = '...';
             label.addEventListener('mousedown', (event: MouseEvent): void => {
+                if ((event.target as Element).closest('.cvat-canvas-selected-objects-menu-content')) {
+                    event.stopPropagation();
+                    return;
+                }
                 if (event.button !== 0 || this.isMultiSelectModifierPressed(event) ||
                     this.isMultiSelectObjectModifierPressed(event) ||
                     !this.getMovableSelectedObjectIDs().length || !this.selectedObjectsBox) {
@@ -4117,6 +4121,13 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     screenY: event.screenY,
                 }));
             });
+            for (const eventName of ['pointerdown', 'click']) {
+                label.addEventListener(eventName, (event: Event): void => {
+                    if ((event.target as Element).closest('.cvat-canvas-selected-objects-menu-content')) {
+                        event.stopPropagation();
+                    }
+                });
+            }
             menuButton.addEventListener('mousedown', (event: MouseEvent): void => event.stopPropagation());
             menuButton.addEventListener('dblclick', (event: MouseEvent): void => {
                 event.preventDefault();

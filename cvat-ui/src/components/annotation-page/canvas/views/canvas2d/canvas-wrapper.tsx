@@ -1646,14 +1646,16 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
                             canvasInstance.html().querySelector<HTMLElement>('.cvat_canvas_selected_objects_label') ||
                             window.document.body
                         )}
-                        onOpenChange={(open: boolean, info): void => {
-                            if (!open && info.source !== 'menu') {
-                                this.setState({
-                                    selectionMenuPosition: null,
-                                    selectionLayerPickerVisible: false,
-                                });
-                            }
-                        }}
+                        dropdownRender={(menu): JSX.Element => (
+                            <div
+                                role='presentation'
+                                className='cvat-canvas-selected-objects-menu-content'
+                                onPointerDown={(event): void => event.stopPropagation()}
+                                onMouseDown={(event): void => event.stopPropagation()}
+                            >
+                                {menu}
+                            </div>
+                        )}
                         menu={{
                             selectable: false,
                             className: 'cvat-object-item-menu',
