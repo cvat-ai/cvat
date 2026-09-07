@@ -8188,6 +8188,20 @@ components:
           maximum: 1
           minimum: 0
           description: Pairwise annotation matching IoU threshold
+    CreatedViaEnum:
+      enum:
+      - registration
+      - social
+      - sso
+      - ldap
+      - invitation
+      type: string
+      description: |-
+        * `registration` - Registration
+        * `social` - Social
+        * `sso` - SSO
+        * `ldap` - LDAP
+        * `invitation` - Invitation
     CredentialsTypeEnum:
       enum:
       - KEY_SECRET_KEY_PAIR
@@ -13308,6 +13322,12 @@ components:
         has_analytics_access:
           type: boolean
           readOnly: true
+        created_via:
+          readOnly: true
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/CreatedViaEnum'
+          - $ref: '#/components/schemas/NullEnum'
       required:
       - groups
       - username
