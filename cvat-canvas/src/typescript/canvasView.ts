@@ -2076,11 +2076,11 @@ export class CanvasViewImpl implements CanvasView, Listener {
             this.onEditDone,
             this.drawHandler,
             this.masksContent,
-            (undoAvailable: boolean, redoAvailable: boolean): void => {
+            (undoAction?: string, redoAction?: string): void => {
                 this.canvas.dispatchEvent(new CustomEvent('canvas.historychanged', {
                     bubbles: false,
                     cancelable: true,
-                    detail: { undoAvailable, redoAvailable },
+                    detail: { undoAction, redoAction },
                 }));
             },
         );

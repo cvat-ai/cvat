@@ -59,6 +59,8 @@ interface StateToProps {
     canvasIsReady: boolean;
     undoAction?: string;
     redoAction?: string;
+    canvasUndoAction?: string;
+    canvasRedoAction?: string;
     autoSave: boolean;
     autoSaveInterval: number;
     toolsBlockerState: ToolsBlockerState;
@@ -131,7 +133,12 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 filters: annotationFilters,
             },
             job: { instance: jobInstance, queryParameters: { initialOpenGuide }, meta },
-            canvas: { ready: canvasIsReady, instance: canvasInstance, activeControl },
+            canvas: {
+                ready: canvasIsReady,
+                instance: canvasInstance,
+                activeControl,
+                history: { undoAction: canvasUndoAction, redoAction: canvasRedoAction },
+            },
             drawing: { activeRectDrawingMethod: rectDrawingMethod },
             workspace,
         },
@@ -172,6 +179,8 @@ function mapStateToProps(state: CombinedState): StateToProps {
         jobInstance: jobInstance as Job,
         undoAction: history.undo.length ? history.undo[history.undo.length - 1][0] : undefined,
         redoAction: history.redo.length ? history.redo[history.redo.length - 1][0] : undefined,
+        canvasUndoAction,
+        canvasRedoAction,
         autoSave,
         autoSaveInterval,
         toolsBlockerState,
@@ -263,17 +272,8 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
 }
 
 type Props = StateToProps & DispatchToProps & RouteComponentProps;
-interface State {
-    maskUndoAvailable: boolean;
-    maskRedoAvailable: boolean;
-}
 
-class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
-    public state: State = {
-        maskUndoAvailable: false,
-        maskRedoAvailable: false,
-    };
-
+class AnnotationTopBarContainer extends React.PureComponent<Props> {
     private inputFrameRef: React.RefObject<HTMLInputElement>;
     private autoSaveInterval: number | undefined;
     private isWaitingForPlayDelay: boolean;
@@ -285,19 +285,9 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
         this.inputFrameRef = React.createRef<HTMLInputElement>();
     }
 
-    private onCanvasHistoryChanged = (event: Event): void => {
-        const { undoAvailable, redoAvailable } = (
-            event as CustomEvent<{ undoAvailable: boolean; redoAvailable: boolean }>
-        ).detail;
-        this.setState({
-            maskUndoAvailable: undoAvailable,
-            maskRedoAvailable: redoAvailable,
-        });
-    };
-
     public componentDidMount(): void {
         const {
-            autoSaveInterval, history, jobInstance, setForceExitAnnotationFlag, canvasInstance,
+            autoSaveInterval, history, jobInstance, setForceExitAnnotationFlag,
         } = this.props;
         this.autoSaveInterval = window.setInterval(this.autoSave.bind(this), autoSaveInterval);
 
@@ -324,9 +314,6 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
         });
 
         window.addEventListener('beforeunload', this.beforeUnloadCallback);
-        if (canvasInstance instanceof Canvas) {
-            canvasInstance.html().addEventListener('canvas.historychanged', this.onCanvasHistoryChanged);
-        }
     }
 
     public componentDidUpdate(prevProps: Props): void {
@@ -340,12 +327,8 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
     }
 
     public componentWillUnmount(): void {
-        const { canvasInstance } = this.props;
         window.clearInterval(this.autoSaveInterval);
         window.removeEventListener('beforeunload', this.beforeUnloadCallback);
-        if (canvasInstance instanceof Canvas) {
-            canvasInstance.html().removeEventListener('canvas.historychanged', this.onCanvasHistoryChanged);
-        }
         this.unblock();
     }
 
@@ -752,6 +735,8 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
             frameIsDeleted,
             undoAction,
             redoAction,
+            canvasUndoAction,
+            canvasRedoAction,
             workspace,
             keyMap,
             ranges,
@@ -767,14 +752,9 @@ class AnnotationTopBarContainer extends React.PureComponent<Props, State> {
             switchShowSearchPallet,
             showSearchFrameByName,
         } = this.props;
-        const { maskUndoAvailable, maskRedoAvailable } = this.state;
         const maskDrawing = activeControl === ActiveControl.DRAW_MASK;
-        let availableUndoAction = undoAction;
-        let availableRedoAction = redoAction;
-        if (maskDrawing) {
-            availableUndoAction = maskUndoAvailable ? 'mask stroke' : undefined;
-            availableRedoAction = maskRedoAvailable ? 'mask stroke' : undefined;
-        }
+        const availableUndoAction = maskDrawing ? canvasUndoAction : undoAction;
+        const availableRedoAction = maskDrawing ? canvasRedoAction : redoAction;
 
         return (
             <AnnotationTopBarComponent

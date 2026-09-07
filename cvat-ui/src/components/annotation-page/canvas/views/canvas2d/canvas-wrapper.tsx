@@ -44,6 +44,7 @@ import {
     splitAnnotationsAsync,
     activateObject,
     updateCanvasContextMenu,
+    updateCanvasHistory,
     fetchAnnotationsAsync,
     getDataFailed,
     canvasErrorOccurred,
@@ -156,6 +157,7 @@ interface DispatchToProps {
     onFetchAnnotation(): void;
     onGetDataFailed(error: Error): void;
     onCanvasErrorOccurred(error: Error): void;
+    onUpdateCanvasHistory(undoAction?: string, redoAction?: string): void;
     onStartIssue(position: number[]): void;
     onUpdateEditedObject(editedState: ObjectState | null): void;
 }
@@ -393,6 +395,9 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         },
         onCanvasErrorOccurred(error: Error): void {
             dispatch(canvasErrorOccurred(error));
+        },
+        onUpdateCanvasHistory(undoAction?: string, redoAction?: string): void {
+            dispatch(updateCanvasHistory(undoAction, redoAction));
         },
         onStartIssue(position: number[]): void {
             dispatch(reviewActions.startIssue(position));
@@ -669,6 +674,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         canvasInstance.html().removeEventListener('canvas.error', this.onCanvasErrorOccurrence);
         canvasInstance.html().removeEventListener('canvas.warning', this.onCanvasWarningOccurrence);
         canvasInstance.html().removeEventListener('canvas.message', this.onCanvasMessage as EventListener);
+        canvasInstance.html().removeEventListener('canvas.historychanged', this.onCanvasHistoryChanged as EventListener);
     }
 
     private onCanvasErrorOccurrence = (event: any): void => {
@@ -695,6 +701,15 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
     private onCanvasMessage = (event: CustomEvent<{ messages: CanvasHint[] | null, topic: string }>): void => {
         const { messages, topic } = event.detail;
         this.canvasTipsRef.current?.update(messages, topic);
+    };
+
+    private onCanvasHistoryChanged = (event: CustomEvent<{
+        undoAction?: string;
+        redoAction?: string;
+    }>): void => {
+        const { onUpdateCanvasHistory } = this.props;
+        const { undoAction, redoAction } = event.detail;
+        onUpdateCanvasHistory(undoAction, redoAction);
     };
 
     private onCanvasShapeDrawn = (event: any): void => {
@@ -1147,6 +1162,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         canvasInstance.html().addEventListener('canvas.error', this.onCanvasErrorOccurrence);
         canvasInstance.html().addEventListener('canvas.warning', this.onCanvasWarningOccurrence);
         canvasInstance.html().addEventListener('canvas.message', this.onCanvasMessage as EventListener);
+        canvasInstance.html().addEventListener('canvas.historychanged', this.onCanvasHistoryChanged as EventListener);
     }
 
     public render(): JSX.Element {

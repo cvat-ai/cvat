@@ -146,7 +146,7 @@ context('Manipulations with masks', { scrollBehavior: false }, () => {
 
             cy.drawMask(polygonAction);
             cy.get(undoButton).should('not.have.css', 'pointer-events', 'none').trigger('mouseover');
-            cy.get('.ant-tooltip-inner').should('contain.text', 'Undo: mask stroke');
+            cy.get('.ant-tooltip-inner').should('contain.text', 'Undo: Add polygon to mask');
             cy.get(redoButton).should('have.css', 'pointer-events', 'none');
 
             cy.drawMask(brushStroke);
@@ -159,7 +159,7 @@ context('Manipulations with masks', { scrollBehavior: false }, () => {
             cy.get('.cvat-brush-tools-toolbox').should('be.visible');
             cy.get(undoButton).should('have.css', 'pointer-events', 'none');
             cy.get(redoButton).should('not.have.css', 'pointer-events', 'none').trigger('mouseover');
-            cy.get('.ant-tooltip-inner').should('contain.text', 'Redo: mask stroke');
+            cy.get('.ant-tooltip-inner').should('contain.text', 'Redo: Add polygon to mask');
 
             cy.get(redoButton).click();
             cy.get(undoButton).should('not.have.css', 'pointer-events', 'none');

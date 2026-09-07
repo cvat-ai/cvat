@@ -140,6 +140,7 @@ export enum AnnotationActionTypes {
     REMOVE_JOB_ANNOTATIONS_SUCCESS = 'REMOVE_JOB_ANNOTATIONS_SUCCESS',
     REMOVE_JOB_ANNOTATIONS_FAILED = 'REMOVE_JOB_ANNOTATIONS_FAILED',
     UPDATE_CANVAS_CONTEXT_MENU = 'UPDATE_CANVAS_CONTEXT_MENU',
+    UPDATE_CANVAS_HISTORY = 'UPDATE_CANVAS_HISTORY',
     UNDO_ACTION_FAILED = 'UNDO_ACTION_FAILED',
     REDO_ACTION_FAILED = 'REDO_ACTION_FAILED',
     CHANGE_ANNOTATIONS_FILTERS = 'CHANGE_ANNOTATIONS_FILTERS',
@@ -420,6 +421,13 @@ export function updateCanvasContextMenu(
             type,
             pointID,
         },
+    };
+}
+
+export function updateCanvasHistory(undoAction?: string, redoAction?: string): AnyAction {
+    return {
+        type: AnnotationActionTypes.UPDATE_CANVAS_HISTORY,
+        payload: { undoAction, redoAction },
     };
 }
 

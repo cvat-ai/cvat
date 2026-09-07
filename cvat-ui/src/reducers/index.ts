@@ -903,6 +903,10 @@ export interface AnnotationState {
             top: number;
             left: number;
         };
+        history: {
+            undoAction?: string;
+            redoAction?: string;
+        };
         instance: Canvas | Canvas3d | null;
         ready: boolean;
         activeControl: ActiveControl;
