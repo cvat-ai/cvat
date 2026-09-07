@@ -1396,7 +1396,7 @@ export default class Collection {
                         lock: state.lock,
                         hidden: state.hidden,
                         pinned: state.updateFlags.pinned ? state.pinned : undefined,
-                        color: state.color,
+                        color: state.updateFlags.color ? state.color : undefined,
                         outside: state.outside || false,
                         occluded: state.occluded || false,
                         points: state.shapeType === 'mask' ? (() => {
@@ -1415,7 +1415,7 @@ export default class Collection {
                             lock: element.lock,
                             hidden: element.hidden,
                             pinned: element.updateFlags.pinned ? element.pinned : undefined,
-                            color: element.color,
+                            color: element.updateFlags.color ? element.color : undefined,
                             points: [...element.points],
                             rotation: 0,
                             type: element.shapeType,
@@ -1433,7 +1433,7 @@ export default class Collection {
                         lock: state.lock,
                         hidden: state.hidden,
                         pinned: state.updateFlags.pinned ? state.pinned : undefined,
-                        color: state.color,
+                        color: state.updateFlags.color ? state.color : undefined,
                         source: state.source,
                         label_id: state.label.id,
                         shapes: [

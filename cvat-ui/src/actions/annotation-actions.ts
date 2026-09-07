@@ -781,19 +781,22 @@ function translateSelectionState(
 
 function createCopiedObjectState(serialized: SerializedData): ObjectState {
     const objectState = new cvat.classes.ObjectState(serialized);
-    const preservePinned = (state: ObjectState, source: SerializedData): void => {
+    const preserveClientState = (state: ObjectState, source: SerializedData): void => {
         if (typeof source.pinned === 'boolean') {
             Object.assign(state, { pinned: source.pinned });
+        }
+        if (typeof source.color === 'string') {
+            Object.assign(state, { color: source.color });
         }
         state.elements.forEach((element, index) => {
             const sourceElement = source.elements?.[index];
             if (sourceElement) {
-                preservePinned(element, sourceElement);
+                preserveClientState(element, sourceElement);
             }
         });
     };
 
-    preservePinned(objectState, serialized);
+    preserveClientState(objectState, serialized);
     return objectState;
 }
 
@@ -1119,9 +1122,27 @@ export function changeFrameAsync(
 
             const { selectedStatesID } = state.annotation.annotations;
             const { states, history: fetchedHistory } = await fetchAnnotations(toFrame);
+            const selectedTrackIDs = new Set(state.annotation.annotations.states
+                .filter((objectState: ObjectState): boolean => (
+                    objectState.objectType === ObjectType.TRACK &&
+                    selectedStatesID.includes(objectState.clientID as number)
+                ))
+                .map((objectState: ObjectState): number => objectState.clientID as number));
+            const hiddenZLayers = state.annotation.annotations.zLayer.hiddenByFrame.get(toFrame) || new Set<number>();
+            const availableTrackIDs = new Set(states
+                .filter((objectState: ObjectState): boolean => (
+                    objectState.objectType === ObjectType.TRACK && !objectState.outside && !objectState.hidden &&
+                    !hiddenZLayers.has(objectState.zOrder)
+                ))
+                .map((objectState: ObjectState): number => objectState.clientID as number));
+            const nextSelectedStatesID = selectedStatesID.filter((clientID: number): boolean => (
+                selectedTrackIDs.has(clientID) && availableTrackIDs.has(clientID)
+            ));
             let history = fetchedHistory;
-            if (!skipSelectionHistory && selectedStatesID.length) {
-                await job.actions.recordSelection(selectedStatesID, [], frame);
+            const selectionChanged = selectedStatesID.length !== nextSelectedStatesID.length ||
+                selectedStatesID.some((clientID: number): boolean => !nextSelectedStatesID.includes(clientID));
+            if (!skipSelectionHistory && selectionChanged) {
+                await job.actions.recordSelection(selectedStatesID, nextSelectedStatesID, frame);
                 history = await job.actions.get();
             }
 
@@ -1137,6 +1158,7 @@ export function changeFrameAsync(
                     filename: data.filename,
                     relatedFiles: data.relatedFiles,
                     states,
+                    selectedStatesID: nextSelectedStatesID,
                     history,
                     changeTime: currentTime + delay,
                     delay,

@@ -392,6 +392,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 filename,
                 relatedFiles,
                 states,
+                selectedStatesID,
                 history,
                 delay,
                 changeTime,
@@ -422,7 +423,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 annotations: {
                     ...state.annotations,
                     activatedStateID: updateActivatedStateID(states, activatedStateID),
-                    selectedStatesID: [],
+                    selectedStatesID,
                     highlightedConflict: null,
                     states,
                     initialized: true,
