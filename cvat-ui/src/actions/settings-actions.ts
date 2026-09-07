@@ -17,6 +17,61 @@ import GammaCorrection, { GammaFilterOptions } from 'utils/fabric-wrapper/gamma-
 import { resolveConflicts } from 'utils/conflict-detector';
 import { shortcutsActions } from './shortcuts-actions';
 
+const SHORTCUTS_SETTINGS_VERSION = 1;
+
+type SerializedShortcuts = {
+    version?: number;
+    keyMap: Record<string, { sequences: string[] }>;
+};
+
+const shortcutsMigrations: Record<number, (shortcuts: SerializedShortcuts) => void> = {
+    1: (shortcuts: SerializedShortcuts): void => {
+        const shortcutMigrations: Record<string, { oldSequences: string[]; newSequences: string[] }> = {
+            SAVE_JOB: {
+                oldSequences: ['ctrl+s'],
+                newSequences: ['mod+s'],
+            },
+            UNDO: {
+                oldSequences: ['ctrl+z'],
+                newSequences: ['mod+z'],
+            },
+            REDO: {
+                oldSequences: ['ctrl+shift+z', 'ctrl+y'],
+                newSequences: ['mod+shift+z', 'ctrl+y'],
+            },
+            COPY_SHAPE: {
+                oldSequences: ['ctrl+c'],
+                newSequences: ['mod+c'],
+            },
+            PASTE_SHAPE: {
+                oldSequences: ['ctrl+v'],
+                newSequences: ['mod+v'],
+            },
+        };
+
+        Object.entries(shortcutMigrations).forEach(([shortcutID, migration]) => {
+            const shortcut = shortcuts.keyMap[shortcutID];
+            if (shortcut && _.isEqual(shortcut.sequences, migration.oldSequences)) {
+                shortcut.sequences = migration.newSequences;
+            }
+        });
+    },
+};
+
+function migrateShortcutsSettings(shortcuts: SerializedShortcuts): SerializedShortcuts | null {
+    if ((shortcuts.version ?? 0) >= SHORTCUTS_SETTINGS_VERSION) {
+        return null;
+    }
+
+    const migratedShortcuts = structuredClone(shortcuts);
+    for (let version = (shortcuts.version ?? 0) + 1; version <= SHORTCUTS_SETTINGS_VERSION; version++) {
+        shortcutsMigrations[version]?.(migratedShortcuts);
+    }
+
+    migratedShortcuts.version = SHORTCUTS_SETTINGS_VERSION;
+    return migratedShortcuts;
+}
+
 export enum SettingsActionTypes {
     SWITCH_ROTATE_ALL = 'SWITCH_ROTATE_ALL',
     SWITCH_GRID = 'SWITCH_GRID',
@@ -488,6 +543,12 @@ export function restoreSettingsAsync(): ThunkAction {
         dispatch(setSettings(newSettings));
 
         if ('shortcuts' in loadedSettings) {
+            const migratedShortcuts = migrateShortcutsSettings(loadedSettings.shortcuts);
+            if (migratedShortcuts) {
+                loadedSettings.shortcuts = migratedShortcuts;
+                localStorage.setItem('clientSettings', JSON.stringify(loadedSettings));
+            }
+
             const updateKeyMap = structuredClone(shortcuts.keyMap);
 
             Object.entries(loadedSettings.shortcuts.keyMap).forEach(([key, value]) => {
@@ -509,6 +570,7 @@ export function updateCachedSettings(settings: CombinedState['settings'], shortc
         player: settings.player,
         workspace: settings.workspace,
         shortcuts: {
+            version: SHORTCUTS_SETTINGS_VERSION,
             keyMap: Object.entries(shortcuts.keyMap).reduce<Record<string, { sequences: string[] }>>(
                 (acc, [key, value]) => {
                     if (key in shortcuts.defaultState) {
