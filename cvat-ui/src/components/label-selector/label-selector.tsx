@@ -7,12 +7,13 @@ import React, { useEffect, useState } from 'react';
 import Text from 'antd/lib/typography/Text';
 import Select, { SelectProps } from 'antd/lib/select';
 
+import type { Label } from 'cvat-core-wrapper';
 import CVATTooltip from 'components/common/cvat-tooltip';
 
-interface Props extends SelectProps<string> {
-    labels: any[];
-    value: any | number | null;
-    onChange: (label: any) => void;
+interface Props extends Omit<SelectProps<number>, 'value' | 'onChange'> {
+    labels: Label[];
+    value: Label | number | null;
+    onChange: (label: Label) => void;
     onEnterPress?: (labelID: number) => void;
     tooltip?: React.ReactNode;
 }
@@ -31,7 +32,7 @@ function LabelColorDot({ color }: { color?: string }): JSX.Element | null {
 }
 
 interface LabelContentProps {
-    label: any;
+    label: Label;
     tooltip?: string;
 }
 
@@ -67,7 +68,7 @@ export default function LabelSelector(props: Props): JSX.Element {
     const [dropdownOpen, setDropdownOpen] = useState(false);
 
     useEffect(() => {
-        if (enterPressed && onEnterPress) {
+        if (enterPressed && onEnterPress && typeof value === 'number') {
             onEnterPress(value);
             setEnterPressed(false);
         }
@@ -91,8 +92,8 @@ export default function LabelSelector(props: Props): JSX.Element {
                 return false;
             }}
             defaultValue={labels[0].id}
-            onChange={(newValue: string) => {
-                const [label] = labels.filter((_label: any): boolean => _label.id === +newValue);
+            onChange={(newValue: number) => {
+                const label = labels.find((_label) => _label.id === newValue);
                 if (label) {
                     onChange(label);
                 } else {
@@ -109,7 +110,7 @@ export default function LabelSelector(props: Props): JSX.Element {
                 onDropdownVisibleChange?.(open);
             }}
         >
-            {labels.map((label: any) => (
+            {labels.map((label) => (
                 <Select.Option
                     key={label.id}
                     value={label.id}
