@@ -20,7 +20,6 @@ interface Props {
     statesLocked: boolean;
     multiSelected?: boolean;
     onMouseDown?(event: React.MouseEvent): void;
-    onContextMenu?(event: React.MouseEvent): void;
     hideStates(): void;
     showStates(): void;
     lockStates(): void;
@@ -36,7 +35,6 @@ function LabelItemComponent(props: Props): JSX.Element {
         statesLocked,
         multiSelected = false,
         onMouseDown,
-        onContextMenu,
         hideStates,
         showStates,
         lockStates,
@@ -64,7 +62,6 @@ function LabelItemComponent(props: Props): JSX.Element {
                 multiSelected ? 'cvat-objects-sidebar-label-item-multi-selected' : '',
             ].join(' ')}
             onMouseDown={onMouseDown}
-            onContextMenu={onContextMenu}
         >
             <Col span={2}>
                 <div style={{ background: labelColor }} className='cvat-label-item-color'>

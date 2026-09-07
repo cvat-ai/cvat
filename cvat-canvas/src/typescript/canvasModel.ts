@@ -473,7 +473,7 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
                 hideEditedObject: false,
                 focusedObjectPadding: 50,
                 multiSelectModifier: 'shift',
-                multiSelectObjectModifier: 'ctrl',
+                multiSelectObjectModifier: 'meta',
             },
             imageBitmap: false,
             image: null,

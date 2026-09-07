@@ -16,12 +16,13 @@ interface Props {
     visibleObjectIDs: number[];
     draggable: boolean;
     visibleSkeletonElements: Record<number, number[]>;
+    toggleSelection(): void;
 }
 
 // Wraps an object item with dnd-kit drag behavior while preserving the original object item rendering.
 function DraggableObjectItem(props: Props): JSX.Element {
     const {
-        objectStates, clientID, visibleObjectIDs, draggable, visibleSkeletonElements,
+        objectStates, clientID, visibleObjectIDs, draggable, visibleSkeletonElements, toggleSelection,
     } = props;
 
     const {
@@ -40,6 +41,18 @@ function DraggableObjectItem(props: Props): JSX.Element {
             ref={setNodeRef}
             {...(draggable ? attributes : {})}
             {...(draggable ? listeners : {})}
+            onPointerDown={(event: React.PointerEvent): void => {
+                if (!event.metaKey) {
+                    listeners?.onPointerDown?.(event);
+                }
+            }}
+            onMouseDownCapture={(event: React.MouseEvent): void => {
+                if (event.metaKey) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    toggleSelection();
+                }
+            }}
             className={isDragging ? 'cvat-objects-sidebar-z-layer-dragging' : undefined}
             style={style}
         >

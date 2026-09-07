@@ -23,7 +23,6 @@ interface LayerHeaderProps {
     multiSelected: boolean;
     onMouseDown(event: React.MouseEvent): void;
     onKeyDown(event: React.KeyboardEvent): void;
-    onContextMenu(event: React.MouseEvent): void;
     selectLayer(zOrder: number): void;
     toggleLayerVisibility(zOrder: number, includeLower: boolean): void;
     toggleLayerCollapsed(zOrder: number): void;
@@ -33,7 +32,7 @@ interface LayerHeaderProps {
 function LayerHeader(props: LayerHeaderProps): JSX.Element {
     const {
         zOrder, selected, visible, collapsed, multiSelected, selectLayer, toggleLayerCollapsed,
-        toggleLayerVisibility, onMouseDown, onKeyDown, onContextMenu,
+        toggleLayerVisibility, onMouseDown, onKeyDown,
     } = props;
 
     const {
@@ -60,7 +59,6 @@ function LayerHeader(props: LayerHeaderProps): JSX.Element {
             aria-selected={multiSelected}
             onMouseDown={onMouseDown}
             onKeyDown={onKeyDown}
-            onContextMenu={onContextMenu}
         >
             <div>
                 <CVATTooltip title={collapsed ? 'Expand layer' : 'Collapse layer'}>

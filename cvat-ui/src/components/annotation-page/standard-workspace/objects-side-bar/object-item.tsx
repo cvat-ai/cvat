@@ -158,16 +158,6 @@ function ObjectItemComponent(props: Props): JSX.Element {
         }
     }, [activateSingle, keyMap, objectType, selectRange, selectionActive, toggleSelection]);
 
-    const onContextMenu = useCallback((event: React.MouseEvent): void => {
-        if (isMultiSelectObjectModifierPressed(event, keyMap)) {
-            const interactiveElement = (event.target as Element).closest(INTERACTIVE_ELEMENT_SELECTOR);
-            if (!interactiveElement) {
-                event.preventDefault();
-                event.stopPropagation();
-            }
-        }
-    }, [keyMap]);
-
     const onKeyDown = useCallback((event: React.KeyboardEvent): void => {
         if (['Enter', ' '].includes(event.key) && isMultiSelectObjectModifierPressed(event, keyMap)) {
             event.preventDefault();
@@ -187,7 +177,6 @@ function ObjectItemComponent(props: Props): JSX.Element {
                 tabIndex={0}
                 onMouseEnter={activateState}
                 onMouseDown={onMouseDown}
-                onContextMenu={onContextMenu}
                 onKeyDown={onKeyDown}
                 onDoubleClick={focusAndExpand}
                 id={`cvat-objects-sidebar-state-item-${clientID}`}

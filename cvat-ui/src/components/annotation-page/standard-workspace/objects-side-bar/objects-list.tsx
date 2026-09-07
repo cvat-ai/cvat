@@ -301,6 +301,11 @@ function ObjectListComponent(props: Props): JSX.Element {
         compactLayers();
         selectObjects([]);
     };
+    const toggleObjectSelection = (clientID: number): void => {
+        selectObjects(selectedStatesID.includes(clientID) ?
+            selectedStatesID.filter((selectedID: number): boolean => selectedID !== clientID) :
+            [...selectedStatesID, clientID]);
+    };
     const selectLayerObjects = (event: React.MouseEvent | React.KeyboardEvent, zOrder: number): void => {
         if (('button' in event && event.button !== 0) ||
             ('key' in event && !['Enter', ' '].includes(event.key)) ||
@@ -332,13 +337,6 @@ function ObjectListComponent(props: Props): JSX.Element {
         selectObjects(remove ?
             selectedStatesID.filter((clientID: number): boolean => !affectedIDs.includes(clientID)) :
             [...new Set([...selectedStatesID, ...affectedIDs])]);
-    };
-    const suppressModifierContextMenu = (event: React.MouseEvent): void => {
-        if (isMultiSelectObjectModifierPressed(event, keyMap) &&
-            !(event.target as Element).closest('button, [role="button"]')) {
-            event.preventDefault();
-            event.stopPropagation();
-        }
     };
     const visibleObjectIDs = statesOrdering === StatesOrdering.LAYER ? zLayers
         .filter((zOrder: number): boolean => !collapsedLayers.has(zOrder))
@@ -470,7 +468,7 @@ function ObjectListComponent(props: Props): JSX.Element {
                                                 onKeyDown={(event: React.KeyboardEvent): void => (
                                                     selectLayerObjects(event, zOrder)
                                                 )}
-                                                onContextMenu={suppressModifierContextMenu}
+                                                toggleObjectSelection={toggleObjectSelection}
                                             />
                                         </React.Fragment>
                                     );

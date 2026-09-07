@@ -155,8 +155,8 @@ export function multiSelectModifierFromKeyMap(keyMap: KeyMap): MultiSelectModifi
     return modifierFromKeyMap(keyMap, 'CANVAS_MULTI_SELECT_MODIFIER', 'shift');
 }
 
-export function multiSelectObjectModifierFromKeyMap(keyMap: KeyMap): MultiSelectModifier {
-    return modifierFromKeyMap(keyMap, 'CANVAS_MULTI_SELECT_OBJECT_MODIFIER', 'ctrl');
+export function multiSelectObjectModifierFromKeyMap(_keyMap: KeyMap): MultiSelectModifier {
+    return 'meta';
 }
 
 export function isMultiSelectModifierPressed(event: ModifierEvent, keyMap: KeyMap): boolean {

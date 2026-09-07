@@ -15,7 +15,6 @@ interface OwnProps {
     labelID: number;
     multiSelected: boolean;
     onMouseDown(event: React.MouseEvent): void;
-    onContextMenu(event: React.MouseEvent): void;
 }
 
 interface StateToProps {
@@ -153,7 +152,7 @@ class LabelItemContainer extends React.PureComponent<Props, State> {
 
     public render(): JSX.Element {
         const {
-            labelName, labelColor, multiSelected, onMouseDown, onContextMenu,
+            labelName, labelColor, multiSelected, onMouseDown,
         } = this.props;
         const { visible, statesHidden, statesLocked } = this.state;
 
@@ -166,7 +165,6 @@ class LabelItemContainer extends React.PureComponent<Props, State> {
                 statesLocked={statesLocked}
                 multiSelected={multiSelected}
                 onMouseDown={onMouseDown}
-                onContextMenu={onContextMenu}
                 hideStates={this.hideStates}
                 showStates={this.showStates}
                 lockStates={this.lockStates}

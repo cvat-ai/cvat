@@ -151,7 +151,7 @@ context('Group features', () => {
 
         it('Group and ungroup a persistent selection.', () => {
             for (const sidebarItem of shapeSidebarItemArray) {
-                cy.get(sidebarItem).click({ ctrlKey: true });
+                cy.get(sidebarItem).click({ metaKey: true });
                 cy.get(sidebarItem).should('have.class', 'cvat-objects-sidebar-state-item-multi-selected');
             }
 
@@ -179,6 +179,31 @@ context('Group features', () => {
             shapeSidebarItemArray.forEach((sidebarItem) => {
                 cy.get(sidebarItem).should('not.have.class', 'cvat-objects-sidebar-state-item-multi-selected');
             });
+        });
+
+        it('Select objects in the sidebar when sorted by layer.', () => {
+            cy.sidebarItemSortBy('Layer');
+            for (const sidebarItem of shapeSidebarItemArray) {
+                cy.get(sidebarItem).click({ metaKey: true });
+                cy.get(sidebarItem).should('have.class', 'cvat-objects-sidebar-state-item-multi-selected');
+            }
+            cy.get('body').type('{Esc}');
+            cy.sidebarItemSortBy('ID - ascent');
+        });
+
+        it('Keep selected tracks when changing frames.', () => {
+            for (const sidebarItem of trackSidebarItemArray) {
+                cy.get(sidebarItem).click({ metaKey: true });
+            }
+            cy.get('.cvat-player-next-button').click();
+            trackSidebarItemArray.forEach((sidebarItem) => {
+                cy.get(sidebarItem).should('have.class', 'cvat-objects-sidebar-state-item-multi-selected');
+            });
+            cy.get('.cvat-player-previous-button').click();
+            trackSidebarItemArray.forEach((sidebarItem) => {
+                cy.get(sidebarItem).should('have.class', 'cvat-objects-sidebar-state-item-multi-selected');
+            });
+            cy.get('body').type('{Esc}');
         });
 
         it('With group button unite two shapes. They have corresponding colors.', () => {

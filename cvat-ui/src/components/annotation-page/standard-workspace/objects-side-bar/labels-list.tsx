@@ -220,14 +220,6 @@ function LabelsListComponent(): JSX.Element {
             [...new Set([...selectedStatesID, ...affectedIDs])];
         dispatch(selectObjectsAsync(nextSelection));
     };
-    const suppressModifierContextMenu = (event: React.MouseEvent): void => {
-        if (isMultiSelectObjectModifierPressed(event, keyMap) &&
-            !(event.target as Element).closest(INTERACTIVE_ELEMENT_SELECTOR)) {
-            event.preventDefault();
-            event.stopPropagation();
-        }
-    };
-
     return (
         <div className='cvat-objects-sidebar-labels-list'>
             <GlobalHotKeys keyMap={subKeyMap(componentShortcuts, keyMap)} handlers={handlers} />
@@ -244,7 +236,6 @@ function LabelsListComponent(): JSX.Element {
                                 selectedIDs.has(clientID)
                             ))}
                         onMouseDown={(event: React.MouseEvent): void => selectLabels(event, labelID)}
-                        onContextMenu={suppressModifierContextMenu}
                     />
                 ),
             )}

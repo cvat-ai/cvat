@@ -2021,9 +2021,9 @@ export class CanvasViewImpl implements CanvasView, Listener {
         return this.isModifierPressed(event, this.configuration.multiSelectModifier || 'shift');
     }
 
-    // The modifier for adding or removing one clicked object defaults to Ctrl.
+    // The modifier for adding or removing one clicked object defaults to Command/Meta.
     private isMultiSelectObjectModifierPressed(event: MouseEvent | KeyboardEvent): boolean {
-        return this.isModifierPressed(event, this.configuration.multiSelectObjectModifier || 'ctrl');
+        return this.isModifierPressed(event, this.configuration.multiSelectObjectModifier || 'meta');
     }
 
     private updateSelectedObjectsBoxCursor(event: MouseEvent | KeyboardEvent): void {
@@ -2390,14 +2390,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
         });
         this.canvas.addEventListener('mousedown', this.onContentMouseDown, true);
         this.canvas.addEventListener('mousemove', this.onContentMouseMove, true);
-        this.canvas.addEventListener('contextmenu', (event: MouseEvent): void => {
-            // On macOS Ctrl+click may report the generated contextmenu event as button 2.
-            const onControlPoint = (event.target as Element | null)?.classList.contains('svg_select_points');
-            if (this.isMultiSelectObjectModifierPressed(event) && !onControlPoint) {
-                event.preventDefault();
-                event.stopPropagation();
-            }
-        }, true);
 
         window.document.addEventListener('mouseup', this.onMouseUp);
         window.document.addEventListener('keydown', this.onKeyDown);
