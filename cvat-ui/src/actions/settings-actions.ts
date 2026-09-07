@@ -39,6 +39,14 @@ const shortcutsMigrations: Record<number, (shortcuts: SerializedShortcuts) => vo
                 oldSequences: ['ctrl+shift+z', 'ctrl+y'],
                 newSequences: ['mod+shift+z', 'ctrl+y'],
             },
+            AUDIO_UNDO: {
+                oldSequences: ['ctrl+z'],
+                newSequences: ['mod+z'],
+            },
+            AUDIO_REDO: {
+                oldSequences: ['ctrl+shift+z', 'ctrl+y'],
+                newSequences: ['mod+shift+z', 'ctrl+y'],
+            },
             COPY_SHAPE: {
                 oldSequences: ['ctrl+c'],
                 newSequences: ['mod+c'],
