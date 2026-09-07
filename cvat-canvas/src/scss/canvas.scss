@@ -128,8 +128,11 @@ g.cvat_canvas_shape_selected_object {
     position: absolute;
     z-index: 5;
     display: flex;
+    flex: none;
     align-items: center;
-    min-height: 24px;
+    width: max-content;
+    height: 26px;
+    box-sizing: border-box;
     padding: 2px 4px 2px 8px;
     color: white;
     background: rgba(31, 31, 31, 88%);
@@ -138,6 +141,8 @@ g.cvat_canvas_shape_selected_object {
     font-size: 14px;
     font-weight: 600;
     line-height: 20px;
+    transform: none;
+    transform-origin: top left;
     filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 45%));
     pointer-events: auto;
     cursor: move;

@@ -368,8 +368,8 @@ const multiSelectShortcut = {
     CANVAS_MULTI_SELECT_OBJECT_MODIFIER: {
         name: 'Add/remove selection modifier',
         description: 'Hold this key and click an object on the canvas or in the Objects sidebar to add or remove it ' +
-            'from the selection (supported: shift, ctrl, alt, meta - other keys are ignored)',
-        sequences: ['ctrl'],
+            'from the selection (supported: shift, ctrl, alt, command - other keys are ignored)',
+        sequences: ['command'],
         scope: ShortcutScope.STANDARD_WORKSPACE,
     },
 };
@@ -1638,11 +1638,14 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
 
                 {selectionMenuPosition && (
                     <Dropdown
-                        key={`${selectionMenuPosition.left}:${selectionMenuPosition.top}`}
                         destroyPopupOnHide
                         open
                         placement='bottomLeft'
                         trigger={[]}
+                        getPopupContainer={(): HTMLElement => (
+                            canvasInstance.html().querySelector<HTMLElement>('.cvat_canvas_selected_objects_label') ||
+                            window.document.body
+                        )}
                         onOpenChange={(open: boolean, info): void => {
                             if (!open && info.source !== 'menu') {
                                 this.setState({
