@@ -22,6 +22,7 @@ import { injectScrollbarStyle } from '../utils/inject-scrollbar-style';
 import { useWaveformViewport, WaveformViewport } from './use-waveform-viewport';
 import { useWaveformPlayback, WaveformPlayback } from './use-waveform-playback';
 import { useAdaptiveTimeline } from './use-adaptive-timeline';
+import { useMinimapScrollbar } from './use-minimap-scrollbar';
 
 export interface WaveformRegionRuntime {
     /** Stable ref */
@@ -240,6 +241,7 @@ export function useAudioWaveform(params: Params): AudioWaveform {
     const runtime = useWaveSurferRuntime(params);
     const viewport = useWaveformViewport(runtime, params.containerRef);
     useAdaptiveTimeline(runtime, viewport.pixelsPerSecond, viewport.overviewPixelsPerSecond);
+    useMinimapScrollbar(runtime, viewport);
     const playback = useWaveformPlayback(runtime);
 
     return {

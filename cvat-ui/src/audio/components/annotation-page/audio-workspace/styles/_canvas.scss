@@ -65,6 +65,10 @@
         border-color: #1677ff;
     }
 
+    ::part(minimap) {
+        overflow: hidden;
+    }
+
     .cvat-audio-waveform-controls {
         position: absolute;
         z-index: 10;
@@ -132,6 +136,20 @@
         background-color: #f3f4f6;
         border-top: 1px solid #e5e7eb;
         padding: 0;
+
+        [part='minimap-overlay'].cvat-audio-minimap-scrollbar {
+            cursor: grab;
+            touch-action: none;
+
+            &:hover {
+                background-color: rgba(0, 85, 255, 35%) !important;
+            }
+
+            &.cvat-audio-minimap-scrollbar-drag {
+                cursor: grabbing;
+                background-color: rgba(0, 85, 255, 35%) !important;
+            }
+        }
 
         #minimap {
             min-height: 50px;
