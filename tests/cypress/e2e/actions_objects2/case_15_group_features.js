@@ -152,7 +152,7 @@ context('Group features', () => {
 
         it('Group and ungroup a persistent selection.', () => {
             for (const sidebarItem of shapeSidebarItemArray) {
-                cy.get(sidebarItem).click(platformModifier);
+                cy.get(sidebarItem).click({ ...platformModifier });
                 cy.get(sidebarItem).should('have.class', 'cvat-objects-sidebar-state-item-multi-selected');
             }
 
@@ -185,7 +185,7 @@ context('Group features', () => {
         it('Select objects in the sidebar when sorted by layer.', () => {
             cy.sidebarItemSortBy('Layer');
             for (const sidebarItem of shapeSidebarItemArray) {
-                cy.get(sidebarItem).click(platformModifier);
+                cy.get(sidebarItem).click({ ...platformModifier });
                 cy.get(sidebarItem).should('have.class', 'cvat-objects-sidebar-state-item-multi-selected');
             }
             cy.get('body').type('{Esc}');
@@ -194,7 +194,7 @@ context('Group features', () => {
 
         it('Keep selected tracks when changing frames.', () => {
             for (const sidebarItem of trackSidebarItemArray) {
-                cy.get(sidebarItem).click(platformModifier);
+                cy.get(sidebarItem).click({ ...platformModifier });
             }
             cy.get('.cvat-player-next-button').click();
             trackSidebarItemArray.forEach((sidebarItem) => {

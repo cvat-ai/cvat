@@ -242,7 +242,7 @@ context('Multi-object selection', { scrollBehavior: false }, () => {
         cy.get(`#cvat_canvas_shape_${objectIds.carShape1}`).click({ ...platformModifier, force: true });
         assertSelection([objectIds.carShape1]);
 
-        cy.get(sidebarItem(objectIds.carShape2)).click(platformModifier);
+        cy.get(sidebarItem(objectIds.carShape2)).click({ ...platformModifier });
         assertSelection([objectIds.carShape1, objectIds.carShape2]);
 
         cy.get(`#cvat_canvas_shape_${objectIds.carShape1}`).click({ ...platformModifier, force: true });
@@ -311,7 +311,7 @@ context('Multi-object selection', { scrollBehavior: false }, () => {
 
     it('Selects complete label and layer groups and works with Layer ordering', () => {
         cy.contains('[role="tab"]', 'Labels').click();
-        cy.contains('.cvat-objects-sidebar-label-item', labels.car).click(platformModifier);
+        cy.contains('.cvat-objects-sidebar-label-item', labels.car).click({ ...platformModifier });
         assertSelection([objectIds.carShape1, objectIds.carShape2, objectIds.points]);
         cy.get('.cvat-objects-sidebar-label-item-multi-selected').should('have.length', 1);
 
