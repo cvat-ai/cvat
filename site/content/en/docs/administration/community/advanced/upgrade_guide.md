@@ -550,6 +550,6 @@ after data was validated.
 
 1. Bitnami Redis uses a different user ID than CloudPirates Redis.
    It might cause issues and can be fixed with `volumePermissions.enabled: true`.
-2. Bitnami Redis uses AOF, while CloudPirates Redis does not.
+1. Bitnami Redis uses AOF, while CloudPirates Redis does not.
    AOF can be enabled using Helm values after the migration is complete.
-3. Do not delete backups immediately after migration.
+1. Do not delete backups immediately after migration.
