@@ -29,7 +29,9 @@ import {
     undoActionAsync,
 } from 'actions/annotation-actions';
 import AnnotationTopBarComponent from 'components/annotation-page/top-bar/top-bar';
-import { Canvas, CanvasMode, RectDrawingMethod } from 'cvat-canvas-wrapper';
+import {
+    Canvas, CanvasMode, RectDrawingMethod, CanvasHistorySource,
+} from 'cvat-canvas-wrapper';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import { FramesMetaData, Job } from 'cvat-core-wrapper';
 import {
@@ -61,6 +63,7 @@ interface StateToProps {
     redoAction?: string;
     canvasUndoAction?: string;
     canvasRedoAction?: string;
+    canvasHistorySource?: CanvasHistorySource;
     autoSave: boolean;
     autoSaveInterval: number;
     toolsBlockerState: ToolsBlockerState;
@@ -137,7 +140,11 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 ready: canvasIsReady,
                 instance: canvasInstance,
                 activeControl,
-                history: { undoAction: canvasUndoAction, redoAction: canvasRedoAction },
+                history: {
+                    source: canvasHistorySource,
+                    undoAction: canvasUndoAction,
+                    redoAction: canvasRedoAction,
+                },
             },
             drawing: { activeRectDrawingMethod: rectDrawingMethod },
             workspace,
@@ -181,6 +188,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         redoAction: history.redo.length ? history.redo[history.redo.length - 1][0] : undefined,
         canvasUndoAction,
         canvasRedoAction,
+        canvasHistorySource,
         autoSave,
         autoSaveInterval,
         toolsBlockerState,
@@ -737,6 +745,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
             redoAction,
             canvasUndoAction,
             canvasRedoAction,
+            canvasHistorySource,
             workspace,
             keyMap,
             ranges,
@@ -753,8 +762,13 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
             showSearchFrameByName,
         } = this.props;
         const maskDrawing = activeControl === ActiveControl.DRAW_MASK;
-        const availableUndoAction = maskDrawing ? canvasUndoAction : undoAction;
-        const availableRedoAction = maskDrawing ? canvasRedoAction : redoAction;
+        const maskHistory = canvasHistorySource === CanvasHistorySource.MASK;
+        let availableUndoAction = maskDrawing ? undefined : undoAction;
+        let availableRedoAction = maskDrawing ? undefined : redoAction;
+        if (maskDrawing && maskHistory) {
+            availableUndoAction = canvasUndoAction;
+            availableRedoAction = canvasRedoAction;
+        }
 
         return (
             <AnnotationTopBarComponent

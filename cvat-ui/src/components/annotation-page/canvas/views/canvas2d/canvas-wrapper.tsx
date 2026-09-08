@@ -19,7 +19,7 @@ import {
 } from 'reducers';
 import { EventScope } from 'cvat-logger';
 import {
-    Canvas, HighlightSeverity, CanvasHint, RenderData,
+    Canvas, HighlightSeverity, CanvasHint, RenderData, CanvasHistorySource,
 } from 'cvat-canvas-wrapper';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import {
@@ -157,7 +157,7 @@ interface DispatchToProps {
     onFetchAnnotation(): void;
     onGetDataFailed(error: Error): void;
     onCanvasErrorOccurred(error: Error): void;
-    onUpdateCanvasHistory(undoAction?: string, redoAction?: string): void;
+    onUpdateCanvasHistory(source: CanvasHistorySource, undoAction?: string, redoAction?: string): void;
     onStartIssue(position: number[]): void;
     onUpdateEditedObject(editedState: ObjectState | null): void;
 }
@@ -396,8 +396,8 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         onCanvasErrorOccurred(error: Error): void {
             dispatch(canvasErrorOccurred(error));
         },
-        onUpdateCanvasHistory(undoAction?: string, redoAction?: string): void {
-            dispatch(updateCanvasHistory(undoAction, redoAction));
+        onUpdateCanvasHistory(source: CanvasHistorySource, undoAction?: string, redoAction?: string): void {
+            dispatch(updateCanvasHistory(source, undoAction, redoAction));
         },
         onStartIssue(position: number[]): void {
             dispatch(reviewActions.startIssue(position));
@@ -704,12 +704,13 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
     };
 
     private onCanvasHistoryChanged = (event: CustomEvent<{
+        source: CanvasHistorySource;
         undoAction?: string;
         redoAction?: string;
     }>): void => {
         const { onUpdateCanvasHistory } = this.props;
-        const { undoAction, redoAction } = event.detail;
-        onUpdateCanvasHistory(undoAction, redoAction);
+        const { source, undoAction, redoAction } = event.detail;
+        onUpdateCanvasHistory(source, undoAction, redoAction);
     };
 
     private onCanvasShapeDrawn = (event: any): void => {

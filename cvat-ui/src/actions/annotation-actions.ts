@@ -8,7 +8,7 @@ import { ThunkAction, ThunkDispatch } from 'utils/redux';
 import isAbleToChangeFrame from 'utils/is-able-to-change-frame';
 import { CanvasMode as Canvas3DMode } from 'cvat-canvas3d-wrapper';
 import {
-    RectDrawingMethod, CuboidDrawingMethod, Canvas, CanvasMode as Canvas2DMode,
+    RectDrawingMethod, CuboidDrawingMethod, Canvas, CanvasMode as Canvas2DMode, CanvasHistorySource,
 } from 'cvat-canvas-wrapper';
 import {
     getCore, MLModel, JobType, Job, QualityConflict,
@@ -424,10 +424,14 @@ export function updateCanvasContextMenu(
     };
 }
 
-export function updateCanvasHistory(undoAction?: string, redoAction?: string): AnyAction {
+export function updateCanvasHistory(
+    source: CanvasHistorySource,
+    undoAction?: string,
+    redoAction?: string,
+): AnyAction {
     return {
         type: AnnotationActionTypes.UPDATE_CANVAS_HISTORY,
-        payload: { undoAction, redoAction },
+        payload: { source, undoAction, redoAction },
     };
 }
 

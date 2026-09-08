@@ -979,12 +979,12 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             };
         }
         case AnnotationActionTypes.UPDATE_CANVAS_HISTORY: {
-            const { undoAction, redoAction } = action.payload;
+            const { source, undoAction, redoAction } = action.payload;
             return {
                 ...state,
                 canvas: {
                     ...state.canvas,
-                    history: { undoAction, redoAction },
+                    history: { source, undoAction, redoAction },
                 },
             };
         }
