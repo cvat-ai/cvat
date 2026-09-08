@@ -19,7 +19,7 @@ context('Audio annotation. Delete region via sidebar context menu.', () => {
             cy.audioCreateRegionViaButton(firstLabelName, 100, 250);
             cy.get('.cvat-audio-region-item').should('have.length', 1);
             cy.get('.cvat-audio-region-item').first()
-                .find('.cvat-audio-region-item-action-btn').last().click();
+                .find('.cvat-audio-region-item-action-btn:has([data-icon="more"])').click();
             cy.get('.cvat-audio-region-item-menu', { timeout: 5000 }).should('be.visible');
             cy.get('.cvat-audio-region-item-menu').contains('button', /delete interval/i).click();
             cy.get('.cvat-audio-region-item').should('have.length', 0);
