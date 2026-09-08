@@ -15,70 +15,8 @@ import { SerializedImageFilter } from 'cvat-core-wrapper';
 import { ImageFilter, ImageFilterAlias } from 'utils/image-processing';
 import GammaCorrection, { GammaFilterOptions } from 'utils/fabric-wrapper/gamma-correction';
 import { resolveConflicts } from 'utils/conflict-detector';
+import { migrateShortcutsSettings, SHORTCUTS_SETTINGS_VERSION } from 'utils/shortcuts-migration';
 import { shortcutsActions } from './shortcuts-actions';
-
-const SHORTCUTS_SETTINGS_VERSION = 1;
-
-type SerializedShortcuts = {
-    version?: number;
-    keyMap: Record<string, { sequences: string[] }>;
-};
-
-const shortcutsMigrations: Record<number, (shortcuts: SerializedShortcuts) => void> = {
-    1: (shortcuts: SerializedShortcuts): void => {
-        const shortcutMigrations: Record<string, { oldSequences: string[]; newSequences: string[] }> = {
-            SAVE_JOB: {
-                oldSequences: ['ctrl+s'],
-                newSequences: ['mod+s'],
-            },
-            UNDO: {
-                oldSequences: ['ctrl+z'],
-                newSequences: ['mod+z'],
-            },
-            REDO: {
-                oldSequences: ['ctrl+shift+z', 'ctrl+y'],
-                newSequences: ['mod+shift+z', 'ctrl+y'],
-            },
-            AUDIO_UNDO: {
-                oldSequences: ['ctrl+z'],
-                newSequences: ['mod+z'],
-            },
-            AUDIO_REDO: {
-                oldSequences: ['ctrl+shift+z', 'ctrl+y'],
-                newSequences: ['mod+shift+z', 'ctrl+y'],
-            },
-            COPY_SHAPE: {
-                oldSequences: ['ctrl+c'],
-                newSequences: ['mod+c'],
-            },
-            PASTE_SHAPE: {
-                oldSequences: ['ctrl+v'],
-                newSequences: ['mod+v'],
-            },
-        };
-
-        Object.entries(shortcutMigrations).forEach(([shortcutID, migration]) => {
-            const shortcut = shortcuts.keyMap[shortcutID];
-            if (shortcut && _.isEqual(shortcut.sequences, migration.oldSequences)) {
-                shortcut.sequences = migration.newSequences;
-            }
-        });
-    },
-};
-
-function migrateShortcutsSettings(shortcuts: SerializedShortcuts): SerializedShortcuts | null {
-    if ((shortcuts.version ?? 0) >= SHORTCUTS_SETTINGS_VERSION) {
-        return null;
-    }
-
-    const migratedShortcuts = structuredClone(shortcuts);
-    for (let version = (shortcuts.version ?? 0) + 1; version <= SHORTCUTS_SETTINGS_VERSION; version++) {
-        shortcutsMigrations[version]?.(migratedShortcuts);
-    }
-
-    migratedShortcuts.version = SHORTCUTS_SETTINGS_VERSION;
-    return migratedShortcuts;
-}
 
 export enum SettingsActionTypes {
     SWITCH_ROTATE_ALL = 'SWITCH_ROTATE_ALL',

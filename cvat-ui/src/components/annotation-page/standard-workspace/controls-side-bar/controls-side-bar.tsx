@@ -77,7 +77,7 @@ const componentShortcuts = {
     PASTE_SHAPE: {
         name: 'Paste shape',
         description: 'Paste a shape from internal CVAT clipboard',
-        sequences: ['mod+v'],
+        sequences: ['ctrl+v', 'command+v'],
         scope: ShortcutScope.OBJECTS_SIDEBAR,
     },
     SWITCH_DRAW_MODE_STANDARD_CONTROLS: {
