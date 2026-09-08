@@ -14,7 +14,7 @@ import { getRegionItemColor } from './audio-region-colors';
 import AudioIntervalActions, { AudioIntervalActionShortcuts } from './audio-interval-actions';
 import AudioIntervalHeader from './audio-interval-header';
 import AudioRegionsListHeader, { AudioRegionsOrdering } from './audio-regions-list-header';
-import { intervalID } from './utils/audio-interval';
+import { intervalDurationSeconds, intervalEndSeconds, intervalID } from './utils/audio-interval';
 
 function sortIntervals(
     intervals: AudioIntervalState[],
@@ -22,11 +22,18 @@ function sortIntervals(
 ): AudioIntervalState[] {
     const copy = [...intervals];
     switch (ordering) {
+        case AudioRegionsOrdering.ID_ASCENT:
+            return copy.sort((a, b) => intervalID(a) - intervalID(b));
+        case AudioRegionsOrdering.ID_DESCENT:
+            return copy.sort((a, b) => intervalID(b) - intervalID(a));
         case AudioRegionsOrdering.START_TIME:
             return copy.sort((a, b) => a.start - b.start);
+        case AudioRegionsOrdering.END_TIME:
+            return copy.sort((a, b) => intervalEndSeconds(a) - intervalEndSeconds(b));
+        case AudioRegionsOrdering.DURATION:
+            return copy.sort((a, b) => intervalDurationSeconds(a) - intervalDurationSeconds(b));
         case AudioRegionsOrdering.LABEL_NAME:
             return copy.sort((a, b) => a.label.name.localeCompare(b.label.name));
-        case AudioRegionsOrdering.INSERTION:
         default:
             return copy;
     }
@@ -154,7 +161,7 @@ export default function AudioRegionsList(props: Props): JSX.Element {
         onChangeLabel,
     } = props;
 
-    const [ordering, setOrdering] = useState<AudioRegionsOrdering>(AudioRegionsOrdering.INSERTION);
+    const [ordering, setOrdering] = useState<AudioRegionsOrdering>(AudioRegionsOrdering.ID_ASCENT);
     const listRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
