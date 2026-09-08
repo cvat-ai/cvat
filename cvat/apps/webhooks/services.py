@@ -65,7 +65,6 @@ def send_webhook(
         webhook_id=webhook.id,
         event=payload["event"],
         status_code=status_code,
-        changed_fields=",".join(list(payload.get("before_update", {}).keys())),
         redelivery=redelivery,
         request=payload,
         response=response,

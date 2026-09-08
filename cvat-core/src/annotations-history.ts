@@ -112,6 +112,10 @@ export default class AnnotationHistory {
         this.transaction = new HistoryTransaction(action);
     }
 
+    public get transactionActive(): boolean {
+        return this.transaction !== null;
+    }
+
     public endTransaction(): void {
         const { transaction } = this;
         this.transaction = null;

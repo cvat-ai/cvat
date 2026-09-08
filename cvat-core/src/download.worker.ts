@@ -200,11 +200,33 @@ async function fetchData(url: string, requestConfig): Promise<{
                 throw new DownloadError(await response.text(), response.status);
             }
 
+            const responseHeaders = headersToObject(response.headers);
+            if (response.status === 200 && receivedBytes === 0) {
+                chunkIdentity = getChunkIdentity(responseHeaders);
+                const readResult = await readResponse(response, chunks, receivedBytes);
+                receivedBytes = readResult.receivedBytes;
+                bodyDownloadTimeMs += readResult.downloadTimeMs;
+
+                const telemetry = receivedBytes >= MIN_CHUNK_SIZE_FOR_TELEMETRY_BYTES ? {
+                    chunkSizeBytes: receivedBytes,
+                    downloadTimeMs: bodyDownloadTimeMs,
+                    retries: requestCount - 1,
+                } : undefined;
+
+                return {
+                    data: mergeChunks(chunks, receivedBytes),
+                    headers: {
+                        ...responseHeaders,
+                        'content-length': `${receivedBytes}`,
+                    },
+                    telemetry,
+                };
+            }
+
             if (response.status !== 206) {
                 throw new Error(`Unexpected response status: ${response.status}`);
             }
 
-            const responseHeaders = headersToObject(response.headers);
             const contentRange = parseContentRange(responseHeaders['content-range'] ?? null);
             if (!contentRange || contentRange.start !== receivedBytes || contentRange.total === null) {
                 throw new Error('Unexpected Content-Range header');

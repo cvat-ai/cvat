@@ -276,16 +276,16 @@ function AudioRegionsListContainer(props: Props): JSX.Element {
                 colorBy={colorBy}
                 activeControl={activeControl}
                 intervalActionShortcuts={{
-                    setPlaybackToStart: normalizedKeyMap.AUDIO_SET_PLAYBACK_TO_INTERVAL_START ?? '',
-                    playInterval: normalizedKeyMap.AUDIO_PLAY_INTERVAL_ONCE ?? '',
-                    setPlaybackToEnd: normalizedKeyMap.AUDIO_SET_PLAYBACK_TO_INTERVAL_END ?? '',
-                    switchLock: normalizedKeyMap.AUDIO_SWITCH_LOCK ?? '',
-                    switchPinned: normalizedKeyMap.AUDIO_SWITCH_PINNED ?? '',
-                    switchHidden: normalizedKeyMap.AUDIO_SWITCH_HIDDEN ?? '',
+                    setPlaybackToStart: normalizedKeyMap.AUDIO_SET_PLAYBACK_TO_INTERVAL_START,
+                    playInterval: normalizedKeyMap.AUDIO_PLAY_INTERVAL_ONCE,
+                    setPlaybackToEnd: normalizedKeyMap.AUDIO_SET_PLAYBACK_TO_INTERVAL_END,
+                    switchLock: normalizedKeyMap.AUDIO_SWITCH_LOCK,
+                    switchPinned: normalizedKeyMap.AUDIO_SWITCH_PINNED,
+                    switchHidden: normalizedKeyMap.AUDIO_SWITCH_HIDDEN,
                 }}
-                switchLockAllShortcut={normalizedKeyMap.AUDIO_SWITCH_ALL_LOCK ?? ''}
-                switchPinAllShortcut={normalizedKeyMap.AUDIO_SWITCH_ALL_PINNED ?? ''}
-                switchHiddenAllShortcut={normalizedKeyMap.AUDIO_SWITCH_ALL_HIDDEN ?? ''}
+                switchLockAllShortcut={normalizedKeyMap.AUDIO_SWITCH_ALL_LOCK}
+                switchPinAllShortcut={normalizedKeyMap.AUDIO_SWITCH_ALL_PINNED}
+                switchHiddenAllShortcut={normalizedKeyMap.AUDIO_SWITCH_ALL_HIDDEN}
                 onSetActiveInterval={onSetActiveInterval}
                 onSetHoveredInterval={onSetHoveredInterval}
                 onPlayIntervalOnce={onPlayIntervalOnce}

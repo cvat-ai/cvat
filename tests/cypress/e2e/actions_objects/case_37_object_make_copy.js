@@ -10,7 +10,7 @@ import { taskName, labelName } from '../../support/const';
 context('Object make a copy.', () => {
     const caseId = '37';
     const rectangleShape2Points = {
-        points: 'By 2 Points',
+        points: '2 Points',
         type: 'Shape',
         labelName,
         firstX: 100,

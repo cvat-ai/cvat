@@ -525,22 +525,22 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
         },
     });
 
+    Object.defineProperty(Job.prototype.annotations.splitInterval, 'implementation', {
+        value: function splitIntervalImplementation(
+            this: JobClass,
+            state: Parameters<typeof JobClass.prototype.annotations.splitInterval>[0],
+            position: Parameters<typeof JobClass.prototype.annotations.splitInterval>[1],
+        ): ReturnType<typeof JobClass.prototype.annotations.splitInterval> {
+            return Promise.resolve(getCollection(this).splitInterval(state, position));
+        },
+    });
+
     Object.defineProperty(Job.prototype.annotations.bulkSave, 'implementation', {
         value: function bulkSaveImplementation(
             this: JobClass,
             states: Parameters<typeof JobClass.prototype.annotations.bulkSave>[0],
         ): ReturnType<typeof JobClass.prototype.annotations.bulkSave> {
-            getCollection(this).bulkSave(states);
-            return Promise.resolve();
-        },
-    });
-
-    Object.defineProperty(Job.prototype.annotations.bulkSaveObjects, 'implementation', {
-        value: function bulkSaveObjectsImplementation(
-            this: JobClass,
-            states: Parameters<typeof JobClass.prototype.annotations.bulkSaveObjects>[0],
-        ): ReturnType<typeof JobClass.prototype.annotations.bulkSaveObjects> {
-            getCollection(this).bulkSaveObjects(states);
+            getCollection(this).save(states);
             return Promise.resolve();
         },
     });
@@ -1344,22 +1344,22 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
         },
     });
 
+    Object.defineProperty(Task.prototype.annotations.splitInterval, 'implementation', {
+        value: function splitIntervalImplementation(
+            this: TaskClass,
+            state: Parameters<typeof TaskClass.prototype.annotations.splitInterval>[0],
+            position: Parameters<typeof TaskClass.prototype.annotations.splitInterval>[1],
+        ): ReturnType<typeof TaskClass.prototype.annotations.splitInterval> {
+            return Promise.resolve(getCollection(this).splitInterval(state, position));
+        },
+    });
+
     Object.defineProperty(Task.prototype.annotations.bulkSave, 'implementation', {
         value: function bulkSaveImplementation(
             this: TaskClass,
             states: Parameters<typeof TaskClass.prototype.annotations.bulkSave>[0],
         ): ReturnType<typeof TaskClass.prototype.annotations.bulkSave> {
-            getCollection(this).bulkSave(states);
-            return Promise.resolve();
-        },
-    });
-
-    Object.defineProperty(Task.prototype.annotations.bulkSaveObjects, 'implementation', {
-        value: function bulkSaveObjectsImplementation(
-            this: TaskClass,
-            states: Parameters<typeof TaskClass.prototype.annotations.bulkSaveObjects>[0],
-        ): ReturnType<typeof TaskClass.prototype.annotations.bulkSaveObjects> {
-            getCollection(this).bulkSaveObjects(states);
+            getCollection(this).save(states);
             return Promise.resolve();
         },
     });

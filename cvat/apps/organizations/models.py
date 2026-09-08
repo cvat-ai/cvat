@@ -6,7 +6,6 @@
 from datetime import timedelta
 
 from allauth.account.adapter import get_adapter
-from dirtyfields import DirtyFieldsMixin
 from django.conf import settings
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.exceptions import ImproperlyConfigured
@@ -18,7 +17,7 @@ from drf_spectacular.utils import extend_schema_field
 from cvat.apps.engine.models import TimestampedModel
 
 
-class Organization(DirtyFieldsMixin, TimestampedModel):
+class Organization(TimestampedModel):
     slug = models.SlugField(max_length=16, blank=False, unique=True)
     name = models.CharField(max_length=64, blank=True)
     description = models.TextField(blank=True)
@@ -35,7 +34,7 @@ class Organization(DirtyFieldsMixin, TimestampedModel):
         default_permissions = ()
 
 
-class Membership(DirtyFieldsMixin, models.Model):
+class Membership(models.Model):
     WORKER = "worker"
     SUPERVISOR = "supervisor"
     MAINTAINER = "maintainer"
@@ -63,7 +62,7 @@ class Membership(DirtyFieldsMixin, models.Model):
 
 
 # Inspired by https://github.com/bee-keeper/django-invitations
-class Invitation(DirtyFieldsMixin, models.Model):
+class Invitation(models.Model):
     key = models.CharField(max_length=64, primary_key=True)
     created_date = models.DateTimeField(auto_now_add=True)
     sent_date = models.DateTimeField(null=True)

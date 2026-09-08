@@ -19,7 +19,7 @@ import { attachRegionResizeAutoScroll } from '../utils/region-resize-auto-scroll
 import { WaveformRegionRuntime } from './use-audio-waveform';
 import { useBulkBoundariesEditing } from './use-bulk-boundaries-editing';
 import type { RegionHighlighting } from './use-region-projection';
-import type { SelectionInteraction } from './use-region-selection';
+import type { RegionSelection } from './use-region-selection';
 import { WaveformViewport } from './use-waveform-viewport';
 
 const REGION_DRAG_BOUNDS_CONSTRAINT = Symbol('regionDragBoundsConstraint');
@@ -44,7 +44,7 @@ interface ResizeMeta {
 interface Params {
     regionRuntime: WaveformRegionRuntime;
     regionHighlighting: RegionHighlighting;
-    selectionInteraction: SelectionInteraction;
+    regionSelection: RegionSelection;
     viewport: WaveformViewport;
     isPreviewRegion(region: Region): boolean;
     durationRef: React.MutableRefObject<number>;
@@ -86,7 +86,7 @@ function installRegionDragBoundsConstraint(region: Region): void {
  * Persists user-created and user-edited waveform regions as audio intervals.
  */
 export function useRegionEditing({
-    regionRuntime, regionHighlighting, selectionInteraction, viewport,
+    regionRuntime, regionHighlighting, regionSelection, viewport,
     isPreviewRegion, durationRef, ready,
 }: Params): void {
     const dispatch = useDispatch<ThunkDispatch>();
@@ -101,7 +101,7 @@ export function useRegionEditing({
     const latestRef = useRef({ intervals, activeLabelId, activeControl });
     latestRef.current = { intervals, activeLabelId, activeControl };
     useBulkBoundariesEditing({
-        regionRuntime, regionHighlighting, selectionInteraction, viewport, durationRef, ready,
+        regionRuntime, regionHighlighting, regionSelection, viewport, durationRef, ready,
     });
 
     // setup when runtime is ready
@@ -239,6 +239,11 @@ export function useRegionEditing({
 
         const unsubscribeTransformChange = viewport.onTransformChange(refreshResize);
 
+        const isPointerOverWaveform = (event: PointerEvent): boolean => {
+            const waveform = viewport.containerRef.current;
+            return !!waveform && event.composedPath().includes(waveform);
+        };
+
         const onPointerDown = (event: PointerEvent): void => {
             if (
                 interaction ||
@@ -323,7 +328,7 @@ export function useRegionEditing({
             }
         };
 
-        const onPointerUp = (event: PointerEvent): void => {
+        const onPointerEnd = (event: PointerEvent, preserveReleasedIntervalHover: boolean): void => {
             const currInteraction = interaction;
             if (!currInteraction || currInteraction.pointerID !== event.pointerId) return;
             const currResize = resizeMeta;
@@ -331,12 +336,18 @@ export function useRegionEditing({
             interaction = null;
             resizeMeta = null;
             if (!currResize) {
+                if (preserveReleasedIntervalHover) {
+                    dispatch(audioActions.setAudioHoveredInterval(currInteraction.clientID));
+                }
                 dispatch(audioActions.setAudioInteractingInterval(null));
                 return;
             }
 
             autoScroll.stop();
             restoreResizeCursor();
+            if (preserveReleasedIntervalHover) {
+                dispatch(audioActions.setAudioHoveredInterval(currInteraction.clientID));
+            }
             dispatch(audioActions.setAudioInteractingInterval(null));
             if (!hasResized) return;
 
@@ -346,10 +357,18 @@ export function useRegionEditing({
             }));
         };
 
+        const onPointerUp = (event: PointerEvent): void => {
+            onPointerEnd(event, isPointerOverWaveform(event));
+        };
+
+        const onPointerCancel = (event: PointerEvent): void => {
+            onPointerEnd(event, false);
+        };
+
         document.addEventListener('pointerdown', onPointerDown);
         document.addEventListener('pointermove', onPointerMove);
         document.addEventListener('pointerup', onPointerUp);
-        document.addEventListener('pointercancel', onPointerUp);
+        document.addEventListener('pointercancel', onPointerCancel);
         return () => {
             interaction = null;
             resizeMeta = null;
@@ -362,7 +381,7 @@ export function useRegionEditing({
             document.removeEventListener('pointerdown', onPointerDown);
             document.removeEventListener('pointermove', onPointerMove);
             document.removeEventListener('pointerup', onPointerUp);
-            document.removeEventListener('pointercancel', onPointerUp);
+            document.removeEventListener('pointercancel', onPointerCancel);
         };
     }, [ready]);
 }

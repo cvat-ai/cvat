@@ -22,6 +22,11 @@ interface Props {
     workspace: Workspace;
     undoShortcut: string;
     redoShortcut: string;
+    playPauseShortcut: string;
+    backwardShortcut: string;
+    forwardShortcut: string;
+    fastBackwardShortcut: string;
+    fastForwardShortcut: string;
     keyMap: KeyMap;
     jobInstance: Job;
     audioDuration: number;
@@ -45,6 +50,11 @@ export default function AudioTopBarComponent(props: Props): JSX.Element {
         workspace,
         undoShortcut,
         redoShortcut,
+        playPauseShortcut,
+        backwardShortcut,
+        forwardShortcut,
+        fastBackwardShortcut,
+        fastForwardShortcut,
         jobInstance,
         keyMap,
         audioDuration,
@@ -78,6 +88,11 @@ export default function AudioTopBarComponent(props: Props): JSX.Element {
                         duration={audioDuration}
                         workspace={workspace}
                         keyMap={keyMap}
+                        playPauseShortcut={playPauseShortcut}
+                        backwardShortcut={backwardShortcut}
+                        forwardShortcut={forwardShortcut}
+                        fastBackwardShortcut={fastBackwardShortcut}
+                        fastForwardShortcut={fastForwardShortcut}
                         onPlayPause={onAudioPlayPause}
                         onSeek={onAudioSeek}
                     />
