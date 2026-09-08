@@ -36,8 +36,12 @@ export function migrateShortcutsSettings(shortcuts: SerializedShortcuts): Serial
     }
 
     const migratedShortcuts = structuredClone(shortcuts);
-    for (let version = (shortcuts.version ?? 0) + 1; version <= SHORTCUTS_SETTINGS_VERSION; version++) {
-        shortcutsMigrations[version]?.(migratedShortcuts);
+    for (
+        let futureVersion = (shortcuts.version ?? 0) + 1;
+        futureVersion <= SHORTCUTS_SETTINGS_VERSION;
+        futureVersion++
+    ) {
+        shortcutsMigrations[futureVersion]?.(migratedShortcuts);
     }
 
     migratedShortcuts.version = SHORTCUTS_SETTINGS_VERSION;
