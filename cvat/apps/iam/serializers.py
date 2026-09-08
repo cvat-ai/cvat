@@ -3,6 +3,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+
 from allauth.account import app_settings as allauth_settings
 from allauth.account.adapter import get_adapter
 from allauth.account.utils import filter_users_by_email, setup_user_email
@@ -20,6 +21,7 @@ from drf_spectacular.utils import extend_schema_field, extend_schema_serializer
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
+from cvat.apps.iam.email_validation import run_email_validators
 from cvat.apps.iam.forms import ResetPasswordFormEx
 from cvat.apps.iam.models import User, UserCreationMethod
 from cvat.apps.iam.password_validation import (
@@ -101,6 +103,9 @@ class RegisterSerializerEx(RegisterSerializer):
             raise serializers.ValidationError(
                 _("A user is already registered with this e-mail address.")
             )
+
+        if not dummy_user:
+            run_email_validators(self.cleaned_data["email"])
 
         # Allow to overwrite data for dummy users
         user = dummy_user or adapter.new_user(request)
