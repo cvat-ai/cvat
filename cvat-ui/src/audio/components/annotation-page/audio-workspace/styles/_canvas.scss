@@ -65,7 +65,7 @@
         border-color: #1677ff;
     }
 
-    ::part(minimap) {
+    [part='minimap'] {
         overflow: hidden;
     }
 

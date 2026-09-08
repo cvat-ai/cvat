@@ -17,24 +17,13 @@ interface MinimapPluginInternals {
     overlay?: HTMLElement;
 }
 
-interface ScrollMetrics {
-    clientWidth: number;
-    scrollWidth: number;
-}
-
 function getMinimapOverlay(runtime: WaveSurferRuntime): HTMLElement | null {
     const minimapPlugin = runtime.minimap.plugin as unknown as MinimapPluginInternals;
     return minimapPlugin.overlay ?? null;
 }
 
-function getScrollMetrics(runtime: WaveSurferRuntime): ScrollMetrics | null {
-    const scrollContainer = runtime.instanceRef.current?.getWrapper().parentElement;
-    if (!scrollContainer) return null;
-
-    return {
-        clientWidth: scrollContainer.clientWidth,
-        scrollWidth: scrollContainer.scrollWidth,
-    };
+function getScrollContainer(runtime: WaveSurferRuntime): HTMLElement | null {
+    return runtime.instanceRef.current?.getWrapper().parentElement ?? null;
 }
 
 /**
@@ -48,8 +37,8 @@ export function useMinimapScrollbar(runtime: WaveSurferRuntime, viewport: Wavefo
         const overlay = getMinimapOverlay(runtime);
         if (!overlay) return undefined;
 
-        const metrics = getScrollMetrics(runtime);
-        const isScrollable = !!metrics && metrics.scrollWidth > metrics.clientWidth;
+        const scrollContainer = getScrollContainer(runtime);
+        const isScrollable = !!scrollContainer && scrollContainer.scrollWidth > scrollContainer.clientWidth;
         overlay.style.opacity = isScrollable ? '1' : '0';
         overlay.style.pointerEvents = isScrollable ? 'auto' : 'none';
         return undefined;
@@ -78,14 +67,11 @@ export function useMinimapScrollbar(runtime: WaveSurferRuntime, viewport: Wavefo
             draggedPointerID = null;
             overlay.classList.remove(MINIMAP_SCROLLBAR_DRAG_CLASS);
             overlay.style.transition = originalTransition;
-            if (overlay.hasPointerCapture(pointerID)) {
-                overlay.releasePointerCapture(pointerID);
-            }
         };
 
         const onPointerDown = (event: PointerEvent): void => {
-            const metrics = getScrollMetrics(runtime);
-            const isScrollable = !!metrics && metrics.scrollWidth > metrics.clientWidth;
+            const scrollContainer = getScrollContainer(runtime);
+            const isScrollable = !!scrollContainer && scrollContainer.scrollWidth > scrollContainer.clientWidth;
             if (!isScrollable || !event.isPrimary || event.button !== 0) return;
 
             const overlayRect = overlay.getBoundingClientRect();
@@ -110,14 +96,15 @@ export function useMinimapScrollbar(runtime: WaveSurferRuntime, viewport: Wavefo
 
             hasDragged = true;
 
-            const currentMetrics = getScrollMetrics(runtime);
+            const scrollContainer = getScrollContainer(runtime);
             const transform = viewport.getTransform();
-            if (!currentMetrics || !transform) return;
+            if (!scrollContainer || !transform) return;
 
+            // Calculate as it's the start of the overlay being dragged
             const minimapRect = minimapWrapper.getBoundingClientRect();
             const overlayRect = overlay.getBoundingClientRect();
             const draggableWidth = minimapRect.width - overlayRect.width;
-            const maximumScroll = currentMetrics.scrollWidth - currentMetrics.clientWidth;
+            const maximumScroll = scrollContainer.scrollWidth - scrollContainer.clientWidth;
             if (draggableWidth <= 0 || maximumScroll <= 0) return;
 
             const overlayLeft = clamp(
