@@ -540,6 +540,8 @@ jobs:
 
       - name: Run tmate
         uses: mxschmitt/action-tmate@v3
+        env:
+          ACTIONS_STEP_DEBUG: true
         with:
           limit-access-to-actor: true
 
