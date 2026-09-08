@@ -72,6 +72,11 @@ export const config: Partial<Config> = {
                 asyncFetch: asyncFetchUsers,
             },
         },
+        created_date: {
+            label: 'Created at',
+            type: 'datetime',
+            operators: ['between', 'greater', 'greater_or_equal', 'less', 'less_or_equal'],
+        },
         updated_date: {
             label: 'Last updated',
             type: 'datetime',
