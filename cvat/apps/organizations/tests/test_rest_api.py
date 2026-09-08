@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+from django.contrib.auth import get_user_model
 from django.core import mail
 from django.test import override_settings
 from django.urls import reverse
@@ -88,3 +89,43 @@ class InvitationCreateAPITestCase(ApiTestBase):
         user = User.objects.get(id=invited_user_id)
         self.assertEqual(user.email, "invited@test.com")
         self.assertEqual(user.created_via, UserCreationMethod.REGISTRATION)
+
+
+class InvitationEmailValidationAPITestCase(ApiTestBase):
+    org_slug = "testorg"
+    invited_email = "invited_user@somedomain.com"
+
+    @classmethod
+    def setUpTestData(cls):
+        create_db_users(cls)
+
+    def setUp(self):
+        super().setUp()
+        response = self._post_request(
+            "/api/organizations", self.admin, data={"slug": self.org_slug}
+        )
+        assert response.status_code == status.HTTP_201_CREATED, response.content
+
+    def _run_api(self):
+        return self._post_request(
+            "/api/invitations",
+            self.admin,
+            data={"role": "worker", "email": self.invited_email},
+            query_params={"org": self.org_slug},
+        )
+
+    @override_settings(
+        EMAIL_VALIDATORS=[{"NAME": "cvat.apps.iam.tests.test_rest_api.RejectingEmailValidator"}],
+    )
+    def test_cannot_invite_user_rejected_by_email_validator(self):
+        response = self._run_api()
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST, response.content)
+        self.assertFalse(get_user_model().objects.filter(email=self.invited_email).exists())
+
+    @override_settings(
+        EMAIL_VALIDATORS=[{"NAME": "cvat.apps.iam.tests.test_rest_api.AcceptingEmailValidator"}],
+    )
+    def test_can_invite_user_accepted_by_email_validator(self):
+        response = self._run_api()
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED, response.content)
+        self.assertTrue(get_user_model().objects.filter(email=self.invited_email).exists())

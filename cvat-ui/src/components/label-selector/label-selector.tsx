@@ -4,13 +4,18 @@
 // SPDX-License-Identifier: MIT
 
 import React, { useEffect, useState } from 'react';
+import Text from 'antd/lib/typography/Text';
 import Select, { SelectProps } from 'antd/lib/select';
 
-interface Props extends SelectProps<string> {
-    labels: any[];
-    value: any | number | null;
-    onChange: (label: any) => void;
+import type { Label } from 'cvat-core-wrapper';
+import CVATTooltip from 'components/common/cvat-tooltip';
+
+interface Props extends Omit<SelectProps<number>, 'value' | 'onChange'> {
+    labels: Label[];
+    value: Label | number | null;
+    onChange: (label: Label) => void;
     onEnterPress?: (labelID: number) => void;
+    tooltip?: React.ReactNode;
 }
 
 function LabelColorDot({ color }: { color?: string }): JSX.Element | null {
@@ -26,9 +31,32 @@ function LabelColorDot({ color }: { color?: string }): JSX.Element | null {
     );
 }
 
+interface LabelContentProps {
+    label: Label;
+    tooltip?: string;
+}
+
+function LabelContent({ label, tooltip }: LabelContentProps): JSX.Element {
+    return (
+        <span className='cvat-label-selector-option'>
+            <LabelColorDot color={label.color} />
+            <Text
+                ellipsis={tooltip ? {
+                    tooltip: {
+                        title: tooltip,
+                        placement: 'right',
+                    },
+                } : true}
+            >
+                {label.name}
+            </Text>
+        </span>
+    );
+}
+
 export default function LabelSelector(props: Props): JSX.Element {
     const {
-        labels, value, onChange, onEnterPress, ...rest
+        labels, value, onChange, onEnterPress, onDropdownVisibleChange, tooltip, ...rest
     } = props;
     const dynamicProps = value ?
         {
@@ -37,33 +65,35 @@ export default function LabelSelector(props: Props): JSX.Element {
         {};
 
     const [enterPressed, setEnterPressed] = useState(false);
+    const [dropdownOpen, setDropdownOpen] = useState(false);
 
     useEffect(() => {
-        if (enterPressed && onEnterPress) {
+        if (enterPressed && onEnterPress && typeof value === 'number') {
             onEnterPress(value);
             setEnterPressed(false);
         }
     }, [value, enterPressed]);
 
-    return (
+    const selector = (
         <Select
             virtual={false}
             {...rest}
             {...dynamicProps}
+            optionLabelProp='label'
             showSearch
             filterOption={(input: string, option) => {
                 if (option) {
-                    const { title } = option.props;
-                    if (typeof title === 'string') {
-                        return title.toLowerCase().includes(input.toLowerCase());
+                    const labelName = option.props['data-label'];
+                    if (typeof labelName === 'string') {
+                        return labelName.toLowerCase().includes(input.toLowerCase());
                     }
                 }
 
                 return false;
             }}
             defaultValue={value === null ? undefined : labels[0].id}
-            onChange={(newValue: string) => {
-                const [label] = labels.filter((_label: any): boolean => _label.id === +newValue);
+            onChange={(newValue: number) => {
+                const label = labels.find((_label) => _label.id === newValue);
                 if (label) {
                     onChange(label);
                 } else {
@@ -75,15 +105,27 @@ export default function LabelSelector(props: Props): JSX.Element {
                     setEnterPressed(event.key === 'Enter');
                 }
             }}
+            onDropdownVisibleChange={(open) => {
+                setDropdownOpen(open);
+                onDropdownVisibleChange?.(open);
+            }}
         >
-            {labels.map((label: any) => (
-                <Select.Option title={label.name} key={label.id} value={label.id}>
-                    <span className='cvat-label-selector-option'>
-                        <LabelColorDot color={label.color} />
-                        {label.name}
-                    </span>
+            {labels.map((label) => (
+                <Select.Option
+                    key={label.id}
+                    value={label.id}
+                    data-label={label.name}
+                    label={<LabelContent label={label} />}
+                >
+                    <LabelContent label={label} tooltip={label.name} />
                 </Select.Option>
             ))}
         </Select>
     );
+
+    return tooltip ? (
+        <CVATTooltip title={dropdownOpen ? null : tooltip}>
+            {selector}
+        </CVATTooltip>
+    ) : selector;
 }
