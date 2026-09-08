@@ -7,7 +7,9 @@ frame count: one job per camera, per scene, per delivery batch.
 
 Two ways to group:
   --job FILE [FILE ...]   one job per occurrence, in the given file order
-  --files-per-job N       chunk the sorted directory listing into jobs of N files
+  --files-per-job N       a count, not a file list: chunk the sorted directory
+                          listing into jobs of N files each, the explicit
+                          equivalent of the task's segment_size
 
 Steps:
   1. Build the file groups and check them against --image-dir: every file must
@@ -56,11 +58,14 @@ def parse_args() -> argparse.Namespace:
         metavar="FILE",
         help="the files of one job (repeat for more jobs)",
     )
-    grouping.add_argument("--files-per-job", type=int, help="chunk the directory into jobs of N")
-    parser.add_argument("--name", default="Task with a job file mapping", help="task name")
-    parser.add_argument(
-        "--labels", nargs="+", default=["object"], metavar="NAME", help="label names to create"
+    grouping.add_argument(
+        "--files-per-job",
+        type=int,
+        metavar="N",
+        help="number of files per job: chunk the sorted directory listing into jobs of N "
+        "files each (the explicit equivalent of the task's segment_size)",
     )
+    parser.add_argument("--name", default="Task with a job file mapping", help="task name")
     parser.add_argument(
         "--output",
         type=Path,
@@ -120,7 +125,8 @@ def main() -> None:
         task = client.tasks.create_from_data(
             spec=models.TaskWriteRequest(
                 name=args.name,
-                labels=[models.PatchedLabelRequest(name=name) for name in args.labels],
+                # One label makes the resulting task ready for annotation.
+                labels=[models.PatchedLabelRequest(name="object")],
             ),
             resource_type=ResourceType.LOCAL,
             resources=resources,
@@ -128,25 +134,20 @@ def main() -> None:
         )
         print(f"Created task {task.id} with {task.size} frames: {args.host}/tasks/{task.id}")
 
-        # 3. The mapping the server actually built.
+        # 3. The mapping the server actually built: one row per file, carrying
+        # the frame that file ended up on. A job's frames come back in order,
+        # so the frame is the job's start plus the file's position in it.
         rows = []
         for job in sorted(task.get_jobs(), key=lambda job: job.start_frame):
             names = [frame.name for frame in job.get_frames_info()]
             print(f"  job {job.id} frames {job.start_frame}-{job.stop_frame}: {', '.join(names)}")
             rows.extend(
-                {
-                    "job_id": job.id,
-                    "start_frame": job.start_frame,
-                    "stop_frame": job.stop_frame,
-                    "file_name": name,
-                }
-                for name in names
+                {"job_id": job.id, "frame": job.start_frame + offset, "file_name": name}
+                for offset, name in enumerate(names)
             )
 
         with args.output.open("w", newline="") as f:
-            writer = csv.DictWriter(
-                f, fieldnames=["job_id", "start_frame", "stop_frame", "file_name"]
-            )
+            writer = csv.DictWriter(f, fieldnames=["job_id", "frame", "file_name"])
             writer.writeheader()
             writer.writerows(rows)
         print(f"Wrote {args.output.resolve()}")

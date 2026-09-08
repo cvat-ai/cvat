@@ -19,6 +19,7 @@ import urllib.request
 import zipfile
 from pathlib import Path
 from time import sleep
+from unittest.mock import MagicMock
 
 import platformdirs
 import pytest
@@ -35,7 +36,7 @@ from shared.utils.config import (
     MINIO_SECRET_KEY,
     USER_PASS,
 )
-from shared.utils.helpers import generate_image_file
+from shared.utils.helpers import generate_image_file, generate_video_file
 
 EXAMPLES_DIR = Path(__file__).parents[3] / "cvat-sdk" / "examples"
 
@@ -67,6 +68,136 @@ def load_recipe(name: str) -> types.ModuleType:
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
+
+
+class TestExampleHelpers:
+    def test_data_lint_reports_an_object_past_the_last_frame(self):
+        # Exercise a corrupt response directly: the write API rejects this frame.
+        recipe = load_recipe("project_data_lint.py")
+        task = MagicMock(spec=Task)
+        task.id = 7
+        task.data_original_chunk_type = "imageset"
+        task.get_meta.return_value = types.SimpleNamespace(
+            size=2,
+            deleted_frames=[],
+            frames=[types.SimpleNamespace(width=10, height=10) for _ in range(2)],
+        )
+        task.get_jobs.return_value = []
+        task.get_annotations.return_value = models.LabeledDataRequest(
+            tags=[],
+            tracks=[],
+            shapes=[
+                models.LabeledShapeRequest(
+                    type="rectangle", frame=2, label_id=1, points=[1, 1, 4, 8]
+                )
+            ],
+        )
+
+        findings, _ = recipe.lint_task(task, {1: "object"}, 4)
+
+        assert len(findings) == 1
+        finding = findings[0]
+        assert (finding.severity, finding.check, finding.task_id, finding.frame) == (
+            "error",
+            "dead-object",
+            7,
+            2,
+        )
+        assert finding.detail == "rectangle sits on frame 2, which is past the task's last frame 1"
+
+    @pytest.mark.parametrize("with_track", [False, True])
+    def test_data_lint_accepts_empty_or_interpolated_completed_jobs(self, with_track: bool):
+        recipe = load_recipe("project_data_lint.py")
+        task = MagicMock(spec=Task)
+        task.id = 7
+        task.data_original_chunk_type = "video"
+        task.get_meta.return_value = types.SimpleNamespace(
+            size=4, deleted_frames=[], frames=[types.SimpleNamespace(width=10, height=10)]
+        )
+        task.get_jobs.return_value = [
+            types.SimpleNamespace(id=1, start_frame=0, stop_frame=1, state="completed"),
+            types.SimpleNamespace(id=2, start_frame=2, stop_frame=3, state="completed"),
+        ]
+        tracks = []
+        if with_track:
+            # The track remains visible across both jobs despite having just one keyframe.
+            tracks.append(
+                models.LabeledTrackRequest(
+                    frame=0,
+                    label_id=1,
+                    shapes=[
+                        models.TrackedShapeRequest(
+                            type="rectangle", frame=0, outside=False, points=[1, 1, 4, 8]
+                        )
+                    ],
+                )
+            )
+        task.get_annotations.return_value = models.LabeledDataRequest(
+            tags=[], shapes=[], tracks=tracks
+        )
+
+        findings, _ = recipe.lint_task(task, {1: "object"}, 4)
+
+        assert findings == []
+
+    @pytest.mark.parametrize("watermark", [None, "2026-09-01T00:00:00+00:00"])
+    @pytest.mark.parametrize("export_fails", [False, True])
+    def test_incremental_download_uses_caller_state(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        capsys: pytest.CaptureFixture,
+        watermark: str | None,
+        export_fails: bool,
+    ):
+        recipe = load_recipe("dataset_incremental_download.py")
+        monkeypatch.chdir(tmp_path)
+        # An old file must neither control this run nor be overwritten by it.
+        state_path = tmp_path / "incremental_state.json"
+        state_path.write_text("unrelated state")
+        output_dir = tmp_path / "datasets"
+        output_dir.mkdir()
+        archive = output_dir / "task_7.zip"
+        archive.write_bytes(b"old export")
+        client = MagicMock()
+        task = MagicMock(spec=Task)
+        task.id, task.name = 7, "Example"
+        client.tasks.list.return_value = [task]
+        monkeypatch.setattr(recipe, "make_client", lambda *args, **kwargs: client)
+        client.__enter__.return_value = client
+        argv = [
+            "recipe",
+            "--host",
+            "http://example.invalid",
+            "--token",
+            "dummy",
+            "--project-id",
+            "3",
+        ]
+        if watermark:
+            argv += ["--updated-after", watermark]
+        monkeypatch.setattr(sys, "argv", argv)
+
+        def export(format_name: str, path: Path, **kwargs) -> None:
+            assert not path.exists()
+            if export_fails:
+                raise RuntimeError("export failed")
+            path.write_bytes(b"new export")
+
+        task.export_dataset.side_effect = export
+        if export_fails:
+            with pytest.raises(RuntimeError, match="export failed"):
+                recipe.main()
+            assert "Downloaded" not in capsys.readouterr().out
+        else:
+            recipe.main()
+            assert archive.read_bytes() == b"new export"
+            assert "Downloaded 1 task dataset(s)" in capsys.readouterr().out
+        filters = {"project_id": 3}
+        if watermark:
+            filters["updated_date__gt"] = watermark
+        client.tasks.list.assert_called_once_with(**filters)
+        assert state_path.read_text() == "unrelated state"
 
 
 @pytest.fixture(scope="class")
@@ -166,6 +297,18 @@ class TestExamples:
             resources=sorted(self.make_image_dir().iterdir()),
         )
 
+    def make_video_task_in_project(
+        self, project: Project, *, num_frames: int = 4, name: str = "Recipe video task"
+    ) -> Task:
+        video = generate_video_file(num_frames)
+        path = self.tmp_path / video.name
+        path.write_bytes(video.getbuffer())
+        return self.client.tasks.create_from_data(
+            spec=models.TaskWriteRequest(name=name, project_id=project.id),
+            resource_type=ResourceType.LOCAL,
+            resources=[path],
+        )
+
     def make_project_with_task(self) -> Project:
         project = self.make_project()
         self.make_task_in_project(project)
@@ -174,7 +317,7 @@ class TestExamples:
     def run_incremental(self, project_id: int, *, extra: list[str] | None = None):
         return self.run_recipe(
             "dataset_incremental_download.py",
-            args=["--project-id", str(project_id), "--state", "state.json"] + list(extra or []),
+            args=["--project-id", str(project_id)] + list(extra or []),
             with_cleanup=False,
         )
 
@@ -193,47 +336,45 @@ class TestExamples:
 
     def test_incremental_download_second_run_exports_nothing(self):
         project = self.make_project_with_task()
+        watermark = max(task.updated_date for task in project.get_tasks()).isoformat()
         self.run_incremental(project.id)
 
-        result = self.run_incremental(project.id)
+        result = self.run_incremental(project.id, extra=["--updated-after", watermark])
 
-        assert "Nothing changed since" in result.stdout
+        assert f"No tasks to export after {watermark}" in result.stdout
         assert "Exported task" not in result.stdout
 
     def test_incremental_download_reexports_only_the_changed_task(self):
         project = self.make_project()
         untouched = self.make_task_in_project(project, name="Untouched")
         touched = self.make_task_in_project(project, name="Touched")
+        watermark = max(task.updated_date for task in project.get_tasks()).isoformat()
         self.run_incremental(project.id)
 
         touched.update(models.PatchedTaskWriteRequest(name="Touched again"))
 
-        result = self.run_incremental(project.id)
+        result = self.run_incremental(project.id, extra=["--updated-after", watermark])
         assert f"Exported task {touched.id}" in result.stdout
         assert f"Exported task {untouched.id}" not in result.stdout
         assert "Downloaded 1 task dataset(s)" in result.stdout
 
-    def test_incremental_download_rejects_state_of_another_project(self):
-        first = self.make_project_with_task()
-        second = self.make_project_with_task()
-        self.run_incremental(first.id)
+    def test_incremental_download_honours_a_given_watermark(self):
+        project = self.make_project_with_task()
+        watermark = "2100-01-01T00:00:00+00:00"
 
         result = self.run_recipe(
             "dataset_incremental_download.py",
-            args=["--project-id", str(second.id), "--state", "state.json"],
+            args=[
+                "--project-id",
+                str(project.id),
+                "--updated-after",
+                watermark,
+            ],
             with_cleanup=False,
-            expect_failure=True,
         )
-        assert "belongs to project" in result.stderr
 
-    def test_incremental_download_reports_deleted_tasks(self):
-        project = self.make_project()
-        task = self.make_task_in_project(project, name="Doomed")
-        self.run_incremental(project.id)
-        task.remove()
-
-        result = self.run_incremental(project.id)
-        assert f"Task {task.id} no longer exists on the server" in result.stdout
+        assert f"No tasks to export after {watermark}" in result.stdout
+        assert "Exported task" not in result.stdout
 
     def read_manifest(self, name: str = "bulk_export.csv") -> list[dict]:
         with (self.tmp_path / name).open(newline="") as f:
@@ -312,6 +453,20 @@ class TestExamples:
         assert "Exported 2 of 2 task(s)" in result.stdout
         for task in tasks:
             assert (self.tmp_path / "out" / f"task_{task.id}.zip").is_file()
+
+    def test_bulk_export_reports_ids_filtered_out_by_status(self):
+        project = self.make_project()
+        task = self.make_task_in_project(project, name="Still in annotation")
+
+        result = self.run_recipe(
+            "dataset_bulk_export.py",
+            args=["--task-id", str(task.id), "--status", "completed", "--output-dir", "out"],
+            with_cleanup=False,
+            expect_failure=True,
+        )
+
+        assert f"Skipping task {task.id}: status is annotation, not completed" in result.stdout
+        assert "The selection is empty" in result.stderr
 
     def test_bulk_export_requires_a_selector(self):
         result = self.run_recipe(
@@ -645,7 +800,7 @@ class TestExamples:
         )
         assert "error out-of-bounds" in result.stdout
 
-    def test_data_lint_reports_empty_frames_on_a_clean_project(self):
+    def test_data_lint_accepts_a_clean_project(self):
         project = self.make_project(name="Clean project")
         task = self.make_task_in_project(project, name="Clean task")
         label_id = task.get_labels()[0].id
@@ -669,8 +824,8 @@ class TestExamples:
             with_cleanup=False,
         )
 
-        assert "0 error(s)" in result.stdout
-        assert "empty-frame" not in result.stdout
+        assert "Found 0 issue(s)" in result.stdout
+        assert self.read_manifest("data_lint.csv") == []
 
     def test_data_lint_detects_duplicate_objects(self):
         project = self.make_project(name="Duplicate project")
@@ -702,6 +857,90 @@ class TestExamples:
             expect_failure=True,
         )
         assert "not found in project" in result.stderr
+
+    @pytest.mark.timeout(180)
+    def test_data_lint_checks_geometry_beyond_the_first_frame_of_a_video(self):
+        # A video task reports a single frame meta for the whole video, so the
+        # frame count has to come from `size`; taking it from `frames` used to
+        # silence every check past frame 0.
+        project = self.make_project(name="Video lint project")
+        task = self.make_video_task_in_project(project, num_frames=4)
+        label_id = task.get_labels()[0].id
+        task.set_annotations(
+            models.LabeledDataRequest(
+                shapes=[
+                    models.LabeledShapeRequest(
+                        type="rectangle", frame=2, label_id=label_id, points=[1.0, 1.0, 999.0, 8.0]
+                    )
+                ]
+            )
+        )
+
+        result = self.run_recipe(
+            "project_data_lint.py",
+            args=["--project-id", str(project.id)],
+            with_cleanup=False,
+            expect_failure=True,
+        )
+
+        assert "error out-of-bounds" in result.stdout
+        assert f"task {task.id} frame 2" in result.stdout
+        rows = self.read_manifest("data_lint.csv")
+        assert [row["frame"] for row in rows if row["check"] == "out-of-bounds"] == ["2"]
+
+    def test_data_lint_accepts_unannotated_frames(self):
+        project = self.make_project(name="Partly annotated project")
+        task = self.make_task_in_project(project, name="Partly annotated task")
+        label_id = task.get_labels()[0].id
+        task.set_annotations(
+            models.LabeledDataRequest(
+                shapes=[
+                    models.LabeledShapeRequest(
+                        type="rectangle", frame=0, label_id=label_id, points=[1.0, 1.0, 4.0, 8.0]
+                    )
+                ]
+            )
+        )
+
+        result = self.run_recipe(
+            "project_data_lint.py",
+            args=["--project-id", str(project.id)],
+            with_cleanup=False,
+        )
+
+        assert "Found 0 issue(s)" in result.stdout
+        assert self.read_manifest("data_lint.csv") == []
+
+    def test_data_lint_reports_objects_left_on_a_deleted_frame(self):
+        project = self.make_project(name="Deleted frame project")
+        task = self.make_task_in_project(project, name="Deleted frame task")
+        label_id = task.get_labels()[0].id
+        task.set_annotations(
+            models.LabeledDataRequest(
+                shapes=[
+                    models.LabeledShapeRequest(
+                        type="rectangle",
+                        frame=frame,
+                        label_id=label_id,
+                        points=[1.0, 1.0, 4.0, 8.0],
+                    )
+                    for frame in (0, 1)
+                ]
+            )
+        )
+        task.remove_frames_by_ids([1])
+
+        result = self.run_recipe(
+            "project_data_lint.py",
+            args=["--project-id", str(project.id)],
+            with_cleanup=False,
+            expect_failure=True,
+        )
+
+        assert "error dead-object" in result.stdout
+        assert "was removed from the task" in result.stdout
+        rows = self.read_manifest("data_lint.csv")
+        assert [row["frame"] for row in rows if row["check"] == "dead-object"] == ["1"]
 
     @pytest.mark.timeout(180)
     def test_subtasks_create_one_task_per_label_group(self):
@@ -788,11 +1027,13 @@ class TestExamples:
         jobs = sorted(task.get_jobs(), key=lambda job: job.start_frame)
         assert [len(job.get_frames_info()) for job in jobs] == [2, 1, 1]
         rows = self.read_manifest("job_file_mapping.csv")
-        assert [row["file_name"] for row in rows] == [
-            "img_0.png",
-            "img_1.png",
-            "img_2.png",
-            "img_3.png",
+        assert set(rows[0]) == {"job_id", "frame", "file_name"}
+        # Each row names the frame its own file landed on, not the job's range.
+        assert [(row["job_id"], row["frame"], row["file_name"]) for row in rows] == [
+            (str(jobs[0].id), "0", "img_0.png"),
+            (str(jobs[0].id), "1", "img_1.png"),
+            (str(jobs[1].id), "2", "img_2.png"),
+            (str(jobs[2].id), "3", "img_3.png"),
         ]
         task.remove()
 

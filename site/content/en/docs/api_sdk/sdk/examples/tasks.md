@@ -149,12 +149,17 @@ python task_create_subtasks.py --host 'https://app.cvat.ai' --token '<your token
 Normally CVAT cuts a task into jobs of `segment_size` frames. The
 `job_file_mapping` data parameter replaces that with an explicit grouping: one
 job per camera, per scene, or per delivery batch. Group the files yourself with
-repeated `--job` flags, or chunk the directory with `--files-per-job N`.
+repeated `--job` flags, or chunk the directory with `--files-per-job N` — a
+count of files, the explicit equivalent of `segment_size`.
 
 Every file in `--image-dir` must belong to exactly one job — unknown files,
 duplicates, and leftovers are rejected before the task is created. Afterwards
 the recipe reads the jobs back from the server and writes
-`job_file_mapping.csv`, so the mapping you see is the one that exists.
+`job_file_mapping.csv`, one `job_id,frame,file_name` row per file: the mapping
+you see is the one that exists, and every file names the frame it actually
+landed on. Frame numbers are zero-based indexes within the task.
+
+The example creates one `object` label so the task is ready for annotation.
 
 `job_file_mapping` implies predefined file ordering and works with images, not
 video.
@@ -165,8 +170,8 @@ video.
 | `--token` | yes | Personal Access Token |
 | `--image-dir` | yes | Directory with the task's images |
 | `--job FILE [FILE ...]` | one of `--job` / `--files-per-job` | The files of one job; repeat for more |
-| `--files-per-job N` | one of `--job` / `--files-per-job` | Chunk the directory into jobs of N files |
-| `--name`, `--labels` | no | Task name and labels |
+| `--files-per-job N` | one of `--job` / `--files-per-job` | Number of files per job: chunk the directory into jobs of N files each |
+| `--name` | no | Task name |
 | `--output` | no | Mapping CSV path (default `job_file_mapping.csv`) |
 | `--cleanup` | no | Delete the created task at the end |
 

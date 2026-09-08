@@ -88,23 +88,34 @@ python project_annotation_stats.py --host 'https://app.cvat.ai' --token '<your t
 
 ## Lint a project's data and annotations
 
-Walks a project's tasks and reports six classes of problem, each with a
-severity: shapes that leave the frame, rectangles with (almost) no area, and
-duplicated objects are errors; frames nobody annotated and jobs marked
-completed with nothing in them are warnings; labels nobody used are info.
-Findings are printed grouped by severity and written to `data_lint.csv`. The
-script exits 1 when any error exists, so it can gate an export pipeline —
-`--no-fail` turns that off.
+Walks a project's tasks and runs five checks. Findings have a severity
+and are printed grouped by severity and written to
+`data_lint.csv`. The script exits 1 when any error exists, so it can gate an
+export pipeline — `--no-fail` turns that off.
+
+| Check | Severity | What it means |
+| --- | --- | --- |
+| `out-of-bounds` | error | The shape leaves the frame |
+| `degenerate-box` | error | The rectangle has (almost) no area |
+| `duplicate-object` | error | An identical object on the same frame |
+| `dead-object` | error | The object is on a deleted frame or beyond the last task frame and is omitted from dataset exports |
+| `unused-label` | info | The label was never used |
+
+Empty frames and completed jobs without objects can be valid negative
+examples, so the script does not report them as problems.
 
 Masks and skeletons are skipped by the geometry checks (their points are not
 plain x/y pairs), and objects marked `outside` are skipped everywhere.
+Geometry checks inspect individual shapes and track keyframes; they do not
+interpolate tracks. Video frame counts come from the task's `size`, because
+a video reports one metadata entry for the whole file.
 
 | Flag | Required | Meaning |
 | --- | --- | --- |
 | `--host` | yes | Server URL |
 | `--token` | yes | Personal Access Token |
 | `--project-id` | yes | Id of the project to lint |
-| `--task-id ID [ID ...]` | no | Lint only these tasks of the project |
+| `--task-id ID [ID ...]` | no | Lint only these tasks of the project; they are retrieved by id, so a big project is not listed |
 | `--min-box-area` | no | Rectangles below this many px² are errors (default `4`) |
 | `--output` | no | CSV report path (default `data_lint.csv`) |
 | `--no-fail` | no | Exit 0 even when errors were found |

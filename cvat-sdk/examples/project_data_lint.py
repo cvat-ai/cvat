@@ -3,15 +3,15 @@
 # SPDX-License-Identifier: MIT
 
 """Lint a project's annotations before exporting them: find shapes that leave the
-frame, boxes with (almost) no area, duplicated objects, frames nobody annotated,
-jobs marked completed with nothing in them, and labels nobody used.
+frame, boxes with (almost) no area, duplicated objects, objects stranded on
+removed frames, and labels nobody used.
 
 Every finding has a severity. The script exits 1 when any error-severity finding
 exists, so it can gate a pipeline; --no-fail turns that off.
 
 Steps:
   1. Retrieve the project, its labels, and the tasks to inspect.
-  2. For each task, read the frame sizes, the jobs, and the annotations.
+  2. For each task, read the frame metadata, the jobs, and the annotations.
   3. Run the checks and collect the findings.
   4. Print them grouped by severity, write the CSV report, and set the exit code.
 
@@ -30,7 +30,7 @@ from pathlib import Path
 from cvat_sdk import make_client
 
 GEOMETRY_TYPES = {"rectangle", "polygon", "polyline", "points"}
-SEVERITY_ORDER = {"error": 0, "warning": 1, "info": 2}
+SEVERITY_ORDER = {"error": 0, "info": 1}
 
 
 @dataclass
@@ -101,7 +101,13 @@ def iter_objects(annotations):
 
 def lint_task(task, label_names: dict[int, str], min_box_area: float):
     """The findings for one task, plus how often each label was used in it."""
-    frames = task.get_frames_info()
+    meta = task.get_meta()
+    # An image task reports one entry in `frames` per frame; a video task reports
+    # a single entry for the whole video. `size` is the frame count either way.
+    frame_count = meta.size
+    per_frame_meta = str(task.data_original_chunk_type) == "imageset"
+    deleted_frames = set(meta.deleted_frames)
+
     jobs = task.get_jobs()
     job_of_frame = {}
     for job in jobs:
@@ -110,13 +116,13 @@ def lint_task(task, label_names: dict[int, str], min_box_area: float):
 
     findings: list[Finding] = []
     label_usage = Counter()
-    annotated_frames = set()
     seen = set()
 
     for frame, label_id, type_, points in iter_objects(task.get_annotations()):
-        label = label_names.get(label_id, str(label_id))
+        # Every linted task belongs to the project, and a task in a project uses
+        # the project's labels, so the id is always one of them.
+        label = label_names[label_id]
         label_usage[label] += 1
-        annotated_frames.add(frame)
         job_id = job_of_frame.get(frame, "")
 
         key = (frame, label_id, type_, tuple(round(value, 3) for value in points))
@@ -134,13 +140,32 @@ def lint_task(task, label_names: dict[int, str], min_box_area: float):
             )
         seen.add(key)
 
-        if frame >= len(frames):
+        if frame in deleted_frames or frame >= frame_count:
+            # These objects are omitted from dataset exports.
+            reason = (
+                "was removed from the task"
+                if frame in deleted_frames
+                else f"is past the task's last frame {frame_count - 1}"
+            )
+            findings.append(
+                Finding(
+                    "error",
+                    "dead-object",
+                    task.id,
+                    job_id,
+                    frame,
+                    label,
+                    f"{type_} sits on frame {frame}, which {reason}",
+                )
+            )
             continue
-        meta = frames[frame]
+
+        frame_meta = meta.frames[frame if per_frame_meta else 0]
 
         if type_ in GEOMETRY_TYPES and points:
             xs, ys = points[0::2], points[1::2]
-            if min(xs) < 0 or min(ys) < 0 or max(xs) > meta.width or max(ys) > meta.height:
+            width, height = frame_meta.width, frame_meta.height
+            if min(xs) < 0 or min(ys) < 0 or max(xs) > width or max(ys) > height:
                 findings.append(
                     Finding(
                         "error",
@@ -150,7 +175,7 @@ def lint_task(task, label_names: dict[int, str], min_box_area: float):
                         frame,
                         label,
                         f"{type_} spans x {min(xs):.1f}..{max(xs):.1f}, "
-                        f"y {min(ys):.1f}..{max(ys):.1f} in a {meta.width}x{meta.height} frame",
+                        f"y {min(ys):.1f}..{max(ys):.1f} in a {width}x{height} frame",
                     )
                 )
 
@@ -169,36 +194,28 @@ def lint_task(task, label_names: dict[int, str], min_box_area: float):
                     )
                 )
 
-    for frame, meta in enumerate(frames):
-        if frame not in annotated_frames:
-            findings.append(
-                Finding(
-                    "warning",
-                    "empty-frame",
-                    task.id,
-                    job_of_frame.get(frame, ""),
-                    frame,
-                    "",
-                    f"{meta.name} has no objects",
-                )
-            )
-
-    for job in jobs:
-        job_frames = range(job.start_frame, job.stop_frame + 1)
-        if str(job.state) == "completed" and not annotated_frames.intersection(job_frames):
-            findings.append(
-                Finding(
-                    "warning",
-                    "completed-but-empty",
-                    task.id,
-                    job.id,
-                    "",
-                    "",
-                    f"job is completed but frames {job.start_frame}-{job.stop_frame} are empty",
-                )
-            )
-
     return findings, label_usage
+
+
+def select_tasks(client, project, task_ids: list[int] | None) -> list:
+    """The project's tasks, or just the requested ones.
+
+    With --task-id the tasks are retrieved by id: listing every task of a large
+    project only to throw most of them away would be a waste.
+    """
+    if not task_ids:
+        return list(project.get_tasks())
+
+    tasks = []
+    for task_id in task_ids:
+        try:
+            task = client.tasks.retrieve(task_id)
+        except Exception:
+            task = None
+        if task is None or task.project_id != project.id:
+            sys.exit(f"Task id {task_id} was not found in project {project.id}")
+        tasks.append(task)
+    return tasks
 
 
 def main() -> None:
@@ -207,14 +224,7 @@ def main() -> None:
         project = client.projects.retrieve(args.project_id)
         label_names = {label.id: label.name for label in project.get_labels()}
 
-        tasks_by_id = {task.id: task for task in project.get_tasks()}
-        if args.task_id:
-            missing = [str(tid) for tid in args.task_id if tid not in tasks_by_id]
-            if missing:
-                sys.exit(f"Task id(s) {', '.join(missing)} not found in project {project.id}")
-            tasks = [tasks_by_id[tid] for tid in args.task_id]
-        else:
-            tasks = list(tasks_by_id.values())
+        tasks = select_tasks(client, project, args.task_id)
         if not tasks:
             sys.exit(f"Project {project.id} has no tasks to lint")
 
@@ -243,10 +253,7 @@ def main() -> None:
         writer.writerows(asdict(finding) for finding in findings)
 
     counts = Counter(finding.severity for finding in findings)
-    print(
-        f"Found {len(findings)} issue(s): {counts['error']} error(s), "
-        f"{counts['warning']} warning(s), {counts['info']} info"
-    )
+    print(f"Found {len(findings)} issue(s): {counts['error']} error(s), {counts['info']} info")
     print(f"Wrote {args.output.resolve()}")
     if counts["error"] and not args.no_fail:
         sys.exit(1)

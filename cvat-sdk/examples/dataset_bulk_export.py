@@ -87,31 +87,36 @@ def parse_args() -> argparse.Namespace:
 
 
 def select_tasks(client, args: argparse.Namespace) -> list:
-    """The tasks to export, as (id, name, status) triples."""
-    if args.project_id:
-        filters = {"project_id": args.project_id}
-        if args.status:
-            filters["status"] = args.status
-        tasks = client.tasks.list(**filters)
-        by_id = {task.id: task for task in tasks}
-        if args.task_id:
-            missing = [str(tid) for tid in args.task_id if tid not in by_id]
-            if missing:
-                sys.exit(f"Task id(s) {', '.join(missing)} not found in project {args.project_id}")
-            tasks = [by_id[tid] for tid in args.task_id]
-        return [(task.id, task.name, str(task.status)) for task in tasks]
+    """The tasks to export, as (id, name, status) triples.
 
-    selected = []
-    for task_id in args.task_id:
-        try:
-            task = client.tasks.retrieve(task_id)
-        except Exception:
-            selected.append((task_id, "", ""))
-            continue
-        if args.status and str(task.status) != args.status:
-            continue
-        selected.append((task.id, task.name, str(task.status)))
-    return selected
+    --task-id names the tasks, --project-id takes the whole project, and giving
+    both means "these ids, which must be in that project". --status is applied
+    after the ids are resolved, so a task that exists but is in another status is
+    reported as filtered out rather than as missing - two different mistakes.
+    """
+    if args.task_id:
+        selected = []
+        for task_id in args.task_id:
+            try:
+                task = client.tasks.retrieve(task_id)
+            except Exception:
+                # Keep it in the selection: export_one records the failure in the
+                # manifest, which beats aborting a long run over one bad id.
+                selected.append((task_id, "", ""))
+                continue
+            if args.project_id and task.project_id != args.project_id:
+                sys.exit(f"Task id {task_id} is not in project {args.project_id}")
+            if args.status and str(task.status) != args.status:
+                print(f"Skipping task {task_id}: status is {task.status}, not {args.status}")
+                continue
+            selected.append((task.id, task.name, str(task.status)))
+        return selected
+
+    # A whole project: the server does the filtering.
+    filters = {"project_id": args.project_id}
+    if args.status:
+        filters["status"] = args.status
+    return [(task.id, task.name, str(task.status)) for task in client.tasks.list(**filters)]
 
 
 def worker_client(host: str, token: str):

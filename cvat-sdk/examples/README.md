@@ -30,11 +30,11 @@ Conventions:
 | `project_create_and_list.py` | Create, list, filter, retrieve, rename a project | `--name`, `--labels`, `--cleanup` |
 | `project_add_labels.py` | Add labels (optionally with attributes) to an existing project | `--project-id`, `--labels`, `--attr` (repeat) |
 | `project_annotation_stats.py` | Aggregate object counts per label/type across a project's tasks; CSV report | `--project-id` |
-| `project_data_lint.py` | Lint a project's annotations: out-of-bounds shapes, tiny boxes, duplicates, empty frames/jobs, unused labels | `--project-id`, `--task-id`, `--min-box-area`, `--output`, `--no-fail` |
+| `project_data_lint.py` | Lint a project's annotations: out-of-bounds shapes, tiny boxes, duplicates, objects on removed or out-of-range frames, unused labels | `--project-id`, `--task-id`, `--min-box-area`, `--output`, `--no-fail` |
 | `project_backup.py` | Download a backup zip of an existing project | `--project-id`, `--output` |
 | `project_restore.py` | Restore a project from a backup zip | `--backup`, `--cleanup` |
 | `project_export_dataset.py` | Export a project's tasks individually (all, or a `--task-id` list), locally and to a bucket | `--project-id`, `--cloud-storage-id`, `--export-format`, `--task-id` (optional, space-separated) |
-| `dataset_incremental_download.py` | Export only the project tasks that changed since the previous run | `--project-id`, `--state`, `--output-dir`, `--export-format`, `--with-images` |
+| `dataset_incremental_download.py` | Export only the project tasks that changed since the previous run | `--project-id`, `--updated-after`, `--output-dir`, `--export-format`, `--with-images` |
 | `dataset_bulk_export.py` | Export many tasks at once, locally and/or to a bucket, with a CSV manifest | `--project-id` and/or `--task-id`, `--status`, `--output-dir`, `--cloud-storage-id`, `--jobs`, `--skip-existing` |
 | `task_create_from_cloud.py` | Create a task from bucket object keys | `--cloud-storage-id`, `--cloud-keys`, `--cleanup` |
 | `tasks_bulk_from_cloud.py` | Bulk-create tasks in a project, from bucket object keys or wildcard patterns | `--cloud-storage-id`, `--project-id`, `--task` (repeat), `--task-pattern` (repeat), `--manifest`, `--cleanup` |
