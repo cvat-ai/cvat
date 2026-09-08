@@ -9,6 +9,7 @@ import base64
 import io
 import json
 import os
+import re
 import textwrap
 from copy import deepcopy
 from datetime import timedelta
@@ -64,7 +65,7 @@ from cvat.apps.lambda_manager.serializers import (
     FunctionCallRequestSerializer,
     FunctionCallSerializer,
 )
-from cvat.apps.lambda_manager.signals import interactive_function_call_signal
+from cvat.apps.lambda_manager.signals import internal_ai_agent_function_call_signal
 from cvat.apps.lambda_manager.utils import ROIHelper
 from cvat.utils.http import make_requests_session
 
@@ -595,9 +596,6 @@ class LambdaFunction:
                 code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
-        if is_interactive and request:
-            interactive_function_call_signal.send(sender=self, request=request)
-
         response = self.gateway.invoke(self, payload)
 
         def check_attr_value(value, db_attr):
@@ -692,6 +690,14 @@ class LambdaFunction:
                 roi=roi,
                 image_width=roi["image_width"],
                 image_height=roi["image_height"],
+            )
+
+        if is_interactive and request:
+            org_id = getattr(request.iam_context["organization"], "id", None)
+            internal_ai_agent_function_call_signal.send(
+                sender=self,
+                user_id=request.user.id,
+                org_id=org_id,
             )
 
         return response
@@ -1064,8 +1070,9 @@ class LambdaJob:
         *,
         db_job: Job | None = None,
         roi: list | None = None,
-    ):
+    ) -> int:
         collector = DetectionResultCollector(db_task, db_job)
+        invocation_count = 0
 
         converter = DetectionResultConverter(db_task)
 
@@ -1088,6 +1095,7 @@ class LambdaJob:
                 converter=converter,
             )
 
+            invocation_count += 1
             progress = (frame + 1) / db_task.data.size
             if not cls._update_progress(progress):
                 break
@@ -1101,6 +1109,7 @@ class LambdaJob:
                 collector.submit()
 
         collector.submit()
+        return invocation_count
 
     @staticmethod
     # progress is in [0, 1] range
@@ -1137,7 +1146,7 @@ class LambdaJob:
         max_distance: int,
         *,
         db_job: Job | None = None,
-    ):
+    ) -> int:
         if db_job:
             data = dm.task.get_job_data(db_job.id)
         else:
@@ -1154,6 +1163,7 @@ class LambdaJob:
                 shapes_without_boxes.append(shape)
 
         paths = {}
+        invocation_count = 0
         for i, (frame0, frame1) in enumerate(zip(frame_set[:-1], frame_set[1:])):
             boxes0 = boxes_by_frame[frame0]
             for box in boxes0:
@@ -1176,6 +1186,7 @@ class LambdaJob:
                         "max_distance": max_distance,
                     },
                 )
+                invocation_count += 1
 
                 for idx0, idx1 in enumerate(matching):
                     if idx1 >= 0:
@@ -1233,6 +1244,8 @@ class LambdaJob:
                 else:
                     dm.task.put_task_data(db_task.id, serializer.data)
 
+        return invocation_count
+
     @classmethod
     def __call__(cls, function, task: int, cleanup: bool, **kwargs):
         # TODO: need logging
@@ -1251,8 +1264,9 @@ class LambdaJob:
             else:
                 assert False
 
+        count = 0
         if function.kind == FunctionKind.DETECTOR:
-            cls._call_detector(
+            count = cls._call_detector(
                 function,
                 db_task,
                 kwargs.get("threshold"),
@@ -1262,12 +1276,21 @@ class LambdaJob:
                 roi=kwargs.get("roi"),
             )
         elif function.kind == FunctionKind.REID:
-            cls._call_reid(
+            count = cls._call_reid(
                 function,
                 db_task,
                 kwargs.get("threshold"),
                 kwargs.get("max_distance"),
                 db_job=db_job,
+            )
+
+        if count:
+            rq_job_meta = LambdaRQMeta.for_job(rq.get_current_job())
+            internal_ai_agent_function_call_signal.send(
+                sender=function,
+                user_id=rq_job_meta.user.id,
+                org_id=rq_job_meta.org_id,
+                count=count,
             )
 
 
@@ -1321,7 +1344,7 @@ def return_response(success_code=status.HTTP_200_OK):
     ),
 )
 class FunctionViewSet(viewsets.ViewSet):
-    lookup_value_regex = "[a-zA-Z0-9_.-]+"
+    lookup_value_regex = "[a-zA-Z0-9][a-zA-Z0-9_.-]*"
     lookup_field = "func_id"
     iam_supports_organization_params = False
     iam_permission_class = LambdaPermission
@@ -1498,6 +1521,9 @@ class RequestViewSet(viewsets.ViewSet):
                 + "with wrong arguments ({})".format(str(err)),
                 code=status.HTTP_400_BAD_REQUEST,
             )
+
+        if not re.fullmatch(FunctionViewSet.lookup_value_regex, function):
+            raise serializers.ValidationError("Function ID is invalid")
 
         db_task = Task.objects.get(pk=task)
 

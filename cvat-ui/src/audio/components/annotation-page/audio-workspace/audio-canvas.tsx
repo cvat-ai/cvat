@@ -14,9 +14,10 @@ import GlobalHotKeys from 'utils/mousetrap-react';
 import AudioCanvasSkeleton from './skeleton/audio-canvas-skeleton';
 import { useAudioWaveform } from './hooks/use-audio-waveform';
 import { useAudioIntervalAnnotations } from './hooks/use-audio-interval-annotations';
+import { useWaveformHeight } from './hooks/use-waveform-height';
 import AudioWaveformControls from './audio-waveform-controls';
 
-const minimapContainerID = 'minimap';
+const MINIMAP_CONTAINER_ID = 'minimap';
 
 interface AudioCanvasProps {
     sourceToken: string;
@@ -30,13 +31,15 @@ function AudioCanvas({
     sourceToken, audioBuffer, peaks, duration, waveformReady,
 }: AudioCanvasProps): JSX.Element {
     const containerRef = React.useRef<HTMLDivElement>(null);
+    const { waveformHeight, resizeHandleProps } = useWaveformHeight();
     const waveform = useAudioWaveform({
         sourceToken,
-        minimapContainerID,
+        minimapContainerID: MINIMAP_CONTAINER_ID,
         audioBuffer,
         peaks,
         duration,
         containerRef,
+        waveformHeight,
     });
     const annotations = useAudioIntervalAnnotations({ waveform });
 
@@ -57,9 +60,15 @@ function AudioCanvas({
                     centerPlaybackPosition={waveform.viewport.centerPlaybackPosition}
                 />
                 <div className='cvat-audio-minimap-section'>
-                    <div id={minimapContainerID} />
+                    <div id={MINIMAP_CONTAINER_ID} />
                 </div>
             </div>
+            {waveformReady && (
+                <div
+                    className='cvat-audio-waveform-resize-handle'
+                    {...resizeHandleProps}
+                />
+            )}
             <AudioRegionDetailsWrapper />
         </div>
     );

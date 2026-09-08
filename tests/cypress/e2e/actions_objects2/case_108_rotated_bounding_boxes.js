@@ -11,7 +11,7 @@ import { decomposeMatrix } from '../../support/utils';
 context('Rotated bounding boxes.', () => {
     const caseId = '108';
     const createRectangleShape2Points = {
-        points: 'By 2 Points',
+        points: '2 Points',
         type: 'Shape',
         labelName,
         firstX: 250,
@@ -20,7 +20,7 @@ context('Rotated bounding boxes.', () => {
         secondY: 450,
     };
     const createRectangleTrack2Points = {
-        points: 'By 2 Points',
+        points: '2 Points',
         type: 'Track',
         labelName,
         firstX: createRectangleShape2Points.firstX,

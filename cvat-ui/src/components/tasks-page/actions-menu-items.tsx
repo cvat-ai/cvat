@@ -27,6 +27,7 @@ interface MenuItemsData {
     startEditField: (key: string) => void;
     selectedIds: number[];
     isExportDatasetDisabled: boolean;
+    isQualityControlDisabled: boolean;
 }
 
 const bulkAllowedKeys = ['edit_assignee', 'backup_task', 'export_task_dataset', 'delete_task', 'edit_organization'];
@@ -50,6 +51,7 @@ export default function TaskActionsItems(menuItemsData: MenuItemsData, taskMenuP
         onMoveTaskToProject,
         onDeleteTask,
         isExportDatasetDisabled,
+        isQualityControlDisabled,
     } = menuItemsData;
 
     const isBulkMode = selectedIds.length > 1;
@@ -110,7 +112,7 @@ export default function TaskActionsItems(menuItemsData: MenuItemsData, taskMenuP
     menuItems.push([{
         key: 'quality_control',
         label: withCount('Quality control', 'quality_control', `/tasks/${taskId}/quality-control`),
-        disabled: isDisabled('quality_control'),
+        disabled: isDisabled('quality_control') || isQualityControlDisabled,
     }, 70]);
 
     if (isConsensusEnabled) {

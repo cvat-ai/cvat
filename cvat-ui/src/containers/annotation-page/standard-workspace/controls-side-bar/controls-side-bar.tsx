@@ -9,6 +9,7 @@ import { Canvas } from 'cvat-canvas-wrapper';
 import {
     updateActiveControl as updateActiveControlAction,
     redrawShapeAsync,
+    rotateActiveObjectOrFrame,
     rotateCurrentFrame,
     repeatDrawShapeAsync,
     pasteShapeAsync,
@@ -31,6 +32,7 @@ interface StateToProps {
 interface DispatchToProps {
     updateActiveControl(activeControl: ActiveControl): void;
     rotateFrame(angle: Rotation): void;
+    rotateActiveObjectOrFrame(angle: Rotation): void;
     resetGroup(): void;
     repeatDrawShape(): void;
     pasteShape(): void;
@@ -70,6 +72,9 @@ function dispatchToProps(dispatch: any): DispatchToProps {
         },
         rotateFrame(rotation: Rotation): void {
             dispatch(rotateCurrentFrame(rotation));
+        },
+        rotateActiveObjectOrFrame(rotation: Rotation): void {
+            dispatch(rotateActiveObjectOrFrame(rotation));
         },
         repeatDrawShape(): void {
             dispatch(repeatDrawShapeAsync());

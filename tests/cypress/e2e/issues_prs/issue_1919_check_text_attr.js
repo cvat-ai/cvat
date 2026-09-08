@@ -13,7 +13,7 @@ context('Check label attribute changes', () => {
     const issueId = '1919';
     const newLabelAttrValue = 'New attribute value';
     const createRectangleShape2Points = {
-        points: 'By 2 Points',
+        points: '2 Points',
         type: 'Shape',
         labelName,
         firstX: 250,
