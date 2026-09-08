@@ -299,16 +299,17 @@ function ItemTopComponent(props: Props): JSX.Element {
                 </Text>
             </Col>
             <Col span={12}>
-                <CVATTooltip title='Change current label'>
-                    <LabelSelector
-                        disabled={locked || shapeType === ShapeType.SKELETON}
-                        size='small'
-                        labels={labels}
-                        value={labelID}
-                        onChange={changeLabel}
-                        className='cvat-objects-sidebar-state-item-label-selector'
-                    />
-                </CVATTooltip>
+                <LabelSelector
+                    disabled={locked || shapeType === ShapeType.SKELETON}
+                    size='small'
+                    labels={labels}
+                    value={labelID}
+                    onChange={changeLabel}
+                    tooltip='Change current label'
+                    className='cvat-objects-sidebar-state-item-label-selector'
+                    popupClassName='cvat-objects-sidebar-state-item-label-dropdown'
+                    popupMatchSelectWidth={false}
+                />
             </Col>
             {objectActions}
         </Row>
