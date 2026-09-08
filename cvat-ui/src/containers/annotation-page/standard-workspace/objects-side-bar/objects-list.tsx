@@ -232,7 +232,7 @@ const componentShortcuts = {
     SELECT_ALL_OBJECTS: {
         name: 'Select all objects',
         description: 'Add all objects visible on the canvas to the selection',
-        sequences: ['command+a'],
+        sequences: ['mod+a'],
         scope: ShortcutScope.OBJECTS_SIDEBAR,
     },
 };
@@ -457,12 +457,10 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
     public componentDidMount(): void {
         this.updateObjects();
         window.addEventListener(OBJECTS_SIDEBAR_OPEN_Z_LAYER_EVENT, this.onOpenZLayerInSidebar);
-        window.addEventListener('keydown', this.onSelectAllObjects, true);
     }
 
     public componentWillUnmount(): void {
         window.removeEventListener(OBJECTS_SIDEBAR_OPEN_Z_LAYER_EVENT, this.onOpenZLayerInSidebar);
-        window.removeEventListener('keydown', this.onSelectAllObjects, true);
     }
 
     public componentDidUpdate(): void {
@@ -487,26 +485,6 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             filteredStates,
             sortedStatesID: sortAndMap(filteredStates, statesOrdering),
         });
-    };
-
-    private onSelectAllObjects = (event: KeyboardEvent): void => {
-        if (event.key.toLowerCase() !== 'a' || !event.metaKey || event.ctrlKey || event.altKey || event.shiftKey) {
-            return;
-        }
-
-        const target = event.target as HTMLElement | null;
-        if (target?.closest('input, textarea, [contenteditable]')) {
-            return;
-        }
-
-        const { hiddenZLayers, selectObjects } = this.props;
-        const { filteredStates } = this.state;
-        event.preventDefault();
-        event.stopPropagation();
-        selectObjects(filteredStates.filter((state: ObjectState): boolean => (
-            [ObjectType.SHAPE, ObjectType.TRACK].includes(state.objectType) &&
-            !state.outside && !state.hidden && !hiddenZLayers.has(state.zOrder)
-        )).map((state: ObjectState): number => state.clientID as number));
     };
 
     private onChangeStatesOrdering = (statesOrdering: StatesOrdering): void => {

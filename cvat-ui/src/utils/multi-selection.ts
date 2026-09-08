@@ -132,6 +132,9 @@ function modifierFromKeyMap(
     fallback: MultiSelectModifier,
 ): MultiSelectModifier {
     const [sequence] = keyMap[shortcut]?.sequences ?? [];
+    if (sequence === 'mod') {
+        return /Mac|iPod|iPhone|iPad/.test(navigator.platform) ? 'meta' : 'ctrl';
+    }
     if (sequence === 'ctrl' || sequence === 'control') return 'ctrl';
     if (sequence === 'alt' || sequence === 'option') return 'alt';
     if (sequence === 'meta' || sequence === 'command' || sequence === 'cmd') return 'meta';
@@ -155,8 +158,9 @@ export function multiSelectModifierFromKeyMap(keyMap: KeyMap): MultiSelectModifi
     return modifierFromKeyMap(keyMap, 'CANVAS_MULTI_SELECT_MODIFIER', 'shift');
 }
 
-export function multiSelectObjectModifierFromKeyMap(_keyMap: KeyMap): MultiSelectModifier {
-    return 'meta';
+export function multiSelectObjectModifierFromKeyMap(keyMap: KeyMap): MultiSelectModifier {
+    const platformModifier = /Mac|iPod|iPhone|iPad/.test(navigator.platform) ? 'meta' : 'ctrl';
+    return modifierFromKeyMap(keyMap, 'CANVAS_MULTI_SELECT_OBJECT_MODIFIER', platformModifier);
 }
 
 export function isMultiSelectModifierPressed(event: ModifierEvent, keyMap: KeyMap): boolean {

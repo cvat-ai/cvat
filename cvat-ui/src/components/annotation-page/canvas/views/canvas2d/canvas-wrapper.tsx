@@ -368,8 +368,8 @@ const multiSelectShortcut = {
     CANVAS_MULTI_SELECT_OBJECT_MODIFIER: {
         name: 'Add/remove selection modifier',
         description: 'Hold this key and click an object on the canvas or in the Objects sidebar to add or remove it ' +
-            'from the selection (supported: shift, ctrl, alt, command - other keys are ignored)',
-        sequences: ['command'],
+            'from the selection (supported: shift, ctrl, alt, mod - other keys are ignored)',
+        sequences: ['mod'],
         scope: ShortcutScope.STANDARD_WORKSPACE,
     },
 };

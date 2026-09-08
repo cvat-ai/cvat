@@ -6,6 +6,7 @@
 /// <reference types="cypress" />
 
 context('Hotkeys to change labels feature.', () => {
+    const platformModifier = Cypress.platform === 'darwin' ? { metaKey: true } : { ctrlKey: true };
     const caseId = '72';
     const labelName = `Case ${caseId}`;
     const taskName = labelName;
@@ -133,7 +134,7 @@ context('Hotkeys to change labels feature.', () => {
         it('Changing a label for a multi-selection using hotkey.', () => {
             for (const clientId of [1, 2]) {
                 cy.get(`#cvat-objects-sidebar-state-item-${clientId}`)
-                    .trigger('mousedown', { button: 0, metaKey: true });
+                    .trigger('mousedown', { button: 0, ...platformModifier });
                 cy.get(`#cvat-objects-sidebar-state-item-${clientId}`)
                     .should('have.class', 'cvat-objects-sidebar-state-item-multi-selected');
             }
