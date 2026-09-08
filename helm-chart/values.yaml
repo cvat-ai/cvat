@@ -29,7 +29,7 @@ cvat:
     # This setting is used to override Redis service name.
     # Bitnami chart require "cvat-redis-master" override. CloudPirates chart does not need this override.
     # If you use external Redis, use .Values.redis.external.host = your_redis_service + .Values.redis.enabled = false instead
-    redisInmemHostOverride: "cvat-redis-master"
+    redisInmemHostOverride: "{{ .Release.Name }}-redis-master"
     # -- The service account the backend pods will use to interact with the Kubernetes API
     serviceAccount:
       name: default

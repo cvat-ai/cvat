@@ -67,7 +67,7 @@ Shared environment variables for backend pods
   value: "{{ .Values.redis.external.host }}"
 {{- else if .Values.cvat.backend.redisInmemHostOverride }}
 - name: CVAT_REDIS_INMEM_HOST
-  value: "{{ .Values.cvat.backend.redisInmemHostOverride }}"
+  value: {{ tpl .Values.cvat.backend.redisInmemHostOverride . | quote }}
 {{- else }}
 {{/*
 Service name is release-redis-master for replication architecture and if Sentinel enabled with masterService enabled. Otherwise, it is release-redis.
