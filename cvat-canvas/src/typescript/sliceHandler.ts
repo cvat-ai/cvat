@@ -363,6 +363,12 @@ export class SliceHandlerImpl implements SliceHandler {
                 drawOverOffscreenCanvas(context, shape as any as SVGImageElement);
                 applyOffscreenCanvasMask(context, polygon2);
                 const secondShape = imageDataToRLE(context.getImageData(0, 0, width, height).data);
+
+                if (firstShape.length < 2 || secondShape.length < 2) {
+                    this.slice({ enabled: false });
+                    return;
+                }
+
                 this.onSliceDone(sliceData.state, [firstShape, secondShape], Date.now() - this.startTimestamp);
             } else if (sliceData.shapeType === 'polygon') {
                 this.onSliceDone(
