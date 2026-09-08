@@ -71,7 +71,12 @@ function useRegionPreviewCapability(
             drag: false,
             resize: false,
         });
-        if (region.element) region.element.style.pointerEvents = 'none';
+        if (region.element) {
+            const isMarker = range.start === range.end;
+            region.element.style.pointerEvents = 'none';
+            region.element.style.backgroundColor = isMarker ? 'none' : options.color;
+            region.element.style.borderLeft = isMarker ? `2px solid ${options.color}` : 'none';
+        }
 
         let removed = false;
         const remove = (): void => {

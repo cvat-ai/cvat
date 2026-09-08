@@ -27,6 +27,8 @@ import { WaveformViewport } from './use-waveform-viewport';
 const REGION_DRAG_BOUNDS_CONSTRAINT = Symbol('regionDragBoundsConstraint');
 const RESIZE_CURSOR_CLASS = 'cvat-audio-waveform-interaction-resize';
 const AUTO_SCROLL_CLASS = 'cvat-audio-waveform-interaction-auto-scroll';
+const SNAP_HOVER_CLASS = 'cvat-audio-waveform-interaction-snap-hover';
+const SNAP_BOUNDARY_TOLERANCE_PX = 15;
 
 interface RegionPointerInteraction {
     pointerID: number;
@@ -47,9 +49,21 @@ interface ResizeInteraction {
 
 interface DrawInteraction {
     pointerID: number;
+    clientX: number;
     startTime: number;
+    startSnapTime: number | null;
     labelID: number | null;
     preview: RegionPreviewHandle;
+}
+
+interface DrawStartSnapGuide {
+    time: number;
+    preview: RegionPreviewHandle;
+}
+
+interface SnapSearchOptions {
+    excludedClientID?: number;
+    excludedTime?: number | null;
 }
 
 interface Params {
@@ -118,11 +132,12 @@ export function useRegionEditing({
         shallowEqual,
     );
     const labelPreviewColor = getAudioLabelPreviewColor(activeLabelId, labels, opacity);
+    const labelSnapGuideColor = getAudioLabelPreviewColor(activeLabelId, labels, 100);
     const latestRef = useRef({
-        intervals, activeLabelId, activeControl, labelPreviewColor,
+        intervals, activeLabelId, activeControl, labelPreviewColor, labelSnapGuideColor,
     });
     latestRef.current = {
-        intervals, activeLabelId, activeControl, labelPreviewColor,
+        intervals, activeLabelId, activeControl, labelPreviewColor, labelSnapGuideColor,
     };
     const cancelCustomInteractionRef = useRef<(() => void) | null>(null);
     useBulkBoundariesEditing({
@@ -196,6 +211,41 @@ export function useRegionEditing({
         let hasResized = false;
         let resizeCursorViewport: HTMLElement | null = null;
         let autoScrollViewport: HTMLElement | null = null;
+        let isAltPressed = false;
+        // Track clientX to be able to display snapped start region border position
+        // when the modifier key is pressed in Draw mode
+        let lastWaveformPointerClientX: number | null = null;
+        let drawStartSnapGuide: DrawStartSnapGuide | null = null;
+
+        const findSnapTime = (clientX: number, options: SnapSearchOptions = {}): number | null => {
+            const pointerTime = viewport.clientXToTime(clientX);
+            const transform = viewport.getTransform();
+            if (pointerTime === null || !transform?.pixelsPerSecond) return null;
+
+            let closestTime: number | null = null;
+            let closestDistance = SNAP_BOUNDARY_TOLERANCE_PX / transform.pixelsPerSecond;
+
+            latestRef.current.intervals.forEach((interval) => {
+                const clientID = interval.clientID as number;
+                if (interval.hidden || clientID === options.excludedClientID) return;
+
+                (['start', 'end'] as UpdateSide[]).forEach((side) => {
+                    const time = side === 'start' ? intervalStartSeconds(interval) : intervalEndSeconds(interval);
+                    if (
+                        options.excludedTime != null &&
+                        Math.abs(time - options.excludedTime) < INTERVAL_BOUNDARY_EPSILON
+                    ) return;
+
+                    const distance = Math.abs(pointerTime - time);
+                    if (distance > closestDistance) return;
+
+                    closestDistance = distance;
+                    closestTime = time;
+                });
+            });
+
+            return closestTime;
+        };
 
         const setAutoScrolling = (isAutoScrolling: boolean): void => {
             if (isAutoScrolling) {
@@ -228,7 +278,13 @@ export function useRegionEditing({
         };
 
         const applyResize = (resize: ResizeInteraction): boolean => {
-            const time = viewport.clientXToTime(resize.clientX + resize.grabOffsetX);
+            const boundaryClientX = resize.clientX + resize.grabOffsetX;
+            const otherBoundary = resize.side === 'start' ? resize.end : resize.start;
+            const snapTime = isAltPressed ? findSnapTime(boundaryClientX, {
+                excludedClientID: resize.clientID,
+                excludedTime: otherBoundary,
+            }) : null;
+            const time = snapTime ?? viewport.clientXToTime(boundaryClientX);
             const duration = durationRef.current;
             if (time === null || duration <= 0) return false;
 
@@ -260,32 +316,80 @@ export function useRegionEditing({
             return !!waveform && event.composedPath().includes(waveform);
         };
 
+        const clearDrawStartSnapGuide = (): void => {
+            drawStartSnapGuide?.preview.remove();
+            drawStartSnapGuide = null;
+            viewport.containerRef.current?.classList.remove(SNAP_HOVER_CLASS);
+        };
+
+        const setDrawStartSnapGuide = (time: number): void => {
+            if (drawStartSnapGuide) {
+                if (drawStartSnapGuide.time !== time) {
+                    drawStartSnapGuide.preview.updateRange({ start: time, end: time });
+                    drawStartSnapGuide.time = time;
+                }
+
+                return;
+            }
+
+            const preview = createPreview({
+                range: { start: time, end: time },
+                color: latestRef.current.labelSnapGuideColor,
+            });
+            if (!preview) return;
+
+            drawStartSnapGuide = { time, preview };
+            viewport.containerRef.current?.classList.add(SNAP_HOVER_CLASS);
+        };
+
+        const refreshDrawStartSnapGuide = (): void => {
+            const snapTime = isAltPressed && lastWaveformPointerClientX !== null ?
+                findSnapTime(lastWaveformPointerClientX) : null;
+            if (snapTime === null) {
+                clearDrawStartSnapGuide();
+            } else {
+                setDrawStartSnapGuide(snapTime);
+            }
+        };
+
         const startDrawing = (event: PointerEvent): void => {
             if (regionInteraction || drawing || event.button !== 0 || !isPointerOverWaveform(event)) return;
 
-            const startTime = viewport.clientXToTime(event.clientX);
-            if (startTime === null) return;
+            const startSnapTime = isAltPressed ? findSnapTime(event.clientX) : null;
+            const pointerTime = viewport.clientXToTime(event.clientX);
+            const startTime = startSnapTime ?? pointerTime;
+            if (startTime === null || pointerTime === null) return;
 
             event.preventDefault();
 
             const preview = createPreview({
-                range: { start: startTime, end: startTime },
+                range: {
+                    start: Math.min(startTime, pointerTime),
+                    end: Math.max(startTime, pointerTime),
+                },
                 color: latestRef.current.labelPreviewColor,
             });
             if (!preview) return;
 
+            clearDrawStartSnapGuide();
+
             drawing = {
                 pointerID: event.pointerId,
+                clientX: event.clientX,
                 startTime,
+                startSnapTime,
                 labelID: latestRef.current.activeLabelId,
                 preview,
             };
         };
 
-        const updateDrawing = (event: PointerEvent): void => {
-            if (!drawing || drawing.pointerID !== event.pointerId) return;
+        const refreshDrawing = (): void => {
+            if (!drawing) return;
 
-            const time = viewport.clientXToTime(event.clientX);
+            const endSnapTime = isAltPressed ? findSnapTime(drawing.clientX, {
+                excludedTime: drawing.startSnapTime,
+            }) : null;
+            const time = endSnapTime ?? viewport.clientXToTime(drawing.clientX);
             if (time === null) return;
 
             drawing.preview.updateRange({
@@ -294,11 +398,21 @@ export function useRegionEditing({
             });
         };
 
+        const updateDrawing = (event: PointerEvent): void => {
+            if (!drawing || drawing.pointerID !== event.pointerId) return;
+
+            drawing = { ...drawing, clientX: event.clientX };
+            refreshDrawing();
+        };
+
         const finishDrawing = (event: PointerEvent, shouldPersist: boolean): void => {
             const currentDrawing = drawing;
             if (!currentDrawing || currentDrawing.pointerID !== event.pointerId) return;
 
-            const endTime = viewport.clientXToTime(event.clientX);
+            const endSnapTime = isAltPressed ? findSnapTime(event.clientX, {
+                excludedTime: currentDrawing.startSnapTime,
+            }) : null;
+            const endTime = endSnapTime ?? viewport.clientXToTime(event.clientX);
             drawing = null;
             currentDrawing.preview.remove();
             if (endTime === null || !shouldPersist) return;
@@ -389,7 +503,10 @@ export function useRegionEditing({
             } else if (event.clientX > currentResizing.clientX) {
                 movementDirection = 1;
             }
-            resizing = { ...currentResizing, clientX: event.clientX };
+            resizing = {
+                ...currentResizing,
+                clientX: event.clientX,
+            };
             refreshResizing();
 
             if (movementDirection !== null) {
@@ -427,6 +544,8 @@ export function useRegionEditing({
         };
 
         const cancelCustomInteraction = (): void => {
+            lastWaveformPointerClientX = null;
+            clearDrawStartSnapGuide();
             if (drawing) {
                 drawing.preview.remove();
                 drawing = null;
@@ -451,14 +570,18 @@ export function useRegionEditing({
         cancelCustomInteractionRef.current = cancelCustomInteraction;
 
         const onPointerDown = (event: PointerEvent): void => {
+            isAltPressed = event.altKey;
             if (latestRef.current.activeControl === ActiveControl.AUDIO_REGION_CREATE) {
                 startDrawing(event);
             } else {
+                lastWaveformPointerClientX = null;
+                clearDrawStartSnapGuide();
                 startResizing(event);
             }
         };
 
         const onPointerMove = (event: PointerEvent): void => {
+            isAltPressed = event.altKey;
             if (drawing) {
                 if (latestRef.current.activeControl === ActiveControl.AUDIO_REGION_CREATE) {
                     updateDrawing(event);
@@ -468,6 +591,14 @@ export function useRegionEditing({
                 return;
             }
 
+            if (latestRef.current.activeControl === ActiveControl.AUDIO_REGION_CREATE) {
+                lastWaveformPointerClientX = isPointerOverWaveform(event) ? event.clientX : null;
+                refreshDrawStartSnapGuide();
+                return;
+            }
+
+            lastWaveformPointerClientX = null;
+            clearDrawStartSnapGuide();
             updateResizing(event);
         };
 
@@ -482,6 +613,7 @@ export function useRegionEditing({
         };
 
         const onPointerUp = (event: PointerEvent): void => {
+            isAltPressed = event.altKey;
             if (drawing) {
                 suppressReleasedDrawClick();
                 finishDrawing(event, latestRef.current.activeControl === ActiveControl.AUDIO_REGION_CREATE);
@@ -492,6 +624,7 @@ export function useRegionEditing({
         };
 
         const onPointerCancel = (event: PointerEvent): void => {
+            isAltPressed = event.altKey;
             if (drawing) {
                 finishDrawing(event, false);
                 return;
@@ -500,10 +633,30 @@ export function useRegionEditing({
             finishResizing(event, false);
         };
 
+        const onAltKeyChange = (event: KeyboardEvent): void => {
+            if (event.key !== 'Alt') return;
+
+            if (event.type === 'keydown') {
+                isAltPressed = true;
+            } else if (event.type === 'keyup') {
+                isAltPressed = false;
+            } else {
+                return;
+            }
+
+            if (resizing) refreshResizing();
+            if (drawing) refreshDrawing();
+            if (!drawing && latestRef.current.activeControl === ActiveControl.AUDIO_REGION_CREATE) {
+                refreshDrawStartSnapGuide();
+            }
+        };
+
         document.addEventListener('pointerdown', onPointerDown);
         document.addEventListener('pointermove', onPointerMove);
         document.addEventListener('pointerup', onPointerUp);
         document.addEventListener('pointercancel', onPointerCancel);
+        document.addEventListener('keydown', onAltKeyChange);
+        document.addEventListener('keyup', onAltKeyChange);
         return () => {
             if (cancelCustomInteractionRef.current === cancelCustomInteraction) {
                 cancelCustomInteractionRef.current = null;
@@ -512,6 +665,10 @@ export function useRegionEditing({
             resizing = null;
             drawing?.preview.remove();
             drawing = null;
+            drawStartSnapGuide?.preview.remove();
+            drawStartSnapGuide = null;
+            lastWaveformPointerClientX = null;
+            viewport.containerRef.current?.classList.remove(SNAP_HOVER_CLASS);
             hasResized = false;
             dispatch(audioActions.setAudioInteractingInterval(null));
             autoScroll.destroy();
@@ -522,6 +679,8 @@ export function useRegionEditing({
             document.removeEventListener('pointermove', onPointerMove);
             document.removeEventListener('pointerup', onPointerUp);
             document.removeEventListener('pointercancel', onPointerCancel);
+            document.removeEventListener('keydown', onAltKeyChange);
+            document.removeEventListener('keyup', onAltKeyChange);
         };
     }, [ready]);
 
