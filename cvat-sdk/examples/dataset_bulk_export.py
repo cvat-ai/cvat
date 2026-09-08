@@ -100,8 +100,6 @@ def select_tasks(client, args: argparse.Namespace) -> list:
             try:
                 task = client.tasks.retrieve(task_id)
             except Exception:
-                # Keep it in the selection: export_one records the failure in the
-                # manifest, which beats aborting a long run over one bad id.
                 selected.append((task_id, "", ""))
                 continue
             if args.project_id and task.project_id != args.project_id:
@@ -112,7 +110,6 @@ def select_tasks(client, args: argparse.Namespace) -> list:
             selected.append((task.id, task.name, str(task.status)))
         return selected
 
-    # A whole project: the server does the filtering.
     filters = {"project_id": args.project_id}
     if args.status:
         filters["status"] = args.status

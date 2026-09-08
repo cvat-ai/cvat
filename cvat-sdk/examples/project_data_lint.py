@@ -141,7 +141,6 @@ def lint_task(task, label_names: dict[int, str], min_box_area: float):
         seen.add(key)
 
         if frame in deleted_frames or frame >= frame_count:
-            # These objects are omitted from dataset exports.
             reason = (
                 "was removed from the task"
                 if frame in deleted_frames

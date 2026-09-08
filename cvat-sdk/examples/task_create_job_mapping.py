@@ -125,7 +125,6 @@ def main() -> None:
         task = client.tasks.create_from_data(
             spec=models.TaskWriteRequest(
                 name=args.name,
-                # One label makes the resulting task ready for annotation.
                 labels=[models.PatchedLabelRequest(name="object")],
             ),
             resource_type=ResourceType.LOCAL,
@@ -134,7 +133,7 @@ def main() -> None:
         )
         print(f"Created task {task.id} with {task.size} frames: {args.host}/tasks/{task.id}")
 
-        # 3. The mapping the server actually built: one row per file, carrying
+        # 3. The mapping is built using one row per file, carrying
         # the frame that file ended up on. A job's frames come back in order,
         # so the frame is the job's start plus the file's position in it.
         rows = []
