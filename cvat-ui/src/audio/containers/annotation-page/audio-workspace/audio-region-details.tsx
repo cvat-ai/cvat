@@ -23,7 +23,7 @@ function AudioRegionDetailsWrapper(): JSX.Element | null {
         activeIntervalID: state.audio.player.activeIntervalID,
         labels: state.annotation.job.labels,
         colorBy: state.settings.shapes.colorBy,
-        opacity: state.settings.intervals.opacity,
+        opacity: state.settings.shapes.opacity,
         selectedOpacity: state.settings.shapes.selectedOpacity,
         normalizedKeyMap: state.shortcuts.normalizedKeyMap,
     }), shallowEqual);

@@ -14,15 +14,13 @@ import { ColorBy, CombinedState } from 'reducers';
 import { collapseAppearance as collapseAppearanceAction } from 'actions/annotation-actions';
 import {
     changeShapesColorBy as changeShapesColorByAction,
-    changeIntervalsOpacity as changeIntervalsOpacityAction,
+    changeShapesOpacity as changeShapesOpacityAction,
     changeSelectedShapesOpacity as changeSelectedShapesOpacityAction,
 } from 'actions/settings-actions';
 import { registerComponentShortcuts } from 'actions/shortcuts-actions';
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import { ShortcutScope } from 'utils/enums';
 import { subKeyMap } from 'utils/component-subkeymap';
-
-import { AUDIO_MIN_OPACITY } from './audio-region-colors';
 
 const componentShortcuts = {
     SWITCH_COLOR_BY_APPEARANCE_AUDIO: {
@@ -46,7 +44,7 @@ interface StateToProps {
 interface DispatchToProps {
     collapseAppearance(): void;
     changeShapesColorBy(colorBy: ColorBy): void;
-    changeAudioOpacity(value: number): void;
+    changeShapesOpacity(value: number): void;
     changeSelectedShapesOpacity(value: number): void;
 }
 
@@ -54,8 +52,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
     const {
         annotation: { appearanceCollapsed },
         settings: {
-            shapes: { colorBy, selectedOpacity },
-            intervals: { opacity },
+            shapes: { colorBy, opacity, selectedOpacity },
         },
         shortcuts: { keyMap },
     } = state;
@@ -77,8 +74,8 @@ function mapDispatchToProps(dispatch: Dispatch<AnyAction>): DispatchToProps {
         changeShapesColorBy(colorBy: ColorBy): void {
             dispatch(changeShapesColorByAction(colorBy));
         },
-        changeAudioOpacity(value: number): void {
-            dispatch(changeIntervalsOpacityAction(value));
+        changeShapesOpacity(value: number): void {
+            dispatch(changeShapesOpacityAction(value));
         },
         changeSelectedShapesOpacity(value: number): void {
             dispatch(changeSelectedShapesOpacityAction(value));
@@ -104,7 +101,7 @@ function AudioAppearanceBlock(props: Props): JSX.Element {
         selectedOpacity,
         collapseAppearance,
         changeShapesColorBy,
-        changeAudioOpacity,
+        changeShapesOpacity,
         changeSelectedShapesOpacity,
         keyMap,
     } = props;
@@ -146,9 +143,9 @@ function AudioAppearanceBlock(props: Props): JSX.Element {
                         <Text type='secondary'>Opacity</Text>
                         <Slider
                             className='cvat-appearance-opacity-slider'
-                            onChange={changeAudioOpacity}
+                            onChange={changeShapesOpacity}
                             value={opacity}
-                            min={AUDIO_MIN_OPACITY}
+                            min={0}
                             max={100}
                         />
                         <Text type='secondary'>Selected opacity</Text>
@@ -156,7 +153,7 @@ function AudioAppearanceBlock(props: Props): JSX.Element {
                             className='cvat-appearance-selected-opacity-slider'
                             onChange={changeSelectedShapesOpacity}
                             value={selectedOpacity}
-                            min={AUDIO_MIN_OPACITY}
+                            min={0}
                             max={100}
                         />
                     </div>

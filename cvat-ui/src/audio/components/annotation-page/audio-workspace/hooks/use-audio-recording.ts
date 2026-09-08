@@ -47,7 +47,7 @@ export function useAudioRecording({ playback, regions, ready }: Params): void {
         labels: state.annotation.job.labels,
         activeLabelID: state.audio.player.activeLabelId,
         colorBy: state.settings.shapes.colorBy,
-        opacity: state.settings.intervals.opacity,
+        opacity: state.settings.shapes.opacity,
         selectedOpacity: state.settings.shapes.selectedOpacity,
     }), shallowEqual);
     const latestRef = useRef({

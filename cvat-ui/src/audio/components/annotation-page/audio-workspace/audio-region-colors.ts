@@ -7,8 +7,11 @@ import { AudioIntervalState, Label } from 'cvat-core-wrapper';
 import { hexToRgba } from 'audio/utils/hex-color';
 
 const DEFAULT_COLOR = '#6366F1';
-export const AUDIO_MIN_OPACITY = 10;
-const AUDIO_PREVIEW_MIN_OPACITY = 15;
+
+function getAudioAlpha(percent: number): number {
+    const opacity = percent / 100;
+    return opacity + 0.2 * (1 - opacity) ** 2;
+}
 
 function resolveLabelHex(labelID: number | null | undefined, labels: Label[]): string {
     const label = labels.find((item) => item.id === labelID);
@@ -35,8 +38,7 @@ export function getAudioRegionColor(
     isActive: boolean,
 ): string {
     const hex = resolveAudioHex(interval, labels, colorBy);
-    const alpha = Math.max(isActive ? selectedOpacity : opacity, AUDIO_MIN_OPACITY);
-    return hexToRgba(hex, alpha);
+    return hexToRgba(hex, getAudioAlpha(isActive ? selectedOpacity : opacity));
 }
 
 export function getRegionItemColor(
@@ -52,5 +54,5 @@ export function getAudioLabelPreviewColor(
     labels: Label[],
     opacity: number,
 ): string {
-    return hexToRgba(resolveLabelHex(labelID, labels), Math.max(opacity, AUDIO_PREVIEW_MIN_OPACITY));
+    return hexToRgba(resolveLabelHex(labelID, labels), getAudioAlpha(opacity));
 }

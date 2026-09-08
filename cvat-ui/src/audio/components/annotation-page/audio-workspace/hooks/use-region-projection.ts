@@ -81,7 +81,7 @@ export function useRegionProjection({ regionRuntime, ready }: Params): RegionHig
         interactingIntervalID: state.audio.player.interactingIntervalID,
         labels: state.annotation.job.labels,
         colorBy: state.settings.shapes.colorBy,
-        opacity: state.settings.intervals.opacity,
+        opacity: state.settings.shapes.opacity,
         selectedOpacity: state.settings.shapes.selectedOpacity,
         activeControl: state.annotation.canvas.activeControl,
     }), shallowEqual);
