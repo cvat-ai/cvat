@@ -1,13 +1,7 @@
+# This file is used to disable all CVAT components for maintenance purposes.
 cvat:
-
-## Scale down redis to 0, Bitnami version
-#  redis:
-#    master:
-#      replicas: 0
-
   frontend:
     replicas: 0
-
   backend:
     initializer:
       enabled: false
