@@ -469,6 +469,7 @@ function ObjectListComponent(props: Props): JSX.Element {
                                                     selectLayerObjects(event, zOrder)
                                                 )}
                                                 toggleObjectSelection={toggleObjectSelection}
+                                                keyMap={keyMap}
                                             />
                                         </React.Fragment>
                                     );

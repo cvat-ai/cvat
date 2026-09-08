@@ -8,6 +8,8 @@ import { useDraggable } from '@dnd-kit/core';
 
 import { ObjectState } from 'cvat-core-wrapper';
 import ObjectItemContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/object-item';
+import { KeyMap } from 'utils/mousetrap-react';
+import { isMultiSelectObjectModifierPressed } from 'utils/multi-selection';
 import { objectDragID } from './index';
 
 interface Props {
@@ -17,12 +19,13 @@ interface Props {
     draggable: boolean;
     visibleSkeletonElements: Record<number, number[]>;
     toggleSelection(): void;
+    keyMap: KeyMap;
 }
 
 // Wraps an object item with dnd-kit drag behavior while preserving the original object item rendering.
 function DraggableObjectItem(props: Props): JSX.Element {
     const {
-        objectStates, clientID, visibleObjectIDs, draggable, visibleSkeletonElements, toggleSelection,
+        objectStates, clientID, visibleObjectIDs, draggable, visibleSkeletonElements, toggleSelection, keyMap,
     } = props;
 
     const {
@@ -42,12 +45,12 @@ function DraggableObjectItem(props: Props): JSX.Element {
             {...(draggable ? attributes : {})}
             {...(draggable ? listeners : {})}
             onPointerDown={(event: React.PointerEvent): void => {
-                if (!event.metaKey) {
+                if (!isMultiSelectObjectModifierPressed(event, keyMap)) {
                     listeners?.onPointerDown?.(event);
                 }
             }}
             onMouseDownCapture={(event: React.MouseEvent): void => {
-                if (event.metaKey) {
+                if (isMultiSelectObjectModifierPressed(event, keyMap)) {
                     event.preventDefault();
                     event.stopPropagation();
                     toggleSelection();

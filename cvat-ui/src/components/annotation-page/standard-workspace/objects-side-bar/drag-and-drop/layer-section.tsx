@@ -7,6 +7,7 @@ import React from 'react';
 import { useDroppable } from '@dnd-kit/core';
 
 import { ObjectState } from 'cvat-core-wrapper';
+import { KeyMap } from 'utils/mousetrap-react';
 import { isLayerState, layerDropID } from './index';
 import DraggableObjectItem from './draggable-object-item';
 import LayerHeader from './layer-header';
@@ -24,6 +25,7 @@ interface LayerSectionProps {
     onMouseDown(event: React.MouseEvent): void;
     onKeyDown(event: React.KeyboardEvent): void;
     toggleObjectSelection(clientID: number): void;
+    keyMap: KeyMap;
     selectLayer(zOrder: number): void;
     toggleLayerVisibility(zOrder: number, includeLower: boolean): void;
     toggleLayerCollapsed(zOrder: number): void;
@@ -34,7 +36,7 @@ function LayerSection(props: LayerSectionProps): JSX.Element {
     const {
         zOrder, layerObjectIds, visibleObjectIDs, objectStates, visibleSkeletonElements,
         selected, visible, collapsed, multiSelected, selectLayer, onMouseDown, onKeyDown,
-        toggleLayerCollapsed, toggleLayerVisibility, toggleObjectSelection,
+        toggleLayerCollapsed, toggleLayerVisibility, toggleObjectSelection, keyMap,
     } = props;
 
     const { isOver, setNodeRef } = useDroppable({ id: layerDropID(zOrder) });
@@ -73,6 +75,7 @@ function LayerSection(props: LayerSectionProps): JSX.Element {
                         visibleSkeletonElements={visibleSkeletonElements}
                         draggable={!!object && isLayerState(object) && !object.lock}
                         toggleSelection={(): void => toggleObjectSelection(id)}
+                        keyMap={keyMap}
                     />
                 );
             })}
