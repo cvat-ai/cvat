@@ -322,27 +322,23 @@ Cypress.Commands.add('headlessLogin', ({
 } = {}) => {
     cy.window().its('cvat', { timeout: 25000 }).should('not.be.undefined');
     return cy.window().then((win) => (
-        // Preserve the CSRF cookie while switching users. Clearing all cookies here can leave
-        // an active session without the CSRF token required for login when UI requests are still in flight.
-        cy.clearCookie('sessionid')
-            .then(() => cy.clearCookie('sessionfresh'))
-            .then(() => (
-                win.cvat.server.login(
-                    username || Cypress.env('user'),
-                    password || Cypress.env('password'),
-                ).then(() => win.cvat.users.get({ self: true }).then((users) => {
-                    if (nextURL) {
-                        cy.intercept('GET', nextURL).as('nextPage');
-                        cy.visit(nextURL);
-                        return cy.wait('@nextPage').then(() => {
-                            cy.url().should('include', nextURL);
-                            cy.get('.cvat-spinner').should('not.exist');
-                        }).then(() => users[0]);
-                    }
+        cy.headlessLogout().then(() => (
+            win.cvat.server.login(
+                username || Cypress.env('user'),
+                password || Cypress.env('password'),
+            ).then(() => win.cvat.users.get({ self: true }).then((users) => {
+                if (nextURL) {
+                    cy.intercept('GET', nextURL).as('nextPage');
+                    cy.visit(nextURL);
+                    return cy.wait('@nextPage').then(() => {
+                        cy.url().should('include', nextURL);
+                        cy.get('.cvat-spinner').should('not.exist');
+                    }).then(() => users[0]);
+                }
 
-                    return users[0];
-                }))
-            ))
+                return users[0];
+            }))
+        ))
     ));
 });
 
@@ -628,12 +624,12 @@ Cypress.Commands.add('createRectangle', (createRectangleParams) => {
         cy.get('.ant-select-selection-item').then(($labelValue) => {
             selectedValueGlobal = $labelValue.text();
         });
-        cy.contains('.ant-radio-wrapper', createRectangleParams.points).click();
+        cy.contains('.ant-radio-button-wrapper', createRectangleParams.points).click();
         cy.contains('button', createRectangleParams.type).click();
     });
     cy.get('.cvat-canvas-container').click(createRectangleParams.firstX, createRectangleParams.firstY);
     cy.get('.cvat-canvas-container').click(createRectangleParams.secondX, createRectangleParams.secondY);
-    if (createRectangleParams.points === 'By 4 Points') {
+    if (createRectangleParams.points === '4 Points') {
         cy.get('.cvat-canvas-container')
             .click(createRectangleParams.thirdX, createRectangleParams.thirdY);
         cy.get('.cvat-canvas-container')

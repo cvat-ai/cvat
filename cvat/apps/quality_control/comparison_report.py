@@ -460,12 +460,12 @@ class ConfusionMatrix(ReportNode):
         if not self.labels or self.rows is None:
             return np.asarray([], dtype=int)
 
-        support = np.sum(self.rows, axis=0) + np.sum(self.rows, axis=1)
+        label_totals = np.sum(self.rows, axis=0) + np.sum(self.rows, axis=1)
         return np.asarray(
             [
                 index
                 for index, label in enumerate(self.labels)
-                if label != UNMATCHED_LABEL_NAME and support[index] > 0
+                if label != UNMATCHED_LABEL_NAME and label_totals[index] > 0
             ],
             dtype=int,
         )

@@ -314,13 +314,13 @@ context('Quality requirements UI', () => {
             .and('include', '/docs/qa-analytics/auto-qa/#quality-target-metrics');
         cy.contains('.ant-form-item', 'Target metric').find('.ant-select-selector').click();
         cy.get('.ant-select-dropdown').within(() => {
-            cy.contains('.ant-select-item-group', 'Micro / Aggregate').should('exist');
-            cy.contains('.ant-select-item-group', 'Macro average / Mean')
+            cy.contains('.ant-select-item-group', 'Micro average').should('exist');
+            cy.contains('.ant-select-item-group', 'Macro average')
                 .should('have.css', 'color', 'rgb(24, 144, 255)');
             cy.contains('.ant-select-item-group', 'Worst label').should('exist');
             cy.contains('.ant-select-item-option-content', /\((micro|macro\/mean|worst label)\)/)
                 .should('not.exist');
-            cy.contains('.ant-select-item-group', 'Macro average / Mean')
+            cy.contains('.ant-select-item-group', 'Macro average')
                 .nextAll('.ant-select-item-option')
                 .contains('.ant-select-item-option-content', /^Jaccard Index$/)
                 .first()

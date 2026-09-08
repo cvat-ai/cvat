@@ -40,11 +40,11 @@ export const METRIC_OPTION_GROUPS: Array<{
     options: QualityRequirementMetric[];
 }> = [
     {
-        label: 'Micro / Aggregate',
+        label: 'Micro average',
         options: Object.values(QualityRequirementMetric),
     },
     {
-        label: 'Macro average / Mean',
+        label: 'Macro average',
         options: Object.values(QualityRequirementMetric).map((metric) => serializeQualityTargetMetric({
             metric,
             aggregation: QualityMetricAggregation.MEAN,

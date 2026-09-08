@@ -379,7 +379,7 @@ Tasks inside a project can use individual quality settings or inherit settings
 from the project they belong to. Read more about quality settings in projects
 [here](#project-quality-settings).
 
-To set up quality settings, open the **Quality Settings** tab on the **Quality Control** page
+To set up quality settings, open the **Settings** tab on the **Quality Control** page
 for a task or project, available in the **Actions** menu.
 
 ![Quality control button in the task actions menu](/images/quality-control-actions-button.png)
@@ -436,53 +436,92 @@ Annotation quality settings have the following parameters:
 | Min visibility threshold | Minimal visible area percent of the mask annotations (polygons, masks). Used for reporting _Covered annotation_ warnings, useful with the _Check object visibility_ option. |
 | Match only visible parts | Use only the visible part of the masks and polygons in comparisons. |
 
-#### Quality target metrics
+### Quality requirements
 
-A quality requirement can use Accuracy, Precision, Recall, Jaccard Index, or Dice Coefficient
-as its target metric. CVAT first matches dataset annotations with ground-truth annotations and
-then calculates the selected metric from the resulting confusion matrix.
+A quality requirement defines which annotations to check and the minimum score they must achieve.
+For example, you can require at least 90% recall for car bounding boxes while using a different
+threshold for pedestrians.
 
-For micro aggregation, let:
+Open **Actions > Quality Control** for a task or project, then select the **Settings** tab.
+Edit a requirement for the annotation type you want to check. Use **Filter** to select the relevant
+annotations, choose a **Target metric**, and set the **Target metric threshold (%)**.
+Save the changes and calculate a new quality report, then open the **Requirements** tab to see
+the results. A requirement passes when its score meets or exceeds its threshold.
 
-- `V` be the number of valid annotations;
-- `D` be the number of dataset annotations;
-- `G` be the number of ground-truth annotations;
-- `T` be the total number of annotation comparison outcomes in the confusion matrix.
+### Quality target metrics
 
-The micro target metric is calculated as follows:
+The target metric determines what a requirement measures. CVAT matches annotations against
+ground truth, then calculates a score. Higher scores indicate better quality.
 
-| Metric | Formula |
-| - | - |
-| Accuracy | `V / T` |
-| Precision | `V / D` |
-| Recall | `V / G` |
-| Jaccard Index | `V / (D + G - V)` |
-| Dice Coefficient | `2 * V / (D + G)` |
+#### Choose a metric
 
-CVAT also calculates each metric for individual active labels. For a label, let `TP`, `TN`,
-`FP`, and `FN` have their standard one-vs-rest confusion-matrix meanings. The per-label formulas
-are:
+The descriptions below refer to micro scores, calculated from the combined annotation counts.
+You can also evaluate each label separately, as explained in the next section.
 
-| Metric | Formula |
-| - | - |
-| Accuracy | `(TP + TN) / (TP + TN + FP + FN)` |
-| Precision | `TP / (TP + FP)` |
-| Recall | `TP / (TP + FN)` |
-| Jaccard Index | `TP / (TP + FP + FN)` |
-| Dice Coefficient | `2 * TP / (2 * TP + FP + FN)` |
+| Metric | What it measures | When to use it |
+| - | - | - |
+| Accuracy | The share of correct annotation comparisons. | To measure overall correctness. |
+| Precision | The share of actual annotations that are correct. | When extra or incorrectly labeled annotations are costly. |
+| Recall | The share of ground-truth annotations found correctly. | When missing objects is costly. |
+| Jaccard Index | Correct matches relative to the combined actual and expected annotations, counting each correct match once. | To account for both extra and missing annotations. |
+| Dice Coefficient | Twice the correct matches divided by the sum of actual and expected annotations. | To balance precision and recall in one score. |
 
-The aggregation determines how these values become the requirement score:
+For example, if ground truth contains 10 cars and an annotator correctly marks 8 cars with no
+extra annotations, precision is 100%, recall is 80%, Jaccard Index is 80%, and Dice Coefficient
+is about 88.9%. A recall requirement with a 90% threshold would fail.
 
-- **Micro / aggregate** calculates one metric from the combined annotation counts. Micro is the
-  default aggregation and has no prefix in the API value, for example, `jaccard_index`.
-- **Macro mean** is the arithmetic mean of per-label values, for example,
-  `mean_jaccard_index`.
-- **Worst label** is the minimum per-label value, for example, `label_jaccard_index`.
+#### Choose how to combine labels
 
-Only labels present in the dataset annotations or ground truth participate in macro mean and
-worst-label aggregation. If annotations are available but a metric denominator is zero, CVAT uses
-a score of `0`. If there is no applicable annotation sample, the requirement is reported as
-`not_computed` instead.
+Each metric offers three ways to combine results across labels:
+
+| Option | How the score is calculated | When to use it |
+| - | - | - |
+| Micro average | Calculates one score from the combined annotation counts. This is the default. | To evaluate annotations overall; frequent labels have more influence. |
+| Macro average | Calculates a score for each label, then takes their arithmetic mean. | To give rare and frequent labels equal importance. |
+| Worst label | Takes the lowest per-label score. | To require every evaluated label to meet the threshold. |
+
+For example, suppose ground truth contains 90 cars and 10 pedestrians. The annotator correctly
+marks all 90 cars but only 5 pedestrians. Recall is 100% for cars and 50% for pedestrians:
+
+- **Micro average:** `95 / 100 = 95%`.
+- **Macro average:** `(100% + 50%) / 2 = 75%`.
+- **Worst label:** `50%`, for pedestrians.
+
+With an 80% recall threshold, the micro requirement passes, while the macro and worst-label
+requirements fail. Choose worst label if good results for cars must not hide missed pedestrians.
+
+**Empty labels are excluded from both macro average and worst-label scores.** A label is empty
+when it is absent from both the actual annotations and ground truth for the evaluated requirement.
+It does not count toward the number of labels in the macro average and cannot be
+selected as the worst label, even if its per-label metrics are displayed in the confusion matrix.
+In the example above, an unused bicycle label would leave macro recall at 75% and worst-label
+recall at 50%.
+
+Labels with annotations on only one side are still included: for example, a label present in
+ground truth but entirely missed by the annotator has 0% recall. If a metric has a zero denominator
+for an included label, its score is 0%. If there are no applicable annotation samples for the
+requirement, the report shows **Not computed**.
+
+#### Metric formulas
+
+For micro scores, `V` is the number of correct matches, `D` is the number of actual annotations,
+`G` is the number of ground-truth annotations, and `T` is the total number of annotation comparison
+outcomes, including unmatched annotations.
+
+Per-label scores treat the selected label as the positive class and all other labels as negative:
+
+- `TP` (true positives): correct matches for the label.
+- `FP` (false positives): annotations assigned to the label without a matching ground-truth annotation of that label.
+- `FN` (false negatives): ground-truth annotations of the label without a matching actual annotation of that label.
+- `TN` (true negatives): comparison outcomes involving neither an actual nor an expected annotation of the label.
+
+| Metric | Micro score | Per-label score used by macro average and worst label |
+| - | - | - |
+| Accuracy | `V / T` | `(TP + TN) / (TP + TN + FP + FN)` |
+| Precision | `V / D` | `TP / (TP + FP)` |
+| Recall | `V / G` | `TP / (TP + FN)` |
+| Jaccard Index | `V / (D + G - V)` | `TP / (TP + FP + FN)` |
+| Dice Coefficient | `2 * V / (D + G)` | `2 * TP / (2 * TP + FP + FN)` |
 
 ### Project quality settings
 
