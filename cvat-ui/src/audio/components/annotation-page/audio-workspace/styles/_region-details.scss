@@ -11,6 +11,7 @@
     overflow: hidden;
     flex: 1 1 0;
     display: flex;
+    min-height: $grid-unit-size * 40;
     flex-direction: column;
 
     > .cvat-audio-interval-header {
