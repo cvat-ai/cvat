@@ -55,8 +55,9 @@
     position: relative;
     background-color: white;
     border-radius: 8px;
-    margin-bottom: 20px;
+    margin-bottom: 0;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 10%);
+    flex-shrink: 0;
     overflow: hidden;
     min-width: 0;
     width: 100%;
@@ -137,6 +138,30 @@
             min-height: 50px;
             width: 100%;
         }
+    }
+}
+
+.cvat-audio-waveform-resize-handle {
+    position: relative;
+    height: $grid-unit-size;
+    margin: $grid-unit-size * 0.5 0 $grid-unit-size * 0.25 0;
+    cursor: ns-resize;
+    flex-shrink: 0;
+    touch-action: none;
+
+    &::after {
+        position: absolute;
+        top: calc(50% - 1px);
+        right: 0;
+        left: 0;
+        height: 2px;
+        background-color: #e5e7eb;
+        content: '';
+        transition: background-color 200ms;
+    }
+
+    &:hover::after {
+        background-color: #818cf8;
     }
 }
 
