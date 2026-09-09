@@ -14,7 +14,7 @@ def _cache_param(mode: StorageMethodChoice):
     ex: @pytest.mark.parametrize("use_cache", StorageMethodChoice.CACHE/FILE_SYSTEM)
     """
     str_value = str(mode)
-    use_cache: bool = (str_value == str(StorageMethodChoice.CACHE))
+    use_cache: bool = str_value == str(StorageMethodChoice.CACHE)
     return pytest.param(use_cache, id=str_value, marks=getattr(pytest.mark, str_value))
 
 
