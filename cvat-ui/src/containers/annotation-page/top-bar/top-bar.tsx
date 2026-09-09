@@ -761,11 +761,11 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
             switchShowSearchPallet,
             showSearchFrameByName,
         } = this.props;
-        const maskDrawing = activeControl === ActiveControl.DRAW_MASK;
+        const maskHistoryMode = [ActiveControl.DRAW_MASK, ActiveControl.EDIT].includes(activeControl);
         const maskHistory = canvasHistorySource === CanvasHistorySource.MASK;
-        let availableUndoAction = maskDrawing ? undefined : undoAction;
-        let availableRedoAction = maskDrawing ? undefined : redoAction;
-        if (maskDrawing && maskHistory) {
+        let availableUndoAction = maskHistoryMode ? undefined : undoAction;
+        let availableRedoAction = maskHistoryMode ? undefined : redoAction;
+        if (maskHistoryMode && maskHistory) {
             availableUndoAction = canvasUndoAction;
             availableRedoAction = canvasRedoAction;
         }
