@@ -2246,7 +2246,8 @@ def _move_to_backing_cs_if_configured(db_data: models.Data) -> None:
                 f"Cloud storage #{backing_cs_id} (configured as default backing CS) does not exist"
             )
         else:
-            db_data.move_to_backing_cs(backing_cs)
+            if db_data.supports_backing_cs(backing_cs):
+                db_data.move_to_backing_cs(backing_cs)
 
 
 def _resolve_static_cache(storage_method: models.StorageMethodChoice) -> models.StorageMethodChoice:
