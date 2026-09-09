@@ -6,6 +6,7 @@ import { clamp } from 'utils/math';
 
 export const ZOOM_MIN = 1;
 export const ZOOM_MAX = 300;
+export const MIN_WAVEFORM_PIXELS_PER_SECOND = 8;
 
 export const MIN_INTERVAL_DURATION = 0.001;
 export const INTERVAL_BOUNDARY_EPSILON = 0.001;
@@ -14,9 +15,27 @@ export const MIN_RECORDING_DURATION = 0.05;
 export const MINIMAP_HEIGHT = 50;
 export const MINIMAP_TIMELINE_HEIGHT = 18;
 
+export function computeWaveformBasePixelsPerSecond(durationSec: number, containerWidth: number): number {
+    if (durationSec <= 0 || containerWidth <= 0) {
+        return MIN_WAVEFORM_PIXELS_PER_SECOND;
+    }
+
+    let pixelsPerSecond = containerWidth / durationSec;
+
+    // WaveSurfer rounds its calculated track width up. Protect the exact fit case
+    // from floating-point multiplication producing a one-pixel horizontal scroll.
+    if (Math.ceil(durationSec * pixelsPerSecond) > containerWidth) {
+        pixelsPerSecond -= Number.EPSILON * Math.max(1, pixelsPerSecond);
+    }
+
+    return Math.max(
+        MIN_WAVEFORM_PIXELS_PER_SECOND,
+        pixelsPerSecond,
+    );
+}
+
 export function computeWaveformZoom(displayZoom: number, durationSec: number, containerWidth: number): number {
-    if (durationSec <= 0 || containerWidth <= 0) return 1;
-    return Math.max(1, (containerWidth / durationSec) * displayZoom);
+    return computeWaveformBasePixelsPerSecond(durationSec, containerWidth) * displayZoom;
 }
 
 export function computeFitIntervalPixelsPerSecond(
