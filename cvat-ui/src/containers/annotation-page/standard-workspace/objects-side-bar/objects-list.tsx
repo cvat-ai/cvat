@@ -188,9 +188,9 @@ const componentShortcuts = {
         scope: ShortcutScope.OBJECTS_SIDEBAR,
     },
     COPY_SHAPE: {
-        name: 'Copy shape',
-        description: 'Copy shape to CVAT internal clipboard',
-        sequences: ['ctrl+c'],
+        name: 'Copy objects',
+        description: 'Copy selected objects or an active object to the CVAT internal clipboard',
+        sequences: ['mod+c'],
         scope: ShortcutScope.OBJECTS_SIDEBAR,
     },
     RUN_ANNOTATIONS_ACTION: {

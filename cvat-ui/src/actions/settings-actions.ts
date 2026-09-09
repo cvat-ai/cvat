@@ -448,6 +448,15 @@ export function resetImageFilters(): AnyAction {
     };
 }
 
+const legacyPlatformShortcutDefaults: Record<string, string[]> = {
+    COPY_SHAPE: ['ctrl+c'],
+    PASTE_SHAPE: ['ctrl+v'],
+    UNDO: ['ctrl+z'],
+    REDO: ['ctrl+shift+z', 'ctrl+y'],
+    AUDIO_UNDO: ['ctrl+z'],
+    AUDIO_REDO: ['ctrl+shift+z', 'ctrl+y'],
+};
+
 export function restoreSettingsAsync(): ThunkAction {
     return async (dispatch, getState): Promise<void> => {
         const state: CombinedState = getState();
@@ -492,7 +501,11 @@ export function restoreSettingsAsync(): ThunkAction {
 
             Object.entries(loadedSettings.shortcuts.keyMap).forEach(([key, value]) => {
                 if (key in updateKeyMap) {
-                    updateKeyMap[key].sequences = (value as { sequences: string[] }).sequences;
+                    const storedSequences = (value as { sequences: string[] }).sequences;
+                    const legacyDefault = legacyPlatformShortcutDefaults[key];
+                    if (!legacyDefault || !_.isEqual(storedSequences, legacyDefault)) {
+                        updateKeyMap[key].sequences = storedSequences;
+                    }
                 }
             });
 

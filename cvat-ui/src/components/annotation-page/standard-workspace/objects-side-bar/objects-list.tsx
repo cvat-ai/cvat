@@ -24,7 +24,7 @@ import {
     OBJECTS_SIDEBAR_EXPAND_Z_LAYER_EVENT,
 } from 'utils/objects-sidebar';
 import { KeyMap } from 'utils/mousetrap-react';
-import { isMultiSelectObjectModifierPressed } from 'utils/multi-selection';
+import { isMultiSelectObjectModifierPressed, sanitizeSelectedObjectIDs } from 'utils/multi-selection';
 
 import ObjectListHeader from './objects-list-header';
 import {
@@ -219,6 +219,17 @@ function ObjectListComponent(props: Props): JSX.Element {
 
             return acc;
         }, {});
+    const selectableObjectIDs = new Set(sanitizeSelectedObjectIDs(
+        layerObjectStates,
+        sortedStatesID,
+        hiddenLayers,
+    ));
+    const selectableObjectIdsByLayer = Object.fromEntries(Object.entries(objectIdsByLayer).map(
+        ([zOrder, clientIDs]): [string, number[]] => [
+            zOrder,
+            clientIDs.filter((clientID: number): boolean => selectableObjectIDs.has(clientID)),
+        ],
+    ));
 
     const onDragEnd = useCallback((event: DragEndEvent): void => {
         const { active, over } = event;
@@ -330,7 +341,9 @@ function ObjectListComponent(props: Props): JSX.Element {
         event.preventDefault();
         event.stopPropagation();
         setSelectionAnchorLayer(zOrder);
-        const affectedIDs = affectedLayers.flatMap((layer: number): number[] => objectIdsByLayer[layer] || []);
+        const affectedIDs = affectedLayers.flatMap(
+            (layer: number): number[] => selectableObjectIdsByLayer[layer] || [],
+        );
         const selectedIDs = new Set(selectedStatesID);
         const remove = affectedLayers.length === 1 && affectedIDs.length > 0 &&
             affectedIDs.every((clientID: number): boolean => selectedIDs.has(clientID));
@@ -453,10 +466,12 @@ function ObjectListComponent(props: Props): JSX.Element {
                                                 objectStates={layerObjectStates}
                                                 visibleSkeletonElements={visibleSkeletonElements}
                                                 selected={zOrder === currentLayer}
-                                                multiSelected={!!objectIdsByLayer[zOrder]?.length &&
-                                                    objectIdsByLayer[zOrder].every((clientID: number): boolean => (
-                                                        selectedStatesID.includes(clientID)
-                                                    ))}
+                                                multiSelected={!!selectableObjectIdsByLayer[zOrder]?.length &&
+                                                    selectableObjectIdsByLayer[zOrder].every(
+                                                        (clientID: number): boolean => (
+                                                            selectedStatesID.includes(clientID)
+                                                        ),
+                                                    )}
                                                 visible={!hiddenLayers.has(zOrder)}
                                                 collapsed={collapsedLayers.has(zOrder)}
                                                 selectLayer={selectLayer}

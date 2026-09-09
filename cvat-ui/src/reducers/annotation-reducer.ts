@@ -14,6 +14,7 @@ import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import {
     DimensionType, getCore, JobStage, Label, LabelType, ObjectState, ObjectType, ShapeType,
 } from 'cvat-core-wrapper';
+import { sanitizeSelectedObjectIDs } from 'utils/multi-selection';
 import {
     ActiveControl,
     AnnotationState,
@@ -661,6 +662,13 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 }
             }
             const [minZ, maxZ] = computeZRange(nextStates);
+            const hiddenZLayers = state.annotations.zLayer.hiddenByFrame.get(state.player.frame.number) ||
+                new Set<number>();
+            const selectedStatesID = sanitizeSelectedObjectIDs(
+                nextStates,
+                state.annotations.selectedStatesID,
+                hiddenZLayers,
+            );
 
             return {
                 ...state,
@@ -672,6 +680,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                         max: maxZ,
                     },
                     states: nextStates,
+                    selectedStatesID,
                     renderData: getAnnotationsRenderData(nextStates, state.annotations.filters),
                     history,
                 },
@@ -723,10 +732,13 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
         }
         case AnnotationActionTypes.SELECT_OBJECTS: {
             const { selectedStatesID: requestedStatesID, history } = action.payload;
-            const tagIDs = new Set(state.annotations.states
-                .filter((objectState: ObjectState): boolean => objectState.objectType === ObjectType.TAG)
-                .map((objectState: ObjectState): number => objectState.clientID as number));
-            const selectedStatesID = requestedStatesID.filter((clientID: number): boolean => !tagIDs.has(clientID));
+            const hiddenZLayers = state.annotations.zLayer.hiddenByFrame.get(state.player.frame.number) ||
+                new Set<number>();
+            const selectedStatesID = sanitizeSelectedObjectIDs(
+                state.annotations.states,
+                requestedStatesID,
+                hiddenZLayers,
+            );
             return {
                 ...state,
                 annotations: {
@@ -1030,12 +1042,22 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             const { states, history } = action.payload;
             const [minZ, maxZ] = computeZRange(states);
             const currentZLayer = state.annotations.initialized ? state.annotations.zLayer.cur : maxZ;
+            const hiddenZLayers = state.annotations.zLayer.hiddenByFrame.get(state.player.frame.number) ||
+                new Set<number>();
+            // An annotation refresh may remove selected objects (for example, when undoing a paste).
+            // Do not leave stale IDs that would keep regular canvas hover interaction disabled.
+            const selectedStatesID = sanitizeSelectedObjectIDs(
+                states,
+                state.annotations.selectedStatesID,
+                hiddenZLayers,
+            );
 
             return {
                 ...state,
                 annotations: {
                     ...state.annotations,
                     activatedStateID: updateActivatedStateID(states, activatedStateID),
+                    selectedStatesID,
                     states,
                     renderData: getAnnotationsRenderData(states, state.annotations.filters),
                     history,

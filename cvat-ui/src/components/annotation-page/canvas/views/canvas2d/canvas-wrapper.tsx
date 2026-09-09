@@ -1077,7 +1077,6 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
     private onCanvasMouseDown = (e: MouseEvent): void => {
         const {
             workspace, activatedStateID, selectedStatesID, onActivateObject, onSelectObjects, keyMap, activeControl,
-            updateActiveControl, canvasInstance,
         } = this.props;
         const shapeElement = (e.target as Element)?.closest?.('.cvat_canvas_shape');
         const selectionBox = (e.target as Element)?.closest?.('.cvat_canvas_selected_objects_box');
@@ -1085,14 +1084,11 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
         const multiSelectObjectModifierPressed = isMultiSelectObjectModifierPressed(e, keyMap);
 
         // An unmodified click outside the selected objects returns to regular single-object interaction.
-        if (e.button === 0 && !multiSelectModifierPressed && !multiSelectObjectModifierPressed &&
+        if (activeControl !== ActiveControl.SELECT && e.button === 0 &&
+            !multiSelectModifierPressed && !multiSelectObjectModifierPressed &&
             selectedStatesID.length && !selectionBox) {
             const clickedClientID = shapeElement ? +(shapeElement.getAttribute('clientID') as string) : null;
             if (clickedClientID === null || !selectedStatesID.includes(clickedClientID)) {
-                if (canvasInstance instanceof Canvas && activeControl === ActiveControl.SELECT) {
-                    canvasInstance.selectObjects({ enabled: false });
-                    updateActiveControl(ActiveControl.CURSOR);
-                }
                 onSelectObjects([]);
             }
         }

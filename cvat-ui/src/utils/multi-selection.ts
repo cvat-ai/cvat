@@ -36,6 +36,21 @@ export function getSelectedStates(states: ObjectState[], selectedStatesID: numbe
     return states.filter((state: ObjectState): boolean => selectedIDs.has(state.clientID as number));
 }
 
+export function sanitizeSelectedObjectIDs(
+    states: ObjectState[],
+    requestedStatesID: number[],
+    hiddenZLayers: Set<number> = new Set<number>(),
+): number[] {
+    const selectableIDs = new Set(states
+        .filter((state: ObjectState): boolean => (
+            [ObjectType.SHAPE, ObjectType.TRACK].includes(state.objectType) &&
+            !state.hidden && !state.outside && !hiddenZLayers.has(state.zOrder)
+        ))
+        .map((state: ObjectState): number => state.clientID as number));
+
+    return [...new Set(requestedStatesID)].filter((clientID: number): boolean => selectableIDs.has(clientID));
+}
+
 export function getSelectionToggleState(
     states: ObjectState[],
     property: SelectionToggleProperty,

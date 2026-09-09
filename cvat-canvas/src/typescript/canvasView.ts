@@ -1653,10 +1653,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     const ddy = cy - groupLastCenter.y;
                     if (ddx !== 0 || ddy !== 0) {
                         for (const siblingID of groupSiblingIDs) {
-                            const siblingShape = this.svgShapes[siblingID];
-                            if (siblingShape) {
-                                (siblingShape as any).dmove(ddx, ddy);
-                            }
+                            this.moveSelectionPreviewShape(siblingID, ddx, ddy);
                         }
                         groupLastCenter = { x: cx, y: cy };
                     }
@@ -1691,7 +1688,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                         const correctionY = totalDy - (cy - startCenter.y);
                         if (correctionX || correctionY) {
                             for (const clientID of movedIDs) {
-                                this.svgShapes[clientID]?.dmove(correctionX, correctionY);
+                                this.moveSelectionPreviewShape(clientID, correctionX, correctionY);
                             }
                         }
                         if (!totalDx && !totalDy) {
@@ -3849,6 +3846,16 @@ export class CanvasViewImpl implements CanvasView, Listener {
         return points;
     }
 
+    private moveSelectionPreviewShape(clientID: number, dx: number, dy: number): void {
+        const shape = this.svgShapes[clientID];
+        if (!shape) return;
+
+        const rotation = this.drawnStates[clientID]?.rotation || 0;
+        if (rotation) shape.rotate(0);
+        shape.dmove(dx, dy);
+        if (rotation) shape.rotate(rotation);
+    }
+
     private isStateMovableInSelection(state: any): boolean {
         return !!state && !state.lock && !state.pinned && !state.isGroundTruth;
     }
@@ -3940,7 +3947,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             if (dx !== 0 || dy !== 0) {
                 this.selectedObjectsBox?.dmove(dx, dy);
                 for (const clientID of movableIDs) {
-                    this.svgShapes[clientID]?.dmove(dx, dy);
+                    this.moveSelectionPreviewShape(clientID, dx, dy);
                 }
                 lastPointer = { x: p.x, y: p.y };
                 this.updateSelectedObjectsLabelPosition();
@@ -3959,7 +3966,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             if (correctionX || correctionY) {
                 this.selectedObjectsBox.dmove(correctionX, correctionY);
                 for (const clientID of movableIDs) {
-                    this.svgShapes[clientID]?.dmove(correctionX, correctionY);
+                    this.moveSelectionPreviewShape(clientID, correctionX, correctionY);
                 }
             }
             if (dx !== 0 || dy !== 0) {

@@ -19,6 +19,7 @@ import {
 import logger, { EventScope } from 'cvat-logger';
 import { getCVATStore } from 'cvat-store';
 import changeObjectOrientation from 'utils/change-object-orientation';
+import { sanitizeSelectedObjectIDs } from 'utils/multi-selection';
 
 import {
     ActiveControl,
@@ -630,17 +631,6 @@ export function copyShape(objectState: any): AnyAction {
     };
 }
 
-function sanitizeSelectedObjectIDs(state: CombinedState, requestedStatesID: number[]): number[] {
-    const hiddenZLayers = getHiddenZLayers(state);
-    const selectableIDs = new Set(state.annotation.annotations.states
-        .filter((objectState: ObjectState): boolean => (
-            [ObjectType.SHAPE, ObjectType.TRACK].includes(objectState.objectType) &&
-            !objectState.hidden && !objectState.outside && !hiddenZLayers.has(objectState.zOrder)
-        ))
-        .map((objectState: ObjectState): number => objectState.clientID as number));
-    return [...new Set(requestedStatesID)].filter((clientID: number): boolean => selectableIDs.has(clientID));
-}
-
 export function selectObjects(selectedStatesID: number[]): AnyAction {
     return {
         type: AnnotationActionTypes.SELECT_OBJECTS,
@@ -658,7 +648,11 @@ export function selectObjectsAsync(requestedStatesID: number[]): ThunkAction {
             job: { instance: jobInstance },
             player: { frame: { number: frame } },
         } = state.annotation;
-        const selectedStatesID = sanitizeSelectedObjectIDs(state, requestedStatesID);
+        const selectedStatesID = sanitizeSelectedObjectIDs(
+            state.annotation.annotations.states,
+            requestedStatesID,
+            getHiddenZLayers(state),
+        );
 
         if (previousSelection.length === selectedStatesID.length &&
             previousSelection.every((clientID: number): boolean => selectedStatesID.includes(clientID))) {
