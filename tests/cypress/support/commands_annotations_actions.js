@@ -17,8 +17,10 @@ Cypress.Commands.add('openAnnotationsActionsModal', () => {
 
 Cypress.Commands.add('runAnnotationsAction', () => {
     cy.get('.cvat-action-runner-run-btn').click();
-    cy.get('.cvat-action-runner-progress').should('exist').and('be.visible');
     cy.get('.cvat-action-runner-run-btn').should('be.disabled');
+    cy.contains('Action initialization').should('exist').and('be.visible');
+    cy.contains('Action is running').should('exist').and('be.visible');
+    cy.get('.cvat-action-runner-progress').should('exist').and('be.visible');
 });
 
 Cypress.Commands.add('cancelAnnotationsAction', () => {
