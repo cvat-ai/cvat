@@ -290,8 +290,8 @@ context('Manipulations with skeletons', { scrollBehavior: false }, () => {
             createSkeletonObject('shape');
             cy.get('#cvat_canvas_shape_2').click();
             cy.get('#cvat_canvas_shape_2').trigger('mouseover');
-            cy.get('body').type('{ctrl}c');
-            cy.get('body').type('{ctrl}v');
+            cy.pressWithPlatformModifier('c');
+            cy.pressWithPlatformModifier('v');
             cy.get('.cvat-canvas-container').click();
 
             cy.get('#cvat_canvas_shape_7').should('exist').and('be.visible');
