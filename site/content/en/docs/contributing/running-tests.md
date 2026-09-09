@@ -88,6 +88,44 @@ If you want to get a code coverage report, use special option for it:
 COVERAGE_PROCESS_START=.coveragerc pytest ./tests/python --rebuild --cov --cov-report xml
 ```
 
+To compare backend paths exercised by different REST API parameters, assign a
+coverage context to each separate test run. The test launcher adds
+`docker-compose.coverage.yml` when `CVAT_COVERAGE_CONTEXT` is set. Coverage is
+collected inside the server and worker containers, including subprocesses, and
+written to `coverage-data/`.
+
+For example, run dynamic-cache and static-cache cases separately:
+
+```bash
+CVAT_COVERAGE_CONTEXT=cache pytest ./tests/python/rest_api/test_tasks.py \
+    -m cache --rebuild
+CVAT_COVERAGE_CONTEXT=file_system pytest ./tests/python/rest_api/test_tasks.py \
+    -m file_system
+CVAT_COVERAGE_CONTEXT=file_system pytest ./tests/python --stop-services
+```
+
+Stopping or recreating the containers lets each Python process flush its data.
+Combine the process data, then produce one report per parameter value:
+
+```bash
+coverage combine --keep --rcfile=tests/python/coverage/.coveragerc \
+    --data-file=coverage-data/.coverage coverage-data
+coverage html --rcfile=tests/python/coverage/.coveragerc \
+    --data-file=coverage-data/.coverage --contexts=cache \
+    -d coverage-data/html-dynamic-cache
+coverage html --rcfile=tests/python/coverage/.coveragerc \
+    --data-file=coverage-data/.coverage --contexts=file_system \
+    -d coverage-data/html-file-system
+```
+
+Open each report's `index.html` to compare files and executed lines. Delete
+`coverage-data/` before a new comparison to avoid mixing it with older runs.
+
+The same override can instrument manually issued REST API requests. Run
+`mkdir -p coverage-data && chmod a+rwx coverage-data`, add
+`-f docker-compose.coverage.yml` after the normal Compose files, and set
+`CVAT_COVERAGE_CONTEXT` when starting or recreating the stack.
+
 **Debugging**
 
 Currently, this is only supported in deployments based on Docker Compose,

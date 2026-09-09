@@ -1,0 +1,32 @@
+[run]
+branch = true
+parallel = true
+sigterm = true
+concurrency =
+    multiprocessing
+    thread
+context = ${CVAT_COVERAGE_CONTEXT-manual}
+
+source =
+    cvat.apps
+    utils.dataset_manifest
+
+omit =
+    cvat/settings/*
+    */tests/*
+    */test_*
+    */_test_*
+    */migrations/*
+
+[paths]
+source =
+    .
+    /opt/cvat
+
+[report]
+ignore_errors = true
+show_missing = true
+skip_empty = true
+
+[html]
+show_contexts = true

@@ -39,6 +39,8 @@ class Container(str, Enum):
     DB = "cvat_db"
     SERVER = "cvat_server"
     WORKER_ANNOTATION = "cvat_worker_annotation"
+    WORKER_CHUNKS = "cvat_worker_chunks"
+    WORKER_CONSENSUS = "cvat_worker_consensus"
     WORKER_IMPORT = "cvat_worker_import"
     WORKER_EXPORT = "cvat_worker_export"
     WORKER_QUALITY_REPORTS = "cvat_worker_quality_reports"
@@ -493,6 +495,13 @@ def local_start(
     dc_files = [cvat_root_dir / f for f in DC_FILES]
     if extra_dc_files is not None:
         dc_files += extra_dc_files
+
+    if os.environ.get("CVAT_COVERAGE_CONTEXT"):
+        coverage_dir = cvat_root_dir / "coverage-data"
+        coverage_dir.mkdir(exist_ok=True)
+        # Backend containers run as UID 1000, which can differ from the host user.
+        coverage_dir.chmod(0o777)
+        dc_files.append(cvat_root_dir / "docker-compose.coverage.yml")
 
     container_name_files = [cvat_root_dir / f for f in CONTAINER_NAME_FILES]
 

@@ -7,6 +7,7 @@
 /keys
 /logs
 /profiles
+/coverage-data/
 
 # Ignore temporary files
 docker-compose.override.yml
