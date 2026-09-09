@@ -32,7 +32,7 @@ from pytest_cases import fixture, fixture_ref, parametrize
 import shared.utils.s3 as s3
 from rest_api._test_base import TestTasksBase
 from rest_api.utils import create_task, get_cloud_storage_content, wait_until_task_is_created
-from shared.fixtures.params import STORAGE_METHODS, CACHE, FILE_SYSTEM
+from shared.fixtures.params import CACHE, FILE_SYSTEM, STORAGE_METHODS
 from shared.tasks.enums import SourceDataType
 from shared.tasks.interface import ITaskSpec
 from shared.tasks.types import ImagesTaskSpec
