@@ -22,6 +22,7 @@ import { injectScrollbarStyle } from '../utils/inject-scrollbar-style';
 import { useWaveformViewport, WaveformViewport } from './use-waveform-viewport';
 import { useWaveformPlayback, WaveformPlayback } from './use-waveform-playback';
 import { useAdaptiveTimeline } from './use-adaptive-timeline';
+import OptimizedTimelinePlugin from '../plugins/optimized-timeline-plugin';
 
 export interface WaveformRegionRuntime {
     /** Stable ref */
@@ -122,7 +123,7 @@ function useWaveSurferRuntime({
             height: MINIMAP_HEIGHT,
             overlayColor: 'rgba(0, 85, 255, 0.3)',
         });
-        const timeline = TimelinePlugin.create();
+        const timeline = OptimizedTimelinePlugin.create();
         timelineRef.current = timeline;
         const unsubscribeMinimapInit = minimap.on('init', () => {
             const { miniWavesurfer } = minimap as unknown as MinimapPluginInternals;
