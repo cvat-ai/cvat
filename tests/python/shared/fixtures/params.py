@@ -7,7 +7,7 @@ import pytest
 from cvat_sdk.api_client import models
 
 _STORAGE_METHOD_VALUES: dict = models.StorageMethod.allowed_values[("value",)]
-CACHE_VALUE = _STORAGE_METHOD_VALUES["FILE_SYSTEM"]
+CACHE_VALUE = _STORAGE_METHOD_VALUES["CACHE"]
 FILE_SYSTEM_VALUE = _STORAGE_METHOD_VALUES["FILE_SYSTEM"]
 
 def _cache_param(storage_method: models.StorageMethod):
