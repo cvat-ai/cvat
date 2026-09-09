@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 import pytest
+
 from cvat.apps.engine.models import StorageMethodChoice
 
 
