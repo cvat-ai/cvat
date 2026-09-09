@@ -55,7 +55,7 @@ from rest_api.utils import (
     import_task_annotations,
 )
 from shared.fixtures.init import container_exec_cvat
-from shared.fixtures.params import DYNAMIC_CACHE
+from shared.fixtures.params import CACHE
 from shared.tasks.interface import ITaskSpec
 from shared.tasks.types import SourceDataType
 from shared.tasks.utils import parse_frame_step, to_rel_frames
@@ -1432,7 +1432,7 @@ class TestWorkWithTask:
         "cloud_storage_id, manifest",
         [(1, "images_with_manifest/manifest.jsonl")],  # public bucket
     )
-    @pytest.mark.parametrize("use_cache", DYNAMIC_CACHE)
+    @pytest.mark.parametrize("use_cache", CACHE)
     def test_work_with_task_containing_non_stable_cloud_storage_files(
         self, cloud_storage_id, manifest, use_cache, cloud_storages, request
     ):
@@ -1734,7 +1734,7 @@ class TestTaskBackups:
         self._test_can_restore_task_from_backup(task.id, backup_file=backup_path)
 
     @pytest.mark.with_external_services
-    @pytest.mark.parametrize("use_cache", DYNAMIC_CACHE)
+    @pytest.mark.parametrize("use_cache", CACHE)
     def test_can_export_and_import_backup_with_images_in_backing_cs(
         self, request, cloud_storages, use_cache
     ):
@@ -3064,7 +3064,7 @@ class TestPatchTask:
         ],
     )
     @pytest.mark.parametrize("field", ["source_storage", "target_storage"])
-    @pytest.mark.parametrize("use_cache", DYNAMIC_CACHE)
+    @pytest.mark.parametrize("use_cache", CACHE)
     def test_user_cannot_update_task_with_cloud_storage_without_access(
         self, storage_id, field, use_cache, regular_lonely_user
     ):
@@ -3288,7 +3288,7 @@ class TestPatchTask:
             (False, True),
         ],
     )
-    @pytest.mark.parametrize("use_cache", DYNAMIC_CACHE)
+    @pytest.mark.parametrize("use_cache", CACHE)
     def test_task_can_be_transferred_to_different_workspace(
         self,
         from_org: bool,

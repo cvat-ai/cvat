@@ -15,7 +15,7 @@ from pytest_cases import fixture, fixture_ref, parametrize
 import shared.utils.s3 as s3
 from rest_api.utils import calc_end_frame, create_task, iter_exclude, unique
 from shared.fixtures.init import container_exec_cvat
-from shared.fixtures.params import CACHE_MODES, DYNAMIC_CACHE
+from shared.fixtures.params import STORAGE_METHODS, CACHE
 from shared.tasks.enums import SourceDataType
 from shared.tasks.interface import ITaskSpec
 from shared.tasks.types import ImagesTaskSpec, VideoTaskSpec
@@ -124,7 +124,7 @@ class TestTasksBase:
         )
 
     @fixture(scope="class")
-    @parametrize("use_cache", CACHE_MODES)
+    @parametrize("use_cache", STORAGE_METHODS)
     def fxt_uploaded_images_task(
         self, request: pytest.FixtureRequest, use_cache: bool
     ) -> tuple[ITaskSpec, int]:
@@ -597,7 +597,7 @@ class TestTasksBase:
         "cloud_storage_id",
         [pytest.param(5, marks=[pytest.mark.with_external_services])],
     )
-    @parametrize("use_cache", DYNAMIC_CACHE)
+    @parametrize("use_cache", CACHE)
     def fxt_backing_cs_images_task_with_related_images(
         self,
         request: pytest.FixtureRequest,
@@ -749,7 +749,7 @@ class TestTasksBase:
         )
 
     @fixture(scope="class")
-    @parametrize("use_cache", CACHE_MODES)
+    @parametrize("use_cache", STORAGE_METHODS)
     def fxt_uploaded_video_task(
         self,
         request: pytest.FixtureRequest,
@@ -794,7 +794,7 @@ class TestTasksBase:
         "cloud_storage_id",
         [pytest.param(5, marks=[pytest.mark.with_external_services])],
     )
-    @parametrize("use_cache", DYNAMIC_CACHE)
+    @parametrize("use_cache", CACHE)
     def fxt_backing_cs_video_task(
         self,
         request: pytest.FixtureRequest,

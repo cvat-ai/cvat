@@ -32,7 +32,7 @@ from pytest_cases import fixture, fixture_ref, parametrize
 import shared.utils.s3 as s3
 from rest_api._test_base import TestTasksBase
 from rest_api.utils import create_task, get_cloud_storage_content, wait_until_task_is_created
-from shared.fixtures.params import CACHE_MODES, DYNAMIC_CACHE, STATIC_CACHE
+from shared.fixtures.params import STORAGE_METHODS, CACHE, FILE_SYSTEM
 from shared.tasks.enums import SourceDataType
 from shared.tasks.interface import ITaskSpec
 from shared.tasks.types import ImagesTaskSpec
@@ -149,7 +149,7 @@ class TestPostTaskData:
 
             assert [(j.start_frame, j.stop_frame) for j in jobs] == expected_segments
 
-    @pytest.mark.parametrize("use_cache", DYNAMIC_CACHE)
+    @pytest.mark.parametrize("use_cache", CACHE)
     def test_can_create_task_with_exif_rotated_images(self, use_cache: bool):
         task_spec = {
             "name": f"test {self._USERNAME} to create a task with exif rotated images",
@@ -493,7 +493,7 @@ class TestPostTaskData:
 
     @pytest.mark.with_external_services
     @pytest.mark.timeout(20)
-    @pytest.mark.parametrize("use_cache", CACHE_MODES)
+    @pytest.mark.parametrize("use_cache", STORAGE_METHODS)
     @pytest.mark.parametrize(
         "cloud_storage_id, manifest, use_bucket_content",
         [
@@ -556,7 +556,7 @@ class TestPostTaskData:
 
     @pytest.mark.with_external_services
     @pytest.mark.timeout(60)
-    @pytest.mark.parametrize("use_cache", STATIC_CACHE)
+    @pytest.mark.parametrize("use_cache", FILE_SYSTEM)
     def test_cannot_create_task_with_cloud_storage_without_cache_when_server_file_is_missing(
         self, cloud_storages, use_cache
     ):
@@ -578,7 +578,7 @@ class TestPostTaskData:
         assert f"The file '{missing_key}' not found" in message, message
 
     @pytest.mark.with_external_services
-    @pytest.mark.parametrize("use_cache", DYNAMIC_CACHE)
+    @pytest.mark.parametrize("use_cache", CACHE)
     @pytest.mark.timeout(60)
     def test_can_create_task_with_cloud_storage_and_manifest_when_manifest_references_missing_file(
         self, request, cloud_storages, use_cache
@@ -624,7 +624,7 @@ class TestPostTaskData:
         assert task.size == 2, task.size
 
     @pytest.mark.with_external_services
-    @pytest.mark.parametrize("use_cache", DYNAMIC_CACHE)
+    @pytest.mark.parametrize("use_cache", CACHE)
     @pytest.mark.timeout(60)
     def test_cannot_create_task_with_cloud_storage_without_manifest_when_server_file_is_missing(
         self, cloud_storages, use_cache
@@ -882,7 +882,7 @@ class TestPostTaskData:
             ("data", "cloud_storage_id"),
         ],
     )
-    @pytest.mark.parametrize("use_cache", DYNAMIC_CACHE)
+    @pytest.mark.parametrize("use_cache", CACHE)
     def test_user_cannot_create_task_with_cloud_storage_without_access(
         self, storage_id, spec, field, manifest, regular_lonely_user, use_cache
     ):
@@ -947,7 +947,7 @@ class TestPostTaskData:
             (None, "[e-z]*.jpeg", False, 0, "No media data found"),
         ],
     )
-    @pytest.mark.parametrize("use_cache", DYNAMIC_CACHE)
+    @pytest.mark.parametrize("use_cache", CACHE)
     def test_create_task_with_file_pattern(
         self,
         cloud_storage_id,
@@ -1041,7 +1041,7 @@ class TestPostTaskData:
             (["videos/manifest.jsonl"], None),
         ],
     )
-    @pytest.mark.parametrize("use_cache", DYNAMIC_CACHE)
+    @pytest.mark.parametrize("use_cache", CACHE)
     def test_create_task_with_video_and_manifest_in_cloud_storage_directory(
         self,
         cloud_storage_id: int,
@@ -1131,7 +1131,7 @@ class TestPostTaskData:
             (1, ""),
         ],
     )
-    @pytest.mark.parametrize("use_cache", DYNAMIC_CACHE)
+    @pytest.mark.parametrize("use_cache", CACHE)
     def test_create_task_with_cloud_storage_and_check_data_sorting(
         self,
         filenames: list[str],
@@ -2091,7 +2091,7 @@ class TestTaskData(TestTasksBase):
         return task_spec, task_id
 
     @fixture(scope="class")
-    @parametrize("use_cache", STATIC_CACHE)
+    @parametrize("use_cache", FILE_SYSTEM)
     def fxt_uploaded_images_task_with_honeypots_mixed_job_chunk_counts_and_changed_honeypots(
         self, request: pytest.FixtureRequest, *, use_cache: bool
     ) -> tuple[ITaskSpec, int]:
@@ -2105,7 +2105,7 @@ class TestTaskData(TestTasksBase):
         return task_spec, task_id
 
     @pytest.mark.timeout(300)
-    @pytest.mark.parametrize("use_cache", DYNAMIC_CACHE)
+    @pytest.mark.parametrize("use_cache", CACHE)
     def test_all_job_chunks_available_after_honeypot_frame_change(
         self, request: pytest.FixtureRequest, use_cache
     ):
