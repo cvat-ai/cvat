@@ -8,8 +8,8 @@ import TimelinePlugin, { type TimelinePluginOptions } from 'wavesurfer.js/dist/p
 import { formatSecondsWithPrecision } from 'audio/utils/format-audio-time';
 import { MINIMAP_TIMELINE_HEIGHT } from 'audio/utils/waveform-geometry';
 
-import type { WaveSurferRuntime } from './use-audio-waveform';
 import OptimizedTimelinePlugin from '../plugins/optimized-timeline-plugin';
+import type { WaveSurferRuntime } from './use-audio-waveform';
 
 interface TimelineDensityBand {
     minPixelsPerSecond: number;
