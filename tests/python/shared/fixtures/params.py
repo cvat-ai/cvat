@@ -11,7 +11,7 @@ from cvat.apps.engine.models import StorageMethodChoice
 def _cache_param(mode: StorageMethodChoice):
     """
     For explicit test-level use with @pytest.mark.parametrize
-    ex: @pytest.mark.parametrize("use_cache", DYNAMIC/STATIC)
+    ex: @pytest.mark.parametrize("use_cache", StorageMethodChoice.CACHE/FILE_SYSTEM)
     """
     str_value = str(mode)
     use_cache: bool = (str_value == str(StorageMethodChoice.CACHE))
