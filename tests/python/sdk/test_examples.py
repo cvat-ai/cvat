@@ -28,6 +28,7 @@ from cvat_sdk.core.auth import AuthStore, ProfileEntry
 from cvat_sdk.core.downloading import Downloader
 from cvat_sdk.core.proxies.projects import Project
 from cvat_sdk.core.proxies.tasks import ResourceType, Task
+from cvat_sdk.core.proxies.types import Location
 
 from shared.utils.config import (
     BASE_URL,
@@ -139,6 +140,44 @@ class TestExampleHelpers:
         findings, _ = recipe.lint_task(task, {1: "object"}, 4)
 
         assert findings == []
+
+    @staticmethod
+    def bucket_page(names: list[tuple[str, str]], next_token: str | None):
+        """One retrieve_content_v2 response: (name, type) entries plus a token."""
+        return (
+            types.SimpleNamespace(
+                content=[
+                    types.SimpleNamespace(name=name, type=types.SimpleNamespace(value=entry_type))
+                    for name, entry_type in names
+                ],
+                next=next_token,
+            ),
+            None,
+        )
+
+    def test_import_from_cloud_looks_up_a_key_across_pages(self):
+        recipe = load_recipe("task_import_annotations_from_cloud.py")
+        api = MagicMock()
+        api.retrieve_content_v2.side_effect = [
+            self.bucket_page([("other.zip", "REG")], "page-2"),
+            self.bucket_page([("task_42.zip", "REG")], None),
+        ]
+
+        assert recipe.bucket_contains(api, 7, "annotations/task_42.zip")
+
+        first, second = api.retrieve_content_v2.call_args_list
+        assert first.args == (7,) and first.kwargs == {"prefix": "annotations/"}
+        assert second.kwargs["next_token"] == "page-2"
+
+    def test_import_from_cloud_reports_a_key_the_bucket_does_not_have(self):
+        recipe = load_recipe("task_import_annotations_from_cloud.py")
+        api = MagicMock()
+        api.retrieve_content_v2.side_effect = [
+            self.bucket_page([("task_42.zip", "DIR"), ("task_43.zip", "REG")], None)
+        ]
+
+        assert not recipe.bucket_contains(api, 7, "task_42.zip")
+        assert api.retrieve_content_v2.call_args.kwargs == {}
 
     @pytest.mark.parametrize("watermark", [None, "2026-09-01T00:00:00+00:00"])
     @pytest.mark.parametrize("export_fails", [False, True])
@@ -277,14 +316,18 @@ class TestExamples:
         resources: list[Path] | None = None,
         segment_size: int | None = None,
         labels: tuple[str, ...] = ("object",),
+        source_storage: models.StorageRequest | None = None,
     ) -> Task:
         if resources is None:
             resources = sorted(self.make_image_dir().iterdir())
         return self.client.tasks.create_from_data(
+            # Storages can only be set while creating a task; a PATCH of
+            # source_storage is ignored by the server.
             spec=models.TaskWriteRequest(
                 name=name,
                 labels=[models.PatchedLabelRequest(name=label) for label in labels],
                 **({"segment_size": segment_size} if segment_size else {}),
+                **({"source_storage": source_storage} if source_storage else {}),
             ),
             resource_type=ResourceType.LOCAL,
             resources=resources,
@@ -1378,6 +1421,111 @@ class TestExamples:
                 str(task.id),
                 "--annotations-file",
                 str(annotations_file),
+                "--import-format",
+                "Bogus 9.9",
+            ],
+            with_cleanup=False,
+            expect_failure=True,
+        )
+        assert "Unknown import format" in result.stderr
+
+    def export_annotations_to_bucket(self, task: Task, key: str) -> None:
+        """Put an annotation file into the test bucket, without a local copy."""
+        task.export_dataset(
+            "COCO 1.0",
+            key,
+            include_images=False,
+            location=Location.CLOUD_STORAGE,
+            cloud_storage_id=IMPORT_EXPORT_BUCKET_ID,
+        )
+
+    @pytest.mark.with_external_services
+    def test_task_import_annotations_from_cloud(self):
+        task = self.make_task()
+        self.seed_rectangle(task)
+        key = f"recipes/annotations_{task.id}.zip"
+        self.export_annotations_to_bucket(task, key)
+        task.remove_annotations()
+        assert not task.get_annotations().shapes
+
+        result = self.run_recipe(
+            "task_import_annotations_from_cloud.py",
+            args=[
+                "--task-id",
+                str(task.id),
+                "--cloud-storage-id",
+                str(IMPORT_EXPORT_BUCKET_ID),
+                "--filename",
+                key,
+            ],
+            with_cleanup=False,
+        )
+        assert f"Task {task.id}: 0 objects before import" in result.stdout
+        assert f"Reading '{key}' from cloud storage {IMPORT_EXPORT_BUCKET_ID}" in result.stdout
+        assert f"Task {task.id}: 1 objects after import" in result.stdout
+        assert len(task.get_annotations().shapes) == 1
+
+    @pytest.mark.with_external_services
+    def test_task_import_annotations_from_cloud_uses_the_task_source_storage(self):
+        task = self.make_task(
+            source_storage=models.StorageRequest(
+                location=models.LocationEnum("cloud_storage"),
+                cloud_storage_id=IMPORT_EXPORT_BUCKET_ID,
+            )
+        )
+        self.seed_rectangle(task)
+        key = f"annotations_{task.id}.zip"
+        self.export_annotations_to_bucket(task, key)
+        task.remove_annotations()
+
+        result = self.run_recipe(
+            "task_import_annotations_from_cloud.py",
+            args=["--task-id", str(task.id), "--filename", key],
+            with_cleanup=False,
+        )
+        assert f"Reading '{key}' from cloud storage {IMPORT_EXPORT_BUCKET_ID}" in result.stdout
+        assert len(task.get_annotations().shapes) == 1
+
+    @pytest.mark.with_external_services
+    def test_task_import_annotations_from_cloud_reports_a_missing_key(self):
+        task = self.make_task()
+        result = self.run_recipe(
+            "task_import_annotations_from_cloud.py",
+            args=[
+                "--task-id",
+                str(task.id),
+                "--cloud-storage-id",
+                str(IMPORT_EXPORT_BUCKET_ID),
+                "--filename",
+                "recipes/no_such_file.zip",
+            ],
+            with_cleanup=False,
+            expect_failure=True,
+        )
+        assert "was not found in cloud storage" in result.stderr
+        assert not task.get_annotations().shapes
+
+    def test_task_import_annotations_from_cloud_requires_a_storage(self):
+        task = self.make_task()
+        result = self.run_recipe(
+            "task_import_annotations_from_cloud.py",
+            args=["--task-id", str(task.id), "--filename", "annotations.zip"],
+            with_cleanup=False,
+            expect_failure=True,
+        )
+        assert "has no cloud source storage configured" in result.stderr
+
+    def test_task_import_annotations_from_cloud_rejects_unknown_format(self):
+        task = self.make_task()
+        result = self.run_recipe(
+            "task_import_annotations_from_cloud.py",
+            args=[
+                "--task-id",
+                str(task.id),
+                "--cloud-storage-id",
+                "1",
+                "--filename",
+                "annotations.zip",
                 "--import-format",
                 "Bogus 9.9",
             ],

@@ -32,7 +32,7 @@ All examples are tested in the latest SDK version.
 - [Tasks](tasks) — create from a bucket, bulk-create in a project,
   inspect and export, subtasks by object type, explicit job file mapping
 - [Jobs](jobs) — list jobs, round-robin assignment, batch-advance stages
-- [Annotations](annotations) — import, bulk-edit, per-label statistics, linting
+- [Annotations](annotations) — import from a file or a bucket, bulk-edit, per-label statistics, linting
 - [Ground truth](ground-truth) — validation sets, honeypots, specific ground truth frames
 - [Datasets](datasets) — incremental download, bulk export
 - [Cloud storage](cloud-storage) — attach an S3-compatible bucket
