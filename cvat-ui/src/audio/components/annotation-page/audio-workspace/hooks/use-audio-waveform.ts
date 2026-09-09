@@ -19,10 +19,10 @@ import { MINIMAP_HEIGHT, MINIMAP_TIMELINE_HEIGHT } from 'audio/utils/waveform-ge
 import { ThunkDispatch } from 'utils/redux';
 
 import { injectScrollbarStyle } from '../utils/inject-scrollbar-style';
+import OptimizedTimelinePlugin from '../plugins/optimized-timeline-plugin';
 import { useWaveformViewport, WaveformViewport } from './use-waveform-viewport';
 import { useWaveformPlayback, WaveformPlayback } from './use-waveform-playback';
 import { useAdaptiveTimeline } from './use-adaptive-timeline';
-import OptimizedTimelinePlugin from '../plugins/optimized-timeline-plugin';
 
 export interface WaveformRegionRuntime {
     /** Stable ref */

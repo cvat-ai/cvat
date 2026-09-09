@@ -111,6 +111,7 @@ export default class OptimizedTimelinePlugin extends TimelinePlugin {
         const isTop = this.options.insertPosition === 'beforebegin';
         if (timeInterval <= 0) return;
 
+        const shouldEmitReady = this.timeline === null;
         const timeline = this.getOrCreateTimeline();
         const notchEl = createElement('div', {
             style: {
@@ -181,6 +182,10 @@ export default class OptimizedTimelinePlugin extends TimelinePlugin {
 
             timeline.appendChild(notch);
             this.mountedNotches.set(index, notch);
+        }
+
+        if (shouldEmitReady) {
+            this.emit('ready');
         }
     }
 
