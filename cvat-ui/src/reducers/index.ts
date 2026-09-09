@@ -5,7 +5,7 @@
 
 import { Canvas3d } from 'cvat-canvas3d/src/typescript/canvas3d';
 import {
-    Canvas, RectDrawingMethod, CuboidDrawingMethod, RenderData,
+    Canvas, RectDrawingMethod, CuboidDrawingMethod, RenderData, CanvasHistorySource,
 } from 'cvat-canvas-wrapper';
 import { OrientationVisibility } from 'cvat-canvas3d-wrapper';
 import {
@@ -904,6 +904,11 @@ export interface AnnotationState {
             visible: boolean;
             top: number;
             left: number;
+        };
+        history: {
+            source?: CanvasHistorySource;
+            undoAction?: string;
+            redoAction?: string;
         };
         instance: Canvas | Canvas3d | null;
         ready: boolean;

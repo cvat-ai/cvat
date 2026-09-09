@@ -53,6 +53,7 @@ from cvat.apps.quality_control.comparison_report import (
     ConfusionMatrix,
     RequirementCalculationReason,
     RequirementCalculationStatus,
+    compute_target_metric,
     deduplicate_annotation_conflicts,
 )
 from cvat.apps.quality_control.filters import RequirementJsonLogicFilter
@@ -82,7 +83,7 @@ class EffectiveQualityRequirement:
     enabled: bool
     filter: str
     annotation_type: str
-    target_metric: str
+    target_metric: models.QualityTargetMetricType
     target_metric_threshold: float
     source_requirement_id: int | None = None
     parent_requirement: int | None = None
@@ -195,6 +196,7 @@ def _make_effective_requirement(
         fill_default=True,
     )
     values["compare_attributes"] = attribute_comparison_may_compare(values["attribute_comparison"])
+    values["target_metric"] = models.QualityTargetMetricType.parse(values["target_metric"])
 
     effective_filter = _combine_filters(
         inherited.filter if inherited else "",
@@ -335,6 +337,9 @@ def serialize_requirement_parameters(requirement: Any) -> dict[str, Any]:
 
         params.pop(internal_name, None)
 
+    if params.get("metric") is not None:
+        params["metric"] = str(models.QualityTargetMetricType.parse(params["metric"]))
+
     for field in (
         "id",
         "settings",
@@ -424,14 +429,14 @@ def make_empty_requirement_calculation() -> ComparisonReportRequirementCalculati
     )
 
 
-def _get_requirement_metric(requirement: Any) -> str:
+def _get_requirement_metric(requirement: Any) -> models.QualityTargetMetricType:
     metric = _get_requirement_field(
         requirement,
         "target_metric",
         "metric",
-        default=models.QualityTargetMetricType.ACCURACY,
+        default=models.QualityMetric.ACCURACY,
     )
-    return str(metric or models.QualityTargetMetricType.ACCURACY)
+    return models.QualityTargetMetricType.parse(metric or models.QualityMetric.ACCURACY)
 
 
 def build_requirement_comparison_summary(
@@ -454,14 +459,14 @@ def build_requirement_comparison_summary(
     score = (
         None
         if calculation.status == RequirementCalculationStatus.NOT_COMPUTED
-        else getattr(annotations, metric, None)
+        else compute_target_metric(annotations, metric)
     )
 
     return ComparisonReportRequirementComparisonSummary(
         conflict_count=len(conflicts),
         error_count=len(conflicts),
         conflicts_by_type=Counter(c.type for c in conflicts),
-        score=float(score) if score is not None else None,
+        score=score,
         score_components=annotations.to_score_components(),
         calculation=calculation,
         confusion_matrix=annotations.confusion_matrix,

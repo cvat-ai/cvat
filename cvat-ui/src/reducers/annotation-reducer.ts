@@ -85,6 +85,7 @@ const defaultState: AnnotationState = {
             top: 0,
             left: 0,
         },
+        history: {},
         instance: null,
         ready: false,
         activeControl: ActiveControl.CURSOR,
@@ -1022,6 +1023,16 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                         clientID: Number.isInteger(activatedElementID) ? activatedElementID : activatedStateID,
                         parentID: Number.isInteger(activatedElementID) ? activatedStateID : null,
                     },
+                },
+            };
+        }
+        case AnnotationActionTypes.UPDATE_CANVAS_HISTORY: {
+            const { source, undoAction, redoAction } = action.payload;
+            return {
+                ...state,
+                canvas: {
+                    ...state.canvas,
+                    history: { source, undoAction, redoAction },
                 },
             };
         }

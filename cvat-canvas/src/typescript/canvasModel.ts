@@ -29,6 +29,10 @@ export interface CanvasHint {
     icon?: 'info' | 'loading';
 }
 
+export enum CanvasHistorySource {
+    MASK = 'mask',
+}
+
 export interface RenderData {
     visibleSkeletonElements: Record<number, number[]>;
 }
