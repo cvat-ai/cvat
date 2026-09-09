@@ -23,7 +23,7 @@ const shortcutsMigrations: Record<number, (shortcuts: SerializedShortcuts) => vo
 
         Object.entries(shortcutMigrations).forEach(([shortcutID, commandSequence]) => {
             const shortcut = shortcuts.keyMap[shortcutID];
-            if (shortcut) {
+            if (shortcut && !shortcut.sequences.includes(commandSequence)) {
                 shortcut.sequences.push(commandSequence);
             }
         });
