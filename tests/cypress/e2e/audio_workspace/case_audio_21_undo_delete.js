@@ -15,7 +15,7 @@ context('Audio annotation. Undo restores deleted region.', () => {
     });
 
     describe(`Testing case "${caseId}"`, () => {
-        it('After delete, Ctrl+Z brings the region back', () => {
+        it('After delete, the platform undo shortcut brings the region back', () => {
             cy.get('body').then(($body) => {
                 const initial = $body.find('.cvat-audio-region-item').length;
                 cy.audioCreateRegionViaButton(firstLabelName, 100, 250);
