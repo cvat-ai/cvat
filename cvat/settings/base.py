@@ -737,6 +737,7 @@ SPECTACULAR_SETTINGS = {
         "StorageType": "cvat.apps.engine.models.StorageChoice",
         "SortingMethod": "cvat.apps.engine.models.SortingMethod",
         "WebhookType": "cvat.apps.webhooks.models.WebhookTypeChoice",
+        "AllWebhookType": "cvat.apps.webhooks.serializers.AllWebhookTypeChoice",
         "WebhookContentType": "cvat.apps.webhooks.models.WebhookContentTypeChoice",
         "RequestStatus": "cvat.apps.redis_handler.serializers.RequestStatus",
         "ValidationMode": "cvat.apps.engine.models.ValidationMode",

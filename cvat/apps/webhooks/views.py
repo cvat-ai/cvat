@@ -19,9 +19,10 @@ from cvat.apps.engine.view_utils import list_action, make_paginated_response
 from cvat.apps.iam.filters import ORGANIZATION_OPEN_API_PARAMETERS
 
 from .event_type import AllEvents, OrganizationEvents, ProjectEvents, ServerEvents
-from .models import Webhook, WebhookDelivery, WebhookTypeChoice
+from .models import Webhook, WebhookDelivery
 from .permissions import WebhookPermission
 from .serializers import (
+    AllWebhookTypeChoice,
     EventsSerializer,
     WebhookDeliveryReadSerializer,
     WebhookReadSerializer,
@@ -107,6 +108,8 @@ class WebhookViewSet(viewsets.ModelViewSet):
                 location=OpenApiParameter.QUERY,
                 type=OpenApiTypes.STR,
                 required=False,
+                enum=[v[0] for v in AllWebhookTypeChoice.choices()],
+                default=AllWebhookTypeChoice.ALL.value,
             )
         ],
         responses={"200": OpenApiResponse(EventsSerializer)},
@@ -118,16 +121,16 @@ class WebhookViewSet(viewsets.ModelViewSet):
         permission_classes=[],
     )
     def events(self, request):
-        webhook_type = request.query_params.get("type", "all")
+        webhook_type = request.query_params.get("type", AllWebhookTypeChoice.ALL)
 
         match webhook_type:
-            case WebhookTypeChoice.PROJECT:
+            case AllWebhookTypeChoice.PROJECT:
                 events = ProjectEvents
-            case WebhookTypeChoice.ORGANIZATION:
+            case AllWebhookTypeChoice.ORGANIZATION:
                 events = OrganizationEvents
-            case WebhookTypeChoice.SERVER:
+            case AllWebhookTypeChoice.SERVER:
                 events = ServerEvents
-            case "all":
+            case AllWebhookTypeChoice.ALL:
                 events = AllEvents
             case _:
                 raise ValidationError(f"Invalid value of type query parameter, got {webhook_type}")

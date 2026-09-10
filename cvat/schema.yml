@@ -7782,6 +7782,12 @@ paths:
         name: type
         schema:
           type: string
+          enum:
+          - all
+          - organization
+          - project
+          - server
+          default: all
         description: Type of webhook
       tags:
       - webhooks
@@ -7903,6 +7909,18 @@ components:
         * `micro` - micro
         * `mean` - mean
         * `label` - label
+    AllWebhookType:
+      enum:
+      - organization
+      - project
+      - server
+      - all
+      type: string
+      description: |-
+        * `organization` - ORGANIZATION
+        * `project` - PROJECT
+        * `server` - SERVER
+        * `all` - ALL
     AnnotationConflict:
       type: object
       properties:
@@ -9012,7 +9030,7 @@ components:
       type: object
       properties:
         webhook_type:
-          $ref: '#/components/schemas/WebhookTypeEnum'
+          $ref: '#/components/schemas/AllWebhookType'
         events:
           type: array
           items:
@@ -14096,18 +14114,6 @@ components:
         * `organization` - ORGANIZATION
         * `project` - PROJECT
         * `server` - SERVER
-    WebhookTypeEnum:
-      enum:
-      - organization
-      - project
-      - server
-      - all
-      type: string
-      description: |-
-        * `organization` - ORGANIZATION
-        * `project` - PROJECT
-        * `server` - SERVER
-        * `all` - ALL
     WebhookWriteRequest:
       type: object
       properties:
