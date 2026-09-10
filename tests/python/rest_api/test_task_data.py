@@ -187,7 +187,8 @@ class TestPostTaskData:
         "https://github.com/cvat-ai/cvat/issues/6878",
         "Image upload inconsistent between SDK and web",
     )
-    def test_can_create_task_with_big_images(self, fxt_use_cache):
+    @parametrize("use_cache", STORAGE_METHODS)
+    def test_can_create_task_with_big_images(self, use_cache: bool):
         # Checks for regressions about the issue
         # https://github.com/cvat-ai/cvat/issues/6878
         # In the case of big files (>2.5 MB by default),
@@ -207,7 +208,7 @@ class TestPostTaskData:
         task_data = {
             "client_files": [image_file],
             "image_quality": 70,
-            "use_cache": fxt_use_cache,
+            "use_cache": use_cache,
             "use_zip_chunks": True,
         }
 
@@ -229,7 +230,8 @@ class TestPostTaskData:
             chunk_image = chunk_zip.read(infos[0])
             assert chunk_image == image_bytes
 
-    def test_can_create_task_with_exif_rotated_tif_image(self, fxt_use_cache):
+    @parametrize("use_cache", STORAGE_METHODS)
+    def test_can_create_task_with_exif_rotated_tif_image(self, use_cache):
         task_spec = {
             "name": f"test {self._USERNAME} to create a task with exif rotated tif image",
         }
@@ -239,7 +241,7 @@ class TestPostTaskData:
             "server_files": image_files,
             "image_quality": 70,
             "segment_size": 500,
-            "use_cache": fxt_use_cache,
+            "use_cache": use_cache,
             "sorting_method": "natural",
         }
 
@@ -556,9 +558,8 @@ class TestPostTaskData:
 
     @pytest.mark.with_external_services
     @pytest.mark.timeout(60)
-    @pytest.mark.parametrize("use_cache", FILE_SYSTEM)
     def test_cannot_create_task_with_cloud_storage_without_cache_when_server_file_is_missing(
-        self, cloud_storages, use_cache
+        self, cloud_storages
     ):
         cloud_storage = cloud_storages[1]
         missing_key = "this_file_does_not_exist_for_full_download.png"
@@ -566,7 +567,7 @@ class TestPostTaskData:
         task_spec = {"name": "missing key, no cache", "labels": [{"name": "car"}]}
         data_spec = {
             "image_quality": 75,
-            "use_cache": use_cache,
+            "use_cache": False,
             "cloud_storage_id": cloud_storage["id"],
             "server_files": [missing_key],
         }
@@ -754,19 +755,18 @@ class TestPostTaskData:
             pytest.param(
                 True,
                 False,
-                marks=pytest.mark.dynamic_cache,
+                marks=pytest.mark.cache,
                 id="dynamic_cache-without_manifest",
             ),
             pytest.param(
                 True,
                 True,
-                marks=pytest.mark.dynamic_cache,
+                marks=pytest.mark.cache,
                 id="dynamic_cache-with_manifest",
             ),
             pytest.param(
                 False,
                 False,
-                marks=pytest.mark.static_cache,
                 id="static_cache-without_manifest",
             ),
         ],
@@ -1088,9 +1088,10 @@ class TestPostTaskData:
             (1, ""),
         ],
     )
+    @pytest.mark.parametrize("use_cache", STORAGE_METHODS)
     def test_create_task_with_cloud_storage_and_retrieve_data(
         self,
-        fxt_use_cache: bool,
+        use_cache: bool,
         use_manifest: bool,
         sorting_method: str,
         cloud_storage_id: int,
@@ -1103,8 +1104,8 @@ class TestPostTaskData:
             request=request,
             cloud_storage=cloud_storage,
             # manifest file should not be uploaded if random sorting is used or if cache is not used
-            use_manifest=use_manifest and fxt_use_cache and (sorting_method != "random"),
-            use_cache=fxt_use_cache,
+            use_manifest=use_manifest and use_cache and (sorting_method != "random"),
+            use_cache=use_cache,
             server_files=[f"test/sub_{i}/img_{j}.jpeg" for i in range(2) for j in range(3)],
             org=org,
             sorting_method=sorting_method,
@@ -1168,13 +1169,14 @@ class TestPostTaskData:
             (1, ""),
         ],
     )
+    @pytest.mark.parametrize("use_cache", STORAGE_METHODS)
     def test_create_task_with_cloud_storage_and_check_retrieve_data_meta(
         self,
         cloud_storage_id: int,
         org: str,
         cloud_storages,
         request,
-        fxt_use_cache,
+        use_cache,
     ):
         cloud_storage = cloud_storages[cloud_storage_id]
 
@@ -1188,7 +1190,7 @@ class TestPostTaskData:
             request=request,
             cloud_storage=cloud_storage,
             use_manifest=False,
-            use_cache=fxt_use_cache,
+            use_cache=use_cache,
             server_files=["test/video/video.mkv"],
             org=org,
             data_spec_kwargs=data_spec,
@@ -2099,7 +2101,7 @@ class TestTaskData(TestTasksBase):
 
         assert not use_cache, "fixture must exercise static FILE_SYSTEM storage"
         task_spec, task_id = self._image_task_with_honeypots_and_mixed_job_chunk_counts_base(
-            request, use_cache=use_cache
+            request, use_cache=False
         )
         self._rotate_all_task_honeypots(task_spec, task_id)
         return task_spec, task_id

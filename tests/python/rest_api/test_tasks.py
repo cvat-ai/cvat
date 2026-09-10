@@ -55,7 +55,7 @@ from rest_api.utils import (
     import_task_annotations,
 )
 from shared.fixtures.init import container_exec_cvat
-from shared.fixtures.params import CACHE
+from shared.fixtures.params import CACHE, STORAGE_METHODS
 from shared.tasks.interface import ITaskSpec
 from shared.tasks.types import SourceDataType
 from shared.tasks.utils import parse_frame_step, to_rel_frames
@@ -1575,8 +1575,9 @@ class TestTaskBackups:
     @pytest.mark.timeout(20)
     @pytest.mark.with_external_services
     @pytest.mark.parametrize("lightweight_backup", [True, False])
+    @pytest.mark.parametrize("use_cache", STORAGE_METHODS)
     def test_can_export_and_import_backup_task_with_cloud_storage(
-        self, lightweight_backup, fxt_use_cache
+        self, lightweight_backup, use_cache,
     ):
         task_spec = {
             "name": "Task with files from cloud storage",
@@ -1588,7 +1589,7 @@ class TestTaskBackups:
         }
         data_spec = {
             "image_quality": 75,
-            "use_cache": fxt_use_cache,
+            "use_cache": use_cache,
             "cloud_storage_id": 1,
             "server_files": [f"images/image_{i}.jpg" for i in range(0, 6)],
             "start_frame": 1,

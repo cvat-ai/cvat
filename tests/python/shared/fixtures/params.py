@@ -4,5 +4,6 @@
 
 import pytest
 
-CACHE = pytest.param(True, id='cache', marks=pytest.mark.cache)
-FILE_SYSTEM = pytest.param(False, id='file_system')
+CACHE = (pytest.param(True, id='cache', marks=pytest.mark.cache),)
+FILE_SYSTEM = (pytest.param(False),)
+STORAGE_METHODS = CACHE + FILE_SYSTEM

@@ -14,6 +14,7 @@ from cvat_sdk.core.exceptions import BackgroundRequestException
 from cvat_sdk.core.proxies.tasks import ResourceType, Task
 from PIL import Image
 from pytest_cases import fixture, fixture_ref, parametrize
+from shared.fixtures.params import STORAGE_METHODS
 
 import shared.utils.s3 as s3
 from shared.utils.config import (
@@ -91,12 +92,13 @@ class TestAudioTasks:
             2,  # private bucket
         ],
     )
+    @parametrize("use_cache", STORAGE_METHODS)
     def test_can_create_audio_task_from_cloud_data(
         self,
         fxt_test_name: str,
         fxt_uploaded_s3_file,
         fxt_local_audio_file_path: Path,
-        fxt_use_cache: bool,
+        use_cache: bool,
         cloud_storage_id: int,
         cloud_storages,
         organizations,
@@ -120,7 +122,7 @@ class TestAudioTasks:
                 resource_type=ResourceType.SHARE,
                 data_params={
                     "cloud_storage_id": cloud_storage_id,
-                    "use_cache": fxt_use_cache,
+                    "use_cache": use_cache,
                 },
             )
 
