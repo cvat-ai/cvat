@@ -5707,6 +5707,37 @@ class TaskDataAPITestCase(ApiTestBase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         assert b"not in canonical form" in response.content
 
+    @override_settings(MEDIA_CACHE_ALLOW_STATIC_CACHE=False)
+    def test_use_cache_false_falls_back_to_cache(self):
+        task_spec = {
+            "name": "task falls back to cache",
+            "owner_id": self.user.id,
+            "assignee_id": self.user.id,
+            "overlap": 0,
+            "segment_size": 100,
+            "labels": [
+                {"name": "car"},
+                {"name": "person"},
+            ],
+        }
+
+        images = copy.deepcopy(self._client_images["images"])
+        n = 3
+        image_sizes = self._client_images["image_sizes"][:n]
+        task_data = ({
+            **{f'client_files[{i}]': images[i] for i in range(n)},
+            "image_quality": 75,
+            "use_cache": False
+        })
+        self._test_api_v2_tasks_id_data_spec(
+            self.user,
+            task_spec,
+            task_data,
+            self.ChunkType.IMAGESET,
+            self.ChunkType.IMAGESET,
+            image_sizes,
+            expected_storage_method=StorageMethodChoice.CACHE.value,
+        )
 
 class JobAnnotationAPITestCase(ApiTestBase):
     @classmethod
