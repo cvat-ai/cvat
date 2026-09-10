@@ -35,6 +35,8 @@ import data.organizations
 # }
 #
 
+SERVER := "server"
+
 is_project_owner if {
     input.resource.project.owner.id == input.auth.user.id
 }
@@ -68,7 +70,7 @@ base_filter := {} if { # Django Q object to filter list of entries
     utils.is_sandbox
     user := input.auth.user
     qobject := ["&",
-        ["~", {"type": "server"}],
+        ["~", {"type": SERVER}],
         ["|",
             {"owner_id": user.id},
             {"project__owner_id": user.id},
@@ -95,7 +97,7 @@ filter := utils.add_organization_filter(base_filter, ["organization"])
 allow if {
     input.scope == utils.VIEW
     utils.is_sandbox
-    input.resource.type != "server"
+    input.resource.type != SERVER
     utils.is_resource_owner
 }
 
@@ -109,7 +111,7 @@ allow if {
     input.scope in {utils.UPDATE, utils.DELETE}
     utils.is_sandbox
     utils.has_perm(utils.WORKER)
-    input.resource.type != "server"
+    input.resource.type != SERVER
     utils.is_resource_owner
 }
 
