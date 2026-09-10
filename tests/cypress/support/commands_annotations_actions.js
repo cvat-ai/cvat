@@ -14,7 +14,7 @@ Cypress.Commands.add('openAnnotationsActionsModal', () => {
     cy.interactMenu('Run actions');
     cy.get('.cvat-action-runner-content').should('exist').and('be.visible');
 });
-wai;
+
 Cypress.Commands.add('runAnnotationsAction', () => {
     cy.get('.cvat-action-runner-run-btn').click();
     cy.get('.cvat-action-runner-run-btn').should('be.disabled');
