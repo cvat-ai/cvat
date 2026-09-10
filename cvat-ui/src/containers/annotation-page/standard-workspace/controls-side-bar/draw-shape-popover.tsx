@@ -6,6 +6,8 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import { RadioChangeEvent } from 'antd/lib/radio';
+import message from 'antd/lib/message';
+import notification from 'antd/lib/notification';
 
 import { CombinedState } from 'reducers';
 import { rememberObject } from 'actions/annotation-actions';
@@ -15,6 +17,7 @@ import DrawShapePopoverComponent from 'components/annotation-page/standard-works
 import {
     Label, ObjectType, ShapeType, LabelType,
 } from 'cvat-core-wrapper';
+import openCVWrapper from 'utils/opencv-wrapper/opencv-wrapper';
 
 interface OwnProps {
     shapeType: ShapeType;
@@ -118,7 +121,8 @@ class DrawShapePopoverContainer extends React.PureComponent<Props, State> {
         const defaultCuboidDrawingMethod = CuboidDrawingMethod.CLASSIC;
         this.state = {
             selectedLabelID: defaultLabelID,
-            rectDrawingMethod: shapeType === ShapeType.RECTANGLE ? defaultRectDrawingMethod : undefined,
+            rectDrawingMethod: [ShapeType.RECTANGLE, ShapeType.ELLIPSE].includes(shapeType) ?
+                defaultRectDrawingMethod : undefined,
             cuboidDrawingMethod: shapeType === ShapeType.CUBOID ? defaultCuboidDrawingMethod : undefined,
             simplifyPoly: false,
         };
@@ -132,7 +136,27 @@ class DrawShapePopoverContainer extends React.PureComponent<Props, State> {
         }
     }
 
-    private onDraw(objectType: ObjectType): void {
+    private async initializeOpenCV(): Promise<boolean> {
+        if (openCVWrapper.isInitialized) {
+            return true;
+        }
+
+        const hide = message.loading('Initializing OpenCV for rotated shape drawing...', 0);
+        try {
+            await openCVWrapper.initialize(() => {});
+            return true;
+        } catch (error: any) {
+            notification.error({
+                message: 'Could not initialize OpenCV',
+                description: error.toString(),
+            });
+            return false;
+        } finally {
+            hide();
+        }
+    }
+
+    private async onDraw(objectType: ObjectType): Promise<void> {
         const {
             canvasInstance, shapeType, onDrawStart, labels,
         } = this.props;
@@ -142,6 +166,10 @@ class DrawShapePopoverContainer extends React.PureComponent<Props, State> {
         } = this.state;
         const effectiveSimplifyPoly = this.isPolyShape && typeof numberOfPoints !== 'undefined' ? false : simplifyPoly;
 
+        if (rectDrawingMethod === RectDrawingMethod.ROTATED_POINTS && !(await this.initializeOpenCV())) {
+            return;
+        }
+
         canvasInstance.cancel();
 
         const selectedLabel = labels.find((label) => label.id === selectedLabelID);
@@ -149,6 +177,8 @@ class DrawShapePopoverContainer extends React.PureComponent<Props, State> {
             canvasInstance.draw({
                 enabled: true,
                 rectDrawingMethod,
+                rotatedShapeFitter: rectDrawingMethod === RectDrawingMethod.ROTATED_POINTS ?
+                    openCVWrapper.contours : undefined,
                 cuboidDrawingMethod,
                 numberOfPoints,
                 shapeType,

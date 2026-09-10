@@ -27,7 +27,7 @@ import Space from 'antd/lib/space';
 import Switch from 'antd/lib/switch';
 import {
     getCore, Job, Loader, Project, Storage, StorageData, StorageLocation,
-    Task,
+    Task, DimensionType,
 } from 'cvat-core-wrapper';
 import StorageField from 'components/storage/storage-field';
 import { createAction, ActionUnion } from 'utils/redux';
@@ -630,23 +630,26 @@ function ImportDatasetModal(props: StateToProps): JSX.Element {
                             )}
                     </Select>
                 </Form.Item>
-                <Space className='cvat-modal-import-switch-conv-mask-to-poly-container'>
-                    <Form.Item
-                        name='convMaskToPoly'
-                        valuePropName='checked'
-                        className='cvat-modal-import-switch-conv-mask-to-poly'
-                    >
-                        <Switch
-                            onChange={(value: boolean) => {
-                                dispatch(reducerActions.setConvMaskToPoly(value));
-                            }}
-                        />
-                    </Form.Item>
-                    <Text strong>Convert masks to polygons</Text>
-                    <CVATTooltip title='The option is relevant for formats that work with masks only'>
-                        <QuestionCircleOutlined />
-                    </CVATTooltip>
-                </Space>
+                {
+                    instance?.dimension !== DimensionType.DIMENSION_1D &&
+                    <Space className='cvat-modal-import-switch-conv-mask-to-poly-container'>
+                        <Form.Item
+                            name='convMaskToPoly'
+                            valuePropName='checked'
+                            className='cvat-modal-import-switch-conv-mask-to-poly'
+                        >
+                            <Switch
+                                onChange={(value: boolean) => {
+                                    dispatch(reducerActions.setConvMaskToPoly(value));
+                                }}
+                            />
+                        </Form.Item>
+                        <Text strong>Convert masks to polygons</Text>
+                        <CVATTooltip title='The option is relevant for formats that work with masks only'>
+                            <QuestionCircleOutlined />
+                        </CVATTooltip>
+                    </Space>
+                }
                 <Space className='cvat-modal-import-switch-use-default-storage-container'>
                     <Form.Item
                         name='useDefaultSettings'

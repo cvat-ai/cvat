@@ -25,6 +25,7 @@ interface MenuItemsData {
     onGoToReplicas: (() => void) | null;
     startEditField: (key: string) => void;
     jobsToAct: Job[];
+    isExportAnnotationsDisabled: boolean;
 }
 
 enum MenuKeys {
@@ -62,6 +63,7 @@ export default function JobActionsItems(
         jobsToAct,
         onGoToParent,
         onGoToReplicas,
+        isExportAnnotationsDisabled,
     } = menuItemsData;
 
     const isBulkMode = jobsToAct.length > 1;
@@ -140,7 +142,7 @@ export default function JobActionsItems(
         key: MenuKeys.EXPORT_JOB,
         onClick: onExportAnnotations,
         label: withCount('Export annotations', MenuKeys.EXPORT_JOB),
-        disabled: isDisabled(MenuKeys.EXPORT_JOB),
+        disabled: isExportAnnotationsDisabled || isDisabled(MenuKeys.EXPORT_JOB),
     }, 60]);
 
     if (onMergeConsensusJob) {

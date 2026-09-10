@@ -84,6 +84,7 @@ const defaultState: AnnotationState = {
             top: 0,
             left: 0,
         },
+        history: {},
         instance: null,
         ready: false,
         activeControl: ActiveControl.CURSOR,
@@ -97,6 +98,7 @@ const defaultState: AnnotationState = {
             initialOpenGuide: false,
             defaultLabel: null,
             defaultPointsCount: null,
+            defaultRotated: false,
         },
         groundTruthInfo: {
             validationLayout: null,
@@ -287,6 +289,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                         initialOpenGuide: queryParameters.initialOpenGuide,
                         defaultLabel: queryParameters.defaultLabel,
                         defaultPointsCount: queryParameters.defaultPointsCount,
+                        defaultRotated: queryParameters.defaultRotated,
                     },
                 },
                 annotations: {
@@ -972,6 +975,16 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                         clientID: Number.isInteger(activatedElementID) ? activatedElementID : activatedStateID,
                         parentID: Number.isInteger(activatedElementID) ? activatedStateID : null,
                     },
+                },
+            };
+        }
+        case AnnotationActionTypes.UPDATE_CANVAS_HISTORY: {
+            const { source, undoAction, redoAction } = action.payload;
+            return {
+                ...state,
+                canvas: {
+                    ...state.canvas,
+                    history: { source, undoAction, redoAction },
                 },
             };
         }

@@ -58,6 +58,20 @@ const totalBandwidthInfo = {
     totalDownloadRetries: 0,
 };
 
+// A download may start and finish while the page is visible but be throttled while it is hidden.
+// Track visibility transitions to exclude such downloads from bandwidth telemetry.
+let pageVisibilityCounter = 0;
+
+function isPageVisible(): boolean {
+    return typeof document === 'undefined' || document.visibilityState === 'visible';
+}
+
+if (typeof document !== 'undefined') {
+    document.addEventListener('visibilitychange', () => {
+        pageVisibilityCounter++;
+    });
+}
+
 tus.defaultOptions.storeFingerprintForResuming = false;
 
 function enableOrganization(): { org: string } {
@@ -1731,6 +1745,8 @@ async function getImageContext(jid: number, frame: number): Promise<ArrayBuffer>
 
 async function getData(jid: number, chunk: number, quality: ChunkQuality): Promise<ArrayBuffer> {
     const { backendAPI } = config;
+    const pageWasVisible = isPageVisible();
+    const pageVisibilityVersionAtStart = pageVisibilityCounter;
 
     try {
         const response = await (workerAxios as any).get(`${backendAPI}/jobs/${jid}/data`, {
@@ -1743,7 +1759,10 @@ async function getData(jid: number, chunk: number, quality: ChunkQuality): Promi
             responseType: 'arraybuffer',
         });
 
-        if (response.telemetry) {
+        const pageWasVisibleThroughoutDownload = pageWasVisible &&
+            isPageVisible() && pageVisibilityCounter === pageVisibilityVersionAtStart;
+
+        if (response.telemetry && pageWasVisibleThroughoutDownload) {
             totalBandwidthInfo.totalDownloadBytes += response.telemetry.chunkSizeBytes;
             totalBandwidthInfo.totalDownloadTimeMs += response.telemetry.downloadTimeMs;
             totalBandwidthInfo.totalDownloadRetries += response.telemetry.retries;

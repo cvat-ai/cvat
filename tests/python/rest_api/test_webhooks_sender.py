@@ -10,7 +10,7 @@ import pytest
 from deepdiff import DeepDiff
 
 from shared.fixtures.data import Container
-from shared.fixtures.init import CVAT_ROOT_DIR
+from shared.fixtures.init import CVAT_DB_DIR, CVAT_ROOT_DIR
 from shared.utils.config import delete_method, get_method, patch_method, post_method
 from shared.utils.helpers import generate_image_files
 
@@ -123,11 +123,6 @@ class TestWebhookProjectEvents:
 
         assert payload["event"] == events[0]
         assert payload["sender"]["username"] == "admin1"
-        assert payload["before_update"]["name"] == project["name"]
-        assert payload["changes"]["name"] == {
-            "from": project["name"],
-            "to": patch_data["name"],
-        }
 
         project.update(patch_data)
         assert (
@@ -212,20 +207,6 @@ class TestWebhookIntersection:
         assert deliveries_1["count"] == deliveries_2["count"] == 1
 
         assert payload_1["project"]["name"] == payload_2["project"]["name"] == patch_data["name"]
-
-        assert (
-            payload_1["before_update"]["name"]
-            == payload_2["before_update"]["name"]
-            == post_data["name"]
-        )
-        assert payload_1["changes"]["name"] == {
-            "from": post_data["name"],
-            "to": patch_data["name"],
-        }
-        assert payload_2["changes"]["name"] == {
-            "from": post_data["name"],
-            "to": patch_data["name"],
-        }
 
         assert payload_1["webhook_id"] == webhook_id_1
         assert payload_2["webhook_id"] == webhook_id_2
@@ -326,11 +307,6 @@ class TestWebhookTaskEvents:
         deliveries, payload = get_deliveries(webhook_id=webhook_id)
 
         assert deliveries["count"] == 1
-        assert payload["before_update"]["assignee_id"] == tasks[task_id]["assignee"]["id"]
-        assert payload["changes"]["assignee_id"] == {
-            "from": tasks[task_id]["assignee"]["id"],
-            "to": assignee_id,
-        }
         assert payload["task"]["assignee"]["id"] == assignee_id
 
     def test_webhook_create_and_delete_task(self, organizations):
@@ -407,11 +383,6 @@ class TestWebhookJobEvents:
         deliveries, payload = get_deliveries(webhook_id)
 
         assert deliveries["count"] == 1
-        assert payload["before_update"]["assignee_id"] is None
-        assert payload["changes"]["assignee_id"] == {
-            "from": None,
-            "to": patch_data["assignee"],
-        }
         assert payload["job"]["assignee"]["id"] == patch_data["assignee"]
 
     def test_webhook_update_job_stage(self, jobs, tasks):
@@ -428,11 +399,6 @@ class TestWebhookJobEvents:
 
         deliveries, payload = get_deliveries(webhook_id)
         assert deliveries["count"] == 1
-        assert payload["before_update"]["stage"] == job["stage"]
-        assert payload["changes"]["stage"] == {
-            "from": job["stage"],
-            "to": patch_data["stage"],
-        }
         assert payload["job"]["stage"] == patch_data["stage"]
 
     def test_webhook_update_job_state(self, jobs, tasks):
@@ -453,11 +419,6 @@ class TestWebhookJobEvents:
 
         deliveries, payload = get_deliveries(webhook_id)
         assert deliveries["count"] == 1
-        assert payload["before_update"]["state"] == job["state"]
-        assert payload["changes"]["state"] == {
-            "from": job["state"],
-            "to": patch_data["state"],
-        }
         assert payload["job"]["state"] == patch_data["state"]
 
 
@@ -481,11 +442,6 @@ class TestWebhookIssueEvents:
         deliveries, payload = get_deliveries(webhook_id)
 
         assert deliveries["count"] == 1
-        assert payload["before_update"]["resolved"] == issue["resolved"]
-        assert payload["changes"]["resolved"] == {
-            "from": issue["resolved"],
-            "to": patch_data["resolved"],
-        }
         assert payload["issue"]["resolved"] == patch_data["resolved"]
 
     def test_webhook_update_issue_position(self, issues, jobs, tasks):
@@ -506,11 +462,6 @@ class TestWebhookIssueEvents:
         deliveries, payload = get_deliveries(webhook_id)
 
         assert deliveries["count"] == 1
-        assert payload["before_update"]["position"] == issue["position"]
-        assert payload["changes"]["position"] == {
-            "from": issue["position"],
-            "to": patch_data["position"],
-        }
         assert payload["issue"]["position"] == patch_data["position"]
 
     @pytest.mark.parametrize("org_id", (2,))
@@ -578,11 +529,6 @@ class TestWebhookMembershipEvents:
         deliveries, payload = get_deliveries(webhook_id)
 
         assert deliveries["count"] == 1
-        assert payload["before_update"]["role"] == membership["role"]
-        assert payload["changes"]["role"] == {
-            "from": membership["role"],
-            "to": patch_data["role"],
-        }
         assert payload["membership"]["role"] == patch_data["role"]
 
     def test_webhook_delete_membership(self, memberships):
@@ -621,11 +567,6 @@ class TestWebhookOrganizationEvents:
         deliveries, payload = get_deliveries(webhook_id)
 
         assert deliveries["count"] == 1
-        assert payload["before_update"]["name"] == organizations[org_id]["name"]
-        assert payload["changes"]["name"] == {
-            "from": organizations[org_id]["name"],
-            "to": patch_data["name"],
-        }
         assert payload["organization"]["name"] == patch_data["name"]
 
 
@@ -650,11 +591,6 @@ class TestWebhookCommentEvents:
         deliveries, payload = get_deliveries(webhook_id)
 
         assert deliveries["count"] == 1
-        assert payload["before_update"]["message"] == comment["message"]
-        assert payload["changes"]["message"] == {
-            "from": comment["message"],
-            "to": patch_data["message"],
-        }
 
         comment.update(patch_data)
         assert (
@@ -731,6 +667,46 @@ class TestGetWebhookDeliveries:
         )
         assert response.status_code == HTTPStatus.FORBIDDEN
 
+    def test_get_old_delivery(self):
+        # NOTE: "old" == seeded in the test DB before `changed_fields` and the
+        # "before_update" payload key were dropped; such deliveries must keep both.
+        with open(CVAT_DB_DIR / "data.json") as f:
+            db_records = json.load(f)
+
+        old_delivery = next(
+            {**r["fields"], "id": r["pk"]}
+            for r in db_records
+            if r["model"] == "webhooks.webhookdelivery" and r["fields"]["changed_fields"]
+        )
+
+        response = get_method("admin1", f"webhooks/{old_delivery['webhook']}/deliveries")
+        assert response.status_code == HTTPStatus.OK
+
+        actual_delivery = next(
+            d for d in response.json()["results"] if d["id"] == old_delivery["id"]
+        )
+
+        assert actual_delivery["changed_fields"] == old_delivery["changed_fields"]
+        assert "before_update" in actual_delivery["request"]
+
+    def test_get_new_delivery(self, tasks):
+        task_id, project_id = next(
+            (task["id"], task["project_id"]) for task in tasks if task["project_id"] is not None
+        )
+
+        webhook_id = create_webhook(["update:task"], "project", project_id=project_id)["id"]
+
+        patch_data = {"name": "new task name"}
+        response = patch_method("admin1", f"tasks/{task_id}", patch_data)
+        assert response.status_code == HTTPStatus.OK
+
+        deliveries, payload = get_deliveries(webhook_id)
+        assert payload["task"]["name"] == patch_data["name"]
+
+        new_delivery = deliveries["results"][0]
+        assert new_delivery["changed_fields"] == ""
+        assert "before_update" not in new_delivery["request"]
+
 
 @pytest.mark.usefixtures("restore_db_per_function")
 class TestWebhookPing:
@@ -797,15 +773,6 @@ class TestWebhookRedelivery:
 
         assert deliveries_1["results"][0]["redelivery"] is False
         assert deliveries_2["results"][0]["redelivery"] is True
-
-        assert payload_1["changes"]["name"] == {
-            "from": project["name"],
-            "to": patch_data["name"],
-        }
-        assert payload_2["changes"]["name"] == {
-            "from": project["name"],
-            "to": patch_data["name"],
-        }
 
         project.update(patch_data)
         assert (

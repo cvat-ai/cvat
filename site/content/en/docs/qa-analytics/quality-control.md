@@ -35,7 +35,7 @@ Consult the detailed guide on quality estimation in CVAT in the
 1. Upload or create Ground Truth annotations in the Ground Truth job in the task
 1. Switch the Ground Truth job into the `acceptance` stage and `completed` state
 
-  ![Set job status](/images/honeypot10.jpg)
+  ![Set job status](/images/honeypot10.webp)
 
 {{% /tab %}}
 
@@ -49,16 +49,16 @@ to use Honeypots for your task, you will need to recreate the task.
 1. Open the task page
 1. Select the `+` button next to the job list
 
-   ![Create job](/images/honeypot01.jpg)
+   ![Create job](/images/honeypot01.webp)
 
 1. Select Job Type **Ground truth** and configure the job parameters
 
-   ![Configure job parameters](/images/honeypot02.jpg)
+   ![Configure job parameters](/images/honeypot02.webp)
 
 1. Upload or create Ground Truth annotations in the Ground Truth job in the task
 1. Switch the Ground Truth job into the `acceptance`stage and `completed` state
 
-   ![Set job status](/images/honeypot10.jpg)
+   ![Set job status](/images/honeypot10.webp)
 
 {{% /tab %}}
 

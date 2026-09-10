@@ -745,7 +745,7 @@ SPECTACULAR_SETTINGS = {
         "AnnotationConflictSeverity": "cvat.apps.quality_control.models.AnnotationConflictSeverity",
         "AnnotationConflictAnnotationType": "cvat.apps.quality_control.models.AnnotationType",
         "MismatchingAnnotationKind": "cvat.apps.quality_control.models.MismatchingAnnotationKind",
-        "QualityTargetMetric": "cvat.apps.quality_control.models.QualityTargetMetricType",
+        "QualityTargetMetric": "cvat.apps.quality_control.models.QUALITY_TARGET_METRIC_CHOICES",
         "QualityPointSizeBase": "cvat.apps.quality_control.models.PointSizeBase",
         "QualityReportTarget": "cvat.apps.quality_control.models.QualityReportTarget",
     },
@@ -829,6 +829,8 @@ SMOKESCREEN_ENABLED = to_bool(os.getenv("SMOKESCREEN_ENABLED", True))
 EMAIL_BACKEND = None
 
 ONE_RUNNING_JOB_IN_QUEUE_PER_USER = to_bool(os.getenv("ONE_RUNNING_JOB_IN_QUEUE_PER_USER", False))
+
+EMAIL_VALIDATORS = []
 
 # How many chunks can be prepared simultaneously during task creation in case the cache is not used
 CVAT_CONCURRENT_CHUNK_PROCESSING = int(os.getenv("CVAT_CONCURRENT_CHUNK_PROCESSING", 1))

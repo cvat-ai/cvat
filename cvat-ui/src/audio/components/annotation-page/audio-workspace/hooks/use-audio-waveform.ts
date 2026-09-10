@@ -15,7 +15,7 @@ import HoverPlugin from 'wavesurfer.js/dist/plugins/hover';
 
 import { audioActions, releaseAudioDataAsync } from 'actions/audio-actions';
 import { formatSeconds } from 'audio/utils/format-audio-time';
-import { MINIMAP_TIMELINE_HEIGHT } from 'audio/utils/waveform-geometry';
+import { MINIMAP_HEIGHT, MINIMAP_TIMELINE_HEIGHT } from 'audio/utils/waveform-geometry';
 import { ThunkDispatch } from 'utils/redux';
 
 import { injectScrollbarStyle } from '../utils/inject-scrollbar-style';
@@ -72,6 +72,7 @@ interface Params {
     peaks: Float32Array[];
     duration: number;
     containerRef: React.RefObject<HTMLDivElement>;
+    waveformHeight: number;
 }
 
 interface WaveSurferWebAudioPlayer {
@@ -92,7 +93,7 @@ interface MinimapPluginInternals {
  * Exposes a stable API for the rest of the waveform hooks to use.
  */
 function useWaveSurferRuntime({
-    sourceToken, minimapContainerID, audioBuffer, peaks, duration, containerRef,
+    sourceToken, minimapContainerID, audioBuffer, peaks, duration, containerRef, waveformHeight,
 }: Params): WaveSurferRuntime {
     interface WaveSurferPluginScope {
         minimap: MinimapPlugin;
@@ -118,7 +119,7 @@ function useWaveSurferRuntime({
             progressColor: '#3e3a3a',
             cursorColor: '#ff0000',
             cursorWidth: 2,
-            height: 50,
+            height: MINIMAP_HEIGHT,
             overlayColor: 'rgba(0, 85, 255, 0.3)',
         });
         const timeline = TimelinePlugin.create();
@@ -175,7 +176,7 @@ function useWaveSurferRuntime({
             autoCenter: false,
             peaks,
             duration,
-            height: 140,
+            height: waveformHeight,
             waveColor: '#4F46E5',
             progressColor: '#818CF8',
             cursorColor: '#C084FC',
@@ -217,6 +218,10 @@ function useWaveSurferRuntime({
             wsInstance.destroy();
         };
     }, []);
+
+    useEffect(() => {
+        instanceRef.current?.setOptions({ height: waveformHeight });
+    }, [waveformHeight]);
 
     return {
         instanceRef,

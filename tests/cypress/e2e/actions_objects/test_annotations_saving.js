@@ -46,11 +46,11 @@ context('Test annotations saving works correctly', () => {
         cy.intercept('POST', '/api/tasks**').as('createTaskRequest');
         cy.intercept('GET', '/api/jobs**').as('getJobsRequest');
         cy.contains('button', 'Submit & Continue').click();
-        cy.wait('@createTaskRequest').then((interception) => {
+        cy.wait('@createTaskRequest', { requestTimeout: 25_000 }).then((interception) => {
             expect(interception.response.statusCode).to.equal(201);
             taskId = interception.response.body.id;
         });
-        cy.wait('@getJobsRequest').then((interception) => {
+        cy.wait('@getJobsRequest', { requestTimeout: 25_000 }).then((interception) => {
             expect(interception.response.statusCode).to.equal(200);
             jobId = interception.response.body.results[0].id;
 
@@ -63,7 +63,7 @@ context('Test annotations saving works correctly', () => {
         it('Create different objects, save twice. Update, delete. Export hash works as expected', () => {
             // client id 1
             cy.createRectangle({
-                points: 'By 2 Points',
+                points: '2 Points',
                 type: 'Shape',
                 labelName: generalLabel.name,
                 firstX: 150,
@@ -74,7 +74,7 @@ context('Test annotations saving works correctly', () => {
 
             // client id 2
             cy.createRectangle({
-                points: 'By 2 Points',
+                points: '2 Points',
                 type: 'Track',
                 labelName: generalLabel.name,
                 firstX: 200,

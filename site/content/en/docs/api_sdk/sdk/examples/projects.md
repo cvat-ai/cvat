@@ -5,8 +5,9 @@ weight: 2
 description: 'Create/list, backup, restore, dataset export — one recipe per file'
 ---
 
-Four recipes cover the project lifecycle: `project_create_and_list.py` for the
-common CRUD path, `project_backup.py` and `project_restore.py` for portable
+Five recipes cover the project lifecycle: `project_create_and_list.py` for the
+common CRUD path, `project_add_labels.py` for extending an existing project's
+label schema, `project_backup.py` and `project_restore.py` for portable
 copies, and `project_export_dataset.py` for dataset export (local + cloud).
 For a CSV overview of a project's jobs, see `job_list.py --project-id --csv`
 in the [job recipes](../jobs).
@@ -32,6 +33,32 @@ python project_create_and_list.py --host 'https://app.cvat.ai' --token '<your to
 ### The script
 
 {{< include-code "assets/sdk-examples/project_create_and_list.py" >}}
+
+## Add labels to an existing project
+
+Adds labels — optionally with selectable attributes — to a project that
+already exists. Labels that are already there are skipped, so the recipe is
+safe to re-run. The tasks inside the project take their labels from the
+project itself, so they all pick up the change.
+
+| Flag | Required | Meaning |
+| --- | --- | --- |
+| `--host` | yes | Server URL |
+| `--token` | yes | Personal Access Token |
+| `--project-id` | yes | Id of the project to extend |
+| `--labels` | yes | Label names to add, space-separated |
+| `--attr LABEL NAME VALUE [...]` | no | Selectable attribute for one of the `--labels`; repeat for more |
+
+```bash
+python project_add_labels.py --host 'https://app.cvat.ai' --token '<your token>' \
+    --project-id 7 --labels car person
+python project_add_labels.py --host 'https://app.cvat.ai' --token '<your token>' \
+    --project-id 7 --labels car --attr car color red green blue
+```
+
+### The script
+
+{{< include-code "assets/sdk-examples/project_add_labels.py" >}}
 
 ## Back up a project
 
@@ -120,6 +147,7 @@ _Notes:_
 - `include_images=False` exports annotations only and is much smaller.
 - Full recipes:
   [`project_create_and_list.py`](https://github.com/cvat-ai/cvat/tree/develop/cvat-sdk/examples/project_create_and_list.py),
+  [`project_add_labels.py`](https://github.com/cvat-ai/cvat/tree/develop/cvat-sdk/examples/project_add_labels.py),
   [`project_backup.py`](https://github.com/cvat-ai/cvat/tree/develop/cvat-sdk/examples/project_backup.py),
   [`project_restore.py`](https://github.com/cvat-ai/cvat/tree/develop/cvat-sdk/examples/project_restore.py),
   [`project_export_dataset.py`](https://github.com/cvat-ai/cvat/tree/develop/cvat-sdk/examples/project_export_dataset.py).

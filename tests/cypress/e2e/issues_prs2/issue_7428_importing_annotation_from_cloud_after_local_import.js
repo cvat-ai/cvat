@@ -13,7 +13,7 @@ context('Incorrect cloud storage filename used in subsequent import.', () => {
     const issueId = '7428';
     const exportFormat = 'CVAT for images';
     const rectangleShape2Points = {
-        points: 'By 2 Points',
+        points: '2 Points',
         type: 'Shape',
         labelName,
         firstX: 400,

@@ -10,7 +10,7 @@ import { taskName, labelName } from '../../support/const';
 context('Always show object details feature', () => {
     const caseId = '36';
     const rectangleShape2Points = {
-        points: 'By 2 Points',
+        points: '2 Points',
         type: 'Shape',
         labelName,
         firstX: 400,

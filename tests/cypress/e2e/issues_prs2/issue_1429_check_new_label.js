@@ -11,7 +11,7 @@ context('Check if the new label reflects in the options', () => {
     const issueId = '1429';
     const newLabelName = `New ${labelName}`;
     const createRectangleShape2Points = {
-        points: 'By 2 Points',
+        points: '2 Points',
         type: 'Shape',
         labelName,
         firstX: 250,

@@ -11,7 +11,7 @@ context('Count total annotation, issues and labels', () => {
     let jobId = null;
 
     const createRectangleShape2Points = {
-        points: 'By 2 Points',
+        points: '2 Points',
         type: 'Shape',
         labelName: 'label',
         firstX: 250,

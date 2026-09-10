@@ -62,7 +62,7 @@ context('Settings. Text size/position. Text labels content.', () => {
         ],
     };
     const rectangleShape2Points = {
-        points: 'By 2 Points',
+        points: '2 Points',
         type: 'Shape',
         labelName,
         firstX: 100,
