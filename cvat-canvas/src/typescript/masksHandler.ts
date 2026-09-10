@@ -22,7 +22,11 @@ interface WrappingBBox {
 }
 
 type DrawnObject = fabric.Polygon | fabric.Circle | fabric.Rect | fabric.Line | fabric.Image;
-type HistoryAction = DrawnObject[];
+interface HistoryAction {
+    objects: DrawnObject[];
+    description: string;
+}
+type HistoryChangedCallback = (undoAction?: string, redoAction?: string) => void;
 
 export interface MasksHandler {
     draw(drawData: DrawData): void;
@@ -45,6 +49,7 @@ export class MasksHandlerImpl implements MasksHandler {
     private onDrawRepeat: (data: DrawData) => void;
     private onEditStart: (state: any) => void;
     private onEditDone: (state: any, points: number[]) => void;
+    private onHistoryChanged: HistoryChangedCallback;
     private vectorDrawHandler: DrawHandler;
 
     private redraw: number | null;
@@ -241,20 +246,42 @@ export class MasksHandlerImpl implements MasksHandler {
         this.undoStack = [];
         this.redoStack = [];
         this.activeHistoryAction = null;
+        this.onHistoryChanged();
+    }
+
+    private historyActionDescription(): string {
+        const descriptions: Record<BrushTool['type'], string> = {
+            brush: 'Draw mask stroke',
+            eraser: 'Erase mask stroke',
+            'polygon-plus': 'Add polygon to mask',
+            'polygon-minus': 'Subtract polygon from mask',
+        };
+        return this.tool ? descriptions[this.tool.type] : 'Edit mask';
+    }
+
+    private notifyHistoryChanged(): void {
+        this.onHistoryChanged(
+            this.undoStack.at(-1)?.description,
+            this.redoStack.at(-1)?.description,
+        );
     }
 
     private startHistoryAction(): void {
-        this.activeHistoryAction = [];
+        this.activeHistoryAction = {
+            objects: [],
+            description: this.historyActionDescription(),
+        };
     }
 
     private addToHistoryAction(object: DrawnObject): void {
-        this.activeHistoryAction?.push(object);
+        this.activeHistoryAction?.objects.push(object);
     }
 
     private finishHistoryAction(): void {
-        if (this.activeHistoryAction?.length) {
+        if (this.activeHistoryAction?.objects.length) {
             this.undoStack.push(this.activeHistoryAction);
             this.redoStack = [];
+            this.notifyHistoryChanged();
         }
         this.activeHistoryAction = null;
     }
@@ -398,6 +425,7 @@ export class MasksHandlerImpl implements MasksHandler {
         onEditDone: MasksHandlerImpl['onEditDone'],
         vectorDrawHandler: DrawHandler,
         canvas: HTMLCanvasElement,
+        onHistoryChanged: HistoryChangedCallback,
     ) {
         this.redraw = null;
         this.isDrawing = false;
@@ -415,6 +443,7 @@ export class MasksHandlerImpl implements MasksHandler {
         this.onDrawRepeat = onDrawRepeat;
         this.onEditDone = onEditDone;
         this.onEditStart = onEditStart;
+        this.onHistoryChanged = onHistoryChanged;
         this.vectorDrawHandler = vectorDrawHandler;
         this.canvas = new fabric.Canvas(canvas, {
             containerClass: 'cvat_masks_canvas_wrapper',
@@ -794,15 +823,17 @@ export class MasksHandlerImpl implements MasksHandler {
             return false;
         }
 
-        for (const object of action) {
+        for (const object of action.objects) {
             this.canvas.remove(object);
             const index = this.drawnObjects.indexOf(object);
             if (index !== -1) {
                 this.drawnObjects.splice(index, 1);
             }
         }
+
         this.redoStack.push(action);
         this.canvas.renderAll();
+        this.notifyHistoryChanged();
 
         return true;
     }
@@ -817,12 +848,13 @@ export class MasksHandlerImpl implements MasksHandler {
             return false;
         }
 
-        for (const object of action) {
+        for (const object of action.objects) {
             this.canvas.add(object);
             this.drawnObjects.push(object);
         }
         this.undoStack.push(action);
         this.canvas.renderAll();
+        this.notifyHistoryChanged();
 
         return true;
     }
