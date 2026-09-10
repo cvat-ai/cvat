@@ -27,6 +27,7 @@ from typing import Any
 import numpy as np
 import pytest
 import requests
+from attrs.converters import to_bool
 from cvat_sdk import exceptions
 from cvat_sdk.api_client import models
 from cvat_sdk.api_client.api_client import ApiClient, Endpoint
@@ -1500,6 +1501,31 @@ class TestTaskBackups:
 
         assert filename.is_file()
         assert filename.stat().st_size > 0
+
+    @pytest.mark.cache
+    @pytest.mark.skipif(
+        to_bool(os.getenv("CVAT_ALLOW_STATIC_CACHE", False)),
+        reason="requires CVAT_ALLOW_STATIC_CACHE to be disabled",
+    )
+    def test_task_uses_cache_when_static_cache_is_disabled(self):
+        task_id, _ = create_task(
+            self.user,
+            {"name": "Task with static cache disabled"},
+            {
+                "image_quality": 75,
+                "use_cache": False,
+                "client_files": generate_image_files(1),
+            },
+        )
+
+        task = self.client.tasks.retrieve(task_id)
+        filename = self.tmp_dir / f"task_{task.id}_backup.zip"
+        task.download_backup(filename)
+
+        with zipfile.ZipFile(filename) as backup:
+            task_manifest = json.loads(backup.read("task.json"))
+
+        assert task_manifest["data"]["storage_method"] == "cache"
 
     @pytest.mark.parametrize("mode", ["annotation", "interpolation"])
     def test_can_export_backup(self, tasks, mode):
