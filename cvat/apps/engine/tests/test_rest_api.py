@@ -76,7 +76,6 @@ from cvat.apps.engine.models import (
     Task,
     TaskMode,
 )
-from cvat.apps.engine.task import _resolve_static_cache
 from cvat.apps.engine.tests.utils import (
     ApiTestBase,
     ExportApiTestBase,
