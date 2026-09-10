@@ -2,6 +2,8 @@
 #
 # SPDX-License-Identifier: MIT
 
+from enum import Enum
+
 from django.db import models
 from drf_spectacular.utils import extend_schema_serializer
 from rest_framework import serializers
@@ -11,6 +13,20 @@ from cvat.apps.engine.serializers import BasicUserSerializer, WriteOnceMixin
 
 from .event_type import AllEvents, EventKeyChoice, OrganizationEvents, ProjectEvents, ServerEvents
 from .models import Webhook, WebhookContentTypeChoice, WebhookDelivery, WebhookTypeChoice
+
+
+class AllWebhookTypeChoice(str, Enum):
+    ORGANIZATION = WebhookTypeChoice.ORGANIZATION.value
+    PROJECT = WebhookTypeChoice.PROJECT.value
+    SERVER = WebhookTypeChoice.SERVER.value
+    ALL = AllEvents.webhook_type
+
+    @classmethod
+    def choices(cls):
+        return tuple((x.value, x.name) for x in cls)
+
+    def __str__(self):
+        return self.value
 
 
 class EventKeysValidator:
@@ -65,9 +81,7 @@ class EventSerializer(serializers.Serializer):
 
 
 class EventsSerializer(serializers.Serializer):
-    webhook_type = serializers.ChoiceField(
-        choices=(*WebhookTypeChoice.choices(), (AllEvents.webhook_type, "ALL"))
-    )
+    webhook_type = serializers.ChoiceField(choices=AllWebhookTypeChoice.choices())
     events = EventSerializer(many=True, read_only=True)
 
 
