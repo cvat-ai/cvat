@@ -32,16 +32,15 @@ function getScrollContainer(runtime: WaveSurferRuntime): HTMLElement | null {
  */
 export function useMinimapScrollbar(runtime: WaveSurferRuntime, viewport: WaveformViewport): void {
     useLayoutEffect(() => {
-        if (!runtime.ready) return undefined;
+        if (!runtime.ready) return;
 
         const overlay = getMinimapOverlay(runtime);
-        if (!overlay) return undefined;
+        if (!overlay) return;
 
         const scrollContainer = getScrollContainer(runtime);
         const isScrollable = !!scrollContainer && scrollContainer.scrollWidth > scrollContainer.clientWidth;
         overlay.style.opacity = isScrollable ? '1' : '0';
         overlay.style.pointerEvents = isScrollable ? 'auto' : 'none';
-        return undefined;
     }, [runtime.ready, viewport.pixelsPerSecond, viewport.overviewPixelsPerSecond]);
 
     useEffect(() => {
@@ -92,7 +91,7 @@ export function useMinimapScrollbar(runtime: WaveSurferRuntime, viewport: Wavefo
                 finishDrag(event.pointerId);
                 return;
             }
-            if (Math.abs(event.clientX - dragStartX) < MINIMAP_DRAG_THRESHOLD) return;
+            if (!hasDragged && Math.abs(event.clientX - dragStartX) < MINIMAP_DRAG_THRESHOLD) return;
 
             hasDragged = true;
 
