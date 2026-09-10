@@ -1603,7 +1603,9 @@ class TestTaskBackups:
     @pytest.mark.parametrize("lightweight_backup", [True, False])
     @pytest.mark.parametrize("use_cache", STORAGE_METHODS)
     def test_can_export_and_import_backup_task_with_cloud_storage(
-        self, lightweight_backup, use_cache,
+        self,
+        lightweight_backup,
+        use_cache,
     ):
         task_spec = {
             "name": "Task with files from cloud storage",

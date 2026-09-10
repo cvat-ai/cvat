@@ -626,4 +626,3 @@ def access_tokens_by_username(raw_access_tokens_by_username):
 @pytest.fixture(scope="session")
 def fxt_local_audio_file_path() -> Generator[Path, None, None]:
     yield SHARE_DIR / "audio" / "sample1.mp3"
-

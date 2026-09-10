@@ -5724,11 +5724,11 @@ class TaskDataAPITestCase(ApiTestBase):
         images = copy.deepcopy(self._client_images["images"])
         n = 3
         image_sizes = self._client_images["image_sizes"][:n]
-        task_data = ({
-            **{f'client_files[{i}]': images[i] for i in range(n)},
+        task_data = {
+            **{f"client_files[{i}]": images[i] for i in range(n)},
             "image_quality": 75,
-            "use_cache": False
-        })
+            "use_cache": False,
+        }
         self._test_api_v2_tasks_id_data_spec(
             self.user,
             task_spec,
@@ -5738,6 +5738,7 @@ class TaskDataAPITestCase(ApiTestBase):
             image_sizes,
             expected_storage_method=StorageMethodChoice.CACHE.value,
         )
+
 
 class JobAnnotationAPITestCase(ApiTestBase):
     @classmethod
@@ -8684,4 +8685,3 @@ class TestCloudStorageAzureStatus(SimpleTestCase):
 
         self.storage._head = fake_head
         self.assertEqual(self.storage.get_status(), Status.NOT_FOUND)
-
