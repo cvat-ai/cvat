@@ -14,7 +14,7 @@ Cypress.Commands.add('openAnnotationsActionsModal', () => {
     cy.interactMenu('Run actions');
     cy.get('.cvat-action-runner-content').should('exist').and('be.visible');
 });
-
+wai;
 Cypress.Commands.add('runAnnotationsAction', () => {
     cy.get('.cvat-action-runner-run-btn').click();
     cy.get('.cvat-action-runner-run-btn').should('be.disabled');
@@ -50,7 +50,8 @@ Cypress.Commands.add('selectAnnotationsAction', (name) => {
 });
 
 Cypress.Commands.add('waitAnnotationsAction', () => {
-    cy.get('.cvat-action-runner-progress').should('not.exist'); // wait until action ends
+    cy.get('.cvat-action-runner-progress', { timeout: 30_000 }).should('not.exist');
+    // can take longer on enterprise runners
 });
 
 Cypress.Commands.add('setAnnotationActionParameter', (parameterName, type, value) => {
