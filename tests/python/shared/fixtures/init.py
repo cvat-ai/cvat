@@ -563,6 +563,8 @@ def pytest_sessionstart(session: pytest.Session) -> None:
 
 
 def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
+    if not session.config.getoption("--no-services"):
+        os.environ.setdefault("CVAT_ALLOW_STATIC_CACHE", "true")
     session_finish(session)
 
 
