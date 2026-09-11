@@ -167,6 +167,7 @@ slogger = ServerLogManager(__name__)
 _UPLOAD_PARSER_CLASSES = api_settings.DEFAULT_PARSER_CLASSES + [MultiPartParser]
 
 _DATA_CHECKSUM_HEADER_NAME = "X-Checksum"
+_DATA_CHUNK_SIZE_HEADER_NAME = "X-Chunk-Size"
 _DATA_UPDATED_DATE_HEADER_NAME = "X-Updated-Date"
 _RETRY_AFTER_TIMEOUT = 10
 
@@ -880,11 +881,12 @@ class _DataGetter(metaclass=ABCMeta):
 
     def _make_chunk_response_headers(
         self,
-        checksum: str,
+        chunk_data: DataWithMeta,
         updated_date: datetime,
     ) -> dict[str, str]:
         return {
-            _DATA_CHECKSUM_HEADER_NAME: str(checksum or ""),
+            _DATA_CHECKSUM_HEADER_NAME: self._get_chunk_checksum(chunk_data),
+            _DATA_CHUNK_SIZE_HEADER_NAME: str(len(chunk_data.data.getbuffer())),
             _DATA_UPDATED_DATE_HEADER_NAME: serializers.DateTimeField().to_representation(
                 updated_date
             ),
@@ -924,7 +926,7 @@ class _TaskDataGetter(_DataGetter):
 
     def _get_chunk_response_headers(self, chunk_data: DataWithMeta) -> dict[str, str]:
         return self._make_chunk_response_headers(
-            self._get_chunk_checksum(chunk_data),
+            chunk_data,
             self._db_task.get_chunks_updated_date(),
         )
 
@@ -999,7 +1001,7 @@ class _JobDataGetter(_DataGetter):
 
     def _get_chunk_response_headers(self, chunk_data: DataWithMeta) -> dict[str, str]:
         return self._make_chunk_response_headers(
-            self._get_chunk_checksum(chunk_data), self._db_job.segment.chunks_updated_date
+            chunk_data, self._db_job.segment.chunks_updated_date
         )
 
 
@@ -1598,6 +1600,14 @@ class TaskViewSet(
                 required=False,
                 response=[200, 206],
                 description="Data checksum, applicable for chunks only",
+            ),
+            OpenApiParameter(
+                _DATA_CHUNK_SIZE_HEADER_NAME,
+                location=OpenApiParameter.HEADER,
+                type=OpenApiTypes.INT,
+                required=False,
+                response=[200, 206, 416],
+                description="Decoded chunk size in bytes, applicable for chunks only",
             ),
             OpenApiParameter(
                 _DATA_UPDATED_DATE_HEADER_NAME,
@@ -2590,6 +2600,30 @@ class JobViewSet(
                 required=False,
                 type=OpenApiTypes.INT,
                 description="A unique number value identifying chunk, starts from 0 for each job",
+            ),
+            OpenApiParameter(
+                _DATA_CHECKSUM_HEADER_NAME,
+                location=OpenApiParameter.HEADER,
+                type=OpenApiTypes.STR,
+                required=False,
+                response=[200, 206],
+                description="Data checksum, applicable for chunks only",
+            ),
+            OpenApiParameter(
+                _DATA_CHUNK_SIZE_HEADER_NAME,
+                location=OpenApiParameter.HEADER,
+                type=OpenApiTypes.INT,
+                required=False,
+                response=[200, 206, 416],
+                description="Decoded chunk size in bytes, applicable for chunks only",
+            ),
+            OpenApiParameter(
+                _DATA_UPDATED_DATE_HEADER_NAME,
+                location=OpenApiParameter.HEADER,
+                type=OpenApiTypes.DATETIME,
+                required=False,
+                response=[200, 206],
+                description="Data update date, applicable for chunks only",
             ),
         ],
         responses={
