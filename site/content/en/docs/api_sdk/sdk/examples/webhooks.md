@@ -1,7 +1,7 @@
 ---
 title: 'Webhook recipes'
 linkTitle: 'Webhooks'
-weight: 7
+weight: 9
 description: 'Register a webhook for task events and monitor task status changes live with a local receiver'
 ---
 

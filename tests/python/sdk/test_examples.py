@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+import csv
 import hashlib
 import hmac
 import importlib.util
@@ -18,6 +19,7 @@ import urllib.request
 import zipfile
 from pathlib import Path
 from time import sleep
+from unittest.mock import MagicMock
 
 import platformdirs
 import pytest
@@ -26,6 +28,7 @@ from cvat_sdk.core.auth import AuthStore, ProfileEntry
 from cvat_sdk.core.downloading import Downloader
 from cvat_sdk.core.proxies.projects import Project
 from cvat_sdk.core.proxies.tasks import ResourceType, Task
+from cvat_sdk.core.proxies.types import Location
 
 from shared.utils.config import (
     BASE_URL,
@@ -34,7 +37,7 @@ from shared.utils.config import (
     MINIO_SECRET_KEY,
     USER_PASS,
 )
-from shared.utils.helpers import generate_image_file
+from shared.utils.helpers import generate_image_file, generate_video_file
 
 EXAMPLES_DIR = Path(__file__).parents[3] / "cvat-sdk" / "examples"
 
@@ -54,6 +57,9 @@ def receiver_target_url() -> str:
 # The bucket content summary printed by cloud_storage_register.py.
 BUCKET_CONTENT_RE = re.compile(r"contains (\d+) entries in (\d+) page\(s\)")
 
+# The id line printed by the task-creating recipes.
+CREATED_TASK_RE = re.compile(r"Created task (\d+)")
+
 
 def load_recipe(name: str) -> types.ModuleType:
     """Import a recipe as a module, so a test can reuse its own helpers instead
@@ -63,6 +69,174 @@ def load_recipe(name: str) -> types.ModuleType:
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
+
+
+class TestExampleHelpers:
+    def test_data_lint_reports_an_object_past_the_last_frame(self):
+        # Exercise a corrupt response directly: the write API rejects this frame.
+        recipe = load_recipe("project_data_lint.py")
+        task = MagicMock(spec=Task)
+        task.id = 7
+        task.data_original_chunk_type = "imageset"
+        task.get_meta.return_value = types.SimpleNamespace(
+            size=2,
+            deleted_frames=[],
+            frames=[types.SimpleNamespace(width=10, height=10) for _ in range(2)],
+        )
+        task.get_jobs.return_value = []
+        task.get_annotations.return_value = models.LabeledDataRequest(
+            tags=[],
+            tracks=[],
+            shapes=[
+                models.LabeledShapeRequest(
+                    type="rectangle", frame=2, label_id=1, points=[1, 1, 4, 8]
+                )
+            ],
+        )
+
+        findings, _ = recipe.lint_task(task, {1: "object"}, 4)
+
+        assert len(findings) == 1
+        finding = findings[0]
+        assert (finding.severity, finding.check, finding.task_id, finding.frame) == (
+            "error",
+            "dead-object",
+            7,
+            2,
+        )
+        assert finding.detail == "rectangle sits on frame 2, which is past the task's last frame 1"
+
+    @pytest.mark.parametrize("with_track", [False, True])
+    def test_data_lint_accepts_empty_or_interpolated_completed_jobs(self, with_track: bool):
+        recipe = load_recipe("project_data_lint.py")
+        task = MagicMock(spec=Task)
+        task.id = 7
+        task.data_original_chunk_type = "video"
+        task.get_meta.return_value = types.SimpleNamespace(
+            size=4, deleted_frames=[], frames=[types.SimpleNamespace(width=10, height=10)]
+        )
+        task.get_jobs.return_value = [
+            types.SimpleNamespace(id=1, start_frame=0, stop_frame=1, state="completed"),
+            types.SimpleNamespace(id=2, start_frame=2, stop_frame=3, state="completed"),
+        ]
+        tracks = []
+        if with_track:
+            # The track remains visible across both jobs despite having just one keyframe.
+            tracks.append(
+                models.LabeledTrackRequest(
+                    frame=0,
+                    label_id=1,
+                    shapes=[
+                        models.TrackedShapeRequest(
+                            type="rectangle", frame=0, outside=False, points=[1, 1, 4, 8]
+                        )
+                    ],
+                )
+            )
+        task.get_annotations.return_value = models.LabeledDataRequest(
+            tags=[], shapes=[], tracks=tracks
+        )
+
+        findings, _ = recipe.lint_task(task, {1: "object"}, 4)
+
+        assert findings == []
+
+    @staticmethod
+    def bucket_page(names: list[tuple[str, str]], next_token: str | None):
+        """One retrieve_content_v2 response: (name, type) entries plus a token."""
+        return (
+            types.SimpleNamespace(
+                content=[
+                    types.SimpleNamespace(name=name, type=types.SimpleNamespace(value=entry_type))
+                    for name, entry_type in names
+                ],
+                next=next_token,
+            ),
+            None,
+        )
+
+    def test_import_from_cloud_looks_up_a_key_across_pages(self):
+        recipe = load_recipe("task_import_annotations_from_cloud.py")
+        api = MagicMock()
+        api.retrieve_content_v2.side_effect = [
+            self.bucket_page([("other.zip", "REG")], "page-2"),
+            self.bucket_page([("task_42.zip", "REG")], None),
+        ]
+
+        assert recipe.bucket_contains(api, 7, "annotations/task_42.zip")
+
+        first, second = api.retrieve_content_v2.call_args_list
+        assert first.args == (7,) and first.kwargs == {"prefix": "annotations/"}
+        assert second.kwargs["next_token"] == "page-2"
+
+    def test_import_from_cloud_reports_a_key_the_bucket_does_not_have(self):
+        recipe = load_recipe("task_import_annotations_from_cloud.py")
+        api = MagicMock()
+        api.retrieve_content_v2.side_effect = [
+            self.bucket_page([("task_42.zip", "DIR"), ("task_43.zip", "REG")], None)
+        ]
+
+        assert not recipe.bucket_contains(api, 7, "task_42.zip")
+        assert api.retrieve_content_v2.call_args.kwargs == {}
+
+    @pytest.mark.parametrize("watermark", [None, "2026-09-01T00:00:00+00:00"])
+    @pytest.mark.parametrize("export_fails", [False, True])
+    def test_incremental_download_uses_caller_state(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        capsys: pytest.CaptureFixture,
+        watermark: str | None,
+        export_fails: bool,
+    ):
+        recipe = load_recipe("dataset_incremental_download.py")
+        monkeypatch.chdir(tmp_path)
+        # An old file must neither control this run nor be overwritten by it.
+        state_path = tmp_path / "incremental_state.json"
+        state_path.write_text("unrelated state")
+        output_dir = tmp_path / "datasets"
+        output_dir.mkdir()
+        archive = output_dir / "task_7.zip"
+        archive.write_bytes(b"old export")
+        client = MagicMock()
+        task = MagicMock(spec=Task)
+        task.id, task.name = 7, "Example"
+        client.tasks.list.return_value = [task]
+        monkeypatch.setattr(recipe, "make_client", lambda *args, **kwargs: client)
+        client.__enter__.return_value = client
+        argv = [
+            "recipe",
+            "--host",
+            "http://example.invalid",
+            "--token",
+            "dummy",
+            "--project-id",
+            "3",
+        ]
+        if watermark:
+            argv += ["--updated-after", watermark]
+        monkeypatch.setattr(sys, "argv", argv)
+
+        def export(format_name: str, path: Path, **kwargs) -> None:
+            assert not path.exists()
+            if export_fails:
+                raise RuntimeError("export failed")
+            path.write_bytes(b"new export")
+
+        task.export_dataset.side_effect = export
+        if export_fails:
+            with pytest.raises(RuntimeError, match="export failed"):
+                recipe.main()
+            assert "Downloaded" not in capsys.readouterr().out
+        else:
+            recipe.main()
+            assert archive.read_bytes() == b"new export"
+            assert "Downloaded 1 task dataset(s)" in capsys.readouterr().out
+        filters = {"project_id": 3}
+        if watermark:
+            filters["updated_date__gt"] = watermark
+        client.tasks.list.assert_called_once_with(**filters)
+        assert state_path.read_text() == "unrelated state"
 
 
 @pytest.fixture(scope="class")
@@ -142,14 +316,18 @@ class TestExamples:
         resources: list[Path] | None = None,
         segment_size: int | None = None,
         labels: tuple[str, ...] = ("object",),
+        source_storage: models.StorageRequest | None = None,
     ) -> Task:
         if resources is None:
             resources = sorted(self.make_image_dir().iterdir())
         return self.client.tasks.create_from_data(
+            # Storages can only be set while creating a task; a PATCH of
+            # source_storage is ignored by the server.
             spec=models.TaskWriteRequest(
                 name=name,
                 labels=[models.PatchedLabelRequest(name=label) for label in labels],
                 **({"segment_size": segment_size} if segment_size else {}),
+                **({"source_storage": source_storage} if source_storage else {}),
             ),
             resource_type=ResourceType.LOCAL,
             resources=resources,
@@ -162,10 +340,785 @@ class TestExamples:
             resources=sorted(self.make_image_dir().iterdir()),
         )
 
+    def make_video_task_in_project(
+        self, project: Project, *, num_frames: int = 4, name: str = "Recipe video task"
+    ) -> Task:
+        video = generate_video_file(num_frames)
+        path = self.tmp_path / video.name
+        path.write_bytes(video.getbuffer())
+        return self.client.tasks.create_from_data(
+            spec=models.TaskWriteRequest(name=name, project_id=project.id),
+            resource_type=ResourceType.LOCAL,
+            resources=[path],
+        )
+
     def make_project_with_task(self) -> Project:
         project = self.make_project()
         self.make_task_in_project(project)
         return project
+
+    def run_incremental(self, project_id: int, *, extra: list[str] | None = None):
+        return self.run_recipe(
+            "dataset_incremental_download.py",
+            args=["--project-id", str(project_id)] + list(extra or []),
+            with_cleanup=False,
+        )
+
+    def test_incremental_download_first_run_exports_every_task(self):
+        project = self.make_project()
+        first = self.make_task_in_project(project, name="Incremental A")
+        second = self.make_task_in_project(project, name="Incremental B")
+
+        result = self.run_incremental(project.id)
+
+        assert f"Exported task {first.id}" in result.stdout
+        assert f"Exported task {second.id}" in result.stdout
+        assert "Downloaded 2 task dataset(s)" in result.stdout
+        for task in (first, second):
+            assert (self.tmp_path / "datasets" / f"task_{task.id}.zip").is_file()
+
+    def test_incremental_download_second_run_exports_nothing(self):
+        project = self.make_project_with_task()
+        watermark = max(task.updated_date for task in project.get_tasks()).isoformat()
+        self.run_incremental(project.id)
+
+        result = self.run_incremental(project.id, extra=["--updated-after", watermark])
+
+        assert f"No tasks to export after {watermark}" in result.stdout
+        assert "Exported task" not in result.stdout
+
+    def test_incremental_download_reexports_only_the_changed_task(self):
+        project = self.make_project()
+        untouched = self.make_task_in_project(project, name="Untouched")
+        touched = self.make_task_in_project(project, name="Touched")
+        watermark = max(task.updated_date for task in project.get_tasks()).isoformat()
+        self.run_incremental(project.id)
+
+        touched.update(models.PatchedTaskWriteRequest(name="Touched again"))
+
+        result = self.run_incremental(project.id, extra=["--updated-after", watermark])
+        assert f"Exported task {touched.id}" in result.stdout
+        assert f"Exported task {untouched.id}" not in result.stdout
+        assert "Downloaded 1 task dataset(s)" in result.stdout
+
+    def test_incremental_download_honours_a_given_watermark(self):
+        project = self.make_project_with_task()
+        watermark = "2100-01-01T00:00:00+00:00"
+
+        result = self.run_recipe(
+            "dataset_incremental_download.py",
+            args=[
+                "--project-id",
+                str(project.id),
+                "--updated-after",
+                watermark,
+            ],
+            with_cleanup=False,
+        )
+
+        assert f"No tasks to export after {watermark}" in result.stdout
+        assert "Exported task" not in result.stdout
+
+    def read_manifest(self, name: str = "bulk_export.csv") -> list[dict]:
+        with (self.tmp_path / name).open(newline="") as f:
+            return list(csv.DictReader(f))
+
+    def test_bulk_export_exports_every_task_of_a_project(self):
+        project = self.make_project()
+        first = self.make_task_in_project(project, name="Bulk A")
+        second = self.make_task_in_project(project, name="Bulk B")
+
+        result = self.run_recipe(
+            "dataset_bulk_export.py",
+            args=["--project-id", str(project.id), "--output-dir", "out"],
+            with_cleanup=False,
+        )
+
+        assert "Exported 2 of 2 task(s)" in result.stdout
+        for task in (first, second):
+            assert (self.tmp_path / "out" / f"task_{task.id}.zip").is_file()
+        rows = self.read_manifest()
+        assert {int(row["task_id"]) for row in rows} == {first.id, second.id}
+        assert all(row["error"] == "" for row in rows)
+
+    def test_bulk_export_explicit_task_ids(self):
+        project = self.make_project()
+        wanted = self.make_task_in_project(project, name="Wanted")
+        other = self.make_task_in_project(project, name="Other")
+
+        self.run_recipe(
+            "dataset_bulk_export.py",
+            args=["--task-id", str(wanted.id), "--output-dir", "out"],
+            with_cleanup=False,
+        )
+
+        assert (self.tmp_path / "out" / f"task_{wanted.id}.zip").is_file()
+        assert not (self.tmp_path / "out" / f"task_{other.id}.zip").exists()
+
+    def test_bulk_export_skips_existing(self):
+        project = self.make_project_with_task()
+        args = ["--project-id", str(project.id), "--output-dir", "out", "--skip-existing"]
+        self.run_recipe("dataset_bulk_export.py", args=args, with_cleanup=False)
+
+        result = self.run_recipe("dataset_bulk_export.py", args=args, with_cleanup=False)
+        assert "Skipped task" in result.stdout
+        assert "Exported 0 of 1 task(s)" in result.stdout
+
+    def test_bulk_export_continues_after_a_failure(self):
+        project = self.make_project()
+        good = self.make_task_in_project(project, name="Good")
+        missing_id = 10**9
+
+        result = self.run_recipe(
+            "dataset_bulk_export.py",
+            args=["--task-id", str(good.id), str(missing_id), "--output-dir", "out"],
+            with_cleanup=False,
+            expect_failure=True,
+        )
+
+        assert f"Exported task {good.id}" in result.stdout
+        assert f"FAILED task {missing_id}" in result.stdout
+        assert (self.tmp_path / "out" / f"task_{good.id}.zip").is_file()
+        errors = [row for row in self.read_manifest() if row["error"]]
+        assert len(errors) == 1
+
+    @pytest.mark.timeout(180)
+    def test_bulk_export_with_two_workers(self):
+        project = self.make_project()
+        tasks = [self.make_task_in_project(project, name=f"Worker {i}") for i in range(2)]
+
+        result = self.run_recipe(
+            "dataset_bulk_export.py",
+            args=["--project-id", str(project.id), "--output-dir", "out", "--jobs", "2"],
+            with_cleanup=False,
+        )
+
+        assert "Exported 2 of 2 task(s)" in result.stdout
+        for task in tasks:
+            assert (self.tmp_path / "out" / f"task_{task.id}.zip").is_file()
+
+    def test_bulk_export_reports_ids_filtered_out_by_status(self):
+        project = self.make_project()
+        task = self.make_task_in_project(project, name="Still in annotation")
+
+        result = self.run_recipe(
+            "dataset_bulk_export.py",
+            args=["--task-id", str(task.id), "--status", "completed", "--output-dir", "out"],
+            with_cleanup=False,
+            expect_failure=True,
+        )
+
+        assert f"Skipping task {task.id}: status is annotation, not completed" in result.stdout
+        assert "The selection is empty" in result.stderr
+
+    def test_bulk_export_requires_a_selector(self):
+        result = self.run_recipe(
+            "dataset_bulk_export.py",
+            args=["--output-dir", "out"],
+            with_cleanup=False,
+            expect_failure=True,
+        )
+        assert "Select what to export" in result.stderr
+
+    def created_task_id(self, stdout: str) -> int:
+        match = CREATED_TASK_RE.search(stdout)
+        assert match, f"no created-task line in:\n{stdout}"
+        return int(match.group(1))
+
+    def make_gt_annotations_file(self, image_dir: Path) -> Path:
+        """A CVAT-format annotations archive with one box on img_0.png, built by
+        annotating a throwaway task made from the same files (so the frame names match).
+        """
+        source = self.make_task(name="GT source", resources=sorted(image_dir.iterdir()))
+        label_id = source.get_labels()[0].id
+        source.set_annotations(
+            models.LabeledDataRequest(
+                shapes=[
+                    models.LabeledShapeRequest(
+                        type="rectangle", frame=0, label_id=label_id, points=[1.0, 1.0, 4.0, 4.0]
+                    )
+                ]
+            )
+        )
+        path = self.tmp_path / "gt_annotations.zip"
+        source.export_dataset("CVAT for images 1.1", path, include_images=False)
+        return path
+
+    @pytest.mark.timeout(180)
+    def test_validation_task_uses_the_requested_frames(self):
+        image_dir = self.make_image_dir(4)
+
+        result = self.run_recipe(
+            "task_create_with_validation.py",
+            args=[
+                "--image-dir",
+                str(image_dir),
+                "--validation-frame",
+                "img_0.png",
+                "img_2.png",
+            ],
+            with_cleanup=False,
+        )
+
+        assert "Ground truth job" in result.stdout
+        task_id = self.created_task_id(result.stdout)
+        gt_jobs = self.client.jobs.list(task_id=task_id, type="ground_truth")
+        assert len(gt_jobs) == 1
+        # The GT job's own frame list is padded with placeholders to mirror the
+        # task's full frame range; the real validation frames come from the layout.
+        layout, _ = self.client.api_client.tasks_api.retrieve_validation_layout(task_id)
+        task_frames = self.client.tasks.retrieve(task_id).get_frames_info()
+        names = sorted(task_frames[index].name for index in layout.validation_frames)
+        assert names == ["img_0.png", "img_2.png"]
+        self.client.tasks.retrieve(task_id).remove()
+
+    @pytest.mark.timeout(180)
+    def test_validation_task_random_frame_count(self):
+        image_dir = self.make_image_dir(4)
+
+        result = self.run_recipe(
+            "task_create_with_validation.py",
+            args=["--image-dir", str(image_dir), "--frame-count", "2", "--random-seed", "42"],
+        )
+
+        assert "Ground truth job" in result.stdout
+        assert ": 2 frames" in result.stdout
+        assert "Deleted task" in result.stdout
+
+    @pytest.mark.timeout(180)
+    def test_validation_task_imports_ground_truth_annotations(self):
+        image_dir = self.make_image_dir(4)
+        annotations = self.make_gt_annotations_file(image_dir)
+
+        result = self.run_recipe(
+            "task_create_with_validation.py",
+            args=[
+                "--image-dir",
+                str(image_dir),
+                "--validation-frame",
+                "img_0.png",
+                "--gt-annotations",
+                str(annotations),
+                "--gt-format",
+                "CVAT 1.1",
+            ],
+            with_cleanup=False,
+        )
+
+        task_id = self.created_task_id(result.stdout)
+        gt_job = self.client.jobs.list(task_id=task_id, type="ground_truth")[0]
+        annotations_read = gt_job.get_annotations()
+        assert len(annotations_read.shapes) == 1
+        assert f"Imported 1 objects into ground truth job {gt_job.id}" in result.stdout
+        self.client.tasks.retrieve(task_id).remove()
+
+    def test_validation_task_rejects_unknown_frame(self):
+        image_dir = self.make_image_dir(2)
+
+        result = self.run_recipe(
+            "task_create_with_validation.py",
+            args=["--image-dir", str(image_dir), "--validation-frame", "nope.png"],
+            expect_failure=True,
+        )
+        assert "not in" in result.stderr
+
+    @pytest.mark.timeout(180)
+    def test_honeypot_task_injects_pool_frames_into_every_job(self):
+        image_dir = self.make_image_dir(6)
+
+        result = self.run_recipe(
+            "task_create_with_honeypots.py",
+            args=[
+                "--image-dir",
+                str(image_dir),
+                "--pool-frame-count",
+                "2",
+                "--honeypots-per-job",
+                "1",
+                "--segment-size",
+                "2",
+            ],
+            with_cleanup=False,
+        )
+
+        task_id = self.created_task_id(result.stdout)
+        layout, _ = self.client.api_client.tasks_api.retrieve_validation_layout(task_id)
+        assert str(layout.mode) == "gt_pool"
+        assert len(layout.validation_frames) == 2
+        annotation_jobs = self.client.jobs.list(task_id=task_id, type="annotation")
+        assert len(layout.honeypot_frames) == len(annotation_jobs)
+        for job in annotation_jobs:
+            assert f"job {job.id} frames" in result.stdout
+        self.client.tasks.retrieve(task_id).remove()
+
+    @pytest.mark.timeout(180)
+    def test_honeypot_refresh_changes_the_mapping(self):
+        image_dir = self.make_image_dir(6)
+        result = self.run_recipe(
+            "task_create_with_honeypots.py",
+            args=[
+                "--image-dir",
+                str(image_dir),
+                "--pool-frame-count",
+                "2",
+                "--honeypots-per-job",
+                "1",
+                "--segment-size",
+                "2",
+                "--refresh",
+            ],
+            with_cleanup=False,
+        )
+
+        assert "Refreshed the honeypots" in result.stdout
+        assert result.stdout.count("Validation pool frames:") == 2
+        self.client.tasks.retrieve(self.created_task_id(result.stdout)).remove()
+
+    @pytest.mark.timeout(180)
+    def test_honeypot_disable_frame(self):
+        image_dir = self.make_image_dir(6)
+
+        # The pool is appended after the original frames, so with 6 images and a
+        # 2-frame pool the pool always lands at indexes 6-7 - deterministic, unlike
+        # --pool-frame-count's own random selection of *which* images join the pool.
+        result = self.run_recipe(
+            "task_create_with_honeypots.py",
+            args=[
+                "--image-dir",
+                str(image_dir),
+                "--pool-frame",
+                "img_0.png",
+                "img_1.png",
+                "--honeypots-per-job",
+                "1",
+                "--segment-size",
+                "2",
+                "--disable-frame",
+                "6",
+            ],
+        )
+        assert "Disabled frames: [6]" in result.stdout
+        assert "Deleted task" in result.stdout
+
+    def gt_job_of(self, task_id: int):
+        jobs = self.client.jobs.list(task_id=task_id, type="ground_truth")
+        return jobs[0] if jobs else None
+
+    @pytest.mark.timeout(120)
+    def test_add_gt_frames_by_index(self):
+        task = self.make_task(
+            name="GT frames by index", resources=sorted(self.make_image_dir(4).iterdir())
+        )
+
+        result = self.run_recipe(
+            "task_add_gt_frames.py",
+            args=["--task-id", str(task.id), "--frame", "0", "2"],
+            with_cleanup=False,
+        )
+
+        assert "Created ground truth job" in result.stdout
+        layout, _ = self.client.api_client.tasks_api.retrieve_validation_layout(task.id)
+        assert sorted(layout.validation_frames) == [0, 2]
+
+    @pytest.mark.timeout(120)
+    def test_add_gt_frames_by_name(self):
+        task = self.make_task(
+            name="GT frames by name", resources=sorted(self.make_image_dir(4).iterdir())
+        )
+
+        self.run_recipe(
+            "task_add_gt_frames.py",
+            args=["--task-id", str(task.id), "--frame-name", "img_1.png", "img_3.png"],
+            with_cleanup=False,
+        )
+
+        layout, _ = self.client.api_client.tasks_api.retrieve_validation_layout(task.id)
+        assert sorted(layout.validation_frames) == [1, 3]
+
+    @pytest.mark.timeout(120)
+    def test_add_gt_frames_refuses_to_overwrite(self):
+        task = self.make_task(
+            name="GT frames twice", resources=sorted(self.make_image_dir(4).iterdir())
+        )
+        self.run_recipe(
+            "task_add_gt_frames.py",
+            args=["--task-id", str(task.id), "--frame", "0"],
+            with_cleanup=False,
+        )
+
+        refused = self.run_recipe(
+            "task_add_gt_frames.py",
+            args=["--task-id", str(task.id), "--frame", "1"],
+            with_cleanup=False,
+            expect_failure=True,
+        )
+        assert "already has a ground truth job" in refused.stderr
+
+        replaced = self.run_recipe(
+            "task_add_gt_frames.py",
+            args=["--task-id", str(task.id), "--frame", "1", "--replace"],
+            with_cleanup=False,
+        )
+        assert "Created ground truth job" in replaced.stdout
+        layout, _ = self.client.api_client.tasks_api.retrieve_validation_layout(task.id)
+        assert sorted(layout.validation_frames) == [1]
+
+    def test_add_gt_frames_rejects_out_of_range(self):
+        task = self.make_task(
+            name="GT frames range", resources=sorted(self.make_image_dir(2).iterdir())
+        )
+
+        result = self.run_recipe(
+            "task_add_gt_frames.py",
+            args=["--task-id", str(task.id), "--frame", "99"],
+            with_cleanup=False,
+            expect_failure=True,
+        )
+        assert "out of range" in result.stderr
+
+    @pytest.mark.timeout(120)
+    def test_add_gt_frames_cleanup_removes_only_the_job(self):
+        task = self.make_task(
+            name="GT frames cleanup", resources=sorted(self.make_image_dir(3).iterdir())
+        )
+
+        result = self.run_recipe(
+            "task_add_gt_frames.py",
+            args=["--task-id", str(task.id), "--frame", "0"],
+        )
+
+        assert "Deleted ground truth job" in result.stdout
+        assert self.gt_job_of(task.id) is None
+        assert self.client.tasks.retrieve(task.id).id == task.id
+
+    def seed_lint_project(self):
+        """A project whose single task has one good box, one out-of-bounds box,
+        one zero-area box, and an unused label. Images are 5x10 (w x h).
+        """
+        project = self.make_project(name="Lint project", labels=("object", "unused"))
+        task = self.make_task_in_project(project, name="Lint task")
+        label_id = {label.name: label.id for label in task.get_labels()}["object"]
+        task.set_annotations(
+            models.LabeledDataRequest(
+                shapes=[
+                    models.LabeledShapeRequest(
+                        type="rectangle", frame=0, label_id=label_id, points=[1.0, 1.0, 4.0, 8.0]
+                    ),
+                    models.LabeledShapeRequest(
+                        type="rectangle", frame=0, label_id=label_id, points=[1.0, 1.0, 99.0, 8.0]
+                    ),
+                    models.LabeledShapeRequest(
+                        type="rectangle", frame=0, label_id=label_id, points=[2.0, 2.0, 2.0, 2.0]
+                    ),
+                ]
+            )
+        )
+        return project, task
+
+    def test_data_lint_reports_geometry_errors_and_fails(self):
+        project, task = self.seed_lint_project()
+
+        result = self.run_recipe(
+            "project_data_lint.py",
+            args=["--project-id", str(project.id)],
+            with_cleanup=False,
+            expect_failure=True,
+        )
+
+        assert "error out-of-bounds" in result.stdout
+        assert "error degenerate-box" in result.stdout
+        assert "info unused-label" in result.stdout
+        rows = self.read_manifest("data_lint.csv")
+        checks = {row["check"] for row in rows}
+        assert {"out-of-bounds", "degenerate-box", "unused-label"} <= checks
+        assert all(int(row["task_id"]) == task.id for row in rows if row["task_id"])
+
+    def test_data_lint_no_fail_exits_zero(self):
+        project, _ = self.seed_lint_project()
+
+        result = self.run_recipe(
+            "project_data_lint.py",
+            args=["--project-id", str(project.id), "--no-fail"],
+            with_cleanup=False,
+        )
+        assert "error out-of-bounds" in result.stdout
+
+    def test_data_lint_accepts_a_clean_project(self):
+        project = self.make_project(name="Clean project")
+        task = self.make_task_in_project(project, name="Clean task")
+        label_id = task.get_labels()[0].id
+        task.set_annotations(
+            models.LabeledDataRequest(
+                shapes=[
+                    models.LabeledShapeRequest(
+                        type="rectangle",
+                        frame=frame,
+                        label_id=label_id,
+                        points=[1.0, 1.0, 4.0, 8.0],
+                    )
+                    for frame in range(task.size)
+                ]
+            )
+        )
+
+        result = self.run_recipe(
+            "project_data_lint.py",
+            args=["--project-id", str(project.id)],
+            with_cleanup=False,
+        )
+
+        assert "Found 0 issue(s)" in result.stdout
+        assert self.read_manifest("data_lint.csv") == []
+
+    def test_data_lint_detects_duplicate_objects(self):
+        project = self.make_project(name="Duplicate project")
+        task = self.make_task_in_project(project, name="Duplicate task")
+        label_id = task.get_labels()[0].id
+        box = dict(type="rectangle", frame=0, label_id=label_id, points=[1.0, 1.0, 4.0, 8.0])
+        task.set_annotations(
+            models.LabeledDataRequest(
+                shapes=[models.LabeledShapeRequest(**box), models.LabeledShapeRequest(**box)]
+            )
+        )
+
+        result = self.run_recipe(
+            "project_data_lint.py",
+            args=["--project-id", str(project.id)],
+            with_cleanup=False,
+            expect_failure=True,
+        )
+        assert "error duplicate-object" in result.stdout
+
+    def test_data_lint_rejects_a_task_outside_the_project(self):
+        project = self.make_project_with_task()
+        stranger = self.make_task(name="Stranger")
+
+        result = self.run_recipe(
+            "project_data_lint.py",
+            args=["--project-id", str(project.id), "--task-id", str(stranger.id)],
+            with_cleanup=False,
+            expect_failure=True,
+        )
+        assert "not found in project" in result.stderr
+
+    @pytest.mark.timeout(180)
+    def test_data_lint_checks_geometry_beyond_the_first_frame_of_a_video(self):
+        # A video task reports a single frame meta for the whole video, so the
+        # frame count has to come from `size`; taking it from `frames` used to
+        # silence every check past frame 0.
+        project = self.make_project(name="Video lint project")
+        task = self.make_video_task_in_project(project, num_frames=4)
+        label_id = task.get_labels()[0].id
+        task.set_annotations(
+            models.LabeledDataRequest(
+                shapes=[
+                    models.LabeledShapeRequest(
+                        type="rectangle", frame=2, label_id=label_id, points=[1.0, 1.0, 999.0, 8.0]
+                    )
+                ]
+            )
+        )
+
+        result = self.run_recipe(
+            "project_data_lint.py",
+            args=["--project-id", str(project.id)],
+            with_cleanup=False,
+            expect_failure=True,
+        )
+
+        assert "error out-of-bounds" in result.stdout
+        assert f"task {task.id} frame 2" in result.stdout
+        rows = self.read_manifest("data_lint.csv")
+        assert [row["frame"] for row in rows if row["check"] == "out-of-bounds"] == ["2"]
+
+    def test_data_lint_accepts_unannotated_frames(self):
+        project = self.make_project(name="Partly annotated project")
+        task = self.make_task_in_project(project, name="Partly annotated task")
+        label_id = task.get_labels()[0].id
+        task.set_annotations(
+            models.LabeledDataRequest(
+                shapes=[
+                    models.LabeledShapeRequest(
+                        type="rectangle", frame=0, label_id=label_id, points=[1.0, 1.0, 4.0, 8.0]
+                    )
+                ]
+            )
+        )
+
+        result = self.run_recipe(
+            "project_data_lint.py",
+            args=["--project-id", str(project.id)],
+            with_cleanup=False,
+        )
+
+        assert "Found 0 issue(s)" in result.stdout
+        assert self.read_manifest("data_lint.csv") == []
+
+    def test_data_lint_reports_objects_left_on_a_deleted_frame(self):
+        project = self.make_project(name="Deleted frame project")
+        task = self.make_task_in_project(project, name="Deleted frame task")
+        label_id = task.get_labels()[0].id
+        task.set_annotations(
+            models.LabeledDataRequest(
+                shapes=[
+                    models.LabeledShapeRequest(
+                        type="rectangle",
+                        frame=frame,
+                        label_id=label_id,
+                        points=[1.0, 1.0, 4.0, 8.0],
+                    )
+                    for frame in (0, 1)
+                ]
+            )
+        )
+        task.remove_frames_by_ids([1])
+
+        result = self.run_recipe(
+            "project_data_lint.py",
+            args=["--project-id", str(project.id)],
+            with_cleanup=False,
+            expect_failure=True,
+        )
+
+        assert "error dead-object" in result.stdout
+        assert "was removed from the task" in result.stdout
+        rows = self.read_manifest("data_lint.csv")
+        assert [row["frame"] for row in rows if row["check"] == "dead-object"] == ["1"]
+
+    @pytest.mark.timeout(180)
+    def test_subtasks_create_one_task_per_label_group(self):
+        image_dir = self.make_image_dir(2)
+
+        result = self.run_recipe(
+            "task_create_subtasks.py",
+            args=[
+                "--image-dir",
+                str(image_dir),
+                "--subtask",
+                "boxes:rectangle:car,person",
+                "--subtask",
+                "roads:polygon:road",
+            ],
+            with_cleanup=False,
+        )
+
+        assert "Created 2 subtask(s)" in result.stdout
+        ids = [int(match) for match in re.findall(r"as task (\d+)", result.stdout)]
+        assert len(ids) == 2
+        boxes, roads = (self.client.tasks.retrieve(task_id) for task_id in ids)
+        assert sorted((label.name, str(label.type)) for label in boxes.get_labels()) == [
+            ("car", "rectangle"),
+            ("person", "rectangle"),
+        ]
+        assert [(label.name, str(label.type)) for label in roads.get_labels()] == [
+            ("road", "polygon")
+        ]
+        for task_id in ids:
+            self.client.tasks.retrieve(task_id).remove()
+
+    def test_subtasks_reject_unknown_label_type(self):
+        image_dir = self.make_image_dir(2)
+
+        result = self.run_recipe(
+            "task_create_subtasks.py",
+            args=["--image-dir", str(image_dir), "--subtask", "boxes:square:car"],
+            expect_failure=True,
+        )
+        assert "square" in result.stderr
+        assert "Created subtask" not in result.stdout
+
+    def test_subtasks_reject_malformed_spec(self):
+        image_dir = self.make_image_dir(2)
+
+        result = self.run_recipe(
+            "task_create_subtasks.py",
+            args=["--image-dir", str(image_dir), "--subtask", "boxes-rectangle-car"],
+            expect_failure=True,
+        )
+        assert "NAME:TYPE:label" in result.stderr
+
+    def test_subtasks_parse_spec_helper(self):
+        recipe = load_recipe("task_create_subtasks.py")
+        assert recipe.parse_subtask("boxes:rectangle:car, person") == (
+            "boxes",
+            "rectangle",
+            ["car", "person"],
+        )
+
+    @pytest.mark.timeout(180)
+    def test_job_mapping_explicit_groups(self):
+        image_dir = self.make_image_dir(4)
+
+        result = self.run_recipe(
+            "task_create_job_mapping.py",
+            args=[
+                "--image-dir",
+                str(image_dir),
+                "--job",
+                "img_0.png",
+                "img_1.png",
+                "--job",
+                "img_2.png",
+                "--job",
+                "img_3.png",
+            ],
+            with_cleanup=False,
+        )
+
+        task_id = self.created_task_id(result.stdout)
+        task = self.client.tasks.retrieve(task_id)
+        jobs = sorted(task.get_jobs(), key=lambda job: job.start_frame)
+        assert [len(job.get_frames_info()) for job in jobs] == [2, 1, 1]
+        rows = self.read_manifest("job_file_mapping.csv")
+        assert set(rows[0]) == {"job_id", "frame", "file_name"}
+        # Each row names the frame its own file landed on, not the job's range.
+        assert [(row["job_id"], row["frame"], row["file_name"]) for row in rows] == [
+            (str(jobs[0].id), "0", "img_0.png"),
+            (str(jobs[0].id), "1", "img_1.png"),
+            (str(jobs[1].id), "2", "img_2.png"),
+            (str(jobs[2].id), "3", "img_3.png"),
+        ]
+        task.remove()
+
+    @pytest.mark.timeout(180)
+    def test_job_mapping_files_per_job(self):
+        image_dir = self.make_image_dir(5)
+
+        result = self.run_recipe(
+            "task_create_job_mapping.py",
+            args=["--image-dir", str(image_dir), "--files-per-job", "2"],
+        )
+
+        assert result.stdout.count("job ") >= 3
+        assert "Deleted task" in result.stdout
+
+    def test_job_mapping_rejects_unassigned_files(self):
+        image_dir = self.make_image_dir(3)
+
+        result = self.run_recipe(
+            "task_create_job_mapping.py",
+            args=["--image-dir", str(image_dir), "--job", "img_0.png"],
+            expect_failure=True,
+        )
+        assert "not assigned to any job" in result.stderr
+
+    def test_job_mapping_rejects_unknown_file(self):
+        image_dir = self.make_image_dir(2)
+
+        result = self.run_recipe(
+            "task_create_job_mapping.py",
+            args=[
+                "--image-dir",
+                str(image_dir),
+                "--job",
+                "img_0.png",
+                "img_1.png",
+                "--job",
+                "ghost.png",
+            ],
+            expect_failure=True,
+        )
+        assert "ghost.png" in result.stderr
 
     def test_auth_token(self):
         result = self.run_recipe("auth_token.py", with_cleanup=False)
@@ -468,6 +1421,111 @@ class TestExamples:
                 str(task.id),
                 "--annotations-file",
                 str(annotations_file),
+                "--import-format",
+                "Bogus 9.9",
+            ],
+            with_cleanup=False,
+            expect_failure=True,
+        )
+        assert "Unknown import format" in result.stderr
+
+    def export_annotations_to_bucket(self, task: Task, key: str) -> None:
+        """Put an annotation file into the test bucket, without a local copy."""
+        task.export_dataset(
+            "COCO 1.0",
+            key,
+            include_images=False,
+            location=Location.CLOUD_STORAGE,
+            cloud_storage_id=IMPORT_EXPORT_BUCKET_ID,
+        )
+
+    @pytest.mark.with_external_services
+    def test_task_import_annotations_from_cloud(self):
+        task = self.make_task()
+        self.seed_rectangle(task)
+        key = f"recipes/annotations_{task.id}.zip"
+        self.export_annotations_to_bucket(task, key)
+        task.remove_annotations()
+        assert not task.get_annotations().shapes
+
+        result = self.run_recipe(
+            "task_import_annotations_from_cloud.py",
+            args=[
+                "--task-id",
+                str(task.id),
+                "--cloud-storage-id",
+                str(IMPORT_EXPORT_BUCKET_ID),
+                "--filename",
+                key,
+            ],
+            with_cleanup=False,
+        )
+        assert f"Task {task.id}: 0 objects before import" in result.stdout
+        assert f"Reading '{key}' from cloud storage {IMPORT_EXPORT_BUCKET_ID}" in result.stdout
+        assert f"Task {task.id}: 1 objects after import" in result.stdout
+        assert len(task.get_annotations().shapes) == 1
+
+    @pytest.mark.with_external_services
+    def test_task_import_annotations_from_cloud_uses_the_task_source_storage(self):
+        task = self.make_task(
+            source_storage=models.StorageRequest(
+                location=models.LocationEnum("cloud_storage"),
+                cloud_storage_id=IMPORT_EXPORT_BUCKET_ID,
+            )
+        )
+        self.seed_rectangle(task)
+        key = f"annotations_{task.id}.zip"
+        self.export_annotations_to_bucket(task, key)
+        task.remove_annotations()
+
+        result = self.run_recipe(
+            "task_import_annotations_from_cloud.py",
+            args=["--task-id", str(task.id), "--filename", key],
+            with_cleanup=False,
+        )
+        assert f"Reading '{key}' from cloud storage {IMPORT_EXPORT_BUCKET_ID}" in result.stdout
+        assert len(task.get_annotations().shapes) == 1
+
+    @pytest.mark.with_external_services
+    def test_task_import_annotations_from_cloud_reports_a_missing_key(self):
+        task = self.make_task()
+        result = self.run_recipe(
+            "task_import_annotations_from_cloud.py",
+            args=[
+                "--task-id",
+                str(task.id),
+                "--cloud-storage-id",
+                str(IMPORT_EXPORT_BUCKET_ID),
+                "--filename",
+                "recipes/no_such_file.zip",
+            ],
+            with_cleanup=False,
+            expect_failure=True,
+        )
+        assert "was not found in cloud storage" in result.stderr
+        assert not task.get_annotations().shapes
+
+    def test_task_import_annotations_from_cloud_requires_a_storage(self):
+        task = self.make_task()
+        result = self.run_recipe(
+            "task_import_annotations_from_cloud.py",
+            args=["--task-id", str(task.id), "--filename", "annotations.zip"],
+            with_cleanup=False,
+            expect_failure=True,
+        )
+        assert "has no cloud source storage configured" in result.stderr
+
+    def test_task_import_annotations_from_cloud_rejects_unknown_format(self):
+        task = self.make_task()
+        result = self.run_recipe(
+            "task_import_annotations_from_cloud.py",
+            args=[
+                "--task-id",
+                str(task.id),
+                "--cloud-storage-id",
+                "1",
+                "--filename",
+                "annotations.zip",
                 "--import-format",
                 "Bogus 9.9",
             ],
