@@ -158,6 +158,17 @@ class CloudStorageClient(ABC):
         self.prefix = prefix
         self.proxies = None if is_trusted else PROXIES_FOR_UNTRUSTED_URLS
 
+    def key_with_prefix(self, key: str) -> str:
+        """Join a bare key onto the configured prefix, if there is one.
+
+        upload_file()/upload_fileobj() take the key as-is: unlike list_files_on_one_page(),
+        they have no way to tell a caller-supplied key that already includes the prefix from
+        one that does not, so this exists for callers that generate their own key (e.g.
+        export_resource_to_cloud_storage()) rather than obtaining one from a prefix-aware
+        listing.
+        """
+        return f"{self.prefix.rstrip('/')}/{key}" if self.prefix else key
+
     @property
     @abstractmethod
     def name(self) -> str:
@@ -1334,7 +1345,8 @@ def export_resource_to_cloud_storage(
     file_path = func(*args, **kwargs)
     rq_job_meta = ExportRQMeta.for_job(rq_job)
 
-    db_storage.get_client().upload_file(Path(file_path), rq_job_meta.result_filename)
+    client = db_storage.get_client()
+    client.upload_file(Path(file_path), client.key_with_prefix(rq_job_meta.result_filename))
 
     return file_path
 
