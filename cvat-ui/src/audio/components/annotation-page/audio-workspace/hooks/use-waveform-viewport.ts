@@ -13,7 +13,8 @@ import { shallowEqual, ThunkDispatch } from 'utils/redux';
 import { clamp } from 'utils/math';
 import { AudioTimeRange } from '../utils/audio-interval';
 import {
-    computeFitIntervalPixelsPerSecond, computeWaveformZoom,
+    computeFitIntervalPixelsPerSecond, computeWaveformBasePixelsPerSecond,
+    computeWaveformZoom,
     centeredScrollOffsetForTime, limitZoom, ZOOM_MIN,
 } from '../../../../utils/waveform-geometry';
 import type { WaveSurferRuntime } from './use-audio-waveform';
@@ -379,7 +380,9 @@ export function useWaveformViewport(
             scrollContainer.clientWidth,
             safeInset,
         );
-        const targetZoom = limitZoom((targetPixelsPerSecond * duration) / scrollContainer.clientWidth);
+        const targetZoom = limitZoom(
+            targetPixelsPerSecond / computeWaveformBasePixelsPerSecond(duration, scrollContainer.clientWidth),
+        );
         const actualPixelsPerSecond = computeWaveformZoom(targetZoom, duration, scrollContainer.clientWidth);
         const startInset = Math.min(safeInset, start * actualPixelsPerSecond);
 
