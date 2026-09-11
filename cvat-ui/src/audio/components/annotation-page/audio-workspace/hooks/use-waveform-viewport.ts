@@ -14,7 +14,7 @@ import { clamp } from 'utils/math';
 import { AudioTimeRange } from '../utils/audio-interval';
 import {
     computeFitIntervalPixelsPerSecond, computeWaveformZoom,
-    centeredScrollOffsetForTime, limitZoom, ZOOM_MIN,
+    centeredScrollOffsetForTime, limitZoom,
 } from '../../../../utils/waveform-geometry';
 import type { WaveSurferRuntime } from './use-audio-waveform';
 
@@ -336,16 +336,6 @@ export function useWaveformViewport(
         }
         emitTransformChange();
     }, [pixelsPerSecond, ready]);
-
-    useLayoutEffect(() => {
-        if (!ready) return;
-
-        const minimapPlugin = runtime.minimap?.plugin;
-        if (!minimapPlugin) return;
-
-        const { overlay } = minimapPlugin as unknown as { overlay?: HTMLElement };
-        if (overlay) overlay.style.opacity = zoom > ZOOM_MIN ? '1' : '0';
-    }, [ready, zoom]);
 
     // Fits interval into the current viewport, preserving a 10%/64px safe inset wherever
     // there is track space available.
