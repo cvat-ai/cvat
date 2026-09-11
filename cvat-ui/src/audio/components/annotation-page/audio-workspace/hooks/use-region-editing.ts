@@ -167,6 +167,41 @@ export function useRegionEditing({
             return closestTime;
         };
 
+        const findMoveSnapDelta = (move: MoveInteraction, delta: number, duration: number): number | null => {
+            const transform = viewport.getTransform();
+            if (!transform?.pixelsPerSecond) return null;
+
+            const movedBoundaries = [move.start + delta, move.end + delta];
+            const minimumDelta = -move.start;
+            const maximumDelta = duration - move.end;
+            let closestAdjustment: number | null = null;
+            const tolerance = SNAP_BOUNDARY_TOLERANCE_PX / transform.pixelsPerSecond;
+
+            latestRef.current.intervals.forEach((interval) => {
+                const clientID = interval.clientID as number;
+                if (interval.hidden || clientID === move.clientID) return;
+
+                (['start', 'end'] as UpdateSide[]).forEach((side) => {
+                    const snapTime = side === 'start' ? intervalStartSeconds(interval) : intervalEndSeconds(interval);
+                    movedBoundaries.forEach((boundary) => {
+                        const adjustment = snapTime - boundary;
+                        const candidateDelta = delta + adjustment;
+                        if (candidateDelta < minimumDelta || candidateDelta > maximumDelta) return;
+
+                        const distance = Math.abs(adjustment);
+                        if (
+                            distance > tolerance ||
+                            (closestAdjustment !== null && distance > Math.abs(closestAdjustment))
+                        ) return;
+
+                        closestAdjustment = adjustment;
+                    });
+                });
+            });
+
+            return closestAdjustment === null ? null : delta + closestAdjustment;
+        };
+
         const setAutoScrolling = (isAutoScrolling: boolean): void => {
             if (isAutoScrolling) {
                 autoScrollViewport = viewport.containerRef.current;
@@ -232,9 +267,12 @@ export function useRegionEditing({
             const duration = durationRef.current;
             if (pointerTime === null || duration <= 0) return false;
 
-            const delta = clamp(
+            let delta = clamp(
                 pointerTime - move.startTime, -move.start, duration - move.end,
             );
+            if (isAltPressed) {
+                delta = findMoveSnapDelta(move, delta, duration) ?? delta;
+            }
             const start = move.start + delta;
             const end = move.end + delta;
             if (start === move.region.start && end === move.region.end) {
@@ -622,6 +660,7 @@ export function useRegionEditing({
             }
 
             if (resizing) refreshResizing();
+            if (moving) refreshMoving();
             if (drawing) refreshDrawing();
             if (!drawing && latestRef.current.activeControl === ActiveControl.AUDIO_REGION_CREATE) {
                 refreshDrawStartSnapGuide();
