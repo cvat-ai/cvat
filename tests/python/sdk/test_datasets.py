@@ -8,6 +8,7 @@ from logging import Logger
 from pathlib import Path
 
 import cvat_sdk.datasets as cvatds
+import cvat_sdk.datasets.task_dataset as task_dataset_module
 import PIL.Image
 import pytest
 from cvat_sdk import Client, models
@@ -360,8 +361,10 @@ class TestTaskDataset:
             with dataset.iter_samples(temporary_chunks=True):
                 pass
 
-    def test_non_imageset_video_task_is_unsupported_for_chunk_based_media_access(self):
-        video_file = generate_video_file(4)
+    def test_iter_samples_decodes_video_chunks_once_and_skips_deleted_frames(
+        self, monkeypatch: pytest.MonkeyPatch
+    ):
+        video_file = generate_video_file(7)
         video_path = self.tmp_path / video_file.name
         video_path.write_bytes(video_file.getbuffer())
 
@@ -372,20 +375,67 @@ class TestTaskDataset:
             ),
             resource_type=ResourceType.LOCAL,
             resources=[video_path],
+            data_params={"chunk_size": 3},
+        )
+        video_task.remove_frames_by_ids([1, 4])
+
+        assert video_task.data_original_chunk_type == "video"
+
+        dataset = cvatds.TaskDataset(
+            self.client,
+            video_task.id,
+            load_annotations=False,
+            media_download_policy=cvatds.MediaDownloadPolicy.FETCH_CHUNKS_ON_DEMAND,
+        )
+        opened_chunks = []
+        closed_chunks = []
+
+        def fake_iter_video_frames(chunk_path):
+            opened_chunks.append(chunk_path)
+            chunk_index = int(chunk_path.stem)
+            first_frame_index = chunk_index * dataset._task.data_chunk_size
+            frame_count = min(
+                dataset._task.data_chunk_size,
+                dataset._task.size - first_frame_index,
+            )
+
+            try:
+                for member_index in range(frame_count):
+                    frame_index = first_frame_index + member_index
+                    yield PIL.Image.new("L", (1, 1), frame_index)
+            finally:
+                closed_chunks.append(chunk_path)
+
+        monkeypatch.setattr(
+            task_dataset_module,
+            "iter_video_frames",
+            fake_iter_video_frames,
         )
 
-        assert video_task.data_original_chunk_type != "imageset"
+        expected_frame_indexes = [0, 2, 3, 5, 6]
+        with dataset.iter_samples(temporary_chunks=True) as samples:
+            first_sample = next(samples)
+            first_media = first_sample.media
+            assert first_media.load_image().getpixel((0, 0)) == 0
 
-        with pytest.raises(
-            cvatds.UnsupportedDatasetError,
-            match="tasks whose original chunks are image sets",
-        ):
-            cvatds.TaskDataset(
-                self.client,
-                video_task.id,
-                load_annotations=False,
-                media_download_policy=cvatds.MediaDownloadPolicy.FETCH_CHUNKS_ON_DEMAND,
-            )
+            second_sample = next(samples)
+            with pytest.raises(RuntimeError, match="released"):
+                first_media.load_image()
+            assert second_sample.media.load_image().getpixel((0, 0)) == 2
+
+            actual_frame_indexes = [first_sample.frame_index, second_sample.frame_index]
+            for sample in samples:
+                actual_frame_indexes.append(sample.frame_index)
+                assert sample.media.load_image().getpixel((0, 0)) == sample.frame_index
+
+        assert actual_frame_indexes == expected_frame_indexes
+        assert [path.name for path in opened_chunks] == ["0.mp4", "1.mp4", "2.mp4"]
+        assert closed_chunks == opened_chunks
+        assert all(not path.exists() for path in opened_chunks)
+
+        assert dataset.samples[2].media.load_image().getpixel((0, 0)) == 3
+        assert opened_chunks[-1].name == "1.mp4"
+        assert closed_chunks == opened_chunks
 
     @pytest.mark.parametrize(
         "media_download_policy",
