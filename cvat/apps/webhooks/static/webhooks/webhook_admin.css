@@ -1,0 +1,27 @@
+/* Copyright (C) CVAT.ai Corporation
+ *
+ * SPDX-License-Identifier: MIT
+ */
+
+.webhook-events > div > label,
+.webhook-events > div > div > label {
+    width: auto;
+    min-width: 0;
+    padding: 0;
+}
+
+.webhook-events > div {
+    margin-bottom: 12px;
+}
+
+.webhook-events > div > label {
+    font-weight: bold;
+    margin-bottom: 4px;
+}
+
+.webhook-events > div > div > label {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    padding-left: 16px;
+}

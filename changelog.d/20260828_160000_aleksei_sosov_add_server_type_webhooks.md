@@ -7,3 +7,6 @@
 - \[Server API\] Added an `email_verified` field to `GET /api/users`
   response
   (<https://github.com/cvat-ai/cvat/pull/11106>)
+
+- Added a Django admin panel for managing webhooks
+  (<https://github.com/cvat-ai/cvat/pull/11106>)
