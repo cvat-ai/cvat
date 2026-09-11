@@ -128,12 +128,13 @@ def _import(
                     attributes=[CommonData.Attribute(name=k, value=v) for k, v in row.items()],
                 )
 
-                if not row.get("filename"):
+                row_filename = row.pop("filename", None)
+                if not row_filename:
                     raise CvatImportError("Missing filename")
 
-                output_instance_data = instance_data_for_filename.get(row["filename"])
+                output_instance_data = instance_data_for_filename.get(row_filename)
                 if not output_instance_data:
-                    raise CvatImportError(f"Unknown filename '{row['filename']}'")
+                    raise CvatImportError(f"Unknown filename '{row_filename}'")
 
                 output_instance_data.add_interval(interval)
             except Exception as e:
