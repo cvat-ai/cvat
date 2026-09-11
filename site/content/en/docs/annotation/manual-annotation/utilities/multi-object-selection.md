@@ -42,6 +42,8 @@ The **Select objects** tool remains active, so you can draw another selection bo
 
 You can also hold **Shift** and start dragging from an empty canvas area while using the **Cursor** tool.
 This activates **Select objects** and starts the selection box from the initial pointer position.
+If the box selects at least one object, **Select objects** remains active after you release the mouse button.
+If the box selects no objects, CVAT returns to the **Cursor** tool.
 
 ### Selecting individual objects
 

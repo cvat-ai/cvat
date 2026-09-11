@@ -102,6 +102,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
     private skeletonResizerRefreshRequest: number | null;
     private ctrlPressed: boolean;
     private pendingSelectionEvent: MouseEvent | null;
+    private selectionStartedWithModifier: boolean;
     private selectedObjects: number[];
     private selectedObjectsBox: SVG.Rect | null;
     private selectedObjectsLabel: HTMLDivElement | null;
@@ -562,7 +563,14 @@ export class CanvasViewImpl implements CanvasView, Listener {
     };
 
     private onSelectObjectsDone = (objects?: any[], continueSelection = false): void => {
-        if (!continueSelection) {
+        const emptyModifierSelection = this.selectionStartedWithModifier && !objects?.length;
+        const keepSelecting = continueSelection && !emptyModifierSelection;
+        this.selectionStartedWithModifier = false;
+        if (emptyModifierSelection) {
+            this.selectHandler.cancel(false);
+        }
+
+        if (!keepSelecting) {
             this.mode = Mode.IDLE;
             if (this.controller.selectData.enabled) {
                 this.controller.selectObjects({ enabled: false });
@@ -575,7 +583,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             cancelable: true,
             detail: {
                 states: objects || [],
-                continueSelection,
+                continueSelection: keepSelecting,
             },
         }));
     };
@@ -2094,6 +2102,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             );
             if (distance < 3) return;
 
+            this.selectionStartedWithModifier = true;
             this.controller.selectObjects({ enabled: true });
             this.selectHandler.move(event);
             this.pendingSelectionEvent = null;
@@ -2185,6 +2194,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         this.snapToAngleResize = consts.SNAP_TO_ANGLE_RESIZE_DEFAULT;
         this.ctrlPressed = false;
         this.pendingSelectionEvent = null;
+        this.selectionStartedWithModifier = false;
         this.selectedObjects = [];
         this.selectedObjectsBox = null;
         this.selectedObjectsLabel = null;

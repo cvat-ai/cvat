@@ -306,6 +306,49 @@ context('Multi-object selection', { scrollBehavior: false }, () => {
         cy.get('.cvat-select-control').should('have.class', 'cvat-active-canvas-control');
     });
 
+    it('Keeps Cursor active when a Shift-drag selects no objects', () => {
+        cy.get('.cvat-cursor-control').should('have.class', 'cvat-active-canvas-control');
+        cy.get(`#cvat_canvas_shape_${objectIds.carShape1}`).then(($firstShape) => {
+            const first = $firstShape[0].getBoundingClientRect();
+            cy.get(`#cvat_canvas_shape_${objectIds.carShape2}`).then(($secondShape) => {
+                const second = $secondShape[0].getBoundingClientRect();
+                const start = { x: first.right + 10, y: first.top };
+                const end = { x: second.left - 10, y: first.bottom };
+                cy.get('#cvat_canvas_content').trigger('mousedown', {
+                    button: 0,
+                    buttons: 1,
+                    clientX: start.x,
+                    clientY: start.y,
+                    shiftKey: true,
+                });
+                cy.get('#cvat_canvas_content').trigger('mousemove', {
+                    button: 0,
+                    buttons: 1,
+                    clientX: start.x + 4,
+                    clientY: start.y,
+                    shiftKey: true,
+                });
+                cy.get('#cvat_canvas_content').trigger('mousemove', {
+                    button: 0,
+                    buttons: 1,
+                    clientX: end.x,
+                    clientY: end.y,
+                    shiftKey: true,
+                });
+                cy.document().trigger('mouseup', {
+                    button: 0,
+                    clientX: end.x,
+                    clientY: end.y,
+                    shiftKey: true,
+                });
+            });
+        });
+
+        assertSelection([]);
+        cy.get('.cvat-cursor-control').should('have.class', 'cvat-active-canvas-control');
+        cy.get('.cvat-select-control').should('not.have.class', 'cvat-active-canvas-control');
+    });
+
     it('Starts bbox selection with Shift-drag while the Cursor tool is active', () => {
         cy.get('.cvat-cursor-control').should('have.class', 'cvat-active-canvas-control');
         cy.get(`#cvat_canvas_shape_${objectIds.carShape1}`).then(($firstShape) => {

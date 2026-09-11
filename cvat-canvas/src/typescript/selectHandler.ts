@@ -10,7 +10,7 @@ export interface SelectHandler {
     push(state: any): void;
     setSelected(states: any[], notify?: boolean): void;
     move(event: MouseEvent): void;
-    cancel(): void;
+    cancel(notify?: boolean): void;
 }
 
 export class SelectHandlerImpl implements SelectHandler {
@@ -76,8 +76,8 @@ export class SelectHandlerImpl implements SelectHandler {
         this.selector.move(event);
     }
 
-    public cancel(): void {
+    public cancel(notify = true): void {
         this.release();
-        this.onSelectDone();
+        if (notify) this.onSelectDone();
     }
 }
