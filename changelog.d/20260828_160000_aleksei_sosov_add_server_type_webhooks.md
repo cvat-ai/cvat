@@ -10,3 +10,9 @@
 
 - Added a Django admin panel for managing webhooks
   (<https://github.com/cvat-ai/cvat/pull/11106>)
+
+### Changed
+
+- \[Server API\] Webhook payloads for `completed:request[...]` events now
+  include a `sender` field.
+  (<https://github.com/cvat-ai/cvat/pull/11106>)

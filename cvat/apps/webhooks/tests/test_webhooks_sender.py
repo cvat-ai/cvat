@@ -104,13 +104,13 @@ class TestServerWebhooksOnRegistration(ApiTestBase):
             {
                 "event": "update:user",
                 "webhook_id": self.webhook.id,
-                "sender": {"id": None, "url": None, "username": ""},
+                "sender": None,
                 "user": {**_shared_user_body, "has_analytics_access": None, "email_verified": None},
             },
             {
                 "event": "update:user",
                 "webhook_id": self.webhook.id,
-                "sender": {"id": None, "url": None, "username": ""},
+                "sender": None,
                 "user": {
                     **_shared_user_body,
                     "has_analytics_access": False,
@@ -120,7 +120,7 @@ class TestServerWebhooksOnRegistration(ApiTestBase):
             {
                 "event": "create:user",
                 "webhook_id": self.webhook.id,
-                "sender": {"id": None, "url": None, "username": ""},
+                "sender": None,
                 "user": {
                     **_shared_user_body,
                     "has_analytics_access": False,
@@ -130,7 +130,7 @@ class TestServerWebhooksOnRegistration(ApiTestBase):
             {
                 "event": "update:user",
                 "webhook_id": self.webhook.id,
-                "sender": {"id": None, "url": None, "username": ""},
+                "sender": None,
                 "user": {
                     **_shared_user_body,
                     "has_analytics_access": False,
@@ -159,7 +159,7 @@ class TestServerWebhooksOnRegistration(ApiTestBase):
             {
                 "event": "update:user",
                 "webhook_id": self.webhook.id,
-                "sender": {"id": None, "url": None, "username": ""},
+                "sender": None,
                 "user": {
                     **_shared_user_body,
                     "has_analytics_access": False,

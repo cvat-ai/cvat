@@ -11,9 +11,11 @@ from typing import TypeVar
 
 import requests
 import rq
-from crum import get_current_request, get_current_user
+from crum import get_current_request
 from django.db.models import Model
+from django.http import HttpRequest
 from rest_framework.serializers import BaseSerializer
+from rq.job import Job as RQJob
 
 from cvat.apps.consensus.rq import ConsensusRequestId
 from cvat.apps.engine.models import (
@@ -27,7 +29,7 @@ from cvat.apps.engine.models import (
     Task,
 )
 from cvat.apps.engine.rq import BaseRQMeta, ExportRequestId, ImportRequestId
-from cvat.apps.engine.serializers import BasicUserSerializer, UserSerializer
+from cvat.apps.engine.serializers import UserSerializer
 from cvat.apps.iam.models import User
 from cvat.apps.organizations.models import Invitation, Membership, Organization
 from cvat.apps.quality_control.rq import QualityRequestId
@@ -196,19 +198,55 @@ def retrieve_instance(model: type[ModelT], pk: int) -> ModelT:
     raise ValueError(f"Unsupported model: {model}")
 
 
-def get_sender() -> dict | None:
+def _get_sender_from_http_request(http_request: HttpRequest) -> dict | None:
+    from cvat.apps.events.handlers import get_serializer
+
+    if not http_request.user.is_authenticated:
+        return None
+
+    return get_serializer(http_request.user).data
+
+
+def _get_sender_from_rq_job(rq_job: RQJob) -> dict | None:
+    from cvat.apps.events.handlers import get_serializer
+
+    user_meta = BaseRQMeta.for_job(rq_job).user
+    if user_meta is None:
+        return None
+
+    serializer = get_serializer(User(pk=user_meta.id))
+    return {field: getattr(user_meta, field) for field in serializer.Meta.fields}
+
+
+def _get_sender_from_context() -> dict | None:
     http_request = get_current_request()
     if http_request is not None:
-        user = get_current_user()
-        return BasicUserSerializer(user, context={"request": http_request}).data
+        return _get_sender_from_http_request(http_request)
 
     rq_job = rq.get_current_job()
     if rq_job is not None:
-        user = BaseRQMeta.for_job(rq_job).user
-        if user is not None:
-            return user.to_dict()
+        return _get_sender_from_rq_job(rq_job)
 
     return None
+
+
+def get_sender(
+    http_request: HttpRequest | None = None,
+    rq_job: RQJob | None = None,
+) -> dict | None:
+    """
+    Return the sender for a webhook payload.
+
+    An explicitly passed source wins; otherwise the sender is resolved from the
+    current context
+    """
+    if http_request is not None:
+        return _get_sender_from_http_request(http_request)
+
+    if rq_job is not None:
+        return _get_sender_from_rq_job(rq_job)
+
+    return _get_sender_from_context()
 
 
 def perform_webhook_request(webhook: Webhook, payload: dict) -> tuple[int, str]:

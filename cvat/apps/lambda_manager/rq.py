@@ -5,7 +5,6 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
-from uuid import UUID
 
 from django.db.models import Model
 
@@ -17,7 +16,7 @@ from cvat.apps.engine.rq import (
 )
 
 if TYPE_CHECKING:
-    from cvat.apps.iam.models import User
+    from cvat.apps.engine.types import ExtendedRequest
     from cvat.apps.redis_handler.background import AbstractRequestManager
 
 
@@ -34,15 +33,13 @@ class LambdaRQMeta(BaseRQMeta):
     def build_for(
         cls,
         *,
-        user: User,
-        uuid: UUID,
+        request: ExtendedRequest,
         request_manager_cls: type[AbstractRequestManager],
         instance: Model,
         function_id: str,
     ):
         base_meta = BaseRQMeta.build_from_instance(
-            user=user,
-            uuid=uuid,
+            request=request,
             instance=instance,
             request_manager_cls=request_manager_cls,
         )
