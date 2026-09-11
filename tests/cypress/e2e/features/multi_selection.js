@@ -306,6 +306,47 @@ context('Multi-object selection', { scrollBehavior: false }, () => {
         cy.get('.cvat-select-control').should('have.class', 'cvat-active-canvas-control');
     });
 
+    it('Starts bbox selection with Shift-drag while the Cursor tool is active', () => {
+        cy.get('.cvat-cursor-control').should('have.class', 'cvat-active-canvas-control');
+        cy.get(`#cvat_canvas_shape_${objectIds.carShape1}`).then(($firstShape) => {
+            const first = $firstShape[0].getBoundingClientRect();
+            cy.get(`#cvat_canvas_shape_${objectIds.carShape2}`).then(($secondShape) => {
+                const second = $secondShape[0].getBoundingClientRect();
+                cy.get('#cvat_canvas_content').then(($canvas) => {
+                    const canvas = $canvas[0].getBoundingClientRect();
+                    const startX = first.left - canvas.left - 5;
+                    const startY = Math.min(first.top, second.top) - canvas.top - 5;
+                    const endX = second.right - canvas.left + 5;
+                    const endY = Math.max(first.bottom, second.bottom) - canvas.top + 5;
+
+                    cy.wrap($canvas).realMouseDown({
+                        x: startX,
+                        y: startY,
+                        shiftKey: true,
+                        scrollBehavior: false,
+                    });
+                    cy.wrap($canvas).realMouseMove(startX + 4, startY, {
+                        shiftKey: true,
+                        scrollBehavior: false,
+                    });
+                    cy.wrap($canvas).realMouseMove(endX, endY, {
+                        shiftKey: true,
+                        scrollBehavior: false,
+                    });
+                    cy.wrap($canvas).realMouseUp({
+                        x: endX,
+                        y: endY,
+                        shiftKey: true,
+                        scrollBehavior: false,
+                    });
+                });
+            });
+        });
+
+        assertSelection([objectIds.carShape1, objectIds.carShape2]);
+        cy.get('.cvat-select-control').should('have.class', 'cvat-active-canvas-control');
+    });
+
     it('Excludes hidden objects and tags from selection', () => {
         cy.get(sidebarItem(objectIds.carShape1)).within(() => {
             cy.get('.cvat-object-item-button-hidden').click();
@@ -491,6 +532,41 @@ context('Multi-object selection', { scrollBehavior: false }, () => {
         cy.contains('.cvat-object-item-menu button', 'Unpin selection').click();
     });
 
+    it('Disables incompatible actions and normalizes a mixed lock state', () => {
+        cy.get(sidebarItem(objectIds.carShape1)).within(() => {
+            cy.get('.cvat-object-item-button-lock').click();
+        });
+        selectFromSidebar([objectIds.carShape1, objectIds.carShape2]);
+        openSelectionMenu();
+
+        cy.get('.cvat-canvas-selected-objects-label-selector .ant-select-disabled').should('exist');
+        cy.contains('.cvat-object-item-menu button', 'Pin selection').should('be.disabled');
+        cy.get('.cvat-canvas-selected-objects-attributes .ant-collapse-header').click();
+        cy.get('.cvat-canvas-selected-objects-attributes .cvat-object-item-select-attribute')
+            .should('have.class', 'ant-select-disabled');
+
+        cy.contains('.cvat-object-item-menu button', 'Lock selection').click();
+        [objectIds.carShape1, objectIds.carShape2].forEach((clientId) => {
+            cy.get(sidebarItem(clientId)).find('.cvat-object-item-button-lock-enabled').should('exist');
+        });
+        cy.get('.cvat_canvas_selected_objects_box')
+            .should('have.class', 'cvat_canvas_selected_objects_box_not_draggable');
+
+        openSelectionMenu();
+        cy.contains('.cvat-object-item-menu button', 'Unlock selection').click();
+        [objectIds.carShape1, objectIds.carShape2].forEach((clientId) => {
+            cy.get(sidebarItem(clientId)).find('.cvat-object-item-button-lock-enabled').should('not.exist');
+        });
+    });
+
+    it('Opens selection actions by right-clicking the selection bbox', () => {
+        selectFromSidebar([objectIds.carShape1, objectIds.carShape2]);
+        cy.get('.cvat_canvas_selected_objects_box').rightclick({ force: true });
+        cy.get('.cvat-object-item-menu').should('exist').and('be.visible');
+        cy.contains('.cvat-object-item-menu button', 'Delete selection').should('be.visible');
+        assertSelection([objectIds.carShape1, objectIds.carShape2]);
+    });
+
     it('Runs layer and annotation actions for the complete selection', () => {
         selectFromSidebar([objectIds.carShape1, objectIds.carShape2]);
         cy.get(`#cvat_canvas_shape_${objectIds.carShape1}`).invoke('attr', 'data-z-order').then((initialZOrder) => {
@@ -509,12 +585,41 @@ context('Multi-object selection', { scrollBehavior: false }, () => {
         cy.closeAnnotationsActionsModal();
     });
 
+    it('Applies layer actions only to editable selection members', () => {
+        cy.get(sidebarItem(objectIds.carShape1)).within(() => {
+            cy.get('.cvat-object-item-button-lock').click();
+        });
+        selectFromSidebar([objectIds.carShape1, objectIds.carShape2]);
+
+        cy.get(`#cvat_canvas_shape_${objectIds.carShape1}`).invoke('attr', 'data-z-order').then((lockedZOrder) => {
+            cy.get(`#cvat_canvas_shape_${objectIds.carShape2}`).invoke('attr', 'data-z-order').then((editableZOrder) => {
+                openSelectionMenu();
+                cy.contains('.cvat-object-item-menu button', 'To one layer forward').click();
+                cy.get(`#cvat_canvas_shape_${objectIds.carShape1}`)
+                    .should('have.attr', 'data-z-order', lockedZOrder);
+                cy.get(`#cvat_canvas_shape_${objectIds.carShape2}`)
+                    .should('not.have.attr', 'data-z-order', editableZOrder);
+                assertSelection([objectIds.carShape1, objectIds.carShape2]);
+                cy.pressWithPlatformModifier('z');
+                cy.get(`#cvat_canvas_shape_${objectIds.carShape2}`)
+                    .should('have.attr', 'data-z-order', editableZOrder);
+            });
+        });
+
+        clearSelection();
+        cy.get(sidebarItem(objectIds.carShape1)).within(() => {
+            cy.get('.cvat-object-item-button-lock-enabled').click();
+        });
+    });
+
     it('Changes common labels and attributes and groups the selection', () => {
         selectFromSidebar([objectIds.carShape1, objectIds.carShape2]);
         openSelectionMenu();
         cy.get('.cvat-canvas-selected-objects-label-selector .ant-select-selector').click();
-        cy.get('.ant-select-dropdown').not('.ant-select-dropdown-hidden')
-            .find(`.ant-select-item-option[title="${labels.person}"]`).click();
+        cy.contains(
+            '.ant-select-dropdown:not(.ant-select-dropdown-hidden) .ant-select-item-option',
+            labels.person,
+        ).click();
         [objectIds.carShape1, objectIds.carShape2].forEach((clientId) => {
             cy.get(sidebarItem(clientId)).find('.ant-select-selection-item').should('have.text', labels.person);
         });
@@ -522,8 +627,10 @@ context('Multi-object selection', { scrollBehavior: false }, () => {
         openSelectionMenu();
         cy.get('.cvat-canvas-selected-objects-attributes .ant-collapse-header').click();
         cy.get('.cvat-object-item-menu .cvat-object-item-select-attribute').click();
-        cy.get('.ant-select-dropdown').not('.ant-select-dropdown-hidden')
-            .find('.ant-select-item-option[title="bad"]').click();
+        cy.contains(
+            '.ant-select-dropdown:not(.ant-select-dropdown-hidden) .ant-select-item-option',
+            'bad',
+        ).click();
 
         openSelectionMenu();
         cy.contains('.cvat-object-item-menu button', 'Group selection').click();
@@ -532,8 +639,10 @@ context('Multi-object selection', { scrollBehavior: false }, () => {
 
         openSelectionMenu();
         cy.get('.cvat-canvas-selected-objects-label-selector .ant-select-selector').click();
-        cy.get('.ant-select-dropdown').not('.ant-select-dropdown-hidden')
-            .find(`.ant-select-item-option[title="${labels.car}"]`).click();
+        cy.contains(
+            '.ant-select-dropdown:not(.ant-select-dropdown-hidden) .ant-select-item-option',
+            labels.car,
+        ).click();
     });
 
     it('Copies and pastes a selection with platform modifier shortcuts', () => {
@@ -542,6 +651,13 @@ context('Multi-object selection', { scrollBehavior: false }, () => {
         cy.pressWithPlatformModifier('v');
         cy.get('.cvat_canvas_shape_drawing').should('have.length', 2);
         cy.get('.cvat-canvas-container').click(600, 500);
+        cy.get('.cvat_canvas_shape').should('have.length', selectableObjectIds.length + 2);
+
+        cy.pressWithPlatformModifier('z');
+        cy.get('.cvat_canvas_shape').should('have.length', selectableObjectIds.length);
+        assertSelection([]);
+
+        cy.pressWithPlatformModifier('{shift}z');
         cy.get('.cvat_canvas_shape').should('have.length', selectableObjectIds.length + 2);
 
         cy.pressWithPlatformModifier('z');
