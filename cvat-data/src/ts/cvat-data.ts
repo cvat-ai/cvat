@@ -331,6 +331,12 @@ export class FrameDecoder {
                             this.chunkIsBeingDecoded = null;
                             release();
                         }
+                    }).catch((error) => {
+                        release();
+                        if (this.chunkIsBeingDecoded) {
+                            this.chunkIsBeingDecoded.onReject(error instanceof Error ? error : new Error(String(error)));
+                            this.chunkIsBeingDecoded = null;
+                        }
                     });
 
                     index++;
@@ -338,8 +344,11 @@ export class FrameDecoder {
 
                 this.videoWorker.onerror = (event: ErrorEvent) => {
                     release();
-                    this.chunkIsBeingDecoded.onReject(event.error);
-                    this.chunkIsBeingDecoded = null;
+                    if (this.chunkIsBeingDecoded) {
+                        const error = event.error instanceof Error ? event.error : new Error(event.message);
+                        this.chunkIsBeingDecoded.onReject(error);
+                        this.chunkIsBeingDecoded = null;
+                    }
                 };
 
                 this.videoWorker.postMessage({
@@ -396,8 +405,11 @@ export class FrameDecoder {
 
                 this.zipWorker.onerror = (event: ErrorEvent) => {
                     release();
-                    this.chunkIsBeingDecoded.onReject(event.error);
-                    this.chunkIsBeingDecoded = null;
+                    if (this.chunkIsBeingDecoded) {
+                        const error = event.error instanceof Error ? event.error : new Error(event.message);
+                        this.chunkIsBeingDecoded.onReject(error);
+                        this.chunkIsBeingDecoded = null;
+                    }
                 };
 
                 this.zipWorker.postMessage({
@@ -409,6 +421,10 @@ export class FrameDecoder {
                 });
             }
         } catch (_error) {
+            if (this.chunkIsBeingDecoded) {
+                const error = _error instanceof Error ? _error : new Error(String(_error));
+                this.chunkIsBeingDecoded.onReject(error);
+            }
             this.chunkIsBeingDecoded = null;
             release();
         }
