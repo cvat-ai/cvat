@@ -27,6 +27,7 @@ from typing import Any
 import numpy as np
 import pytest
 import requests
+from attrs.converters import to_bool
 from cvat_sdk import exceptions
 from cvat_sdk.api_client import models
 from cvat_sdk.api_client.api_client import ApiClient, Endpoint
@@ -55,6 +56,7 @@ from rest_api.utils import (
     import_task_annotations,
 )
 from shared.fixtures.init import container_exec_cvat
+from shared.fixtures.params import CACHE, STORAGE_METHODS
 from shared.tasks.interface import ITaskSpec
 from shared.tasks.types import SourceDataType
 from shared.tasks.utils import parse_frame_step, to_rel_frames
@@ -1424,13 +1426,16 @@ class TestPatchTaskLabel:
 class TestWorkWithTask:
     _USERNAME = "admin1"
 
+    # Tests negatively for cloud data corruption, so timeout can be greater
+    @pytest.mark.timeout(25)
     @pytest.mark.with_external_services
     @pytest.mark.parametrize(
         "cloud_storage_id, manifest",
         [(1, "images_with_manifest/manifest.jsonl")],  # public bucket
     )
+    @pytest.mark.parametrize("use_cache", CACHE)
     def test_work_with_task_containing_non_stable_cloud_storage_files(
-        self, cloud_storage_id, manifest, cloud_storages, request
+        self, cloud_storage_id, manifest, use_cache, cloud_storages, request
     ):
         image_name = "images_with_manifest/image_case_65_1.png"
         cloud_storage_content = [image_name, manifest]
@@ -1441,7 +1446,7 @@ class TestWorkWithTask:
 
         data_spec = {
             "image_quality": 75,
-            "use_cache": True,
+            "use_cache": use_cache,
             "cloud_storage_id": cloud_storage_id,
             "server_files": cloud_storage_content,
         }
@@ -1496,6 +1501,31 @@ class TestTaskBackups:
 
         assert filename.is_file()
         assert filename.stat().st_size > 0
+
+    @pytest.mark.cache
+    @pytest.mark.skipif(
+        to_bool(os.getenv("CVAT_ALLOW_STATIC_CACHE", False)),
+        reason="requires CVAT_ALLOW_STATIC_CACHE to be disabled",
+    )
+    def test_task_uses_cache_when_static_cache_is_disabled(self):
+        task_id, _ = create_task(
+            self.user,
+            {"name": "Task with static cache disabled"},
+            {
+                "image_quality": 75,
+                "use_cache": False,
+                "client_files": generate_image_files(1),
+            },
+        )
+
+        task = self.client.tasks.retrieve(task_id)
+        filename = self.tmp_dir / f"task_{task.id}_backup.zip"
+        task.download_backup(filename)
+
+        with zipfile.ZipFile(filename) as backup:
+            task_manifest = json.loads(backup.read("task.json"))
+
+        assert task_manifest["data"]["storage_method"] == "cache"
 
     @pytest.mark.parametrize("mode", ["annotation", "interpolation"])
     def test_can_export_backup(self, tasks, mode):
@@ -1568,9 +1598,15 @@ class TestTaskBackups:
 
         self._test_can_restore_task_from_backup(task_id)
 
+    @pytest.mark.timeout(20)
     @pytest.mark.with_external_services
     @pytest.mark.parametrize("lightweight_backup", [True, False])
-    def test_can_export_and_import_backup_task_with_cloud_storage(self, lightweight_backup):
+    @pytest.mark.parametrize("use_cache", STORAGE_METHODS)
+    def test_can_export_and_import_backup_task_with_cloud_storage(
+        self,
+        lightweight_backup,
+        use_cache,
+    ):
         task_spec = {
             "name": "Task with files from cloud storage",
             "labels": [
@@ -1581,7 +1617,7 @@ class TestTaskBackups:
         }
         data_spec = {
             "image_quality": 75,
-            "use_cache": False,
+            "use_cache": use_cache,
             "cloud_storage_id": 1,
             "server_files": [f"images/image_{i}.jpg" for i in range(0, 6)],
             "start_frame": 1,
@@ -1607,7 +1643,9 @@ class TestTaskBackups:
             expected_media.update(["images/image_1.jpg", "images/image_3.jpg"])
         assert files_in_data == expected_media
 
-        self._test_can_restore_task_from_backup(task_id, lightweight_backup=lightweight_backup)
+        self._test_can_restore_task_from_backup(
+            task_id, lightweight_backup=lightweight_backup, backup_file=filename
+        )
 
     @pytest.mark.parametrize("mode", ["annotation", "interpolation"])
     def test_can_import_backup(self, tasks, mode):
@@ -1725,11 +1763,14 @@ class TestTaskBackups:
         self._test_can_restore_task_from_backup(task.id, backup_file=backup_path)
 
     @pytest.mark.with_external_services
-    def test_can_export_and_import_backup_with_images_in_backing_cs(self, request, cloud_storages):
+    @pytest.mark.parametrize("use_cache", CACHE)
+    def test_can_export_and_import_backup_with_images_in_backing_cs(
+        self, request, cloud_storages, use_cache
+    ):
         task = self.client.tasks.create_from_data(
             models.TaskWriteRequest(name="Canvas3D"),
             [SHARE_DIR / "test_canvas3d.zip"],
-            data_params={"use_cache": True},
+            data_params={"use_cache": use_cache},
         )
 
         self._test_can_export_and_import_backup_with_backing_cs(
@@ -3052,8 +3093,9 @@ class TestPatchTask:
         ],
     )
     @pytest.mark.parametrize("field", ["source_storage", "target_storage"])
+    @pytest.mark.parametrize("use_cache", CACHE)
     def test_user_cannot_update_task_with_cloud_storage_without_access(
-        self, storage_id, field, regular_lonely_user
+        self, storage_id, field, use_cache, regular_lonely_user
     ):
         user = regular_lonely_user
 
@@ -3062,7 +3104,7 @@ class TestPatchTask:
         }
         data_spec = {
             "image_quality": 75,
-            "use_cache": True,
+            "use_cache": use_cache,
             "server_files": ["images/image_1.jpg"],
         }
         task_id, _ = create_task(user, task_spec, data_spec)
@@ -3275,10 +3317,12 @@ class TestPatchTask:
             (False, True),
         ],
     )
+    @pytest.mark.parametrize("use_cache", CACHE)
     def test_task_can_be_transferred_to_different_workspace(
         self,
         from_org: bool,
         to_org: bool,
+        use_cache: bool,
         organizations,
         find_users,
     ):
@@ -3320,7 +3364,7 @@ class TestPatchTask:
         }
         data_spec = {
             "image_quality": 75,
-            "use_cache": True,
+            "use_cache": use_cache,
             "server_files": ["images/image_1.jpg"],
         }
         task_id, _ = create_task(
