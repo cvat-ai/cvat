@@ -3,19 +3,25 @@
 #
 # SPDX-License-Identifier: MIT
 import functools
+import os
 import re
 import shutil
+from contextlib import suppress
 
 from django.conf import settings
 from django.db import transaction
 from django.db.models.signals import m2m_changed, post_delete, post_save, pre_delete, pre_save
 from django.dispatch import receiver
 from rest_framework.exceptions import ValidationError
+from rq.job import Job as RQJob
 
+from cvat.apps.engine.background import BaseResourceImporter
 from cvat.apps.engine.cache import MediaCache
 from cvat.apps.engine.cache_signals import cache_item_created_signal, cache_item_read_signal
 from cvat.apps.events.handlers import handle_cache_item_create, handle_cache_item_read
 from cvat.apps.iam.models import User
+from cvat.apps.redis_handler.background import AbstractRequestManager
+from cvat.apps.redis_handler.signals import request_failed, request_succeeded
 
 from .models import Asset, CloudStorage, Data, Job, JobType, Profile, Project, StatusChoice, Task
 
@@ -248,3 +254,21 @@ def __cache_item_read_handler(
         size=item_data_size,
         queue=rq_queue,
     )
+
+
+@receiver(request_succeeded)
+@receiver(request_failed)
+def cleanup_import_source_file(
+    sender: type[AbstractRequestManager],
+    rq_job: RQJob,
+    *args,
+    **kwargs,
+) -> None:
+    # unfortunately, there is not way to specify base class right in the signal receiver decorator
+    if not issubclass(sender, BaseResourceImporter):
+        return
+
+    filename = rq_job.args[0]
+
+    with suppress(FileNotFoundError):
+        os.remove(filename)

@@ -87,19 +87,6 @@ else:
 if EXPORT_CACHE_LOCK_ACQUISITION_TIMEOUT <= EXPORT_CACHE_LOCK_TTL:
     raise ImproperlyConfigured("Lock acquisition timeout must be more than lock TTL")
 
-EXPORT_LOCKED_RETRY_INTERVAL = os.getenv("CVAT_DATASET_EXPORT_LOCKED_RETRY_INTERVAL")
-"Retry interval for cases the export cache lock was unavailable, in seconds"
-
-if EXPORT_LOCKED_RETRY_INTERVAL is not None:
-    EXPORT_LOCKED_RETRY_INTERVAL = int(EXPORT_LOCKED_RETRY_INTERVAL)
-    logger.warning(
-        "The CVAT_DATASET_EXPORT_LOCKED_RETRY_INTERVAL is deprecated, "
-        "use CVAT_EXPORT_LOCKED_RETRY_INTERVAL instead",
-    )
-else:
-    EXPORT_LOCKED_RETRY_INTERVAL = int(
-        os.getenv("CVAT_EXPORT_LOCKED_RETRY_INTERVAL", default_export_locked_retry_interval)
-    )
 
 MAX_CONSENSUS_REPLICAS = int(os.getenv("CVAT_MAX_CONSENSUS_REPLICAS", 11))
 if MAX_CONSENSUS_REPLICAS < 1:
