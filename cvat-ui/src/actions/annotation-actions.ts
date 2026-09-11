@@ -1685,7 +1685,7 @@ export function rotateActiveObjectOrFrame(rotation: Rotation): ThunkAction {
         if (activatedState) {
             if (!activatedState.isGroundTruth && !activatedState.lock &&
                 changeObjectOrientation(activatedState, degrees)) {
-                dispatch(updateAnnotationsAsync([activatedState]));
+                dispatch(updateAnnotationsBatchAsync([activatedState]));
             }
             return;
         }

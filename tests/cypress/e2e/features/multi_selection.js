@@ -448,6 +448,14 @@ context('Multi-object selection', { scrollBehavior: false }, () => {
         cy.get(shapeSelector).trigger('mousemove');
         cy.get(shapeSelector).should('have.class', 'cvat_canvas_shape_activated');
         cy.get('body').type('{ctrl}r');
+        cy.get('.cvat-annotation-header-undo-button').trigger('mouseover');
+        cy.get('.ant-tooltip-inner').should('contain.text', 'Undo: Object rotated');
+        cy.get('.cvat-annotation-header-undo-button').click();
+        cy.get('.cvat-annotation-header-redo-button').trigger('mouseover');
+        cy.get('.ant-tooltip-inner').should('contain.text', 'Redo: Object rotated');
+        cy.get('.cvat-annotation-header-undo-button').trigger('mouseover');
+        cy.get('.ant-tooltip-inner').should('not.contain.text', 'Undo: Changed points');
+        cy.get('.cvat-annotation-header-redo-button').click();
 
         selectFromSidebar([objectIds.carShape1]);
         cy.get(shapeSelector).then(($shape) => {

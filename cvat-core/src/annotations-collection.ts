@@ -218,6 +218,8 @@ export default class Collection {
                     actions.add(HistoryActions.CHANGED_PINNED);
                 } else if (property === 'zOrder') {
                     actions.add(HistoryActions.CHANGED_ZORDER);
+                } else if (property === 'rotation') {
+                    actions.add(HistoryActions.CHANGED_ROTATION);
                 } else {
                     throw new ArgumentError(`Batch update does not support "${property}" changes`);
                 }
@@ -225,10 +227,12 @@ export default class Collection {
             state.elements.forEach(collectActions);
         };
         objectStates.forEach(collectActions);
-        if (actions.size !== 1) {
+        const orientationChange = actions.size === 2 &&
+            actions.has(HistoryActions.CHANGED_POINTS) && actions.has(HistoryActions.CHANGED_ROTATION);
+        if (actions.size !== 1 && !orientationChange) {
             throw new ArgumentError('Batch update must contain exactly one supported change type');
         }
-        const [action] = actions;
+        const action = orientationChange ? HistoryActions.CHANGED_ROTATION : [...actions][0];
 
         const clientIDs = new Set<number>();
         const objects = objectStates.map((state) => {
