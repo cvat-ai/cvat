@@ -1199,9 +1199,21 @@ class ProjectData(InstanceLabelData):
         task_id: int = attrib(default=None)
         subset: str = attrib(default=None)
 
+    class LabeledInterval(NamedTuple):
+        start: timedelta
+        stop: timedelta | None
+        label: int
+        attributes: Sequence[CommonData.Attribute]
+        group: int = 0
+        source: str | None = None
+        id: int | None = None
+        score: float = 1.0
+        task_id: int = None
+        subset: str = None
+
     def __init__(
         self,
-        annotation_irs: Mapping[str, AnnotationIR],
+        annotation_irs: Mapping[int, AnnotationIR],
         db_project: Project,
         host: str = "",
         task_annotations: Mapping[int, Any] = None,
@@ -1235,6 +1247,15 @@ class ProjectData(InstanceLabelData):
             + task.data.start_frame
             + self._task_frame_offsets[task_id]
         )
+
+    def abs_interval_frame(self, task_id: int, rel_frame: int) -> int:
+        task = self._db_tasks[task_id]
+
+        task_rel_range = range(0, task.data.size)
+        if rel_frame not in task_rel_range and rel_frame != task_rel_range.stop:
+            raise ValueError(f"Unknown internal frame id {rel_frame}")
+
+        return rel_frame * task.data.get_frame_step() + task.data.start_frame
 
     def rel_frame_id(self, task_id: int, absolute_id: int) -> int:
         task = self._db_tasks[task_id]
@@ -1474,6 +1495,27 @@ class ProjectData(InstanceLabelData):
             ],
         )
 
+    def _export_labeled_interval(self, interval: dict[str, Any], task_id: int) -> LabeledInterval:
+        def frame_to_timestamp(frame: int) -> timedelta:
+            return timedelta(milliseconds=frame)
+
+        return ProjectData.LabeledInterval(
+            id=interval["id"],
+            start=frame_to_timestamp(self.abs_interval_frame(task_id, interval["start"])),
+            stop=(
+                frame_to_timestamp(self.abs_interval_frame(task_id, interval["stop"]))
+                if interval["stop"] is not None
+                else None
+            ),
+            label=self._get_label_name(interval["label_id"]),
+            group=interval.get("group", 0),
+            source=interval["source"],
+            score=interval["score"],
+            attributes=self._export_attributes(interval["attributes"]),
+            task_id=task_id,
+            subset=self._task_data(task_id).db_instance.subset,
+        )
+
     def group_by_frame(
         self, include_empty: bool = False
     ) -> Generator[CommonData.Frame, None, None]:
@@ -1531,6 +1573,11 @@ class ProjectData(InstanceLabelData):
             for tag in self._annotation_irs[task.id].tags:
                 if (task.id, tag["frame"]) not in self._deleted_frames:
                     yield self._export_tag(tag, task.id)
+
+    def iterate_intervals(self) -> Generator[LabeledInterval, None, None]:
+        for task in self._db_tasks.values():
+            for interval in self._annotation_irs[task.id].intervals:
+                yield self._export_labeled_interval(interval, task_id=task.id)
 
     @property
     def meta(self):

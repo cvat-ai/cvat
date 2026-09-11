@@ -11,14 +11,14 @@ from datetime import timedelta
 import datumaro.util
 from rest_framework.serializers import ValidationError
 
-from cvat.apps.dataset_manager.bindings import CommonData
+from cvat.apps.dataset_manager.bindings import CommonData, CvatImportError, ProjectData
 from cvat.apps.dataset_manager.formats.registry import exporter, importer
 from cvat.apps.engine.models import DimensionType, SourceType
 from cvat.apps.engine.utils import take_by
 
 
 @exporter(name="Generic TSV", version="1.0", ext="TSV", dimension=DimensionType.DIM_1D)
-def _export(dst_file, temp_dir, instance_data: CommonData, save_images=False):
+def _export(dst_file, temp_dir, instance_data: CommonData | ProjectData, save_images=False):
     if save_images:
         raise ValidationError("Media export as dataset is not supported for audio tasks")
 
@@ -33,14 +33,25 @@ def _export(dst_file, temp_dir, instance_data: CommonData, save_images=False):
     attr_names = sorted(attr_names)
     field_names += attr_names
 
-    sample_filename = instance_data.db_data.audio.path
+    # TODO: refactor ProjectData to inherit CommonData
+    if isinstance(instance_data, ProjectData):
+        sample_filename_per_task = {task.id: task.data.audio.path for task in instance_data.tasks}
+        instance_intervals = (
+            (sample_filename_per_task[ann.task_id], ann)
+            for ann in instance_data.iterate_intervals()
+        )
+    elif isinstance(instance_data, CommonData):
+        sample_filename = instance_data.db_data.audio.path
+        instance_intervals = ((sample_filename, ann) for ann in instance_data.iterate_intervals())
+    else:
+        assert False, f"Unexpected instance_data type '{type(instance_data)}'"
 
     file_writer = io.TextIOWrapper(dst_file)
     with closing(file_writer):
         csv_writer = csv.DictWriter(file_writer, delimiter="\t", fieldnames=field_names)
         csv_writer.writeheader()
 
-        for interval in instance_data.iterate_intervals():
+        for sample_filename, interval in instance_intervals:
             row_dict = {
                 "id": interval.id,
                 "filename": sample_filename,
@@ -83,9 +94,20 @@ def parse_time(v: str) -> timedelta | None:
 
 
 @importer(name="Generic TSV", version="1.0", ext="TSV", dimension=DimensionType.DIM_1D)
-def _import(src_file, temp_dir, instance_data: CommonData, load_data_callback=None, **kwargs):
+def _import(
+    src_file, temp_dir, instance_data: CommonData | ProjectData, load_data_callback=None, **kwargs
+):
     if load_data_callback is not None:
         raise ValidationError("Media import from dataset is not supported for audio tasks")
+
+    if isinstance(instance_data, ProjectData):
+        instance_data_for_filename = {
+            task_data.db_data.audio.path: task_data for task_data in instance_data.all_task_data
+        }
+    elif isinstance(instance_data, CommonData):
+        instance_data_for_filename = {instance_data.db_data.audio.path: instance_data}
+    else:
+        assert False, f"Unexpected instance_data type '{type(instance_data)}'"
 
     file_reader = io.TextIOWrapper(src_file)
     field_names = None
@@ -94,14 +116,25 @@ def _import(src_file, temp_dir, instance_data: CommonData, load_data_callback=No
         if field_names is None:
             field_names = csv_reader.fieldnames
 
-        for row in csv_reader:
-            interval = CommonData.LabeledInterval(
-                start=parse_time(row.pop("start")),
-                stop=parse_time(row.pop("stop")),
-                label=row.pop("label"),
-                group=datumaro.util.cast(row.pop("group", 0), int, default=0),
-                source=SourceType.FILE,
-                score=datumaro.util.cast(row.pop("score", 1), float, default=1),
-                attributes=[CommonData.Attribute(name=k, value=v) for k, v in row.items()],
-            )
-            instance_data.add_interval(interval)
+        for row_number, row in enumerate(csv_reader):
+            try:
+                interval = CommonData.LabeledInterval(
+                    start=parse_time(row.pop("start")),
+                    stop=parse_time(row.pop("stop")),
+                    label=row.pop("label"),
+                    group=datumaro.util.cast(row.pop("group", 0), int, default=0),
+                    source=SourceType.FILE,
+                    score=datumaro.util.cast(row.pop("score", 1), float, default=1),
+                    attributes=[CommonData.Attribute(name=k, value=v) for k, v in row.items()],
+                )
+
+                if not row.get("filename"):
+                    raise CvatImportError("Missing filename")
+
+                output_instance_data = instance_data_for_filename.get(row["filename"])
+                if not output_instance_data:
+                    raise CvatImportError(f"Unknown filename '{row['filename']}'")
+
+                output_instance_data.add_interval(interval)
+            except Exception as e:
+                raise CvatImportError("Can't import interval #{}: {}".format(row_number, e)) from e
