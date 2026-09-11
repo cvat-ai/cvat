@@ -1513,7 +1513,7 @@ class ProjectData(InstanceLabelData):
             score=interval["score"],
             attributes=self._export_attributes(interval["attributes"]),
             task_id=task_id,
-            subset=self._task_data(task_id).db_instance.subset,
+            subset=self._tasks_data[task_id]._db_subset,
         )
 
     def group_by_frame(
