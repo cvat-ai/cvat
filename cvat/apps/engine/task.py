@@ -531,6 +531,62 @@ def _download_data(
     return list(local_files.keys())
 
 
+def _is_frame_filter_active(
+    *,
+    start_frame: int,
+    stop_frame: int | None,
+    step: int,
+    media_count: int,
+) -> bool:
+    effective_stop = (media_count - 1) if stop_frame is None else min(media_count - 1, stop_frame)
+    return start_frame != 0 or step != 1 or effective_stop != media_count - 1
+
+
+def _filter_server_files_exclude(
+    media_files: Sequence[str],
+    server_files_exclude: Sequence[str] | None,
+) -> list[str]:
+    if not server_files_exclude:
+        return list(media_files)
+
+    exclude_set = set(server_files_exclude)
+    return [
+        f
+        for f in media_files
+        if f not in exclude_set
+        and all(f"{parent}/" not in exclude_set for parent in PurePosixPath(f).parents)
+    ]
+
+
+def _get_sorted_filtered_image_paths(
+    media_files: Sequence[str],
+    *,
+    sorting_method: models.SortingMethod,
+    start_frame: int,
+    stop_frame: int | None,
+    step: int,
+) -> list[str]:
+    if not media_files:
+        return []
+
+    sorted_paths = sort(list(media_files), sorting_method)
+
+    effective_stop = (
+        (len(sorted_paths) - 1) if stop_frame is None else min(len(sorted_paths) - 1, stop_frame)
+    )
+    step = max(step, 1)
+
+    if not _is_frame_filter_active(
+        start_frame=start_frame,
+        stop_frame=stop_frame,
+        step=step,
+        media_count=len(sorted_paths),
+    ):
+        return sorted_paths
+
+    return [sorted_paths[i] for i in range(start_frame, effective_stop + 1, step)]
+
+
 def _read_dataset_manifest(path: Path, *, create_index: bool = False) -> ImageManifestManager:
     """
     Reads an upload manifest file
@@ -1640,9 +1696,9 @@ def initialize_task(
         is_backup_restore=is_backup_restore,
     )
 
+    cloud_storage_manifest: ImageManifestManager | VideoManifestManager | None = None
+    cloud_storage_manifest_prefix: str | None = None
     if is_data_in_cloud and not is_backup_restore:
-        cloud_storage_manifest: ImageManifestManager | VideoManifestManager | None = None
-        cloud_storage_manifest_prefix: str | None = None
         if manifest_file:
             cloud_storage_manifest_path = (
                 db_data.cloud_storage.get_storage_dirname() / manifest_file
@@ -1671,6 +1727,10 @@ def initialize_task(
     media = _count_files(data)
     media, detected_mode = _validate_data(media, manifest_files=manifest_files)
     is_media_sorted = False
+    media_was_prefiltered = False
+    requested_start_frame = db_data.start_frame
+    requested_frame_filter = db_data.frame_filter
+    requested_stop_frame = data["stop_frame"]
 
     if job_file_mapping is not None and detected_mode != models.TaskMode.ANNOTATION:
         raise ValidationError("job_file_mapping can't be used with sequence-based data like videos")
@@ -1705,9 +1765,63 @@ def initialize_task(
         ):
             update_status("Downloading input media")
 
-            db_data.cloud_storage.get_client().bulk_download_to_dir(
-                list(map(PurePosixPath, itertools.chain.from_iterable(media.values()))), upload_dir
+            files_to_download = list(
+                map(PurePosixPath, itertools.chain.from_iterable(media.values()))
             )
+            if (
+                media["image"]
+                and not is_packed_media
+                and job_file_mapping is None
+                and _is_frame_filter_active(
+                    start_frame=db_data.start_frame,
+                    stop_frame=data["stop_frame"],
+                    step=db_data.get_frame_step(),
+                    media_count=len(media["image"]),
+                )
+            ):
+                # Sorting and frame filtering must be applied once, before download.
+                # Otherwise, the extractor may reference files that were not downloaded
+                # (e.g. with random sorting and static cache).
+                media["image"] = _get_sorted_filtered_image_paths(
+                    _filter_server_files_exclude(media["image"], data.get("server_files_exclude")),
+                    sorting_method=data["sorting_method"],
+                    start_frame=db_data.start_frame,
+                    stop_frame=data["stop_frame"],
+                    step=db_data.get_frame_step(),
+                )
+                is_media_sorted = True
+                media_was_prefiltered = True
+
+                # Extractor must not re-apply the filter on the already selected subset.
+                # Persist requested coordinates later for ordinary tasks; GT pool resets them.
+                db_data.start_frame = 0
+                db_data.frame_filter = ""
+                data["stop_frame"] = None
+
+                non_image_files = list(
+                    itertools.chain.from_iterable(v for k, v in media.items() if k != "image" and v)
+                )
+                files_to_download = list(
+                    map(PurePosixPath, itertools.chain(media["image"], non_image_files))
+                )
+
+            db_data.cloud_storage.get_client().bulk_download_to_dir(files_to_download, upload_dir)
+
+            if media_was_prefiltered:
+                # Keep the task manifest aligned with the downloaded subset.
+                # Otherwise a full cloud/upload manifest would mismatch selected files.
+                if isinstance(cloud_storage_manifest, ImageManifestManager):
+                    manifest = ImageManifestManager(db_data.get_manifest_path())
+                    _create_task_manifest_based_on_cloud_storage_manifest(
+                        sorted_media=[PurePosixPath(f) for f in media["image"]],
+                        cloud_storage_manifest_prefix=cloud_storage_manifest_prefix or "",
+                        cloud_storage_manifest=cloud_storage_manifest,
+                        manifest=manifest,
+                    )
+                    manifest_file = None
+                elif manifest_file:
+                    # Drop the full upload manifest so descriptors rebuild from the subset.
+                    manifest_file = None
 
             is_data_in_cloud = False
             if is_packed_media:
@@ -2037,6 +2151,17 @@ def initialize_task(
         db_data.stop_frame = min(
             db_data.stop_frame, db_data.start_frame + (db_data.size - 1) * db_data.get_frame_step()
         )
+
+    # Restore source-frame coordinates for ordinary prefiltered tasks.
+    # GT pool allocation rewrites layout and intentionally clears these fields.
+    if media_was_prefiltered and not (
+        validation_params and validation_params.get("mode") == models.ValidationMode.GT_POOL
+    ):
+        db_data.start_frame = requested_start_frame
+        db_data.frame_filter = requested_frame_filter
+        db_data.stop_frame = db_data.start_frame + (db_data.size - 1) * db_data.get_frame_step()
+        if requested_stop_frame is not None:
+            db_data.stop_frame = min(db_data.stop_frame, requested_stop_frame)
 
     slogger.glob.info(
         "Saved media for Data #{}: media type '{}', {} frames".format(
