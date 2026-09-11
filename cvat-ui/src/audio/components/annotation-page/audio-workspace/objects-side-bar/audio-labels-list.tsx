@@ -23,6 +23,8 @@ import { registerComponentShortcuts } from 'actions/shortcuts-actions';
 import { subKeyMap } from 'utils/component-subkeymap';
 import { useResetShortcutsOnUnmount } from 'utils/hooks';
 import { getCVATStore } from 'cvat-store';
+import { LabelType } from 'cvat-core-wrapper';
+import { filterApplicableForType } from 'utils/filter-applicable-labels';
 
 const componentShortcuts: Record<string, KeyMapItem> = {};
 
@@ -126,12 +128,16 @@ function AudioLabelsList(): JSX.Element {
     }), shallowEqual);
 
     const labelIDs = useMemo(() => labels.map((label: any): number => label.id), [labels]);
+    const applicableLabelIDs = useMemo(
+        () => filterApplicableForType(LabelType.INTERVAL, labels).map((label) => label.id as number),
+        [labels],
+    );
 
     useResetShortcutsOnUnmount(componentShortcuts);
 
     const keyToLabelMapping = useMemo(() => Object.fromEntries(
-        labelIDs.slice(0, 10).map((labelID: number, idx: number) => [(idx + 1) % 10, labelID]),
-    ), [labelIDs]);
+        applicableLabelIDs.slice(0, 10).map((labelID: number, idx: number) => [(idx + 1) % 10, labelID]),
+    ), [applicableLabelIDs]);
 
     useEffect(() => {
         const updated = JSON.parse(JSON.stringify(componentShortcuts));

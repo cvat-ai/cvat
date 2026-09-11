@@ -82,7 +82,7 @@ context('Delete a label from a project.', () => {
         it('Open a job with no labels in the project. "No labels" notification is shown.', () => {
             cy.openTaskJob(taskName);
             cy.get('.cvat-disabled-canvas-control').should('exist');
-            cy.contains('.cvat-notification-no-labels', 'does not contain any labels').should('exist').and('be.visible');
+            cy.contains('.cvat-notification-no-labels', 'does not contain any compatible labels').should('exist').and('be.visible');
         });
     });
 });
