@@ -10,7 +10,7 @@ import notification from 'antd/lib/notification';
 import Button from 'antd/lib/button';
 
 import './styles.scss';
-import { Job } from 'cvat-core-wrapper';
+import { DimensionType, Job, LabelType } from 'cvat-core-wrapper';
 import AttributeAnnotationWorkspace from 'components/annotation-page/attribute-annotation-workspace/attribute-annotation-workspace';
 import SingleShapeWorkspace from 'components/annotation-page/single-shape-workspace/single-shape-workspace';
 import ReviewAnnotationsWorkspace from 'components/annotation-page/review-workspace/review-workspace';
@@ -27,6 +27,7 @@ import { usePrevious } from 'utils/hooks';
 import EventRecorder from 'utils/event-recorder';
 import { readLatestFrame } from 'utils/remember-latest-frame';
 import { EventScope } from 'cvat-core/src/enums';
+import { filterApplicableForType } from 'utils/filter-applicable-labels';
 import SearchFramesModal from './top-bar/search-modal';
 
 interface Props {
@@ -109,14 +110,17 @@ export default function AnnotationPageComponent(props: Props): JSX.Element {
 
             EventRecorder.logger = job.logger;
 
-            if (!job.labels.length) {
+            const applicableLabels = job.dimension === DimensionType.DIMENSION_1D ?
+                filterApplicableForType(LabelType.INTERVAL, job.labels) :
+                job.labels;
+            if (!applicableLabels.length) {
                 notification.warning({
                     message: 'No labels',
                     description: (
                         <span>
                             {`${job.projectId ? 'Project' : 'Task'} ${
                                 job.projectId || job.taskId
-                            } does not contain any labels. `}
+                            } does not contain any compatible labels. `}
                             <a href={`/${job.projectId ? 'projects' : 'tasks'}/${job.projectId || job.taskId}/`}>
                                 Add
                             </a>

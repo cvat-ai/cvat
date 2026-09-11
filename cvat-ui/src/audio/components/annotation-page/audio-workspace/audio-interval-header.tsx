@@ -47,6 +47,11 @@ export default function AudioIntervalHeader({
     const end = intervalEndSeconds(interval);
     const duration = intervalDurationSeconds(interval);
     const applicableLabels = filterApplicableForType(LabelType.INTERVAL, labels);
+    // Old intervals may have labels that are not applicable for intervals anymore,
+    // so we need to add them to the list of labels for the selector
+    const labelsForSelector = applicableLabels.some((label) => label.id === interval.label.id) ?
+        applicableLabels :
+        [interval.label, ...applicableLabels];
 
     const labelSelector = (
         <LabelSelector
@@ -54,7 +59,7 @@ export default function AudioIntervalHeader({
             className='cvat-audio-interval-header-label-selector'
             popupClassName='cvat-audio-interval-header-label-dropdown'
             popupMatchSelectWidth={false}
-            labels={applicableLabels}
+            labels={labelsForSelector}
             value={interval.label.id ?? null}
             disabled={isReadonly}
             tooltip='Change current label'
