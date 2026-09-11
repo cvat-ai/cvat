@@ -63,8 +63,5 @@ keydb:
     requests:
 
 traefik:
-  logs:
-    general:
-      level: DEBUG
-    access:
-      enabled: true
+  log:
+    level: DEBUG
