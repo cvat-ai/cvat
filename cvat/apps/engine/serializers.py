@@ -38,13 +38,13 @@ from PIL import Image
 from rest_framework import exceptions, serializers
 from rest_framework.reverse import reverse
 
-from cvat.apps.dataset_manager.formats.utils import get_label_color
 from cvat.apps.engine import field_validation, models
 from cvat.apps.engine.cloud_provider import (
     Credentials,
     Status,
     get_cloud_storage_client,
 )
+from cvat.apps.engine.label_colors import get_label_color
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.media_io.frame_provider import TaskFrameProvider
 from cvat.apps.engine.permissions import ProjectPermission, TaskPermission
