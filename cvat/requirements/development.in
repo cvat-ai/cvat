@@ -2,5 +2,5 @@
 
 django-extensions==4.*
 django-silk==5.*
-rope==0.17.0
+rope==1.14.0
 snakeviz~=2.2
