@@ -38,7 +38,7 @@ export class AnnotationBase extends AnnotationContext {
 
         this._serverId = data.id ?? undefined;
         this._parentId = injection.parentId ?? undefined;
-        this.color = color;
+        this.color = data.color ?? color;
         this.readOnlyFields = [];
         this.groupObject = Object.defineProperties(
             {}, {
@@ -65,8 +65,8 @@ export class AnnotationBase extends AnnotationContext {
         this.clientID = clientID;
         this.group = data.group;
         this.label = this.labels[data.label_id];
-        this.lock = false;
-        this.hidden = false;
+        this.lock = data.lock ?? false;
+        this.hidden = data.hidden ?? false;
         this.source = data.source;
         this.updated = Date.now();
         this.attributes = deserializeAttributes(data.attributes);

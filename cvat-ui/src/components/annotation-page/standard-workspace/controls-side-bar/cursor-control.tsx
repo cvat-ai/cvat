@@ -4,18 +4,20 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import Icon from '@ant-design/icons';
 
 import { CursorIcon } from 'icons';
 import { ActiveControl, CombinedState } from 'reducers';
 import { Canvas } from 'cvat-canvas-wrapper';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
+import { selectObjectsAsync } from 'actions/annotation-actions';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import GlobalHotKeys from 'utils/mousetrap-react';
+import { ThunkDispatch } from 'utils/redux';
 import { ShortcutScope } from 'utils/enums';
 import { registerComponentShortcuts } from 'actions/shortcuts-actions';
 import { subKeyMap } from 'utils/component-subkeymap';
-import { useSelector } from 'react-redux';
 
 export interface Props {
     canvasInstance: Canvas | Canvas3d;
@@ -39,18 +41,26 @@ function CursorControl(props: Props): JSX.Element {
         canvasInstance, activeControl, cursorShortkey,
     } = props;
 
+    const dispatch = useDispatch<ThunkDispatch>();
     const { keyMap } = useSelector((state: CombinedState) => state.shortcuts);
+    const selectedStatesID = useSelector(
+        (state: CombinedState) => state.annotation.annotations.selectedStatesID,
+    );
 
-    const handler = (): void => {
+    const handler = async (): Promise<void> => {
+        if (selectedStatesID.length) {
+            await dispatch(selectObjectsAsync([]));
+        }
+
         if (activeControl !== ActiveControl.CURSOR) {
             canvasInstance.cancel();
         }
     };
 
     const handlers: Record<keyof typeof componentShortcuts, (event?: KeyboardEvent) => void> = {
-        CANCEL: (event: KeyboardEvent | undefined) => {
+        CANCEL: async (event: KeyboardEvent | undefined) => {
             if (event) event.preventDefault();
-            handler();
+            await handler();
         },
     };
 

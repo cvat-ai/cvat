@@ -23,7 +23,7 @@ export class SkeletonShape extends Shape {
     constructor(data: SerializedShape, clientID: number, color: string, injection: AnnotationInjection) {
         super(data, clientID, color, injection);
         this.shapeType = ShapeType.SKELETON;
-        this.pinned = false;
+        this.pinned = data.pinned ?? false;
         this.rotation = 0;
         this.occluded = false;
         this.points = [];
@@ -274,8 +274,11 @@ export class SkeletonShape extends Shape {
         if (updatedElements.size && actionType) {
             const undoSource = this.source;
             const redoSource = this.readOnlyFields.includes('source') ? this.source : computeNewSource(this.source);
+            const ownsTransaction = !this.history.transactionActive;
 
-            this.history.beginTransaction(actionType);
+            if (ownsTransaction) {
+                this.history.beginTransaction(actionType);
+            }
             try {
                 for (const [element, state] of updatedElements) {
                     element.save(frame, state);
@@ -296,10 +299,14 @@ export class SkeletonShape extends Shape {
                     frame,
                 );
             } catch (error: unknown) {
-                this.history.abortTransaction();
+                if (ownsTransaction) {
+                    this.history.abortTransaction();
+                }
                 throw error;
             } finally {
-                this.history.endTransaction();
+                if (ownsTransaction) {
+                    this.history.endTransaction();
+                }
             }
         }
 

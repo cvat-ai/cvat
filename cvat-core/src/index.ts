@@ -14,7 +14,9 @@ import logger from './logger';
 import * as enums from './enums';
 import config from './config';
 import { mask2Rle, rle2Mask } from './rle-utils';
-import { getVisibleSkeletonElements, propagateShapes, validateAttributeValue } from './object-utils';
+import {
+    cropMask, getVisibleSkeletonElements, propagateShapes, validateAttributeValue,
+} from './object-utils';
 import { createOpenCVInterface } from './opencv/opencv-interface';
 import User from './user';
 import Project from './project';
@@ -264,6 +266,7 @@ export default interface CVATCore {
     utils: {
         mask2Rle: typeof mask2Rle;
         rle2Mask: typeof rle2Mask;
+        cropMask: typeof cropMask;
         propagateShapes: typeof propagateShapes;
         validateAttributeValue: typeof validateAttributeValue;
         getVisibleSkeletonElements: typeof getVisibleSkeletonElements;

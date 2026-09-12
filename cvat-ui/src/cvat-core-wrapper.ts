@@ -7,7 +7,7 @@ import CVATCore from 'cvat-core/src';
 import _cvat from 'cvat-core/src/api';
 import config from 'config';
 
-import ObjectState from 'cvat-core/src/object-state';
+import ObjectState, { SerializedData } from 'cvat-core/src/object-state';
 import { AudioIntervalState } from 'cvat-core/src/annotations-objects/audio-interval-state';
 import Webhook, { type WebhookEvent } from 'cvat-core/src/webhook';
 import MLModel from 'cvat-core/src/ml-model';
@@ -37,7 +37,7 @@ import ApiToken from 'cvat-core/src/api-token';
 import { FramesMetaData, FrameData } from 'cvat-core/src/frames';
 import { ServerError, RequestError } from 'cvat-core/src/exceptions';
 import {
-    ShapeType, ObjectType, LabelType, ModelKind, ModelProviders,
+    ShapeType, ObjectType, LabelType, ModelKind, ModelProviders, HistoryActions,
     DimensionType, JobType, Source, MembershipRole,
     JobStage, JobState, RQStatus, StorageLocation, MediaType,
 } from 'cvat-core/src/enums';
@@ -92,6 +92,7 @@ export {
     AnnotationGuide,
     Attribute,
     ShapeType,
+    HistoryActions,
     Source,
     ObjectType,
     LabelType,
@@ -147,6 +148,7 @@ export {
 };
 
 export type {
+    SerializedData,
     SerializedAttribute,
     SerializedLabel,
     SerializedApiToken,

@@ -45,6 +45,17 @@ Each layer appears as a layer card; the objects placed on it appear as object ca
 
 ## Working with Layers
 
+### Selecting Objects by Layer
+
+Hold **Ctrl** on Windows and Linux, or **Command** on macOS, and click a layer header
+to add all selectable objects on that layer to the active multi-object selection.
+Repeat the action to remove them. Hidden objects are not included when determining
+whether the layer is selected.
+
+Use **Shift+Click** to select objects from a continuous range of layers.
+For other selection methods and available batch operations,
+see {{< ilink "/docs/annotation/manual-annotation/utilities/multi-object-selection" "Multi-object selection" >}}.
+
 ### Selecting the Current Layer
 
 The current layer determines where CVAT places newly created objects.

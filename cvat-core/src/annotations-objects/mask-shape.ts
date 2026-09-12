@@ -30,7 +30,7 @@ export class MaskShape extends Shape {
             this.points = cropMask(this.points, width, height);
         }
         [this.left, this.top, this.right, this.bottom] = this.points.splice(-4, 4);
-        this.pinned = true;
+        this.pinned = data.pinned ?? true;
         this.shapeType = ShapeType.MASK;
     }
 

@@ -388,7 +388,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
         const { undo, undoAction, canvasInstance } = this.props;
 
         if (canvasInstance instanceof Canvas) {
-            if (canvasInstance.undo() || canvasInstance.mode() !== CanvasMode.IDLE) {
+            if (canvasInstance.undo() || ![CanvasMode.IDLE, CanvasMode.SELECT].includes(canvasInstance.mode())) {
                 return;
             }
         }
@@ -402,7 +402,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
         const { redo, redoAction, canvasInstance } = this.props;
 
         if (canvasInstance instanceof Canvas) {
-            if (canvasInstance.redo() || canvasInstance.mode() !== CanvasMode.IDLE) {
+            if (canvasInstance.redo() || ![CanvasMode.IDLE, CanvasMode.SELECT].includes(canvasInstance.mode())) {
                 return;
             }
         }
