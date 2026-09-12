@@ -325,6 +325,22 @@ context('Multi-object selection', { scrollBehavior: false }, () => {
         cy.get('.cvat-select-control').should('have.class', 'cvat-active-canvas-control');
     });
 
+    it('Toggles semantic object hits with unmodified clicks in Select mode', () => {
+        cy.get('.cvat-select-control').click();
+        cy.get(`#cvat_canvas_shape_${objectIds.carShape1}`).realClick({ position: 'center' });
+        assertSelection([objectIds.carShape1]);
+
+        cy.get(`#cvat_canvas_shape_${objectIds.carShape1}`).realClick({ position: 'center' });
+        assertSelection([]);
+        cy.get('.cvat-select-control').should('have.class', 'cvat-active-canvas-control');
+
+        cy.get(`#cvat_canvas_shape_${objectIds.points}`).find('circle').first().realClick();
+        assertSelection([objectIds.points]);
+        cy.get(`#cvat_canvas_shape_${objectIds.points}`).find('circle').first().realClick();
+        assertSelection([]);
+        cy.get('.cvat-select-control').should('have.class', 'cvat-active-canvas-control');
+    });
+
     it('Keeps Cursor active when a Shift-drag selects no objects', () => {
         cy.get('.cvat-cursor-control').should('have.class', 'cvat-active-canvas-control');
         cy.get(`#cvat_canvas_shape_${objectIds.carShape1}`).then(($firstShape) => {

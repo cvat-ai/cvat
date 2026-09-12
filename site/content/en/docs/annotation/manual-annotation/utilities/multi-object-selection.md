@@ -47,7 +47,11 @@ If the box selects no objects, CVAT returns to the **Cursor** tool.
 
 ### Selecting individual objects
 
-Hold the platform selection modifier and click an object to add it to or remove it from the selection:
+While the **Select objects** tool is active, click an object to add it to or remove it from the selection.
+The same semantic hit-testing used for regular canvas interaction applies to overlapping objects,
+Points objects, and skeletons.
+
+While using the **Cursor** tool, hold the platform selection modifier and click an object:
 
 - On Windows and Linux, use **Ctrl+Click**.
 - On macOS, use **Command+Click**.
@@ -82,7 +86,8 @@ To clear the selection, do one of the following:
 
 - Press **Esc**.
 - Click outside the selection while using the **Cursor** tool.
-- Click an unselected object without a selection modifier to return to regular single-object interaction.
+- Click an unselected object without a selection modifier while using the **Cursor** tool
+  to return to regular single-object interaction.
 
 Use **Ctrl/Command+Click** to remove individual objects without clearing the rest of the selection.
 Hiding an object or its layer removes the object from the active selection.

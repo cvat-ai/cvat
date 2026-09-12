@@ -760,15 +760,18 @@ export class CanvasViewImpl implements CanvasView, Listener {
         if (e.button === 0) {
             const { offset } = this.controller.geometry;
             const [x, y] = translateToSVG(this.content, [e.clientX, e.clientY]);
-            const event: CustomEvent = new CustomEvent('canvas.find', {
-                bubbles: false,
-                cancelable: true,
-                detail: {
-                    x: x - offset,
-                    y: y - offset,
-                    states: this.controller.objects,
+            const event: CustomEvent = new CustomEvent(
+                this.mode === Mode.SELECT ? 'canvas.selectionrequested' : 'canvas.find',
+                {
+                    bubbles: false,
+                    cancelable: true,
+                    detail: {
+                        x: x - offset,
+                        y: y - offset,
+                        states: this.controller.objects,
+                    },
                 },
-            });
+            );
 
             this.canvas.dispatchEvent(event);
             e.preventDefault();
@@ -3937,6 +3940,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         let lastPointer: { x: number; y: number } | null = null;
         let movableIDs: number[] = [];
         let dragging = false;
+        let moved = false;
 
         (this.selectedObjectsBox as any).draggable();
         this.selectedObjectsBox.on('contextmenu', (event: MouseEvent): void => {
@@ -3961,6 +3965,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             startCenter = { x: cx, y: cy };
             lastPointer = { x: p.x, y: p.y };
             startedAt = Date.now();
+            moved = false;
             this.setSelectedObjectsOverlayDragging(true);
         }).on('dragmove', (event: CustomEvent): void => {
             if (!dragging || !lastPointer) {
@@ -3972,6 +3977,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             const dx = p.x - lastPointer.x;
             const dy = p.y - lastPointer.y;
             if (dx !== 0 || dy !== 0) {
+                moved = true;
                 this.selectedObjectsBox?.dmove(dx, dy);
                 for (const clientID of movableIDs) {
                     this.moveSelectionPreviewShape(clientID, dx, dy);
@@ -3979,7 +3985,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 lastPointer = { x: p.x, y: p.y };
                 this.updateSelectedObjectsLabelPosition();
             }
-        }).on('dragend', (): void => {
+        }).on('dragend', (event: CustomEvent): void => {
             if (!dragging || !startCenter || !this.selectedObjectsBox) {
                 return;
             }
@@ -4015,9 +4021,12 @@ export class CanvasViewImpl implements CanvasView, Listener {
                         },
                     }),
                 );
+            } else if (!moved && this.mode === Mode.SELECT) {
+                this.onFindObject(event.detail.event);
             }
 
             dragging = false;
+            moved = false;
             movableIDs = [];
             startCenter = null;
             lastPointer = null;
@@ -4764,6 +4773,11 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
                 const click = (e: MouseEvent): void => {
                     e.stopPropagation();
+                    if (this.mode === Mode.SELECT) {
+                        this.onFindObject(e);
+                        return;
+                    }
+
                     this.canvas.dispatchEvent(
                         new CustomEvent('canvas.clicked', {
                             bubbles: false,
@@ -4866,6 +4880,12 @@ export class CanvasViewImpl implements CanvasView, Listener {
         group.on('click.canvas', (event: MouseEvent): void => {
             // Need to redispatch the event on another element
             basicPolyline.fire(new MouseEvent('click', event));
+            if (this.mode === Mode.SELECT) {
+                event.stopPropagation();
+                this.onFindObject(event);
+                return;
+            }
+
             // redispatch event to canvas to be able merge points clicking them
             this.content.dispatchEvent(new MouseEvent('click', event));
         });
