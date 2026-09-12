@@ -684,6 +684,9 @@ context('Multi-object selection', { scrollBehavior: false }, () => {
 
         cy.get('.cvat-canvas-selected-objects-label-selector .ant-select-disabled').should('exist');
         cy.contains('.cvat-object-item-menu button', 'Pin selection').should('be.disabled');
+        cy.get('.cvat-canvas-selected-objects-attributes .ant-collapse-header-text .ant-typography')
+            .should('have.text', 'Details')
+            .and('have.css', 'color', 'rgb(48, 48, 48)');
         cy.get('.cvat-canvas-selected-objects-attributes .ant-collapse-header').click();
         cy.get('.cvat-canvas-selected-objects-attributes .cvat-object-item-select-attribute')
             .should('have.class', 'ant-select-disabled');
