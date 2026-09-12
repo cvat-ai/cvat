@@ -663,14 +663,9 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
             previousClientIDs: Parameters<typeof JobClass.prototype.actions.recordSelection>[0],
             nextClientIDs: Parameters<typeof JobClass.prototype.actions.recordSelection>[1],
             frame: Parameters<typeof JobClass.prototype.actions.recordSelection>[2],
+            mergeWithPrevious: Parameters<typeof JobClass.prototype.actions.recordSelection>[3],
         ): ReturnType<typeof JobClass.prototype.actions.recordSelection> {
-            getHistory(this).do(
-                HistoryActions.CHANGED_SELECTION,
-                () => [...previousClientIDs],
-                () => [...nextClientIDs],
-                [...new Set([...previousClientIDs, ...nextClientIDs])],
-                frame,
-            );
+            getHistory(this).recordSelection(previousClientIDs, nextClientIDs, frame, mergeWithPrevious);
             return Promise.resolve();
         },
     });
@@ -1519,14 +1514,9 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
             previousClientIDs: Parameters<typeof TaskClass.prototype.actions.recordSelection>[0],
             nextClientIDs: Parameters<typeof TaskClass.prototype.actions.recordSelection>[1],
             frame: Parameters<typeof TaskClass.prototype.actions.recordSelection>[2],
+            mergeWithPrevious: Parameters<typeof TaskClass.prototype.actions.recordSelection>[3],
         ): ReturnType<typeof TaskClass.prototype.actions.recordSelection> {
-            getHistory(this).do(
-                HistoryActions.CHANGED_SELECTION,
-                () => [...previousClientIDs],
-                () => [...nextClientIDs],
-                [...new Set([...previousClientIDs, ...nextClientIDs])],
-                frame,
-            );
+            getHistory(this).recordSelection(previousClientIDs, nextClientIDs, frame, mergeWithPrevious);
             return Promise.resolve();
         },
     });

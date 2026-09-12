@@ -150,6 +150,7 @@ export enum HistoryActions {
     CHANGED_PINNED = 'Changed pinned',
     CHANGED_COLOR = 'Changed color',
     CHANGED_HIDDEN = 'Changed hidden',
+    CHANGED_HIDDEN_AND_SELECTION = 'Changed hidden and selection',
     CHANGED_SOURCE = 'Changed source',
     CHANGED_SKELETON = 'Changed skeleton',
     CHANGED_AUDIO_POSITION = 'Changed audio position',

@@ -41,16 +41,22 @@ class HistoryTransaction implements ActionItem {
         this.actions.push(action);
     }
 
-    public async undo(): Promise<void> {
+    public async undo(): Promise<void | number[]> {
+        let affectedIDs: number[] | undefined;
         for (let index = this.actions.length - 1; index >= 0; index--) {
-            await this.actions[index].undo();
+            const result = await this.actions[index].undo();
+            if (result) affectedIDs = result;
         }
+        return affectedIDs;
     }
 
-    public async redo(): Promise<void> {
+    public async redo(): Promise<void | number[]> {
+        let affectedIDs: number[] | undefined;
         for (const action of this.actions) {
-            await action.redo();
+            const result = await action.redo();
+            if (result) affectedIDs = result;
         }
+        return affectedIDs;
     }
 }
 
@@ -108,6 +114,44 @@ export default class AnnotationHistory {
 
         this._undo = this._undo.slice(-MAX_HISTORY_LENGTH + 1);
         this._undo.push(actionItem);
+        this._redo = [];
+    }
+
+    public recordSelection(
+        previousClientIDs: number[],
+        nextClientIDs: number[],
+        frame: number,
+        mergeWithPrevious = false,
+    ): void {
+        if (!mergeWithPrevious) {
+            this.do(
+                HistoryActions.CHANGED_SELECTION,
+                () => [...previousClientIDs],
+                () => [...nextClientIDs],
+                [...new Set([...previousClientIDs, ...nextClientIDs])],
+                frame,
+            );
+            return;
+        }
+
+        if (this.frozen) return;
+        const previousAction = this._undo.pop();
+        if (!previousAction || previousAction.action !== HistoryActions.CHANGED_HIDDEN ||
+            previousAction.frame !== frame) {
+            if (previousAction) this._undo.push(previousAction);
+            throw new Error('Only a hidden-state change can be merged with a selection change');
+        }
+
+        const transaction = new HistoryTransaction(HistoryActions.CHANGED_HIDDEN_AND_SELECTION);
+        transaction.add(previousAction);
+        transaction.add({
+            action: HistoryActions.CHANGED_SELECTION,
+            undo: () => [...previousClientIDs],
+            redo: () => [...nextClientIDs],
+            clientIds: [...new Set([...previousClientIDs, ...nextClientIDs])],
+            frame,
+        });
+        this._undo.push(transaction);
         this._redo = [];
     }
 

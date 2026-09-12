@@ -1214,7 +1214,11 @@ export function undoActionAsync(): ThunkAction {
                 await dispatch(fetchAnnotationsAsync());
             }
 
-            if (undo[0] === HistoryActions.CHANGED_SELECTION || undo[0] === HistoryActions.REMOVED_SELECTION) {
+            if ([
+                HistoryActions.CHANGED_SELECTION,
+                HistoryActions.CHANGED_HIDDEN_AND_SELECTION,
+                HistoryActions.REMOVED_SELECTION,
+            ].includes(undo[0] as HistoryActions)) {
                 dispatch(selectObjects(affectedIDs));
             }
         } catch (error) {
@@ -1257,7 +1261,8 @@ export function redoActionAsync(): ThunkAction {
                 await dispatch(fetchAnnotationsAsync());
             }
 
-            if (redo[0] === HistoryActions.CHANGED_SELECTION) {
+            if ([HistoryActions.CHANGED_SELECTION, HistoryActions.CHANGED_HIDDEN_AND_SELECTION]
+                .includes(redo[0] as HistoryActions)) {
                 dispatch(selectObjects(affectedIDs));
             } else if (redo[0] === HistoryActions.REMOVED_SELECTION) {
                 dispatch(selectObjects([]));
@@ -1599,7 +1604,7 @@ async function updateObjectsLayers(
 }
 
 export function updateAnnotationsAsync(statesToUpdate: ObjectState[]): ThunkAction {
-    return async (dispatch: ThunkDispatch): Promise<void> => {
+    return async (dispatch: ThunkDispatch, getState): Promise<void> => {
         const { jobInstance, workspace } = receiveAnnotationsParameters();
         try {
             if (statesToUpdate.some((state): boolean => state.updateFlags.zOrder)) {
@@ -1612,8 +1617,24 @@ export function updateAnnotationsAsync(statesToUpdate: ObjectState[]): ThunkActi
                 return;
             }
 
+            const { selectedStatesID } = getState().annotation.annotations;
+            const hiddenSelectedState = statesToSave.length === 1 &&
+                statesToSave[0].updateFlags.hidden && statesToSave[0].hidden &&
+                selectedStatesID.includes(statesToSave[0].clientID as number);
+            const previousSelection = hiddenSelectedState ? [...selectedStatesID] : [];
+            const nextSelection = hiddenSelectedState ? selectedStatesID.filter(
+                (clientID: number): boolean => clientID !== statesToSave[0].clientID,
+            ) : [];
             const promises = statesToSave.map((objectState) => objectState.save());
             let states = await Promise.all(promises);
+            if (hiddenSelectedState) {
+                await jobInstance.actions.recordSelection(
+                    previousSelection,
+                    nextSelection,
+                    statesToSave[0].frame,
+                    true,
+                );
+            }
 
             if (workspace === Workspace.REVIEW) {
                 states = lockStatesForReviewWorkspace(states);

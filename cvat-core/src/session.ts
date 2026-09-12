@@ -410,13 +410,14 @@ function buildDuplicatedAPI(prototype): void {
                     const result = await PluginRegistry.apiWrapper.call(this, prototype.actions.redo, count);
                     return result;
                 },
-                async recordSelection(previousClientIDs, nextClientIDs, frame) {
+                async recordSelection(previousClientIDs, nextClientIDs, frame, mergeWithPrevious = false) {
                     const result = await PluginRegistry.apiWrapper.call(
                         this,
                         prototype.actions.recordSelection,
                         previousClientIDs,
                         nextClientIDs,
                         frame,
+                        mergeWithPrevious,
                     );
                     return result;
                 },
@@ -518,7 +519,12 @@ export class Session {
     public actions: {
         undo: (count?: number) => Promise<number[]>;
         redo: (count?: number) => Promise<number[]>;
-        recordSelection: (previousClientIDs: number[], nextClientIDs: number[], frame: number) => Promise<void>;
+        recordSelection: (
+            previousClientIDs: number[],
+            nextClientIDs: number[],
+            frame: number,
+            mergeWithPrevious?: boolean,
+        ) => Promise<void>;
         freeze: (frozen: boolean) => Promise<void>;
         clear: () => Promise<void>;
         get: () => Promise<{

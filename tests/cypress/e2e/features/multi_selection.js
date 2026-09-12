@@ -412,10 +412,17 @@ context('Multi-object selection', { scrollBehavior: false }, () => {
         });
         assertSelection([objectIds.carShape2]);
 
-        clearSelection();
+        cy.pressWithPlatformModifier('z');
+        assertSelection([objectIds.carShape1, objectIds.carShape2]);
+
+        cy.pressWithPlatformModifier('{shift}z');
+        assertSelection([objectIds.carShape2]);
+
         cy.get(sidebarItem(objectIds.carShape1)).within(() => {
             cy.get('.cvat-object-item-button-hidden-enabled').click();
         });
+        assertSelection([objectIds.carShape2]);
+        clearSelection();
     });
 
     it('Toggles a layer selection when the layer contains hidden objects', () => {

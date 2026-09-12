@@ -86,6 +86,8 @@ To clear the selection, do one of the following:
 
 Use **Ctrl/Command+Click** to remove individual objects without clearing the rest of the selection.
 Hiding an object or its layer removes the object from the active selection.
+Undoing the hide action restores both the object's visibility and its previous selection membership.
+Showing the object again manually does not add it back to the selection.
 
 ## Moving selected objects
 
