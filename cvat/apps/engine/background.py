@@ -236,8 +236,7 @@ class BaseResourceExporter(AbstractRequestManager):
 
     def build_meta(self, *, request_id):
         return ExportRQMeta.build_for(
-            uuid=self.request.uuid,
-            user=self.request.user,
+            request=self.request,
             request_manager_cls=type(self),
             instance=self.db_instance,
             result_url=(

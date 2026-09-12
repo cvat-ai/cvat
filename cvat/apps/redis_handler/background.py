@@ -159,8 +159,7 @@ class AbstractRequestManager(metaclass=ABCMeta):
 
     def build_meta(self, *, request_id: str) -> dict[str, Any]:
         return BaseRQMeta.build_from_instance(
-            user=self.request.user,
-            uuid=self.request.uuid,
+            request=self.request,
             instance=self.db_instance,
             request_manager_cls=type(self),
         )
