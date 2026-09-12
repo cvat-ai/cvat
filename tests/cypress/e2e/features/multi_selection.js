@@ -815,6 +815,36 @@ context('Multi-object selection', { scrollBehavior: false }, () => {
         assertSelection([]);
     });
 
+    it('Places a copied selection partially outside the frame', () => {
+        selectFromSidebar([objectIds.carShape1, objectIds.carShape2]);
+        openSelectionMenu();
+        cy.contains('.cvat-object-item-menu button', 'Make a copy').click();
+        cy.get('.cvat_canvas_shape_drawing').should('have.length', 2);
+
+        cy.get('#cvat_canvas_background').then(($background) => {
+            const x = $background[0].getBoundingClientRect().width - 100;
+            const y = $background[0].getBoundingClientRect().height / 2;
+            cy.wrap($background).realMouseMove(x, y);
+            cy.wrap($background).realClick({ x, y });
+        });
+        cy.get('.cvat_canvas_shape').should('have.length', selectableObjectIds.length + 2);
+        cy.get('#cvat_canvas_background').then(($background) => {
+            const frame = $background[0].getBoundingClientRect();
+            cy.get('.cvat_canvas_shape_selected_object').should(($shapes) => {
+                expect($shapes).to.have.length(2);
+                [...$shapes].forEach((shape) => {
+                    expect(shape.getBoundingClientRect().right).to.be.at.most(frame.right + 1);
+                });
+                const right = Math.max(...[...$shapes].map((shape) => shape.getBoundingClientRect().right));
+                expect(right).to.be.closeTo(frame.right, 1);
+            });
+        });
+
+        cy.pressWithPlatformModifier('z');
+        cy.get('.cvat_canvas_shape').should('have.length', selectableObjectIds.length);
+        assertSelection([]);
+    });
+
     it('Copies and deletes a selection as batch history actions', () => {
         selectFromSidebar([objectIds.carShape1, objectIds.carShape2]);
         openSelectionMenu();

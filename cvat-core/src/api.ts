@@ -38,7 +38,9 @@ import {
     Exception, ArgumentError, DataError, ScriptingError, ServerError,
 } from './exceptions';
 
-import { getVisibleSkeletonElements, propagateShapes, validateAttributeValue } from './object-utils';
+import {
+    cropMask, getVisibleSkeletonElements, propagateShapes, validateAttributeValue,
+} from './object-utils';
 import { mask2Rle, rle2Mask } from './rle-utils';
 import User from './user';
 import config from './config';
@@ -503,6 +505,7 @@ function build(): CVATCore {
         utils: {
             mask2Rle,
             rle2Mask,
+            cropMask,
             propagateShapes,
             validateAttributeValue,
             getVisibleSkeletonElements,

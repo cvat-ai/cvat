@@ -8,6 +8,7 @@ import {
     CanvasHistorySource,
     RectDrawingMethod,
     CuboidDrawingMethod,
+    finalizePastedShapePoints,
     CanvasHint as _CanvasHint,
     InteractionData as _InteractionData,
     InteractionResult as _InteractionResult,
@@ -43,4 +44,5 @@ export type RenderData = _RenderData;
 
 export {
     Canvas, CanvasMode, CanvasHistorySource, RectDrawingMethod, CuboidDrawingMethod,
+    finalizePastedShapePoints,
 };

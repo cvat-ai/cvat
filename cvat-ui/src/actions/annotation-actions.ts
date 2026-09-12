@@ -10,6 +10,7 @@ import getHiddenZLayers from 'utils/get-hidden-z-layers';
 import { CanvasMode as Canvas3DMode } from 'cvat-canvas3d-wrapper';
 import {
     RectDrawingMethod, CuboidDrawingMethod, Canvas, CanvasMode as Canvas2DMode, CanvasHistorySource,
+    finalizePastedShapePoints,
 } from 'cvat-canvas-wrapper';
 import {
     getCore, MLModel, JobType, Job, QualityConflict,
@@ -756,7 +757,8 @@ function translateSelectionState(
     dx: number,
     dy: number,
     zOrder: number,
-): SerializedData {
+    geometry?: Canvas['geometry'],
+): SerializedData | null {
     const offsetPoints = (points: number[] | undefined, shapeType?: ShapeType): number[] | undefined => {
         if (!points) {
             return points;
@@ -774,11 +776,35 @@ function translateSelectionState(
         return points.map((value, index) => value + (index % 2 === 0 ? dx : dy));
     };
 
+    const finalizePoints = (points: number[] | undefined): number[] | undefined | null => {
+        if (!points || !geometry || state.shapeType === ShapeType.SKELETON) {
+            return points;
+        }
+
+        if (state.shapeType === ShapeType.MASK) {
+            const croppedPoints = cvat.utils.cropMask(points, geometry.image.width, geometry.image.height);
+            return croppedPoints.length >= 6 ? croppedPoints : null;
+        }
+
+        const canvasPoints = points.map((coordinate: number): number => coordinate + geometry.offset);
+        return finalizePastedShapePoints(
+            state.shapeType as ShapeType,
+            canvasPoints,
+            state.rotation || 0,
+            geometry,
+        );
+    };
+
+    const points = finalizePoints(offsetPoints(state.points, state.shapeType));
+    if (points === null) {
+        return null;
+    }
+
     return {
         ...state,
         attributes: { ...state.attributes },
         descriptions: [...(state.descriptions || [])],
-        points: state.shapeType === ShapeType.SKELETON ? undefined : offsetPoints(state.points, state.shapeType),
+        points: state.shapeType === ShapeType.SKELETON ? undefined : points,
         zOrder,
         frame,
         elements: state.elements?.map((element) => translateSelectionState(element, frame, dx, dy, zOrder)) || [],
@@ -811,6 +837,7 @@ function placeCopiedStatesAsync(
     dx: number,
     dy: number,
     selectCreated: boolean,
+    geometry?: Canvas['geometry'],
 ): ThunkAction {
     return async (dispatch: ThunkDispatch): Promise<void> => {
         const {
@@ -822,15 +849,18 @@ function placeCopiedStatesAsync(
             return;
         }
 
-        const statesToCreate = copiedStates.map((state): ObjectState => createCopiedObjectState(
-            translateSelectionState(
-                state,
-                frameNumber,
-                state.objectType === ObjectType.TAG ? 0 : dx,
-                state.objectType === ObjectType.TAG ? 0 : dy,
-                currentZOrder,
-            ),
-        ));
+        const translatedStates = copiedStates.map((state): SerializedData | null => translateSelectionState(
+            state,
+            frameNumber,
+            state.objectType === ObjectType.TAG ? 0 : dx,
+            state.objectType === ObjectType.TAG ? 0 : dy,
+            currentZOrder,
+            state.objectType === ObjectType.TAG ? undefined : geometry,
+        )).filter((state): state is SerializedData => state !== null);
+        const statesToCreate = translatedStates.map((state): ObjectState => createCopiedObjectState(state));
+        if (!statesToCreate.length) {
+            return;
+        }
 
         try {
             const clientIDs: number[] = await jobInstance.annotations.put(statesToCreate);
@@ -889,7 +919,7 @@ function startPastePlacementAsync(copiedStates: SerializedData[], selectCreated:
             };
         };
         const initialStates = shapes.map((state): ObjectState => createCopiedObjectState(withPreviewIDs(
-            translateSelectionState(state, frameNumber, 0, 0, currentZOrder),
+            translateSelectionState(state, frameNumber, 0, 0, currentZOrder) as SerializedData,
         )));
 
         canvasInstance.cancel();
@@ -914,6 +944,7 @@ function startPastePlacementAsync(copiedStates: SerializedData[], selectCreated:
                     offset.x,
                     offset.y,
                     selectCreated && !continueDraw,
+                    canvasInstance.geometry,
                 ));
                 if (!continueDraw) {
                     dispatch({

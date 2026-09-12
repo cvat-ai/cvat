@@ -17,6 +17,7 @@ import {
 import { Master } from './master';
 import { CanvasController, CanvasControllerImpl } from './canvasController';
 import { CanvasView, CanvasViewImpl } from './canvasView';
+import { finalizePastedShapePoints } from './paste';
 
 import '../scss/canvas.scss';
 
@@ -222,4 +223,5 @@ export type RenderData = _RenderData;
 
 export {
     CanvasImpl as Canvas, RectDrawingMethod, CuboidDrawingMethod, Mode as CanvasMode, CanvasHistorySource,
+    finalizePastedShapePoints,
 };

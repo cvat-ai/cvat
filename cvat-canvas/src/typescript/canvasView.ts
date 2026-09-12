@@ -3835,8 +3835,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
     }
 
     private placeSelectionPaste(event: MouseEvent): void {
-        if (!this.selectionPasteData || !this.selectionPasteStates.length ||
-            !this.areShapesInsideFrame(this.selectionPasteStates.map((state: any): number => state.clientID))) {
+        if (!this.selectionPasteData || !this.selectionPasteStates.length) {
             return;
         }
 
@@ -3900,22 +3899,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
             clientIDs.includes(state.clientID) && state.shapeType === 'mask'
         ));
         return includesMask ? { dx: Math.round(dx), dy: Math.round(dy) } : { dx, dy };
-    }
-
-    private areShapesInsideFrame(clientIDs: number[]): boolean {
-        const { offset, image } = this.geometry;
-        const { width, height } = image;
-        return clientIDs.every((clientID: number): boolean => {
-            const shape = this.svgShapes[clientID];
-            if (!shape) {
-                return false;
-            }
-
-            const {
-                x, y, x2, y2,
-            } = shape.rbox(this.adoptedContent);
-            return x >= offset && y >= offset && x2 <= offset + width && y2 <= offset + height;
-        });
     }
 
     private setSelectedObjectsOverlayDragging(dragging: boolean): void {
