@@ -67,6 +67,14 @@ class Replacer:
         # single optional arg pattern
         type_repr = re.sub(r"^(.+, none_type)$", r"typing.Union[\1]", type_repr)
 
+        # Emit the None singleton instead of the none_type alias (none_type = type(None)).
+        # The indirection is valid at runtime, but static type checkers (Pyright/Pylance,
+        # mypy) can't resolve it to None, so every nullable field degrades to Unknown/Any
+        # in the public type annotations. None resolves correctly and is equivalent here.
+        # The none_type alias is still used by the runtime type metadata (openapi_types,
+        # etc.), so its import remains required. See cvat-ai/cvat#10531.
+        type_repr = re.sub(r"\bnone_type\b", "None", type_repr)
+
         return type_repr
 
     allowed_actions = {
