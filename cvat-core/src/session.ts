@@ -465,7 +465,7 @@ export class Session {
             distance: number | null,
         }>;
         splitInterval: (state: AudioIntervalState, position: number) => Promise<number | null>;
-        bulkSave: (states: AudioIntervalState[]) => Promise<void>;
+        bulkSave: (states: (ObjectState | AudioIntervalState)[]) => Promise<void>;
         import: (data: SerializedCollection) => Promise<void>;
         export: () => Promise<SerializedCollection>;
         commit: (

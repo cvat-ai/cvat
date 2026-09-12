@@ -540,7 +540,7 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
             this: JobClass,
             states: Parameters<typeof JobClass.prototype.annotations.bulkSave>[0],
         ): ReturnType<typeof JobClass.prototype.annotations.bulkSave> {
-            getCollection(this).bulkSave(states);
+            getCollection(this).save(states);
             return Promise.resolve();
         },
     });
@@ -1359,7 +1359,7 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
             this: TaskClass,
             states: Parameters<typeof TaskClass.prototype.annotations.bulkSave>[0],
         ): ReturnType<typeof TaskClass.prototype.annotations.bulkSave> {
-            getCollection(this).bulkSave(states);
+            getCollection(this).save(states);
             return Promise.resolve();
         },
     });

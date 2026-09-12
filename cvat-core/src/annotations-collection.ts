@@ -31,6 +31,39 @@ import AnnotationHistory from './annotations-history';
 type AnnotationObject = Shape | Tag | Track | AudioInterval;
 type AnnotationState = ObjectState | AudioIntervalState;
 
+const SAVE_ACTION_BY_PROPERTY: Readonly<Record<string, HistoryActions>> = {
+    label: HistoryActions.CHANGED_LABEL,
+    attributes: HistoryActions.CHANGED_ATTRIBUTES,
+    points: HistoryActions.CHANGED_POINTS,
+    rotation: HistoryActions.CHANGED_ROTATION,
+    outside: HistoryActions.CHANGED_OUTSIDE,
+    occluded: HistoryActions.CHANGED_OCCLUDED,
+    zOrder: HistoryActions.CHANGED_ZORDER,
+    keyframe: HistoryActions.CHANGED_KEYFRAME,
+    lock: HistoryActions.CHANGED_LOCK,
+    pinned: HistoryActions.CHANGED_PINNED,
+    color: HistoryActions.CHANGED_COLOR,
+    hidden: HistoryActions.CHANGED_HIDDEN,
+    position: HistoryActions.CHANGED_AUDIO_POSITION,
+};
+
+function getSaveAction(states: AnnotationState[]): HistoryActions {
+    const actions = new Set<HistoryActions>();
+    const collectActions = (state: AnnotationState): void => {
+        Object.entries(state.updateFlags).forEach(([property, updated]) => {
+            if (updated) {
+                actions.add(SAVE_ACTION_BY_PROPERTY[property] || HistoryActions.CHANGED_OBJECTS);
+            }
+        });
+        if (state instanceof ObjectState) {
+            state.elements.forEach(collectActions);
+        }
+    };
+    states.forEach(collectActions);
+
+    return actions.size === 1 ? [...actions][0] : HistoryActions.CHANGED_OBJECTS;
+}
+
 const validateAttributesList = (
     attributes: { spec_id: number, value: string }[],
 ): { spec_id: number, value: string }[] => {
@@ -1656,14 +1689,31 @@ export default class Collection {
         }
     }
 
-    public bulkSave(states: AudioIntervalState[]): void {
-        this.history.beginTransaction(HistoryActions.CHANGED_AUDIO_INTERVALS);
+    public save(states: AnnotationState[]): void {
+        checkObjectType('states', states, null, { cls: Array, name: 'Array' });
+        if (!states.length) {
+            throw new ArgumentError('At least one annotation state must be provided');
+        }
+        states.forEach((state) => {
+            if (!(state instanceof ObjectState || state instanceof AudioIntervalState)) {
+                throw new ArgumentError('Only object and audio interval states can be saved');
+            }
+        });
+
+        this.history.beginTransaction(getSaveAction(states));
         try {
             states.forEach((state) => {
-                const interval = state.clientID === null ? null : this.objects[state.clientID];
-                if (!(interval instanceof AudioInterval)) return;
-
-                interval.save(state);
+                const object = state.clientID === null ? null : this.objects[state.clientID];
+                if (state instanceof AudioIntervalState && object instanceof AudioInterval) {
+                    object.save(state);
+                } else if (
+                    state instanceof ObjectState &&
+                    (object instanceof Shape || object instanceof Track || object instanceof Tag)
+                ) {
+                    object.save(state.frame, state);
+                } else {
+                    throw new ArgumentError(`Annotation object with client id ${state.clientID} was not found`);
+                }
             });
         } catch (error: unknown) {
             this.history.abortTransaction();
