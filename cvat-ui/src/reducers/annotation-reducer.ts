@@ -799,6 +799,9 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     ...state.annotations,
                     history,
                     activatedStateID: null,
+                    selectedStatesID: state.annotations.selectedStatesID.filter(
+                        (clientID: number): boolean => clientID !== objectState.clientID,
+                    ),
                     states: nextStates,
                     renderData: getAnnotationsRenderData(nextStates, state.annotations.filters),
                 },

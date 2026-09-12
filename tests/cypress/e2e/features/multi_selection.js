@@ -870,4 +870,16 @@ context('Multi-object selection', { scrollBehavior: false }, () => {
         cy.get(`#cvat_canvas_shape_${objectIds.carShape2}`).should('exist');
         assertSelection([objectIds.carShape1, objectIds.carShape2]);
     });
+
+    it('Removes an individually deleted object from the selection', () => {
+        selectFromSidebar([objectIds.carShape1, objectIds.carShape2, objectIds.personTrack1]);
+        cy.interactAnnotationObjectMenu(sidebarItem(objectIds.carShape2), 'Remove');
+        cy.get(`#cvat_canvas_shape_${objectIds.carShape2}`).should('not.exist');
+        assertSelection([objectIds.carShape1, objectIds.personTrack1]);
+
+        cy.pressWithPlatformModifier('z');
+        cy.get(`#cvat_canvas_shape_${objectIds.carShape2}`).should('exist');
+        assertSelection([objectIds.carShape1, objectIds.personTrack1]);
+        clearSelection();
+    });
 });
