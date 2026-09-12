@@ -147,27 +147,46 @@ context('Multi-object selection', { scrollBehavior: false }, () => {
         cy.pressWithPlatformModifier('a');
     }
 
-    function dragSelectionBox(deltaX, deltaY) {
-        cy.get('.cvat_canvas_selected_objects_box').then(($box) => {
-            const box = $box[0].getBoundingClientRect();
+    function dragSelectionElement(selector, deltaX, deltaY, modifiers = {}) {
+        cy.get(selector).then(($element) => {
+            const box = $element[0].getBoundingClientRect();
             const startX = box.left + box.width / 2;
             const startY = box.top + box.height / 2;
-            cy.wrap($box).trigger('mousedown', {
+            cy.wrap($element).trigger('mousedown', {
                 button: 0,
                 buttons: 1,
                 clientX: startX,
                 clientY: startY,
+                ...modifiers,
             });
             cy.get('#cvat_canvas_content').trigger('mousemove', {
                 button: 0,
                 buttons: 1,
                 clientX: startX + deltaX,
                 clientY: startY + deltaY,
+                ...modifiers,
             });
             cy.document().trigger('mouseup', {
                 button: 0,
                 clientX: startX + deltaX,
                 clientY: startY + deltaY,
+                ...modifiers,
+            });
+        });
+    }
+
+    function dragSelectionBox(deltaX, deltaY) {
+        dragSelectionElement('.cvat_canvas_selected_objects_box', deltaX, deltaY);
+    }
+
+    function assertSelectionDragDoesNotPan(selector, modifiers = {}) {
+        cy.get('#cvat_canvas_content').then(($content) => {
+            const initialBox = $content[0].getBoundingClientRect();
+            dragSelectionElement(selector, 30, 20, modifiers);
+            cy.get('#cvat_canvas_content').should(($currentContent) => {
+                const currentBox = $currentContent[0].getBoundingClientRect();
+                expect(currentBox.left).to.be.closeTo(initialBox.left, 0.1);
+                expect(currentBox.top).to.be.closeTo(initialBox.top, 0.1);
             });
         });
     }
@@ -531,6 +550,16 @@ context('Multi-object selection', { scrollBehavior: false }, () => {
                 .should('have.attr', 'x', initialX);
         });
         assertSelection([objectIds.carShape1, objectIds.carShape2]);
+
+        cy.get(`#cvat_canvas_shape_${objectIds.carShape1}`).invoke('attr', 'x').then((initialX) => {
+            dragSelectionElement('.cvat_canvas_selected_objects_label_title', 30, 20);
+            cy.get(`#cvat_canvas_shape_${objectIds.carShape1}`)
+                .should('not.have.attr', 'x', initialX);
+            cy.contains('.cvat-annotation-header-button', 'Undo').click();
+            cy.get(`#cvat_canvas_shape_${objectIds.carShape1}`)
+                .should('have.attr', 'x', initialX);
+        });
+        assertSelection([objectIds.carShape1, objectIds.carShape2]);
     });
 
     it('Keeps a rotated shape aligned with the selection drag preview', () => {
@@ -649,12 +678,19 @@ context('Multi-object selection', { scrollBehavior: false }, () => {
         });
         cy.get('.cvat_canvas_selected_objects_box')
             .should('have.class', 'cvat_canvas_selected_objects_box_not_draggable');
+        assertSelectionDragDoesNotPan('.cvat_canvas_selected_objects_box');
 
         openSelectionMenu();
         cy.contains('.cvat-object-item-menu button', 'Unlock selection').click();
         [objectIds.carShape1, objectIds.carShape2].forEach((clientId) => {
             cy.get(sidebarItem(clientId)).find('.cvat-object-item-button-lock-enabled').should('not.exist');
         });
+    });
+
+    it('Does not pan the canvas when a modified selection-header drag is rejected', () => {
+        selectFromSidebar([objectIds.carShape1, objectIds.carShape2]);
+        assertSelectionDragDoesNotPan('.cvat_canvas_selected_objects_label_title', platformModifier);
+        assertSelection([objectIds.carShape1, objectIds.carShape2]);
     });
 
     it('Opens selection actions by right-clicking the selection bbox', () => {

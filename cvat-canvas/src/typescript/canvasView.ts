@@ -3944,9 +3944,12 @@ export class CanvasViewImpl implements CanvasView, Listener {
             event.stopPropagation();
             this.openSelectedObjectsMenu(event.clientX, event.clientY);
         }).on('beforedrag', (event: CustomEvent): void => {
-            if (this.isMultiSelectModifierPressed(event.detail.event) ||
-                this.isMultiSelectObjectModifierPressed(event.detail.event) ||
+            const sourceEvent = event.detail.event as MouseEvent;
+            sourceEvent.stopPropagation();
+            if (this.isMultiSelectModifierPressed(sourceEvent) ||
+                this.isMultiSelectObjectModifierPressed(sourceEvent) ||
                 !this.getMovableSelectedObjectIDs().length) {
+                sourceEvent.preventDefault();
                 event.preventDefault();
             }
         }).on('dragstart', (event: CustomEvent): void => {
@@ -4132,14 +4135,17 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     event.stopPropagation();
                     return;
                 }
-                if (event.button !== 0 || this.isMultiSelectModifierPressed(event) ||
-                    this.isMultiSelectObjectModifierPressed(event) ||
-                    !this.getMovableSelectedObjectIDs().length || !this.selectedObjectsBox) {
+                if (event.button !== 0) {
                     return;
                 }
 
                 event.preventDefault();
                 event.stopPropagation();
+                if (this.isMultiSelectModifierPressed(event) || this.isMultiSelectObjectModifierPressed(event) ||
+                    !this.getMovableSelectedObjectIDs().length || !this.selectedObjectsBox) {
+                    return;
+                }
+
                 this.selectedObjectsBox.node.dispatchEvent(new MouseEvent('mousedown', {
                     bubbles: true,
                     cancelable: true,
