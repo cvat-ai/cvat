@@ -4020,7 +4020,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
     private openSelectedObjectsMenu(left: number, top: number, toggle = false): void {
         this.canvas.dispatchEvent(new CustomEvent('canvas.selectionmenu', {
-            bubbles: false,
+            bubbles: true,
             cancelable: true,
             detail: {
                 left,

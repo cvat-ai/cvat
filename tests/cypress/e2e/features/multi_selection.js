@@ -717,6 +717,20 @@ context('Multi-object selection', { scrollBehavior: false }, () => {
         assertSelection([objectIds.carShape1, objectIds.carShape2]);
     });
 
+    it('Closes an object menu before opening selection actions', () => {
+        cy.get(sidebarItem(objectIds.carShape1)).within(() => {
+            cy.get('[aria-label="more"]').click();
+        });
+        cy.get('.cvat-object-item-menu:visible').should('have.length', 1);
+
+        cy.get(`#cvat_canvas_shape_${objectIds.carShape2}`).click({ ...platformModifier, force: true });
+        assertSelection([objectIds.carShape2]);
+        cy.get('button[aria-label="Open selection actions"]').click();
+
+        cy.get('.cvat-object-item-menu:visible').should('have.length', 1);
+        cy.contains('.cvat-object-item-menu:visible button', 'Delete selection').should('be.visible');
+    });
+
     it('Runs layer and annotation actions for the complete selection', () => {
         selectFromSidebar([objectIds.carShape1, objectIds.carShape2]);
         cy.get(`#cvat_canvas_shape_${objectIds.carShape1}`).invoke('attr', 'data-z-order').then((initialZOrder) => {

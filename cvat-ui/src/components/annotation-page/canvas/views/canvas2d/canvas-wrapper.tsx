@@ -184,6 +184,7 @@ interface DispatchToProps {
     onJoinAnnotations(states: ObjectState[], points: number[][]): void;
     onSliceAnnotations(state: ObjectState, results: number[][]): void;
     onActivateObject: (activatedStateID: number | null, activatedElementID: number | null) => void;
+    onCloseCanvasContextMenu(): void;
     onExpandObject(objectState: ObjectState): void;
     onOpenLayerStack(sidebarCollapsed: boolean): void;
     onChangeBrightnessLevel(level: number): void;
@@ -434,6 +435,9 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
             }
 
             dispatch(activateObject(activatedStateID, activatedElementID, null));
+        },
+        onCloseCanvasContextMenu(): void {
+            dispatch(updateCanvasContextMenu(false, 0, 0));
         },
         onExpandObject(objectState: ObjectState): void {
             dispatch(collapseObjectItems([objectState], false));
@@ -821,6 +825,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
             return;
         }
 
+        const { onCloseCanvasContextMenu } = this.props;
         const { canvasInstance } = this.props as { canvasInstance: Canvas };
         const canvasGridItem = canvasInstance.html().parentElement?.parentElement;
         const gridItemBox = canvasGridItem?.getBoundingClientRect();
@@ -838,6 +843,8 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
             ));
             return;
         }
+
+        onCloseCanvasContextMenu();
 
         this.setState((state) => ({
             selectionMenuPosition: toggle && state.selectionMenuPosition ? null : selectionMenuPosition,
