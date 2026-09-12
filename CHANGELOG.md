@@ -16,6 +16,111 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.75.0'></a>
+## \[2.75.0\] - 2026-09-10
+
+### Added
+
+- \[Server API\] Documentation for organization filtering parameters (`org`, `org_id`,
+  and the `X-Organization` header) for endpoints that return object lists and others
+  (<https://github.com/cvat-ai/cvat/issues/10776>)
+
+- Annotations can now be filtered by source (auto / semi-auto / manual / file /
+  consensus) in the annotations Filters panel
+  (<https://github.com/cvat-ai/cvat/pull/10960>)
+
+- \[Server API\] Added Jaccard Index and Dice Coefficient target metrics and
+  micro, macro, and worst-label aggregation modes for Accuracy, Precision,
+  Recall, Jaccard Index, and Dice Coefficient.
+  (<https://github.com/cvat-ai/cvat/pull/10436>)
+
+- Added a `Rotated` drawing method for drawing rotated rectangles and
+  ellipses by placing points.
+  (<https://github.com/cvat-ai/cvat/pull/11058>)
+
+- Added new "Split audio interval at playback position" control
+  (<https://github.com/cvat-ai/cvat/pull/11097>)
+
+- \[Server API\] Added a read-only `created_via` field to user responses
+  (<https://github.com/cvat-ai/cvat/pull/11105>)
+
+- Added ID, end time, and duration ordering options to the audio regions list.
+  (<https://github.com/cvat-ai/cvat/pull/11133>)
+
+- The audio waveform can now be vertically resized to make peaks easier to inspect.
+  (<https://github.com/cvat-ai/cvat/pull/11157>)
+
+### Changed
+
+- Audio interval label selector now supports searching labels.
+  (<https://github.com/cvat-ai/cvat/pull/11116>)
+
+- Improved the audio interval Draw mode with a text cursor and contrast hover guide.
+  (<https://github.com/cvat-ai/cvat/pull/11136>)
+
+- Updated the default save, undo, redo, copy, and paste shortcuts to work with the standard OS modifier:
+  Ctrl on Windows and Linux, or Command on macOS.
+  (<https://github.com/cvat-ai/cvat/pull/11155>)
+
+### Deprecated
+
+- \[Server API\] The `changed_fields` field of webhook delivery responses is
+  deprecated. It is kept for historical deliveries and is always empty for
+  new ones
+  (<https://github.com/cvat-ai/cvat/pull/11104>)
+
+### Removed
+
+- \[Server API\] Webhook payloads for `update:<resource>` events no longer
+  contain the `before_update` and `changes` keys.
+  (<https://github.com/cvat-ai/cvat/pull/11104>)
+
+### Fixed
+
+- Fixed audio interval playback automatic stop position
+  (<https://github.com/cvat-ai/cvat/pull/11080>)
+
+- Removed unsupported "Save images" and "Convert masks to polygons" options
+  from import and export annotation dialogs for 1D
+  (<https://github.com/cvat-ai/cvat/pull/11081>)
+
+- Fixed audio control tooltips to show actual shortcuts.
+  (<https://github.com/cvat-ai/cvat/pull/11082>)
+
+- Fixed dragging of overlapping audio intervals being blocked by later-created intervals.
+  (<https://github.com/cvat-ai/cvat/pull/11090>)
+
+- Annotation images failing to load when a server or proxy ignores a chunk range request
+  (<https://github.com/cvat-ai/cvat/pull/11121>)
+
+- \[Server API\] Improved performance when filtering quality reports by task or
+  project and report target. The `target` parameter is now required when filtering
+  by `task_id` or `project_id`
+  (<https://github.com/cvat-ai/cvat/pull/11120>)
+
+- Calls to the `POST /api/lambda/requests` endpoint with an invalid
+  function ID no longer crash
+  (<https://github.com/cvat-ai/cvat/pull/11118>)
+
+- \[Server API\] Improved performance when filtering nested quality reports by
+  parent and report target. The `target` parameter is now required with `parent_id`,
+  and incompatible parent and requested report targets are rejected.
+
+- Fixed toolbar undo and redo behavior while drawing masks
+  (<https://github.com/cvat-ai/cvat/pull/11142>)
+
+- Mask position is restored when it is moved completely outside the image
+  (<https://github.com/cvat-ai/cvat/pull/11145>)
+
+- The **Remove underlying pixels** option affecting masks when they are dragged
+  (<https://github.com/cvat-ai/cvat/pull/11152>)
+
+- Canceling shape or mask redraw not restoring the original object on the canvas
+  (<https://github.com/cvat-ai/cvat/pull/11146>)
+
+- The slice tool could create an empty mask when slicing between disconnected mask regions
+  (<https://github.com/cvat-ai/cvat/pull/11153>)
+
 <a id='changelog-2.74.1'></a>
 ## \[2.74.1\] - 2026-09-01
 
