@@ -10,8 +10,32 @@ from typing import Any, Self
 import rq
 from rq.job import Job as RQJob
 from rq.job import JobStatus
+from rq.worker import Worker as RQWorker
 
 from cvat.apps.redis_handler import signals
+
+CVAT_CAN_STOP_STARTED_JOBS_KEY = "cvat_can_stop_started_jobs"
+
+
+def can_worker_stop_started_jobs(rq_job: RQJob) -> bool:
+    """
+    Checks whether the worker running the job is able to stop its work horse.
+
+    Workers that execute jobs in-process (the debug SimpleWorker) have no forked
+    work horse to kill, so stopping a started job there would kill the worker itself.
+    """
+    worker_key = f"{RQWorker.redis_worker_namespace_prefix}{rq_job.worker_name}"
+    # The marker is CVAT-specific and can be absent on already running or older production
+    # workers. Only SimpleWorker writes "0", so default to "can stop" for backward
+    # compatibility.
+    can_stop_started_jobs = (
+        rq_job.connection.hget(worker_key, CVAT_CAN_STOP_STARTED_JOBS_KEY) or "1"
+    )
+
+    if isinstance(can_stop_started_jobs, bytes):
+        can_stop_started_jobs = can_stop_started_jobs.decode()
+
+    return can_stop_started_jobs != "0"
 
 
 class DetachedJob(RQJob):
