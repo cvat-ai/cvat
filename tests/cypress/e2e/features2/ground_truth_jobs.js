@@ -241,7 +241,10 @@ context('Ground truth jobs', () => {
     });
 
     describe('Testing creating task with quality params', () => {
-        const imagesCount = 3;
+        const imagesCount = 7;
+        const gtQuantityPercent = 70;
+        const expectedGtFrameCount = Math.floor((imagesCount * gtQuantityPercent) / 100);
+        const expectedGtFramePercent = Math.round((expectedGtFrameCount / imagesCount) * 100);
         const imageFileName = `image_${taskName.replace(' ', '_').toLowerCase()}`;
         const width = 800;
         const height = 800;
@@ -265,7 +268,12 @@ context('Ground truth jobs', () => {
         it('Create task with ground truth job', () => {
             createTaskWithQualityParams({
                 validationMode: 'Ground Truth',
+                validationFramesPercent: gtQuantityPercent,
             }, archiveName);
+
+            cy.get('.cvat-job-item').first()
+                .find('.cvat-job-item-frames')
+                .should('have.text', `${expectedGtFrameCount} (${expectedGtFramePercent}%)`);
         });
 
         it('Create task with honeypots', () => {
