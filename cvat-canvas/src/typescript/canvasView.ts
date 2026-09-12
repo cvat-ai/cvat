@@ -853,6 +853,13 @@ export class CanvasViewImpl implements CanvasView, Listener {
     }
 
     private transformCanvas(): void {
+        this.content.style.setProperty(
+            '--cvat-selection-stroke-width', `${(2 * consts.BASE_STROKE_WIDTH) / this.geometry.scale}`,
+        );
+        this.content.style.setProperty(
+            '--cvat-selection-point-stroke-width', `${consts.POINTS_SELECTED_STROKE_WIDTH / this.geometry.scale}`,
+        );
+
         // Transform canvas
         for (const obj of [
             this.background,
@@ -4202,14 +4209,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
             visualShape.classList.add('cvat_canvas_shape_selected_object');
             visualShape.style.setProperty('--cvat-selection-opacity', `${selectedShapeOpacity}`);
             visualShape.style.setProperty('--cvat-selection-mask-opacity', `${Math.sqrt(selectedShapeOpacity)}`);
-            visualShape.style.setProperty(
-                '--cvat-selection-stroke-width',
-                `${(2 * consts.BASE_STROKE_WIDTH) / this.geometry.scale}`,
-            );
-            visualShape.style.setProperty(
-                '--cvat-selection-point-stroke-width',
-                `${consts.POINTS_SELECTED_STROKE_WIDTH / this.geometry.scale}`,
-            );
         }
 
         this.updateSelectedObjectsOverlay();

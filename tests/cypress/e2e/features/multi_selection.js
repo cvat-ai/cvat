@@ -390,6 +390,46 @@ context('Multi-object selection', { scrollBehavior: false }, () => {
         cy.get('.cvat-select-control').should('have.class', 'cvat-active-canvas-control');
     });
 
+    it('Keeps selection control borders at a constant screen size while zooming', () => {
+        const strokeVariables = [
+            '--cvat-selection-stroke-width',
+            '--cvat-selection-point-stroke-width',
+        ];
+        const readScale = (element) => {
+            const view = element.ownerDocument.defaultView;
+            const matrix = new view.DOMMatrix(view.getComputedStyle(element).transform);
+            return Math.hypot(matrix.a, matrix.b);
+        };
+        const readStrokeWidths = (element) => {
+            const view = element.ownerDocument.defaultView;
+            const style = view.getComputedStyle(element);
+            return strokeVariables.map((variable) => Number.parseFloat(style.getPropertyValue(variable)));
+        };
+
+        selectFromSidebar([objectIds.points]);
+        cy.get('#cvat_canvas_content').then(($content) => {
+            const initialScale = readScale($content[0]);
+            cy.get('.cvat_canvas_shape_selected_object').then(($selectedShape) => {
+                const initialWidths = readStrokeWidths($selectedShape[0]);
+                cy.get('.cvat-canvas-container').trigger('wheel', { deltaY: -5 });
+                cy.get('#cvat_canvas_content').should(($zoomedContent) => {
+                    const zoomedScale = readScale($zoomedContent[0]);
+                    expect(zoomedScale).not.to.equal(initialScale);
+                    const selectedShape = $zoomedContent[0]
+                        .querySelector('.cvat_canvas_shape_selected_object');
+                    expect(selectedShape).not.to.be.null;
+                    const zoomedWidths = readStrokeWidths(selectedShape);
+                    zoomedWidths.forEach((width, index) => {
+                        expect(width * zoomedScale).to.be.closeTo(initialWidths[index] * initialScale, 0.01);
+                    });
+                });
+            });
+        });
+
+        clearSelection();
+        cy.get('.cvat-fit-control').click();
+    });
+
     it('Excludes hidden objects and tags from selection', () => {
         cy.get(sidebarItem(objectIds.carShape1)).within(() => {
             cy.get('.cvat-object-item-button-hidden').click();
