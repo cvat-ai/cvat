@@ -52,7 +52,7 @@ function getSaveAction(states: AnnotationState[]): HistoryActions {
     const collectActions = (state: AnnotationState): void => {
         Object.entries(state.updateFlags).forEach(([property, updated]) => {
             if (updated) {
-                actions.add(SAVE_ACTION_BY_PROPERTY[property] || HistoryActions.CHANGED_OBJECTS);
+                actions.add(SAVE_ACTION_BY_PROPERTY[property] ?? HistoryActions.CHANGED_OBJECTS);
             }
         });
         if (state instanceof ObjectState) {
