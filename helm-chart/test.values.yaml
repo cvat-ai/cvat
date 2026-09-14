@@ -12,7 +12,7 @@ cvat:
       - name: DJANGO_SETTINGS_MODULE
         value: cvat.settings.testing_rest
       - name: CVAT_ALLOW_STATIC_CACHE
-        value: true
+        value: "true"
       - name: CVAT_ACCESS_TOKEN_STALE_PERIOD
         value: "3153600000" # ~100 years
     worker:
