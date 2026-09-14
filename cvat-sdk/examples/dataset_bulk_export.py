@@ -3,11 +3,10 @@
 # SPDX-License-Identifier: MIT
 
 """Export many task datasets in one run: name the tasks by id, optionally
-narrowed by status, write them locally and/or straight to a cloud storage, and
-record every result in a CSV manifest.
+narrowed by status, and write them locally and/or straight to a cloud storage.
 
-A failing task does not stop the run - it is recorded in the manifest and the
-script exits with code 1 at the end, so a pipeline still sees the failure.
+A failing task does not stop the run - its error is printed and the script
+exits with code 1 at the end, so a pipeline still sees the failure.
 
 Steps:
   1. Check --cloud-storage-id once, so a wrong id fails before any export, and
@@ -15,9 +14,7 @@ Steps:
      task belongs to the cloud storage's workspace before exporting anything.
   2. Export each task to --output-dir and/or to --cloud-storage-id, skipping the
      ones already exported when --skip-existing is passed.
-  3. Append a manifest row after every task - a run stopped with Ctrl+C still
-     leaves a manifest of what it managed to export - and report how many tasks
-     were exported, skipped, failed.
+  3. Report how many tasks were exported, skipped, and failed.
 
 Usage (run ``python dataset_bulk_export.py --help`` for the full list of options):
   python dataset_bulk_export.py --host 'https://app.cvat.ai' --token '<your token>' \\
@@ -27,14 +24,11 @@ Usage (run ``python dataset_bulk_export.py --help`` for the full list of options
 """
 
 import argparse
-import csv
 import sys
 from pathlib import Path
 
 from cvat_sdk import make_client, models
 from cvat_sdk.core.proxies.types import Location
-
-MANIFEST_FIELDS = ("task_id", "name", "status", "destination", "path", "bytes", "error")
 
 
 def parse_args() -> argparse.Namespace:
@@ -79,19 +73,13 @@ def parse_args() -> argparse.Namespace:
         "local exports only",
     )
     parser.add_argument("--with-images", action="store_true", help="include images in the exports")
-    parser.add_argument(
-        "--manifest",
-        type=Path,
-        default=Path("bulk_export.csv"),
-        help="path to write the CSV manifest to (default: %(default)s)",
-    )
     return parser.parse_args()
 
 
 def select_tasks(
     client, args: argparse.Namespace, storage: models.CloudStorageRead | None = None
 ) -> list:
-    """The tasks to export, as (id, name, status) triples.
+    """The tasks to export, as (id, name) pairs.
 
     --status is applied after the ids are resolved, so a task that exists but is
     in another status is reported as filtered out rather than as missing - two
@@ -102,7 +90,7 @@ def select_tasks(
         try:
             task = client.tasks.retrieve(task_id)
         except Exception:
-            selected.append((task_id, "", ""))
+            selected.append((task_id, ""))
             continue
         if args.status and str(task.status) != args.status:
             print(f"Skipping task {task_id}: status is {task.status}, not {args.status}")
@@ -111,20 +99,16 @@ def select_tasks(
             sys.exit(
                 f"Task {task_id} and cloud storage {storage.id} belong to different workspaces"
             )
-        selected.append((task.id, task.name, str(task.status)))
+        selected.append((task.id, task.name))
     return selected
 
 
-def export_one(client, args: argparse.Namespace, task_id: int, name: str, status: str) -> dict:
-    row = dict.fromkeys(MANIFEST_FIELDS, "")
-    row.update(task_id=task_id, name=name, status=status)
+def export_one(client, args: argparse.Namespace, task_id: int, name: str) -> str:
     local_path = args.output_dir / f"task_{task_id}.zip" if args.output_dir else None
 
     if args.skip_existing and local_path and local_path.exists():
-        row["destination"] = "skipped"
-        row["path"] = str(local_path)
         print(f"Skipped task {task_id} ({local_path} exists)")
-        return row
+        return "skipped"
 
     try:
         task = client.tasks.retrieve(task_id)
@@ -138,8 +122,6 @@ def export_one(client, args: argparse.Namespace, task_id: int, name: str, status
                 location=Location.LOCAL,
             )
             destinations.append("local")
-            row["path"] = str(local_path)
-            row["bytes"] = local_path.stat().st_size
 
         if args.cloud_storage_id:
             task.export_dataset(
@@ -151,13 +133,12 @@ def export_one(client, args: argparse.Namespace, task_id: int, name: str, status
             )
             destinations.append(f"cloud storage {args.cloud_storage_id}")
 
-        row["destination"] = ", ".join(destinations)
-        print(f"Exported task {task_id} {name!r} -> {row['destination']}")
+        print(f"Exported task {task_id} {name!r} -> {', '.join(destinations)}")
     except Exception as error:  # one bad task must not abort the whole run
-        row["error"] = f"{type(error).__name__}: {error}"
-        print(f"FAILED task {task_id} {name!r}: {row['error']}")
+        print(f"FAILED task {task_id} {name!r}: {type(error).__name__}: {error}")
+        return "failed"
 
-    return row
+    return "exported"
 
 
 def main() -> None:
@@ -187,25 +168,12 @@ def main() -> None:
             sys.exit("The selection is empty; nothing to export")
         print(f"Exporting {len(selection)} task(s)")
 
-        rows = []
-        with args.manifest.open("w", newline="") as f:
-            writer = csv.DictWriter(f, fieldnames=MANIFEST_FIELDS)
-            writer.writeheader()
-            for task in selection:
-                row = export_one(client, args, *task)
-                # Written and flushed one task at a time, so Ctrl+C halfway
-                # through still leaves a usable manifest on disk.
-                writer.writerow(row)
-                f.flush()
-                rows.append(row)
+        results = [export_one(client, args, *task) for task in selection]
 
-    failed = [row for row in rows if row["error"]]
-    skipped = [row for row in rows if row["destination"] == "skipped"]
-    exported = len(rows) - len(failed) - len(skipped)
-    print(
-        f"Exported {exported} of {len(rows)} task(s); {len(skipped)} skipped, {len(failed)} failed"
-    )
-    print(f"Wrote {args.manifest.resolve()}")
+    failed = results.count("failed")
+    skipped = results.count("skipped")
+    exported = results.count("exported")
+    print(f"Exported {exported} of {len(results)} task(s); {skipped} skipped, {failed} failed")
     if failed:
         sys.exit(1)
 

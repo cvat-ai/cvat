@@ -35,7 +35,7 @@ Conventions:
 | `project_restore.py` | Restore a project from a backup zip | `--backup`, `--cleanup` |
 | `project_export_dataset.py` | Export a project's tasks individually (all, or a `--task-id` list), locally and to a bucket | `--project-id`, `--cloud-storage-id`, `--export-format`, `--task-id` (optional, space-separated) |
 | `dataset_incremental_download.py` | Keep a local cache of a project's task data, re-downloading only the tasks the server has changed | `--project-id`, `--task-id`, `--cache-dir`, `--offline`, `--quiet` |
-| `dataset_bulk_export.py` | Export many tasks at once, locally and/or to a bucket, with a CSV manifest | `--task-id` (space-separated), `--status`, `--output-dir`, `--cloud-storage-id`, `--skip-existing`, `--manifest` |
+| `dataset_bulk_export.py` | Export many tasks at once, locally and/or to a bucket | `--task-id` (space-separated), `--status`, `--output-dir`, `--cloud-storage-id`, `--skip-existing` |
 | `task_create_from_cloud.py` | Create a task from bucket object keys | `--cloud-storage-id`, `--cloud-keys`, `--cleanup` |
 | `tasks_bulk_from_cloud.py` | Bulk-create tasks in a project, from bucket object keys or wildcard patterns | `--cloud-storage-id`, `--project-id`, `--task` (repeat), `--task-pattern` (repeat), `--manifest`, `--cleanup` |
 | `task_create_subtasks.py` | Create one task per object type / label group over the same images | `--image-dir`, `--subtask` (repeat), `--segment-size`, `--cleanup` |

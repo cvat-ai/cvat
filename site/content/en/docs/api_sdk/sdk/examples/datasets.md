@@ -8,8 +8,8 @@ description: 'Download only what changed, and export many tasks in one run'
 Two recipes for getting data out of CVAT at scale:
 `dataset_incremental_download.py` keeps a local cache of a project's tasks and
 re-downloads only what the server has changed, and `dataset_bulk_export.py`
-exports a given list of tasks as dataset archives in one go, with a manifest
-and resume. For exporting a single project's tasks locally and to a bucket, see
+exports a given list of tasks as dataset archives in one go, with support for
+resuming local exports. For exporting a single project's tasks locally and to a bucket, see
 [`project_export_dataset.py`](../projects#export-a-projects-tasks-as-datasets).
 
 ## Export a task or project
@@ -97,10 +97,8 @@ media can be read as images.
 
 Takes an explicit list of task ids, optionally narrowed by status, and
 exports each one to a local directory, to a registered cloud storage, or both.
-Every result — including failures — lands in a CSV manifest, appended and
-flushed after each task so a run stopped with Ctrl+C still leaves a manifest of
-what it finished. One failing task never aborts the run: the script exports the
-rest and exits 1. `--skip-existing` makes an interrupted local run resumable — it takes the
+The script prints each result and a summary of exported, skipped, and failed tasks.
+One failing task never aborts the run: the script exports the rest and exits 1. `--skip-existing` makes an interrupted local run resumable — it takes the
 exported file as proof a task is done, so it needs `--output-dir` and refuses
 to pair with `--cloud-storage-id`, where nothing lands locally to check.
 
@@ -115,7 +113,6 @@ to pair with `--cloud-storage-id`, where nothing lands locally to check.
 | `--export-format` | no | Exporter name (default `'COCO 1.0'`) |
 | `--skip-existing` | no | Skip tasks already exported into `--output-dir`; local exports only, so it cannot be combined with `--cloud-storage-id` |
 | `--with-images` | no | Include images |
-| `--manifest` | no | CSV manifest path (default `bulk_export.csv`) |
 
 ```bash
 python dataset_bulk_export.py --host 'https://app.cvat.ai' --token '<your token>' \

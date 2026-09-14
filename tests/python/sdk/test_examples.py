@@ -78,7 +78,6 @@ class TestExampleHelpers:
     )
     def test_bulk_export_checks_workspace_before_any_export(
         self,
-        tmp_path: Path,
         monkeypatch: pytest.MonkeyPatch,
         storage_org: int | None,
         task_org: int | None,
@@ -108,7 +107,6 @@ class TestExampleHelpers:
             tasks[task_id] = task
         client.tasks.retrieve.side_effect = tasks.__getitem__
         monkeypatch.setattr(recipe, "make_client", lambda *args, **kwargs: client)
-        manifest = tmp_path / "manifest.csv"
         monkeypatch.setattr(
             sys,
             "argv",
@@ -123,8 +121,6 @@ class TestExampleHelpers:
                 "8",
                 "--cloud-storage-id",
                 "9",
-                "--manifest",
-                str(manifest),
             ],
         )
 
@@ -137,7 +133,6 @@ class TestExampleHelpers:
             # A later mismatched task must also prevent exporting the first one.
             for task in tasks.values():
                 task.export_dataset.assert_not_called()
-            assert not manifest.exists()
         else:
             recipe.main()
             for task in tasks.values():
@@ -148,10 +143,6 @@ class TestExampleHelpers:
                     location=Location.CLOUD_STORAGE,
                     cloud_storage_id=9,
                 )
-            with manifest.open(newline="") as f:
-                rows = list(csv.DictReader(f))
-            assert [row["task_id"] for row in rows] == ["7", "8"]
-            assert all(not row["error"] for row in rows)
 
     @staticmethod
     def duplicate_task(shapes=(), tracks=()):
@@ -573,7 +564,7 @@ class TestExamples:
         assert f"Skipped task {video.id}" in result.stdout
         assert "0 of 1 task(s) available locally" in result.stdout
 
-    def read_manifest(self, name: str = "bulk_export.csv") -> list[dict]:
+    def read_manifest(self, name: str) -> list[dict]:
         with (self.tmp_path / name).open(newline="") as f:
             return list(csv.DictReader(f))
 
@@ -591,9 +582,6 @@ class TestExamples:
         assert "Exported 2 of 2 task(s)" in result.stdout
         for task in (first, second):
             assert (self.tmp_path / "out" / f"task_{task.id}.zip").is_file()
-        rows = self.read_manifest()
-        assert {int(row["task_id"]) for row in rows} == {first.id, second.id}
-        assert all(row["error"] == "" for row in rows)
 
     def test_bulk_export_explicit_task_ids(self):
         project = self.make_project()
@@ -625,7 +613,7 @@ class TestExamples:
 
         result = self.run_recipe(
             "dataset_bulk_export.py",
-            args=["--task-id", str(good.id), str(missing_id), "--output-dir", "out"],
+            args=["--task-id", str(missing_id), str(good.id), "--output-dir", "out"],
             with_cleanup=False,
             expect_failure=True,
         )
@@ -633,8 +621,7 @@ class TestExamples:
         assert f"Exported task {good.id}" in result.stdout
         assert f"FAILED task {missing_id}" in result.stdout
         assert (self.tmp_path / "out" / f"task_{good.id}.zip").is_file()
-        errors = [row for row in self.read_manifest() if row["error"]]
-        assert len(errors) == 1
+        assert "Exported 1 of 2 task(s); 0 skipped, 1 failed" in result.stdout
 
     def test_bulk_export_reports_ids_filtered_out_by_status(self):
         project = self.make_project()
