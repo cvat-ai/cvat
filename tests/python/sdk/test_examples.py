@@ -23,6 +23,13 @@ from unittest.mock import MagicMock
 
 import platformdirs
 import pytest
+from cvat_sdk import Client, models
+from cvat_sdk.core.auth import AuthStore, ProfileEntry
+from cvat_sdk.core.downloading import Downloader
+from cvat_sdk.core.proxies.projects import Project
+from cvat_sdk.core.proxies.tasks import ResourceType, Task
+from cvat_sdk.core.proxies.types import Location
+
 from shared.utils.config import (
     BASE_URL,
     IMPORT_EXPORT_BUCKET_ID,
@@ -31,13 +38,6 @@ from shared.utils.config import (
     USER_PASS,
 )
 from shared.utils.helpers import generate_image_file, generate_video_file
-
-from cvat_sdk import Client, models
-from cvat_sdk.core.auth import AuthStore, ProfileEntry
-from cvat_sdk.core.downloading import Downloader
-from cvat_sdk.core.proxies.projects import Project
-from cvat_sdk.core.proxies.tasks import ResourceType, Task
-from cvat_sdk.core.proxies.types import Location
 
 EXAMPLES_DIR = Path(__file__).parents[3] / "cvat-sdk" / "examples"
 
