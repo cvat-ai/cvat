@@ -129,7 +129,7 @@ function AudioLabelsList(): JSX.Element {
 
     const labelIDs = useMemo(() => labels.map((label: any): number => label.id), [labels]);
     const applicableLabelIDs = useMemo(
-        () => filterApplicableForType(LabelType.INTERVAL, labels).map((label) => label.id as number),
+        () => filterApplicableForType(LabelType.INTERVAL, labels).map((label) => label.id!),
         [labels],
     );
 

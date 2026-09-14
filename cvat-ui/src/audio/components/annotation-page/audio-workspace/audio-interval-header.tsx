@@ -10,7 +10,7 @@ import { AudioIntervalState, Label, LabelType } from 'cvat-core-wrapper';
 import { formatMilliseconds, formatTimeShort } from 'audio/utils/format-audio-time';
 import { ColorBy } from 'reducers';
 import LabelSelector from 'components/label-selector/label-selector';
-import { filterApplicableForType } from 'utils/filter-applicable-labels';
+import { filterApplicableForTypes } from 'utils/filter-applicable-labels';
 import AudioIntervalActions, { AudioIntervalActionShortcuts } from './audio-interval-actions';
 import AudioIntervalMoreActions from './audio-interval-more-actions';
 import { intervalDurationSeconds, intervalEndSeconds, intervalStartSeconds } from './utils/audio-interval';
@@ -46,12 +46,9 @@ export default function AudioIntervalHeader({
     const start = intervalStartSeconds(interval);
     const end = intervalEndSeconds(interval);
     const duration = intervalDurationSeconds(interval);
-    const applicableLabels = filterApplicableForType(LabelType.INTERVAL, labels);
-    // Old intervals may have labels that are not applicable for intervals anymore,
-    // so we need to add them to the list of labels for the selector
-    const labelsForSelector = applicableLabels.some((label) => label.id === interval.label.id) ?
-        applicableLabels :
-        [interval.label, ...applicableLabels];
+    // Old intervals may have labels that are not applicable to intervals anymore,
+    // so we need to keep them in the list of labels for the selector
+    const labelsForSelector = filterApplicableForTypes([LabelType.INTERVAL, interval.label.type], labels);
 
     const labelSelector = (
         <LabelSelector
