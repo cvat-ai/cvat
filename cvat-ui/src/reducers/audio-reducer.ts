@@ -2,11 +2,15 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { AnyAction } from 'redux';
 import { AnnotationActionTypes } from 'actions/annotation-actions';
-import { AudioActionTypes } from 'actions/audio-actions';
+import { AudioActions, AudioActionTypes } from 'actions/audio-actions';
 import { BoundariesActionTypes } from 'actions/boundaries-actions';
 import { limitZoom } from 'audio/utils/waveform-geometry';
+import {
+    DimensionType, LabelType,
+} from 'cvat-core-wrapper';
+import { filterApplicableForType } from 'utils/filter-applicable-labels';
+
 import { ActiveControl, AudioState } from '.';
 
 const defaultState: AudioState = {
@@ -40,16 +44,30 @@ const defaultState: AudioState = {
     },
 };
 
-export default function audioReducer(state: AudioState = defaultState, action: AnyAction): AudioState {
+type AudioReducerAction =
+    | AudioActions
+    | {
+        type:
+            | BoundariesActionTypes.RESET_AFTER_ERROR
+            | AnnotationActionTypes.GET_JOB_SUCCESS
+            | AnnotationActionTypes.UPDATE_ACTIVE_CONTROL
+            | AnnotationActionTypes.FETCH_ANNOTATIONS_SUCCESS;
+        payload: any;
+    };
+
+export default function audioReducer(state: AudioState = defaultState, action: AudioReducerAction): AudioState {
     switch (action.type) {
         case BoundariesActionTypes.RESET_AFTER_ERROR:
         case AnnotationActionTypes.GET_JOB_SUCCESS: {
             const { job } = action.payload;
+            const labels = job.dimension === DimensionType.DIMENSION_1D ?
+                filterApplicableForType(LabelType.INTERVAL, job.labels) :
+                job.labels;
             return {
                 ...defaultState,
                 player: {
                     ...defaultState.player,
-                    activeLabelId: job.labels.length ? job.labels[0].id : null,
+                    activeLabelId: (labels.length ? labels[0].id : null) ?? null,
                 },
             };
         }
