@@ -4,15 +4,25 @@
 
 import csv
 import io
+import os
+import os.path as osp
 import time
+from collections import defaultdict
+from collections.abc import Iterable
 from contextlib import closing
 from datetime import timedelta
 
 import datumaro.util
 from rest_framework.serializers import ValidationError
 
-from cvat.apps.dataset_manager.bindings import CommonData, CvatImportError, ProjectData
+from cvat.apps.dataset_manager.bindings import (
+    CommonData,
+    CvatImportError,
+    ProjectData,
+    get_defaulted_subset,
+)
 from cvat.apps.dataset_manager.formats.registry import exporter, importer
+from cvat.apps.dataset_manager.util import make_zip_archive
 from cvat.apps.engine.models import DimensionType, SourceType
 from cvat.apps.engine.utils import take_by
 
@@ -35,23 +45,60 @@ def _export(dst_file, temp_dir, instance_data: CommonData | ProjectData, save_im
 
     # TODO: refactor ProjectData to inherit CommonData
     if isinstance(instance_data, ProjectData):
-        sample_filename_per_task = {task.id: task.data.audio.path for task in instance_data.tasks}
-        instance_intervals = (
-            (sample_filename_per_task[ann.task_id], ann)
-            for ann in instance_data.iterate_intervals()
-        )
+        export_project(dst_file, temp_dir, instance_data, field_names=field_names)
     elif isinstance(instance_data, CommonData):
         sample_filename = instance_data.db_data.audio.path
-        instance_intervals = ((sample_filename, ann) for ann in instance_data.iterate_intervals())
+        write_intervals(
+            dst_file,
+            field_names=field_names,
+            intervals=(
+                (sample_filename, interval) for interval in instance_data.iterate_intervals()
+            ),
+        )
     else:
         assert False, f"Unexpected instance_data type '{type(instance_data)}'"
 
+
+def export_project(dst_file, temp_dir, instance_data: ProjectData, *, field_names: list[str]):
+    # Intervals are exported into a separate file per subset, as the subsets are expected
+    # to be imported into different projects or tasks.
+    sample_filename_per_task = {task.id: task.data.audio.path for task in instance_data.tasks}
+
+    intervals_per_subset = {}
+    for interval in instance_data.iterate_intervals():
+        intervals_per_subset.setdefault(interval.subset, []).append(
+            (sample_filename_per_task[interval.task_id], interval)
+        )
+
+    annotations_dir = osp.join(temp_dir, "annotations")
+    os.makedirs(annotations_dir, exist_ok=True)
+
+    subset_map = {}
+    for subset in instance_data.subsets:
+        subset_name = subset_map.setdefault(subset, get_defaulted_subset(subset, subset_map))
+
+        with open(osp.join(annotations_dir, f"{subset_name}.tsv"), "wb") as subset_file:
+            write_intervals(
+                subset_file,
+                field_names=field_names,
+                intervals=intervals_per_subset[subset_name],
+            )
+
+    make_zip_archive(temp_dir, dst_file)
+
+
+def write_intervals(
+    dst_file,
+    *,
+    field_names: list[str],
+    intervals: Iterable[tuple[str, CommonData.LabeledInterval | ProjectData.LabeledInterval]],
+):
     file_writer = io.TextIOWrapper(dst_file)
     with closing(file_writer):
         csv_writer = csv.DictWriter(file_writer, delimiter="\t", fieldnames=field_names)
         csv_writer.writeheader()
 
-        for sample_filename, interval in instance_intervals:
+        for sample_filename, interval in intervals:
             row_dict = {
                 "id": interval.id,
                 "filename": sample_filename,

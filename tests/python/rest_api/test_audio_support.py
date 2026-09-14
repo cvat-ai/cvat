@@ -5,6 +5,8 @@
 import csv
 import io
 import math
+import zipfile
+from collections import defaultdict
 from collections.abc import Generator, Sequence
 from datetime import timedelta
 from itertools import product
@@ -397,6 +399,47 @@ class TestAudioAnnotations:
 
         assert "stop must be within" in str(capture.value)
 
+    @parametrize(
+        "filename, expected_message",
+        [
+            ("unknown.mp3", "Unknown filename 'unknown.mp3'"),
+            (None, "Missing filename"),
+        ],
+    )
+    def test_cant_import_intervals_with_unmatched_filename(
+        self, tasks, tmp_path: Path, filename: str | None, expected_message: str
+    ):
+        task_id = next(t for t in tasks if t["media_type"] == "audio" and t.get("size"))["id"]
+
+        task = self.client.tasks.retrieve(task_id)
+        label = next(label for label in task.get_labels() if label.type == "interval")
+
+        row = {
+            "id": "1",
+            "filename": filename,
+            "start": "0:00:00",
+            "stop": "0:00:01",
+            "label": label.name,
+            "source": "file",
+            "score": "1.0",
+        }
+        if filename is None:
+            del row["filename"]
+
+        annotation_file = tmp_path / "annotations.tsv"
+        with open(annotation_file, "w", newline="") as f:
+            csv_writer = csv.DictWriter(f, delimiter="\t", fieldnames=list(row))
+            csv_writer.writeheader()
+            csv_writer.writerow(row)
+
+        original_intervals = task.get_annotations().intervals
+
+        with pytest.raises(BackgroundRequestException) as capture:
+            task.import_annotations("Generic TSV 1.0", annotation_file)
+
+        assert expected_message in str(capture.value)
+        assert task.get_annotations().intervals == original_intervals
+
 
 class TestAudioProjectAnnotations:
     FORMAT_NAME = "Generic TSV 1.0"
@@ -461,12 +504,19 @@ class TestAudioProjectAnnotations:
         # the exporter writes timedeltas, which are converted by csv.DictWriter with str()
         return str(timedelta(milliseconds=frame))
 
-    def _export_annotations(self, project: Project) -> list[dict[str, str]]:
-        filename = self.tmp_dir / "annotations.tsv"
+    def _export_annotations(self, project: Project) -> dict[str, list[dict[str, str]]]:
+        filename = self.tmp_dir / "annotations.zip"
         project.export_dataset(self.FORMAT_NAME, filename, include_images=False)
 
-        with open(filename, newline="") as f:
-            return list(csv.DictReader(f, delimiter="\t"))
+        with zipfile.ZipFile(filename) as zip_file:
+            return {
+                name: list(
+                    csv.DictReader(
+                        io.TextIOWrapper(zip_file.open(name), newline=""), delimiter="\t"
+                    )
+                )
+                for name in zip_file.namelist()
+            }
 
     @parametrize("subsets", [None, ["subset1", "subset2"]])
     @pytest.mark.timeout(300)
@@ -485,20 +535,31 @@ class TestAudioProjectAnnotations:
         for task, task_intervals in zip(tasks, expected_intervals):
             self._make_intervals(task, task_intervals)
 
-        rows = self._export_annotations(project)
+        rows_per_file = self._export_annotations(project)
 
-        assert sorted(
-            (row["filename"], row["start"], row["stop"], row["label"]) for row in rows
-        ) == sorted(
-            (
-                source_file.name,
-                self._timestamp(start),
-                self._timestamp(stop) if stop is not None else "",
-                self.LABEL_NAME,
-            )
-            for source_file, task_intervals in zip(source_files, expected_intervals)
-            for start, stop in task_intervals
+        expected_subsets = subsets or ["default"] * len(source_files)
+        assert sorted(rows_per_file) == sorted(
+            {f"annotations/{subset}.tsv" for subset in expected_subsets}
         )
+
+        expected_rows_per_file = defaultdict(list)
+        for source_file, subset, task_intervals in zip(
+            source_files, expected_subsets, expected_intervals
+        ):
+            for start, stop in task_intervals:
+                expected_rows_per_file[f"annotations/{subset}.tsv"].append(
+                    (
+                        source_file.name,
+                        self._timestamp(start),
+                        self._timestamp(stop) if stop is not None else "",
+                        self.LABEL_NAME,
+                    )
+                )
+
+        assert {
+            name: sorted((row["filename"], row["start"], row["stop"], row["label"]) for row in rows)
+            for name, rows in rows_per_file.items()
+        } == {name: sorted(rows) for name, rows in expected_rows_per_file.items()}
 
     def test_cant_import_dataset(
         self,

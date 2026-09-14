@@ -1495,7 +1495,9 @@ class ProjectData(InstanceLabelData):
             ],
         )
 
-    def _export_labeled_interval(self, interval: dict[str, Any], task_id: int) -> LabeledInterval:
+    def _export_labeled_interval(
+        self, interval: dict[str, Any], task_id: int, subset: str
+    ) -> LabeledInterval:
         def frame_to_timestamp(frame: int) -> timedelta:
             return timedelta(milliseconds=frame)
 
@@ -1513,7 +1515,7 @@ class ProjectData(InstanceLabelData):
             score=interval["score"],
             attributes=self._export_attributes(interval["attributes"]),
             task_id=task_id,
-            subset=self._tasks_data[task_id]._db_subset,
+            subset=subset,
         )
 
     def group_by_frame(
@@ -1575,9 +1577,12 @@ class ProjectData(InstanceLabelData):
                     yield self._export_tag(tag, task.id)
 
     def iterate_intervals(self) -> Generator[LabeledInterval, None, None]:
+        subsets = {}
         for task in self._db_tasks.values():
+            subset = subsets.setdefault(task.id, get_defaulted_subset(task.subset, self._subsets))
+
             for interval in self._annotation_irs[task.id].intervals:
-                yield self._export_labeled_interval(interval, task_id=task.id)
+                yield self._export_labeled_interval(interval, task_id=task.id, subset=subset)
 
     @property
     def meta(self):
