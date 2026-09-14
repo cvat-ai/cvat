@@ -47,6 +47,12 @@ class HistoryTransaction implements ActionItem {
         }
     }
 
+    public rollback(): void {
+        for (let index = this.actions.length - 1; index >= 0; index--) {
+            this.actions[index].undo();
+        }
+    }
+
     public async redo(): Promise<void> {
         for (const action of this.actions) {
             await action.redo();
@@ -59,10 +65,14 @@ export default class AnnotationHistory {
     private _undo: ActionItem[];
     private _redo: ActionItem[];
     private transaction: HistoryTransaction | null;
+    private transactionDepth: number;
+    private transactionRollbackOnly: boolean;
 
     constructor() {
         this.frozen = false;
         this.transaction = null;
+        this.transactionDepth = 0;
+        this.transactionRollbackOnly = false;
         this.clear();
     }
 
@@ -107,29 +117,35 @@ export default class AnnotationHistory {
         this._redo = [];
     }
 
-    public beginTransaction(action: HistoryActions): void {
-        if (this.transaction) throw new Error('Another history transaction is already active');
-        this.transaction = new HistoryTransaction(action);
-    }
+    public runTransaction<T>(action: HistoryActions, operation: () => T): T {
+        if (!this.transaction) {
+            this.transaction = new HistoryTransaction(action);
+            this.transactionRollbackOnly = false;
+        }
+        this.transactionDepth++;
+        try {
+            return operation();
+        } catch (error: unknown) {
+            this.transactionRollbackOnly = true;
+            throw error;
+        } finally {
+            this.transactionDepth--;
+            if (!this.transactionDepth) {
+                const { transaction, transactionRollbackOnly } = this;
+                this.transaction = null;
+                this.transactionRollbackOnly = false;
 
-    public get transactionActive(): boolean {
-        return this.transaction !== null;
-    }
-
-    public endTransaction(): void {
-        const { transaction } = this;
-        this.transaction = null;
-        if (!transaction || transaction.empty) return;
-
-        this._undo = this._undo.slice(-MAX_HISTORY_LENGTH + 1);
-        this._undo.push(transaction);
-        this._redo = [];
-    }
-
-    public async abortTransaction(): Promise<void> {
-        const { transaction } = this;
-        this.transaction = null;
-        await transaction?.undo();
+                if (transaction) {
+                    if (transactionRollbackOnly) {
+                        transaction.rollback();
+                    } else if (!transaction.empty) {
+                        this._undo = this._undo.slice(-MAX_HISTORY_LENGTH + 1);
+                        this._undo.push(transaction);
+                        this._redo = [];
+                    }
+                }
+            }
+        }
     }
 
     public async undo(count: number): Promise<number[]> {

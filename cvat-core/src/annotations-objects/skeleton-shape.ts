@@ -275,11 +275,7 @@ export class SkeletonShape extends Shape {
             const undoSource = this.source;
             const redoSource = this.readOnlyFields.includes('source') ? this.source : computeNewSource(this.source);
 
-            const ownsTransaction = !this.history.transactionActive;
-            if (ownsTransaction) {
-                this.history.beginTransaction(actionType);
-            }
-            try {
+            this.history.runTransaction(actionType, () => {
                 for (const [element, state] of updatedElements) {
                     element.save(frame, state);
                 }
@@ -298,16 +294,7 @@ export class SkeletonShape extends Shape {
                     [this.clientID],
                     frame,
                 );
-            } catch (error: unknown) {
-                if (ownsTransaction) {
-                    this.history.abortTransaction();
-                }
-                throw error;
-            } finally {
-                if (ownsTransaction) {
-                    this.history.endTransaction();
-                }
-            }
+            });
         }
 
         const result = Shape.prototype.save.call(this, frame, data);

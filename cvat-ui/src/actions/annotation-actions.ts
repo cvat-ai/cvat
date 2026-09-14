@@ -1281,7 +1281,7 @@ export function updateAnnotationsAsync(statesToUpdate: ObjectState[], batch = fa
             }
 
             if (batch) {
-                await jobInstance.annotations.bulkSave(statesToSave);
+                await jobInstance.annotations.saveStates(statesToSave);
                 dispatch(fetchAnnotationsAsync());
                 return;
             }

@@ -376,7 +376,7 @@ export function updateAudioIntervalsAsync(
         }
         const job = getState().annotation.job.instance;
         if (!job) return;
-        await job.annotations.bulkSave(targets);
+        await job.annotations.saveStates(targets);
         await dispatchFetchAnnotations(dispatch);
     };
 }

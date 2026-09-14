@@ -47,7 +47,7 @@ const SAVE_ACTION_BY_PROPERTY: Readonly<Record<string, HistoryActions>> = {
     position: HistoryActions.CHANGED_AUDIO_POSITION,
 };
 
-function getSaveAction(states: AnnotationState[]): HistoryActions {
+function getSaveAction(states: AnnotationState[]): HistoryActions | null {
     const actions = new Set<HistoryActions>();
     const collectActions = (state: AnnotationState): void => {
         Object.entries(state.updateFlags).forEach(([property, updated]) => {
@@ -60,6 +60,10 @@ function getSaveAction(states: AnnotationState[]): HistoryActions {
         }
     };
     states.forEach(collectActions);
+
+    if (!actions.size) {
+        return null;
+    }
 
     return actions.size === 1 ? [...actions][0] : HistoryActions.CHANGED_OBJECTS;
 }
@@ -192,9 +196,7 @@ export default class Collection {
 
     private _applyZOrderUpdates(frame: number, zOrders: Map<number, number>): ObjectState[] {
         const updatedStates: ObjectState[] = [];
-        this.history.beginTransaction(HistoryActions.CHANGED_ZORDER);
-
-        try {
+        this.history.runTransaction(HistoryActions.CHANGED_ZORDER, () => {
             for (const [clientID, zOrder] of zOrders) {
                 const object = this.objects[clientID];
                 if (!(object instanceof Shape || object instanceof Track) || object.removed || object.lock) {
@@ -222,12 +224,7 @@ export default class Collection {
                 const updatedState = new ObjectState(object.get(frame));
                 updatedStates.push(updatedState);
             }
-        } catch (error: unknown) {
-            this.history.abortTransaction();
-            throw error;
-        } finally {
-            this.history.endTransaction();
-        }
+        });
 
         return updatedStates;
     }
@@ -1672,8 +1669,7 @@ export default class Collection {
         right.attributes = { ...currentState.attributes };
         right.color = currentState.color;
 
-        this.history.beginTransaction(HistoryActions.SPLIT_INTERVAL);
-        try {
+        return this.history.runTransaction(HistoryActions.SPLIT_INTERVAL, () => {
             // update current as left
             const updatedState = interval.get();
             updatedState.stop = position;
@@ -1681,29 +1677,34 @@ export default class Collection {
 
             const [nextClientID] = this.put([right]);
             return nextClientID;
-        } catch (error: unknown) {
-            this.history.abortTransaction();
-            throw error;
-        } finally {
-            this.history.endTransaction();
-        }
+        });
     }
 
     public save(states: AnnotationState[]): void {
         checkObjectType('states', states, null, { cls: Array, name: 'Array' });
         if (!states.length) {
-            throw new ArgumentError('At least one annotation state must be provided');
+            return;
         }
         states.forEach((state) => {
             if (!(state instanceof ObjectState || state instanceof AudioIntervalState)) {
-                throw new ArgumentError('Only object and audio interval states can be saved');
+                throw new ArgumentError(
+                    'Only annotation states for shapes, tracks, tags, and audio intervals can be saved',
+                );
             }
         });
 
-        this.history.beginTransaction(getSaveAction(states));
-        try {
+        const action = getSaveAction(states);
+        if (action === null) {
+            return;
+        }
+
+        this.history.runTransaction(action, () => {
             states.forEach((state) => {
                 const object = state.clientID === null ? null : this.objects[state.clientID];
+                if (!object) {
+                    throw new ArgumentError(`Annotation with client ID ${state.clientID} was not found`);
+                }
+
                 if (state instanceof AudioIntervalState && object instanceof AudioInterval) {
                     object.save(state);
                 } else if (
@@ -1712,15 +1713,12 @@ export default class Collection {
                 ) {
                     object.save(state.frame, state);
                 } else {
-                    throw new ArgumentError(`Annotation object with client id ${state.clientID} was not found`);
+                    throw new ArgumentError(
+                        `Annotation state does not match the annotation type for client ID ${state.clientID}`,
+                    );
                 }
             });
-        } catch (error: unknown) {
-            this.history.abortTransaction();
-            throw error;
-        } finally {
-            this.history.endTransaction();
-        }
+        });
     }
 
     private _searchEmpty(
