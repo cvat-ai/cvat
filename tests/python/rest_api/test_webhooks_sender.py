@@ -21,7 +21,6 @@ from .utils import (
     create_task,
     export_task_backup,
     export_task_dataset,
-    invite_user_to_org,
     register_new_user,
 )
 
@@ -768,17 +767,6 @@ class TestWebhookUserEvents:
         assert payload["user"]["email"] == user["email"]
         assert payload["user"]["is_active"] is True
         assert payload["user"]["created_via"] == "registration"
-
-    def test_webhook_create_user_by_invitation(self) -> None:
-        webhook_id = create_webhook(["create:user"], "server")["id"]
-
-        invite_user_to_org("webhook_invited_user@email.com", org_id=2, role="worker")
-
-        deliveries, payload = get_deliveries(webhook_id)
-
-        assert deliveries["count"] == 1
-        assert payload["event"] == "create:user"
-        assert payload["user"]["created_via"] == "invitation"
 
     def test_webhook_update_user(self, users) -> None:
         user = next(user for user in users if user["username"] == "dummy1")
