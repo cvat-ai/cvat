@@ -174,3 +174,51 @@ class TestServerWebhooksOnRegistration(ApiTestBase):
             ],
             expected_webhook_deliveries_after_confirmation,
         )
+
+
+class TestServerWebhooksOnInvitation(ApiTestBase):
+    org_slug = "testorg"
+
+    @classmethod
+    def setUpClass(cls):
+        cls.admin = User.objects.create_superuser(username="admin", email="", password="admin")
+        return super().setUpClass()
+
+    def setUp(self):
+        super().setUp()
+        response = self._post_request(
+            "/api/organizations",
+            self.admin,
+            data={"slug": self.org_slug, "name": "Test organization"},
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED, response.content)
+
+        self.webhook = make_webhook(
+            _type=WebhookTypeChoice.SERVER.value,
+            events="create:user",
+            owner=self.admin,
+            project=None,
+        )
+
+    def _invite(self, email: str):
+        return self._post_request(
+            "/api/invitations",
+            self.admin,
+            data={"role": "worker", "email": email},
+            query_params={"org": self.org_slug},
+        )
+
+    def test_can_send_webhook_after_inviting_unregistered_user(self):
+        user_email = "invited@test.com"
+
+        with self.captureOnCommitCallbacks(execute=True):
+            response = self._invite(user_email)
+            self.assertEqual(response.status_code, status.HTTP_201_CREATED, response.content)
+
+        deliveries = list(WebhookDelivery.objects.filter(webhook=self.webhook).order_by("id").all())
+        self.assertEqual(len(deliveries), 1)
+
+        delivery = deliveries[0]
+        self.assertEqual(delivery.webhook.id, self.webhook.id)
+        self.assertEqual(delivery.event, "create:user")
+        self.assertEqual(delivery.request["user"]["email"], user_email)

@@ -21,7 +21,6 @@ from .utils import (
     create_task,
     export_task_backup,
     export_task_dataset,
-    invite_user_to_org,
     register_new_user,
 )
 
@@ -103,7 +102,9 @@ def create_email_address(
         "print(email_address.id)"
     )
 
-    return int(container_exec_cvat(request, ["./manage.py", "shell", "-c", code]).strip())
+    return int(
+        container_exec_cvat(request, ["./manage.py", "shell", "-c", code]).strip().splitlines()[-1]
+    )
 
 
 def verify_primary_email_address(request: pytest.FixtureRequest, *, user_id: int) -> None:
@@ -154,6 +155,7 @@ def get_deliveries(webhook_id, expected_count=1, *, timeout: int = 60):
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
+@pytest.mark.usefixtures("restore_redis_inmem_per_function")
 class TestWebhookProjectEvents:
     def test_webhook_update_project_name(self):
         response = post_method("admin1", "projects", {"name": "project"})
@@ -232,6 +234,7 @@ class TestWebhookProjectEvents:
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
+@pytest.mark.usefixtures("restore_redis_inmem_per_function")
 class TestWebhookIntersection:
     # Test case description:
     #     few webhooks are triggered by the same event
@@ -337,6 +340,7 @@ class TestWebhookIntersection:
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
+@pytest.mark.usefixtures("restore_redis_inmem_per_function")
 class TestWebhookTaskEvents:
     def test_webhook_update_task_assignee(self, users, tasks):
         task_id, project_id = next(
@@ -417,6 +421,7 @@ class TestWebhookTaskEvents:
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
+@pytest.mark.usefixtures("restore_redis_inmem_per_function")
 class TestWebhookJobEvents:
     def test_webhook_update_job_assignee(self, jobs, tasks, users):
         job = next(
@@ -476,6 +481,7 @@ class TestWebhookJobEvents:
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
+@pytest.mark.usefixtures("restore_redis_inmem_per_function")
 class TestWebhookIssueEvents:
     def test_webhook_update_issue_resolved(self, issues, jobs, tasks):
         issue = next(
@@ -564,6 +570,7 @@ class TestWebhookIssueEvents:
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
+@pytest.mark.usefixtures("restore_redis_inmem_per_function")
 class TestWebhookMembershipEvents:
     def test_webhook_update_membership_role(self, memberships):
         roles = {"worker", "supervisor", "maintainer"}
@@ -608,6 +615,7 @@ class TestWebhookMembershipEvents:
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
+@pytest.mark.usefixtures("restore_redis_inmem_per_function")
 class TestWebhookOrganizationEvents:
     def test_webhook_create_organization(self) -> None:
         webhook_id = create_webhook(["create:organization"], "server")["id"]
@@ -671,6 +679,7 @@ class TestWebhookOrganizationEvents:
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
+@pytest.mark.usefixtures("restore_redis_inmem_per_function")
 class TestWebhookCommentEvents:
     def test_webhook_update_comment_message(self, comments, issues, jobs, tasks):
         org_comments = list(
@@ -741,6 +750,7 @@ class TestWebhookCommentEvents:
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
+@pytest.mark.usefixtures("restore_redis_inmem_per_function")
 class TestWebhookUserEvents:
     def test_webhook_create_user(self) -> None:
         webhook_id = create_webhook(["create:user"], "server")["id"]
@@ -757,17 +767,6 @@ class TestWebhookUserEvents:
         assert payload["user"]["email"] == user["email"]
         assert payload["user"]["is_active"] is True
         assert payload["user"]["created_via"] == "registration"
-
-    def test_webhook_create_user_by_invitation(self) -> None:
-        webhook_id = create_webhook(["create:user"], "server")["id"]
-
-        invite_user_to_org("webhook_invited_user@email.com", org_id=2, role="worker")
-
-        deliveries, payload = get_deliveries(webhook_id)
-
-        assert deliveries["count"] == 1
-        assert payload["event"] == "create:user"
-        assert payload["user"]["created_via"] == "invitation"
 
     def test_webhook_update_user(self, users) -> None:
         user = next(user for user in users if user["username"] == "dummy1")
@@ -803,6 +802,7 @@ class TestWebhookUserEvents:
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
+@pytest.mark.usefixtures("restore_redis_inmem_per_function")
 class TestWebhookEmailAddressEvents:
     def test_webhook_update_user_on_primary_email_address_created(
         self, request: pytest.FixtureRequest, users
@@ -846,6 +846,7 @@ class TestWebhookEmailAddressEvents:
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
+@pytest.mark.usefixtures("restore_redis_inmem_per_function")
 class TestWebhookProfileEvents:
     def test_webhook_update_user_on_profile_has_analytics_access_changed(
         self, request: pytest.FixtureRequest, users
@@ -867,6 +868,7 @@ class TestWebhookProfileEvents:
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
+@pytest.mark.usefixtures("restore_redis_inmem_per_function")
 class TestWebhookUserGroupsEvents:
     def test_webhook_update_user_on_group_added(
         self, request: pytest.FixtureRequest, users
@@ -944,6 +946,7 @@ class TestWebhookUserGroupsEvents:
 
 
 @pytest.mark.usefixtures("restore_db_per_class")
+@pytest.mark.usefixtures("restore_redis_inmem_per_function")
 class TestGetWebhookDeliveries:
     def test_not_project_staff_cannot_get_webhook(self, projects, users):
         user, project = next(
@@ -1012,6 +1015,7 @@ class TestGetWebhookDeliveries:
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
+@pytest.mark.usefixtures("restore_redis_inmem_per_function")
 class TestWebhookPing:
     def test_ping_webhook(self, projects):
         project_id = list(projects)[0]["id"]
@@ -1051,6 +1055,7 @@ class TestWebhookPing:
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
+@pytest.mark.usefixtures("restore_redis_inmem_per_function")
 class TestWebhookRedelivery:
     def test_webhook_redelivery(self, projects):
         project = list(projects)[0]
@@ -1131,6 +1136,7 @@ def _task_with_data_in_org(tasks: Container) -> dict:
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
+@pytest.mark.usefixtures("restore_redis_inmem_per_function")
 class TestExportCompletedRequestEvent:
     def test_webhook_create_export_for_task(self, tasks: Container) -> None:
         task = _task_with_data_in_org(tasks)
@@ -1153,6 +1159,7 @@ class TestExportCompletedRequestEvent:
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
+@pytest.mark.usefixtures("restore_redis_inmem_per_function")
 class TestBackupCompletedRequestEvent:
     def test_webhook_create_backup_for_task(self, tasks: Container) -> None:
         task = _task_with_data_in_org(tasks)
@@ -1175,6 +1182,7 @@ class TestBackupCompletedRequestEvent:
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
+@pytest.mark.usefixtures("restore_redis_inmem_per_function")
 class TestTaskCreationCompletedRequestEvent:
     def test_webhook_create_task_with_data(self, organizations: Container) -> None:
         org_id = next(iter(organizations))["id"]
@@ -1206,6 +1214,7 @@ class TestTaskCreationCompletedRequestEvent:
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
+@pytest.mark.usefixtures("restore_redis_inmem_per_function")
 class TestQualityReportCompletedRequestEvent:
     def test_webhook_create_quality_report_for_task(self, tasks: Container) -> None:
         task = _task_with_data_in_org(tasks)
@@ -1229,6 +1238,7 @@ class TestQualityReportCompletedRequestEvent:
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
+@pytest.mark.usefixtures("restore_redis_inmem_per_function")
 class TestConsensusMergeCompletedRequestEvent:
     def test_webhook_create_consensus_merge_for_task(self, tasks: Container) -> None:
         task = next(t for t in tasks if t["consensus_enabled"] and t["organization"] is not None)
