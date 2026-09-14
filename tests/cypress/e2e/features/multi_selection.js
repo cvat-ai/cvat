@@ -714,10 +714,73 @@ context('Multi-object selection', { scrollBehavior: false }, () => {
 
     it('Opens selection actions by right-clicking the selection bbox', () => {
         selectFromSidebar([objectIds.carShape1, objectIds.carShape2]);
-        cy.get('.cvat_canvas_selected_objects_box').rightclick({ force: true });
+        let contextPosition = null;
+        let reopenPosition = null;
+        let stableMenuPosition = null;
+        cy.get('.cvat_canvas_selected_objects_box').then(($box) => {
+            const box = $box[0].getBoundingClientRect();
+            contextPosition = {
+                x: box.left + box.width / 2,
+                y: box.top + box.height / 2,
+            };
+            reopenPosition = {
+                x: box.right - 10,
+                y: box.bottom - 10,
+            };
+            cy.wrap($box).rightclick({ force: true });
+        });
         cy.get('.cvat-object-item-menu').should('exist').and('be.visible');
         cy.contains('.cvat-object-item-menu button', 'Delete selection').should('be.visible');
+        cy.get('.cvat-object-item-menu:visible').then(($menu) => {
+            const initialBox = $menu[0].getBoundingClientRect();
+            expect(initialBox.left).to.be.closeTo(contextPosition.x, 8);
+            expect(initialBox.top).to.be.closeTo(contextPosition.y, 8);
+        });
+        cy.then(() => {
+            cy.get('.cvat_canvas_selected_objects_box').trigger('contextmenu', {
+                button: 2,
+                clientX: reopenPosition.x,
+                clientY: reopenPosition.y,
+                force: true,
+            });
+        });
+        cy.get('.cvat-object-item-menu:visible').should(($reopenedMenu) => {
+            const reopenedBox = $reopenedMenu[0].getBoundingClientRect();
+            expect(reopenedBox.left).to.be.closeTo(reopenPosition.x, 8);
+            expect(reopenedBox.top).to.be.closeTo(reopenPosition.y, 8);
+            stableMenuPosition = { left: reopenedBox.left, top: reopenedBox.top };
+        });
+        cy.get('.cvat-canvas-container').trigger('wheel', { deltaY: -5, force: true });
+        cy.get('.cvat-object-item-menu:visible').should(($zoomedMenu) => {
+            const zoomedBox = $zoomedMenu[0].getBoundingClientRect();
+            const viewport = $zoomedMenu[0].ownerDocument.defaultView;
+            expect(zoomedBox.left).to.be.closeTo(stableMenuPosition.left, 0.1);
+            expect(zoomedBox.top).to.be.closeTo(stableMenuPosition.top, 0.1);
+            expect(zoomedBox.right).to.be.at.most(viewport.innerWidth);
+            expect(zoomedBox.bottom).to.be.at.most(viewport.innerHeight);
+        });
         assertSelection([objectIds.carShape1, objectIds.carShape2]);
+        cy.get('.cvat-fit-control').click({ force: true });
+
+        cy.window().then((window) => {
+            const edgePosition = {
+                x: window.innerWidth - 4,
+                y: window.innerHeight - 4,
+            };
+            cy.get('.cvat_canvas_selected_objects_box').trigger('contextmenu', {
+                button: 2,
+                clientX: edgePosition.x,
+                clientY: edgePosition.y,
+                force: true,
+            });
+            cy.get('.cvat-object-item-menu:visible').should(($menu) => {
+                const menuBox = $menu[0].getBoundingClientRect();
+                expect(menuBox.left).to.be.lessThan(edgePosition.x);
+                expect(menuBox.top).to.be.lessThan(edgePosition.y);
+                expect(menuBox.right).to.be.at.most(window.innerWidth);
+                expect(menuBox.bottom).to.be.at.most(window.innerHeight);
+            });
+        });
     });
 
     it('Closes an object menu before opening selection actions', () => {

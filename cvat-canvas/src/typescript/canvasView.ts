@@ -3929,7 +3929,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         this.selectedObjectsBox.on('contextmenu', (event: MouseEvent): void => {
             event.preventDefault();
             event.stopPropagation();
-            this.openSelectedObjectsMenu(event.clientX, event.clientY);
+            this.openSelectedObjectsMenu(event.clientX, event.clientY, 'context');
         }).on('beforedrag', (event: CustomEvent): void => {
             const sourceEvent = event.detail.event as MouseEvent;
             sourceEvent.stopPropagation();
@@ -4018,13 +4018,19 @@ export class CanvasViewImpl implements CanvasView, Listener {
         });
     }
 
-    private openSelectedObjectsMenu(left: number, top: number, toggle = false): void {
+    private openSelectedObjectsMenu(
+        left: number,
+        top: number,
+        source: 'context' | 'header',
+        toggle = false,
+    ): void {
         this.canvas.dispatchEvent(new CustomEvent('canvas.selectionmenu', {
             bubbles: true,
             cancelable: true,
             detail: {
                 left,
                 top,
+                source,
                 toggle,
             },
         }));
@@ -4165,7 +4171,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             menuButton.addEventListener('click', (event: MouseEvent): void => {
                 event.stopPropagation();
                 const buttonBox = menuButton.getBoundingClientRect();
-                this.openSelectedObjectsMenu(buttonBox.left, buttonBox.bottom, true);
+                this.openSelectedObjectsMenu(buttonBox.left, buttonBox.bottom, 'header', true);
             });
 
             label.append(title, menuButton);

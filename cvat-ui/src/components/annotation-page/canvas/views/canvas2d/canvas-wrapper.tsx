@@ -500,6 +500,7 @@ interface State {
     selectionMenuPosition: {
         left: number;
         top: number;
+        source: 'context' | 'header';
     } | null;
     selectionAttributesCollapsed: boolean;
     selectionLayerPickerVisible: boolean;
@@ -830,17 +831,26 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
         const canvasGridItem = canvasInstance.html().parentElement?.parentElement;
         const gridItemBox = canvasGridItem?.getBoundingClientRect();
         const {
-            left, top, toggle, reposition,
+            left, top, source, toggle, reposition,
         } = event.detail;
 
         const selectionMenuPosition = {
             left: left - (gridItemBox?.left || 0),
             top: top - (gridItemBox?.top || 0),
+            source,
         };
         if (reposition) {
-            this.setState((state) => (
-                state.selectionMenuPosition ? { selectionMenuPosition } : null
-            ));
+            this.setState((state) => {
+                if (state.selectionMenuPosition?.source !== 'header') {
+                    return null;
+                }
+                return {
+                    selectionMenuPosition: {
+                        ...selectionMenuPosition,
+                        source: 'header',
+                    },
+                };
+            });
             return;
         }
 
@@ -1658,14 +1668,14 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
 
                 {selectionMenuPosition && (
                     <Dropdown
+                        key={selectionMenuPosition.source === 'context' ?
+                            `context-${selectionMenuPosition.left}-${selectionMenuPosition.top}` : 'header'}
                         destroyPopupOnHide
                         open
                         placement='bottomLeft'
+                        autoAdjustOverflow
                         trigger={[]}
-                        getPopupContainer={(): HTMLElement => (
-                            canvasInstance.html().querySelector<HTMLElement>('.cvat_canvas_selected_objects_label') ||
-                            window.document.body
-                        )}
+                        getPopupContainer={(): HTMLElement => window.document.body}
                         dropdownRender={(menu): JSX.Element => (
                             <div
                                 role='presentation'
