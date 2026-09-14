@@ -31,6 +31,8 @@ function getScrollContainer(runtime: WaveSurferRuntime): HTMLElement | null {
  * The minimap plugin owns the overlay rendering, while this hook owns its pointer interaction.
  */
 export function useMinimapScrollbar(runtime: WaveSurferRuntime, viewport: WaveformViewport): void {
+    // Reactive pixelsPerSecond and overviewPixelsPerSecond dependencies are used to run
+    // this effect on zoom or when the viewport changes.
     useLayoutEffect(() => {
         if (!runtime.ready) return;
 
