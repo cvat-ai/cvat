@@ -98,7 +98,8 @@ media can be read as images.
 Takes an explicit list of task ids, optionally narrowed by status, and
 exports each one to a local directory, to a registered cloud storage, or both.
 The script prints each result and a summary of exported, skipped, and failed tasks.
-One failing task never aborts the run: the script exports the rest and exits 1. `--skip-existing` makes an interrupted local run resumable — it takes the
+One failing task never aborts the run: the script exports the rest and exits 1.
+`--skip-existing` makes an interrupted local run resumable — it takes the
 exported file as proof a task is done, so it needs `--output-dir` and refuses
 to pair with `--cloud-storage-id`, where nothing lands locally to check.
 
