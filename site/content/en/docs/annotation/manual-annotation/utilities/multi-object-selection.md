@@ -71,11 +71,11 @@ The objects sidebar provides the following selection options:
 | **Labels** tab | **Ctrl/Command+Click** a label | Adds or removes all selectable objects with that label. |
 | **Labels** tab | **Shift+Click** a label | Selects objects for a continuous range of labels. |
 | **Layer Stack** | **Ctrl/Command+Click** a layer header | Adds or removes all selectable objects on the layer. |
-| **Layer Stack** | **Shift+Click** a layer header | Selects objects from a continuous range of layers. |
+| **Layer Stack** | **Shift+Click** an object card | Selects an object range within that layer. |
 
 ![Selecting multiple objects from the objects sidebar](/images/multi-object-selection-sidebar.gif)
 
-Collapsed layers are excluded from object-card range selection.
+In the **Layer Stack**, object-card range selection is limited to one expanded layer.
 Hidden, filtered, outside, and hidden-layer objects are not selected.
 Tags and individual skeleton elements cannot be added to a multi-object selection.
 A Points object is selected as one complete object rather than as separate points.

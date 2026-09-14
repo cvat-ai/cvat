@@ -19,13 +19,19 @@ interface Props {
     draggable: boolean;
     visibleSkeletonElements: Record<number, number[]>;
     toggleSelection(): void;
+    selectRange(): void;
     keyMap: KeyMap;
+}
+
+function isRangeModifierPressed(event: React.MouseEvent | React.PointerEvent): boolean {
+    return event.shiftKey && !event.ctrlKey && !event.altKey && !event.metaKey;
 }
 
 // Wraps an object item with dnd-kit drag behavior while preserving the original object item rendering.
 function DraggableObjectItem(props: Props): JSX.Element {
     const {
-        objectStates, clientID, visibleObjectIDs, draggable, visibleSkeletonElements, toggleSelection, keyMap,
+        objectStates, clientID, visibleObjectIDs, draggable, visibleSkeletonElements,
+        toggleSelection, selectRange, keyMap,
     } = props;
 
     const {
@@ -45,12 +51,16 @@ function DraggableObjectItem(props: Props): JSX.Element {
             {...(draggable ? attributes : {})}
             {...(draggable ? listeners : {})}
             onPointerDown={(event: React.PointerEvent): void => {
-                if (!isMultiSelectObjectModifierPressed(event, keyMap)) {
+                if (!isRangeModifierPressed(event) && !isMultiSelectObjectModifierPressed(event, keyMap)) {
                     listeners?.onPointerDown?.(event);
                 }
             }}
             onMouseDownCapture={(event: React.MouseEvent): void => {
-                if (isMultiSelectObjectModifierPressed(event, keyMap)) {
+                if (isRangeModifierPressed(event)) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    selectRange();
+                } else if (isMultiSelectObjectModifierPressed(event, keyMap)) {
                     event.preventDefault();
                     event.stopPropagation();
                     toggleSelection();

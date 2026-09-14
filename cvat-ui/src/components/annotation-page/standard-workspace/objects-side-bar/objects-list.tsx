@@ -117,7 +117,6 @@ function ObjectListComponent(props: Props): JSX.Element {
     const [activeDragID, setActiveDragID] = useState<string | null>(null);
     const [dragPointerPosition, setDragPointerPosition] = useState<PointerPosition | null>(null);
     const [pendingExpandedLayerItemID, setPendingExpandedLayerItemID] = useState<string | null>(null);
-    const [selectionAnchorLayer, setSelectionAnchorLayer] = useState<number | null>(null);
     const layerObjectStates = objectStates.filter(isLayerState);
     const zLayers = Array.from(
         new Set(layerObjectStates.map((state) => state.zOrder)),
@@ -317,6 +316,21 @@ function ObjectListComponent(props: Props): JSX.Element {
             selectedStatesID.filter((selectedID: number): boolean => selectedID !== clientID) :
             [...selectedStatesID, clientID]);
     };
+    const selectObjectRangeWithinLayer = (clientID: number, zOrder: number): void => {
+        const layerObjectIDs = selectableObjectIdsByLayer[zOrder] || [];
+        const anchorID = [...selectedStatesID].reverse().find(
+            (selectedID: number): boolean => layerObjectIDs.includes(selectedID),
+        );
+        if (typeof anchorID !== 'number') {
+            selectObjects([...selectedStatesID, clientID]);
+            return;
+        }
+
+        const from = layerObjectIDs.indexOf(anchorID);
+        const to = layerObjectIDs.indexOf(clientID);
+        const range = layerObjectIDs.slice(Math.min(from, to), Math.max(from, to) + 1);
+        selectObjects([...new Set([...selectedStatesID, ...range])]);
+    };
     const selectLayerObjects = (event: React.MouseEvent | React.KeyboardEvent, zOrder: number): void => {
         if (('button' in event && event.button !== 0) ||
             ('key' in event && !['Enter', ' '].includes(event.key)) ||
@@ -324,28 +338,15 @@ function ObjectListComponent(props: Props): JSX.Element {
             return;
         }
 
-        let affectedLayers: number[] = [];
-        if (event.shiftKey && !event.ctrlKey && !event.altKey && !event.metaKey) {
-            const anchorIndex = selectionAnchorLayer === null ? -1 : zLayers.indexOf(selectionAnchorLayer);
-            const currentIndex = zLayers.indexOf(zOrder);
-            affectedLayers = anchorIndex === -1 ? [zOrder] : zLayers.slice(
-                Math.min(anchorIndex, currentIndex),
-                Math.max(anchorIndex, currentIndex) + 1,
-            );
-        } else if (isMultiSelectObjectModifierPressed(event, keyMap)) {
-            affectedLayers = [zOrder];
-        } else {
+        if (!isMultiSelectObjectModifierPressed(event, keyMap)) {
             return;
         }
 
         event.preventDefault();
         event.stopPropagation();
-        setSelectionAnchorLayer(zOrder);
-        const affectedIDs = affectedLayers.flatMap(
-            (layer: number): number[] => selectableObjectIdsByLayer[layer] || [],
-        );
+        const affectedIDs = selectableObjectIdsByLayer[zOrder] || [];
         const selectedIDs = new Set(selectedStatesID);
-        const remove = affectedLayers.length === 1 && affectedIDs.length > 0 &&
+        const remove = affectedIDs.length > 0 &&
             affectedIDs.every((clientID: number): boolean => selectedIDs.has(clientID));
         selectObjects(remove ?
             selectedStatesID.filter((clientID: number): boolean => !affectedIDs.includes(clientID)) :
@@ -462,7 +463,6 @@ function ObjectListComponent(props: Props): JSX.Element {
                                             <LayerSection
                                                 zOrder={zOrder}
                                                 layerObjectIds={objectIdsByLayer[zOrder] || []}
-                                                visibleObjectIDs={visibleObjectIDs}
                                                 objectStates={layerObjectStates}
                                                 visibleSkeletonElements={visibleSkeletonElements}
                                                 selected={zOrder === currentLayer}
@@ -484,6 +484,9 @@ function ObjectListComponent(props: Props): JSX.Element {
                                                     selectLayerObjects(event, zOrder)
                                                 )}
                                                 toggleObjectSelection={toggleObjectSelection}
+                                                selectObjectRange={(clientID: number): void => (
+                                                    selectObjectRangeWithinLayer(clientID, zOrder)
+                                                )}
                                                 keyMap={keyMap}
                                             />
                                         </React.Fragment>

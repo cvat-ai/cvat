@@ -508,6 +508,8 @@ context('Multi-object selection', { scrollBehavior: false }, () => {
 
         cy.get('.cvat-objects-sidebar-z-layer-mark').first().click({ ...platformModifier, force: true });
         assertSelection(selectableObjectIds.filter((clientId) => clientId !== objectIds.carShape1));
+        cy.get('.cvat-objects-sidebar-z-layer-mark').first().click({ shiftKey: true, force: true });
+        assertSelection(selectableObjectIds.filter((clientId) => clientId !== objectIds.carShape1));
         cy.get('.cvat-objects-sidebar-z-layer-mark').first().click({ ...platformModifier, force: true });
         assertSelection([]);
 
@@ -536,6 +538,32 @@ context('Multi-object selection', { scrollBehavior: false }, () => {
         clearSelection();
         cy.sidebarItemSortBy('ID - ascent');
         assertSelection([]);
+    });
+
+    it('Limits Layer Stack Shift-click ranges to one layer', () => {
+        cy.get(sidebarItem(objectIds.carShape1)).find('[aria-label="more"]').click();
+        cy.contains('.cvat-object-item-menu:visible button', 'To foreground').click();
+        cy.get(sidebarItem(objectIds.carShape2)).find('[aria-label="more"]').click();
+        cy.contains('.cvat-object-item-menu:visible button', 'To one layer forward').click();
+        cy.sidebarItemSortBy('Layer');
+
+        cy.get(sidebarItem(objectIds.personTrack1)).click({ ...platformModifier, force: true });
+        cy.get(sidebarItem(objectIds.carShape1))
+            .find('.cvat-objects-sidebar-state-item-object-type-text')
+            .click({ shiftKey: true, force: true });
+        assertSelection([objectIds.personTrack1, objectIds.carShape1]);
+
+        cy.get(sidebarItem(objectIds.carShape2))
+            .find('.cvat-objects-sidebar-state-item-object-type-text')
+            .click({ shiftKey: true, force: true });
+        assertSelection([objectIds.personTrack1, objectIds.carShape1, objectIds.carShape2]);
+
+        clearSelection();
+        cy.get(sidebarItem(objectIds.carShape1)).find('[aria-label="more"]').click({ force: true });
+        cy.contains('.cvat-object-item-menu:visible button', 'To one layer backward').click();
+        cy.get(sidebarItem(objectIds.carShape2)).find('[aria-label="more"]').click({ force: true });
+        cy.contains('.cvat-object-item-menu:visible button', 'To one layer backward').click();
+        cy.sidebarItemSortBy('ID - ascent');
     });
 
     it('Keeps selected tracks across frames and restores the previous selection with Undo', () => {

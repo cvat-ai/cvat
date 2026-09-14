@@ -15,7 +15,6 @@ import LayerHeader from './layer-header';
 interface LayerSectionProps {
     zOrder: number;
     layerObjectIds: number[];
-    visibleObjectIDs: number[];
     objectStates: ObjectState[];
     visibleSkeletonElements: Record<number, number[]>;
     selected: boolean;
@@ -25,6 +24,7 @@ interface LayerSectionProps {
     onMouseDown(event: React.MouseEvent): void;
     onKeyDown(event: React.KeyboardEvent): void;
     toggleObjectSelection(clientID: number): void;
+    selectObjectRange(clientID: number): void;
     keyMap: KeyMap;
     selectLayer(zOrder: number): void;
     toggleLayerVisibility(zOrder: number, includeLower: boolean): void;
@@ -34,9 +34,9 @@ interface LayerSectionProps {
 // Owns a complete layer block: drop target, header, and draggable object rows.
 function LayerSection(props: LayerSectionProps): JSX.Element {
     const {
-        zOrder, layerObjectIds, visibleObjectIDs, objectStates, visibleSkeletonElements,
+        zOrder, layerObjectIds, objectStates, visibleSkeletonElements,
         selected, visible, collapsed, multiSelected, selectLayer, onMouseDown, onKeyDown,
-        toggleLayerCollapsed, toggleLayerVisibility, toggleObjectSelection, keyMap,
+        toggleLayerCollapsed, toggleLayerVisibility, toggleObjectSelection, selectObjectRange, keyMap,
     } = props;
 
     const { isOver, setNodeRef } = useDroppable({ id: layerDropID(zOrder) });
@@ -71,10 +71,11 @@ function LayerSection(props: LayerSectionProps): JSX.Element {
                         key={id}
                         objectStates={objectStates}
                         clientID={id}
-                        visibleObjectIDs={visibleObjectIDs}
+                        visibleObjectIDs={layerObjectIds}
                         visibleSkeletonElements={visibleSkeletonElements}
                         draggable={!!object && isLayerState(object) && !object.lock}
                         toggleSelection={(): void => toggleObjectSelection(id)}
+                        selectRange={(): void => selectObjectRange(id)}
                         keyMap={keyMap}
                     />
                 );
