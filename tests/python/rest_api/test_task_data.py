@@ -511,7 +511,7 @@ class TestPostTaskData:
     )
     def test_create_task_with_cloud_storage_files(
         self,
-        use_cache,
+        use_cache: bool,
         cloud_storage_id: int,
         cloud_storages,
         manifest: str,
