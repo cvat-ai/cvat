@@ -2,46 +2,69 @@
 #
 # SPDX-License-Identifier: MIT
 
-"""Lint a project's annotations before exporting them: find shapes that leave the
-frame, boxes with (almost) no area, duplicated objects, objects stranded on
-removed frames, and labels nobody used.
+"""Find objects annotated twice: shapes on the same frame whose bounding boxes
+overlap by at least --iou-threshold.
 
-Every finding has a severity. The script exits 1 when any error-severity finding
-exists, so it can gate a pipeline; --no-fail turns that off.
+Duplicates appear when an import runs twice, when two annotators' job ranges
+overlap, or after a merge. Exact copies are the easy case; the ones that hurt
+are the near-identical boxes nobody spots by eye, so the recipe compares by
+intersection over union instead of by equality.
+
+The recipe only reports. It exits 1 when it finds a duplicate, so it can gate
+an export pipeline; --no-fail turns that off.
 
 Steps:
   1. Retrieve the project, its labels, and the tasks to inspect.
-  2. For each task, read the frame metadata, the jobs, and the annotations.
-  3. Run the checks and collect the findings.
-  4. Print them grouped by severity, write the CSV report, and set the exit code.
+  2. For each task, read the annotations and the job that owns each frame.
+  3. Group each frame's objects by IoU and keep the groups with more than one.
+  4. Print the groups, write the CSV report, and set the exit code.
 
 Usage (run ``python project_data_lint.py --help`` for the full list of options):
   python project_data_lint.py --host 'https://app.cvat.ai' --token '<your token>' \\
-      --project-id 7 --min-box-area 16
+      --project-id 7 --iou-threshold 0.8
 """
 
 import argparse
 import csv
 import sys
-from collections import Counter
+from collections import defaultdict
 from dataclasses import asdict, dataclass, fields
+from itertools import groupby
 from pathlib import Path
 
 from cvat_sdk import make_client
 
-GEOMETRY_TYPES = {"rectangle", "polygon", "polyline", "points"}
-SEVERITY_ORDER = {"error": 0, "info": 1}
+# Types whose `points` are plain x/y pairs, so a bounding box can be computed
+# from them. Masks, skeletons, ellipses and cuboids are skipped.
+COMPARABLE_TYPES = {"rectangle", "polygon", "polyline", "points"}
 
 
 @dataclass
-class Finding:
-    severity: str
-    check: str
-    task_id: int | str
+class Annotated:
+    """One annotated object, reduced to what the duplicate search compares."""
+
+    frame: int
+    label_id: int
+    type: str
+    shape_id: int | str
+    track_id: int | str
+    box: tuple[float, float, float, float]
+
+
+@dataclass
+class Duplicate:
+    """One member of a duplicate group, as reported and written to the CSV."""
+
+    task_id: int
     job_id: int | str
-    frame: int | str
+    frame: int
+    group: int
     label: str
-    detail: str
+    type: str
+    shape_id: int | str
+    track_id: int | str
+    iou: float
+    box: str
 
 
 def parse_args() -> argparse.Namespace:
@@ -60,140 +83,149 @@ def parse_args() -> argparse.Namespace:
         type=int,
         nargs="+",
         metavar="ID",
-        help="lint only these task ids (must belong to the project); "
-        "omit to lint every task in the project",
+        help="inspect only these task ids (must belong to the project); "
+        "omit to inspect every task in the project",
     )
     parser.add_argument(
-        "--min-box-area",
+        "--iou-threshold",
         type=float,
-        default=4.0,
-        help="rectangles smaller than this many square pixels are errors (default: %(default)s)",
+        default=0.9,
+        help="two objects are duplicates when their bounding boxes overlap by at least "
+        "this much (default: %(default)s)",
+    )
+    parser.add_argument(
+        "--any-label",
+        action="store_true",
+        help="also group objects that carry different labels, e.g. the same car "
+        "annotated once as 'car' and once as 'vehicle'",
     )
     parser.add_argument(
         "--output",
         type=Path,
-        default=Path("data_lint.csv"),
+        default=Path("duplicates.csv"),
         help="path to write the CSV report to (default: %(default)s)",
     )
     parser.add_argument(
-        "--no-fail", action="store_true", help="always exit 0, even when errors were found"
+        "--no-fail", action="store_true", help="always exit 0, even when duplicates were found"
     )
-    return parser.parse_args()
+    args = parser.parse_args()
+    if not 0 < args.iou_threshold <= 1:
+        parser.error("--iou-threshold must be greater than 0 and at most 1")
+    return args
+
+
+def bounding_box(points: list[float]) -> tuple[float, float, float, float]:
+    xs, ys = points[0::2], points[1::2]
+    return min(xs), min(ys), max(xs), max(ys)
+
+
+def iou(first: tuple[float, ...], second: tuple[float, ...]) -> float:
+    """Intersection over union of two bounding boxes."""
+    width = min(first[2], second[2]) - max(first[0], second[0])
+    height = min(first[3], second[3]) - max(first[1], second[1])
+    intersection = max(0.0, width) * max(0.0, height)
+
+    first_area = (first[2] - first[0]) * (first[3] - first[1])
+    second_area = (second[2] - second[0]) * (second[3] - second[1])
+    union = first_area + second_area - intersection
+    if union == 0:
+        # Neither box has an area: a zero-size shape, or a polyline drawn along
+        # one axis. Such objects are duplicates only if they sit in exactly the
+        # same place, because IoU cannot tell them apart.
+        return 1.0 if first == second else 0.0
+    return intersection / union
 
 
 def iter_objects(annotations):
-    """(frame, label_id, type, points) for tags, shapes, and every track keyframe.
+    """The shapes and the track keyframes the recipe can compare.
 
     Objects marked `outside` are skipped: they are intentionally out of view.
+    Tags are skipped too - they have no geometry to overlap.
     """
-    for tag in annotations.tags:
-        yield tag.frame, tag.label_id, "tag", []
     for shape in annotations.shapes:
-        if getattr(shape, "outside", False):
+        if getattr(shape, "outside", False) or str(shape.type) not in COMPARABLE_TYPES:
             continue
-        yield shape.frame, shape.label_id, str(shape.type), list(shape.points)
+        yield Annotated(
+            frame=shape.frame,
+            label_id=shape.label_id,
+            type=str(shape.type),
+            shape_id=getattr(shape, "id", "") or "",
+            track_id="",
+            box=bounding_box(list(shape.points)),
+        )
     for track in annotations.tracks:
         for shape in track.shapes:
-            if shape.outside:
+            if shape.outside or str(shape.type) not in COMPARABLE_TYPES:
                 continue
-            yield shape.frame, track.label_id, str(shape.type), list(shape.points)
+            yield Annotated(
+                frame=shape.frame,
+                label_id=track.label_id,
+                type=str(shape.type),
+                shape_id=getattr(shape, "id", "") or "",
+                track_id=getattr(track, "id", "") or "",
+                box=bounding_box(list(shape.points)),
+            )
 
 
-def lint_task(task, label_names: dict[int, str], min_box_area: float):
-    """The findings for one task, plus how often each label was used in it."""
-    meta = task.get_meta()
-    # An image task reports one entry in `frames` per frame; a video task reports
-    # a single entry for the whole video. `size` is the frame count either way.
-    frame_count = meta.size
-    per_frame_meta = str(task.data_original_chunk_type) == "imageset"
-    deleted_frames = set(meta.deleted_frames)
+def group_duplicates(objects: list[Annotated], iou_threshold: float, same_label: bool):
+    """Groups of objects that annotate the same thing, as lists of
+    (object, IoU with the group's first object).
 
-    jobs = task.get_jobs()
+    Every candidate is compared against the group's first object rather than
+    against every member: a duplicate is a second copy of one original, and
+    chaining through intermediates would merge a whole row of adjacent objects
+    into one group.
+    """
+    groups: list[list[tuple[Annotated, float]]] = []
+    for obj in objects:
+        for group in groups:
+            first, _ = group[0]
+            if same_label and first.label_id != obj.label_id:
+                continue
+            score = iou(first.box, obj.box)
+            if score >= iou_threshold:
+                group.append((obj, score))
+                break
+        else:
+            # The first object of a group is its own reference, so its IoU is 1.
+            groups.append([(obj, 1.0)])
+    return [group for group in groups if len(group) > 1]
+
+
+def find_duplicates(
+    task, label_names: dict[int, str], iou_threshold: float, same_label: bool
+) -> list[Duplicate]:
+    """The duplicate objects of one task, numbered by group."""
     job_of_frame = {}
-    for job in jobs:
+    for job in task.get_jobs():
         for frame in range(job.start_frame, job.stop_frame + 1):
             job_of_frame.setdefault(frame, job.id)
 
-    findings: list[Finding] = []
-    label_usage = Counter()
-    seen = set()
+    by_frame = defaultdict(list)
+    for obj in iter_objects(task.get_annotations()):
+        by_frame[obj.frame].append(obj)
 
-    for frame, label_id, type_, points in iter_objects(task.get_annotations()):
-        # Every linted task belongs to the project, and a task in a project uses
-        # the project's labels, so the id is always one of them.
-        label = label_names[label_id]
-        label_usage[label] += 1
-        job_id = job_of_frame.get(frame, "")
-
-        key = (frame, label_id, type_, tuple(round(value, 3) for value in points))
-        if points and key in seen:
-            findings.append(
-                Finding(
-                    "error",
-                    "duplicate-object",
-                    task.id,
-                    job_id,
-                    frame,
-                    label,
-                    f"a second {type_} with identical points on this frame",
-                )
-            )
-        seen.add(key)
-
-        if frame in deleted_frames or frame >= frame_count:
-            reason = (
-                "was removed from the task"
-                if frame in deleted_frames
-                else f"is past the task's last frame {frame_count - 1}"
-            )
-            findings.append(
-                Finding(
-                    "error",
-                    "dead-object",
-                    task.id,
-                    job_id,
-                    frame,
-                    label,
-                    f"{type_} sits on frame {frame}, which {reason}",
-                )
-            )
-            continue
-
-        frame_meta = meta.frames[frame if per_frame_meta else 0]
-
-        if type_ in GEOMETRY_TYPES and points:
-            xs, ys = points[0::2], points[1::2]
-            width, height = frame_meta.width, frame_meta.height
-            if min(xs) < 0 or min(ys) < 0 or max(xs) > width or max(ys) > height:
-                findings.append(
-                    Finding(
-                        "error",
-                        "out-of-bounds",
-                        task.id,
-                        job_id,
-                        frame,
-                        label,
-                        f"{type_} spans x {min(xs):.1f}..{max(xs):.1f}, "
-                        f"y {min(ys):.1f}..{max(ys):.1f} in a {width}x{height} frame",
+    duplicates = []
+    group_number = 0
+    for frame in sorted(by_frame):
+        for group in group_duplicates(by_frame[frame], iou_threshold, same_label):
+            group_number += 1
+            for obj, score in group:
+                duplicates.append(
+                    Duplicate(
+                        task_id=task.id,
+                        job_id=job_of_frame.get(frame, ""),
+                        frame=frame,
+                        group=group_number,
+                        label=label_names[obj.label_id],
+                        type=obj.type,
+                        shape_id=obj.shape_id,
+                        track_id=obj.track_id,
+                        iou=round(score, 3),
+                        box=",".join(f"{value:.1f}" for value in obj.box),
                     )
                 )
-
-        if type_ == "rectangle" and len(points) == 4:
-            area = abs(points[2] - points[0]) * abs(points[3] - points[1])
-            if area < min_box_area:
-                findings.append(
-                    Finding(
-                        "error",
-                        "degenerate-box",
-                        task.id,
-                        job_id,
-                        frame,
-                        label,
-                        f"area {area:.2f} px2 is below --min-box-area {min_box_area}",
-                    )
-                )
-
-    return findings, label_usage
+    return duplicates
 
 
 def select_tasks(client, project, task_ids: list[int] | None) -> list:
@@ -225,36 +257,38 @@ def main() -> None:
 
         tasks = select_tasks(client, project, args.task_id)
         if not tasks:
-            sys.exit(f"Project {project.id} has no tasks to lint")
+            sys.exit(f"Project {project.id} has no tasks to inspect")
 
-        findings: list[Finding] = []
-        usage = Counter()
+        duplicates: list[Duplicate] = []
         for task in tasks:
-            task_findings, task_usage = lint_task(task, label_names, args.min_box_area)
-            findings.extend(task_findings)
-            usage.update(task_usage)
-
-        for name in sorted(set(label_names.values()) - set(usage)):
-            findings.append(
-                Finding("info", "unused-label", "", "", "", name, "no objects in the linted tasks")
+            duplicates.extend(
+                find_duplicates(task, label_names, args.iou_threshold, not args.any_label)
             )
 
-    findings.sort(key=lambda f: (SEVERITY_ORDER[f.severity], f.check, str(f.task_id), str(f.frame)))
-    for finding in findings:
-        location = f"task {finding.task_id}" if finding.task_id != "" else "project"
-        if finding.frame != "":
-            location += f" frame {finding.frame}"
-        print(f"{finding.severity} {finding.check}: {location}: {finding.detail}")
+    groups = 0
+    for _, members in groupby(duplicates, key=lambda d: (d.task_id, d.group)):
+        members = list(members)
+        first = members[0]
+        groups += 1
+        print(
+            f"duplicate group {first.group} in task {first.task_id}, "
+            f"frame {first.frame}: {len(members)} objects"
+        )
+        for member in members:
+            origin = (
+                f"track {member.track_id}" if member.track_id != "" else f"shape {member.shape_id}"
+            )
+            suffix = "" if member is first else f" (IoU {member.iou})"
+            print(f"  {member.label} {member.type} {origin} at {member.box}{suffix}")
 
     with args.output.open("w", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=[field.name for field in fields(Finding)])
+        writer = csv.DictWriter(f, fieldnames=[field.name for field in fields(Duplicate)])
         writer.writeheader()
-        writer.writerows(asdict(finding) for finding in findings)
+        writer.writerows(asdict(duplicate) for duplicate in duplicates)
 
-    counts = Counter(finding.severity for finding in findings)
-    print(f"Found {len(findings)} issue(s): {counts['error']} error(s), {counts['info']} info")
+    print(f"Found {groups} duplicate group(s), {len(duplicates)} object(s)")
     print(f"Wrote {args.output.resolve()}")
-    if counts["error"] and not args.no_fail:
+    if duplicates and not args.no_fail:
         sys.exit(1)
 
 

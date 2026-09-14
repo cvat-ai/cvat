@@ -23,13 +23,6 @@ from unittest.mock import MagicMock
 
 import platformdirs
 import pytest
-from cvat_sdk import Client, models
-from cvat_sdk.core.auth import AuthStore, ProfileEntry
-from cvat_sdk.core.downloading import Downloader
-from cvat_sdk.core.proxies.projects import Project
-from cvat_sdk.core.proxies.tasks import ResourceType, Task
-from cvat_sdk.core.proxies.types import Location
-
 from shared.utils.config import (
     BASE_URL,
     IMPORT_EXPORT_BUCKET_ID,
@@ -38,6 +31,13 @@ from shared.utils.config import (
     USER_PASS,
 )
 from shared.utils.helpers import generate_image_file, generate_video_file
+
+from cvat_sdk import Client, models
+from cvat_sdk.core.auth import AuthStore, ProfileEntry
+from cvat_sdk.core.downloading import Downloader
+from cvat_sdk.core.proxies.projects import Project
+from cvat_sdk.core.proxies.tasks import ResourceType, Task
+from cvat_sdk.core.proxies.types import Location
 
 EXAMPLES_DIR = Path(__file__).parents[3] / "cvat-sdk" / "examples"
 
@@ -72,74 +72,172 @@ def load_recipe(name: str) -> types.ModuleType:
 
 
 class TestExampleHelpers:
-    def test_data_lint_reports_an_object_past_the_last_frame(self):
-        # Exercise a corrupt response directly: the write API rejects this frame.
-        recipe = load_recipe("project_data_lint.py")
-        task = MagicMock(spec=Task)
-        task.id = 7
-        task.data_original_chunk_type = "imageset"
-        task.get_meta.return_value = types.SimpleNamespace(
-            size=2,
-            deleted_frames=[],
-            frames=[types.SimpleNamespace(width=10, height=10) for _ in range(2)],
+    @pytest.mark.parametrize(
+        "storage_org, task_org",
+        [(None, None), (3, 3), (3, 4), (None, 3), (3, None)],
+    )
+    def test_bulk_export_checks_workspace_before_any_export(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        storage_org: int | None,
+        task_org: int | None,
+    ):
+        recipe = load_recipe("dataset_bulk_export.py")
+        client = MagicMock()
+        client.__enter__.return_value = client
+        # Retrieval succeeds even for another workspace when the user has access.
+        client.api_client.cloudstorages_api.retrieve.return_value = (
+            models.CloudStorageRead._from_openapi_data(
+                id=9,
+                display_name="Exports",
+                organization=storage_org,
+                provider_type="AWS_S3_BUCKET",
+                resource="exports",
+                credentials_type="KEY_SECRET_KEY_PAIR",
+            ),
+            None,
         )
-        task.get_jobs.return_value = []
-        task.get_annotations.return_value = models.LabeledDataRequest(
-            tags=[],
-            tracks=[],
-            shapes=[
-                models.LabeledShapeRequest(
-                    type="rectangle", frame=2, label_id=1, points=[1, 1, 4, 8]
-                )
+        tasks = {}
+        for task_id, organization_id in ((7, storage_org), (8, task_org)):
+            task = MagicMock(spec=Task)
+            task.id = task_id
+            task.name = f"Task {task_id}"
+            task.status = "annotation"
+            task.organization_id = organization_id
+            tasks[task_id] = task
+        client.tasks.retrieve.side_effect = tasks.__getitem__
+        monkeypatch.setattr(recipe, "make_client", lambda *args, **kwargs: client)
+        manifest = tmp_path / "manifest.csv"
+        monkeypatch.setattr(
+            sys,
+            "argv",
+            [
+                "recipe",
+                "--host",
+                "http://example.invalid",
+                "--token",
+                "dummy",
+                "--task-id",
+                "7",
+                "8",
+                "--cloud-storage-id",
+                "9",
+                "--manifest",
+                str(manifest),
             ],
         )
 
-        findings, _ = recipe.lint_task(task, {1: "object"}, 4)
+        if storage_org != task_org:
+            with pytest.raises(SystemExit) as exit_info:
+                recipe.main()
+            assert str(exit_info.value) == (
+                "Task 8 and cloud storage 9 belong to different workspaces"
+            )
+            # A later mismatched task must also prevent exporting the first one.
+            for task in tasks.values():
+                task.export_dataset.assert_not_called()
+            assert not manifest.exists()
+        else:
+            recipe.main()
+            for task in tasks.values():
+                task.export_dataset.assert_called_once_with(
+                    "COCO 1.0",
+                    f"task_{task.id}.zip",
+                    include_images=False,
+                    location=Location.CLOUD_STORAGE,
+                    cloud_storage_id=9,
+                )
+            with manifest.open(newline="") as f:
+                rows = list(csv.DictReader(f))
+            assert [row["task_id"] for row in rows] == ["7", "8"]
+            assert all(not row["error"] for row in rows)
 
-        assert len(findings) == 1
-        finding = findings[0]
-        assert (finding.severity, finding.check, finding.task_id, finding.frame) == (
-            "error",
-            "dead-object",
-            7,
-            2,
-        )
-        assert finding.detail == "rectangle sits on frame 2, which is past the task's last frame 1"
-
-    @pytest.mark.parametrize("with_track", [False, True])
-    def test_data_lint_accepts_empty_or_interpolated_completed_jobs(self, with_track: bool):
-        recipe = load_recipe("project_data_lint.py")
+    @staticmethod
+    def duplicate_task(shapes=(), tracks=()):
+        """A task whose annotations are exactly the given objects."""
         task = MagicMock(spec=Task)
         task.id = 7
-        task.data_original_chunk_type = "video"
-        task.get_meta.return_value = types.SimpleNamespace(
-            size=4, deleted_frames=[], frames=[types.SimpleNamespace(width=10, height=10)]
+        task.get_jobs.return_value = [types.SimpleNamespace(id=11, start_frame=0, stop_frame=3)]
+        task.get_annotations.return_value = models.LabeledDataRequest(
+            tags=[], shapes=list(shapes), tracks=list(tracks)
         )
-        task.get_jobs.return_value = [
-            types.SimpleNamespace(id=1, start_frame=0, stop_frame=1, state="completed"),
-            types.SimpleNamespace(id=2, start_frame=2, stop_frame=3, state="completed"),
-        ]
-        tracks = []
-        if with_track:
-            # The track remains visible across both jobs despite having just one keyframe.
-            tracks.append(
+        return task
+
+    @staticmethod
+    def box(frame: int, label_id: int, points: list[float], type_: str = "rectangle"):
+        return models.LabeledShapeRequest(type=type_, frame=frame, label_id=label_id, points=points)
+
+    def test_data_lint_groups_near_identical_shapes(self):
+        recipe = load_recipe("project_data_lint.py")
+        task = self.duplicate_task(
+            shapes=[
+                self.box(0, 1, [1.0, 1.0, 4.0, 8.0]),
+                self.box(0, 1, [1.1, 1.0, 4.0, 8.1]),
+                # Neither the distant box nor the copy on another frame belongs
+                # to the group: duplicates are looked for within one frame.
+                self.box(0, 1, [50.0, 50.0, 60.0, 60.0]),
+                self.box(1, 1, [1.0, 1.0, 4.0, 8.0]),
+            ]
+        )
+
+        duplicates = recipe.find_duplicates(task, {1: "object"}, 0.9, True)
+
+        assert [(d.frame, d.group, d.job_id) for d in duplicates] == [(0, 1, 11), (0, 1, 11)]
+        assert duplicates[0].iou == 1.0
+        assert 0.9 <= duplicates[1].iou < 1.0
+
+    @pytest.mark.parametrize("same_label, expected", [(True, 0), (False, 2)])
+    def test_data_lint_groups_across_labels_only_when_told_to(self, same_label, expected):
+        recipe = load_recipe("project_data_lint.py")
+        task = self.duplicate_task(
+            shapes=[self.box(0, 1, [1.0, 1.0, 4.0, 8.0]), self.box(0, 2, [1.0, 1.0, 4.0, 8.0])]
+        )
+
+        duplicates = recipe.find_duplicates(task, {1: "car", 2: "vehicle"}, 0.9, same_label)
+
+        assert len(duplicates) == expected
+
+    def test_data_lint_compares_a_track_keyframe_with_a_shape(self):
+        recipe = load_recipe("project_data_lint.py")
+        task = self.duplicate_task(
+            shapes=[self.box(0, 1, [1.0, 1.0, 4.0, 8.0])],
+            tracks=[
                 models.LabeledTrackRequest(
                     frame=0,
                     label_id=1,
                     shapes=[
                         models.TrackedShapeRequest(
-                            type="rectangle", frame=0, outside=False, points=[1, 1, 4, 8]
+                            type="rectangle", frame=0, outside=False, points=[1.0, 1.0, 4.0, 8.0]
                         )
                     ],
                 )
-            )
-        task.get_annotations.return_value = models.LabeledDataRequest(
-            tags=[], shapes=[], tracks=tracks
+            ],
         )
 
-        findings, _ = recipe.lint_task(task, {1: "object"}, 4)
+        duplicates = recipe.find_duplicates(task, {1: "object"}, 0.9, True)
 
-        assert findings == []
+        assert [d.group for d in duplicates] == [1, 1]
+
+    def test_data_lint_skips_outside_shapes_and_types_without_a_box(self):
+        recipe = load_recipe("project_data_lint.py")
+        task = self.duplicate_task(
+            shapes=[
+                self.box(0, 1, [1.0, 1.0, 4.0, 8.0]),
+                # An 'outside' copy is intentionally not visible, and a mask's
+                # points are an RLE rather than x/y pairs. Neither is a duplicate.
+                models.LabeledShapeRequest(
+                    type="rectangle",
+                    frame=0,
+                    label_id=1,
+                    points=[1.0, 1.0, 4.0, 8.0],
+                    outside=True,
+                ),
+                self.box(0, 1, [1.0, 1.0, 4.0, 8.0], type_="mask"),
+            ]
+        )
+
+        assert recipe.find_duplicates(task, {1: "object"}, 0.9, True) == []
 
     @staticmethod
     def bucket_page(names: list[tuple[str, str]], next_token: str | None):
@@ -179,64 +277,87 @@ class TestExampleHelpers:
         assert not recipe.bucket_contains(api, 7, "task_42.zip")
         assert api.retrieve_content_v2.call_args.kwargs == {}
 
-    @pytest.mark.parametrize("watermark", [None, "2026-09-01T00:00:00+00:00"])
-    @pytest.mark.parametrize("export_fails", [False, True])
-    def test_incremental_download_uses_caller_state(
+    def test_incremental_download_needs_task_ids_to_go_offline(
+        self, monkeypatch: pytest.MonkeyPatch
+    ):
+        recipe = load_recipe("dataset_incremental_download.py")
+        monkeypatch.setattr(
+            sys,
+            "argv",
+            [
+                "recipe",
+                "--host",
+                "http://example.invalid",
+                "--token",
+                "dummy",
+                "--project-id",
+                "3",
+                "--offline",
+            ],
+        )
+
+        with pytest.raises(SystemExit) as exit_info:
+            recipe.main()
+
+        assert "--offline needs --task-id" in str(exit_info.value)
+
+    def test_incremental_download_skips_a_task_it_cannot_cache(
         self,
         tmp_path: Path,
         monkeypatch: pytest.MonkeyPatch,
         capsys: pytest.CaptureFixture,
-        watermark: str | None,
-        export_fails: bool,
     ):
+        # A project can hold tasks TaskDataset does not support (video, or no
+        # data at all); one of them must not cost the caller the other tasks.
         recipe = load_recipe("dataset_incremental_download.py")
-        monkeypatch.chdir(tmp_path)
-        # An old file must neither control this run nor be overwritten by it.
-        state_path = tmp_path / "incremental_state.json"
-        state_path.write_text("unrelated state")
-        output_dir = tmp_path / "datasets"
-        output_dir.mkdir()
-        archive = output_dir / "task_7.zip"
-        archive.write_bytes(b"old export")
+        cache_dir = tmp_path / "cache"
         client = MagicMock()
-        task = MagicMock(spec=Task)
-        task.id, task.name = 7, "Example"
-        client.tasks.list.return_value = [task]
-        monkeypatch.setattr(recipe, "make_client", lambda *args, **kwargs: client)
         client.__enter__.return_value = client
-        argv = [
-            "recipe",
-            "--host",
-            "http://example.invalid",
-            "--token",
-            "dummy",
-            "--project-id",
-            "3",
-        ]
-        if watermark:
-            argv += ["--updated-after", watermark]
-        monkeypatch.setattr(sys, "argv", argv)
+        monkeypatch.setattr(recipe, "make_client", lambda *args, **kwargs: client)
 
-        def export(format_name: str, path: Path, **kwargs) -> None:
-            assert not path.exists()
-            if export_fails:
-                raise RuntimeError("export failed")
-            path.write_bytes(b"new export")
+        cached = MagicMock()
+        cached.samples = [object(), object()]
+        cached.labels = [object()]
+        policies = {}
 
-        task.export_dataset.side_effect = export
-        if export_fails:
-            with pytest.raises(RuntimeError, match="export failed"):
-                recipe.main()
-            assert "Downloaded" not in capsys.readouterr().out
-        else:
-            recipe.main()
-            assert archive.read_bytes() == b"new export"
-            assert "Downloaded 1 task dataset(s)" in capsys.readouterr().out
-        filters = {"project_id": 3}
-        if watermark:
-            filters["updated_date__gt"] = watermark
-        client.tasks.list.assert_called_once_with(**filters)
-        assert state_path.read_text() == "unrelated state"
+        def make_dataset(_client, task_id: int, *, update_policy):
+            policies[task_id] = update_policy
+            if task_id == 8:
+                raise recipe.UnsupportedDatasetError("The task has no data")
+            # Stands in for the cache entry the SDK would have written.
+            entry = cache_dir / f"tasks/{task_id}"
+            entry.mkdir(parents=True, exist_ok=True)
+            (entry / "annotations.json").write_text("{}")
+            return cached
+
+        monkeypatch.setattr(recipe, "TaskDataset", make_dataset)
+        monkeypatch.setattr(
+            sys,
+            "argv",
+            [
+                "recipe",
+                "--host",
+                "http://example.invalid",
+                "--token",
+                "dummy",
+                "--task-id",
+                "7",
+                "8",
+                "--cache-dir",
+                str(cache_dir),
+            ],
+        )
+
+        recipe.main()
+
+        out = capsys.readouterr().out
+        assert "Task 7: 2 sample(s), 1 label(s)" in out
+        assert "Skipped task 8: The task has no data" in out
+        assert "1 of 2 task(s) available locally; cache grew by 2 B" in out
+        assert policies == {
+            7: recipe.UpdatePolicy.IF_MISSING_OR_STALE,
+            8: recipe.UpdatePolicy.IF_MISSING_OR_STALE,
+        }
 
 
 @pytest.fixture(scope="class")
@@ -357,80 +478,113 @@ class TestExamples:
         self.make_task_in_project(project)
         return project
 
-    def run_incremental(self, project_id: int, *, extra: list[str] | None = None):
+    @property
+    def cache_dir(self) -> Path:
+        """The recipe's cache for this test. Never the SDK's per-user default,
+        which is shared between tests and with whoever runs them.
+        """
+        return self.tmp_path / "cvat-cache"
+
+    def cached_chunks(self, task_id: int) -> dict[str, int]:
+        """The cached media chunks of one task, by modification time. The cache
+        layout is <cache-dir>/servers/<server>/tasks/<id>/chunks/<n>.zip.
+        """
+        return {
+            str(path.relative_to(self.cache_dir)): path.stat().st_mtime_ns
+            for path in self.cache_dir.rglob(f"tasks/{task_id}/chunks/*.zip")
+        }
+
+    def run_incremental(self, args: list[str], *, expect_failure: bool = False):
         return self.run_recipe(
             "dataset_incremental_download.py",
-            args=["--project-id", str(project_id)] + list(extra or []),
+            args=["--cache-dir", str(self.cache_dir)] + args,
             with_cleanup=False,
+            expect_failure=expect_failure,
         )
 
-    def test_incremental_download_first_run_exports_every_task(self):
+    def test_incremental_download_caches_every_task_of_a_project(self):
         project = self.make_project()
         first = self.make_task_in_project(project, name="Incremental A")
         second = self.make_task_in_project(project, name="Incremental B")
 
-        result = self.run_incremental(project.id)
+        result = self.run_incremental(["--project-id", str(project.id)])
 
-        assert f"Exported task {first.id}" in result.stdout
-        assert f"Exported task {second.id}" in result.stdout
-        assert "Downloaded 2 task dataset(s)" in result.stdout
         for task in (first, second):
-            assert (self.tmp_path / "datasets" / f"task_{task.id}.zip").is_file()
+            assert f"Task {task.id}: 2 sample(s), 1 label(s)" in result.stdout
+            assert self.cached_chunks(task.id)
+        assert "2 of 2 task(s) available locally" in result.stdout
 
-    def test_incremental_download_second_run_exports_nothing(self):
+    def test_incremental_download_second_run_downloads_nothing(self):
         project = self.make_project_with_task()
-        watermark = max(task.updated_date for task in project.get_tasks()).isoformat()
-        self.run_incremental(project.id)
+        task = project.get_tasks()[0]
+        self.run_incremental(["--project-id", str(project.id)])
+        cached_before = self.cached_chunks(task.id)
+        assert cached_before
 
-        result = self.run_incremental(project.id, extra=["--updated-after", watermark])
+        result = self.run_incremental(["--project-id", str(project.id)])
 
-        assert f"No tasks to export after {watermark}" in result.stdout
-        assert "Exported task" not in result.stdout
+        assert "cache grew by 0 B" in result.stdout
+        assert self.cached_chunks(task.id) == cached_before
 
-    def test_incremental_download_reexports_only_the_changed_task(self):
+    def test_incremental_download_refetches_only_the_changed_task(self):
         project = self.make_project()
         untouched = self.make_task_in_project(project, name="Untouched")
         touched = self.make_task_in_project(project, name="Touched")
-        watermark = max(task.updated_date for task in project.get_tasks()).isoformat()
-        self.run_incremental(project.id)
+        self.run_incremental(["--project-id", str(project.id)])
+        cached_before = {task.id: self.cached_chunks(task.id) for task in (untouched, touched)}
+        assert all(cached_before.values())
 
         touched.update(models.PatchedTaskWriteRequest(name="Touched again"))
 
-        result = self.run_incremental(project.id, extra=["--updated-after", watermark])
-        assert f"Exported task {touched.id}" in result.stdout
-        assert f"Exported task {untouched.id}" not in result.stdout
-        assert "Downloaded 1 task dataset(s)" in result.stdout
+        self.run_incremental(["--project-id", str(project.id)])
 
-    def test_incremental_download_honours_a_given_watermark(self):
+        # Staleness is per task: the changed task loses its whole cache entry,
+        # the other one is not touched at all.
+        assert self.cached_chunks(untouched.id) == cached_before[untouched.id]
+        assert self.cached_chunks(touched.id) != cached_before[touched.id]
+
+    def test_incremental_download_reads_the_cache_offline(self):
         project = self.make_project_with_task()
-        watermark = "2100-01-01T00:00:00+00:00"
+        task = project.get_tasks()[0]
+        self.run_incremental(["--project-id", str(project.id)])
 
-        result = self.run_recipe(
-            "dataset_incremental_download.py",
-            args=[
-                "--project-id",
-                str(project.id),
-                "--updated-after",
-                watermark,
-            ],
-            with_cleanup=False,
-        )
+        result = self.run_incremental(["--task-id", str(task.id), "--offline"])
 
-        assert f"No tasks to export after {watermark}" in result.stdout
-        assert "Exported task" not in result.stdout
+        assert f"Task {task.id}: 2 sample(s), 1 label(s)" in result.stdout
+        assert "cache grew by 0 B" in result.stdout
+
+    def test_incremental_download_reports_an_uncached_task_offline(self):
+        project = self.make_project_with_task()
+        task = project.get_tasks()[0]
+
+        result = self.run_incremental(["--task-id", str(task.id), "--offline"], expect_failure=True)
+
+        assert f"Skipped task {task.id}: not in the cache" in result.stdout
+        assert "0 of 1 task(s) available locally" in result.stdout
+
+    def test_incremental_download_skips_a_video_task(self):
+        project = self.make_project()
+        video = self.make_video_task_in_project(project)
+
+        # Nothing was cached, so the recipe also fails: a pipeline reading the
+        # cache afterwards would find nothing to read.
+        result = self.run_incremental(["--project-id", str(project.id)], expect_failure=True)
+
+        assert f"Skipped task {video.id}" in result.stdout
+        assert "0 of 1 task(s) available locally" in result.stdout
 
     def read_manifest(self, name: str = "bulk_export.csv") -> list[dict]:
         with (self.tmp_path / name).open(newline="") as f:
             return list(csv.DictReader(f))
 
-    def test_bulk_export_exports_every_task_of_a_project(self):
+    def test_bulk_export_exports_every_selected_task(self):
         project = self.make_project()
         first = self.make_task_in_project(project, name="Bulk A")
         second = self.make_task_in_project(project, name="Bulk B")
 
         result = self.run_recipe(
             "dataset_bulk_export.py",
-            args=["--project-id", str(project.id), "--output-dir", "out"],
+            args=["--task-id", str(first.id), str(second.id), "--output-dir", "out"],
             with_cleanup=False,
         )
 
@@ -456,8 +610,8 @@ class TestExamples:
         assert not (self.tmp_path / "out" / f"task_{other.id}.zip").exists()
 
     def test_bulk_export_skips_existing(self):
-        project = self.make_project_with_task()
-        args = ["--project-id", str(project.id), "--output-dir", "out", "--skip-existing"]
+        task = self.make_task_in_project(self.make_project())
+        args = ["--task-id", str(task.id), "--output-dir", "out", "--skip-existing"]
         self.run_recipe("dataset_bulk_export.py", args=args, with_cleanup=False)
 
         result = self.run_recipe("dataset_bulk_export.py", args=args, with_cleanup=False)
@@ -482,21 +636,6 @@ class TestExamples:
         errors = [row for row in self.read_manifest() if row["error"]]
         assert len(errors) == 1
 
-    @pytest.mark.timeout(180)
-    def test_bulk_export_with_two_workers(self):
-        project = self.make_project()
-        tasks = [self.make_task_in_project(project, name=f"Worker {i}") for i in range(2)]
-
-        result = self.run_recipe(
-            "dataset_bulk_export.py",
-            args=["--project-id", str(project.id), "--output-dir", "out", "--jobs", "2"],
-            with_cleanup=False,
-        )
-
-        assert "Exported 2 of 2 task(s)" in result.stdout
-        for task in tasks:
-            assert (self.tmp_path / "out" / f"task_{task.id}.zip").is_file()
-
     def test_bulk_export_reports_ids_filtered_out_by_status(self):
         project = self.make_project()
         task = self.make_task_in_project(project, name="Still in annotation")
@@ -518,7 +657,46 @@ class TestExamples:
             with_cleanup=False,
             expect_failure=True,
         )
-        assert "Select what to export" in result.stderr
+        assert "the following arguments are required: --task-id" in result.stderr
+
+    def test_bulk_export_rejects_an_unusable_cloud_storage(self):
+        task = self.make_task_in_project(self.make_project())
+
+        result = self.run_recipe(
+            "dataset_bulk_export.py",
+            args=["--task-id", str(task.id), "--cloud-storage-id", str(10**9)],
+            with_cleanup=False,
+            expect_failure=True,
+        )
+
+        assert "is not available to this user" in result.stderr
+        assert "Exporting" not in result.stdout
+
+    def test_bulk_export_rejects_skip_existing_without_output_dir(self):
+        result = self.run_recipe(
+            "dataset_bulk_export.py",
+            args=["--task-id", "1", "--cloud-storage-id", "1", "--skip-existing"],
+            with_cleanup=False,
+            expect_failure=True,
+        )
+        assert "--skip-existing needs --output-dir" in result.stderr
+
+    def test_bulk_export_rejects_skip_existing_with_a_cloud_destination(self):
+        result = self.run_recipe(
+            "dataset_bulk_export.py",
+            args=[
+                "--task-id",
+                "1",
+                "--output-dir",
+                "out",
+                "--cloud-storage-id",
+                "1",
+                "--skip-existing",
+            ],
+            with_cleanup=False,
+            expect_failure=True,
+        )
+        assert "--skip-existing cannot resume a cloud export" in result.stderr
 
     def created_task_id(self, stdout: str) -> int:
         match = CREATED_TASK_RE.search(stdout)
@@ -791,13 +969,13 @@ class TestExamples:
         assert self.gt_job_of(task.id) is None
         assert self.client.tasks.retrieve(task.id).id == task.id
 
-    def seed_lint_project(self):
-        """A project whose single task has one good box, one out-of-bounds box,
-        one zero-area box, and an unused label. Images are 5x10 (w x h).
+    def seed_duplicate_project(self):
+        """A project whose single task carries one box, a near-identical copy of
+        it, and an unrelated box. Images are 5x10 (w x h).
         """
-        project = self.make_project(name="Lint project", labels=("object", "unused"))
-        task = self.make_task_in_project(project, name="Lint task")
-        label_id = {label.name: label.id for label in task.get_labels()}["object"]
+        project = self.make_project(name="Duplicate project")
+        task = self.make_task_in_project(project, name="Duplicate task")
+        label_id = task.get_labels()[0].id
         task.set_annotations(
             models.LabeledDataRequest(
                 shapes=[
@@ -805,18 +983,18 @@ class TestExamples:
                         type="rectangle", frame=0, label_id=label_id, points=[1.0, 1.0, 4.0, 8.0]
                     ),
                     models.LabeledShapeRequest(
-                        type="rectangle", frame=0, label_id=label_id, points=[1.0, 1.0, 99.0, 8.0]
+                        type="rectangle", frame=0, label_id=label_id, points=[1.1, 1.0, 4.0, 8.1]
                     ),
                     models.LabeledShapeRequest(
-                        type="rectangle", frame=0, label_id=label_id, points=[2.0, 2.0, 2.0, 2.0]
+                        type="rectangle", frame=0, label_id=label_id, points=[0.0, 0.0, 1.0, 1.0]
                     ),
                 ]
             )
         )
         return project, task
 
-    def test_data_lint_reports_geometry_errors_and_fails(self):
-        project, task = self.seed_lint_project()
+    def test_data_lint_reports_duplicate_objects_and_fails(self):
+        project, task = self.seed_duplicate_project()
 
         result = self.run_recipe(
             "project_data_lint.py",
@@ -825,27 +1003,28 @@ class TestExamples:
             expect_failure=True,
         )
 
-        assert "error out-of-bounds" in result.stdout
-        assert "error degenerate-box" in result.stdout
-        assert "info unused-label" in result.stdout
-        rows = self.read_manifest("data_lint.csv")
-        checks = {row["check"] for row in rows}
-        assert {"out-of-bounds", "degenerate-box", "unused-label"} <= checks
-        assert all(int(row["task_id"]) == task.id for row in rows if row["task_id"])
+        assert f"duplicate group 1 in task {task.id}, frame 0: 2 objects" in result.stdout
+        assert "Found 1 duplicate group(s), 2 object(s)" in result.stdout
+        rows = self.read_manifest("duplicates.csv")
+        assert [row["group"] for row in rows] == ["1", "1"]
+        assert all(int(row["task_id"]) == task.id for row in rows)
+        assert float(rows[1]["iou"]) >= 0.9
 
     def test_data_lint_no_fail_exits_zero(self):
-        project, _ = self.seed_lint_project()
+        project, _ = self.seed_duplicate_project()
 
         result = self.run_recipe(
             "project_data_lint.py",
             args=["--project-id", str(project.id), "--no-fail"],
             with_cleanup=False,
         )
-        assert "error out-of-bounds" in result.stdout
+        assert "Found 1 duplicate group(s)" in result.stdout
 
-    def test_data_lint_accepts_a_clean_project(self):
-        project = self.make_project(name="Clean project")
-        task = self.make_task_in_project(project, name="Clean task")
+    def test_data_lint_accepts_distinct_objects(self):
+        # The same box on every frame: copies on different frames annotate
+        # different things, so none of them is a duplicate.
+        project = self.make_project(name="Distinct project")
+        task = self.make_task_in_project(project, name="Distinct task")
         label_id = task.get_labels()[0].id
         task.set_annotations(
             models.LabeledDataRequest(
@@ -867,27 +1046,79 @@ class TestExamples:
             with_cleanup=False,
         )
 
-        assert "Found 0 issue(s)" in result.stdout
-        assert self.read_manifest("data_lint.csv") == []
+        assert "Found 0 duplicate group(s), 0 object(s)" in result.stdout
+        assert self.read_manifest("duplicates.csv") == []
 
-    def test_data_lint_detects_duplicate_objects(self):
-        project = self.make_project(name="Duplicate project")
-        task = self.make_task_in_project(project, name="Duplicate task")
-        label_id = task.get_labels()[0].id
-        box = dict(type="rectangle", frame=0, label_id=label_id, points=[1.0, 1.0, 4.0, 8.0])
+    def test_data_lint_groups_across_labels_only_with_any_label(self):
+        project = self.make_project(name="Any label project", labels=("car", "vehicle"))
+        task = self.make_task_in_project(project, name="Any label task")
+        label_ids = {label.name: label.id for label in task.get_labels()}
         task.set_annotations(
             models.LabeledDataRequest(
-                shapes=[models.LabeledShapeRequest(**box), models.LabeledShapeRequest(**box)]
+                shapes=[
+                    models.LabeledShapeRequest(
+                        type="rectangle",
+                        frame=0,
+                        label_id=label_ids[name],
+                        points=[1.0, 1.0, 4.0, 8.0],
+                    )
+                    for name in ("car", "vehicle")
+                ]
             )
         )
 
-        result = self.run_recipe(
+        clean = self.run_recipe(
             "project_data_lint.py",
             args=["--project-id", str(project.id)],
             with_cleanup=False,
+        )
+        assert "Found 0 duplicate group(s)" in clean.stdout
+
+        result = self.run_recipe(
+            "project_data_lint.py",
+            args=["--project-id", str(project.id), "--any-label"],
+            with_cleanup=False,
             expect_failure=True,
         )
-        assert "error duplicate-object" in result.stdout
+
+        assert "Found 1 duplicate group(s), 2 object(s)" in result.stdout
+        assert {row["label"] for row in self.read_manifest("duplicates.csv")} == {"car", "vehicle"}
+
+    def test_data_lint_iou_threshold_controls_what_counts_as_a_duplicate(self):
+        project = self.make_project(name="Threshold project")
+        task = self.make_task_in_project(project, name="Threshold task")
+        label_id = task.get_labels()[0].id
+        # Two equally sized boxes offset vertically: they overlap over half of
+        # their union, so the default threshold leaves them alone.
+        task.set_annotations(
+            models.LabeledDataRequest(
+                shapes=[
+                    models.LabeledShapeRequest(
+                        type="rectangle", frame=0, label_id=label_id, points=[0.0, 0.0, 4.0, 6.0]
+                    ),
+                    models.LabeledShapeRequest(
+                        type="rectangle", frame=0, label_id=label_id, points=[0.0, 2.0, 4.0, 8.0]
+                    ),
+                ]
+            )
+        )
+
+        strict = self.run_recipe(
+            "project_data_lint.py",
+            args=["--project-id", str(project.id)],
+            with_cleanup=False,
+        )
+        assert "Found 0 duplicate group(s)" in strict.stdout
+
+        result = self.run_recipe(
+            "project_data_lint.py",
+            args=["--project-id", str(project.id), "--iou-threshold", "0.4"],
+            with_cleanup=False,
+            expect_failure=True,
+        )
+
+        assert "Found 1 duplicate group(s), 2 object(s)" in result.stdout
+        assert [row["iou"] for row in self.read_manifest("duplicates.csv")] == ["1.0", "0.5"]
 
     def test_data_lint_rejects_a_task_outside_the_project(self):
         project = self.make_project_with_task()
@@ -900,90 +1131,6 @@ class TestExamples:
             expect_failure=True,
         )
         assert "not found in project" in result.stderr
-
-    @pytest.mark.timeout(180)
-    def test_data_lint_checks_geometry_beyond_the_first_frame_of_a_video(self):
-        # A video task reports a single frame meta for the whole video, so the
-        # frame count has to come from `size`; taking it from `frames` used to
-        # silence every check past frame 0.
-        project = self.make_project(name="Video lint project")
-        task = self.make_video_task_in_project(project, num_frames=4)
-        label_id = task.get_labels()[0].id
-        task.set_annotations(
-            models.LabeledDataRequest(
-                shapes=[
-                    models.LabeledShapeRequest(
-                        type="rectangle", frame=2, label_id=label_id, points=[1.0, 1.0, 999.0, 8.0]
-                    )
-                ]
-            )
-        )
-
-        result = self.run_recipe(
-            "project_data_lint.py",
-            args=["--project-id", str(project.id)],
-            with_cleanup=False,
-            expect_failure=True,
-        )
-
-        assert "error out-of-bounds" in result.stdout
-        assert f"task {task.id} frame 2" in result.stdout
-        rows = self.read_manifest("data_lint.csv")
-        assert [row["frame"] for row in rows if row["check"] == "out-of-bounds"] == ["2"]
-
-    def test_data_lint_accepts_unannotated_frames(self):
-        project = self.make_project(name="Partly annotated project")
-        task = self.make_task_in_project(project, name="Partly annotated task")
-        label_id = task.get_labels()[0].id
-        task.set_annotations(
-            models.LabeledDataRequest(
-                shapes=[
-                    models.LabeledShapeRequest(
-                        type="rectangle", frame=0, label_id=label_id, points=[1.0, 1.0, 4.0, 8.0]
-                    )
-                ]
-            )
-        )
-
-        result = self.run_recipe(
-            "project_data_lint.py",
-            args=["--project-id", str(project.id)],
-            with_cleanup=False,
-        )
-
-        assert "Found 0 issue(s)" in result.stdout
-        assert self.read_manifest("data_lint.csv") == []
-
-    def test_data_lint_reports_objects_left_on_a_deleted_frame(self):
-        project = self.make_project(name="Deleted frame project")
-        task = self.make_task_in_project(project, name="Deleted frame task")
-        label_id = task.get_labels()[0].id
-        task.set_annotations(
-            models.LabeledDataRequest(
-                shapes=[
-                    models.LabeledShapeRequest(
-                        type="rectangle",
-                        frame=frame,
-                        label_id=label_id,
-                        points=[1.0, 1.0, 4.0, 8.0],
-                    )
-                    for frame in (0, 1)
-                ]
-            )
-        )
-        task.remove_frames_by_ids([1])
-
-        result = self.run_recipe(
-            "project_data_lint.py",
-            args=["--project-id", str(project.id)],
-            with_cleanup=False,
-            expect_failure=True,
-        )
-
-        assert "error dead-object" in result.stdout
-        assert "was removed from the task" in result.stdout
-        rows = self.read_manifest("data_lint.csv")
-        assert [row["frame"] for row in rows if row["check"] == "dead-object"] == ["1"]
 
     @pytest.mark.timeout(180)
     def test_subtasks_create_one_task_per_label_group(self):

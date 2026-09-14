@@ -2,7 +2,7 @@
 title: 'Annotation recipes'
 linkTitle: 'Annotations'
 weight: 5
-description: 'Import annotations into a task from a file or a bucket, edit them in bulk, aggregate statistics, and lint a project'
+description: 'Import annotations into a task from a file or a bucket, edit them in bulk, aggregate statistics, and find objects annotated twice'
 ---
 
 Five recipes: `task_import_annotations.py` loads an annotation file into an
@@ -11,8 +11,7 @@ file that stays in a registered cloud storage, `task_edit_annotations.py`
 reads a task's annotations, applies a bulk edit, and writes it back,
 `project_annotation_stats.py` walks a project's tasks and aggregates object
 counts per label and type into a CSV report, and `project_data_lint.py`
-checks a project's annotations for broken geometry, duplicates, and empty
-work before you export it.
+finds objects that were annotated twice before you export them.
 
 ## Import annotations into a task
 
@@ -135,43 +134,51 @@ python project_annotation_stats.py --host 'https://app.cvat.ai' --token '<your t
 
 {{< include-code "assets/sdk-examples/project_annotation_stats.py" >}}
 
-## Lint a project's data and annotations
+## Find objects annotated twice
 
-Walks a project's tasks and runs five checks. Findings have a severity
-and are printed grouped by severity and written to
-`data_lint.csv`. The script exits 1 when any error exists, so it can gate an
-export pipeline — `--no-fail` turns that off.
+Walks a project's tasks and reports groups of objects that annotate the same
+thing on the same frame. Duplicates appear when an import runs twice, when two
+annotators' job ranges overlap, or after a merge — and the ones that hurt are
+not the exact copies but the near-identical boxes nobody spots by eye, so the
+recipe compares objects by intersection over union rather than by equality.
 
-| Check | Severity | What it means |
-| --- | --- | --- |
-| `out-of-bounds` | error | The shape leaves the frame |
-| `degenerate-box` | error | The rectangle has (almost) no area |
-| `duplicate-object` | error | An identical object on the same frame |
-| `dead-object` | error | The object is on a deleted frame or beyond the last task frame and is omitted from dataset exports |
-| `unused-label` | info | The label was never used |
+Two objects belong to the same group when the IoU of their bounding boxes is at
+least `--iou-threshold` (`0.9` by default) and they carry the same label.
+`--any-label` drops the label condition, which catches the same car annotated
+once as `car` and once as `vehicle`.
 
-Empty frames and completed jobs without objects can be valid negative
-examples, so the script does not report them as problems.
+Every candidate is compared against the group's first object rather than
+against every member: a duplicate is a second copy of one original, and
+chaining through intermediates would merge a whole row of adjacent objects into
+a single group.
 
-Masks and skeletons are skipped by the geometry checks (their points are not
-plain x/y pairs), and objects marked `outside` are skipped everywhere.
-Geometry checks inspect individual shapes and track keyframes; they do not
-interpolate tracks. Video frame counts come from the task's `size`, because
-a video reports one metadata entry for the whole file.
+The recipe only reports. Groups are printed and written to `duplicates.csv`
+with one row per object (`task_id`, `job_id`, `frame`, `group`, `label`,
+`type`, `shape_id`, `track_id`, `iou`, `box`). It exits 1 when any group was
+found, so it can gate an export pipeline — `--no-fail` turns that off. Fix what
+it reports with `task_edit_annotations.py` or in the UI.
+
+Rectangles, polygons, polylines and points are compared through their axis-aligned
+bounding boxes. Masks, skeletons, ellipses and cuboids are skipped, because
+their `points` are not plain x/y pairs. Tags are skipped too — they have no
+geometry to overlap. Objects marked `outside` are skipped everywhere, and track
+keyframes are compared alongside plain shapes, so a shape duplicating a track
+is reported.
 
 | Flag | Required | Meaning |
 | --- | --- | --- |
 | `--host` | yes | Server URL |
 | `--token` | yes | Personal Access Token |
-| `--project-id` | yes | Id of the project to lint |
-| `--task-id ID [ID ...]` | no | Lint only these tasks of the project; they are retrieved by id, so a big project is not listed |
-| `--min-box-area` | no | Rectangles below this many px² are errors (default `4`) |
-| `--output` | no | CSV report path (default `data_lint.csv`) |
-| `--no-fail` | no | Exit 0 even when errors were found |
+| `--project-id` | yes | Id of the project to inspect |
+| `--task-id ID [ID ...]` | no | Inspect only these tasks of the project; they are retrieved by id, so a big project is not listed |
+| `--iou-threshold` | no | Minimum bounding box overlap for a duplicate, in `(0, 1]` (default `0.9`) |
+| `--any-label` | no | Also group objects that carry different labels |
+| `--output` | no | CSV report path (default `duplicates.csv`) |
+| `--no-fail` | no | Exit 0 even when duplicates were found |
 
 ```bash
 python project_data_lint.py --host 'https://app.cvat.ai' --token '<your token>' \
-    --project-id 7 --min-box-area 16
+    --project-id 7 --iou-threshold 0.8
 ```
 
 ### The script
@@ -193,8 +200,8 @@ _Other SDK options:_
 | `Task.update_annotations(PatchedLabeledDataRequest(...), action=AnnotationUpdateAction.CREATE \| UPDATE \| DELETE)` | Partial update: create, update, or delete only the objects in the request. |
 | `Task.remove_annotations(ids=[...])` | Delete specific objects by id — or all of them when `ids` is omitted. |
 | `Project.get_annotations()` | Read the annotations of every task in a project in one call. |
-| `Task.get_frames_info()` | Frame names and sizes — what the geometry checks compare against. |
-| `Task.get_jobs()` | Job frame ranges and states, so a finding can name the job to fix. |
+| `Task.get_frames_info()` | Frame names and sizes — useful to report a duplicate by file name rather than by frame index. |
+| `Task.get_jobs()` | Job frame ranges and states, so a reported duplicate can name the job to fix. |
 
 _Notes:_
 
@@ -202,7 +209,8 @@ _Notes:_
   `task.get_labels()` maps names to ids.
 - Both editing recipes re-read the annotations after writing, so the printed
   "after" counts show the server's state, not the client's intention.
-- The linter reads only; fix what it reports with `task_edit_annotations.py` or in the UI.
+- The duplicate search reads only; `Task.remove_annotations(ids=[...])` is what
+  removes the extra objects once you have decided which copy to keep.
 - A bucket import is a background request: the POST only returns an `rq_id`,
   and the annotations appear once `client.wait_for_completion()` returns. A
   missing key or wrong credentials surface as a failed request, not as an error

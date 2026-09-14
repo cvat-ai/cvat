@@ -5,11 +5,11 @@ weight: 7
 description: 'Download only what changed, and export many tasks in one run'
 ---
 
-Two recipes for getting datasets out of CVAT at scale:
-`dataset_incremental_download.py` re-exports only the tasks that changed since
-a supplied timestamp, and `dataset_bulk_export.py` exports a whole selection of
-tasks in one go, with a manifest and resume. For exporting a single project's
-tasks locally and to a bucket, see
+Two recipes for getting data out of CVAT at scale:
+`dataset_incremental_download.py` keeps a local cache of a project's tasks and
+re-downloads only what the server has changed, and `dataset_bulk_export.py`
+exports a given list of tasks as dataset archives in one go, with a manifest
+and resume. For exporting a single project's tasks locally and to a bucket, see
 [`project_export_dataset.py`](../projects#export-a-projects-tasks-as-datasets).
 
 ## Export a task or project
@@ -28,35 +28,66 @@ with make_client("https://app.cvat.ai", access_token="<your token>") as client:
     project.export_dataset("COCO 1.0", "project_7.zip", include_images=False, location=Location.LOCAL)
 ```
 
-Each call downloads one archive. The recipes below add incremental selection
-or exports of multiple tasks to this basic workflow.
+Each call downloads one archive, rebuilt by the server every time — there is
+no incremental path through `export_dataset`. The incremental recipe below
+uses a different part of the SDK; the bulk recipe adds multi-task exports to
+this basic workflow.
 
 ## Download only what changed
 
-Pass `--updated-after` to export tasks changed after an ISO 8601 timestamp.
-The `updated_date__gt` filter selects those tasks on the server. Omit the
-option for a full download. Each selected task replaces its previous archive.
+`cvat_sdk.datasets.TaskDataset` mirrors a task on the local file system and
+keeps that copy current. Each time you construct it, the SDK compares the
+cached task's `updated_date` with the server's: an unchanged task is served
+from disk, a changed one is fetched again. Chunks already cached are never
+downloaded twice.
 
-Your pipeline owns the synchronization timestamp and its storage, whether
-that is a file, a database, or another service. Advance the timestamp only
-after all exports succeed; retry a failed run with the same timestamp. Choose
-a checkpoint from before the run, using a clock consistent with the server,
-so changes made during export are included on the next run.
+```python
+from cvat_sdk.datasets import TaskDataset, UpdatePolicy
+
+dataset = TaskDataset(client, 10, update_policy=UpdatePolicy.IF_MISSING_OR_STALE)
+for sample in dataset.samples:
+    image = sample.media.load_image()   # PIL.Image, from the cache
+    shapes = sample.annotations.shapes
+```
+
+The cache lives under `client.config.cache_dir` (a per-user directory by
+default), keyed by server host and task id, so several projects and servers can
+share one cache without colliding.
+
+Two limits to design around:
+
+- **Staleness is per task, not per frame.** Any change to a task — including an
+  annotation edit — purges that task's whole cache entry, so its media is
+  downloaded again on the next run.
+- **Metadata is always re-fetched.** Each run asks the server for the task and
+  its labels; that request is how staleness is detected. Only chunks and
+  annotations are skipped when the cache is fresh.
+
+`UpdatePolicy.NEVER` is the other half of the pair: it reads the cache and
+performs no network access at all, failing on anything not already cached. The
+recipe exposes it as `--offline`, which needs explicit `--task-id` values,
+because listing a project's tasks is itself a server call.
 
 | Flag | Required | Meaning |
 | --- | --- | --- |
 | `--host` | yes | Server URL |
 | `--token` | yes | Personal Access Token |
-| `--project-id` | yes | Id of the project to track |
-| `--updated-after` | no | Export tasks updated after this ISO 8601 timestamp, e.g. `'2026-09-01T00:00:00+00:00'` |
-| `--output-dir` | no | Where the exports go (default `datasets`) |
-| `--export-format` | no | Exporter name (default `'COCO 1.0'`) |
-| `--with-images` | no | Include images — much larger and slower |
+| `--project-id` | one of `--project-id` / `--task-id` | Download every task of this project |
+| `--task-id ID [ID ...]` | one of `--project-id` / `--task-id` | Download these task ids |
+| `--cache-dir` | no | Where the cache goes (default: the SDK's per-user cache directory) |
+| `--offline` | no | Use `UpdatePolicy.NEVER` — read the cache, contact no server; needs `--task-id` |
+| `--quiet` | no | Hide the SDK's per-file cache and download log |
 
 ```bash
 python dataset_incremental_download.py --host 'https://app.cvat.ai' --token '<your token>' \
-    --project-id 7 --output-dir datasets --updated-after '2026-09-01T00:00:00+00:00'
+    --project-id 7 --cache-dir ./cvat-cache
 ```
+
+Run it twice: the second run reports `cache grew by 0 B`, and the SDK's log
+shows the annotations and chunks coming from the cache rather than the network.
+
+Video tasks are skipped with a message — `TaskDataset` supports tasks whose
+media can be read as images.
 
 ### The script
 
@@ -64,32 +95,31 @@ python dataset_incremental_download.py --host 'https://app.cvat.ai' --token '<yo
 
 ## Export many tasks in one run
 
-Picks tasks by project, by explicit ids, by status, or a combination, and
+Takes an explicit list of task ids, optionally narrowed by status, and
 exports each one to a local directory, to a registered cloud storage, or both.
-Every result — including failures — lands in a CSV manifest, and one failing
-task never aborts the run: the script finishes the rest and exits 1.
-`--skip-existing` makes an interrupted run resumable, and `--jobs N` exports
-in parallel with **one client per worker thread**, because a `Client` is not
-safe to share across threads.
+Every result — including failures — lands in a CSV manifest, appended and
+flushed after each task so a run stopped with Ctrl+C still leaves a manifest of
+what it finished. One failing task never aborts the run: the script exports the
+rest and exits 1. `--skip-existing` makes an interrupted local run resumable — it takes the
+exported file as proof a task is done, so it needs `--output-dir` and refuses
+to pair with `--cloud-storage-id`, where nothing lands locally to check.
 
 | Flag | Required | Meaning |
 | --- | --- | --- |
 | `--host` | yes | Server URL |
 | `--token` | yes | Personal Access Token |
-| `--project-id` | one of `--project-id` / `--task-id` | Export every task of this project |
-| `--task-id ID [ID ...]` | one of `--project-id` / `--task-id` | Export these task ids |
-| `--status` | no | Keep only tasks in `annotation`, `validation`, or `completed`; with `--task-id` it is applied after the ids are resolved, so an id in another status is reported as filtered out rather than as missing |
+| `--task-id ID [ID ...]` | yes | Export these task ids |
+| `--status` | no | Keep only tasks in `annotation`, `validation`, or `completed`; applied after the ids are resolved, so an id in another status is reported as filtered out rather than as missing |
 | `--output-dir` | one of `--output-dir` / `--cloud-storage-id` | Local destination |
-| `--cloud-storage-id` | one of `--output-dir` / `--cloud-storage-id` | Cloud destination |
+| `--cloud-storage-id` | one of `--output-dir` / `--cloud-storage-id` | Cloud destination; checked for existence and access before the run. Every selected task must belong to the storage's workspace (the same organization, or both in the personal workspace); a mismatch stops the run before any export. |
 | `--export-format` | no | Exporter name (default `'COCO 1.0'`) |
-| `--jobs` | no | Parallel exports (default `1`) |
-| `--skip-existing` | no | Skip tasks already exported into `--output-dir` |
+| `--skip-existing` | no | Skip tasks already exported into `--output-dir`; local exports only, so it cannot be combined with `--cloud-storage-id` |
 | `--with-images` | no | Include images |
-| `--output` | no | Manifest path (default `bulk_export.csv`) |
+| `--manifest` | no | CSV manifest path (default `bulk_export.csv`) |
 
 ```bash
 python dataset_bulk_export.py --host 'https://app.cvat.ai' --token '<your token>' \
-    --project-id 7 --output-dir datasets --jobs 4
+    --task-id 10 11 12 --output-dir datasets
 ```
 
 ### The script
@@ -106,12 +136,20 @@ _Other SDK options:_
 | `Job.export_dataset(format_name, path)` | The same export scoped to a single job. |
 | `Task.download_backup(path)` | A backup (data + annotations + settings) rather than a dataset. |
 | `client.tasks.list(updated_date__gt=..., status=..., name__contains=...)` | Server-side selection; see the [filtering guide](../../highlevel-api). |
+| `TaskDataset(..., media_download_policy=MediaDownloadPolicy.FETCH_CHUNKS_ON_DEMAND)` | Fetch a chunk only when a sample in it is read, instead of preloading every chunk. |
+| `TaskDataset.iter_samples(temporary_chunks=True)` | Stream samples through a temporary directory, leaving the shared cache untouched. |
+| `TaskDataset(..., load_annotations=False)` | Cache media only, when the labels are not needed. |
+| `cvat_sdk.pytorch.TaskVisionDataset` | The same cache behind a `torch.utils.data.Dataset`; see the [PyTorch adapter](../../pytorch-adapter). |
 
 _Notes:_
 
 - `updated_date` changes when a task's fields, data, or annotations change, so it
-  is what the incremental recipe keys on.
-- Omit `--updated-after` to force a full re-download.
+  is what the cache compares against, and why an annotation edit re-downloads
+  that task's media too.
+- Delete the cache directory to force a full re-download.
+- `export_dataset` and `TaskDataset` produce different things: the first a
+  format-converted archive to hand off, the second a live local mirror to read
+  frame by frame.
 - Full recipes:
   [`dataset_incremental_download.py`](https://github.com/cvat-ai/cvat/tree/develop/cvat-sdk/examples/dataset_incremental_download.py),
   [`dataset_bulk_export.py`](https://github.com/cvat-ai/cvat/tree/develop/cvat-sdk/examples/dataset_bulk_export.py).

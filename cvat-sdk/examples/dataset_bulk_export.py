@@ -2,25 +2,26 @@
 #
 # SPDX-License-Identifier: MIT
 
-"""Export many task datasets in one run: pick the tasks by project, by id, or by
-status, write them locally and/or straight to a cloud storage, and record every
-result in a CSV manifest.
+"""Export many task datasets in one run: name the tasks by id, optionally
+narrowed by status, write them locally and/or straight to a cloud storage, and
+record every result in a CSV manifest.
 
 A failing task does not stop the run - it is recorded in the manifest and the
 script exits with code 1 at the end, so a pipeline still sees the failure.
 
 Steps:
-  1. Resolve the selection (--project-id, --task-id, --status).
+  1. Check --cloud-storage-id once, so a wrong id fails before any export, and
+     resolve the selection (--task-id, --status). Check that every selected
+     task belongs to the cloud storage's workspace before exporting anything.
   2. Export each task to --output-dir and/or to --cloud-storage-id, skipping the
      ones already exported when --skip-existing is passed.
-  3. Write the manifest and report how many tasks were exported, skipped, failed.
-
-With --jobs > 1 the exports run in worker threads. Each worker builds its OWN
-client: a cvat_sdk Client is not safe to share between threads.
+  3. Append a manifest row after every task - a run stopped with Ctrl+C still
+     leaves a manifest of what it managed to export - and report how many tasks
+     were exported, skipped, failed.
 
 Usage (run ``python dataset_bulk_export.py --help`` for the full list of options):
   python dataset_bulk_export.py --host 'https://app.cvat.ai' --token '<your token>' \\
-      --project-id 7 --output-dir datasets --jobs 4
+      --task-id 10 11 12 --output-dir datasets
   python dataset_bulk_export.py --host 'https://app.cvat.ai' --token '<your token>' \\
       --task-id 10 11 12 --cloud-storage-id 3 --output-dir datasets
 """
@@ -28,14 +29,12 @@ Usage (run ``python dataset_bulk_export.py --help`` for the full list of options
 import argparse
 import csv
 import sys
-import threading
-from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-from cvat_sdk import make_client
+from cvat_sdk import make_client, models
 from cvat_sdk.core.proxies.types import Location
 
-_thread_state = threading.local()
+MANIFEST_FIELDS = ("task_id", "name", "status", "destination", "path", "bytes", "error")
 
 
 def parse_args() -> argparse.Namespace:
@@ -46,9 +45,13 @@ def parse_args() -> argparse.Namespace:
         required=True,
         help="Personal Access Token (CVAT UI: Profile -> Security)",
     )
-    parser.add_argument("--project-id", type=int, help="export every task of this project")
     parser.add_argument(
-        "--task-id", type=int, nargs="+", metavar="ID", help="export these task ids"
+        "--task-id",
+        type=int,
+        nargs="+",
+        metavar="ID",
+        required=True,
+        help="export these task ids",
     )
     parser.add_argument(
         "--status",
@@ -61,7 +64,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--cloud-storage-id",
         type=int,
-        help="also export straight to this registered cloud storage (see cloud_storage_register.py)",
+        help="also export straight to this registered cloud storage, checked before "
+        "the run starts (see cloud_storage_register.py)",
     )
     parser.add_argument(
         "--export-format",
@@ -69,71 +73,51 @@ def parse_args() -> argparse.Namespace:
         help="exporter name, e.g. 'COCO 1.0' (default: '%(default)s')",
     )
     parser.add_argument(
-        "--jobs", type=int, default=1, help="number of parallel exports (default: %(default)s)"
-    )
-    parser.add_argument(
         "--skip-existing",
         action="store_true",
-        help="skip tasks whose output file is already in --output-dir (resume a run)",
+        help="skip tasks whose output file is already in --output-dir (resume a run); "
+        "local exports only",
     )
     parser.add_argument("--with-images", action="store_true", help="include images in the exports")
     parser.add_argument(
-        "--output",
+        "--manifest",
         type=Path,
         default=Path("bulk_export.csv"),
-        help="path to write the manifest to (default: %(default)s)",
+        help="path to write the CSV manifest to (default: %(default)s)",
     )
     return parser.parse_args()
 
 
-def select_tasks(client, args: argparse.Namespace) -> list:
+def select_tasks(
+    client, args: argparse.Namespace, storage: models.CloudStorageRead | None = None
+) -> list:
     """The tasks to export, as (id, name, status) triples.
 
-    --task-id names the tasks, --project-id takes the whole project, and giving
-    both means "these ids, which must be in that project". --status is applied
-    after the ids are resolved, so a task that exists but is in another status is
-    reported as filtered out rather than as missing - two different mistakes.
+    --status is applied after the ids are resolved, so a task that exists but is
+    in another status is reported as filtered out rather than as missing - two
+    different mistakes.
     """
-    if args.task_id:
-        selected = []
-        for task_id in args.task_id:
-            try:
-                task = client.tasks.retrieve(task_id)
-            except Exception:
-                selected.append((task_id, "", ""))
-                continue
-            if args.project_id and task.project_id != args.project_id:
-                sys.exit(f"Task id {task_id} is not in project {args.project_id}")
-            if args.status and str(task.status) != args.status:
-                print(f"Skipping task {task_id}: status is {task.status}, not {args.status}")
-                continue
-            selected.append((task.id, task.name, str(task.status)))
-        return selected
-
-    filters = {"project_id": args.project_id}
-    if args.status:
-        filters["status"] = args.status
-    return [(task.id, task.name, str(task.status)) for task in client.tasks.list(**filters)]
+    selected = []
+    for task_id in args.task_id:
+        try:
+            task = client.tasks.retrieve(task_id)
+        except Exception:
+            selected.append((task_id, "", ""))
+            continue
+        if args.status and str(task.status) != args.status:
+            print(f"Skipping task {task_id}: status is {task.status}, not {args.status}")
+            continue
+        if storage is not None and task.organization_id != storage.organization:
+            sys.exit(
+                f"Task {task_id} and cloud storage {storage.id} belong to different workspaces"
+            )
+        selected.append((task.id, task.name, str(task.status)))
+    return selected
 
 
-def worker_client(host: str, token: str):
-    """The calling thread's own client - never share one between threads."""
-    client = getattr(_thread_state, "client", None)
-    if client is None:
-        client = _thread_state.client = make_client(host, access_token=token)
-    return client
-
-
-def export_one(args: argparse.Namespace, task_id: int, name: str, status: str) -> dict:
-    row = {
-        "task_id": task_id,
-        "name": name,
-        "status": status,
-        "destination": "",
-        "path": "",
-        "bytes": "",
-        "error": "",
-    }
+def export_one(client, args: argparse.Namespace, task_id: int, name: str, status: str) -> dict:
+    row = dict.fromkeys(MANIFEST_FIELDS, "")
+    row.update(task_id=task_id, name=name, status=status)
     local_path = args.output_dir / f"task_{task_id}.zip" if args.output_dir else None
 
     if args.skip_existing and local_path and local_path.exists():
@@ -143,7 +127,6 @@ def export_one(args: argparse.Namespace, task_id: int, name: str, status: str) -
         return row
 
     try:
-        client = worker_client(args.host, args.token)
         task = client.tasks.retrieve(task_id)
         destinations = []
 
@@ -179,30 +162,42 @@ def export_one(args: argparse.Namespace, task_id: int, name: str, status: str) -
 
 def main() -> None:
     args = parse_args()
-    if not args.project_id and not args.task_id:
-        sys.exit("Select what to export: pass --project-id and/or --task-id")
     if not args.output_dir and not args.cloud_storage_id:
         sys.exit("Select a destination: pass --output-dir and/or --cloud-storage-id")
+    if args.skip_existing and not args.output_dir:
+        sys.exit("--skip-existing needs --output-dir: a cloud export leaves nothing local to check")
+    if args.skip_existing and args.cloud_storage_id:
+        sys.exit("--skip-existing cannot resume a cloud export; drop it or drop --cloud-storage-id")
     if args.output_dir:
         args.output_dir.mkdir(parents=True, exist_ok=True)
 
     with make_client(args.host, access_token=args.token) as client:
-        selection = select_tasks(client, args)
-    if not selection:
-        sys.exit("The selection is empty; nothing to export")
-    print(f"Exporting {len(selection)} task(s) with {args.jobs} worker(s)")
+        storage = None
+        if args.cloud_storage_id:
+            try:
+                storage, _ = client.api_client.cloudstorages_api.retrieve(args.cloud_storage_id)
+            except Exception as error:
+                sys.exit(
+                    f"Cloud storage {args.cloud_storage_id} is not available to this user: {error}"
+                )
+            print(f"Exporting to cloud storage {storage.id} {storage.display_name!r}")
 
-    if args.jobs > 1:
-        with ThreadPoolExecutor(max_workers=args.jobs) as pool:
-            rows = list(pool.map(lambda task: export_one(args, *task), selection))
-    else:
-        rows = [export_one(args, *task) for task in selection]
+        selection = select_tasks(client, args, storage)
+        if not selection:
+            sys.exit("The selection is empty; nothing to export")
+        print(f"Exporting {len(selection)} task(s)")
 
-    rows.sort(key=lambda row: row["task_id"])
-    with args.output.open("w", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=list(rows[0]))
-        writer.writeheader()
-        writer.writerows(rows)
+        rows = []
+        with args.manifest.open("w", newline="") as f:
+            writer = csv.DictWriter(f, fieldnames=MANIFEST_FIELDS)
+            writer.writeheader()
+            for task in selection:
+                row = export_one(client, args, *task)
+                # Written and flushed one task at a time, so Ctrl+C halfway
+                # through still leaves a usable manifest on disk.
+                writer.writerow(row)
+                f.flush()
+                rows.append(row)
 
     failed = [row for row in rows if row["error"]]
     skipped = [row for row in rows if row["destination"] == "skipped"]
@@ -210,7 +205,7 @@ def main() -> None:
     print(
         f"Exported {exported} of {len(rows)} task(s); {len(skipped)} skipped, {len(failed)} failed"
     )
-    print(f"Wrote {args.output.resolve()}")
+    print(f"Wrote {args.manifest.resolve()}")
     if failed:
         sys.exit(1)
 
