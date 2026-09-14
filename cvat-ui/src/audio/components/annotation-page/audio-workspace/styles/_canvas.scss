@@ -135,6 +135,12 @@
             }
         }
 
+        &.cvat-audio-waveform-interaction-snap-hover {
+            *::part(hover) {
+                visibility: hidden;
+            }
+        }
+
         // The hover timestamp is derived from the last pointer event and lags
         // behind a stationary pointer while custom resize auto-scrolls.
         &.cvat-audio-waveform-interaction-auto-scroll {
