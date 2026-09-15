@@ -1501,7 +1501,6 @@ class TestTaskBackups:
         assert filename.is_file()
         assert filename.stat().st_size > 0
 
-
     @pytest.mark.parametrize("mode", ["annotation", "interpolation"])
     def test_can_export_backup(self, tasks, mode):
         task_id = next(
