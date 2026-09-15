@@ -2994,6 +2994,20 @@ paths:
       - basicAuth: []
       responses:
         '200':
+          headers:
+            X-Checksum:
+              schema:
+                type: string
+              description: Data checksum, applicable for chunks only
+            X-Chunk-Size:
+              schema:
+                type: integer
+              description: Decoded chunk size in bytes, applicable for chunks only
+            X-Updated-Date:
+              schema:
+                type: string
+                format: date-time
+              description: Data update date, applicable for chunks only
           content:
             application/vnd.cvat+json:
               schema:
@@ -3001,6 +3015,20 @@ paths:
                 format: binary
           description: Data of a specific type
         '206':
+          headers:
+            X-Checksum:
+              schema:
+                type: string
+              description: Data checksum, applicable for chunks only
+            X-Chunk-Size:
+              schema:
+                type: integer
+              description: Decoded chunk size in bytes, applicable for chunks only
+            X-Updated-Date:
+              schema:
+                type: string
+                format: date-time
+              description: Data update date, applicable for chunks only
           content:
             application/vnd.cvat+json:
               schema:
@@ -3008,6 +3036,11 @@ paths:
                 format: binary
           description: Partial chunk data
         '416':
+          headers:
+            X-Chunk-Size:
+              schema:
+                type: integer
+              description: Decoded chunk size in bytes, applicable for chunks only
           description: Requested range is not satisfiable
   /api/jobs/{id}/data/meta:
     get:
@@ -6653,6 +6686,10 @@ paths:
               schema:
                 type: string
               description: Data checksum, applicable for chunks only
+            X-Chunk-Size:
+              schema:
+                type: integer
+              description: Decoded chunk size in bytes, applicable for chunks only
             X-Updated-Date:
               schema:
                 type: string
@@ -6665,6 +6702,10 @@ paths:
               schema:
                 type: string
               description: Data checksum, applicable for chunks only
+            X-Chunk-Size:
+              schema:
+                type: integer
+              description: Decoded chunk size in bytes, applicable for chunks only
             X-Updated-Date:
               schema:
                 type: string
@@ -6672,6 +6713,11 @@ paths:
               description: Data update date, applicable for chunks only
           description: Partial chunk data
         '416':
+          headers:
+            X-Chunk-Size:
+              schema:
+                type: integer
+              description: Decoded chunk size in bytes, applicable for chunks only
           description: Requested range is not satisfiable
     post:
       operationId: tasks_create_data
