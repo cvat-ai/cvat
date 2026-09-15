@@ -30,7 +30,11 @@ function getScrollContainer(runtime: WaveSurferRuntime): HTMLElement | null {
  * Makes the minimap's visible-area overlay behave as a horizontal scrollbar thumb.
  * The minimap plugin owns the overlay rendering, while this hook owns its pointer interaction.
  */
-export function useMinimapScrollbar(runtime: WaveSurferRuntime, viewport: WaveformViewport): void {
+export function useMinimapScrollbar(
+    runtime: WaveSurferRuntime,
+    viewport: WaveformViewport,
+    seek: (time: number) => void,
+): void {
     // Reactive pixelsPerSecond and overviewPixelsPerSecond dependencies are used to run
     // this effect on zoom or when the viewport changes.
     useLayoutEffect(() => {
@@ -125,7 +129,8 @@ export function useMinimapScrollbar(runtime: WaveSurferRuntime, viewport: Wavefo
             if (!hasDragged) {
                 const minimapRect = minimapWrapper.getBoundingClientRect();
                 const relativeX = clamp((event.clientX - minimapRect.left) / minimapRect.width, 0, 1);
-                runtime.instanceRef.current?.seekTo(relativeX);
+                // The overlay intercepts the minimap click, so seek through playback to synchronize its range.
+                seek(relativeX * runtime.durationRef.current);
             }
             finishDrag(event.pointerId);
             event.preventDefault();

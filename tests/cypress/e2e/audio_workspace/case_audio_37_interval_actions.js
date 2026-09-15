@@ -95,7 +95,7 @@ context('Audio annotation. Interval actions.', () => {
         });
 
         it('Plays the selected interval once with Shift+Space', () => {
-            createInterval(100, 112);
+            createInterval(100, 140);
 
             cy.realPress(['Shift', 'Space']);
             cy.get('.cvat-player-pause-button').should('exist');
@@ -133,7 +133,7 @@ context('Audio annotation. Interval actions.', () => {
                 });
 
                 it('Plays the selected interval once from its action', () => {
-                    createInterval(100, 112);
+                    createInterval(100, 140);
 
                     clickIntervalAction('playInterval');
                     cy.get('.cvat-player-pause-button').should('exist');
