@@ -1761,9 +1761,7 @@ class TestTaskBackups:
         self._test_can_restore_task_from_backup(task.id, backup_file=backup_path)
 
     @pytest.mark.with_external_services
-    def test_can_export_and_import_backup_with_images_in_backing_cs(
-        self, request, cloud_storages
-    ):
+    def test_can_export_and_import_backup_with_images_in_backing_cs(self, request, cloud_storages):
         task = self.client.tasks.create_from_data(
             models.TaskWriteRequest(name="Canvas3D"),
             [SHARE_DIR / "test_canvas3d.zip"],
