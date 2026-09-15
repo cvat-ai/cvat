@@ -127,9 +127,7 @@ def ensure_supported_version(
         )
 
 
-def resolve_decoder_and_library(
-    library_path: os.PathLike[str] | str | None,
-) -> tuple[DecoderInfo, ctypes.CDLL]:
+def resolve_decoder_info(library_path: os.PathLike[str] | str | None) -> DecoderInfo:
     """Resolve, load, and version-validate an explicit, configured, or system library."""
 
     resolved_path = _discover_library_path(library_path)
@@ -137,7 +135,7 @@ def resolve_decoder_and_library(
     version = _probe_version(library)
     ensure_supported_version(version, resolved_path)
 
-    return DecoderInfo(library_path=resolved_path, version=version), library
+    return DecoderInfo(library_path=resolved_path, version=version, library=library)
 
 
 class OpenH264Decoder:

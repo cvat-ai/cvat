@@ -17,26 +17,34 @@ from .utils import (
     OpenH264Decoder,
     iter_access_units_from_stream,
     read_video_track_from_stream,
-    resolve_decoder_and_library,
+    resolve_decoder_info,
 )
 
 __all__ = ["DecoderInfo", "iter_frames", "resolve_decoder"]
 
 
 def resolve_decoder(*, library_path: os.PathLike[str] | str | None = None) -> DecoderInfo:
-    """Resolve an explicit, configured, or system OpenH264 library without downloading it."""
+    """Load an explicit, configured, or system OpenH264 library without downloading it.
 
-    info, _library = resolve_decoder_and_library(library_path)
-    return info
+    Pass the result to :func:`iter_frames` to decode several chunks without resolving and
+    loading the library again for each of them.
+    """
+
+    return resolve_decoder_info(library_path)
 
 
 def iter_frames(
     path: os.PathLike[str] | str,
     *,
-    library_path: os.PathLike[str] | str | None = None,
+    decoder: DecoderInfo | None = None,
 ) -> Generator[PIL.Image.Image, None, None]:
     """
     Decode a CVAT-generated constrained-baseline MP4 chunk sequentially.
+
+    ``decoder`` reuses a library already loaded by :func:`resolve_decoder`; when it is
+    omitted, the library is resolved from the environment on first iteration. Each call
+    creates its own native decoder, since decoding state must not carry over between
+    independent chunks.
 
     This adapter deliberately has no codec downloader or general-purpose media fallback.
     """
@@ -48,8 +56,9 @@ def iter_frames(
 
     with file:
         track = read_video_track_from_stream(file, file_size)
-        _info, library = resolve_decoder_and_library(library_path)
+        if decoder is None:
+            decoder = resolve_decoder_info(None)
 
-        with OpenH264Decoder(library) as decoder:
+        with OpenH264Decoder(decoder.library) as native_decoder:
             for access_unit in iter_access_units_from_stream(file, track):
-                yield decoder.decode(access_unit)
+                yield native_decoder.decode(access_unit)

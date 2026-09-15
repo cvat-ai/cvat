@@ -71,7 +71,7 @@ def test_resolve_rejects_an_out_of_window_library(monkeypatch: pytest.MonkeyPatc
     monkeypatch.setattr(decoder, "_probe_version", lambda _lib: (1, 0, 0))
 
     with pytest.raises(DecoderVersionMismatchError, match="1.0.0"):
-        decoder.resolve_decoder_and_library(None)
+        decoder.resolve_decoder_info(None)
 
 
 def test_explicit_path_takes_precedence(monkeypatch: pytest.MonkeyPatch) -> None:

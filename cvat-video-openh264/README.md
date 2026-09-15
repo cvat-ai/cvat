@@ -18,27 +18,28 @@ cd cvat-video-openh264 && uv pip install --editable . --group test
 ```python
 from pathlib import Path
 
-from cvat_video_openh264 import iter_frames
+from cvat_video_openh264 import iter_frames, resolve_decoder
 
-for image in iter_frames(
-    Path("0.mp4"),
-    library_path=Path("/opt/codecs/libopenh264.so"),
-):
-    process(image)
+decoder = resolve_decoder(library_path=Path("/opt/codecs/libopenh264.so"))
+
+for chunk in sorted(Path("chunks").glob("*.mp4")):
+    for image in iter_frames(chunk, decoder=decoder):
+        process(image)
 ```
 
-If `library_path` is omitted, the adapter checks `CVAT_OPENH264_LIBRARY` and then the
-platform's normal system-library discovery. Discovery and decoding begin only when the
-returned iterator is advanced.
+`resolve_decoder()` loads and version-validates the library once; passing its result to
+`iter_frames()` keeps repeated calls from reloading the codec. If `library_path` is
+omitted, the adapter checks `CVAT_OPENH264_LIBRARY` and then the platform's normal
+system-library discovery. `iter_frames()` without a `decoder` resolves the library the
+same way, and discovery and decoding begin only when the returned iterator is advanced.
 
 `iter_frames()` processes AVC samples in the sequence defined by the MP4 sample tables.
 The supported format rejects composition offsets, so this sequence is also presentation
-order. The returned generator owns the open chunk file and one decoder; exhausting or
-closing it releases both. Each yielded image owns its pixel data and remains valid after
-iteration advances or the decoder closes.
-When iteration reaches the end normally, the adapter verifies that the decoder produced
-one image for every AVC sample. Closing the generator early releases resources without
-performing this final count check.
+order. The returned generator owns the open chunk file and one native decoder; exhausting
+or closing it releases both. Each call creates its own native decoder, because decoding
+state must not carry over between independent chunks; only the loaded library is shared.
+Each yielded image owns its pixel data and remains valid after iteration advances or the
+decoder closes.
 
 The parser accepts the constrained CVAT-generated MP4/H.264 format:
 
@@ -49,10 +50,9 @@ The parser accepts the constrained CVAT-generated MP4/H.264 format:
 - bounded sample counts and sizes whose offsets remain inside the file.
 
 Malformed boxes, unsupported profiles, reordered composition timestamps, inconsistent
-sample tables, invalid decoder output, and frame-count mismatches raise
-`UnsupportedVideoChunkError`. All public decoder exceptions derive from
-`VideoDecoderError`. `DecoderInfo` and `resolve_decoder()` provide the public decoder
-discovery API.
+sample tables, and invalid decoder output raise `UnsupportedVideoChunkError`. All public
+decoder exceptions derive from `VideoDecoderError`. `DecoderInfo` and `resolve_decoder()`
+provide the public decoder discovery API.
 
 ## Development
 

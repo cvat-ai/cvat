@@ -6,6 +6,7 @@ import zipfile
 from pathlib import Path
 
 import pytest
+
 from scripts.check_artifacts import ArtifactValidationError, validate_artifact
 
 

@@ -50,7 +50,7 @@ def install_fake_decoder(
 
     class FakeDecoder:
         def __init__(self, library: ctypes.CDLL) -> None:
-            # The reader must hand the decoder the library it just resolved.
+            # The reader must hand the decoder the library from the resolved DecoderInfo.
             assert library is fake_library
 
         def __enter__(self) -> "FakeDecoder":
@@ -73,10 +73,9 @@ def install_fake_decoder(
 
     monkeypatch.setattr(
         reader,
-        "resolve_decoder_and_library",
-        lambda _library_path: (
-            DecoderInfo(library_path="fake-openh264", version=(1, 6, 0)),
-            fake_library,
+        "resolve_decoder_info",
+        lambda _library_path: DecoderInfo(
+            library_path="fake-openh264", version=(1, 6, 0), library=fake_library
         ),
     )
     monkeypatch.setattr(reader, "OpenH264Decoder", FakeDecoder)

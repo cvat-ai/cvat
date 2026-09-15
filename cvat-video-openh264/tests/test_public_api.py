@@ -19,8 +19,9 @@ def test_public_decoder_contract_is_typed() -> None:
 
     assert video.iter_frames is reader.iter_frames
     assert video.resolve_decoder is reader.resolve_decoder
-    assert list(signature.parameters) == ["path", "library_path"]
-    assert signature.parameters["library_path"].kind is inspect.Parameter.KEYWORD_ONLY
+    assert list(signature.parameters) == ["path", "decoder"]
+    assert signature.parameters["decoder"].kind is inspect.Parameter.KEYWORD_ONLY
+    assert list(inspect.signature(video.resolve_decoder).parameters) == ["library_path"]
     assert not hasattr(video, "DecoderUnavailableError")
     assert video.VideoDecoderUnavailableError.__name__ == "VideoDecoderUnavailableError"
 

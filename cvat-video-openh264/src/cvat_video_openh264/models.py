@@ -2,13 +2,23 @@
 #
 # SPDX-License-Identifier: MIT
 
-from dataclasses import dataclass
+import ctypes
+from dataclasses import dataclass, field
 
 
 @dataclass(frozen=True)
 class DecoderInfo:
+    """A resolved, loaded and version-validated OpenH264 shared library.
+
+    ``library`` is the loaded handle, so passing one instance to repeated
+    :func:`cvat_video_openh264.iter_frames` calls resolves and loads the codec once
+    instead of once per chunk. It is excluded from comparison and ``repr`` because
+    every load of the same path yields a distinct ``CDLL`` wrapper.
+    """
+
     library_path: str
     version: tuple[int, int, int]
+    library: ctypes.CDLL = field(repr=False, compare=False)
 
 
 @dataclass(frozen=True)
