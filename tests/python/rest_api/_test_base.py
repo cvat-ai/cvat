@@ -7,7 +7,6 @@ from typing import IO
 
 import numpy as np
 import pytest
-from attrs.converters import to_bool
 from cvat_sdk.api_client import models
 from PIL import Image
 from pytest_cases import fixture, fixture_ref, parametrize
@@ -403,6 +402,20 @@ class TestTasksBase:
 
     @fixture(scope="class")
     @parametrize(
+        "use_cache",
+        [
+            *CACHE,
+            pytest.param(
+                False,
+                id="file_system",
+                marks=pytest.mark.xfail(
+                    reason="Creating a task from a cloud .bin file with static cache "
+                    "doesn't work at the moment"
+                ),
+            ),
+        ],
+    )
+    @parametrize(
         "cloud_storage_id",
         [
             pytest.param(
@@ -410,16 +423,16 @@ class TestTasksBase:
                 marks=[
                     pytest.mark.with_external_services,
                     pytest.mark.timeout(60),
-                    pytest.mark.xfail(
-                        to_bool(os.getenv("CVAT_ALLOW_STATIC_CACHE", False)),
-                        reason="Creating a task from a cloud .bin file with static cache doesn't work at the moment",
-                    ),
                 ],
             )
         ],
     )
     def fxt_cloud_bin_pointcloud_task(
-        self, request: pytest.FixtureRequest, cloud_storages, cloud_storage_id: int
+        self,
+        request: pytest.FixtureRequest,
+        cloud_storages,
+        cloud_storage_id: int,
+        use_cache: bool,
     ) -> tuple[ITaskSpec, int]:
         cloud_storage = cloud_storages[cloud_storage_id]
         s3_client = s3.make_client(bucket=cloud_storage["resource"])
@@ -437,6 +450,7 @@ class TestTasksBase:
             image_files=bin_files,
             server_files=server_files,
             cloud_storage_id=cloud_storage_id,
+            use_cache=use_cache,
         )
 
     @fixture(scope="class")

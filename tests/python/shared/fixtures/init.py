@@ -28,6 +28,7 @@ CONTAINER_NAME_FILES = ["docker-compose.tests.yml"]
 
 DC_FILES = CONTAINER_NAME_FILES + [
     "docker-compose.dev.yml",
+    "tests/docker-compose.static_cache.yml",
     "tests/docker-compose.file_share.yml",
     "tests/docker-compose.minio.yml",
     "tests/docker-compose.pat_settings.yml",
@@ -559,8 +560,6 @@ def kube_start(cvat_db_dir, keep_data):
 
 
 def pytest_sessionstart(session: pytest.Session) -> None:
-    if not session.config.getoption("--no-services"):
-        os.environ["CVAT_ALLOW_STATIC_CACHE"] = "true"
     session_start(session)
 
 

@@ -1,0 +1,15 @@
+x-allow-static-cache: &allow-static-cache
+  environment:
+    # Let tests select either FILE_SYSTEM or CACHE in the same deployment.
+    CVAT_ALLOW_STATIC_CACHE: "true"
+
+services:
+  cvat_server: *allow-static-cache
+  cvat_worker_utils: *allow-static-cache
+  cvat_worker_import: *allow-static-cache
+  cvat_worker_export: *allow-static-cache
+  cvat_worker_annotation: *allow-static-cache
+  cvat_worker_webhooks: *allow-static-cache
+  cvat_worker_quality_reports: *allow-static-cache
+  cvat_worker_chunks: *allow-static-cache
+  cvat_worker_consensus: *allow-static-cache
