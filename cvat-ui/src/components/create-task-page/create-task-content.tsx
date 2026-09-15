@@ -208,6 +208,10 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
         this.setState((state) => ({
             ...defaultState,
             projectId: state.projectId,
+            quality: {
+                ...defaultState.quality,
+                validationMode: state.quality.validationMode,
+            },
         }));
     };
 
