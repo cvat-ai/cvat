@@ -56,7 +56,7 @@ from rest_api.utils import (
     import_task_annotations,
 )
 from shared.fixtures.init import container_exec_cvat
-from shared.fixtures.params import CACHE, STORAGE_METHODS
+from shared.fixtures.params import CACHE
 from shared.tasks.interface import ITaskSpec
 from shared.tasks.types import SourceDataType
 from shared.tasks.utils import parse_frame_step, to_rel_frames
