@@ -2,6 +2,8 @@ export function getKeyfromCode(code: string): string | null {
     const mapping: Record<string, string> = {
         ControlLeft: 'ctrl',
         ControlRight: 'ctrl',
+        MetaLeft: 'command',
+        MetaRight: 'command',
         AltLeft: 'alt',
         AltRight: 'alt',
         ShiftLeft: 'shift',
@@ -110,5 +112,5 @@ export function getKeyfromCode(code: string): string | null {
 }
 
 export function isModifier(key: string): boolean {
-    return key === 'ctrl' || key === 'alt' || key === 'shift';
+    return key === 'ctrl' || key === 'command' || key === 'alt' || key === 'shift';
 }

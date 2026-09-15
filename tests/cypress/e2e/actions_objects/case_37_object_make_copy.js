@@ -174,18 +174,18 @@ context('Object make a copy.', () => {
         it('Copy a shape to an another frame.', () => {
             cy.get('#cvat_canvas_shape_1').trigger('mousemove');
             cy.get('#cvat_canvas_shape_1').should('have.class', 'cvat_canvas_shape_activated');
-            cy.get('body').type('{ctrl}c');
+            cy.pressWithPlatformModifier('c');
             cy.get('.cvat-player-next-button').click();
-            cy.get('body').type('{ctrl}v');
+            cy.pressWithPlatformModifier('v');
             cy.get('.cvat-canvas-container').click();
             cy.get('.cvat-player-previous-button').click();
         });
 
-        it('Copy a shape to an another frame after press "Ctrl+V" on the first frame.', () => {
+        it('Copy a shape to another frame after pressing the platform paste shortcut on the first frame.', () => {
             cy.get('#cvat_canvas_shape_1').trigger('mousemove');
             cy.get('#cvat_canvas_shape_1').should('have.class', 'cvat_canvas_shape_activated');
-            cy.get('body').type('{ctrl}c');
-            cy.get('body').type('{ctrl}v');
+            cy.pressWithPlatformModifier('c');
+            cy.pressWithPlatformModifier('v');
             cy.get('.cvat-player-next-button').click();
             cy.get('.cvat-canvas-container').click(300, 300);
             cy.get('.cvat-objects-sidebar-state-item').then((sidebarItems) => {
@@ -193,19 +193,21 @@ context('Object make a copy.', () => {
             });
         });
 
-        it('Copy a shape with holding "Ctrl".', () => {
+        it('Copy a shape with the platform shortcut modifier held.', () => {
             const keyCodeC = 67;
             const keyCodeV = 86;
+            const modifier = Cypress.platform === 'darwin' ? 'meta' : 'ctrl';
+            const modifierKey = `${modifier}Key`;
             cy.get('.cvat_canvas_shape').first().trigger('mousemove');
             cy.get('.cvat_canvas_shape').last().should('have.class', 'cvat_canvas_shape_activated');
-            cy.get('body').type('{ctrl}', { release: false }); // Hold
-            cy.get('body').trigger('keydown', { keyCode: keyCodeC, code: 'KeyC', ctrlKey: true });
-            cy.get('body').trigger('keyup', { keyCode: keyCodeC, code: 'KeyC', ctrlKey: true });
-            cy.get('body').trigger('keydown', { keyCode: keyCodeV, code: 'KeyV', ctrlKey: true });
-            cy.get('body').trigger('keyup', { keyCode: keyCodeC, code: 'KeyC', ctrlKey: true });
+            cy.get('body').type(`{${modifier}}`, { release: false }); // Hold
+            cy.get('body').trigger('keydown', { keyCode: keyCodeC, code: 'KeyC', [modifierKey]: true });
+            cy.get('body').trigger('keyup', { keyCode: keyCodeC, code: 'KeyC', [modifierKey]: true });
+            cy.get('body').trigger('keydown', { keyCode: keyCodeV, code: 'KeyV', [modifierKey]: true });
+            cy.get('body').trigger('keyup', { keyCode: keyCodeC, code: 'KeyC', [modifierKey]: true });
             cy.get('.cvat-canvas-container').click(400, 300);
             cy.get('.cvat-canvas-container').click(500, 300);
-            cy.get('body').type('{ctrl}'); // Unhold
+            cy.get('body').type(`{${modifier}}`); // Unhold
             cy.get('.cvat-canvas-container').click(600, 300);
             cy.get('.cvat_canvas_shape_drawing').should('not.exist');
             cy.get('.cvat-objects-sidebar-state-item').then((sidebarItems) => {

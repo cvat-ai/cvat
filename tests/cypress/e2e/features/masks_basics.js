@@ -129,6 +129,48 @@ context('Manipulations with masks', { scrollBehavior: false }, () => {
             cy.removeAnnotations();
         });
 
+        it('Updates toolbar undo and redo state while drawing a mask', () => {
+            const undoButton = '.cvat-annotation-header-undo-button';
+            const redoButton = '.cvat-annotation-header-redo-button';
+            const polygonAction = [{
+                method: 'polygon-plus',
+                coordinates: [[300, 300], [400, 300], [400, 400], [300, 400]],
+            }, {
+                method: 'brush-size',
+                value: 10,
+            }];
+            const brushStroke = [{
+                method: 'brush',
+                coordinates: [[500, 500], [600, 500]],
+            }];
+
+            cy.startMaskDrawing();
+            cy.get(undoButton).should('have.css', 'pointer-events', 'none');
+            cy.get(redoButton).should('have.css', 'pointer-events', 'none');
+
+            cy.drawMask(polygonAction);
+            cy.get(undoButton).should('not.have.css', 'pointer-events', 'none').trigger('mouseover');
+            cy.get('.ant-tooltip-inner').should('contain.text', 'Undo: Add polygon to mask');
+            cy.get(redoButton).should('have.css', 'pointer-events', 'none');
+
+            cy.drawMask(brushStroke);
+            cy.get(undoButton).click();
+            cy.get('.cvat-brush-tools-toolbox').should('be.visible');
+            cy.get(undoButton).should('not.have.css', 'pointer-events', 'none');
+            cy.get(redoButton).should('not.have.css', 'pointer-events', 'none');
+
+            cy.get(undoButton).click();
+            cy.get('.cvat-brush-tools-toolbox').should('be.visible');
+            cy.get(undoButton).should('have.css', 'pointer-events', 'none');
+            cy.get(redoButton).should('not.have.css', 'pointer-events', 'none').trigger('mouseover');
+            cy.get('.ant-tooltip-inner').should('contain.text', 'Redo: Add polygon to mask');
+
+            cy.get(redoButton).click();
+            cy.get(undoButton).should('not.have.css', 'pointer-events', 'none');
+            cy.get('body').type('{esc}');
+            cy.get('.cvat-brush-tools-toolbox').should('not.be.visible');
+        });
+
         it('Propagate mask to another frame', () => {
             cy.startMaskDrawing();
             cy.drawMask(drawingActions);
@@ -150,7 +192,7 @@ context('Manipulations with masks', { scrollBehavior: false }, () => {
             cy.finishMaskDrawing();
 
             cy.interactAnnotationObjectMenu('#cvat-objects-sidebar-state-item-1', 'Make a copy');
-            cy.get('body').type('{ctrl}z');
+            cy.pressWithPlatformModifier('z');
             cy.get('#cvat_canvas_shape_1').should('exist').and('be.visible');
             cy.goCheckFrameNumber(serverFiles.length - 1);
             cy.get('.cvat-canvas-container').click();
@@ -548,12 +590,12 @@ context('Manipulations with masks', { scrollBehavior: false }, () => {
             readTemporaryMaskPixelAlpha(350, 500).should('be.greaterThan', 0);
             readTemporaryMaskPixelAlpha(650, 500).should('be.greaterThan', 0);
 
-            cy.get('body').type('{ctrl}z');
+            cy.pressWithPlatformModifier('z');
             cy.get('#cvat_canvas_shape_1').should('exist').and('be.visible');
             readTemporaryMaskPixelAlpha(350, 500).should('be.greaterThan', 0);
             readTemporaryMaskPixelAlpha(650, 500).should('equal', 0);
 
-            cy.get('body').type('{ctrl}{shift}z');
+            cy.pressWithPlatformModifier('{shift}z');
             readTemporaryMaskPixelAlpha(650, 500).should('be.greaterThan', 0);
 
             cy.get('.cvat-canvas-container').trigger('mousemove', {
@@ -565,7 +607,7 @@ context('Manipulations with masks', { scrollBehavior: false }, () => {
             cy.get('.cvat-canvas-container').trigger('mousemove', {
                 clientX: 400, clientY: 600, bubbles: true,
             });
-            cy.get('body').type('{ctrl}z');
+            cy.pressWithPlatformModifier('z');
             readTemporaryMaskPixelAlpha(650, 500).should('equal', 0);
             readTemporaryMaskPixelAlpha(350, 600).should('be.greaterThan', 0);
             cy.get('.cvat-canvas-container').trigger('mouseup', { bubbles: true });

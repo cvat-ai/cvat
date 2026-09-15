@@ -25,6 +25,11 @@ require('cy-verify-downloads').addCustomCommand();
 
 let selectedValueGlobal = '';
 
+Cypress.Commands.add('pressWithPlatformModifier', (key) => {
+    const modifier = Cypress.platform === 'darwin' ? 'meta' : 'ctrl';
+    cy.get('body').type(`{${modifier}}${key}`);
+});
+
 Cypress.Commands.add('activateCanvasShape', (selector) => {
     cy.get(selector).then(([shapeWrapper]) => {
         const tagName = (element) => element.tagName.toLowerCase();

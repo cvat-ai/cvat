@@ -388,6 +388,10 @@ The **Settings** tab has the following sections:
 
 #### Requirements configuration
 
+A quality requirement defines which annotations to check and the minimum score they must achieve.
+For example, you can require at least 90% recall for car bounding boxes while using a different
+threshold for pedestrians.
+
 Each enabled quality requirement has its own annotation type, target metric, threshold,
 filter, and comparison options. CVAT provides non-removable base requirements for supported
 annotation types. You can rename a base requirement, change its settings, or disable it.
@@ -488,7 +492,83 @@ The available controls depend on the requirement target:
 | Attribute comparison | Attribute rules | Configures a comparator for individual attributes. The Levenshtein comparator also has a similarity threshold. |
 
 Save the settings after editing them. Changes apply when the next quality report is
-calculated; they do not alter existing reports.
+calculated; they do not alter existing reports. Open the **Requirements** tab to see the results.
+A requirement passes when its score meets or exceeds its threshold.
+
+### Quality target metrics
+
+The target metric determines what a requirement measures. CVAT matches annotations against
+ground truth, then calculates a score. Higher scores indicate better quality.
+
+#### Choose a metric
+
+The descriptions below refer to micro scores, calculated from the combined annotation counts.
+You can also evaluate each label separately, as explained in the next section.
+
+| Metric | What it measures | When to use it |
+| - | - | - |
+| Accuracy | The share of correct annotation comparisons. | To measure overall correctness. |
+| Precision | The share of actual annotations that are correct. | When extra or incorrectly labeled annotations are costly. |
+| Recall | The share of ground-truth annotations found correctly. | When missing objects is costly. |
+| Jaccard Index | Correct matches relative to the combined actual and expected annotations, counting each correct match once. | To account for both extra and missing annotations. |
+| Dice Coefficient | Twice the correct matches divided by the sum of actual and expected annotations. | To balance precision and recall in one score. |
+
+For example, if ground truth contains 10 cars and an annotator correctly marks 8 cars with no
+extra annotations, precision is 100%, recall is 80%, Jaccard Index is 80%, and Dice Coefficient
+is about 88.9%. A recall requirement with a 90% threshold would fail.
+
+#### Choose how to combine labels
+
+Each metric offers three ways to combine results across labels:
+
+| Option | How the score is calculated | When to use it |
+| - | - | - |
+| Micro average | Calculates one score from the combined annotation counts. This is the default. | To evaluate annotations overall; frequent labels have more influence. |
+| Macro average | Calculates a score for each label, then takes their arithmetic mean. | To give rare and frequent labels equal importance. |
+| Worst label | Takes the lowest per-label score. | To require every evaluated label to meet the threshold. |
+
+For example, suppose ground truth contains 90 cars and 10 pedestrians. The annotator correctly
+marks all 90 cars but only 5 pedestrians. Recall is 100% for cars and 50% for pedestrians:
+
+- **Micro average:** `95 / 100 = 95%`.
+- **Macro average:** `(100% + 50%) / 2 = 75%`.
+- **Worst label:** `50%`, for pedestrians.
+
+With an 80% recall threshold, the micro requirement passes, while the macro and worst-label
+requirements fail. Choose worst label if good results for cars must not hide missed pedestrians.
+
+**Empty labels are excluded from both macro average and worst-label scores.** A label is empty
+when it is absent from both the actual annotations and ground truth for the evaluated requirement.
+It does not count toward the number of labels in the macro average and cannot be
+selected as the worst label, even if its per-label metrics are displayed in the confusion matrix.
+In the example above, an unused bicycle label would leave macro recall at 75% and worst-label
+recall at 50%.
+
+Labels with annotations on only one side are still included: for example, a label present in
+ground truth but entirely missed by the annotator has 0% recall. If a metric has a zero denominator
+for an included label, its score is 0%. If there are no applicable annotation samples for the
+requirement, the report shows **Not computed**.
+
+#### Metric formulas
+
+For micro scores, `V` is the number of correct matches, `D` is the number of actual annotations,
+`G` is the number of ground-truth annotations, and `T` is the total number of annotation comparison
+outcomes, including unmatched annotations.
+
+Per-label scores treat the selected label as the positive class and all other labels as negative:
+
+- `TP` (true positives): correct matches for the label.
+- `FP` (false positives): annotations assigned to the label without a matching ground-truth annotation of that label.
+- `FN` (false negatives): ground-truth annotations of the label without a matching actual annotation of that label.
+- `TN` (true negatives): comparison outcomes involving neither an actual nor an expected annotation of the label.
+
+| Metric | Micro score | Per-label score used by macro average and worst label |
+| - | - | - |
+| Accuracy | `V / T` | `(TP + TN) / (TP + TN + FP + FN)` |
+| Precision | `V / D` | `TP / (TP + FP)` |
+| Recall | `V / G` | `TP / (TP + FN)` |
+| Jaccard Index | `V / (D + G - V)` | `TP / (TP + FP + FN)` |
+| Dice Coefficient | `2 * V / (D + G)` | `2 * TP / (2 * TP + FP + FN)` |
 
 ### Project quality settings
 

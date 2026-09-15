@@ -10,6 +10,7 @@ import { useWaveformRegions } from './use-waveform-regions';
 
 export interface AudioIntervalAnnotations {
     navigation: IntervalNavigation;
+    wrapperClassName: string;
 }
 
 interface Params {
@@ -34,5 +35,8 @@ export function useAudioIntervalAnnotations({ waveform }: Params): AudioInterval
     useAudioRecording({ playback: waveform.playback, regions, ready: waveform.ready });
     const navigation = useIntervalNavigation({ viewport: waveform.viewport });
 
-    return { navigation };
+    return {
+        navigation,
+        wrapperClassName: regions.wrapperClassName,
+    };
 }

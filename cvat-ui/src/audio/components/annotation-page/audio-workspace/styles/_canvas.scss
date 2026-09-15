@@ -51,6 +51,7 @@
 .cvat-audio-waveform-wrapper {
     $control-background: rgb(209, 208, 240, 80%);
     $control-hover-background: rgb(209, 208, 240, 95%);
+    $draw-mode-guide-color: red;
 
     position: relative;
     background-color: white;
@@ -64,6 +65,10 @@
 
     ::part(cvat-audio-bulk-edit-boundary) {
         border-color: #1677ff;
+    }
+
+    [part='minimap'] {
+        overflow: hidden;
     }
 
     .cvat-audio-waveform-controls {
@@ -120,6 +125,26 @@
             }
         }
 
+        &.cvat-audio-waveform-interaction-create {
+            cursor: text;
+
+            *::part(hover) {
+                border-color: $draw-mode-guide-color;
+            }
+
+            *::part(wrapper),
+            *::part(region),
+            *::part(region-handle) {
+                cursor: text;
+            }
+        }
+
+        &.cvat-audio-waveform-interaction-snap-hover {
+            *::part(hover) {
+                visibility: hidden;
+            }
+        }
+
         // The hover timestamp is derived from the last pointer event and lags
         // behind a stationary pointer while custom resize auto-scrolls.
         &.cvat-audio-waveform-interaction-auto-scroll {
@@ -133,6 +158,20 @@
         background-color: #f3f4f6;
         border-top: 1px solid #e5e7eb;
         padding: 0;
+
+        [part='minimap-overlay'].cvat-audio-minimap-scrollbar {
+            cursor: grab;
+            touch-action: none;
+
+            &:hover {
+                background-color: rgba(0, 85, 255, 35%) !important;
+            }
+
+            &.cvat-audio-minimap-scrollbar-drag {
+                cursor: grabbing;
+                background-color: rgba(0, 85, 255, 35%) !important;
+            }
+        }
 
         #minimap {
             min-height: 50px;
