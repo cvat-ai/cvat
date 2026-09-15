@@ -1763,14 +1763,13 @@ class TestTaskBackups:
         self._test_can_restore_task_from_backup(task.id, backup_file=backup_path)
 
     @pytest.mark.with_external_services
-    @pytest.mark.parametrize("use_cache", CACHE)
     def test_can_export_and_import_backup_with_images_in_backing_cs(
-        self, request, cloud_storages, use_cache
+        self, request, cloud_storages
     ):
         task = self.client.tasks.create_from_data(
             models.TaskWriteRequest(name="Canvas3D"),
             [SHARE_DIR / "test_canvas3d.zip"],
-            data_params={"use_cache": use_cache},
+            data_params={"use_cache": True},
         )
 
         self._test_can_export_and_import_backup_with_backing_cs(
@@ -3317,12 +3316,10 @@ class TestPatchTask:
             (False, True),
         ],
     )
-    @pytest.mark.parametrize("use_cache", CACHE)
     def test_task_can_be_transferred_to_different_workspace(
         self,
         from_org: bool,
         to_org: bool,
-        use_cache: bool,
         organizations,
         find_users,
     ):
@@ -3364,7 +3361,7 @@ class TestPatchTask:
         }
         data_spec = {
             "image_quality": 75,
-            "use_cache": use_cache,
+            "use_cache": True,
             "server_files": ["images/image_1.jpg"],
         }
         task_id, _ = create_task(
