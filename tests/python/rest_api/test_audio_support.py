@@ -16,6 +16,7 @@ from PIL import Image
 from pytest_cases import fixture, fixture_ref, parametrize
 
 import shared.utils.s3 as s3
+from shared.fixtures.params import STORAGE_METHODS
 from shared.utils.config import (
     SHARE_DIR,
     make_sdk_client,
@@ -84,7 +85,6 @@ class TestAudioTasks:
         assert task.size > 0
 
     @pytest.mark.with_external_services
-    @parametrize("use_cache", [True, False])
     @parametrize(
         "cloud_storage_id",
         [
@@ -92,6 +92,7 @@ class TestAudioTasks:
             2,  # private bucket
         ],
     )
+    @parametrize("use_cache", STORAGE_METHODS)
     def test_can_create_audio_task_from_cloud_data(
         self,
         fxt_test_name: str,
