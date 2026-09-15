@@ -1,0 +1,3 @@
+[tools]
+python = "3.12"
+yarn = "4.9.2"
