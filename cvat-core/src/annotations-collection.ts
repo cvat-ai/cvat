@@ -199,6 +199,132 @@ export default class Collection {
         return updatedStates;
     }
 
+    public updateBatch(objectStates: ObjectState[]): ObjectState[] {
+        checkObjectType('objectStates', objectStates, null, { cls: Array, name: 'Array' });
+
+        const actions = new Set<HistoryActions>();
+        const collectActions = (state: ObjectState): void => {
+            Object.entries(state.updateFlags).forEach(([property, updated]) => {
+                if (!updated) return;
+                if (property === 'points') {
+                    actions.add(HistoryActions.CHANGED_POINTS);
+                } else if (property === 'attributes') {
+                    actions.add(HistoryActions.CHANGED_ATTRIBUTES);
+                } else if (property === 'label') {
+                    actions.add(HistoryActions.CHANGED_LABEL);
+                } else if (property === 'lock') {
+                    actions.add(HistoryActions.CHANGED_LOCK);
+                } else if (property === 'pinned') {
+                    actions.add(HistoryActions.CHANGED_PINNED);
+                } else if (property === 'zOrder') {
+                    actions.add(HistoryActions.CHANGED_ZORDER);
+                } else if (property === 'rotation') {
+                    actions.add(HistoryActions.CHANGED_ROTATION);
+                } else {
+                    throw new ArgumentError(`Batch update does not support "${property}" changes`);
+                }
+            });
+            state.elements.forEach(collectActions);
+        };
+        objectStates.forEach(collectActions);
+        const orientationChange = actions.size === 2 &&
+            actions.has(HistoryActions.CHANGED_POINTS) && actions.has(HistoryActions.CHANGED_ROTATION);
+        if (actions.size !== 1 && !orientationChange) {
+            throw new ArgumentError('Batch update must contain exactly one supported change type');
+        }
+        const action = orientationChange ? HistoryActions.CHANGED_ROTATION : [...actions][0];
+
+        const clientIDs = new Set<number>();
+        const objects = objectStates.map((state) => {
+            const object = this.objects[state.clientID];
+            if (!(object instanceof Shape || object instanceof Track || object instanceof Tag) || object.removed) {
+                throw new ArgumentError(`Object with client ID ${state.clientID} cannot be updated`);
+            }
+            if (object instanceof Tag && ![
+                HistoryActions.CHANGED_ATTRIBUTES,
+                HistoryActions.CHANGED_LABEL,
+                HistoryActions.CHANGED_LOCK,
+            ].includes(action)) {
+                throw new ArgumentError(`Object with client ID ${state.clientID} does not support this change`);
+            }
+            const unlocking = object.lock && state.updateFlags.lock && !state.lock;
+            if ((object.lock && !unlocking) || state.isGroundTruth) {
+                throw new ArgumentError(`Object with client ID ${state.clientID} is not editable`);
+            }
+            if (clientIDs.has(state.clientID)) {
+                throw new ArgumentError(`Object with client ID ${state.clientID} is duplicated`);
+            }
+            clientIDs.add(state.clientID);
+            return object;
+        });
+
+        const updatedStates: ObjectState[] = [];
+        this.history.beginTransaction(action);
+        try {
+            for (let index = 0; index < objectStates.length; index++) {
+                const state = objectStates[index];
+                const object = objects[index];
+                updatedStates.push(object.save(state.frame, state));
+            }
+        } catch (error: unknown) {
+            this.history.abortTransaction();
+            throw error;
+        } finally {
+            this.history.endTransaction();
+        }
+
+        return updatedStates;
+    }
+
+    public removeBatch(objectStates: ObjectState[], force: boolean): number[] {
+        checkObjectType('objectStates', objectStates, null, { cls: Array, name: 'Array' });
+
+        const clientIDs = new Set<number>();
+        const uniqueStates = objectStates.filter((state) => {
+            if (clientIDs.has(state.clientID)) {
+                return false;
+            }
+            clientIDs.add(state.clientID);
+            return true;
+        });
+        const objects = uniqueStates.map((state) => {
+            const object = this.objects[state.clientID];
+            if (!(object instanceof Shape || object instanceof Track || object instanceof Tag)) {
+                throw new ArgumentError(`Object with client ID ${state.clientID} cannot be removed`);
+            }
+            return object;
+        });
+
+        const removedObjects: (Shape | Track | Tag)[] = [];
+        this.history.beginTransaction(HistoryActions.REMOVED_SELECTION);
+        try {
+            for (let index = 0; index < uniqueStates.length; index++) {
+                const state = uniqueStates[index];
+                const object = objects[index];
+                if (object.removed) {
+                    removedObjects.push(object);
+                    continue;
+                }
+                if (object.lock && !force) {
+                    continue;
+                }
+                if (state.isGroundTruth) {
+                    continue;
+                }
+                if (object.delete(state.frame, force)) {
+                    removedObjects.push(object);
+                }
+            }
+        } catch (error: unknown) {
+            this.history.abortTransaction();
+            throw error;
+        } finally {
+            this.history.endTransaction();
+        }
+
+        return removedObjects.map((object) => object.clientID);
+    }
+
     public import(data: Partial<SerializedCollection>): {
         tags: Tag[];
         shapes: Shape[];
@@ -1275,7 +1401,7 @@ export default class Collection {
                         attributes,
                         descriptions: state.descriptions,
                         frame: state.frame,
-                        group: 0,
+                        group: state.group?.id ?? 0,
                         label_id: state.label.id,
                         outside: state.outside || false,
                         occluded: state.occluded || false,
@@ -1305,7 +1431,7 @@ export default class Collection {
                         attributes: attributes.filter((attr) => !labelAttributes[attr.spec_id].mutable),
                         descriptions: state.descriptions,
                         frame: state.frame,
-                        group: 0,
+                        group: state.group?.id ?? 0,
                         source: state.source,
                         label_id: state.label.id,
                         shapes: [

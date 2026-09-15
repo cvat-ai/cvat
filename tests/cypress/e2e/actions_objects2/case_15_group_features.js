@@ -8,6 +8,7 @@
 import { taskName, labelName } from '../../support/const';
 
 context('Group features', () => {
+    const platformModifier = Cypress.platform === 'darwin' ? { metaKey: true } : { ctrlKey: true };
     const caseId = '15';
     const createRectangleShape2Points = {
         points: '2 Points',
@@ -147,6 +148,63 @@ context('Group features', () => {
                         expect($bColorObjectsSidebarStateItem).contain(defaultGroupColorRgb.match(/\d+, \d+, \d+/));
                     });
             });
+        });
+
+        it('Group and ungroup a persistent selection.', () => {
+            for (const sidebarItem of shapeSidebarItemArray) {
+                cy.get(sidebarItem).click({ ...platformModifier });
+                cy.get(sidebarItem).should('have.class', 'cvat-objects-sidebar-state-item-multi-selected');
+            }
+
+            cy.get('.cvat-group-control').click();
+            testShapesFillEquality(false);
+            shapeSidebarItemArray.forEach((sidebarItem) => {
+                cy.get(sidebarItem).should('have.class', 'cvat-objects-sidebar-state-item-multi-selected');
+            });
+
+            cy.contains('.cvat-annotation-header-button', 'Undo').click();
+            testShapesFillEquality(true);
+            cy.contains('.cvat-annotation-header-button', 'Redo').click();
+            testShapesFillEquality(false);
+
+            cy.get('button[aria-label="Open selection actions"]').click();
+            cy.contains('button', 'Ungroup selection').click();
+            testShapesFillEquality(true);
+
+            cy.get('body').type('g');
+            testShapesFillEquality(false);
+            cy.get('body').type('{Shift}g');
+            testShapesFillEquality(true);
+
+            cy.get('body').type('{Esc}');
+            shapeSidebarItemArray.forEach((sidebarItem) => {
+                cy.get(sidebarItem).should('not.have.class', 'cvat-objects-sidebar-state-item-multi-selected');
+            });
+        });
+
+        it('Select objects in the sidebar when sorted by layer.', () => {
+            cy.sidebarItemSortBy('Layer');
+            for (const sidebarItem of shapeSidebarItemArray) {
+                cy.get(sidebarItem).trigger('mousedown', { button: 0, ...platformModifier });
+                cy.get(sidebarItem).should('have.class', 'cvat-objects-sidebar-state-item-multi-selected');
+            }
+            cy.get('body').type('{Esc}');
+            cy.sidebarItemSortBy('ID - ascent');
+        });
+
+        it('Keep selected tracks when changing frames.', () => {
+            for (const sidebarItem of trackSidebarItemArray) {
+                cy.get(sidebarItem).click({ ...platformModifier });
+            }
+            cy.get('.cvat-player-next-button').click();
+            trackSidebarItemArray.forEach((sidebarItem) => {
+                cy.get(sidebarItem).should('have.class', 'cvat-objects-sidebar-state-item-multi-selected');
+            });
+            cy.get('.cvat-player-previous-button').click();
+            trackSidebarItemArray.forEach((sidebarItem) => {
+                cy.get(sidebarItem).should('have.class', 'cvat-objects-sidebar-state-item-multi-selected');
+            });
+            cy.get('body').type('{Esc}');
         });
 
         it('With group button unite two shapes. They have corresponding colors.', () => {
