@@ -165,7 +165,6 @@ jobs:
         id: run_tests
         run: |
           pytest tests/python/
-          CVAT_ALLOW_STATIC_CACHE="true" pytest -k "TestTaskData" tests/python
 
       - name: Creating a log file from cvat containers
         if: failure() && steps.run_tests.conclusion == 'failure'

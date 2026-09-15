@@ -786,8 +786,7 @@ class LambdaQueue:
 
             with get_rq_lock_by_user(queue, user_id):
                 meta = LambdaRQMeta.build_for(
-                    user=request.user,
-                    uuid=request.uuid,
+                    request=request,
                     request_manager_cls=type(self),
                     instance=Job.objects.get(pk=job) if job else Task.objects.get(pk=task),
                     function_id=lambda_func.id,

@@ -6,10 +6,11 @@ import React from 'react';
 import { Col, Row } from 'antd/lib/grid';
 import classNames from 'classnames';
 
-import { AudioIntervalState, Label } from 'cvat-core-wrapper';
+import { AudioIntervalState, Label, LabelType } from 'cvat-core-wrapper';
 import { formatMilliseconds, formatTimeShort } from 'audio/utils/format-audio-time';
 import { ColorBy } from 'reducers';
 import LabelSelector from 'components/label-selector/label-selector';
+import { filterApplicableForTypes } from 'utils/filter-applicable-labels';
 import AudioIntervalActions, { AudioIntervalActionShortcuts } from './audio-interval-actions';
 import AudioIntervalMoreActions from './audio-interval-more-actions';
 import { intervalDurationSeconds, intervalEndSeconds, intervalStartSeconds } from './utils/audio-interval';
@@ -45,6 +46,9 @@ export default function AudioIntervalHeader({
     const start = intervalStartSeconds(interval);
     const end = intervalEndSeconds(interval);
     const duration = intervalDurationSeconds(interval);
+    // Old intervals may have labels that are not applicable to intervals anymore,
+    // so we need to keep them in the list of labels for the selector
+    const labelsForSelector = filterApplicableForTypes([LabelType.INTERVAL, interval.label.type], labels);
 
     const labelSelector = (
         <LabelSelector
@@ -52,7 +56,7 @@ export default function AudioIntervalHeader({
             className='cvat-audio-interval-header-label-selector'
             popupClassName='cvat-audio-interval-header-label-dropdown'
             popupMatchSelectWidth={false}
-            labels={labels}
+            labels={labelsForSelector}
             value={interval.label.id ?? null}
             disabled={isReadonly}
             tooltip='Change current label'
