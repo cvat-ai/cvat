@@ -36718,6 +36718,27 @@
     }
   },
   {
+    "model": "webhooks.webhook",
+    "pk": 7,
+    "fields": {
+      "content_type": "application/json",
+      "created_date": "2022-09-29T08:01:00.441Z",
+      "description": "",
+      "enable_ssl": false,
+      "events": "create:user",
+      "is_active": true,
+      "organization": null,
+      "owner": [
+        "admin1"
+      ],
+      "project": null,
+      "secret": "",
+      "target_url": "http://webhooks.internal",
+      "type": "server",
+      "updated_date": "2022-09-29T08:01:00.441Z"
+    }
+  },
+  {
     "model": "webhooks.webhookdelivery",
     "pk": 1,
     "fields": {

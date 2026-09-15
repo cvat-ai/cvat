@@ -5,9 +5,11 @@
 import React, { useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import Layout from 'antd/lib/layout';
+import { LabelType } from 'cvat-core-wrapper';
 
 import { ActiveControl, CombinedState } from 'reducers';
 import { shallowEqual, ThunkDispatch } from 'utils/redux';
+import { filterApplicableForType } from 'utils/filter-applicable-labels';
 import { updateActiveControl } from 'actions/annotation-actions';
 import {
     audioActions,
@@ -55,6 +57,7 @@ export default function AudioControlsSideBarComponent(): JSX.Element {
         labels: state.annotation.job.labels,
         activeLabelId: state.audio.player.activeLabelId,
     }), shallowEqual);
+    const applicableLabels = filterApplicableForType(LabelType.INTERVAL, labels);
 
     const updateAudioActiveControl = useCallback((control: ActiveControl): void => {
         dispatch(updateActiveControl(control));
@@ -90,7 +93,7 @@ export default function AudioControlsSideBarComponent(): JSX.Element {
                 createRegionShortkey={normalizedKeyMap.CREATE_AUDIO_REGION}
                 recordRegionShortkey={normalizedKeyMap.RECORD_AUDIO_REGION}
                 extendRegionShortkey={normalizedKeyMap.EXTEND_AUDIO_REGION_FROM_LAST}
-                labels={labels}
+                labels={applicableLabels}
                 activeLabelId={activeLabelId}
                 onExtendRegion={onExtendRegion}
                 onSetActiveLabel={onSetActiveLabel}
