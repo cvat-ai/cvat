@@ -8,10 +8,13 @@ from unittest.mock import MagicMock, patch
 from django.conf import settings
 from django.test import TestCase
 
+from cvat.apps.engine.models import Project
+from cvat.apps.iam.models import User
 from cvat.apps.webhooks.exceptions import WebhookDeliveryError
 from cvat.apps.webhooks.models import (
     Webhook,
     WebhookDelivery,
+    WebhookTypeChoice,
 )
 from cvat.apps.webhooks.tasks import send_webhook
 
@@ -21,7 +24,14 @@ from .utils import make_webhook, payload
 class TestSendWebhook(TestCase):
     @classmethod
     def setUpTestData(cls) -> None:
-        cls.webhook = make_webhook()
+        owner = User.objects.create(username="owner")
+        project = Project.objects.create(name="p", owner=owner)
+        cls.webhook = make_webhook(
+            _type=WebhookTypeChoice.PROJECT.value,
+            events="update:project",
+            owner=owner,
+            project=project,
+        )
 
     def setUp(self) -> None:
         job = MagicMock()
