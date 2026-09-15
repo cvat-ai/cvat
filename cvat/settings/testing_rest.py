@@ -14,8 +14,6 @@ PASSWORD_HASHERS = [
 
 REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"]["anon"] = "300/minute"
 
-IMPORT_CACHE_CLEAN_DELAY = timedelta(seconds=30)
-
 # The tests should not fail due to high disk utilization of CI infrastructure that we have no control over
 # But let's keep this check enabled
 HEALTH_CHECK = {

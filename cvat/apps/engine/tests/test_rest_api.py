@@ -3738,10 +3738,7 @@ class TaskImportExportAPITestCase(ExportApiTestBase, ImportApiTestBase):
         self._run_api_v2_tasks_id_export_import(None)
 
     def test_can_remove_export_cache_automatically_after_successful_export(self):
-        from cvat.apps.dataset_manager.cron import (
-            cleanup_export_cache_directory,
-            clear_export_cache,
-        )
+        from cvat.apps.dataset_manager.cron import ExportCacheDirectoryCleaner
 
         self._create_tasks()
         task_id = self.tasks[0]["id"]
@@ -3755,13 +3752,8 @@ class TaskImportExportAPITestCase(ExportApiTestBase, ImportApiTestBase):
                 mock.patch(
                     "cvat.apps.dataset_manager.views.TTL_CONSTS", new={"task": TASK_CACHE_TTL}
                 ),
-                mock.patch(
-                    "cvat.apps.dataset_manager.cron.clear_export_cache",
-                    side_effect=clear_export_cache,
-                ) as mock_clear_export_cache,
             ):
-                cleanup_export_cache_directory()
-                mock_clear_export_cache.assert_not_called()
+                self.assertEqual(ExportCacheDirectoryCleaner().cron_cleanup(), 0)
 
                 self._export_task_backup(
                     user,
@@ -3787,8 +3779,7 @@ class TaskImportExportAPITestCase(ExportApiTestBase, ImportApiTestBase):
                         new={"task": timedelta(seconds=0)},
                     ),
                 ):
-                    cleanup_export_cache_directory()
-                    mock_clear_export_cache.assert_called_once()
+                    self.assertEqual(ExportCacheDirectoryCleaner().cron_cleanup(), 1)
                 self.assertFalse(os.path.exists(file_path))
                 queue.finished_job_registry.remove(rq_job_ids[0], delete_job=True)
 

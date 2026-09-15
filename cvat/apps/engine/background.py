@@ -76,7 +76,6 @@ from cvat.apps.engine.utils import (
     build_annotations_file_name,
     build_backup_file_name,
     get_rq_lock_for_job,
-    import_resource_with_clean_up_after,
     is_dataset_export,
     sendfile,
 )
@@ -583,9 +582,6 @@ class BaseResourceImporter(AbstractRequestManager):
 
         self._init_callback_with_params()
 
-        # redefine here callback and callback args in order to:
-        # - (optional) download file from cloud storage
-        # - remove uploaded file at the end
         if self.import_args.location_config.location == Location.CLOUD_STORAGE:
             self.callback_args = (
                 self.callback_args[0],
@@ -595,9 +591,6 @@ class BaseResourceImporter(AbstractRequestManager):
                 *self.callback_args[1:],
             )
             self.callback = import_resource_from_cloud_storage
-
-        self.callback_args = (self.callback, *self.callback_args)
-        self.callback = import_resource_with_clean_up_after
 
 
 class DatasetImporter(BaseResourceImporter):
