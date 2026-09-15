@@ -196,7 +196,9 @@ export default class Collection {
 
     private _applyZOrderUpdates(frame: number, zOrders: Map<number, number>): ObjectState[] {
         const updatedStates: ObjectState[] = [];
-        this.history.runTransaction(HistoryActions.CHANGED_ZORDER, () => {
+        const ownsTransaction = this.history.beginTransaction(HistoryActions.CHANGED_ZORDER);
+
+        try {
             for (const [clientID, zOrder] of zOrders) {
                 const object = this.objects[clientID];
                 if (!(object instanceof Shape || object instanceof Track) || object.removed || object.lock) {
@@ -224,7 +226,16 @@ export default class Collection {
                 const updatedState = new ObjectState(object.get(frame));
                 updatedStates.push(updatedState);
             }
-        });
+        } catch (error: unknown) {
+            if (ownsTransaction) {
+                this.history.abortTransaction();
+            }
+            throw error;
+        } finally {
+            if (ownsTransaction) {
+                this.history.endTransaction();
+            }
+        }
 
         return updatedStates;
     }
@@ -1669,7 +1680,8 @@ export default class Collection {
         right.attributes = { ...currentState.attributes };
         right.color = currentState.color;
 
-        return this.history.runTransaction(HistoryActions.SPLIT_INTERVAL, () => {
+        const ownsTransaction = this.history.beginTransaction(HistoryActions.SPLIT_INTERVAL);
+        try {
             // update current as left
             const updatedState = interval.get();
             updatedState.stop = position;
@@ -1677,10 +1689,19 @@ export default class Collection {
 
             const [nextClientID] = this.put([right]);
             return nextClientID;
-        });
+        } catch (error: unknown) {
+            if (ownsTransaction) {
+                this.history.abortTransaction();
+            }
+            throw error;
+        } finally {
+            if (ownsTransaction) {
+                this.history.endTransaction();
+            }
+        }
     }
 
-    public save(states: AnnotationState[]): void {
+    public saveStates(states: AnnotationState[]): void {
         checkObjectType('states', states, null, { cls: Array, name: 'Array' });
         if (!states.length) {
             return;
@@ -1698,7 +1719,8 @@ export default class Collection {
             return;
         }
 
-        this.history.runTransaction(action, () => {
+        const ownsTransaction = this.history.beginTransaction(action);
+        try {
             states.forEach((state) => {
                 const object = state.clientID === null ? null : this.objects[state.clientID];
                 if (!object) {
@@ -1718,7 +1740,16 @@ export default class Collection {
                     );
                 }
             });
-        });
+        } catch (error: unknown) {
+            if (ownsTransaction) {
+                this.history.abortTransaction();
+            }
+            throw error;
+        } finally {
+            if (ownsTransaction) {
+                this.history.endTransaction();
+            }
+        }
     }
 
     private _searchEmpty(

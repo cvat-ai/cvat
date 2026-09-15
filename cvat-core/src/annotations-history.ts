@@ -11,8 +11,8 @@ interface ActionItem {
     action: HistoryActions;
     clientIds: number[];
     frame: number | null;
-    undo: () => void;
-    redo: () => void;
+    undo: () => void | Promise<void>;
+    redo: () => void | Promise<void>;
 }
 
 class HistoryTransaction implements ActionItem {
@@ -47,12 +47,6 @@ class HistoryTransaction implements ActionItem {
         }
     }
 
-    public rollback(): void {
-        for (let index = this.actions.length - 1; index >= 0; index--) {
-            this.actions[index].undo();
-        }
-    }
-
     public async redo(): Promise<void> {
         for (const action of this.actions) {
             await action.redo();
@@ -65,14 +59,10 @@ export default class AnnotationHistory {
     private _undo: ActionItem[];
     private _redo: ActionItem[];
     private transaction: HistoryTransaction | null;
-    private transactionDepth: number;
-    private transactionRollbackOnly: boolean;
 
     constructor() {
         this.frozen = false;
         this.transaction = null;
-        this.transactionDepth = 0;
-        this.transactionRollbackOnly = false;
         this.clear();
     }
 
@@ -92,8 +82,8 @@ export default class AnnotationHistory {
 
     public do(
         action: HistoryActions,
-        undo: () => void,
-        redo: () => void,
+        undo: () => void | Promise<void>,
+        redo: () => void | Promise<void>,
         clientIds: number[],
         frame: number | null,
     ): void {
@@ -117,35 +107,27 @@ export default class AnnotationHistory {
         this._redo = [];
     }
 
-    public runTransaction<T>(action: HistoryActions, operation: () => T): T {
-        if (!this.transaction) {
-            this.transaction = new HistoryTransaction(action);
-            this.transactionRollbackOnly = false;
-        }
-        this.transactionDepth++;
-        try {
-            return operation();
-        } catch (error: unknown) {
-            this.transactionRollbackOnly = true;
-            throw error;
-        } finally {
-            this.transactionDepth--;
-            if (!this.transactionDepth) {
-                const { transaction, transactionRollbackOnly } = this;
-                this.transaction = null;
-                this.transactionRollbackOnly = false;
+    public beginTransaction(action: HistoryActions): boolean {
+        if (this.transaction) return false;
 
-                if (transaction) {
-                    if (transactionRollbackOnly) {
-                        transaction.rollback();
-                    } else if (!transaction.empty) {
-                        this._undo = this._undo.slice(-MAX_HISTORY_LENGTH + 1);
-                        this._undo.push(transaction);
-                        this._redo = [];
-                    }
-                }
-            }
-        }
+        this.transaction = new HistoryTransaction(action);
+        return true;
+    }
+
+    public endTransaction(): void {
+        const { transaction } = this;
+        this.transaction = null;
+        if (!transaction || transaction.empty) return;
+
+        this._undo = this._undo.slice(-MAX_HISTORY_LENGTH + 1);
+        this._undo.push(transaction);
+        this._redo = [];
+    }
+
+    public async abortTransaction(): Promise<void> {
+        const { transaction } = this;
+        this.transaction = null;
+        await transaction?.undo();
     }
 
     public async undo(count: number): Promise<number[]> {
