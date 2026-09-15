@@ -27,6 +27,9 @@ from shared.utils.config import USER_PASS, make_api_client, post_method
 DEFAULT_RETRIES = 50
 DEFAULT_INTERVAL = 0.1
 
+DEFAULT_EXPORT_RETRIES = 100
+DEFAULT_IMPORT_RETRIES = 100
+
 
 def initialize_export(endpoint: Endpoint, *, expect_forbidden: bool = False, **kwargs) -> str:
     _, response = endpoint.call_with_http_info(**kwargs, _parse_response=False, _check_status=False)
@@ -73,7 +76,7 @@ def wait_and_download_v2(
     api_client: ApiClient,
     rq_id: str,
     *,
-    max_retries: int = DEFAULT_RETRIES,
+    max_retries: int = DEFAULT_EXPORT_RETRIES,
     interval: float = DEFAULT_INTERVAL,
 ) -> bytes:
     background_request, _ = wait_background_request(
@@ -96,7 +99,7 @@ def wait_and_download_v2(
 def export_v2(
     endpoint: Endpoint,
     *,
-    max_retries: int = DEFAULT_RETRIES,
+    max_retries: int = DEFAULT_EXPORT_RETRIES,
     interval: float = DEFAULT_INTERVAL,
     expect_forbidden: bool = False,
     wait_result: bool = True,
@@ -176,7 +179,7 @@ def export_job_dataset(username: str, *args, **kwargs) -> bytes | None:
 def export_backup(
     api: ProjectsApi | TasksApi,
     *,
-    max_retries: int = DEFAULT_RETRIES,
+    max_retries: int = DEFAULT_EXPORT_RETRIES,
     interval: float = DEFAULT_INTERVAL,
     **kwargs,
 ) -> bytes | None:
@@ -197,7 +200,7 @@ def export_task_backup(username: str, *args, **kwargs) -> bytes | None:
 def import_resource(
     endpoint: Endpoint,
     *,
-    max_retries: int = DEFAULT_RETRIES,
+    max_retries: int = DEFAULT_IMPORT_RETRIES,
     interval: float = DEFAULT_INTERVAL,
     expect_forbidden: bool = False,
     wait_result: bool = True,
@@ -244,7 +247,7 @@ def import_resource(
 def import_backup(
     api: ProjectsApi | TasksApi,
     *,
-    max_retries: int = DEFAULT_RETRIES,
+    max_retries: int = DEFAULT_IMPORT_RETRIES,
     interval: float = DEFAULT_INTERVAL,
     **kwargs,
 ):

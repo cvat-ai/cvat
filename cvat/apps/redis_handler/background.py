@@ -7,7 +7,6 @@ from collections.abc import Callable
 from typing import Any, ClassVar
 
 import django_rq
-from django.conf import settings
 from django.db.models import Model
 from django_rq.queues import DjangoRQ
 from rest_framework import status
@@ -145,22 +144,31 @@ class AbstractRequestManager(metaclass=ABCMeta):
 
         job_status = job.get_status(refresh=False)
 
-        if job_status in {
-            # FUTURE-TODO: cancelling and re-enqueuing a started job should probably be allowed
-            RQJobStatus.STARTED,
-            RQJobStatus.QUEUED,
-            RQJobStatus.DEFERRED,
-        }:
-            return Response(
-                RqIdSerializer({"rq_id": job.id}).data,
-                status=status.HTTP_409_CONFLICT,
-            )
-
-        if job_status == RQJobStatus.SCHEDULED:
-            job.cancel(enqueue_dependents=settings.ONE_RUNNING_JOB_IN_QUEUE_PER_USER)
-
-        job.delete()
-        return None
+        match job_status:
+            case (
+                # FUTURE-TODO: cancelling and re-enqueuing a started job should probably be allowed
+                RQJobStatus.STARTED
+                | RQJobStatus.QUEUED
+                | RQJobStatus.DEFERRED
+                | RQJobStatus.SCHEDULED
+            ):
+                return Response(
+                    RqIdSerializer({"rq_id": job.id}).data,
+                    status=status.HTTP_409_CONFLICT,
+                )
+            case (
+                RQJobStatus.FINISHED
+                | RQJobStatus.FAILED
+                | RQJobStatus.CANCELED
+                | RQJobStatus.STOPPED
+            ):
+                # The request ID is reused as the RQ job ID, and RQ's enqueue just overwrites
+                # the existing job hash without dropping its result/failure TTL or registry entry.
+                # Delete the terminal job so the new one starts from a clean slate.
+                job.delete()
+                return None
+            case _:
+                raise ValueError(f"Unexpected RQ job status, got {job_status!r}")
 
     def build_meta(self, *, request_id: str) -> dict[str, Any]:
         return BaseRQMeta.build_from_instance(

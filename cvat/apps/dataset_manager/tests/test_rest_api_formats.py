@@ -36,7 +36,7 @@ from rest_framework import status
 
 import cvat.apps.dataset_manager as dm
 from cvat.apps.dataset_manager.bindings import CvatDataExtractor, TaskData
-from cvat.apps.dataset_manager.cron import clear_export_cache
+from cvat.apps.dataset_manager.cron import ExportCacheDirectoryCleaner
 from cvat.apps.dataset_manager.task import TaskAnnotation
 from cvat.apps.dataset_manager.tests.utils import (
     TestDir,
@@ -1490,6 +1490,7 @@ class ExportBehaviorTest(_DbTestBase):
         pass
 
     def setUp(self):
+        super().setUp()
         self.export_cache_lock = multiprocessing.Lock()
 
     @contextmanager
@@ -1704,7 +1705,7 @@ class ExportBehaviorTest(_DbTestBase):
                     side_effect(set_condition, clear_removed_the_file),
                 )
 
-                clear_export_cache(file_path=Path(file_path))
+                ExportCacheDirectoryCleaner().cron_cleanup()
                 set_condition(clear_has_been_finished)
 
                 mock_os_remove.assert_not_called()
@@ -1856,9 +1857,16 @@ class ExportBehaviorTest(_DbTestBase):
                 mock_osp_exists.assert_called()
 
         def _clear(*_, file_path: str):
+            import sys
             from os import remove as original_remove
 
             from cvat.apps.dataset_manager.util import LockNotAvailableError
+
+            swallowed_exceptions = []
+
+            def patched_log_exception(logger=None, exc_info=True):
+                cur_exc_info = sys.exc_info() if exc_info is True else exc_info
+                swallowed_exceptions.append(cur_exc_info[1] if cur_exc_info else None)
 
             with (
                 patch(
@@ -1872,20 +1880,20 @@ class ExportBehaviorTest(_DbTestBase):
                 patch(
                     "cvat.apps.dataset_manager.views.TTL_CONSTS", new={"task": timedelta(seconds=0)}
                 ),
+                patch("cvat.apps.dataset_manager.cron.log_exception", new=patched_log_exception),
             ):
                 mock_os_remove.side_effect = chain_side_effects(
                     original_remove,
                     side_effect(set_condition, clear_removed_the_file),
                 )
 
-                exited_by_timeout = False
-                try:
-                    clear_export_cache(file_path=Path(file_path))
-                except LockNotAvailableError:
-                    # should come from waiting for get_export_cache_lock
-                    exited_by_timeout = True
+                ExportCacheDirectoryCleaner().cron_cleanup()
 
-                assert exited_by_timeout, "LockNotAvailableError should have been raised"
+                # should come from waiting for get_export_cache_lock
+                assert any(
+                    isinstance(e, LockNotAvailableError) for e in swallowed_exceptions
+                ), "LockNotAvailableError should have been raised"
+                mock_os_remove.assert_not_called()
 
         # The problem checked is TOCTOU / race condition for file existence check and
         # further file reading / removal. There are several possible variants of the problem.
@@ -2184,15 +2192,20 @@ class ExportBehaviorTest(_DbTestBase):
             patch("cvat.apps.dataset_manager.views.TTL_CONSTS", new={"task": timedelta(seconds=0)}),
         ):
             export_path = export(dst_format=format_name, task_id=task_id)
-            clear_export_cache(file_path=Path(export_path))
+            self.assertEqual(ExportCacheDirectoryCleaner().cron_cleanup(), 1)
 
         self.assertFalse(osp.isfile(export_path))
 
-    def test_cleanup_can_fail_if_no_file(self):
-        from cvat.apps.dataset_manager.util import CacheFileOrDirPathParseError
+    def test_cleanup_can_skip_unparsable_files(self):
+        from cvat.apps.dataset_manager.util import ExportCacheManager
 
-        with self.assertRaises(CacheFileOrDirPathParseError):
-            clear_export_cache(file_path=Path("non existent file path"))
+        unparsable_file = Path(ExportCacheManager.ROOT) / "unparsable_file_name"
+        unparsable_file.touch()
+        try:
+            self.assertEqual(ExportCacheDirectoryCleaner().cron_cleanup(), 0)
+            self.assertTrue(unparsable_file.is_file())
+        finally:
+            unparsable_file.unlink(missing_ok=True)
 
     def test_cleanup_can_defer_removal_if_file_is_used_recently(self):
         from os import remove as original_remove
@@ -2210,14 +2223,12 @@ class ExportBehaviorTest(_DbTestBase):
             ) as mock_os_remove,
         ):
             export_path = export(dst_format=format_name, task_id=task_id)
-            clear_export_cache(file_path=Path(export_path))
+            self.assertEqual(ExportCacheDirectoryCleaner().cron_cleanup(), 0)
             mock_os_remove.assert_not_called()
 
         self.assertTrue(osp.isfile(export_path))
 
     def test_cleanup_cron_job_can_delete_cached_files(self):
-        from cvat.apps.dataset_manager.cron import cleanup_export_cache_directory
-
         def _get_project_task_job_ids():
             project = self._create_project(projects["main"])
             project_id = project["id"]
@@ -2250,13 +2261,8 @@ class ExportBehaviorTest(_DbTestBase):
                         "cvat.apps.dataset_manager.views.TTL_CONSTS",
                         new={resource: timedelta(seconds=0)},
                     ),
-                    patch(
-                        "cvat.apps.dataset_manager.cron.clear_export_cache",
-                        side_effect=clear_export_cache,
-                    ) as mock_clear_export_cache,
                 ):
-                    cleanup_export_cache_directory()
-                    mock_clear_export_cache.assert_called_once()
+                    self.assertEqual(ExportCacheDirectoryCleaner().cron_cleanup(), 1)
 
                 self.assertFalse(osp.exists(export_path))
 
