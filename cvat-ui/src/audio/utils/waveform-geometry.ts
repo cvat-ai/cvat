@@ -8,6 +8,9 @@ export const ZOOM_MIN = 1;
 export const ZOOM_MAX = 300;
 export const MIN_WAVEFORM_PIXELS_PER_SECOND = 8;
 
+const FIT_INTERVAL_SAFE_INSET_RATIO = 0.1;
+const FIT_INTERVAL_MIN_SAFE_INSET_RATIO = 0.03;
+
 export const MIN_INTERVAL_DURATION = 0.001;
 export const INTERVAL_BOUNDARY_EPSILON = 0.001;
 export const MIN_RECORDING_DURATION = 0.05;
@@ -38,7 +41,7 @@ export function computeWaveformZoom(displayZoom: number, durationSec: number, co
     return computeWaveformBasePixelsPerSecond(durationSec, containerWidth) * displayZoom;
 }
 
-export function computeFitIntervalPixelsPerSecond(
+function computeFitIntervalPixelsPerSecond(
     start: number,
     end: number,
     duration: number,
@@ -65,6 +68,72 @@ export function computeFitIntervalPixelsPerSecond(
     }
 
     return viewportWidth / duration;
+}
+
+export interface FitIntervalGeometry {
+    pixelsPerSecond: number;
+    safeInset: number;
+}
+
+export function computeFitIntervalGeometry(
+    start: number,
+    end: number,
+    duration: number,
+    viewportWidth: number,
+    basePixelsPerSecond: number,
+): FitIntervalGeometry {
+    const minimumSafeInset = viewportWidth * FIT_INTERVAL_MIN_SAFE_INSET_RATIO;
+    const maximumSafeInset = viewportWidth * FIT_INTERVAL_SAFE_INSET_RATIO;
+    const trackWidth = duration * basePixelsPerSecond;
+    const intervalStart = start * basePixelsPerSecond;
+    const intervalEnd = end * basePixelsPerSecond;
+    const intervalWidth = intervalEnd - intervalStart;
+    const spaceBeforeInterval = intervalStart;
+    const spaceAfterInterval = trackWidth - intervalEnd;
+    const freeViewportSpace = viewportWidth - intervalWidth;
+    let maximumFitInset = 0;
+
+    // Center the interval when it, along with equal insets, fits inside the viewport.
+    if (freeViewportSpace > 0) {
+        const centeredInset = Math.min(
+            freeViewportSpace / 2,
+            spaceBeforeInterval,
+            spaceAfterInterval,
+        );
+        if (centeredInset > maximumFitInset) {
+            maximumFitInset = centeredInset;
+        }
+    }
+
+    // Anchor the viewport at the track start when the interval end is visible there.
+    if (intervalEnd <= viewportWidth) {
+        const startAnchoredInset = Math.min(
+            viewportWidth - intervalEnd,
+            spaceAfterInterval,
+        );
+        if (startAnchoredInset > maximumFitInset) {
+            maximumFitInset = startAnchoredInset;
+        }
+    }
+
+    // Anchor the viewport at the track end when the interval start is visible there.
+    const viewportStartAtTrackEnd = trackWidth - viewportWidth;
+    if (intervalStart >= viewportStartAtTrackEnd) {
+        const endAnchoredInset = Math.min(
+            intervalStart - viewportStartAtTrackEnd,
+            spaceBeforeInterval,
+        );
+        if (endAnchoredInset > maximumFitInset) {
+            maximumFitInset = endAnchoredInset;
+        }
+    }
+
+    const safeInset = clamp(maximumFitInset, minimumSafeInset, maximumSafeInset);
+
+    return {
+        pixelsPerSecond: computeFitIntervalPixelsPerSecond(start, end, duration, viewportWidth, safeInset),
+        safeInset,
+    };
 }
 
 export function centeredScrollOffsetForTime(

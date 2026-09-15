@@ -103,7 +103,7 @@ context('Audio annotation. Interval actions.', () => {
             expectCursorAtIntervalBoundary('end');
         });
 
-        it('Fits the selected interval into the waveform viewport with I', () => {
+        it('Fits the selected interval into the waveform viewport with I shortcut', () => {
             createInterval(300, 450);
             cy.audioSliderSetValue('cvat-audio-zoom-control', '{downarrow}', 40);
             cy.getAudioWaveformScrollContainer().then(($scroll) => {
