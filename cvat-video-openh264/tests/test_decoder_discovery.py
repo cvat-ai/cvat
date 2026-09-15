@@ -98,11 +98,15 @@ def test_posix_falls_back_to_system_discovery(monkeypatch: pytest.MonkeyPatch) -
     assert _discover_library_path(None) == "/usr/lib/libopenh264.so"
 
 
-def test_windows_requires_an_absolute_explicit_path(monkeypatch: pytest.MonkeyPatch) -> None:
+@pytest.mark.parametrize("from_environment", [False, True])
+def test_windows_accepts_a_relative_configured_path(
+    monkeypatch: pytest.MonkeyPatch, from_environment: bool
+) -> None:
     monkeypatch.setattr(decoder.os, "name", "nt")
+    library_path = "relative\\libopenh264.dll"
+    monkeypatch.setenv("CVAT_OPENH264_LIBRARY", library_path)
 
-    with pytest.raises(VideoDecoderUnavailableError, match="must be absolute on Windows"):
-        _discover_library_path("relative\\libopenh264.dll")
+    assert _discover_library_path(None if from_environment else library_path) == library_path
 
 
 def test_windows_does_not_search_path_or_cwd(monkeypatch: pytest.MonkeyPatch) -> None:

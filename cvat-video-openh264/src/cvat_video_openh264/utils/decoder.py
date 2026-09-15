@@ -36,12 +36,6 @@ from .i420 import i420_to_rgb
 MIN_SUPPORTED_VERSION = (1, 6, 0)
 MAX_SUPPORTED_MAJOR = 2
 
-# LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR | LOAD_LIBRARY_SEARCH_SYSTEM32. On Windows this pins
-# the load-time dependency search to the codec's own directory and System32 so a DLL
-# planted in the current working directory or on PATH cannot be picked up as one of
-# libopenh264's dependencies.
-_WINDOWS_SAFE_LOAD_FLAGS = 0x00000100 | 0x00000800
-
 
 def load_library(library_path: str) -> ctypes.CDLL:
     """Load a shared library and bind the OpenH264 entry points this adapter calls.
@@ -55,10 +49,7 @@ def load_library(library_path: str) -> ctypes.CDLL:
     """
 
     try:
-        if os.name == "posix":
-            library = ctypes.CDLL(library_path)
-        else:
-            library = ctypes.CDLL(library_path, winmode=_WINDOWS_SAFE_LOAD_FLAGS)
+        library = ctypes.CDLL(library_path)
     except OSError as exc:
         raise VideoDecoderUnavailableError(
             f"Could not load a compatible OpenH264 library from {library_path!r}: {exc}"
@@ -83,9 +74,8 @@ def _discover_library_path(library_path: os.PathLike[str] | str | None) -> str:
     """Resolve the OpenH264 library path without loading it.
 
     An explicit ``library_path`` or ``CVAT_OPENH264_LIBRARY`` is authoritative. When
-    neither is set, only POSIX platforms fall back to system-library discovery. Windows
-    intentionally requires an explicit absolute path so the current working directory and
-    ``PATH`` never influence codec selection.
+    neither is set, only POSIX platforms fall back to system-library discovery. Configured
+    paths are passed unchanged to ``ctypes.CDLL`` on every platform.
     """
 
     if library_path is not None:
@@ -102,11 +92,6 @@ def _discover_library_path(library_path: os.PathLike[str] | str | None) -> str:
         )
 
     if configured_path:
-        if os.name != "posix" and not os.path.isabs(configured_path):
-            raise VideoDecoderUnavailableError(
-                "An explicit OpenH264 library path must be absolute on Windows so the "
-                "current working directory and PATH never influence codec selection."
-            )
         return configured_path
 
     resolved_path = ctypes.util.find_library("openh264") if os.name == "posix" else None
