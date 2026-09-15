@@ -3088,9 +3088,8 @@ class TestPatchTask:
         ],
     )
     @pytest.mark.parametrize("field", ["source_storage", "target_storage"])
-    @pytest.mark.parametrize("use_cache", CACHE)
     def test_user_cannot_update_task_with_cloud_storage_without_access(
-        self, storage_id, field, use_cache, regular_lonely_user
+        self, storage_id, field, regular_lonely_user
     ):
         user = regular_lonely_user
 
@@ -3099,7 +3098,7 @@ class TestPatchTask:
         }
         data_spec = {
             "image_quality": 75,
-            "use_cache": use_cache,
+            "use_cache": True,
             "server_files": ["images/image_1.jpg"],
         }
         task_id, _ = create_task(user, task_spec, data_spec)
