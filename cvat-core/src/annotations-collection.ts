@@ -1395,7 +1395,7 @@ export default class Collection {
                         attributes,
                         descriptions: state.descriptions,
                         frame: state.frame,
-                        group: state.group?.id || 0,
+                        group: state.group?.id ?? 0,
                         label_id: state.label.id,
                         lock: state.lock,
                         hidden: state.hidden,
