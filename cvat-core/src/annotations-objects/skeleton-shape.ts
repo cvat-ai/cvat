@@ -23,7 +23,7 @@ export class SkeletonShape extends Shape {
     constructor(data: SerializedShape, clientID: number, color: string, injection: AnnotationInjection) {
         super(data, clientID, color, injection);
         this.shapeType = ShapeType.SKELETON;
-        this.pinned = data.pinned ?? false;
+        this.pinned = false;
         this.rotation = 0;
         this.occluded = false;
         this.points = [];

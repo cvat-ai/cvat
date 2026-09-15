@@ -280,34 +280,40 @@ export default class Collection {
         checkObjectType('objectStates', objectStates, null, { cls: Array, name: 'Array' });
 
         const clientIDs = new Set<number>();
-        const objects = objectStates.map((state) => {
-            const object = this.objects[state.clientID];
-            if (!(object instanceof Shape || object instanceof Track || object instanceof Tag) || object.removed) {
-                throw new ArgumentError(`Object with client ID ${state.clientID} cannot be removed`);
-            }
-            if (object.lock && !force) {
-                throw new ArgumentError(`Object with client ID ${state.clientID} is locked`);
-            }
-            if (state.isGroundTruth) {
-                throw new ArgumentError(`Ground truth object with client ID ${state.clientID} cannot be removed`);
-            }
+        const uniqueStates = objectStates.filter((state) => {
             if (clientIDs.has(state.clientID)) {
-                throw new ArgumentError(`Object with client ID ${state.clientID} is duplicated`);
+                return false;
             }
             clientIDs.add(state.clientID);
+            return true;
+        });
+        const objects = uniqueStates.map((state) => {
+            const object = this.objects[state.clientID];
+            if (!(object instanceof Shape || object instanceof Track || object instanceof Tag)) {
+                throw new ArgumentError(`Object with client ID ${state.clientID} cannot be removed`);
+            }
             return object;
         });
 
         const removedObjects: (Shape | Track | Tag)[] = [];
         this.history.beginTransaction(HistoryActions.REMOVED_SELECTION);
         try {
-            for (let index = 0; index < objectStates.length; index++) {
-                const state = objectStates[index];
+            for (let index = 0; index < uniqueStates.length; index++) {
+                const state = uniqueStates[index];
                 const object = objects[index];
-                if (!object.delete(state.frame, force)) {
-                    throw new ArgumentError(`Object with client ID ${state.clientID} could not be removed`);
+                if (object.removed) {
+                    removedObjects.push(object);
+                    continue;
                 }
-                removedObjects.push(object);
+                if (object.lock && !force) {
+                    continue;
+                }
+                if (state.isGroundTruth) {
+                    continue;
+                }
+                if (object.delete(state.frame, force)) {
+                    removedObjects.push(object);
+                }
             }
         } catch (error: unknown) {
             this.history.abortTransaction();
@@ -1397,10 +1403,6 @@ export default class Collection {
                         frame: state.frame,
                         group: state.group?.id ?? 0,
                         label_id: state.label.id,
-                        lock: state.lock,
-                        hidden: state.hidden,
-                        pinned: state.updateFlags.pinned ? state.pinned : undefined,
-                        color: state.updateFlags.color ? state.color : undefined,
                         outside: state.outside || false,
                         occluded: state.occluded || false,
                         points: state.shapeType === 'mask' ? (() => {
@@ -1416,10 +1418,6 @@ export default class Collection {
                             frame: element.frame,
                             group: 0,
                             label_id: element.label.id,
-                            lock: element.lock,
-                            hidden: element.hidden,
-                            pinned: element.updateFlags.pinned ? element.pinned : undefined,
-                            color: element.updateFlags.color ? element.color : undefined,
                             points: [...element.points],
                             rotation: 0,
                             type: element.shapeType,
@@ -1433,11 +1431,7 @@ export default class Collection {
                         attributes: attributes.filter((attr) => !labelAttributes[attr.spec_id].mutable),
                         descriptions: state.descriptions,
                         frame: state.frame,
-                        group: state.group?.id || 0,
-                        lock: state.lock,
-                        hidden: state.hidden,
-                        pinned: state.updateFlags.pinned ? state.pinned : undefined,
-                        color: state.updateFlags.color ? state.color : undefined,
+                        group: state.group?.id ?? 0,
                         source: state.source,
                         label_id: state.label.id,
                         shapes: [

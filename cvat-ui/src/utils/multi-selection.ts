@@ -20,6 +20,7 @@ interface SelectionGroupState {
     canGroup: boolean;
     canUngroup: boolean;
     alreadyInSameGroup: boolean;
+    disabledReason: string | null;
 }
 
 interface SelectionAttributeState {
@@ -108,11 +109,14 @@ export function getSelectionGroupState(states: ObjectState[]): SelectionGroupSta
     const groupID = states[0]?.group?.id || 0;
     const alreadyInSameGroup = states.length > 1 && !!groupID &&
         states.every((state: ObjectState): boolean => state.group?.id === groupID);
+    const disabledReason = states.some((state: ObjectState): boolean => state.isGroundTruth) ?
+        'Ground truth objects cannot be grouped or ungrouped' : null;
 
     return {
-        canGroup: states.length > 1 && !alreadyInSameGroup,
-        canUngroup: states.some((state: ObjectState): boolean => !!state.group?.id),
+        canGroup: disabledReason === null && states.length > 1 && !alreadyInSameGroup,
+        canUngroup: disabledReason === null && states.some((state: ObjectState): boolean => !!state.group?.id),
         alreadyInSameGroup,
+        disabledReason,
     };
 }
 

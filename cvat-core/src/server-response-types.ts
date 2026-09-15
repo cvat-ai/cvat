@@ -283,11 +283,6 @@ export interface SerializedShape {
     rotation: number;
     z_order: number;
     type: ShapeType;
-    // Client-side state used when cloning; absent from server responses.
-    pinned?: boolean;
-    lock?: boolean;
-    hidden?: boolean;
-    color?: string;
 }
 
 export interface SerializedTrack {
@@ -310,11 +305,6 @@ export interface SerializedTrack {
         z_order: number;
     }[];
     elements: Omit<SerializedTrack, 'elements'>[];
-    // Client-side state used when cloning; absent from server responses.
-    pinned?: boolean;
-    lock?: boolean;
-    hidden?: boolean;
-    color?: string;
 }
 
 export interface SerializedTag {

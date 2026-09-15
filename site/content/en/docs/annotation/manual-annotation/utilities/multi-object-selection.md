@@ -183,13 +183,14 @@ At least two objects must be selected, and the action is disabled if they alread
 
 Select **Ungroup selection** to remove selected objects from their groups.
 This action is available when at least one selected object belongs to a group.
+Grouping and ungrouping are unavailable when the selection contains a ground-truth object.
 
 ### Deleting a selection
 
-Select **Delete selection** to delete all selected objects as one undoable operation.
-Regular deletion is rejected when any selected object is locked.
+Select **Delete selection** to delete the eligible selected objects as one undoable operation.
+Regular deletion skips locked objects, which remain selected.
 Use **Shift+Delete** or **Shift+Backspace** to force-delete locked selected objects.
-Ground-truth objects cannot be deleted.
+Ground-truth objects are always skipped and remain selected.
 
 The regular object shortcuts also work with an active selection.
 For example, press **L** to lock or unlock the selection, **P** to pin or unpin it,
@@ -201,8 +202,9 @@ Press **Ctrl+C** on Windows or Linux, or **Command+C** on macOS, to copy the sel
 Press **Ctrl+V** or **Command+V** to start interactive placement.
 
 CVAT displays transparent preview objects. Move the pointer to the required position and click to place the selection.
-The new objects preserve their relative geometry, labels, attributes, object types, rotations, groups,
-lock and pin states, and instance colors. Pasted objects become the active selection.
+The new objects preserve their relative geometry, labels, attributes, object types, rotations, and groups.
+Lock, visibility, pin, and instance color use the same defaults as single-object copies.
+Pasted objects become the active selection.
 
 ![Copying and pasting multiple selected objects](/images/multi-object-selection-copy-paste.gif)
 

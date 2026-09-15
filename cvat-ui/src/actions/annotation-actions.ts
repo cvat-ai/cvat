@@ -689,6 +689,7 @@ function snapshotSelectionState(state: ObjectState): SerializedData {
     const serialized = state.serialize();
     return {
         ...serialized,
+        source: Source.MANUAL,
         attributes: { ...serialized.attributes },
         descriptions: [...(serialized.descriptions || [])],
         points: serialized.points ? [...serialized.points] : undefined,
@@ -698,6 +699,10 @@ function snapshotSelectionState(state: ObjectState): SerializedData {
         serverID: undefined,
         parentID: undefined,
         keyframes: undefined,
+        lock: false,
+        hidden: false,
+        pinned: undefined,
+        color: undefined,
     };
 }
 
@@ -727,19 +732,14 @@ export function removeSelectionAsync(force: boolean): ThunkAction {
             return;
         }
 
-        if (selectedStates.some((state: ObjectState): boolean => state.isGroundTruth)) {
-            dispatch({
-                type: AnnotationActionTypes.REMOVE_OBJECT_FAILED,
-                payload: { error: new Error('Ground truth objects cannot be removed') },
-            });
-            return;
-        }
-
         try {
             const removedIDs: number[] = await jobInstance.annotations.removeBatch(selectedStates, force);
             if (removedIDs.length) {
                 await jobInstance.logger.log(EventScope.deleteObject, { count: removedIDs.length });
-                dispatch(selectObjects([]));
+                const removedIDSet = new Set(removedIDs);
+                dispatch(selectObjects(selectedStatesID.filter((clientID: number): boolean => (
+                    !removedIDSet.has(clientID)
+                ))));
                 await dispatch(fetchAnnotationsAsync());
             }
         } catch (error) {
@@ -811,27 +811,6 @@ function translateSelectionState(
     };
 }
 
-function createCopiedObjectState(serialized: SerializedData): ObjectState {
-    const objectState = new cvat.classes.ObjectState(serialized);
-    const preserveClientState = (state: ObjectState, source: SerializedData): void => {
-        if (typeof source.pinned === 'boolean') {
-            Object.assign(state, { pinned: source.pinned });
-        }
-        if (typeof source.color === 'string') {
-            Object.assign(state, { color: source.color });
-        }
-        state.elements.forEach((element, index) => {
-            const sourceElement = source.elements?.[index];
-            if (sourceElement) {
-                preserveClientState(element, sourceElement);
-            }
-        });
-    };
-
-    preserveClientState(objectState, serialized);
-    return objectState;
-}
-
 function placeCopiedStatesAsync(
     copiedStates: SerializedData[],
     dx: number,
@@ -857,7 +836,7 @@ function placeCopiedStatesAsync(
             currentZOrder,
             state.objectType === ObjectType.TAG ? undefined : geometry,
         )).filter((state): state is SerializedData => state !== null);
-        const statesToCreate = translatedStates.map((state): ObjectState => createCopiedObjectState(state));
+        const statesToCreate = translatedStates.map((state): ObjectState => new cvat.classes.ObjectState(state));
         if (!statesToCreate.length) {
             return;
         }
@@ -918,7 +897,7 @@ function startPastePlacementAsync(copiedStates: SerializedData[], selectCreated:
                 elements: state.elements?.map((element) => withPreviewIDs(element, clientID)) || [],
             };
         };
-        const initialStates = shapes.map((state): ObjectState => createCopiedObjectState(withPreviewIDs(
+        const initialStates = shapes.map((state): ObjectState => new cvat.classes.ObjectState(withPreviewIDs(
             translateSelectionState(state, frameNumber, 0, 0, currentZOrder) as SerializedData,
         )));
 
@@ -1245,12 +1224,12 @@ export function undoActionAsync(): ThunkAction {
                 await dispatch(fetchAnnotationsAsync());
             }
 
-            if ([
-                HistoryActions.CHANGED_SELECTION,
-                HistoryActions.CHANGED_HIDDEN_AND_SELECTION,
-                HistoryActions.REMOVED_SELECTION,
-            ].includes(undo[0] as HistoryActions)) {
+            if ([HistoryActions.CHANGED_SELECTION, HistoryActions.CHANGED_HIDDEN_AND_SELECTION]
+                .includes(undo[0] as HistoryActions)) {
                 dispatch(selectObjects(affectedIDs));
+            } else if (undo[0] === HistoryActions.REMOVED_SELECTION) {
+                const { selectedStatesID } = getStore().getState().annotation.annotations;
+                dispatch(selectObjects([...new Set([...selectedStatesID, ...affectedIDs])]));
             }
         } catch (error) {
             dispatch({
@@ -1295,8 +1274,6 @@ export function redoActionAsync(): ThunkAction {
             if ([HistoryActions.CHANGED_SELECTION, HistoryActions.CHANGED_HIDDEN_AND_SELECTION]
                 .includes(redo[0] as HistoryActions)) {
                 dispatch(selectObjects(affectedIDs));
-            } else if (redo[0] === HistoryActions.REMOVED_SELECTION) {
-                dispatch(selectObjects([]));
             }
         } catch (error) {
             dispatch({
@@ -1876,7 +1853,8 @@ export function groupSelectedAnnotationsAsync(reset = false): ThunkAction {
         const selectedStates = states.filter((state: ObjectState): boolean => (
             selectedIDs.has(state.clientID as number)
         ));
-        if ((reset && !selectedStates.some((state: ObjectState): boolean => !!state.group?.id)) ||
+        if (selectedStates.some((state: ObjectState): boolean => state.isGroundTruth) ||
+            (reset && !selectedStates.some((state: ObjectState): boolean => !!state.group?.id)) ||
             (!reset && selectedStates.length < 2)) {
             return;
         }

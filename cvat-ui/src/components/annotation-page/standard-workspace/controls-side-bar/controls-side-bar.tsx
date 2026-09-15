@@ -58,6 +58,7 @@ interface Props {
     selectedObjectsCount: number;
     hasGroupedSelectedObjects: boolean;
     selectedObjectsInSameGroup: boolean;
+    selectionGroupDisabledReason: string | null;
 
     updateActiveControl(activeControl: ActiveControl): void;
     rotateFrame(rotation: Rotation): void;
@@ -177,6 +178,7 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
         selectedObjectsCount,
         hasGroupedSelectedObjects,
         selectedObjectsInSameGroup,
+        selectionGroupDisabledReason,
         groupSelection,
     } = props;
 
@@ -259,7 +261,9 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
         dynamicGroupIconProps = {
             className: 'cvat-group-control',
             onClick: (): void => {
-                if (selectedObjectsCount < 2) {
+                if (selectionGroupDisabledReason) {
+                    message.warning(selectionGroupDisabledReason);
+                } else if (selectedObjectsCount < 2) {
                     message.warning('Select at least two objects to group');
                 } else if (selectedObjectsInSameGroup) {
                     message.warning('Selected objects are already in the same group');
@@ -311,7 +315,9 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
         RESET_GROUP_STANDARD_CONTROLS: (event: KeyboardEvent | undefined): void => {
             event?.preventDefault();
             if (hasSelectedObjects) {
-                if (hasGroupedSelectedObjects) {
+                if (selectionGroupDisabledReason) {
+                    message.warning(selectionGroupDisabledReason);
+                } else if (hasGroupedSelectedObjects) {
                     groupSelection(true);
                 } else {
                     message.warning('No selected objects are grouped');

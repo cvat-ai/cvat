@@ -1585,9 +1585,13 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
         const pinSelection = getSelectionToggleState(selectedStates, 'pinned');
         const selectionGroupState = getSelectionGroupState(selectedStates);
         const groupSelectionDisabled = !selectionGroupState.canGroup;
-        const groupSelectionDisabledReason = selectionGroupState.alreadyInSameGroup ?
-            'Selected objects are already in the same group' : 'Select at least two objects to group';
+        const groupSelectionDisabledReason = selectionGroupState.disabledReason || (
+            selectionGroupState.alreadyInSameGroup ?
+                'Selected objects are already in the same group' : 'Select at least two objects to group'
+        );
         const ungroupSelectionDisabled = !selectionGroupState.canUngroup;
+        const ungroupSelectionDisabledReason = selectionGroupState.disabledReason ||
+            'No selected objects are grouped';
         const selectionLayerActionsDisabled = !selectedStates.some((state: ObjectState): boolean => (
             !state.lock && !state.isGroundTruth && [ObjectType.SHAPE, ObjectType.TRACK].includes(state.objectType)
         ));
@@ -1878,7 +1882,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
                                             type='link'
                                             disabled={ungroupSelectionDisabled}
                                             title={ungroupSelectionDisabled ?
-                                                'No selected objects are grouped' : undefined}
+                                                ungroupSelectionDisabledReason : undefined}
                                             icon={<UngroupOutlined />}
                                             onClick={(): void => this.onGroupSelectedObjects(true)}
                                         >

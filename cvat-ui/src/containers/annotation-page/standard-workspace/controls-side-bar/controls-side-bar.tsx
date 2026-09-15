@@ -35,6 +35,7 @@ interface StateToProps {
     selectedObjectsCount: number;
     hasGroupedSelectedObjects: boolean;
     selectedObjectsInSameGroup: boolean;
+    selectionGroupDisabledReason: string | null;
 }
 
 interface DispatchToProps {
@@ -82,6 +83,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
         selectedObjectsCount: selectedStates.length,
         hasGroupedSelectedObjects: selectionGroupState.canUngroup,
         selectedObjectsInSameGroup: selectionGroupState.alreadyInSameGroup,
+        selectionGroupDisabledReason: selectionGroupState.disabledReason,
     };
 }
 
