@@ -56,6 +56,31 @@ context('Audio annotation. Interval snapping.', () => {
         });
     };
 
+    const moveInterval = (sourceX, targetX) => {
+        cy.getAudioWaveformViewport().then(($viewport) => {
+            const viewportBounds = $viewport[0].getBoundingClientRect();
+            const y = viewportBounds.height / 2;
+            const fromX = sourceX - viewportBounds.left;
+            const toX = targetX - viewportBounds.left;
+
+            cy.wrap($viewport).realMouseMove(fromX, y, { altKey: true, scrollBehavior: false });
+            cy.wrap($viewport).realMouseDown({
+                position: { x: fromX, y },
+                button: 'left',
+                altKey: true,
+                scrollBehavior: false,
+            });
+            cy.wrap($viewport).realMouseMove(toX, y, { altKey: true, scrollBehavior: false });
+            cy.wrap($viewport).realMouseUp({
+                x: toX,
+                y,
+                button: 'left',
+                altKey: true,
+                scrollBehavior: false,
+            });
+        });
+    };
+
     beforeEach(() => {
         cy.prepareUserSession();
         cy.openAudioJob(taskName);
@@ -195,6 +220,37 @@ context('Audio annotation. Interval snapping.', () => {
                         .to.be.closeTo(adjacent.right, POSITION_TOLERANCE_PX);
                     expect(updatedRectangles[1].right)
                         .to.be.closeTo(targetX, POSITION_TOLERANCE_PX);
+                });
+            });
+        });
+
+        it('Snaps each moved interval boundary to another interval', () => {
+            cy.audioCreateRegionViaButton(firstLabelName, 120, 200);
+            cy.audioCreateRegionViaButton(firstLabelName, 340, 420);
+
+            cy.getAudioRegionRects().then(([leftSource, rightTarget]) => {
+                const sourceCenter = (leftSource.left + leftSource.right) / 2;
+                const pointerNearTargetStart = sourceCenter + rightTarget.left - leftSource.right - SNAP_OFFSET_PX;
+                moveInterval(sourceCenter, pointerNearTargetStart);
+
+                cy.getAudioRegionRects().should(([movedSource, target]) => {
+                    expect(movedSource.right)
+                        .to.be.closeTo(target.left, POSITION_TOLERANCE_PX);
+                });
+            });
+
+            cy.audioClearAnnotations();
+            cy.audioCreateRegionViaButton(firstLabelName, 180, 260);
+            cy.audioCreateRegionViaButton(firstLabelName, 340, 420);
+
+            cy.getAudioRegionRects().then(([leftTarget, rightSource]) => {
+                const sourceCenter = (rightSource.left + rightSource.right) / 2;
+                const pointerNearTargetEnd = sourceCenter + leftTarget.right - rightSource.left + SNAP_OFFSET_PX;
+                moveInterval(sourceCenter, pointerNearTargetEnd);
+
+                cy.getAudioRegionRects().should(([target, movedSource]) => {
+                    expect(target.right)
+                        .to.be.closeTo(movedSource.left, POSITION_TOLERANCE_PX);
                 });
             });
         });
