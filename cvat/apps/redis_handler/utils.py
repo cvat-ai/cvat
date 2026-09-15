@@ -70,11 +70,8 @@ def send_request_succeeded_signal(
     from cvat.apps.engine.rq import BaseRQMeta
 
     request_manager_cls_path = BaseRQMeta.for_job(rq_job).request_manager_cls
-    sender = (
-        get_class_from_full_path(full_path=request_manager_cls_path)
-        if request_manager_cls_path
-        else None
-    )
+
+    sender = get_class_from_full_path(full_path=request_manager_cls_path)
 
     _ = signals.request_succeeded.send_robust(
         sender=sender,
@@ -96,13 +93,12 @@ def send_request_failed_signal(
 ) -> None:
     from cvat.apps.engine.rq import BaseRQMeta
 
-    if rq_job_will_be_retried(rq_job=rq_job):
-        return
-
     request_manager_cls_path = BaseRQMeta.for_job(rq_job).request_manager_cls
-    sender = (
-        get_class_from_full_path(request_manager_cls_path) if request_manager_cls_path else None
-    )
+    sender = get_class_from_full_path(full_path=request_manager_cls_path)
+
+    if rq_job_will_be_retried(rq_job=rq_job):
+        sender.rq_meta_cls.for_job(rq_job).reset_on_retry()
+        return
 
     _ = signals.request_failed.send_robust(
         sender=sender,
