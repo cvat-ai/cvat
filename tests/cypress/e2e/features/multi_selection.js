@@ -239,10 +239,10 @@ context('Multi-object selection', { scrollBehavior: false }, () => {
 
     after(() => {
         if (taskId !== null) {
+            cy.saveJob();
             cy.headlessDeleteTask(taskId);
         }
-        cy.visit('/tasks');
-        cy.logout();
+        cy.headlessLogout();
     });
 
     beforeEach(() => {
@@ -255,6 +255,49 @@ context('Multi-object selection', { scrollBehavior: false }, () => {
         });
         cy.get('body').type('{esc}', { force: true });
         cy.get('.cvat_canvas_selected_objects_label').should('not.exist');
+    });
+
+    it('Keeps selection control borders at a constant screen size while zooming', () => {
+        const strokeVariables = [
+            '--cvat-selection-stroke-width',
+            '--cvat-selection-point-stroke-width',
+        ];
+        const readScale = (element) => {
+            const view = element.ownerDocument.defaultView;
+            const matrix = new view.DOMMatrix(view.getComputedStyle(element).transform);
+            return Math.hypot(matrix.a, matrix.b);
+        };
+        const readStrokeWidths = (element) => {
+            const view = element.ownerDocument.defaultView;
+            const style = view.getComputedStyle(element);
+            return strokeVariables.map((variable) => Number.parseFloat(style.getPropertyValue(variable)));
+        };
+        let initialScale = 0;
+        let initialWidths = [];
+
+        selectFromSidebar([objectIds.points]);
+        cy.get('#cvat_canvas_content').then(($content) => {
+            initialScale = readScale($content[0]);
+        });
+        cy.get('.cvat_canvas_shape_selected_object').then(($selectedShape) => {
+            initialWidths = readStrokeWidths($selectedShape[0]);
+        });
+        cy.get('.cvat-canvas-container').trigger('wheel', { deltaY: -5 });
+        cy.get('#cvat_canvas_content').should(($zoomedContent) => {
+            const zoomedScale = readScale($zoomedContent[0]);
+            expect(zoomedScale).not.to.equal(initialScale);
+            const selectedShape = $zoomedContent[0]
+                .querySelector('.cvat_canvas_shape_selected_object');
+            expect(selectedShape).not.to.be.null;
+            const zoomedWidths = readStrokeWidths(selectedShape);
+            zoomedWidths.forEach((width, index) => {
+                expect(width * zoomedScale).to.be.closeTo(initialWidths[index] * initialScale, 0.01);
+            });
+        });
+
+        clearSelection();
+        cy.get('.cvat-fit-control').click({ force: true });
+        cy.get('body').trigger('mousemove', { clientX: 0, clientY: 0, force: true });
     });
 
     it('Adds and removes objects with Mod-click on the canvas and in the Objects tab', () => {
@@ -425,56 +468,16 @@ context('Multi-object selection', { scrollBehavior: false }, () => {
         cy.get('.cvat-select-control').should('have.class', 'cvat-active-canvas-control');
     });
 
-    it('Keeps selection control borders at a constant screen size while zooming', () => {
-        const strokeVariables = [
-            '--cvat-selection-stroke-width',
-            '--cvat-selection-point-stroke-width',
-        ];
-        const readScale = (element) => {
-            const view = element.ownerDocument.defaultView;
-            const matrix = new view.DOMMatrix(view.getComputedStyle(element).transform);
-            return Math.hypot(matrix.a, matrix.b);
-        };
-        const readStrokeWidths = (element) => {
-            const view = element.ownerDocument.defaultView;
-            const style = view.getComputedStyle(element);
-            return strokeVariables.map((variable) => Number.parseFloat(style.getPropertyValue(variable)));
-        };
-
-        selectFromSidebar([objectIds.points]);
-        cy.get('#cvat_canvas_content').then(($content) => {
-            const initialScale = readScale($content[0]);
-            cy.get('.cvat_canvas_shape_selected_object').then(($selectedShape) => {
-                const initialWidths = readStrokeWidths($selectedShape[0]);
-                cy.get('.cvat-canvas-container').trigger('wheel', { deltaY: -5 });
-                cy.get('#cvat_canvas_content').should(($zoomedContent) => {
-                    const zoomedScale = readScale($zoomedContent[0]);
-                    expect(zoomedScale).not.to.equal(initialScale);
-                    const selectedShape = $zoomedContent[0]
-                        .querySelector('.cvat_canvas_shape_selected_object');
-                    expect(selectedShape).not.to.be.null;
-                    const zoomedWidths = readStrokeWidths(selectedShape);
-                    zoomedWidths.forEach((width, index) => {
-                        expect(width * zoomedScale).to.be.closeTo(initialWidths[index] * initialScale, 0.01);
-                    });
-                });
-            });
-        });
-
-        clearSelection();
-        cy.get('.cvat-fit-control').click();
-    });
-
     it('Excludes hidden objects and tags from selection', () => {
         cy.get(sidebarItem(objectIds.carShape1)).within(() => {
-            cy.get('.cvat-object-item-button-hidden').click();
+            cy.get('.cvat-object-item-button-hidden').click({ force: true });
         });
         runSelectAllShortcut();
         assertSelection(selectableObjectIds.filter((clientId) => clientId !== objectIds.carShape1));
 
         clearSelection();
         cy.get(sidebarItem(objectIds.carShape1)).within(() => {
-            cy.get('.cvat-object-item-button-hidden-enabled').click();
+            cy.get('.cvat-object-item-button-hidden-enabled').click({ force: true });
         });
         cy.get(sidebarItem(objectIds.tag)).click({ ...platformModifier, force: true });
         assertSelection([]);
@@ -483,7 +486,7 @@ context('Multi-object selection', { scrollBehavior: false }, () => {
     it('Removes an object from the active selection when it is hidden', () => {
         selectFromSidebar([objectIds.carShape1, objectIds.carShape2]);
         cy.get(sidebarItem(objectIds.carShape1)).within(() => {
-            cy.get('.cvat-object-item-button-hidden').click();
+            cy.get('.cvat-object-item-button-hidden').click({ force: true });
         });
         assertSelection([objectIds.carShape2]);
 
@@ -494,7 +497,7 @@ context('Multi-object selection', { scrollBehavior: false }, () => {
         assertSelection([objectIds.carShape2]);
 
         cy.get(sidebarItem(objectIds.carShape1)).within(() => {
-            cy.get('.cvat-object-item-button-hidden-enabled').click();
+            cy.get('.cvat-object-item-button-hidden-enabled').click({ force: true });
         });
         assertSelection([objectIds.carShape2]);
         clearSelection();
@@ -502,7 +505,7 @@ context('Multi-object selection', { scrollBehavior: false }, () => {
 
     it('Toggles a layer selection when the layer contains hidden objects', () => {
         cy.get(sidebarItem(objectIds.carShape1)).within(() => {
-            cy.get('.cvat-object-item-button-hidden').click();
+            cy.get('.cvat-object-item-button-hidden').click({ force: true });
         });
         cy.sidebarItemSortBy('Layer');
 
@@ -514,7 +517,7 @@ context('Multi-object selection', { scrollBehavior: false }, () => {
         assertSelection([]);
 
         cy.get(sidebarItem(objectIds.carShape1)).within(() => {
-            cy.get('.cvat-object-item-button-hidden-enabled').click();
+            cy.get('.cvat-object-item-button-hidden-enabled').click({ force: true });
         });
         cy.sidebarItemSortBy('ID - ascent');
     });
@@ -541,9 +544,9 @@ context('Multi-object selection', { scrollBehavior: false }, () => {
     });
 
     it('Limits Layer Stack Shift-click ranges to one layer', () => {
-        cy.get(sidebarItem(objectIds.carShape1)).find('[aria-label="more"]').click();
+        cy.get(sidebarItem(objectIds.carShape1)).find('[aria-label="more"]').click({ force: true });
         cy.contains('.cvat-object-item-menu:visible button', 'To foreground').click();
-        cy.get(sidebarItem(objectIds.carShape2)).find('[aria-label="more"]').click();
+        cy.get(sidebarItem(objectIds.carShape2)).find('[aria-label="more"]').click({ force: true });
         cy.contains('.cvat-object-item-menu:visible button', 'To one layer forward').click();
         cy.sidebarItemSortBy('Layer');
 
@@ -900,7 +903,9 @@ context('Multi-object selection', { scrollBehavior: false }, () => {
             labels.person,
         ).click();
         [objectIds.carShape1, objectIds.carShape2].forEach((clientId) => {
-            cy.get(sidebarItem(clientId)).find('.ant-select-selection-item').should('have.text', labels.person);
+            cy.get(sidebarItem(clientId))
+                .find('.cvat-objects-sidebar-state-item-label-selector .ant-select-selection-item')
+                .should('have.text', labels.person);
         });
 
         openSelectionMenu();
