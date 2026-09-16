@@ -660,6 +660,9 @@ CORS_ALLOW_HEADERS = list(default_headers) + [
 
 CORS_EXPOSE_HEADERS = [
     "Content-Range",
+    "X-Checksum",
+    "X-Chunk-Size",
+    "X-Updated-Date",
 ]
 
 TUS_MAX_FILE_SIZE = 26843545600  # 25gb
@@ -737,6 +740,7 @@ SPECTACULAR_SETTINGS = {
         "StorageType": "cvat.apps.engine.models.StorageChoice",
         "SortingMethod": "cvat.apps.engine.models.SortingMethod",
         "WebhookType": "cvat.apps.webhooks.models.WebhookTypeChoice",
+        "AllWebhookType": "cvat.apps.webhooks.serializers.AllWebhookTypeChoice",
         "WebhookContentType": "cvat.apps.webhooks.models.WebhookContentTypeChoice",
         "RequestStatus": "cvat.apps.redis_handler.serializers.RequestStatus",
         "ValidationMode": "cvat.apps.engine.models.ValidationMode",

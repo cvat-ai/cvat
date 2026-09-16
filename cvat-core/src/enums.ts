@@ -273,6 +273,7 @@ export enum LabelType {
     POINTS = 'points',
     ELLIPSE = 'ellipse',
     CUBOID = 'cuboid',
+    INTERVAL = 'interval',
     SKELETON = 'skeleton',
     MASK = 'mask',
     TAG = 'tag',

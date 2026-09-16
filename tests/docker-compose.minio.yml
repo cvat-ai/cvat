@@ -34,7 +34,7 @@ services:
         aliases:
           - minio
   mc:
-    image: minio/mc:RELEASE.2022-09-16T09-16-47Z
+    image: quay.io/minio/mc:RELEASE.2022-09-16T09-16-47Z
     depends_on:
       - minio
     environment:

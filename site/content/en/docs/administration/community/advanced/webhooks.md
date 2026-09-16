@@ -395,6 +395,7 @@ Webhook payload object for `completed:<resource>` events:
 | `event`      | `string`  | Identifies the event that triggered the webhook, following the `completed:<resource>` pattern. |
 | `request`    | `object`  | Complete information about the request. Same structure as the retrieve response in the [Swagger](#webhooks-with-api-calls) docs. |
 | `webhook_id` | `integer` | The identifier for the webhook that sends the payload. |
+| `sender`     | `object`  | Details about the user that triggered the webhook. |
 
 An example of payload for a completed task data creation request:
 
@@ -427,7 +428,14 @@ An example of payload for a completed task data creation request:
         "result_url": null,
         "result_id": null
     },
-    "webhook_id": 1
+    "webhook_id": 1,
+    "sender": {
+        "url": "/api/users/1",
+        "id": 1,
+        "username": "demo_user",
+        "first_name": "",
+        "last_name": ""
+    }
 }
 {{< /scroll-code >}}
 
