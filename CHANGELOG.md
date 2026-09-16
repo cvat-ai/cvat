@@ -16,6 +16,55 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.76.0'></a>
+## \[2.76.0\] - 2026-09-16
+
+### Added
+
+- Added server-type webhooks with `create:user`, `update:user`,
+  `delete:user`, `create:organization`, and `delete:organization` events.
+  (<https://github.com/cvat-ai/cvat/pull/11106>)
+
+- \[Server API\] Added an `email_verified` field to `GET /api/users`
+  response
+  (<https://github.com/cvat-ai/cvat/pull/11106>)
+
+- Added a Django admin panel for managing webhooks
+  (<https://github.com/cvat-ai/cvat/pull/11106>)
+
+- The visible area overlay in the audio minimap can now be dragged to scroll the waveform.
+  (<https://github.com/cvat-ai/cvat/pull/11158>)
+
+- Added "snap" function when drawing/resizing an audio interval
+  (<https://github.com/cvat-ai/cvat/pull/11161>)
+
+- Added the `interval` label type for audio annotation. New audio intervals can only use
+  `interval` and `any` labels.
+  (<https://github.com/cvat-ai/cvat/pull/11172>)
+
+- Added "snap" function when moving an audio interval
+  (<https://github.com/cvat-ai/cvat/pull/11173>)
+
+- Added redis migration to cloudpirates (<https://docs.cvat.ai/docs/administration/community/advanced/upgrade_guide/>)
+  (<https://github.com/cvat-ai/cvat/pull/11160>)
+
+### Changed
+
+- \[Server API\] Webhook payloads for `completed:request[...]` events now
+  include a `sender` field.
+  (<https://github.com/cvat-ai/cvat/pull/11106>)
+
+- Set default "speaker" label color to teal instead of gray
+  (<https://github.com/cvat-ai/cvat/pull/11166>)
+
+### Fixed
+
+- Incomplete annotation chunk downloads when an intermediary proxy closes or restarts a response
+  (<https://github.com/cvat-ai/cvat/pull/11122>)
+
+- Improved audio waveform zoom performance for long audio files.
+  (<https://github.com/cvat-ai/cvat/pull/11164>)
+
 <a id='changelog-2.75.0'></a>
 ## \[2.75.0\] - 2026-09-10
 
