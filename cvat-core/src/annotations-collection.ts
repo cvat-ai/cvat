@@ -20,7 +20,7 @@ import Statistics from './statistics';
 import { Attribute, Label } from './labels';
 import { ArgumentError } from './exceptions';
 import ObjectState from './object-state';
-import { cropMask } from './object-utils';
+import { cropMask, subtractMasks } from './object-utils';
 import { AudioIntervalState } from './annotations-objects/audio-interval-state';
 import config from './config';
 import {
@@ -1394,6 +1394,30 @@ export default class Collection {
             }
         }
 
+        let subtractedMaskBecameEmpty = false;
+        if (config.subtractUnderlyingMasks.enabled) {
+            // masks are processed one by one, so each of them is also subtracted by previous ones of this batch
+            const masksOnFrames: Record<number, number[][]> = {};
+            constructed.shapes = constructed.shapes.filter((shape) => {
+                if (shape.type !== ShapeType.MASK) {
+                    return true;
+                }
+
+                masksOnFrames[shape.frame] = masksOnFrames[shape.frame] ?? (this.shapes[shape.frame] ?? [])
+                    .filter((object): object is MaskShape => object instanceof MaskShape && !object.removed)
+                    .map((mask) => [...mask.points, mask.left, mask.top, mask.right, mask.bottom]);
+                const { width, height } = this.injection.framesInfo[shape.frame];
+                shape.points = subtractMasks(shape.points, masksOnFrames[shape.frame], width, height);
+                if (shape.points.length < 6) {
+                    subtractedMaskBecameEmpty = true;
+                    return false;
+                }
+
+                masksOnFrames[shape.frame].push(shape.points);
+                return true;
+            });
+        }
+
         // Add constructed objects to a collection
         const imported = this.import(constructed);
         const importedArray = ([] as AnnotationObject[]).concat(
@@ -1424,6 +1448,10 @@ export default class Collection {
 
         if (config.removeUnderlyingMaskPixels.enabled && globalEmptyMaskOccurred) {
             config.removeUnderlyingMaskPixels?.onEmptyMaskOccurrence();
+        }
+
+        if (subtractedMaskBecameEmpty) {
+            config.subtractUnderlyingMasks?.onEmptyMaskOccurrence();
         }
 
         if (annotationStates.length) {

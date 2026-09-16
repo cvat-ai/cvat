@@ -217,6 +217,10 @@ export default interface CVATCore {
             enabled: boolean;
             onEmptyMaskOccurrence: () => void | null;
         };
+        subtractUnderlyingMasks: {
+            enabled: boolean;
+            onEmptyMaskOccurrence: () => void | null;
+        };
         onOrganizationChange: (newOrgId: number | null) => void | null;
         globalObjectsCounter: typeof config.globalObjectsCounter;
         requestsStatusDelay: typeof config.requestsStatusDelay;
