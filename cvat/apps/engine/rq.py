@@ -442,12 +442,18 @@ def define_dependent_job(
         queue.deferred_job_registry,
         queue,
         queue.started_job_registry,
+        queue.scheduled_job_registry,
     ]
     # Since there is no cleanup implementation in DeferredJobRegistry,
     # this registry can contain "outdated" jobs that weren't deleted from it
     # but were added to another registry. Probably such situations can occur
     # if there are active or deferred jobs when restarting the worker container.
-    filters = [lambda job: job.is_deferred, lambda _: True, lambda _: True]
+    filters = [
+        lambda job: job.is_deferred,
+        lambda _: True,
+        lambda _: True,
+        lambda job: job.is_scheduled,
+    ]
     all_user_jobs: list[RQJob] = []
     for q, f in zip(queues, filters):
         job_ids = q.get_job_ids()

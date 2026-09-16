@@ -4,6 +4,7 @@
 
 import unittest
 import uuid
+from datetime import datetime, timedelta, timezone
 from unittest import mock
 
 import django_rq
@@ -83,6 +84,19 @@ class TestDefineDependentJob(unittest.TestCase):
         assert len(dependency.dependencies) == 1
         dep_job = dependency.dependencies[0]
         assert dep_job == job
+
+    def test_define_dependency_on_scheduled_user_job(self) -> None:
+        """A job awaiting a delayed retry (ScheduledJobRegistry) is still the user's active job."""
+        job = self.queue.enqueue_at(
+            datetime.now(timezone.utc) + timedelta(minutes=1),
+            dummy_task,
+            job_id=str(uuid.uuid4()),
+            meta={"user_id": DEFAULT_USER_ID},
+        )
+        assert job.is_scheduled
+        dependency = self._define_dependent_job(rq_id=str(uuid.uuid4()))
+        assert dependency is not None, "Dependent job not found."
+        assert dependency.dependencies == [job]
 
     def test_no_dependency_when_should_be_dependent_is_false(self) -> None:
         """Skips dependency if the flag should_be_dependent=False is used."""
