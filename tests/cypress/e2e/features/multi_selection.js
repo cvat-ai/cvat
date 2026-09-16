@@ -886,7 +886,15 @@ context('Multi-object selection', { scrollBehavior: false }, () => {
     it('Changes common labels and attributes and groups the selection', () => {
         selectFromSidebar([objectIds.carShape1, objectIds.carShape2]);
         openSelectionMenu();
-        cy.get('.cvat-canvas-selected-objects-label-selector .ant-select-selector').click();
+        const labelSelector = '.cvat-canvas-selected-objects-label-selector';
+        cy.get(`${labelSelector} .ant-select-arrow`).should('be.visible')
+            .find('.anticon-down').should('exist');
+        cy.get(`${labelSelector} .ant-select-selector`).trigger('mouseover');
+        cy.get(`${labelSelector} .ant-select-arrow`).should('be.visible')
+            .find('.anticon-down').should('exist');
+        cy.get(`${labelSelector} .ant-select-selector`).click();
+        cy.get(`${labelSelector} .ant-select-arrow`).should('be.visible')
+            .find('.anticon').should('be.visible');
         cy.contains(
             '.ant-select-dropdown:not(.ant-select-dropdown-hidden) .ant-select-item-option',
             labels.person,
@@ -896,6 +904,11 @@ context('Multi-object selection', { scrollBehavior: false }, () => {
         });
 
         openSelectionMenu();
+        cy.get(`${labelSelector} .ant-select-arrow`).should('be.visible')
+            .find('.anticon-down').should('exist');
+        cy.get(`${labelSelector} .ant-select-selector`).trigger('mouseover');
+        cy.get(`${labelSelector} .ant-select-arrow`).should('be.visible')
+            .find('.anticon-down').should('exist');
         cy.get('.cvat-canvas-selected-objects-attributes .ant-collapse-header').click();
         cy.get('.cvat-object-item-menu .cvat-object-item-select-attribute').click();
         cy.contains(

@@ -1703,32 +1703,30 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
                                 {
                                     key: 'change-label',
                                     label: (
-                                        <CVATTooltip
-                                            title={labelSelectorDisabled ? labelSelectorDisabledReason : null}
-                                        >
-                                            <div className='cvat-canvas-selected-objects-label-selector'>
-                                                {applicableLabels.length ? (
-                                                    <LabelSelector
-                                                        disabled={labelSelectorDisabled}
-                                                        size='small'
-                                                        labels={applicableLabels}
-                                                        value={selectedLabelID}
-                                                        placeholder={selectedLabelID === null ?
-                                                            'Multiple labels' : 'Select label'}
-                                                        onChange={this.onChangeSelectedObjectsLabel}
-                                                        getPopupContainer={
-                                                            (triggerNode): HTMLElement => triggerNode.parentElement!
-                                                        }
-                                                    />
-                                                ) : (
-                                                    <Select
-                                                        disabled
-                                                        size='small'
-                                                        placeholder='No common labels'
-                                                    />
-                                                )}
-                                            </div>
-                                        </CVATTooltip>
+                                        <div className='cvat-canvas-selected-objects-label-selector'>
+                                            {applicableLabels.length ? (
+                                                <LabelSelector
+                                                    disabled={labelSelectorDisabled}
+                                                    size='small'
+                                                    labels={applicableLabels}
+                                                    value={selectedLabelID}
+                                                    placeholder={selectedLabelID === null ?
+                                                        'Multiple labels' : 'Select label'}
+                                                    onChange={this.onChangeSelectedObjectsLabel}
+                                                    tooltip={labelSelectorDisabled ?
+                                                        labelSelectorDisabledReason : 'Change current label'}
+                                                    className='cvat-objects-sidebar-state-item-label-selector'
+                                                    popupClassName='cvat-objects-sidebar-state-item-label-dropdown'
+                                                    popupMatchSelectWidth={false}
+                                                />
+                                            ) : (
+                                                <Select
+                                                    disabled
+                                                    size='small'
+                                                    placeholder='No common labels'
+                                                />
+                                            )}
+                                        </div>
                                     ),
                                 },
                                 {
