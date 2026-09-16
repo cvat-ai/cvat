@@ -103,14 +103,12 @@ def parse_args() -> argparse.Namespace:
 def iter_objects(annotations):
     """The shapes and the track keyframes the recipe compares.
 
-    Objects marked `outside` are skipped: they are intentionally out of view.
-    Tags are skipped too - they have no coordinates to compare.
-    Skeleton track frames need explicit keyframes for every element; this
-    recipe does not interpolate missing keypoints.
+    Track keyframes and skeleton keypoints marked `outside` are skipped: they
+    are intentionally out of view. Tags are skipped too - they have no
+    coordinates to compare. Skeleton track frames need explicit keyframes for
+    every element; this recipe does not interpolate missing keypoints.
     """
     for shape in annotations.shapes:
-        if getattr(shape, "outside", False):
-            continue
         elements = ()
         if str(shape.type) == "skeleton":
             elements = skeleton_coordinates(shape.elements)
