@@ -620,6 +620,19 @@ context('Multi-object selection', { scrollBehavior: false }, () => {
         cy.get('.ant-tooltip-inner').should('not.contain.text', 'Undo: Changed points');
         cy.get('.cvat-annotation-header-redo-button').click();
 
+        cy.get('.svg_select_points_rot').should('be.visible').and('have.length', 1);
+        cy.get('.svg_select_points_rot').trigger('mousedown', { button: 0 });
+        cy.get('.cvat-canvas-container').trigger('mousemove', 350, 150);
+        cy.get('.cvat-canvas-container').trigger('mouseup');
+        cy.get('.cvat-annotation-header-undo-button').trigger('mouseover');
+        cy.get('.ant-tooltip-inner').should('contain.text', 'Undo: Object rotated');
+        cy.get('.cvat-annotation-header-undo-button').click();
+        cy.get('.cvat-annotation-header-redo-button').trigger('mouseover');
+        cy.get('.ant-tooltip-inner').should('contain.text', 'Redo: Object rotated');
+        cy.get('.cvat-annotation-header-undo-button').trigger('mouseover');
+        cy.get('.ant-tooltip-inner').should('not.contain.text', 'Undo: Changed points');
+        cy.get('.cvat-annotation-header-redo-button').click();
+
         selectFromSidebar([objectIds.carShape1]);
         cy.get(shapeSelector).then(($shape) => {
             const initialBox = $shape[0].getBoundingClientRect();
