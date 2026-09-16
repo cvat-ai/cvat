@@ -33,7 +33,8 @@ to bring the current playhead into view.
 - Use the [Zoom control](../controls-sidebar/) or scroll the mouse wheel over the waveform to
 change the time scale.
 
-- The hover guide shows the timestamp at the pointer position, and timeline tick marks and labels adjust automatically to the current zoom level.
+- The hover guide shows the timestamp at the pointer position, and timeline tick marks and labels
+  adjust automatically to the current zoom level.
 
   ![Hover guide](/images/audio_editor_workspace_04.webp)
 
