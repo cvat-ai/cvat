@@ -11,8 +11,8 @@ interface ActionItem {
     action: HistoryActions;
     clientIds: number[];
     frame: number | null;
-    undo: () => void;
-    redo: () => void;
+    undo: () => void | Promise<void>;
+    redo: () => void | Promise<void>;
 }
 
 class HistoryTransaction implements ActionItem {
@@ -82,8 +82,8 @@ export default class AnnotationHistory {
 
     public do(
         action: HistoryActions,
-        undo: () => void,
-        redo: () => void,
+        undo: () => void | Promise<void>,
+        redo: () => void | Promise<void>,
         clientIds: number[],
         frame: number | null,
     ): void {
@@ -107,9 +107,11 @@ export default class AnnotationHistory {
         this._redo = [];
     }
 
-    public beginTransaction(action: HistoryActions): void {
-        if (this.transaction) throw new Error('Another history transaction is already active');
+    public beginTransaction(action: HistoryActions): boolean {
+        if (this.transaction) return false;
+
         this.transaction = new HistoryTransaction(action);
+        return true;
     }
 
     public endTransaction(): void {
