@@ -14,9 +14,10 @@ Steps:
   3. Print the layout the server built: the validation pool, and per annotation
      job which frame of the job stands in for which pool frame.
 
-Honeypots need an image task (not video). The task grows by the injected frames,
-and its jobs no longer have a common length, so the task's segment_size reads
-back as 0: CVAT stores the resulting per-job frame lists instead of one size.
+Honeypots are only supported by image tasks (not video) with randomly sorted
+images, so the script always creates the task with sorting_method="random".
+Each annotation job becomes --honeypots-per-job frames longer than --segment-size,
+since that many honeypots are injected into it.
 
 Usage (run ``python task_create_with_honeypots.py --help`` for the full list of options):
   python task_create_with_honeypots.py --host 'https://app.cvat.ai' --token '<your token>' \\
