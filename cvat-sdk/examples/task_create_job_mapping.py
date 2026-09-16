@@ -18,7 +18,11 @@ Steps:
   3. Read the jobs back from the server and print/write the resulting mapping,
      so what you see is what the server built, not what was requested.
 
-job_file_mapping implies predefined file ordering and works with images, not video.
+job_file_mapping implies predefined file ordering and takes one file per frame,
+so it applies to image tasks only: a video is a single file the server cuts into
+frames itself, and there is nothing to map. A directory of images is therefore
+what this recipe takes, and CVAT rejects the request if the data turns out to be
+a video.
 
 Usage (run ``python task_create_job_mapping.py --help`` for the full list of options):
   python task_create_job_mapping.py --host 'https://app.cvat.ai' --token '<your token>' \\
@@ -36,8 +40,6 @@ from pathlib import Path
 from cvat_sdk import make_client, models
 from cvat_sdk.core.proxies.tasks import ResourceType
 
-IMAGE_SUFFIXES = {".jpg", ".jpeg", ".png", ".bmp", ".webp"}
-
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
@@ -48,7 +50,11 @@ def parse_args() -> argparse.Namespace:
         help="Personal Access Token (CVAT UI: Profile -> Security)",
     )
     parser.add_argument(
-        "--image-dir", type=Path, required=True, help="directory with the task's images"
+        "--image-dir",
+        type=Path,
+        required=True,
+        help="directory with the task's images, one file per frame (a video cannot be "
+        "mapped to jobs file by file)",
     )
     grouping = parser.add_mutually_exclusive_group(required=True)
     grouping.add_argument(
@@ -111,11 +117,12 @@ def build_groups(args: argparse.Namespace, available: list[str]) -> list[list[st
 
 def main() -> None:
     args = parse_args()
-    available = sorted(
-        p.name for p in args.image_dir.iterdir() if p.suffix.lower() in IMAGE_SUFFIXES
-    )
+    # The files are taken as they are found: the server is the authority on
+    # which media formats it supports, so filtering by extension here would
+    # only reject files CVAT can read.
+    available = sorted(p.name for p in args.image_dir.iterdir() if p.is_file())
     if not available:
-        sys.exit(f"No images found in {args.image_dir}")
+        sys.exit(f"No files found in {args.image_dir}")
 
     groups = build_groups(args, available)
     resources = [args.image_dir / name for group in groups for name in group]

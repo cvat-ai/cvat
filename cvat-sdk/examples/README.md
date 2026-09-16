@@ -30,7 +30,7 @@ Conventions:
 | `project_create_and_list.py` | Create, list, filter, retrieve, rename a project | `--name`, `--labels`, `--cleanup` |
 | `project_add_labels.py` | Add labels (optionally with attributes) to an existing project | `--project-id`, `--labels`, `--attr` (repeat) |
 | `project_annotation_stats.py` | Aggregate object counts per label/type across a project's tasks; CSV report | `--project-id` |
-| `project_data_lint.py` | Find objects annotated twice: shapes on the same frame whose bounding boxes overlap by at least an IoU threshold | `--project-id`, `--task-id`, `--iou-threshold`, `--any-label`, `--output`, `--no-fail` |
+| `project_find_duplicates.py` | Find objects annotated twice: objects on the same frame with the same label, shape type, and coordinates | `--project-id`, `--task-id`, `--any-label`, `--output`, `--no-fail` |
 | `project_backup.py` | Download a backup zip of an existing project | `--project-id`, `--output` |
 | `project_restore.py` | Restore a project from a backup zip | `--backup`, `--cleanup` |
 | `project_export_dataset.py` | Export a project's tasks individually (all, or a `--task-id` list), locally and to a bucket | `--project-id`, `--cloud-storage-id`, `--export-format`, `--task-id` (optional, space-separated) |
@@ -38,15 +38,15 @@ Conventions:
 | `dataset_bulk_export.py` | Export many tasks at once, locally and/or to a bucket | `--task-id` (space-separated), `--status`, `--output-dir`, `--cloud-storage-id`, `--skip-existing` |
 | `task_create_from_cloud.py` | Create a task from bucket object keys | `--cloud-storage-id`, `--cloud-keys`, `--cleanup` |
 | `tasks_bulk_from_cloud.py` | Bulk-create tasks in a project, from bucket object keys or wildcard patterns | `--cloud-storage-id`, `--project-id`, `--task` (repeat), `--task-pattern` (repeat), `--manifest`, `--cleanup` |
-| `task_create_subtasks.py` | Create one task per object type / label group over the same images | `--image-dir`, `--subtask` (repeat), `--segment-size`, `--cleanup` |
+| `tasks_create_per_label_group.py` | Create one task per shape type / label group over the same images | `--image-dir`, `--task` (repeat), `--segment-size`, `--cleanup` |
 | `task_create_job_mapping.py` | Create a task with an explicit file-to-job mapping and verify it from the server | `--image-dir`, `--job` (repeat) or `--files-per-job`, `--output`, `--cleanup` |
 | `task_inspect_and_export.py` | Inspect a task; export its dataset and event-log analytics | `--task-id`, `--export-format` |
 | `task_import_annotations.py` | Import an annotations file into an existing task | `--task-id`, `--annotations-file`, `--import-format` |
-| `task_import_annotations_from_cloud.py` | Import an annotations file into an existing task directly from a registered cloud storage | `--task-id`, `--filename`, `--cloud-storage-id`, `--import-format`, `--import-mode`, `--no-file-check` |
+| `task_import_annotations_from_cloud.py` | Import an annotations file into an existing task directly from a registered cloud storage | `--task-id`, `--filename`, `--cloud-storage-id`, `--import-format`, `--import-mode` |
 | `task_edit_annotations.py` | Bulk-edit a task's annotations: relabel or delete objects by label | `--task-id`, `--relabel` or `--delete-label` |
-| `task_create_with_validation.py` | Create a task with a ground truth validation set and upload the ground truth into it | `--image-dir`, `--validation-frame` or `--frame-count`, `--gt-annotations`, `--gt-format`, `--cleanup` |
-| `task_create_with_honeypots.py` | Create a task whose annotation jobs carry ground truth frames; refresh or retire them | `--image-dir`, `--pool-frame` or `--pool-frame-count`, `--honeypots-per-job`, `--refresh`, `--disable-frame`, `--cleanup` |
-| `task_add_gt_frames.py` | Add a ground truth job with an exact frame list to an existing task | `--task-id`, `--frame` or `--frame-name`, `--replace`, `--cleanup` |
+| `task_create_with_validation.py` | Create a task with a ground truth validation set and upload the ground truth into it | `--image-dir`, `--gt-frame` or `--gt-frame-count`, `--gt-annotations`, `--gt-format`, `--cleanup` |
+| `task_create_with_honeypots.py` | Create a task whose annotation jobs carry ground truth frames | `--image-dir`, `--honeypot-frame` or `--honeypot-frame-count`, `--honeypots-per-job`, `--cleanup` |
+| `task_create_gt_job.py` | Create a ground truth job with an exact frame list in an existing task | `--task-id`, `--frame` or `--frame-name`, `--replace` |
 | `job_list.py` | List a task's or project's jobs with stage/state/assignee; optional CSV report | `--task-id` or `--project-id`, `--stage`, `--state`, `--csv` |
 | `job_assign.py` | Round-robin assign unassigned jobs; CSV report | `--task-id`, `--org` or `--org-id`, `--assignees` or `--search` |
 | `job_workflow.py` | Batch-advance completed jobs to the next stage | `--from-stage`, `--task-id` |

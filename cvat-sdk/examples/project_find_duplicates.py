@@ -2,13 +2,12 @@
 #
 # SPDX-License-Identifier: MIT
 
-"""Find objects annotated twice: shapes on the same frame whose bounding boxes
-overlap by at least --iou-threshold.
+"""Find objects annotated twice: objects on the same frame that have the same
+label, the same shape type, and exactly the same coordinates.
 
 Duplicates appear when an import runs twice, when two annotators' job ranges
-overlap, or after a merge. Exact copies are the easy case; the ones that hurt
-are the near-identical boxes nobody spots by eye, so the recipe compares by
-intersection over union instead of by equality.
+overlap, or after a merge. Shapes whose coordinates differ are different
+objects, so the comparison is an exact one and needs no similarity threshold.
 
 The recipe only reports. It exits 1 when it finds a duplicate, so it can gate
 an export pipeline; --no-fail turns that off.
@@ -16,12 +15,13 @@ an export pipeline; --no-fail turns that off.
 Steps:
   1. Retrieve the project, its labels, and the tasks to inspect.
   2. For each task, read the annotations and the job that owns each frame.
-  3. Group each frame's objects by IoU and keep the groups with more than one.
+  3. Group each frame's objects by (label, type, coordinates) and keep the
+     groups with more than one member.
   4. Print the groups, write the CSV report, and set the exit code.
 
-Usage (run ``python project_data_lint.py --help`` for the full list of options):
-  python project_data_lint.py --host 'https://app.cvat.ai' --token '<your token>' \\
-      --project-id 7 --iou-threshold 0.8
+Usage (run ``python project_find_duplicates.py --help`` for the full list of options):
+  python project_find_duplicates.py --host 'https://app.cvat.ai' --token '<your token>' \\
+      --project-id 7
 """
 
 import argparse
@@ -34,10 +34,6 @@ from pathlib import Path
 
 from cvat_sdk import make_client
 
-# Types whose `points` are plain x/y pairs, so a bounding box can be computed
-# from them. Masks, skeletons, ellipses and cuboids are skipped.
-COMPARABLE_TYPES = {"rectangle", "polygon", "polyline", "points"}
-
 
 @dataclass
 class Annotated:
@@ -48,7 +44,7 @@ class Annotated:
     type: str
     shape_id: int | str
     track_id: int | str
-    box: tuple[float, float, float, float]
+    points: tuple[float, ...]
 
 
 @dataclass
@@ -63,8 +59,7 @@ class Duplicate:
     type: str
     shape_id: int | str
     track_id: int | str
-    iou: float
-    box: str
+    points: str
 
 
 def parse_args() -> argparse.Namespace:
@@ -87,13 +82,6 @@ def parse_args() -> argparse.Namespace:
         "omit to inspect every task in the project",
     )
     parser.add_argument(
-        "--iou-threshold",
-        type=float,
-        default=0.9,
-        help="two objects are duplicates when their bounding boxes overlap by at least "
-        "this much (default: %(default)s)",
-    )
-    parser.add_argument(
         "--any-label",
         action="store_true",
         help="also group objects that carry different labels, e.g. the same car "
@@ -108,42 +96,17 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--no-fail", action="store_true", help="always exit 0, even when duplicates were found"
     )
-    args = parser.parse_args()
-    if not 0 < args.iou_threshold <= 1:
-        parser.error("--iou-threshold must be greater than 0 and at most 1")
-    return args
-
-
-def bounding_box(points: list[float]) -> tuple[float, float, float, float]:
-    xs, ys = points[0::2], points[1::2]
-    return min(xs), min(ys), max(xs), max(ys)
-
-
-def iou(first: tuple[float, ...], second: tuple[float, ...]) -> float:
-    """Intersection over union of two bounding boxes."""
-    width = min(first[2], second[2]) - max(first[0], second[0])
-    height = min(first[3], second[3]) - max(first[1], second[1])
-    intersection = max(0.0, width) * max(0.0, height)
-
-    first_area = (first[2] - first[0]) * (first[3] - first[1])
-    second_area = (second[2] - second[0]) * (second[3] - second[1])
-    union = first_area + second_area - intersection
-    if union == 0:
-        # Neither box has an area: a zero-size shape, or a polyline drawn along
-        # one axis. Such objects are duplicates only if they sit in exactly the
-        # same place, because IoU cannot tell them apart.
-        return 1.0 if first == second else 0.0
-    return intersection / union
+    return parser.parse_args()
 
 
 def iter_objects(annotations):
-    """The shapes and the track keyframes the recipe can compare.
+    """The shapes and the track keyframes the recipe compares.
 
     Objects marked `outside` are skipped: they are intentionally out of view.
-    Tags are skipped too - they have no geometry to overlap.
+    Tags are skipped too - they have no coordinates to compare.
     """
     for shape in annotations.shapes:
-        if getattr(shape, "outside", False) or str(shape.type) not in COMPARABLE_TYPES:
+        if getattr(shape, "outside", False):
             continue
         yield Annotated(
             frame=shape.frame,
@@ -151,11 +114,11 @@ def iter_objects(annotations):
             type=str(shape.type),
             shape_id=getattr(shape, "id", "") or "",
             track_id="",
-            box=bounding_box(list(shape.points)),
+            points=tuple(shape.points),
         )
     for track in annotations.tracks:
         for shape in track.shapes:
-            if shape.outside or str(shape.type) not in COMPARABLE_TYPES:
+            if shape.outside:
                 continue
             yield Annotated(
                 frame=shape.frame,
@@ -163,68 +126,54 @@ def iter_objects(annotations):
                 type=str(shape.type),
                 shape_id=getattr(shape, "id", "") or "",
                 track_id=getattr(track, "id", "") or "",
-                box=bounding_box(list(shape.points)),
+                points=tuple(shape.points),
             )
 
 
-def group_duplicates(objects: list[Annotated], iou_threshold: float, same_label: bool):
-    """Groups of objects that annotate the same thing, as lists of
-    (object, IoU with the group's first object).
+def format_points(points: tuple[float, ...], limit: int = 8) -> str:
+    """The coordinates as text, cut short: a mask's points are a whole RLE."""
+    head = ",".join(f"{value:.2f}" for value in points[:limit])
+    return f"{head},..." if len(points) > limit else head
 
-    Every candidate is compared against the group's first object rather than
-    against every member: a duplicate is a second copy of one original, and
-    chaining through intermediates would merge a whole row of adjacent objects
-    into one group.
+
+def find_duplicates(task, label_names: dict[int, str], same_label: bool) -> list[Duplicate]:
+    """The duplicate objects of one task, numbered by group.
+
+    Two objects are duplicates when they sit on the same frame and share the
+    shape type and the coordinates, so the objects can be bucketed by that key
+    in one pass instead of compared pairwise.
     """
-    groups: list[list[tuple[Annotated, float]]] = []
-    for obj in objects:
-        for group in groups:
-            first, _ = group[0]
-            if same_label and first.label_id != obj.label_id:
-                continue
-            score = iou(first.box, obj.box)
-            if score >= iou_threshold:
-                group.append((obj, score))
-                break
-        else:
-            # The first object of a group is its own reference, so its IoU is 1.
-            groups.append([(obj, 1.0)])
-    return [group for group in groups if len(group) > 1]
-
-
-def find_duplicates(
-    task, label_names: dict[int, str], iou_threshold: float, same_label: bool
-) -> list[Duplicate]:
-    """The duplicate objects of one task, numbered by group."""
     job_of_frame = {}
     for job in task.get_jobs():
         for frame in range(job.start_frame, job.stop_frame + 1):
             job_of_frame.setdefault(frame, job.id)
 
-    by_frame = defaultdict(list)
+    groups: dict[tuple, list[Annotated]] = defaultdict(list)
     for obj in iter_objects(task.get_annotations()):
-        by_frame[obj.frame].append(obj)
+        label_part = obj.label_id if same_label else None
+        groups[(obj.frame, label_part, obj.type, obj.points)].append(obj)
 
     duplicates = []
     group_number = 0
-    for frame in sorted(by_frame):
-        for group in group_duplicates(by_frame[frame], iou_threshold, same_label):
-            group_number += 1
-            for obj, score in group:
-                duplicates.append(
-                    Duplicate(
-                        task_id=task.id,
-                        job_id=job_of_frame.get(frame, ""),
-                        frame=frame,
-                        group=group_number,
-                        label=label_names[obj.label_id],
-                        type=obj.type,
-                        shape_id=obj.shape_id,
-                        track_id=obj.track_id,
-                        iou=round(score, 3),
-                        box=",".join(f"{value:.1f}" for value in obj.box),
-                    )
+    for key in sorted(groups, key=lambda key: key[0]):
+        members = groups[key]
+        if len(members) < 2:
+            continue
+        group_number += 1
+        for obj in members:
+            duplicates.append(
+                Duplicate(
+                    task_id=task.id,
+                    job_id=job_of_frame.get(obj.frame, ""),
+                    frame=obj.frame,
+                    group=group_number,
+                    label=label_names[obj.label_id],
+                    type=obj.type,
+                    shape_id=obj.shape_id,
+                    track_id=obj.track_id,
+                    points=format_points(obj.points),
                 )
+            )
     return duplicates
 
 
@@ -261,9 +210,7 @@ def main() -> None:
 
         duplicates: list[Duplicate] = []
         for task in tasks:
-            duplicates.extend(
-                find_duplicates(task, label_names, args.iou_threshold, not args.any_label)
-            )
+            duplicates.extend(find_duplicates(task, label_names, not args.any_label))
 
     groups = 0
     for _, members in groupby(duplicates, key=lambda d: (d.task_id, d.group)):
@@ -271,15 +218,14 @@ def main() -> None:
         first = members[0]
         groups += 1
         print(
-            f"duplicate group {first.group} in task {first.task_id}, "
-            f"frame {first.frame}: {len(members)} objects"
+            f"duplicate group {first.group} in task {first.task_id}, frame {first.frame}: "
+            f"{len(members)} objects at {first.points}"
         )
         for member in members:
             origin = (
                 f"track {member.track_id}" if member.track_id != "" else f"shape {member.shape_id}"
             )
-            suffix = "" if member is first else f" (IoU {member.iou})"
-            print(f"  {member.label} {member.type} {origin} at {member.box}{suffix}")
+            print(f"  {member.label} {member.type} {origin}")
 
     with args.output.open("w", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=[field.name for field in fields(Duplicate)])

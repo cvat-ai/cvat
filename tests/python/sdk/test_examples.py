@@ -159,38 +159,53 @@ class TestExampleHelpers:
     def box(frame: int, label_id: int, points: list[float], type_: str = "rectangle"):
         return models.LabeledShapeRequest(type=type_, frame=frame, label_id=label_id, points=points)
 
-    def test_data_lint_groups_near_identical_shapes(self):
-        recipe = load_recipe("project_data_lint.py")
+    def test_duplicates_groups_objects_with_the_same_coordinates(self):
+        recipe = load_recipe("project_find_duplicates.py")
         task = self.duplicate_task(
             shapes=[
                 self.box(0, 1, [1.0, 1.0, 4.0, 8.0]),
+                self.box(0, 1, [1.0, 1.0, 4.0, 8.0]),
+                # None of the rest belongs to the group: a shifted box is a
+                # different object, and duplicates are looked for within one frame.
                 self.box(0, 1, [1.1, 1.0, 4.0, 8.1]),
-                # Neither the distant box nor the copy on another frame belongs
-                # to the group: duplicates are looked for within one frame.
-                self.box(0, 1, [50.0, 50.0, 60.0, 60.0]),
                 self.box(1, 1, [1.0, 1.0, 4.0, 8.0]),
             ]
         )
 
-        duplicates = recipe.find_duplicates(task, {1: "object"}, 0.9, True)
+        duplicates = recipe.find_duplicates(task, {1: "object"}, True)
 
         assert [(d.frame, d.group, d.job_id) for d in duplicates] == [(0, 1, 11), (0, 1, 11)]
-        assert duplicates[0].iou == 1.0
-        assert 0.9 <= duplicates[1].iou < 1.0
+        assert {d.points for d in duplicates} == {"1.00,1.00,4.00,8.00"}
+
+    def test_duplicates_ignore_the_shape_type_of_matching_coordinates(self):
+        recipe = load_recipe("project_find_duplicates.py")
+        # Comparing coordinates for equality needs no geometry, so every shape
+        # type takes part - but a polygon is not a duplicate of a rectangle.
+        task = self.duplicate_task(
+            shapes=[
+                self.box(0, 1, [1.0, 1.0, 4.0, 8.0], type_="mask"),
+                self.box(0, 1, [1.0, 1.0, 4.0, 8.0], type_="mask"),
+                self.box(0, 1, [1.0, 1.0, 4.0, 8.0], type_="polygon"),
+            ]
+        )
+
+        duplicates = recipe.find_duplicates(task, {1: "object"}, True)
+
+        assert [(d.type, d.group) for d in duplicates] == [("mask", 1), ("mask", 1)]
 
     @pytest.mark.parametrize("same_label, expected", [(True, 0), (False, 2)])
-    def test_data_lint_groups_across_labels_only_when_told_to(self, same_label, expected):
-        recipe = load_recipe("project_data_lint.py")
+    def test_duplicates_group_across_labels_only_when_told_to(self, same_label, expected):
+        recipe = load_recipe("project_find_duplicates.py")
         task = self.duplicate_task(
             shapes=[self.box(0, 1, [1.0, 1.0, 4.0, 8.0]), self.box(0, 2, [1.0, 1.0, 4.0, 8.0])]
         )
 
-        duplicates = recipe.find_duplicates(task, {1: "car", 2: "vehicle"}, 0.9, same_label)
+        duplicates = recipe.find_duplicates(task, {1: "car", 2: "vehicle"}, same_label)
 
         assert len(duplicates) == expected
 
-    def test_data_lint_compares_a_track_keyframe_with_a_shape(self):
-        recipe = load_recipe("project_data_lint.py")
+    def test_duplicates_compare_a_track_keyframe_with_a_shape(self):
+        recipe = load_recipe("project_find_duplicates.py")
         task = self.duplicate_task(
             shapes=[self.box(0, 1, [1.0, 1.0, 4.0, 8.0])],
             tracks=[
@@ -206,17 +221,17 @@ class TestExampleHelpers:
             ],
         )
 
-        duplicates = recipe.find_duplicates(task, {1: "object"}, 0.9, True)
+        duplicates = recipe.find_duplicates(task, {1: "object"}, True)
 
         assert [d.group for d in duplicates] == [1, 1]
 
-    def test_data_lint_skips_outside_shapes_and_types_without_a_box(self):
-        recipe = load_recipe("project_data_lint.py")
+    def test_duplicates_skip_outside_shapes(self):
+        recipe = load_recipe("project_find_duplicates.py")
         task = self.duplicate_task(
             shapes=[
                 self.box(0, 1, [1.0, 1.0, 4.0, 8.0]),
-                # An 'outside' copy is intentionally not visible, and a mask's
-                # points are an RLE rather than x/y pairs. Neither is a duplicate.
+                # An 'outside' copy is intentionally not visible, so it does not
+                # duplicate the shape it sits on.
                 models.LabeledShapeRequest(
                     type="rectangle",
                     frame=0,
@@ -224,49 +239,10 @@ class TestExampleHelpers:
                     points=[1.0, 1.0, 4.0, 8.0],
                     outside=True,
                 ),
-                self.box(0, 1, [1.0, 1.0, 4.0, 8.0], type_="mask"),
             ]
         )
 
-        assert recipe.find_duplicates(task, {1: "object"}, 0.9, True) == []
-
-    @staticmethod
-    def bucket_page(names: list[tuple[str, str]], next_token: str | None):
-        """One retrieve_content_v2 response: (name, type) entries plus a token."""
-        return (
-            types.SimpleNamespace(
-                content=[
-                    types.SimpleNamespace(name=name, type=types.SimpleNamespace(value=entry_type))
-                    for name, entry_type in names
-                ],
-                next=next_token,
-            ),
-            None,
-        )
-
-    def test_import_from_cloud_looks_up_a_key_across_pages(self):
-        recipe = load_recipe("task_import_annotations_from_cloud.py")
-        api = MagicMock()
-        api.retrieve_content_v2.side_effect = [
-            self.bucket_page([("other.zip", "REG")], "page-2"),
-            self.bucket_page([("task_42.zip", "REG")], None),
-        ]
-
-        assert recipe.bucket_contains(api, 7, "annotations/task_42.zip")
-
-        first, second = api.retrieve_content_v2.call_args_list
-        assert first.args == (7,) and first.kwargs == {"prefix": "annotations/"}
-        assert second.kwargs["next_token"] == "page-2"
-
-    def test_import_from_cloud_reports_a_key_the_bucket_does_not_have(self):
-        recipe = load_recipe("task_import_annotations_from_cloud.py")
-        api = MagicMock()
-        api.retrieve_content_v2.side_effect = [
-            self.bucket_page([("task_42.zip", "DIR"), ("task_43.zip", "REG")], None)
-        ]
-
-        assert not recipe.bucket_contains(api, 7, "task_42.zip")
-        assert api.retrieve_content_v2.call_args.kwargs == {}
+        assert recipe.find_duplicates(task, {1: "object"}, True) == []
 
     def test_incremental_download_needs_task_ids_to_go_offline(
         self, monkeypatch: pytest.MonkeyPatch
@@ -718,7 +694,7 @@ class TestExamples:
             args=[
                 "--image-dir",
                 str(image_dir),
-                "--validation-frame",
+                "--gt-frame",
                 "img_0.png",
                 "img_2.png",
             ],
@@ -743,7 +719,7 @@ class TestExamples:
 
         result = self.run_recipe(
             "task_create_with_validation.py",
-            args=["--image-dir", str(image_dir), "--frame-count", "2", "--random-seed", "42"],
+            args=["--image-dir", str(image_dir), "--gt-frame-count", "2", "--random-seed", "42"],
         )
 
         assert "Ground truth job" in result.stdout
@@ -760,7 +736,7 @@ class TestExamples:
             args=[
                 "--image-dir",
                 str(image_dir),
-                "--validation-frame",
+                "--gt-frame",
                 "img_0.png",
                 "--gt-annotations",
                 str(annotations),
@@ -782,7 +758,7 @@ class TestExamples:
 
         result = self.run_recipe(
             "task_create_with_validation.py",
-            args=["--image-dir", str(image_dir), "--validation-frame", "nope.png"],
+            args=["--image-dir", str(image_dir), "--gt-frame", "nope.png"],
             expect_failure=True,
         )
         assert "not in" in result.stderr
@@ -796,7 +772,7 @@ class TestExamples:
             args=[
                 "--image-dir",
                 str(image_dir),
-                "--pool-frame-count",
+                "--honeypot-frame-count",
                 "2",
                 "--honeypots-per-job",
                 "1",
@@ -817,66 +793,37 @@ class TestExamples:
         self.client.tasks.retrieve(task_id).remove()
 
     @pytest.mark.timeout(180)
-    def test_honeypot_refresh_changes_the_mapping(self):
-        image_dir = self.make_image_dir(6)
-        result = self.run_recipe(
-            "task_create_with_honeypots.py",
-            args=[
-                "--image-dir",
-                str(image_dir),
-                "--pool-frame-count",
-                "2",
-                "--honeypots-per-job",
-                "1",
-                "--segment-size",
-                "2",
-                "--refresh",
-            ],
-            with_cleanup=False,
-        )
-
-        assert "Refreshed the honeypots" in result.stdout
-        assert result.stdout.count("Validation pool frames:") == 2
-        self.client.tasks.retrieve(self.created_task_id(result.stdout)).remove()
-
-    @pytest.mark.timeout(180)
-    def test_honeypot_disable_frame(self):
+    def test_honeypot_task_takes_the_named_frames_into_the_pool(self):
         image_dir = self.make_image_dir(6)
 
         # The pool is appended after the original frames, so with 6 images and a
         # 2-frame pool the pool always lands at indexes 6-7 - deterministic, unlike
-        # --pool-frame-count's own random selection of *which* images join the pool.
+        # --honeypot-frame-count's random selection of *which* images join the pool.
         result = self.run_recipe(
             "task_create_with_honeypots.py",
             args=[
                 "--image-dir",
                 str(image_dir),
-                "--pool-frame",
+                "--honeypot-frame",
                 "img_0.png",
                 "img_1.png",
                 "--honeypots-per-job",
                 "1",
                 "--segment-size",
                 "2",
-                "--disable-frame",
-                "6",
             ],
         )
-        assert "Disabled frames: [6]" in result.stdout
+        assert "Validation pool frames: [6, 7]" in result.stdout
         assert "Deleted task" in result.stdout
 
-    def gt_job_of(self, task_id: int):
-        jobs = self.client.jobs.list(task_id=task_id, type="ground_truth")
-        return jobs[0] if jobs else None
-
     @pytest.mark.timeout(120)
-    def test_add_gt_frames_by_index(self):
+    def test_gt_job_by_index(self):
         task = self.make_task(
             name="GT frames by index", resources=sorted(self.make_image_dir(4).iterdir())
         )
 
         result = self.run_recipe(
-            "task_add_gt_frames.py",
+            "task_create_gt_job.py",
             args=["--task-id", str(task.id), "--frame", "0", "2"],
             with_cleanup=False,
         )
@@ -886,13 +833,13 @@ class TestExamples:
         assert sorted(layout.validation_frames) == [0, 2]
 
     @pytest.mark.timeout(120)
-    def test_add_gt_frames_by_name(self):
+    def test_gt_job_by_name(self):
         task = self.make_task(
             name="GT frames by name", resources=sorted(self.make_image_dir(4).iterdir())
         )
 
         self.run_recipe(
-            "task_add_gt_frames.py",
+            "task_create_gt_job.py",
             args=["--task-id", str(task.id), "--frame-name", "img_1.png", "img_3.png"],
             with_cleanup=False,
         )
@@ -901,18 +848,18 @@ class TestExamples:
         assert sorted(layout.validation_frames) == [1, 3]
 
     @pytest.mark.timeout(120)
-    def test_add_gt_frames_refuses_to_overwrite(self):
+    def test_gt_job_refuses_to_overwrite(self):
         task = self.make_task(
             name="GT frames twice", resources=sorted(self.make_image_dir(4).iterdir())
         )
         self.run_recipe(
-            "task_add_gt_frames.py",
+            "task_create_gt_job.py",
             args=["--task-id", str(task.id), "--frame", "0"],
             with_cleanup=False,
         )
 
         refused = self.run_recipe(
-            "task_add_gt_frames.py",
+            "task_create_gt_job.py",
             args=["--task-id", str(task.id), "--frame", "1"],
             with_cleanup=False,
             expect_failure=True,
@@ -920,7 +867,7 @@ class TestExamples:
         assert "already has a ground truth job" in refused.stderr
 
         replaced = self.run_recipe(
-            "task_add_gt_frames.py",
+            "task_create_gt_job.py",
             args=["--task-id", str(task.id), "--frame", "1", "--replace"],
             with_cleanup=False,
         )
@@ -928,37 +875,23 @@ class TestExamples:
         layout, _ = self.client.api_client.tasks_api.retrieve_validation_layout(task.id)
         assert sorted(layout.validation_frames) == [1]
 
-    def test_add_gt_frames_rejects_out_of_range(self):
+    def test_gt_job_rejects_out_of_range(self):
         task = self.make_task(
             name="GT frames range", resources=sorted(self.make_image_dir(2).iterdir())
         )
 
         result = self.run_recipe(
-            "task_add_gt_frames.py",
+            "task_create_gt_job.py",
             args=["--task-id", str(task.id), "--frame", "99"],
             with_cleanup=False,
             expect_failure=True,
         )
         assert "out of range" in result.stderr
 
-    @pytest.mark.timeout(120)
-    def test_add_gt_frames_cleanup_removes_only_the_job(self):
-        task = self.make_task(
-            name="GT frames cleanup", resources=sorted(self.make_image_dir(3).iterdir())
-        )
-
-        result = self.run_recipe(
-            "task_add_gt_frames.py",
-            args=["--task-id", str(task.id), "--frame", "0"],
-        )
-
-        assert "Deleted ground truth job" in result.stdout
-        assert self.gt_job_of(task.id) is None
-        assert self.client.tasks.retrieve(task.id).id == task.id
-
     def seed_duplicate_project(self):
-        """A project whose single task carries one box, a near-identical copy of
-        it, and an unrelated box. Images are 5x10 (w x h).
+        """A project whose single task carries one box, an exact copy of it, a
+        box shifted by a fraction of a pixel, and an unrelated box.
+        Images are 5x10 (w x h).
         """
         project = self.make_project(name="Duplicate project")
         task = self.make_task_in_project(project, name="Duplicate task")
@@ -966,6 +899,9 @@ class TestExamples:
         task.set_annotations(
             models.LabeledDataRequest(
                 shapes=[
+                    models.LabeledShapeRequest(
+                        type="rectangle", frame=0, label_id=label_id, points=[1.0, 1.0, 4.0, 8.0]
+                    ),
                     models.LabeledShapeRequest(
                         type="rectangle", frame=0, label_id=label_id, points=[1.0, 1.0, 4.0, 8.0]
                     ),
@@ -980,11 +916,11 @@ class TestExamples:
         )
         return project, task
 
-    def test_data_lint_reports_duplicate_objects_and_fails(self):
+    def test_duplicates_are_reported_and_fail_the_run(self):
         project, task = self.seed_duplicate_project()
 
         result = self.run_recipe(
-            "project_data_lint.py",
+            "project_find_duplicates.py",
             args=["--project-id", str(project.id)],
             with_cleanup=False,
             expect_failure=True,
@@ -995,19 +931,20 @@ class TestExamples:
         rows = self.read_manifest("duplicates.csv")
         assert [row["group"] for row in rows] == ["1", "1"]
         assert all(int(row["task_id"]) == task.id for row in rows)
-        assert float(rows[1]["iou"]) >= 0.9
+        # The box shifted by a fraction of a pixel is a different object.
+        assert {row["points"] for row in rows} == {"1.00,1.00,4.00,8.00"}
 
-    def test_data_lint_no_fail_exits_zero(self):
+    def test_duplicates_no_fail_exits_zero(self):
         project, _ = self.seed_duplicate_project()
 
         result = self.run_recipe(
-            "project_data_lint.py",
+            "project_find_duplicates.py",
             args=["--project-id", str(project.id), "--no-fail"],
             with_cleanup=False,
         )
         assert "Found 1 duplicate group(s)" in result.stdout
 
-    def test_data_lint_accepts_distinct_objects(self):
+    def test_duplicates_accept_distinct_objects(self):
         # The same box on every frame: copies on different frames annotate
         # different things, so none of them is a duplicate.
         project = self.make_project(name="Distinct project")
@@ -1028,7 +965,7 @@ class TestExamples:
         )
 
         result = self.run_recipe(
-            "project_data_lint.py",
+            "project_find_duplicates.py",
             args=["--project-id", str(project.id)],
             with_cleanup=False,
         )
@@ -1036,7 +973,7 @@ class TestExamples:
         assert "Found 0 duplicate group(s), 0 object(s)" in result.stdout
         assert self.read_manifest("duplicates.csv") == []
 
-    def test_data_lint_groups_across_labels_only_with_any_label(self):
+    def test_duplicates_group_across_labels_only_with_any_label(self):
         project = self.make_project(name="Any label project", labels=("car", "vehicle"))
         task = self.make_task_in_project(project, name="Any label task")
         label_ids = {label.name: label.id for label in task.get_labels()}
@@ -1055,14 +992,14 @@ class TestExamples:
         )
 
         clean = self.run_recipe(
-            "project_data_lint.py",
+            "project_find_duplicates.py",
             args=["--project-id", str(project.id)],
             with_cleanup=False,
         )
         assert "Found 0 duplicate group(s)" in clean.stdout
 
         result = self.run_recipe(
-            "project_data_lint.py",
+            "project_find_duplicates.py",
             args=["--project-id", str(project.id), "--any-label"],
             with_cleanup=False,
             expect_failure=True,
@@ -1071,48 +1008,12 @@ class TestExamples:
         assert "Found 1 duplicate group(s), 2 object(s)" in result.stdout
         assert {row["label"] for row in self.read_manifest("duplicates.csv")} == {"car", "vehicle"}
 
-    def test_data_lint_iou_threshold_controls_what_counts_as_a_duplicate(self):
-        project = self.make_project(name="Threshold project")
-        task = self.make_task_in_project(project, name="Threshold task")
-        label_id = task.get_labels()[0].id
-        # Two equally sized boxes offset vertically: they overlap over half of
-        # their union, so the default threshold leaves them alone.
-        task.set_annotations(
-            models.LabeledDataRequest(
-                shapes=[
-                    models.LabeledShapeRequest(
-                        type="rectangle", frame=0, label_id=label_id, points=[0.0, 0.0, 4.0, 6.0]
-                    ),
-                    models.LabeledShapeRequest(
-                        type="rectangle", frame=0, label_id=label_id, points=[0.0, 2.0, 4.0, 8.0]
-                    ),
-                ]
-            )
-        )
-
-        strict = self.run_recipe(
-            "project_data_lint.py",
-            args=["--project-id", str(project.id)],
-            with_cleanup=False,
-        )
-        assert "Found 0 duplicate group(s)" in strict.stdout
-
-        result = self.run_recipe(
-            "project_data_lint.py",
-            args=["--project-id", str(project.id), "--iou-threshold", "0.4"],
-            with_cleanup=False,
-            expect_failure=True,
-        )
-
-        assert "Found 1 duplicate group(s), 2 object(s)" in result.stdout
-        assert [row["iou"] for row in self.read_manifest("duplicates.csv")] == ["1.0", "0.5"]
-
-    def test_data_lint_rejects_a_task_outside_the_project(self):
+    def test_duplicates_reject_a_task_outside_the_project(self):
         project = self.make_project_with_task()
         stranger = self.make_task(name="Stranger")
 
         result = self.run_recipe(
-            "project_data_lint.py",
+            "project_find_duplicates.py",
             args=["--project-id", str(project.id), "--task-id", str(stranger.id)],
             with_cleanup=False,
             expect_failure=True,
@@ -1120,24 +1021,24 @@ class TestExamples:
         assert "not found in project" in result.stderr
 
     @pytest.mark.timeout(180)
-    def test_subtasks_create_one_task_per_label_group(self):
+    def test_per_label_group_creates_one_task_per_group(self):
         image_dir = self.make_image_dir(2)
 
         result = self.run_recipe(
-            "task_create_subtasks.py",
+            "tasks_create_per_label_group.py",
             args=[
                 "--image-dir",
                 str(image_dir),
-                "--subtask",
+                "--task",
                 "boxes:rectangle:car,person",
-                "--subtask",
+                "--task",
                 "roads:polygon:road",
             ],
             with_cleanup=False,
         )
 
-        assert "Created 2 subtask(s)" in result.stdout
-        ids = [int(match) for match in re.findall(r"as task (\d+)", result.stdout)]
+        assert "Created 2 task(s)" in result.stdout
+        ids = [int(match) for match in CREATED_TASK_RE.findall(result.stdout)]
         assert len(ids) == 2
         boxes, roads = (self.client.tasks.retrieve(task_id) for task_id in ids)
         assert sorted((label.name, str(label.type)) for label in boxes.get_labels()) == [
@@ -1150,30 +1051,30 @@ class TestExamples:
         for task_id in ids:
             self.client.tasks.retrieve(task_id).remove()
 
-    def test_subtasks_reject_unknown_label_type(self):
+    def test_per_label_group_rejects_unknown_label_type(self):
         image_dir = self.make_image_dir(2)
 
         result = self.run_recipe(
-            "task_create_subtasks.py",
-            args=["--image-dir", str(image_dir), "--subtask", "boxes:square:car"],
+            "tasks_create_per_label_group.py",
+            args=["--image-dir", str(image_dir), "--task", "boxes:square:car"],
             expect_failure=True,
         )
         assert "square" in result.stderr
-        assert "Created subtask" not in result.stdout
+        assert "Created task" not in result.stdout
 
-    def test_subtasks_reject_malformed_spec(self):
+    def test_per_label_group_rejects_malformed_spec(self):
         image_dir = self.make_image_dir(2)
 
         result = self.run_recipe(
-            "task_create_subtasks.py",
-            args=["--image-dir", str(image_dir), "--subtask", "boxes-rectangle-car"],
+            "tasks_create_per_label_group.py",
+            args=["--image-dir", str(image_dir), "--task", "boxes-rectangle-car"],
             expect_failure=True,
         )
         assert "NAME:TYPE:label" in result.stderr
 
-    def test_subtasks_parse_spec_helper(self):
-        recipe = load_recipe("task_create_subtasks.py")
-        assert recipe.parse_subtask("boxes:rectangle:car, person") == (
+    def test_per_label_group_parse_spec_helper(self):
+        recipe = load_recipe("tasks_create_per_label_group.py")
+        assert recipe.parse_spec("boxes:rectangle:car, person") == (
             "boxes",
             "rectangle",
             ["car", "person"],

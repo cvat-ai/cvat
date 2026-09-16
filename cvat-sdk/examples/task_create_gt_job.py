@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-"""Add a ground truth job to an existing task with an exact frame list you choose.
+"""Create a ground truth job in an existing task from an exact frame list you choose.
 
 Steps:
   1. Retrieve the task and resolve the requested frames: indexes (--frame) or
@@ -13,10 +13,10 @@ Steps:
   4. Read the task's validation layout back and print the frames the server
      recorded, so you can see the request landed exactly as asked.
 
-Usage (run ``python task_add_gt_frames.py --help`` for the full list of options):
-  python task_add_gt_frames.py --host 'https://app.cvat.ai' --token '<your token>' \\
+Usage (run ``python task_create_gt_job.py --help`` for the full list of options):
+  python task_create_gt_job.py --host 'https://app.cvat.ai' --token '<your token>' \\
       --task-id 42 --frame 0 17 42
-  python task_add_gt_frames.py --host 'https://app.cvat.ai' --token '<your token>' \\
+  python task_create_gt_job.py --host 'https://app.cvat.ai' --token '<your token>' \\
       --task-id 42 --frame-name 'img_001.png' 'img_042.png'
 """
 
@@ -48,9 +48,6 @@ def parse_args() -> argparse.Namespace:
         "--replace",
         action="store_true",
         help="delete an existing ground truth job first (discards its annotations)",
-    )
-    parser.add_argument(
-        "--cleanup", action="store_true", help="delete the created ground truth job at the end"
     )
     return parser.parse_args()
 
@@ -104,12 +101,6 @@ def main() -> None:
         layout, _ = client.api_client.tasks_api.retrieve_validation_layout(task.id)
         print(f"Validation frames: {sorted(layout.validation_frames)}")
         print("Upload the ground truth with: task_create_with_validation.py --gt-annotations ...")
-
-        if args.cleanup:
-            client.api_client.jobs_api.destroy(job.id)
-            print(f"Deleted ground truth job {job.id}")
-        else:
-            print("Keeping the ground truth job; pass --cleanup to delete it")
 
 
 if __name__ == "__main__":

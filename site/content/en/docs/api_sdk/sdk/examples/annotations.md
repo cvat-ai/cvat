@@ -10,7 +10,7 @@ existing task, `task_import_annotations_from_cloud.py` does the same with a
 file that stays in a registered cloud storage, `task_edit_annotations.py`
 reads a task's annotations, applies a bulk edit, and writes it back,
 `project_annotation_stats.py` walks a project's tasks and aggregates object
-counts per label and type into a CSV report, and `project_data_lint.py`
+counts per label and type into a CSV report, and `project_find_duplicates.py`
 finds objects that were annotated twice before you export them.
 
 ## Import annotations into a task
@@ -49,11 +49,6 @@ recipe posts the import request through the low-level
 `client.api_client.tasks_api` with `location=Location.CLOUD_STORAGE` and awaits
 the returned `rq_id` with `client.wait_for_completion()`.
 
-Before starting the import, the recipe checks that the object key really is in
-the bucket — otherwise a typo would only show up as a failed background
-request. Pass `--no-file-check` to skip that listing (for example when the
-credentials may read objects but not list them).
-
 | Flag | Required | Meaning |
 | --- | --- | --- |
 | `--host` | yes | Server URL |
@@ -62,8 +57,7 @@ credentials may read objects but not list them).
 | `--filename` | yes | Object key in the bucket, e.g. `'annotations/task_42.zip'` |
 | `--cloud-storage-id` | no | Registered cloud storage id; omit to use the task's own source storage |
 | `--import-format` | no | Importer name (default `'COCO 1.0'`) |
-| `--import-mode` | no | `replace` (default) or `append` |
-| `--no-file-check` | no | Skip the bucket listing that verifies `--filename` |
+| `--import-mode` | no | `append` (default) or `replace` |
 
 ```bash
 # explicit bucket
@@ -71,9 +65,9 @@ python task_import_annotations_from_cloud.py --host 'https://app.cvat.ai' --toke
     --task-id 42 --cloud-storage-id 7 --filename 'annotations/task_42.zip' \
     --import-format 'COCO 1.0'
 
-# the bucket configured as the task's source storage, adding to the existing objects
+# the bucket configured as the task's source storage, replacing what the task has
 python task_import_annotations_from_cloud.py --host 'https://app.cvat.ai' --token '<your token>' \
-    --task-id 42 --filename 'predictions/task_42.zip' --import-mode append
+    --task-id 42 --filename 'predictions/task_42.zip' --import-mode replace
 ```
 
 Register the bucket first with
@@ -138,32 +132,24 @@ python project_annotation_stats.py --host 'https://app.cvat.ai' --token '<your t
 
 Walks a project's tasks and reports groups of objects that annotate the same
 thing on the same frame. Duplicates appear when an import runs twice, when two
-annotators' job ranges overlap, or after a merge — and the ones that hurt are
-not the exact copies but the near-identical boxes nobody spots by eye, so the
-recipe compares objects by intersection over union rather than by equality.
+annotators' job ranges overlap, or after a merge.
 
-Two objects belong to the same group when the IoU of their bounding boxes is at
-least `--iou-threshold` (`0.9` by default) and they carry the same label.
-`--any-label` drops the label condition, which catches the same car annotated
-once as `car` and once as `vehicle`.
-
-Every candidate is compared against the group's first object rather than
-against every member: a duplicate is a second copy of one original, and
-chaining through intermediates would merge a whole row of adjacent objects into
-a single group.
+Two objects belong to the same group when they sit on the same frame and share
+the shape type and the coordinates. The comparison is an exact one: an object
+whose coordinates differ is a different object, not a duplicate, so no
+similarity threshold is involved. `--any-label` drops the label condition,
+which catches the same car annotated once as `car` and once as `vehicle`.
 
 The recipe only reports. Groups are printed and written to `duplicates.csv`
 with one row per object (`task_id`, `job_id`, `frame`, `group`, `label`,
-`type`, `shape_id`, `track_id`, `iou`, `box`). It exits 1 when any group was
-found, so it can gate an export pipeline — `--no-fail` turns that off. Fix what
-it reports with `task_edit_annotations.py` or in the UI.
+`type`, `shape_id`, `track_id`, `points`). It exits 1 when any group was found,
+so it can gate an export pipeline — `--no-fail` turns that off. Fix what it
+reports with `task_edit_annotations.py` or in the UI.
 
-Rectangles, polygons, polylines and points are compared through their axis-aligned
-bounding boxes. Masks, skeletons, ellipses and cuboids are skipped, because
-their `points` are not plain x/y pairs. Tags are skipped too — they have no
-geometry to overlap. Objects marked `outside` are skipped everywhere, and track
-keyframes are compared alongside plain shapes, so a shape duplicating a track
-is reported.
+Every shape type is compared, because comparing coordinates for equality needs
+no geometry. Tags are skipped — they have no coordinates. Objects marked
+`outside` are skipped too, and track keyframes are compared alongside plain
+shapes, so a shape duplicating a track is reported.
 
 | Flag | Required | Meaning |
 | --- | --- | --- |
@@ -171,19 +157,18 @@ is reported.
 | `--token` | yes | Personal Access Token |
 | `--project-id` | yes | Id of the project to inspect |
 | `--task-id ID [ID ...]` | no | Inspect only these tasks of the project; they are retrieved by id, so a big project is not listed |
-| `--iou-threshold` | no | Minimum bounding box overlap for a duplicate, in `(0, 1]` (default `0.9`) |
 | `--any-label` | no | Also group objects that carry different labels |
 | `--output` | no | CSV report path (default `duplicates.csv`) |
 | `--no-fail` | no | Exit 0 even when duplicates were found |
 
 ```bash
-python project_data_lint.py --host 'https://app.cvat.ai' --token '<your token>' \
-    --project-id 7 --iou-threshold 0.8
+python project_find_duplicates.py --host 'https://app.cvat.ai' --token '<your token>' \
+    --project-id 7
 ```
 
 ### The script
 
-{{< include-code "assets/sdk-examples/project_data_lint.py" >}}
+{{< include-code "assets/sdk-examples/project_find_duplicates.py" >}}
 
 _Other SDK options:_
 
@@ -195,7 +180,7 @@ _Other SDK options:_
 | `Job.import_annotations(format_name, path)` | The same import scoped to a single job. |
 | `jobs_api.create_annotations(id, format=..., filename=..., location=..., cloud_storage_id=...)` | The bucket import scoped to a single job. |
 | `projects_api.create_dataset(id, format=..., filename=..., location=..., cloud_storage_id=...)` | Import a whole dataset into a project from a bucket. |
-| `cloudstorages_api.retrieve_content_v2(id, prefix=...)` | List a bucket's objects — how the recipe checks the key before importing. |
+| `cloudstorages_api.retrieve_content_v2(id, prefix=...)` | List a bucket's objects, to check a key before importing it. |
 | `Task.set_annotations(LabeledDataRequest(...))` | Replace a task's annotations with the given objects. |
 | `Task.update_annotations(PatchedLabeledDataRequest(...), action=AnnotationUpdateAction.CREATE \| UPDATE \| DELETE)` | Partial update: create, update, or delete only the objects in the request. |
 | `Task.remove_annotations(ids=[...])` | Delete specific objects by id — or all of them when `ids` is omitted. |
@@ -214,7 +199,7 @@ _Notes:_
 - A bucket import is a background request: the POST only returns an `rq_id`,
   and the annotations appear once `client.wait_for_completion()` returns. A
   missing key or wrong credentials surface as a failed request, not as an error
-  on the POST.
+  on the POST, so check the request's message when an import fails.
 - `--filename` is the object key as seen from the bucket root, including any
   "directory" prefix.
 - Full recipes:
@@ -222,4 +207,4 @@ _Notes:_
   [`task_import_annotations_from_cloud.py`](https://github.com/cvat-ai/cvat/tree/develop/cvat-sdk/examples/task_import_annotations_from_cloud.py),
   [`task_edit_annotations.py`](https://github.com/cvat-ai/cvat/tree/develop/cvat-sdk/examples/task_edit_annotations.py),
   [`project_annotation_stats.py`](https://github.com/cvat-ai/cvat/tree/develop/cvat-sdk/examples/project_annotation_stats.py),
-  [`project_data_lint.py`](https://github.com/cvat-ai/cvat/tree/develop/cvat-sdk/examples/project_data_lint.py).
+  [`project_find_duplicates.py`](https://github.com/cvat-ai/cvat/tree/develop/cvat-sdk/examples/project_find_duplicates.py).

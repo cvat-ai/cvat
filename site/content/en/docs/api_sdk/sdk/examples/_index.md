@@ -30,9 +30,9 @@ All examples are tested in the latest SDK version.
 - [Authenticate](authentication) — `auth_token.py`, `auth_profile.py`, `auth_cli.py`
 - [Projects](projects) — create/list, backup, restore, dataset export
 - [Tasks](tasks) — create from a bucket, bulk-create in a project,
-  inspect and export, subtasks by object type, explicit job file mapping
+  inspect and export, one task per label group, explicit job file mapping
 - [Jobs](jobs) — list jobs, round-robin assignment, batch-advance stages
-- [Annotations](annotations) — import from a file or a bucket, bulk-edit, per-label statistics, linting
+- [Annotations](annotations) — import from a file or a bucket, bulk-edit, per-label statistics, duplicate search
 - [Ground truth](ground-truth) — validation sets, honeypots, specific ground truth frames
 - [Datasets](datasets) — incremental download, bulk export
 - [Cloud storage](cloud-storage) — attach an S3-compatible bucket

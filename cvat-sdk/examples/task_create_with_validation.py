@@ -9,19 +9,19 @@ The validation frames are moved into a separate ground truth job, which the
 annotators never see. Quality reports compare the annotation jobs against it.
 
 Steps:
-  1. Collect the images from --image-dir.
+  1. Collect the files from --image-dir.
   2. Create the task with validation_params in "gt" mode: either the exact
-     frames you name (--validation-frame) or a random sample (--frame-count,
+     frames you name (--gt-frame) or a random sample (--gt-frame-count,
      reproducible with --random-seed).
   3. Find the created ground truth job and print its frames.
   4. Upload --gt-annotations into that job and print how many objects landed.
 
 Usage (run ``python task_create_with_validation.py --help`` for the full list of options):
   python task_create_with_validation.py --host 'https://app.cvat.ai' --token '<your token>' \\
-      --image-dir ./images --validation-frame 'img_001.png' 'img_042.png' \\
+      --image-dir ./images --gt-frame 'img_001.png' 'img_042.png' \\
       --gt-annotations ground_truth.zip --gt-format 'COCO 1.0'
   python task_create_with_validation.py --host 'https://app.cvat.ai' --token '<your token>' \\
-      --image-dir ./images --frame-count 20 --random-seed 42
+      --image-dir ./images --gt-frame-count 20 --random-seed 42
 """
 
 import argparse
@@ -30,8 +30,6 @@ from pathlib import Path
 
 from cvat_sdk import make_client, models
 from cvat_sdk.core.proxies.tasks import ResourceType
-
-IMAGE_SUFFIXES = {".jpg", ".jpeg", ".png", ".bmp", ".webp"}
 
 
 def parse_args() -> argparse.Namespace:
@@ -43,7 +41,11 @@ def parse_args() -> argparse.Namespace:
         help="Personal Access Token (CVAT UI: Profile -> Security)",
     )
     parser.add_argument(
-        "--image-dir", type=Path, required=True, help="directory with the task's images"
+        "--image-dir",
+        type=Path,
+        required=True,
+        help="directory with the task's images; every file in it is uploaded, "
+        "and the server decides which media it accepts",
     )
     parser.add_argument("--name", default="Task with a validation set", help="task name")
     parser.add_argument(
@@ -54,18 +56,20 @@ def parse_args() -> argparse.Namespace:
         help="label names to create (default: %(default)s)",
     )
     parser.add_argument("--segment-size", type=int, help="frames per annotation job")
+    # Naming the frames and counting them are two ways to say the same thing,
+    # so argparse rejects a command line that passes both.
     frames = parser.add_mutually_exclusive_group(required=True)
     frames.add_argument(
-        "--validation-frame",
+        "--gt-frame",
         nargs="+",
         metavar="NAME",
-        help="exact file names to use as validation frames",
+        help="exact file names to use as ground truth frames",
     )
     frames.add_argument(
-        "--frame-count", type=int, help="number of randomly chosen validation frames"
+        "--gt-frame-count", type=int, help="number of randomly chosen ground truth frames"
     )
     parser.add_argument(
-        "--random-seed", type=int, help="seed for --frame-count, for a reproducible split"
+        "--random-seed", type=int, help="seed for --gt-frame-count, for a reproducible split"
     )
     parser.add_argument(
         "--gt-annotations", type=Path, help="annotations file to upload into the ground truth job"
@@ -80,9 +84,14 @@ def parse_args() -> argparse.Namespace:
 
 
 def collect_images(image_dir: Path) -> list[Path]:
-    images = sorted(p for p in image_dir.iterdir() if p.suffix.lower() in IMAGE_SUFFIXES)
+    """The files to upload, passed as they are found.
+
+    The server is the authority on which media formats it supports, so
+    filtering by extension here would only reject files CVAT can read.
+    """
+    images = sorted(p for p in image_dir.iterdir() if p.is_file())
     if not images:
-        sys.exit(f"No images found in {image_dir}")
+        sys.exit(f"No files found in {image_dir}")
     return images
 
 
@@ -90,20 +99,20 @@ def main() -> None:
     args = parse_args()
     images = collect_images(args.image_dir)
 
-    # 2. "gt" mode puts the validation frames into a separate ground truth job.
+    # 2. "gt" mode puts the ground truth frames into a separate ground truth job.
     validation_params = {"mode": "gt"}
-    if args.validation_frame:
+    if args.gt_frame:
         available = {path.name for path in images}
-        unknown = [name for name in args.validation_frame if name not in available]
+        unknown = [name for name in args.gt_frame if name not in available]
         if unknown:
             sys.exit(f"Frame(s) {', '.join(unknown)} not in {args.image_dir}")
         validation_params["frame_selection_method"] = "manual"
-        validation_params["frames"] = list(args.validation_frame)
+        validation_params["frames"] = list(args.gt_frame)
     else:
-        if args.frame_count >= len(images):
-            sys.exit(f"--frame-count must be smaller than the {len(images)} images available")
+        if args.gt_frame_count >= len(images):
+            sys.exit(f"--gt-frame-count must be smaller than the {len(images)} files available")
         validation_params["frame_selection_method"] = "random_uniform"
-        validation_params["frame_count"] = args.frame_count
+        validation_params["frame_count"] = args.gt_frame_count
         if args.random_seed is not None:
             validation_params["random_seed"] = args.random_seed
 
@@ -130,7 +139,7 @@ def main() -> None:
         task_frames = task.get_frames_info()
         frame_names = [task_frames[index].name for index in layout.validation_frames]
         print(f"Ground truth job {gt_job.id}: {len(frame_names)} frames")
-        print(f"Validation frames: {', '.join(frame_names)}")
+        print(f"Ground truth frames: {', '.join(frame_names)}")
 
         # 4. Upload the ground truth itself.
         if args.gt_annotations:

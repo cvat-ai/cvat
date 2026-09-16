@@ -17,10 +17,8 @@ Steps:
   2. Fetch the server's import format list and validate --import-format.
   3. Resolve the storage to read from: --cloud-storage-id, or the task's own
      source storage when the flag is omitted.
-  4. Check that --filename really is in the bucket, to fail with a clear
-     message instead of a failed background job.
-  5. Start the import and wait for the background request to finish.
-  6. Count the objects again to show what the import added.
+  4. Start the import and wait for the background request to finish.
+  5. Count the objects again to show what the import added.
 
 Register a bucket first with cloud_storage_register.py to get the storage id.
 
@@ -67,15 +65,10 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--import-mode",
-        choices=["replace", "append"],
-        default="replace",
-        help="replace the task's annotations or add to them (default: '%(default)s')",
-    )
-    parser.add_argument(
-        "--no-file-check",
-        action="store_true",
-        help="skip the bucket listing of step 4 (e.g. when the credentials may only read "
-        "objects, not list them)",
+        choices=["append", "replace"],
+        default="append",
+        help="add to the task's annotations or replace them; the default keeps what "
+        "the task already has (default: '%(default)s')",
     )
     return parser.parse_args()
 
@@ -97,27 +90,6 @@ def resolve_cloud_storage_id(task, requested_id: int | None) -> int:
     return storage.cloud_storage_id
 
 
-def bucket_contains(api, cloud_storage_id: int, key: str) -> bool:
-    """Whether the bucket has an object with this key.
-
-    retrieve_content_v2 lists one "directory" of the bucket per call and
-    returns the names inside it, so the key is split into prefix + name.
-    """
-    prefix, _, name = key.rpartition("/")
-    next_token = None
-    while True:
-        content, _ = api.retrieve_content_v2(
-            cloud_storage_id,
-            **({"prefix": f"{prefix}/"} if prefix else {}),
-            **({"next_token": next_token} if next_token else {}),
-        )
-        if any(entry.type.value == "REG" and entry.name == name for entry in content.content):
-            return True
-        if not content.next:
-            return False
-        next_token = content.next
-
-
 def main() -> None:
     args = parse_args()
     with make_client(args.host, access_token=args.token) as client:
@@ -137,13 +109,7 @@ def main() -> None:
         cloud_storage_id = resolve_cloud_storage_id(task, args.cloud_storage_id)
         print(f"Reading {args.filename!r} from cloud storage {cloud_storage_id}")
 
-        # 4. A missing key would only surface as a failed background job.
-        if not args.no_file_check and not bucket_contains(
-            client.api_client.cloudstorages_api, cloud_storage_id, args.filename
-        ):
-            sys.exit(f"{args.filename!r} was not found in cloud storage {cloud_storage_id}")
-
-        # 5. location=cloud_storage makes the server fetch the file itself; the
+        # 4. location=cloud_storage makes the server fetch the file itself; the
         # response only starts a background request, whose id is awaited below.
         _, response = client.api_client.tasks_api.create_annotations(
             task.id,
@@ -160,7 +126,7 @@ def main() -> None:
         client.wait_for_completion(rq_id, log_prefix=f"Task {task.id} annotation import")
         print(f"Imported {args.filename} as {args.import_format!r} ({args.import_mode})")
 
-        # 6. Re-read the annotations, so the count is the server's state.
+        # 5. Re-read the annotations, so the count is the server's state.
         print(f"Task {task.id}: {count_objects(task)} objects after import")
 
 
