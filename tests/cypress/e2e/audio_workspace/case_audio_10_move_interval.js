@@ -65,12 +65,14 @@ context('Audio annotation. Move interval.', () => {
                 getRegionBounds().then((before) => {
                     moveRegion(regionStart + 50, viewportWidth + 100);
 
-                    getRegionBounds().should((after) => {
-                        const viewportRight = $viewport[0].getBoundingClientRect().right;
+                    cy.getAudioWaveformWrapper().then(($wrapper) => {
+                        const trackRight = $wrapper[0].getBoundingClientRect().right;
 
-                        expect(after.left).to.be.closeTo(viewportRight - before.width, POSITION_TOLERANCE_PX);
-                        expect(after.right).to.be.closeTo(viewportRight, POSITION_TOLERANCE_PX);
-                        expect(after.width).to.be.closeTo(before.width, POSITION_TOLERANCE_PX);
+                        getRegionBounds().should((after) => {
+                            expect(after.left).to.be.closeTo(trackRight - before.width, POSITION_TOLERANCE_PX);
+                            expect(after.right).to.be.closeTo(trackRight, POSITION_TOLERANCE_PX);
+                            expect(after.width).to.be.closeTo(before.width, POSITION_TOLERANCE_PX);
+                        });
                     });
                 });
             });
