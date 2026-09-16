@@ -32,7 +32,7 @@ from dataclasses import asdict, dataclass, fields
 from itertools import groupby
 from pathlib import Path
 
-from cvat_sdk import make_client
+from cvat_sdk import make_client, models
 
 
 @dataclass
@@ -45,6 +45,7 @@ class Annotated:
     shape_id: int | str
     track_id: int | str
     points: tuple[float, ...]
+    elements: tuple[tuple[int, tuple[float, ...]], ...] = ()
 
 
 @dataclass
@@ -104,10 +105,17 @@ def iter_objects(annotations):
 
     Objects marked `outside` are skipped: they are intentionally out of view.
     Tags are skipped too - they have no coordinates to compare.
+    Skeleton track frames need explicit keyframes for every element; this
+    recipe does not interpolate missing keypoints.
     """
     for shape in annotations.shapes:
         if getattr(shape, "outside", False):
             continue
+        elements = ()
+        if str(shape.type) == "skeleton":
+            elements = skeleton_coordinates(shape.elements)
+            if not elements:
+                continue
         yield Annotated(
             frame=shape.frame,
             label_id=shape.label_id,
@@ -115,11 +123,33 @@ def iter_objects(annotations):
             shape_id=getattr(shape, "id", "") or "",
             track_id="",
             points=tuple(shape.points),
+            elements=elements,
         )
     for track in annotations.tracks:
         for shape in track.shapes:
             if shape.outside:
                 continue
+            elements = ()
+            if str(shape.type) == "skeleton":
+                # Element tracks can have independent keyframes. Comparing a
+                # partial pose would require interpolation, outside this recipe.
+                keypoints = [
+                    (element.label_id, keyframe)
+                    for element in track.elements
+                    for keyframe in element.shapes
+                    if keyframe.frame == shape.frame
+                ]
+                if len(keypoints) != len(track.elements):
+                    continue
+                elements = tuple(
+                    sorted(
+                        (label_id, tuple(keyframe.points))
+                        for label_id, keyframe in keypoints
+                        if not keyframe.outside
+                    )
+                )
+                if not elements:
+                    continue
             yield Annotated(
                 frame=shape.frame,
                 label_id=track.label_id,
@@ -127,7 +157,21 @@ def iter_objects(annotations):
                 shape_id=getattr(shape, "id", "") or "",
                 track_id=getattr(track, "id", "") or "",
                 points=tuple(shape.points),
+                elements=elements,
             )
+
+
+def skeleton_coordinates(
+    elements: list[models.SubLabeledShape],
+) -> tuple[tuple[int, tuple[float, ...]], ...]:
+    """Visible keypoints, keyed by label rather than their serialized order."""
+    return tuple(
+        sorted(
+            (element.label_id, tuple(element.points))
+            for element in elements
+            if not getattr(element, "outside", False)
+        )
+    )
 
 
 def format_points(points: tuple[float, ...], limit: int = 8) -> str:
@@ -151,7 +195,7 @@ def find_duplicates(task, label_names: dict[int, str], same_label: bool) -> list
     groups: dict[tuple, list[Annotated]] = defaultdict(list)
     for obj in iter_objects(task.get_annotations()):
         label_part = obj.label_id if same_label else None
-        groups[(obj.frame, label_part, obj.type, obj.points)].append(obj)
+        groups[(obj.frame, label_part, obj.type, obj.points, obj.elements)].append(obj)
 
     duplicates = []
     group_number = 0

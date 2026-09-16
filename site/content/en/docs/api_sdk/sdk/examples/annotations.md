@@ -150,6 +150,10 @@ Every shape type is compared, because comparing coordinates for equality needs
 no geometry. Tags are skipped — they have no coordinates. Objects marked
 `outside` are skipped too, and track keyframes are compared alongside plain
 shapes, so a shape duplicating a track is reported.
+Skeletons are compared using their visible keypoint labels and coordinates,
+independent of keypoint order. Skeleton track frames are compared only when
+every element has an explicit keyframe on that frame; the recipe does not
+interpolate missing keypoints. Skeletons with no visible keypoints are skipped.
 
 | Flag | Required | Meaning |
 | --- | --- | --- |

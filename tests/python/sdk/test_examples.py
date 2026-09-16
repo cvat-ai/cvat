@@ -244,6 +244,95 @@ class TestExampleHelpers:
 
         assert recipe.find_duplicates(task, {1: "object"}, True) == []
 
+    @pytest.mark.parametrize("as_tracks", [False, True])
+    @pytest.mark.parametrize("change", ["none", "coordinates", "labels", "outside", "missing"])
+    def test_duplicates_compare_skeleton_keypoints(self, as_tracks: bool, change: str) -> None:
+        recipe = load_recipe("project_find_duplicates.py")
+
+        def skeleton(
+            points: list[list[int]], labels: tuple[int, int] = (2, 3), outside: bool = False
+        ) -> models.LabeledShapeRequest:
+            return models.LabeledShapeRequest(
+                type="skeleton",
+                frame=0,
+                label_id=1,
+                points=[],
+                elements=[
+                    models.SubLabeledShapeRequest(
+                        type="points", frame=0, label_id=label, points=point, outside=outside
+                    )
+                    for label, point in zip(labels, points)
+                ],
+            )
+
+        original = skeleton([[10, 10], [20, 20]])
+        other = skeleton(
+            [[80, 80], [90, 90]] if change == "coordinates" else [[10, 10], [20, 20]],
+            labels=(3, 2) if change == "labels" else (2, 3),
+            outside=change == "outside",
+        )
+        # Serialization order must not affect an otherwise identical pose.
+        other.elements.reverse()
+        if change == "missing":
+            other.elements.pop()
+
+        tracks = []
+        shapes = [original, other]
+        if as_tracks:
+            tracks = [
+                models.LabeledTrackRequest(
+                    frame=0,
+                    label_id=1,
+                    shapes=[
+                        models.TrackedShapeRequest(
+                            type="skeleton", frame=0, outside=False, points=[]
+                        )
+                    ],
+                    elements=[
+                        models.SubLabeledTrackRequest(
+                            frame=0,
+                            label_id=element.label_id,
+                            shapes=[
+                                models.TrackedShapeRequest(
+                                    type="points",
+                                    frame=0,
+                                    outside=element.outside,
+                                    points=element.points,
+                                )
+                            ],
+                        )
+                        for element in other.elements
+                    ],
+                )
+            ]
+            shapes = [original]
+
+        duplicates = recipe.find_duplicates(
+            self.duplicate_task(shapes=shapes, tracks=tracks), {1: "person"}, True
+        )
+        assert len(duplicates) == (2 if change == "none" else 0)
+
+    def test_duplicates_skip_skeleton_tracks_requiring_interpolation(self) -> None:
+        recipe = load_recipe("project_find_duplicates.py")
+        track = models.LabeledTrackRequest(
+            frame=0,
+            label_id=1,
+            shapes=[models.TrackedShapeRequest(type="skeleton", frame=1, outside=False, points=[])],
+            elements=[
+                models.SubLabeledTrackRequest(
+                    frame=0,
+                    label_id=2,
+                    shapes=[
+                        models.TrackedShapeRequest(
+                            type="points", frame=0, outside=False, points=[10, 10]
+                        )
+                    ],
+                )
+            ],
+        )
+        task = self.duplicate_task(tracks=[track, track])
+        assert recipe.find_duplicates(task, {1: "person"}, True) == []
+
     def test_incremental_download_needs_task_ids_to_go_offline(
         self, monkeypatch: pytest.MonkeyPatch
     ):
