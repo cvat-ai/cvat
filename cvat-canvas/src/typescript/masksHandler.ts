@@ -259,12 +259,13 @@ export class MasksHandlerImpl implements MasksHandler {
     }
 
     private imageDataFromCanvas(wrappingBBox: WrappingBBox): Uint8ClampedArray {
-        const imageData = this.canvas.getContext().getImageData(
-            wrappingBBox.left,
-            wrappingBBox.top,
-            wrappingBBox.right - wrappingBBox.left + 1,
-            wrappingBBox.bottom - wrappingBBox.top + 1,
-        ).data;
+        const imageData = this.canvas.toCanvasElement()
+            .getContext('2d').getImageData(
+                wrappingBBox.left,
+                wrappingBBox.top,
+                wrappingBBox.right - wrappingBBox.left + 1,
+                wrappingBBox.bottom - wrappingBBox.top + 1,
+            ).data;
         return imageData;
     }
 
@@ -446,7 +447,6 @@ export class MasksHandlerImpl implements MasksHandler {
             fireRightClick: true,
             selection: false,
             defaultCursor: 'inherit',
-            enableRetinaScaling: false,
             renderOnAddRemove: false,
         });
         this.disableImageSmoothing();
