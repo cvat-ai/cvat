@@ -535,12 +535,12 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
         },
     });
 
-    Object.defineProperty(Job.prototype.annotations.bulkSave, 'implementation', {
-        value: function bulkSaveImplementation(
+    Object.defineProperty(Job.prototype.annotations.saveStates, 'implementation', {
+        value: function saveStatesImplementation(
             this: JobClass,
-            states: Parameters<typeof JobClass.prototype.annotations.bulkSave>[0],
-        ): ReturnType<typeof JobClass.prototype.annotations.bulkSave> {
-            getCollection(this).bulkSave(states);
+            states: Parameters<typeof JobClass.prototype.annotations.saveStates>[0],
+        ): ReturnType<typeof JobClass.prototype.annotations.saveStates> {
+            getCollection(this).saveStates(states);
             return Promise.resolve();
         },
     });
@@ -559,15 +559,6 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
             objectStates: Parameters<typeof JobClass.prototype.annotations.put>[0],
         ): ReturnType<typeof JobClass.prototype.annotations.put> {
             return Promise.resolve(getCollection(this).put(objectStates));
-        },
-    });
-
-    Object.defineProperty(Job.prototype.annotations.updateBatch, 'implementation', {
-        value: function updateBatchAnnotationsImplementation(
-            this: JobClass,
-            objectStates: Parameters<typeof JobClass.prototype.annotations.updateBatch>[0],
-        ): ReturnType<typeof JobClass.prototype.annotations.updateBatch> {
-            return Promise.resolve(getCollection(this).updateBatch(objectStates));
         },
     });
 
@@ -1386,12 +1377,12 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
         },
     });
 
-    Object.defineProperty(Task.prototype.annotations.bulkSave, 'implementation', {
-        value: function bulkSaveImplementation(
+    Object.defineProperty(Task.prototype.annotations.saveStates, 'implementation', {
+        value: function saveStatesImplementation(
             this: TaskClass,
-            states: Parameters<typeof TaskClass.prototype.annotations.bulkSave>[0],
-        ): ReturnType<typeof TaskClass.prototype.annotations.bulkSave> {
-            getCollection(this).bulkSave(states);
+            states: Parameters<typeof TaskClass.prototype.annotations.saveStates>[0],
+        ): ReturnType<typeof TaskClass.prototype.annotations.saveStates> {
+            getCollection(this).saveStates(states);
             return Promise.resolve();
         },
     });
@@ -1410,15 +1401,6 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
             objectStates: Parameters<typeof TaskClass.prototype.annotations.put>[0],
         ): ReturnType<typeof TaskClass.prototype.annotations.put> {
             return Promise.resolve(getCollection(this).put(objectStates));
-        },
-    });
-
-    Object.defineProperty(Task.prototype.annotations.updateBatch, 'implementation', {
-        value: function updateBatchAnnotationsImplementation(
-            this: TaskClass,
-            objectStates: Parameters<typeof TaskClass.prototype.annotations.updateBatch>[0],
-        ): ReturnType<typeof TaskClass.prototype.annotations.updateBatch> {
-            return Promise.resolve(getCollection(this).updateBatch(objectStates));
         },
     });
 

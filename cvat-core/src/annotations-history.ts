@@ -86,10 +86,6 @@ export default class AnnotationHistory {
         };
     }
 
-    public get transactionActive(): boolean {
-        return this.transaction !== null;
-    }
-
     public do(
         action: HistoryActions,
         undo: ActionItem['undo'],
@@ -155,9 +151,11 @@ export default class AnnotationHistory {
         this._redo = [];
     }
 
-    public beginTransaction(action: HistoryActions): void {
-        if (this.transaction) throw new Error('Another history transaction is already active');
+    public beginTransaction(action: HistoryActions): boolean {
+        if (this.transaction) return false;
+
         this.transaction = new HistoryTransaction(action);
+        return true;
     }
 
     public endTransaction(): void {

@@ -1611,7 +1611,7 @@ async function updateObjectsLayers(
     }
 }
 
-export function updateAnnotationsAsync(statesToUpdate: ObjectState[]): ThunkAction {
+export function updateAnnotationsAsync(statesToUpdate: ObjectState[], batch = false): ThunkAction {
     return async (dispatch: ThunkDispatch, getState): Promise<void> => {
         const { jobInstance, workspace } = receiveAnnotationsParameters();
         try {
@@ -1622,6 +1622,12 @@ export function updateAnnotationsAsync(statesToUpdate: ObjectState[]): ThunkActi
 
             const statesToSave = statesToUpdate.filter((objectState) => !objectState.isGroundTruth);
             if (!statesToSave.length) {
+                return;
+            }
+
+            if (batch) {
+                await jobInstance.annotations.saveStates(statesToSave);
+                dispatch(fetchAnnotationsAsync());
                 return;
             }
 
@@ -1669,34 +1675,7 @@ export function updateAnnotationsAsync(statesToUpdate: ObjectState[]): ThunkActi
 // Updates several objects at once and records the change as a single undo step
 // (used when a multi-selection is moved together).
 export function updateAnnotationsBatchAsync(statesToUpdate: ObjectState[]): ThunkAction {
-    return async (dispatch: ThunkDispatch): Promise<void> => {
-        const { jobInstance } = receiveAnnotationsParameters();
-        try {
-            if (!statesToUpdate.length) {
-                return;
-            }
-            if (statesToUpdate.some((objectState) => objectState.isGroundTruth)) {
-                throw new Error('Ground truth objects cannot be updated');
-            }
-
-            const states = await jobInstance.annotations.updateBatch(statesToUpdate);
-
-            const needToUpdateAll = states
-                .some((state) => state.shapeType === ShapeType.MASK || state.parentID !== null);
-            if (needToUpdateAll) {
-                dispatch(fetchAnnotationsAsync());
-                return;
-            }
-
-            dispatchAnnotationsUpdate(dispatch, states, await jobInstance.actions.get());
-        } catch (error) {
-            dispatch({
-                type: AnnotationActionTypes.UPDATE_ANNOTATIONS_FAILED,
-                payload: { error },
-            });
-            dispatch(fetchAnnotationsAsync());
-        }
-    };
+    return (dispatch: ThunkDispatch): Promise<void> => dispatch(updateAnnotationsAsync(statesToUpdate, true));
 }
 
 export function rotateActiveObjectOrFrame(rotation: Rotation): ThunkAction {
@@ -2290,7 +2269,7 @@ export function restoreFrameAsync(frame: number): ThunkAction {
     };
 }
 
-export function changeHideActiveObjectAsync(hide: boolean): ThunkAction {
+export function changeHideActiveObjectAsync(hide: boolean, save = true): ThunkAction {
     return async (dispatch: ThunkDispatch, getState): Promise<void> => {
         const state = getState();
         const { instance: canvas } = state.annotation.canvas;
@@ -2300,7 +2279,7 @@ export function changeHideActiveObjectAsync(hide: boolean): ThunkAction {
             });
 
             const { objectState } = state.annotation.editing;
-            if (objectState) {
+            if (objectState && save) {
                 objectState.hidden = hide;
                 await dispatch(updateAnnotationsAsync([objectState]));
             }
