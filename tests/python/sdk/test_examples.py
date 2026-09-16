@@ -1626,7 +1626,10 @@ class TestExamples:
             with_cleanup=False,
             expect_failure=True,
         )
-        assert "was not found in cloud storage" in result.stderr
+        assert (
+            f"Import of 'recipes/no_such_file.zip' from cloud storage "
+            f"{IMPORT_EXPORT_BUCKET_ID} failed" in result.stderr
+        )
         assert not task.get_annotations().shapes
 
     def test_task_import_annotations_from_cloud_requires_a_storage(self):

@@ -33,6 +33,7 @@ import json
 import sys
 
 from cvat_sdk import make_client
+from cvat_sdk.core.exceptions import BackgroundRequestException
 from cvat_sdk.core.proxies.types import Location
 
 
@@ -123,7 +124,13 @@ def main() -> None:
         if not rq_id:
             sys.exit("The server did not return a request id (rq_id) for the import")
 
-        client.wait_for_completion(rq_id, log_prefix=f"Task {task.id} annotation import")
+        try:
+            client.wait_for_completion(rq_id, log_prefix=f"Task {task.id} annotation import")
+        except BackgroundRequestException as error:
+            sys.exit(
+                f"Import of {args.filename!r} from cloud storage {cloud_storage_id} failed: {error}"
+            )
+
         print(f"Imported {args.filename} as {args.import_format!r} ({args.import_mode})")
 
         # 5. Re-read the annotations, so the count is the server's state.
