@@ -118,7 +118,7 @@ def iter_objects(annotations):
             frame=shape.frame,
             label_id=shape.label_id,
             type=str(shape.type),
-            shape_id=getattr(shape, "id", "") or "",
+            shape_id=shape.id,
             track_id="",
             points=tuple(shape.points),
             elements=elements,
@@ -152,8 +152,8 @@ def iter_objects(annotations):
                 frame=shape.frame,
                 label_id=track.label_id,
                 type=str(shape.type),
-                shape_id=getattr(shape, "id", "") or "",
-                track_id=getattr(track, "id", "") or "",
+                shape_id=shape.id,
+                track_id=track.id,
                 points=tuple(shape.points),
                 elements=elements,
             )
@@ -165,9 +165,7 @@ def skeleton_coordinates(
     """Visible keypoints, keyed by label rather than their serialized order."""
     return tuple(
         sorted(
-            (element.label_id, tuple(element.points))
-            for element in elements
-            if not getattr(element, "outside", False)
+            (element.label_id, tuple(element.points)) for element in elements if not element.outside
         )
     )
 
