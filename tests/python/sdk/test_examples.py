@@ -6,6 +6,7 @@ import csv
 import hashlib
 import hmac
 import importlib.util
+import itertools
 import json
 import os
 import re
@@ -69,6 +70,22 @@ def load_recipe(name: str) -> types.ModuleType:
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
+
+
+# Annotations read back from the server carry their database ids, and the
+# duplicates recipe reports them, so the objects built here need ids too.
+OBJECT_IDS = itertools.count(1)
+
+
+def track_of(*shapes: models.TrackedShape, elements=()) -> models.LabeledTrack:
+    """A track of label 1 holding the given keyframes, as the server returns it."""
+    return models.LabeledTrack(
+        id=next(OBJECT_IDS),
+        frame=min(shape.frame for shape in shapes),
+        label_id=1,
+        shapes=list(shapes),
+        elements=list(elements),
+    )
 
 
 class TestExampleHelpers:
@@ -150,14 +167,29 @@ class TestExampleHelpers:
         task = MagicMock(spec=Task)
         task.id = 7
         task.get_jobs.return_value = [types.SimpleNamespace(id=11, start_frame=0, stop_frame=3)]
-        task.get_annotations.return_value = models.LabeledDataRequest(
+        task.get_annotations.return_value = models.LabeledData(
             tags=[], shapes=list(shapes), tracks=list(tracks)
         )
         return task
 
     @staticmethod
     def box(frame: int, label_id: int, points: list[float], type_: str = "rectangle"):
-        return models.LabeledShapeRequest(type=type_, frame=frame, label_id=label_id, points=points)
+        return models.LabeledShape(
+            id=next(OBJECT_IDS),
+            type=type_,
+            frame=frame,
+            label_id=label_id,
+            points=points,
+            outside=False,
+        )
+
+    @staticmethod
+    def keyframe(
+        frame: int, points: list[float], *, type_: str = "rectangle", outside: bool = False
+    ):
+        return models.TrackedShape(
+            id=next(OBJECT_IDS), type=type_, frame=frame, points=points, outside=outside
+        )
 
     def test_duplicates_groups_objects_with_the_same_coordinates(self):
         recipe = load_recipe("project_find_duplicates.py")
@@ -208,38 +240,20 @@ class TestExampleHelpers:
         recipe = load_recipe("project_find_duplicates.py")
         task = self.duplicate_task(
             shapes=[self.box(0, 1, [1.0, 1.0, 4.0, 8.0])],
-            tracks=[
-                models.LabeledTrackRequest(
-                    frame=0,
-                    label_id=1,
-                    shapes=[
-                        models.TrackedShapeRequest(
-                            type="rectangle", frame=0, outside=False, points=[1.0, 1.0, 4.0, 8.0]
-                        )
-                    ],
-                )
-            ],
+            tracks=[track_of(self.keyframe(0, [1.0, 1.0, 4.0, 8.0]))],
         )
 
         duplicates = recipe.find_duplicates(task, {1: "object"}, True)
 
         assert [d.group for d in duplicates] == [1, 1]
 
-    def test_duplicates_skip_outside_shapes(self):
+    def test_duplicates_skip_outside_track_keyframes(self):
         recipe = load_recipe("project_find_duplicates.py")
         task = self.duplicate_task(
-            shapes=[
-                self.box(0, 1, [1.0, 1.0, 4.0, 8.0]),
-                # An 'outside' copy is intentionally not visible, so it does not
-                # duplicate the shape it sits on.
-                models.LabeledShapeRequest(
-                    type="rectangle",
-                    frame=0,
-                    label_id=1,
-                    points=[1.0, 1.0, 4.0, 8.0],
-                    outside=True,
-                ),
-            ]
+            shapes=[self.box(0, 1, [1.0, 1.0, 4.0, 8.0])],
+            # An 'outside' keyframe is intentionally not visible, so it does not
+            # duplicate the shape it sits on.
+            tracks=[track_of(self.keyframe(0, [1.0, 1.0, 4.0, 8.0], outside=True))],
         )
 
         assert recipe.find_duplicates(task, {1: "object"}, True) == []
@@ -251,15 +265,22 @@ class TestExampleHelpers:
 
         def skeleton(
             points: list[list[int]], labels: tuple[int, int] = (2, 3), outside: bool = False
-        ) -> models.LabeledShapeRequest:
-            return models.LabeledShapeRequest(
+        ) -> models.LabeledShape:
+            return models.LabeledShape(
+                id=next(OBJECT_IDS),
                 type="skeleton",
                 frame=0,
                 label_id=1,
                 points=[],
+                outside=False,
                 elements=[
-                    models.SubLabeledShapeRequest(
-                        type="points", frame=0, label_id=label, points=point, outside=outside
+                    models.SubLabeledShape(
+                        id=next(OBJECT_IDS),
+                        type="points",
+                        frame=0,
+                        label_id=label,
+                        points=point,
+                        outside=outside,
                     )
                     for label, point in zip(labels, points)
                 ],
@@ -280,24 +301,19 @@ class TestExampleHelpers:
         shapes = [original, other]
         if as_tracks:
             tracks = [
-                models.LabeledTrackRequest(
-                    frame=0,
-                    label_id=1,
-                    shapes=[
-                        models.TrackedShapeRequest(
-                            type="skeleton", frame=0, outside=False, points=[]
-                        )
-                    ],
+                track_of(
+                    self.keyframe(0, [], type_="skeleton"),
                     elements=[
-                        models.SubLabeledTrackRequest(
+                        models.SubLabeledTrack(
+                            id=next(OBJECT_IDS),
                             frame=0,
                             label_id=element.label_id,
                             shapes=[
-                                models.TrackedShapeRequest(
-                                    type="points",
-                                    frame=0,
+                                self.keyframe(
+                                    0,
+                                    element.points,
+                                    type_="points",
                                     outside=element.outside,
-                                    points=element.points,
                                 )
                             ],
                         )
@@ -314,19 +330,14 @@ class TestExampleHelpers:
 
     def test_duplicates_skip_skeleton_tracks_requiring_interpolation(self) -> None:
         recipe = load_recipe("project_find_duplicates.py")
-        track = models.LabeledTrackRequest(
-            frame=0,
-            label_id=1,
-            shapes=[models.TrackedShapeRequest(type="skeleton", frame=1, outside=False, points=[])],
+        track = track_of(
+            self.keyframe(1, [], type_="skeleton"),
             elements=[
-                models.SubLabeledTrackRequest(
+                models.SubLabeledTrack(
+                    id=next(OBJECT_IDS),
                     frame=0,
                     label_id=2,
-                    shapes=[
-                        models.TrackedShapeRequest(
-                            type="points", frame=0, outside=False, points=[10, 10]
-                        )
-                    ],
+                    shapes=[self.keyframe(0, [10, 10], type_="points")],
                 )
             ],
         )
