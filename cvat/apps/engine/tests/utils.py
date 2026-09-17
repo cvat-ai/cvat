@@ -108,6 +108,11 @@ def clear_rq_jobs():
             scheduler.remove_lock()
 
 
+def set_rq_async_mode(is_async: bool) -> None:
+    for config in settings.RQ_QUEUES.values():
+        config["ASYNC"] = is_async
+
+
 class ApiTestBase(APITestCase):
     def _clear_temp_data(self):
         # Clear server frame/chunk cache.

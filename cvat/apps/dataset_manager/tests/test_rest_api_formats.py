@@ -26,13 +26,18 @@ from unittest.mock import patch
 
 import av
 import datumaro
+import django_rq
 import numpy as np
+import rq.worker
 from attr import define, field
 from datumaro.components.comparator import EqualityComparator
 from datumaro.components.dataset import Dataset
+from django.conf import settings
 from django.contrib.auth.models import Group
+from django.test import override_settings
 from PIL import Image
 from rest_framework import status
+from rq.job import JobStatus as RQJobStatus
 
 import cvat.apps.dataset_manager as dm
 from cvat.apps.dataset_manager.bindings import CvatDataExtractor, TaskData
@@ -50,7 +55,9 @@ from cvat.apps.engine.tests.utils import (
     ExportApiTestBase,
     ForceLogin,
     ImportApiTestBase,
+    clear_rq_jobs,
     get_paginated_collection,
+    set_rq_async_mode,
 )
 from cvat.apps.iam.models import User
 
@@ -2004,6 +2011,102 @@ class ExportBehaviorTest(_DbTestBase):
             lock_time = 2
             with get_export_cache_lock("test_export_path", ttl=lock_time, acquire_timeout=5):
                 sleep(lock_time + 1)
+
+    def _run_export_job_via_worker(self, rq_id: str):
+        queue = django_rq.get_queue(settings.CVAT_QUEUES.EXPORT_DATA.value)
+
+        with patch.object(queue.connection, "client_list", return_value=[]):
+            worker = rq.worker.SimpleWorker([queue], connection=queue.connection)
+
+        worked = worker.work(burst=True)
+        self.assertTrue(worked, "The worker did not process any job")
+        return queue.fetch_job(rq_id)
+
+    def test_export_can_request_retry_on_locking_failure(self):
+        from cvat.apps.dataset_manager.util import LockNotAvailableError
+
+        format_name = "CVAT for images 1.1"
+        task = self._setup_task_with_annotations(format_name=format_name)
+        task_id = task["id"]
+
+        set_rq_async_mode(is_async=True)
+        self.addCleanup(set_rq_async_mode, is_async=False)
+        self.addCleanup(clear_rq_jobs)
+
+        real_get_export_cache_lock = get_export_cache_lock
+        lock_calls = []
+
+        def flaky_get_export_cache_lock(*args, **kwargs):
+            lock_calls.append((args, kwargs))
+            if len(lock_calls) == 1:
+                raise LockNotAvailableError
+            return real_get_export_cache_lock(*args, **kwargs)
+
+        with (
+            patch(
+                "cvat.apps.dataset_manager.views.get_export_cache_lock",
+                side_effect=flaky_get_export_cache_lock,
+            ),
+            override_settings(EXPORT_JOB_RETRY_INTERVALS=[0]),
+        ):
+            response = self._post_request(
+                f"/api/tasks/{task_id}/dataset/export",
+                self.admin,
+                query_params={"format": format_name, "save_images": True},
+            )
+            self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
+            rq_id = response.json()["rq_id"]
+
+            job = self._run_export_job_via_worker(rq_id=rq_id)
+
+        self.assertGreaterEqual(len(lock_calls), 2, "The lock error should have caused a retry")
+        self.assertEqual(job.get_status(refresh=True), RQJobStatus.FINISHED)
+        self.assertEqual(job.retries_left, 0)
+
+        response = self._check_request_status(self.admin, rq_id)
+        self.assertIsNotNone(response.json()["result_url"])
+
+    def test_export_is_scheduled_for_retry_on_locking_failure(self):
+        from cvat.apps.dataset_manager.util import LockNotAvailableError
+
+        format_name = "CVAT for images 1.1"
+        task = self._setup_task_with_annotations(format_name=format_name)
+        task_id = task["id"]
+
+        set_rq_async_mode(is_async=True)
+        self.addCleanup(set_rq_async_mode, is_async=False)
+        self.addCleanup(clear_rq_jobs)
+
+        with (
+            patch(
+                "cvat.apps.dataset_manager.views.get_export_cache_lock",
+                side_effect=LockNotAvailableError,
+            ) as mock_get_export_cache_lock,
+            override_settings(EXPORT_JOB_RETRY_INTERVALS=[60]),
+        ):
+            response = self._post_request(
+                f"/api/tasks/{task_id}/dataset/export",
+                self.admin,
+                query_params={"format": format_name, "save_images": True},
+            )
+            self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
+            rq_id = response.json()["rq_id"]
+
+            job = self._run_export_job_via_worker(rq_id=rq_id)
+
+        mock_get_export_cache_lock.assert_called()
+        self.assertEqual(job.get_status(refresh=True), RQJobStatus.SCHEDULED)
+        self.assertEqual(job.retries_left, 0)
+        self.assertIn(
+            job.id,
+            django_rq.get_queue(
+                settings.CVAT_QUEUES.EXPORT_DATA.value
+            ).scheduled_job_registry.get_job_ids(),
+        )
+
+        response = self._get_request(f"/api/requests/{rq_id}", self.admin)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.json()["status"], "queued")
 
     def test_export_can_reuse_older_file_if_still_relevant(self):
         format_name = "CVAT for images 1.1"
