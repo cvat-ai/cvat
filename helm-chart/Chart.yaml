@@ -26,10 +26,16 @@ appVersion: latest
 # We dont use it, so you can override it using values.override.yaml
 
 dependencies:
-  - name: postgresql
-    version: "12.1.*"
-    repository: https://charts.bitnami.com/bitnami
+#  - name: postgresql
+#    version: "12.1.*"
+#    repository: https://charts.bitnami.com/bitnami
+#    condition: postgresql.enabled
+
+  - name: postgres
+    version: "0.20.5"
+    repository: https://cloudpirates-io.github.io/helm-charts
     condition: postgresql.enabled
+    alias: postgresql
 
   - name: nuclio
     version: "0.22.*"
