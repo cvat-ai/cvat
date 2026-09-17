@@ -6,7 +6,7 @@ description: 'Import and export audio interval annotations in Generic TSV 1.0 fo
 ---
 
 Generic TSV 1.0 is CVAT's import and export format for audio interval annotations. It applies to
-1D audio tasks only and contains annotations, not the audio recording.
+audio tasks only and contains annotations, not the audio recording.
 
 ## Generic TSV export
 
