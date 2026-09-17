@@ -743,13 +743,13 @@ class TestListCloudStorages:
         assert DeepDiff(data, response.json()["results"]) == {}
 
     def test_admin_can_see_all_cloud_storages(self, cloud_storages):
-        self._test_can_see_cloud_storages("admin2", cloud_storages.raw, page_size="all")
+        self._test_can_see_cloud_storages("admin2", cloud_storages.raw, page_size=500)
 
     @pytest.mark.parametrize("field_value, query_value", [(2, 2), (None, "")])
     def test_can_filter_by_org_id(self, field_value, query_value, cloud_storages):
         cloud_storages = filter(lambda i: i["organization"] == field_value, cloud_storages)
         self._test_can_see_cloud_storages(
-            "admin2", list(cloud_storages), page_size="all", org_id=query_value
+            "admin2", list(cloud_storages), page_size=500, org_id=query_value
         )
 
 

@@ -134,13 +134,13 @@ class TestListInvitations:
         assert DeepDiff(data, response.json()["results"]) == {}
 
     def test_admin_can_see_all_invitations(self, invitations):
-        self._test_can_see_invitations("admin2", invitations.raw, page_size="all")
+        self._test_can_see_invitations("admin2", invitations.raw, page_size=500)
 
     @pytest.mark.parametrize("field_value, query_value", [(1, 1), (None, "")])
     def test_can_filter_by_org_id(self, field_value, query_value, invitations):
         invitations = filter(lambda i: i["organization"] == field_value, invitations)
         self._test_can_see_invitations(
-            "admin2", list(invitations), page_size="all", org_id=query_value
+            "admin2", list(invitations), page_size=500, org_id=query_value
         )
 
 
