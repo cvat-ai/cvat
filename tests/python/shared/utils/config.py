@@ -41,6 +41,26 @@ def get_method(username, endpoint, **kwargs):
     return requests.get(get_api_url(endpoint, **kwargs), auth=(username, USER_PASS))
 
 
+def get_paginated_results(username, endpoint, **kwargs) -> list[dict]:
+    """
+    Follows the `next` link of a list endpoint and returns the merged `results`
+    of every page. Use this instead of the removed `page_size=all` option.
+    """
+    kwargs.setdefault("page_size", 500)
+    response = get_method(username, endpoint, **kwargs)
+    response.raise_for_status()
+    data = response.json()
+    results = list(data["results"])
+
+    while data["next"]:
+        response = requests.get(data["next"], auth=(username, USER_PASS))
+        response.raise_for_status()
+        data = response.json()
+        results.extend(data["results"])
+
+    return results
+
+
 def options_method(username, endpoint, **kwargs):
     return requests.options(get_api_url(endpoint, **kwargs), auth=(username, USER_PASS))
 
