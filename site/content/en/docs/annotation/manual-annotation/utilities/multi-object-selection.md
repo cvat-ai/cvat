@@ -113,17 +113,17 @@ A selection containing only stationary objects cannot be dragged.
 
 ## Selection actions
 
-Open the selection action menu by clicking **⋯** next to **SELECTION (N)**
-or by right-clicking the selection bounding box.
+Open the selection action card by right-clicking the selection bounding box.
 
-![Selection action menu](/images/multi-object-selection-actions-overview.png)
+The card contains the label selector, frequently used actions represented by icons,
+and a **More selection actions** (⋯) menu for additional operations.
 
 Unavailable actions are disabled when they cannot be applied safely to the selection.
 Hover over a disabled action to see why it is unavailable.
 
 ### Changing labels
 
-Use the label selector at the top of the menu to apply one label to the complete selection.
+Use the label selector at the top of the card to apply one label to the complete selection.
 The selector contains only labels that are compatible with every selected object.
 If the selected objects have different labels, the selector displays **Multiple labels**.
 
@@ -143,10 +143,10 @@ Attributes are read-only when the selection contains a locked or ground-truth ob
 
 ### Locking and pinning
 
-Select **Lock selection** or **Unlock selection** to change the lock state of all selected objects.
+Use the lock icon to lock or unlock all selected objects.
 Locking and unlocking are unavailable when the selection contains a ground-truth object.
 
-Select **Pin selection** or **Unpin selection** to change the pinned state of all selected objects.
+Use the pin icon to pin or unpin all selected objects.
 Pinning and unpinning are unavailable when the selection contains a locked or ground-truth object.
 
 For a selection with mixed lock or pin states, the action changes only the objects needed
@@ -156,15 +156,17 @@ to bring the complete selection to the state shown by the action.
 
 ### Copying and running annotation actions
 
-Select **Make a copy** to copy the selected objects and start interactive placement.
+Open **More selection actions** (⋯), then select **Make a copy** to copy the selected objects
+and start interactive placement.
 For details, see [Copying and pasting a selection](#copying-and-pasting-a-selection).
 
-Select **Run annotation action** to open the annotation action dialog with the selected objects
-as its input. The dialog provides actions that are compatible with the selected objects.
+In the same menu, select **Run annotation action** to open the annotation action dialog with
+the selected objects as its input. The dialog provides actions that are compatible with the selected objects.
 
 ### Changing the layer order
 
-Use one of the following actions to change the layer order of selected objects:
+Open **More selection actions** (⋯), then use one of the following actions to change the layer order
+of selected objects:
 
 - **To background** moves them behind the other objects.
 - **To foreground** moves them in front of the other objects.
@@ -178,16 +180,16 @@ Layer actions are disabled when the selection contains no editable objects.
 
 ### Grouping and ungrouping
 
-Select **Group selection** to place the selected objects in one group.
+Use the group icon to place the selected objects in one group.
 At least two objects must be selected, and the action is disabled if they already belong to the same group.
 
-Select **Ungroup selection** to remove selected objects from their groups.
+Use the ungroup icon to remove selected objects from their groups.
 This action is available when at least one selected object belongs to a group.
 Grouping and ungrouping are unavailable when the selection contains a ground-truth object.
 
 ### Deleting a selection
 
-Select **Delete selection** to delete the eligible selected objects as one undoable operation.
+Use the delete icon to delete the eligible selected objects as one undoable operation.
 Regular deletion skips locked objects, which remain selected.
 Use **Shift+Delete** or **Shift+Backspace** to force-delete locked selected objects.
 Ground-truth objects are always skipped and remain selected.

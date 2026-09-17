@@ -17,11 +17,13 @@ import config from 'config';
 import {
     AnnotationConflict, ObjectState, ShapeType, QualityConflict,
 } from 'cvat-core-wrapper';
+import SelectionContextMenu from './selection-context-menu';
 
 interface Props {
     workspace: Workspace;
     contextMenuParentID: number | null;
     contextMenuClientID: number | null;
+    selection: boolean;
     objectStates: any[];
     frameConflicts: QualityConflict[];
     visible: boolean;
@@ -106,6 +108,7 @@ function ReviewContextMenu({
 export default function CanvasContextMenu(props: Props): JSX.Element | null {
     const {
         contextMenuClientID,
+        selection,
         contextMenuParentID,
         objectStates,
         frameConflicts,
@@ -119,7 +122,23 @@ export default function CanvasContextMenu(props: Props): JSX.Element | null {
         onCopyObject,
     } = props;
 
-    if (!visible || contextMenuClientID === null) {
+    if (!visible) {
+        return null;
+    }
+
+    if (selection) {
+        return ReactDOM.createPortal(
+            <div
+                className='cvat-canvas-context-menu cvat-canvas-selection-context-menu'
+                style={{ top, left }}
+            >
+                <SelectionContextMenu />
+            </div>,
+            window.document.body,
+        );
+    }
+
+    if (contextMenuClientID === null) {
         return null;
     }
 

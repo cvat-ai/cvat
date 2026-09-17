@@ -7,15 +7,9 @@ import './styles.scss';
 
 import React from 'react';
 import { connect } from 'react-redux';
-import Button from 'antd/lib/button';
-import Dropdown from 'antd/lib/dropdown';
-import Select from 'antd/lib/select';
 import Spin from 'antd/lib/spin';
 import Popover from 'antd/lib/popover';
-import Icon, {
-    CopyOutlined, DeleteOutlined, GroupOutlined, LockFilled, PushpinFilled, PushpinOutlined,
-    FunctionOutlined, UngroupOutlined, UnlockOutlined, UpOutlined, VerticalAlignBottomOutlined,
-} from '@ant-design/icons';
+import Icon, { UpOutlined } from '@ant-design/icons';
 import notification from 'antd/lib/notification';
 import debounce from 'lodash/debounce';
 
@@ -29,21 +23,14 @@ import {
 } from 'cvat-canvas-wrapper';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import {
-    AnnotationConflict, Label, ObjectState, ObjectType, ShapeType, QualityConflict, Source, getCore,
+    AnnotationConflict, ObjectState, ObjectType, ShapeType, QualityConflict, getCore,
 } from 'cvat-core-wrapper';
 import { openZLayerInObjectsSidebar, scrollAndExpandState } from 'utils/objects-sidebar';
-import { filterApplicableLabels } from 'utils/filter-applicable-labels';
 import getHiddenZLayers from 'utils/get-hidden-z-layers';
 import config from 'config';
 import CVATTooltip from 'components/common/cvat-tooltip';
-import LabelSelector from 'components/label-selector/label-selector';
-import ObjectItemDetails from 'components/annotation-page/standard-workspace/objects-side-bar/object-item-details';
-import { LayerPicker } from 'components/annotation-page/standard-workspace/objects-side-bar/object-item-basics';
-import { openAnnotationsActionModal } from 'components/annotation-page/annotations-actions/annotations-actions-modal';
 import FrameTags from 'components/annotation-page/tag-annotation-workspace/frame-tags';
-import {
-    BackgroundIcon, ForegroundIcon, LayerStackIcon, OneLayerBackwardIcon, OneLayerForwardIcon,
-} from 'icons';
+import { LayerStackIcon } from 'icons';
 import {
     confirmCanvasReadyAsync,
     resetCanvas,
@@ -53,11 +40,7 @@ import {
     createAnnotationsAsync,
     mergeAnnotationsAsync,
     groupAnnotationsAsync,
-    groupSelectedAnnotationsAsync,
     selectObjectsAsync,
-    copySelection,
-    pasteSelectionAsync,
-    removeSelectionAsync,
     joinAnnotationsAsync,
     sliceAnnotationsAsync,
     splitAnnotationsAsync,
@@ -94,12 +77,7 @@ import {
     isMultiSelectObjectModifierPressed,
     multiSelectModifierFromKeyMap,
     multiSelectObjectModifierFromKeyMap,
-    getSelectionAttributeState,
     getSelectedStates,
-    getSelectionGroupState,
-    getSelectionToggleState,
-    prepareSelectionZOrder,
-    prepareSelectionToggle,
 } from 'utils/multi-selection';
 import ImageSetupsContent from './image-setups-content';
 import CanvasTipsComponent from './canvas-hints';
@@ -115,7 +93,6 @@ interface StateToProps {
     activatedAttributeID: number | null;
     selectedStatesID: number[];
     annotations: ObjectState[];
-    labels: Label[];
     renderData: RenderData;
     frameData: any;
     frameAngle: number;
@@ -148,8 +125,6 @@ interface StateToProps {
     showAllInterpolationTracks: boolean;
     workspace: Workspace;
     currentZLayer: number;
-    minZLayer: number;
-    maxZLayer: number;
     hiddenZLayers: Set<number>;
     sidebarCollapsed: boolean;
     automaticBordering: boolean;
@@ -177,14 +152,10 @@ interface DispatchToProps {
     onMergeAnnotations(states: ObjectState[]): void;
     onSplitAnnotations(state: ObjectState): void;
     onGroupAnnotations(states: ObjectState[]): void;
-    onGroupSelection(reset?: boolean): void;
     onSelectObjects(selectedStatesID: number[]): void;
-    onMakeCopySelection(states: ObjectState[]): void;
-    onRemoveSelection(): Promise<void>;
     onJoinAnnotations(states: ObjectState[], points: number[][]): void;
     onSliceAnnotations(state: ObjectState, results: number[][]): void;
     onActivateObject: (activatedStateID: number | null, activatedElementID: number | null) => void;
-    onCloseCanvasContextMenu(): void;
     onExpandObject(objectState: ObjectState): void;
     onOpenLayerStack(sidebarCollapsed: boolean): void;
     onChangeBrightnessLevel(level: number): void;
@@ -210,7 +181,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 activeControl, instance: canvasInstance, ready: canvasIsReady, activeObjectHidden,
             },
             drawing: { activeLabelID, activeObjectType },
-            job: { instance: jobInstance, labels },
+            job: { instance: jobInstance },
             player: {
                 frame: { data: frameData, number: frame },
                 frameAngles,
@@ -221,7 +192,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 activatedElementID,
                 activatedAttributeID,
                 selectedStatesID,
-                zLayer: { cur: currentZLayer, min: minZLayer, max: maxZLayer },
+                zLayer: { cur: currentZLayer },
                 highlightedConflict,
                 renderData,
             },
@@ -275,7 +246,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
         activatedAttributeID,
         selectedStatesID,
         annotations,
-        labels,
         renderData,
         opacity: opacity / 100,
         colorBy,
@@ -304,8 +274,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
         showAllInterpolationTracks,
         showTagsOnFrame,
         currentZLayer,
-        minZLayer,
-        maxZLayer,
         hiddenZLayers: getHiddenZLayers(state),
         sidebarCollapsed,
         automaticBordering,
@@ -407,18 +375,8 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         onGroupAnnotations(states: ObjectState[]): void {
             dispatch(groupAnnotationsAsync(states));
         },
-        onGroupSelection(reset = false): void {
-            dispatch(groupSelectedAnnotationsAsync(reset));
-        },
         onSelectObjects(selectedStatesID: number[]): void {
             dispatch(selectObjectsAsync(selectedStatesID));
-        },
-        onMakeCopySelection(states: ObjectState[]): void {
-            dispatch(copySelection(states));
-            dispatch(pasteSelectionAsync());
-        },
-        onRemoveSelection(): Promise<void> {
-            return dispatch(removeSelectionAsync(false));
         },
         onJoinAnnotations(states: ObjectState[], points: number[][]): void {
             dispatch(joinAnnotationsAsync(states, points));
@@ -435,9 +393,6 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
             }
 
             dispatch(activateObject(activatedStateID, activatedElementID, null));
-        },
-        onCloseCanvasContextMenu(): void {
-            dispatch(updateCanvasContextMenu(false, 0, 0));
         },
         onExpandObject(objectState: ObjectState): void {
             dispatch(collapseObjectItems([objectState], false));
@@ -496,23 +451,7 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
 
 type Props = StateToProps & DispatchToProps;
 
-interface State {
-    selectionMenuPosition: {
-        left: number;
-        top: number;
-        source: 'context' | 'header';
-    } | null;
-    selectionAttributesCollapsed: boolean;
-    selectionLayerPickerVisible: boolean;
-}
-
-class CanvasWrapperComponent extends React.PureComponent<Props, State> {
-    public state: State = {
-        selectionMenuPosition: null,
-        selectionAttributesCollapsed: true,
-        selectionLayerPickerVisible: false,
-    };
-
+class CanvasWrapperComponent extends React.PureComponent<Props> {
     private debouncedUpdate = debounce(this.updateCanvas.bind(this), 250, { leading: true });
     private canvasTipsRef = React.createRef<CanvasTipsComponent>();
 
@@ -677,14 +616,6 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
             // reflect the multi-selection (shift + left-mousedown) on the canvas:
             // drives the persistent selection visual and enables live group drag
             canvasInstance.setSelectedObjects(selectedStatesID);
-            if (!selectedStatesID.length &&
-                (this.state.selectionMenuPosition || !this.state.selectionAttributesCollapsed)) {
-                this.setState({
-                    selectionMenuPosition: null,
-                    selectionAttributesCollapsed: true,
-                    selectionLayerPickerVisible: false,
-                });
-            }
         }
 
         if (prevProps.highlightedConflict !== highlightedConflict) {
@@ -796,9 +727,6 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
         canvasInstance.html().removeEventListener('canvas.merged', this.onCanvasObjectsMerged);
         canvasInstance.html().removeEventListener('canvas.grouped', this.onCanvasObjectsGrouped);
         canvasInstance.html().removeEventListener('canvas.selected', this.onCanvasSelected);
-        canvasInstance.html().removeEventListener(
-            'canvas.selectionmenu', this.onCanvasSelectionMenu as EventListener,
-        );
         canvasInstance.html().removeEventListener('canvas.joined', this.onCanvasObjectsJoined);
         canvasInstance.html().removeEventListener('canvas.regionselected', this.onCanvasPositionSelected);
         canvasInstance.html().removeEventListener('canvas.splitted', this.onCanvasTrackSplitted);
@@ -818,149 +746,6 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
             const { onCanvasErrorOccurred } = this.props;
             onCanvasErrorOccurred(exception);
         }
-    };
-
-    private onCanvasSelectionMenu = (event: CustomEvent): void => {
-        if (event.detail.close) {
-            this.setState({ selectionMenuPosition: null });
-            return;
-        }
-
-        const { onCloseCanvasContextMenu } = this.props;
-        const { canvasInstance } = this.props as { canvasInstance: Canvas };
-        const canvasGridItem = canvasInstance.html().parentElement?.parentElement;
-        const gridItemBox = canvasGridItem?.getBoundingClientRect();
-        const {
-            left, top, source, toggle, reposition,
-        } = event.detail;
-
-        const selectionMenuPosition = {
-            left: left - (gridItemBox?.left || 0),
-            top: top - (gridItemBox?.top || 0),
-            source,
-        };
-        if (reposition) {
-            this.setState((state) => {
-                if (state.selectionMenuPosition?.source !== 'header') {
-                    return null;
-                }
-                return {
-                    selectionMenuPosition: {
-                        ...selectionMenuPosition,
-                        source: 'header',
-                    },
-                };
-            });
-            return;
-        }
-
-        onCloseCanvasContextMenu();
-
-        this.setState((state) => ({
-            selectionMenuPosition: toggle && state.selectionMenuPosition ? null : selectionMenuPosition,
-        }));
-    };
-
-    private onChangeSelectedObjectsLabel = (label: Label): void => {
-        const {
-            annotations, selectedStatesID, onUpdateAnnotationsBatch,
-        } = this.props;
-        const selectedStates = getSelectedStates(annotations, selectedStatesID);
-
-        for (const selectedState of selectedStates) {
-            selectedState.label = label;
-        }
-        onUpdateAnnotationsBatch(selectedStates);
-        this.setState({ selectionMenuPosition: null });
-    };
-
-    private onRemoveSelectedObjects = async (): Promise<void> => {
-        const {
-            canvasInstance, onRemoveSelection, updateActiveControl,
-        } = this.props;
-
-        if (canvasInstance instanceof Canvas) {
-            canvasInstance.selectObjects({ enabled: false });
-        }
-        updateActiveControl(ActiveControl.CURSOR);
-        await onRemoveSelection();
-        this.setState({ selectionMenuPosition: null });
-    };
-
-    private onMakeCopySelectedObjects = (): void => {
-        const {
-            annotations, selectedStatesID, onMakeCopySelection,
-        } = this.props;
-        const selectedStates = getSelectedStates(annotations, selectedStatesID);
-
-        if (selectedStates.length) {
-            onMakeCopySelection(selectedStates);
-        }
-        this.setState({ selectionMenuPosition: null });
-    };
-
-    private onRunAnnotationActionForSelectedObjects = (): void => {
-        const { annotations, selectedStatesID } = this.props;
-        const selectedStates = getSelectedStates(annotations, selectedStatesID);
-        if (selectedStates.length) {
-            openAnnotationsActionModal({ defaultObjectStates: selectedStates });
-        }
-        this.setState({ selectionMenuPosition: null });
-    };
-
-    private updateSelectedObjectsZOrder = async (
-        resolveZOrder: (state: ObjectState) => number,
-    ): Promise<void> => {
-        const { annotations, selectedStatesID, onUpdateAnnotationsBatch } = this.props;
-        const selectedStates = getSelectedStates(annotations, selectedStatesID);
-        const statesToUpdate = prepareSelectionZOrder(selectedStates, resolveZOrder);
-        if (statesToUpdate.length) {
-            await onUpdateAnnotationsBatch(statesToUpdate);
-        }
-        this.setState({
-            selectionMenuPosition: null,
-            selectionLayerPickerVisible: false,
-        });
-    };
-
-    private onSwitchSelectedObjectsLock = async (): Promise<void> => {
-        const {
-            annotations, selectedStatesID, onUpdateAnnotationsBatch,
-        } = this.props;
-        const selectedStates = getSelectedStates(annotations, selectedStatesID);
-        const statesToUpdate = prepareSelectionToggle(selectedStates, 'lock');
-        if (!statesToUpdate.length) return;
-        await onUpdateAnnotationsBatch(statesToUpdate);
-        this.setState({ selectionMenuPosition: null });
-    };
-
-    private onSwitchSelectedObjectsPinned = async (): Promise<void> => {
-        const {
-            annotations, selectedStatesID, onUpdateAnnotationsBatch,
-        } = this.props;
-        const selectedStates = getSelectedStates(annotations, selectedStatesID);
-        const statesToUpdate = prepareSelectionToggle(selectedStates, 'pinned');
-        if (!statesToUpdate.length) return;
-        await onUpdateAnnotationsBatch(statesToUpdate);
-        this.setState({ selectionMenuPosition: null });
-    };
-
-    private onGroupSelectedObjects = (reset = false): void => {
-        const { onGroupSelection } = this.props;
-        onGroupSelection(reset);
-        this.setState({ selectionMenuPosition: null });
-    };
-
-    private onChangeSelectedObjectsAttribute = async (attributeID: number, value: string): Promise<void> => {
-        const {
-            annotations, selectedStatesID, onUpdateAnnotationsBatch,
-        } = this.props;
-        const selectedStates = getSelectedStates(annotations, selectedStatesID);
-        const statesToUpdate = selectedStates.filter(
-            (state: ObjectState): boolean => state.attributes[attributeID] !== value,
-        );
-        for (const state of statesToUpdate) state.attributes = { [attributeID]: value };
-        if (statesToUpdate.length) await onUpdateAnnotationsBatch(statesToUpdate);
     };
 
     private onCanvasWarningOccurrence = (event: any): void => {
@@ -1306,7 +1091,6 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
     };
     private onCanvasDragStart = (): void => {
         const { updateActiveControl } = this.props;
-        this.setState({ selectionMenuPosition: null });
         updateActiveControl(ActiveControl.DRAG_CANVAS);
     };
 
@@ -1518,9 +1302,6 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
         canvasInstance.html().addEventListener('canvas.merged', this.onCanvasObjectsMerged);
         canvasInstance.html().addEventListener('canvas.grouped', this.onCanvasObjectsGrouped);
         canvasInstance.html().addEventListener('canvas.selected', this.onCanvasSelected);
-        canvasInstance.html().addEventListener(
-            'canvas.selectionmenu', this.onCanvasSelectionMenu as EventListener,
-        );
         canvasInstance.html().addEventListener('canvas.joined', this.onCanvasObjectsJoined);
         canvasInstance.html().addEventListener('canvas.regionselected', this.onCanvasPositionSelected);
         canvasInstance.html().addEventListener('canvas.splitted', this.onCanvasTrackSplitted);
@@ -1534,8 +1315,6 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
     public render(): JSX.Element {
         const {
             currentZLayer,
-            minZLayer,
-            maxZLayer,
             hiddenZLayers,
             sidebarCollapsed,
             keyMap,
@@ -1544,8 +1323,6 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
             showTagsOnFrame,
             canvasIsReady,
             annotations,
-            labels,
-            selectedStatesID,
             activatedStateID,
             focusedObjectPadding,
             onSwitchAutomaticBordering,
@@ -1555,51 +1332,6 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
             onExpandObject,
         } = this.props;
         const { canvasInstance } = this.props as { canvasInstance: Canvas };
-        const {
-            selectionMenuPosition, selectionAttributesCollapsed, selectionLayerPickerVisible,
-        } = this.state;
-        const selectedStates = getSelectedStates(annotations, selectedStatesID);
-        const selectionAttributeState = getSelectionAttributeState(selectedStates);
-        const selectionAttributeValues: Record<number, string> = {};
-        const mixedSelectionAttributeIDs = new Set<number>();
-        for (const attribute of selectionAttributeState.attributes) {
-            const attributeID = attribute.id as number;
-            const value = selectedStates[0]?.attributes[attributeID] || '';
-            selectionAttributeValues[attributeID] = value;
-            if (selectedStates.some((state: ObjectState): boolean => state.attributes[attributeID] !== value)) {
-                mixedSelectionAttributeIDs.add(attributeID);
-            }
-        }
-        const applicableLabels = labels.filter((label: Label): boolean => selectedStates.every(
-            (state: ObjectState): boolean => filterApplicableLabels(state, labels).some(
-                (applicableLabel: Label): boolean => applicableLabel.id === label.id,
-            ),
-        ));
-        const selectedLabelID = selectedStates.length > 0 && selectedStates.every(
-            (state: ObjectState): boolean => state.label.id === selectedStates[0].label.id,
-        ) ? selectedStates[0].label.id : null;
-        const labelSelectorDisabled = !applicableLabels.length || selectedStates.some(
-            (state: ObjectState): boolean => (
-                state.lock || state.isGroundTruth || state.shapeType === ShapeType.SKELETON
-            ),
-        );
-        const labelSelectorDisabledReason = !applicableLabels.length ?
-            'No label can be applied to every selected object' :
-            'Labels cannot be changed for locked, ground truth, or skeleton objects';
-        const lockSelection = getSelectionToggleState(selectedStates, 'lock');
-        const pinSelection = getSelectionToggleState(selectedStates, 'pinned');
-        const selectionGroupState = getSelectionGroupState(selectedStates);
-        const groupSelectionDisabled = !selectionGroupState.canGroup;
-        const groupSelectionDisabledReason = selectionGroupState.disabledReason || (
-            selectionGroupState.alreadyInSameGroup ?
-                'Selected objects are already in the same group' : 'Select at least two objects to group'
-        );
-        const ungroupSelectionDisabled = !selectionGroupState.canUngroup;
-        const ungroupSelectionDisabledReason = selectionGroupState.disabledReason ||
-            'No selected objects are grouped';
-        const selectionLayerActionsDisabled = !selectedStates.some((state: ObjectState): boolean => (
-            !state.lock && !state.isGroundTruth && [ObjectType.SHAPE, ObjectType.TRACK].includes(state.objectType)
-        ));
 
         const preventDefault = (event: KeyboardEvent | undefined): void => {
             if (event) {
@@ -1674,282 +1406,6 @@ class CanvasWrapperComponent extends React.PureComponent<Props, State> {
                         height: '100%',
                     }}
                 />
-
-                {selectionMenuPosition && (
-                    <Dropdown
-                        key={selectionMenuPosition.source === 'context' ?
-                            `context-${selectionMenuPosition.left}-${selectionMenuPosition.top}` : 'header'}
-                        destroyPopupOnHide
-                        open
-                        placement='bottomLeft'
-                        autoAdjustOverflow
-                        trigger={[]}
-                        getPopupContainer={(): HTMLElement => window.document.body}
-                        dropdownRender={(menu): JSX.Element => (
-                            <div
-                                role='presentation'
-                                className='cvat-canvas-selected-objects-menu-content'
-                                onPointerDown={(event): void => event.stopPropagation()}
-                                onMouseDown={(event): void => event.stopPropagation()}
-                            >
-                                {menu}
-                            </div>
-                        )}
-                        menu={{
-                            selectable: false,
-                            className: 'cvat-object-item-menu',
-                            onClick: (info): void => info.domEvent.stopPropagation(),
-                            items: [
-                                {
-                                    key: 'change-label',
-                                    label: (
-                                        <div className='cvat-canvas-selected-objects-label-selector'>
-                                            {applicableLabels.length ? (
-                                                <LabelSelector
-                                                    disabled={labelSelectorDisabled}
-                                                    size='small'
-                                                    labels={applicableLabels}
-                                                    value={selectedLabelID}
-                                                    placeholder={selectedLabelID === null ?
-                                                        'Multiple labels' : 'Select label'}
-                                                    onChange={this.onChangeSelectedObjectsLabel}
-                                                    tooltip={labelSelectorDisabled ?
-                                                        labelSelectorDisabledReason : 'Change current label'}
-                                                    className='cvat-objects-sidebar-state-item-label-selector'
-                                                    popupClassName='cvat-objects-sidebar-state-item-label-dropdown'
-                                                    popupMatchSelectWidth={false}
-                                                />
-                                            ) : (
-                                                <Select
-                                                    disabled
-                                                    size='small'
-                                                    placeholder='No common labels'
-                                                />
-                                            )}
-                                        </div>
-                                    ),
-                                },
-                                {
-                                    key: 'switch-lock',
-                                    label: (
-                                        <Button
-                                            type='link'
-                                            disabled={!!lockSelection.disabledReason}
-                                            title={lockSelection.disabledReason || undefined}
-                                            icon={lockSelection.active ? <LockFilled /> : <UnlockOutlined />}
-                                            onClick={this.onSwitchSelectedObjectsLock}
-                                        >
-                                            {lockSelection.active ? 'Unlock selection' : 'Lock selection'}
-                                        </Button>
-                                    ),
-                                },
-                                {
-                                    key: 'switch-pinned',
-                                    label: (
-                                        <Button
-                                            type='link'
-                                            disabled={!!pinSelection.disabledReason}
-                                            title={pinSelection.disabledReason || undefined}
-                                            icon={pinSelection.active ? <PushpinFilled /> : <PushpinOutlined />}
-                                            onClick={this.onSwitchSelectedObjectsPinned}
-                                        >
-                                            {pinSelection.active ? 'Unpin selection' : 'Pin selection'}
-                                        </Button>
-                                    ),
-                                },
-                                {
-                                    key: 'copy',
-                                    label: (
-                                        <Button
-                                            type='link'
-                                            icon={<CopyOutlined />}
-                                            onClick={this.onMakeCopySelectedObjects}
-                                        >
-                                            Make a copy
-                                        </Button>
-                                    ),
-                                },
-                                {
-                                    key: 'run-annotation-action',
-                                    label: (
-                                        <Button
-                                            type='link'
-                                            icon={<FunctionOutlined />}
-                                            onClick={this.onRunAnnotationActionForSelectedObjects}
-                                        >
-                                            Run annotation action
-                                        </Button>
-                                    ),
-                                },
-                                {
-                                    key: 'to-background',
-                                    label: (
-                                        <Button
-                                            type='link'
-                                            disabled={selectionLayerActionsDisabled}
-                                            icon={<Icon component={BackgroundIcon} />}
-                                            onClick={(): Promise<void> => this.updateSelectedObjectsZOrder(
-                                                (): number => minZLayer - 1,
-                                            )}
-                                        >
-                                            To background
-                                        </Button>
-                                    ),
-                                },
-                                {
-                                    key: 'to-foreground',
-                                    label: (
-                                        <Button
-                                            type='link'
-                                            disabled={selectionLayerActionsDisabled}
-                                            icon={<Icon component={ForegroundIcon} />}
-                                            onClick={(): Promise<void> => this.updateSelectedObjectsZOrder(
-                                                (): number => maxZLayer + 1,
-                                            )}
-                                        >
-                                            To foreground
-                                        </Button>
-                                    ),
-                                },
-                                {
-                                    key: 'one-layer-backward',
-                                    label: (
-                                        <Button
-                                            type='link'
-                                            disabled={selectionLayerActionsDisabled}
-                                            icon={<Icon component={OneLayerBackwardIcon} />}
-                                            onClick={(): Promise<void> => this.updateSelectedObjectsZOrder(
-                                                (state: ObjectState): number => state.zOrder - 1,
-                                            )}
-                                        >
-                                            To one layer backward
-                                        </Button>
-                                    ),
-                                },
-                                {
-                                    key: 'one-layer-forward',
-                                    label: (
-                                        <Button
-                                            type='link'
-                                            disabled={selectionLayerActionsDisabled}
-                                            icon={<Icon component={OneLayerForwardIcon} />}
-                                            onClick={(): Promise<void> => this.updateSelectedObjectsZOrder(
-                                                (state: ObjectState): number => state.zOrder + 1,
-                                            )}
-                                        >
-                                            To one layer forward
-                                        </Button>
-                                    ),
-                                },
-                                {
-                                    key: 'move-to-layer',
-                                    label: (
-                                        <LayerPicker
-                                            visible={selectionLayerPickerVisible}
-                                            value={selectedStates[0]?.zOrder ?? 0}
-                                            onVisibleChange={(visible: boolean): void => this.setState({
-                                                selectionLayerPickerVisible: visible,
-                                            })}
-                                            onChange={(zOrder: number): Promise<void> => (
-                                                this.updateSelectedObjectsZOrder((): number => zOrder)
-                                            )}
-                                        >
-                                            <Button
-                                                type='link'
-                                                disabled={selectionLayerActionsDisabled}
-                                                icon={<VerticalAlignBottomOutlined />}
-                                            >
-                                                Move to layer ...
-                                            </Button>
-                                        </LayerPicker>
-                                    ),
-                                },
-                                {
-                                    key: 'group',
-                                    label: (
-                                        <Button
-                                            type='link'
-                                            disabled={groupSelectionDisabled}
-                                            title={groupSelectionDisabled ? groupSelectionDisabledReason : undefined}
-                                            icon={<GroupOutlined />}
-                                            onClick={(): void => this.onGroupSelectedObjects()}
-                                        >
-                                            Group selection
-                                        </Button>
-                                    ),
-                                },
-                                {
-                                    key: 'ungroup',
-                                    label: (
-                                        <Button
-                                            type='link'
-                                            disabled={ungroupSelectionDisabled}
-                                            title={ungroupSelectionDisabled ?
-                                                ungroupSelectionDisabledReason : undefined}
-                                            icon={<UngroupOutlined />}
-                                            onClick={(): void => this.onGroupSelectedObjects(true)}
-                                        >
-                                            Ungroup selection
-                                        </Button>
-                                    ),
-                                },
-                                {
-                                    key: 'remove',
-                                    label: (
-                                        <Button
-                                            type='link'
-                                            icon={<DeleteOutlined />}
-                                            onClick={this.onRemoveSelectedObjects}
-                                        >
-                                            Delete selection
-                                        </Button>
-                                    ),
-                                },
-                                ...(selectionAttributeState.attributes.length ? [{
-                                    key: 'attributes',
-                                    className: 'cvat-canvas-selected-objects-attributes-item',
-                                    label: (
-                                        <div
-                                            className='cvat-canvas-selected-objects-attributes'
-                                            title={selectionAttributeState.disabledReason || undefined}
-                                        >
-                                            <ObjectItemDetails
-                                                readonly={!selectionAttributeState.enabled}
-                                                collapsed={selectionAttributesCollapsed}
-                                                collapse={(): void => this.setState({
-                                                    selectionAttributesCollapsed: !selectionAttributesCollapsed,
-                                                })}
-                                                changeAttribute={this.onChangeSelectedObjectsAttribute}
-                                                values={selectionAttributeValues}
-                                                mixedAttributeIDs={mixedSelectionAttributeIDs}
-                                                attributes={selectionAttributeState.attributes}
-                                                changeSize={(): void => {}}
-                                                sizeParams={null}
-                                                source={selectedStates[0]?.source || Source.MANUAL}
-                                                score={selectedStates[0]?.score || 0}
-                                                votes={selectedStates[0]?.votes || 0}
-                                                textContent=''
-                                                detailsLabel='Details'
-                                            />
-                                        </div>
-                                    ),
-                                }] : []),
-                            ],
-                        }}
-                    >
-                        <span
-                            className='cvat-canvas-selected-objects-menu-anchor'
-                            style={{
-                                position: 'absolute',
-                                display: 'block',
-                                left: selectionMenuPosition.left,
-                                top: selectionMenuPosition.top,
-                                width: 1,
-                                height: 1,
-                            }}
-                        />
-                    </Dropdown>
-                )}
 
                 <Popover
                     destroyTooltipOnHide

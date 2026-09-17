@@ -4,50 +4,70 @@
 
 @import 'base';
 
+.cvat-canvas-selected-objects-menu-content.cvat-objects-sidebar-state-item {
+    box-sizing: border-box;
+    width: 100%;
+    margin: 0;
+    padding: $grid-unit-size;
+    background: $background-color-2;
+
+    .cvat-canvas-selected-objects-menu-header {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) $grid-unit-size * 3;
+        gap: $grid-unit-size;
+        align-items: center;
+    }
+
+    .cvat-canvas-selected-objects-more-button {
+        width: $grid-unit-size * 3;
+        padding: 0;
+        color: $objects-bar-icons-color;
+        font-size: 20px;
+    }
+
+    .cvat-canvas-selected-objects-quick-actions {
+        display: flex;
+        justify-content: space-around;
+        margin-top: $grid-unit-size;
+        padding-top: $grid-unit-size;
+        border-top: 1px solid rgba(0, 0, 0, 7%);
+
+        > span,
+        > button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: $grid-unit-size * 4;
+        }
+
+        button {
+            color: $objects-bar-icons-color;
+            font-size: 16px;
+        }
+
+        button[disabled] {
+            opacity: 0.5;
+        }
+    }
+}
+
+.cvat-canvas-selection-context-menu {
+    overflow-x: hidden;
+}
+
 .cvat-canvas-selected-objects-label-selector {
-    width: $grid-unit-size * 30;
-    padding: $grid-unit-size * 2;
+    min-width: 0;
 
     > .ant-select {
         width: 100%;
     }
-}
 
-.cvat-canvas-selected-objects-attributes {
-    width: $grid-unit-size * 30;
-    padding: 0 $grid-unit-size * 2;
-
-    .cvat-objects-sidebar-state-item-collapse > .ant-collapse-item > .ant-collapse-header {
-        align-items: center;
-        padding-left: 0;
-        padding-top: 0;
-
-        .ant-collapse-arrow {
-            color: $text-color !important;
-            opacity: 1 !important;
-            visibility: visible !important;
-            top: auto;
-        }
-
-        .ant-collapse-header-text {
-            margin-left: -2px;
-        }
-    }
-}
-
-.cvat-canvas-selected-objects-attributes-item.ant-dropdown-menu-item {
-    display: flex;
-    align-items: center;
-    padding-top: 5px !important;
-    padding-bottom: 5px !important;
-
-    > .ant-dropdown-menu-title-content {
-        width: 100%;
+    .ant-select-selector {
+        padding-right: $grid-unit-size * 3 !important;
     }
 
-    .ant-collapse-header-text .ant-typography {
-        font-size: 14px !important;
-        color: $text-color !important;
+    .ant-select-arrow {
+        z-index: 1;
     }
 }
 

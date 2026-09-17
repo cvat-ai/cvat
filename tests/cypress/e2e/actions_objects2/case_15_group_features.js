@@ -167,8 +167,8 @@ context('Group features', () => {
             cy.contains('.cvat-annotation-header-button', 'Redo').click();
             testShapesFillEquality(false);
 
-            cy.get('button[aria-label="Open selection actions"]').click();
-            cy.contains('button', 'Ungroup selection').click();
+            cy.get('.cvat_canvas_selected_objects_box').rightclick({ force: true });
+            cy.get('.cvat-canvas-selected-objects-menu-content button[aria-label="Ungroup selection"]').click();
             testShapesFillEquality(true);
 
             cy.get('body').type('g');

@@ -17,6 +17,8 @@ export interface SelectionFilter {
     intersect?: boolean;
     // keep the regular object appearance while the consumer renders persistent selection feedback
     preserveAppearance?: boolean;
+    // clear the previous selector result when a new selection box starts
+    replaceOnSelection?: boolean;
 }
 
 export interface ObjectSelector {
@@ -116,6 +118,10 @@ export class ObjectSelectorImpl implements ObjectSelector {
     }
 
     private onMouseDown = (event: MouseEvent): void => {
+        if (this.selectionFilter?.replaceOnSelection) {
+            this.resetAllAppearances();
+            this.selectedObjects = {};
+        }
         const point = translateToSVG((this.canvas.node as any) as SVGSVGElement, [event.clientX, event.clientY]);
         this.mouseDownPosition = { x: point[0], y: point[1] };
         this.selectionRect = this.canvas.rect().addClass('cvat_canvas_selection_box');

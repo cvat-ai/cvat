@@ -595,9 +595,13 @@ export function removeObjectAsync(objectState: ObjectState, force: boolean): Thu
     return async (dispatch: ThunkDispatch): Promise<void> => {
         try {
             const { frame, jobInstance } = receiveAnnotationsParameters();
+            const { selectedStatesID } = getStore().getState().annotation.annotations;
             await jobInstance.logger.log(EventScope.deleteObject, { count: 1 });
 
-            const removed = await objectState.delete(frame, force);
+            const objectIsSelected = selectedStatesID.includes(objectState.clientID as number);
+            const removed = objectIsSelected ?
+                (await jobInstance.annotations.removeBatch([objectState], force)).length > 0 :
+                await objectState.delete(frame, force);
             const history = await jobInstance.actions.get();
 
             if (removed) {

@@ -2876,7 +2876,9 @@ export class CanvasViewImpl implements CanvasView, Listener {
             if (data.enabled) {
                 this.mode = Mode.SELECT;
                 this.selectHandler.select(
-                    data, { objectType: ['shape', 'track'], preserveAppearance: true }, this.pendingSelectionEvent,
+                    data, {
+                        objectType: ['shape', 'track'], preserveAppearance: true, replaceOnSelection: true,
+                    }, this.pendingSelectionEvent,
                 );
             } else {
                 this.selectHandler.select(data, {});
@@ -3929,7 +3931,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         this.selectedObjectsBox.on('contextmenu', (event: MouseEvent): void => {
             event.preventDefault();
             event.stopPropagation();
-            this.openSelectedObjectsMenu(event.clientX, event.clientY, 'context');
+            this.openSelectedObjectsMenu(event.clientX, event.clientY);
         }).on('beforedrag', (event: CustomEvent): void => {
             const sourceEvent = event.detail.event as MouseEvent;
             sourceEvent.stopPropagation();
@@ -4018,20 +4020,13 @@ export class CanvasViewImpl implements CanvasView, Listener {
         });
     }
 
-    private openSelectedObjectsMenu(
-        left: number,
-        top: number,
-        source: 'context' | 'header',
-        toggle = false,
-    ): void {
+    private openSelectedObjectsMenu(left: number, top: number): void {
         this.canvas.dispatchEvent(new CustomEvent('canvas.selectionmenu', {
             bubbles: true,
             cancelable: true,
             detail: {
                 left,
                 top,
-                source,
-                toggle,
             },
         }));
     }
@@ -4062,22 +4057,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
             0,
             this.canvas.clientWidth - labelWidth,
         )}px`;
-
-        const menuButton = this.selectedObjectsLabel.querySelector<HTMLButtonElement>(
-            '.cvat_canvas_selected_objects_menu_button',
-        );
-        if (menuButton) {
-            const buttonBox = menuButton.getBoundingClientRect();
-            this.canvas.dispatchEvent(new CustomEvent('canvas.selectionmenu', {
-                bubbles: false,
-                cancelable: true,
-                detail: {
-                    left: buttonBox.left,
-                    top: buttonBox.bottom,
-                    reposition: true,
-                },
-            }));
-        }
     }
 
     private updateSelectedObjectsOverlay(): void {
@@ -4119,15 +4098,9 @@ export class CanvasViewImpl implements CanvasView, Listener {
         if (!this.selectedObjectsLabel) {
             const label = window.document.createElement('div');
             const title = window.document.createElement('span');
-            const menuButton = window.document.createElement('button');
 
             label.className = 'cvat_canvas_selected_objects_label';
             title.className = 'cvat_canvas_selected_objects_label_title';
-            menuButton.className = 'cvat_canvas_selected_objects_menu_button';
-            menuButton.type = 'button';
-            menuButton.title = 'Selection actions';
-            menuButton.setAttribute('aria-label', 'Open selection actions');
-            menuButton.textContent = '...';
             label.addEventListener('mousedown', (event: MouseEvent): void => {
                 if ((event.target as Element).closest('.cvat-canvas-selected-objects-menu-content')) {
                     event.stopPropagation();
@@ -4163,18 +4136,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     }
                 });
             }
-            menuButton.addEventListener('mousedown', (event: MouseEvent): void => event.stopPropagation());
-            menuButton.addEventListener('dblclick', (event: MouseEvent): void => {
-                event.preventDefault();
-                event.stopPropagation();
-            });
-            menuButton.addEventListener('click', (event: MouseEvent): void => {
-                event.stopPropagation();
-                const buttonBox = menuButton.getBoundingClientRect();
-                this.openSelectedObjectsMenu(buttonBox.left, buttonBox.bottom, 'header', true);
-            });
-
-            label.append(title, menuButton);
+            label.append(title);
             this.canvas.appendChild(label);
             this.selectedObjectsLabel = label;
         }
