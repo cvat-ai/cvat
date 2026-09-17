@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any, Self
 
 import rq
+from rq import Retry
 from rq.job import Job as RQJob
 from rq.job import JobStatus
 
@@ -60,6 +61,13 @@ def get_class_from_full_path(full_path: str) -> type | None:
 
 def rq_job_will_be_retried(rq_job: RQJob) -> bool:
     return bool(rq_job.retries_left and rq_job.retries_left > 0)
+
+
+def build_job_retry(intervals: list[int]) -> Retry | None:
+    if not intervals:
+        return None
+
+    return Retry(max=len(intervals), interval=list(intervals))
 
 
 def send_request_succeeded_signal(

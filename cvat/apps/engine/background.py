@@ -81,6 +81,7 @@ from cvat.apps.engine.utils import (
 )
 from cvat.apps.events.handlers import handle_dataset_export, handle_dataset_import
 from cvat.apps.redis_handler.background import AbstractRequestManager
+from cvat.apps.redis_handler.utils import build_job_retry
 
 slogger = ServerLogManager(__name__)
 
@@ -185,7 +186,7 @@ class BaseResourceExporter(AbstractRequestManager):
 
     @property
     def job_retry(self) -> Retry | None:
-        return Retry(max=5, interval=[60] * 5)
+        return build_job_retry(intervals=settings.EXPORT_JOB_RETRY_INTERVALS)
 
     @abstractmethod
     def get_result_filename(self) -> str: ...
@@ -506,7 +507,7 @@ class BaseResourceImporter(AbstractRequestManager):
 
     @property
     def job_retry(self) -> Retry | None:
-        return Retry(max=3, interval=[10, 20, 30])
+        return build_job_retry(intervals=settings.IMPORT_JOB_RETRY_INTERVALS)
 
     def init_request_args(self):
         try:

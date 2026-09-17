@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+import json
 import logging as log
 import os
 
@@ -85,6 +86,24 @@ else:
 
 if EXPORT_CACHE_LOCK_ACQUISITION_TIMEOUT <= EXPORT_CACHE_LOCK_TTL:
     raise ImproperlyConfigured("Lock acquisition timeout must be more than lock TTL")
+
+
+def _parse_job_retry_intervals(env_var: str, default: list[int]) -> list[int]:
+    intervals = json.loads(os.getenv(env_var, json.dumps(default)))
+    if not isinstance(intervals, list) or not all(isinstance(v, int) and v >= 0 for v in intervals):
+        raise ImproperlyConfigured(
+            f"{env_var} must be a JSON list of non-negative integers, got {intervals!r}"
+        )
+    return intervals
+
+
+EXPORT_JOB_RETRY_INTERVALS = _parse_job_retry_intervals(
+    env_var="CVAT_EXPORT_JOB_RETRY_INTERVALS", default=[60, 60, 60, 60, 60]
+)
+
+IMPORT_JOB_RETRY_INTERVALS = _parse_job_retry_intervals(
+    env_var="CVAT_IMPORT_JOB_RETRY_INTERVALS", default=[10, 20, 30]
+)
 
 MAX_CONSENSUS_REPLICAS = int(os.getenv("CVAT_MAX_CONSENSUS_REPLICAS", 11))
 if MAX_CONSENSUS_REPLICAS < 1:
