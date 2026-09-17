@@ -90,11 +90,15 @@ _Other SDK options:_
 _Notes:_
 
 - Webhook payloads carry the event name (e.g. `update:task`), the serialized
-  resource, the `sender`, and — for updates — `before_update`/`changes` with
-  the old field values.
+  resource, and the `sender`.
 - An organization webhook lives in the organization's scope, so every call
   about it must be made in that organization's context
   (`client.organization_context(slug)`).
+- A third webhook scope, `type="server"`, exists for server-wide events
+  (user and organization lifecycle events) and is restricted to admin
+  accounts; it isn't covered by these two project/organization recipes. See
+  {{< ilink "/docs/administration/community/advanced/webhooks#for-server-admin-only" "the Webhooks guide" >}}
+  for details.
 - The delivery list is paginated like every list endpoint;
   `get_paginated_collection()` walks all the pages.
 - Full recipes:
