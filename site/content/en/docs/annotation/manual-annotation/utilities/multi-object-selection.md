@@ -117,6 +117,8 @@ Open the selection action card by right-clicking the selection bounding box.
 
 The card contains the label selector, frequently used actions represented by icons,
 and a **More selection actions** (⋯) menu for additional operations.
+It also displays the number of selected objects and a compact type summary.
+Hover over the summary to see the number of objects of each type.
 
 Unavailable actions are disabled when they cannot be applied safely to the selection.
 Hover over a disabled action to see why it is unavailable.
@@ -154,6 +156,15 @@ to bring the complete selection to the state shown by the action.
 
 ![Locking, unlocking, pinning, and unpinning selected objects](/images/multi-object-selection-lock-pin.gif)
 
+### Occluding and hiding
+
+Use the occluded icon or press **Q** or **/** to change the occluded state of every selected object.
+Use the visibility icon or press **H** to hide the complete selection.
+
+These actions are unavailable when the selection contains a locked or ground-truth object.
+Hiding removes the hidden objects from the active selection. Undo restores both their visibility
+and their selection membership as one history action.
+
 ### Copying and running annotation actions
 
 Open **More selection actions** (⋯), then select **Make a copy** to copy the selected objects
@@ -180,10 +191,10 @@ Layer actions are disabled when the selection contains no editable objects.
 
 ### Grouping and ungrouping
 
-Use the group icon to place the selected objects in one group.
+Open **More selection actions** (⋯), then select **Group selection** to place the selected objects in one group.
 At least two objects must be selected, and the action is disabled if they already belong to the same group.
 
-Use the ungroup icon to remove selected objects from their groups.
+Select **Ungroup selection** from the same menu to remove selected objects from their groups.
 This action is available when at least one selected object belongs to a group.
 Grouping and ungrouping are unavailable when the selection contains a ground-truth object.
 

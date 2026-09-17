@@ -53,6 +53,7 @@ import {
 import { openAnnotationsActionModal } from 'components/annotation-page/annotations-actions/annotations-actions-modal';
 import { OBJECTS_SIDEBAR_OPEN_Z_LAYER_EVENT } from 'utils/objects-sidebar';
 import {
+    type SelectionToggleProperty,
     getSelectedStates,
     getSelectionToggleState,
     prepareSelectionZOrder,
@@ -128,14 +129,14 @@ const componentShortcuts = {
         scope: ShortcutScope.OBJECTS_SIDEBAR,
     },
     SWITCH_HIDDEN: {
-        name: 'Hide/show an object',
-        description: 'Change hidden state for an active object',
+        name: 'Hide/show objects',
+        description: 'Change hidden state for selected objects or an active object',
         sequences: ['h'],
         scope: ShortcutScope.OBJECTS_SIDEBAR,
     },
     SWITCH_OCCLUDED: {
         name: 'Switch occluded',
-        description: 'Change occluded property for an active object',
+        description: 'Change occluded property for selected objects or an active object',
         sequences: ['q', '/'],
         scope: ShortcutScope.OBJECTS_SIDEBAR,
     },
@@ -511,39 +512,27 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
         this.lockAllStates(false);
     };
 
-    private switchSelectionLock = (): void => {
+    private switchSelectionProperty = (property: SelectionToggleProperty): void => {
         const {
             objectStates, selectedStatesID, updateAnnotationsBatch,
         } = this.props;
         const selectedStates = getSelectedStates(objectStates, selectedStatesID);
         if (!selectedStates.length) return;
-        const { disabledReason } = getSelectionToggleState(selectedStates, 'lock');
+        const { disabledReason } = getSelectionToggleState(selectedStates, property);
         if (disabledReason) {
             message.destroy();
             message.warning(disabledReason);
             return;
         }
 
-        const statesToUpdate = prepareSelectionToggle(selectedStates, 'lock');
+        const statesToUpdate = prepareSelectionToggle(selectedStates, property);
         updateAnnotationsBatch(statesToUpdate);
     };
 
-    private switchSelectionPinned = (): void => {
-        const {
-            objectStates, selectedStatesID, updateAnnotationsBatch,
-        } = this.props;
-        const selectedStates = getSelectedStates(objectStates, selectedStatesID);
-        if (!selectedStates.length) return;
-        const { disabledReason } = getSelectionToggleState(selectedStates, 'pinned');
-        if (disabledReason) {
-            message.destroy();
-            message.warning(disabledReason);
-            return;
-        }
-
-        const statesToUpdate = prepareSelectionToggle(selectedStates, 'pinned');
-        updateAnnotationsBatch(statesToUpdate);
-    };
+    private switchSelectionLock = (): void => this.switchSelectionProperty('lock');
+    private switchSelectionPinned = (): void => this.switchSelectionProperty('pinned');
+    private switchSelectionHidden = (): void => this.switchSelectionProperty('hidden');
+    private switchSelectionOccluded = (): void => this.switchSelectionProperty('occluded');
 
     private onCollapseAllStates = (): void => {
         this.collapseAllStates(true);
@@ -735,6 +724,10 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             },
             SWITCH_HIDDEN: (event?: KeyboardEvent) => {
                 preventDefault(event);
+                if (selectedStatesID.length) {
+                    this.switchSelectionHidden();
+                    return;
+                }
                 const state = activatedState();
                 const {
                     editedState, changeHideEditedState, activeControl, activeObjectHidden,
@@ -750,6 +743,10 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             },
             SWITCH_OCCLUDED: (event?: KeyboardEvent) => {
                 preventDefault(event);
+                if (selectedStatesID.length) {
+                    this.switchSelectionOccluded();
+                    return;
+                }
                 const state = activatedState();
                 if (state && isLayerState(state)) {
                     state.occluded = !state.occluded;

@@ -563,6 +563,9 @@ context('Multi-object selection', { scrollBehavior: false }, () => {
         cy.contains('.cvat-objects-sidebar-label-item', labels.car).click({ ...platformModifier });
         assertSelection([objectIds.carShape1, objectIds.carShape2, objectIds.points]);
         cy.get('.cvat-objects-sidebar-label-item-multi-selected').should('have.length', 1);
+        openSelectionMenu();
+        cy.get('.cvat-canvas-selected-objects-count').should('have.text', '3 OBJECTS');
+        cy.get('.cvat-canvas-selected-objects-type-text').should('have.text', 'RECT + POINTS');
 
         clearSelection();
         cy.contains('[role="tab"]', 'Objects').click();
@@ -755,6 +758,58 @@ context('Multi-object selection', { scrollBehavior: false }, () => {
         cy.get('.cvat-canvas-selected-objects-menu-content button[aria-label="Unpin selection"]').click();
     });
 
+    it('Occludes and hides the selection with quick actions, shortcuts, and batch history', () => {
+        const selectedIds = [objectIds.carShape1, objectIds.carShape2];
+        selectFromSidebar(selectedIds);
+        openSelectionMenu();
+        cy.get('.cvat-canvas-selected-objects-menu-content button[aria-label="Occlude selection"]').click();
+        selectedIds.forEach((clientId) => {
+            cy.get(sidebarItem(clientId)).find('.cvat-object-item-button-occluded-enabled').should('exist');
+        });
+        assertSelection(selectedIds);
+
+        cy.contains('.cvat-annotation-header-button', 'Undo').click();
+        selectedIds.forEach((clientId) => {
+            cy.get(sidebarItem(clientId)).find('.cvat-object-item-button-occluded-enabled').should('not.exist');
+        });
+        assertSelection(selectedIds);
+
+        cy.get('body').type('q');
+        selectedIds.forEach((clientId) => {
+            cy.get(sidebarItem(clientId)).find('.cvat-object-item-button-occluded-enabled').should('exist');
+        });
+        cy.contains('.cvat-annotation-header-button', 'Undo').click();
+
+        openSelectionMenu();
+        cy.get('.cvat-canvas-selected-objects-menu-content button[aria-label="Hide selection"]').click();
+        selectedIds.forEach((clientId) => {
+            cy.get(sidebarItem(clientId)).find('.cvat-object-item-button-hidden-enabled').should('exist');
+        });
+        assertSelection([]);
+
+        cy.contains('.cvat-annotation-header-button', 'Undo').click();
+        selectedIds.forEach((clientId) => {
+            cy.get(sidebarItem(clientId)).find('.cvat-object-item-button-hidden-enabled').should('not.exist');
+        });
+        assertSelection(selectedIds);
+
+        cy.contains('.cvat-annotation-header-button', 'Redo').click();
+        selectedIds.forEach((clientId) => {
+            cy.get(sidebarItem(clientId)).find('.cvat-object-item-button-hidden-enabled').should('exist');
+        });
+        assertSelection([]);
+
+        cy.contains('.cvat-annotation-header-button', 'Undo').click();
+        assertSelection(selectedIds);
+        cy.get('body').type('h');
+        selectedIds.forEach((clientId) => {
+            cy.get(sidebarItem(clientId)).find('.cvat-object-item-button-hidden-enabled').should('exist');
+        });
+        assertSelection([]);
+        cy.contains('.cvat-annotation-header-button', 'Undo').click();
+        assertSelection(selectedIds);
+    });
+
     it('Disables incompatible actions and normalizes a mixed lock state', () => {
         cy.get(sidebarItem(objectIds.carShape1)).within(() => {
             cy.get('.cvat-object-item-button-lock').click();
@@ -764,6 +819,10 @@ context('Multi-object selection', { scrollBehavior: false }, () => {
 
         cy.get('.cvat-canvas-selected-objects-label-selector .ant-select-disabled').should('exist');
         cy.get('.cvat-canvas-selected-objects-menu-content button[aria-label="Pin selection"]')
+            .should('be.disabled');
+        cy.get('.cvat-canvas-selected-objects-menu-content button[aria-label="Occlude selection"]')
+            .should('be.disabled');
+        cy.get('.cvat-canvas-selected-objects-menu-content button[aria-label="Hide selection"]')
             .should('be.disabled');
         cy.get('.cvat-canvas-selected-objects-menu-content .ant-collapse-header-text .ant-typography')
             .should('have.text', 'DETAILS');
@@ -810,6 +869,8 @@ context('Multi-object selection', { scrollBehavior: false }, () => {
             cy.wrap($box).rightclick({ force: true });
         });
         cy.get('.cvat-canvas-selected-objects-menu-content').should('exist').and('be.visible');
+        cy.get('.cvat-canvas-selected-objects-count').should('have.text', '2 OBJECTS');
+        cy.get('.cvat-canvas-selected-objects-type-text').should('have.text', 'RECTANGLE SHAPES');
         cy.get('.cvat-canvas-selected-objects-menu-content button[aria-label="Delete selection"]')
             .should('be.visible');
         cy.get('.cvat-canvas-selection-context-menu').should(($menu) => {
@@ -968,10 +1029,10 @@ context('Multi-object selection', { scrollBehavior: false }, () => {
             'bad',
         ).click();
 
-        openSelectionMenu();
-        cy.get('.cvat-canvas-selected-objects-menu-content button[aria-label="Group selection"]').click();
-        openSelectionMenu();
-        cy.get('.cvat-canvas-selected-objects-menu-content button[aria-label="Ungroup selection"]')
+        openSelectionOverflowMenu();
+        cy.contains('.cvat-canvas-selected-objects-overflow-menu button', 'Group selection').click();
+        openSelectionOverflowMenu();
+        cy.contains('.cvat-canvas-selected-objects-overflow-menu button', 'Ungroup selection')
             .should('not.be.disabled').click();
 
         openSelectionMenu();

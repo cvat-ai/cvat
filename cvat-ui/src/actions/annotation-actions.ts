@@ -1619,6 +1619,9 @@ export function updateAnnotationsAsync(statesToUpdate: ObjectState[], batch = fa
     return async (dispatch: ThunkDispatch, getState): Promise<void> => {
         const { jobInstance, workspace } = receiveAnnotationsParameters();
         try {
+            const hiddenWasUpdated = (state: ObjectState): boolean => (
+                state.updateFlags.hidden || state.elements.some(hiddenWasUpdated)
+            );
             if (statesToUpdate.some((state): boolean => state.updateFlags.zOrder)) {
                 // deactivate object to visualize changes immediately (UX)
                 dispatch(activateObject(null, null, null));
@@ -1629,15 +1632,28 @@ export function updateAnnotationsAsync(statesToUpdate: ObjectState[], batch = fa
                 return;
             }
 
+            const { selectedStatesID } = getState().annotation.annotations;
             if (batch) {
+                const hidingCompleteSelection = statesToSave.length === selectedStatesID.length &&
+                    statesToSave.every((stateToSave) => (
+                        hiddenWasUpdated(stateToSave) && stateToSave.hidden &&
+                        selectedStatesID.includes(stateToSave.clientID as number)
+                    ));
                 await jobInstance.annotations.saveStates(statesToSave);
+                if (hidingCompleteSelection) {
+                    await jobInstance.actions.recordSelection(
+                        selectedStatesID,
+                        [],
+                        statesToSave[0].frame,
+                        true,
+                    );
+                }
                 dispatch(fetchAnnotationsAsync());
                 return;
             }
 
-            const { selectedStatesID } = getState().annotation.annotations;
             const hiddenSelectedState = statesToSave.length === 1 &&
-                statesToSave[0].updateFlags.hidden && statesToSave[0].hidden &&
+                hiddenWasUpdated(statesToSave[0]) && statesToSave[0].hidden &&
                 selectedStatesID.includes(statesToSave[0].clientID as number);
             const previousSelection = hiddenSelectedState ? [...selectedStatesID] : [];
             const nextSelection = hiddenSelectedState ? selectedStatesID.filter(

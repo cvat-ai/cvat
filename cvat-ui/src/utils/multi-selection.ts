@@ -9,7 +9,7 @@ import {
 
 type MultiSelectModifier = 'shift' | 'ctrl' | 'alt' | 'meta';
 type ModifierEvent = Pick<MouseEvent, 'shiftKey' | 'ctrlKey' | 'altKey' | 'metaKey'>;
-export type SelectionToggleProperty = 'lock' | 'pinned';
+export type SelectionToggleProperty = 'lock' | 'pinned' | 'occluded' | 'hidden';
 
 interface SelectionToggleState {
     active: boolean;
@@ -31,6 +31,8 @@ interface SelectionAttributeState {
 
 const LOCK_DISABLED_REASON = 'Ground truth objects cannot be locked or unlocked';
 const PIN_DISABLED_REASON = 'Locked, ground truth, tag, and skeleton element objects cannot be pinned';
+const OCCLUDED_DISABLED_REASON = 'Locked and ground truth objects cannot be occluded or unoccluded';
+const HIDDEN_DISABLED_REASON = 'Locked and ground truth objects cannot be hidden or shown';
 
 export function getSelectedStates(states: ObjectState[], selectedStatesID: number[]): ObjectState[] {
     const selectedIDs = new Set(selectedStatesID);
@@ -66,6 +68,14 @@ export function getSelectionToggleState(
         (state.shapeType === ShapeType.POINTS && Number.isInteger(state.parentID))
     ))) {
         disabledReason = PIN_DISABLED_REASON;
+    } else if (property === 'occluded' && states.some((state: ObjectState): boolean => (
+        state.lock || state.isGroundTruth
+    ))) {
+        disabledReason = OCCLUDED_DISABLED_REASON;
+    } else if (property === 'hidden' && states.some((state: ObjectState): boolean => (
+        state.lock || state.isGroundTruth
+    ))) {
+        disabledReason = HIDDEN_DISABLED_REASON;
     }
 
     return {

@@ -168,7 +168,8 @@ context('Group features', () => {
             testShapesFillEquality(false);
 
             cy.get('.cvat_canvas_selected_objects_box').rightclick({ force: true });
-            cy.get('.cvat-canvas-selected-objects-menu-content button[aria-label="Ungroup selection"]').click();
+            cy.get('.cvat-canvas-selected-objects-more-button').click();
+            cy.contains('.cvat-canvas-selected-objects-overflow-menu button', 'Ungroup selection').click();
             testShapesFillEquality(true);
 
             cy.get('body').type('g');
