@@ -41,6 +41,9 @@ export enum SettingsActionTypes {
     CHANGE_BRIGHTNESS_LEVEL = 'CHANGE_BRIGHTNESS_LEVEL',
     CHANGE_CONTRAST_LEVEL = 'CHANGE_CONTRAST_LEVEL',
     CHANGE_SATURATION_LEVEL = 'CHANGE_SATURATION_LEVEL',
+    CHANGE_RELATED_OVERLAY_ENABLED = 'CHANGE_RELATED_OVERLAY_ENABLED',
+    CHANGE_RELATED_OVERLAY_OPACITY = 'CHANGE_RELATED_OVERLAY_OPACITY',
+    CHANGE_RELATED_OVERLAY_INDEX = 'CHANGE_RELATED_OVERLAY_INDEX',
     SWITCH_AUTO_SAVE = 'SWITCH_AUTO_SAVE',
     CHANGE_AUTO_SAVE_INTERVAL = 'CHANGE_AUTO_SAVE_INTERVAL',
     CHANGE_FOCUSED_OBJECT_PADDING = 'CHANGE_FOCUSED_OBJECT_PADDING',
@@ -280,6 +283,26 @@ export function changeSaturationLevel(level: number): AnyAction {
     };
 }
 
+export function changeRelatedOverlayEnabled(enabled: boolean): AnyAction {
+    return {
+        type: SettingsActionTypes.CHANGE_RELATED_OVERLAY_ENABLED,
+        payload: { enabled },
+    };
+}
+
+export function changeRelatedOverlayOpacity(opacity: number): AnyAction {
+    return {
+        type: SettingsActionTypes.CHANGE_RELATED_OVERLAY_OPACITY,
+        payload: { opacity },
+    };
+}
+
+export function changeRelatedOverlayIndex(index: number): AnyAction {
+    return {
+        type: SettingsActionTypes.CHANGE_RELATED_OVERLAY_INDEX,
+        payload: { index },
+    };
+}
 export function switchAutoSave(autoSave: boolean): AnyAction {
     return {
         type: SettingsActionTypes.SWITCH_AUTO_SAVE,
