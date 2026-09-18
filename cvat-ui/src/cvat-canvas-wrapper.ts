@@ -5,6 +5,7 @@
 import {
     Canvas,
     CanvasMode,
+    CanvasHistorySource,
     RectDrawingMethod,
     CuboidDrawingMethod,
     CanvasHint as _CanvasHint,
@@ -41,5 +42,5 @@ export type CanvasHint = _CanvasHint;
 export type RenderData = _RenderData;
 
 export {
-    Canvas, CanvasMode, RectDrawingMethod, CuboidDrawingMethod,
+    Canvas, CanvasMode, CanvasHistorySource, RectDrawingMethod, CuboidDrawingMethod,
 };

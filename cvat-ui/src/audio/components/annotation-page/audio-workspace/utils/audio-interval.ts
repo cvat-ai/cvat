@@ -11,6 +11,10 @@ export interface AudioTimeRange {
     end: number;
 }
 
+export interface AudioPlaybackRange extends AudioTimeRange {
+    id: object;
+}
+
 export function intervalID(interval: AudioIntervalState): number {
     return interval.clientID as number;
 }

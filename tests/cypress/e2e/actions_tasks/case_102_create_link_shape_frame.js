@@ -18,7 +18,7 @@ Cypress.automation('remote:debugger:protocol', {
 context('Create a link for shape, frame.', () => {
     const caseId = '102';
     const createRectangleShape2Points = {
-        points: 'By 2 Points',
+        points: '2 Points',
         type: 'Shape',
         labelName,
         firstX: 250,

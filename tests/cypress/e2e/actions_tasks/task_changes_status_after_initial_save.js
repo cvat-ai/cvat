@@ -9,7 +9,7 @@ context('Task status updated after initial save.', () => {
     const labelName = 'car';
     const taskName = 'Test task status updated after initial save';
     const rectangleData = {
-        points: 'By 2 Points',
+        points: '2 Points',
         type: 'Shape',
         labelName,
         firstX: 250,

@@ -6,6 +6,7 @@
 @import 'base';
 
 .cvat-label-selector-option {
+    max-width: 100%;
     display: inline-flex;
     align-items: baseline;
 }
@@ -16,6 +17,7 @@
     height: $grid-unit-size;
     border-radius: 50%;
     margin-right: $grid-unit-size;
+    flex: 0 0 auto;
 }
 
 .cvat-annotation-page.ant-layout {

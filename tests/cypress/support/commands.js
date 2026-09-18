@@ -25,6 +25,11 @@ require('cy-verify-downloads').addCustomCommand();
 
 let selectedValueGlobal = '';
 
+Cypress.Commands.add('pressWithPlatformModifier', (key) => {
+    const modifier = Cypress.platform === 'darwin' ? 'meta' : 'ctrl';
+    cy.get('body').type(`{${modifier}}${key}`);
+});
+
 Cypress.Commands.add('activateCanvasShape', (selector) => {
     cy.get(selector).then(([shapeWrapper]) => {
         const tagName = (element) => element.tagName.toLowerCase();
@@ -538,6 +543,11 @@ Cypress.Commands.add('saveJob', (method = 'PATCH', status = 200, as = 'saveJob')
     cy.wait(`@${as}`).its('response.statusCode').should('equal', status);
 });
 
+Cypress.Commands.add('clearAnnotationsAndSave', (method = 'PUT', status = 200, as = 'saveRemoveAnnotations') => {
+    cy.removeAnnotations();
+    cy.saveJob(method, status, as);
+});
+
 Cypress.Commands.add('getJobIdFromIdx', (jobIdx) => {
     const jobsKey = [];
     cy.document().then((doc) => {
@@ -619,12 +629,12 @@ Cypress.Commands.add('createRectangle', (createRectangleParams) => {
         cy.get('.ant-select-selection-item').then(($labelValue) => {
             selectedValueGlobal = $labelValue.text();
         });
-        cy.contains('.ant-radio-wrapper', createRectangleParams.points).click();
+        cy.contains('.ant-radio-button-wrapper', createRectangleParams.points).click();
         cy.contains('button', createRectangleParams.type).click();
     });
     cy.get('.cvat-canvas-container').click(createRectangleParams.firstX, createRectangleParams.firstY);
     cy.get('.cvat-canvas-container').click(createRectangleParams.secondX, createRectangleParams.secondY);
-    if (createRectangleParams.points === 'By 4 Points') {
+    if (createRectangleParams.points === '4 Points') {
         cy.get('.cvat-canvas-container')
             .click(createRectangleParams.thirdX, createRectangleParams.thirdY);
         cy.get('.cvat-canvas-container')
@@ -638,7 +648,7 @@ Cypress.Commands.add('switchLabel', (labelName, objectType) => {
     cy.get(`.cvat-${objectType}-popover`).find('.ant-select-selection-item').click();
     cy.get('.ant-select-dropdown')
         .not('.ant-select-dropdown-hidden')
-        .find(`.ant-select-item-option[title="${labelName}"]`)
+        .find(`.ant-select-item-option[data-label="${labelName}"]`)
         .click();
 });
 
@@ -832,7 +842,7 @@ Cypress.Commands.add('changeLabelAAM', (labelName) => {
                 .not('.ant-select-dropdown-hidden')
                 .first()
                 .within(() => {
-                    cy.get(`.ant-select-item-option[title="${labelName}"]`).click();
+                    cy.get(`.ant-select-item-option[data-label="${labelName}"]`).click();
                 });
         }
     });

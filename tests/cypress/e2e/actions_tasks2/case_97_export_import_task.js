@@ -32,7 +32,7 @@ context('Export, import an annotation task.', { browser: '!firefox' }, () => {
     let ctmBeforeExport;
 
     const createRectangleShape2Points = {
-        points: 'By 2 Points',
+        points: '2 Points',
         type: 'Shape',
         labelName,
         firstX: 250,

@@ -32,6 +32,127 @@ interface ResourceFilterProps {
     onApplyFilter(filter: string | null): void;
 }
 
+interface AppliedFilter {
+    predefined: string[] | null;
+    recent: string | null;
+    built: string | null;
+}
+
+const defaultAppliedFilter: AppliedFilter = {
+    predefined: null,
+    recent: null,
+    built: null,
+};
+
+function keepFilterInLocalStorage(filter: string, storageKey: string, capacity: number): void {
+    if (typeof filter !== 'string') {
+        return;
+    }
+
+    let savedItems: string[] = [];
+    try {
+        savedItems = JSON.parse(localStorage.getItem(storageKey) || '[]');
+        if (!Array.isArray(savedItems) || savedItems.some((item: any) => typeof item !== 'string')) {
+            throw new Error('Wrong filters value stored');
+        }
+    } catch (_: any) {
+        // nothing to do
+    }
+    savedItems.splice(0, 0, filter);
+    savedItems = Array.from(new Set(savedItems)).slice(0, capacity);
+    localStorage.setItem(storageKey, JSON.stringify(savedItems));
+}
+
+function receiveRecentFilters(storageKey: string): Record<string, string> {
+    let recentFilters: string[] = [];
+    try {
+        recentFilters = JSON.parse(localStorage.getItem(storageKey) || '[]');
+        if (!Array.isArray(recentFilters) || recentFilters.some((item: any) => typeof item !== 'string')) {
+            throw new Error('Wrong filters value stored');
+        }
+    } catch (_: any) {
+        // nothing to do
+    }
+
+    return recentFilters
+        .reduce((acc: Record<string, string>, val: string) => ({ ...acc, [val]: val }), {});
+}
+
+function isValidTree(tree: ImmutableTree, config: Config): boolean {
+    return (QbUtils.queryString(tree, config) || '').trim().length > 0 && QbUtils.isValidTree(tree, config);
+}
+
+function unite(filters: string[]): string {
+    if (filters.length > 1) {
+        return JSON.stringify({
+            and: filters.map((filter: string): JSON => JSON.parse(filter)),
+        });
+    }
+
+    return filters[0];
+}
+
+function splitFilterIntoPredefined(predefinedFilters: string[], filter: string): string[] | null {
+    if (predefinedFilters.includes(filter)) {
+        return [filter];
+    }
+
+    const parsedFilter = JSON.parse(filter);
+    const filterKeys = Object.keys(parsedFilter);
+    if (filterKeys.length === 1 && filterKeys[0] === 'and') {
+        const subFilters = parsedFilter.and.map((value: object) => JSON.stringify(value)) as string[];
+        if (subFilters.every((subFilter) => predefinedFilters.includes(subFilter))) {
+            return subFilters;
+        }
+    }
+
+    return null;
+}
+
+function getPredefinedFilters(
+    user: User,
+    predefinedFilterValues?: Record<string, string>,
+): Record<string, string> | null {
+    let result: Record<string, string> | null = null;
+    if (user && predefinedFilterValues) {
+        result = {};
+        for (const key of Object.keys(predefinedFilterValues)) {
+            result[key] = predefinedFilterValues[key].replace('<username>', `${user.username}`);
+        }
+    }
+
+    return result;
+}
+
+function applyFilterIfChanged(
+    currentFilter: string | null,
+    nextFilter: string | null,
+    onApplyFilter: ResourceFilterProps['onApplyFilter'],
+): boolean {
+    if (currentFilter !== nextFilter) {
+        onApplyFilter(nextFilter);
+    }
+
+    return currentFilter !== nextFilter;
+}
+
+function renderBuilder(builderProps: any): JSX.Element {
+    return (
+        <div className='query-builder-container'>
+            <div className='query-builder'>
+                <Builder {...builderProps} />
+            </div>
+        </div>
+    );
+}
+
+/**
+ * Creates a reusable resource filter that lets users combine quick filters, recall recently applied filters,
+ * or construct a custom filter with the query builder. Selecting one filtering mode replaces selections made in
+ * the others, while multiple quick filters can be combined. The component keeps its controls synchronized with
+ * the filter supplied by the parent and reports newly applied or cleared filters through the provided callback.
+ * Clearing the active filter does not remove entries from the recent filters list.
+ */
 export default function ResourceFilterHOC(
     filtrationCfg: Partial<Config>,
     localStorageRecentKeyword: string,
@@ -42,93 +163,6 @@ export default function ResourceFilterHOC(
     const defaultTree = QbUtils.checkTree(
         QbUtils.loadTree({ id: QbUtils.uuid(), type: 'group' }), config,
     ) as ImmutableTree;
-
-    function keepFilterInLocalStorage(filter: string): void {
-        if (typeof filter !== 'string') {
-            return;
-        }
-
-        let savedItems: string[] = [];
-        try {
-            savedItems = JSON.parse(localStorage.getItem(localStorageRecentKeyword) || '[]');
-            if (!Array.isArray(savedItems) || savedItems.some((item: any) => typeof item !== 'string')) {
-                throw new Error('Wrong filters value stored');
-            }
-        } catch (_: any) {
-            // nothing to do
-        }
-        savedItems.splice(0, 0, filter);
-        savedItems = Array.from(new Set(savedItems)).slice(0, localStorageRecentCapacity);
-        localStorage.setItem(localStorageRecentKeyword, JSON.stringify(savedItems));
-    }
-
-    function receiveRecentFilters(): Record<string, string> {
-        let recentFilters: string[] = [];
-        try {
-            recentFilters = JSON.parse(localStorage.getItem(localStorageRecentKeyword) || '[]');
-            if (!Array.isArray(recentFilters) || recentFilters.some((item: any) => typeof item !== 'string')) {
-                throw new Error('Wrong filters value stored');
-            }
-        } catch (_: any) {
-            // nothing to do
-        }
-
-        return recentFilters
-            .reduce((acc: Record<string, string>, val: string) => ({ ...acc, [val]: val }), {});
-    }
-
-    const defaultAppliedFilter: {
-        predefined: string[] | null;
-        recent: string | null;
-        built: string | null;
-    } = {
-        predefined: null,
-        recent: null,
-        built: null,
-    };
-
-    function isValidTree(tree: ImmutableTree): boolean {
-        return (QbUtils.queryString(tree, config) || '').trim().length > 0 && QbUtils.isValidTree(tree, config);
-    }
-
-    function unite(filters: string[]): string {
-        if (filters.length > 1) {
-            return JSON.stringify({
-                and: filters.map((filter: string): JSON => JSON.parse(filter)),
-            });
-        }
-
-        return filters[0];
-    }
-
-    function splitFilterIntoPredefined(predefinedFilters: string[], filter: string): string[] | null {
-        if (predefinedFilters.includes(filter)) {
-            return [filter];
-        }
-
-        const parsedFilter = JSON.parse(filter);
-        const filterKeys = Object.keys(parsedFilter);
-        if (filterKeys.length === 1 && filterKeys[0] === 'and') {
-            const subFilters = parsedFilter.and.map((v) => JSON.stringify(v));
-            if (subFilters.every((s) => predefinedFilters.includes(s))) {
-                return subFilters;
-            }
-        }
-
-        return null;
-    }
-
-    function getPredefinedFilters(user: User): Record<string, string> | null {
-        let result: Record <string, string> | null = null;
-        if (user && predefinedFilterValues) {
-            result = {};
-            for (const key of Object.keys(predefinedFilterValues)) {
-                result[key] = predefinedFilterValues[key].replace('<username>', `${user.username}`);
-            }
-        }
-
-        return result;
-    }
 
     function ResourceFilterComponent(props: ResourceFilterProps): JSX.Element {
         const {
@@ -143,16 +177,16 @@ export default function ResourceFilterHOC(
         const [appliedFilter, setAppliedFilter] = useState(defaultAppliedFilter);
         const [state, setState] = useState<ImmutableTree>(defaultTree);
 
-        const predefinedFilters = getPredefinedFilters(user);
+        const predefinedFilters = getPredefinedFilters(user, predefinedFilterValues);
 
         useEffect(() => {
-            setRecentFilters(receiveRecentFilters());
+            setRecentFilters(receiveRecentFilters(localStorageRecentKeyword));
             setIsMounted(true);
 
             try {
                 if (value && value !== '{}') {
                     const tree = QbUtils.loadFromJsonLogic(JSON.parse(value), config);
-                    if (tree && isValidTree(tree)) {
+                    if (tree && isValidTree(tree, config)) {
                         setAppliedFilter({
                             ...appliedFilter,
                             predefined: splitFilterIntoPredefined(Object.values(predefinedFilters ?? {}), value),
@@ -199,30 +233,20 @@ export default function ResourceFilterHOC(
             }
 
             if (appliedFilter.predefined?.length) {
-                onApplyFilter(unite(appliedFilter.predefined));
+                applyFilterIfChanged(value, unite(appliedFilter.predefined), onApplyFilter);
             } else if (appliedFilter.recent) {
-                onApplyFilter(appliedFilter.recent);
+                applyFilterIfChanged(value, appliedFilter.recent, onApplyFilter);
+                // Restore the selected filter because the builder may contain unapplied changes.
                 const tree = QbUtils.loadFromJsonLogic(JSON.parse(appliedFilter.recent), config);
-                if (tree && isValidTree(tree)) {
+                if (tree && isValidTree(tree, config)) {
                     setState(tree);
                 }
             } else if (appliedFilter.built) {
-                if (value !== appliedFilter.built) {
-                    onApplyFilter(appliedFilter.built);
-                }
-            } else if (value !== null) {
-                onApplyFilter(null);
+                applyFilterIfChanged(value, appliedFilter.built, onApplyFilter);
+            } else if (applyFilterIfChanged(value, null, onApplyFilter)) {
                 setState(defaultTree);
             }
         }, [appliedFilter]);
-
-        const renderBuilder = (builderProps: any): JSX.Element => (
-            <div className='query-builder-container'>
-                <div className='query-builder'>
-                    <Builder {...builderProps} />
-                </div>
-            </div>
-        );
 
         return (
             <div className='cvat-resource-page-filters'>
@@ -369,8 +393,10 @@ export default function ResourceFilterHOC(
                                     onClick={() => {
                                         const filter = QbUtils.jsonLogicFormat(state, config).logic;
                                         const stringified = JSON.stringify(filter);
-                                        keepFilterInLocalStorage(stringified);
-                                        setRecentFilters(receiveRecentFilters());
+                                        keepFilterInLocalStorage(
+                                            stringified, localStorageRecentKeyword, localStorageRecentCapacity,
+                                        );
+                                        setRecentFilters(receiveRecentFilters(localStorageRecentKeyword));
                                         onBuilderVisibleChange(false);
                                         setAppliedFilter({
                                             predefined: null,

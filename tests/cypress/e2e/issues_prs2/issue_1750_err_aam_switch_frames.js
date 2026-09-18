@@ -9,7 +9,7 @@ import { taskName, labelName } from '../../support/const';
 context('An error occurs in AAM when switching to 2 frames, if the frames have objects created in shape mode', () => {
     const issueId = '1750';
     const createRectangleShape2Points = {
-        points: 'By 2 Points',
+        points: '2 Points',
         type: 'Shape',
         labelName,
         firstX: 250,
@@ -18,7 +18,7 @@ context('An error occurs in AAM when switching to 2 frames, if the frames have o
         secondY: 450,
     };
     const createRectangleShape2PointsSecond = {
-        points: 'By 2 Points',
+        points: '2 Points',
         type: 'Shape',
         labelName,
         firstX: createRectangleShape2Points.firstX,

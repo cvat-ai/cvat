@@ -120,7 +120,7 @@ class QualityReportRequirementCalculationSerializer(serializers.Serializer):
 class QualityReportRequirementSummaryItemSerializer(serializers.Serializer):
     requirement_id = serializers.IntegerField(allow_null=True)
     name = serializers.CharField()
-    metric = serializers.CharField()
+    metric = serializers.ChoiceField(choices=models.QUALITY_TARGET_METRIC_CHOICES)
     score = serializers.FloatField(allow_null=True)
     score_components = QualityReportScoreComponentsSerializer()
     calculation = QualityReportRequirementCalculationSerializer()
@@ -140,6 +140,21 @@ class QualityReportConfusionMatrixAxesSerializer(serializers.Serializer):
     rows = serializers.CharField()
 
 
+class QualityReportTargetMetricValuesSerializer(serializers.Serializer):
+    micro = serializers.FloatField(allow_null=True)
+    mean = serializers.FloatField(allow_null=True)
+    label = serializers.FloatField(allow_null=True)
+
+
+class QualityReportTargetMetricSummarySerializer(serializers.Serializer):
+    metric = serializers.ChoiceField(choices=[metric.value for metric in models.QualityMetric])
+    aggregation = serializers.ChoiceField(
+        choices=[aggregation.value for aggregation in models.QualityMetricAggregation]
+    )
+    values = QualityReportTargetMetricValuesSerializer()
+    worst_labels = serializers.ListField(child=serializers.CharField())
+
+
 class QualityReportConfusionMatrixSerializer(serializers.Serializer):
     labels = serializers.ListField(child=serializers.CharField())
     rows = serializers.ListField(child=serializers.ListField(child=serializers.IntegerField()))
@@ -148,6 +163,8 @@ class QualityReportConfusionMatrixSerializer(serializers.Serializer):
     recall = serializers.ListField(child=serializers.FloatField(), allow_null=True)
     accuracy = serializers.ListField(child=serializers.FloatField(), allow_null=True)
     jaccard_index = serializers.ListField(child=serializers.FloatField(), allow_null=True)
+    dice = serializers.ListField(child=serializers.FloatField(), allow_null=True)
+    target_metric_summary = QualityReportTargetMetricSummarySerializer()
 
 
 class QualityReportTargetSerializer(serializers.ChoiceField):
@@ -392,7 +409,7 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
     )
     metric = serializers.ChoiceField(
         source="target_metric",
-        choices=models.QualityTargetMetricType.choices(),
+        choices=models.QUALITY_TARGET_METRIC_CHOICES,
         required=False,
         allow_null=True,
         help_text="The primary metric used for quality estimation",

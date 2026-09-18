@@ -23,6 +23,11 @@ interface Props {
     duration: number;
     workspace: Workspace;
     keyMap: KeyMap;
+    playPauseShortcut: string;
+    backwardShortcut: string;
+    forwardShortcut: string;
+    fastBackwardShortcut: string;
+    fastForwardShortcut: string;
     onPlayPause(): void;
     onSeek(intent: AudioSeekIntent): void;
 }
@@ -76,6 +81,7 @@ type SeekButton = {
     className: string;
     icon: React.ComponentType;
     intent: AudioSeekIntent;
+    shortcut?: keyof Pick<Props, 'backwardShortcut' | 'forwardShortcut' | 'fastBackwardShortcut' | 'fastForwardShortcut'>;
 };
 
 const LEFT_BUTTONS: SeekButton[] = [
@@ -90,12 +96,14 @@ const LEFT_BUTTONS: SeekButton[] = [
         className: 'cvat-player-long-jump-backward-button',
         icon: BackJumpIcon,
         intent: AUDIO_SEEK_INTENTS.LONG_BACKWARD,
+        shortcut: 'fastBackwardShortcut',
     },
     {
         title: 'short-backward',
         className: 'cvat-player-short-jump-backward-button',
         icon: PreviousIcon,
         intent: AUDIO_SEEK_INTENTS.SHORT_BACKWARD,
+        shortcut: 'backwardShortcut',
     },
 ];
 
@@ -105,12 +113,14 @@ const RIGHT_BUTTONS: SeekButton[] = [
         className: 'cvat-player-short-jump-forward-button',
         icon: NextIcon,
         intent: AUDIO_SEEK_INTENTS.SHORT_FORWARD,
+        shortcut: 'forwardShortcut',
     },
     {
         title: 'long-forward',
         className: 'cvat-player-long-jump-forward-button',
         icon: ForwardJumpIcon,
         intent: AUDIO_SEEK_INTENTS.LONG_FORWARD,
+        shortcut: 'fastForwardShortcut',
     },
     {
         title: 'Jump to end',
@@ -126,6 +136,11 @@ function AudioPlayerNavigation(props: Props): JSX.Element {
         duration,
         workspace,
         keyMap,
+        playPauseShortcut,
+        backwardShortcut,
+        forwardShortcut,
+        fastBackwardShortcut,
+        fastForwardShortcut,
         onPlayPause,
         onSeek,
     } = props;
@@ -169,7 +184,7 @@ function AudioPlayerNavigation(props: Props): JSX.Element {
     };
 
     const renderSeekButton = ({
-        title, icon, intent, className,
+        title, icon, intent, className, shortcut,
     }: SeekButton): JSX.Element => {
         let tooltip = title;
         if (title === 'short-backward') tooltip = 'Short step backward';
@@ -177,8 +192,15 @@ function AudioPlayerNavigation(props: Props): JSX.Element {
         if (title === 'long-backward') tooltip = 'Long step backward';
         if (title === 'long-forward') tooltip = 'Long step forward';
 
+        const shortcutValue = shortcut ? {
+            backwardShortcut,
+            forwardShortcut,
+            fastBackwardShortcut,
+            fastForwardShortcut,
+        }[shortcut] : '';
+
         return (
-            <CVATTooltip key={title} title={tooltip}>
+            <CVATTooltip key={title} title={`${tooltip} ${shortcutValue}`}>
                 <Icon
                     className={className}
                     component={icon}
@@ -201,7 +223,7 @@ function AudioPlayerNavigation(props: Props): JSX.Element {
                 <Col>
                     <div style={blockStyle} className='cvat-player-buttons'>
                         {LEFT_BUTTONS.map(renderSeekButton)}
-                        <CVATTooltip title={playing ? 'Pause' : 'Play'}>
+                        <CVATTooltip title={`${playing ? 'Pause' : 'Play'} ${playPauseShortcut}`}>
                             <Icon
                                 className={playing ? 'cvat-player-pause-button' : 'cvat-player-play-button'}
                                 component={playing ? PauseIcon : PlayIcon}

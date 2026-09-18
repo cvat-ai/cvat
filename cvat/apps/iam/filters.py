@@ -1,9 +1,25 @@
 # Copyright (C) 2021-2022 Intel Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 
 from drf_spectacular.utils import OpenApiParameter
 from rest_framework.filters import BaseFilterBackend
+
+ORG_SLUG_PARAM_DESCRIPTION = """\
+Organization unique slug.
+If omitted, results from all organizations available to the user are returned
+(unfiltered). An empty value ("") selects the personal sandbox workspace only.
+A non-empty value selects that organization.
+"""
+
+ORG_ID_PARAM_DESCRIPTION = """\
+Organization unique id.
+If omitted, results from all organizations available to the user are returned
+(unfiltered). An empty value ("") selects the personal sandbox workspace only.
+A positive integer selects that organization.
+"""
+
 
 ORGANIZATION_OPEN_API_PARAMETERS = [
     OpenApiParameter(
@@ -11,21 +27,24 @@ ORGANIZATION_OPEN_API_PARAMETERS = [
         type=str,
         required=False,
         location=OpenApiParameter.QUERY,
-        description="Organization unique slug",
+        description=ORG_SLUG_PARAM_DESCRIPTION,
+        allow_blank=True,
     ),
     OpenApiParameter(
         name="org_id",
         type=int,
         required=False,
         location=OpenApiParameter.QUERY,
-        description="Organization identifier",
+        description=ORG_ID_PARAM_DESCRIPTION,
+        allow_blank=True,
     ),
     OpenApiParameter(
         name="X-Organization",
         type=str,
         required=False,
         location=OpenApiParameter.HEADER,
-        description="Organization unique slug",
+        description=ORG_SLUG_PARAM_DESCRIPTION,
+        allow_blank=True,
     ),
 ]
 
@@ -48,18 +67,25 @@ class OrganizationFilterBackend(BaseFilterBackend):
         for parameter in ORGANIZATION_OPEN_API_PARAMETERS:
             parameter_type = None
 
-            if parameter.type == int:
+            if parameter.type is int:
                 parameter_type = "integer"
-            elif parameter.type == str:
+            elif parameter.type is str:
                 parameter_type = "string"
 
-            parameters.append(
-                {
-                    "name": parameter.name,
-                    "in": parameter.location,
-                    "description": parameter.description,
-                    "schema": {"type": parameter_type},
-                }
-            )
+            param = {
+                "name": parameter.name,
+                "in": parameter.location,
+                "description": parameter.description,
+                "schema": {"type": parameter_type},
+            }
+
+            # allowEmptyValue is deprecated in OpenAPI 3: https://spec.openapis.org/oas/v3.0.3.html
+            # We use it here to show the option to pass an empty value in the Swagger UI.
+            # The empty value has been used in CVAT for quite a while already,
+            # and removing it is expected to be a huge breaking change to the API.
+            if parameter.allow_blank:
+                param["allowEmptyValue"] = True
+
+            parameters.append(param)
 
         return parameters

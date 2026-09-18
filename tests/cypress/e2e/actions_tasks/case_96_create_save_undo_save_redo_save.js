@@ -9,7 +9,7 @@ import { taskName, labelName } from '../../support/const';
 context('Create an object, save, undo, save, redo, save.', () => {
     const caseId = '96';
     const createRectangleShape2Points = {
-        points: 'By 2 Points',
+        points: '2 Points',
         type: 'Shape',
         labelName,
         firstX: 250,

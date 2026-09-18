@@ -58,8 +58,10 @@ class Command(BaseCommand):
                 f" (#{data.local_storage_backing_cs_id})"
             )
 
-        if not data.supports_backing_cs():
-            raise CommandError(f"Task #{task.id} does not support backing cloud storage")
+        if not data.supports_backing_cs(backing_cs):
+            raise CommandError(
+                f"Task #{task.id} does not support backing cloud storage #{backing_cs.id}"
+            )
 
         data.move_to_backing_cs(backing_cs)
         return True

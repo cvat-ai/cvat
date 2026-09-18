@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
+from dataclasses import dataclass
 from enum import Enum
 from functools import cached_property
 from typing import TYPE_CHECKING, Any
@@ -80,17 +81,83 @@ class QualityReportTarget(str, Enum):
         return tuple((x.value, x.name) for x in cls)
 
 
-class QualityTargetMetricType(str, Enum):
+class QualityMetric(str, Enum):
     ACCURACY = "accuracy"
     PRECISION = "precision"
     RECALL = "recall"
+    JACCARD_INDEX = "jaccard_index"
+    DICE = "dice"
+
+    def __str__(self) -> str:
+        return self.value
+
+
+class QualityMetricAggregation(str, Enum):
+    MICRO = "micro"
+    MEAN = "mean"
+    LABEL = "label"
+
+    @classmethod
+    def from_metric_value(cls, value: str) -> QualityMetricAggregation:
+        return next(
+            (
+                aggregation
+                for aggregation in cls
+                if aggregation != cls.MICRO and value.startswith(f"{aggregation.value}_")
+            ),
+            cls.MICRO,
+        )
+
+
+@dataclass(frozen=True)
+class QualityTargetMetricType:
+    metric: QualityMetric
+    aggregation: QualityMetricAggregation = QualityMetricAggregation.MICRO
+
+    @classmethod
+    def parse(cls, value: QualityTargetMetricType | QualityMetric | str) -> QualityTargetMetricType:
+        if isinstance(value, cls):
+            return value
+
+        value = str(value)
+        aggregation = QualityMetricAggregation.from_metric_value(value)
+        metric_value = (
+            value.removeprefix(f"{aggregation.value}_")
+            if aggregation != QualityMetricAggregation.MICRO
+            else value
+        )
+        return cls(metric=QualityMetric(metric_value), aggregation=aggregation)
+
+    @property
+    def value(self) -> str:
+        prefix = (
+            f"{self.aggregation.value}_"
+            if self.aggregation != QualityMetricAggregation.MICRO
+            else ""
+        )
+        return f"{prefix}{self.metric.value}"
 
     def __str__(self) -> str:
         return self.value
 
     @classmethod
-    def choices(cls):
-        return tuple((x.value, x.name) for x in cls)
+    def choices(cls) -> tuple[tuple[str, str], ...]:
+        target_metrics = (
+            cls(metric=metric, aggregation=aggregation)
+            for aggregation in QualityMetricAggregation
+            for metric in QualityMetric
+        )
+        return tuple(
+            (target_metric.value, target_metric.value.upper()) for target_metric in target_metrics
+        )
+
+    @classmethod
+    def __class_getitem__(cls, name: str) -> QualityTargetMetricType:
+        # NOTE @grigorii: Keep enum-style lookup compatible with migration 0003.
+        return cls(metric=QualityMetric[name])
+
+
+QUALITY_TARGET_METRIC_CHOICES = QualityTargetMetricType.choices()
 
 
 class QualityReport(models.Model):
@@ -385,7 +452,7 @@ class QualityRequirement(TimestampedModel):
 
     target_metric = models.CharField(
         max_length=32,
-        choices=QualityTargetMetricType.choices(),
+        choices=QUALITY_TARGET_METRIC_CHOICES,
         null=True,
         blank=True,
     )
@@ -438,7 +505,7 @@ class QualityRequirement(TimestampedModel):
 
         default_settings = ComparisonParameters().to_dict()
         default_settings.update(
-            target_metric=QualityTargetMetricType.ACCURACY,
+            target_metric=str(QualityTargetMetricType(metric=QualityMetric.ACCURACY)),
             target_metric_threshold=0.7,
             compare_attributes=False,
             attribute_comparison=None,

@@ -11,7 +11,7 @@ context('Actions on rectangle', () => {
     const caseId = '8';
     const newLabelName = `New label for case ${caseId}`;
     const createRectangleShape2Points = {
-        points: 'By 2 Points',
+        points: '2 Points',
         type: 'Shape',
         labelName,
         firstX: 250,
@@ -20,7 +20,7 @@ context('Actions on rectangle', () => {
         secondY: 450,
     };
     const createRectangleShape4Points = {
-        points: 'By 4 Points',
+        points: '4 Points',
         type: 'Shape',
         labelName,
         firstX: 400,
@@ -33,7 +33,7 @@ context('Actions on rectangle', () => {
         fourthY: 450,
     };
     const createRectangleTrack2Points = {
-        points: 'By 2 Points',
+        points: '2 Points',
         type: 'Track',
         labelName,
         firstX: createRectangleShape2Points.firstX,
@@ -42,7 +42,7 @@ context('Actions on rectangle', () => {
         secondY: createRectangleShape2Points.secondY - 150,
     };
     const createRectangleTrack4Points = {
-        points: 'By 4 Points',
+        points: '4 Points',
         type: 'Track',
         labelName,
         firstX: createRectangleShape4Points.firstX,
@@ -56,7 +56,7 @@ context('Actions on rectangle', () => {
     };
     const createRectangleShape2PointsNewLabel = {
         labelName: newLabelName,
-        points: 'By 2 Points',
+        points: '2 Points',
         type: 'Shape',
         firstX: createRectangleShape2Points.firstX,
         firstY: createRectangleShape2Points.firstY + 150,
@@ -65,7 +65,7 @@ context('Actions on rectangle', () => {
     };
     const createRectangleShape4PointsNewLabel = {
         labelName: newLabelName,
-        points: 'By 4 Points',
+        points: '4 Points',
         type: 'Shape',
         firstX: createRectangleShape4Points.firstX,
         firstY: createRectangleShape4Points.firstY + 150,

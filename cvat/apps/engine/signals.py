@@ -133,20 +133,34 @@ def __pre_delete_data_handler(instance: Data, **kwargs):
     instance._saved_media_rel_paths = instance.get_all_media_rel_paths()
 
 
+def _delete_from_backing_storage(
+    backing_storage: CloudStorage,
+    data_id: int,
+    media_paths: list[str],
+) -> None:
+    from .cloud_provider import SubdirectoryCloudStorageClient
+
+    # Create the client after commit to avoid retaining one heavyweight client per deleted Data.
+    storage_client = SubdirectoryCloudStorageClient(
+        backing_storage.get_client(is_trusted=True),
+        f"data/{data_id}/raw",
+    )
+    storage_client.bulk_delete(media_paths)
+
+
 @receiver(post_delete, sender=Data)
 def __delete_data_handler(instance: Data, **kwargs):
     transaction.on_commit(
         functools.partial(shutil.rmtree, instance.get_data_dirname(), ignore_errors=True)
     )
 
-    if instance.local_storage_backing_cs:
-        storage_client = instance.get_cloud_storage_client()
-        assert storage_client
-
+    if backing_storage := instance.local_storage_backing_cs:
         transaction.on_commit(
             functools.partial(
-                storage_client.bulk_delete,
-                [p.as_posix() for p in instance._saved_media_rel_paths],
+                _delete_from_backing_storage,
+                backing_storage=backing_storage,
+                data_id=instance.id,
+                media_paths=[path.as_posix() for path in instance._saved_media_rel_paths],
             ),
             robust=True,
         )

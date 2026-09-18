@@ -198,6 +198,19 @@ function FiltersModalComponent(): JSX.Element {
                     label: 'Occluded',
                     type: 'boolean',
                 },
+                source: {
+                    label: 'Source',
+                    type: 'select',
+                    fieldSettings: {
+                        listValues: [
+                            { value: 'auto', title: 'Auto' },
+                            { value: 'semi-auto', title: 'Semi-auto' },
+                            { value: 'manual', title: 'Manual' },
+                            { value: 'file', title: 'File' },
+                            { value: 'consensus', title: 'Consensus' },
+                        ],
+                    },
+                },
                 width: {
                     label: 'Width',
                     type: 'number',

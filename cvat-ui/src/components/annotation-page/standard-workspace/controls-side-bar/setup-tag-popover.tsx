@@ -7,15 +7,16 @@ import { Row, Col } from 'antd/lib/grid';
 import Button from 'antd/lib/button';
 import Text from 'antd/lib/typography/Text';
 
+import type { Label } from 'cvat-core-wrapper';
 import LabelSelector from 'components/label-selector/label-selector';
 import { PlusOutlined } from '@ant-design/icons';
 import CVATTooltip from 'components/common/cvat-tooltip';
 
 interface Props {
-    labels: any[];
+    labels: Label[];
     selectedLabelID: number | null;
     repeatShapeShortcut: string;
-    onChangeLabel(value: string): void;
+    onChangeLabel(value: Label): void;
     onSetup(): void;
 }
 

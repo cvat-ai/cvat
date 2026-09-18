@@ -389,8 +389,8 @@ function BrushTools(): React.ReactPortal | null {
                 <LabelSelector
                     labels={applicableLabels}
                     value={defaultLabelID}
-                    onChange={({ id: labelID }: { id: number }) => {
-                        if (Number.isInteger(labelID)) {
+                    onChange={({ id: labelID }) => {
+                        if (typeof labelID === 'number' && Number.isInteger(labelID)) {
                             dispatch(
                                 rememberObject({ activeLabelID: labelID }),
                             );

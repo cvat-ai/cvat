@@ -57,13 +57,27 @@ The name of the service account to use for backend pods
 {{- default "default" .Values.cvat.backend.serviceAccount.name }}
 {{- end }}
 
+{{/*
+Shared environment variables for backend pods
+*/}}
+
 {{- define "cvat.sharedBackendEnv" }}
-{{- if .Values.redis.enabled }}
-- name: CVAT_REDIS_INMEM_HOST
-  value: "{{ .Release.Name }}-redis-master"
-{{- else }}
+{{- if not .Values.redis.enabled }}
 - name: CVAT_REDIS_INMEM_HOST
   value: "{{ .Values.redis.external.host }}"
+{{- else if .Values.cvat.backend.redisInmemHostOverride }}
+- name: CVAT_REDIS_INMEM_HOST
+  value: {{ tpl .Values.cvat.backend.redisInmemHostOverride . | quote }}
+{{- else }}
+{{/*
+Service name is release-redis-master for replication architecture and if Sentinel enabled with masterService enabled. Otherwise, it is release-redis.
+*/}}
+- name: CVAT_REDIS_INMEM_HOST
+  {{- if and (eq .Values.redis.architecture "replication") (or (not .Values.redis.sentinel.enabled) .Values.redis.sentinel.masterService.enabled) }}
+  value: "{{ .Release.Name }}-redis-master"
+  {{- else }}
+  value: "{{ .Release.Name }}-redis"
+  {{- end }}
 {{- end }}
 - name: CVAT_REDIS_INMEM_PORT
   value: "6379"
@@ -174,6 +188,14 @@ The name of the service account to use for backend pods
 - name: {{ $envName | toYaml }}
   value: {{ tpl $envValueTemplate $ | toYaml }}
 {{- end }}
+- name: POD_NAME
+  valueFrom:
+    fieldRef:
+      fieldPath: metadata.name
+- name: POD_NAMESPACE
+  valueFrom:
+    fieldRef:
+      fieldPath: metadata.namespace
 {{- end }}
 
 {{- define "cvat.backend.initContainers" -}}

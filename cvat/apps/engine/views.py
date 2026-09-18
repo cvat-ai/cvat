@@ -38,7 +38,7 @@ from rest_framework import mixins, serializers, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import APIException, NotFound, PermissionDenied, ValidationError
 from rest_framework.parsers import MultiPartParser
-from rest_framework.permissions import SAFE_METHODS, IsAuthenticated
+from rest_framework.permissions import SAFE_METHODS
 from rest_framework.response import Response
 from rest_framework.settings import api_settings
 from rq.job import Job as RQJob
@@ -154,7 +154,6 @@ from cvat.apps.engine.view_utils import (
 )
 from cvat.apps.iam.filters import ORGANIZATION_OPEN_API_PARAMETERS
 from cvat.apps.iam.models import User
-from cvat.apps.iam.permissions import IsAuthenticatedOrReadPublicResource
 from cvat.apps.redis_handler.serializers import RqIdSerializer
 from cvat.utils import django_database as db_utils
 from cvat.utils.paths import join_untrusted_path, problem_with_untrusted_path
@@ -168,6 +167,7 @@ slogger = ServerLogManager(__name__)
 _UPLOAD_PARSER_CLASSES = api_settings.DEFAULT_PARSER_CLASSES + [MultiPartParser]
 
 _DATA_CHECKSUM_HEADER_NAME = "X-Checksum"
+_DATA_CHUNK_SIZE_HEADER_NAME = "X-Chunk-Size"
 _DATA_UPDATED_DATE_HEADER_NAME = "X-Updated-Date"
 _RETRY_AFTER_TIMEOUT = 10
 
@@ -881,11 +881,12 @@ class _DataGetter(metaclass=ABCMeta):
 
     def _make_chunk_response_headers(
         self,
-        checksum: str,
+        chunk_data: DataWithMeta,
         updated_date: datetime,
     ) -> dict[str, str]:
         return {
-            _DATA_CHECKSUM_HEADER_NAME: str(checksum or ""),
+            _DATA_CHECKSUM_HEADER_NAME: self._get_chunk_checksum(chunk_data),
+            _DATA_CHUNK_SIZE_HEADER_NAME: str(len(chunk_data.data.getbuffer())),
             _DATA_UPDATED_DATE_HEADER_NAME: serializers.DateTimeField().to_representation(
                 updated_date
             ),
@@ -925,7 +926,7 @@ class _TaskDataGetter(_DataGetter):
 
     def _get_chunk_response_headers(self, chunk_data: DataWithMeta) -> dict[str, str]:
         return self._make_chunk_response_headers(
-            self._get_chunk_checksum(chunk_data),
+            chunk_data,
             self._db_task.get_chunks_updated_date(),
         )
 
@@ -1000,7 +1001,7 @@ class _JobDataGetter(_DataGetter):
 
     def _get_chunk_response_headers(self, chunk_data: DataWithMeta) -> dict[str, str]:
         return self._make_chunk_response_headers(
-            self._get_chunk_checksum(chunk_data), self._db_job.segment.chunks_updated_date
+            chunk_data, self._db_job.segment.chunks_updated_date
         )
 
 
@@ -1599,6 +1600,14 @@ class TaskViewSet(
                 required=False,
                 response=[200, 206],
                 description="Data checksum, applicable for chunks only",
+            ),
+            OpenApiParameter(
+                _DATA_CHUNK_SIZE_HEADER_NAME,
+                location=OpenApiParameter.HEADER,
+                type=OpenApiTypes.INT,
+                required=False,
+                response=[200, 206, 416],
+                description="Decoded chunk size in bytes, applicable for chunks only",
             ),
             OpenApiParameter(
                 _DATA_UPDATED_DATE_HEADER_NAME,
@@ -2592,6 +2601,30 @@ class JobViewSet(
                 type=OpenApiTypes.INT,
                 description="A unique number value identifying chunk, starts from 0 for each job",
             ),
+            OpenApiParameter(
+                _DATA_CHECKSUM_HEADER_NAME,
+                location=OpenApiParameter.HEADER,
+                type=OpenApiTypes.STR,
+                required=False,
+                response=[200, 206],
+                description="Data checksum, applicable for chunks only",
+            ),
+            OpenApiParameter(
+                _DATA_CHUNK_SIZE_HEADER_NAME,
+                location=OpenApiParameter.HEADER,
+                type=OpenApiTypes.INT,
+                required=False,
+                response=[200, 206, 416],
+                description="Decoded chunk size in bytes, applicable for chunks only",
+            ),
+            OpenApiParameter(
+                _DATA_UPDATED_DATE_HEADER_NAME,
+                location=OpenApiParameter.HEADER,
+                type=OpenApiTypes.DATETIME,
+                required=False,
+                response=[200, 206],
+                description="Data update date, applicable for chunks only",
+            ),
         ],
         responses={
             "200": OpenApiResponse(OpenApiTypes.BINARY, description="Data of a specific type"),
@@ -3273,7 +3306,9 @@ class UserViewSet(
     PartialUpdateModelMixin,
     mixins.DestroyModelMixin,
 ):
-    queryset = User.objects.prefetch_related("groups").all()
+    queryset = (
+        User.objects.select_related("profile").prefetch_related("groups", "emailaddress_set").all()
+    )
     iam_supports_organization_params = True
     iam_permission_class = UserPermission
 
@@ -3682,16 +3717,6 @@ class AssetsViewSet(
 
     def check_object_permissions(self, request: ExtendedRequest, obj):
         super().check_object_permissions(request, obj.guide)
-
-    def get_permissions(self):
-        permissions = super().get_permissions()
-
-        if self.action == "retrieve":
-            permissions = [IsAuthenticatedOrReadPublicResource()] + [
-                p for p in permissions if not isinstance(p, IsAuthenticated)
-            ]
-
-        return permissions
 
     def get_serializer_class(self):
         if self.request.method in SAFE_METHODS:

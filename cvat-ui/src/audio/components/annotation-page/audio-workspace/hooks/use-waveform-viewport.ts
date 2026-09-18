@@ -5,6 +5,7 @@
 import {
     useCallback, useEffect, useRef, useLayoutEffect, useState,
 } from 'react';
+import message from 'antd/lib/message';
 import { useDispatch, useSelector } from 'react-redux';
 
 import { audioActions } from 'actions/audio-actions';
@@ -13,7 +14,9 @@ import { shallowEqual, ThunkDispatch } from 'utils/redux';
 import { clamp } from 'utils/math';
 import { AudioTimeRange } from '../utils/audio-interval';
 import {
-    computeWaveformZoom, centeredScrollOffsetForTime, limitZoom, ZOOM_MIN,
+    computeFitIntervalGeometry, computeWaveformBasePixelsPerSecond,
+    computeWaveformZoom,
+    centeredScrollOffsetForTime, limitZoom,
 } from '../../../../utils/waveform-geometry';
 import type { WaveSurferRuntime } from './use-audio-waveform';
 
@@ -65,10 +68,20 @@ export function useWaveformViewport(
     containerRef: React.RefObject<HTMLDivElement>,
 ): WaveformViewport {
     const dispatch = useDispatch<ThunkDispatch>();
-    const { zoom, duration } = useSelector((state: CombinedState) => ({
-        zoom: state.audio.player.zoom,
-        duration: state.audio.player.duration,
-    }), shallowEqual);
+    const {
+        zoom, duration, fitIntervalRequest, fitInterval,
+    } = useSelector((state: CombinedState) => {
+        const { player } = state.audio;
+        const fitRequest = player.fitIntervalRequest;
+
+        return {
+            zoom: player.zoom,
+            duration: player.duration,
+            fitIntervalRequest: fitRequest,
+            fitInterval: fitRequest ?
+                player.intervals.find((interval) => interval.clientID === fitRequest.clientID) : null,
+        };
+    }, shallowEqual);
     const { ready } = runtime;
     const [containerWidth, setContainerWidth] = useState(0);
     const zoomRef = useRef(zoom);
@@ -80,6 +93,12 @@ export function useWaveformViewport(
     pixelsPerSecondRef.current = pixelsPerSecond;
     const transformListenersRef = useRef(new Set<(transform: ViewportTransform) => void>());
     const previousTransformRef = useRef<ViewportTransform | null>(null);
+    const synchronouslyAppliedZoomRef = useRef<{
+        zoom: number;
+        duration: number;
+        containerWidth: number;
+        pixelsPerSecond: number;
+    } | null>(null);
 
     const getScrollContainer = useCallback((): HTMLElement | null => (
         runtime.instanceRef.current?.getWrapper()?.parentElement ?? null
@@ -205,8 +224,8 @@ export function useWaveformViewport(
         const onWheel = (event: WheelEvent): void => {
             event.preventDefault();
             const scrollContainer = getScrollContainer();
-            // Handle horizontal scroll when shift is pressed
-            if (event.shiftKey) {
+            // Support horizontal input from Shift+wheel, touchpads, and touch mice.
+            if (event.shiftKey || event.deltaX !== 0) {
                 zoomAnchorRef.current = null;
                 if (!scrollContainer) return;
                 const maximumScroll = Math.max(0, scrollContainer.scrollWidth - scrollContainer.clientWidth);
@@ -248,6 +267,15 @@ export function useWaveformViewport(
     // when it is visible; otherwise retain the current viewport's left edge.
     // Wheel zoom retain the timestamp under the pointer.
     useLayoutEffect(() => {
+        const synchronouslyAppliedZoom = synchronouslyAppliedZoomRef.current;
+        // Consume the acknowledgement even when the next commit is not the expected zoom update.
+        // A later matching update must be applied normally rather than skipping a stale acknowledgement.
+        synchronouslyAppliedZoomRef.current = null;
+        const zoomWasAppliedSynchronously =
+            synchronouslyAppliedZoom?.zoom === zoom &&
+            synchronouslyAppliedZoom.duration === duration &&
+            synchronouslyAppliedZoom.containerWidth === containerWidth &&
+            synchronouslyAppliedZoom.pixelsPerSecond === pixelsPerSecond;
         const instance = runtime.instanceRef.current;
         const scrollContainer = getScrollContainer();
         if (!instance || !scrollContainer) return;
@@ -264,30 +292,95 @@ export function useWaveformViewport(
         const currentTime = instance.getCurrentTime();
         const cursorOffset = currentTime * previousZoom - scrollContainer.scrollLeft;
         const cursorIsVisible = cursorOffset >= 0 && cursorOffset <= scrollContainer.clientWidth;
-        instance.zoom(pixelsPerSecond);
-        if (anchor) {
-            instance.setScroll(clamp(anchor.time * pixelsPerSecond - anchor.x, 0, maximumScroll));
-        } else if (containerResized) {
-            instance.setScroll(clamp(visibleStartTime * pixelsPerSecond, 0, maximumScroll));
-        } else if (pixelsPerSecond !== previousZoom) {
-            let scrollOffset = visibleStartTime * pixelsPerSecond;
-            if (cursorIsVisible) {
-                scrollOffset = currentTime * pixelsPerSecond - cursorOffset;
+        if (!zoomWasAppliedSynchronously) {
+            instance.zoom(pixelsPerSecond);
+            if (anchor) {
+                instance.setScroll(clamp(anchor.time * pixelsPerSecond - anchor.x, 0, maximumScroll));
+            } else if (containerResized) {
+                instance.setScroll(clamp(visibleStartTime * pixelsPerSecond, 0, maximumScroll));
+            } else if (pixelsPerSecond !== previousZoom) {
+                let scrollOffset = visibleStartTime * pixelsPerSecond;
+                if (cursorIsVisible) {
+                    scrollOffset = currentTime * pixelsPerSecond - cursorOffset;
+                }
+                instance.setScroll(clamp(scrollOffset, 0, maximumScroll));
             }
-            instance.setScroll(clamp(scrollOffset, 0, maximumScroll));
         }
         emitTransformChange();
     }, [pixelsPerSecond, ready]);
 
-    useLayoutEffect(() => {
-        if (!ready) return;
+    // Fits an interval into the current viewport.
+    useEffect(() => {
+        if (!ready || !fitIntervalRequest || duration <= 0) return;
 
-        const minimapPlugin = runtime.minimap?.plugin;
-        if (!minimapPlugin) return;
+        const instance = runtime.instanceRef.current;
+        const scrollContainer = getScrollContainer();
+        if (!fitInterval || !instance || !scrollContainer || scrollContainer.clientWidth <= 0) {
+            dispatch(audioActions.completeFitAudioInterval(fitIntervalRequest));
+            return;
+        }
 
-        const { overlay } = minimapPlugin as unknown as { overlay?: HTMLElement };
-        if (overlay) overlay.style.opacity = zoom > ZOOM_MIN ? '1' : '0';
-    }, [ready, zoom]);
+        const start = fitInterval.start / 1000;
+        const end = fitInterval.stop === null ? duration : fitInterval.stop / 1000;
+        const intervalDuration = end - start;
+
+        if (intervalDuration <= 0) {
+            dispatch(audioActions.completeFitAudioInterval(fitIntervalRequest));
+            return;
+        }
+
+        const basePixelsPerSecond = computeWaveformBasePixelsPerSecond(duration, scrollContainer.clientWidth);
+        const {
+            pixelsPerSecond: targetPixelsPerSecond,
+            safeInset,
+        } = computeFitIntervalGeometry(
+            start,
+            end,
+            duration,
+            scrollContainer.clientWidth,
+            basePixelsPerSecond,
+        );
+        const availableWidth = scrollContainer.clientWidth - safeInset * 2;
+
+        if (availableWidth <= 0) {
+            dispatch(audioActions.completeFitAudioInterval(fitIntervalRequest));
+            return;
+        }
+
+        const targetZoom = limitZoom(
+            targetPixelsPerSecond / basePixelsPerSecond,
+        );
+        const actualPixelsPerSecond = computeWaveformZoom(targetZoom, duration, scrollContainer.clientWidth);
+        const startInset = Math.min(safeInset, start * actualPixelsPerSecond);
+        const targetScroll = start * actualPixelsPerSecond - startInset;
+        const intervalDoesNotFit =
+            intervalDuration * actualPixelsPerSecond > scrollContainer.clientWidth - startInset;
+
+        // Perform sync zoom and scroll
+        const zoomChanged = targetZoom !== zoomRef.current;
+        if (zoomChanged) {
+            synchronouslyAppliedZoomRef.current = {
+                zoom: targetZoom,
+                duration,
+                containerWidth,
+                pixelsPerSecond: actualPixelsPerSecond,
+            };
+        }
+
+        const maximumScroll = Math.max(0, duration * actualPixelsPerSecond - scrollContainer.clientWidth);
+        instance.zoom(actualPixelsPerSecond);
+        instance.setScroll(clamp(targetScroll, 0, maximumScroll));
+
+        if (zoomChanged) {
+            dispatch(audioActions.setAudioZoom(targetZoom));
+        }
+
+        if (intervalDoesNotFit) {
+            message.destroy();
+            message.warning('The interval is too long to fully fit. Showing its beginning instead.');
+        }
+        dispatch(audioActions.completeFitAudioInterval(fitIntervalRequest));
+    }, [ready, fitIntervalRequest, fitInterval, duration, containerWidth]);
 
     return {
         containerRef,

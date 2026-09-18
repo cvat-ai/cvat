@@ -25,7 +25,7 @@ context('Import and export annotations: specify source and target storage in mod
     const format = 'CVAT for images';
 
     const createRectangleShape2Points = {
-        points: 'By 2 Points',
+        points: '2 Points',
         type: 'Shape',
         labelName,
         firstX: 250,

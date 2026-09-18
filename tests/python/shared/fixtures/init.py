@@ -28,6 +28,7 @@ CONTAINER_NAME_FILES = ["docker-compose.tests.yml"]
 
 DC_FILES = CONTAINER_NAME_FILES + [
     "docker-compose.dev.yml",
+    "tests/docker-compose.static_cache.yml",
     "tests/docker-compose.file_share.yml",
     "tests/docker-compose.minio.yml",
     "tests/docker-compose.pat_settings.yml",

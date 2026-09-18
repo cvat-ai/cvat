@@ -174,6 +174,40 @@ context('Manipulations with skeletons', { scrollBehavior: false }, () => {
             cy.removeAnnotations();
         });
 
+        it('Undo and redo outside property for a skeleton point', () => {
+            createSkeletonObject('shape');
+
+            const skeletonPointSelector = '#cvat-objects-sidebar-state-item-element-2';
+            cy.get(skeletonPointSelector).within(() => {
+                cy.get('.cvat-object-item-button-outside').click();
+                cy.get('.cvat-object-item-button-outside-enabled').should('exist');
+                cy.get('.cvat-object-item-button-occluded-enabled').should('not.exist');
+            });
+
+            cy.get('.cvat-annotation-header-undo-button').trigger('mouseover');
+            cy.get('.ant-tooltip-inner').should('contain.text', 'Undo: Changed outside');
+            cy.get('.cvat-annotation-header-undo-button').click();
+            cy.get(skeletonPointSelector).within(() => {
+                cy.get('.cvat-object-item-button-outside-enabled').should('not.exist');
+                cy.get('.cvat-object-item-button-occluded-enabled').should('not.exist');
+            });
+
+            cy.get('.cvat-annotation-header-redo-button').click();
+            cy.get(skeletonPointSelector).within(() => {
+                cy.get('.cvat-object-item-button-outside-enabled').should('exist');
+                cy.get('.cvat-object-item-button-occluded-enabled').should('not.exist');
+            });
+
+            cy.get('.cvat-annotation-header-undo-button').click();
+            cy.get(skeletonPointSelector).within(() => {
+                cy.get('.cvat-object-item-button-outside-enabled').should('not.exist');
+                cy.get('.cvat-object-item-button-occluded-enabled').should('not.exist');
+            });
+
+            deleteSkeleton('#cvat_canvas_shape_1', 'shape', false);
+            cy.removeAnnotations();
+        });
+
         it('Creating, re-drawing, and removing a skeleton track', () => {
             createSkeletonObject('track');
 
@@ -256,8 +290,8 @@ context('Manipulations with skeletons', { scrollBehavior: false }, () => {
             createSkeletonObject('shape');
             cy.get('#cvat_canvas_shape_2').click();
             cy.get('#cvat_canvas_shape_2').trigger('mouseover');
-            cy.get('body').type('{ctrl}c');
-            cy.get('body').type('{ctrl}v');
+            cy.pressWithPlatformModifier('c');
+            cy.pressWithPlatformModifier('v');
             cy.get('.cvat-canvas-container').click();
 
             cy.get('#cvat_canvas_shape_7').should('exist').and('be.visible');

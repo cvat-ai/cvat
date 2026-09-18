@@ -51,18 +51,24 @@
 .cvat-audio-waveform-wrapper {
     $control-background: rgb(209, 208, 240, 80%);
     $control-hover-background: rgb(209, 208, 240, 95%);
+    $draw-mode-guide-color: red;
 
     position: relative;
     background-color: white;
     border-radius: 8px;
-    margin-bottom: 20px;
+    margin-bottom: 0;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 10%);
+    flex-shrink: 0;
     overflow: hidden;
     min-width: 0;
     width: 100%;
 
     ::part(cvat-audio-bulk-edit-boundary) {
         border-color: #1677ff;
+    }
+
+    [part='minimap'] {
+        overflow: hidden;
     }
 
     .cvat-audio-waveform-controls {
@@ -94,6 +100,10 @@
             overflow: hidden;
         }
 
+        *::part(cvat-audio-region-resize-handles-hidden) {
+            opacity: 0;
+        }
+
         &.cvat-audio-waveform-interaction-drag {
             cursor: grabbing;
 
@@ -104,13 +114,34 @@
             }
         }
 
-        &.cvat-audio-waveform-interaction-resize {
+        &.cvat-audio-waveform-interaction-resize,
+        &.cvat-audio-waveform-bulk-resize {
             cursor: ew-resize;
 
             *::part(wrapper),
             *::part(region),
             *::part(region-handle) {
                 cursor: ew-resize !important;
+            }
+        }
+
+        &.cvat-audio-waveform-interaction-create {
+            cursor: text;
+
+            *::part(hover) {
+                border-color: $draw-mode-guide-color;
+            }
+
+            *::part(wrapper),
+            *::part(region),
+            *::part(region-handle) {
+                cursor: text;
+            }
+        }
+
+        &.cvat-audio-waveform-interaction-snap-hover {
+            *::part(hover) {
+                visibility: hidden;
             }
         }
 
@@ -128,10 +159,48 @@
         border-top: 1px solid #e5e7eb;
         padding: 0;
 
+        [part='minimap-overlay'].cvat-audio-minimap-scrollbar {
+            cursor: grab;
+            touch-action: none;
+
+            &:hover {
+                background-color: rgba(0, 85, 255, 35%) !important;
+            }
+
+            &.cvat-audio-minimap-scrollbar-drag {
+                cursor: grabbing;
+                background-color: rgba(0, 85, 255, 35%) !important;
+            }
+        }
+
         #minimap {
             min-height: 50px;
             width: 100%;
         }
+    }
+}
+
+.cvat-audio-waveform-resize-handle {
+    position: relative;
+    height: $grid-unit-size;
+    margin: $grid-unit-size * 0.5 0 $grid-unit-size * 0.25 0;
+    cursor: ns-resize;
+    flex-shrink: 0;
+    touch-action: none;
+
+    &::after {
+        position: absolute;
+        top: calc(50% - 1px);
+        right: 0;
+        left: 0;
+        height: 2px;
+        background-color: #e5e7eb;
+        content: '';
+        transition: background-color 200ms;
+    }
+
+    &:hover::after {
+        background-color: #818cf8;
     }
 }
 

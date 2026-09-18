@@ -5,9 +5,11 @@
 import React, { useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import Layout from 'antd/lib/layout';
+import { LabelType } from 'cvat-core-wrapper';
 
 import { ActiveControl, CombinedState } from 'reducers';
 import { shallowEqual, ThunkDispatch } from 'utils/redux';
+import { filterApplicableForType } from 'utils/filter-applicable-labels';
 import { updateActiveControl } from 'actions/annotation-actions';
 import {
     audioActions,
@@ -17,6 +19,7 @@ import ControlVisibilityObserver, { ExtraControlsControl } from 'components/anno
 
 import AudioCursorControl, { Props as CursorControlProps } from './cursor-control';
 import IntervalRegionControl, { Props as IntervalRegionControlProps } from './interval-region-control';
+import SplitAtPlayheadControl, { Props as SplitAtPlayheadControlProps } from './split-at-playhead-control';
 import LoopControl, { Props as LoopControlProps } from './loop-control';
 import ZoomControl, { Props as ZoomControlProps } from './zoom-control';
 import SpeedControl, { Props as SpeedControlProps } from './speed-control';
@@ -24,6 +27,10 @@ import VolumeControl, { Props as VolumeControlProps } from './volume-control';
 
 const ObservedCursorControl = ControlVisibilityObserver<CursorControlProps>(AudioCursorControl, 'audioCursorControl');
 const ObservedIntervalRegionControl = ControlVisibilityObserver<IntervalRegionControlProps>(IntervalRegionControl, 'audioIntervalRegionControl');
+const ObservedSplitAtPlayheadControl = ControlVisibilityObserver<SplitAtPlayheadControlProps>(
+    SplitAtPlayheadControl,
+    'audioSplitAtPlayheadControl',
+);
 const ObservedLoopControl = ControlVisibilityObserver<LoopControlProps>(LoopControl, 'audioLoopControl');
 const ObservedZoomControl = ControlVisibilityObserver<ZoomControlProps>(ZoomControl, 'audioZoomControl');
 const ObservedSpeedControl = ControlVisibilityObserver<SpeedControlProps>(SpeedControl, 'audioSpeedControl');
@@ -50,6 +57,7 @@ export default function AudioControlsSideBarComponent(): JSX.Element {
         labels: state.annotation.job.labels,
         activeLabelId: state.audio.player.activeLabelId,
     }), shallowEqual);
+    const applicableLabels = filterApplicableForType(LabelType.INTERVAL, labels);
 
     const updateAudioActiveControl = useCallback((control: ActiveControl): void => {
         dispatch(updateActiveControl(control));
@@ -72,7 +80,6 @@ export default function AudioControlsSideBarComponent(): JSX.Element {
     const onExtendRegion = useCallback((labelId: number): void => {
         dispatch(extendAudioIntervalFromLastAsync(labelId));
     }, [dispatch]);
-
     return (
         <Layout.Sider className='cvat-canvas-controls-sidebar' theme='light' width={44}>
             <ObservedCursorControl
@@ -86,15 +93,18 @@ export default function AudioControlsSideBarComponent(): JSX.Element {
                 createRegionShortkey={normalizedKeyMap.CREATE_AUDIO_REGION}
                 recordRegionShortkey={normalizedKeyMap.RECORD_AUDIO_REGION}
                 extendRegionShortkey={normalizedKeyMap.EXTEND_AUDIO_REGION_FROM_LAST}
-                labels={labels}
+                labels={applicableLabels}
                 activeLabelId={activeLabelId}
                 onExtendRegion={onExtendRegion}
                 onSetActiveLabel={onSetActiveLabel}
                 updateActiveControl={updateAudioActiveControl}
             />
             <hr />
+            <ObservedSplitAtPlayheadControl shortcut={normalizedKeyMap.SPLIT_AUDIO_INTERVAL_AT_PLAYBACK_POSITION} />
+            <hr />
             <ObservedLoopControl
                 loop={loop}
+                loopShortcut={normalizedKeyMap.TOGGLE_AUDIO_LOOP}
                 onLoopChange={onLoopChange}
             />
             <hr />

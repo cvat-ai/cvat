@@ -174,7 +174,7 @@ const componentShortcuts = {
     COPY_SHAPE: {
         name: 'Copy shape',
         description: 'Copy shape to CVAT internal clipboard',
-        sequences: ['ctrl+c'],
+        sequences: ['ctrl+c', 'command+c'],
         scope: ShortcutScope.OBJECTS_SIDEBAR,
     },
     RUN_ANNOTATIONS_ACTION: {
@@ -521,7 +521,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             objectState.lock = locked;
         }
 
-        updateAnnotations(filteredStates);
+        updateAnnotations(filteredStates, true);
     }
 
     private hideAllStates(hidden: boolean): void {
@@ -529,14 +529,14 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
         const { filteredStates } = this.state;
 
         if (editedState?.shapeType === ShapeType.MASK) {
-            changeHideEditedState(hidden);
+            changeHideEditedState(hidden, false);
         }
 
         for (const objectState of filteredStates) {
             objectState.hidden = hidden;
         }
 
-        updateAnnotations(filteredStates);
+        updateAnnotations(filteredStates, true);
     }
 
     private collapseAllStates(collapsed: boolean): void {

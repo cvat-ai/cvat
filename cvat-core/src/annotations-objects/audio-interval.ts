@@ -117,10 +117,6 @@ export class AudioInterval extends ScoredMixin(PinnableMixin(AnnotationBase)) {
             delete updated[readOnlyField];
         }
 
-        if (this.pinned && data.pinned) {
-            delete updated.position;
-        }
-
         // this.validateStateBeforeSave(data, updated);
 
         if (updated.label) {

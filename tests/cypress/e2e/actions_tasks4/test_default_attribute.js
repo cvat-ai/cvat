@@ -35,7 +35,7 @@ context('Test default value for an attribute', () => {
 
     function checkCreatedObject(attr1Value, attr2Value) {
         cy.createRectangle({
-            points: 'By 2 Points',
+            points: '2 Points',
             type: 'Shape',
             labelName: label,
             firstX: 150,

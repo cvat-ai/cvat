@@ -16,12 +16,12 @@ import { addPart, removePart } from '../utils/shadow-dom';
 import { getIntervalRegionsByClientID } from '../utils/wave-regions';
 import { WaveformRegionRuntime } from './use-audio-waveform';
 import type { RegionHighlighting } from './use-region-projection';
-import type { SelectionInteraction } from './use-region-selection';
+import type { RegionSelection } from './use-region-selection';
 import { WaveformViewport } from './use-waveform-viewport';
 
 const BOUNDARY_TOLERANCE_MS = 50;
 const BULK_EDIT_BOUNDARY_PART = 'cvat-audio-bulk-edit-boundary';
-const RESIZE_CURSOR_CLASS = 'cvat-audio-waveform-interaction-resize';
+const BULK_RESIZE_CURSOR_CLASS = 'cvat-audio-waveform-bulk-resize';
 
 interface Boundary {
     regionClientID: number;
@@ -60,7 +60,7 @@ type BulkDragStatus = { status: 'pending'; value: PendingBulkDrag } | { status: 
 interface Params {
     regionRuntime: WaveformRegionRuntime;
     regionHighlighting: RegionHighlighting;
-    selectionInteraction: SelectionInteraction;
+    regionSelection: RegionSelection;
     viewport: WaveformViewport;
     durationRef: React.MutableRefObject<number>;
     ready: boolean;
@@ -99,38 +99,34 @@ function setBoundaryIndicator(boundary: Boundary, active: boolean): void {
  * and prevents its drag auto-scroll/pointer-lock behavior from taking over.
  */
 export function useBulkBoundariesEditing({
-    regionRuntime, regionHighlighting, selectionInteraction, viewport, durationRef, ready,
+    regionRuntime, regionHighlighting, regionSelection, viewport, durationRef, ready,
 }: Params): void {
     const dispatch = useDispatch<ThunkDispatch>();
-    const { activeControl } = useSelector(
+    const { activeControl, interactingIntervalID } = useSelector(
         (state: CombinedState) => ({
             activeControl: state.annotation.canvas.activeControl,
+            interactingIntervalID: state.audio.player.interactingIntervalID,
         }),
         shallowEqual,
     );
     const activeControlRef = useRef(activeControl);
+    const interactingIntervalIDRef = useRef(interactingIntervalID);
     const hoveredRef = useRef<HoveredBoundaries>({ boundaries: [], time: null });
     const bulkDragRef = useRef<BulkDragStatus | null>(null);
-    const previousCursorRef = useRef('');
     activeControlRef.current = activeControl;
+    interactingIntervalIDRef.current = interactingIntervalID;
 
     const clearHoveredBoundaries = (): void => {
-        viewport.containerRef.current?.classList.remove(RESIZE_CURSOR_CLASS);
+        viewport.containerRef.current?.classList.remove(BULK_RESIZE_CURSOR_CLASS);
         hoveredRef.current.boundaries.forEach((boundary) => setBoundaryIndicator(boundary, false));
         regionHighlighting.removeHighlightedRegionIDs(
             new Set(hoveredRef.current.boundaries.map((boundary) => boundary.regionClientID)),
         );
         hoveredRef.current = { boundaries: [], time: null };
-        document.body.style.cursor = previousCursorRef.current;
     };
 
     const setHoveredBoundaries = (boundaries: Boundary[], time: number | null): void => {
-        viewport.containerRef.current?.classList.toggle(RESIZE_CURSOR_CLASS, !!boundaries.length);
-        document.body.style.cursor = previousCursorRef.current;
-        if (boundaries.length) {
-            previousCursorRef.current = document.body.style.cursor;
-            document.body.style.cursor = 'ew-resize';
-        }
+        viewport.containerRef.current?.classList.toggle(BULK_RESIZE_CURSOR_CLASS, !!boundaries.length);
         const previousRegionIDs = new Set(hoveredRef.current.boundaries.map((boundary) => boundary.regionClientID));
         const nextRegionIDs = new Set(boundaries.map((boundary) => boundary.regionClientID));
         regionHighlighting.removeHighlightedRegionIDs(
@@ -251,7 +247,7 @@ export function useBulkBoundariesEditing({
         const engage = (pointerID: number, boundaries: Boundary[], startTime: number, latestTime: number): void => {
             if (!boundaries.length) return;
 
-            selectionInteraction.disableSelectionInteraction();
+            regionSelection.disableSelection();
 
             const affectedRegions = [
                 ...new Map(boundaries.map((boundary) => [boundary.regionClientID, boundary.region])),
@@ -311,17 +307,36 @@ export function useBulkBoundariesEditing({
                     }
                 }
             } else {
+                if (interactingIntervalIDRef.current !== null) return;
+
                 lastPointerX = event.clientX;
-                const time = isBulkEditingAllowed(activeControlRef.current) && isBulkEvent(event) ?
+                const isBulkHovering = isBulkEditingAllowed(activeControlRef.current) && isBulkEvent(event);
+                if (isBulkHovering) {
+                    regionSelection.disableHover();
+                } else {
+                    regionSelection.enableHover();
+                }
+                const time = isBulkHovering ?
                     viewport.clientXToTime(event.clientX) : null;
                 updateHoveredBoundaries(time);
             }
         };
 
         const onShiftKeyChange = (event: KeyboardEvent): void => {
-            if (event.key !== 'Shift' || event.repeat || bulkDragRef.current) return;
+            if (
+                event.key !== 'Shift' ||
+                event.repeat ||
+                bulkDragRef.current ||
+                interactingIntervalIDRef.current !== null
+            ) return;
 
-            const time = event.type === 'keydown' && lastPointerX !== null && isBulkEditingAllowed(activeControlRef.current) ?
+            const isBulkHovering = event.type === 'keydown' && isBulkEditingAllowed(activeControlRef.current);
+            if (isBulkHovering) {
+                regionSelection.disableHover();
+            } else {
+                regionSelection.enableHover();
+            }
+            const time = isBulkHovering && lastPointerX !== null ?
                 viewport.clientXToTime(lastPointerX) : null;
             updateHoveredBoundaries(time);
         };
@@ -329,12 +344,18 @@ export function useBulkBoundariesEditing({
         const onPointerDown = (event: PointerEvent): void => {
             if (suppressReleaseClick) {
                 suppressReleaseClick = false;
-                selectionInteraction.enableSelectionInteraction();
+                regionSelection.enableSelection();
             }
 
-            if (!isBulkEditingAllowed(activeControlRef.current) || !isBulkEvent(event) || event.button !== 0) return;
+            if (
+                interactingIntervalIDRef.current !== null ||
+                !isBulkEditingAllowed(activeControlRef.current) ||
+                !isBulkEvent(event) ||
+                event.button !== 0
+            ) return;
             if (bulkDragRef.current) return;
 
+            regionSelection.disableHover();
             const time = viewport.clientXToTime(event.clientX);
             if (time === null) return;
 
@@ -386,10 +407,13 @@ export function useBulkBoundariesEditing({
 
             event.stopImmediatePropagation();
             bulkDragRef.current = null;
+            if (!event.shiftKey) {
+                regionSelection.enableHover();
+            }
             if (drag.status !== 'engaged') return;
 
             if (event.type === 'pointercancel') {
-                selectionInteraction.enableSelectionInteraction();
+                regionSelection.enableSelection();
             } else {
                 suppressReleaseClick = true;
             }
@@ -418,7 +442,7 @@ export function useBulkBoundariesEditing({
             suppressReleaseClick = false;
             event.preventDefault();
             event.stopImmediatePropagation();
-            selectionInteraction.enableSelectionInteraction();
+            regionSelection.enableSelection();
         };
 
         document.addEventListener('pointermove', onPointerMove, { capture: true });
@@ -438,7 +462,8 @@ export function useBulkBoundariesEditing({
             document.removeEventListener('click', onClick, { capture: true });
             document.removeEventListener('keydown', onShiftKeyChange);
             document.removeEventListener('keyup', onShiftKeyChange);
-            selectionInteraction.enableSelectionInteraction();
+            regionSelection.enableSelection();
+            regionSelection.enableHover();
             clearHoveredBoundaries();
         };
     }, [ready]);

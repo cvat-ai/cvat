@@ -31,10 +31,12 @@ context('Audio annotation. Import transcriptions from a TSV file.', () => {
 
     describe(`Testing case "${caseId}"`, () => {
         it('Upload annotations offers the TSV format, accepts a .tsv file, and imports it', () => {
-            cy.removeAnnotations();
+            cy.audioClearAnnotations();
             cy.intercept('GET', '/api/jobs/**/annotations?**').as('uploadAnnotationsGet');
 
             cy.interactMenu('Upload annotations');
+            // Option for 2D export is not present
+            cy.contains('.cvat-modal-import-dataset', 'Convert masks to polygons').should('not.exist');
             cy.get('.cvat-modal-import-dataset').find('.cvat-modal-import-select').click();
             cy.contains('.cvat-modal-import-dataset-option-item', format).click();
             cy.get('.cvat-modal-import-select').should('contain.text', format);

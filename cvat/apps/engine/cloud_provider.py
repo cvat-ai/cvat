@@ -6,6 +6,7 @@
 from __future__ import annotations
 
 import functools
+import io
 import json
 import os
 from abc import ABC, abstractmethod
@@ -16,7 +17,7 @@ from enum import Enum
 from io import BytesIO
 from pathlib import Path, PurePath
 from queue import Queue
-from typing import Any, BinaryIO, Concatenate, ParamSpec, TypeVar
+from typing import IO, Any, BinaryIO, Concatenate, ParamSpec, TypeVar
 
 import boto3
 from azure.core.exceptions import HttpResponseError, ServiceRequestError
@@ -177,6 +178,11 @@ class CloudStorageClient(ABC):
     @abstractmethod
     def _download_fileobj_to_stream(self, key: str, stream: BinaryIO, /) -> None:
         pass
+
+    supports_streaming = False
+
+    def get_file_stream(self, key: str, /, *, offset: int) -> tuple[Any, int]:
+        raise NotImplementedError()
 
     @validate_file_status
     @validate_bucket_status
@@ -390,6 +396,9 @@ class CloudStorageClient(ABC):
     @abstractmethod
     def supported_actions(self):
         pass
+
+    def get_openable(self, key: str, /) -> NamedOpenable:
+        return _CloudStorageOpenable(self, key)
 
 
 class HeaderFirstDownloader(ABC):
@@ -806,6 +815,12 @@ class S3CloudStorageClient(CloudStorageClient):
                     slogger.glob.error(f"{str(ex)}. Key: {key}, bucket: {self.name}")
             raise
 
+    supports_streaming = True
+
+    def get_file_stream(self, key: str, /, *, offset: int) -> tuple[Any, int]:
+        obj = self._client.get_object(Bucket=self.bucket.name, Key=key, Range=f"bytes={offset}-")
+        return obj["Body"], obj["ContentLength"] + offset
+
     def bulk_delete(self, files: Sequence[str]) -> None:
         def delete_batch(batch: Sequence[str]):
             delete_request = {"Objects": [{"Key": f} for f in batch], "Quiet": True}
@@ -1167,6 +1182,13 @@ class SubdirectoryCloudStorageClient(CloudStorageClient):
         assert key is not None
         return self.underlying.upload_file(file_path, self._map_key(key))
 
+    @property
+    def supports_streaming(self) -> bool:
+        return self.underlying.supports_streaming
+
+    def get_file_stream(self, key: str, /, *, offset: int) -> tuple[Any, int]:
+        return self.underlying.get_file_stream(self._map_key(key), offset=offset)
+
     def bulk_delete(self, files: Sequence[str]) -> None:
         self.underlying.bulk_delete(list(map(self._map_key, files)))
 
@@ -1315,3 +1337,149 @@ def export_resource_to_cloud_storage(
     db_storage.get_client().upload_file(Path(file_path), rq_job_meta.result_filename)
 
     return file_path
+
+
+class _CloudStorageOpenable(NamedOpenable):
+    def __init__(self, storage: CloudStorageClient, key: str) -> None:
+        self._storage = storage
+        self._key = key
+
+    def open(self, mode: str) -> IO[bytes]:
+        assert mode == "rb"
+        return _CloudStorageFile(self._storage, self._key)
+
+    def __fspath__(self) -> str:
+        return self._key
+
+
+class _CloudStorageFile(io.IOBase):
+    """
+    A file-like object that reads data from a cloud storage service.
+
+    The implementation works as follows:
+
+    We always hold an open stream resulting from a "read blob" request to the service.
+    We also maintain a "logical offset" that represents the current position as seen by the client,
+    and a "stream offset" that represents the actual position in the stream.
+
+    When seeking, we only update the logical offset. This is because this class is used in
+    conjunction with FFmpeg, which loves to seek to the end of the file and back to determine
+    the size. If we tried to synchronize the stream offset on every seek, it would be unbearably
+    slow.
+
+    Instead, we only synchronize the stream offset with the logical offset when a read is requested.
+    We do it in one of two ways:
+
+    * If we need to seek forward a small distance (<= _SKIP_THRESHOLD), we read and discard
+      enough bytes to get there. This avoids the latency of making a new request.
+
+    * Otherwise, we reopen the stream at the logical offset (using a range request).
+    """
+
+    _SKIP_THRESHOLD = 1 << 20
+    _READ_TRIES = 3
+
+    def __init__(self, storage: CloudStorageClient, key: str) -> None:
+        self._storage = storage
+        self._key = key
+
+        self._logical_offset = self._stream_offset = 0
+        self._stream, self._length = self._storage.get_file_stream(self._key, offset=0)
+
+    def _reopen_stream(self) -> None:
+        self._stream.close()
+        self._stream, new_length = self._storage.get_file_stream(
+            self._key, offset=self._logical_offset
+        )
+        self._stream_offset = self._logical_offset
+
+        if new_length != self._length:
+            raise RuntimeError(
+                f"File length changed from {self._length} to {new_length} while being read"
+            )
+
+    def readable(self) -> bool:
+        return True
+
+    def _read_from_stream(self, size: int) -> bytes:
+        result = self._stream.read(size)
+        self._stream_offset += len(result)
+        return result
+
+    def _put_stream_at_logical_offset(self):
+        # synchronize the stream offset with the logical offset
+        lag = self._logical_offset - self._stream_offset
+
+        if 0 < lag <= self._SKIP_THRESHOLD:
+            try:
+                self._read_from_stream(lag)
+            except Exception:
+                self._reopen_stream()
+            else:
+                if self._logical_offset != self._stream_offset:
+                    # This should never happen; somehow the stream is shorter than expected.
+                    # Try to recover by reopening the stream.
+                    self._reopen_stream()
+        elif lag != 0:
+            self._reopen_stream()
+
+    def read(self, size: int = -1) -> bytes:
+        if self._logical_offset >= self._length:
+            return b""
+
+        if size < 0:
+            expected_result_size = self._length - self._logical_offset
+        else:
+            expected_result_size = min(size, self._length - self._logical_offset)
+
+        self._put_stream_at_logical_offset()
+
+        result = b""
+
+        last_ex = None
+
+        for _ in range(self._READ_TRIES):
+            try:
+                piece = self._read_from_stream(expected_result_size - len(result))
+            except Exception as ex:
+                last_ex = ex
+            else:
+                last_ex = None
+                self._logical_offset += len(piece)
+                result += piece
+
+                if len(result) == expected_result_size:
+                    return result
+
+                # We might get here if the stream ends early. It shouldn't, since we read less than
+                # the expected stream length, but we're talking to an external service, so anything
+                # could happen. We'll treat this the same as an error (except we'll keep whatever
+                # data we did get).
+
+            self._reopen_stream()
+
+        if last_ex:
+            raise last_ex
+        raise RuntimeError("Truncated stream received from cloud storage service")
+
+    def seekable(self) -> bool:
+        return True
+
+    def seek(self, offset: int, whence: int = io.SEEK_SET) -> int:
+        match whence:
+            case io.SEEK_SET:
+                self._logical_offset = offset
+            case io.SEEK_CUR:
+                self._logical_offset = self._logical_offset + offset
+            case io.SEEK_END:
+                self._logical_offset = self._length + offset
+            case _:
+                assert False, f"invalid whence value {whence}"
+
+        return self._logical_offset
+
+    def tell(self) -> int:
+        return self._logical_offset
+
+    def close(self) -> None:
+        self._stream.close()

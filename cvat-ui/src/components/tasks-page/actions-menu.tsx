@@ -10,7 +10,7 @@ import Modal from 'antd/lib/modal';
 import Dropdown from 'antd/lib/dropdown';
 
 import {
-    RQStatus, Task, User, Organization,
+    RQStatus, Task, User, Organization, DimensionType,
 } from 'cvat-core-wrapper';
 import { useDropdownEditField, usePlugins } from 'utils/hooks';
 
@@ -63,6 +63,12 @@ function TaskActionsComponent(props: Readonly<Props>): JSX.Element {
     }), shallowEqual);
 
     const isBulkMode = selectedIds.length > 1;
+    const isExportDatasetDisabled = isBulkMode &&
+        new Set(
+            currentTasks
+                .filter((task) => selectedIds.includes(task.id))
+                .map((task) => task.dimension),
+        ).size > 1;
     const {
         dropdownOpen,
         editField,
@@ -268,6 +274,8 @@ function TaskActionsComponent(props: Readonly<Props>): JSX.Element {
             onMoveTaskToProject,
             onDeleteTask,
             selectedIds,
+            isExportDatasetDisabled,
+            isQualityControlDisabled: taskInstance.dimension === DimensionType.DIMENSION_1D,
         }, props);
     }
 

@@ -10,7 +10,7 @@ import { labelName, taskName } from '../../support/const';
 context('Navigation to empty frames', () => {
     const issueId = '2485';
     const createRectangleShape2Points = {
-        points: 'By 2 Points',
+        points: '2 Points',
         type: 'Shape',
         labelName,
         firstX: 250,

@@ -100,6 +100,67 @@
     }
 }
 
+.cvat-audio-split-popover {
+    .ant-popover-inner {
+        padding: $grid-unit-size * 0.5;
+        border-radius: $grid-unit-size;
+    }
+
+    .cvat-audio-split-popover-title {
+        padding: $grid-unit-size * 0.75 $grid-unit-size;
+    }
+
+    .cvat-audio-split-popover-options {
+        max-height: $grid-unit-size * 20;
+        overflow-y: auto;
+    }
+
+    .cvat-audio-split-option-row {
+        margin-bottom: $grid-unit-size * 0.5;
+    }
+
+    .cvat-audio-split-option {
+        width: 100%;
+        padding: $grid-unit-size * 0.5 $grid-unit-size;
+    }
+
+    .cvat-audio-split-option-index {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: $grid-unit-size * 2.5;
+        height: $grid-unit-size * 2.5;
+        border: 1px solid rgba(0, 0, 0, 15%);
+        border-radius: $grid-unit-size * 0.5;
+        color: #303030;
+        background: rgba(255, 255, 255, 72%);
+        font-size: $grid-unit-size * 1.5;
+        font-weight: 600;
+    }
+
+    .cvat-audio-split-option-label-color {
+        width: $grid-unit-size * 0.75;
+        height: $grid-unit-size * 0.75;
+        border: 1px solid rgba(0, 0, 0, 6%);
+        border-radius: 50%;
+    }
+
+    .cvat-audio-split-option-label {
+        width: $grid-unit-size * 10;
+        font-size: $grid-unit-size * 1.5;
+        text-align: left;
+    }
+
+    .cvat-audio-split-option-status {
+        color: #8c8c8c;
+    }
+
+    .cvat-audio-split-option-time {
+        font-size: $grid-unit-size * 1.5;
+        color: #8c8c8c;
+    }
+}
+
 .cvat-modal-confirm-remove-audio-annotation {
     .cvat-audio-remove-annotations-time-range {
         display: flex;

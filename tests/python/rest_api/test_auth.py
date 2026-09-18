@@ -274,6 +274,7 @@ class TestCredentialsManagement:
             assert response.status == HTTPStatus.OK
             assert user.username == username
             assert user.email == email
+            assert user.created_via.value == "registration"
 
     def test_can_change_password(self, admin_user: str):
         username = admin_user

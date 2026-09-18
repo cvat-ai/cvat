@@ -42,7 +42,7 @@ jobs:
           key: ${{ runner.os }}-build-ui-${{ needs.search_cache.outputs.sha }}
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4.2.0
+        uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4.3.0
 
       - name: Create artifact directories
         run: |
@@ -165,7 +165,6 @@ jobs:
         id: run_tests
         run: |
           pytest tests/python/
-          CVAT_ALLOW_STATIC_CACHE="true" pytest -k "TestTaskData" tests/python
 
       - name: Creating a log file from cvat containers
         if: failure() && steps.run_tests.conclusion == 'failure'

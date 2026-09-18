@@ -52,8 +52,8 @@ export function showUnsupportedNotification(): boolean {
 }
 
 // The 'platform' package is no longer maintained and relies on User-Agent string,
-// which is not really trusted source of information. This function uses new experimental browser API
-export function platformInfoV2(): string {
+// which is not really trusted source of information. This function uses new experimental browser API.
+function detectPlatform(): string {
     if (window.isSecureContext && 'userAgentData' in navigator) {
         // Use the new User-Agent Client Hints API when available in secure context
         return (navigator as any).userAgentData?.platform || navigator.platform;
@@ -61,4 +61,14 @@ export function platformInfoV2(): string {
     // Fallback to the navigator.platform
     // It is still in specs https://html.spec.whatwg.org/multipage/system-state.html#dom-navigator-platform-dev
     return navigator.platform;
+}
+
+const currentPlatform = detectPlatform();
+
+export function platformInfoV2(): string {
+    return currentPlatform;
+}
+
+export function isMacOS(): boolean {
+    return currentPlatform.toLowerCase().includes('mac');
 }
