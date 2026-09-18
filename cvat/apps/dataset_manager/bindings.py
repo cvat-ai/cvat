@@ -196,10 +196,11 @@ class InstanceLabelData:
                 )
 
         elif self._soft_attribute_import:
-            if isinstance(value, (int, float)):
-                attr_type = AttributeType.NUMBER
-            elif isinstance(value, bool):
+            # bool is a subclass of int, so it has to be checked first
+            if isinstance(value, bool):
                 attr_type = AttributeType.CHECKBOX
+            elif isinstance(value, (int, float)):
+                attr_type = AttributeType.NUMBER
             else:
                 value = str(value)
                 if value.lower() in {"true", "false"}:
