@@ -399,9 +399,9 @@ class TestListIssues:
         assert DeepDiff(data, response.json()["results"]) == {}
 
     def test_admin_can_see_all_issues(self, issues):
-        self._test_can_see_issues("admin2", issues.raw, page_size="all")
+        self._test_can_see_issues("admin2", issues.raw, page_size=500)
 
     @pytest.mark.parametrize("field_value, query_value", [(1, 1), (None, "")])
     def test_can_filter_by_org_id(self, field_value, query_value, issues, jobs):
         issues = filter(lambda i: jobs[i["job"]]["organization"] == field_value, issues)
-        self._test_can_see_issues("admin2", list(issues), page_size="all", org_id=query_value)
+        self._test_can_see_issues("admin2", list(issues), page_size=500, org_id=query_value)

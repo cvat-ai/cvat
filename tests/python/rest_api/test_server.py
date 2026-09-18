@@ -7,7 +7,7 @@ from http import HTTPStatus
 
 import pytest
 
-from shared.utils.config import make_api_client, put_method
+from shared.utils.config import get_method, make_api_client, put_method
 
 
 @pytest.mark.usefixtures("restore_db_per_class")
@@ -40,3 +40,26 @@ class TestGetSchema:
 
             assert response.status == HTTPStatus.OK
             assert data
+
+
+@pytest.mark.usefixtures("restore_db_per_class")
+class TestPageSize:
+    def test_default_page_size(self, admin_user: str):
+        response = get_method(admin_user, "projects")
+        assert response.status_code == HTTPStatus.OK
+        assert len(response.json()["results"]) <= 10
+
+    def test_page_size_is_clamped_to_max(self, admin_user: str):
+        response = get_method(admin_user, "projects", page_size=1000)
+        assert response.status_code == HTTPStatus.OK
+        assert len(response.json()["results"]) <= 500
+
+    def test_page_size_all_is_rejected(self, admin_user: str):
+        response = get_method(admin_user, "projects", page_size="all")
+        assert response.status_code == HTTPStatus.BAD_REQUEST
+        assert "page_size" in response.json()
+
+    def test_invalid_page_size_falls_back_to_default(self, admin_user: str):
+        response = get_method(admin_user, "projects", page_size="abc")
+        assert response.status_code == HTTPStatus.OK
+        assert len(response.json()["results"]) <= 10
