@@ -22,6 +22,7 @@ from rest_framework import serializers, status
 from rest_framework.exceptions import MethodNotAllowed
 from rest_framework.response import Response
 from rest_framework.reverse import reverse
+from rq import Retry
 from rq.job import JobStatus as RQJobStatus
 
 import cvat.apps.dataset_manager as dm
@@ -60,6 +61,7 @@ from cvat.apps.engine.rq import (
     ExportRequestId,
     ExportRQMeta,
     ImportRequestId,
+    ImportRQMeta,
 )
 from cvat.apps.engine.serializers import (
     AnnotationFileSerializer,
@@ -74,12 +76,12 @@ from cvat.apps.engine.utils import (
     build_annotations_file_name,
     build_backup_file_name,
     get_rq_lock_for_job,
-    import_resource_with_clean_up_after,
     is_dataset_export,
     sendfile,
 )
 from cvat.apps.events.handlers import handle_dataset_export, handle_dataset_import
 from cvat.apps.redis_handler.background import AbstractRequestManager
+from cvat.apps.redis_handler.utils import build_job_retry
 
 slogger = ServerLogManager(__name__)
 
@@ -90,6 +92,8 @@ LOCK_ACQUIRE_TIMEOUT = LOCK_TTL - 5
 
 
 class BaseResourceExporter(AbstractRequestManager):
+    rq_meta_cls = ExportRQMeta
+
     class Downloader:
         def __init__(
             self,
@@ -179,6 +183,10 @@ class BaseResourceExporter(AbstractRequestManager):
     @property
     def job_failed_ttl(self):
         return self.job_result_ttl
+
+    @property
+    def job_retry(self) -> Retry | None:
+        return build_job_retry(intervals=settings.EXPORT_JOB_RETRY_INTERVALS)
 
     @abstractmethod
     def get_result_filename(self) -> str: ...
@@ -473,6 +481,7 @@ class BackupExporter(BaseResourceExporter):
 
 class BaseResourceImporter(AbstractRequestManager):
     QUEUE_NAME = settings.CVAT_QUEUES.IMPORT_DATA.value
+    rq_meta_cls = ImportRQMeta
 
     @dataclass
     class ImportArgs:
@@ -495,6 +504,10 @@ class BaseResourceImporter(AbstractRequestManager):
     @property
     def job_failed_ttl(self):
         return int(settings.IMPORT_CACHE_FAILED_TTL.total_seconds())
+
+    @property
+    def job_retry(self) -> Retry | None:
+        return build_job_retry(intervals=settings.IMPORT_JOB_RETRY_INTERVALS)
 
     def init_request_args(self):
         try:
@@ -570,9 +583,6 @@ class BaseResourceImporter(AbstractRequestManager):
 
         self._init_callback_with_params()
 
-        # redefine here callback and callback args in order to:
-        # - (optional) download file from cloud storage
-        # - remove uploaded file at the end
         if self.import_args.location_config.location == Location.CLOUD_STORAGE:
             self.callback_args = (
                 self.callback_args[0],
@@ -582,9 +592,6 @@ class BaseResourceImporter(AbstractRequestManager):
                 *self.callback_args[1:],
             )
             self.callback = import_resource_from_cloud_storage
-
-        self.callback_args = (self.callback, *self.callback_args)
-        self.callback = import_resource_with_clean_up_after
 
 
 class DatasetImporter(BaseResourceImporter):
