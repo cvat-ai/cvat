@@ -6,6 +6,7 @@ import { type Label } from '../labels';
 import {
     colors, Source, HistoryActions,
 } from '../enums';
+import { validateAttributeValue } from '../object-utils';
 import { AnnotationContext } from './annotation-context';
 import type { AnnotationInjection, CommonUpdateFlags } from './types';
 import { computeNewSource, defaultGroupColor, deserializeAttributes } from './utils';
@@ -150,6 +151,18 @@ export class AnnotationBase extends AnnotationContext {
         this.source = redoSource;
         this.attributes = new Map();
         this.appendDefaultAttributes(label);
+
+        // Keep old attribute values when the new label has a compatible attribute with the same name.
+        for (const attribute of redoLabel.attributes) {
+            for (const oldAttribute of undoLabel.attributes) {
+                if (attribute.name === oldAttribute.name) {
+                    const oldValue = undoAttributes.get(oldAttribute.id!)!;
+                    if (validateAttributeValue(oldValue, attribute)) {
+                        this.attributes.set(attribute.id!, oldValue);
+                    }
+                }
+            }
+        }
         const redoAttributes = new Map(this.attributes);
 
         this.history.do(
