@@ -156,7 +156,7 @@ export class AnnotationBase extends AnnotationContext {
         for (const attribute of redoLabel.attributes) {
             for (const oldAttribute of undoLabel.attributes) {
                 if (attribute.name === oldAttribute.name) {
-                    const oldValue = undoAttributes.get(oldAttribute.id!)!;
+                    const oldValue = undoAttributes.get(oldAttribute.id!) ?? oldAttribute.defaultValue;
                     if (validateAttributeValue(oldValue, attribute)) {
                         this.attributes.set(attribute.id!, oldValue);
                     }
