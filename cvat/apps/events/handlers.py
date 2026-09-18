@@ -7,8 +7,9 @@ from typing import Any
 
 import rq
 from crum import get_current_request, get_current_user
-from django.db import DatabaseError
+from django.db import DatabaseError, transaction
 from django.db.models import Model
+from django.dispatch import Signal
 from rest_framework import status
 from rest_framework.exceptions import NotAuthenticated
 from rest_framework.response import Response
@@ -450,6 +451,18 @@ def handle_delete(scope, instance, store_in_deletion_cache=False, **kwargs):
     )
 
 
+annotations_changed = Signal()
+"""
+Sent after a job's annotations (shapes/tags/tracks) have been created, updated
+or deleted, once the enclosing DB transaction has committed. Lets other apps
+react to annotation changes without handle_annotations_change (or its callers
+in cvat.apps.dataset_manager) needing to know about them.
+
+Providing args: instance (the Job whose annotations changed), action
+("create", "update" or "delete").
+"""
+
+
 def handle_annotations_change(instance: Job, annotations, action, **kwargs):
     def filter_data(data):
         return {
@@ -569,6 +582,11 @@ def handle_annotations_change(instance: Job, annotations, action, **kwargs):
                 user_email=uemail,
                 payload={"tracks": tracks},
             )
+
+    transaction.on_commit(
+        lambda: annotations_changed.send(sender=Job, instance=instance, action=action),
+        robust=True,
+    )
 
 
 def handle_dataset_io(

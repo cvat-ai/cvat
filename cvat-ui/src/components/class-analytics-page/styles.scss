@@ -1,0 +1,57 @@
+// Copyright (C) CVAT.ai Corporation
+//
+// SPDX-License-Identifier: MIT
+
+@import 'base';
+
+.cvat-class-analytics-page {
+    @include cvat-resource-page;
+    padding-left: $grid-unit-size * 2;
+    padding-right: $grid-unit-size * 2;
+    overflow-y: auto;
+}
+
+.cvat-class-analytics-form-card {
+    margin-bottom: $grid-unit-size * 2;
+    flex-shrink: 0;
+}
+
+.cvat-class-analytics-task-id-input {
+    width: $grid-unit-size * 20;
+}
+
+.cvat-class-analytics-content {
+    flex-grow: 1;
+    position: relative;
+}
+
+.cvat-class-analytics-status-wrapper {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 100%;
+    text-align: center;
+}
+
+.cvat-class-analytics-chart-wrapper {
+    height: $grid-unit-size * 50;
+    display: flex;
+    flex-direction: column;
+    background: $background-color-1;
+    border: 1px solid $border-color-1;
+    border-radius: $border-radius-base;
+    padding: $grid-unit-size * 2;
+
+    // The Bar chart (chart.js, maintainAspectRatio=false) fills whatever
+    // height its immediate parent has, so it needs an explicit flex child
+    // rather than relying on the wrapper's own (now shared with the banner) height.
+    canvas {
+        flex-grow: 1;
+    }
+}
+
+.cvat-class-analytics-stale-banner {
+    margin-bottom: $grid-unit-size * 2;
+    flex-shrink: 0;
+}
