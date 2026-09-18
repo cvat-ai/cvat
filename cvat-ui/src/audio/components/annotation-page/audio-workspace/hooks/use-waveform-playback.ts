@@ -15,6 +15,8 @@ import { clamp } from 'utils/math';
 import type { WaveSurferRuntime } from './use-audio-waveform';
 import type { AudioTimeRange } from '../utils/audio-interval';
 
+const FINISH_POSITION_TOLERANCE = 0.02;
+
 export interface WaveformPlayback {
     /** Play audio from the current position. */
     play(): void;
@@ -159,6 +161,16 @@ export function useWaveformPlayback(runtime: WaveSurferRuntime): WaveformPlaybac
         };
         const onFinish = (): void => {
             if (!playbackRangeRef.current) {
+                // its finish of the track playback not a range
+                const currentTime = instance.getCurrentTime();
+                const trackDuration = instance.getDuration();
+
+                // WaveSurfer with WebAudio backend can finish playback just before its reported duration.
+                // Playback itself is accurate, so snap the displayed cursor to the true end.
+                if (Math.abs(trackDuration - currentTime) <= FINISH_POSITION_TOLERANCE) {
+                    instance.setTime(trackDuration);
+                }
+
                 dispatch(audioActions.switchAudioPlay(false));
                 return;
             }
