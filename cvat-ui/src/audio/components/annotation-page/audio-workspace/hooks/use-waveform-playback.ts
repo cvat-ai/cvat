@@ -149,10 +149,6 @@ export function useWaveformPlayback(runtime: WaveSurferRuntime): WaveformPlaybac
                     playRange(activeRange);
                 });
             } else {
-                // Without it the stop position is not accurate even when it's playing
-                // a range with WebAudio backend. Audio stop must be accurate with it though
-                // so we just fix the displayed position here to look precise as well.
-                instance.setTime(range.end);
                 dispatch(audioActions.clearAudioPlaybackRange());
                 dispatch(audioActions.switchAudioPlay(false));
             }
