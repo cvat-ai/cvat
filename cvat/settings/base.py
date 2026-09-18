@@ -452,6 +452,13 @@ PERIODIC_RQ_JOBS = [
     },
     {
         "queue": CVAT_QUEUES.CLEANING.value,
+        "id": "cron_instance_tmp_directories_cleanup",
+        "func": "cvat.apps.dataset_manager.cron.cleanup_instance_tmp_directories",
+        # Run once a day
+        "cron_string": "0 20 * * *",
+    },
+    {
+        "queue": CVAT_QUEUES.CLEANING.value,
         "id": "clear_unusable_access_tokens",
         "func": "cvat.apps.access_tokens.cron.clear_unusable_access_tokens",
         "cron_string": "0 0 * * 0",
@@ -818,7 +825,6 @@ BUCKET_CONTENT_MAX_PAGE_SIZE = 500
 
 IMPORT_CACHE_FAILED_TTL = timedelta(days=30)
 IMPORT_CACHE_SUCCESS_TTL = timedelta(hours=1)
-IMPORT_CACHE_CLEAN_DELAY = timedelta(hours=12)
 
 ASSET_MAX_SIZE_MB = 10
 ASSET_SUPPORTED_TYPES = ("image/jpeg", "image/png", "image/webp", "image/gif", "application/pdf")

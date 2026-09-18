@@ -42,6 +42,7 @@ from rest_framework.permissions import SAFE_METHODS
 from rest_framework.response import Response
 from rest_framework.settings import api_settings
 from rq.job import Job as RQJob
+from rq.job import JobStatus as RQJobStatus
 
 import cvat.apps.dataset_manager as dm
 from cvat.apps.dataset_manager.serializers import DatasetFormatsSerializer
@@ -3905,6 +3906,11 @@ class AnnotationGuidesViewSet(
 
 
 def rq_exception_handler(rq_job: RQJob, exc_type: type[Exception], exc_value: Exception, tb):
+    # NOTE @sosov: The worker has already re-queued/re-scheduled the job for another attempt
+    # that is why we can`t use redis_handler.utils.rq_job_will_be_retried there
+    if rq_job.get_status(refresh=False) in (RQJobStatus.QUEUED, RQJobStatus.SCHEDULED):
+        return True
+
     rq_job_meta = RQMetaWithFailureInfo.for_job(rq_job)
     rq_job_meta.formatted_exception = "".join(traceback.format_exception_only(exc_type, exc_value))
     if rq_job.origin == settings.CVAT_QUEUES.CHUNKS.value:

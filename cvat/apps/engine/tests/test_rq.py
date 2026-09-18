@@ -4,6 +4,7 @@
 
 import unittest
 import uuid
+from datetime import datetime, timedelta, timezone
 from unittest import mock
 
 import django_rq
@@ -12,7 +13,7 @@ from django_rq.queues import DjangoRQ
 from rq.job import Dependency, Job
 
 from cvat.apps.engine.rq import define_dependent_job
-from cvat.apps.engine.tests.utils import clear_rq_jobs
+from cvat.apps.engine.tests.utils import clear_rq_jobs, set_rq_async_mode
 
 DEFAULT_USER_ID = 1
 
@@ -39,11 +40,6 @@ def _enqueue_test_job(
     return job
 
 
-def _set_rq_async_mode(is_async) -> None:
-    for config in settings.RQ_QUEUES.values():
-        config["ASYNC"] = is_async
-
-
 class TestDefineDependentJob(unittest.TestCase):
     """
     Tests for automatic dependency resolution between RQ jobs.
@@ -53,7 +49,7 @@ class TestDefineDependentJob(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls) -> None:
-        _set_rq_async_mode(True)
+        set_rq_async_mode(is_async=True)
         cls.queue = django_rq.get_queue(settings.CVAT_QUEUES.IMPORT_DATA.value)
 
     def setUp(self) -> None:
@@ -63,7 +59,7 @@ class TestDefineDependentJob(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls) -> None:
-        _set_rq_async_mode(False)
+        set_rq_async_mode(is_async=False)
 
     def tearDown(self) -> None:
         self.addCleanup(self.patcher.stop)
@@ -83,6 +79,19 @@ class TestDefineDependentJob(unittest.TestCase):
         assert len(dependency.dependencies) == 1
         dep_job = dependency.dependencies[0]
         assert dep_job == job
+
+    def test_define_dependency_on_scheduled_user_job(self) -> None:
+        """A job awaiting a delayed retry (ScheduledJobRegistry) is still the user's active job."""
+        job = self.queue.enqueue_at(
+            datetime.now(timezone.utc) + timedelta(minutes=1),
+            dummy_task,
+            job_id=str(uuid.uuid4()),
+            meta={"user_id": DEFAULT_USER_ID},
+        )
+        assert job.is_scheduled
+        dependency = self._define_dependent_job(rq_id=str(uuid.uuid4()))
+        assert dependency is not None, "Dependent job not found."
+        assert dependency.dependencies == [job]
 
     def test_no_dependency_when_should_be_dependent_is_false(self) -> None:
         """Skips dependency if the flag should_be_dependent=False is used."""
