@@ -19,6 +19,7 @@ interface Props {
     collapsed: boolean;
     attributes: any[];
     values: Record<number, string>;
+    mixedAttributeIDs?: Set<number>;
     changeAttribute(attrID: number, value: string): void;
     collapse(): void;
     sizeParams: SizeParams | null;
@@ -27,6 +28,7 @@ interface Props {
     score: number;
     votes: number;
     textContent: string;
+    detailsLabel?: string;
 }
 
 export enum SizeType {
@@ -79,6 +81,8 @@ export function attrValuesAreEqual(next: Record<number, string>, prev: Record<nu
 }
 
 function attrAreTheSame(prevProps: Props, nextProps: Props): boolean {
+    const prevMixed = prevProps.mixedAttributeIDs || new Set<number>();
+    const nextMixed = nextProps.mixedAttributeIDs || new Set<number>();
     return (
         nextProps.readonly === prevProps.readonly &&
         nextProps.collapsed === prevProps.collapsed &&
@@ -87,14 +91,17 @@ function attrAreTheSame(prevProps: Props, nextProps: Props): boolean {
         nextProps.score === prevProps.score &&
         nextProps.votes === prevProps.votes &&
         nextProps.textContent === prevProps.textContent &&
+        nextProps.detailsLabel === prevProps.detailsLabel &&
+        nextMixed.size === prevMixed.size &&
+        [...nextMixed].every((attributeID: number): boolean => prevMixed.has(attributeID)) &&
         attrValuesAreEqual(nextProps.values, prevProps.values)
     );
 }
 
 function ItemAttributesComponent(props: Props): JSX.Element | null {
     const {
-        collapsed, attributes, values, readonly, changeAttribute, collapse,
-        sizeParams, changeSize, source, score, votes,
+        collapsed, attributes, values, readonly, changeAttribute, collapse, mixedAttributeIDs = new Set(),
+        sizeParams, changeSize, source, score, votes, detailsLabel = 'DETAILS',
     } = props;
 
     const isConsensus = source === Source.CONSENSUS;
@@ -159,7 +166,7 @@ function ItemAttributesComponent(props: Props): JSX.Element | null {
                     key: 'details',
                     label: (
                         <Row style={{ width: '100%' }} align='middle' justify='space-between'>
-                            <Text style={{ fontSize: 10 }} type='secondary'>DETAILS</Text>
+                            <Text style={{ fontSize: 10 }} type='secondary'>{detailsLabel}</Text>
                             {scoreVotesElement}
                         </Row>
                     ),
@@ -201,6 +208,7 @@ function ItemAttributesComponent(props: Props): JSX.Element | null {
                                         attrName={attribute.name}
                                         attrID={attribute.id}
                                         attrValues={attribute.values}
+                                        mixed={mixedAttributeIDs.has(attribute.id)}
                                         changeAttribute={changeAttribute}
                                     />
                                 </Row>

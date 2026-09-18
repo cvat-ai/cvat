@@ -31,6 +31,7 @@ interface StateToProps {
     workspace: Workspace;
     latestComments: string[];
     activatedStateID: number | null;
+    selectedStatesID: number[];
 }
 
 interface DispatchToProps {
@@ -46,7 +47,9 @@ interface DispatchToProps {
 function mapStateToProps(state: CombinedState): StateToProps {
     const {
         annotation: {
-            annotations: { collapsed, states: objectStates, activatedStateID },
+            annotations: {
+                collapsed, states: objectStates, activatedStateID, selectedStatesID,
+            },
             canvas: {
                 instance,
                 contextMenu: {
@@ -72,13 +75,12 @@ function mapStateToProps(state: CombinedState): StateToProps {
         contextMenuParentID: parentID,
         collapsed: clientID !== null ? collapsed[clientID] : undefined,
         activatedStateID,
+        selectedStatesID,
         objectStates,
         canvasInstance: instance instanceof Canvas ? instance : null,
-        visible:
-            clientID !== null &&
-            visible &&
-            ready &&
-            !!objectState,
+        visible: visible && ready && (
+            type === ContextMenuType.CANVAS_SELECTION ? !!selectedStatesID.length : clientID !== null && !!objectState
+        ),
         left,
         top,
         type,
@@ -165,6 +167,9 @@ class CanvasContextMenuContainer extends React.PureComponent<Props, State> {
             canvasInstance.html().addEventListener('canvas.clicked', this.onClickCanvas);
             canvasInstance.html().addEventListener('contextmenu', this.onOpenCanvasContextMenu);
             canvasInstance.html().addEventListener('canvas.contextmenu', this.onCanvasPointContextMenu);
+            canvasInstance.html().addEventListener(
+                'canvas.selectionmenu', this.onCanvasSelectionMenu as EventListener,
+            );
         }
     }
 
@@ -206,6 +211,9 @@ class CanvasContextMenuContainer extends React.PureComponent<Props, State> {
             canvasInstance.html().removeEventListener('canvas.clicked', this.onClickCanvas);
             canvasInstance.html().removeEventListener('contextmenu', this.onOpenCanvasContextMenu);
             canvasInstance.html().removeEventListener('canvas.contextmenu', this.onCanvasPointContextMenu);
+            canvasInstance.html().removeEventListener(
+                'canvas.selectionmenu', this.onCanvasSelectionMenu as EventListener,
+            );
         }
     }
 
@@ -236,6 +244,17 @@ class CanvasContextMenuContainer extends React.PureComponent<Props, State> {
                 e.detail.mouseEvent.clientY,
                 e.detail.pointID,
                 ContextMenuType.CANVAS_SHAPE_POINT,
+            );
+        }
+    };
+
+    private onCanvasSelectionMenu = (event: CustomEvent): void => {
+        const { onUpdateContextMenu } = this.props;
+        if (event.detail.close) {
+            onUpdateContextMenu(false, 0, 0, null, ContextMenuType.CANVAS_SELECTION);
+        } else {
+            onUpdateContextMenu(
+                true, event.detail.left, event.detail.top, null, ContextMenuType.CANVAS_SELECTION,
             );
         }
     };
@@ -293,10 +312,11 @@ class CanvasContextMenuContainer extends React.PureComponent<Props, State> {
         } = this.props;
 
         return (
-            type === ContextMenuType.CANVAS_SHAPE ? (
+            [ContextMenuType.CANVAS_SHAPE, ContextMenuType.CANVAS_SELECTION].includes(type) ? (
                 <CanvasContextMenuComponent
                     contextMenuClientID={contextMenuClientID}
                     contextMenuParentID={contextMenuParentID}
+                    selection={type === ContextMenuType.CANVAS_SELECTION}
                     left={left}
                     top={top}
                     visible={visible}

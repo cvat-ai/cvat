@@ -18,6 +18,11 @@ You may use the `Group Shapes` button or shortcuts:
 
 You may select shapes clicking on them or selecting an area.
 
+If you already have an active
+{{< ilink "/docs/annotation/manual-annotation/utilities/multi-object-selection" "multi-object selection" >}},
+press **G** or select **Group selection** from the selection action menu to group its objects.
+Press **Shift+G** or select **Ungroup selection** to remove group membership from selected objects.
+
 Grouped shapes will have `group_id` filed in dumped annotation.
 
 Also you may switch color distribution from an instance (default) to a group.
