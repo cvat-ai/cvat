@@ -27,6 +27,8 @@ const frameDataCache: Record<string, {
     latestContextImagesRequest: number | null;
     provider: FrameDecoder;
     prefetchAnalyzer: PrefetchAnalyzer;
+    compressedDecodedBlocksCacheSize: number;
+    originalDecodedBlocksCacheSize: number;
     decodedBlocksCacheSize: number;
     activeChunkRequest: Promise<void> | null;
     activeContextRequest: Promise<Record<number, ImageBitmap>> | null;
@@ -36,9 +38,38 @@ const frameDataCache: Record<string, {
         timestamp: number;
         size: number;
     }>;
+    compressedChunkType: 'video' | 'imageset';
+    originalChunkType: 'video' | 'imageset';
+    currentChunkType: 'video' | 'imageset';
     getChunk: (chunkIndex: number, quality: ChunkQuality) => Promise<ArrayBuffer>;
     getMeta: () => Promise<FramesMetaData>;
+    currentChunkQuality: ChunkQuality;
 }> = {};
+
+function getBlockType(chunkType: 'video' | 'imageset'): BlockType {
+    return chunkType === 'video' ? BlockType.MP4VIDEO : BlockType.ARCHIVE;
+}
+
+function estimateDecodedBlocksCacheSize(
+    meta: FramesMetaData,
+    chunkSize: number,
+    quality: ChunkQuality,
+): number {
+    const mean = meta.frames.reduce((a, b) => a + b.width * b.height, 0) / meta.frames.length;
+    const stdDev = Math.sqrt(
+        meta.frames.map((x) => (x.width * x.height - mean) ** 2).reduce((a, b) => a + b) /
+        meta.frames.length,
+    );
+
+    const memoryBudgetBytes = quality === ChunkQuality.COMPRESSED ?
+        3072 * 1024 * 1024 :
+        2048 * 1024 * 1024;
+
+    return Math.min(
+        Math.floor(memoryBudgetBytes / ((mean + stdDev) * 4 * chunkSize)) || 1,
+        10,
+    );
+}
 
 // frame meta data storage by job id
 const frameMetaCacheSync: Record<string, FramesMetaData> = {};
@@ -346,6 +377,7 @@ export class FrameData {
     public readonly relatedFiles: number;
     public readonly deleted: boolean;
     public readonly jobID: number;
+    public readonly preferOriginalQuality: boolean;
 
     constructor({
         width,
@@ -354,6 +386,7 @@ export class FrameData {
         jobID,
         frameNumber,
         deleted,
+        preferOriginalQuality = false,
         related_files: relatedFiles,
     }) {
         Object.defineProperties(
@@ -385,6 +418,10 @@ export class FrameData {
                 },
                 deleted: {
                     value: deleted,
+                    writable: false,
+                },
+                preferOriginalQuality: {
+                    value: preferOriginalQuality,
                     writable: false,
                 },
             }),
@@ -458,10 +495,24 @@ class PrefetchAnalyzer {
 Object.defineProperty(FrameData.prototype.data, 'implementation', {
     async value(this: FrameData, onServerRequest) {
         const {
-            provider, prefetchAnalyzer, chunkSize, jobStartFrame,
+            prefetchAnalyzer, chunkSize, jobStartFrame,
             decodeForward, forwardStep, decodedBlocksCacheSize, segmentFrameNumbers,
         } = frameDataCache[this.jobID];
+        const provider = frameDataCache[this.jobID].provider;
         const meta = await frameDataCache[this.jobID].getMeta();
+
+        const chunkQuality = this.preferOriginalQuality ? ChunkQuality.ORIGINAL : ChunkQuality.COMPRESSED;
+        const wrapOriginalQualityError = (error: unknown): Error => {
+            if (!this.preferOriginalQuality) {
+                return error instanceof Error ? error : new Error(String(error));
+            }
+
+            const reason = error instanceof Error ? error.message : String(error);
+            return new Error(
+                `Failed to load original-quality chunk. ${reason}. ` +
+                'Try disabling "Prefer original data quality" and reload the frame.',
+            );
+        };
 
         return new Promise<{
             renderWidth: number;
@@ -499,7 +550,8 @@ Object.defineProperty(FrameData.prototype.data, 'implementation', {
                         this.number,
                         decodeForward,
                         (chunk) => provider.isChunkCached(chunk),
-                    ) && decodedBlocksCacheSize > 1 && !frameDataCache[this.jobID].activeChunkRequest
+                    ) &&
+                    decodedBlocksCacheSize > 1 && !frameDataCache[this.jobID].activeChunkRequest
                 ) {
                     const nextChunkIndex = findTheNextNotDecodedChunk(
                         meta.getFrameIndex(requestedDataFrameNumber),
@@ -515,7 +567,8 @@ Object.defineProperty(FrameData.prototype.data, 'implementation', {
                             };
 
                             frameDataCache[this.jobID].getChunk(
-                                nextChunkIndex, ChunkQuality.COMPRESSED,
+                                nextChunkIndex,
+                                chunkQuality,
                             ).then((chunk: ArrayBuffer) => {
                                 if (!(this.jobID in frameDataCache)) {
                                     // check if frameDataCache still exist
@@ -578,7 +631,8 @@ Object.defineProperty(FrameData.prototype.data, 'implementation', {
                 ) => {
                     let wasResolved = false;
                     frameDataCache[this.jobID].getChunk(
-                        chunkIndex, ChunkQuality.COMPRESSED,
+                        chunkIndex,
+                        chunkQuality,
                     ).then((chunk: ArrayBuffer) => {
                         try {
                             if (!(this.jobID in frameDataCache)) {
@@ -636,16 +690,17 @@ Object.defineProperty(FrameData.prototype.data, 'implementation', {
                                         if (error instanceof RequestOutdatedError) {
                                             reject(this.number);
                                         } else {
-                                            reject(error);
+                                            reject(wrapOriginalQualityError(error));
                                         }
                                     },
                                 );
                         } catch (error) {
-                            reject(error);
+                            reject(wrapOriginalQualityError(error));
                         }
                     }).catch((error) => {
-                        reject(error);
-                        resolveLoadAndDecode(error);
+                        const wrappedError = wrapOriginalQualityError(error);
+                        reject(wrappedError);
+                        resolveLoadAndDecode();
                     });
                 });
             });
@@ -900,6 +955,7 @@ export async function getFrame(
     jobID: number,
     chunkSize: number,
     chunkType: 'video' | 'imageset',
+    originalChunkType: 'video' | 'imageset',
     mode: 'interpolation' | 'annotation', // todo: obsolete, need to remove
     frame: number,
     jobStartFrame: number,
@@ -907,23 +963,28 @@ export async function getFrame(
     step: number,
     dimension: DimensionType,
     getChunk: (chunkIndex: number, quality: ChunkQuality) => Promise<ArrayBuffer>,
+    preferOriginalQuality: boolean = false,
 ): Promise<FrameData> {
     const dataCacheExists = jobID in frameDataCache;
+    const requestedChunkQuality = preferOriginalQuality ? ChunkQuality.ORIGINAL : ChunkQuality.COMPRESSED;
+    const requestedChunkType = preferOriginalQuality ? originalChunkType : chunkType;
 
     if (!dataCacheExists) {
-        const blockType = chunkType === 'video' ? BlockType.MP4VIDEO : BlockType.ARCHIVE;
+        const blockType = getBlockType(requestedChunkType);
         const meta = await getFramesMeta('job', jobID);
-
-        const mean = meta.frames.reduce((a, b) => a + b.width * b.height, 0) / meta.frames.length;
-        const stdDev = Math.sqrt(
-            meta.frames.map((x) => (x.width * x.height - mean) ** 2).reduce((a, b) => a + b) /
-            meta.frames.length,
+        const compressedDecodedBlocksCacheSize = estimateDecodedBlocksCacheSize(
+            meta,
+            chunkSize,
+            ChunkQuality.COMPRESSED,
         );
-
-        // limit of decoded frames cache by 2GB
-        const decodedBlocksCacheSize = Math.min(
-            Math.floor((2048 * 1024 * 1024) / ((mean + stdDev) * 4 * chunkSize)) || 1, 10,
+        const originalDecodedBlocksCacheSize = estimateDecodedBlocksCacheSize(
+            meta,
+            chunkSize,
+            ChunkQuality.ORIGINAL,
         );
+        const decodedBlocksCacheSize = requestedChunkQuality === ChunkQuality.COMPRESSED ?
+            compressedDecodedBlocksCacheSize :
+            originalDecodedBlocksCacheSize;
 
         const dataFrameNumberGetter = (frameNumber: number): number => (
             meta.getDataFrameNumber(frameNumber - jobStartFrame)
@@ -946,13 +1007,19 @@ export async function getFrame(
                 dimension,
             ),
             prefetchAnalyzer: new PrefetchAnalyzer(meta, dataFrameNumberGetter),
+            compressedDecodedBlocksCacheSize,
+            originalDecodedBlocksCacheSize,
             decodedBlocksCacheSize,
             activeChunkRequest: null,
             activeContextRequest: null,
             latestFrameDecodeRequest: null,
             latestContextImagesRequest: null,
             contextCache: {},
+            compressedChunkType: chunkType,
+            originalChunkType,
+            currentChunkType: requestedChunkType,
             getChunk,
+            currentChunkQuality: requestedChunkQuality,
             getMeta: () => {
                 const cached = frameMetaCache[jobID];
                 if (!(cached instanceof Promise)) {
@@ -983,9 +1050,43 @@ export async function getFrame(
     const dataFrameNumber = framesMetaData.getDataFrameNumber(frame - jobStartFrame);
     const frameIndex = framesMetaData.getFrameIndex(dataFrameNumber);
     const frameMeta = framesMetaData.frames[frameIndex];
-    frameDataCache[jobID].provider.setRenderSize(frameMeta.width, frameMeta.height);
     frameDataCache[jobID].decodeForward = isPlaying;
     frameDataCache[jobID].forwardStep = step;
+
+    frameDataCache[jobID].compressedChunkType = chunkType;
+    frameDataCache[jobID].originalChunkType = originalChunkType;
+
+    const requestedDecodedBlocksCacheSize = requestedChunkQuality === ChunkQuality.COMPRESSED ?
+        frameDataCache[jobID].compressedDecodedBlocksCacheSize :
+        frameDataCache[jobID].originalDecodedBlocksCacheSize;
+
+    const currentChunkType = frameDataCache[jobID].currentChunkType;
+    if (
+        currentChunkType !== requestedChunkType ||
+        frameDataCache[jobID].decodedBlocksCacheSize !== requestedDecodedBlocksCacheSize
+    ) {
+        const dataFrameNumberGetter = (frameNumber: number): number => (
+            framesMetaData.getDataFrameNumber(frameNumber - frameDataCache[jobID].jobStartFrame)
+        );
+
+        frameDataCache[jobID].provider = new FrameDecoder(
+            getBlockType(requestedChunkType),
+            requestedDecodedBlocksCacheSize,
+            (frameNumber: number): number => (
+                framesMetaData.getFrameChunkIndex(dataFrameNumberGetter(frameNumber))
+            ),
+            dimension,
+        );
+        frameDataCache[jobID].activeChunkRequest = null;
+        frameDataCache[jobID].latestFrameDecodeRequest = null;
+        frameDataCache[jobID].decodedBlocksCacheSize = requestedDecodedBlocksCacheSize;
+        frameDataCache[jobID].currentChunkType = requestedChunkType;
+    } else if (frameDataCache[jobID].currentChunkQuality !== requestedChunkQuality) {
+        // Avoid reusing already-decoded chunks from the previous quality mode.
+        frameDataCache[jobID].provider.cleanup(Number.MAX_SAFE_INTEGER);
+    }
+    frameDataCache[jobID].currentChunkQuality = requestedChunkQuality;
+    frameDataCache[jobID].provider.setRenderSize(frameMeta.width, frameMeta.height);
 
     const meta = await frameDataCache[jobID].getMeta();
 
@@ -997,6 +1098,7 @@ export async function getFrame(
         frameNumber: frame,
         deleted: frame in meta.deletedFrames,
         jobID,
+        preferOriginalQuality,
     });
 }
 
