@@ -103,15 +103,15 @@ export default function ClassAnalyticsPageComponent(): JSX.Element {
     return (
         <div className='cvat-class-analytics-page'>
             <Card className='cvat-class-analytics-form-card'>
-                <Row justify='space-between' align='middle'>
-                    <Col>
+                <Row justify='space-between' align='middle' gutter={[8, 8]}>
+                    <Col xs={24} sm='auto'>
                         <Title level={4}>Class-wise image counts</Title>
                     </Col>
-                    <Col>
+                    <Col xs={24} sm='auto' className='cvat-class-analytics-status-col'>
                         <StatusTag status={status} />
                     </Col>
                 </Row>
-                <Row gutter={8} align='middle'>
+                <Row gutter={[8, 8]} align='middle'>
                     <Col>
                         <InputNumber
                             className='cvat-class-analytics-task-id-input'
@@ -125,6 +125,7 @@ export default function ClassAnalyticsPageComponent(): JSX.Element {
                     </Col>
                     <Col>
                         <Button
+                            className='cvat-class-analytics-connect-button'
                             type='primary'
                             disabled={!taskId}
                             loading={status === 'connecting'}
