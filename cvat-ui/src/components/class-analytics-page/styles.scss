@@ -1,0 +1,85 @@
+// Copyright (C) CVAT.ai Corporation
+//
+// SPDX-License-Identifier: MIT
+
+@import 'base';
+
+.cvat-class-analytics-page {
+    @include cvat-resource-page;
+    padding-left: $grid-unit-size;
+    padding-right: $grid-unit-size;
+    overflow-y: auto;
+
+    @media screen and (width >= 576px) {
+        padding-left: $grid-unit-size * 2;
+        padding-right: $grid-unit-size * 2;
+    }
+}
+
+.cvat-class-analytics-form-card {
+    margin-bottom: $grid-unit-size * 2;
+    flex-shrink: 0;
+}
+
+.cvat-class-analytics-task-id-input {
+    width: $grid-unit-size * 14;
+}
+
+.cvat-class-analytics-connect-button {
+    width: fit-content;
+}
+
+.cvat-class-analytics-status-col {
+    text-align: right;
+}
+
+.cvat-class-analytics-content {
+    flex-grow: 1;
+    position: relative;
+}
+
+.cvat-class-analytics-status-wrapper {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 100%;
+    padding: 0 $grid-unit-size * 2;
+    text-align: center;
+}
+
+.cvat-class-analytics-chart-wrapper {
+    width: 100%;
+    height: $grid-unit-size * 40;
+    display: flex;
+    flex-direction: column;
+    background: $background-color-1;
+    border: 1px solid $border-color-1;
+    border-radius: $border-radius-base;
+    padding: $grid-unit-size * 2;
+    margin: 0 auto;
+    box-sizing: border-box;
+
+    // The Bar chart (chart.js, maintainAspectRatio=false) fills whatever
+    // height its immediate parent has, so it needs an explicit flex child
+    // rather than relying on the wrapper's own (now shared with the banner) height.
+    canvas {
+        flex-grow: 1;
+        // Chart.js sizes the canvas via a resize observer on its parent; capping
+        // its own width stops it from ever forcing the wrapper (and page) wider
+        // than the viewport on narrow screens.
+        max-width: 100%;
+    }
+
+    // On anything narrower than this, half the screen isn't enough room for a
+    // readable chart, so it stays full-width until there's space to spare.
+    @media screen and (width >= 992px) {
+        width: 50%;
+        height: $grid-unit-size * 50;
+    }
+}
+
+.cvat-class-analytics-stale-banner {
+    margin-bottom: $grid-unit-size * 2;
+    flex-shrink: 0;
+}

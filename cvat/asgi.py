@@ -20,7 +20,9 @@ import cvat.utils.remote_debugger as debug
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "cvat.settings.development")
 
-application = get_asgi_application()
+# Django apps must be set up (by get_asgi_application()) before anything that
+# imports models/consumers, so the websocket routing import happens below.
+http_application = get_asgi_application()
 
 
 if debug.is_debugging_enabled():
@@ -38,4 +40,14 @@ if debug.is_debugging_enabled():
             self.__debugger.attach_current_thread()
             return await super().handle(*args, **kwargs)
 
-    application = DebuggerApp()
+    http_application = DebuggerApp()
+
+from channels.auth import AuthMiddlewareStack  # noqa: E402
+from channels.routing import ProtocolTypeRouter, URLRouter  # noqa: E402
+
+from cvat.apps.test.routing import websocket_urlpatterns  # noqa: E402
+
+application = ProtocolTypeRouter({
+    "http": http_application,
+    "websocket": AuthMiddlewareStack(URLRouter(websocket_urlpatterns)),
+})

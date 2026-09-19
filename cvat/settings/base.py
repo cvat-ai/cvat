@@ -148,7 +148,11 @@ INSTALLED_APPS = [
     "cvat.apps.consensus",
     "cvat.apps.access_tokens",
     "cvat.apps.growth",
+    "cvat.apps.test",
+    "channels",
 ]
+
+ASGI_APPLICATION = "cvat.asgi.application"
 
 AUTH_USER_MODEL = "iam.User"
 
@@ -347,6 +351,7 @@ redis_inmem_password = os.getenv("CVAT_REDIS_INMEM_PASSWORD", "")
 class REDIS_INMEM_DATABASES(IntEnum):
     RQ = 0
     CACHE = 1
+    CHANNELS = 2
 
 
 REDIS_INMEM_SETTINGS = {
@@ -647,6 +652,26 @@ CACHES = {
         "BACKEND": "django.core.cache.backends.redis.RedisCache",
         "LOCATION": f"redis://:{urllib.parse.quote(redis_ondisk_password)}@{redis_ondisk_host}:{redis_ondisk_port}",
         "TIMEOUT": CVAT_CHUNK_CACHE_TTL,
+    },
+}
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [{
+                "address": (
+                    f"redis://:{urllib.parse.quote(redis_inmem_password)}@{redis_inmem_host}:"
+                    f"{redis_inmem_port}/{REDIS_INMEM_DATABASES.CHANNELS}"
+                ),
+                # channels_redis blocks on BZPOPMIN with a 5s server-side timeout
+                # (RedisChannelLayer.brpop_timeout) while waiting for group messages.
+                # redis-py's own client-side socket timeout can otherwise fire first,
+                # abandoning a perfectly healthy read -- same class of bug CVAT's own
+                # RQ config above already works around for BLPOP.
+                "socket_timeout": None,
+            }],
+        },
     },
 }
 

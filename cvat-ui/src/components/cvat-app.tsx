@@ -61,6 +61,8 @@ import InvitationsPage from 'components/invitations-page/invitations-page';
 
 import RequestsPage from 'components/requests-page/requests-page';
 
+import ClassAnalyticsPage from 'components/class-analytics-page/class-analytics-page';
+
 import AnnotationPageContainer from 'containers/annotation-page/annotation-page';
 import { Organization, getCore, UserGrowthDataModifiableFields } from 'cvat-core-wrapper';
 import {
@@ -596,6 +598,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                                         <Route exact path='/invitations' component={InvitationsPage} />
                                         <Route exact path='/organization' component={OrganizationPage} />
                                         <Route exact path='/requests' component={RequestsPage} />
+                                        <Route exact path='/class-analytics' component={ClassAnalyticsPage} />
                                         <Route exact path='/profile' component={ProfilePageComponent} />
                                         { routesToRender }
                                         <Route

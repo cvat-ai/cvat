@@ -465,6 +465,18 @@ function HeaderComponent(props: Props): JSX.Element {
                     Requests
                 </Button>
                 <Button
+                    className={getButtonClassName('class-analytics')}
+                    type='link'
+                    value='class-analytics'
+                    href='/class-analytics'
+                    onClick={(event: React.MouseEvent): void => {
+                        event.preventDefault();
+                        history.push('/class-analytics');
+                    }}
+                >
+                    Class Analytics
+                </Button>
+                <Button
                     className={getButtonClassName('models')}
                     type='link'
                     value='models'
