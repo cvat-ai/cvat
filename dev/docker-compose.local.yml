@@ -1,0 +1,160 @@
+x-backend-dev-volumes: &backend-dev-volumes
+  - ./cvat:/home/django/cvat:delegated
+  - ./manage.py:/home/django/manage.py:delegated
+  - ./utils:/home/django/utils:delegated
+
+x-backend-local-env: &backend-local-env
+  DJANGO_LOG_SERVER_HOST: ""
+
+services:
+  cvat_server:
+    image: ${CVAT_LOCAL_SERVER_IMAGE:-cvat/server:dev-debug}
+    build:
+      context: .
+      dockerfile: dev/Dockerfile.server.debug
+      args:
+        CVAT_VERSION: "${CVAT_VERSION:-dev}"
+    environment:
+      <<: *backend-local-env
+      CVAT_DEBUG_ENABLED: "yes"
+      CVAT_DEBUG_WAIT: "${CVAT_DEBUG_WAIT_CLIENT:-no}"
+      NUMPROCS: 1
+    volumes: *backend-dev-volumes
+
+  cvat_worker_utils:
+    profiles: ["workers"]
+    image: ${CVAT_LOCAL_SERVER_IMAGE:-cvat/server:dev-debug}
+    environment:
+      <<: *backend-local-env
+      CVAT_DEBUG_ENABLED: "no"
+      NUMPROCS: 1
+    volumes: *backend-dev-volumes
+
+  cvat_worker_import:
+    profiles: ["workers"]
+    image: ${CVAT_LOCAL_SERVER_IMAGE:-cvat/server:dev-debug}
+    environment:
+      <<: *backend-local-env
+      CVAT_DEBUG_ENABLED: "yes"
+      CVAT_DEBUG_PORT: "9093"
+      NUMPROCS: 1
+    ports: !override
+      - "127.0.0.1:9093:9093"
+    volumes: *backend-dev-volumes
+
+  cvat_worker_export:
+    profiles: ["workers"]
+    image: ${CVAT_LOCAL_SERVER_IMAGE:-cvat/server:dev-debug}
+    environment:
+      <<: *backend-local-env
+      CVAT_DEBUG_ENABLED: "yes"
+      CVAT_DEBUG_PORT: "9092"
+      NUMPROCS: 1
+    ports: !override
+      - "127.0.0.1:9092:9092"
+    volumes: *backend-dev-volumes
+
+  cvat_worker_annotation:
+    profiles: ["workers"]
+    image: ${CVAT_LOCAL_SERVER_IMAGE:-cvat/server:dev-debug}
+    environment:
+      <<: *backend-local-env
+      CVAT_DEBUG_ENABLED: "yes"
+      CVAT_DEBUG_PORT: "9091"
+      NUMPROCS: 1
+    ports: !override
+      - "127.0.0.1:9091:9091"
+    volumes: *backend-dev-volumes
+
+  cvat_worker_webhooks:
+    profiles: ["workers"]
+    image: ${CVAT_LOCAL_SERVER_IMAGE:-cvat/server:dev-debug}
+    environment:
+      <<: *backend-local-env
+      CVAT_DEBUG_ENABLED: "yes"
+      CVAT_DEBUG_PORT: "9097"
+      NUMPROCS: 1
+    ports: !override
+      - "127.0.0.1:9097:9097"
+    volumes: *backend-dev-volumes
+
+  cvat_worker_quality_reports:
+    profiles: ["workers"]
+    image: ${CVAT_LOCAL_SERVER_IMAGE:-cvat/server:dev-debug}
+    environment:
+      <<: *backend-local-env
+      CVAT_DEBUG_ENABLED: "yes"
+      CVAT_DEBUG_PORT: "9094"
+      NUMPROCS: 1
+    ports: !override
+      - "127.0.0.1:9094:9094"
+    volumes: *backend-dev-volumes
+
+  cvat_worker_chunks:
+    profiles: ["workers"]
+    image: ${CVAT_LOCAL_SERVER_IMAGE:-cvat/server:dev-debug}
+    environment:
+      <<: *backend-local-env
+      CVAT_DEBUG_ENABLED: "yes"
+      CVAT_DEBUG_PORT: "9095"
+      NUMPROCS: 1
+    ports: !override
+      - "127.0.0.1:9095:9095"
+    volumes: *backend-dev-volumes
+
+  cvat_worker_consensus:
+    profiles: ["workers"]
+    image: ${CVAT_LOCAL_SERVER_IMAGE:-cvat/server:dev-debug}
+    environment:
+      <<: *backend-local-env
+      CVAT_DEBUG_ENABLED: "yes"
+      CVAT_DEBUG_PORT: "9096"
+      NUMPROCS: 1
+    ports: !override
+      - "127.0.0.1:9096:9096"
+    volumes: *backend-dev-volumes
+
+  cvat_ui_dev:
+    profiles: ["ui"]
+    image: ${CVAT_LOCAL_UI_IMAGE:-cvat/ui:dev-debug}
+    build:
+      context: .
+      dockerfile: dev/Dockerfile.local-ui
+    user: node
+    working_dir: /workspace/cvat-ui
+    command:
+      - bash
+      - -lc
+      - >
+        yarn --immutable &&
+        yarn run -T webpack serve
+        --env API_URL=http://cvat-server:8080
+        --config ./webpack.config.js
+        --mode=development
+    environment:
+      CVAT_UI_HOST: 0.0.0.0
+      CVAT_UI_PORT: "${CVAT_LOCAL_UI_PORT:-3000}"
+      HOME: /home/node
+      YARN_ENABLE_TELEMETRY: "0"
+      YARN_GLOBAL_FOLDER: /yarn-cache
+      YARN_INSTALL_STATE_PATH: /workspace/node_modules/.yarn-install-state.gz
+    ports:
+      - "127.0.0.1:${CVAT_LOCAL_UI_PORT:-3000}:${CVAT_LOCAL_UI_PORT:-3000}"
+    volumes:
+      - .:/workspace:delegated
+      - cvat_node_modules:/workspace/node_modules
+      - cvat_yarn_cache:/yarn-cache
+    networks:
+      - cvat
+    depends_on:
+      - cvat_server
+
+  cvat_vector:
+    profiles: ["analytics"]
+
+  cvat_grafana:
+    profiles: ["analytics"]
+
+volumes:
+  cvat_node_modules:
+  cvat_yarn_cache:
