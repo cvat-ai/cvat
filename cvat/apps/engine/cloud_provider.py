@@ -365,6 +365,11 @@ class CloudStorageClient(ABC):
             for f in content:
                 f["name"] = f["name"][last_slash + 1 :]
 
+        # Some providers can return a directory marker for the directory being listed
+        # (for example, "/" at the storage root). After removing the path components,
+        # such an entry has an empty name and cannot be represented by the API.
+        content = [item for item in content if item["name"]]
+
         if _use_sort:
             content = sorted(content, key=lambda x: x["type"])
 
