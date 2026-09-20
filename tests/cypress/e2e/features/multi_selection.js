@@ -933,8 +933,7 @@ context('Multi-object selection', { scrollBehavior: false }, () => {
         cy.get('.cvat_canvas_selected_objects_box').rightclick({ force: true });
         cy.get('.cvat-canvas-selected-objects-menu-content').should('be.visible');
 
-        cy.get('.cvat-canvas-container').click(700, 600, { force: true });
-        assertSelection([]);
+        clearSelection();
         cy.get('.cvat-canvas-selected-objects-menu-content').should('not.exist');
 
         cy.get(`#cvat_canvas_shape_${objectIds.carShape1}`).click({ ...platformModifier, force: true });
