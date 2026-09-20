@@ -182,7 +182,9 @@ class SelectiveThrottleMixin:
 
         is_get = self.request.method == "GET"
         is_annotations_request = is_get and self.action == "annotations"
-        is_frame_download = is_get and self.action == "data" and self.request.query_params.get("type") == "frame"
+        is_frame_download = (
+            is_get and self.action == "data" and self.request.query_params.get("type") == "frame"
+        )
 
         if is_annotations_request:
             throttle_scope = self.annotations_get_throttle_scope
