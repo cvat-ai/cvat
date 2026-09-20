@@ -740,6 +740,9 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 requestedStatesID,
                 hiddenZLayers,
             );
+            const closeSelectionContextMenu = !selectedStatesID.length &&
+                state.canvas.contextMenu.type === ContextMenuType.CANVAS_SELECTION &&
+                state.canvas.contextMenu.visible;
             return {
                 ...state,
                 annotations: {
@@ -752,6 +755,15 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     } : {}),
                     ...(history ? { history } : {}),
                 },
+                ...(closeSelectionContextMenu ? {
+                    canvas: {
+                        ...state.canvas,
+                        contextMenu: {
+                            ...state.canvas.contextMenu,
+                            visible: false,
+                        },
+                    },
+                } : {}),
             };
         }
         case AnnotationActionTypes.REMOVE_OBJECT: {

@@ -928,6 +928,20 @@ context('Multi-object selection', { scrollBehavior: false }, () => {
         });
     });
 
+    it('Does not reopen selection actions after clearing and starting a new selection', () => {
+        selectFromSidebar([objectIds.carShape1, objectIds.carShape2]);
+        cy.get('.cvat_canvas_selected_objects_box').rightclick({ force: true });
+        cy.get('.cvat-canvas-selected-objects-menu-content').should('be.visible');
+
+        cy.get('.cvat-canvas-container').click(700, 600, { force: true });
+        assertSelection([]);
+        cy.get('.cvat-canvas-selected-objects-menu-content').should('not.exist');
+
+        cy.get(`#cvat_canvas_shape_${objectIds.carShape1}`).click({ ...platformModifier, force: true });
+        assertSelection([objectIds.carShape1]);
+        cy.get('.cvat-canvas-selected-objects-menu-content').should('not.exist');
+    });
+
     it('Closes an object menu before opening selection actions', () => {
         cy.get(sidebarItem(objectIds.carShape1)).within(() => {
             cy.get('[aria-label="more"]').click();
