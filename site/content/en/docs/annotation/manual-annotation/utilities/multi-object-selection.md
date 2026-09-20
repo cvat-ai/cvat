@@ -39,11 +39,13 @@ To select objects with a selection box, do the following:
 Only objects fully contained by the selection box are selected.
 For rotated objects, CVAT uses the transformed object boundaries.
 The **Select objects** tool remains active, so you can draw another selection box without selecting the tool again.
+Each new selection box starts a new selection and replaces the previous one.
 
 You can also hold **Shift** and start dragging from an empty canvas area while using the **Cursor** tool.
 This activates **Select objects** and starts the selection box from the initial pointer position.
 If the box selects at least one object, **Select objects** remains active after you release the mouse button.
 If the box selects no objects, CVAT returns to the **Cursor** tool.
+A Shift-drag also replaces objects previously selected with **Ctrl/Command+Click**.
 
 ### Selecting individual objects
 
@@ -119,6 +121,8 @@ The card contains the label selector, frequently used actions represented by ico
 and a **More selection actions** (⋯) menu for additional operations.
 It also displays the number of selected objects and a compact type summary.
 Hover over the summary to see the number of objects of each type.
+
+![Selection action card and additional actions menu](/images/multi-object-selection-actions-overview.png)
 
 Unavailable actions are disabled when they cannot be applied safely to the selection.
 Hover over a disabled action to see why it is unavailable.
@@ -219,13 +223,22 @@ The new objects preserve their relative geometry, labels, attributes, object typ
 Lock, visibility, pin, and instance color use the same defaults as single-object copies.
 Pasted objects become the active selection.
 
+A copied selection can contain different geometry types, including rectangles, ellipses, polygons,
+polylines, and Points objects, as well as shapes and tracks. When objects are placed near a frame boundary,
+CVAT constrains or crops their geometry according to the object type.
+
+Press **Esc** during interactive placement to cancel the paste without creating objects.
+Canceling the paste also clears the active selection.
+
 ![Copying and pasting multiple selected objects](/images/multi-object-selection-copy-paste.gif)
 
 ## Undo, redo, and frame navigation
 
 Selection membership changes and supported batch operations are recorded in annotation history.
 Undo and redo restore selection changes, movement, deletion, paste, label and attribute changes,
-lock and pin changes, grouping, and layer changes.
+lock, pin, occluded, and visibility changes, grouping, and layer changes.
+When hiding selected objects, Undo restores both their visibility and selection membership.
+This also applies to skeleton objects and their elements.
 
 On Windows and Linux, use **Ctrl+Z** to undo and **Ctrl+Shift+Z** or **Ctrl+Y** to redo.
 On macOS, use **Command+Z** to undo and **Command+Shift+Z** to redo.
