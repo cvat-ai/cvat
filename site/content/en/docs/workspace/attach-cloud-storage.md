@@ -564,6 +564,11 @@ After filling in all the fields, select **Submit**.
 
 ## Prepare the dataset
 
+{{% alert title="Object key requirements" color="primary" %}}
+CVAT interprets object keys as canonical relative POSIX paths and uses `/` as the path separator.
+Keys that start with `/` or contain empty path components (`//`) cannot be represented correctly.
+{{% /alert %}}
+
 For example, the dataset is [The Oxford-IIIT Pet Dataset](https://www.robots.ox.ac.uk/~vgg/data/pets/):
 
 1. Download the [archive with images](https://www.robots.ox.ac.uk/~vgg/data/pets/data/images.tar.gz).
