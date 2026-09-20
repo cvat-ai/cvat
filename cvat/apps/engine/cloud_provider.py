@@ -357,6 +357,7 @@ class CloudStorageClient(ABC):
 
         if not _use_flat_listing:
             result["directories"] = [d.strip("/") for d in result["directories"]]
+
         content = [{"name": f, "type": "REG"} for f in result["files"]]
         content.extend([{"name": d, "type": "DIR"} for d in result["directories"]])
 
@@ -365,9 +366,9 @@ class CloudStorageClient(ABC):
             for f in content:
                 f["name"] = f["name"][last_slash + 1 :]
 
-        # Some providers can return a directory marker for the directory being listed
-        # (for example, "/" at the storage root). After removing the path components,
-        # such an entry has an empty name and cannot be represented by the API.
+        # Hierarchical common prefixes can become nameless after relativization:
+        # key="/file", prefix="" -> common prefix="/" -> name=""
+        # key="dir//file", prefix="dir/" -> common prefix="dir//" -> name=""
         content = [item for item in content if item["name"]]
 
         if _use_sort:
