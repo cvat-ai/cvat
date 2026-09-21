@@ -286,6 +286,15 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
                 },
             };
         }
+        case SettingsActionTypes.CHANGE_SATURATION_LEVEL: {
+            return {
+                ...state,
+                player: {
+                    ...state.player,
+                    saturationLevel: action.payload.level,
+                },
+            };
+        }
         case SettingsActionTypes.CHANGE_RELATED_OVERLAY_ENABLED: {
             return {
                 ...state,
@@ -310,15 +319,6 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
                 player: {
                     ...state.player,
                     relatedOverlayIndex: action.payload.index,
-                },
-            };
-        }
-        case SettingsActionTypes.CHANGE_SATURATION_LEVEL: {
-            return {
-                ...state,
-                player: {
-                    ...state.player,
-                    saturationLevel: action.payload.level,
                 },
             };
         }

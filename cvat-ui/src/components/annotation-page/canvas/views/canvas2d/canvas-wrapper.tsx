@@ -1043,7 +1043,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         const {
             hiddenZLayers, annotations, frameData, jobInstance,
             workspace, frame, imageFilters, renderData,
-            relatedOverlayEnabled, relatedOverlayOpacity, relatedOverlayIndex,
+            relatedOverlayEnabled, relatedOverlayIndex,
         } = this.props;
 
         const { canvasInstance } = this.props as { canvasInstance: Canvas };
@@ -1094,18 +1094,32 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
                                 try {
                                     const relatedImages: Record<string, ImageBitmap> =
                                         await jobInstance.frames.contextImage(frame);
-                                    const relatedKeys = Object.keys(relatedImages).sort();
-                                    const selectedOverlayKey = relatedKeys[relatedOverlayIndex] ?? relatedKeys[0];
-                                    const overlayBitmap = relatedImages[selectedOverlayKey];
 
-                                    if (overlayBitmap) {
-                                        const { renderWidth, renderHeight, imageData: baseBitmap } = result;
-                                        const offscreen = new OffscreenCanvas(renderWidth, renderHeight);
-                                        const ctx = offscreen.getContext('2d') as OffscreenCanvasRenderingContext2D;
-                                        ctx.drawImage(baseBitmap, 0, 0, renderWidth, renderHeight);
-                                        ctx.globalAlpha = relatedOverlayOpacity;
-                                        ctx.drawImage(overlayBitmap, 0, 0, renderWidth, renderHeight);
-                                        ctx.globalAlpha = 1;
+                                    const relatedKeys = Object.keys(relatedImages).sort();
+                                    const selectedRelatedKey =
+                                        relatedKeys[relatedOverlayIndex] ?? relatedKeys[0];
+                                    const relatedBitmap = relatedImages[selectedRelatedKey];
+
+                                    if (relatedBitmap) {
+                                        const { renderWidth, renderHeight } = result;
+
+                                        const offscreen = new OffscreenCanvas(
+                                            renderWidth,
+                                            renderHeight,
+                                        );
+
+                                        const ctx = offscreen.getContext(
+                                            '2d',
+                                        ) as OffscreenCanvasRenderingContext2D;
+
+                                        ctx.drawImage(
+                                            relatedBitmap,
+                                            0,
+                                            0,
+                                            renderWidth,
+                                            renderHeight,
+                                        );
+
                                         result = {
                                             renderWidth,
                                             renderHeight,
@@ -1115,7 +1129,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
                                 } catch (error: any) {
                                     notification.error({
                                         description: error.toString(),
-                                        message: 'Could not overlay related image',
+                                        message: 'Could not display related image',
                                         className: 'cvat-notification-notice-image-processing-error',
                                     });
                                 }
