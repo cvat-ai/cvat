@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+from django.conf import settings
 from rest_framework.exceptions import ValidationError
 from rest_framework.pagination import PageNumberPagination
 
@@ -11,17 +12,24 @@ from cvat.apps.engine.types import ExtendedRequest
 class CustomPagination(PageNumberPagination):
     page_size_query_param = "page_size"
     page_size_query_description = "Number of results to return per page."
-    max_page_size = 500
+    max_page_size = settings.REST_FRAMEWORK_MAX_PAGE_SIZE
+
+    def _raise_validation_error(self, value: str) -> None:
+        raise ValidationError(
+            {self.page_size_query_param: f"Expected a positive integer, got '{value}'"}
+        )
 
     def get_page_size(self, request: ExtendedRequest) -> int:
-        if request.query_params.get(self.page_size_query_param) == "all":
-            raise ValidationError(
-                {
-                    self.page_size_query_param: (
-                        "The 'all' value is no longer supported. "
-                        f"Use an integer up to {self.max_page_size} and follow the 'next' link."
-                    )
-                }
-            )
+        value = request.query_params.get(self.page_size_query_param)
+        if value is None:
+            return self.page_size
 
-        return super().get_page_size(request)
+        try:
+            page_size = int(value)
+        except ValueError:
+            self._raise_validation_error(value)
+
+        if page_size <= 0:
+            self._raise_validation_error(value)
+
+        return min(page_size, self.max_page_size)
