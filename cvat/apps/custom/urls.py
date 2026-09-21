@@ -16,6 +16,7 @@ from . import views_s3_videos
 from . import views_train_groups
 from . import views_taxonomy
 from . import views_user_admin
+from . import views_vision
 
 # Create a router for our extended task endpoints
 router = DefaultRouter(trailing_slash=False)
@@ -55,6 +56,10 @@ urlpatterns = [
          name='task-train-metadata'),
     path('tasks/<int:pk>/verdict/', views_task_extension.TaskVerdictUpdateAPIView.as_view(),
          name='task-verdict-update'),
+
+    # Orochi Vision findings (chapters) per task
+    path('tasks/<int:pk>/chapters/', views_vision.TaskChaptersView.as_view(),
+         name='task-chapters'),
 
     # Analytics and reporting endpoints
     path('tasks-paginated/', views_analytics.TasksPaginatedView.as_view(),

@@ -334,3 +334,22 @@ All core functionality is complete and ready for use:
 - ✅ Test scripts provided
 
 **Ready for production use!** 🚀
+
+
+---
+
+## 🚆 Vision chapters (`/api/custom/tasks/{id}/chapters/`)
+
+Orochi Vision's findings for the clip behind a task, pushed by Orochi On-Prem right after
+it creates the task (same session auth as `train-metadata`). Everything in the document is
+in the clock of the video CVAT references — the trimmed clip when stops were cut out.
+
+| Method | Path | Body / Result |
+|---|---|---|
+| `POST` / `PUT` | `/api/custom/tasks/{id}/chapters/` | Body: the chapters document (`schema_version: 1`, see `cvat/apps/custom/vision.py`). Replaces any previous one. `201` created / `200` replaced / `400` with `details[]`. |
+| `GET` | `/api/custom/tasks/{id}/chapters/` | `{task_id, summary, chapters}`; `404` until On-Prem has pushed. |
+
+`summary` (`car_count`, `needs_review`, `truncated_start/end`, `trimmed`, `trim_ratio`,
+`video_duration_s`, `analysed_camera`, `outcome`, `pipeline_image`, `updated_date`) is also
+embedded as `vision` in every row of `tasks-paginated/` and in `task-analysis/`
+(`null` when nothing was pushed), so lists never need a second request.

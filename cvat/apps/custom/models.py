@@ -401,3 +401,53 @@ class UserAdminAuditLog(models.Model):
 
     def __str__(self):
         return f"{self.action} {self.target_username}"
+class TaskVisionAnalysis(models.Model):
+    """Orochi Vision's findings for the clip behind a task, pushed by On-Prem after
+    it uploads the session (see vision.py for the document).
+
+    `chapters` is the UI-facing document; the scalar columns are copied out of it
+    on every write so lists and filters never open the JSON. One row per task,
+    replaced wholesale on each push -- Vision's output is a fact about the clip,
+    not something annotators edit.
+    """
+
+    task = models.OneToOneField(
+        Task, on_delete=models.CASCADE, related_name="vision_analysis",
+        help_text="Associated CVAT task",
+    )
+    chapters = models.JSONField(help_text="Chapters document, schema_version 1")
+    car_count = models.PositiveIntegerField(null=True, blank=True)
+    needs_review = models.BooleanField(default=False, db_index=True)
+    truncated_start = models.BooleanField(null=True, blank=True)
+    truncated_end = models.BooleanField(null=True, blank=True)
+    trimmed = models.BooleanField(default=False)
+    trim_ratio = models.FloatField(null=True, blank=True)
+    video_duration_s = models.FloatField(null=True, blank=True)
+    analysed_camera = models.CharField(max_length=16, blank=True, default="")
+    outcome = models.CharField(max_length=40, blank=True, default="")
+    pipeline_image = models.CharField(max_length=120, null=True, blank=True)
+    created_date = models.DateTimeField(auto_now_add=True)
+    updated_date = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Task Vision Analysis"
+        verbose_name_plural = "Task Vision Analyses"
+        db_table = "custom_task_vision_analysis"
+
+    def __str__(self):
+        return f"Vision for task {self.task_id}: {self.car_count} cars"
+
+    SUMMARY_FIELDS = ("car_count", "needs_review", "truncated_start", "truncated_end",
+                      "trimmed", "trim_ratio", "video_duration_s", "analysed_camera",
+                      "outcome", "pipeline_image")
+
+    @classmethod
+    def upsert_from_chapters(cls, task, doc: dict):
+        from .vision import summarize
+        return cls.objects.update_or_create(
+            task=task, defaults={"chapters": doc, **summarize(doc)})
+
+    def summary(self) -> dict:
+        out = {f: getattr(self, f) for f in self.SUMMARY_FIELDS}
+        out["updated_date"] = self.updated_date.isoformat() if self.updated_date else None
+        return out

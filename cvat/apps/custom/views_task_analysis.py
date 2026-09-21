@@ -139,6 +139,7 @@ class TaskAnalysisView(APIView):
         ).only("group").first()
         group = mapping.group if mapping else None
 
+        vision = getattr(task, "vision_analysis", None)
         basic_info = {
             "group": group,
             "id": task.id,
@@ -182,7 +183,9 @@ class TaskAnalysisView(APIView):
                 "created_date": train_metadata.created_date.isoformat(),
                 "updated_date": train_metadata.updated_date.isoformat(),
                 "is_new": created  # Indicates if metadata was just created
-            }
+            },
+            # Orochi Vision summary; the full document is at tasks/{id}/chapters/
+            "vision": vision.summary() if vision else None,
         }
 
         return basic_info

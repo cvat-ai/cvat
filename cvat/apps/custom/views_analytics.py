@@ -91,7 +91,7 @@ class TasksPaginatedView(APIView):
             queryset = Task.objects.select_related(
                 'project', 'owner', 'assignee', 'data'
             ).prefetch_related(
-                'train_metadata'
+                'train_metadata', 'vision_analysis'
             ).order_by('-id')
             queryset = annotate_train_group(queryset)
             queryset = filter_by_group(queryset, request.query_params.get("group"))
@@ -212,6 +212,7 @@ class TasksPaginatedView(APIView):
                 for task in page:
                     # Get or create train metadata
                     train_metadata, created = TaskTrainMetadata.get_or_create_for_task(task)
+                    vision = getattr(task, "vision_analysis", None)
 
                     # Calculate annotation statistics
                     annotation_stats = self._get_annotation_stats(task)
@@ -225,6 +226,9 @@ class TasksPaginatedView(APIView):
                         "assignee": task.assignee.username if task.assignee else None,
                         "status": task.status,
                         "group": getattr(task, "train_group", None),
+
+                        # Orochi Vision summary (None until On-Prem pushes chapters)
+                        "vision": vision.summary() if vision else None,
 
                         # Train metadata
                         "train_metadata": {
