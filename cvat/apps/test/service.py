@@ -78,7 +78,7 @@ def _resolve_job_ids(
         labels = list(
             Label.objects.filter(
                 Q(task_id=task_id) |
-                Q(project__tasks__id=task_id)
+                Q(project__task__id=task_id)
             ).select_related("task", "project").distinct().order_by("id")
         )
     else:  # job_id

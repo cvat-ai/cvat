@@ -22,7 +22,7 @@ import './styles.scss';
 import React, {
     useCallback, useEffect, useMemo, useRef, useState,
 } from 'react';
-import { useSelector } from 'react-redux';
+
 import Alert from 'antd/lib/alert';
 import Badge from 'antd/lib/badge';
 import Card from 'antd/lib/card';
@@ -39,7 +39,6 @@ import notification from 'antd/lib/notification';
 import { WifiOutlined, DisconnectOutlined, SyncOutlined } from '@ant-design/icons';
 
 import { getCore } from 'cvat-core-wrapper';
-import { CombinedState } from 'reducers';
 
 import ClassCountsChart from './class-counts-chart';
 import {
@@ -117,8 +116,6 @@ function ClassCountsTable({ counts }: { counts: ClassCountItem[] }): JSX.Element
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export default function ClassCountsAnalyticsPage(): JSX.Element {
-    const user = useSelector((state: CombinedState) => state.auth.user);
-
     const [scopeType, setScopeType] = useState<ScopeType>('task');
     const [scopeId, setScopeId] = useState<number | null>(null);
     const [options, setOptions] = useState<ScopeOption[]>([]);
@@ -145,17 +142,23 @@ export default function ClassCountsAnalyticsPage(): JSX.Element {
 
         const load = async (): Promise<void> => {
             try {
+                let items: { value: number, label: string }[] = [];
                 if (scopeType === 'task') {
-                    const tasks = await core.tasks.get({ page_size: 50 });
-                    setOptions(tasks.map((t: any) => ({ value: t.id, label: `#${t.id} — ${t.name}` })));
+                    const tasks = await core.tasks.get({ page: 1 });
+                    items = Array.from(tasks).map((t: any) => ({ value: t.id, label: `#${t.id} — ${t.name}` }));
                 } else if (scopeType === 'project') {
-                    const projects = await core.projects.get({ page_size: 50 });
-                    setOptions(projects.map((p: any) => ({ value: p.id, label: `#${p.id} — ${p.name}` })));
+                    const projects = await core.projects.get({ page: 1 });
+                    items = Array.from(projects).map((p: any) => ({ value: p.id, label: `#${p.id} — ${p.name}` }));
                 } else {
-                    const jobs = await core.jobs.get({ page_size: 50 });
-                    setOptions(jobs.map((j: any) => ({ value: j.id, label: `Job #${j.id}` })));
+                    const jobs = await core.jobs.get({ page: 1 });
+                    items = Array.from(jobs).map((j: any) => ({ value: j.id, label: `Job #${j.id}` }));
                 }
-            } catch {
+                setOptions(items);
+                if (items.length > 0) {
+                    setScopeId(items[0].value);
+                }
+            } catch (err: any) {
+                console.error('Error fetching scope options:', err);
                 setOptions([]);
             } finally {
                 setOptionsLoading(false);
@@ -275,8 +278,7 @@ export default function ClassCountsAnalyticsPage(): JSX.Element {
                                 options={options}
                                 style={{ width: 320 }}
                                 showSearch
-                                filterOption={(input, option) =>
-                                    (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+                                filterOption={(input, option) => (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
                                 }
                             />
                         </Space>
@@ -302,7 +304,9 @@ export default function ClassCountsAnalyticsPage(): JSX.Element {
                         </div>
                     ) : (
                         <Card className='cvat-class-counts-chart-card'>
-                            {restLoading && <SyncOutlined spin style={{ position: 'absolute', top: 16, right: 16, color: '#1677ff' }} />}
+                            {restLoading && <SyncOutlined spin style={{
+                                position: 'absolute', top: 16, right: 16, color: '#1677ff',
+                            }} />}
                             <Tabs
                                 defaultActiveKey='chart'
                                 items={[

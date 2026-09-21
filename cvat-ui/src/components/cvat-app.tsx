@@ -598,7 +598,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                                         <Route exact path='/organization' component={OrganizationPage} />
                                         <Route exact path='/requests' component={RequestsPage} />
                                         <Route exact path='/profile' component={ProfilePageComponent} />
-                                        <Route exact path='/analytics/class-counts' component={ClassCountsAnalyticsPage} />
+                                        <Route exact path='/class-counts' component={ClassCountsAnalyticsPage} />
                                         { routesToRender }
                                         <Route
                                             path='/models'

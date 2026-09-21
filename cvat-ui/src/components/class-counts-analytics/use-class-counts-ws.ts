@@ -68,7 +68,7 @@ function scopeToQuery(scope: ScopeParam): string {
 
 function getWsUrl(scope: ScopeParam, token: string | null): string {
     const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const host = window.location.host;
+    const { host } = window.location;
     const query = scopeToQuery(scope);
     const tokenPart = token ? `&token=${encodeURIComponent(token)}` : '';
     return `${proto}//${host}/ws/test/class-counts?${query}${tokenPart}`;
@@ -103,9 +103,9 @@ export function useClassCountsWS({
         if (!scope || !mountedRef.current) return;
 
         const url = getWsUrl(scope, token);
-        setStatus((prev) => (prev === ConnectionStatus.CONNECTED
-            ? ConnectionStatus.RECONNECTING
-            : ConnectionStatus.CONNECTING));
+        setStatus((prev) => (prev === ConnectionStatus.CONNECTED ?
+            ConnectionStatus.RECONNECTING :
+            ConnectionStatus.CONNECTING));
 
         const ws = new WebSocket(url);
         wsRef.current = ws;
@@ -189,7 +189,7 @@ export function useClassCountsWS({
                 wsRef.current = null;
             }
         };
-    }, [scope, token]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [scope, token]);
 
     return status;
 }

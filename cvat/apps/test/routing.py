@@ -15,7 +15,7 @@ from .consumers import websocket_consumer
 
 # Route table: list of (path_regex, asgi_app) tuples
 _ROUTES = [
-    (re.compile(r"^/ws/test/class-counts$"), websocket_consumer),
+    (re.compile(r"^/ws/test/class-counts/?$"), websocket_consumer),
 ]
 
 

@@ -494,10 +494,10 @@ function HeaderComponent(props: Props): JSX.Element {
                     className={getButtonClassName('class-counts')}
                     type='link'
                     value='class-counts'
-                    href='/analytics/class-counts'
-                    onClick={(event: React.MouseEvent): void => {
-                        event.preventDefault();
-                        history.push('/analytics/class-counts');
+                    href='/class-counts'
+                    onClick={(e: React.MouseEvent) => {
+                        e.preventDefault();
+                        history.push('/class-counts');
                     }}
                 >
                     Class Analytics
