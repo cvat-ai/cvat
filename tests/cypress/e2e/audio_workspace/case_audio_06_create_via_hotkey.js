@@ -29,7 +29,7 @@ context('Audio annotation. Create region via hotkey.', () => {
             cy.get('.cvat-audio-region-item').first().should('have.class', 'cvat-audio-region-item-active');
         });
 
-        it('Keeps the Draw default when relabeling an active interval by shortcut', () => {
+        it('Keeps as the default label selected by shortcut', () => {
             cy.audioCreateRegionViaHotkey(80, 220);
             cy.get('.cvat-audio-region-item').should('have.length', 1)
                 .and('contain.text', firstLabelName);
