@@ -72,6 +72,12 @@ export function useWaveformPlayback(runtime: WaveSurferRuntime): WaveformPlaybac
         const instance = runtime.instanceRef.current;
         if (!instance || !instance.isPlaying()) return;
 
+        // WaveSurfer's WebAudio backend retains every stopAt callback on the current
+        // AudioBufferSourceNode. Restarting it clears callbacks from the previous
+        // range before scheduling the new endpoint, otherwise it snaps to the old range's end time.
+        // Should be a no-op otherwise.
+        instance.setTime(instance.getCurrentTime());
+
         instance.play(undefined, range.end).catch(() => {});
     }, []);
     const syncPlaybackRangeAfterSeek = useCallback((time: number): void => {
