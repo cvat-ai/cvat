@@ -23,7 +23,7 @@ from http import HTTPStatus
 from pathlib import Path
 from typing import Any
 
-from config import ASSETS_DIR, get_method, get_paginated_results
+from config import ASSETS_DIR, get_method, get_paginated_collection
 from dateutil.parser import ParserError, parse
 
 
@@ -83,7 +83,7 @@ def main():
         if asset_name in ("annotations", "access_tokens"):
             continue  # this will be handled at the end
 
-        results = get_paginated_results("admin1", endpoint)
+        results = get_paginated_collection("admin1", endpoint)
 
         with open(dump_path, "w") as f:
             json.dump(clean_list_response({"results": results}), f, indent=2, sort_keys=True)
@@ -101,11 +101,9 @@ def main():
         if endpoint == "users":
             obj_type = endpoint.removesuffix("s")
             for user in results:
-                response = get_method(
-                    user["username"], "auth/access_tokens", page_size=100, sort="id"
+                access_tokens[obj_type][user["username"]] = get_paginated_collection(
+                    user["username"], "auth/access_tokens"
                 )
-                if response.status_code == HTTPStatus.OK:
-                    access_tokens[obj_type][user["username"]] = response.json()["results"]
 
     for filename, data in [
         ("annotations.json", annotations),

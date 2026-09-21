@@ -46,9 +46,7 @@ class TestGetResources:
                 assert set(objects) == {"user"}
 
                 for username, tokens in objects["user"].items():
-                    response = config.get_method(
-                        username, "auth/access_tokens", page_size=100, sort="id"
-                    ).json()["results"]
+                    response = config.get_paginated_collection(username, "auth/access_tokens")
                     assert (
                         DeepDiff(
                             tokens,
@@ -62,7 +60,7 @@ class TestGetResources:
                 if endpoint == "quality/reports":
                     request_params["include_legacy"] = "true"
 
-                resp_results = config.get_paginated_results("admin1", endpoint, **request_params)
+                resp_results = config.get_paginated_collection("admin1", endpoint, **request_params)
                 json_objs = json.load(f)
 
                 if endpoint == "quality/settings":
