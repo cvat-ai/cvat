@@ -97,7 +97,7 @@ context('Audio annotation. Interval playback behavior.', () => {
     };
 
     describe(`Testing case "${caseId}"`, () => {
-        it.skip('Plays an interval once from a sidebar double-click', () => {
+        it('Plays an interval once from a sidebar double-click', () => {
             createShortInterval();
             cy.get('.cvat-audio-region-item').first()
                 .find('.cvat-audio-interval-header-index').dblclick();
@@ -107,7 +107,7 @@ context('Audio annotation. Interval playback behavior.', () => {
             expectCursorAtIntervalEnd();
         });
 
-        it.skip('Plays an interval once from a canvas double-click', () => {
+        it('Plays an interval once from a canvas double-click', () => {
             createShortInterval();
             cy.doubleClickRegionOnWaveform(106);
 
@@ -156,7 +156,7 @@ context('Audio annotation. Interval playback behavior.', () => {
             });
         });
 
-        it.skip('Preserves play-once bounds across pause and resume', () => {
+        it('Preserves play-once bounds across pause and resume', () => {
             createShortInterval();
             cy.get('.cvat-audio-region-item').first()
                 .find('.cvat-audio-interval-header-index').dblclick();
@@ -168,7 +168,7 @@ context('Audio annotation. Interval playback behavior.', () => {
             expectCursorAtIntervalEnd();
         });
 
-        it.skip('Loops a playing interval range', () => {
+        it('Loops a playing interval range', () => {
             createShortInterval();
 
             cy.get('.cvat-audio-loop-control').click();
@@ -182,7 +182,7 @@ context('Audio annotation. Interval playback behavior.', () => {
             cy.get('.cvat-player-pause-button').click();
         });
 
-        it.skip('Continues playback past the old end when the active interval is extended', () => {
+        it('Continues playback past the old end when the active interval is extended', () => {
             cy.audioCreateRegionViaButton(firstLabelName, 100, 130);
             getIntervalBounds().then(({ right: previousEnd }) => {
                 cy.get('.cvat-audio-region-item').first().dblclick();
@@ -210,7 +210,7 @@ context('Audio annotation. Interval playback behavior.', () => {
             });
         });
 
-        it.skip('Stops and clears playback when the active interval is shrunk behind the playhead', () => {
+        it('Stops and clears playback when the active interval is shrunk behind the playhead', () => {
             cy.audioCreateRegionViaButton(firstLabelName, 100, 180);
             getIntervalBounds().then(({ left }) => {
                 cy.get('.cvat-audio-region-item').first().dblclick();
@@ -235,7 +235,7 @@ context('Audio annotation. Interval playback behavior.', () => {
             });
         });
 
-        it.skip('Stops interval playback when its source interval is deleted', () => {
+        it('Stops interval playback when its source interval is deleted', () => {
             cy.audioCreateRegionViaButton(firstLabelName, 100, 180);
             cy.get('.cvat-audio-region-item').first().dblclick();
             cy.get('.cvat-player-pause-button').should('exist');
@@ -245,7 +245,7 @@ context('Audio annotation. Interval playback behavior.', () => {
             cy.get('.cvat-player-play-button', { timeout: 8000 }).should('exist');
         });
 
-        it.skip('Preserves an interval range when seeking within it by waveform', () => {
+        it('Preserves an interval range when seeking within it by waveform', () => {
             cy.audioCreateRegionViaButton(firstLabelName, 100, 180);
             cy.get('.cvat-audio-region-item').first().dblclick();
             cy.get('.cvat-player-pause-button').should('exist');
@@ -258,7 +258,7 @@ context('Audio annotation. Interval playback behavior.', () => {
             expectCursorAtIntervalEnd();
         });
 
-        it.skip('Preserves an interval range when seeking within it by minimap', () => {
+        it('Preserves an interval range when seeking within it by minimap', () => {
             cy.audioCreateRegionViaButton(firstLabelName, 100, 180);
             cy.get('.cvat-audio-region-item').first().dblclick();
             cy.get('.cvat-player-pause-button').should('exist');
@@ -276,7 +276,7 @@ context('Audio annotation. Interval playback behavior.', () => {
             expectCursorAtIntervalEnd();
         });
 
-        it.skip('Cancels an interval range when seeking outside it by waveform', () => {
+        it('Cancels an interval range when seeking outside it by waveform', () => {
             cy.audioCreateRegionViaButton(firstLabelName, 100, 130);
             cy.get('.cvat-audio-region-item').first().dblclick();
             cy.get('.cvat-player-pause-button').should('exist');
@@ -288,7 +288,7 @@ context('Audio annotation. Interval playback behavior.', () => {
             cy.get('.cvat-player-play-button', { timeout: 8000 }).should('exist');
         });
 
-        it.skip('Cancels an interval range when seeking outside it by minimap', () => {
+        it('Cancels an interval range when seeking outside it by minimap', () => {
             cy.audioCreateRegionViaButton(firstLabelName, 100, 130);
             cy.get('.cvat-audio-region-item').first().dblclick();
             cy.get('.cvat-player-pause-button').should('exist');
