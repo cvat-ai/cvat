@@ -89,6 +89,7 @@ import BulkProgress from './bulk-progress';
 import ProfilePageComponent from './profile-page/profile-page';
 import ServerUnavailableComponent from './server-unavailable/server-unavailable';
 import GitHubStarModal from './github-star-prompt/github-star-modal';
+import { ClassCountsAnalyticsPage } from './class-counts-analytics';
 
 interface CVATAppProps {
     loadFormats: () => void;
@@ -597,6 +598,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                                         <Route exact path='/organization' component={OrganizationPage} />
                                         <Route exact path='/requests' component={RequestsPage} />
                                         <Route exact path='/profile' component={ProfilePageComponent} />
+                                        <Route exact path='/analytics/class-counts' component={ClassCountsAnalyticsPage} />
                                         { routesToRender }
                                         <Route
                                             path='/models'
