@@ -29,16 +29,21 @@ export type ActionParameters = Record<string, {
 }>;
 
 export interface ActionMetadata {
+    isVisible?: boolean;
     descriptions?: {
         type: 'info' | 'warning';
         message: string;
     }[];
 }
 
+// Stores metadata used to configure action behavior at runtime.
 const actionMetadata = new WeakMap<object, ActionMetadata>();
 
 export function setActionMetadata(key: object, metadata: ActionMetadata): void {
-    actionMetadata.set(key, structuredClone(metadata));
+    actionMetadata.set(key, structuredClone({
+        ...actionMetadata.get(key),
+        ...metadata,
+    }));
 }
 
 export abstract class BaseAction {
@@ -55,9 +60,12 @@ export abstract class BaseAction {
         return this;
     }
 
+    public get metadata(): ActionMetadata {
+        return structuredClone(actionMetadata.get(this.metadataKey) ?? {});
+    }
+
     public get descriptions(): ActionMetadata['descriptions'] {
-        const metadata = actionMetadata.get(this.metadataKey);
-        return metadata?.descriptions ? structuredClone(metadata.descriptions) : [];
+        return this.metadata.descriptions ?? [];
     }
 }
 
