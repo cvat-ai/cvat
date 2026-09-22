@@ -21,7 +21,7 @@ import CloudStorage from './cloud-storage';
 import Organization from './organization';
 import Webhook from './webhook';
 import AnnotationGuide from './guide';
-import { BaseAction } from './annotations-actions/base-action';
+import { BaseAction, setActionMetadata } from './annotations-actions/base-action';
 import { BaseCollectionAction } from './annotations-actions/base-collection-action';
 import { BaseShapesAction } from './annotations-actions/base-shapes-action';
 import {
@@ -31,7 +31,6 @@ import ApiToken from './api-token';
 import { JobValidationLayout, TaskValidationLayout } from './validation-layout';
 import { Request } from './request';
 import { createOpenCVInterface } from './opencv/opencv-interface';
-import { getActionMetadata, setActionMetadata } from './annotations-actions/annotations-actions';
 
 import * as enums from './enums';
 
@@ -200,7 +199,6 @@ function build(): CVATCore {
         },
         actions: {
             metadata: {
-                get: getActionMetadata,
                 set: setActionMetadata,
             },
             async list() {

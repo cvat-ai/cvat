@@ -35,6 +35,12 @@ export interface ActionMetadata {
     }[];
 }
 
+const actionMetadata = new WeakMap<object, ActionMetadata>();
+
+export function setActionMetadata(key: object, metadata: ActionMetadata): void {
+    actionMetadata.set(key, structuredClone(metadata));
+}
+
 export abstract class BaseAction {
     public abstract init(sessionInstance: Job | Task, parameters: Record<string, string | number>): Promise<void>;
     public abstract destroy(): Promise<void>;
@@ -45,8 +51,13 @@ export abstract class BaseAction {
     public abstract get name(): string;
     public abstract get parameters(): ActionParameters | null;
 
+    protected get metadataKey(): object {
+        return this;
+    }
+
     public get descriptions(): ActionMetadata['descriptions'] {
-        return [];
+        const metadata = actionMetadata.get(this.metadataKey);
+        return metadata?.descriptions ? structuredClone(metadata.descriptions) : [];
     }
 }
 
