@@ -36,6 +36,7 @@ import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import { filterApplicableLabels } from 'utils/filter-applicable-labels';
 import { toClipboard } from 'utils/to-clipboard';
 import changeObjectOrientation, { type OrientationAngle } from 'utils/change-object-orientation';
+import { getObjectStateByClientID } from 'utils/objects-sidebar';
 
 interface OwnProps {
     clientID: number;
@@ -104,12 +105,11 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
     } = state;
 
     const { objectStates: states, clientID } = own;
-    const stateIDs = states.map((_state: any): number => _state.clientID);
-    const index = stateIDs.indexOf(clientID);
+    const objectState = getObjectStateByClientID(states, clientID) as ObjectState;
 
     return {
-        objectState: states[index],
-        attributes: jobAttributes[states[index].label.id as number],
+        objectState,
+        attributes: jobAttributes[objectState.label.id as number],
         labels,
         ready,
         activeControl,

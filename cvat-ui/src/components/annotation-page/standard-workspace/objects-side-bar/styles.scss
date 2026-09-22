@@ -345,6 +345,20 @@
     }
 }
 
+.cvat-objects-sidebar-states-list-virtualized {
+    overflow: hidden;
+    padding: 0;
+}
+
+.cvat-objects-sidebar-virtual-list {
+    box-sizing: border-box;
+    padding: $grid-unit-size * 0.5 0 $grid-unit-size * 0.5 $grid-unit-size * 0.5;
+}
+
+.cvat-objects-sidebar-virtual-row {
+    padding-right: $grid-unit-size * 0.5;
+}
+
 .cvat-objects-sidebar-state-item-label-dropdown {
     max-width: $grid-unit-size * 30;
 }

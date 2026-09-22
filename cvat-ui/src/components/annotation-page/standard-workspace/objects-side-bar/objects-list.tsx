@@ -3,12 +3,15 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, {
+    useCallback, useEffect, useRef, useState,
+} from 'react';
 
 import {
     DndContext, DragEndEvent, DragOverlay, DragStartEvent, PointerSensor,
     pointerWithin, useSensor, useSensors,
 } from '@dnd-kit/core';
+import VirtualList, { ListRef } from 'rc-virtual-list';
 import {
     CaretDownOutlined, CaretRightOutlined, EyeInvisibleOutlined,
     EyeOutlined, VerticalAlignMiddleOutlined,
@@ -38,6 +41,8 @@ import {
 } from './drag-and-drop';
 import LayerInsertDropArea from './drag-and-drop/layer-insert-drop-area';
 import LayerSection from './drag-and-drop/layer-section';
+
+const OBJECT_ITEM_ESTIMATED_HEIGHT = 88;
 
 interface Props {
     workspace: Workspace;
@@ -109,6 +114,9 @@ function ObjectListComponent(props: Props): JSX.Element {
     const [activeDragID, setActiveDragID] = useState<string | null>(null);
     const [dragPointerPosition, setDragPointerPosition] = useState<PointerPosition | null>(null);
     const [pendingExpandedLayerItemID, setPendingExpandedLayerItemID] = useState<string | null>(null);
+    const [statesListHeight, setStatesListHeight] = useState(0);
+    const statesListRef = useRef<HTMLDivElement>(null);
+    const virtualListRef = useRef<ListRef>(null);
     const layerObjectStates = objectStates.filter(isLayerState);
     const zLayers = Array.from(
         new Set(layerObjectStates.map((state) => state.zOrder)),
@@ -117,6 +125,23 @@ function ObjectListComponent(props: Props): JSX.Element {
     const allLayersCollapsed = !!zLayers.length && zLayers.every((zOrder: number): boolean => (
         collapsedLayers.has(zOrder)
     ));
+
+    useEffect((): () => void => {
+        const statesList = statesListRef.current;
+        if (!statesList) {
+            return () => {};
+        }
+
+        const updateHeight = (): void => {
+            setStatesListHeight(statesList.clientHeight);
+        };
+        const resizeObserver = new ResizeObserver(updateHeight);
+
+        updateHeight();
+        resizeObserver.observe(statesList);
+
+        return (): void => resizeObserver.disconnect();
+    }, []);
 
     // Remove collapse markers for layers that disappeared after filtering or z-order changes.
     useEffect((): void => {
@@ -155,6 +180,20 @@ function ObjectListComponent(props: Props): JSX.Element {
                 event as CustomEvent<{ clientID: number; parentID: number | null }>
             ).detail;
 
+            if (statesOrdering !== StatesOrdering.LAYER) {
+                const rootClientID = parentID ?? clientID;
+                const index = sortedStatesID.indexOf(rootClientID);
+                if (index !== -1) {
+                    const itemID = Number.isInteger(parentID) ?
+                        `cvat-objects-sidebar-state-item-element-${clientID}` :
+                        `cvat-objects-sidebar-state-item-${clientID}`;
+
+                    virtualListRef.current?.scrollTo({ index, align: 'auto' });
+                    setPendingExpandedLayerItemID(itemID);
+                }
+                return;
+            }
+
             const expandedState = objectStates.find((state: ObjectState): boolean => (
                 state.clientID === (parentID ?? clientID)
             ));
@@ -181,7 +220,7 @@ function ObjectListComponent(props: Props): JSX.Element {
         return (): void => {
             window.removeEventListener(OBJECTS_SIDEBAR_EXPAND_Z_LAYER_EVENT, onExpandLayer);
         };
-    }, [collapsedLayers, objectStates]);
+    }, [collapsedLayers, objectStates, sortedStatesID, statesOrdering]);
 
     // Track the pointer only during drag so nearby insert gaps can expand.
     useEffect((): (() => void) | undefined => {
@@ -339,7 +378,12 @@ function ObjectListComponent(props: Props): JSX.Element {
                 showAllStates={showAllStates}
                 changeShowGroundTruth={changeShowGroundTruth}
             />
-            <div className='cvat-objects-sidebar-states-list'>
+            <div
+                ref={statesListRef}
+                className={`cvat-objects-sidebar-states-list ${
+                    statesOrdering === StatesOrdering.LAYER ? '' : 'cvat-objects-sidebar-states-list-virtualized'
+                }`}
+            >
                 {statesOrdering === StatesOrdering.LAYER ? (
                     <div className='cvat-objects-sidebar-z-layers-panel'>
                         <div className='cvat-objects-sidebar-z-layers-title'>
@@ -415,15 +459,27 @@ function ObjectListComponent(props: Props): JSX.Element {
                             </DragOverlay>
                         </DndContext>
                     </div>
-                ) : sortedStatesID.map((id: number): JSX.Element => (
-                    <ObjectItemContainer
-                        key={id}
-                        objectStates={objectStates}
-                        clientID={id}
-                        visibleSkeletonElements={visibleSkeletonElements}
-                        allowSimplifyLifecycle
-                    />
-                ))}
+                ) : statesListHeight > 0 && (
+                    <VirtualList<number>
+                        ref={virtualListRef}
+                        className='cvat-objects-sidebar-virtual-list'
+                        data={sortedStatesID}
+                        height={statesListHeight}
+                        itemHeight={OBJECT_ITEM_ESTIMATED_HEIGHT}
+                        itemKey={(id: number): number => id}
+                    >
+                        {(id: number): JSX.Element => (
+                            <div className='cvat-objects-sidebar-virtual-row'>
+                                <ObjectItemContainer
+                                    objectStates={objectStates}
+                                    clientID={id}
+                                    visibleSkeletonElements={visibleSkeletonElements}
+                                    allowSimplifyLifecycle
+                                />
+                            </div>
+                        )}
+                    </VirtualList>
+                )}
             </div>
         </>
     );
