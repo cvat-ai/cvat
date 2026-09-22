@@ -185,7 +185,7 @@ class _QualityRequirementsTestBase(_PermissionTestBase):
         return settings
 
     def _list_requirements(self, user: str, **kwargs):
-        kwargs.setdefault("page_size", "all")
+        kwargs.setdefault("page_size", 500)
         response = get_method(user, self._requirements_endpoint, **kwargs)
         return response.json()["results"] if response.ok else None, response
 

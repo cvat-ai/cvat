@@ -5,6 +5,7 @@
 import './styles.scss';
 import React from 'react';
 import { useSelector } from 'react-redux';
+import classNames from 'classnames';
 import Layout from 'antd/lib/layout';
 
 import { CombinedState } from 'reducers';
@@ -20,15 +21,23 @@ import AudioControlsSidebarSkeleton from './skeleton/audio-controls-sidebar-skel
 import AudioRegionsListSkeleton from './skeleton/audio-regions-list-skeleton';
 
 export default function AudioWorkspaceComponent(): JSX.Element {
-    const { waveformReady, audioLoading, audioError } = useSelector((state: CombinedState) => ({
+    const {
+        waveformReady, audioLoading, audioError, sidebarCollapsed,
+    } = useSelector((state: CombinedState) => ({
         waveformReady: state.audio.player.waveformReady,
         audioLoading: state.audio.player.audioLoading,
         audioError: state.audio.player.audioError,
+        sidebarCollapsed: state.annotation.sidebarCollapsed,
     }), shallowEqual);
     const showSkeleton = !audioError && (audioLoading || !waveformReady);
 
     return (
-        <Layout hasSider className='cvat-audio-workspace'>
+        <Layout
+            hasSider
+            className={classNames('cvat-audio-workspace', {
+                'cvat-audio-workspace-objects-sidebar-collapsed': sidebarCollapsed,
+            })}
+        >
             {showSkeleton ? <AudioControlsSidebarSkeleton /> : <AudioControlsSideBarComponent />}
             <AudioCanvasWrapper />
             <AudioObjectsSideBar
