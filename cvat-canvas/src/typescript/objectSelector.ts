@@ -44,6 +44,7 @@ export class ObjectSelectorImpl implements ObjectSelector {
     private geometry: Geometry;
     private isEnabled: boolean;
     private mouseDownPosition: { x: number; y: number; };
+    private mouseDownClientPosition: { x: number; y: number; };
     private selectedObjects: Record<number, ObjectState>;
     private resetAppearance: Record<number, () => void>;
     private findObjectOnClick: (event: MouseEvent) => void;
@@ -65,6 +66,7 @@ export class ObjectSelectorImpl implements ObjectSelector {
         this.selectedObjects = {};
         this.resetAppearance = {};
         this.mouseDownPosition = { x: 0, y: 0 };
+        this.mouseDownClientPosition = { x: 0, y: 0 };
         this.selectionFilter = null;
     }
 
@@ -118,12 +120,12 @@ export class ObjectSelectorImpl implements ObjectSelector {
     }
 
     private onMouseDown = (event: MouseEvent): void => {
-        if (this.selectionFilter?.replaceOnSelection) {
-            this.resetAllAppearances();
-            this.selectedObjects = {};
+        if (event.button !== 0) {
+            return;
         }
         const point = translateToSVG((this.canvas.node as any) as SVGSVGElement, [event.clientX, event.clientY]);
         this.mouseDownPosition = { x: point[0], y: point[1] };
+        this.mouseDownClientPosition = { x: event.clientX, y: event.clientY };
         this.selectionRect = this.canvas.rect().addClass('cvat_canvas_selection_box');
         this.selectionRect.attr({ 'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale });
         this.selectionRect.attr({ ...this.mouseDownPosition });
@@ -136,6 +138,17 @@ export class ObjectSelectorImpl implements ObjectSelector {
 
             const states = this.getStates();
             const box = this.getSelectionBox(event);
+            const isClick = Math.hypot(
+                event.clientX - this.mouseDownClientPosition.x,
+                event.clientY - this.mouseDownClientPosition.y,
+            ) <= 2;
+            if (this.selectionFilter?.replaceOnSelection && isClick) {
+                return;
+            }
+            if (this.selectionFilter?.replaceOnSelection) {
+                this.resetAllAppearances();
+                this.selectedObjects = {};
+            }
             const shapes = (this.canvas.select('.cvat_canvas_shape') as any).members.filter(
                 (shape: SVG.Shape): boolean => !shape.hasClass('cvat_canvas_hidden'),
             );

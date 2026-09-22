@@ -47,7 +47,6 @@ import {
     removeSelectionAsync,
     updateActiveControl,
     updateAnnotationsBatchAsync,
-    updateCanvasContextMenu,
 } from 'actions/annotation-actions';
 
 export default function SelectionContextMenu(): JSX.Element | null {
@@ -77,15 +76,10 @@ export default function SelectionContextMenu(): JSX.Element | null {
         return null;
     }
 
-    const close = (): void => {
-        dispatch(updateCanvasContextMenu(false, 0, 0));
-    };
-
     const updateSelection = async (states: ObjectState[]): Promise<void> => {
         if (states.length) {
             await dispatch(updateAnnotationsBatchAsync(states));
         }
-        close();
     };
 
     const updateZOrder = async (resolveZOrder: (state: ObjectState) => number): Promise<void> => {
@@ -191,7 +185,6 @@ export default function SelectionContextMenu(): JSX.Element | null {
                     onClick={(): void => {
                         dispatch(copySelection(selectedStates));
                         dispatch(pasteSelectionAsync());
-                        close();
                     }}
                 >
                     Make a copy
@@ -206,7 +199,6 @@ export default function SelectionContextMenu(): JSX.Element | null {
                     icon={<FunctionOutlined />}
                     onClick={(): void => {
                         openAnnotationsActionModal({ defaultObjectStates: selectedStates });
-                        close();
                     }}
                 >
                     Run annotation action
@@ -292,7 +284,6 @@ export default function SelectionContextMenu(): JSX.Element | null {
                     icon={<GroupOutlined />}
                     onClick={(): void => {
                         dispatch(groupSelectedAnnotationsAsync());
-                        close();
                     }}
                 >
                     Group selection
@@ -309,7 +300,6 @@ export default function SelectionContextMenu(): JSX.Element | null {
                     icon={<UngroupOutlined />}
                     onClick={(): void => {
                         dispatch(groupSelectedAnnotationsAsync(true));
-                        close();
                     }}
                 >
                     Ungroup selection
@@ -490,7 +480,6 @@ export default function SelectionContextMenu(): JSX.Element | null {
                             }
                             dispatch(updateActiveControl(ActiveControl.CURSOR));
                             await dispatch(removeSelectionAsync(false));
-                            close();
                         }}
                     />
                 </CVATTooltip>

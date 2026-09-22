@@ -433,7 +433,12 @@ context('Multi-object selection', { scrollBehavior: false }, () => {
         cy.get(`#cvat_canvas_shape_${objectIds.carShape1}`).realClick({ position: 'center' });
         assertSelection([objectIds.carShape1]);
 
+        cy.get(`#cvat_canvas_shape_${objectIds.carShape2}`).realClick({ position: 'center' });
+        assertSelection([objectIds.carShape1, objectIds.carShape2]);
+
         cy.get(`#cvat_canvas_shape_${objectIds.carShape1}`).realClick({ position: 'center' });
+        assertSelection([objectIds.carShape2]);
+        cy.get(`#cvat_canvas_shape_${objectIds.carShape2}`).realClick({ position: 'center' });
         assertSelection([]);
         cy.get('.cvat-select-control').should('have.class', 'cvat-active-canvas-control');
 
@@ -745,17 +750,18 @@ context('Multi-object selection', { scrollBehavior: false }, () => {
         [objectIds.carShape1, objectIds.carShape2].forEach((clientId) => {
             cy.get(sidebarItem(clientId)).find('.cvat-object-item-button-lock-enabled').should('exist');
         });
+        cy.get('.cvat-canvas-selected-objects-menu-content').should('be.visible');
 
-        openSelectionMenu();
         cy.get('.cvat-canvas-selected-objects-menu-content button[aria-label="Unlock selection"]').click();
-        openSelectionMenu();
+        cy.get('.cvat-canvas-selected-objects-menu-content').should('be.visible');
         cy.get('.cvat-canvas-selected-objects-menu-content button[aria-label="Pin selection"]').click();
         [objectIds.carShape1, objectIds.carShape2].forEach((clientId) => {
             cy.get(sidebarItem(clientId)).find('.cvat-object-item-button-pinned-enabled').should('exist');
         });
+        cy.get('.cvat-canvas-selected-objects-menu-content').should('be.visible');
 
-        openSelectionMenu();
         cy.get('.cvat-canvas-selected-objects-menu-content button[aria-label="Unpin selection"]').click();
+        cy.get('.cvat-canvas-selected-objects-menu-content').should('be.visible');
     });
 
     it('Occludes and hides the selection with quick actions, shortcuts, and batch history', () => {
@@ -849,6 +855,25 @@ context('Multi-object selection', { scrollBehavior: false }, () => {
         selectFromSidebar([objectIds.carShape1, objectIds.carShape2]);
         assertSelectionDragDoesNotPan('.cvat_canvas_selected_objects_label_title', platformModifier);
         assertSelection([objectIds.carShape1, objectIds.carShape2]);
+    });
+
+    it('Keeps selection actions open after a Shift-drag selection', () => {
+        cy.get(`#cvat_canvas_shape_${objectIds.carShape1}`).then(($shape) => {
+            const box = $shape[0].getBoundingClientRect();
+            shiftDrawSelectionBox({
+                x: box.left - 5,
+                y: box.top - 5,
+            }, {
+                x: box.right + 5,
+                y: box.bottom + 5,
+            });
+        });
+
+        assertSelection([objectIds.carShape1]);
+        cy.get('.cvat-select-control').should('have.class', 'cvat-active-canvas-control');
+        cy.get('.cvat_canvas_selected_objects_box').rightclick({ force: true });
+        cy.get('.cvat-canvas-selected-objects-menu-content').should('be.visible');
+        assertSelection([objectIds.carShape1]);
     });
 
     it('Opens selection actions by right-clicking the selection bbox', () => {
