@@ -20,7 +20,7 @@ import { PolySimplify } from './poly-simplify';
 const registeredActions: BaseAction[] = [];
 
 export async function listActions(): Promise<typeof registeredActions> {
-    return registeredActions.filter((action) => action.metadata.isVisible !== false);
+    return [...registeredActions];
 }
 
 export async function registerAction(action: BaseAction): Promise<void> {

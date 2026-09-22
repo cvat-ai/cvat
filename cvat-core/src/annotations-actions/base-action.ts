@@ -29,7 +29,6 @@ export type ActionParameters = Record<string, {
 }>;
 
 export interface ActionMetadata {
-    isVisible?: boolean;
     descriptions?: {
         type: 'info' | 'warning';
         message: string;
