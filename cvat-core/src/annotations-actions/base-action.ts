@@ -28,9 +28,11 @@ export type ActionParameters = Record<string, {
     };
 }>;
 
-export interface ActionDescription {
-    type: 'info' | 'warning';
-    message: string;
+export interface ActionMetadata {
+    descriptions?: {
+        type: 'info' | 'warning';
+        message: string;
+    }[];
 }
 
 export abstract class BaseAction {
@@ -43,7 +45,7 @@ export abstract class BaseAction {
     public abstract get name(): string;
     public abstract get parameters(): ActionParameters | null;
 
-    public get descriptions(): ActionDescription[] {
+    public get descriptions(): ActionMetadata['descriptions'] {
         return [];
     }
 }

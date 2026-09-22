@@ -5,7 +5,7 @@
 import ObjectState from '../object-state';
 import { ArgumentError } from '../exceptions';
 import { Job, Task } from '../session';
-import { BaseAction } from './base-action';
+import { ActionMetadata, BaseAction } from './base-action';
 import {
     BaseShapesAction, run as runShapesAction, call as callShapesAction,
 } from './base-shapes-action';
@@ -18,6 +18,16 @@ import { PropagateShapes } from './propagate-shapes';
 import { PolySimplify } from './poly-simplify';
 
 const registeredActions: BaseAction[] = [];
+const metadataBySource = new WeakMap<object, ActionMetadata>();
+
+export function setActionMetadata(source: object, metadata: ActionMetadata): void {
+    metadataBySource.set(source, structuredClone(metadata));
+}
+
+export function getActionMetadata(source: object): ActionMetadata | null {
+    const metadata = metadataBySource.get(source);
+    return metadata ? structuredClone(metadata) : null;
+}
 
 export async function listActions(): Promise<typeof registeredActions> {
     return [...registeredActions];

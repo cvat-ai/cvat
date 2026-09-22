@@ -46,6 +46,8 @@ import {
     listActions,
     registerAction,
     unregisterAction,
+    getActionMetadata,
+    setActionMetadata,
 } from './annotations-actions/annotations-actions';
 import { BaseCollectionAction } from './annotations-actions/base-collection-action';
 import { BaseShapesAction } from './annotations-actions/base-shapes-action';
@@ -204,6 +206,10 @@ export default interface CVATCore {
         list: typeof listActions;
         register: typeof registerAction;
         unregister: typeof unregisterAction;
+        metadata: {
+            get: typeof getActionMetadata;
+            set: typeof setActionMetadata;
+        };
         run: typeof runAction;
         call: typeof callAction;
     };

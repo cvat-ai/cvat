@@ -31,6 +31,7 @@ import ApiToken from './api-token';
 import { JobValidationLayout, TaskValidationLayout } from './validation-layout';
 import { Request } from './request';
 import { createOpenCVInterface } from './opencv/opencv-interface';
+import { getActionMetadata, setActionMetadata } from './annotations-actions/annotations-actions';
 
 import * as enums from './enums';
 
@@ -198,6 +199,10 @@ function build(): CVATCore {
             },
         },
         actions: {
+            metadata: {
+                get: getActionMetadata,
+                set: setActionMetadata,
+            },
             async list() {
                 const result = await PluginRegistry.apiWrapper(cvat.actions.list);
                 return result;
