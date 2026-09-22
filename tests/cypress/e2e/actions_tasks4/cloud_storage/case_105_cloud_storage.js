@@ -173,12 +173,12 @@ context('Cloud storage.', () => {
             cy.get('.cvat-cloud-storage-form').should('not.exist');
         });
 
-        it('Check select files from "Cloud Storage" when creating a task.', () => {
+        it('Check select files from "Cloud storage" when creating a task.', () => {
             cy.contains('.cvat-header-button', 'Tasks').click();
             cy.get('.cvat-create-task-dropdown').click();
             cy.get('.cvat-create-task-button').should('be.visible').click();
             cy.get('.cvat-create-task-content').should('be.visible').within(() => {
-                cy.contains('[role="tab"]', 'Cloud Storage').click();
+                cy.contains('[role="tab"]', 'Cloud storage').click();
                 cy.get('#cloudStorageSelect').should('exist');
             });
         });

@@ -256,7 +256,7 @@ function JobItem(props: Readonly<Props>): JSX.Element {
                             <Row>
                                 <Col>
                                     <BorderOutlined />
-                                    <Text>{isAudioTask ? 'Duration: ' : 'Frame count: '}</Text>
+                                    <Text>{isAudioTask ? 'Recording duration: ' : 'Frame count: '}</Text>
                                     <Text type='secondary' className='cvat-job-item-frames'>
                                         {isAudioTask ?
                                             `${audioJobDuration} (${frameCountPercentRepresentation}%)` :

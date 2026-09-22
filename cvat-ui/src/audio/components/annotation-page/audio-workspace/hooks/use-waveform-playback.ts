@@ -256,7 +256,13 @@ export function useWaveformPlayback(runtime: WaveSurferRuntime): WaveformPlaybac
         if (!instance || !seekRequest || duration <= 0) return;
 
         const target = clamp(seekRequest.time, 0, duration);
-        instance.setTime(target);
+        // WaveSurfer's WebAudio player restarts from zero when it resumes at the exact duration.
+        // And it internally pauses/resumes on setTime when playing, so when seeking to the end
+        // Give it a small offset to let it stop naturally
+        const seekTime = playingRef.current && target === duration ?
+            duration - Math.min(0.001, duration / 2) : target;
+
+        instance.setTime(seekTime);
         syncPlaybackRangeAfterSeek(target);
 
         dispatch(audioActions.completeAudioSeek(seekRequest));
