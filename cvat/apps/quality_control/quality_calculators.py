@@ -37,7 +37,11 @@ from cvat.apps.quality_control.comparison_report import (
     ComparisonReportTaskStats,
     deduplicate_annotation_conflicts,
 )
-from cvat.apps.quality_control.data_providers import JobDataProvider, QualitySettingsManager
+from cvat.apps.quality_control.data_providers import (
+    JobDataProvider,
+    QualitySettingsManager,
+    make_job_data_provider,
+)
 from cvat.apps.quality_control.quality_handlers import (
     DatasetQualityEstimator,
     EffectiveQualityRequirement,
@@ -136,11 +140,11 @@ class TaskQualityCalculator:
             for job in job_queryset:
                 job.segment.task = gt_job.segment.task  # put the prefetched object
 
-            gt_job_data_provider = JobDataProvider(gt_job.id, queryset=job_queryset)
+            gt_job_data_provider = make_job_data_provider(gt_job.id, queryset=job_queryset)
             active_validation_frames = self.get_active_validation_frames(task, gt_job_data_provider)
 
             job_data_providers = {
-                job.id: JobDataProvider(
+                job.id: make_job_data_provider(
                     job.id,
                     queryset=job_queryset,
                     included_frames=active_validation_frames,
@@ -167,7 +171,7 @@ class TaskQualityCalculator:
                 job_comparison_reports[job.id] = comparator.generate_report()
 
                 # Release resources
-                del job_data_provider.dm_dataset
+                job_data_provider.close()
 
         task_comparison_report = self._compute_task_report(
             job_comparison_reports,

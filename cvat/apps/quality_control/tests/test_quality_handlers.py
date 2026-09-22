@@ -5,13 +5,16 @@
 from __future__ import annotations
 
 import unittest
-from types import SimpleNamespace
 from unittest import mock
 
 import datumaro as dm
 import numpy as np
 
+from cvat.apps.dataset_manager import data_model as cdm
+from cvat.apps.dataset_manager.data_model.adapters.datumaro import DatumaroAnnotationAdapter
 from cvat.apps.quality_control import models
+from cvat.apps.quality_control.backends import ComparisonSample
+from cvat.apps.quality_control.backends.datumaro import Datumaro2DBackend
 from cvat.apps.quality_control.comparison_report import (
     AnnotationConflict,
     ComparisonReport,
@@ -31,7 +34,6 @@ from cvat.apps.quality_control.comparison_report import (
 )
 from cvat.apps.quality_control.export import prepare_requirement_confusion_matrix_json
 from cvat.apps.quality_control.quality_handlers import (
-    ShapeRequirementHandler,
     build_requirement_comparison_summary,
     build_requirement_report,
     build_requirements_summary,
@@ -44,13 +46,20 @@ from cvat.apps.quality_control.quality_handlers import (
 
 class TestShapeRequirementHandler(unittest.TestCase):
     @staticmethod
-    def _make_handler() -> ShapeRequirementHandler:
-        handler = ShapeRequirementHandler.__new__(ShapeRequirementHandler)
-        handler.requirement = SimpleNamespace(
-            annotation_type=models.QualityRequirementAnnotationType.SKELETON_KEYPOINT
+    def _prepare(annotations, provider):
+        backend = Datumaro2DBackend(provider, provider)
+        provider.label_catalog = cdm.LabelCatalog((cdm.Label(1, "person", "skeleton"),))
+        provider.dataset.adapt_annotation.side_effect = lambda ann: DatumaroAnnotationAdapter(
+            ann, reference_getter=provider.dm_ann_to_annotation_reference
         )
-        handler._filter = mock.Mock()
-        return handler
+        sample = ComparisonSample(
+            gt_annotations=(),
+            ds_annotations=tuple(backend._view(a, provider) for a in annotations),
+            frame_id=0,
+        )
+        return backend.prepare_sample(
+            sample, requirement_type=models.QualityRequirementAnnotationType.SKELETON_KEYPOINT
+        ).ds_annotations
 
     def test_ungrouped_skeleton_keypoints_get_virtual_group_without_used_groups(self) -> None:
         elements = [
@@ -62,9 +71,9 @@ class TestShapeRequirementHandler(unittest.TestCase):
             annotations=[dm.Skeleton(elements, label=0)],
         )
 
-        prepared_item = self._make_handler()._prepare_item_for_requirement(item, mock.Mock())
+        prepared_item = self._prepare(item.annotations, mock.Mock())
 
-        self.assertEqual([ann.group for ann in prepared_item.annotations], [1, 1])
+        self.assertEqual([ann.group for ann in prepared_item], [1, 1])
 
     def test_skeleton_keypoints_inherit_parent_or_virtual_group(self) -> None:
         first_ungrouped_elements = [
@@ -86,9 +95,9 @@ class TestShapeRequirementHandler(unittest.TestCase):
         )
         data_provider = mock.Mock()
 
-        prepared_item = self._make_handler()._prepare_item_for_requirement(item, data_provider)
+        prepared_item = self._prepare(item.annotations, data_provider)
 
-        self.assertEqual([ann.group for ann in prepared_item.annotations], [4, 4, 3, 3, 5])
+        self.assertEqual([ann.group for ann in prepared_item], [4, 4, 3, 3, 5])
         self.assertTrue(
             all(
                 element.group == 0
