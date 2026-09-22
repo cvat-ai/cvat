@@ -852,9 +852,9 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
 
             const taskDataSpec = {
                 image_quality: this.imageQuality,
-                use_zip_chunks: this.useZipChunks,
-                use_cache: this.useCache,
-                sorting_method: this.sortingMethod,
+                ...(typeof this.useZipChunks !== 'undefined' ? { use_zip_chunks: this.useZipChunks } : {}),
+                ...(typeof this.useCache !== 'undefined' ? { use_cache: this.useCache } : {}),
+                ...(typeof this.sortingMethod !== 'undefined' ? { sorting_method: this.sortingMethod } : {}),
                 client_files: fields?.clientFiles ?? [],
                 server_files: fields?.serverFiles ?? [],
                 remote_files: fields?.remoteFiles ?? [],
