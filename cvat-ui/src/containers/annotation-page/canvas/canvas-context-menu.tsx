@@ -31,7 +31,6 @@ interface StateToProps {
     workspace: Workspace;
     latestComments: string[];
     activatedStateID: number | null;
-    selectedStatesID: number[];
 }
 
 interface DispatchToProps {
@@ -48,7 +47,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
     const {
         annotation: {
             annotations: {
-                collapsed, states: objectStates, activatedStateID, selectedStatesID,
+                collapsed, states: objectStates, activatedStateID,
             },
             canvas: {
                 instance,
@@ -75,11 +74,10 @@ function mapStateToProps(state: CombinedState): StateToProps {
         contextMenuParentID: parentID,
         collapsed: clientID !== null ? collapsed[clientID] : undefined,
         activatedStateID,
-        selectedStatesID,
         objectStates,
         canvasInstance: instance instanceof Canvas ? instance : null,
         visible: visible && ready && (
-            type === ContextMenuType.CANVAS_SELECTION ? !!selectedStatesID.length : clientID !== null && !!objectState
+            type === ContextMenuType.CANVAS_SELECTION || (clientID !== null && !!objectState)
         ),
         left,
         top,
@@ -164,6 +162,7 @@ class CanvasContextMenuContainer extends React.PureComponent<Props, State> {
 
         window.addEventListener('mousemove', this.moveContextMenu);
         if (canvasInstance) {
+            canvasInstance.html().addEventListener('mousedown', this.onMouseDownCanvas);
             canvasInstance.html().addEventListener('canvas.clicked', this.onClickCanvas);
             canvasInstance.html().addEventListener('contextmenu', this.onOpenCanvasContextMenu);
             canvasInstance.html().addEventListener('canvas.contextmenu', this.onCanvasPointContextMenu);
@@ -208,6 +207,7 @@ class CanvasContextMenuContainer extends React.PureComponent<Props, State> {
         const { canvasInstance } = this.props;
         window.removeEventListener('mousemove', this.moveContextMenu);
         if (canvasInstance) {
+            canvasInstance.html().removeEventListener('mousedown', this.onMouseDownCanvas);
             canvasInstance.html().removeEventListener('canvas.clicked', this.onClickCanvas);
             canvasInstance.html().removeEventListener('contextmenu', this.onOpenCanvasContextMenu);
             canvasInstance.html().removeEventListener('canvas.contextmenu', this.onCanvasPointContextMenu);
@@ -221,6 +221,12 @@ class CanvasContextMenuContainer extends React.PureComponent<Props, State> {
         const { visible, onUpdateContextMenu } = this.props;
         if (visible) {
             onUpdateContextMenu(false, 0, 0, null, ContextMenuType.CANVAS_SHAPE);
+        }
+    };
+
+    private onMouseDownCanvas = (event: MouseEvent): void => {
+        if (event.button === 0) {
+            this.onClickCanvas();
         }
     };
 

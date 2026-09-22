@@ -45,6 +45,7 @@ export class ObjectSelectorImpl implements ObjectSelector {
     private isEnabled: boolean;
     private mouseDownPosition: { x: number; y: number; };
     private mouseDownClientPosition: { x: number; y: number; };
+    private selectionWasDragged: boolean;
     private selectedObjects: Record<number, ObjectState>;
     private resetAppearance: Record<number, () => void>;
     private findObjectOnClick: (event: MouseEvent) => void;
@@ -67,6 +68,7 @@ export class ObjectSelectorImpl implements ObjectSelector {
         this.resetAppearance = {};
         this.mouseDownPosition = { x: 0, y: 0 };
         this.mouseDownClientPosition = { x: 0, y: 0 };
+        this.selectionWasDragged = false;
         this.selectionFilter = null;
     }
 
@@ -126,6 +128,7 @@ export class ObjectSelectorImpl implements ObjectSelector {
         const point = translateToSVG((this.canvas.node as any) as SVGSVGElement, [event.clientX, event.clientY]);
         this.mouseDownPosition = { x: point[0], y: point[1] };
         this.mouseDownClientPosition = { x: event.clientX, y: event.clientY };
+        this.selectionWasDragged = false;
         this.selectionRect = this.canvas.rect().addClass('cvat_canvas_selection_box');
         this.selectionRect.attr({ 'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale });
         this.selectionRect.attr({ ...this.mouseDownPosition });
@@ -138,10 +141,12 @@ export class ObjectSelectorImpl implements ObjectSelector {
 
             const states = this.getStates();
             const box = this.getSelectionBox(event);
-            const isClick = Math.hypot(
+            const movedBeyondClickThreshold = Math.hypot(
                 event.clientX - this.mouseDownClientPosition.x,
                 event.clientY - this.mouseDownClientPosition.y,
-            ) <= 2;
+            ) > 2;
+            this.selectionWasDragged ||= movedBeyondClickThreshold;
+            const isClick = !this.selectionWasDragged;
             if (this.selectionFilter?.replaceOnSelection && isClick) {
                 return;
             }
@@ -187,6 +192,10 @@ export class ObjectSelectorImpl implements ObjectSelector {
 
     private onMouseMove = (event: MouseEvent): void => {
         if (this.selectionRect) {
+            this.selectionWasDragged ||= Math.hypot(
+                event.clientX - this.mouseDownClientPosition.x,
+                event.clientY - this.mouseDownClientPosition.y,
+            ) > 2;
             const box = this.getSelectionBox(event);
             this.selectionRect.attr({
                 x: box.xtl,
@@ -194,6 +203,14 @@ export class ObjectSelectorImpl implements ObjectSelector {
                 width: box.xbr - box.xtl,
                 height: box.ybr - box.ytl,
             });
+        }
+    };
+
+    private suppressClickAfterSelectionDrag = (event: MouseEvent): void => {
+        if (this.selectionWasDragged) {
+            this.selectionWasDragged = false;
+            event.preventDefault();
+            event.stopImmediatePropagation();
         }
     };
 
@@ -213,6 +230,7 @@ export class ObjectSelectorImpl implements ObjectSelector {
             window.document.addEventListener('mouseup', this.onMouseUp);
             this.canvas.node.addEventListener('mousedown', this.onMouseDown);
             this.canvas.node.addEventListener('mousemove', this.onMouseMove);
+            this.canvas.node.addEventListener('click', this.suppressClickAfterSelectionDrag, true);
             this.canvas.node.addEventListener('click', this.findObjectOnClick);
 
             this.selectedObjects = {};
@@ -307,6 +325,7 @@ export class ObjectSelectorImpl implements ObjectSelector {
         window.document.removeEventListener('mouseup', this.onMouseUp);
         this.canvas.node.removeEventListener('mousedown', this.onMouseDown);
         this.canvas.node.removeEventListener('mousemove', this.onMouseMove);
+        this.canvas.node.removeEventListener('click', this.suppressClickAfterSelectionDrag, true);
         this.canvas.node.removeEventListener('click', this.findObjectOnClick);
 
         this.selectionRect?.remove();

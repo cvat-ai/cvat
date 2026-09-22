@@ -671,13 +671,16 @@ export function selectObjectsAsync(requestedStatesID: number[]): ThunkAction {
             getHiddenZLayers(state),
         );
 
-        if (previousSelection.length === selectedStatesID.length &&
-            previousSelection.every((clientID: number): boolean => selectedStatesID.includes(clientID))) {
+        const selectionUnchanged = previousSelection.length === selectedStatesID.length &&
+            previousSelection.every((clientID: number): boolean => selectedStatesID.includes(clientID));
+        const selectionContextMenuVisible = state.annotation.canvas.contextMenu.visible &&
+            state.annotation.canvas.contextMenu.type === ContextMenuType.CANVAS_SELECTION;
+        if (selectionUnchanged && !selectionContextMenuVisible) {
             return;
         }
 
         let history;
-        if (jobInstance) {
+        if (jobInstance && !selectionUnchanged) {
             await jobInstance.actions.recordSelection(previousSelection, selectedStatesID, frame);
             history = await jobInstance.actions.get();
         }

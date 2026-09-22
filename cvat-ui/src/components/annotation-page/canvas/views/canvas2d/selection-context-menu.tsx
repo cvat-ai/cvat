@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import Button from 'antd/lib/button';
 import Dropdown from 'antd/lib/dropdown';
@@ -70,7 +70,14 @@ export default function SelectionContextMenu(): JSX.Element | null {
     }));
     const [attributesCollapsed, setAttributesCollapsed] = useState(true);
     const [layerPickerVisible, setLayerPickerVisible] = useState(false);
-    const selectedStates = getSelectedStates(annotations, selectedStatesID);
+    const contextSelectionID = useRef<number[]>(selectedStatesID);
+    if (selectedStatesID.length) {
+        contextSelectionID.current = [...selectedStatesID];
+    }
+    const selectedStates = getSelectedStates(
+        annotations,
+        selectedStatesID.length ? selectedStatesID : contextSelectionID.current,
+    );
 
     if (!selectedStates.length) {
         return null;

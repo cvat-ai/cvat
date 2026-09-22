@@ -3801,7 +3801,11 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 this.deleteText(state.clientID);
             }
             if (this.selectionPasteOffset.x || this.selectionPasteOffset.y) {
-                shape?.dmove(this.selectionPasteOffset.x, this.selectionPasteOffset.y);
+                this.moveSelectionPreviewShape(
+                    state.clientID,
+                    this.selectionPasteOffset.x,
+                    this.selectionPasteOffset.y,
+                );
             }
         }
     }
@@ -3830,7 +3834,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         }
 
         for (const state of this.selectionPasteStates) {
-            this.svgShapes[state.clientID]?.dmove(dx, dy);
+            this.moveSelectionPreviewShape(state.clientID, dx, dy);
         }
         this.selectionPasteOffset.x += dx;
         this.selectionPasteOffset.y += dy;

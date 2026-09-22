@@ -8,7 +8,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import Icon from '@ant-design/icons';
 
 import { CursorIcon } from 'icons';
-import { ActiveControl, CombinedState } from 'reducers';
+import { ActiveControl, CombinedState, ContextMenuType } from 'reducers';
 import { Canvas } from 'cvat-canvas-wrapper';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import { selectObjectsAsync } from 'actions/annotation-actions';
@@ -46,9 +46,13 @@ function CursorControl(props: Props): JSX.Element {
     const selectedStatesID = useSelector(
         (state: CombinedState) => state.annotation.annotations.selectedStatesID,
     );
+    const selectionContextMenuVisible = useSelector((state: CombinedState) => (
+        state.annotation.canvas.contextMenu.visible &&
+        state.annotation.canvas.contextMenu.type === ContextMenuType.CANVAS_SELECTION
+    ));
 
     const handler = async (): Promise<void> => {
-        if (selectedStatesID.length) {
+        if (selectedStatesID.length || selectionContextMenuVisible) {
             await dispatch(selectObjectsAsync([]));
         }
 
