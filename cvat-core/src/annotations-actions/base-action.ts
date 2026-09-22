@@ -28,6 +28,11 @@ export type ActionParameters = Record<string, {
     };
 }>;
 
+export interface ActionDescription {
+    type: 'info' | 'warning';
+    message: string;
+}
+
 export abstract class BaseAction {
     public abstract init(sessionInstance: Job | Task, parameters: Record<string, string | number>): Promise<void>;
     public abstract destroy(): Promise<void>;
@@ -37,6 +42,10 @@ export abstract class BaseAction {
 
     public abstract get name(): string;
     public abstract get parameters(): ActionParameters | null;
+
+    public get descriptions(): ActionDescription[] {
+        return [];
+    }
 }
 
 export function prepareActionParameters(declared: ActionParameters, defined: object): Record<string, string | number> {

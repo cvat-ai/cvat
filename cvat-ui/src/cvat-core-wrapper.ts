@@ -54,7 +54,9 @@ import { Event } from 'cvat-core/src/event';
 import { APIWrapperEnterOptions } from 'cvat-core/src/plugins';
 import { BaseShapesAction } from 'cvat-core/src/annotations-actions/base-shapes-action';
 import { BaseCollectionAction } from 'cvat-core/src/annotations-actions/base-collection-action';
-import { ActionParameterType, BaseAction } from 'cvat-core/src/annotations-actions/base-action';
+import {
+    ActionDescription, ActionParameterType, BaseAction,
+} from 'cvat-core/src/annotations-actions/base-action';
 import { Request, RequestOperation } from 'cvat-core/src/request';
 import { ImageProcessing, BaseImageFilter, SerializedImageFilter } from 'cvat-core/src/opencv/image-processing';
 import AboutData from 'cvat-core/src/about';
@@ -175,4 +177,5 @@ export type {
     SerializedImageFilter,
     SerializedInterval,
     WebhookEvent,
+    ActionDescription,
 };
