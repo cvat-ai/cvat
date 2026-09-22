@@ -331,6 +331,7 @@ function AnnotationsActionsModalContent(props: Props): JSX.Element {
     const jobInstance = storage.getState().annotation.job.instance as Job;
     const is1D = jobInstance.dimension === DimensionType.DIMENSION_1D;
     const currentFrameAction = activeAction instanceof BaseCollectionAction || !!targetObjectStates?.length;
+    const actionDescriptions = activeAction?.descriptions ?? [];
 
     useEffect(() => {
         if (is1D) {
@@ -459,6 +460,20 @@ function AnnotationsActionsModalContent(props: Props): JSX.Element {
                         </Col>
                     </Row>
                 </Col>
+
+                {actionDescriptions.map(({ message, type }, index) => (
+                    <Col
+                        key={`${type}-${index}`}
+                        span={24}
+                        className='cvat-action-runner-description'
+                    >
+                        <Alert
+                            message={message}
+                            type={type}
+                            showIcon
+                        />
+                    </Col>
+                ))}
 
                 {activeAction && !currentFrameAction ? (
                     <>

@@ -51,6 +51,7 @@ import {
 } from './annotations-actions/annotations-actions';
 import { BaseCollectionAction } from './annotations-actions/base-collection-action';
 import { BaseShapesAction } from './annotations-actions/base-shapes-action';
+import { setActionMetadata } from './annotations-actions/base-action';
 import {
     ArgumentError, DataError, Exception, ScriptingError, ServerError,
 } from './exceptions';
@@ -206,6 +207,9 @@ export default interface CVATCore {
         list: typeof listActions;
         register: typeof registerAction;
         unregister: typeof unregisterAction;
+        metadata: {
+            set: typeof setActionMetadata;
+        };
         run: typeof runAction;
         call: typeof callAction;
     };

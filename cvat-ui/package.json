@@ -64,6 +64,6 @@
     "redux-logger": "^4.0.0",
     "redux-thunk": "^2.3.0",
     "rehype-sanitize": "^6.0.0",
-    "wavesurfer.js": "^7.12.5"
+    "wavesurfer.js": "^7.12.12"
   }
 }
