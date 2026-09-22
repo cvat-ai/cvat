@@ -15,6 +15,8 @@ import { clamp } from 'utils/math';
 import type { WaveSurferRuntime } from './use-audio-waveform';
 import type { AudioTimeRange } from '../utils/audio-interval';
 
+const FINISH_POSITION_TOLERANCE = 0.02;
+
 export interface WaveformPlayback {
     /** Play audio from the current position. */
     play(): void;
@@ -71,6 +73,12 @@ export function useWaveformPlayback(runtime: WaveSurferRuntime): WaveformPlaybac
     const updateRunningPlaybackRange = useCallback((range: AudioTimeRange): void => {
         const instance = runtime.instanceRef.current;
         if (!instance || !instance.isPlaying()) return;
+
+        // WaveSurfer's WebAudio backend retains every stopAt callback on the current
+        // AudioBufferSourceNode. Restarting it clears callbacks from the previous
+        // range before scheduling the new endpoint, otherwise it snaps to the old range's end time.
+        // Should be a no-op otherwise.
+        instance.setTime(instance.getCurrentTime());
 
         instance.play(undefined, range.end).catch(() => {});
     }, []);
@@ -149,16 +157,22 @@ export function useWaveformPlayback(runtime: WaveSurferRuntime): WaveformPlaybac
                     playRange(activeRange);
                 });
             } else {
-                // Without it the stop position is not accurate even when it's playing
-                // a range with WebAudio backend. Audio stop must be accurate with it though
-                // so we just fix the displayed position here to look precise as well.
-                instance.setTime(range.end);
                 dispatch(audioActions.clearAudioPlaybackRange());
                 dispatch(audioActions.switchAudioPlay(false));
             }
         };
         const onFinish = (): void => {
             if (!playbackRangeRef.current) {
+                // its finish of the track playback not a range
+                const currentTime = instance.getCurrentTime();
+                const trackDuration = instance.getDuration();
+
+                // WaveSurfer with WebAudio backend can finish playback just before its reported duration.
+                // Playback itself is accurate, so snap the displayed cursor to the true end.
+                if (Math.abs(trackDuration - currentTime) <= FINISH_POSITION_TOLERANCE) {
+                    instance.setTime(trackDuration);
+                }
+
                 dispatch(audioActions.switchAudioPlay(false));
                 return;
             }
@@ -242,7 +256,13 @@ export function useWaveformPlayback(runtime: WaveSurferRuntime): WaveformPlaybac
         if (!instance || !seekRequest || duration <= 0) return;
 
         const target = clamp(seekRequest.time, 0, duration);
-        instance.setTime(target);
+        // WaveSurfer's WebAudio player restarts from zero when it resumes at the exact duration.
+        // And it internally pauses/resumes on setTime when playing, so when seeking to the end
+        // Give it a small offset to let it stop naturally
+        const seekTime = playingRef.current && target === duration ?
+            duration - Math.min(0.001, duration / 2) : target;
+
+        instance.setTime(seekTime);
         syncPlaybackRangeAfterSeek(target);
 
         dispatch(audioActions.completeAudioSeek(seekRequest));

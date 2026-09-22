@@ -1,21 +1,21 @@
 ---
 title: 'Webhook recipes'
 linkTitle: 'Webhooks'
-weight: 7
-description: 'Register a webhook for task events and monitor task status changes live with a local receiver'
+weight: 9
+description: 'Register a webhook for task events and watch new tasks appear live with a local receiver'
 ---
 
-Two recipes: `webhook_register.py` creates a webhook for task events on a
+Two recipes: `register_webhook.py` creates a webhook for task events on a
 project or an organization, pings it, and summarizes its recorded deliveries;
-`webhook_monitor.py` is the receiving side — it runs a local HTTP server,
-registers a webhook pointing at it, verifies each delivery's signature, and
-aggregates task status changes live.
+`webhook_resource_monitoring.py` is the receiving side — it runs a local HTTP
+server, registers a webhook pointing at it, verifies each delivery's signature,
+and tallies the tasks created in the project as they arrive.
 
 CVAT signs every delivery with the webhook secret: the `X-Signature-256`
 header carries `sha256=<HMAC-SHA256 of the request body>`. A receiver that
-recomputes and compares the signature (as `webhook_monitor.py` does) can be
-sure the payload came from the server and not from someone who merely knows
-the URL.
+recomputes and compares the signature (as `webhook_resource_monitoring.py`
+does) can be sure the payload came from the server and not from someone who
+merely knows the URL.
 
 ## Register a webhook and inspect its deliveries
 
@@ -37,29 +37,30 @@ low-level `client.api_client.webhooks_api`.
 | `--cleanup` | no | Delete the created webhook at the end |
 
 ```bash
-python webhook_register.py --host 'https://app.cvat.ai' --token '<your token>' \
+python register_webhook.py --host 'https://app.cvat.ai' --token '<your token>' \
     --project-id 7 --target-url 'https://ci.example.com/cvat-events' --secret 'w3bh00k'
-python webhook_register.py --host 'https://app.cvat.ai' --token '<your token>' \
+python register_webhook.py --host 'https://app.cvat.ai' --token '<your token>' \
     --org 'annotators' --target-url 'https://ci.example.com/cvat-events' --secret 'w3bh00k'
 ```
 
 ### The script
 
-{{< include-code "assets/sdk-examples/webhook_register.py" >}}
+{{< include-code "assets/sdk-examples/register_webhook.py" >}}
 
-## Monitor task status changes live
+## Watch new tasks appear live
 
-Starts a local HTTP server on `--port`, registers a project webhook targeting
-`--public-url` (how the CVAT server reaches this machine — a public IP, a DNS
-name, or a tunnel), and then, for every delivery: verifies the signature,
-tallies the event, and for task updates prints and tallies the status change.
-On Ctrl-C — or after `--max-events` verified events — it prints the tallies.
+Starts a local HTTP server on `--port`, registers a `create:task` webhook for
+the project targeting `--public-url` (how the CVAT server reaches this machine
+— a public IP, a DNS name, or a tunnel), and then, for every delivery: verifies
+the signature, tallies the event, and prints the new task's id and name. On
+Ctrl-C — or after `--max-events` verified events — it prints the tallies and
+how many deliveries were rejected for a bad signature.
 
 | Flag | Required | Meaning |
 | --- | --- | --- |
 | `--host` | yes | Server URL |
 | `--token` | yes | Personal Access Token |
-| `--project-id` | yes | Project whose task events to monitor |
+| `--project-id` | yes | Project whose new tasks to watch |
 | `--public-url` | yes | URL under which the CVAT server can reach this machine |
 | `--port` | no | Local port to listen on (default `8000`) |
 | `--secret` | yes | Secret the server signs the deliveries with |
@@ -67,14 +68,14 @@ On Ctrl-C — or after `--max-events` verified events — it prints the tallies.
 | `--cleanup` | no | Delete the created webhook at the end |
 
 ```bash
-python webhook_monitor.py --host 'https://app.cvat.ai' --token '<your token>' \
+python webhook_resource_monitoring.py --host 'https://app.cvat.ai' --token '<your token>' \
     --project-id 7 --public-url 'https://my-tunnel.example.com/payload' \
     --port 8000 --secret 'w3bh00k'
 ```
 
 ### The script
 
-{{< include-code "assets/sdk-examples/webhook_monitor.py" >}}
+{{< include-code "assets/sdk-examples/webhook_resource_monitoring.py" >}}
 
 _Other SDK options:_
 
@@ -90,13 +91,17 @@ _Other SDK options:_
 _Notes:_
 
 - Webhook payloads carry the event name (e.g. `update:task`), the serialized
-  resource, the `sender`, and — for updates — `before_update`/`changes` with
-  the old field values.
+  resource, and the `sender`.
 - An organization webhook lives in the organization's scope, so every call
   about it must be made in that organization's context
   (`client.organization_context(slug)`).
+- A third webhook scope, `type="server"`, exists for server-wide events
+  (user and organization lifecycle events) and is restricted to admin
+  accounts; it isn't covered by these two project/organization recipes. See
+  {{< ilink "/docs/administration/community/advanced/webhooks#for-server-admin-only" "the Webhooks guide" >}}
+  for details.
 - The delivery list is paginated like every list endpoint;
   `get_paginated_collection()` walks all the pages.
 - Full recipes:
-  [`webhook_register.py`](https://github.com/cvat-ai/cvat/tree/develop/cvat-sdk/examples/webhook_register.py),
-  [`webhook_monitor.py`](https://github.com/cvat-ai/cvat/tree/develop/cvat-sdk/examples/webhook_monitor.py).
+  [`register_webhook.py`](https://github.com/cvat-ai/cvat/tree/develop/cvat-sdk/examples/register_webhook.py),
+  [`webhook_resource_monitoring.py`](https://github.com/cvat-ai/cvat/tree/develop/cvat-sdk/examples/webhook_resource_monitoring.py).

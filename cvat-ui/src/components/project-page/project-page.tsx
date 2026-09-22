@@ -17,12 +17,14 @@ import Popover from 'antd/lib/popover';
 import Title from 'antd/lib/typography/Title';
 import Pagination from 'antd/lib/pagination';
 import { MultiPlusIcon } from 'icons';
-import { PlusOutlined } from '@ant-design/icons';
+import { PlusOutlined, SoundOutlined } from '@ant-design/icons';
 import Empty from 'antd/lib/empty';
 import Input from 'antd/lib/input';
 import notification from 'antd/lib/notification';
 
-import { getCore, Project, Task } from 'cvat-core-wrapper';
+import {
+    DimensionType, getCore, Project, Task,
+} from 'cvat-core-wrapper';
 import { CombinedState, TasksQuery, SelectedResourceType } from 'reducers';
 import { getProjectTasksAsync, updateProjectAsync } from 'actions/projects-actions';
 import CVATLoadingSpinner from 'components/common/loading-spinner';
@@ -160,6 +162,8 @@ export default function ProjectPageComponent(): JSX.Element {
         return <ProjectNotFoundComponent />;
     }
 
+    const canCreateAudioTask = !projectInstance.dimension || projectInstance.dimension === DimensionType.DIMENSION_1D;
+    const canCreateGenericTask = projectInstance.dimension !== DimensionType.DIMENSION_1D;
     const subsets = Array.from(
         new Set<string>(tasks.map((task: Task) => task.subset)),
     );
@@ -335,22 +339,36 @@ export default function ProjectPageComponent(): JSX.Element {
                             overlayInnerStyle={{ padding: 0 }}
                             content={(
                                 <CvatDropdownMenuPaper>
-                                    <Button
-                                        type='primary'
-                                        icon={<PlusOutlined />}
-                                        className='cvat-create-task-button'
-                                        onClick={() => history.push(`/tasks/create?projectId=${id}`)}
-                                    >
-                                        Create a new task
-                                    </Button>
-                                    <Button
-                                        type='primary'
-                                        icon={<span className='anticon'><MultiPlusIcon /></span>}
-                                        className='cvat-create-multi-tasks-button'
-                                        onClick={() => history.push(`/tasks/create?projectId=${id}&many=true`)}
-                                    >
-                                        Create multi tasks
-                                    </Button>
+                                    {canCreateGenericTask ? (
+                                        <>
+                                            <Button
+                                                type='primary'
+                                                icon={<PlusOutlined />}
+                                                className='cvat-create-task-button'
+                                                onClick={() => history.push(`/tasks/create?projectId=${id}`)}
+                                            >
+                                                Create a new task
+                                            </Button>
+                                            <Button
+                                                type='primary'
+                                                icon={<span className='anticon'><MultiPlusIcon /></span>}
+                                                className='cvat-create-multi-tasks-button'
+                                                onClick={() => history.push(`/tasks/create?projectId=${id}&many=true`)}
+                                            >
+                                                Create multi tasks
+                                            </Button>
+                                        </>
+                                    ) : null}
+                                    {canCreateAudioTask ? (
+                                        <Button
+                                            type='primary'
+                                            icon={<SoundOutlined />}
+                                            className='cvat-create-audio-task-button'
+                                            onClick={() => history.push(`/tasks/create?projectId=${id}&type=audio`)}
+                                        >
+                                            Create a new audio task
+                                        </Button>
+                                    ) : null}
                                 </CvatDropdownMenuPaper>
                             )}
                         >

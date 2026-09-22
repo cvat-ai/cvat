@@ -7,12 +7,11 @@ from collections.abc import Callable
 from typing import Any, ClassVar
 
 import django_rq
-from django.conf import settings
 from django.db.models import Model
-from django_rq.queues import DjangoRQ, DjangoScheduler
+from django_rq.queues import DjangoRQ
 from rest_framework import status
 from rest_framework.response import Response
-from rq import Callback
+from rq import Callback, Retry
 from rq.job import Job as RQJob
 from rq.job import JobStatus as RQJobStatus
 
@@ -43,6 +42,8 @@ class AbstractRequestManager(metaclass=ABCMeta):
 
     job_on_success_callback: Callback | None
     job_on_failure_callback: Callback | None
+
+    rq_meta_cls: ClassVar[type[BaseRQMeta]] = BaseRQMeta
 
     def __init__(
         self,
@@ -76,6 +77,13 @@ class AbstractRequestManager(metaclass=ABCMeta):
         """
         Time to live for failures in seconds,
         if not set, the default failure TTL will be used
+        """
+        return None
+
+    @property
+    def job_retry(self) -> Retry | None:
+        """
+        Retry policy for the job, if not set, the job will not be retried
         """
         return None
 
@@ -136,26 +144,31 @@ class AbstractRequestManager(metaclass=ABCMeta):
 
         job_status = job.get_status(refresh=False)
 
-        if job_status in {
-            # FUTURE-TODO: cancelling and re-enqueuing a started job should probably be allowed
-            RQJobStatus.STARTED,
-            RQJobStatus.QUEUED,
-            RQJobStatus.DEFERRED,
-        }:
-            return Response(
-                RqIdSerializer({"rq_id": job.id}).data,
-                status=status.HTTP_409_CONFLICT,
-            )
-
-        # RQ jobs can be scheduled only by CVAT internal logic, in that case job has no dependencies
-        if job_status == RQJobStatus.SCHEDULED:
-            scheduler: DjangoScheduler = django_rq.get_scheduler(queue.name, queue=queue)
-            # remove the job id from the set with scheduled keys
-            scheduler.cancel(job)
-            job.cancel(enqueue_dependents=settings.ONE_RUNNING_JOB_IN_QUEUE_PER_USER)
-
-        job.delete()
-        return None
+        match job_status:
+            case (
+                # FUTURE-TODO: cancelling and re-enqueuing a started job should probably be allowed
+                RQJobStatus.STARTED
+                | RQJobStatus.QUEUED
+                | RQJobStatus.DEFERRED
+                | RQJobStatus.SCHEDULED
+            ):
+                return Response(
+                    RqIdSerializer({"rq_id": job.id}).data,
+                    status=status.HTTP_409_CONFLICT,
+                )
+            case (
+                RQJobStatus.FINISHED
+                | RQJobStatus.FAILED
+                | RQJobStatus.CANCELED
+                | RQJobStatus.STOPPED
+            ):
+                # The request ID is reused as the RQ job ID, and RQ's enqueue just overwrites
+                # the existing job hash without dropping its result/failure TTL or registry entry.
+                # Delete the terminal job so the new one starts from a clean slate.
+                job.delete()
+                return None
+            case _:
+                raise ValueError(f"Unexpected RQ job status, got {job_status!r}")
 
     def build_meta(self, *, request_id: str) -> dict[str, Any]:
         return BaseRQMeta.build_from_instance(
@@ -175,6 +188,7 @@ class AbstractRequestManager(metaclass=ABCMeta):
                 depends_on=define_dependent_job(queue, self.user_id, rq_id=request_id),
                 result_ttl=self.job_result_ttl,
                 failure_ttl=self.job_failed_ttl,
+                retry=self.job_retry,
                 on_success=self.job_on_success_callback,
                 on_failure=self.job_on_failure_callback,
                 **kwargs,
