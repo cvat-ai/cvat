@@ -13,6 +13,7 @@ PASSWORD_HASHERS = [
 ]
 
 REST_FRAMEWORK["DEFAULT_THROTTLE_RATES"]["anon"] = "300/minute"
+REST_FRAMEWORK_MAX_PAGE_SIZE = 100
 
 # The tests should not fail due to high disk utilization of CI infrastructure that we have no control over
 # But let's keep this check enabled

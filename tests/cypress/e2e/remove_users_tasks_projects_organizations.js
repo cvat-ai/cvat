@@ -16,7 +16,7 @@ describe('Delete users, tasks, projects, organizations created during the tests 
 
     it('Get a list of tasks and delete them all', () => {
         cy.request({
-            url: '/api/tasks?page_size=1000',
+            url: '/api/tasks?page_size=500',
             headers: authHeaders,
         }).then((response) => {
             const responseResult = response.body.results;
@@ -33,7 +33,7 @@ describe('Delete users, tasks, projects, organizations created during the tests 
 
     it('Get a list of projects and delete them all', () => {
         cy.request({
-            url: '/api/projects?page_size=all',
+            url: '/api/projects?page_size=500',
             headers: authHeaders,
         }).then((response) => {
             const responseResult = response.body.results;
@@ -50,7 +50,7 @@ describe('Delete users, tasks, projects, organizations created during the tests 
 
     it('Get a list of organizations and delete them all', () => {
         cy.request({
-            url: '/api/organizations?page_size=all',
+            url: '/api/organizations?page_size=500',
             headers: authHeaders,
         }).then((response) => {
             const responseResult = response.body.results;
