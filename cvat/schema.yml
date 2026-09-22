@@ -8660,6 +8660,18 @@ components:
         * `KEY_FILE_PATH` - KEY_FILE_PATH
         * `ANONYMOUS_ACCESS` - ANONYMOUS_ACCESS
         * `CONNECTION_STRING` - CONNECTION_STRING
+    CvatUsageReasonEnum:
+      enum:
+      - work_project
+      - academic_research
+      - teaching_or_coursework
+      - personal_project
+      type: string
+      description: |-
+        * `work_project` - work_project
+        * `academic_research` - academic_research
+        * `teaching_or_coursework` - teaching_or_coursework
+        * `personal_project` - personal_project
     DataMetaRead:
       type: object
       properties:
@@ -11462,6 +11474,44 @@ components:
           title: Active
           description: Designates whether this user should be treated as active. Unselect
             this instead of deleting accounts.
+        cvat_usage_reason:
+          nullable: true
+          description: |-
+            The main reason the user uses CVAT.
+
+            * `work_project` - work_project
+            * `academic_research` - academic_research
+            * `teaching_or_coursework` - teaching_or_coursework
+            * `personal_project` - personal_project
+          oneOf:
+          - $ref: '#/components/schemas/CvatUsageReasonEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        primary_role:
+          type: string
+          nullable: true
+          minLength: 1
+          description: A predefined role code or custom role text.
+          maxLength: 255
+        planned_activities:
+          type: array
+          items:
+            $ref: '#/components/schemas/PlannedActivitiesEnum'
+          description: Predefined activity codes selected by the user.
+          maxItems: 6
+        data_types:
+          type: array
+          items:
+            type: string
+            minLength: 1
+            maxLength: 255
+          description: Predefined data type codes and optionally one custom value.
+          maxItems: 6
+        discovery_source:
+          type: string
+          nullable: true
+          minLength: 1
+          description: A predefined discovery source code or custom text.
+          maxLength: 255
     PatchedWebhookWriteRequest:
       type: object
       properties:
@@ -11487,6 +11537,22 @@ components:
           items:
             $ref: '#/components/schemas/EventsEnum'
           writeOnly: true
+    PlannedActivitiesEnum:
+      enum:
+      - set_up_projects
+      - annotate_data
+      - review_quality
+      - manage_annotators
+      - connect_models
+      - evaluate_for_organization
+      type: string
+      description: |-
+        * `set_up_projects` - set_up_projects
+        * `annotate_data` - annotate_data
+        * `review_quality` - review_quality
+        * `manage_annotators` - manage_annotators
+        * `connect_models` - connect_models
+        * `evaluate_for_organization` - evaluate_for_organization
     Plugins:
       type: object
       properties:
@@ -13934,6 +14000,41 @@ components:
           type: boolean
           readOnly: true
           nullable: true
+        cvat_usage_reason:
+          nullable: true
+          description: |-
+            The main reason the user uses CVAT.
+
+            * `work_project` - work_project
+            * `academic_research` - academic_research
+            * `teaching_or_coursework` - teaching_or_coursework
+            * `personal_project` - personal_project
+          oneOf:
+          - $ref: '#/components/schemas/CvatUsageReasonEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        primary_role:
+          type: string
+          nullable: true
+          description: A predefined role code or custom role text.
+          maxLength: 255
+        planned_activities:
+          type: array
+          items:
+            $ref: '#/components/schemas/PlannedActivitiesEnum'
+          description: Predefined activity codes selected by the user.
+          maxItems: 6
+        data_types:
+          type: array
+          items:
+            type: string
+            maxLength: 255
+          description: Predefined data type codes and optionally one custom value.
+          maxItems: 6
+        discovery_source:
+          type: string
+          nullable: true
+          description: A predefined discovery source code or custom text.
+          maxLength: 255
         email_verified:
           type: boolean
           nullable: true

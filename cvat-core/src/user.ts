@@ -23,6 +23,11 @@ export default class User {
     public readonly isActive: boolean;
     public readonly isVerified: boolean;
     public readonly hasAnalyticsAccess: boolean;
+    public readonly cvatUsageReason: string | null;
+    public readonly primaryRole: string | null;
+    public readonly plannedActivities: string[];
+    public readonly dataTypes: string[];
+    public readonly discoverySource: string | null;
 
     constructor(initialData: SerializedUser) {
         const data = {
@@ -39,6 +44,11 @@ export default class User {
             is_active: null,
             email_verification_required: null,
             has_analytics_access: null,
+            cvat_usage_reason: null,
+            primary_role: null,
+            planned_activities: [] as string[],
+            data_types: [] as string[],
+            discovery_source: null,
         };
 
         for (const property in data) {
@@ -89,6 +99,21 @@ export default class User {
                 hasAnalyticsAccess: {
                     get: () => data.has_analytics_access,
                 },
+                cvatUsageReason: {
+                    get: () => data.cvat_usage_reason,
+                },
+                primaryRole: {
+                    get: () => data.primary_role,
+                },
+                plannedActivities: {
+                    get: () => [...data.planned_activities],
+                },
+                dataTypes: {
+                    get: () => [...data.data_types],
+                },
+                discoverySource: {
+                    get: () => data.discovery_source,
+                },
             }),
         );
     }
@@ -108,6 +133,11 @@ export default class User {
             is_active: this.isActive,
             email_verification_required: this.isVerified,
             has_analytics_access: this.hasAnalyticsAccess,
+            cvat_usage_reason: this.cvatUsageReason,
+            primary_role: this.primaryRole,
+            planned_activities: this.plannedActivities,
+            data_types: this.dataTypes,
+            discovery_source: this.discoverySource,
         };
     }
 

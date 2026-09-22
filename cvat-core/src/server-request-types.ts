@@ -98,7 +98,16 @@ export type OrganizationMembersFilter = Camelized<APIOrganizationMembersFilter>;
 export type APIApiTokenModifiableFields = Partial<Pick<SerializedApiToken, 'name' | 'expiry_date' | 'read_only'>>;
 export type ApiTokenModifiableFields = CamelizedV2<APIApiTokenModifiableFields>;
 
-export type APIUserModifiableFields = Partial<Pick<SerializedUser, 'username' | 'first_name' | 'last_name'>>;
+export type APIUserModifiableFields = Partial<Pick<SerializedUser,
+    | 'username'
+    | 'first_name'
+    | 'last_name'
+    | 'cvat_usage_reason'
+    | 'primary_role'
+    | 'planned_activities'
+    | 'data_types'
+    | 'discovery_source'
+>>;
 export type UserModifiableFields = CamelizedV2<APIUserModifiableFields>;
 
 export type APIUserGrowthDataModifiableFields = Partial<Pick<
