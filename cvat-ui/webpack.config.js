@@ -111,7 +111,11 @@ module.exports = (env, argv = {}) => {
                 '@root': path.resolve(__dirname, 'src'),
                 '@modules': path.resolve(__dirname, '..', 'node_modules'),
             },
-            modules: [path.resolve(__dirname, 'src'), 'node_modules'],
+            modules: [
+                path.resolve(__dirname, 'src'),
+                path.resolve(__dirname, '..', 'node_modules'),
+                'node_modules',
+            ],
         },
         module: {
             rules: [
