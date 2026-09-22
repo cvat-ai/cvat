@@ -113,8 +113,10 @@ module.exports = (env, argv = {}) => {
             },
             modules: [
                 path.resolve(__dirname, 'src'),
-                path.resolve(__dirname, '..', 'node_modules'),
                 'node_modules',
+                // Fallback for plugins symlinked from outside the CVAT source tree. Keep this after
+                // 'node_modules' to preserve standard resolution of nested package dependencies.
+                path.resolve(__dirname, '..', 'node_modules'),
             ],
         },
         module: {
