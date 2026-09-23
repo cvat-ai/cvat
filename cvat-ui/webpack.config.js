@@ -112,7 +112,13 @@ module.exports = (env, argv = {}) => {
                 '@root': path.resolve(__dirname, 'src'),
                 '@modules': path.resolve(__dirname, '..', 'node_modules'),
             },
-            modules: [path.resolve(__dirname, 'src'), 'node_modules'],
+            modules: [
+                path.resolve(__dirname, 'src'),
+                'node_modules',
+                // Fallback for plugins symlinked from outside the CVAT source tree. Keep this after
+                // 'node_modules' to preserve standard resolution of nested package dependencies.
+                path.resolve(__dirname, '..', 'node_modules'),
+            ],
         },
         module: {
             rules: [

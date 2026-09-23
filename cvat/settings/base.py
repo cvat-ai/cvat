@@ -174,6 +174,8 @@ def parse_num_proxies(value: str | None) -> int | None:
     return num_proxies
 
 
+# NOTE @sosov: DRF does not have a max_page_size setting out of the box
+REST_FRAMEWORK_MAX_PAGE_SIZE = 500
 REST_FRAMEWORK = {
     "DEFAULT_PARSER_CLASSES": [
         "rest_framework.parsers.JSONParser",
