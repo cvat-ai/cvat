@@ -14,6 +14,8 @@ current playback position, and colored regions represent audio intervals.
 
 ### Move through the recording
 
+![Navigate the waveform](/images/audio_editor_workspace_13.gif)
+
 - Click the waveform to move the playhead to that time. To move through a zoomed recording, use the
 horizontal scrollbar, horizontal scrolling on a supported mouse or touchpad, or
 <kbd>Shift</kbd>+mouse wheel.
@@ -40,20 +42,22 @@ change the time scale.
 
 - Drag the handle below the minimap to change the waveform height.
 
-  ![Resize handle](/images/audio_editor_workspace_05.webp)
+  ![Resize handle](/images/audio_editor_workspace_05.gif)
 
 ## Select and edit intervals
 
 | Action | Description |
 | --- | --- |
-| **Select** | Click an interval on the waveform or select it in the [Objects Sidebar](../objects-sidebar/) to make it active.<br><br>Default shortcuts:<br>Next visible interval: <kbd>Tab</kbd><br>Previous visible interval: <kbd>Shift</kbd>+<kbd>Tab</kbd><br>Each shortcut selects and centers the interval on the waveform. |
-| **Move** | Drag an interval to change its position. <br>Hold <kbd>Alt</kbd> while dragging to snap either boundary to a nearby boundary of another visible interval. If both boundaries have eligible snap targets, CVAT uses the closest one. |
-| **Resize** | Drag either boundary to change its start or end time. <br>When you resize an interval beyond the visible edge, the waveform scrolls automatically. <br>Hold <kbd>Alt</kbd> to snap the boundary being resized to a nearby boundary of another visible interval. It cannot snap to the other boundary of the same interval. |
-| **Bulk resize** | Hold <kbd>Shift</kbd> near adjacent interval boundaries to highlight nearby unlocked boundaries, then drag to resize them together. |
+| **Select** | Click an interval on the waveform or select it in the [Objects Sidebar](../objects-sidebar/) to make it active.<br>![Select](/images/audio_editor_workspace_14.gif)<br><br>Default shortcuts:<br>Next visible interval: <kbd>Tab</kbd><br>Previous visible interval: <kbd>Shift</kbd>+<kbd>Tab</kbd><br>Each shortcut selects and centers the interval on the waveform. |
+| **Move** | Drag an interval to change its position. <br>Hold <kbd>Alt</kbd> while dragging to snap either boundary to a nearby boundary of another visible interval. If both boundaries have eligible snap targets, CVAT uses the closest one.<br>![Move](/images/audio_editor_workspace_15.gif) |
+| **Resize** | Drag either boundary to change its start or end time. <br>When you resize an interval beyond the visible edge, the waveform scrolls automatically. <br>Hold <kbd>Alt</kbd> to snap the boundary being resized to a nearby boundary of another visible interval. It cannot snap to the other boundary of the same interval.<br>![Resize](/images/audio_editor_workspace_16.gif) |
+| **Bulk resize** | Hold <kbd>Shift</kbd> near adjacent interval boundaries to highlight nearby unlocked boundaries, then drag to resize them together.<br>![Bulk resize](/images/audio_editor_workspace_17.gif) |
 
 ### Interval details
 
 When you select an interval, its details panel appears below the waveform.
+
+#### Header
 
 | Image | Description |
 | --- | --- |
@@ -61,7 +65,13 @@ When you select an interval, its details panel appears below the waveform.
 | ![Interval Header Playback ](/images/audio_editor_workspace_08.webp) | Playback controls move the playhead to the interval start or end, or play the interval once.<br><br>Default shortcuts:<br>Set playback to start: <kbd>Shift</kbd>+<kbd>D</kbd><br>Play once: <kbd>Shift</kbd>+<kbd>Space</kbd><br>Set playback to end: <kbd>Shift</kbd>+<kbd>F</kbd> |
 | ![Interval Header State ](/images/audio_editor_workspace_09.webp) | State controls lock, pin, or hide the interval. Locked intervals cannot be edited, moved, or resized. Pinned intervals cannot be moved. Hidden intervals are not shown on the waveform.<br><br>Default shortcuts:<br>Lock/Unlock: <kbd>L</kbd><br>Pin/Unpin: <kbd>P</kbd><br>Hide/Show: <kbd>H</kbd> |
 | ![Interval Header More Actions ](/images/audio_editor_workspace_10.webp) | The **More actions** menu lets you fit the waveform to the interval, copy its URL, duplicate it, change its color when available, or delete it.<br><br>Default shortcuts:<br>Fit interval: <kbd>I</kbd><br>Delete: <kbd>Del</kbd><br>Force-delete a locked interval: <kbd>Shift</kbd>+<kbd>Del</kbd> |
-| ![Interval Header Attribute ](/images/audio_editor_workspace_11.webp) | All attributes are expanded by default. Edit their values or collapse them as needed. Available attributes depend on the selected label. |
+
+#### Edit attributes
+
+All attributes are expanded by default. Edit their values or collapse them as needed. Available
+attributes depend on the selected label.
+
+![Interval attributes](/images/audio_editor_workspace_11.webp)
 
 ### Play and manage intervals
 

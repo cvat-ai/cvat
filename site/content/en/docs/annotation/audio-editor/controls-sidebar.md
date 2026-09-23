@@ -27,6 +27,6 @@ methods:
 
 | Method | How it works |
 | --- | --- |
-| **Draw** | Drag over the waveform to define an interval. You can drag in either direction. <br>Hold <kbd>Alt</kbd> when setting the start or end to snap that boundary to a nearby boundary of a visible interval. <br><br>Default shortcut: <kbd>N</kbd>. |
-| **Record** | Start recording at the current playhead position.<br>Press play to start recording.<br>Press pause to set the end time.<br>Press <kbd>Esc</kbd> to cancel an unfinished recording.<br><br>Default shortcut: <kbd>Shift</kbd>+<kbd>N</kbd>. |
-| **Extend** | Creates a new interval from the end of the nearest preceding interval to the current playhead. <br>If there is no preceding interval, it starts at the beginning of the recording.<br><br>Default shortcut: <kbd>Shift</kbd>+<kbd>E</kbd>. |
+| **Draw** | Drag over the waveform to define an interval. You can drag in either direction. <br>Hold <kbd>Alt</kbd> when setting the start or end to snap that boundary to a nearby boundary of a visible interval.<br>![Draw ](/images/audio_editor_controls_10.gif) <br><br>Default shortcut: <kbd>N</kbd>. |
+| **Record** | Start recording at the current playhead position.<br>Press play to start recording.<br>Press pause to set the end time.<br>Press <kbd>Esc</kbd> to cancel an unfinished recording.<br>![Record ](/images/audio_editor_controls_11.gif)<br><br>Default shortcut: <kbd>Shift</kbd>+<kbd>N</kbd>. |
+| **Extend** | Creates a new interval from the end of the nearest preceding interval to the current playhead. <br>If there is no preceding interval, it starts at the beginning of the recording.<br>![Extend ](/images/audio_editor_controls_12.gif)<br><br>Default shortcut: <kbd>Shift</kbd>+<kbd>E</kbd>. |
