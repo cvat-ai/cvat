@@ -691,7 +691,7 @@ Cypress.Commands.add('getObjectSidebarItem', (id) => {
             throw new Error(`Reached the end of the sidebar without finding object ${id}`);
         }
 
-        cy.wrap($holder).scrollTo(0, nextScroll, { duration: 0 });
+        cy.wrap($holder).scrollTo(0, nextScroll, { duration: 0, ensureScrollable: false });
         // Let the virtual list mount rows at the new scroll position.
         return cy.wait(50).then(() => findItem(attempt + 1));
     });
