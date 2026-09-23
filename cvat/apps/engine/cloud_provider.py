@@ -366,9 +366,10 @@ class CloudStorageClient(ABC):
             for f in content:
                 f["name"] = f["name"][last_slash + 1 :]
 
-        # Hierarchical common prefixes can become nameless after relativization:
-        # key="/file", prefix="" -> common prefix="/" -> name=""
-        # key="dir//file", prefix="dir/" -> common prefix="dir//" -> name=""
+        # Provider directories can become nameless after being made relative to search_prefix:
+        # key="/file", prefix="" -> directory="/" -> name=""
+        # key="dir//file", prefix="dir/" -> directory="dir//" -> name=""
+        # Empty names are rejected by the API and would make the whole listing fail.
         content = [item for item in content if item["name"]]
 
         if _use_sort:

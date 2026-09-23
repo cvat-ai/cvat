@@ -12,6 +12,7 @@ and **Google Cloud Storage** storages to import and export image datasets for yo
 
 Check out:
 
+- [Object key requirements](#object-key-requirements)
 - [Amazon S3](#amazon-s3)
   - [Create a bucket](#create-a-bucket)
   - [Upload data](#upload-data)
@@ -44,6 +45,13 @@ Check out:
   - [Attach Azure Blob Storage](#attach-azure-blob-storage)
   - [Video tutorial: Add Microsoft Azure Blob Storage as Cloud Storage in CVAT](#video-tutorial-add-microsoft-azure-blob-storage-as-cloud-storage-in-cvat)
 - [Prepare the dataset](#prepare-the-dataset)
+
+## Object key requirements
+
+{{% alert title="Note" color="primary" %}}
+CVAT interprets object keys as canonical relative POSIX paths and uses `/` as the path separator.
+Object keys that start with `/` or contain empty path components (`//`) cannot be used in CVAT.
+{{% /alert %}}
 
 ## Amazon S3
 
@@ -563,11 +571,6 @@ After filling in all the fields, select **Submit**.
 <iframe width="560" height="315" src="https://www.youtube.com/embed/nvrm8oFBKMY?si=v2z6Rjlc250niXPX" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
 
 ## Prepare the dataset
-
-{{% alert title="Object key requirements" color="primary" %}}
-CVAT interprets object keys as canonical relative POSIX paths and uses `/` as the path separator.
-Keys that start with `/` or contain empty path components (`//`) cannot be represented correctly.
-{{% /alert %}}
 
 For example, the dataset is [The Oxford-IIIT Pet Dataset](https://www.robots.ox.ac.uk/~vgg/data/pets/):
 
