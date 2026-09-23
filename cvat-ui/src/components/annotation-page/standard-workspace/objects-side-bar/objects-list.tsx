@@ -43,6 +43,13 @@ import LayerInsertDropArea from './drag-and-drop/layer-insert-drop-area';
 import LayerSection from './drag-and-drop/layer-section';
 
 const OBJECT_ITEM_ESTIMATED_HEIGHT = 88;
+const SCROLL_TARGET_MAX_FRAMES = 60;
+
+interface PendingScrollTarget {
+    itemID: string;
+    rootID: string;
+    parentID: number | null;
+}
 
 interface Props {
     workspace: Workspace;
@@ -113,7 +120,7 @@ function ObjectListComponent(props: Props): JSX.Element {
     const [dragActive, setDragActive] = useState<boolean>(false);
     const [activeDragID, setActiveDragID] = useState<string | null>(null);
     const [dragPointerPosition, setDragPointerPosition] = useState<PointerPosition | null>(null);
-    const [pendingExpandedLayerItemID, setPendingExpandedLayerItemID] = useState<string | null>(null);
+    const [pendingScrollTarget, setPendingScrollTarget] = useState<PendingScrollTarget | null>(null);
     const [statesListHeight, setStatesListHeight] = useState(0);
     const statesListRef = useRef<HTMLDivElement>(null);
     const virtualListRef = useRef<ListRef>(null);
@@ -160,18 +167,53 @@ function ObjectListComponent(props: Props): JSX.Element {
         });
     }, [zLayers.join(',')]);
 
-    useEffect((): void => {
-        if (!pendingExpandedLayerItemID) {
-            return;
+    useEffect((): (() => void) | undefined => {
+        if (!pendingScrollTarget) {
+            return undefined;
         }
 
-        const sidebarItem = window.document.getElementById(pendingExpandedLayerItemID);
+        let frame: number;
+        let attempts = 0;
+        let stableFrames = 0;
+        const alignTarget = (): void => {
+            const item = window.document.getElementById(pendingScrollTarget.itemID) || (
+                pendingScrollTarget.parentID !== null ?
+                    window.document.getElementById(pendingScrollTarget.rootID) : null
+            );
+            const scrollContainer = statesOrdering === StatesOrdering.LAYER ? statesListRef.current :
+                statesListRef.current?.querySelector<HTMLElement>('.rc-virtual-list-holder');
 
-        if (sidebarItem) {
-            sidebarItem.scrollIntoView({ block: 'nearest' });
-            setPendingExpandedLayerItemID(null);
-        }
-    }, [collapsedLayers, pendingExpandedLayerItemID]);
+            if (item && scrollContainer) {
+                if (statesOrdering === StatesOrdering.LAYER) {
+                    item.scrollIntoView({ block: 'start' });
+                    setPendingScrollTarget(null);
+                    return;
+                }
+
+                const delta = item.getBoundingClientRect().top - scrollContainer.getBoundingClientRect().top;
+                if (Math.abs(delta) > 1) {
+                    scrollContainer.scrollTop += delta;
+                    stableFrames = 0;
+                } else {
+                    stableFrames++;
+                }
+
+                if (stableFrames >= 2) {
+                    setPendingScrollTarget(null);
+                    return;
+                }
+            }
+
+            if (++attempts < SCROLL_TARGET_MAX_FRAMES) {
+                frame = window.requestAnimationFrame(alignTarget);
+            } else {
+                setPendingScrollTarget(null);
+            }
+        };
+
+        frame = window.requestAnimationFrame(alignTarget);
+        return (): void => window.cancelAnimationFrame(frame);
+    }, [collapsedLayers, pendingScrollTarget, statesOrdering]);
 
     // React to external requests to expand the layer containing a target object.
     useEffect((): () => void => {
@@ -188,8 +230,12 @@ function ObjectListComponent(props: Props): JSX.Element {
                         `cvat-objects-sidebar-state-item-element-${clientID}` :
                         `cvat-objects-sidebar-state-item-${clientID}`;
 
-                    virtualListRef.current?.scrollTo({ index, align: 'auto' });
-                    setPendingExpandedLayerItemID(itemID);
+                    setPendingScrollTarget({
+                        itemID,
+                        rootID: `cvat-objects-sidebar-state-item-${rootClientID}`,
+                        parentID,
+                    });
+                    virtualListRef.current?.scrollTo({ index, align: 'top' });
                 }
                 return;
             }
@@ -199,13 +245,14 @@ function ObjectListComponent(props: Props): JSX.Element {
             ));
 
             if (expandedState) {
-                if (collapsedLayers.has(expandedState.zOrder)) {
-                    const itemID = Number.isInteger(parentID) ?
-                        `cvat-objects-sidebar-state-item-element-${clientID}` :
-                        `cvat-objects-sidebar-state-item-${clientID}`;
-
-                    setPendingExpandedLayerItemID(itemID);
-                }
+                const itemID = Number.isInteger(parentID) ?
+                    `cvat-objects-sidebar-state-item-element-${clientID}` :
+                    `cvat-objects-sidebar-state-item-${clientID}`;
+                setPendingScrollTarget({
+                    itemID,
+                    rootID: `cvat-objects-sidebar-state-item-${parentID ?? clientID}`,
+                    parentID,
+                });
 
                 setCollapsedLayers((current: Set<number>): Set<number> => {
                     const next = new Set(current);
