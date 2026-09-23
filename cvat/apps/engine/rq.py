@@ -8,7 +8,6 @@ from abc import ABCMeta, abstractmethod
 from collections.abc import Callable
 from types import NoneType
 from typing import TYPE_CHECKING, Any, ClassVar, Protocol
-from uuid import UUID
 
 import attrs
 import django_rq
@@ -26,7 +25,7 @@ from cvat.apps.redis_handler.apps import SELECTOR_TO_QUEUE
 from cvat.apps.redis_handler.rq import RequestId, RequestIdWithOptionalSubresource
 
 if TYPE_CHECKING:
-    from cvat.apps.iam.models import User
+    from cvat.apps.engine.types import ExtendedRequest
     from cvat.apps.redis_handler.background import AbstractRequestManager
 
 
@@ -35,6 +34,9 @@ class RQJobMetaField:
         ID = "id"
         USERNAME = "username"
         EMAIL = "email"
+        FIRST_NAME = "first_name"
+        LAST_NAME = "last_name"
+        URL = "url"
 
     class RequestField:
         UUID = "uuid"
@@ -111,6 +113,9 @@ class UserMeta:
     id: int = ImmutableRQMetaAttribute(RQJobMetaField.UserField.ID)
     username: str = ImmutableRQMetaAttribute(RQJobMetaField.UserField.USERNAME)
     email: str = ImmutableRQMetaAttribute(RQJobMetaField.UserField.EMAIL)
+    first_name: str = ImmutableRQMetaAttribute(RQJobMetaField.UserField.FIRST_NAME)
+    last_name: str = ImmutableRQMetaAttribute(RQJobMetaField.UserField.LAST_NAME)
+    url: str = ImmutableRQMetaAttribute(RQJobMetaField.UserField.URL)
 
     def __init__(self, meta: dict[str, Any]) -> None:
         self._meta = meta
@@ -172,10 +177,9 @@ class AbstractRQMeta(metaclass=ABCMeta):
     def _get_resettable_fields() -> list[str]:
         """Return a list of fields that must be reset on retry"""
 
-    def get_meta_on_retry(self) -> dict[str, Any]:
-        resettable_fields = self._get_resettable_fields()
-
-        return {k: v for k, v in self._meta.items() if k not in resettable_fields}
+    def reset_on_retry(self) -> None:
+        for field in self._get_resettable_fields():
+            self._meta.pop(field, None)
 
 
 class RQMetaWithFailureInfo(AbstractRQMeta):
@@ -261,8 +265,7 @@ class BaseRQMeta(RQMetaWithFailureInfo):
     def build(
         cls,
         *,
-        uuid: UUID,
-        user: User,
+        request: ExtendedRequest,
         request_manager_cls: type[AbstractRequestManager],
         organization_id: int | None,
         organization_slug: str | None,
@@ -270,14 +273,21 @@ class BaseRQMeta(RQMetaWithFailureInfo):
         task_id: int | None,
         job_id: int | None,
     ) -> dict:
+        from cvat.apps.events.handlers import get_serializer
+
+        user_data = get_serializer(request.user).data
+
         return {
             RQJobMetaField.USER: {
-                RQJobMetaField.UserField.ID: user.pk,
-                RQJobMetaField.UserField.USERNAME: user.username,
-                RQJobMetaField.UserField.EMAIL: user.email,
+                RQJobMetaField.UserField.ID: user_data["id"],
+                RQJobMetaField.UserField.USERNAME: user_data["username"],
+                RQJobMetaField.UserField.EMAIL: request.user.email,
+                RQJobMetaField.UserField.FIRST_NAME: user_data["first_name"],
+                RQJobMetaField.UserField.LAST_NAME: user_data["last_name"],
+                RQJobMetaField.UserField.URL: user_data["url"],
             },
             RQJobMetaField.REQUEST: {
-                RQJobMetaField.RequestField.UUID: uuid,
+                RQJobMetaField.RequestField.UUID: request.uuid,
                 RQJobMetaField.RequestField.TIMESTAMP: timezone.now(),
             },
             RQJobMetaField.ORG_ID: organization_id,
@@ -293,8 +303,7 @@ class BaseRQMeta(RQMetaWithFailureInfo):
     @classmethod
     def build_from_instance(
         cls,
-        uuid: UUID,
-        user: User,
+        request: ExtendedRequest,
         request_manager_cls: type[AbstractRequestManager],
         instance: Model | None,
     ) -> dict:
@@ -308,8 +317,7 @@ class BaseRQMeta(RQMetaWithFailureInfo):
         )
 
         return cls.build(
-            uuid=uuid,
-            user=user,
+            request=request,
             organization_id=organization_id(instance),
             organization_slug=organization_slug(instance),
             project_id=project_id(instance),
@@ -326,25 +334,18 @@ class ExportRQMeta(BaseRQMeta):
     )
     result_filename: str = ImmutableRQMetaAttribute(RQJobMetaField.RESULT_FILENAME)
 
-    @staticmethod
-    def _get_resettable_fields() -> list[str]:
-        base_fields = BaseRQMeta._get_resettable_fields()
-        return base_fields + [RQJobMetaField.RESULT_URL, RQJobMetaField.RESULT_FILENAME]
-
     @classmethod
     def build_for(
         cls,
         *,
-        uuid: UUID,
-        user: User,
+        request: ExtendedRequest,
         request_manager_cls: type[AbstractRequestManager],
         instance: Model,
         result_url: str | None,
         result_filename: str,
     ):
         base_meta = BaseRQMeta.build_from_instance(
-            uuid=uuid,
-            user=user,
+            request=request,
             instance=instance,
             request_manager_cls=request_manager_cls,
         )
@@ -441,12 +442,18 @@ def define_dependent_job(
         queue.deferred_job_registry,
         queue,
         queue.started_job_registry,
+        queue.scheduled_job_registry,
     ]
     # Since there is no cleanup implementation in DeferredJobRegistry,
     # this registry can contain "outdated" jobs that weren't deleted from it
     # but were added to another registry. Probably such situations can occur
     # if there are active or deferred jobs when restarting the worker container.
-    filters = [lambda job: job.is_deferred, lambda _: True, lambda _: True]
+    filters = [
+        lambda job: job.is_deferred,
+        lambda _: True,
+        lambda _: True,
+        lambda job: job.is_scheduled,
+    ]
     all_user_jobs: list[RQJob] = []
     for q, f in zip(queues, filters):
         job_ids = q.get_job_ids()

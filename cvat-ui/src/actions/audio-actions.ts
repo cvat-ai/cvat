@@ -22,8 +22,10 @@ import type { AudioPlaybackRange } from 'audio/components/annotation-page/audio-
 import { updateActiveControl } from './annotation-actions';
 
 export enum AudioActionTypes {
-    SWITCH_AUDIO_PLAY = 'SWITCH_AUDIO_PLAY',
+    PAUSE_AUDIO = 'PAUSE_AUDIO',
     PLAY_FULL_AUDIO = 'PLAY_FULL_AUDIO',
+    PLAY_AUDIO_RANGE = 'PLAY_AUDIO_RANGE',
+    RESUME_AUDIO_RANGE = 'RESUME_AUDIO_RANGE',
     REPORT_AUDIO_CURRENT_TIME = 'REPORT_AUDIO_CURRENT_TIME',
     SEEK_AUDIO = 'SEEK_AUDIO',
     COMPLETE_AUDIO_SEEK = 'COMPLETE_AUDIO_SEEK',
@@ -32,7 +34,6 @@ export enum AudioActionTypes {
     SET_AUDIO_ZOOM = 'SET_AUDIO_ZOOM',
     SET_AUDIO_VOLUME = 'SET_AUDIO_VOLUME',
     SET_AUDIO_LOOP = 'SET_AUDIO_LOOP',
-    SET_AUDIO_PLAYBACK_RANGE = 'SET_AUDIO_PLAYBACK_RANGE',
     UPDATE_AUDIO_PLAYBACK_RANGE = 'UPDATE_AUDIO_PLAYBACK_RANGE',
     CLEAR_AUDIO_PLAYBACK_RANGE = 'CLEAR_AUDIO_PLAYBACK_RANGE',
     SET_AUDIO_INTERVAL_PLAYBACK_SOURCE = 'SET_AUDIO_INTERVAL_PLAYBACK_SOURCE',
@@ -53,10 +54,12 @@ export enum AudioActionTypes {
 }
 
 export const audioActions = {
-    switchAudioPlay: (playing: boolean) => (
-        createAction(AudioActionTypes.SWITCH_AUDIO_PLAY, { playing })
-    ),
+    pauseAudio: () => createAction(AudioActionTypes.PAUSE_AUDIO),
     playFullAudio: () => createAction(AudioActionTypes.PLAY_FULL_AUDIO),
+    playAudioRange: (range: AudioPlaybackRange) => (
+        createAction(AudioActionTypes.PLAY_AUDIO_RANGE, { range })
+    ),
+    resumeAudioRange: () => createAction(AudioActionTypes.RESUME_AUDIO_RANGE),
     reportAudioCurrentTime: (time: number) => (
         createAction(AudioActionTypes.REPORT_AUDIO_CURRENT_TIME, { time })
     ),
@@ -77,9 +80,6 @@ export const audioActions = {
     ),
     setAudioLoop: (loop: boolean) => (
         createAction(AudioActionTypes.SET_AUDIO_LOOP, { loop })
-    ),
-    setAudioPlaybackRange: (range: AudioPlaybackRange) => (
-        createAction(AudioActionTypes.SET_AUDIO_PLAYBACK_RANGE, { range })
     ),
     updateAudioPlaybackRange: (range: AudioPlaybackRange) => (
         createAction(AudioActionTypes.UPDATE_AUDIO_PLAYBACK_RANGE, { range })
@@ -139,13 +139,11 @@ export type AudioActions = ActionUnion<typeof audioActions>;
 
 export function toggleAudioPlayback(): ThunkAction {
     return async (dispatch: ThunkDispatch, getState): Promise<void> => {
-        const {
-            playing, playbackRange,
-        } = getState().audio.player;
+        const { playing, playbackRange } = getState().audio.player;
         if (playing) {
-            dispatch(audioActions.switchAudioPlay(false));
+            dispatch(audioActions.pauseAudio());
         } else if (playbackRange) {
-            dispatch(audioActions.switchAudioPlay(true));
+            dispatch(audioActions.resumeAudioRange());
         } else {
             dispatch(audioActions.playFullAudio());
         }
@@ -263,9 +261,8 @@ export function requestPlayAudioIntervalOnce(clientID: number): ThunkAction {
         if (range.end <= range.start) return;
 
         dispatch(audioActions.setAudioActiveInterval(clientID));
-        dispatch(audioActions.setAudioPlaybackRange(range));
+        dispatch(audioActions.playAudioRange(range));
         dispatch(audioActions.setAudioIntervalPlaybackSource(range.id, clientID));
-        dispatch(audioActions.switchAudioPlay(true));
     };
 }
 
@@ -376,7 +373,7 @@ export function updateAudioIntervalsAsync(
         }
         const job = getState().annotation.job.instance;
         if (!job) return;
-        await job.annotations.bulkSave(targets);
+        await job.annotations.saveStates(targets);
         await dispatchFetchAnnotations(dispatch);
     };
 }

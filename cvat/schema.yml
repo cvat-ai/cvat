@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: CVAT REST API
-  version: 2.75.1
+  version: 2.76.1
   description: REST API for Computer Vision Annotation Tool (CVAT)
   termsOfService: https://www.google.com/policies/terms/
   contact:
@@ -2994,6 +2994,20 @@ paths:
       - basicAuth: []
       responses:
         '200':
+          headers:
+            X-Checksum:
+              schema:
+                type: string
+              description: Data checksum, applicable for chunks only
+            X-Chunk-Size:
+              schema:
+                type: integer
+              description: Decoded chunk size in bytes, applicable for chunks only
+            X-Updated-Date:
+              schema:
+                type: string
+                format: date-time
+              description: Data update date, applicable for chunks only
           content:
             application/vnd.cvat+json:
               schema:
@@ -3001,6 +3015,20 @@ paths:
                 format: binary
           description: Data of a specific type
         '206':
+          headers:
+            X-Checksum:
+              schema:
+                type: string
+              description: Data checksum, applicable for chunks only
+            X-Chunk-Size:
+              schema:
+                type: integer
+              description: Decoded chunk size in bytes, applicable for chunks only
+            X-Updated-Date:
+              schema:
+                type: string
+                format: date-time
+              description: Data update date, applicable for chunks only
           content:
             application/vnd.cvat+json:
               schema:
@@ -3008,6 +3036,11 @@ paths:
                 format: binary
           description: Partial chunk data
         '416':
+          headers:
+            X-Chunk-Size:
+              schema:
+                type: integer
+              description: Decoded chunk size in bytes, applicable for chunks only
           description: Requested range is not satisfiable
   /api/jobs/{id}/data/meta:
     get:
@@ -6653,6 +6686,10 @@ paths:
               schema:
                 type: string
               description: Data checksum, applicable for chunks only
+            X-Chunk-Size:
+              schema:
+                type: integer
+              description: Decoded chunk size in bytes, applicable for chunks only
             X-Updated-Date:
               schema:
                 type: string
@@ -6665,6 +6702,10 @@ paths:
               schema:
                 type: string
               description: Data checksum, applicable for chunks only
+            X-Chunk-Size:
+              schema:
+                type: integer
+              description: Decoded chunk size in bytes, applicable for chunks only
             X-Updated-Date:
               schema:
                 type: string
@@ -6672,6 +6713,11 @@ paths:
               description: Data update date, applicable for chunks only
           description: Partial chunk data
         '416':
+          headers:
+            X-Chunk-Size:
+              schema:
+                type: integer
+              description: Decoded chunk size in bytes, applicable for chunks only
           description: Requested range is not satisfiable
     post:
       operationId: tasks_create_data
@@ -7463,6 +7509,7 @@ paths:
           enum:
           - organization
           - project
+          - server
       tags:
       - webhooks
       security:
@@ -7781,6 +7828,12 @@ paths:
         name: type
         schema:
           type: string
+          enum:
+          - all
+          - organization
+          - project
+          - server
+          default: all
         description: Type of webhook
       tags:
       - webhooks
@@ -7902,6 +7955,18 @@ components:
         * `micro` - micro
         * `mean` - mean
         * `label` - label
+    AllWebhookType:
+      enum:
+      - organization
+      - project
+      - server
+      - all
+      type: string
+      description: |-
+        * `organization` - ORGANIZATION
+        * `project` - PROJECT
+        * `server` - SERVER
+        * `all` - ALL
     AnnotationConflict:
       type: object
       properties:
@@ -9011,7 +9076,7 @@ components:
       type: object
       properties:
         webhook_type:
-          $ref: '#/components/schemas/WebhookType'
+          $ref: '#/components/schemas/AllWebhookType'
         events:
           type: array
           items:
@@ -9033,15 +9098,19 @@ components:
       - create:issue
       - create:job
       - create:membership
+      - create:organization
       - create:project
       - create:task
+      - create:user
       - delete:comment
       - delete:invitation
       - delete:issue
       - delete:job
       - delete:membership
+      - delete:organization
       - delete:project
       - delete:task
+      - delete:user
       - update:comment
       - update:issue
       - update:job
@@ -9049,6 +9118,7 @@ components:
       - update:organization
       - update:project
       - update:task
+      - update:user
       type: string
       description: |-
         * `completed:request[calculate:quality]` - COMPLETED:REQUEST[CALCULATE:QUALITY]
@@ -9063,15 +9133,19 @@ components:
         * `create:issue` - CREATE:ISSUE
         * `create:job` - CREATE:JOB
         * `create:membership` - CREATE:MEMBERSHIP
+        * `create:organization` - CREATE:ORGANIZATION
         * `create:project` - CREATE:PROJECT
         * `create:task` - CREATE:TASK
+        * `create:user` - CREATE:USER
         * `delete:comment` - DELETE:COMMENT
         * `delete:invitation` - DELETE:INVITATION
         * `delete:issue` - DELETE:ISSUE
         * `delete:job` - DELETE:JOB
         * `delete:membership` - DELETE:MEMBERSHIP
+        * `delete:organization` - DELETE:ORGANIZATION
         * `delete:project` - DELETE:PROJECT
         * `delete:task` - DELETE:TASK
+        * `delete:user` - DELETE:USER
         * `update:comment` - UPDATE:COMMENT
         * `update:issue` - UPDATE:ISSUE
         * `update:job` - UPDATE:JOB
@@ -9079,6 +9153,7 @@ components:
         * `update:organization` - UPDATE:ORGANIZATION
         * `update:project` - UPDATE:PROJECT
         * `update:task` - UPDATE:TASK
+        * `update:user` - UPDATE:USER
     FileInfo:
       type: object
       properties:
@@ -13858,6 +13933,11 @@ components:
         has_analytics_access:
           type: boolean
           readOnly: true
+          nullable: true
+        email_verified:
+          type: boolean
+          nullable: true
+          readOnly: true
         created_via:
           readOnly: true
           nullable: true
@@ -14074,10 +14154,12 @@ components:
       enum:
       - organization
       - project
+      - server
       type: string
       description: |-
         * `organization` - ORGANIZATION
         * `project` - PROJECT
+        * `server` - SERVER
     WebhookWriteRequest:
       type: object
       properties:

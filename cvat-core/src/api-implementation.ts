@@ -14,7 +14,6 @@ import {
     isBoolean,
     isInteger,
     isString,
-    isPageSize,
     checkFilter,
     checkExclusiveFields,
     checkObjectType,
@@ -450,7 +449,7 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
     ) => {
         checkFilter(filter, {
             page: isInteger,
-            pageSize: isPageSize,
+            pageSize: isInteger,
             parentID: isInteger,
             projectID: isInteger,
             taskID: isInteger,
@@ -582,7 +581,7 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
                 annotationType: isString,
                 enabled: isBoolean,
                 page: isInteger,
-                pageSize: isPageSize,
+                pageSize: isInteger,
                 filter: isString,
                 search: isString,
                 sort: isString,

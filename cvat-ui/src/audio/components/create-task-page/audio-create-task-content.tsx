@@ -93,7 +93,7 @@ const defaultState: State = {
 };
 
 const NON_AUDIO_ERROR = 'Wrong list of files. Only audio files are allowed for an audio task. ';
-const LOCAL_AUDIO_FILES_HINT = 'You can upload an audio file';
+const LOCAL_AUDIO_FILES_HINT = 'You can only upload an audio file here';
 
 function localFilesHaveNonAudio(files: File[]): boolean {
     const meaningful = files.filter((f) => !f.name.endsWith('.jsonl'));

@@ -62,12 +62,22 @@ Shared environment variables for backend pods
 */}}
 
 {{- define "cvat.sharedBackendEnv" }}
-{{- if .Values.redis.enabled }}
-- name: CVAT_REDIS_INMEM_HOST
-  value: "{{ .Release.Name }}-redis-master"
-{{- else }}
+{{- if not .Values.redis.enabled }}
 - name: CVAT_REDIS_INMEM_HOST
   value: "{{ .Values.redis.external.host }}"
+{{- else if .Values.cvat.backend.redisInmemHostOverride }}
+- name: CVAT_REDIS_INMEM_HOST
+  value: {{ tpl .Values.cvat.backend.redisInmemHostOverride . | quote }}
+{{- else }}
+{{/*
+Service name is release-redis-master for replication architecture and if Sentinel enabled with masterService enabled. Otherwise, it is release-redis.
+*/}}
+- name: CVAT_REDIS_INMEM_HOST
+  {{- if and (eq .Values.redis.architecture "replication") (or (not .Values.redis.sentinel.enabled) .Values.redis.sentinel.masterService.enabled) }}
+  value: "{{ .Release.Name }}-redis-master"
+  {{- else }}
+  value: "{{ .Release.Name }}-redis"
+  {{- end }}
 {{- end }}
 - name: CVAT_REDIS_INMEM_PORT
   value: "6379"

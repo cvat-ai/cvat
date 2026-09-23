@@ -5,6 +5,7 @@
 import {
     useCallback, useEffect, useRef, useLayoutEffect, useState,
 } from 'react';
+import message from 'antd/lib/message';
 import { useDispatch, useSelector } from 'react-redux';
 
 import { audioActions } from 'actions/audio-actions';
@@ -13,16 +14,15 @@ import { shallowEqual, ThunkDispatch } from 'utils/redux';
 import { clamp } from 'utils/math';
 import { AudioTimeRange } from '../utils/audio-interval';
 import {
-    computeFitIntervalPixelsPerSecond, computeWaveformZoom,
-    centeredScrollOffsetForTime, limitZoom, ZOOM_MIN,
+    computeFitIntervalGeometry, computeWaveformBasePixelsPerSecond,
+    computeWaveformZoom,
+    centeredScrollOffsetForTime, limitZoom,
 } from '../../../../utils/waveform-geometry';
 import type { WaveSurferRuntime } from './use-audio-waveform';
 
 const ZOOM_BASIC_COEF = 6 / 5;
 const ZOOM_ADJUST_COEF = 1 / 10;
 const ZOOM_DELTA_LIMIT = 8;
-const FIT_INTERVAL_SAFE_INSET_PX = 64;
-const FIT_INTERVAL_SAFE_INSET_RATIO = 0.1;
 
 export interface ViewportTransform {
     pixelsPerSecond: number;
@@ -193,34 +193,6 @@ export function useWaveformViewport(
         return actualDeltaX;
     }, []);
 
-    const applyZoomAndScroll = useCallback((
-        targetZoom: number,
-        targetPixelsPerSecond: number,
-        targetScroll: number,
-    ): void => {
-        const instance = runtime.instanceRef.current;
-        const scrollContainer = getScrollContainer();
-        if (!instance || !scrollContainer) return;
-
-        const zoomChanged = targetZoom !== zoom;
-        if (zoomChanged) {
-            synchronouslyAppliedZoomRef.current = {
-                zoom: targetZoom,
-                duration,
-                containerWidth,
-                pixelsPerSecond: targetPixelsPerSecond,
-            };
-        }
-
-        const maximumScroll = Math.max(0, duration * targetPixelsPerSecond - scrollContainer.clientWidth);
-        instance.zoom(targetPixelsPerSecond);
-        instance.setScroll(clamp(targetScroll, 0, maximumScroll));
-
-        if (zoomChanged) {
-            dispatch(audioActions.setAudioZoom(targetZoom));
-        }
-    }, [containerWidth, duration, zoom]);
-
     useEffect(() => {
         if (!ready) return undefined;
 
@@ -337,18 +309,7 @@ export function useWaveformViewport(
         emitTransformChange();
     }, [pixelsPerSecond, ready]);
 
-    useLayoutEffect(() => {
-        if (!ready) return;
-
-        const minimapPlugin = runtime.minimap?.plugin;
-        if (!minimapPlugin) return;
-
-        const { overlay } = minimapPlugin as unknown as { overlay?: HTMLElement };
-        if (overlay) overlay.style.opacity = zoom > ZOOM_MIN ? '1' : '0';
-    }, [ready, zoom]);
-
-    // Fits interval into the current viewport, preserving a 10%/64px safe inset wherever
-    // there is track space available.
+    // Fits an interval into the current viewport.
     useEffect(() => {
         if (!ready || !fitIntervalRequest || duration <= 0) return;
 
@@ -363,29 +324,63 @@ export function useWaveformViewport(
         const end = fitInterval.stop === null ? duration : fitInterval.stop / 1000;
         const intervalDuration = end - start;
 
-        const safeInset = Math.max(
-            scrollContainer.clientWidth * FIT_INTERVAL_SAFE_INSET_RATIO, FIT_INTERVAL_SAFE_INSET_PX);
-        const availableWidth = scrollContainer.clientWidth - safeInset * 2;
-
-        if (intervalDuration <= 0 || availableWidth <= 0) {
+        if (intervalDuration <= 0) {
             dispatch(audioActions.completeFitAudioInterval(fitIntervalRequest));
             return;
         }
 
-        const targetPixelsPerSecond = computeFitIntervalPixelsPerSecond(
+        const basePixelsPerSecond = computeWaveformBasePixelsPerSecond(duration, scrollContainer.clientWidth);
+        const {
+            pixelsPerSecond: targetPixelsPerSecond,
+            safeInset,
+        } = computeFitIntervalGeometry(
             start,
             end,
             duration,
             scrollContainer.clientWidth,
-            safeInset,
+            basePixelsPerSecond,
         );
-        const targetZoom = limitZoom((targetPixelsPerSecond * duration) / scrollContainer.clientWidth);
+        const availableWidth = scrollContainer.clientWidth - safeInset * 2;
+
+        if (availableWidth <= 0) {
+            dispatch(audioActions.completeFitAudioInterval(fitIntervalRequest));
+            return;
+        }
+
+        const targetZoom = limitZoom(
+            targetPixelsPerSecond / basePixelsPerSecond,
+        );
         const actualPixelsPerSecond = computeWaveformZoom(targetZoom, duration, scrollContainer.clientWidth);
         const startInset = Math.min(safeInset, start * actualPixelsPerSecond);
+        const targetScroll = start * actualPixelsPerSecond - startInset;
+        const intervalDoesNotFit =
+            intervalDuration * actualPixelsPerSecond > scrollContainer.clientWidth - startInset;
 
-        applyZoomAndScroll(targetZoom, actualPixelsPerSecond, start * actualPixelsPerSecond - startInset);
+        // Perform sync zoom and scroll
+        const zoomChanged = targetZoom !== zoomRef.current;
+        if (zoomChanged) {
+            synchronouslyAppliedZoomRef.current = {
+                zoom: targetZoom,
+                duration,
+                containerWidth,
+                pixelsPerSecond: actualPixelsPerSecond,
+            };
+        }
+
+        const maximumScroll = Math.max(0, duration * actualPixelsPerSecond - scrollContainer.clientWidth);
+        instance.zoom(actualPixelsPerSecond);
+        instance.setScroll(clamp(targetScroll, 0, maximumScroll));
+
+        if (zoomChanged) {
+            dispatch(audioActions.setAudioZoom(targetZoom));
+        }
+
+        if (intervalDoesNotFit) {
+            message.destroy();
+            message.warning('The interval is too long to fully fit. Showing its beginning instead.');
+        }
         dispatch(audioActions.completeFitAudioInterval(fitIntervalRequest));
-    }, [ready, fitIntervalRequest, fitInterval, duration, applyZoomAndScroll]);
+    }, [ready, fitIntervalRequest, fitInterval, duration, containerWidth]);
 
     return {
         containerRef,

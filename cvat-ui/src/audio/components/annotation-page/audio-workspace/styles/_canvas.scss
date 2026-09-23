@@ -9,7 +9,7 @@
     min-width: 0;
     overflow: hidden auto;
     background-color: #fff;
-    padding: 8px;
+    padding: $grid-unit-size;
 }
 
 .cvat-audio-file-upload {
@@ -22,7 +22,7 @@
     padding: 10px 20px;
     background-color: #4f46e5;
     color: white;
-    border-radius: 8px;
+    border-radius: $grid-unit-size;
     cursor: pointer;
     font-size: 1rem;
     font-weight: 500;
@@ -37,7 +37,7 @@
     padding: 10px 20px;
     background-color: #ef4444;
     color: white;
-    border-radius: 8px;
+    border-radius: $grid-unit-size;
     cursor: pointer;
     font-size: 1rem;
     font-weight: 500;
@@ -55,7 +55,7 @@
 
     position: relative;
     background-color: white;
-    border-radius: 8px;
+    border-radius: $grid-unit-size;
     margin-bottom: 0;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 10%);
     flex-shrink: 0;
@@ -67,13 +67,18 @@
         border-color: #1677ff;
     }
 
+    [part='minimap'] {
+        overflow: hidden;
+    }
+
     .cvat-audio-waveform-controls {
         position: absolute;
-        z-index: 10;
-        top: 8px;
-        right: 8px;
+        z-index: 2;
+        top: $grid-unit-size;
+        right: $grid-unit-size;
         display: flex;
         gap: 4px;
+        transition: right 0.2s ease;
 
         .ant-btn.cvat-audio-btn {
             background-color: $control-background;
@@ -85,6 +90,10 @@
                 background-color: $control-hover-background;
             }
         }
+    }
+
+    .cvat-audio-workspace-objects-sidebar-collapsed & .cvat-audio-waveform-controls {
+        right: $grid-unit-size * 4;
     }
 
     > div:first-child {
@@ -135,6 +144,12 @@
             }
         }
 
+        &.cvat-audio-waveform-interaction-snap-hover {
+            *::part(hover) {
+                visibility: hidden;
+            }
+        }
+
         // The hover timestamp is derived from the last pointer event and lags
         // behind a stationary pointer while custom resize auto-scrolls.
         &.cvat-audio-waveform-interaction-auto-scroll {
@@ -148,6 +163,20 @@
         background-color: #f3f4f6;
         border-top: 1px solid #e5e7eb;
         padding: 0;
+
+        [part='minimap-overlay'].cvat-audio-minimap-scrollbar {
+            cursor: grab;
+            touch-action: none;
+
+            &:hover {
+                background-color: rgba(0, 85, 255, 35%) !important;
+            }
+
+            &.cvat-audio-minimap-scrollbar-drag {
+                cursor: grabbing;
+                background-color: rgba(0, 85, 255, 35%) !important;
+            }
+        }
 
         #minimap {
             min-height: 50px;
@@ -189,7 +218,7 @@
     text-align: center;
     padding: 60px 20px;
     background-color: white;
-    border-radius: 8px;
+    border-radius: $grid-unit-size;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 10%);
 }
 
