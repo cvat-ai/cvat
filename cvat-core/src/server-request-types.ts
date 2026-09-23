@@ -11,7 +11,7 @@ import { Camelized, CamelizedV2 } from './type-utils';
 
 export interface APICommonFilterParams {
     page?: number;
-    page_size?: number | 'all';
+    page_size?: number;
     filter?: string;
     sort?: string;
     org_id?: number;
