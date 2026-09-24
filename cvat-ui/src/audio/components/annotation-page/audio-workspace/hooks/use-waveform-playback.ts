@@ -18,10 +18,6 @@ import type { AudioTimeRange } from '../utils/audio-interval';
 const FINISH_POSITION_TOLERANCE = 0.02;
 
 export interface WaveformPlayback {
-    /** Play audio from the current position. */
-    play(): void;
-    /** Pause audio playback */
-    pause(): void;
     /** Seek to a specific time in seconds */
     seek(time: number): void;
     getCurrentTime(): number;
@@ -55,20 +51,12 @@ export function useWaveformPlayback(runtime: WaveSurferRuntime): WaveformPlaybac
     playingRef.current = playing;
     const { ready } = runtime;
 
-    const play = useCallback((): void => {
-        const instance = runtime.instanceRef.current;
-        if (!instance) return;
-
-        instance.play().catch(() => {});
-        dispatch(audioActions.switchAudioPlay(true));
-    }, []);
     const playRange = useCallback((range: AudioTimeRange): void => {
         const instance = runtime.instanceRef.current;
         if (!instance) return;
 
         instance.setTime(range.start);
         instance.play(undefined, range.end).catch(() => {});
-        dispatch(audioActions.switchAudioPlay(true));
     }, []);
     const updateRunningPlaybackRange = useCallback((range: AudioTimeRange): void => {
         const instance = runtime.instanceRef.current;
@@ -94,10 +82,6 @@ export function useWaveformPlayback(runtime: WaveSurferRuntime): WaveformPlaybac
         updateRunningPlaybackRange(range);
     }, []);
 
-    const pause = useCallback((): void => {
-        runtime.instanceRef.current?.pause();
-        dispatch(audioActions.switchAudioPlay(false));
-    }, []);
     const seek = useCallback((time: number): void => {
         const instance = runtime.instanceRef.current;
         if (!instance) return;
@@ -158,7 +142,6 @@ export function useWaveformPlayback(runtime: WaveSurferRuntime): WaveformPlaybac
                 });
             } else {
                 dispatch(audioActions.clearAudioPlaybackRange());
-                dispatch(audioActions.switchAudioPlay(false));
             }
         };
         const onFinish = (): void => {
@@ -173,7 +156,7 @@ export function useWaveformPlayback(runtime: WaveSurferRuntime): WaveformPlaybac
                     instance.setTime(trackDuration);
                 }
 
-                dispatch(audioActions.switchAudioPlay(false));
+                dispatch(audioActions.pauseAudio());
                 return;
             }
 
@@ -210,45 +193,58 @@ export function useWaveformPlayback(runtime: WaveSurferRuntime): WaveformPlaybac
         };
     }, [ready]);
 
-    // Sync "playing" redux state with the WaveSurfer instance
-    useEffect(() => {
-        const instance = runtime.instanceRef.current;
-        if (!instance) return;
-
-        if (playing) {
-            if (instance.isPlaying()) return;
-
-            instance.play(undefined, playbackRangeRef.current?.end).catch(() => {});
-        } else {
-            instance.pause();
-        }
-    }, [playing, ready]);
-
-    // Synchronize playback-range changes with WaveSurfer.
+    // Synchronize semantic Redux playback actions with WaveSurfer.
+    //
+    //   playbackRange | playing | intended state
+    //   --------------+---------+-----------------------------
+    //   null          | false   | full-track playback paused
+    //   null          | true    | full-track playback running
+    //   range         | false   | range playback paused
+    //   range         | true    | range playback running
     useEffect(() => {
         const instance = runtime.instanceRef.current;
         if (!instance) return;
 
         const previousPlaybackRange = previousPlaybackRangeRef.current;
-        previousPlaybackRangeRef.current = playbackRange;
 
         if (!playbackRange) {
-            if (previousPlaybackRange && instance.isPlaying()) {
+            // Full-track mode.
+            previousPlaybackRangeRef.current = null;
+            if (playing && !instance.isPlaying()) {
+                instance.play().catch(() => {});
+            } else if (!playing) {
+                // Full-track playback was paused, or a range was cleared because
+                // it ended or became invalid. Both cases must pause.
                 instance.pause();
-                dispatch(audioActions.switchAudioPlay(false));
             }
             return;
         }
 
-        if (!playingRef.current) return;
+        // Range mode.
+        if (!playing) {
+            if (instance.isPlaying()) {
+                instance.pause();
+            }
+            return;
+        }
 
         if (!previousPlaybackRange || previousPlaybackRange.id !== playbackRange.id) {
+            // A newly selected range always starts from its beginning.
+            previousPlaybackRangeRef.current = playbackRange;
             playRange(playbackRange);
             return;
         }
 
+        if (!instance.isPlaying()) {
+            // Resume the same paused range from the current cursor, retaining its end boundary.
+            instance.play(undefined, playbackRange.end).catch(() => {});
+            return;
+        }
+
+        // The same range remains active but its boundaries changed, for example after
+        // editing its source interval. Keep playing and apply its current end bound.
         updateRunningPlaybackRange(playbackRange);
-    }, [playbackRange, ready]);
+    }, [playbackRange, playing, ready]);
 
     // Handle seek requests from redux
     useEffect(() => {
@@ -256,7 +252,13 @@ export function useWaveformPlayback(runtime: WaveSurferRuntime): WaveformPlaybac
         if (!instance || !seekRequest || duration <= 0) return;
 
         const target = clamp(seekRequest.time, 0, duration);
-        instance.setTime(target);
+        // WaveSurfer's WebAudio player restarts from zero when it resumes at the exact duration.
+        // And it internally pauses/resumes on setTime when playing, so when seeking to the end
+        // Give it a small offset to let it stop naturally
+        const seekTime = playingRef.current && target === duration ?
+            duration - Math.min(0.001, duration / 2) : target;
+
+        instance.setTime(seekTime);
         syncPlaybackRangeAfterSeek(target);
 
         dispatch(audioActions.completeAudioSeek(seekRequest));
@@ -273,8 +275,6 @@ export function useWaveformPlayback(runtime: WaveSurferRuntime): WaveformPlaybac
     }, [playbackRate, ready]);
 
     return {
-        play,
-        pause,
         seek,
         getCurrentTime,
         subscribeTimeUpdates,

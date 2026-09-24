@@ -161,6 +161,10 @@ context('Audio annotation. Interval playback behavior.', () => {
             cy.get('.cvat-audio-region-item').first()
                 .find('.cvat-audio-interval-header-index').dblclick();
             cy.get('.cvat-player-pause-button').should('exist').click();
+            cy.get('.cvat-player-play-button').should('exist');
+            getIntervalBounds().then(({ right }) => {
+                getCursorPosition().should('be.lessThan', right - CURSOR_TOLERANCE_PX);
+            });
             cy.get('.cvat-player-play-button').should('exist').click();
 
             cy.get('.cvat-player-pause-button').should('exist');
