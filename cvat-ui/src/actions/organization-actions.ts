@@ -5,7 +5,7 @@
 
 import { Store } from 'antd/lib/form/interface';
 import {
-    getCore, Membership, Organization, User,
+    getCore, Membership, MembershipRole, Organization, User,
 } from 'cvat-core-wrapper';
 import { ActionUnion, createAction, ThunkAction } from 'utils/redux';
 import { filterNull } from 'utils/filter-null';
@@ -51,10 +51,13 @@ export enum OrganizationActionsTypes {
 
 export const organizationActions = {
     activateOrganization: () => createAction(OrganizationActionsTypes.ACTIVATE_ORGANIZATION),
-    activateOrganizationSuccess: (organization: any | null) => createAction(
-        OrganizationActionsTypes.ACTIVATE_ORGANIZATION_SUCCESS, { organization },
+    activateOrganizationSuccess: (
+        organization: Organization | null,
+        currentRole: MembershipRole | null = null,
+    ) => createAction(
+        OrganizationActionsTypes.ACTIVATE_ORGANIZATION_SUCCESS, { organization, currentRole },
     ),
-    activateOrganizationFailed: (error: any, slug: string | null) => createAction(
+    activateOrganizationFailed: (error: string, slug: string | null) => createAction(
         OrganizationActionsTypes.ACTIVATE_ORGANIZATION_FAILED, { slug, error },
     ),
     createOrganizationSuccess: (organization: any) => createAction(
@@ -128,7 +131,7 @@ export const organizationActions = {
 };
 
 export function activateOrganizationAsync(): ThunkAction {
-    return async function (dispatch) {
+    return async function (dispatch, getState) {
         dispatch(organizationActions.activateOrganization());
         const curSlug = localStorage.getItem('currentOrganization');
 
@@ -137,19 +140,33 @@ export function activateOrganizationAsync(): ThunkAction {
                 const organizations = await core.organizations.get(curSlug ? {
                     filter: `{"and":[{"==":[{"var":"slug"},"${curSlug}"]}]}`,
                 } : {});
+
                 const [organization] = organizations;
                 if (organization?.slug === curSlug) {
                     await core.organizations.activate(organization);
-                    dispatch(organizationActions.activateOrganizationSuccess(organization));
+                    const { user } = getState().auth;
+                    let currentRole: MembershipRole | null = null;
+                    if (user && organization.owner?.id === user.id) {
+                        currentRole = MembershipRole.OWNER;
+                    } else if (user) {
+                        const members = await organization.members({
+                            filter: JSON.stringify({ '==': [{ var: 'user' }, user.username] }),
+                        });
+
+                        currentRole = members.find((member) => (
+                            member.user.id === user.id && member.isActive
+                        ))?.role ?? null;
+                    }
+                    dispatch(organizationActions.activateOrganizationSuccess(organization, currentRole));
                 } else {
                     localStorage.removeItem('currentOrganization');
                     dispatch(organizationActions.activateOrganizationSuccess(null));
                 }
             } catch (error: unknown) {
                 if (error instanceof Error) {
-                    dispatch(organizationActions.activateOrganizationFailed(curSlug, error.toString()));
+                    dispatch(organizationActions.activateOrganizationFailed(error.toString(), curSlug));
                 } else {
-                    dispatch(organizationActions.activateOrganizationFailed(curSlug, 'Unknown error'));
+                    dispatch(organizationActions.activateOrganizationFailed('Unknown error', curSlug));
                 }
             }
         } else {

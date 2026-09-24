@@ -148,9 +148,15 @@ export default interface CVATCore {
         get: any;
     };
     organizations: {
-        get: any;
-        activate: any;
-        deactivate: any;
+        get: (filter: {
+            page?: number;
+            pageSize?: number;
+            search?: string;
+            sort?: string;
+            filter?: string;
+        }) => Promise<PaginatedResource<Organization>>;
+        activate: (organization: Organization) => Promise<void>;
+        deactivate: () => Promise<void>;
         acceptInvitation: (key: string) => Promise<string>;
         declineInvitation: (key: string) => Promise<void>;
         invitations: (filter: {
