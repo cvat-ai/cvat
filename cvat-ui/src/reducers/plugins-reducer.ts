@@ -14,6 +14,9 @@ const defaultState: PluginsState = {
     },
     current: {},
     callbacks: {
+        auth: {
+            onAuthenticationStart: [],
+        },
         annotationPage: {
             header: {
                 menu: {
@@ -251,7 +254,7 @@ export default function (state: PluginsState = defaultState, action: PluginActio
             const { path, callback } = action.payload;
             const updatedState = {
                 ...state,
-                components: { ...state.components },
+                callbacks: { ...state.callbacks },
             };
 
             const container = findContainerFromPath(path, updatedState, 'callbacks') as CallableFunction[];
@@ -263,7 +266,7 @@ export default function (state: PluginsState = defaultState, action: PluginActio
             const { path, callback } = action.payload;
             const updatedState = {
                 ...state,
-                components: { ...state.components },
+                callbacks: { ...state.callbacks },
             };
 
             const container = findContainerFromPath(path, updatedState, 'callbacks') as CallableFunction[];
