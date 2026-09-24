@@ -59,7 +59,7 @@ export default function AudioControlsSideBarComponent(): JSX.Element {
     }), shallowEqual);
     const applicableLabels = filterApplicableForType(LabelType.INTERVAL, labels);
 
-    const updateAudioActiveControl = useCallback((control: ActiveControl): void => {
+    const onUpdateActiveControl = useCallback((control: ActiveControl): void => {
         dispatch(updateActiveControl(control));
     }, [dispatch]);
     const onZoomChange = useCallback((nextZoom: number): void => {
@@ -85,7 +85,7 @@ export default function AudioControlsSideBarComponent(): JSX.Element {
             <ObservedCursorControl
                 cursorShortkey={normalizedKeyMap.CANCEL_AUDIO}
                 activeControl={activeControl}
-                updateActiveControl={updateAudioActiveControl}
+                updateActiveControl={onUpdateActiveControl}
             />
             <hr />
             <ObservedIntervalRegionControl
@@ -97,7 +97,7 @@ export default function AudioControlsSideBarComponent(): JSX.Element {
                 activeLabelId={activeLabelId}
                 onExtendRegion={onExtendRegion}
                 onSetActiveLabel={onSetActiveLabel}
-                updateActiveControl={updateAudioActiveControl}
+                onUpdateActiveControl={onUpdateActiveControl}
             />
             <hr />
             <ObservedSplitAtPlayheadControl shortcut={normalizedKeyMap.SPLIT_AUDIO_INTERVAL_AT_PLAYBACK_POSITION} />
