@@ -14,7 +14,7 @@ from django.contrib.auth import get_user_model
 from django.test import TestCase
 
 from cvat.apps.dataset_manager import task as task_module
-from cvat.apps.dataset_manager.annotation import AnnotationIR, TrackManager
+from cvat.apps.dataset_manager.annotation import AnnotationIR, AnnotationManager, TrackManager
 from cvat.apps.engine import models
 from cvat.apps.engine.models import DimensionType, JobType, ShapeType
 from cvat.apps.engine.tests.utils import compare_objects
@@ -465,6 +465,47 @@ class AnnotationIRTest(TestCase):
                 annotation = AnnotationIR(dimension=dimension, data=data)
                 sliced_annotation = annotation.slice(0, 1)
                 self.assertEqual(sliced_annotation.data["tracks"][0]["shapes"], shapes[0:2])
+
+
+class AnnotationManagerTest(TestCase):
+    def test_merge_keeps_track_starting_earlier_in_next_job(self):
+        for dimension in [DimensionType.DIM_2D, DimensionType.DIM_3D]:
+            with self.subTest(dimension=dimension):
+                # job 1 covers frames [0; 9], job 2 covers frames [5; 14]
+                job_tracks = [
+                    (0, make_track([make_shape(6, dimension=dimension)], frame=6)),
+                    (
+                        5,
+                        make_track(
+                            [
+                                make_shape(5, dimension=dimension),
+                                make_shape(13, outside=True, dimension=dimension),
+                            ],
+                            frame=5,
+                        ),
+                    ),
+                ]
+
+                task_annotations = AnnotationIR(dimension)
+                for start_frame, track in job_tracks:
+                    job_annotations = AnnotationIR(
+                        dimension, {"tags": [], "shapes": [], "tracks": [track], "intervals": []}
+                    )
+                    AnnotationManager(task_annotations, dimension=dimension).merge(
+                        job_annotations, start_frame, overlap=5
+                    )
+
+                self.assertEqual(len(task_annotations.tracks), 1)
+                self.assertEqual(
+                    [(s["frame"], s["outside"]) for s in task_annotations.tracks[0]["shapes"]],
+                    [(5, False), (6, False), (13, True)],
+                )
+
+                exported_frames = [
+                    s["frame"]
+                    for s in AnnotationManager(task_annotations, dimension=dimension).to_shapes(15)
+                ]
+                self.assertEqual(exported_frames, [5, 6, 7, 8, 9, 10, 11, 12, 13])
 
 
 class TestTaskAnnotation(TestCase):

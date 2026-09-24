@@ -452,9 +452,21 @@ class ObjectManager:
             if frame in old_objects_by_frame:
                 int_objects = int_objects_by_frame[frame]
                 old_objects = old_objects_by_frame[frame]
+                matched_old_objects = list(old_objects)
                 new_objects = self._merge_objects_on_one_frame(
                     int_objects, old_objects, start_frame, overlap
                 )
+
+                # The united object can differ from the old one it was matched with
+                # (e.g. a track that starts earlier in the next job), so replace it.
+                united_objects = {
+                    id(old_obj): obj
+                    for old_obj, obj in zip(matched_old_objects, old_objects)
+                    if obj is not old_obj
+                }
+                if united_objects:
+                    self.objects[:] = [united_objects.get(id(obj), obj) for obj in self.objects]
+
                 self.objects.extend(new_objects)
             else:
                 # We don't have old objects on the frame. Let's add all new ones.
