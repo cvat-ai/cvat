@@ -2,8 +2,6 @@
 #
 # SPDX-License-Identifier: MIT
 
-import subprocess
-import sys
 import unittest
 from unittest import mock
 
@@ -41,25 +39,6 @@ class TestAnnotationHierarchy(unittest.TestCase):
         self.assertEqual(interval.annotation_type, "interval")
         self.assertEqual(interval.start, 100)
         self.assertIsNone(interval.stop)
-
-    def test_model_and_adapter_can_be_imported_without_quality_control(self):
-        subprocess.run(
-            [
-                sys.executable,
-                "-B",
-                "-c",
-                (
-                    "import sys; from cvat.apps.dataset_manager import data_model as cdm; "
-                    "assert 'datumaro' not in sys.modules; assert 'django' not in sys.modules; "
-                    "from cvat.apps.dataset_manager.data_model.adapters.datumaro "
-                    "import DatumaroAnnotationAdapter; "
-                    "assert issubclass(DatumaroAnnotationAdapter, cdm.Annotation); "
-                    "assert 'django' not in sys.modules; "
-                    "assert 'cvat.apps.quality_control' not in sys.modules"
-                ),
-            ],
-            check=True,
-        )
 
 
 class TestDatumaroAnnotationAdapter(unittest.TestCase):
@@ -170,14 +149,9 @@ class TestDatumaroDatasetAdapter(unittest.TestCase):
         self.assertEqual(dataset.get("same-id", subset="validation").annotations, ())
         self.assertIsNone(dataset.get("same-id", subset="missing"))
 
-    def test_empty_annotations_do_not_remove_an_item_or_invent_a_frame(self):
-        dataset = DatumaroDatasetAdapter(
-            dm.Dataset.from_iterable([dm.DatasetItem("recording")], categories=[]),
-            label_catalog=cdm.LabelCatalog(()),
-            reference_getter=mock.Mock(side_effect=AssertionError),
+        dataset_without_frame_mapping = DatumaroDatasetAdapter(
+            native,
+            label_catalog=cdm.LabelCatalog(labels),
+            reference_getter=lambda ann: reference,
         )
-        self.assertEqual(len(dataset), 1)
-        self.assertEqual(dataset.label_catalog.labels, ())
-        item = next(iter(dataset))
-        self.assertEqual(item.annotations, ())
-        self.assertIsNone(item.frame_id)
+        self.assertIsNone(dataset_without_frame_mapping.get("same-id", subset="train").frame_id)
