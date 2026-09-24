@@ -202,6 +202,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
     private resetState = (): void => {
         this.basicConfigurationComponent.current?.resetFields();
         this.advancedConfigurationComponent.current?.resetFields();
+        this.qualityConfigurationComponent.current?.resetFields();
 
         this.fileManagerComponent.reset();
 
@@ -305,7 +306,7 @@ class CreateTaskContent extends React.PureComponent<Props & RouteComponentProps,
     };
 
     private handleValidationModeChange = (value: ValidationMode): void => {
-        this.qualityConfigurationComponent.current?.resetFields();
+        this.qualityConfigurationComponent.current?.resetParameters();
         this.setState(() => ({
             quality: {
                 ...defaultState.quality,
