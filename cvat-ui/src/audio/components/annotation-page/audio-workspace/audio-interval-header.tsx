@@ -13,6 +13,11 @@ import LabelSelector from 'components/label-selector/label-selector';
 import { filterApplicableForTypes } from 'utils/filter-applicable-labels';
 import AudioIntervalActions, { AudioIntervalActionShortcuts } from './audio-interval-actions';
 import AudioIntervalMoreActions from './audio-interval-more-actions';
+import {
+    intervalDurationSeconds,
+    intervalEndSeconds,
+    intervalStartSeconds,
+} from './utils/audio-interval';
 
 interface Props {
     clientID: number;
@@ -58,9 +63,10 @@ function AudioIntervalHeader({
     const sourceLabelValue = showSource && source && String(source).toLowerCase() !== 'manual' ?
         source :
         null;
-    const startSeconds = start / 1000;
-    const endSeconds = (stop ?? start) / 1000;
-    const duration = Math.max(0, endSeconds - startSeconds);
+    const interval = { start, stop };
+    const startSeconds = intervalStartSeconds(interval);
+    const endSeconds = intervalEndSeconds(interval);
+    const duration = intervalDurationSeconds(interval);
     // Old intervals may have labels that are not applicable to intervals anymore,
     // so we need to keep them in the list of labels for the selector
     const labelsForSelector = filterApplicableForTypes([LabelType.INTERVAL, labelType], labels);
