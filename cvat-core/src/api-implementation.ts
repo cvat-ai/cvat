@@ -381,7 +381,7 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
             organizationSlug: organization.slug,
         };
     });
-    implementationMixin(cvat.organizations.deactivate, async () => {
+    implementationMixin(cvat.organizations.deactivate, () => {
         config.organization = {
             organizationID: null,
             organizationSlug: null,
