@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import itertools
 from collections import Counter
-from contextlib import suppress
+from contextlib import closing, suppress
 from copy import deepcopy
 
 from django.db import transaction
@@ -37,7 +37,11 @@ from cvat.apps.quality_control.comparison_report import (
     ComparisonReportTaskStats,
     deduplicate_annotation_conflicts,
 )
-from cvat.apps.quality_control.data_providers import JobDataProvider, QualitySettingsManager
+from cvat.apps.quality_control.data_providers import (
+    JobDataProvider,
+    QualitySettingsManager,
+    make_job_data_provider,
+)
 from cvat.apps.quality_control.quality_handlers import (
     DatasetQualityEstimator,
     EffectiveQualityRequirement,
@@ -136,38 +140,32 @@ class TaskQualityCalculator:
             for job in job_queryset:
                 job.segment.task = gt_job.segment.task  # put the prefetched object
 
-            gt_job_data_provider = JobDataProvider(gt_job.id, queryset=job_queryset)
-            active_validation_frames = self.get_active_validation_frames(task, gt_job_data_provider)
-
-            job_data_providers = {
-                job.id: JobDataProvider(
-                    job.id,
-                    queryset=job_queryset,
-                    included_frames=active_validation_frames,
-                )
-                for job in jobs
-            }
-
             quality_requirements = resolve_effective_requirements(
                 list(quality_settings.requirements.select_related("parent").all())
             )
 
             job_comparison_reports: dict[int, ComparisonReport] = {}
-            for job in jobs:
-                if job.id not in filtered_job_ids:
-                    continue
-
-                job_data_provider = job_data_providers[job.id]
-                comparator = DatasetQualityEstimator(
-                    job_data_provider,
-                    gt_job_data_provider,
-                    requirements=quality_requirements,
-                    report_parameters=report_parameters,
+            with closing(
+                make_job_data_provider(gt_job.id, queryset=job_queryset)
+            ) as gt_job_data_provider:
+                active_validation_frames = self.get_active_validation_frames(
+                    task, gt_job_data_provider
                 )
-                job_comparison_reports[job.id] = comparator.generate_report()
-
-                # Release resources
-                del job_data_provider.dm_dataset
+                for job in jobs:
+                    with closing(
+                        make_job_data_provider(
+                            job.id,
+                            queryset=job_queryset,
+                            included_frames=active_validation_frames,
+                        )
+                    ) as job_data_provider:
+                        comparator = DatasetQualityEstimator(
+                            job_data_provider,
+                            gt_job_data_provider,
+                            requirements=quality_requirements,
+                            report_parameters=report_parameters,
+                        )
+                        job_comparison_reports[job.id] = comparator.generate_report()
 
         task_comparison_report = self._compute_task_report(
             job_comparison_reports,
