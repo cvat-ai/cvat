@@ -108,7 +108,7 @@ export type APIUserModifiableFields = Partial<Pick<SerializedUser,
     | 'data_types'
     | 'discovery_source'
 >>;
-export type UserModifiableFields = CamelizedV2<APIUserModifiableFields>;
+export type UserModifiableFields = Camelized<APIUserModifiableFields>;
 
 export type APIUserGrowthDataModifiableFields = Partial<Pick<
     SerializedUserGrowthData,
