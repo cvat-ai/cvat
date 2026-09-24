@@ -18,12 +18,18 @@ services:
     expose:
       - "9000"
     ports:
-      - 9000:9000
+      - "9000:9000"
     environment:
       MOTO_PORT: "9000"
       S3_IGNORE_SUBDOMAIN_BUCKETNAME: "true"
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:9000/')"]
+      test:
+        - CMD
+        - python
+        - -c
+        - >-
+          import urllib.request;
+          urllib.request.urlopen('http://localhost:9000/')
       interval: 2s
       timeout: 20s
       retries: 3
@@ -31,6 +37,7 @@ services:
       cvat:
         aliases:
           - moto
+
   s3-init:
     # Seed the test S3 buckets through boto3.
     image: *moto-image
@@ -48,4 +55,6 @@ services:
       - ./tests/mounted_file_share/:/mnt/mounted_file_share:ro
     networks:
       - cvat
-    entrypoint: ["python", "/mnt/init_s3.py"]
+    entrypoint:
+      - python
+      - /mnt/init_s3.py
