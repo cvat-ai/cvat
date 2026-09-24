@@ -184,13 +184,11 @@ function ObjectListComponent(props: Props): JSX.Element {
                 statesListRef.current?.querySelector<HTMLElement>('.rc-virtual-list-holder');
 
             if (item && scrollContainer) {
-                if (statesOrdering === StatesOrdering.LAYER) {
-                    item.scrollIntoView({ block: 'start' });
-                    setPendingScrollTarget(null);
-                    return;
-                }
-
-                const delta = item.getBoundingClientRect().top - scrollContainer.getBoundingClientRect().top;
+                const scrollPaddingTop = Number.parseFloat(
+                    window.getComputedStyle(scrollContainer).scrollPaddingTop,
+                ) || 0;
+                const delta = item.getBoundingClientRect().top -
+                    scrollContainer.getBoundingClientRect().top - scrollPaddingTop;
                 if (Math.abs(delta) > 1) {
                     scrollContainer.scrollTop += delta;
                     stableFrames = 0;
