@@ -31,6 +31,7 @@ from cvat.apps.quality_control.attribute_comparison import (
 )
 from cvat.apps.quality_control.backends import (
     ComparisonSample,
+    FrameComparisonSample,
     QualityBackend,
     make_quality_backend,
 )
@@ -97,12 +98,19 @@ class EffectiveQualityRequirement:
     _effective_requirement: bool = True
 
     @property
-    def comparison_annotation_type(self) -> cdm.AnnotationType:
-        """Resolve the requirement target to an annotation kind in the data model."""
-        requirement_type = models.QualityRequirementAnnotationType(self.annotation_type)
-        if requirement_type == models.QualityRequirementAnnotationType.SKELETON_KEYPOINT:
-            return cdm.AnnotationType.POINTS
-        return cdm.AnnotationType(requirement_type.value)
+    def comparison_annotation_type(self) -> type[cdm.Annotation]:
+        """Resolve the requirement target to an annotation interface."""
+        return {
+            models.QualityRequirementAnnotationType.TAG: cdm.Tag,
+            models.QualityRequirementAnnotationType.RECTANGLE: cdm.Rectangle,
+            models.QualityRequirementAnnotationType.POLYGON: cdm.Polygon,
+            models.QualityRequirementAnnotationType.POLYLINE: cdm.Polyline,
+            models.QualityRequirementAnnotationType.POINTS: cdm.Points,
+            models.QualityRequirementAnnotationType.ELLIPSE: cdm.Ellipse,
+            models.QualityRequirementAnnotationType.MASK: cdm.Mask,
+            models.QualityRequirementAnnotationType.SKELETON: cdm.Skeleton,
+            models.QualityRequirementAnnotationType.SKELETON_KEYPOINT: cdm.Points,
+        }[models.QualityRequirementAnnotationType(self.annotation_type)]
 
 
 _INHERITED_REQUIREMENT_FIELDS = (
@@ -560,12 +568,11 @@ class RequirementHandler(ABC):
     def __init__(self, *, requirement: EffectiveQualityRequirement, backend: QualityBackend):
         self.requirement = requirement
         self._backend = backend
-        self._included_annotation_types = [requirement.comparison_annotation_type]
+        self._included_annotation_types = (requirement.comparison_annotation_type,)
         self._filter = RequirementJsonLogicFilter(
             expression=self.requirement.filter,
             catalog=self._backend.catalog,
             included_annotation_types=self._included_annotation_types,
-            area_getter=self._backend.get_annotation_area,
         )
 
     def _get_explicit_comparison_attribute_names(
@@ -633,10 +640,10 @@ class RequirementHandler(ABC):
         self, sample: ComparisonSample
     ) -> tuple[ComparisonSample, ComparisonReportRequirementCalculation]:
         ds_candidates = [
-            a for a in sample.ds_annotations if a.annotation_type in self._included_annotation_types
+            a for a in sample.ds_annotations if isinstance(a, self._included_annotation_types)
         ]
         gt_candidates = [
-            a for a in sample.gt_annotations if a.annotation_type in self._included_annotation_types
+            a for a in sample.gt_annotations if isinstance(a, self._included_annotation_types)
         ]
         ds_selected = self._filter.filter_annotations(sample.ds_annotations)
         gt_selected = self._filter.filter_annotations(sample.gt_annotations)
@@ -783,7 +790,7 @@ class RequirementHandler(ABC):
     @abstractmethod
     def match_annotations(
         self,
-        sample: ComparisonSample,
+        sample: FrameComparisonSample,
     ) -> RequirementFrameResult:
         """Match annotations between dataset and ground truth items.
 
@@ -863,7 +870,7 @@ class RequirementHandler(ABC):
 class TagRequirementHandler(RequirementHandler):
     def match_annotations(
         self,
-        sample: ComparisonSample,
+        sample: FrameComparisonSample,
     ) -> RequirementFrameResult:
         conflicts = []
         frame_id = sample.frame_id
@@ -944,7 +951,7 @@ class TagRequirementHandler(RequirementHandler):
 class ShapeRequirementHandler(RequirementHandler):
     def match_annotations(
         self,
-        sample: ComparisonSample,
+        sample: FrameComparisonSample,
     ) -> RequirementFrameResult:
         conflicts = []
         frame_id = sample.frame_id
@@ -1033,13 +1040,10 @@ class ShapeRequirementHandler(RequirementHandler):
         # current single-stage matcher. Keep this handling for a future multi-stage matcher.
         if (
             self.requirement.compare_line_orientation is not False
-            and cdm.AnnotationType.POLYLINE in self._included_annotation_types
+            and cdm.Polyline in self._included_annotation_types
         ):
             for gt_ann, ds_ann in itertools.chain(shape_matches, shape_mismatches):
-                if (
-                    gt_ann.annotation_type != ds_ann.annotation_type
-                    or gt_ann.annotation_type != cdm.AnnotationType.POLYLINE
-                ):
+                if not isinstance(gt_ann, cdm.Polyline) or not isinstance(ds_ann, cdm.Polyline):
                     continue
 
                 comparison = _get_comparison(gt_ann, ds_ann)
@@ -1118,8 +1122,8 @@ class DatasetQualityEstimator:
         self._results: dict[str, dict[int, ComparisonReportFrameComparisonSummary]] = {}
         self._calculations: dict[str, ComparisonReportRequirementCalculation] = {}
 
-    def _get_total_frames(self) -> int:
-        return self._backend.total_frames
+    def _get_total_samples(self) -> int:
+        return self._backend.total_samples
 
     def _compare_datasets(self):
         try:
@@ -1129,7 +1133,7 @@ class DatasetQualityEstimator:
             self._backend.close()
 
     def _compare_samples(self, sample: ComparisonSample):
-        if sample.scope != "frame" or sample.frame_id is None:
+        if not isinstance(sample, FrameComparisonSample):
             raise ValueError("Only frame comparison reports are implemented")
 
         for requirement in self._requirements:
@@ -1192,7 +1196,7 @@ class DatasetQualityEstimator:
             parameters=self._report_parameters,
             comparison_summary=ComparisonReportSummary(
                 frames=intersection_frames,
-                total_frames=self._get_total_frames(),
+                total_frames=self._get_total_samples(),
                 conflict_count=len(conflicts),
                 error_count=len(conflicts),
                 conflicts_by_type=Counter(c.type for c in conflicts),

@@ -13,11 +13,11 @@ from collections.abc import Iterator, Mapping, Sequence
 from dataclasses import dataclass
 from enum import Enum
 from functools import cached_property
-from typing import Any, Literal
+from typing import Any
 
 
 class AnnotationType(str, Enum):
-    """Annotation kinds independent of quality requirements and storage libraries."""
+    """Standard identifiers; custom annotations may define other string identifiers."""
 
     TAG = "tag"
     RECTANGLE = "rectangle"
@@ -91,7 +91,8 @@ class Annotation(ABC):
 
     @property
     @abstractmethod
-    def annotation_type(self) -> AnnotationType:
+    def annotation_type(self) -> str:
+        """Stable identifier for serialization and filter expressions."""
         raise NotImplementedError
 
     @property
@@ -125,17 +126,57 @@ class Annotation(ABC):
         raise NotImplementedError
 
 
+class Annotation2D(Annotation):
+    """An annotation with a two-dimensional area in square pixels."""
+
+    @abstractmethod
+    def get_area(self) -> float:
+        raise NotImplementedError
+
+
+class Tag(Annotation):
+    annotation_type = AnnotationType.TAG
+
+
+class Rectangle(Annotation2D):
+    annotation_type = AnnotationType.RECTANGLE
+
+
+class Polygon(Annotation2D):
+    annotation_type = AnnotationType.POLYGON
+
+
+class Polyline(Annotation2D):
+    annotation_type = AnnotationType.POLYLINE
+
+
+class Points(Annotation2D):
+    annotation_type = AnnotationType.POINTS
+
+
+class Ellipse(Annotation2D):
+    annotation_type = AnnotationType.ELLIPSE
+
+
+class Cuboid(Annotation):
+    annotation_type = AnnotationType.CUBOID
+
+
+class Mask(Annotation2D):
+    annotation_type = AnnotationType.MASK
+
+
+class Skeleton(Annotation2D):
+    annotation_type = AnnotationType.SKELETON
+
+
 class Interval(Annotation):
     """An interval in absolute integer milliseconds, with an exclusive stop.
 
-    None preserves an open end. Resolving it requires the consumer's recording
-    scope; this contract does not introduce an audio quality implementation.
-    CommonData.LabeledInterval remains the import/export representation.
+    None preserves an open end. Resolving it requires the consumer's recording scope.
     """
 
-    @property
-    def annotation_type(self) -> Literal[AnnotationType.INTERVAL]:
-        return AnnotationType.INTERVAL
+    annotation_type = AnnotationType.INTERVAL
 
     @property
     @abstractmethod
@@ -148,7 +189,7 @@ class Interval(Annotation):
         raise NotImplementedError
 
 
-class DatasetItem(ABC):
+class Sample(ABC):
     """Annotations for one media item, identified by its ID and subset.
 
     Frame numbers are optional: a recording does not need an artificial frame.
@@ -185,7 +226,7 @@ class Dataset(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def __iter__(self) -> Iterator[DatasetItem]:
+    def __iter__(self) -> Iterator[Sample]:
         raise NotImplementedError
 
     @abstractmethod
@@ -193,5 +234,5 @@ class Dataset(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def get(self, item_id: str, *, subset: str) -> DatasetItem | None:
+    def get(self, item_id: str, *, subset: str) -> Sample | None:
         raise NotImplementedError

@@ -14,12 +14,16 @@ import datumaro as dm
 from cvat.apps.dataset_manager import data_model as cdm
 from cvat.apps.dataset_manager.data_model.adapters.datumaro import (
     DatumaroAnnotationAdapter,
-    DatumaroDatasetItemAdapter,
+    DatumaroSampleAdapter,
     to_datumaro_annotation_type,
 )
-from cvat.apps.quality_control.annotation_matching import Comparator
 from cvat.apps.quality_control.attribute_comparison import attribute_comparison_may_compare
-from cvat.apps.quality_control.backends.base import ComparisonSample, QualityBackend
+from cvat.apps.quality_control.backends.base import (
+    ComparisonSample,
+    FrameComparisonSample,
+    QualityBackend,
+)
+from cvat.apps.quality_control.backends.datumaro.matching import Comparator
 from cvat.apps.quality_control.comparison_report import ComparisonParameters
 from cvat.apps.quality_control.filters import RequirementJsonLogicFilter
 from cvat.apps.quality_control.matching import (
@@ -53,8 +57,8 @@ class Datumaro2DBackend(QualityBackend):
         return Comparator.IGNORED_ATTRIBUTES
 
     @property
-    def total_frames(self) -> int:
-        return self._ds_provider.total_frames
+    def total_samples(self) -> int:
+        return self._ds_provider.total_samples
 
     def _view(
         self, annotation: dm.Annotation, provider: DatumaroJobDataProvider
@@ -64,8 +68,8 @@ class Datumaro2DBackend(QualityBackend):
             self._views[key] = provider.dataset.adapt_annotation(annotation)
         return self._views[key]
 
-    def iter_samples(self) -> Iterator[ComparisonSample]:
-        def annotations(item: cdm.DatasetItem, provider: DatumaroJobDataProvider):
+    def iter_samples(self) -> Iterator[FrameComparisonSample]:
+        def annotations(item: cdm.Sample, provider: DatumaroJobDataProvider):
             views = []
             for annotation in item.annotations:
                 view = cast(DatumaroAnnotationAdapter, annotation)
@@ -79,23 +83,17 @@ class Datumaro2DBackend(QualityBackend):
                 continue
 
             self._native_items = (
-                cast(DatumaroDatasetItemAdapter, gt_item).native_item,
-                cast(DatumaroDatasetItemAdapter, ds_item).native_item,
+                cast(DatumaroSampleAdapter, gt_item).native_item,
+                cast(DatumaroSampleAdapter, ds_item).native_item,
             )
             try:
-                yield ComparisonSample(
+                yield FrameComparisonSample(
                     gt_annotations=annotations(gt_item, self._gt_provider),
                     ds_annotations=annotations(ds_item, self._ds_provider),
                     frame_id=ds_item.frame_id,
                 )
             finally:
                 self.close()
-
-    def get_annotation_area(self, annotation: cdm.Annotation) -> float | None:
-        native = cast(DatumaroAnnotationAdapter, annotation).native_annotation
-        if native.type == dm.AnnotationType.label or not hasattr(native, "get_area"):
-            return None
-        return native.get_area()
 
     def prepare_sample(
         self,
@@ -113,8 +111,7 @@ class Datumaro2DBackend(QualityBackend):
             annotation_filter = RequirementJsonLogicFilter(
                 expression="",
                 catalog=self.catalog,
-                included_annotation_types=[cdm.AnnotationType.SKELETON],
-                area_getter=self.get_annotation_area,
+                included_annotation_types=[cdm.Skeleton],
             )
             for view in annotations:
                 ann = cast(DatumaroAnnotationAdapter, view).native_annotation

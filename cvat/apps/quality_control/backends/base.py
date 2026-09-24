@@ -6,9 +6,9 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from collections.abc import Collection, Iterator, Sequence
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING
 
-from attrs import define
+from attrs import define, field, validators
 
 from cvat.apps.dataset_manager import data_model as cdm
 from cvat.apps.quality_control.matching import AttributeMatchingFunction, MatchingResults
@@ -22,8 +22,11 @@ if TYPE_CHECKING:
 class ComparisonSample:
     gt_annotations: Sequence[cdm.Annotation]
     ds_annotations: Sequence[cdm.Annotation]
-    frame_id: int | None
-    scope: Literal["frame", "recording"] = "frame"
+
+
+@define(frozen=True)
+class FrameComparisonSample(ComparisonSample):
+    frame_id: int = field(validator=validators.instance_of(int))
 
 
 class QualityBackend(ABC):
@@ -45,7 +48,8 @@ class QualityBackend(ABC):
 
     @property
     @abstractmethod
-    def total_frames(self) -> int:
+    def total_samples(self) -> int:
+        """Total samples in the job, including those outside the comparison subset."""
         raise NotImplementedError
 
     @abstractmethod
@@ -59,10 +63,6 @@ class QualityBackend(ABC):
         *,
         requirement_type: QualityRequirementAnnotationType | str,
     ) -> ComparisonSample:
-        raise NotImplementedError
-
-    @abstractmethod
-    def get_annotation_area(self, annotation: cdm.Annotation) -> float | None:
         raise NotImplementedError
 
     @abstractmethod

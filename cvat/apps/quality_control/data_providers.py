@@ -52,7 +52,8 @@ class JobDataProvider(ABC):
         return self.job_data.db_instance.segment.task.dimension
 
     @property
-    def total_frames(self) -> int:
+    def total_samples(self) -> int:
+        """Total samples in the job, independent of the included comparison frames."""
         return len(self.job_data)
 
     def _load_label_catalog(self) -> cdm.LabelCatalog:
@@ -83,7 +84,6 @@ class JobDataProvider(ABC):
 
 
 def make_job_data_provider(job_id: int, *, queryset=None, included_frames=None) -> JobDataProvider:
-    # Datumaro is the existing implementation. Audio quality remains unsupported.
     from cvat.apps.quality_control.datumaro_data_provider import DatumaroJobDataProvider
 
     return DatumaroJobDataProvider(job_id, queryset=queryset, included_frames=included_frames)

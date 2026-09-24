@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import operator
-from collections.abc import Callable, Collection, Sequence
+from collections.abc import Collection, Sequence
 from functools import cached_property
 from typing import Any
 
@@ -70,7 +70,6 @@ class _AnnotationAttributesFilterContext:
 class _ShapeFilterContext:
     _ann: cdm.Annotation
     _catalog: cdm.LabelCatalog
-    _area_getter: Callable[[cdm.Annotation], float | None]
     _attributes: dict[str, Any]
     _include_track: bool = True
 
@@ -80,13 +79,11 @@ class _ShapeFilterContext:
         ann: cdm.Annotation,
         *,
         catalog: cdm.LabelCatalog,
-        area_getter: Callable[[cdm.Annotation], float | None],
         include_track: bool = True,
     ) -> "_ShapeFilterContext":
         return cls(
             ann,
             catalog,
-            area_getter,
             dict(ann.attributes),
             include_track=include_track,
         )
@@ -96,12 +93,12 @@ class _ShapeFilterContext:
         return self._catalog.labels[self._ann.label].name if self._ann.label is not None else None
 
     @property
-    def type(self) -> cdm.AnnotationType:
+    def type(self) -> str:
         return self._ann.annotation_type
 
     @cached_property
     def area(self) -> float | None:
-        return self._area_getter(self._ann)
+        return self._ann.get_area() if isinstance(self._ann, cdm.Annotation2D) else None
 
     @property
     def source(self) -> Any:
@@ -143,7 +140,6 @@ class _ShapeFilterContext:
         return self.__class__(
             self._ann,
             self._catalog,
-            self._area_getter,
             self._attributes,
             include_track=False,
         )
@@ -219,12 +215,10 @@ class RequirementJsonLogicFilter(JsonLogicFilter):
         *,
         expression: str,
         catalog: cdm.LabelCatalog,
-        area_getter: Callable[[cdm.Annotation], float | None],
-        included_annotation_types: Collection[cdm.AnnotationType],
+        included_annotation_types: Collection[type[cdm.Annotation]],
     ) -> None:
         self._catalog = catalog
-        self._area_getter = area_getter
-        self._included_annotation_types = set(included_annotation_types)
+        self._included_annotation_types = tuple(included_annotation_types)
 
         filter_expression = expression.strip()
         self._rules = (
@@ -371,7 +365,7 @@ class RequirementJsonLogicFilter(JsonLogicFilter):
             raise ValidationError(f"filter: term '{arg}' is not supported")
 
     def matches_annotation(self, ann: cdm.Annotation) -> bool:
-        if ann.annotation_type not in self._included_annotation_types:
+        if not isinstance(ann, self._included_annotation_types):
             return False
 
         return self._matches(self._build_shape_filter_context(ann))
@@ -614,7 +608,6 @@ class RequirementJsonLogicFilter(JsonLogicFilter):
         return _ShapeFilterContext.from_annotation(
             ann,
             catalog=self._catalog,
-            area_getter=self._area_getter,
         )
 
     def _build_shape_filter_context(self, ann: cdm.Annotation) -> _FilterContext:

@@ -11,9 +11,9 @@ import datumaro as dm
 import numpy as np
 
 from cvat.apps.dataset_manager import data_model as cdm
-from cvat.apps.dataset_manager.data_model.adapters.datumaro import DatumaroAnnotationAdapter
+from cvat.apps.dataset_manager.data_model.adapters.datumaro import adapt_annotation
 from cvat.apps.quality_control import models
-from cvat.apps.quality_control.backends import ComparisonSample
+from cvat.apps.quality_control.backends import FrameComparisonSample
 from cvat.apps.quality_control.backends.datumaro import Datumaro2DBackend
 from cvat.apps.quality_control.comparison_report import (
     AnnotationConflict,
@@ -49,10 +49,10 @@ class TestShapeRequirementHandler(unittest.TestCase):
     def _prepare(annotations, provider):
         backend = Datumaro2DBackend(provider, provider)
         provider.label_catalog = cdm.LabelCatalog((cdm.Label(1, "person", "skeleton"),))
-        provider.dataset.adapt_annotation.side_effect = lambda ann: DatumaroAnnotationAdapter(
+        provider.dataset.adapt_annotation.side_effect = lambda ann: adapt_annotation(
             ann, reference_getter=provider.dm_ann_to_annotation_reference
         )
-        sample = ComparisonSample(
+        sample = FrameComparisonSample(
             gt_annotations=(),
             ds_annotations=tuple(backend._view(a, provider) for a in annotations),
             frame_id=0,

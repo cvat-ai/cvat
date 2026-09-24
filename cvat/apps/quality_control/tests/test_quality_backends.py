@@ -13,19 +13,22 @@ from unittest import mock
 
 import datumaro as dm
 import numpy as np
+from attrs import evolve
 
 from cvat.apps.dataset_manager import data_model as cdm
 from cvat.apps.dataset_manager.bindings import CommonData
+from cvat.apps.dataset_manager.data_model.adapters.datumaro import adapt_annotation
 from cvat.apps.engine.models import DimensionType
 from cvat.apps.quality_control import data_providers, filters, models, quality_handlers
-from cvat.apps.quality_control.annotation_matching import Comparator
 from cvat.apps.quality_control.attribute_comparison import CVAT_ATTRIBUTE_SPEC_IDS_ATTR
 from cvat.apps.quality_control.backends import (
     ComparisonSample,
+    FrameComparisonSample,
     QualityBackend,
     make_quality_backend,
 )
 from cvat.apps.quality_control.backends.datumaro import Datumaro2DBackend
+from cvat.apps.quality_control.backends.datumaro.matching import Comparator
 from cvat.apps.quality_control.comparison_report import ComparisonReport, ComparisonReportParameters
 from cvat.apps.quality_control.data_providers import JobDataProvider
 from cvat.apps.quality_control.datumaro_data_provider import (
@@ -161,12 +164,9 @@ class TestDatumaroQualityBackend(unittest.TestCase):
                     result, backend, iterator, handler, sample = self.compare(
                         gt_item, ds_item, requirement
                     )
-                    self.assertIs(
-                        sample.gt_annotations[0].annotation_type, cdm.AnnotationType(target)
-                    )
-                    self.assertIs(
-                        sample.ds_annotations[0].annotation_type, cdm.AnnotationType(target)
-                    )
+                    for annotation in (*sample.gt_annotations, *sample.ds_annotations):
+                        self.assertIsInstance(annotation, requirement.comparison_annotation_type)
+                        self.assertEqual(annotation.annotation_type, target)
                     native = Comparator(
                         backend._gt_provider.dm_dataset.categories(),
                         settings=backend._comparison_parameters(requirement),
@@ -267,7 +267,7 @@ class TestDatumaroQualityBackend(unittest.TestCase):
                     requirement_type=models.QualityRequirementAnnotationType.SKELETON_KEYPOINT,
                 )
                 view = prepared.gt_annotations[0]
-                self.assertIs(view.annotation_type, cdm.AnnotationType.POINTS)
+                self.assertIsInstance(view, cdm.Points)
                 self.assertEqual(
                     view.reference,
                     cdm.AnnotationReference(
@@ -440,6 +440,26 @@ class TestDatumaroQualityBackend(unittest.TestCase):
         self.assertEqual(report.get_conflicts(), [])
         self.assertEqual(len(list(ds.dm_dataset)[0].annotations), 1)
 
+    def test_total_samples_counts_the_job_not_only_compared_frames(self):
+        gt = make_provider(1, make_item(frame=1))
+        ds = make_provider(2, make_item(frame=1))
+        ds.job_data.extend([None] * 9)
+        backend = Datumaro2DBackend(ds, gt)
+        self.assertEqual(ds.total_samples, 10)
+        self.assertEqual(backend.total_samples, 10)
+        self.assertEqual(len(list(backend.iter_samples())), 1)
+
+        report = DatasetQualityEstimator(
+            ds,
+            gt,
+            requirements=[make_requirement()],
+            report_parameters=ComparisonReportParameters(),
+        ).generate_report()
+        summary = json.loads(report.to_json())["comparison_summary"]
+        self.assertEqual(summary["total_frames"], 10)
+        self.assertEqual(summary["frames"], [1])
+        self.assertNotIn("total_samples", summary)
+
     def test_backend_releases_sample_state_after_comparison_error(self):
         gt = make_provider(1, make_item())
         ds = make_provider(2, make_item())
@@ -465,20 +485,86 @@ class TestDatumaroQualityBackend(unittest.TestCase):
 
 
 class TestQualityBackendBoundary(unittest.TestCase):
+    def test_frame_sample_requires_a_frame_and_preserves_it_when_filtered(self):
+        with self.assertRaises(TypeError):
+            FrameComparisonSample((), (), frame_id=None)
+        sample = FrameComparisonSample((), (), frame_id=7)
+        filtered = evolve(sample, ds_annotations=[])
+        self.assertIsInstance(filtered, FrameComparisonSample)
+        self.assertEqual(filtered.frame_id, 7)
+
+    def test_frame_report_rejects_a_generic_sample_and_closes_backend(self):
+        backend = mock.Mock(spec=QualityBackend)
+        backend.iter_samples.return_value = iter([ComparisonSample((), ())])
+        with mock.patch.object(quality_handlers, "make_quality_backend", return_value=backend):
+            estimator = DatasetQualityEstimator(
+                mock.Mock(),
+                mock.Mock(),
+                requirements=[],
+                report_parameters=ComparisonReportParameters(),
+            )
+        with self.assertRaisesRegex(ValueError, "Only frame comparison reports"):
+            estimator.generate_report()
+        backend.close.assert_called_once_with()
+
+    def test_filters_accept_new_annotation_types_and_their_subclasses(self):
+        class Event(cdm.Annotation):
+            annotation_type = "event"
+            id = 1
+            label = None
+            attributes = {}
+            reference = cdm.AnnotationReference(1, 1, "tag")
+            source = None
+            group = 0
+            score = 1.0
+
+        class DerivedEvent(Event):
+            pass
+
+        annotation_filter = filters.RequirementJsonLogicFilter(
+            expression=json.dumps({"==": [{"var": "shape.type"}, "event"]}),
+            catalog=cdm.LabelCatalog(()),
+            included_annotation_types=[Event],
+        )
+        event = DerivedEvent()
+        self.assertTrue(annotation_filter.matches_annotation(event))
+        self.assertIsNone(annotation_filter.build_shape_context_for_annotation(event).area)
+        tag = adapt_annotation(dm.Label(label=0), reference_getter=mock.Mock())
+        self.assertFalse(annotation_filter.matches_annotation(tag))
+
+    def test_filters_preserve_area_for_2d_annotations_and_none_for_other_types(self):
+        annotation_filter = filters.RequirementJsonLogicFilter(
+            expression="",
+            catalog=cdm.LabelCatalog(()),
+            included_annotation_types=[cdm.Annotation],
+        )
+        for native, expected_area in (
+            (dm.Bbox(1, 2, 10, 20), 200),
+            (dm.PolyLine([0, 0, 10, 20]), 0),
+            (dm.Label(label=0), None),
+            (dm.Cuboid3d(position=[0, 0, 0]), None),
+        ):
+            with self.subTest(annotation_type=native.type):
+                annotation = adapt_annotation(native, reference_getter=mock.Mock())
+                context = annotation_filter.build_shape_context_for_annotation(annotation)
+                self.assertEqual(context.area, expected_area)
+
     def test_backend_requires_an_implementation(self):
         self.assertRaises(TypeError, QualityBackend)
         self.assertRaises(TypeError, JobDataProvider, 1)
 
     def test_common_handler_accepts_annotations_without_native_geometry(self):
-        class PlainAnnotation(cdm.Annotation):
+        class PlainAnnotation(cdm.Rectangle):
             id = 1
-            annotation_type = cdm.AnnotationType.RECTANGLE
             label = 0
             attributes = {}
             reference = cdm.AnnotationReference(1, 1, "shape", "rectangle")
             source = None
             group = 0
             score = 1.0
+
+            def get_area(self):
+                return 100.0
 
         gt = PlainAnnotation()
         ds = PlainAnnotation()
@@ -495,20 +581,22 @@ class TestQualityBackendBoundary(unittest.TestCase):
             group_comparisons=[],
         )
         handler = RequirementHandler.for_requirement(make_requirement(), backend=backend)
-        result = handler.match_annotations(ComparisonSample([gt], [ds], frame_id=0))
+        result = handler.match_annotations(FrameComparisonSample([gt], [ds], frame_id=0))
         self.assertEqual(result.summary.score, 1)
         self.assertEqual(result.summary.conflicts, [])
 
     def test_handler_builds_group_and_coverage_conflicts_from_comparison_data(self):
-        class PlainAnnotation(cdm.Annotation):
+        class PlainAnnotation(cdm.Rectangle):
             id = 1
-            annotation_type = cdm.AnnotationType.RECTANGLE
             label = 0
             attributes = {}
             reference = cdm.AnnotationReference(1, 1, "shape", "rectangle")
             source = None
             group = 0
             score = 1.0
+
+            def get_area(self):
+                return 100.0
 
         gt = PlainAnnotation()
         ds = PlainAnnotation()
@@ -535,7 +623,7 @@ class TestQualityBackendBoundary(unittest.TestCase):
                     covered_annotations=[ds],
                     group_comparisons=[GroupComparison(gt, ds, gt_size, ds_size, groups_match)],
                 )
-                result = handler.match_annotations(ComparisonSample([gt], [ds], frame_id=7))
+                result = handler.match_annotations(FrameComparisonSample([gt], [ds], frame_id=7))
                 conflicts = result.summary.conflicts
                 expected_types = [models.AnnotationConflictType.COVERED_ANNOTATION]
                 if expected_conflict:

@@ -8,19 +8,19 @@ import unittest
 from unittest import mock
 
 import datumaro as dm
+import numpy as np
 
 from cvat.apps.dataset_manager import data_model as cdm
 from cvat.apps.dataset_manager.data_model.adapters.datumaro import (
-    DatumaroAnnotationAdapter,
     DatumaroDatasetAdapter,
-    to_annotation_type,
+    adapt_annotation,
     to_datumaro_annotation_type,
 )
 
 
 class TestAnnotationHierarchy(unittest.TestCase):
     def test_abstract_annotations_require_an_implementation(self):
-        for annotation_class in (cdm.Annotation, cdm.Interval, cdm.Dataset, cdm.DatasetItem):
+        for annotation_class in (cdm.Annotation, cdm.Interval, cdm.Dataset, cdm.Sample):
             with self.subTest(annotation_class=annotation_class):
                 self.assertRaises(TypeError, annotation_class)
 
@@ -38,7 +38,7 @@ class TestAnnotationHierarchy(unittest.TestCase):
 
         interval = TestInterval()
         self.assertIsInstance(interval, cdm.Annotation)
-        self.assertIs(interval.annotation_type, cdm.AnnotationType.INTERVAL)
+        self.assertEqual(interval.annotation_type, "interval")
         self.assertEqual(interval.start, 100)
         self.assertIsNone(interval.stop)
 
@@ -63,17 +63,46 @@ class TestAnnotationHierarchy(unittest.TestCase):
 
 
 class TestDatumaroAnnotationAdapter(unittest.TestCase):
+    def test_2d_adapters_preserve_native_area(self):
+        annotations = (
+            (dm.Bbox(1, 2, 10, 20), cdm.Rectangle),
+            (dm.Polygon([0, 0, 10, 0, 10, 20, 0, 20]), cdm.Polygon),
+            (dm.PolyLine([0, 0, 10, 20]), cdm.Polyline),
+            (dm.Points([0, 0, 10, 20]), cdm.Points),
+            (dm.Ellipse(0, 0, 10, 20), cdm.Ellipse),
+            (dm.Mask(np.ones((2, 3), dtype=bool)), cdm.Mask),
+            (dm.Skeleton([dm.Points([0, 0]), dm.Points([10, 20])]), cdm.Skeleton),
+        )
+        for native, annotation_type in annotations:
+            with self.subTest(annotation_type=annotation_type):
+                annotation = adapt_annotation(native, reference_getter=mock.Mock())
+                self.assertIsInstance(annotation, annotation_type)
+                self.assertIsInstance(annotation, cdm.Annotation2D)
+                self.assertEqual(annotation.get_area(), native.get_area())
+                self.assertIs(to_datumaro_annotation_type(annotation_type), native.type)
+
+    def test_tags_and_cuboids_do_not_expose_2d_area(self):
+        for native, annotation_type in (
+            (dm.Label(label=0), cdm.Tag),
+            (dm.Cuboid3d(position=[0, 0, 0]), cdm.Cuboid),
+        ):
+            with self.subTest(annotation_type=annotation_type):
+                annotation = adapt_annotation(native, reference_getter=mock.Mock())
+                self.assertIsInstance(annotation, annotation_type)
+                self.assertNotIsInstance(annotation, cdm.Annotation2D)
+
     def test_native_geometry_and_lazy_source_reference_are_preserved(self):
         native = dm.Bbox(
             1, 2, 10, 20, label=0, id=7, group=3, attributes={"source": "manual", "text": "hello"}
         )
         reference = cdm.AnnotationReference(42, 5, cdm.AnnotationReferenceType.SHAPE, "rectangle")
         reference_getter = mock.Mock(return_value=reference)
-        annotation = DatumaroAnnotationAdapter(native, reference_getter=reference_getter)
+        annotation = adapt_annotation(native, reference_getter=reference_getter)
 
         self.assertIsInstance(annotation, cdm.Annotation)
         self.assertIs(annotation.native_annotation, native)
-        self.assertIs(annotation.annotation_type, cdm.AnnotationType.RECTANGLE)
+        self.assertIsInstance(annotation, cdm.Rectangle)
+        self.assertEqual(annotation.annotation_type, "rectangle")
         self.assertEqual(annotation.id, 7)
         self.assertEqual(annotation.label, 0)
         self.assertEqual(annotation.group, 3)
@@ -89,12 +118,9 @@ class TestDatumaroAnnotationAdapter(unittest.TestCase):
         self.assertEqual(native.attributes["text"], "hello")
 
     def test_types_outside_quality_targets_are_supported(self):
-        self.assertIs(to_annotation_type(dm.AnnotationType.cuboid_3d), cdm.AnnotationType.CUBOID)
-        self.assertIs(
-            to_datumaro_annotation_type(cdm.AnnotationType.CUBOID), dm.AnnotationType.cuboid_3d
-        )
+        self.assertIs(to_datumaro_annotation_type(cdm.Cuboid), dm.AnnotationType.cuboid_3d)
         with self.assertRaisesRegex(ValueError, "No Datumaro representation"):
-            to_datumaro_annotation_type(cdm.AnnotationType.INTERVAL)
+            to_datumaro_annotation_type(cdm.Interval)
 
 
 class TestDatumaroDatasetAdapter(unittest.TestCase):
@@ -134,7 +160,7 @@ class TestDatumaroDatasetAdapter(unittest.TestCase):
             [("same-id", "train"), ("same-id", "validation")],
         )
         item = dataset.get("same-id", subset="train")
-        self.assertIsInstance(item, cdm.DatasetItem)
+        self.assertIsInstance(item, cdm.Sample)
         self.assertIs(item.native_item, native.get("same-id", subset="train"))
         self.assertEqual(item.frame_id, 100)
         self.assertIs(item.annotations, item.annotations)
