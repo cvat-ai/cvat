@@ -27,7 +27,7 @@ interface ProfileFormValues {
 }
 
 const roleOptions = [
-    { value: 'ml_engineer', label: 'ML / computer vision engineer' },
+    { value: 'ml_engineer', label: 'Machine learning engineer' },
     { value: 'data_scientist', label: 'Data scientist' },
     { value: 'annotation_specialist', label: 'Annotation specialist' },
     { value: 'project_manager', label: 'Project manager' },
