@@ -472,24 +472,40 @@ class AnnotationManagerTest(TestCase):
         for dimension in [DimensionType.DIM_2D, DimensionType.DIM_3D]:
             with self.subTest(dimension=dimension):
                 # job 1 covers frames [0; 9], job 2 covers frames [5; 14]
-                job_tracks = [
-                    (0, make_track([make_shape(6, dimension=dimension)], frame=6, source="auto")),
+                jobs = [
+                    (
+                        0,
+                        [
+                            make_track(
+                                [make_shape(6, dimension=dimension)], frame=6, source="auto"
+                            ),
+                            make_track(
+                                [
+                                    make_shape(0, base=50, dimension=dimension),
+                                    make_shape(2, base=50, outside=True, dimension=dimension),
+                                ],
+                                source="semi-auto",
+                            ),
+                        ],
+                    ),
                     (
                         5,
-                        make_track(
-                            [
-                                make_shape(5, dimension=dimension),
-                                make_shape(13, outside=True, dimension=dimension),
-                            ],
-                            frame=5,
-                        ),
+                        [
+                            make_track(
+                                [
+                                    make_shape(5, dimension=dimension),
+                                    make_shape(13, outside=True, dimension=dimension),
+                                ],
+                                frame=5,
+                            )
+                        ],
                     ),
                 ]
 
                 task_annotations = AnnotationIR(dimension)
-                for start_frame, track in job_tracks:
+                for start_frame, tracks in jobs:
                     job_annotations = AnnotationIR(
-                        dimension, {"tags": [], "shapes": [], "tracks": [track], "intervals": []}
+                        dimension, {"tags": [], "shapes": [], "tracks": tracks, "intervals": []}
                     )
                     AnnotationManager(task_annotations, dimension=dimension).merge(
                         job_annotations, start_frame, overlap=5
@@ -503,14 +519,17 @@ class AnnotationManagerTest(TestCase):
                         )
                         for track in task_annotations.tracks
                     ],
-                    [("manual", [(5, False), (6, False), (13, True)])],
+                    [
+                        ("manual", [(5, False), (6, False), (13, True)]),
+                        ("semi-auto", [(0, False), (2, True)]),
+                    ],
                 )
 
                 exported_frames = [
                     s["frame"]
                     for s in AnnotationManager(task_annotations, dimension=dimension).to_shapes(15)
                 ]
-                self.assertEqual(exported_frames, [5, 6, 7, 8, 9, 10, 11, 12, 13])
+                self.assertEqual(exported_frames, [0, 1, 2, 5, 6, 7, 8, 9, 10, 11, 12, 13])
 
 
 class TestTaskAnnotation(TestCase):
