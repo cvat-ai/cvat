@@ -6,49 +6,64 @@ import React from 'react';
 import { Col, Row } from 'antd/lib/grid';
 import classNames from 'classnames';
 
-import { AudioIntervalState, Label, LabelType } from 'cvat-core-wrapper';
+import { Label, LabelType, Source } from 'cvat-core-wrapper';
 import { formatMilliseconds, formatTimeShort } from 'audio/utils/format-audio-time';
 import { ColorBy } from 'reducers';
 import LabelSelector from 'components/label-selector/label-selector';
 import { filterApplicableForTypes } from 'utils/filter-applicable-labels';
 import AudioIntervalActions, { AudioIntervalActionShortcuts } from './audio-interval-actions';
 import AudioIntervalMoreActions from './audio-interval-more-actions';
-import { intervalDurationSeconds, intervalEndSeconds, intervalStartSeconds } from './utils/audio-interval';
 
 interface Props {
-    interval: AudioIntervalState;
+    clientID: number;
+    serverID: number | null;
+    labelID: number | null;
+    labelType: LabelType;
+    start: number;
+    stop: number | null;
+    source: Source;
+    color: string;
+    locked: boolean;
+    pinned: boolean;
+    hidden: boolean;
     intervalIndex: number;
     labels: Label[];
-    isReadonly: boolean;
     showSource: boolean;
     colorBy: ColorBy;
     shortcuts: AudioIntervalActionShortcuts;
     isCompact?: boolean;
-    canPlayInterval?: boolean;
     onChangeLabel(labelID: number): void;
 }
 
-export default function AudioIntervalHeader({
-    interval,
+function AudioIntervalHeader({
+    clientID,
+    serverID,
+    labelID,
+    labelType,
+    start,
+    stop,
+    source,
+    color,
+    locked,
+    pinned,
+    hidden,
     intervalIndex,
     labels,
-    isReadonly,
     showSource,
     colorBy,
     shortcuts,
     isCompact = false,
-    canPlayInterval = true,
     onChangeLabel,
 }: Props): JSX.Element {
-    const source = showSource && interval.source && String(interval.source).toLowerCase() !== 'manual' ?
-        interval.source :
+    const sourceLabelValue = showSource && source && String(source).toLowerCase() !== 'manual' ?
+        source :
         null;
-    const start = intervalStartSeconds(interval);
-    const end = intervalEndSeconds(interval);
-    const duration = intervalDurationSeconds(interval);
+    const startSeconds = start / 1000;
+    const endSeconds = (stop ?? start) / 1000;
+    const duration = Math.max(0, endSeconds - startSeconds);
     // Old intervals may have labels that are not applicable to intervals anymore,
     // so we need to keep them in the list of labels for the selector
-    const labelsForSelector = filterApplicableForTypes([LabelType.INTERVAL, interval.label.type], labels);
+    const labelsForSelector = filterApplicableForTypes([LabelType.INTERVAL, labelType], labels);
 
     const labelSelector = (
         <LabelSelector
@@ -57,8 +72,8 @@ export default function AudioIntervalHeader({
             popupClassName='cvat-audio-interval-header-label-dropdown'
             popupMatchSelectWidth={false}
             labels={labelsForSelector}
-            value={interval.label.id ?? null}
-            disabled={isReadonly}
+            value={labelID}
+            disabled={locked}
             tooltip='Change current label'
             onChange={(label: Label) => {
                 if (label.id != null) {
@@ -67,28 +82,45 @@ export default function AudioIntervalHeader({
             }}
         />
     );
-    const sourceLabel = source ? (
-        <span className='cvat-audio-interval-header-source' title={`Source: ${source}`}>
-            ({source})
+    const sourceLabel = sourceLabelValue ? (
+        <span className='cvat-audio-interval-header-source' title={`Source: ${sourceLabelValue}`}>
+            ({sourceLabelValue})
         </span>
     ) : null;
+    const formattedDuration = formatMilliseconds(duration * 1000);
     const time = (
         <div className='cvat-audio-interval-header-time'>
-            {`${formatTimeShort(start)} → ${formatTimeShort(end)} (${formatMilliseconds(duration * 1000)})`}
+            {`${formatTimeShort(startSeconds)} → ${formatTimeShort(endSeconds)} (${formattedDuration})`}
         </div>
     );
 
     const topActions = isCompact ? (
         <Col flex='none' className='cvat-audio-interval-header-more-actions'>
-            <AudioIntervalMoreActions interval={interval} colorBy={colorBy} />
+            <AudioIntervalMoreActions
+                clientID={clientID}
+                serverID={serverID}
+                locked={locked}
+                color={color}
+                colorBy={colorBy}
+            />
         </Col>
     ) : (
         <Col flex='none'>
             <AudioIntervalActions
-                interval={interval}
-                canPlayInterval={canPlayInterval}
+                clientID={clientID}
+                locked={locked}
+                hidden={hidden}
+                pinned={pinned}
                 shortcuts={shortcuts}
-                more={<AudioIntervalMoreActions interval={interval} colorBy={colorBy} />}
+                more={(
+                    <AudioIntervalMoreActions
+                        clientID={clientID}
+                        serverID={serverID}
+                        locked={locked}
+                        color={color}
+                        colorBy={colorBy}
+                    />
+                )}
             />
         </Col>
     );
@@ -117,8 +149,10 @@ export default function AudioIntervalHeader({
                 <Row className='cvat-audio-interval-header-compact-actions' justify='center'>
                     <Col>
                         <AudioIntervalActions
-                            interval={interval}
-                            canPlayInterval={canPlayInterval}
+                            clientID={clientID}
+                            locked={locked}
+                            hidden={hidden}
+                            pinned={pinned}
                             shortcuts={shortcuts}
                         />
                     </Col>
@@ -130,3 +164,5 @@ export default function AudioIntervalHeader({
         </div>
     );
 }
+
+export default React.memo(AudioIntervalHeader);
