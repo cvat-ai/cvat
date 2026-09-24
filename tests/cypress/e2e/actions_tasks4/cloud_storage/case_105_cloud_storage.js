@@ -28,7 +28,7 @@ context('Cloud storage.', () => {
     const cloudStorageDataWithoutManifest = {
         displayName: 'Without manifest file',
         resource: 'public',
-        endpointUrl: Cypress.config('minioUrl'),
+        endpointUrl: Cypress.config('motoUrl'),
     };
 
     before(() => {

@@ -1,0 +1,51 @@
+x-allow-moto: &allow-moto
+  depends_on:
+    s3-init:
+      condition: service_completed_successfully
+  volumes:
+    - ./tests/allow_moto.sh:/etc/cvat/init.d/allow_moto.sh:ro
+
+services:
+  cvat_server: *allow-moto
+  cvat_worker_export: *allow-moto
+  cvat_worker_import: *allow-moto
+  cvat_worker_chunks: *allow-moto
+
+  moto:
+    image: &moto-image ghcr.io/getmoto/motoserver:5.2.2
+    hostname: moto
+    restart: always
+    expose:
+      - "9000"
+    ports:
+      - 9000:9000
+    environment:
+      MOTO_PORT: "9000"
+      S3_IGNORE_SUBDOMAIN_BUCKETNAME: "true"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:9000/')"]
+      interval: 2s
+      timeout: 20s
+      retries: 3
+    networks:
+      cvat:
+        aliases:
+          - moto
+  s3-init:
+    # Seed the test S3 buckets through boto3.
+    image: *moto-image
+    depends_on:
+      moto:
+        condition: service_healthy
+    environment:
+      AWS_ENDPOINT_URL: "http://moto:9000"
+      AWS_ACCESS_KEY_ID: "moto_access_key"
+      AWS_SECRET_ACCESS_KEY: "moto_secret_key"
+      AWS_DEFAULT_REGION: "us-east-1"
+    volumes:
+      - ./tests/init_s3.py:/mnt/init_s3.py:ro
+      - ./tests/cypress/e2e/actions_tasks/assets/case_65_manifest/:/mnt/images_with_manifest:ro
+      - ./tests/mounted_file_share/:/mnt/mounted_file_share:ro
+    networks:
+      - cvat
+    entrypoint: ["python", "/mnt/init_s3.py"]

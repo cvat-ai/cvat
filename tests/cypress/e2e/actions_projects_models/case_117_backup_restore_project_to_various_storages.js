@@ -29,7 +29,7 @@ context('Tests source & target storage for backups.', () => {
         displayName: 'Demo bucket',
         resource: 'public',
         manifest: 'images_with_manifest/manifest.jsonl',
-        endpointUrl: Cypress.config('minioUrl'),
+        endpointUrl: Cypress.config('motoUrl'),
     };
 
     const storageConnectedToCloud = {
@@ -145,7 +145,7 @@ context('Tests source & target storage for backups.', () => {
             cy.goBack();
         });
 
-        it('Export project to default minio bucket', () => {
+        it('Export project to default moto bucket', () => {
             cy.goToProjectsList();
             cy.backupProject(
                 project.name,
@@ -156,7 +156,7 @@ context('Tests source & target storage for backups.', () => {
             cy.deleteProject(project.name, projectId);
         });
 
-        it('Import project from minio bucket', () => {
+        it('Import project from moto bucket', () => {
             cy.restoreProject(
                 `${backupArchiveName}.zip`,
                 project.advancedConfiguration.sourceStorage,

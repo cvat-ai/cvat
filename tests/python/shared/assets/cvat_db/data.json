@@ -1929,7 +1929,7 @@
       ],
       "provider_type": "AWS_S3_BUCKET",
       "resource": "public",
-      "specific_attributes": "endpoint_url=http%3A%2F%2Fminio%3A9000",
+      "specific_attributes": "endpoint_url=http%3A%2F%2Fmoto%3A9000",
       "updated_date": "2022-03-17T07:22:49.529Z"
     }
   },
@@ -1938,7 +1938,7 @@
     "pk": 2,
     "fields": {
       "created_date": "2022-03-17T07:23:59.305Z",
-      "credentials": "minio_access_key minio_secret_key",
+      "credentials": "moto_access_key moto_secret_key",
       "credentials_type": "KEY_SECRET_KEY_PAIR",
       "description": "",
       "display_name": "Bucket 2",
@@ -1948,7 +1948,7 @@
       ],
       "provider_type": "AWS_S3_BUCKET",
       "resource": "private",
-      "specific_attributes": "endpoint_url=http%3A%2F%2Fminio%3A9000",
+      "specific_attributes": "endpoint_url=http%3A%2F%2Fmoto%3A9000",
       "updated_date": "2022-07-13T12:46:45.587Z"
     }
   },
@@ -1957,7 +1957,7 @@
     "pk": 3,
     "fields": {
       "created_date": "2022-06-29T12:56:18.257Z",
-      "credentials": "minio_access_key minio_secret_key",
+      "credentials": "moto_access_key moto_secret_key",
       "credentials_type": "KEY_SECRET_KEY_PAIR",
       "description": "Bucket for importing and exporting annotations and backups",
       "display_name": "Import/Export bucket",
@@ -1967,7 +1967,7 @@
       ],
       "provider_type": "AWS_S3_BUCKET",
       "resource": "importexportbucket",
-      "specific_attributes": "endpoint_url=http%3A%2F%2Fminio%3A9000",
+      "specific_attributes": "endpoint_url=http%3A%2F%2Fmoto%3A9000",
       "updated_date": "2022-06-29T12:56:18.264Z"
     }
   },
@@ -1976,7 +1976,7 @@
     "pk": 4,
     "fields": {
       "created_date": "2022-06-29T12:56:18.257Z",
-      "credentials": "minio_access_key minio_secret_key",
+      "credentials": "moto_access_key moto_secret_key",
       "credentials_type": "KEY_SECRET_KEY_PAIR",
       "description": "Bucket with wrong endpoint for testing purposes",
       "display_name": "Import/Export bucket with wrong endpoint",
@@ -1986,7 +1986,7 @@
       ],
       "provider_type": "AWS_S3_BUCKET",
       "resource": "importexportbucketwrongendpoint",
-      "specific_attributes": "endpoint_url=http%3A%2F%2Fminio%3A9777",
+      "specific_attributes": "endpoint_url=http%3A%2F%2Fmoto%3A9777",
       "updated_date": "2022-06-29T12:56:18.264Z"
     }
   },
@@ -1995,7 +1995,7 @@
     "pk": 5,
     "fields": {
       "created_date": "2026-02-11T16:29:48Z",
-      "credentials": "minio_access_key minio_secret_key",
+      "credentials": "moto_access_key moto_secret_key",
       "credentials_type": "KEY_SECRET_KEY_PAIR",
       "description": "Bucket to be used as backing cloud storage for tasks",
       "display_name": "Backing CS",
@@ -2005,7 +2005,7 @@
       ],
       "provider_type": "AWS_S3_BUCKET",
       "resource": "backingcs",
-      "specific_attributes": "endpoint_url=http%3A%2F%2Fminio%3A9000",
+      "specific_attributes": "endpoint_url=http%3A%2F%2Fmoto%3A9000",
       "updated_date": "2026-02-11T16:29:48Z"
     }
   },
