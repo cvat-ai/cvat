@@ -495,10 +495,12 @@ class AnnotationManagerTest(TestCase):
                         job_annotations, start_frame, overlap=5
                     )
 
-                self.assertEqual(len(task_annotations.tracks), 1)
                 self.assertEqual(
-                    [(s["frame"], s["outside"]) for s in task_annotations.tracks[0]["shapes"]],
-                    [(5, False), (6, False), (13, True)],
+                    [
+                        [(s["frame"], s["outside"]) for s in track["shapes"]]
+                        for track in task_annotations.tracks
+                    ],
+                    [[(5, False), (6, False), (13, True)]],
                 )
 
                 exported_frames = [
