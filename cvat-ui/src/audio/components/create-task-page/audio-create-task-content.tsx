@@ -27,6 +27,7 @@ import ProjectSubsetField from 'components/create-task-page/project-subset-field
 import AdvancedConfigurationForm, {
     AUDIO_ADVANCED_CONFIGURATION_SECTIONS,
     AdvancedConfiguration,
+    getAdvancedConfigurationInitialValues,
     SortingMethod,
 } from 'components/create-task-page/advanced-configuration-form';
 import QualityConfigurationForm, {
@@ -56,22 +57,7 @@ const defaultState: State = {
         name: '',
     },
     subset: '',
-    advanced: {
-        useZipChunks: true,
-        useCache: true,
-        sortingMethod: SortingMethod.LEXICOGRAPHICAL,
-        sourceStorage: {
-            location: StorageLocation.LOCAL,
-            cloudStorageId: undefined,
-        },
-        targetStorage: {
-            location: StorageLocation.LOCAL,
-            cloudStorageId: undefined,
-        },
-        useProjectSourceStorage: true,
-        useProjectTargetStorage: true,
-        consensusReplicas: 0,
-    },
+    advanced: getAdvancedConfigurationInitialValues(AUDIO_ADVANCED_CONFIGURATION_SECTIONS),
     quality: {
         validationMode: ValidationMode.NONE,
         validationFramesPercent: 5,
