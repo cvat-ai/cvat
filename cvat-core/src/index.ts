@@ -150,7 +150,6 @@ export default interface CVATCore {
     organizations: {
         get: (filter: {
             page?: number;
-            pageSize?: number;
             search?: string;
             sort?: string;
             filter?: string;

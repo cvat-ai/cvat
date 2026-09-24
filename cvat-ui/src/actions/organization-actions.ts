@@ -143,7 +143,6 @@ export function activateOrganizationAsync(): ThunkAction {
 
                 const [organization] = organizations;
                 if (organization?.slug === curSlug) {
-                    await core.organizations.activate(organization);
                     const { user } = getState().auth;
                     let currentRole: MembershipRole | null = null;
                     if (user && organization.owner?.id === user.id) {
@@ -157,6 +156,7 @@ export function activateOrganizationAsync(): ThunkAction {
                             member.user.id === user.id && member.isActive
                         ))?.role ?? null;
                     }
+                    await core.organizations.activate(organization);
                     dispatch(organizationActions.activateOrganizationSuccess(organization, currentRole));
                 } else {
                     localStorage.removeItem('currentOrganization');
