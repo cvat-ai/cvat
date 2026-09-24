@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: MIT
 
 import React, {
-    useCallback, useEffect, useRef, useState,
+    useCallback, useEffect, useMemo, useRef, useState,
 } from 'react';
 
 import {
@@ -34,22 +34,32 @@ import {
     type LayerMoveSource,
     isLayerState,
     isLayerDroppedBesideItself,
+    layerInsertDropID,
     parseLayerDragID,
     parseLayerDropID,
     parseLayerInsertDropID,
+    parseLayerObjectDropID,
     parseObjectDragID,
 } from './drag-and-drop';
+import DraggableObjectItem from './drag-and-drop/draggable-object-item';
 import LayerInsertDropArea from './drag-and-drop/layer-insert-drop-area';
 import LayerSection from './drag-and-drop/layer-section';
 
 const OBJECT_ITEM_ESTIMATED_HEIGHT = 88;
+const LAYER_ITEM_ESTIMATED_HEIGHT = 100;
 const SCROLL_TARGET_MAX_FRAMES = 60;
 
 interface PendingScrollTarget {
     itemID: string;
     rootID: string;
+    rootClientID: number;
     parentID: number | null;
 }
+
+type SidebarRow =
+    | { kind: 'object'; key: string; clientID: number; zOrder: number | null; lastInLayer: boolean }
+    | { kind: 'layer'; key: string; zOrder: number; placement: LayerPlacement }
+    | { kind: 'insert'; key: string; placement: LayerPlacement };
 
 interface Props {
     workspace: Workspace;
@@ -123,11 +133,62 @@ function ObjectListComponent(props: Props): JSX.Element {
     const [pendingScrollTarget, setPendingScrollTarget] = useState<PendingScrollTarget | null>(null);
     const [statesListHeight, setStatesListHeight] = useState(0);
     const statesListRef = useRef<HTMLDivElement>(null);
+    const layerStackRef = useRef<HTMLDivElement>(null);
     const virtualListRef = useRef<ListRef>(null);
-    const layerObjectStates = objectStates.filter(isLayerState);
-    const zLayers = Array.from(
+    const layerObjectStates = useMemo(() => objectStates.filter(isLayerState), [objectStates]);
+    const layerStatesById = useMemo(() => new Map(
+        layerObjectStates.map((state: ObjectState): [number, ObjectState] => [state.clientID, state]),
+    ), [layerObjectStates]);
+    const zLayers = useMemo(() => Array.from(
         new Set(layerObjectStates.map((state) => state.zOrder)),
-    ).sort((left: number, right: number): number => left - right);
+    ).sort((left: number, right: number): number => left - right), [layerObjectStates]);
+    const objectIdsByLayer = useMemo(() => {
+        if (statesOrdering !== StatesOrdering.LAYER) {
+            return {} as Record<number, number[]>;
+        }
+
+        return sortedStatesID.reduce((acc: Record<number, number[]>, id: number): Record<number, number[]> => {
+            const object = layerStatesById.get(id);
+            if (object) {
+                acc[object.zOrder] = acc[object.zOrder] || [];
+                acc[object.zOrder].push(id);
+            }
+            return acc;
+        }, {});
+    }, [layerStatesById, sortedStatesID, statesOrdering]);
+    const sidebarRows = useMemo((): SidebarRow[] => {
+        if (statesOrdering !== StatesOrdering.LAYER) {
+            return sortedStatesID.map((clientID: number): SidebarRow => ({
+                kind: 'object', key: `flat-object:${clientID}`, clientID, zOrder: null, lastInLayer: false,
+            }));
+        }
+
+        const rows: SidebarRow[] = [];
+        zLayers.forEach((zOrder: number, index: number): void => {
+            const placement: LayerPlacement = index === 0 ? { before: zOrder } : { after: zLayers[index - 1] };
+            rows.push({
+                kind: 'layer', key: `layer:${zOrder}`, zOrder, placement,
+            });
+
+            if (!collapsedLayers.has(zOrder)) {
+                const objectIds = objectIdsByLayer[zOrder] || [];
+                objectIds.forEach((clientID: number, objectIndex: number): void => {
+                    rows.push({
+                        kind: 'object',
+                        key: `layer-object:${clientID}`,
+                        clientID,
+                        zOrder,
+                        lastInLayer: objectIndex === objectIds.length - 1,
+                    });
+                });
+            }
+        });
+        if (zLayers.length) {
+            const placement: LayerPlacement = { after: zLayers[zLayers.length - 1] };
+            rows.push({ kind: 'insert', key: layerInsertDropID(placement), placement });
+        }
+        return rows;
+    }, [collapsedLayers, objectIdsByLayer, sortedStatesID, statesOrdering, zLayers]);
 
     const allLayersCollapsed = !!zLayers.length && zLayers.every((zOrder: number): boolean => (
         collapsedLayers.has(zOrder)
@@ -139,16 +200,20 @@ function ObjectListComponent(props: Props): JSX.Element {
             return () => {};
         }
 
+        const layerStack = layerStackRef.current;
         const updateHeight = (): void => {
-            setStatesListHeight(statesList.clientHeight);
+            setStatesListHeight(layerStack?.clientHeight ?? statesList.clientHeight);
         };
         const resizeObserver = new ResizeObserver(updateHeight);
 
         updateHeight();
         resizeObserver.observe(statesList);
+        if (layerStack) {
+            resizeObserver.observe(layerStack);
+        }
 
         return (): void => resizeObserver.disconnect();
-    }, []);
+    }, [statesOrdering]);
 
     // Remove collapse markers for layers that disappeared after filtering or z-order changes.
     useEffect((): void => {
@@ -167,6 +232,17 @@ function ObjectListComponent(props: Props): JSX.Element {
         });
     }, [zLayers.join(',')]);
 
+    useEffect((): void => {
+        if (pendingScrollTarget) {
+            const index = sidebarRows.findIndex((row: SidebarRow): boolean => (
+                row.kind === 'object' && row.clientID === pendingScrollTarget.rootClientID
+            ));
+            if (index !== -1) {
+                virtualListRef.current?.scrollTo({ index, align: 'top' });
+            }
+        }
+    }, [pendingScrollTarget, sidebarRows]);
+
     useEffect((): (() => void) | undefined => {
         if (!pendingScrollTarget) {
             return undefined;
@@ -180,8 +256,7 @@ function ObjectListComponent(props: Props): JSX.Element {
                 pendingScrollTarget.parentID !== null ?
                     window.document.getElementById(pendingScrollTarget.rootID) : null
             );
-            const scrollContainer = statesOrdering === StatesOrdering.LAYER ? statesListRef.current :
-                statesListRef.current?.querySelector<HTMLElement>('.rc-virtual-list-holder');
+            const scrollContainer = statesListRef.current?.querySelector<HTMLElement>('.rc-virtual-list-holder');
 
             if (item && scrollContainer) {
                 const scrollPaddingTop = Number.parseFloat(
@@ -211,7 +286,7 @@ function ObjectListComponent(props: Props): JSX.Element {
 
         frame = window.requestAnimationFrame(alignTarget);
         return (): void => window.cancelAnimationFrame(frame);
-    }, [collapsedLayers, pendingScrollTarget, statesOrdering]);
+    }, [pendingScrollTarget, sidebarRows]);
 
     // React to external requests to expand the layer containing a target object.
     useEffect((): () => void => {
@@ -219,45 +294,30 @@ function ObjectListComponent(props: Props): JSX.Element {
             const { clientID, parentID } = (
                 event as CustomEvent<{ clientID: number; parentID: number | null }>
             ).detail;
+            const rootClientID = parentID ?? clientID;
 
-            if (statesOrdering !== StatesOrdering.LAYER) {
-                const rootClientID = parentID ?? clientID;
-                const index = sortedStatesID.indexOf(rootClientID);
-                if (index !== -1) {
-                    const itemID = Number.isInteger(parentID) ?
-                        `cvat-objects-sidebar-state-item-element-${clientID}` :
-                        `cvat-objects-sidebar-state-item-${clientID}`;
-
-                    setPendingScrollTarget({
-                        itemID,
-                        rootID: `cvat-objects-sidebar-state-item-${rootClientID}`,
-                        parentID,
-                    });
-                    virtualListRef.current?.scrollTo({ index, align: 'top' });
+            if (statesOrdering === StatesOrdering.LAYER) {
+                const expandedState = layerStatesById.get(rootClientID);
+                if (!expandedState) {
+                    return;
                 }
-                return;
-            }
-
-            const expandedState = objectStates.find((state: ObjectState): boolean => (
-                state.clientID === (parentID ?? clientID)
-            ));
-
-            if (expandedState) {
-                const itemID = Number.isInteger(parentID) ?
-                    `cvat-objects-sidebar-state-item-element-${clientID}` :
-                    `cvat-objects-sidebar-state-item-${clientID}`;
-                setPendingScrollTarget({
-                    itemID,
-                    rootID: `cvat-objects-sidebar-state-item-${parentID ?? clientID}`,
-                    parentID,
-                });
-
                 setCollapsedLayers((current: Set<number>): Set<number> => {
                     const next = new Set(current);
                     next.delete(expandedState.zOrder);
                     return next;
                 });
+            } else if (!sortedStatesID.includes(rootClientID)) {
+                return;
             }
+
+            setPendingScrollTarget({
+                itemID: Number.isInteger(parentID) ?
+                    `cvat-objects-sidebar-state-item-element-${clientID}` :
+                    `cvat-objects-sidebar-state-item-${clientID}`,
+                rootID: `cvat-objects-sidebar-state-item-${rootClientID}`,
+                rootClientID,
+                parentID,
+            });
         };
 
         window.addEventListener(OBJECTS_SIDEBAR_EXPAND_Z_LAYER_EVENT, onExpandLayer);
@@ -265,7 +325,7 @@ function ObjectListComponent(props: Props): JSX.Element {
         return (): void => {
             window.removeEventListener(OBJECTS_SIDEBAR_EXPAND_Z_LAYER_EVENT, onExpandLayer);
         };
-    }, [collapsedLayers, objectStates, sortedStatesID, statesOrdering]);
+    }, [layerStatesById, sortedStatesID, statesOrdering]);
 
     // Track the pointer only during drag so nearby insert gaps can expand.
     useEffect((): (() => void) | undefined => {
@@ -283,18 +343,6 @@ function ObjectListComponent(props: Props): JSX.Element {
         };
     }, [dragActive]);
 
-    const objectIdsByLayer = sortedStatesID
-        .reduce((acc: Record<number, number[]>, id: number): Record<number, number[]> => {
-            const object = layerObjectStates.find((state: ObjectState): boolean => state.clientID === id);
-
-            if (object) {
-                acc[object.zOrder] = acc[object.zOrder] || [];
-                acc[object.zOrder].push(id);
-            }
-
-            return acc;
-        }, {});
-
     const onDragEnd = useCallback((event: DragEndEvent): void => {
         const { active, over } = event;
 
@@ -308,7 +356,7 @@ function ObjectListComponent(props: Props): JSX.Element {
 
         const clientID = parseObjectDragID(String(active.id));
         const sourceZOrder = parseLayerDragID(String(active.id));
-        const zOrder = parseLayerDropID(String(over.id));
+        const zOrder = parseLayerDropID(String(over.id)) ?? parseLayerObjectDropID(String(over.id));
         const placement = parseLayerInsertDropID(String(over.id));
 
         if (clientID !== null && zOrder !== null) {
@@ -402,6 +450,80 @@ function ObjectListComponent(props: Props): JSX.Element {
         );
     };
 
+    const layerOrdering = statesOrdering === StatesOrdering.LAYER;
+    const virtualList = statesListHeight > 0 ? (
+        <VirtualList<SidebarRow>
+            ref={virtualListRef}
+            className={`cvat-objects-sidebar-virtual-list${
+                layerOrdering ? ' cvat-objects-sidebar-z-layers-virtual-list' : ''
+            }`}
+            data={sidebarRows}
+            height={statesListHeight}
+            itemHeight={layerOrdering ? LAYER_ITEM_ESTIMATED_HEIGHT : OBJECT_ITEM_ESTIMATED_HEIGHT}
+            itemKey={(row: SidebarRow): string => row.key}
+        >
+            {(row: SidebarRow): JSX.Element => {
+                if (row.kind === 'layer') {
+                    return (
+                        <div className='cvat-objects-sidebar-layer-virtual-row'>
+                            <LayerInsertDropArea
+                                placement={row.placement}
+                                pointerPosition={dragPointerPosition}
+                            />
+                            <LayerSection
+                                zOrder={row.zOrder}
+                                selected={row.zOrder === currentLayer}
+                                visible={!hiddenLayers.has(row.zOrder)}
+                                collapsed={collapsedLayers.has(row.zOrder)}
+                                selectLayer={selectLayer}
+                                toggleLayerVisibility={toggleLayerVisibility}
+                                toggleLayerCollapsed={toggleLayerCollapsed}
+                            />
+                        </div>
+                    );
+                }
+
+                if (row.kind === 'insert') {
+                    return (
+                        <div className='cvat-objects-sidebar-layer-virtual-row'>
+                            <LayerInsertDropArea
+                                placement={row.placement}
+                                pointerPosition={dragPointerPosition}
+                            />
+                        </div>
+                    );
+                }
+
+                if (row.zOrder !== null) {
+                    const object = layerStatesById.get(row.clientID);
+                    return (
+                        <div className='cvat-objects-sidebar-layer-virtual-row'>
+                            <DraggableObjectItem
+                                objectStates={layerObjectStates}
+                                clientID={row.clientID}
+                                zOrder={row.zOrder}
+                                lastInLayer={row.lastInLayer}
+                                visibleSkeletonElements={visibleSkeletonElements}
+                                draggable={!!object && !object.lock}
+                            />
+                        </div>
+                    );
+                }
+
+                return (
+                    <div className='cvat-objects-sidebar-virtual-row'>
+                        <ObjectItemContainer
+                            objectStates={objectStates}
+                            clientID={row.clientID}
+                            visibleSkeletonElements={visibleSkeletonElements}
+                            allowSimplifyLifecycle
+                        />
+                    </div>
+                );
+            }}
+        </VirtualList>
+    ) : null;
+
     return (
         <>
             <ObjectListHeader
@@ -426,10 +548,11 @@ function ObjectListComponent(props: Props): JSX.Element {
             <div
                 ref={statesListRef}
                 className={`cvat-objects-sidebar-states-list ${
-                    statesOrdering === StatesOrdering.LAYER ? '' : 'cvat-objects-sidebar-states-list-virtualized'
+                    layerOrdering ? 'cvat-objects-sidebar-states-list-layer-virtualized' :
+                        'cvat-objects-sidebar-states-list-virtualized'
                 }`}
             >
-                {statesOrdering === StatesOrdering.LAYER ? (
+                {layerOrdering ? (
                     <div className='cvat-objects-sidebar-z-layers-panel'>
                         <div className='cvat-objects-sidebar-z-layers-title'>
                             <Text strong>Layer stack</Text>
@@ -459,39 +582,8 @@ function ObjectListComponent(props: Props): JSX.Element {
                             onDragCancel={onDragCancel}
                             onDragEnd={onDragEnd}
                         >
-                            <div className='cvat-objects-sidebar-z-layers-stack'>
-                                {zLayers.map((zOrder: number, index: number): JSX.Element => {
-                                    const placement: LayerPlacement = index === 0 ?
-                                        { before: zOrder } :
-                                        { after: zLayers[index - 1] };
-
-                                    return (
-                                        <React.Fragment key={zOrder}>
-                                            <LayerInsertDropArea
-                                                placement={placement}
-                                                pointerPosition={dragPointerPosition}
-                                            />
-                                            <LayerSection
-                                                zOrder={zOrder}
-                                                layerObjectIds={objectIdsByLayer[zOrder] || []}
-                                                objectStates={layerObjectStates}
-                                                visibleSkeletonElements={visibleSkeletonElements}
-                                                selected={zOrder === currentLayer}
-                                                visible={!hiddenLayers.has(zOrder)}
-                                                collapsed={collapsedLayers.has(zOrder)}
-                                                selectLayer={selectLayer}
-                                                toggleLayerVisibility={toggleLayerVisibility}
-                                                toggleLayerCollapsed={toggleLayerCollapsed}
-                                            />
-                                        </React.Fragment>
-                                    );
-                                })}
-                                {!!zLayers.length && (
-                                    <LayerInsertDropArea
-                                        placement={{ after: zLayers[zLayers.length - 1] }}
-                                        pointerPosition={dragPointerPosition}
-                                    />
-                                )}
+                            <div ref={layerStackRef} className='cvat-objects-sidebar-z-layers-stack'>
+                                {virtualList}
                             </div>
                             <DragOverlay
                                 // dnd-kit's default drop animation scrolls the source node back into view.
@@ -504,27 +596,7 @@ function ObjectListComponent(props: Props): JSX.Element {
                             </DragOverlay>
                         </DndContext>
                     </div>
-                ) : statesListHeight > 0 && (
-                    <VirtualList<number>
-                        ref={virtualListRef}
-                        className='cvat-objects-sidebar-virtual-list'
-                        data={sortedStatesID}
-                        height={statesListHeight}
-                        itemHeight={OBJECT_ITEM_ESTIMATED_HEIGHT}
-                        itemKey={(id: number): number => id}
-                    >
-                        {(id: number): JSX.Element => (
-                            <div className='cvat-objects-sidebar-virtual-row'>
-                                <ObjectItemContainer
-                                    objectStates={objectStates}
-                                    clientID={id}
-                                    visibleSkeletonElements={visibleSkeletonElements}
-                                    allowSimplifyLifecycle
-                                />
-                            </div>
-                        )}
-                    </VirtualList>
-                )}
+                ) : virtualList}
             </div>
         </>
     );
