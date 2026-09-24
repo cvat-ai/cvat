@@ -31,6 +31,7 @@ import {
     OpenCVTool,
     Rotation,
     Workspace,
+    isMultiSelectionSupported,
 } from 'reducers';
 import { switchToolsBlockerState } from './settings-actions';
 import { updateJobAsync } from './jobs-actions';
@@ -660,6 +661,9 @@ export function selectObjects(selectedStatesID: number[]): AnyAction {
 export function selectObjectsAsync(requestedStatesID: number[]): ThunkAction {
     return async (dispatch: ThunkDispatch, getState): Promise<void> => {
         const state = getState();
+        if (requestedStatesID.length && !isMultiSelectionSupported(state.annotation.workspace)) {
+            return;
+        }
         const {
             annotations: { selectedStatesID: previousSelection },
             job: { instance: jobInstance },
@@ -1164,7 +1168,9 @@ export function changeFrameAsync(
             let history = fetchedHistory;
             const selectionChanged = selectedStatesID.length !== nextSelectedStatesID.length ||
                 selectedStatesID.some((clientID: number): boolean => !nextSelectedStatesID.includes(clientID));
-            if (!skipSelectionHistory && selectionChanged) {
+            // Frame navigation can remove frame-local objects from the visible selection.
+            // Do not let that transient change discard an annotation action waiting in Redo.
+            if (!skipSelectionHistory && selectionChanged && !fetchedHistory.redo.length) {
                 await job.actions.recordSelection(selectedStatesID, nextSelectedStatesID, frame);
                 history = await job.actions.get();
             }

@@ -16,7 +16,7 @@ import {
 import Button from 'antd/lib/button';
 import Text from 'antd/lib/typography/Text';
 
-import { StatesOrdering, Workspace } from 'reducers';
+import { StatesOrdering, Workspace, isMultiSelectionSupported } from 'reducers';
 import { ObjectState } from 'cvat-core-wrapper';
 import ObjectItemContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/object-item';
 import CVATTooltip from 'components/common/cvat-tooltip';
@@ -24,7 +24,9 @@ import {
     OBJECTS_SIDEBAR_EXPAND_Z_LAYER_EVENT,
 } from 'utils/objects-sidebar';
 import { KeyMap } from 'utils/mousetrap-react';
-import { isMultiSelectObjectModifierPressed, sanitizeSelectedObjectIDs } from 'utils/multi-selection';
+import {
+    isMultiSelectObjectModifierPressed, sanitizeSelectedObjectIDs,
+} from 'utils/multi-selection';
 
 import ObjectListHeader from './objects-list-header';
 import {
@@ -105,6 +107,7 @@ function ObjectListComponent(props: Props): JSX.Element {
         changeShowGroundTruth,
         selectObjects,
     } = props;
+    const multiSelectionSupported = isMultiSelectionSupported(workspace);
 
     const sensors = useSensors(useSensor(PointerSensor, {
         activationConstraint: {
@@ -332,7 +335,7 @@ function ObjectListComponent(props: Props): JSX.Element {
         selectObjects([...new Set([...selectedStatesID, ...range])]);
     };
     const selectLayerObjects = (event: React.MouseEvent | React.KeyboardEvent, zOrder: number): void => {
-        if (('button' in event && event.button !== 0) ||
+        if (!multiSelectionSupported || ('button' in event && event.button !== 0) ||
             ('key' in event && !['Enter', ' '].includes(event.key)) ||
             (event.target as Element).closest('button, [role="button"]')) {
             return;
@@ -466,7 +469,8 @@ function ObjectListComponent(props: Props): JSX.Element {
                                                 objectStates={layerObjectStates}
                                                 visibleSkeletonElements={visibleSkeletonElements}
                                                 selected={zOrder === currentLayer}
-                                                multiSelected={!!selectableObjectIdsByLayer[zOrder]?.length &&
+                                                multiSelected={multiSelectionSupported &&
+                                                    !!selectableObjectIdsByLayer[zOrder]?.length &&
                                                     selectableObjectIdsByLayer[zOrder].every(
                                                         (clientID: number): boolean => (
                                                             selectedStatesID.includes(clientID)
@@ -488,6 +492,7 @@ function ObjectListComponent(props: Props): JSX.Element {
                                                     selectObjectRangeWithinLayer(clientID, zOrder)
                                                 )}
                                                 keyMap={keyMap}
+                                                multiSelectionSupported={multiSelectionSupported}
                                             />
                                         </React.Fragment>
                                     );

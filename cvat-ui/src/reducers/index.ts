@@ -1037,6 +1037,10 @@ export enum Workspace {
     AUDIO = 'Audio annotation',
 }
 
+export function isMultiSelectionSupported(workspace: Workspace): boolean {
+    return workspace !== Workspace.STANDARD3D && workspace !== Workspace.AUDIO;
+}
+
 export enum GridColor {
     White = 'White',
     Black = 'Black',

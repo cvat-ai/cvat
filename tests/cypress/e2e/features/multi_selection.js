@@ -1164,6 +1164,28 @@ context('Multi-object selection', { scrollBehavior: false }, () => {
         assertSelection([]);
     });
 
+    it('Uses single-object copy for a one-object selection', () => {
+        selectFromSidebar([objectIds.carShape1]);
+        cy.pressWithPlatformModifier('c');
+        cy.pressWithPlatformModifier('v');
+        cy.get('.cvat_canvas_shape_drawing').should('have.length', 1);
+        cy.get('.cvat-canvas-container').click(600, 500);
+        cy.get('.cvat_canvas_shape').should('have.length', selectableObjectIds.length + 1);
+        assertSelection([]);
+        cy.pressWithPlatformModifier('z');
+        cy.get('.cvat_canvas_shape').should('have.length', selectableObjectIds.length);
+
+        selectFromSidebar([objectIds.carShape1]);
+        openSelectionOverflowMenu();
+        cy.contains('.cvat-canvas-selected-objects-overflow-menu button', 'Make a copy').click();
+        cy.get('.cvat_canvas_shape_drawing').should('have.length', 1);
+        cy.get('.cvat-canvas-container').click(600, 500);
+        cy.get('.cvat_canvas_shape').should('have.length', selectableObjectIds.length + 1);
+        assertSelection([]);
+        cy.pressWithPlatformModifier('z');
+        cy.get('.cvat_canvas_shape').should('have.length', selectableObjectIds.length);
+    });
+
     it('Uses normal client-state defaults for pasted selection objects', () => {
         cy.get(sidebarItem(objectIds.carShape1)).within(() => {
             cy.get('.cvat-object-item-button-lock').click();
@@ -1247,6 +1269,37 @@ context('Multi-object selection', { scrollBehavior: false }, () => {
         cy.get(`#cvat_canvas_shape_${objectIds.carShape1}`).should('exist');
         cy.get(`#cvat_canvas_shape_${objectIds.carShape2}`).should('exist');
         assertSelection([objectIds.carShape1, objectIds.carShape2]);
+    });
+
+    it('Can redo a selection deletion after visiting another frame', () => {
+        const selectedIds = [objectIds.carShape1, objectIds.carShape2];
+        selectFromSidebar(selectedIds);
+        openSelectionMenu();
+        cy.get('.cvat-canvas-selected-objects-menu-content button[aria-label="Delete selection"]').click();
+        selectedIds.forEach((clientId) => {
+            cy.get(`#cvat_canvas_shape_${clientId}`).should('not.exist');
+        });
+
+        cy.contains('.cvat-annotation-header-button', 'Undo').click();
+        selectedIds.forEach((clientId) => {
+            cy.get(`#cvat_canvas_shape_${clientId}`).should('exist');
+        });
+        assertSelection(selectedIds);
+
+        cy.goCheckFrameNumber(1);
+        assertSelection([]);
+        cy.goCheckFrameNumber(0);
+        assertSelection([]);
+
+        cy.contains('.cvat-annotation-header-button', 'Redo').click();
+        selectedIds.forEach((clientId) => {
+            cy.get(`#cvat_canvas_shape_${clientId}`).should('not.exist');
+        });
+
+        cy.contains('.cvat-annotation-header-button', 'Undo').click();
+        selectedIds.forEach((clientId) => {
+            cy.get(`#cvat_canvas_shape_${clientId}`).should('exist');
+        });
     });
 
     it('Skips locked objects when deleting a selection', () => {

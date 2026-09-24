@@ -41,8 +41,10 @@ import {
     BackgroundIcon, ForegroundIcon, OneLayerBackwardIcon, OneLayerForwardIcon,
 } from 'icons';
 import {
+    copyShape,
     copySelection,
     groupSelectedAnnotationsAsync,
+    pasteShapeAsync,
     pasteSelectionAsync,
     removeSelectionAsync,
     updateActiveControl,
@@ -190,8 +192,13 @@ export default function SelectionContextMenu(): JSX.Element | null {
                     type='link'
                     icon={<CopyOutlined />}
                     onClick={(): void => {
-                        dispatch(copySelection(selectedStates));
-                        dispatch(pasteSelectionAsync());
+                        if (selectedStates.length === 1) {
+                            dispatch(copyShape(selectedStates[0]));
+                            dispatch(pasteShapeAsync());
+                        } else {
+                            dispatch(copySelection(selectedStates));
+                            dispatch(pasteSelectionAsync());
+                        }
                     }}
                 >
                     Make a copy

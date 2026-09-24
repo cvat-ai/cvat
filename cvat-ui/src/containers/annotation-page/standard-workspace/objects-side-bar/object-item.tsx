@@ -21,7 +21,7 @@ import {
     selectObjectsAsync,
 } from 'actions/annotation-actions';
 import {
-    ActiveControl, CombinedState, ColorBy,
+    ActiveControl, CombinedState, ColorBy, isMultiSelectionSupported,
 } from 'reducers';
 import { openAnnotationsActionModal } from 'components/annotation-page/annotations-actions/annotations-actions-modal';
 import ObjectStateItemComponent from 'components/annotation-page/standard-workspace/objects-side-bar/object-item';
@@ -57,6 +57,7 @@ interface StateToProps {
     frameNumber: number;
     activated: boolean;
     multiSelected: boolean;
+    multiSelectionSupported: boolean;
     selectedStatesID: number[];
     colorBy: ColorBy;
     ready: boolean;
@@ -102,6 +103,7 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
             },
             canvas: { instance: canvasInstance, ready, activeControl },
             simplify: simplifyState,
+            workspace,
         },
         settings: {
             shapes: { colorBy },
@@ -124,7 +126,8 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
         jobInstance,
         frameNumber,
         activated: activatedStateID === clientID,
-        multiSelected: selectedStatesID.includes(clientID),
+        multiSelected: isMultiSelectionSupported(workspace) && selectedStatesID.includes(clientID),
+        multiSelectionSupported: isMultiSelectionSupported(workspace),
         selectedStatesID,
         minZLayer,
         maxZLayer,
@@ -655,6 +658,7 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
             attributes,
             activated,
             multiSelected,
+            multiSelectionSupported,
             selectedStatesID,
             colorBy,
             normalizedKeyMap,
@@ -675,7 +679,8 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
                     zLayerDragging={zLayerDragging}
                     activated={activated}
                     multiSelected={multiSelected}
-                    selectionActive={selectedStatesID.length > 0}
+                    selectionActive={multiSelectionSupported && selectedStatesID.length > 0}
+                    multiSelectionSupported={multiSelectionSupported}
                     objectType={objectState.objectType}
                     shapeType={objectState.shapeType}
                     clientID={objectState.clientID as number}

@@ -21,6 +21,7 @@ interface Props {
     toggleSelection(): void;
     selectRange(): void;
     keyMap: KeyMap;
+    multiSelectionSupported: boolean;
 }
 
 function isRangeModifierPressed(event: React.MouseEvent | React.PointerEvent): boolean {
@@ -31,7 +32,7 @@ function isRangeModifierPressed(event: React.MouseEvent | React.PointerEvent): b
 function DraggableObjectItem(props: Props): JSX.Element {
     const {
         objectStates, clientID, visibleObjectIDs, draggable, visibleSkeletonElements,
-        toggleSelection, selectRange, keyMap,
+        toggleSelection, selectRange, keyMap, multiSelectionSupported,
     } = props;
 
     const {
@@ -51,11 +52,13 @@ function DraggableObjectItem(props: Props): JSX.Element {
             {...(draggable ? attributes : {})}
             {...(draggable ? listeners : {})}
             onPointerDown={(event: React.PointerEvent): void => {
-                if (!isRangeModifierPressed(event) && !isMultiSelectObjectModifierPressed(event, keyMap)) {
+                if (!multiSelectionSupported ||
+                    (!isRangeModifierPressed(event) && !isMultiSelectObjectModifierPressed(event, keyMap))) {
                     listeners?.onPointerDown?.(event);
                 }
             }}
             onMouseDownCapture={(event: React.MouseEvent): void => {
+                if (!multiSelectionSupported) return;
                 if (isRangeModifierPressed(event)) {
                     event.preventDefault();
                     event.stopPropagation();

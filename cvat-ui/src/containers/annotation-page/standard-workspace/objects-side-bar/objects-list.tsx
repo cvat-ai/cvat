@@ -36,7 +36,7 @@ import {
 import isAbleToChangeFrame from 'utils/is-able-to-change-frame';
 import getHiddenZLayers from 'utils/get-hidden-z-layers';
 import {
-    CombinedState, StatesOrdering, ColorBy, Workspace,
+    CombinedState, StatesOrdering, ColorBy, Workspace, isMultiSelectionSupported,
     ActiveControl,
 } from 'reducers';
 import { ObjectState, ObjectType, ShapeType } from 'cvat-core-wrapper';
@@ -859,10 +859,13 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                 }
             },
             COPY_SHAPE: () => {
-                // with an active multi-selection the whole selection is copied
                 if (selectedStatesID.length) {
                     const selectedStates = getSelectedStates(objectStates, selectedStatesID);
-                    if (selectedStates.length) {
+                    if (selectedStates.length === 1) {
+                        copyShape(selectedStates[0]);
+                        return;
+                    }
+                    if (selectedStates.length > 1) {
                         copySelection(selectedStates);
                         return;
                     }
@@ -924,6 +927,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                 }
             },
             SELECT_ALL_OBJECTS: (event?: KeyboardEvent) => {
+                if (!isMultiSelectionSupported(workspace)) return;
                 const target = event?.target as HTMLElement | null;
                 if (target?.closest('input, textarea, [contenteditable]')) return;
 

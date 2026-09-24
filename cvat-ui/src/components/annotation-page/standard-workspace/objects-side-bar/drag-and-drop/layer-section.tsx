@@ -26,6 +26,7 @@ interface LayerSectionProps {
     toggleObjectSelection(clientID: number): void;
     selectObjectRange(clientID: number): void;
     keyMap: KeyMap;
+    multiSelectionSupported: boolean;
     selectLayer(zOrder: number): void;
     toggleLayerVisibility(zOrder: number, includeLower: boolean): void;
     toggleLayerCollapsed(zOrder: number): void;
@@ -37,6 +38,7 @@ function LayerSection(props: LayerSectionProps): JSX.Element {
         zOrder, layerObjectIds, objectStates, visibleSkeletonElements,
         selected, visible, collapsed, multiSelected, selectLayer, onMouseDown, onKeyDown,
         toggleLayerCollapsed, toggleLayerVisibility, toggleObjectSelection, selectObjectRange, keyMap,
+        multiSelectionSupported,
     } = props;
 
     const { isOver, setNodeRef } = useDroppable({ id: layerDropID(zOrder) });
@@ -77,6 +79,7 @@ function LayerSection(props: LayerSectionProps): JSX.Element {
                         toggleSelection={(): void => toggleObjectSelection(id)}
                         selectRange={(): void => selectObjectRange(id)}
                         keyMap={keyMap}
+                        multiSelectionSupported={multiSelectionSupported}
                     />
                 );
             })}

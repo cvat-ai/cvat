@@ -11,7 +11,7 @@ import message from 'antd/lib/message';
 import {
     LabelType, ObjectState, ObjectType, ShapeType,
 } from 'cvat-core-wrapper';
-import { CombinedState } from 'reducers';
+import { CombinedState, isMultiSelectionSupported } from 'reducers';
 import {
     rememberObject, selectObjectsAsync, updateAnnotationsAsync, updateAnnotationsBatchAsync,
 } from 'actions/annotation-actions';
@@ -24,7 +24,9 @@ import { subKeyMap } from 'utils/component-subkeymap';
 import { useResetShortcutsOnUnmount } from 'utils/hooks';
 import { getCVATStore } from 'cvat-store';
 import { filterApplicableLabels } from 'utils/filter-applicable-labels';
-import { getSelectedStates, isMultiSelectObjectModifierPressed } from 'utils/multi-selection';
+import {
+    getSelectedStates, isMultiSelectObjectModifierPressed,
+} from 'utils/multi-selection';
 import { filterAnnotations } from 'utils/filter-annotations';
 import getHiddenZLayers from 'utils/get-hidden-z-layers';
 
@@ -190,7 +192,8 @@ function LabelsListComponent(): JSX.Element {
     }
 
     const selectLabels = (event: React.MouseEvent, labelID: number): void => {
-        if (event.button !== 0 || (event.target as Element).closest(INTERACTIVE_ELEMENT_SELECTOR)) {
+        if (!isMultiSelectionSupported(workspace) || event.button !== 0 ||
+            (event.target as Element).closest(INTERACTIVE_ELEMENT_SELECTOR)) {
             return;
         }
 
@@ -231,7 +234,7 @@ function LabelsListComponent(): JSX.Element {
                     <LabelItemContainer
                         key={labelID}
                         labelID={labelID}
-                        multiSelected={!!selectableIDsByLabel[labelID].length &&
+                        multiSelected={isMultiSelectionSupported(workspace) && !!selectableIDsByLabel[labelID].length &&
                             selectableIDsByLabel[labelID].every((clientID: number): boolean => (
                                 selectedIDs.has(clientID)
                             ))}

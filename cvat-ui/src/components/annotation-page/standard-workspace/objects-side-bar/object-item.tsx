@@ -25,6 +25,7 @@ interface Props {
     activated: boolean;
     multiSelected: boolean;
     selectionActive: boolean;
+    multiSelectionSupported: boolean;
     objectType: ObjectType;
     shapeType: ShapeType;
     clientID: number;
@@ -71,6 +72,7 @@ function ObjectItemComponent(props: Props): JSX.Element {
         activated,
         multiSelected,
         selectionActive,
+        multiSelectionSupported,
         objectType,
         shapeType,
         clientID,
@@ -128,17 +130,18 @@ function ObjectItemComponent(props: Props): JSX.Element {
     }
 
     const activateState = useCallback((event: React.MouseEvent): void => {
-        if (!selectionActive && !isMultiSelectObjectModifierPressed(event, keyMap)) {
+        if (!selectionActive && !(multiSelectionSupported && isMultiSelectObjectModifierPressed(event, keyMap))) {
             activate();
         }
-    }, [activate, keyMap, selectionActive]);
+    }, [activate, keyMap, multiSelectionSupported, selectionActive]);
     const activateAfterElement = useCallback((): void => activate(), [activate]);
 
     const onMouseDown = useCallback((event: React.MouseEvent): void => {
         if (event.button === 0) {
             const interactiveElement = (event.target as Element).closest(INTERACTIVE_ELEMENT_SELECTOR);
-            const rangeModifier = event.shiftKey && !event.ctrlKey && !event.altKey && !event.metaKey;
-            const objectModifier = isMultiSelectObjectModifierPressed(event, keyMap);
+            const rangeModifier = multiSelectionSupported && event.shiftKey &&
+                !event.ctrlKey && !event.altKey && !event.metaKey;
+            const objectModifier = multiSelectionSupported && isMultiSelectObjectModifierPressed(event, keyMap);
             if (!interactiveElement && objectType === ObjectType.TAG && (rangeModifier || objectModifier)) {
                 event.preventDefault();
                 event.stopPropagation();
@@ -156,17 +159,18 @@ function ObjectItemComponent(props: Props): JSX.Element {
                 activateSingle();
             }
         }
-    }, [activateSingle, keyMap, objectType, selectRange, selectionActive, toggleSelection]);
+    }, [activateSingle, keyMap, multiSelectionSupported, objectType, selectRange, selectionActive, toggleSelection]);
 
     const onKeyDown = useCallback((event: React.KeyboardEvent): void => {
-        if (['Enter', ' '].includes(event.key) && isMultiSelectObjectModifierPressed(event, keyMap)) {
+        if (multiSelectionSupported && ['Enter', ' '].includes(event.key) &&
+            isMultiSelectObjectModifierPressed(event, keyMap)) {
             event.preventDefault();
             event.stopPropagation();
             if (objectType !== ObjectType.TAG) {
                 toggleSelection();
             }
         }
-    }, [keyMap, objectType, toggleSelection]);
+    }, [keyMap, multiSelectionSupported, objectType, toggleSelection]);
 
     return (
         <div style={{ display: 'flex', marginBottom: '1px' }}>

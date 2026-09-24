@@ -218,10 +218,11 @@ and use a configured label shortcut to change the label when it is compatible wi
 Press **Ctrl+C** on Windows or Linux, or **Command+C** on macOS, to copy the selected objects.
 Press **Ctrl+V** or **Command+V** to start interactive placement.
 
-CVAT displays transparent preview objects. Move the pointer to the required position and click to place the selection.
-The new objects preserve their relative geometry, labels, attributes, object types, rotations, and groups.
+If one object is selected, copy and paste use the same placement behavior as **Make a copy** for a single object.
+For two or more objects, CVAT displays transparent preview objects. Move the pointer to the required position
+and click to place them. The new objects preserve their relative geometry, labels, attributes, object types,
+rotations, and groups, and become the active selection.
 Lock, visibility, pin, and instance color use the same defaults as single-object copies.
-Pasted objects become the active selection.
 
 A copied selection can contain different geometry types, including rectangles, ellipses, polygons,
 polylines, and Points objects, as well as shapes and tracks. When objects are placed near a frame boundary,
