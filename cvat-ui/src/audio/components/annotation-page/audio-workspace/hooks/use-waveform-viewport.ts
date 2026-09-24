@@ -37,6 +37,8 @@ export interface WaveformViewport {
     pixelsPerSecond: number;
     /** Full-duration scale in pixels per second, independent of the current zoom. */
     overviewPixelsPerSecond: number;
+    /** Returns the duration in seconds currently visible in the waveform viewport. */
+    getVisibleDuration(): number;
     /**
      * Converts clientX coordinate from viewport to semantic timestamp on the current track.
      * Returns the track boundary (start/end correspondingly) if clientX is outside of the container's BB.
@@ -103,6 +105,15 @@ export function useWaveformViewport(
     const getScrollContainer = useCallback((): HTMLElement | null => (
         runtime.instanceRef.current?.getWrapper()?.parentElement ?? null
     ), [/* must have no deps as almost every hook depends on it and they should be stable */]);
+
+    const getVisibleDuration = useCallback((): number => {
+        const scrollContainer = getScrollContainer();
+        const pps = pixelsPerSecondRef.current;
+        const currentDuration = runtime.durationRef.current;
+        if (!scrollContainer || pps <= 0 || currentDuration <= 0) return 0;
+
+        return Math.min(currentDuration, scrollContainer.clientWidth / pps);
+    }, []);
 
     const getTransform = useCallback((): ViewportTransform | null => {
         const scrollContainer = getScrollContainer();
@@ -386,6 +397,7 @@ export function useWaveformViewport(
         containerRef,
         pixelsPerSecond,
         overviewPixelsPerSecond,
+        getVisibleDuration,
         clientXToTime,
         centerTimeRange,
         centerPlaybackPosition,

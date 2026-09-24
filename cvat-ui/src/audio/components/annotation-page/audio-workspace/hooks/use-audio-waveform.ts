@@ -288,7 +288,7 @@ export function useAudioWaveform(params: Params): AudioWaveform {
     const runtime = useWaveSurferRuntime(params);
     const viewport = useWaveformViewport(runtime, params.containerRef);
     useAdaptiveTimeline(runtime, viewport.pixelsPerSecond, viewport.overviewPixelsPerSecond);
-    const playback = useWaveformPlayback(runtime);
+    const playback = useWaveformPlayback(runtime, viewport.getVisibleDuration);
     useMinimapScrollbar(runtime, viewport, playback.seek);
 
     return {
