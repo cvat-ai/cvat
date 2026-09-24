@@ -221,7 +221,6 @@ ThunkAction {
         const description: any = {
             name: data.basic.name,
             labels: data.labels,
-            image_quality: 70,
             source_storage: new Storage(data.advanced.sourceStorage ?? { location: StorageLocation.LOCAL }).toJSON(),
             target_storage: new Storage(data.advanced.targetStorage ?? { location: StorageLocation.LOCAL }).toJSON(),
         };
@@ -247,7 +246,7 @@ ThunkAction {
         if (data.advanced.frameFilter) {
             description.frame_filter = data.advanced.frameFilter;
         }
-        if (data.advanced.imageQuality) {
+        if (data.advanced.imageQuality !== undefined) {
             description.image_quality = +data.advanced.imageQuality;
         }
         if (data.advanced.dataChunkSize) {
