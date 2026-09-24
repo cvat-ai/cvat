@@ -143,6 +143,7 @@ class AudioCreateTaskContent extends React.PureComponent<Props & RouteComponentP
     private resetState = (): void => {
         this.basicConfigurationComponent.current?.resetFields();
         this.advancedConfigurationComponent.current?.resetFields();
+        this.qualityConfigurationComponent.current?.resetFields();
 
         this.fileManagerComponent.reset();
 
@@ -239,7 +240,7 @@ class AudioCreateTaskContent extends React.PureComponent<Props & RouteComponentP
     };
 
     private handleValidationModeChange = (value: ValidationMode): void => {
-        this.qualityConfigurationComponent.current?.resetFields();
+        this.qualityConfigurationComponent.current?.resetParameters();
         this.setState(() => ({
             quality: {
                 ...defaultState.quality,
