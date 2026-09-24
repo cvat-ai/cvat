@@ -79,7 +79,9 @@ function AudioRegionItem(props: ItemProps): JSX.Element {
         onPlayIntervalOnce(id);
     }, [isCursor, onPlayIntervalOnce, id]);
     const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-        if (isCursor && (e.key === 'Enter' || e.key === ' ')) onSetActiveInterval(id);
+        if (!isCursor || e.key !== 'Enter') return;
+
+        onSetActiveInterval(id);
     }, [isCursor, onSetActiveInterval, id]);
     return (
         <div
@@ -166,9 +168,11 @@ export default function AudioRegionsList(props: Props): JSX.Element {
         if (activeIntervalID === null) return;
         const container = listRef.current;
         if (!container) return;
-        const item = container.querySelector(`[data-interval-id="${CSS.escape(String(activeIntervalID))}"]`);
+        const item = container.querySelector<HTMLElement>(
+            `[data-interval-id="${CSS.escape(String(activeIntervalID))}"]`,
+        );
         if (item) {
-            (item as HTMLElement).scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+            item.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
         }
     }, [activeIntervalID]);
 
