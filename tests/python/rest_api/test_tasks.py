@@ -3756,7 +3756,8 @@ class TestImportTaskAnnotations:
             compare_annotations(original_annotations, updated_annotations, ignore_source=True) == {}
         )
 
-    def test_can_import_audio_tsv(self, tasks):
+    @parametrize("format_name", ["Generic TSV 1.0", "Generic TSV 2.0"])
+    def test_can_import_audio_tsv(self, tasks, format_name):
         task = next(
             t
             for t in tasks
@@ -3779,8 +3780,6 @@ class TestImportTaskAnnotations:
             action=AnnotationUpdateAction.CREATE,
         )
 
-        format_name = "Generic TSV 1.0"
-
         original_annotations = json.loads(
             self.client.api_client.tasks_api.retrieve_annotations(task["id"])[1].data
         )
@@ -3795,9 +3794,17 @@ class TestImportTaskAnnotations:
         )
 
         with TemporaryDirectory() as temp_dir:
-            annotation_file = Path(temp_dir) / "annotations.tsv"
+            if format_name == "Generic TSV 1.0":
+                annotation_file = Path(temp_dir) / "annotations.tsv"
+                import_format_name = format_name
+            elif format_name == "Generic TSV 2.0":
+                annotation_file = Path(temp_dir) / "annotations.zip"
+                import_format_name = "Generic TSV 1.0"
+            else:
+                assert False, format_name
+
             annotation_file.write_bytes(dataset_file.getvalue())
-            self.client.tasks.retrieve(task["id"]).import_annotations(format_name, annotation_file)
+            self.client.tasks.retrieve(task["id"]).import_annotations(import_format_name, annotation_file)
 
         updated_annotations = json.loads(
             self.client.api_client.tasks_api.retrieve_annotations(task["id"])[1].data
