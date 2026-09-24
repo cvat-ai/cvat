@@ -473,7 +473,7 @@ class AnnotationManagerTest(TestCase):
             with self.subTest(dimension=dimension):
                 # job 1 covers frames [0; 9], job 2 covers frames [5; 14]
                 job_tracks = [
-                    (0, make_track([make_shape(6, dimension=dimension)], frame=6)),
+                    (0, make_track([make_shape(6, dimension=dimension)], frame=6, source="auto")),
                     (
                         5,
                         make_track(
@@ -497,10 +497,13 @@ class AnnotationManagerTest(TestCase):
 
                 self.assertEqual(
                     [
-                        [(s["frame"], s["outside"]) for s in track["shapes"]]
+                        (
+                            track["source"],
+                            [(s["frame"], s["outside"]) for s in track["shapes"]],
+                        )
                         for track in task_annotations.tracks
                     ],
-                    [[(5, False), (6, False), (13, True)]],
+                    [("manual", [(5, False), (6, False), (13, True)])],
                 )
 
                 exported_frames = [
