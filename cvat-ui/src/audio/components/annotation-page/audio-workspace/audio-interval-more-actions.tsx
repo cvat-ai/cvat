@@ -7,7 +7,6 @@ import Dropdown from 'antd/lib/dropdown';
 import { MoreOutlined } from '@ant-design/icons';
 import { useDispatch } from 'react-redux';
 
-import { AudioIntervalState } from 'cvat-core-wrapper';
 import {
     audioActions,
     copyAudioIntervalAsync,
@@ -18,43 +17,46 @@ import { ColorBy } from 'reducers';
 import ColorPicker from 'components/annotation-page/standard-workspace/objects-side-bar/color-picker';
 import { ThunkDispatch } from 'utils/redux';
 import AudioRegionItemMenu from './audio-region-item-menu';
-import { copyAudioIntervalURL, intervalID } from './utils/audio-interval';
+import { copyAudioIntervalURL } from './utils/audio-interval';
 
 interface Props {
-    interval: AudioIntervalState;
+    clientID: number;
+    serverID: number | null;
+    locked: boolean;
+    color: string;
     colorBy: ColorBy;
 }
 
-export default function AudioIntervalMoreActions({ interval, colorBy }: Props): JSX.Element {
+export default function AudioIntervalMoreActions({
+    clientID, serverID, locked, color, colorBy,
+}: Props): JSX.Element {
     const dispatch = useDispatch<ThunkDispatch>();
     const [colorPickerVisible, setColorPickerVisible] = useState(false);
 
-    const id = intervalID(interval);
-    const locked = !!interval.lock;
     const actionClassName = 'cvat-audio-region-item-action-btn';
 
     const handleCopyInterval = useCallback((): void => {
-        dispatch(copyAudioIntervalAsync(id));
-    }, [dispatch, id]);
+        dispatch(copyAudioIntervalAsync(clientID));
+    }, [clientID, dispatch]);
 
     const handleDeleteInterval = useCallback((): void => {
-        dispatch(removeAudioIntervalAsync(id));
-    }, [dispatch, id]);
+        dispatch(removeAudioIntervalAsync(clientID));
+    }, [clientID, dispatch]);
 
-    const handleChangeColor = useCallback((color: string): void => {
-        dispatch(updateAudioIntervalAsync(id, { color }));
-    }, [dispatch, id]);
+    const handleChangeColor = useCallback((newColor: string): void => {
+        dispatch(updateAudioIntervalAsync(clientID, { color: newColor }));
+    }, [clientID, dispatch]);
 
     const handleFitInterval = useCallback((): void => {
-        dispatch(audioActions.fitAudioInterval(id));
-    }, [dispatch, id]);
+        dispatch(audioActions.fitAudioInterval(clientID));
+    }, [clientID, dispatch]);
 
     const menu = useMemo(() => (
         AudioRegionItemMenu({
-            serverID: interval.serverID ?? undefined,
+            serverID: serverID ?? undefined,
             locked,
             colorBy,
-            onCreateURL: () => copyAudioIntervalURL(interval.serverID),
+            onCreateURL: () => copyAudioIntervalURL(serverID),
             onCopy: handleCopyInterval,
             onChangeColorClick: () => setColorPickerVisible(true),
             onRemove: handleDeleteInterval,
@@ -62,7 +64,7 @@ export default function AudioIntervalMoreActions({ interval, colorBy }: Props): 
         })
     ), [
         colorBy,
-        interval.serverID,
+        serverID,
         locked,
         handleCopyInterval,
         handleDeleteInterval,
@@ -89,7 +91,7 @@ export default function AudioIntervalMoreActions({ interval, colorBy }: Props): 
         return (
             <ColorPicker
                 visible
-                value={interval.color ?? ''}
+                value={color}
                 onVisibleChange={setColorPickerVisible}
                 onChange={handleChangeColor}
             >

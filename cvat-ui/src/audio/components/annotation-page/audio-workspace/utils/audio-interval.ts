@@ -28,15 +28,15 @@ export function clientIDFromWaveRegionId(id: string): number | null {
     return Number.isInteger(clientID) ? clientID : null;
 }
 
-export function intervalStartSeconds(interval: AudioIntervalState): number {
+export function intervalStartSeconds(interval: Pick<AudioIntervalState, 'start' | 'stop'>): number {
     return interval.start / 1000;
 }
 
-export function intervalEndSeconds(interval: AudioIntervalState): number {
+export function intervalEndSeconds(interval: Pick<AudioIntervalState, 'start' | 'stop'>): number {
     return (interval.stop ?? interval.start) / 1000;
 }
 
-export function intervalDurationSeconds(interval: AudioIntervalState): number {
+export function intervalDurationSeconds(interval: Pick<AudioIntervalState, 'start' | 'stop'>): number {
     return Math.max(0, intervalEndSeconds(interval) - intervalStartSeconds(interval));
 }
 

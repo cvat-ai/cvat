@@ -8,7 +8,9 @@ import React, {
 import Empty from 'antd/lib/empty';
 import classNames from 'classnames';
 import { ActiveControl, ColorBy } from 'reducers';
-import { AudioIntervalState, Label } from 'cvat-core-wrapper';
+import {
+    AudioIntervalState, Label, LabelType, Source,
+} from 'cvat-core-wrapper';
 import { hexToRgbComponents } from 'audio/utils/hex-color';
 import { getRegionItemColor } from './audio-region-colors';
 import { AudioIntervalActionShortcuts } from './audio-interval-actions';
@@ -40,14 +42,24 @@ function sortIntervals(
 }
 
 interface ItemProps {
-    interval: AudioIntervalState;
+    clientID: number;
+    serverID: number | null;
+    labelID: number | null;
+    labelType: LabelType;
+    start: number;
+    stop: number | null;
+    source: Source;
+    color: string;
+    hidden: boolean;
+    locked: boolean;
+    pinned: boolean;
     labels: Label[];
     displayIndex: number;
     isActive: boolean;
     isHovered: boolean;
     itemColor: string;
     colorBy: ColorBy;
-    activeControl: ActiveControl;
+    activeControlRef: React.MutableRefObject<ActiveControl>;
     intervalActionShortcuts: AudioIntervalActionShortcuts;
     onSetActiveInterval(clientID: number | null): void;
     onSetHoveredInterval(clientID: number | null): void;
@@ -57,39 +69,42 @@ interface ItemProps {
 
 function AudioRegionItem(props: ItemProps): JSX.Element {
     const {
-        interval, labels, displayIndex, isActive, isHovered, itemColor, colorBy,
-        activeControl, intervalActionShortcuts,
+        clientID, serverID, labelID, labelType, start, stop, source, color, hidden, locked, pinned,
+        labels, displayIndex, isActive, isHovered, itemColor, colorBy,
+        activeControlRef, intervalActionShortcuts,
         onSetActiveInterval, onSetHoveredInterval, onPlayIntervalOnce,
         onChangeLabel,
     } = props;
 
-    const id = intervalID(interval);
-    const isHidden = !!interval.hidden;
-    const isLocked = !!interval.lock;
-    const isCursor = activeControl === ActiveControl.CURSOR;
-
-    const handleMouseEnter = useCallback(() => onSetHoveredInterval(id), [onSetHoveredInterval, id]);
+    const handleMouseEnter = useCallback(() => onSetHoveredInterval(clientID), [onSetHoveredInterval, clientID]);
     const handleMouseLeave = useCallback(() => onSetHoveredInterval(null), [onSetHoveredInterval]);
     const handleClick = useCallback(() => {
-        if (!isCursor) return;
-        onSetActiveInterval(id);
-    }, [isCursor, onSetActiveInterval, id]);
+        if (activeControlRef.current !== ActiveControl.CURSOR) return;
+
+        onSetActiveInterval(clientID);
+    }, [activeControlRef, onSetActiveInterval, clientID]);
     const handleDoubleClick = useCallback(() => {
-        if (!isCursor) return;
-        onPlayIntervalOnce(id);
-    }, [isCursor, onPlayIntervalOnce, id]);
+        if (activeControlRef.current !== ActiveControl.CURSOR) return;
+
+        onPlayIntervalOnce(clientID);
+    }, [activeControlRef, onPlayIntervalOnce, clientID]);
+    const handleChangeLabel = useCallback((newLabelID: number) => {
+        onChangeLabel(clientID, newLabelID);
+    }, [clientID, onChangeLabel]);
     const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-        if (isCursor && (e.key === 'Enter' || e.key === ' ')) onSetActiveInterval(id);
-    }, [isCursor, onSetActiveInterval, id]);
+        if (activeControlRef.current === ActiveControl.CURSOR && (e.key === 'Enter' || e.key === ' ')) {
+            onSetActiveInterval(clientID);
+        }
+    }, [activeControlRef, onSetActiveInterval, clientID]);
     return (
         <div
             role='button'
             tabIndex={0}
-            data-interval-id={id}
+            data-interval-id={clientID}
             className={classNames('cvat-audio-region-item', {
                 'cvat-audio-region-item-active': isActive,
                 'cvat-audio-region-item-hovered': isHovered,
-                'cvat-audio-region-item-hidden': isHidden,
+                'cvat-audio-region-item-hidden': hidden,
             })}
             style={{ '--region-item-color': hexToRgbComponents(itemColor) } as React.CSSProperties}
             onMouseEnter={handleMouseEnter}
@@ -99,16 +114,24 @@ function AudioRegionItem(props: ItemProps): JSX.Element {
             onKeyDown={handleKeyDown}
         >
             <AudioIntervalHeader
-                interval={interval}
+                clientID={clientID}
+                serverID={serverID}
+                labelID={labelID}
+                labelType={labelType}
+                start={start}
+                stop={stop}
+                source={source}
+                color={color}
+                locked={locked}
+                pinned={pinned}
+                hidden={hidden}
                 intervalIndex={displayIndex}
                 labels={labels}
-                isReadonly={isLocked}
                 showSource
                 colorBy={colorBy}
                 shortcuts={intervalActionShortcuts}
                 isCompact
-                canPlayInterval={isCursor}
-                onChangeLabel={(labelID) => onChangeLabel(id, labelID)}
+                onChangeLabel={handleChangeLabel}
             />
         </div>
     );
@@ -161,6 +184,8 @@ export default function AudioRegionsList(props: Props): JSX.Element {
 
     const [ordering, setOrdering] = useState<AudioRegionsOrdering>(AudioRegionsOrdering.ID_ASCENT);
     const listRef = useRef<HTMLDivElement>(null);
+    const activeControlRef = useRef(activeControl);
+    activeControlRef.current = activeControl;
 
     useEffect(() => {
         if (activeIntervalID === null) return;
@@ -250,14 +275,24 @@ export default function AudioRegionsList(props: Props): JSX.Element {
                     return (
                         <MemoAudioRegionItem
                             key={id}
-                            interval={interval}
+                            clientID={id}
+                            serverID={interval.serverID}
+                            labelID={interval.label.id ?? null}
+                            labelType={interval.label.type}
+                            start={interval.start}
+                            stop={interval.stop}
+                            source={interval.source}
+                            color={interval.color}
+                            hidden={interval.hidden}
+                            locked={interval.lock}
+                            pinned={interval.pinned}
                             labels={labels}
                             displayIndex={indexById.get(id) ?? 0}
                             isActive={id === activeIntervalID}
                             isHovered={id === hoveredIntervalID}
                             itemColor={getRegionItemColor(interval, labels, colorBy)}
                             colorBy={colorBy}
-                            activeControl={activeControl}
+                            activeControlRef={activeControlRef}
                             intervalActionShortcuts={intervalActionShortcuts}
                             onSetActiveInterval={onSetActiveInterval}
                             onSetHoveredInterval={onSetHoveredInterval}
