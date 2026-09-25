@@ -86,11 +86,12 @@ module.exports = (env, argv = {}) => {
             proxy: [{
                 context: (param) =>
                     param.match(
-                        /\/api\/.*|analytics\/.*|static\/.*|admin(?:\/(.*))?.*|profiler(?:\/(.*))?.*|documentation\/.*|django-rq(?:\/(.*))?/gm,
+                        /\/api\/.*|analytics\/.*|ws\/test\/class-counts(?:\/.*)?|static\/.*|admin(?:\/(.*))?.*|profiler(?:\/(.*))?.*|documentation\/.*|django-rq(?:\/(.*))?/gm,
                     ),
                 target: env && env.API_URL,
                 secure: false,
                 changeOrigin: true,
+                ws: true,
                 onProxyReq: (proxyReq) => {
                     proxyReq.setHeader('X-FORWARDED-HOST', `${host}:${port}`);
                 },

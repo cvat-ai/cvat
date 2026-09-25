@@ -489,6 +489,19 @@ function HeaderComponent(props: Props): JSX.Element {
                         Analytics
                     </Button>
                 ) : null}
+                <Button
+                    id='cvat-header-analytics-class-counts-button'
+                    className={getButtonClassName('class-counts')}
+                    type='link'
+                    value='class-counts'
+                    href='/class-counts'
+                    onClick={(e: React.MouseEvent) => {
+                        e.preventDefault();
+                        history.push('/class-counts');
+                    }}
+                >
+                    Class Analytics
+                </Button>
             </div>
             <div className='cvat-right-header'>
                 <CVATTooltip overlay='Click to open repository'>

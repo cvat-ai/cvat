@@ -1,0 +1,105 @@
+// Copyright (C) CVAT.ai Corporation
+//
+// SPDX-License-Identifier: MIT
+
+.cvat-class-counts-page {
+    padding: 24px 16px;
+    min-height: 100vh;
+    background: #141414;
+
+    .cvat-class-counts-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 4px;
+
+        .ant-typography {
+            color: #e8e8e8;
+        }
+    }
+
+    .cvat-class-counts-conn-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 13px;
+        padding: 3px 10px;
+        border-radius: 20px;
+        background: rgba(255, 255, 255, 0.05);
+    }
+
+    .cvat-class-counts-selector-card {
+        background: #1a1a2a;
+        border: 1px solid #2e2e4e;
+        border-radius: 10px;
+
+        .ant-card-body {
+            padding: 16px 20px;
+        }
+    }
+
+    .cvat-class-counts-chart-card {
+        background: #1a1a2a;
+        border: 1px solid #2e2e4e;
+        border-radius: 10px;
+        position: relative;
+
+        .ant-card-body {
+            padding: 16px 20px 24px;
+        }
+
+        .ant-tabs-tab {
+            color: #aaa;
+
+            &.ant-tabs-tab-active .ant-tabs-tab-btn {
+                color: #4e8cff;
+            }
+        }
+
+        .ant-tabs-ink-bar {
+            background: #4e8cff;
+        }
+    }
+
+    .cvat-class-counts-chart-wrapper {
+        height: 420px;
+        padding: 8px 0;
+    }
+
+    .cvat-class-counts-empty {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 300px;
+        color: #666;
+        font-size: 14px;
+    }
+
+    .cvat-class-counts-hint {
+        text-align: center;
+        color: #666;
+        font-size: 12px;
+        margin-bottom: 8px;
+    }
+
+    .cvat-class-counts-table {
+        .ant-table {
+            background: transparent;
+            color: #ccc;
+        }
+
+        .ant-table-thead > tr > th {
+            background: #1a1a2a;
+            color: #aaa;
+            border-bottom: 1px solid #2e2e4e;
+        }
+
+        .ant-table-tbody > tr > td {
+            border-bottom: 1px solid #1e1e30;
+            color: #ccc;
+        }
+
+        .ant-table-tbody > tr:hover > td {
+            background: rgba(78, 140, 255, 0.06);
+        }
+    }
+}
