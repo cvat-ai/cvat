@@ -1,0 +1,935 @@
+<!doctype html>
+<html itemscope itemtype="http://schema.org/WebPage" lang="en" class="no-js">
+  <head>
+    <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.110.0">
+<link rel="canonical" type="text/html" href="https://docs.cvat.ai/docs/annotation/audio-editor/">
+<meta name="robots" content="noindex, nofollow">
+
+
+<link rel="shortcut icon" href="/favicons/favicon.ico" >
+<link rel="apple-touch-icon" href="/favicons/apple-touch-icon-180x180.png" sizes="180x180">
+<link rel="icon" type="image/png" href="/favicons/favicon-16x16.png" sizes="16x16">
+<link rel="icon" type="image/png" href="/favicons/favicon-32x32.png" sizes="32x32">
+<link rel="icon" type="image/png" href="/favicons/android-36x36.png" sizes="36x36">
+<link rel="icon" type="image/png" href="/favicons/android-48x48.png" sizes="48x48">
+<link rel="icon" type="image/png" href="/favicons/android-72x72.png" sizes="72x72">
+<link rel="icon" type="image/png" href="/favicons/android-96x96.png" sizes="96x96">
+<link rel="icon" type="image/png" href="/favicons/android-144x144.png" sizes="144x144">
+<link rel="icon" type="image/png" href="/favicons/android-192x192.png" sizes="192x192">
+
+<title>Audio Editor | CVAT</title>
+<meta name="description" content="Annotate audio recordings with labeled time intervals in the CVAT Audio Editor.">
+<meta property="og:title" content="Audio Editor" />
+<meta property="og:description" content="Annotate audio recordings with labeled time intervals in the CVAT Audio Editor." />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://docs.cvat.ai/docs/annotation/audio-editor/" /><meta property="og:site_name" content="CVAT" />
+<meta itemprop="name" content="Audio Editor">
+<meta itemprop="description" content="Annotate audio recordings with labeled time intervals in the CVAT Audio Editor."><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Audio Editor"/>
+<meta name="twitter:description" content="Annotate audio recordings with labeled time intervals in the CVAT Audio Editor."/>
+
+
+
+
+<link rel="preload" href="/scss/main.min.7643620a8d58b86ce56dea2169e9b31415bebe5012be06f109155734fcc9508b.css" as="style">
+<link href="/scss/main.min.7643620a8d58b86ce56dea2169e9b31415bebe5012be06f109155734fcc9508b.css" rel="stylesheet" integrity="">
+
+<script
+  src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.3/jquery.min.js"
+  integrity="sha512-STof4xm1wgkfm7heWqFJVn58Hm3EtS31XFaagaa8VMReCXAkQnJZ+jEy8PCC/iT18dFy95WcExNHFTqLyp72eQ=="
+  crossorigin="anonymous"></script>
+<script defer
+  src="https://unpkg.com/lunr@2.3.9/lunr.min.js"
+  integrity="sha384-203J0SNzyqHby3iU6hzvzltrWi/M41wOP5Gu+BiJMz5nwKykbkUx8Kp7iti0Lpli"
+  crossorigin="anonymous"></script>
+<link rel="stylesheet" href="/css/prism.css"/>
+<style>
+     
+    .td-content a:not(.btn):not(.nav-link) {
+      color: #000000 !important;
+      text-decoration: underline;
+    }
+    .td-content a:not(.btn):not(.nav-link):hover,
+    .td-content a:not(.btn):not(.nav-link):focus {
+      color: #f97526 !important;
+      text-decoration: underline;  
+    }
+  </style>
+<style>
+     
+    .td-breadcrumbs a {
+      color: #000000 !important;
+      text-decoration: none !important;
+    }
+    .td-breadcrumbs a:hover,
+    .td-breadcrumbs a:focus {
+      color: #f97526 !important;
+      text-decoration: none !important;
+    }
+
+     
+    .td-sidebar a.td-sidebar-link {
+      color: #000000 !important;
+      text-decoration: none !important;
+    }
+    .td-sidebar a.td-sidebar-link:hover,
+    .td-sidebar a.td-sidebar-link:focus {
+      color: #f97526 !important;
+      text-decoration: none !important;
+    }
+     
+    .td-sidebar .td-sidebar-nav-active-item,
+    .td-sidebar a.td-sidebar-link.active,
+    .td-sidebar a.td-sidebar-link.active:hover {
+      color: #f97526 !important;
+    }
+
+     
+    .td-sidebar-toc a {
+      color: #000000 !important;
+      text-decoration: none !important;
+    }
+    .td-sidebar-toc a:hover,
+    .td-sidebar-toc a:focus {
+      color: #f97526 !important;
+      text-decoration: none !important;
+    }
+
+     
+    .td-page-meta a {
+      color: #000000 !important;
+      text-decoration: none !important;
+    }
+    .td-page-meta a:hover,
+    .td-page-meta a:focus {
+      color: #f97526 !important;
+      text-decoration: underline;  
+    }
+     
+    .td-page-meta { display: none !important; }
+
+     
+  .td-toc::before {
+    content: "TABLE OF CONTENTS";    
+    display: block;
+    font-weight: 600;
+    font-size: 0.9rem;
+    margin-bottom: .5rem;
+  }
+  </style>
+
+  </head>
+  <body class="td-section">
+    <header>
+      <nav class="td-navbar navbar-dark js-navbar-scroll">
+<div class="container-fluid flex-column flex-md-row">
+<a class="navbar-brand" href="/docs/"><span class="navbar-brand__logo navbar-logo"><svg width="80" height="15" viewBox="0 0 80 15" xmlns="http://www.w3.org/2000/svg"><path d="M6.63399 15C2.37083 15 0 12.5333.0 7.48889.0 2.46667 2.34908.0 6.63399.0H10.6576V2.62222H6.63399c-2.84935.0-4.0674 1.44445-4.0674 4.86667.0 3.44441 1.2398 4.88891 4.0674 4.88891H15.0638V15H6.63399z"/><path d="M22.412.0l4.8346 13.1004C27.7814 14.5415 28.8724 15 30.2842 15 31.7817 15 32.7657 14.476 33.3005 13.1004L38.3918.0H35.5895L30.9902 11.8559C30.8404 12.2052 30.6265 12.3581 30.2842 12.3581 29.942 12.3581 29.7067 12.2052 29.5783 11.8559L25.1929.0H22.412z"/><path d="M53.0989 3.1441C53.2487 2.79476 53.484 2.64192 53.8262 2.64192 54.1685 2.64192 54.4038 2.79476 54.5322 3.1441L58.9176 15h2.8023L56.8425 1.89956C56.3291.524017 55.3451.0 53.8476.0 52.3288.0 51.3448.524017 50.81 1.89956L45.74 15h2.781L53.0989 3.1441z"/><path d="M69.0681.0V2.5665H73.2661V15H75.802V2.5665H80V0H69.0681z"/></svg></span></a>
+<div class="td-navbar-nav-scroll ms-md-auto" style="height: auto;" id="main_navbar">
+  <ul class="navbar-nav d-flex flex-wrap" style="padding-bottom: 0;">
+    
+      
+        <li class="nav-item">
+          <a class="nav-link "
+             href="/docs/"
+             ><span>Docs</span></a>
+        </li>
+      
+    
+      
+        <li class="nav-item">
+          <a class="nav-link "
+             href="/docs/getting_started/overview/"
+             ><span>Quickstart</span></a>
+        </li>
+      
+    
+      
+        <li class="nav-item">
+          <a class="nav-link "
+             href="/docs/guides/"
+             ><span>Guides</span></a>
+        </li>
+      
+    
+      
+        <li class="nav-item">
+          <a class="nav-link "
+             href="https://app.cvat.ai/auth/login"
+             rel="noopener"><span>Sign in</span></a>
+        </li>
+      
+    
+      
+        <li class="nav-item dropdown">
+          <a
+          class="nav-link dropdown-toggle "
+          href="#"
+          id="nav-get-started"
+          data-bs-toggle="dropdown"
+          aria-haspopup="true"
+          aria-expanded="false"
+          aria-label="Toggle Get started dropdown"
+          onkeydown="if(event.key === ' ' || event.key === 'Enter'){ this.click(); }"
+        ><span>Get started</span></a>
+          <ul class="dropdown-menu" aria-labelledby="nav-get-started">
+            
+              <li>
+                <a class="dropdown-item"
+                   href="/docs/administration/community/basics/installation"
+                   >CVAT Сommunity</a>
+              </li>
+            
+              <li>
+                <a class="dropdown-item"
+                   href="https://app.cvat.ai/auth/register"
+                   rel="noopener">CVAT Online</a>
+              </li>
+            
+              <li>
+                <a class="dropdown-item"
+                   href="https://www.cvat.ai/sales#enterprise"
+                   rel="noopener">CVAT Enterprise</a>
+              </li>
+            
+          </ul>
+        </li>
+      
+    
+      
+        <li class="nav-item">
+          <a class="nav-link "
+             href="/docs/getting_started/overview/#get-in-touch"
+             ><span>Contact us</span></a>
+        </li>
+      
+    <li class="nav-item dropdown d-none d-lg-block">
+      <div class="dropdown">
+  <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">develop</a>
+  <ul class="dropdown-menu">
+    <li><a class="dropdown-item" href="/">Latest version</a></li>
+    <li><a class="dropdown-item" href="/v2.76.0">v2.76.0</a></li>
+    <li><a class="dropdown-item" href="/v2.75.0">v2.75.0</a></li>
+    <li><a class="dropdown-item" href="/v2.74.1">v2.74.1</a></li>
+    <li><a class="dropdown-item" href="/v2.73.0">v2.73.0</a></li>
+    <li><a class="dropdown-item" href="/v2.72.0">v2.72.0</a></li>
+    <li><a class="dropdown-item" href="/v2.71.0">v2.71.0</a></li>
+    </ul>
+</div></li>
+    </ul>
+</div>
+<div class="d-none d-lg-block">
+  <div class="td-search td-search--offline">
+  <div class="td-search__icon"></div>
+  <input
+    type="search"
+    class="td-search__input form-control"
+    placeholder="Search this site…"
+    aria-label="Search this site…"
+    autocomplete="off"
+    
+    data-offline-search-index-json-src="/offline-search-index.5ad9f2f40ba29a8c99c94f7e15a3e4a9.json"
+    data-offline-search-base-href="/"
+    data-offline-search-max-results="10"
+  >
+</div>
+
+</div>
+</div>
+</nav>
+    </header>
+    <div class="container-fluid td-outer">
+      <div class="td-main">
+        <div class="row flex-xl-nowrap">
+          <main class="col-12 col-md-9 col-xl-8 ps-md-5" role="main">
+            
+
+
+
+
+<div class="td-content">
+<div class="pageinfo pageinfo-primary d-print-none">
+<p>
+This is the multi-page printable view of this section.
+<a href="#" onclick="print();return false;">Click here to print</a>.
+</p><p>
+<a href="/docs/annotation/audio-editor/">Return to the regular view of this page</a>.
+</p>
+</div>
+
+
+
+<h1 class="title">Audio Editor</h1>
+<div class="lead">Annotate audio recordings with labeled time intervals in the CVAT Audio Editor.</div>
+
+
+
+
+    <ul>
+    
+  
+  
+  
+  
+
+  
+    
+    
+	
+<li>1: <a href="#pg-13d10ec1b3af87c854cd71560264ebe9">Menu and Navigation Bar</a></li>
+
+
+    
+  
+    
+    
+	
+<li>2: <a href="#pg-e854d71b590fd6dbea6dba6a754062cb">Workspace</a></li>
+
+
+    
+  
+    
+    
+	
+<li>3: <a href="#pg-e9b796bd0e3684cc00f59e0c5e672ae4">Objects Sidebar</a></li>
+
+
+    
+  
+    
+    
+	
+<li>4: <a href="#pg-9accf3c66d04ea8bb55d3b033f257543">Controls Sidebar</a></li>
+
+
+    
+  
+
+    </ul>
+
+
+<div class="content">
+      <p>The Audio Editor is the annotation interface for audio data. Instead of frames and shapes,
+you work with labeled time intervals on an audio waveform.</p>
+<p><img src="/images/audio_editor_01.webp" alt="CVAT Audio Interfaces"></p>
+<p>Use the Audio Editor to play a recording, create intervals for relevant time ranges, and assign
+labels and attributes to each interval. Audio tasks open in this editor automatically.</p>
+
+</div>
+</div>
+
+
+  
+  
+  
+  
+
+  
+  
+
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-13d10ec1b3af87c854cd71560264ebe9">1 - Menu and Navigation Bar</h1>
+    <div class="lead">Use the Audio Editor menu and top bar to manage audio annotations and playback.</div>
+	<p>The Audio Editor top bar contains job actions, save and undo controls, and audio playback navigation.</p>
+<p><img src="/images/audio_editor_navbar_01.webp" alt="CVAT Audio Menu and Navigation Bar"></p>
+<h2 id="menu">Menu</h2>
+<p>Open the <strong>Menu</strong> to manage the current job:</p>
+<table>
+<thead>
+<tr>
+<th>Item</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Upload annotations</strong></td>
+<td>Imports interval annotations into the job. Audio tasks use the <a href="/docs/dataset_management/formats/format-generic-tsv/">Generic TSV 1.0</a> format.</td>
+</tr>
+<tr>
+<td><strong>Export job dataset</strong></td>
+<td>Exports interval annotations.</td>
+</tr>
+<tr>
+<td><strong>Remove annotations</strong></td>
+<td>Removes all intervals, or only the intervals in a selected time range.<br>The removal is saved only after you save the job.<br> <img src="/images/audio_editor_navbar_02.webp" alt="Remove audio annotations"></td>
+</tr>
+<tr>
+<td><strong>Run actions</strong></td>
+<td>Annotation actions are currently not available for audio jobs.</td>
+</tr>
+<tr>
+<td><strong>Open the task</strong></td>
+<td>Opens the task details page.</td>
+</tr>
+<tr>
+<td><strong>Change job state</strong></td>
+<td>Changes the job state to <strong>New</strong>, <strong>In Progress</strong>, <strong>Rejected</strong>, or <strong>Completed</strong>.</td>
+</tr>
+<tr>
+<td><strong>Finish the job</strong></td>
+<td>Saves the annotations and sets the job state to <strong>Completed</strong>.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="save-undo-and-redo">Save, undo, and redo</h2>
+<table>
+<thead>
+<tr>
+<th>Button</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Save</strong><br><br><img src="/images/audio_editor_navbar_03.webp" alt="Save"></td>
+<td>Submits unsaved interval changes to the server.<br><br>Default shortcuts:<br><kbd>Ctrl</kbd>+<kbd>S</kbd><br><kbd>⌘</kbd>+<kbd>S</kbd></td>
+</tr>
+<tr>
+<td><strong>Undo</strong><br><br><img src="/images/audio_editor_navbar_04.webp" alt="Undo"></td>
+<td>Reverses the latest interval creation, deletion, or edit in the current session.<br><br>Default shortcuts:<br><kbd>Ctrl</kbd>+<kbd>Z</kbd><br><kbd>⌘</kbd>+<kbd>Z</kbd></td>
+</tr>
+<tr>
+<td><strong>Redo</strong><br><br><img src="/images/audio_editor_navbar_05.webp" alt="Redo"></td>
+<td>Restores the most recently undone interval change.<br><br>Default shortcuts:<br><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd><br><kbd>Ctrl</kbd>+<kbd>Y</kbd><br><kbd>⌘</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd></td>
+</tr>
+</tbody>
+</table>
+<h2 id="playback-navigation">Playback navigation</h2>
+<p>Use the player controls to play or pause the audio and move the playhead:</p>
+<p><img src="/images/audio_editor_navbar_19.gif" alt="Playback navigation"></p>
+<table>
+<thead>
+<tr>
+<th>Button</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Jump to start</strong><br><img src="/images/audio_editor_navbar_06.webp" alt="Jump to start"></td>
+<td>Moves the playhead to the beginning of the recording.</td>
+</tr>
+<tr>
+<td><strong>Long step backward</strong><br><img src="/images/audio_editor_navbar_07.webp" alt="Long step backward"></td>
+<td>Moves the playhead backward by 5% of the currently visible waveform.<br><br>Default shortcut: <kbd>C</kbd>.</td>
+</tr>
+<tr>
+<td><strong>Short step backward</strong><br><img src="/images/audio_editor_navbar_08.webp" alt="Short step backward"></td>
+<td>Moves the playhead backward by 0.5% of the currently visible waveform.<br><br>Default shortcut: <kbd>D</kbd>.</td>
+</tr>
+<tr>
+<td><strong>Play/Pause</strong><br><img src="/images/audio_editor_navbar_09.webp" alt="Play/Pause"></td>
+<td>Starts or pauses playback.<br><br>Default shortcut: <kbd>Space</kbd>.</td>
+</tr>
+<tr>
+<td><strong>Short step forward</strong><br><img src="/images/audio_editor_navbar_10.webp" alt="Short step forward"></td>
+<td>Moves the playhead forward by 0.5% of the currently visible waveform.<br><br>Default shortcut: <kbd>F</kbd>.</td>
+</tr>
+<tr>
+<td><strong>Long step forward</strong><br><img src="/images/audio_editor_navbar_11.webp" alt="Long step forward"></td>
+<td>Moves the playhead forward by 5% of the currently visible waveform.<br><br>Default shortcut: <kbd>V</kbd>.</td>
+</tr>
+<tr>
+<td><strong>Jump to end</strong><br><img src="/images/audio_editor_navbar_12.webp" alt="Jump to end"></td>
+<td>Moves the playhead to the end of the recording.</td>
+</tr>
+</tbody>
+</table>
+
+
+
+
+<div class="alert alert-primary" role="alert">
+<h4 class="alert-heading"><i class="fas fa-circle-info" aria-hidden="true"></i> Note</h4>
+
+    The step sizes are fixed and cannot be configured. The displayed shortcuts are configurable.
+
+</div>
+
+<h2 id="job-information-and-annotation-mode">Job information and Annotation Mode</h2>
+<table>
+<thead>
+<tr>
+<th>Control</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Fullscreen</strong><br><img src="/images/audio_editor_navbar_13.webp" alt="Fullscreen"></td>
+<td>Toggles fullscreen mode for the Audio Editor.</td>
+</tr>
+<tr>
+<td><strong>Guide</strong><br><img src="/images/audio_editor_navbar_14.webp" alt="Guide"></td>
+<td>Opens the task guide when one is configured.</td>
+</tr>
+<tr>
+<td><strong>Info</strong><br><img src="/images/audio_editor_navbar_15.webp" alt="Info"></td>
+<td>Opens job statistics, including the total audio duration, region count, and per-label region counts, duration, and coverage.<br><img src="/images/audio_editor_navbar_18.webp" alt="Info dialog"></td>
+</tr>
+<tr>
+<td><strong>Filters</strong><br><img src="/images/audio_editor_navbar_16.webp" alt="Filters"></td>
+<td>Restricts the intervals shown in the sidebar and waveform. See <a href="/docs/annotation/manual-annotation/utilities/filter/">Filters</a>.</td>
+</tr>
+<tr>
+<td><strong>Annotation mode</strong><br><img src="/images/audio_editor_navbar_17.webp" alt="Annotation mode"></td>
+<td>The drop-down list to switch between different annotation modes: <br> <strong>Audio annotation</strong> is currently the only available annotation mode for audio jobs.</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-e854d71b590fd6dbea6dba6a754062cb">2 - Workspace</h1>
+    <div class="lead">Navigate and inspect an audio recording on the waveform and minimap.</div>
+	<p>The Audio Editor workspace displays the recording as a waveform. The vertical playhead marks the
+current playback position, and colored regions represent audio intervals.</p>
+<p><img src="/images/audio_editor_workspace_01.webp" alt="CVAT Audio Workspace"></p>
+<h2 id="navigate-the-waveform">Navigate the waveform</h2>
+<h3 id="move-through-the-recording">Move through the recording</h3>
+<p><img src="/images/audio_editor_workspace_13.gif" alt="Navigate the waveform"></p>
+<ul>
+<li>
+<p>Click the waveform to move the playhead to that time. To move through a zoomed recording, use the
+horizontal scrollbar, horizontal scrolling on a supported mouse or touchpad, or
+<kbd>Shift</kbd>+mouse wheel.</p>
+</li>
+<li>
+<p>The minimap shows the entire recording. Click it to move to a time, or drag its visible-area overlay
+to scroll the waveform horizontally.</p>
+<p><img src="/images/audio_editor_workspace_02.webp" alt="Minimap"></p>
+</li>
+<li>
+<p>Click <strong>Center waveform on playback position</strong> button at the top right corner of the waveform
+to bring the current playhead into view.</p>
+<p><img src="/images/audio_editor_workspace_03.webp" alt="Center waveform on playback position"></p>
+</li>
+</ul>
+<h3 id="zoom-and-inspect">Zoom and inspect</h3>
+<ul>
+<li>
+<p>Use the <a href="../controls-sidebar/">Zoom control</a> or scroll the mouse wheel over the waveform to
+change the time scale.</p>
+</li>
+<li>
+<p>The hover guide shows the timestamp at the pointer position, and timeline tick marks and labels
+adjust automatically to the current zoom level.</p>
+<p><img src="/images/audio_editor_workspace_04.webp" alt="Hover guide"></p>
+</li>
+<li>
+<p>Drag the handle below the minimap to change the waveform height.</p>
+<p><img src="/images/audio_editor_workspace_05.gif" alt="Resize handle"></p>
+</li>
+</ul>
+<h2 id="select-and-edit-intervals">Select and edit intervals</h2>
+<table>
+<thead>
+<tr>
+<th>Action</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Select</strong></td>
+<td>Click an interval on the waveform or select it in the <a href="../objects-sidebar/">Objects Sidebar</a> to make it active.<br><img src="/images/audio_editor_workspace_14.gif" alt="Select"><br><br>Default shortcuts:<br>Next visible interval: <kbd>Tab</kbd><br>Previous visible interval: <kbd>Shift</kbd>+<kbd>Tab</kbd><br>Each shortcut selects and centers the interval on the waveform.</td>
+</tr>
+<tr>
+<td><strong>Move</strong></td>
+<td>Drag an interval to change its position. <br>Hold <kbd>Alt</kbd> while dragging to snap either boundary to a nearby boundary of another visible interval. If both boundaries have eligible snap targets, CVAT uses the closest one.<br><img src="/images/audio_editor_workspace_15.gif" alt="Move"></td>
+</tr>
+<tr>
+<td><strong>Resize</strong></td>
+<td>Drag either boundary to change its start or end time. <br>When you resize an interval beyond the visible edge, the waveform scrolls automatically. <br>Hold <kbd>Alt</kbd> to snap the boundary being resized to a nearby boundary of another visible interval. It cannot snap to the other boundary of the same interval.<br><img src="/images/audio_editor_workspace_16.gif" alt="Resize"></td>
+</tr>
+<tr>
+<td><strong>Bulk resize</strong></td>
+<td>Hold <kbd>Shift</kbd> near adjacent interval boundaries to highlight nearby unlocked boundaries, then drag to resize them together.<br><img src="/images/audio_editor_workspace_17.gif" alt="Bulk resize"></td>
+</tr>
+</tbody>
+</table>
+<h3 id="interval-details">Interval details</h3>
+<p>When you select an interval, its details panel appears below the waveform.</p>
+<h4 id="header">Header</h4>
+<table>
+<thead>
+<tr>
+<th>Image</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><img src="/images/audio_editor_workspace_06.webp" alt="Interval Header Left "> <img src="/images/audio_editor_workspace_07.webp" alt="Interval Header Left "></td>
+<td>The header shows the interval number, label, source when available, start and end time, and duration. Use the label selector to change its label.</td>
+</tr>
+<tr>
+<td><img src="/images/audio_editor_workspace_08.webp" alt="Interval Header Playback "></td>
+<td>Playback controls move the playhead to the interval start or end, or play the interval once.<br><br>Default shortcuts:<br>Set playback to start: <kbd>Shift</kbd>+<kbd>D</kbd><br>Play once: <kbd>Shift</kbd>+<kbd>Space</kbd><br>Set playback to end: <kbd>Shift</kbd>+<kbd>F</kbd></td>
+</tr>
+<tr>
+<td><img src="/images/audio_editor_workspace_09.webp" alt="Interval Header State "></td>
+<td>State controls lock, pin, or hide the interval. Locked intervals cannot be edited, moved, or resized. Pinned intervals cannot be moved. Hidden intervals are not shown on the waveform.<br><br>Default shortcuts:<br>Lock/Unlock: <kbd>L</kbd><br>Pin/Unpin: <kbd>P</kbd><br>Hide/Show: <kbd>H</kbd></td>
+</tr>
+<tr>
+<td><img src="/images/audio_editor_workspace_10.webp" alt="Interval Header More Actions "></td>
+<td>The <strong>More actions</strong> menu lets you fit the waveform to the interval, copy its URL, duplicate it, change its color when available, or delete it.<br><br>Default shortcuts:<br>Fit interval: <kbd>I</kbd><br>Delete: <kbd>Del</kbd><br>Force-delete a locked interval: <kbd>Shift</kbd>+<kbd>Del</kbd></td>
+</tr>
+</tbody>
+</table>
+<h4 id="edit-attributes">Edit attributes</h4>
+<p>All attributes are expanded by default. Edit their values or collapse them as needed. Available
+attributes depend on the selected label.</p>
+<p><img src="/images/audio_editor_workspace_11.webp" alt="Interval attributes"></p>
+<h3 id="play-and-manage-intervals">Play and manage intervals</h3>
+<ul>
+<li>
+<p>Double-click an interval on the waveform to play it once.</p>
+</li>
+<li>
+<p>Right-click it to open the context menu, where you can:</p>
+<ul>
+<li>Fit the waveform to the interval.</li>
+<li>Copy the interval URL.</li>
+<li>Duplicate the interval.</li>
+<li>Change its color, when available.</li>
+<li>Delete the interval.</li>
+</ul>
+<p><img src="/images/audio_editor_workspace_12.webp" alt="Interval Context Menu "></p>
+</li>
+</ul>
+<p>For interval creation, see <a href="../controls-sidebar/#create-intervals">Create intervals</a>.</p>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-e9b796bd0e3684cc00f59e0c5e672ae4">3 - Objects Sidebar</h1>
+    <div class="lead">Manage audio intervals, labels, and appearance from the sidebar.</div>
+	<p>The Audio Editor objects sidebar contains the intervals list, label controls, and appearance
+settings.</p>
+<p><img src="/images/audio_editor_rightbar_01.webp" alt="Right Panel Objects"> <img src="/images/audio_editor_rightbar_02.webp" alt="Right Panel Labels"></p>
+<h2 id="intervals-list">Intervals list</h2>
+<table>
+<thead>
+<tr>
+<th>Image</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><img src="/images/audio_editor_rightbar_03.webp" alt="List"></td>
+<td>The list shows every interval in the job, including hidden intervals. <br>Click an item to make it active, or double-click it to play it once.</td>
+</tr>
+<tr>
+<td><img src="/images/audio_editor_rightbar_05.webp" alt="Sort by"></td>
+<td>Use <strong>Sort by</strong> to order the list by ID, start time, end time, duration, or label name.</td>
+</tr>
+<tr>
+<td><img src="/images/audio_editor_rightbar_04.webp" alt="Bulk controls"></td>
+<td>Bulk controls lock, pin, or hide all applicable intervals.<br><br>Default shortcuts:<br>Lock/Unlock all: <kbd>T</kbd>, then <kbd>L</kbd><br>Pin/Unpin all: <kbd>T</kbd>, then <kbd>P</kbd><br>Hide/Show all: <kbd>T</kbd>, then <kbd>H</kbd></td>
+</tr>
+</tbody>
+</table>
+<h2 id="interval-actions">Interval actions</h2>
+<p>Each interval card includes playback, state, and more actions:</p>
+<table>
+<thead>
+<tr>
+<th>Image</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><img src="/images/audio_editor_rightbar_07.webp" alt="Label"> <img src="/images/audio_editor_rightbar_08.webp" alt="Duration"></td>
+<td>The header shows the interval number, label, source when available, start and end time, and duration. Use the label selector to change its label.</td>
+</tr>
+<tr>
+<td><img src="/images/audio_editor_rightbar_09.webp" alt="Playback"></td>
+<td>Playback controls move the playhead to the interval start or end, or play the interval once.<br><br>Default shortcuts:<br>Set playback to start: <kbd>Shift</kbd>+<kbd>D</kbd><br>Play once: <kbd>Shift</kbd>+<kbd>Space</kbd><br>Set playback to end: <kbd>Shift</kbd>+<kbd>F</kbd></td>
+</tr>
+<tr>
+<td><img src="/images/audio_editor_rightbar_10.webp" alt="State controls"></td>
+<td>State controls lock, pin, or hide the interval. Locked intervals cannot be edited, moved, or resized. Pinned intervals cannot be moved. Hidden intervals are not shown on the waveform.<br><br>Default shortcuts:<br>Lock/Unlock: <kbd>L</kbd><br>Pin/Unpin: <kbd>P</kbd><br>Hide/Show: <kbd>H</kbd></td>
+</tr>
+<tr>
+<td><img src="/images/audio_editor_rightbar_11.webp" alt="More"></td>
+<td>The <strong>More actions</strong> menu lets you fit the waveform to the interval, copy its URL, duplicate it, change its color when available, or delete it.<br><br>Default shortcuts:<br>Fit interval: <kbd>I</kbd><br>Delete: <kbd>Del</kbd><br>Force-delete a locked interval: <kbd>Shift</kbd>+<kbd>Del</kbd></td>
+</tr>
+</tbody>
+</table>
+<h2 id="labels-and-appearance">Labels and appearance</h2>
+<table>
+<thead>
+<tr>
+<th>Image</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><img src="/images/audio_editor_rightbar_12.webp" alt="Labels"></td>
+<td>The labels section lets you manage interval visibility and locking by label.</td>
+</tr>
+<tr>
+<td><img src="/images/audio_editor_rightbar_13.webp" alt="Appearance"></td>
+<td>In <strong>Appearance</strong>, choose whether interval colors are determined by <strong>Label</strong> or <strong>Instance</strong> and adjust the general and selected interval opacity.</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+
+
+
+    
+	
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-9accf3c66d04ea8bb55d3b033f257543">4 - Controls Sidebar</h1>
+    <div class="lead">Choose interval tools and adjust audio playback.</div>
+	<p>Use the controls sidebar to create and split intervals, and control playback settings.</p>
+<table>
+<thead>
+<tr>
+<th>Control</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Cursor</strong> <br><img src="/images/audio_editor_controls_01.webp" alt="Cursor "></td>
+<td>Returns to the selection mode and cancels an active interval creation or recording mode.<br><br>Default shortcut: <kbd>Esc</kbd>.</td>
+</tr>
+<tr>
+<td><strong>Audio interval tools</strong> <br><img src="/images/audio_editor_controls_02.webp" alt="Audio interval tools "> <br><img src="/images/audio_editor_controls_03.webp" alt="Audio interval tools 2 "></td>
+<td>Opens <strong>Draw</strong>, <strong>Record</strong>, and <strong>Extend</strong> tools and default label selection. See <a href="#create-intervals">Create intervals</a>.</td>
+</tr>
+<tr>
+<td><strong>Split interval at playback position</strong> <br><img src="/images/audio_editor_controls_04.webp" alt="Split selector "></td>
+<td>To split an interval, place the playhead strictly inside it and click the button. <br>CVAT splits the target interval into two intervals with the same label, attributes, and color. <br>A locked or hidden interval cannot be split. <br>If multiple intervals are eligible and one is active, CVAT splits the active interval. <br>If multiple intervals are eligible and none is active, CVAT lets you choose which interval to split.<br><br>Default shortcut: <kbd>Alt</kbd>+<kbd>M</kbd>.</td>
+</tr>
+<tr>
+<td><strong>Loop interval playback</strong> <br><img src="/images/audio_editor_controls_05.webp" alt="Loop "></td>
+<td>Toggles looping playback for the active interval.<br><br>Default shortcut: <kbd>R</kbd>.</td>
+</tr>
+<tr>
+<td><strong>Zoom</strong> <br><img src="/images/audio_editor_controls_06.webp" alt="Zoom "></td>
+<td>Changes the waveform time scale: x1-x300. <br>Minimum base display rate is 8px/second.</td>
+</tr>
+<tr>
+<td><strong>Volume</strong> <br><img src="/images/audio_editor_controls_07.webp" alt="Volume "></td>
+<td>Changes the playback volume: 0-100%.</td>
+</tr>
+<tr>
+<td><strong>Speed</strong> <br><img src="/images/audio_editor_controls_08.webp" alt="Speed "></td>
+<td>Changes the playback speed: 0.1x-4x.</td>
+</tr>
+</tbody>
+</table>
+<p>To change default shortcuts, see <a href="../../../getting_started/shortcuts/">Shortcuts</a>.</p>
+<h2 id="create-intervals">Create intervals</h2>
+<p>Open the <strong>Audio interval</strong> control and choose a label. You can then use one of the following
+methods:</p>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>How it works</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Draw</strong></td>
+<td>Drag over the waveform to define an interval. You can drag in either direction. <br>Hold <kbd>Alt</kbd> when setting the start or end to snap that boundary to a nearby boundary of a visible interval.<br><img src="/images/audio_editor_controls_10.gif" alt="Draw "> <br><br>Default shortcut: <kbd>N</kbd>.</td>
+</tr>
+<tr>
+<td><strong>Record</strong></td>
+<td>Start recording at the current playhead position.<br>Press play to start recording.<br>Press pause to set the end time.<br>Press <kbd>Esc</kbd> to cancel an unfinished recording.<br><img src="/images/audio_editor_controls_11.gif" alt="Record "><br><br>Default shortcut: <kbd>Shift</kbd>+<kbd>N</kbd>.</td>
+</tr>
+<tr>
+<td><strong>Extend</strong></td>
+<td>Creates a new interval from the end of the nearest preceding interval to the current playhead. <br>If there is no preceding interval, it starts at the beginning of the recording.<br><img src="/images/audio_editor_controls_12.gif" alt="Extend "><br><br>Default shortcut: <kbd>Shift</kbd>+<kbd>E</kbd>.</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+
+
+
+    
+	
+  
+
+
+
+          </main>
+        </div>
+      </div>
+      <footer class="bg-dark py-5 row d-print-none" style="min-height: 0">
+  <div class="container-fluid">
+    <div class="row align-items-center">
+      
+      <div class="col-12 col-lg-8 d-flex align-items-center justify-content-start">
+        <ul class="list-inline mb-0">
+          <li class="list-inline-item me-4">© 2026 CVAT.ai Corporation.</li>
+          <li class="list-inline-item me-4"><a class="text-white" href="https://www.cvat.ai/terms-of-use">Terms of Service</a></li>
+          <li class="list-inline-item me-4"><a class="text-white" href="https://www.cvat.ai/privacy">Privacy Policy</a></li>
+          <li class="list-inline-item me-4"><a class="text-white" href="https://www.cvat.ai/refund-policy">Refund Policy</a></li>
+          <li class="list-inline-item me-4"><a class="text-white" href="https://www.cvat.ai/fair-usage-policy">Fair Usage Policy</a></li>
+          <li class="list-inline-item me-4"><a class="text-white" href="https://status.cvat.ai">Status</a></li>
+        </ul>
+      </div>
+
+      
+      <div class="col-12 col-lg-4 d-flex align-items-center justify-content-lg-end justify-content-center mt-3 mt-lg-0">
+        
+        
+        
+<ul class="list-inline mb-0">
+  
+  <li class="list-inline-item mx-2 h3" data-bs-toggle="tooltip" data-placement="top" title="GitHub" aria-label="GitHub">
+    <a class="text-white" rel="noopener noreferrer" href="https://github.com/cvat-ai/cvat">
+      <i class="fab fa-github"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-bs-toggle="tooltip" data-placement="top" title="LinkedIn" aria-label="LinkedIn">
+    <a class="text-white" rel="noopener noreferrer" href="https://www.linkedin.com/company/cvat-ai/">
+      <i class="fab fa-linkedin"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-bs-toggle="tooltip" data-placement="top" title="Discord" aria-label="Discord">
+    <a class="text-white" rel="noopener noreferrer" href="https://discord.gg/fNR3eXfk6C">
+      <i class="fab fa-discord"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-bs-toggle="tooltip" data-placement="top" title="YouTube" aria-label="YouTube">
+    <a class="text-white" rel="noopener noreferrer" href="https://www.youtube.com/@cvat-ai">
+      <i class="fab fa-youtube"></i>
+    </a>
+  </li>
+  
+</ul>
+
+        
+        
+      </div>
+    </div>
+  </div>
+  
+
+
+<div id="cookie-consent-banner">
+  <p>
+    We use Google Analytics cookies to improve functionality and analyze traffic. You can change your preference at any time using the "Cookie Settings" link in the footer.
+  </p>
+  <div class="button-group">
+    <button onclick="acceptCookies()">Accept</button>
+    <button class="reject" onclick="rejectCookies()">Reject</button>
+  </div>
+</div>
+
+
+<script>
+window.GOOGLE_TAG_ID = 'G-GVSBK1DNK5';
+</script>
+
+
+<script defer src="/js/cookie-consent.min.93cb75ea0d8a602f1db231ed823839f4fc4c6fbfe6d98e78c702dbdf32e8ce95.js" integrity="sha256-k8t16g2KYC8dsjHtgjg59PxMb7/m2Y54xwLb3zLozpU=" crossorigin="anonymous"></script>
+
+</footer>
+
+
+    </div>
+    
+  <script src="/js/main.min.526b9a0efe05e64aed014e26a8012f179897a1fb5e008e36cc88157497fdeb44.js" integrity="sha256-UmuaDv4F5krtAU4mqAEvF5iXofteAI42zIgVdJf960Q=" crossorigin="anonymous"></script>
+<script src='/js/prism.js'></script>
+<script src='/js/tabpane-persist.js'></script>
+
+<script>
+(function () {
+  'use strict';
+  document.addEventListener('DOMContentLoaded', function () {
+    var toc = document.getElementById('TableOfContents');
+    if (!toc || typeof bootstrap === 'undefined' || !bootstrap.ScrollSpy) {
+      return;
+    }
+    
+    new bootstrap.ScrollSpy(document.body, {
+      target: '#TableOfContents',
+      rootMargin: '0px 0px -75%',
+      smoothScroll: true,
+    });
+  });
+}());
+</script>
+<script>
+(function () {
+  'use strict';
+  document.addEventListener('DOMContentLoaded', function () {
+    
+    
+    
+    
+    
+    
+    
+    var nav = document.querySelector('.td-sidebar-nav');
+    var active = nav && nav.querySelector('a.active');
+    if (!nav || !active) {
+      return;
+    }
+    var navRect = nav.getBoundingClientRect();
+    var activeRect = active.getBoundingClientRect();
+    var delta = (activeRect.top - navRect.top) - (nav.clientHeight / 2) + (activeRect.height / 2);
+    nav.scrollTop += delta;
+  });
+}());
+</script>
+
+  </body>
+</html>
