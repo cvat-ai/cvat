@@ -10,6 +10,7 @@ from glob import glob
 from datumaro.components.annotation import AnnotationType
 from datumaro.components.dataset import StreamDataset
 from datumaro.components.dataset_base import DatasetItem
+from datumaro.plugins.data_formats.yolo.base import YoloUltralyticsPoseBase
 
 from cvat.apps.dataset_manager.bindings import (
     CommonData,
@@ -24,7 +25,31 @@ from cvat.apps.dataset_manager.bindings import (
 from cvat.apps.dataset_manager.util import make_zip_archive
 
 from .registry import dm_env, exporter, importer
-from .transformations import EllipsesToMasks, SetKeyframeForEveryTrackShape
+from .transformations import (
+    AddPoseBboxFromSkeleton,
+    EllipsesToMasks,
+    PoseSkeleton,
+    SetKeyframeForEveryTrackShape,
+    SetPoseBboxFromGroup,
+)
+
+
+class _CvatYoloUltralyticsPoseBase(YoloUltralyticsPoseBase):
+    def _load_one_annotation(
+        self, parts: list[str], image_height: int, image_width: int
+    ) -> PoseSkeleton:
+        skeleton = super()._load_one_annotation(parts, image_height, image_width)
+        center_x = self._parse_field(parts[1], float, "bbox center x") * image_width
+        center_y = self._parse_field(parts[2], float, "bbox center y") * image_height
+        width = self._parse_field(parts[3], float, "bbox width") * image_width
+        height = self._parse_field(parts[4], float, "bbox height") * image_height
+        return PoseSkeleton(
+            skeleton,
+            [center_x - width / 2, center_y - height / 2, width, height],
+        )
+
+
+dm_env.extractors.register("yolo_ultralytics_pose", _CvatYoloUltralyticsPoseBase)
 
 
 def _export_common(
@@ -123,8 +148,13 @@ def _export_yolo_ultralytics_segmentation(dst_file, temp_dir, instance_data, *, 
 
 
 @exporter(name="Ultralytics YOLO Pose", ext="ZIP", version="1.0")
-def _export_yolo_ultralytics_pose(*args, **kwargs):
-    _export_common(*args, format_name="yolo_ultralytics_pose", **kwargs)
+def _export_yolo_ultralytics_pose(dst_file, temp_dir, instance_data, *, save_images=False, **kwargs):
+    with GetCVATDataExtractor(instance_data, include_images=save_images) as extractor:
+        dataset = StreamDataset.from_extractors(extractor, env=dm_env)
+        dataset.transform(SetPoseBboxFromGroup)
+        dataset.export(temp_dir, "yolo_ultralytics_pose", save_media=save_images, **kwargs)
+
+    make_zip_archive(temp_dir, dst_file)
 
 
 @exporter(name="Ultralytics YOLO Classification", ext="ZIP", version="1.0")
@@ -163,6 +193,7 @@ def _import_yolo_ultralytics_pose(src_file, temp_dir, instance_data, **kwargs):
         temp_dir,
         instance_data,
         format_name="yolo_ultralytics_pose",
+        load_data_callback=lambda dataset, _: dataset.transform(AddPoseBboxFromSkeleton),
         import_kwargs=dict(skeleton_sub_labels=true_skeleton_point_labels),
         **kwargs,
     )

@@ -12,6 +12,74 @@ import numpy as np
 from pycocotools import mask as mask_utils
 
 
+class PoseSkeleton(dm.Skeleton):
+    __slots__ = ("_pose_bbox",)
+
+    def __init__(self, skeleton: dm.Skeleton, bbox: list[float], *, group: int | None = None):
+        super().__init__(
+            skeleton.elements,
+            id=skeleton.id,
+            attributes=skeleton.attributes,
+            group=skeleton.group if group is None else group,
+            object_id=skeleton.object_id,
+            label=skeleton.label,
+            z_order=skeleton.z_order,
+        )
+        self._pose_bbox = bbox
+
+    def get_bbox(self) -> list[float]:
+        return self._pose_bbox
+
+
+class SetPoseBboxFromGroup(dm.ItemTransform):
+    @staticmethod
+    def _convert_annotations(item: dm.DatasetItem) -> list[dm.Annotation]:
+        grouped_bboxes: dict[int, list[dm.Bbox]] = {}
+        for ann in item.annotations:
+            if (
+                isinstance(ann, dm.Bbox)
+                and ann.group
+                and not ann.attributes.get("rotation", 0)
+            ):
+                grouped_bboxes.setdefault(ann.group, []).append(ann)
+
+        annotations = []
+        for ann in item.annotations:
+            matching_bboxes = grouped_bboxes.get(ann.group, [])
+            if isinstance(ann, dm.Skeleton) and len(matching_bboxes) == 1:
+                ann = PoseSkeleton(ann, matching_bboxes[0].get_bbox())
+            annotations.append(ann)
+
+        return annotations
+
+    def transform_item(self, item: dm.DatasetItem) -> dm.DatasetItem:
+        return item.wrap(annotations=lambda: self._convert_annotations(item))
+
+
+class AddPoseBboxFromSkeleton(dm.ItemTransform):
+    @staticmethod
+    def _convert_annotations(item: dm.DatasetItem) -> list[dm.Annotation]:
+        annotations = list(item.annotations)
+        next_group = max((ann.group for ann in annotations), default=0) + 1
+
+        for index, ann in enumerate(annotations.copy()):
+            if not isinstance(ann, dm.Skeleton):
+                continue
+
+            group = ann.group or next_group
+            if not ann.group:
+                next_group += 1
+
+            annotations[index] = PoseSkeleton(ann, ann.get_bbox(), group=group)
+            x, y, width, height = ann.get_bbox()
+            annotations.append(dm.Bbox(x, y, width, height, label=ann.label, group=group))
+
+        return annotations
+
+    def transform_item(self, item: dm.DatasetItem) -> dm.DatasetItem:
+        return item.wrap(annotations=lambda: self._convert_annotations(item))
+
+
 class RotatedBoxesToPolygons(dm.ItemTransform):
     def _rotate_point(self, p, angle, cx, cy):
         [x, y] = p
