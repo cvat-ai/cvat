@@ -6,7 +6,9 @@ import React from 'react';
 import { connect } from 'react-redux';
 
 import AudioRegionsList from 'audio/components/annotation-page/audio-workspace/audio-regions-list';
-import { intervalID } from 'audio/components/annotation-page/audio-workspace/utils/audio-interval';
+import {
+    AudioRegionsOrdering, intervalID,
+} from 'audio/components/annotation-page/audio-workspace/utils/audio-interval';
 import { ActiveControl, ColorBy, CombinedState } from 'reducers';
 import {
     audioActions,
@@ -97,6 +99,7 @@ registerComponentShortcuts(componentShortcuts);
 interface StateToProps {
     intervals: AudioIntervalState[];
     filtersActive: boolean;
+    ordering: AudioRegionsOrdering;
     activeIntervalID: number | null;
     hoveredIntervalID: number | null;
     labels: Label[];
@@ -109,6 +112,7 @@ interface StateToProps {
 interface DispatchToProps {
     onSetActiveInterval(clientID: number | null): void;
     onSetHoveredInterval(clientID: number | null): void;
+    onChangeOrdering(ordering: AudioRegionsOrdering): void;
     onPlayIntervalOnce(clientID: number): void;
     onToggleIntervalLock(clientID: number): void;
     onToggleIntervalPinned(clientID: number): void;
@@ -129,6 +133,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
     return {
         intervals: player.intervals,
         filtersActive: filters.length > 0,
+        ordering: player.intervalsOrdering,
         activeIntervalID: player.activeIntervalID,
         hoveredIntervalID: player.hoveredIntervalID,
         labels,
@@ -146,6 +151,9 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         },
         onSetHoveredInterval(clientID: number | null): void {
             dispatch(audioActions.setAudioHoveredInterval(clientID));
+        },
+        onChangeOrdering(ordering: AudioRegionsOrdering): void {
+            dispatch(audioActions.setAudioIntervalsOrdering(ordering));
         },
         onPlayIntervalOnce(clientID: number): void {
             dispatch(requestPlayAudioIntervalOnce(clientID));
@@ -187,10 +195,10 @@ type Props = StateToProps & DispatchToProps;
 
 function AudioRegionsListContainer(props: Props): JSX.Element {
     const {
-        intervals, filtersActive, activeIntervalID, hoveredIntervalID, labels, colorBy,
+        intervals, filtersActive, ordering, activeIntervalID, hoveredIntervalID, labels, colorBy,
         activeControl,
         keyMap, normalizedKeyMap,
-        onSetActiveInterval, onSetHoveredInterval, onPlayIntervalOnce,
+        onSetActiveInterval, onSetHoveredInterval, onChangeOrdering, onPlayIntervalOnce,
         onToggleIntervalLock, onToggleIntervalPinned, onToggleIntervalHidden,
         onToggleIntervalsLock, onToggleIntervalsPinned, onToggleIntervalsHidden,
         onDeleteInterval, onSetPlayback, onChangeLabel,
@@ -270,6 +278,7 @@ function AudioRegionsListContainer(props: Props): JSX.Element {
             <AudioRegionsList
                 intervals={intervals}
                 filtersActive={filtersActive}
+                ordering={ordering}
                 activeIntervalID={activeIntervalID}
                 hoveredIntervalID={hoveredIntervalID}
                 labels={labels}
@@ -288,6 +297,7 @@ function AudioRegionsListContainer(props: Props): JSX.Element {
                 switchHiddenAllShortcut={normalizedKeyMap.AUDIO_SWITCH_ALL_HIDDEN}
                 onSetActiveInterval={onSetActiveInterval}
                 onSetHoveredInterval={onSetHoveredInterval}
+                onChangeOrdering={onChangeOrdering}
                 onPlayIntervalOnce={onPlayIntervalOnce}
                 onToggleIntervalsLock={onToggleIntervalsLock}
                 onToggleIntervalsPinned={onToggleIntervalsPinned}
