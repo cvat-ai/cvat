@@ -1,0 +1,126 @@
+// Copyright (C) CVAT.ai Corporation
+//
+// SPDX-License-Identifier: MIT
+
+@import 'base';
+
+.cvat-job-stage-label,
+.cvat-job-state-label {
+    display: inline-flex;
+    align-items: center;
+    gap: $grid-unit-size * 0.5;
+}
+
+.cvat-job-stage-state-badges {
+    .ant-tag {
+        margin-inline-end: 0;
+        display: inline-flex;
+        align-items: center;
+        gap: $grid-unit-size * 0.25;
+    }
+}
+
+.cvat-job-stage-tag-annotation,
+.cvat-job-stage-label.cvat-job-stage-tag-annotation {
+    color: $text-color-secondary;
+
+    .anticon {
+        color: $annotation-progress-color;
+    }
+}
+
+.cvat-job-stage-tag-validation,
+.cvat-job-stage-label.cvat-job-stage-tag-validation {
+    color: $validation-progress-color;
+
+    .anticon {
+        color: $validation-progress-color;
+    }
+}
+
+.cvat-job-stage-tag-acceptance,
+.cvat-job-stage-label.cvat-job-stage-tag-acceptance {
+    color: $completed-progress-color;
+
+    .anticon {
+        color: $completed-progress-color;
+    }
+}
+
+.cvat-job-state-tag-new,
+.cvat-job-state-label.cvat-job-state-tag-new {
+    color: $text-color-secondary;
+
+    .anticon {
+        color: $text-color-secondary;
+    }
+}
+
+.cvat-job-state-tag-in-progress,
+.cvat-job-state-label.cvat-job-state-tag-in-progress {
+    color: $validation-progress-color;
+
+    .anticon {
+        color: $validation-progress-color;
+    }
+}
+
+.cvat-job-state-tag-completed,
+.cvat-job-state-label.cvat-job-state-tag-completed {
+    color: $completed-progress-color;
+
+    .anticon {
+        color: $completed-progress-color;
+    }
+}
+
+.cvat-job-state-tag-rejected,
+.cvat-job-state-label.cvat-job-state-tag-rejected {
+    color: $danger-icon-color;
+
+    .anticon {
+        color: $danger-icon-color;
+    }
+}
+
+.cvat-job-stage-tag.cvat-job-stage-tag-annotation {
+    color: $text-color;
+    background: rgba($color: $annotation-progress-color, $alpha: 18%);
+    border-color: rgba($color: $annotation-progress-color, $alpha: 45%);
+}
+
+.cvat-job-stage-tag.cvat-job-stage-tag-validation {
+    color: $validation-progress-color;
+    background: rgba($color: $validation-progress-color, $alpha: 12%);
+    border-color: rgba($color: $validation-progress-color, $alpha: 35%);
+}
+
+.cvat-job-stage-tag.cvat-job-stage-tag-acceptance {
+    color: darken($completed-progress-color, 8%);
+    background: rgba($color: $completed-progress-color, $alpha: 12%);
+    border-color: rgba($color: $completed-progress-color, $alpha: 35%);
+}
+
+.cvat-job-state-tag.cvat-job-state-tag-new {
+    color: $text-color-secondary;
+    background: $background-color-2;
+    border-color: $border-color-1;
+}
+
+.cvat-job-state-tag.cvat-job-state-tag-in-progress {
+    color: $validation-progress-color;
+    background: rgba($color: $validation-progress-color, $alpha: 12%);
+    border-color: rgba($color: $validation-progress-color, $alpha: 35%);
+}
+
+.cvat-job-state-tag.cvat-job-state-tag-completed {
+    color: darken($completed-progress-color, 8%);
+    background: rgba($color: $completed-progress-color, $alpha: 12%);
+    border-color: rgba($color: $completed-progress-color, $alpha: 35%);
+}
+
+.cvat-job-state-tag.cvat-job-state-tag-rejected {
+    color: $danger-icon-color;
+    background: rgba($color: $danger-icon-color, $alpha: 10%);
+    border-color: rgba($color: $danger-icon-color, $alpha: 35%);
+}
