@@ -27,6 +27,7 @@ import ProjectSubsetField from 'components/create-task-page/project-subset-field
 import AdvancedConfigurationForm, {
     AUDIO_ADVANCED_CONFIGURATION_SECTIONS,
     AdvancedConfiguration,
+    getAdvancedConfigurationInitialValues,
     SortingMethod,
 } from 'components/create-task-page/advanced-configuration-form';
 import QualityConfigurationForm, {
@@ -56,22 +57,7 @@ const defaultState: State = {
         name: '',
     },
     subset: '',
-    advanced: {
-        useZipChunks: true,
-        useCache: true,
-        sortingMethod: SortingMethod.LEXICOGRAPHICAL,
-        sourceStorage: {
-            location: StorageLocation.LOCAL,
-            cloudStorageId: undefined,
-        },
-        targetStorage: {
-            location: StorageLocation.LOCAL,
-            cloudStorageId: undefined,
-        },
-        useProjectSourceStorage: true,
-        useProjectTargetStorage: true,
-        consensusReplicas: 0,
-    },
+    advanced: getAdvancedConfigurationInitialValues(AUDIO_ADVANCED_CONFIGURATION_SECTIONS),
     quality: {
         validationMode: ValidationMode.NONE,
         validationFramesPercent: 5,
@@ -143,6 +129,7 @@ class AudioCreateTaskContent extends React.PureComponent<Props & RouteComponentP
     private resetState = (): void => {
         this.basicConfigurationComponent.current?.resetFields();
         this.advancedConfigurationComponent.current?.resetFields();
+        this.qualityConfigurationComponent.current?.resetFields();
 
         this.fileManagerComponent.reset();
 
@@ -239,7 +226,7 @@ class AudioCreateTaskContent extends React.PureComponent<Props & RouteComponentP
     };
 
     private handleValidationModeChange = (value: ValidationMode): void => {
-        this.qualityConfigurationComponent.current?.resetFields();
+        this.qualityConfigurationComponent.current?.resetParameters();
         this.setState(() => ({
             quality: {
                 ...defaultState.quality,
