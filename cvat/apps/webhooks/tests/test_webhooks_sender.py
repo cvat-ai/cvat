@@ -117,6 +117,8 @@ class TestServerWebhooksOnRegistration(ApiTestBase):
                     "has_analytics_access": None,
                     "cvat_usage_reason": None,
                     "primary_role": None,
+                    "planned_activities": None,
+                    "data_types": None,
                     "discovery_source": None,
                     "email_verified": None,
                 },
