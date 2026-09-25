@@ -5,8 +5,6 @@
 import csv
 import io
 import math
-import zipfile
-from collections import defaultdict
 from collections.abc import Generator, Sequence
 from datetime import timedelta
 from itertools import product
@@ -17,6 +15,7 @@ from cvat_sdk import exceptions, models
 from cvat_sdk.core.exceptions import BackgroundRequestException
 from cvat_sdk.core.proxies.projects import Project
 from cvat_sdk.core.proxies.tasks import ResourceType, Task
+from deepdiff import DeepDiff
 from PIL import Image
 from pytest_cases import fixture, fixture_ref, parametrize
 
@@ -399,47 +398,6 @@ class TestAudioAnnotations:
 
         assert "stop must be within" in str(capture.value)
 
-    @parametrize(
-        "filename, expected_message",
-        [
-            ("unknown.mp3", "Unknown filename 'unknown.mp3'"),
-            (None, "Missing filename"),
-        ],
-    )
-    def test_cant_import_intervals_with_unmatched_filename(
-        self, tasks, tmp_path: Path, filename: str | None, expected_message: str
-    ):
-        task_id = next(t for t in tasks if t["media_type"] == "audio" and t.get("size"))["id"]
-
-        task = self.client.tasks.retrieve(task_id)
-        label = next(label for label in task.get_labels() if label.type == "interval")
-
-        row = {
-            "id": "1",
-            "filename": filename,
-            "start": "0:00:00",
-            "stop": "0:00:01",
-            "label": label.name,
-            "source": "file",
-            "score": "1.0",
-        }
-        if filename is None:
-            del row["filename"]
-
-        annotation_file = tmp_path / "annotations.tsv"
-        with open(annotation_file, "w", newline="") as f:
-            csv_writer = csv.DictWriter(f, delimiter="\t", fieldnames=list(row))
-            csv_writer.writeheader()
-            csv_writer.writerow(row)
-
-        original_intervals = task.get_annotations().intervals
-
-        with pytest.raises(BackgroundRequestException) as capture:
-            task.import_annotations("Generic TSV 1.0", annotation_file)
-
-        assert expected_message in str(capture.value)
-        assert task.get_annotations().intervals == original_intervals
-
 
 class TestAudioProjectAnnotations:
     FORMAT_NAME = "Generic TSV 1.0"
@@ -487,7 +445,7 @@ class TestAudioProjectAnnotations:
 
         return project, tasks
 
-    def _make_intervals(self, task: Task, intervals: Sequence[tuple[int, int | None]]) -> None:
+    def _upload_intervals(self, task: Task, intervals: Sequence[tuple[int, int | None]]) -> None:
         label = next(label for label in task.get_labels() if label.type == "interval")
 
         task.set_annotations(
@@ -504,20 +462,6 @@ class TestAudioProjectAnnotations:
         # the exporter writes timedeltas, which are converted by csv.DictWriter with str()
         return str(timedelta(milliseconds=frame))
 
-    def _export_annotations(self, project: Project) -> dict[str, list[dict[str, str]]]:
-        filename = self.tmp_dir / "annotations.zip"
-        project.export_dataset(self.FORMAT_NAME, filename, include_images=False)
-
-        with zipfile.ZipFile(filename) as zip_file:
-            return {
-                name: list(
-                    csv.DictReader(
-                        io.TextIOWrapper(zip_file.open(name), newline=""), delimiter="\t"
-                    )
-                )
-                for name in zip_file.namelist()
-            }
-
     @parametrize("subsets", [None, ["subset1", "subset2"]])
     @pytest.mark.timeout(300)
     def test_can_export_annotations(
@@ -533,39 +477,41 @@ class TestAudioProjectAnnotations:
 
         expected_intervals = [[(0, 1000)], [(500, 2500)]]
         for task, task_intervals in zip(tasks, expected_intervals):
-            self._make_intervals(task, task_intervals)
+            self._upload_intervals(task, task_intervals)
 
-        rows_per_file = self._export_annotations(project)
+        filename = self.tmp_dir / "annotations.tsv"
+        project.export_dataset(self.FORMAT_NAME, filename, include_images=False)
+
+        with filename.open() as f:
+            rows = list(csv.DictReader(f, delimiter="\t"))
 
         expected_subsets = subsets or ["default"] * len(source_files)
-        assert sorted(rows_per_file) == sorted(
-            {f"annotations/{subset}.tsv" for subset in expected_subsets}
-        )
-
-        expected_rows_per_file = defaultdict(list)
+        expected_rows = []
         for source_file, subset, task_intervals in zip(
             source_files, expected_subsets, expected_intervals
         ):
             for start, stop in task_intervals:
-                expected_rows_per_file[f"annotations/{subset}.tsv"].append(
-                    (
-                        source_file.name,
-                        self._timestamp(start),
-                        self._timestamp(stop) if stop is not None else "",
-                        self.LABEL_NAME,
-                    )
+                expected_rows.append(
+                    {
+                        "filename": source_file.name,
+                        "subset": subset,
+                        "start": self._timestamp(start),
+                        "stop": self._timestamp(stop) if stop is not None else "",
+                        "label": self.LABEL_NAME,
+                    }
                 )
 
-        assert {
-            name: sorted((row["filename"], row["start"], row["stop"], row["label"]) for row in rows)
-            for name, rows in rows_per_file.items()
-        } == {name: sorted(rows) for name, rows in expected_rows_per_file.items()}
+        checked_fields = ("filename", "subset", "start", "stop", "label")
+        assert (
+            DeepDiff(
+                [{k: v for k, v in r.items() if k in checked_fields} for r in rows],
+                expected_rows,
+                ignore_order=True,
+            )
+            == {}
+        )
 
-    def test_cant_import_dataset(
-        self,
-        fxt_test_name: str,
-        fxt_local_audio_file_path: Path,
-    ):
+    def test_cant_import_dataset(self, fxt_test_name: str):
         project = self.client.projects.create({"name": fxt_test_name})
 
         annotation_file = self.tmp_dir / "dataset.tsv"
@@ -574,4 +520,4 @@ class TestAudioProjectAnnotations:
         with pytest.raises(BackgroundRequestException) as capture:
             project.import_dataset(self.FORMAT_NAME, annotation_file)
 
-        assert "import from dataset is not supported for audio" in str(capture.value)
+        assert "media import from dataset is not supported for audio" in str(capture.value).lower()

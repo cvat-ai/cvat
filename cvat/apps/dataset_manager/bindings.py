@@ -9,7 +9,7 @@ import os.path as osp
 import re
 import sys
 from collections import defaultdict
-from collections.abc import Callable, Generator, Iterable, Iterator, Mapping, Sequence
+from collections.abc import Callable, Collection, Generator, Iterable, Iterator, Mapping, Sequence
 from datetime import timedelta
 from functools import partial, reduce
 from operator import add
@@ -912,6 +912,10 @@ class CommonData(InstanceLabelData):
                 return v
 
         return None
+
+    @property
+    def subset(self) -> str:
+        return self._db_subset
 
 
 class JobData(CommonData):
@@ -2183,7 +2187,7 @@ def mangle_image_name(name: str, subset: str, names: defaultdict[tuple[str, str]
     raise Exception("Cannot mangle image name")
 
 
-def get_defaulted_subset(subset: str, subsets: list[str]) -> str:
+def get_defaulted_subset(subset: str, subsets: Collection[str]) -> str:
     if subset:
         return subset
     else:

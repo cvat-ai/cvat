@@ -3779,11 +3779,11 @@ class TestImportTaskAnnotations:
             action=AnnotationUpdateAction.CREATE,
         )
 
+        format_name = "Generic TSV 1.0"
+
         original_annotations = json.loads(
             self.client.api_client.tasks_api.retrieve_annotations(task["id"])[1].data
         )
-
-        format_name = "Generic TSV 1.0"
 
         dataset_file = io.BytesIO(
             export_dataset(

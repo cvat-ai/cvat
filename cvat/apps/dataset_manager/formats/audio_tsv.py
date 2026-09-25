@@ -17,6 +17,7 @@ from cvat.apps.dataset_manager.bindings import (
     CommonData,
     CvatImportError,
     ProjectData,
+    get_defaulted_subset,
 )
 from cvat.apps.dataset_manager.formats.registry import exporter, importer
 from cvat.apps.engine.models import DimensionType, SourceType
@@ -50,12 +51,16 @@ def _export(
         sample_filename_per_task = {task.id: task.data.audio.path for task in instance_data.tasks}
         for interval in instance_data.iterate_intervals():
             intervals_per_subset.setdefault(interval.subset, []).append(
-                (sample_filename_per_task[interval.task_id], interval)
+                (sample_filename_per_task[interval.task_id], interval.subset, interval)
             )
         intervals = itertools.chain.from_iterable(intervals_per_subset.values())
     elif isinstance(instance_data, CommonData):
         sample_filename = instance_data.db_data.audio.path
-        intervals = ((sample_filename, interval) for interval in instance_data.iterate_intervals())
+        sample_subset = instance_data.subset
+        intervals = (
+            (sample_filename, sample_subset, interval)
+            for interval in instance_data.iterate_intervals()
+        )
     else:
         assert False, f"Unexpected instance_data type '{type(instance_data)}'"
 
@@ -66,17 +71,25 @@ def write_tsv(
     dst_file: io.BufferedIOBase,
     *,
     field_names: list[str],
-    intervals: Iterable[tuple[str, CommonData.LabeledInterval | ProjectData.LabeledInterval]],
+    intervals: Iterable[tuple[str, str, CommonData.LabeledInterval | ProjectData.LabeledInterval]],
 ):
     file_writer = io.TextIOWrapper(dst_file)
     with closing(file_writer):
         csv_writer = csv.DictWriter(file_writer, delimiter="\t", fieldnames=field_names)
         csv_writer.writeheader()
 
-        for sample_filename, interval in intervals:
+        subset_map = {}
+        for sample_filename, sample_subset, interval in intervals:
+            sample_output_subset = subset_map.get(sample_subset)
+            if sample_output_subset is None:
+                sample_output_subset = subset_map.setdefault(
+                    sample_subset, get_defaulted_subset(sample_subset, subset_map)
+                )
+
             row_dict = {
                 "id": interval.id,
                 "filename": sample_filename,
+                "subset": sample_output_subset,
                 "start": interval.start,
                 "stop": interval.stop,
                 "label": interval.label,
