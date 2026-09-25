@@ -68,6 +68,9 @@ def build_client(parsed_args: argparse.Namespace, logger: logging.Logger) -> Cli
     except AuthStoreError as e:
         raise CriticalError(str(e)) from e
 
+    dh = client.api_client.default_headers
+    dh["User-Agent"] = f"cvat_cli/{VERSION} {dh['User-Agent']}"
+
     client.check_server_version(fail_if_unsupported=False)
     return client
 
