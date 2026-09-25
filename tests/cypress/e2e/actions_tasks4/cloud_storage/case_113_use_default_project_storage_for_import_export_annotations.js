@@ -40,7 +40,7 @@ context('Tests for source and target storage.', () => {
         displayName: 'Demo bucket',
         resource: 'public',
         manifest: 'images_with_manifest/manifest.jsonl',
-        endpointUrl: Cypress.config('minioUrl'),
+        endpointUrl: Cypress.config('motoUrl'),
     };
 
     const storageConnectedToCloud = {
@@ -120,7 +120,7 @@ context('Tests for source and target storage.', () => {
     });
 
     describe(`Testing case "${caseId}"`, () => {
-        it('Export job annotations to default minio bucket that was attached to the project.', () => {
+        it('Export job annotations to default moto bucket that was attached to the project.', () => {
             // create an annotation task with default project source and target storages
             cy.goToTaskList();
             cy.createAnnotationTask(
@@ -138,7 +138,7 @@ context('Tests for source and target storage.', () => {
             cy.goToTaskList();
             cy.openTask(task.name);
 
-            // create dummy annotations and export them to "public" minio bucket
+            // create dummy annotations and export them to "public" moto bucket
             cy.openJob();
             cy.createRectangle(createRectangleShape2Points).then(() => {
                 Cypress.config('scrollBehavior', false);
@@ -160,8 +160,8 @@ context('Tests for source and target storage.', () => {
             cy.get('#cvat-objects-sidebar-state-item-1').should('not.exist');
         });
 
-        it('Import job annotations from default minio bucket that was attached to the project.', () => {
-            // upload annotations from "public" minio bucket
+        it('Import job annotations from default moto bucket that was attached to the project.', () => {
+            // upload annotations from "public" moto bucket
             cy.interactMenu('Upload annotations');
             cy.intercept('GET', '/api/jobs/**/annotations?**').as('uploadAnnotationsGet');
 
