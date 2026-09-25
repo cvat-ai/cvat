@@ -902,7 +902,7 @@ context('Multi-object selection', { scrollBehavior: false }, () => {
         });
         cy.get('.cvat_canvas_selected_objects_box')
             .should('have.class', 'cvat_canvas_selected_objects_box_not_draggable');
-        assertSelectionDragDoesNotPan('.cvat_canvas_selected_objects_box');
+        assertSelectionDragDoesNotPan('.cvat_canvas_selected_objects_box', { force: true });
 
         openSelectionMenu();
         cy.get('.cvat-canvas-selected-objects-menu-content button[aria-label="Unlock selection"]').click();
@@ -918,7 +918,7 @@ context('Multi-object selection', { scrollBehavior: false }, () => {
     });
 
     it('Keeps selection actions open after a Shift-drag selection', () => {
-        cy.get(`#cvat_canvas_shape_${objectIds.carShape1}`).then(($shape) => {
+        cy.get(`#cvat_canvas_shape_${objectIds.carShape2}`).then(($shape) => {
             const box = $shape[0].getBoundingClientRect();
             shiftDrawSelectionBox({
                 x: box.left - 5,
@@ -929,11 +929,11 @@ context('Multi-object selection', { scrollBehavior: false }, () => {
             });
         });
 
-        assertSelection([objectIds.carShape1]);
+        assertSelection([objectIds.carShape2]);
         cy.get('.cvat-select-control').should('have.class', 'cvat-active-canvas-control');
         cy.get('.cvat_canvas_selected_objects_box').rightclick({ force: true });
         cy.get('.cvat-canvas-selected-objects-menu-content').should('be.visible');
-        assertSelection([objectIds.carShape1]);
+        assertSelection([objectIds.carShape2]);
 
         cy.get('#cvat_canvas_content').click(5, 5, { force: true });
         cy.get('.cvat-canvas-selected-objects-menu-content').should('not.exist');
