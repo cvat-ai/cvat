@@ -61,7 +61,7 @@ def allow_public_access(s3) -> None:
             {
                 "Effect": "Allow",
                 "Principal": "*",
-                # Moto 5.2.2 checks HEAD separately from GetObject. CVAT's
+                # Moto 5.2.3 checks HEAD separately from GetObject. CVAT's
                 # anonymous downloads use HEAD before fetching the data.
                 "Action": [
                     "s3:GetObject",
