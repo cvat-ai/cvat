@@ -4,16 +4,16 @@
 
 /// <reference types="cypress" />
 
-import { taskName, firstLabelName } from '../../support/const_audio';
+import { audioFile, taskName, firstLabelName } from '../../support/const_audio';
 
 context('Audio annotation. Import transcriptions from a TSV file.', () => {
     const caseId = 'audio_29';
 
     const tsvFile = 'audio_transcriptions.tsv';
     const tsvContent = [
-        ['start', 'stop', 'label', 'transcription'].join('\t'),
-        ['00:00:00.000000', '00:00:01.000000', firstLabelName, 'hello world'].join('\t'),
-        ['00:00:01.000000', '00:00:02.000000', firstLabelName, 'second line'].join('\t'),
+        ['filename', 'start', 'stop', 'label', 'transcription'].join('\t'),
+        [audioFile, '00:00:00.000000', '00:00:01.000000', firstLabelName, 'hello world'].join('\t'),
+        [audioFile, '00:00:01.000000', '00:00:02.000000', firstLabelName, 'second line'].join('\t'),
         '',
     ].join('\n');
 
