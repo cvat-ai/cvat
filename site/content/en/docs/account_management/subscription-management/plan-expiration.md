@@ -8,8 +8,8 @@ products:
 ---
 
 If a renewal payment for a self-managed subscription cannot be completed, you usually
-have a grace period to resolve it.
-Free plan limits apply as soon as your paid access expires. If payment remains unresolved
+have a **grace period** to resolve it.
+**Free plan limits** apply as soon as your paid access expires. If payment remains unresolved
 after the grace period, additional restrictions may apply to existing resources.
 
 These changes affect the workspace covered by the subscription: your personal workspace
@@ -50,6 +50,10 @@ The personal account holder and organization owners or maintainers may see a
 **Subscription payment needs attention** dialog. To resolve the payment, follow
 [Restore paid access](#restore-paid-access).
 
+<img src="/images/subscription-payment-notice.webp"
+     alt="Payment reminder showing unavailable paid features and a warning about further restrictions"
+     style="display: block; margin: 0 auto; width: 100%; max-width: 500px; height: auto; border: 1px solid #d9d9d9; border-radius: 8px;">
+
 {{% alert title="Before the grace period ends" color="warning" %}}
 Please resolve the payment or reduce your usage to fit the Free plan.
 If payment remains unresolved when your grace period ends, usage above the limits can restrict
@@ -58,8 +62,8 @@ actions such as modifying existing resources.
 
 ## Restriction period
 
-If payment has not been resolved by the end of the grace period, your workspace returns
-to the Free plan. Additional restrictions depend on which limits your usage exceeds:
+The **restriction period** begins if payment has not been resolved by the end of the grace period.
+Your workspace returns to the Free plan. Additional restrictions depend on which limits your usage exceeds:
 
 | Exceeded limit | Additional restrictions |
 | --- | --- |
@@ -75,6 +79,10 @@ You can still view and delete resources and **export task and project backups**,
 to your role and permissions. A **Restricted Mode** dialog explains the restrictions
 that affect your workspace. If your usage fits within the Free plan, you can continue
 using its available features without these additional restrictions.
+
+<img src="/images/subscription-restricted-mode.webp"
+     alt="Restricted Mode dialog showing exceeded task and membership limits and recovery options"
+     style="display: block; margin: 0 auto; width: 100%; max-width: 500px; height: auto; border: 1px solid #d9d9d9; border-radius: 8px;">
 
 ### Restore paid access
 
@@ -106,7 +114,7 @@ removing resources from CVAT Online.
    before deleting resources.
 
 See {{< ilink "/docs/dataset_management/backup" "Backup Task and Project" >}}
-for detailed instructions and restoration options. Lightweight backups for cloud-backed
+for detailed instructions and restoration options. **Lightweight backups** for cloud-backed
 tasks do not include the original media: please retain those files in your cloud storage
 or make a separate copy. Restoring a backup into CVAT Online is subject to your current
 plan limits and restrictions.
@@ -120,7 +128,7 @@ do not plan to renew or reduce your usage to fit the Free plan.
 {{% /alert %}}
 
 The grace period is part of this 30-day period. Downloading a backup does not extend
-the retention period for the copy stored in CVAT Online.
+the **retention period** for the copy stored in CVAT Online.
 
 If you need help with payment or access, please contact
-[support@cvat.ai](mailto:support@cvat.ai).
+[CVAT support](http://cvat.ai/support/saas).
