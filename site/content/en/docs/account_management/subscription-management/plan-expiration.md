@@ -18,12 +18,11 @@ subscriptions are not affected.
 
 ## Grace period
 
-The usual grace period for self-managed subscriptions is **seven days**.
+The usual grace period for card payments is **seven days**. For bank debit payments,
+the grace period may vary depending on payment processing and retry timing.
+Paid features may remain available while the first payment attempt for an invoice is processing.
 
-Subscriptions paid manually by invoice or by bank transfer **do not have a grace period**.
-Instead, the paid plan stays active until the invoice due date, or for several days
-while a bank transfer is processed, so you can continue using premium features
-without interruption.
+For subscriptions paid manually by invoice, paid access remains active until the invoice due date.
 
 For self-managed subscriptions, the grace period starts when your paid access expires
 because the renewal payment has not been completed. It gives you time to review your billing details and resolve the
