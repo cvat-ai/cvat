@@ -16,6 +16,7 @@ import {
 } from 'actions/annotation-actions';
 import { CombinedState } from 'reducers';
 import ItemButtonsComponent from 'components/annotation-page/standard-workspace/objects-side-bar/object-item-buttons';
+import { getObjectStateByClientID } from 'utils/objects-sidebar';
 
 interface OwnProps {
     clientID: number;
@@ -57,11 +58,7 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
     const {
         clientID, outsideDisabled, hiddenDisabled, keyframeDisabled,
     } = own;
-    let [objectState] = states.filter((_objectState): boolean => _objectState.clientID === clientID);
-    if (!objectState) {
-        const elements = states.map((_objectState: any): any[] => _objectState.elements).flat();
-        [objectState] = elements.filter((_objectState): boolean => _objectState.clientID === clientID);
-    }
+    const objectState = getObjectStateByClientID(states, clientID) as ObjectState;
 
     return {
         objectState,

@@ -656,6 +656,51 @@ Cypress.Commands.add('checkPopoverHidden', (objectType) => {
     cy.get(`.cvat-${objectType}-popover`).should('be.hidden');
 });
 
+Cypress.Commands.add('getObjectSidebarItem', (id) => {
+    const selector = `#cvat-objects-sidebar-state-item-${id}`;
+    const holderSelector = '.cvat-objects-sidebar-virtual-list .rc-virtual-list-holder';
+
+    const findItem = (attempt) => cy.get(holderSelector).then(($holder) => {
+        const holder = $holder[0];
+        const item = holder.querySelector(selector);
+        if (item) {
+            return cy.wrap(item);
+        }
+
+        const visibleIds = Array.from(holder.querySelectorAll('.cvat-objects-sidebar-state-item'))
+            .map((element) => Number(element.id.match(/^cvat-objects-sidebar-state-item-(\d+)$/)?.[1]))
+            .filter(Number.isInteger);
+        if (!visibleIds.length || attempt >= 40) {
+            throw new Error(`Could not find object ${id} in the virtualized sidebar`);
+        }
+
+        const firstId = visibleIds[0];
+        const lastId = visibleIds[visibleIds.length - 1];
+        const ascending = firstId <= lastId;
+        const before = ascending ? id < firstId : id > firstId;
+        const after = ascending ? id > lastId : id < lastId;
+        if (!before && !after) {
+            throw new Error(`Object ${id} is not present among the visible sidebar IDs`);
+        }
+
+        // Keep successive viewports overlapping so variable-height rows are not skipped.
+        const step = Math.max(1, Math.floor(holder.clientHeight * 0.75));
+        const maxScroll = holder.scrollHeight - holder.clientHeight;
+        const nextScroll = Math.max(0, Math.min(maxScroll, holder.scrollTop + (before ? -step : step)));
+        if (nextScroll === holder.scrollTop) {
+            throw new Error(`Reached the end of the sidebar without finding object ${id}`);
+        }
+
+        cy.wrap($holder).scrollTo(0, nextScroll, { duration: 0, ensureScrollable: false });
+        // Let the virtual list mount rows at the new scroll position.
+        return cy.wait(50).then(() => findItem(attempt + 1));
+    });
+
+    return cy.get('.cvat-objects-sidebar-states-list').then(($list) => (
+        $list.find(holderSelector).length ? findItem(0) : cy.get(selector)
+    ));
+});
+
 Cypress.Commands.add('checkObjectParameters', (objectParameters, objectType) => {
     const listCanvasShapeId = [];
     cy.document().then((doc) => {
@@ -665,7 +710,7 @@ Cypress.Commands.add('checkObjectParameters', (objectParameters, objectType) => 
         }
         const maxId = Math.max(...listCanvasShapeId);
         cy.get(`#cvat_canvas_shape_${maxId}`).should('be.visible');
-        cy.get(`#cvat-objects-sidebar-state-item-${maxId}`)
+        cy.getObjectSidebarItem(maxId)
             .should('contain', maxId)
             .and('contain', `${objectType} ${objectParameters.type.toUpperCase()}`)
             .within(() => {
@@ -1846,7 +1891,9 @@ Cypress.Commands.add('joinShapes', (
 });
 
 Cypress.Commands.add('interactAnnotationObjectMenu', (parentSelector, button) => {
-    cy.get(parentSelector).within(() => {
+    const sidebarItemId = parentSelector.match(/^#cvat-objects-sidebar-state-item-(\d+)$/)?.[1];
+    const parent = sidebarItemId ? cy.getObjectSidebarItem(Number(sidebarItemId)) : cy.get(parentSelector);
+    parent.within(() => {
         cy.get('[aria-label="more"]').click();
     });
 
