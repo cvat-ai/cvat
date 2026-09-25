@@ -464,7 +464,6 @@ class TestAudioProjectAnnotations:
         return str(timedelta(milliseconds=frame))
 
     @parametrize("subsets", [None, ["subset1", "subset2"]])
-    @pytest.mark.timeout(300)
     def test_can_export_annotations(
         self,
         fxt_test_name: str,
@@ -511,6 +510,26 @@ class TestAudioProjectAnnotations:
             )
             == {}
         )
+
+    def test_cant_import_task_annotations_with_wrong_filename(
+        self, fxt_test_name: str, fxt_local_audio_file_path: Path
+    ):
+        source_files = [fxt_local_audio_file_path, SHARE_DIR / "audio" / "sample2_with_cover.mp3"]
+        project, tasks = self._create_project_with_audio_tasks(fxt_test_name, source_files)
+
+        for task, task_intervals in zip(tasks, [[(0, 1000)], [(500, 2500)]]):
+            self._upload_intervals(task, task_intervals)
+
+        # the project export contains rows for both tasks
+        filename = self.tmp_dir / "annotations.tsv"
+        project.export_dataset(self.FORMAT_NAME, filename, include_images=False)
+
+        target_task = tasks[0]
+
+        with pytest.raises(BackgroundRequestException) as capture:
+            target_task.import_annotations(self.FORMAT_NAME, filename)
+
+        assert f"Unknown audio file '{source_files[1].name}'" in str(capture.value)
 
     def test_cant_import_dataset(self, fxt_test_name: str):
         project = self.client.projects.create({"name": fxt_test_name})

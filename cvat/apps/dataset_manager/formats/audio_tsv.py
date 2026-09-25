@@ -143,16 +143,20 @@ def _import(
 
     file_reader = io.TextIOWrapper(src_file)
     field_names = None
+    row_number = 1
     for lines_batch in take_by(file_reader, chunk_size=1000):
         csv_reader = csv.DictReader(lines_batch, delimiter="\t", fieldnames=field_names)
         if field_names is None:
             field_names = csv_reader.fieldnames
 
-        for row_number, row in enumerate(csv_reader):
+        for row in csv_reader:
             try:
                 row_filename = row.pop("filename", None)
                 if not row_filename:
                     raise CvatImportError("Missing filename")
+
+                if row_filename != instance_data.db_data.audio.path:
+                    raise CvatImportError(f"Unknown audio file '{row_filename}'")
 
                 row.pop("subset", None)  # unused
 
@@ -167,5 +171,7 @@ def _import(
                 )
 
                 instance_data.add_interval(interval)
+
+                row_number += 1
             except Exception as e:
                 raise CvatImportError("Can't import interval #{}: {}".format(row_number, e)) from e
