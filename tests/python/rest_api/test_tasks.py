@@ -55,6 +55,7 @@ from rest_api.utils import (
     import_task_annotations,
 )
 from shared.fixtures.init import container_exec_cvat
+from shared.fixtures.params import CACHE
 from shared.tasks.interface import ITaskSpec
 from shared.tasks.types import SourceDataType
 from shared.tasks.utils import parse_frame_step, to_rel_frames
@@ -1424,13 +1425,16 @@ class TestPatchTaskLabel:
 class TestWorkWithTask:
     _USERNAME = "admin1"
 
+    # Tests negatively for cloud data corruption, so timeout can be greater
+    @pytest.mark.timeout(25)
     @pytest.mark.with_external_services
     @pytest.mark.parametrize(
         "cloud_storage_id, manifest",
         [(1, "images_with_manifest/manifest.jsonl")],  # public bucket
     )
+    @pytest.mark.parametrize("use_cache", CACHE)
     def test_work_with_task_containing_non_stable_cloud_storage_files(
-        self, cloud_storage_id, manifest, cloud_storages, request
+        self, cloud_storage_id, manifest, use_cache, cloud_storages, request
     ):
         image_name = "images_with_manifest/image_case_65_1.png"
         cloud_storage_content = [image_name, manifest]
@@ -1441,7 +1445,7 @@ class TestWorkWithTask:
 
         data_spec = {
             "image_quality": 75,
-            "use_cache": True,
+            "use_cache": use_cache,
             "cloud_storage_id": cloud_storage_id,
             "server_files": cloud_storage_content,
         }
@@ -1568,9 +1572,13 @@ class TestTaskBackups:
 
         self._test_can_restore_task_from_backup(task_id)
 
+    @pytest.mark.timeout(20)
     @pytest.mark.with_external_services
     @pytest.mark.parametrize("lightweight_backup", [True, False])
-    def test_can_export_and_import_backup_task_with_cloud_storage(self, lightweight_backup):
+    def test_can_export_and_import_backup_task_with_cloud_storage(
+        self,
+        lightweight_backup,
+    ):
         task_spec = {
             "name": "Task with files from cloud storage",
             "labels": [
@@ -1607,7 +1615,9 @@ class TestTaskBackups:
             expected_media.update(["images/image_1.jpg", "images/image_3.jpg"])
         assert files_in_data == expected_media
 
-        self._test_can_restore_task_from_backup(task_id, lightweight_backup=lightweight_backup)
+        self._test_can_restore_task_from_backup(
+            task_id, lightweight_backup=lightweight_backup, backup_file=filename
+        )
 
     @pytest.mark.parametrize("mode", ["annotation", "interpolation"])
     def test_can_import_backup(self, tasks, mode):
@@ -3648,39 +3658,6 @@ class TestImportTaskAnnotations:
             self._delete_annotations(task_id)
         task.import_annotations(self.import_format, filename)
         self._check_annotations(task_id)
-
-    @pytest.mark.skip("Fails sometimes, needs to be fixed")
-    @pytest.mark.timeout(70)
-    def test_check_import_cache_after_previous_interrupted_upload(self, tasks_with_shapes, request):
-        task_id = tasks_with_shapes[0]["id"]
-        with NamedTemporaryFile() as f:
-            filename = self.tmp_dir / f"task_{task_id}_{Path(f.name).name}_coco.zip"
-        task = self.client.tasks.retrieve(task_id)
-        task.export_dataset(self.export_format, filename, include_images=False)
-
-        params = {"format": self.import_format, "filename": filename.name}
-        url = self.client.api_map.make_endpoint_url(
-            self.client.api_client.tasks_api.create_annotations_endpoint.path
-        ).format(id=task_id)
-
-        uploader = Uploader(self.client)
-        uploader._tus_start_upload(url, query_params=params)
-        uploader._upload_file_data_with_tus(
-            url,
-            filename,
-            meta=params,
-            pbar=NullProgressReporter(),
-        )
-        number_of_files = 1
-        sleep(30)  # wait when the cleaning job from rq worker will be started
-        command = ["/bin/bash", "-c", f"ls data/tasks/{task_id}/tmp | wc -l"]
-        for _ in range(12):
-            sleep(2)
-            result = container_exec_cvat(request, command)
-            number_of_files = int(result)
-            if not number_of_files:
-                break
-        assert not number_of_files
 
     def test_import_annotations_after_deleting_related_cloud_storage(
         self, admin_user: str, tasks_with_shapes

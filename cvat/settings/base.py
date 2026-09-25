@@ -173,6 +173,8 @@ def parse_num_proxies(value: str | None) -> int | None:
     return num_proxies
 
 
+# NOTE @sosov: DRF does not have a max_page_size setting out of the box
+REST_FRAMEWORK_MAX_PAGE_SIZE = 500
 REST_FRAMEWORK = {
     "DEFAULT_PARSER_CLASSES": [
         "rest_framework.parsers.JSONParser",
@@ -452,6 +454,13 @@ PERIODIC_RQ_JOBS = [
     },
     {
         "queue": CVAT_QUEUES.CLEANING.value,
+        "id": "cron_instance_tmp_directories_cleanup",
+        "func": "cvat.apps.dataset_manager.cron.cleanup_instance_tmp_directories",
+        # Run once a day
+        "cron_string": "0 20 * * *",
+    },
+    {
+        "queue": CVAT_QUEUES.CLEANING.value,
         "id": "clear_unusable_access_tokens",
         "func": "cvat.apps.access_tokens.cron.clear_unusable_access_tokens",
         "cron_string": "0 0 * * 0",
@@ -660,6 +669,9 @@ CORS_ALLOW_HEADERS = list(default_headers) + [
 
 CORS_EXPOSE_HEADERS = [
     "Content-Range",
+    "X-Checksum",
+    "X-Chunk-Size",
+    "X-Updated-Date",
 ]
 
 TUS_MAX_FILE_SIZE = 26843545600  # 25gb
@@ -737,6 +749,7 @@ SPECTACULAR_SETTINGS = {
         "StorageType": "cvat.apps.engine.models.StorageChoice",
         "SortingMethod": "cvat.apps.engine.models.SortingMethod",
         "WebhookType": "cvat.apps.webhooks.models.WebhookTypeChoice",
+        "AllWebhookType": "cvat.apps.webhooks.serializers.AllWebhookTypeChoice",
         "WebhookContentType": "cvat.apps.webhooks.models.WebhookContentTypeChoice",
         "RequestStatus": "cvat.apps.redis_handler.serializers.RequestStatus",
         "ValidationMode": "cvat.apps.engine.models.ValidationMode",
@@ -814,7 +827,6 @@ BUCKET_CONTENT_MAX_PAGE_SIZE = 500
 
 IMPORT_CACHE_FAILED_TTL = timedelta(days=30)
 IMPORT_CACHE_SUCCESS_TTL = timedelta(hours=1)
-IMPORT_CACHE_CLEAN_DELAY = timedelta(hours=12)
 
 ASSET_MAX_SIZE_MB = 10
 ASSET_SUPPORTED_TYPES = ("image/jpeg", "image/png", "image/webp", "image/gif", "application/pdf")

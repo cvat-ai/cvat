@@ -108,3 +108,6 @@ Here you can do the following:
 It is possible to choose a subset for tasks in the project. You can use the available options
 (`Train`, `Test`, `Validation`) or set your own.
 
+{{% alert title="Note" color="primary" %}}
+It's not allowed to mix 1D/2D/3D tasks in the same project.
+{{% /alert %}}

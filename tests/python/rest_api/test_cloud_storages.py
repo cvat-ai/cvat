@@ -16,7 +16,7 @@ from cvat_sdk.api_client.model.file_info import FileInfo
 from deepdiff import DeepDiff
 from PIL import Image
 
-from shared.utils.config import get_method, make_api_client
+from shared.utils.config import get_paginated_collection, make_api_client
 from shared.utils.s3 import make_client as make_s3_client
 
 from .utils import CollectionSimpleFilterTestBase
@@ -152,9 +152,9 @@ class TestPostCloudStorage:
         "resource": "test",
         "display_name": "Bucket",
         "credentials_type": "KEY_SECRET_KEY_PAIR",
-        "key": "minio_access_key",
-        "secret_key": "minio_secret_key",
-        "specific_attributes": "endpoint_url=http://minio:9000",
+        "key": "moto_access_key",
+        "secret_key": "moto_secret_key",
+        "specific_attributes": "endpoint_url=http://moto:9000",
         "description": "Some description",
         "manifests": ["images_with_manifest/manifest.jsonl"],
     }
@@ -737,20 +737,17 @@ class TestGetCloudStorageContent:
 @pytest.mark.usefixtures("restore_db_per_class")
 class TestListCloudStorages:
     def _test_can_see_cloud_storages(self, user, data, **kwargs):
-        response = get_method(user, "cloudstorages", **kwargs)
+        results = get_paginated_collection(user, "cloudstorages", **kwargs)
 
-        assert response.status_code == HTTPStatus.OK
-        assert DeepDiff(data, response.json()["results"]) == {}
+        assert DeepDiff(data, results) == {}
 
     def test_admin_can_see_all_cloud_storages(self, cloud_storages):
-        self._test_can_see_cloud_storages("admin2", cloud_storages.raw, page_size="all")
+        self._test_can_see_cloud_storages("admin2", cloud_storages.raw)
 
     @pytest.mark.parametrize("field_value, query_value", [(2, 2), (None, "")])
     def test_can_filter_by_org_id(self, field_value, query_value, cloud_storages):
         cloud_storages = filter(lambda i: i["organization"] == field_value, cloud_storages)
-        self._test_can_see_cloud_storages(
-            "admin2", list(cloud_storages), page_size="all", org_id=query_value
-        )
+        self._test_can_see_cloud_storages("admin2", list(cloud_storages), org_id=query_value)
 
 
 class TestCloudStorageStatus:
@@ -761,7 +758,7 @@ class TestCloudStorageStatus:
             (4, "NOT_FOUND"),
         ],
     )
-    def test_minio_connection_status(self, cloud_storage_id, expected_response, admin_user):
+    def test_moto_connection_status(self, cloud_storage_id, expected_response, admin_user):
         with make_api_client(admin_user) as api_client:
             data, _ = api_client.cloudstorages_api.retrieve_status(cloud_storage_id)
             assert data == expected_response

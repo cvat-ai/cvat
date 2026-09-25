@@ -19,9 +19,11 @@ import { MINIMAP_HEIGHT, MINIMAP_TIMELINE_HEIGHT } from 'audio/utils/waveform-ge
 import { ThunkDispatch } from 'utils/redux';
 
 import { injectScrollbarStyle } from '../utils/inject-scrollbar-style';
+import OptimizedTimelinePlugin from '../plugins/optimized-timeline-plugin';
 import { useWaveformViewport, WaveformViewport } from './use-waveform-viewport';
 import { useWaveformPlayback, WaveformPlayback } from './use-waveform-playback';
 import { useAdaptiveTimeline } from './use-adaptive-timeline';
+import { useMinimapScrollbar } from './use-minimap-scrollbar';
 
 export interface WaveformRegionRuntime {
     /** Stable ref */
@@ -80,12 +82,51 @@ interface WaveSurferWebAudioPlayer {
     // It is intentionally typed locally because this is private-API binding,
     // not a public WaveSurfer API contract.
     buffer: AudioBuffer | null;
-    emit(eventName: 'loadedmetadata' | 'canplay'): void;
+
+    // Internal player part only needed for the fix of https://github.com/katspaugh/wavesurfer.js/issues/4365
+    // remove after upgrading to fixed version of wavesurfer.js
+    audioContext: AudioContext;
+    bufferNode: AudioBufferSourceNode | null;
+    playbackPosition: number;
+    paused: boolean;
+    currentTime: number;
+    duration: number;
+    _playbackRate: number;
+    pause(): void;
+    stopAt(timeSeconds: number): void;
+    emit(eventName: 'loadedmetadata' | 'canplay' | 'timeupdate'): void;
 }
 
 interface MinimapPluginInternals {
     // WaveSurfer's minimap owns an internal WaveSurfer instance for the unzoomed overview.
     miniWavesurfer: WaveSurfer | null;
+}
+
+/**
+ * In WaveSurfer 7.12.12 WebAudio player clamps a manually paused range to its end when the
+ * stopped buffer emits "ended".
+ * https://github.com/katspaugh/wavesurfer.js/issues/4365
+ * remove after upgrading to fixed version of wavesurfer.js
+ */
+function patchWebAudioStopAt(player: WaveSurferWebAudioPlayer): void {
+    const patchedPlayer = player;
+    patchedPlayer.stopAt = function stopAt(this: WaveSurferWebAudioPlayer, timeSeconds: number): void {
+        const delay = (timeSeconds - this.currentTime) / this._playbackRate;
+        const { bufferNode } = this;
+        bufferNode?.stop(this.audioContext.currentTime + delay);
+        bufferNode?.addEventListener('ended', () => {
+            if (bufferNode !== this.bufferNode) return;
+
+            const stoppedAtRangeEnd = !this.paused;
+            this.bufferNode = null;
+            this.pause();
+
+            if (!stoppedAtRangeEnd) return;
+
+            this.playbackPosition = Math.min(timeSeconds, this.duration);
+            this.emit('timeupdate');
+        }, { once: true });
+    };
 }
 
 /**
@@ -122,7 +163,7 @@ function useWaveSurferRuntime({
             height: MINIMAP_HEIGHT,
             overlayColor: 'rgba(0, 85, 255, 0.3)',
         });
-        const timeline = TimelinePlugin.create();
+        const timeline = OptimizedTimelinePlugin.create();
         timelineRef.current = timeline;
         const unsubscribeMinimapInit = minimap.on('init', () => {
             const { miniWavesurfer } = minimap as unknown as MinimapPluginInternals;
@@ -186,13 +227,15 @@ function useWaveSurferRuntime({
             plugins: pluginsScope.plugins,
         });
 
+        const player = wsInstance.getMediaElement() as unknown as WaveSurferWebAudioPlayer;
+        patchWebAudioStopAt(player);
+
         // WaveSurfer has no public API for passing an already-decoded AudioBuffer.
         // Initialize its WebAudioPlayer before WaveSurfer starts loading the supplied
         // peaks and duration. This mirrors the player.src initialization path: it
         // installs the buffer and emits the metadata/readiness events that update
         // WaveSurfer's internal player state.
         const unsubscribeInit = wsInstance.on('init', () => {
-            const player = wsInstance.getMediaElement() as unknown as WaveSurferWebAudioPlayer;
             player.buffer = audioBuffer;
             player.emit('loadedmetadata');
             player.emit('canplay');
@@ -246,6 +289,7 @@ export function useAudioWaveform(params: Params): AudioWaveform {
     const viewport = useWaveformViewport(runtime, params.containerRef);
     useAdaptiveTimeline(runtime, viewport.pixelsPerSecond, viewport.overviewPixelsPerSecond);
     const playback = useWaveformPlayback(runtime);
+    useMinimapScrollbar(runtime, viewport, playback.seek);
 
     return {
         regionRuntime: runtime.regionRuntime,

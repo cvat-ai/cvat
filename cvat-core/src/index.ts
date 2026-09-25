@@ -49,6 +49,7 @@ import {
 } from './annotations-actions/annotations-actions';
 import { BaseCollectionAction } from './annotations-actions/base-collection-action';
 import { BaseShapesAction } from './annotations-actions/base-shapes-action';
+import { setActionMetadata } from './annotations-actions/base-action';
 import {
     ArgumentError, DataError, Exception, ScriptingError, ServerError,
 } from './exceptions';
@@ -147,9 +148,14 @@ export default interface CVATCore {
         get: any;
     };
     organizations: {
-        get: any;
-        activate: any;
-        deactivate: any;
+        get: (filter: {
+            page?: number;
+            search?: string;
+            sort?: string;
+            filter?: string;
+        }) => Promise<PaginatedResource<Organization>>;
+        activate: (organization: Organization) => Promise<void>;
+        deactivate: () => Promise<void>;
         acceptInvitation: (key: string) => Promise<string>;
         declineInvitation: (key: string) => Promise<void>;
         invitations: (filter: {
@@ -204,6 +210,9 @@ export default interface CVATCore {
         list: typeof listActions;
         register: typeof registerAction;
         unregister: typeof unregisterAction;
+        metadata: {
+            set: typeof setActionMetadata;
+        };
         run: typeof runAction;
         call: typeof callAction;
     };

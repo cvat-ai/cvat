@@ -1966,9 +1966,9 @@ class _CloudStorageTestBase(ApiTestBase):
             "resource": "test",
             "display_name": "Bucket",
             "credentials_type": "KEY_SECRET_KEY_PAIR",
-            "key": "minio_access_key",
-            "secret_key": "minio_secret_key",
-            "specific_attributes": "endpoint_url=http://minio:9000",
+            "key": "moto_access_key",
+            "secret_key": "moto_secret_key",
+            "specific_attributes": "endpoint_url=http://moto:9000",
             "description": "Some description",
             "manifests": [],
         }
@@ -3738,10 +3738,7 @@ class TaskImportExportAPITestCase(ExportApiTestBase, ImportApiTestBase):
         self._run_api_v2_tasks_id_export_import(None)
 
     def test_can_remove_export_cache_automatically_after_successful_export(self):
-        from cvat.apps.dataset_manager.cron import (
-            cleanup_export_cache_directory,
-            clear_export_cache,
-        )
+        from cvat.apps.dataset_manager.cron import ExportCacheDirectoryCleaner
 
         self._create_tasks()
         task_id = self.tasks[0]["id"]
@@ -3755,13 +3752,8 @@ class TaskImportExportAPITestCase(ExportApiTestBase, ImportApiTestBase):
                 mock.patch(
                     "cvat.apps.dataset_manager.views.TTL_CONSTS", new={"task": TASK_CACHE_TTL}
                 ),
-                mock.patch(
-                    "cvat.apps.dataset_manager.cron.clear_export_cache",
-                    side_effect=clear_export_cache,
-                ) as mock_clear_export_cache,
             ):
-                cleanup_export_cache_directory()
-                mock_clear_export_cache.assert_not_called()
+                self.assertEqual(ExportCacheDirectoryCleaner().cron_cleanup(), 0)
 
                 self._export_task_backup(
                     user,
@@ -3787,8 +3779,7 @@ class TaskImportExportAPITestCase(ExportApiTestBase, ImportApiTestBase):
                         new={"task": timedelta(seconds=0)},
                     ),
                 ):
-                    cleanup_export_cache_directory()
-                    mock_clear_export_cache.assert_called_once()
+                    self.assertEqual(ExportCacheDirectoryCleaner().cron_cleanup(), 1)
                 self.assertFalse(os.path.exists(file_path))
                 queue.finished_job_registry.remove(rq_job_ids[0], delete_job=True)
 
@@ -5705,6 +5696,38 @@ class TaskDataAPITestCase(ApiTestBase):
         )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         assert b"not in canonical form" in response.content
+
+    @override_settings(MEDIA_CACHE_ALLOW_STATIC_CACHE=False)
+    def test_use_cache_false_falls_back_to_cache(self):
+        task_spec = {
+            "name": "task falls back to cache",
+            "owner_id": self.user.id,
+            "assignee_id": self.user.id,
+            "overlap": 0,
+            "segment_size": 100,
+            "labels": [
+                {"name": "car"},
+                {"name": "person"},
+            ],
+        }
+
+        images = copy.deepcopy(self._client_images["images"])
+        n = 3
+        image_sizes = self._client_images["image_sizes"][:n]
+        task_data = {
+            **{f"client_files[{i}]": images[i] for i in range(n)},
+            "image_quality": 75,
+            "use_cache": False,
+        }
+        self._test_api_v2_tasks_id_data_spec(
+            self.user,
+            task_spec,
+            task_data,
+            self.ChunkType.IMAGESET,
+            self.ChunkType.IMAGESET,
+            image_sizes,
+            expected_storage_method=StorageMethodChoice.CACHE.value,
+        )
 
 
 class JobAnnotationAPITestCase(ApiTestBase):

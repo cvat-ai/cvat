@@ -138,6 +138,7 @@ export enum EventScope {
 }
 
 export enum HistoryActions {
+    CHANGED_OBJECTS = 'Changed objects',
     CHANGED_LABEL = 'Changed label',
     CHANGED_ATTRIBUTES = 'Changed attributes',
     CHANGED_POINTS = 'Changed points',
@@ -273,6 +274,7 @@ export enum LabelType {
     POINTS = 'points',
     ELLIPSE = 'ellipse',
     CUBOID = 'cuboid',
+    INTERVAL = 'interval',
     SKELETON = 'skeleton',
     MASK = 'mask',
     TAG = 'tag',
