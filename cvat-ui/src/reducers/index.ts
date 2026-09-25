@@ -1171,6 +1171,7 @@ export interface OrganizationsQuery {
 
 export interface OrganizationState {
     current?: Organization | null;
+    currentRole: Membership['role'] | null;
     initialized: boolean;
     fetching: boolean;
     updating: boolean;

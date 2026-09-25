@@ -357,6 +357,7 @@ class CloudStorageClient(ABC):
 
         if not _use_flat_listing:
             result["directories"] = [d.strip("/") for d in result["directories"]]
+
         content = [{"name": f, "type": "REG"} for f in result["files"]]
         content.extend([{"name": d, "type": "DIR"} for d in result["directories"]])
 
@@ -364,6 +365,12 @@ class CloudStorageClient(ABC):
             last_slash = search_prefix.rindex("/")
             for f in content:
                 f["name"] = f["name"][last_slash + 1 :]
+
+        # Provider directories can become nameless after being made relative to search_prefix:
+        # key="/file", prefix="" -> directory="/" -> name=""
+        # key="dir//file", prefix="dir/" -> directory="dir//" -> name=""
+        # Empty names are rejected by the API and would make the whole listing fail.
+        content = [item for item in content if item["name"]]
 
         if _use_sort:
             content = sorted(content, key=lambda x: x["type"])
