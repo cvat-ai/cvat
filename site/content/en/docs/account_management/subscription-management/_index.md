@@ -43,6 +43,7 @@ See:
   - [How to cancel any plan?](#how-to-cancel-any-plan)
   - [How can I get a refund?](#how-can-i-get-a-refund)
 - [Plan renewal](#plan-renewal)
+- [Plan expiration](plan-expiration/)
 - [Subscription management video tutorial](#subscription-management-video-tutorial)
 
 ## Available paid plans
@@ -286,18 +287,12 @@ and what will happen to your data.
 
 ### What will happen to my data?
 
-Once you have terminated your subscription, your data will remain
-accessible within the system for a month. During this period,
-you will be unable to add new tasks and free plan limits will be applied.
+When your paid access ends, Free plan limits apply to the affected workspace.
+Depending on your usage, some actions on existing resources may also be restricted.
+You can still create task and project backups to keep a copy of your work.
 
-In case you possess a substantial amount of data,
-it will be switched to read-only mode. It means
-you will not be able to save annotations, add any resources,
-and so on.
-
-Following the one month, you will receive a
-notification requesting you to either remove the
-excess data or it will be deleted automatically.
+For details about restrictions, recovery, and data retention, see
+{{< ilink "/docs/account_management/subscription-management/plan-expiration" "Plan expiration" >}}.
 
 ### How to cancel any plan?
 
