@@ -372,6 +372,9 @@ export interface PluginsState {
         };
     };
     callbacks: {
+        auth: {
+            onAuthenticationStart: (() => void)[];
+        };
         annotationPage: {
             header: {
                 menu: {

@@ -333,6 +333,46 @@ class BasicUserSerializer(serializers.ModelSerializer):
         fields = ("url", "id", "username", "first_name", "last_name")
 
 
+CVAT_USAGE_REASONS = (
+    "work_project",
+    "academic_research",
+    "teaching_or_coursework",
+    "personal_project",
+)
+PRIMARY_ROLES_BY_USAGE_REASON = {
+    "work_project": {
+        "ml_engineer",
+        "data_scientist",
+        "annotation_specialist",
+        "project_manager",
+        "founder_executive",
+    },
+    "academic_research": {
+        "researcher",
+        "student",
+        "ml_engineer",
+        "data_scientist",
+    },
+    "teaching_or_coursework": {"educator", "student"},
+    "personal_project": {
+        "ml_engineer",
+        "data_scientist",
+        "researcher",
+        "student",
+    },
+}
+PRIMARY_ROLES = set().union(*PRIMARY_ROLES_BY_USAGE_REASON.values())
+PLANNED_ACTIVITIES = (
+    "set_up_projects",
+    "annotate_data",
+    "review_quality",
+    "manage_annotators",
+    "connect_models",
+    "evaluate_for_organization",
+)
+DATA_TYPES = {"images", "video", "point_clouds_3d", "audio", "not_sure"}
+
+
 class UserSerializer(serializers.ModelSerializer):
     groups = serializers.SlugRelatedField(
         many=True, slug_field="name", queryset=Group.objects.all()
@@ -342,6 +382,45 @@ class UserSerializer(serializers.ModelSerializer):
         required=False,
         read_only=True,
         allow_null=True,
+    )
+    cvat_usage_reason = serializers.ChoiceField(
+        choices=CVAT_USAGE_REASONS,
+        source="profile.cvat_usage_reason",
+        required=False,
+        allow_null=True,
+        help_text="The main reason the user uses CVAT.",
+    )
+    primary_role = serializers.CharField(
+        source="profile.primary_role",
+        required=False,
+        allow_null=True,
+        allow_blank=False,
+        max_length=255,
+        help_text="A predefined role code or custom role text.",
+    )
+    planned_activities = serializers.ListField(
+        source="profile.planned_activities",
+        required=False,
+        allow_empty=True,
+        max_length=len(PLANNED_ACTIVITIES),
+        child=serializers.ChoiceField(choices=PLANNED_ACTIVITIES),
+        help_text="Predefined activity codes selected by the user.",
+    )
+    data_types = serializers.ListField(
+        source="profile.data_types",
+        required=False,
+        allow_empty=True,
+        max_length=len(DATA_TYPES) + 1,
+        child=serializers.CharField(max_length=255),
+        help_text="Predefined data type codes and optionally one custom value.",
+    )
+    discovery_source = serializers.CharField(
+        source="profile.discovery_source",
+        required=False,
+        allow_null=True,
+        allow_blank=False,
+        max_length=255,
+        help_text="A predefined discovery source code or custom text.",
     )
     email_verified = serializers.SerializerMethodField()
 
@@ -361,6 +440,11 @@ class UserSerializer(serializers.ModelSerializer):
             "last_login",
             "date_joined",
             "has_analytics_access",
+            "cvat_usage_reason",
+            "primary_role",
+            "planned_activities",
+            "data_types",
+            "discovery_source",
             "email_verified",
             "created_via",
         )
@@ -372,6 +456,77 @@ class UserSerializer(serializers.ModelSerializer):
         )
         write_only_fields = ("password",)
         extra_kwargs = {"last_login": {"allow_null": True}}
+
+    def validate_primary_role(self, value):
+        if value == "other":
+            raise serializers.ValidationError("Replace 'other' with the custom role")
+
+        return value
+
+    def validate_planned_activities(self, value):
+        if len(value) != len(set(value)):
+            raise serializers.ValidationError("Duplicate planned activities are not allowed")
+
+        return value
+
+    def validate_data_types(self, value):
+        if len(value) != len(set(value)):
+            raise serializers.ValidationError("Duplicate data types are not allowed")
+
+        if "other" in value:
+            raise serializers.ValidationError("Replace 'other' with the custom data type")
+
+        if "not_sure" in value and len(value) != 1:
+            raise serializers.ValidationError("'not_sure' cannot be combined with other data types")
+
+        if len(set(value) - DATA_TYPES) > 1:
+            raise serializers.ValidationError("Only one custom data type is allowed")
+
+        return value
+
+    def validate_discovery_source(self, value):
+        if value == "other":
+            raise serializers.ValidationError("Replace 'other' with the custom discovery source")
+
+        return value
+
+    def validate(self, attrs):
+        attrs = super().validate(attrs)
+        profile_data = attrs.get("profile", {})
+
+        if "cvat_usage_reason" in profile_data:
+            usage_reason = profile_data["cvat_usage_reason"]
+            if self.instance:
+                primary_role = profile_data.get("primary_role", self.instance.profile.primary_role)
+            else:
+                primary_role = profile_data.get("primary_role")
+        else:
+            usage_reason = None
+            primary_role = profile_data.get("primary_role")
+
+        if (
+            usage_reason
+            and primary_role in PRIMARY_ROLES
+            and primary_role not in PRIMARY_ROLES_BY_USAGE_REASON[usage_reason]
+        ):
+            raise serializers.ValidationError(
+                {"primary_role": "The selected role is not available for this usage reason"}
+            )
+
+        return attrs
+
+    @transaction.atomic
+    def update(self, instance, validated_data):
+        profile_data = validated_data.pop("profile", {})
+        instance = super().update(instance, validated_data)
+
+        if profile_data:
+            for field_name, value in profile_data.items():
+                setattr(instance.profile, field_name, value)
+
+            instance.profile.save(update_fields=profile_data.keys())
+
+        return instance
 
     @extend_schema_field(serializers.BooleanField(allow_null=True))
     def get_email_verified(self, instance: User) -> bool | None:

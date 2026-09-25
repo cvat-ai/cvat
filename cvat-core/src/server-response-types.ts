@@ -41,6 +41,11 @@ export interface SerializedUser {
     date_joined?: string;
     email_verification_required: boolean;
     has_analytics_access: boolean;
+    cvat_usage_reason?: string | null;
+    primary_role?: string | null;
+    planned_activities?: string[];
+    data_types?: string[];
+    discovery_source?: string | null;
 }
 
 export interface SerializedUserGrowthData {
