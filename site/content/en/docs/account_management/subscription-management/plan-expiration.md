@@ -52,7 +52,7 @@ The personal account holder and organization owners or maintainers may see a
 
 <img src="/images/subscription-payment-notice.webp"
      alt="Payment reminder showing unavailable paid features and a warning about further restrictions"
-     style="display: block; margin: 0 auto; width: 100%; max-width: 500px; height: auto; border: 1px solid #d9d9d9; border-radius: 8px;">
+     style="display: block; margin: 0 auto; width: 100%; max-width: 650px; height: auto; border: 1px solid #d9d9d9; border-radius: 8px;">
 
 {{% alert title="Before the grace period ends" color="warning" %}}
 Please resolve the payment or reduce your usage to fit the Free plan.
@@ -82,7 +82,7 @@ using its available features without these additional restrictions.
 
 <img src="/images/subscription-restricted-mode.webp"
      alt="Restricted Mode dialog showing exceeded task and membership limits and recovery options"
-     style="display: block; margin: 0 auto; width: 100%; max-width: 500px; height: auto; border: 1px solid #d9d9d9; border-radius: 8px;">
+     style="display: block; margin: 0 auto; width: 100%; max-width: 650px; height: auto; border: 1px solid #d9d9d9; border-radius: 8px;">
 
 ### Restore paid access
 
