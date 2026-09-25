@@ -19,6 +19,7 @@ import {
 import type { IntelligentScissors, OpenCVTracker } from 'utils/opencv-wrapper/opencv-wrapper';
 import { KeyMap, KeyMapItem } from 'utils/mousetrap-react';
 import { ImageFilter } from 'utils/image-processing';
+import { AudioRegionsOrdering } from 'audio/components/annotation-page/audio-workspace/utils/audio-interval';
 
 export interface AudioState {
     player: {
@@ -40,6 +41,7 @@ export interface AudioState {
         } | null;
         fitIntervalRequest: { clientID: number } | null;
         intervals: AudioIntervalState[];
+        intervalsOrdering: AudioRegionsOrdering;
         activeIntervalID: number | null;
         hoveredIntervalID: number | null;
         interactingIntervalID: number | null;

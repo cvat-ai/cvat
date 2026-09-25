@@ -70,8 +70,9 @@
                 transition: background-color 0.15s ease;
             }
 
-            &.ant-collapse-item-active .ant-collapse-header {
+            &.ant-collapse-item-active > .ant-collapse-header {
                 background-color: #f1f1f1;
+                border-radius: $grid-unit-size $grid-unit-size 0 0;
             }
 
             .ant-collapse-content {

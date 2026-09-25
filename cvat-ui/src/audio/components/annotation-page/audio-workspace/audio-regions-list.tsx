@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import React, {
-    useCallback, useEffect, useMemo, useRef, useState,
+    useCallback, useEffect, useMemo, useRef,
 } from 'react';
 import Empty from 'antd/lib/empty';
 import classNames from 'classnames';
@@ -13,31 +13,8 @@ import { hexToRgbComponents } from 'audio/utils/hex-color';
 import { getRegionItemColor } from './audio-region-colors';
 import { AudioIntervalActionShortcuts } from './audio-interval-actions';
 import AudioIntervalHeader from './audio-interval-header';
-import AudioRegionsListHeader, { AudioRegionsOrdering } from './audio-regions-list-header';
-import { intervalDurationSeconds, intervalEndSeconds, intervalID } from './utils/audio-interval';
-
-function sortIntervals(
-    intervals: AudioIntervalState[],
-    ordering: AudioRegionsOrdering,
-): AudioIntervalState[] {
-    const copy = [...intervals];
-    switch (ordering) {
-        case AudioRegionsOrdering.ID_ASCENT:
-            return copy.sort((a, b) => intervalID(a) - intervalID(b));
-        case AudioRegionsOrdering.ID_DESCENT:
-            return copy.sort((a, b) => intervalID(b) - intervalID(a));
-        case AudioRegionsOrdering.START_TIME:
-            return copy.sort((a, b) => a.start - b.start);
-        case AudioRegionsOrdering.END_TIME:
-            return copy.sort((a, b) => intervalEndSeconds(a) - intervalEndSeconds(b));
-        case AudioRegionsOrdering.DURATION:
-            return copy.sort((a, b) => intervalDurationSeconds(a) - intervalDurationSeconds(b));
-        case AudioRegionsOrdering.LABEL_NAME:
-            return copy.sort((a, b) => a.label.name.localeCompare(b.label.name));
-        default:
-            return copy;
-    }
-}
+import AudioRegionsListHeader from './audio-regions-list-header';
+import { AudioRegionsOrdering, intervalID, sortAudioIntervals } from './utils/audio-interval';
 
 interface ItemProps {
     interval: AudioIntervalState;
@@ -79,7 +56,9 @@ function AudioRegionItem(props: ItemProps): JSX.Element {
         onPlayIntervalOnce(id);
     }, [isCursor, onPlayIntervalOnce, id]);
     const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-        if (isCursor && (e.key === 'Enter' || e.key === ' ')) onSetActiveInterval(id);
+        if (!isCursor || e.key !== 'Enter') return;
+
+        onSetActiveInterval(id);
     }, [isCursor, onSetActiveInterval, id]);
     return (
         <div
@@ -119,6 +98,7 @@ const MemoAudioRegionItem = React.memo(AudioRegionItem);
 interface Props {
     intervals: AudioIntervalState[];
     filtersActive: boolean;
+    ordering: AudioRegionsOrdering;
     activeIntervalID: number | null;
     hoveredIntervalID: number | null;
     labels: Label[];
@@ -130,6 +110,7 @@ interface Props {
     switchHiddenAllShortcut: string;
     onSetActiveInterval(clientID: number | null): void;
     onSetHoveredInterval(clientID: number | null): void;
+    onChangeOrdering(value: AudioRegionsOrdering): void;
     onPlayIntervalOnce(clientID: number): void;
     onToggleIntervalsLock(clientIDs: number[], lock: boolean): void;
     onToggleIntervalsPinned(clientIDs: number[], pinned: boolean): void;
@@ -141,6 +122,7 @@ export default function AudioRegionsList(props: Props): JSX.Element {
     const {
         intervals,
         filtersActive,
+        ordering,
         activeIntervalID,
         hoveredIntervalID,
         labels,
@@ -152,6 +134,7 @@ export default function AudioRegionsList(props: Props): JSX.Element {
         switchHiddenAllShortcut,
         onSetActiveInterval,
         onSetHoveredInterval,
+        onChangeOrdering,
         onPlayIntervalOnce,
         onToggleIntervalsLock,
         onToggleIntervalsPinned,
@@ -159,16 +142,17 @@ export default function AudioRegionsList(props: Props): JSX.Element {
         onChangeLabel,
     } = props;
 
-    const [ordering, setOrdering] = useState<AudioRegionsOrdering>(AudioRegionsOrdering.ID_ASCENT);
     const listRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         if (activeIntervalID === null) return;
         const container = listRef.current;
         if (!container) return;
-        const item = container.querySelector(`[data-interval-id="${CSS.escape(String(activeIntervalID))}"]`);
+        const item = container.querySelector<HTMLElement>(
+            `[data-interval-id="${CSS.escape(String(activeIntervalID))}"]`,
+        );
         if (item) {
-            (item as HTMLElement).scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+            item.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
         }
     }, [activeIntervalID]);
 
@@ -198,7 +182,7 @@ export default function AudioRegionsList(props: Props): JSX.Element {
         onToggleIntervalsHidden(visibleIds, false);
     }, [visibleIds, onToggleIntervalsHidden]);
 
-    const sortedIntervals = useMemo(() => sortIntervals(intervals, ordering),
+    const sortedIntervals = useMemo(() => sortAudioIntervals(intervals, ordering),
         [intervals, ordering, labels]);
 
     const indexById = useMemo(() => {
@@ -217,7 +201,7 @@ export default function AudioRegionsList(props: Props): JSX.Element {
             switchLockAllShortcut={switchLockAllShortcut}
             switchPinAllShortcut={switchPinAllShortcut}
             switchHiddenAllShortcut={switchHiddenAllShortcut}
-            onChangeOrdering={setOrdering}
+            onChangeOrdering={onChangeOrdering}
             onLockAll={onLockAll}
             onUnlockAll={onUnlockAll}
             onPinAll={onPinAll}

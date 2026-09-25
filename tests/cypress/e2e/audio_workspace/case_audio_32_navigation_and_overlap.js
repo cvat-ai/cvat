@@ -19,7 +19,7 @@ context('Audio annotation. Interval navigation and overlap selection.', () => {
     });
 
     describe(`Testing case "${caseId}"`, () => {
-        it('Wraps next and previous navigation while skipping hidden intervals', () => {
+        it('Navigates in default ID ascending order while skipping hidden intervals', () => {
             cy.audioCreateRegionViaButton(firstLabelName, 80, 140);
             cy.audioCreateRegionViaButton(firstLabelName, 200, 260);
             cy.audioCreateRegionViaButton(firstLabelName, 320, 380);
@@ -39,6 +39,36 @@ context('Audio annotation. Interval navigation and overlap selection.', () => {
 
             cy.realPress(['Shift', 'Tab']);
             cy.get('.cvat-audio-region-item').eq(2).should('have.class', 'cvat-audio-region-item-active');
+        });
+
+        it('Navigates intervals in start-time order while skipping hidden intervals', () => {
+            cy.audioCreateRegionViaButton(firstLabelName, 320, 380);
+            cy.audioCreateRegionViaButton(firstLabelName, 80, 140);
+            cy.audioCreateRegionViaButton(firstLabelName, 200, 260);
+            cy.audioCreateRegionViaButton(firstLabelName, 440, 500);
+            cy.get('.cvat-audio-region-item').should('have.length', 4);
+
+            cy.get('.cvat-audio-regions-list-ordering-selector').click();
+            cy.get('.ant-select-dropdown').filter(':visible')
+                .contains('.ant-select-item-option', 'Start time').click();
+            cy.get('.cvat-audio-region-item .cvat-audio-interval-header-index').should(($items) => {
+                expect(Array.from($items, (item) => item.textContent)).to.deep.equal(['2', '3', '1', '4']);
+            });
+
+            cy.get('.cvat-audio-region-item').eq(1)
+                .find('.cvat-audio-region-item-action-btn:has(.anticon-eye)').click();
+            cy.get('.cvat-audio-region-item').eq(1).should('have.class', 'cvat-audio-region-item-hidden');
+
+            cy.get('.cvat-audio-region-item').eq(2)
+                .find('.cvat-audio-interval-header-index').click();
+            cy.realPress('Tab');
+            cy.get('.cvat-audio-region-item').eq(3).should('have.class', 'cvat-audio-region-item-active');
+
+            cy.realPress('Tab');
+            cy.get('.cvat-audio-region-item').first().should('have.class', 'cvat-audio-region-item-active');
+
+            cy.realPress(['Shift', 'Tab']);
+            cy.get('.cvat-audio-region-item').eq(3).should('have.class', 'cvat-audio-region-item-active');
         });
 
         it('Selects the Core-chosen interval when visible regions overlap', () => {
