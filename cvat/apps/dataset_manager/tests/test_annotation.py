@@ -531,6 +531,123 @@ class AnnotationManagerTest(TestCase):
                 ]
                 self.assertEqual(exported_frames, [0, 1, 2, 5, 6, 7, 8, 9, 10, 11, 12, 13])
 
+    def test_merge_keeps_replaced_track_reachable(self):
+        # Each case merges jobs the same way as
+        # test_merge_keeps_track_starting_earlier_in_next_job, then checks a
+        # different consequence of replacing the matched track in self.objects.
+        cases = {
+            "two tracks matched in the same merge are both replaced": (
+                [
+                    (
+                        0,
+                        [
+                            make_track([make_shape(6, base=10)], frame=6, source="auto"),
+                            make_track([make_shape(6, base=20)], frame=6, source="auto"),
+                        ],
+                    ),
+                    (
+                        5,
+                        [
+                            make_track(
+                                [make_shape(5, base=10), make_shape(13, base=10, outside=True)],
+                                frame=5,
+                            ),
+                            make_track(
+                                [make_shape(5, base=20), make_shape(13, base=20, outside=True)],
+                                frame=5,
+                            ),
+                        ],
+                    ),
+                ],
+                [
+                    ("manual", [(5, False), (6, False), (13, True)]),
+                    ("manual", [(5, False), (6, False), (13, True)]),
+                ],
+            ),
+            "a track replaced by job 2 is united again by job 3": (
+                [
+                    (0, [make_track([make_shape(6, base=30)], frame=6, source="auto")]),
+                    (5, [make_track([make_shape(5, base=30), make_shape(12, base=30)], frame=5)]),
+                    (
+                        10,
+                        [
+                            make_track(
+                                [make_shape(11, base=30), make_shape(16, base=30, outside=True)],
+                                frame=11,
+                            )
+                        ],
+                    ),
+                ],
+                [("manual", [(5, False), (6, False), (11, False), (12, False), (16, True)])],
+            ),
+        }
+        for name, (jobs, expected) in cases.items():
+            with self.subTest(name=name):
+                task_annotations = AnnotationIR(DimensionType.DIM_2D)
+                for start_frame, tracks in jobs:
+                    job_annotations = AnnotationIR(
+                        DimensionType.DIM_2D,
+                        {"tags": [], "shapes": [], "tracks": tracks, "intervals": []},
+                    )
+                    AnnotationManager(task_annotations, dimension=DimensionType.DIM_2D).merge(
+                        job_annotations, start_frame, overlap=5
+                    )
+                self.assertEqual(
+                    [
+                        (
+                            track["source"],
+                            [(s["frame"], s["outside"]) for s in track["shapes"]],
+                        )
+                        for track in task_annotations.tracks
+                    ],
+                    expected,
+                )
+
+    def test_merge_keeps_track_starting_earlier_in_next_job_with_elements(self):
+        def skeleton(shapes, *, frame, source="manual"):
+            return {
+                "frame": frame,
+                "label_id": 0,
+                "group": None,
+                "source": source,
+                "attributes": [],
+                "shapes": shapes,
+                "elements": [
+                    {
+                        "frame": frame,
+                        "label_id": 0,
+                        "group": None,
+                        "source": source,
+                        "attributes": [],
+                        "shapes": [dict(s) for s in shapes],
+                        "elements": [],
+                    }
+                ],
+            }
+
+        job1 = [skeleton([make_shape(6)], frame=6, source="auto")]
+        job2 = [skeleton([make_shape(5), make_shape(13, outside=True)], frame=5)]
+
+        task_annotations = AnnotationIR(DimensionType.DIM_2D)
+        for start_frame, tracks in [(0, job1), (5, job2)]:
+            job_annotations = AnnotationIR(
+                DimensionType.DIM_2D,
+                {"tags": [], "shapes": [], "tracks": tracks, "intervals": []},
+            )
+            AnnotationManager(task_annotations, dimension=DimensionType.DIM_2D).merge(
+                job_annotations, start_frame, overlap=5
+            )
+
+        track = task_annotations.tracks[0]
+        self.assertEqual(
+            [(s["frame"], s["outside"]) for s in track["shapes"]],
+            [(5, False), (6, False), (13, True)],
+        )
+        self.assertEqual(
+            [(s["frame"], s["outside"]) for s in track["elements"][0]["shapes"]],
+            [(5, False), (13, True)],
+        )
+
 
 class TestTaskAnnotation(TestCase):
     def test_reads_ordered_jobs(self):
