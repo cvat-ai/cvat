@@ -327,6 +327,17 @@ function build(): CVATCore {
                     config.removeUnderlyingMaskPixels.onEmptyMaskOccurrence = value;
                 },
             },
+            subtractUnderlyingMasks: {
+                get enabled() {
+                    return config.subtractUnderlyingMasks.enabled;
+                },
+                set enabled(value: boolean) {
+                    config.subtractUnderlyingMasks.enabled = value;
+                },
+                set onEmptyMaskOccurrence(value: () => void) {
+                    config.subtractUnderlyingMasks.onEmptyMaskOccurrence = value;
+                },
+            },
             get onOrganizationChange(): (orgId: number) => void {
                 return config.onOrganizationChange;
             },

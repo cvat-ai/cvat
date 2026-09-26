@@ -16,6 +16,10 @@ const config = {
         enabled: false,
         onEmptyMaskOccurrence: null,
     },
+    subtractUnderlyingMasks: {
+        enabled: false,
+        onEmptyMaskOccurrence: null,
+    },
     onOrganizationChange: null,
     globalObjectsCounter: 0,
 

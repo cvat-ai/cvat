@@ -21,6 +21,7 @@ See:
 - [Annotation with brush](#annotation-with-brush)
 - [Annotation with polygon-to-mask](#annotation-with-polygon-to-mask)
 - [Remove underlying pixels](#remove-underlying-pixels)
+- [Subtract underlying masks](#subtract-underlying-masks)
 - [AI Tools](#ai-tools)
 - [Import and export](#import-and-export)
 
@@ -43,6 +44,7 @@ It has the following elements:
 | ![Brush size](/images/brushing_tools_brush_size.png)            | **Brush size** in pixels. <br>**Note:** Visible only when **Brush** or **Eraser** are selected.                                                                                                          |
 | ![Brush shape](/images/brushing_tools_brush_shape.png)          | **Brush shape** with two options: circle and square. <br>**Note:** Visible only when **Brush** or **Eraser** are selected.                                                                               |
 | ![Pixel remove](/images/brushing_tools_pixels.png)              | **Remove underlying pixels**. When you are drawing or editing a mask with this tool, <br>pixels on other masks that are located at the same positions as the pixels of the <br>current mask are deleted. |
+| ![Subtract masks](/images/brushing_tools_subtract_masks.png)    | **Subtract underlying masks**. When you are drawing or editing a mask with this tool, <br>pixels of the current mask that are located at the same positions as pixels of other masks <br>are removed from the current mask, so it never overlaps existing masks. |
 | ![Hide mask](/images/brushing_tools_hide.png)              | **Hide mask**. When drawing or editing a mask, you can enable this feature to temporarily hide the mask, allowing you to see the objects underneath more clearly. |
 | ![Label](/images/brushing_tools_label_drop.png)                 | **Label** that will be assigned to the newly created mask                                                                                                                                                |
 | ![Move](/images/brushing_tools_brush_move.png)                  | **Move**. Click and hold to move the menu bar to the other place on the screen                                                                                                                           |
@@ -102,6 +104,18 @@ To save the job with all added objects, on the top menu, click **Save** ![Save](
 Use **Remove underlying pixels** tool when you want to add a mask and simultaneously delete the pixels of <br>other masks that are located at the same positions. It is a highly useful feature to avoid meticulous drawing edges twice between two different objects.
 
 ![Remove pixel](/images/brushing_tools_pixel_underlying.gif)
+
+## Subtract underlying masks
+
+Use **Subtract underlying masks** tool when you want to add a mask that must not overlap the masks
+that already exist on the frame: pixels of other masks located at the same positions are removed from the mask
+you are drawing, while the other masks stay untouched. It is the counterpart of **Remove underlying pixels**:
+that tool gives priority to the new mask, this one gives priority to the existing masks.
+It is useful, for example, to refine the annotation of a scene after a pre-annotation
+without damaging the objects that are already annotated.
+
+The two tools are mutually exclusive: enabling one of them disables the other.
+If the whole mask is covered by other masks, it becomes empty and is not saved, and a warning is shown.
 
 ## AI Tools
 
