@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Row, Col } from 'antd/lib/grid';
 import Checkbox, { CheckboxChangeEvent } from 'antd/lib/checkbox';
@@ -22,6 +22,9 @@ import {
     changeSaturationLevel,
     changeGridSize,
     resetImageFilters,
+    changeRelatedOverlayEnabled,
+    changeRelatedOverlayOpacity,
+    changeRelatedOverlayIndex,
 } from 'actions/settings-actions';
 import { clamp } from 'utils/math';
 import { GridColor, CombinedState, PlayerSettingsState } from 'reducers';
@@ -40,7 +43,30 @@ export default function ImageSetupsContent(): JSX.Element {
         gridColor,
         gridSize,
         grid: gridEnabled,
+        relatedOverlayEnabled,
+        relatedOverlayOpacity,
+        relatedOverlayIndex,
     } = useSelector((state: CombinedState): PlayerSettingsState => state.settings.player);
+    const relatedFiles = useSelector((state: CombinedState): number => state.annotation.player.frame.relatedFiles);
+    const jobInstance = useSelector((state: CombinedState) => state.annotation.job.instance);
+    const frameNumber = useSelector((state: CombinedState): number => state.annotation.player.frame.number);
+    const [relatedNames, setRelatedNames] = useState<string[]>([]);
+
+    useEffect(() => {
+        let cancelled = false;
+        if (relatedFiles > 1 && jobInstance) {
+            jobInstance.frames.contextImage(frameNumber).then((images: Record<string, ImageBitmap>) => {
+                if (!cancelled) {
+                    setRelatedNames(Object.keys(images).sort());
+                }
+            }).catch(() => {
+                if (!cancelled) {
+                    setRelatedNames([]);
+                }
+            });
+        }
+        return () => { cancelled = true; };
+    }, [jobInstance, frameNumber, relatedFiles]);
 
     return (
         <div className='cvat-canvas-image-setups-content'>
@@ -174,6 +200,62 @@ export default function ImageSetupsContent(): JSX.Element {
                 </Col>
             </Row>
             <GammaFilter />
+            { relatedFiles > 0 && (
+                <>
+                    <Text>Related image overlay</Text>
+                    <hr />
+                    <Row className='cvat-image-setups-related-overlay' align='middle' gutter={8}>
+                        <Col span={2}>
+                            <Checkbox
+                                className='cvat-text-color cvat-image-setups-related-overlay-enabled'
+                                checked={relatedOverlayEnabled}
+                                onChange={(event: CheckboxChangeEvent): void => {
+                                    dispatch(changeRelatedOverlayEnabled(event.target.checked));
+                                }}
+                            />
+                        </Col>
+                        <Col span={5}>
+                            <Text className='cvat-text-color'> Opacity </Text>
+                        </Col>
+                        <Col span={17}>
+                            <Slider
+                                className='cvat-image-setups-related-overlay-opacity'
+                                min={0}
+                                max={100}
+                                value={relatedOverlayOpacity}
+                                disabled={!relatedOverlayEnabled}
+                                onChange={(value: number | [number, number]): void => {
+                                    dispatch(changeRelatedOverlayOpacity(value as number));
+                                }}
+                            />
+                        </Col>
+                    </Row>
+                    { relatedFiles > 1 && (
+                        <Row className='cvat-image-setups-related-overlay-selector' align='middle' gutter={8}>
+                            <Col span={2} />
+                            <Col span={5}>
+                                <Text className='cvat-text-color'> Image </Text>
+                            </Col>
+                            <Col span={17}>
+                                <Select
+                                    className='cvat-image-setups-related-overlay-index'
+                                    value={Math.min(relatedOverlayIndex, relatedFiles - 1)}
+                                    disabled={!relatedOverlayEnabled}
+                                    onChange={(value: number): void => {
+                                        dispatch(changeRelatedOverlayIndex(value));
+                                    }}
+                                >
+                                    {Array.from({ length: relatedFiles }, (_, idx) => (
+                                        <Select.Option key={idx} value={idx}>
+                                            {relatedNames[idx] ?? `Related image #${idx + 1}`}
+                                        </Select.Option>
+                                    ))}
+                                </Select>
+                            </Col>
+                        </Row>
+                    )}
+                </>
+            )}
             <Row className='cvat-image-setups-reset-color-settings' justify='space-around'>
                 <Col>
                     <Button
