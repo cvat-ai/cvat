@@ -41,7 +41,7 @@ context('Tests for source and target storage.', () => {
         displayName: 'Demo bucket',
         resource: 'public',
         manifest: 'images_with_manifest/manifest.jsonl',
-        endpointUrl: Cypress.config('minioUrl'),
+        endpointUrl: Cypress.config('motoUrl'),
     };
 
     const storageConnectedToCloud = {
@@ -121,7 +121,7 @@ context('Tests for source and target storage.', () => {
     });
 
     describe(`Testing case "${caseId}"`, () => {
-        it('Export job annotations to default minio bucket that was attached to the task in the project.', () => {
+        it('Export job annotations to default moto bucket that was attached to the task in the project.', () => {
             // create an annotation task with custom local source & target storages
             cy.goToTaskList();
             cy.createAnnotationTask(
@@ -166,7 +166,7 @@ context('Tests for source and target storage.', () => {
             cy.get('#cvat-objects-sidebar-state-item-1').should('not.exist');
         });
 
-        it('Import job annotations from default minio bucket that was attached to the task in the project.', () => {
+        it('Import job annotations from default moto bucket that was attached to the task in the project.', () => {
             cy.goToTaskList();
             cy.openTask(task.name);
             cy.openJob();
