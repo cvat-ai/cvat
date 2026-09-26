@@ -5,6 +5,8 @@
 
 import React from 'react';
 import { connect } from 'react-redux';
+import notification from 'antd/lib/notification';
+import copySkeletonPose from 'utils/copy-skeleton-pose';
 
 import {
     updateAnnotationsAsync,
@@ -71,7 +73,7 @@ interface StateToProps {
 
 interface DispatchToProps {
     changeFrame(frame: number): void;
-    updateState(objectState: ObjectState): void;
+    updateState(objectState: ObjectState): Promise<void>;
     activateObject: (activatedStateID: number | null, activatedElementID: number | null) => void;
     removeObject: (objectState: ObjectState) => void;
     copyShape: (objectState: ObjectState) => void;
@@ -171,9 +173,12 @@ interface State {
     approxPolyAccuracy: number;
     originalPoints: number[] | null;
     previewPoints: number[] | null;
+    copyingPreviousPose: boolean;
 }
 
 class ObjectItemContainer extends React.PureComponent<Props, State> {
+    private mounted = true;
+
     public constructor(props: Props) {
         super(props);
         this.state = {
@@ -182,6 +187,7 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
             approxPolyAccuracy: props.defaultApproxPolyAccuracy,
             originalPoints: null,
             previewPoints: null,
+            copyingPreviousPose: false,
         };
     }
 
@@ -225,6 +231,7 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
     }
 
     public componentWillUnmount(): void {
+        this.mounted = false;
         const {
             objectState, jobInstance, switchSimplifyVisibility, updateState, allowSimplifyLifecycle = true,
         } = this.props;
@@ -243,6 +250,37 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
     private copy = (): void => {
         const { objectState, copyShape } = this.props;
         copyShape(objectState);
+    };
+
+    private copyPreviousPose = async (): Promise<void> => {
+        const {
+            objectState, jobInstance, frameNumber, canvasInstance, ready, activeControl, updateState,
+        } = this.props;
+        if (this.state.copyingPreviousPose || !ready || activeControl !== ActiveControl.CURSOR ||
+            !(canvasInstance instanceof Canvas) || canvasInstance.mode() !== CanvasMode.IDLE ||
+            frameNumber <= jobInstance.startFrame) return;
+
+        this.setState({ copyingPreviousPose: true });
+        try {
+            // annotations.get reads CVAT's in-memory collection, including edits not yet saved to the server.
+            const previousStates = await jobInstance.annotations.get(frameNumber - 1, false, []);
+            const currentStates = await jobInstance.annotations.get(frameNumber, false, []);
+            if (!this.mounted || this.props.jobInstance !== jobInstance || this.props.frameNumber !== frameNumber ||
+                !this.props.ready || canvasInstance.mode() !== CanvasMode.IDLE) return;
+            const previous = previousStates.find((state) => state.clientID === objectState.clientID);
+            const current = currentStates.find((state) => state.clientID === objectState.clientID);
+            if (!previous || !current) {
+                throw new Error('This skeleton track is not present on the previous frame.');
+            }
+            if (copySkeletonPose(previous, current)) await updateState(current);
+        } catch (error) {
+            notification.error({
+                message: 'Could not copy previous pose',
+                description: error instanceof Error ? error.message : String(error),
+            });
+        } finally {
+            if (this.mounted) this.setState({ copyingPreviousPose: false });
+        }
     };
 
     private propagate = (): void => {
@@ -616,6 +654,11 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
                     focusAndExpand={this.focusAndExpand}
                     remove={this.remove}
                     copy={this.copy}
+                    copyPreviousPose={this.copyPreviousPose}
+                    copyingPreviousPose={this.state.copyingPreviousPose}
+                    canCopyPreviousPose={this.props.ready && this.props.activeControl === ActiveControl.CURSOR &&
+                        this.props.frameNumber > jobInstance.startFrame && !objectState.lock &&
+                        !objectState.elements.some((element) => element.lock)}
                     createURL={this.createURL}
                     propagate={this.propagate}
                     switchOrientation={this.switchOrientation}

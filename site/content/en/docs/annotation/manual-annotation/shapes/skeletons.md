@@ -197,6 +197,26 @@ to both the skeleton as a whole and its elements:
 
 ## Editing skeletons on the sidebar
 
+### Copying the previous pose
+
+For a skeleton track, click **Copy previous pose** in its **Objects** sidebar card
+to replace the current frame's point positions with those from the immediately
+preceding frame. For example, correct the pose on frame 45, move to frame 46,
+and click the button to use the corrected pose as a starting point.
+
+The action uses edits in the current session, including edits you have not yet
+saved to the server. It updates the existing track rather than creating another
+skeleton. Attributes, occlusion, and outside flags on the current frame are
+preserved. Review these properties separately for each frame.
+
+Use **Undo** to restore all copied points in one step, or **Save** to persist
+your changes. The button is unavailable on the first frame of the job and when
+the skeleton or any of its points is locked. Both frames must contain the same
+skeleton track; a deleted previous frame is not skipped. Normal track
+interpolation applies between keyframes.
+
+### Properties and parts
+
 In CVAT, the sidebar offers an alternative method for setting
 up skeleton properties and attributes.
 
