@@ -463,9 +463,10 @@ class PdfReader(ImageListReader):
         paths = convert_from_path(
             self._pdf_source,
             last_page=(
-                # stop is 0-based index, but last_page is 1-based, both inclusive
+                # stop is a 0-based index, but last_page is 1-based, both inclusive.
+                # 0 means "up to the last page".
                 1 + stop
-                if stop is not None
+                if stop
                 else None
             ),
             paths_only=True,

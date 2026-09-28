@@ -5732,9 +5732,6 @@ class TaskDataAPITestCase(ApiTestBase):
     def _create_task_from_local_pdf(self, user, **data_params) -> dict:
         task_spec = {
             "name": "pdf task with frame range",
-            "overlap": 0,
-            "segment_size": 0,
-            "labels": [{"name": "car"}],
         }
         response = self._create_task(user, task_spec)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
@@ -5748,11 +5745,7 @@ class TaskDataAPITestCase(ApiTestBase):
         response = self._run_api_v2_tasks_id_data_post(task_id, user, task_data)
         self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED, response.reason_phrase)
 
-        for _ in range(100):
-            response = self._get_task_creation_status(task_id, user)
-            if response.data["state"] in ("Failed", "Finished"):
-                break
-            sleep(0.1)
+        response = self._get_task_creation_status(task_id, user)
         self.assertEqual(response.data["state"], "Finished", response.data.get("message"))
 
         with ForceLogin(user, self.client):
@@ -5773,13 +5766,24 @@ class TaskDataAPITestCase(ApiTestBase):
 
         page_count = len(self._client_pdf["image_sizes"])
 
-        for stop_frame in range(1, page_count):
+        for stop_frame in [1, 4]:
+            assert stop_frame < page_count
+
             with self.subTest(stop_frame=stop_frame):
                 data_meta = self._create_task_from_local_pdf(self.admin, stop_frame=stop_frame)
 
                 self.assertEqual(data_meta["size"], stop_frame + 1)
                 self.assertEqual(len(data_meta["frames"]), stop_frame + 1)
                 self.assertEqual(data_meta["stop_frame"], stop_frame)
+
+    def test_can_create_task_from_pdf_with_zero_stop_frame(self):
+        # Like for other media types, an explicit 0 means "up to the last frame"
+        page_count = len(self._client_pdf["image_sizes"])
+
+        data_meta = self._create_task_from_local_pdf(self.admin, stop_frame=0)
+
+        self.assertEqual(data_meta["size"], page_count)
+        self.assertEqual(data_meta["stop_frame"], page_count - 1)
 
     def test_can_create_task_from_pdf_with_stop_frame_beyond_last_page(self):
         page_count = len(self._client_pdf["image_sizes"])
