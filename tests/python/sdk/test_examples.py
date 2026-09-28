@@ -34,8 +34,8 @@ from cvat_sdk.core.proxies.types import Location
 from shared.utils.config import (
     BASE_URL,
     IMPORT_EXPORT_BUCKET_ID,
-    MINIO_KEY,
-    MINIO_SECRET_KEY,
+    MOTO_KEY,
+    MOTO_SECRET_KEY,
     USER_PASS,
 )
 from shared.utils.helpers import generate_image_file, generate_video_file
@@ -1339,11 +1339,11 @@ class TestExamples:
             "--bucket",
             "test",
             "--access-key",
-            MINIO_KEY,
+            MOTO_KEY,
             "--secret-key",
-            MINIO_SECRET_KEY,
+            MOTO_SECRET_KEY,
             "--endpoint-url",
-            "http://minio:9000",
+            "http://moto:9000",
         ]
         if page_size is not None:
             args += ["--page-size", str(page_size)]
