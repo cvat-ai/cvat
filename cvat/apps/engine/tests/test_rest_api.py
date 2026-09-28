@@ -1966,9 +1966,9 @@ class _CloudStorageTestBase(ApiTestBase):
             "resource": "test",
             "display_name": "Bucket",
             "credentials_type": "KEY_SECRET_KEY_PAIR",
-            "key": "minio_access_key",
-            "secret_key": "minio_secret_key",
-            "specific_attributes": "endpoint_url=http://minio:9000",
+            "key": "moto_access_key",
+            "secret_key": "moto_secret_key",
+            "specific_attributes": "endpoint_url=http://moto:9000",
             "description": "Some description",
             "manifests": [],
         }
