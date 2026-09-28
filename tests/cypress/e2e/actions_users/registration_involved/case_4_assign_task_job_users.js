@@ -42,7 +42,7 @@ context('Multiple users. Assign task, job. Deactivating users.', () => {
 
     function deactivateUserOpenTask(userName) {
         cy.task('getAuthHeaders').then((authHeaders) => cy.task('nodeJSONRequest', {
-            url: '/api/users?page_size=all',
+            url: '/api/users?page_size=500',
             options: {
                 headers: authHeaders,
             },

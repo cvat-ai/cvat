@@ -139,7 +139,7 @@ Cypress.Commands.add('userRegistration', (firstName, lastName, userName, emailAd
 
 Cypress.Commands.add('deleteUsers', (authHeaders, accountsToDelete) => {
     cy.request({
-        url: '/api/users?page_size=all',
+        url: '/api/users?page_size=500',
         headers: authHeaders,
     }).then((_response) => {
         const responseResult = _response.body.results;
@@ -195,7 +195,7 @@ Cypress.Commands.add('headlessGetUserId', (username) => cy.window().its('cvat')
 
 Cypress.Commands.add('deleteTasks', (authHeaders, tasksToDelete) => {
     cy.request({
-        url: '/api/tasks?page_size=all',
+        url: '/api/tasks?page_size=500',
         headers: authHeaders,
     }).then((_response) => {
         const responseResult = _response.body.results;
@@ -1139,7 +1139,7 @@ Cypress.Commands.add(
             cy.contains('Annotations have been loaded').should('be.visible');
             cy.closeNotification('.ant-notification-notice-info');
         } else if (expectedResult === 'fail') {
-            cy.contains('Could not upload annotation').should('be.visible');
+            cy.contains('Could not upload annotation', { timeout: 120000 }).should('be.visible');
             cy.closeNotification('.ant-notification-notice-error');
         }
     },

@@ -21,7 +21,7 @@ import CloudStorage from './cloud-storage';
 import Organization from './organization';
 import Webhook from './webhook';
 import AnnotationGuide from './guide';
-import { BaseAction } from './annotations-actions/base-action';
+import { BaseAction, setActionMetadata } from './annotations-actions/base-action';
 import { BaseCollectionAction } from './annotations-actions/base-collection-action';
 import { BaseShapesAction } from './annotations-actions/base-shapes-action';
 import {
@@ -198,6 +198,9 @@ function build(): CVATCore {
             },
         },
         actions: {
+            metadata: {
+                set: setActionMetadata,
+            },
             async list() {
                 const result = await PluginRegistry.apiWrapper(cvat.actions.list);
                 return result;

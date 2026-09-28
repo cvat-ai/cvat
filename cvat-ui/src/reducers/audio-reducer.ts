@@ -71,16 +71,40 @@ export default function audioReducer(state: AudioState = defaultState, action: A
                 },
             };
         }
-        case AudioActionTypes.SWITCH_AUDIO_PLAY: {
+        case AudioActionTypes.PAUSE_AUDIO: {
             return {
                 ...state,
                 player: {
                     ...state.player,
-                    playing: action.payload.playing,
+                    playing: false,
                 },
             };
         }
         case AudioActionTypes.PLAY_FULL_AUDIO: {
+            return {
+                ...state,
+                player: {
+                    ...state.player,
+                    playing: true,
+                    playbackRange: null,
+                    playbackRangeSource: null,
+                },
+            };
+        }
+        case AudioActionTypes.PLAY_AUDIO_RANGE: {
+            return {
+                ...state,
+                player: {
+                    ...state.player,
+                    playing: true,
+                    playbackRange: action.payload.range,
+                    playbackRangeSource: null,
+                },
+            };
+        }
+        case AudioActionTypes.RESUME_AUDIO_RANGE: {
+            if (!state.player.playbackRange) return state;
+
             return {
                 ...state,
                 player: {
@@ -162,17 +186,10 @@ export default function audioReducer(state: AudioState = defaultState, action: A
                 },
             };
         }
-        case AudioActionTypes.SET_AUDIO_PLAYBACK_RANGE: {
-            return {
-                ...state,
-                player: {
-                    ...state.player,
-                    playbackRange: action.payload.range,
-                },
-            };
-        }
         case AudioActionTypes.UPDATE_AUDIO_PLAYBACK_RANGE: {
-            if (state.player.playbackRange?.id !== action.payload.range.id) return state;
+            if (state.player.playbackRange?.id !== action.payload.range.id) {
+                return state;
+            }
 
             return {
                 ...state,
@@ -183,18 +200,24 @@ export default function audioReducer(state: AudioState = defaultState, action: A
             };
         }
         case AudioActionTypes.CLEAR_AUDIO_PLAYBACK_RANGE: {
-            if (action.payload.id && state.player.playbackRange?.id !== action.payload.id) return state;
+            if (action.payload.id && state.player.playbackRange?.id !== action.payload.id) {
+                return state;
+            }
 
             return {
                 ...state,
                 player: {
                     ...state.player,
+                    playing: false,
                     playbackRange: null,
+                    playbackRangeSource: null,
                 },
             };
         }
         case AudioActionTypes.SET_AUDIO_INTERVAL_PLAYBACK_SOURCE: {
-            if (state.player.playbackRange?.id !== action.payload.rangeID) return state;
+            if (state.player.playbackRange?.id !== action.payload.rangeID) {
+                return state;
+            }
 
             return {
                 ...state,
@@ -293,6 +316,7 @@ export default function audioReducer(state: AudioState = defaultState, action: A
                     audioDataToken: null,
                     audioLoadRequest: action.payload.request,
                     seekRequest: null,
+                    playing: false,
                     playbackRange: null,
                     playbackRangeSource: null,
                     contextMenu: defaultState.player.contextMenu,
@@ -334,6 +358,8 @@ export default function audioReducer(state: AudioState = defaultState, action: A
                     ...(action.payload.ready ? {} : {
                         audioDataToken: null,
                         playing: false,
+                        playbackRange: null,
+                        playbackRangeSource: null,
                         currentTime: 0,
                         duration: 0,
                     }),
@@ -365,6 +391,9 @@ export default function audioReducer(state: AudioState = defaultState, action: A
                     activeIntervalID: null,
                     hoveredIntervalID: null,
                     interactingIntervalID: null,
+                    // A range cannot remain valid when entering create/record mode,
+                    // but full-track playback can continue while drawing.
+                    playing: state.player.playbackRange ? false : state.player.playing,
                     playbackRange: null,
                     playbackRangeSource: null,
                     contextMenu: defaultState.player.contextMenu,

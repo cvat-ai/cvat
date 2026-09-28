@@ -25,7 +25,7 @@ from cvat.apps.engine.models import (
 from cvat.apps.iam.models import User
 from cvat.apps.profiler import silk_profile
 from cvat.apps.quality_control.comparison_report import ComparisonParameters
-from cvat.apps.quality_control.data_providers import JobDataProvider
+from cvat.apps.quality_control.datumaro_data_provider import DatumaroJobDataProvider
 from cvat.apps.redis_handler.background import AbstractRequestManager
 
 
@@ -91,7 +91,7 @@ class _TaskMerger:
 
     @staticmethod
     def _get_annotations(job_id: int) -> dm.Dataset:
-        return JobDataProvider(job_id).dm_dataset
+        return DatumaroJobDataProvider(job_id).dm_dataset
 
     def _merge_consensus_jobs(self, parent_job_id: int):
         self.check_merging_available(parent_job_id=parent_job_id)
@@ -100,7 +100,7 @@ class _TaskMerger:
 
         consensus_job_ids = [consensus_job_id for consensus_job_id, _ in consensus_job_info]
 
-        consensus_job_data_providers = list(map(JobDataProvider, consensus_job_ids))
+        consensus_job_data_providers = list(map(DatumaroJobDataProvider, consensus_job_ids))
         consensus_datasets = [
             consensus_job_data_provider.dm_dataset
             for consensus_job_data_provider in consensus_job_data_providers
@@ -124,7 +124,7 @@ class _TaskMerger:
         # imported annotations
         clear_annotations_in_jobs([parent_job_id])
 
-        parent_job_data_provider = JobDataProvider(parent_job_id)
+        parent_job_data_provider = DatumaroJobDataProvider(parent_job_id)
 
         # imports the annotations in the `parent_job.job_data` instance
         import_dm_annotations(merged_dataset, parent_job_data_provider.job_data)

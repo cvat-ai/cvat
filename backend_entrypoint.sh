@@ -160,6 +160,10 @@ cmd_run() {
             fail "run worker: expected at least 1 queue name"
         fi
 
+        if ! [[ " ${extra_flags[*]-} " == *" --worker-class="* ]]; then
+            extra_flags+=("--worker-class=cvat.rqworker.DefaultWorker")
+        fi
+
         queue_list="${queues[*]}"
         echo "Workers to run: $queue_list"
         if [ ${#extra_flags[@]} -gt 0 ]; then

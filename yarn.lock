@@ -6493,7 +6493,7 @@ __metadata:
     redux-logger: "npm:^4.0.0"
     redux-thunk: "npm:^2.3.0"
     rehype-sanitize: "npm:^6.0.0"
-    wavesurfer.js: "npm:^7.12.5"
+    wavesurfer.js: "npm:^7.12.12"
   languageName: unknown
   linkType: soft
 
@@ -19669,10 +19669,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"wavesurfer.js@npm:^7.12.5":
-  version: 7.12.5
-  resolution: "wavesurfer.js@npm:7.12.5"
-  checksum: 10c0/5b15ba5b373e6900777ef734f564d443a7443bad4ee8e0b8c0df34f0cbb09cbbc85179bd00a98f823c06765c271cdaa1f318b933a32778e239af8c48203e164f
+"wavesurfer.js@npm:^7.12.12":
+  version: 7.12.12
+  resolution: "wavesurfer.js@npm:7.12.12"
+  checksum: 10c0/9e71525ab68a994e5284e257837db0929747d01439baed0d99146d999be1662741508e5bf18545de069fefd9d8108e1b35ba34410ea341b3b4d0591d98b3f32d
   languageName: node
   linkType: hard
 
