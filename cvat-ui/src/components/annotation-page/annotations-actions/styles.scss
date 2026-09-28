@@ -11,15 +11,19 @@
 }
 
 .cvat-action-runner-list,
+.cvat-action-runner-description,
 .cvat-action-runner-frames-predefined {
     margin-top: $grid-unit-size * 2;
 }
 
-.cvat-action-runner-info {
+.cvat-action-runner-info,
+.cvat-action-runner-description {
     .ant-alert {
         text-align: justify;
     }
+}
 
+.cvat-action-runner-info {
     .ant-btn {
         padding-left: 0;
     }

@@ -19,6 +19,7 @@ import {
 import type { IntelligentScissors, OpenCVTracker } from 'utils/opencv-wrapper/opencv-wrapper';
 import { KeyMap, KeyMapItem } from 'utils/mousetrap-react';
 import { ImageFilter } from 'utils/image-processing';
+import type { AudioSeekRequest } from 'actions/audio-actions';
 
 export interface AudioState {
     player: {
@@ -54,7 +55,7 @@ export interface AudioState {
         waveformReady: boolean;
         activeLabelId: number | null;
         audioLoadRequest: object | null;
-        seekRequest: { time: number } | null;
+        seekRequest: AudioSeekRequest | null;
     };
 }
 
@@ -1162,6 +1163,7 @@ export interface OrganizationsQuery {
 
 export interface OrganizationState {
     current?: Organization | null;
+    currentRole: Membership['role'] | null;
     initialized: boolean;
     fetching: boolean;
     updating: boolean;
