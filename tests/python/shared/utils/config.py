@@ -19,9 +19,9 @@ BASE_URL = "http://localhost:8080"
 API_URL = BASE_URL + "/api/"
 
 # MiniIO settings
-MINIO_KEY = "minio_access_key"
-MINIO_SECRET_KEY = "minio_secret_key"  # nosec
-MINIO_ENDPOINT_URL = "http://localhost:9000"
+MOTO_KEY = "moto_access_key"
+MOTO_SECRET_KEY = "moto_secret_key"  # nosec
+MOTO_ENDPOINT_URL = "http://localhost:9000"
 IMPORT_EXPORT_BUCKET_ID = 3
 
 
