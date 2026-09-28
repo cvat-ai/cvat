@@ -333,6 +333,8 @@ class BasicUserSerializer(serializers.ModelSerializer):
         fields = ("url", "id", "username", "first_name", "last_name")
 
 
+OTHER_OPTION = "other"
+NOT_SURE_OPTION = "not_sure"
 CVAT_USAGE_REASONS = (
     "work_project",
     "academic_research",
@@ -370,7 +372,7 @@ PLANNED_ACTIVITIES = (
     "connect_models",
     "evaluate_for_organization",
 )
-DATA_TYPES = {"images", "video", "point_clouds_3d", "audio", "not_sure"}
+DATA_TYPES = {"images", "video", "point_clouds_3d", "audio", NOT_SURE_OPTION}
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -458,8 +460,8 @@ class UserSerializer(serializers.ModelSerializer):
         extra_kwargs = {"last_login": {"allow_null": True}}
 
     def validate_primary_role(self, value):
-        if value == "other":
-            raise serializers.ValidationError("Replace 'other' with the custom role")
+        if value == OTHER_OPTION:
+            raise serializers.ValidationError(f"Replace '{OTHER_OPTION}' with the custom role")
 
         return value
 
@@ -473,11 +475,13 @@ class UserSerializer(serializers.ModelSerializer):
         if len(value) != len(set(value)):
             raise serializers.ValidationError("Duplicate data types are not allowed")
 
-        if "other" in value:
-            raise serializers.ValidationError("Replace 'other' with the custom data type")
+        if OTHER_OPTION in value:
+            raise serializers.ValidationError(f"Replace '{OTHER_OPTION}' with the custom data type")
 
-        if "not_sure" in value and len(value) != 1:
-            raise serializers.ValidationError("'not_sure' cannot be combined with other data types")
+        if NOT_SURE_OPTION in value and len(value) != 1:
+            raise serializers.ValidationError(
+                f"'{NOT_SURE_OPTION}' cannot be combined with other data types"
+            )
 
         if len(set(value) - DATA_TYPES) > 1:
             raise serializers.ValidationError("Only one custom data type is allowed")
@@ -485,8 +489,10 @@ class UserSerializer(serializers.ModelSerializer):
         return value
 
     def validate_discovery_source(self, value):
-        if value == "other":
-            raise serializers.ValidationError("Replace 'other' with the custom discovery source")
+        if value == OTHER_OPTION:
+            raise serializers.ValidationError(
+                f"Replace '{OTHER_OPTION}' with the custom discovery source"
+            )
 
         return value
 
