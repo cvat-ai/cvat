@@ -390,7 +390,6 @@ postgresql:
 ## Values for cloudpirates pgsql
 #postgresql:
 #  enabled: true
-## Do we need this? I think Helm alias should work. nb! to check
 #  nameOverride: postgresql
 #  external:
 #    # Ignored if an empty value is set
