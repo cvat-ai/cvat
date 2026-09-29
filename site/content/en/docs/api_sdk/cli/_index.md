@@ -131,6 +131,116 @@ cvat-cli task ls
 
 {{< /tabpane >}}
 
+### Persistent authentication (profiles)
+
+The CLI can remember a server URL and a Personal Access Token (PAT) locally,
+so that everyday commands do not have to repeat `--server-host` / `--auth`
+or leak credentials into shell history. Each remembered _profile_ is
+self-contained: it bundles one server with one PAT.
+
+Profiles are stored as a JSON file with `0600` (owner read/write only) mode
+inside a `0700` directory. The CLI refuses to read or write the file if
+either it or its parent directory is group- or world-accessible. On Windows
+the check is best-effort. The location follows the platform convention:
+
+| Platform | Path |
+| ---------- | ---- |
+| Linux    | `${XDG_CONFIG_HOME:-$HOME/.config}/cvat-sdk/auth.json` |
+| macOS    | `~/Library/Application Support/cvat-sdk/auth.json` |
+| Windows  | `%LOCALAPPDATA%\CVAT.ai\cvat-sdk\auth.json` |
+
+> Local profiles are only available for PAT authentication method. Username and password cannot be remembered this way.
+
+#### Managing profiles
+
+Use `cvat-cli profile` and `cvat-cli config` to create and manage profiles.
+These commands operate on the local file and do not talk to the server
+(except that `profile create` optionally reads the token's _name_ from the
+server when you did not supply one).
+
+```bash
+# Save a profile. Prompted for the token (no echo) if omitted.
+cvat-cli --server-host https://app.cvat.ai profile create --name mycvat --set-default
+
+# Save a profile by pasting the token, and pick a nickname:
+cvat-cli --server-host https://app.cvat.ai profile create --name mycvat "<paste-token-here>"
+
+# Import a plain-text token:
+cvat-cli --server-host https://app.cvat.ai profile create --name mycvat --file ~/Downloads/cvat-token.txt
+
+# A JSONC envelope containing the token, server, and profile name needs no extra arguments:
+cvat-cli profile create --file ~/Downloads/cvat-token-my-laptop.json
+
+# Inspect and manage the store:
+cvat-cli profile list                # lists names, servers, and the default marker
+cvat-cli profile list --names-only   # names only, one per line (script-friendly)
+cvat-cli profile default             # print the current default profile
+cvat-cli profile default staging     # make "staging" the default
+cvat-cli profile default --unset     # unset the default
+cvat-cli profile delete staging      # remove the profile (does not revoke the token)
+
+# Set a fallback server used when neither --server-host nor --profile is given:
+cvat-cli config default-server https://app.cvat.ai
+cvat-cli config default-server        # print the current default server
+cvat-cli config default-server --unset
+```
+
+Token envelope files accept JSONC syntax, including comments and trailing
+commas. If the server has moved since the envelope was downloaded, pass
+`--server-host` to override the embedded server URL:
+
+```bash
+cvat-cli --server-host https://new.example.com profile create \
+  --file ~/Downloads/cvat-token-my-laptop.json
+```
+
+The server-side token is **not** revoked when a profile is deleted; use the
+CVAT UI or API to revoke it.
+
+#### Selecting a profile per command
+
+The global `--profile <name>` flag selects a saved profile for a single
+command. It is **mutually exclusive** with `--server-host`, `--server-port`,
+and `--auth`:
+
+```bash
+cvat-cli --profile mycvat task ls
+cvat-cli --profile staging task create "task 1" --labels labels.json local file.jpg
+```
+
+#### Resolution order
+
+The CLI first tries to select a profile:
+
+1. An explicit `--profile NAME`, if provided. It supplies both the server and
+   PAT, and cannot be combined with `--server-host`, `--server-port`, or
+   `--auth`.
+2. Otherwise, the default profile, if one is configured and no explicit
+   server or credential was provided. `CVAT_ACCESS_TOKEN` counts as an
+   explicit credential.
+
+If a profile is selected, it supplies both values and resolution stops.
+Otherwise, the credential and server are resolved independently.
+
+Credential resolution order:
+
+1. `--auth USER[:PASS]`, if provided. When `PASS` is omitted, the CLI uses
+   the `PASS` environment variable or prompts for the password.
+2. `CVAT_ACCESS_TOKEN`, if set.
+3. The current OS username, with the `PASS` environment variable or a
+   password prompt.
+
+Server resolution order:
+
+1. `--server-host`, if provided. `--server-port` is applied to the selected
+   host; if only `--server-port` is provided, the host comes from the next
+   available source below.
+2. The server configured by `cvat-cli config default-server`, if set.
+3. The built-in default, `http://localhost`.
+
+Supplying an explicit credential or server prevents the CLI from borrowing
+the other value from the default profile.
+
 ## Examples - tasks
 
 ### Create
@@ -298,7 +408,7 @@ It can auto-annotate using AA functions implemented in one of the following ways
        ...
    ```
 
-1. As a Python module implementing a factory function named `create`.
+2. As a Python module implementing a factory function named `create`.
    This function must return an object implementing the AA function protocol.
    Any parameters specified on the command line using the `-p` option
    will be passed to `create`.

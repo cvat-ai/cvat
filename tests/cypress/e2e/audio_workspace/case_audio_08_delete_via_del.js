@@ -17,7 +17,8 @@ context('Audio annotation. Delete region via Del key.', () => {
     describe(`Testing case "${caseId}"`, () => {
         it('Select region in sidebar list and press Del removes it', () => {
             cy.audioCreateRegionViaButton(firstLabelName, 100, 250);
-            cy.get('.cvat-audio-region-item').should('have.length', 1).first().click();
+            cy.get('.cvat-audio-region-item').should('have.length', 1).first()
+                .find('.cvat-audio-interval-header-index').click();
             cy.get('.cvat-audio-region-item').first().should('have.class', 'cvat-audio-region-item-active');
             cy.get('body').type('{del}');
             cy.get('.cvat-audio-region-item').should('have.length', 0);

@@ -21,11 +21,20 @@ interface WrappingBBox {
     bottom: number;
 }
 
+type DrawnObject = fabric.Polygon | fabric.Circle | fabric.Rect | fabric.Line | fabric.Image;
+interface HistoryAction {
+    objects: DrawnObject[];
+    description: string;
+}
+type HistoryChangedCallback = (undoAction?: string, redoAction?: string) => void;
+
 export interface MasksHandler {
     draw(drawData: DrawData): void;
     edit(state: MasksEditData): void;
     configure(configuration: Configuration): void;
     transform(geometry: Geometry): void;
+    undo(): boolean;
+    redo(): boolean;
     cancel(): void;
     enabled: boolean;
 }
@@ -40,6 +49,7 @@ export class MasksHandlerImpl implements MasksHandler {
     private onDrawRepeat: (data: DrawData) => void;
     private onEditStart: (state: any) => void;
     private onEditDone: (state: any, points: number[]) => void;
+    private onHistoryChanged: HistoryChangedCallback;
     private vectorDrawHandler: DrawHandler;
 
     private redraw: number | null;
@@ -52,7 +62,10 @@ export class MasksHandlerImpl implements MasksHandler {
     private brushMarker: fabric.Rect | fabric.Circle | null;
     private drawablePolygon: null | fabric.Polygon;
     private isPolygonDrawing: boolean;
-    private drawnObjects: (fabric.Polygon | fabric.Circle | fabric.Rect | fabric.Line | fabric.Image)[];
+    private drawnObjects: DrawnObject[];
+    private undoStack: HistoryAction[];
+    private redoStack: HistoryAction[];
+    private activeHistoryAction: HistoryAction | null;
 
     private tool: DrawData['brushTool'] | null;
     private drawData: DrawData | null;
@@ -123,6 +136,7 @@ export class MasksHandlerImpl implements MasksHandler {
         this.canvas.renderAll();
         this.isInsertion = false;
         this.drawnObjects = this.createDrawnObjectsArray();
+        this.clearHistory();
         this.onDrawDone(null);
     }
 
@@ -139,6 +153,7 @@ export class MasksHandlerImpl implements MasksHandler {
         this.isInsertion = false;
         this.redraw = null;
         this.drawnObjects = this.createDrawnObjectsArray();
+        this.clearHistory();
     }
 
     private releaseEdit(): void {
@@ -152,6 +167,7 @@ export class MasksHandlerImpl implements MasksHandler {
         this.canvas.renderAll();
         this.isEditing = false;
         this.drawnObjects = this.createDrawnObjectsArray();
+        this.clearHistory();
         this.onEditDone(null, null);
     }
 
@@ -224,6 +240,56 @@ export class MasksHandlerImpl implements MasksHandler {
                 wrappingBBox.bottom - wrappingBBox.top + 1,
             ).data;
         return imageData;
+    }
+
+    private clearHistory(): void {
+        this.undoStack = [];
+        this.redoStack = [];
+        this.activeHistoryAction = null;
+        this.onHistoryChanged();
+    }
+
+    private historyActionDescription(): string {
+        const descriptions: Record<BrushTool['type'], string> = {
+            brush: 'Draw mask stroke',
+            eraser: 'Erase mask stroke',
+            'polygon-plus': 'Add polygon to mask',
+            'polygon-minus': 'Subtract polygon from mask',
+        };
+        return this.tool ? descriptions[this.tool.type] : 'Edit mask';
+    }
+
+    private notifyHistoryChanged(): void {
+        this.onHistoryChanged(
+            this.undoStack.at(-1)?.description,
+            this.redoStack.at(-1)?.description,
+        );
+    }
+
+    private startHistoryAction(): void {
+        this.activeHistoryAction = {
+            objects: [],
+            description: this.historyActionDescription(),
+        };
+    }
+
+    private addToHistoryAction(object: DrawnObject): void {
+        this.activeHistoryAction?.objects.push(object);
+    }
+
+    private finishHistoryAction(): void {
+        if (this.activeHistoryAction?.objects.length) {
+            this.undoStack.push(this.activeHistoryAction);
+            this.redoStack = [];
+            this.notifyHistoryChanged();
+        }
+        this.activeHistoryAction = null;
+    }
+
+    private addDrawnObject(object: DrawnObject): void {
+        this.canvas.add(object);
+        this.drawnObjects.push(object);
+        this.addToHistoryAction(object);
     }
 
     private updateHidden(value: boolean): void {
@@ -302,8 +368,9 @@ export class MasksHandlerImpl implements MasksHandler {
                         globalCompositeOperation: this.tool.type === 'polygon-minus' ? 'destination-out' : 'xor',
                     });
 
-                    this.canvas.add(polygon);
-                    this.drawnObjects.push(polygon);
+                    this.startHistoryAction();
+                    this.addDrawnObject(polygon);
+                    this.finishHistoryAction();
                     this.canvas.renderAll();
                 },
             }, this.geometry);
@@ -358,6 +425,7 @@ export class MasksHandlerImpl implements MasksHandler {
         onEditDone: MasksHandlerImpl['onEditDone'],
         vectorDrawHandler: DrawHandler,
         canvas: HTMLCanvasElement,
+        onHistoryChanged: HistoryChangedCallback,
     ) {
         this.redraw = null;
         this.isDrawing = false;
@@ -375,6 +443,7 @@ export class MasksHandlerImpl implements MasksHandler {
         this.onDrawRepeat = onDrawRepeat;
         this.onEditDone = onEditDone;
         this.onEditStart = onEditStart;
+        this.onHistoryChanged = onHistoryChanged;
         this.vectorDrawHandler = vectorDrawHandler;
         this.canvas = new fabric.Canvas(canvas, {
             containerClass: 'cvat_masks_canvas_wrapper',
@@ -384,10 +453,12 @@ export class MasksHandlerImpl implements MasksHandler {
         });
         this.canvas.imageSmoothingEnabled = false;
         this.drawnObjects = this.createDrawnObjectsArray();
+        this.clearHistory();
 
         this.canvas.getElement().parentElement.addEventListener('contextmenu', (e: MouseEvent) => e.preventDefault());
         this.latestMousePos = { x: -1, y: -1 };
         window.document.addEventListener('mouseup', () => {
+            this.finishHistoryAction();
             this.isMouseDown = false;
             this.isBrushSizeChanging = false;
         });
@@ -396,6 +467,10 @@ export class MasksHandlerImpl implements MasksHandler {
             const { isDrawing, isEditing, isInsertion } = this;
             this.isMouseDown = (isDrawing || isEditing) && options.e.button === 0 && !options.e.altKey;
             this.isBrushSizeChanging = (isDrawing || isEditing) && options.e.button === 2 && options.e.altKey;
+
+            if (this.isMouseDown && !isInsertion && ['brush', 'eraser'].includes(this.tool?.type)) {
+                this.startHistoryAction();
+            }
 
             if (isInsertion) {
                 const continueInserting = options.e.ctrlKey;
@@ -507,9 +582,8 @@ export class MasksHandlerImpl implements MasksHandler {
                     });
                 }
 
-                this.canvas.add(shape);
                 if (['brush', 'eraser'].includes(tool?.type)) {
-                    this.drawnObjects.push(shape);
+                    this.addDrawnObject(shape);
                 }
 
                 // add line to smooth the mask
@@ -529,9 +603,8 @@ export class MasksHandlerImpl implements MasksHandler {
                             strokeLineCap: tool.form === 'circle' ? 'round' : 'square',
                         });
 
-                        this.canvas.add(line);
                         if (['brush', 'eraser'].includes(tool?.type)) {
-                            this.drawnObjects.push(line);
+                            this.addDrawnObject(line);
                         }
                     }
                 }
@@ -738,6 +811,52 @@ export class MasksHandlerImpl implements MasksHandler {
 
     get enabled(): boolean {
         return this.isDrawing || this.isEditing || this.isInsertion;
+    }
+
+    public undo(): boolean {
+        if (!this.enabled) {
+            return false;
+        }
+
+        const action = this.undoStack.pop();
+        if (!action) {
+            return false;
+        }
+
+        for (const object of action.objects) {
+            this.canvas.remove(object);
+            const index = this.drawnObjects.indexOf(object);
+            if (index !== -1) {
+                this.drawnObjects.splice(index, 1);
+            }
+        }
+
+        this.redoStack.push(action);
+        this.canvas.renderAll();
+        this.notifyHistoryChanged();
+
+        return true;
+    }
+
+    public redo(): boolean {
+        if (!this.enabled) {
+            return false;
+        }
+
+        const action = this.redoStack.pop();
+        if (!action) {
+            return false;
+        }
+
+        for (const object of action.objects) {
+            this.canvas.add(object);
+            this.drawnObjects.push(object);
+        }
+        this.undoStack.push(action);
+        this.canvas.renderAll();
+        this.notifyHistoryChanged();
+
+        return true;
     }
 
     public cancel(): void {

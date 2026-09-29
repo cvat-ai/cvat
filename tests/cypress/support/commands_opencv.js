@@ -11,6 +11,7 @@ let selectedValueGlobal = '';
 
 Cypress.Commands.add('interactOpenCVControlButton', () => {
     cy.get('.cvat-opencv-control').click();
+    cy.hideTooltips();
     cy.get('.cvat-opencv-control').should('have.class', 'ant-popover-open');
     cy.get('.cvat-opencv-control-popover')
         .should('be.visible')

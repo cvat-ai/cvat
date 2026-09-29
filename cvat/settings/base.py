@@ -147,7 +147,10 @@ INSTALLED_APPS = [
     "cvat.apps.redis_handler",
     "cvat.apps.consensus",
     "cvat.apps.access_tokens",
+    "cvat.apps.growth",
 ]
+
+AUTH_USER_MODEL = "iam.User"
 
 SITE_ID = 1
 
@@ -170,6 +173,8 @@ def parse_num_proxies(value: str | None) -> int | None:
     return num_proxies
 
 
+# NOTE @sosov: DRF does not have a max_page_size setting out of the box
+REST_FRAMEWORK_MAX_PAGE_SIZE = 500
 REST_FRAMEWORK = {
     "DEFAULT_PARSER_CLASSES": [
         "rest_framework.parsers.JSONParser",
@@ -297,6 +302,7 @@ OBJECTS_NOT_RELATED_WITH_ORG = [
     "server",
     "request",
     "access_token",
+    "growth",
 ]
 
 # ORG settings
@@ -445,6 +451,13 @@ PERIODIC_RQ_JOBS = [
         "func": "cvat.apps.dataset_manager.cron.cleanup_tmp_directory",
         # Run once a day
         "cron_string": "0 18 * * *",
+    },
+    {
+        "queue": CVAT_QUEUES.CLEANING.value,
+        "id": "cron_instance_tmp_directories_cleanup",
+        "func": "cvat.apps.dataset_manager.cron.cleanup_instance_tmp_directories",
+        # Run once a day
+        "cron_string": "0 20 * * *",
     },
     {
         "queue": CVAT_QUEUES.CLEANING.value,
@@ -656,6 +669,9 @@ CORS_ALLOW_HEADERS = list(default_headers) + [
 
 CORS_EXPOSE_HEADERS = [
     "Content-Range",
+    "X-Checksum",
+    "X-Chunk-Size",
+    "X-Updated-Date",
 ]
 
 TUS_MAX_FILE_SIZE = 26843545600  # 25gb
@@ -733,6 +749,7 @@ SPECTACULAR_SETTINGS = {
         "StorageType": "cvat.apps.engine.models.StorageChoice",
         "SortingMethod": "cvat.apps.engine.models.SortingMethod",
         "WebhookType": "cvat.apps.webhooks.models.WebhookTypeChoice",
+        "AllWebhookType": "cvat.apps.webhooks.serializers.AllWebhookTypeChoice",
         "WebhookContentType": "cvat.apps.webhooks.models.WebhookContentTypeChoice",
         "RequestStatus": "cvat.apps.redis_handler.serializers.RequestStatus",
         "ValidationMode": "cvat.apps.engine.models.ValidationMode",
@@ -741,7 +758,7 @@ SPECTACULAR_SETTINGS = {
         "AnnotationConflictSeverity": "cvat.apps.quality_control.models.AnnotationConflictSeverity",
         "AnnotationConflictAnnotationType": "cvat.apps.quality_control.models.AnnotationType",
         "MismatchingAnnotationKind": "cvat.apps.quality_control.models.MismatchingAnnotationKind",
-        "QualityTargetMetric": "cvat.apps.quality_control.models.QualityTargetMetricType",
+        "QualityTargetMetric": "cvat.apps.quality_control.models.QUALITY_TARGET_METRIC_CHOICES",
         "QualityPointSizeBase": "cvat.apps.quality_control.models.PointSizeBase",
         "QualityReportTarget": "cvat.apps.quality_control.models.QualityReportTarget",
     },
@@ -810,7 +827,6 @@ BUCKET_CONTENT_MAX_PAGE_SIZE = 500
 
 IMPORT_CACHE_FAILED_TTL = timedelta(days=30)
 IMPORT_CACHE_SUCCESS_TTL = timedelta(hours=1)
-IMPORT_CACHE_CLEAN_DELAY = timedelta(hours=12)
 
 ASSET_MAX_SIZE_MB = 10
 ASSET_SUPPORTED_TYPES = ("image/jpeg", "image/png", "image/webp", "image/gif", "application/pdf")
@@ -825,6 +841,8 @@ SMOKESCREEN_ENABLED = to_bool(os.getenv("SMOKESCREEN_ENABLED", True))
 EMAIL_BACKEND = None
 
 ONE_RUNNING_JOB_IN_QUEUE_PER_USER = to_bool(os.getenv("ONE_RUNNING_JOB_IN_QUEUE_PER_USER", False))
+
+EMAIL_VALIDATORS = []
 
 # How many chunks can be prepared simultaneously during task creation in case the cache is not used
 CVAT_CONCURRENT_CHUNK_PROCESSING = int(os.getenv("CVAT_CONCURRENT_CHUNK_PROCESSING", 1))

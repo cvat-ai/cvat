@@ -24,7 +24,11 @@ from cvat.apps.dataset_manager.bindings import (
     JobData,
     TaskData,
 )
-from cvat.apps.dataset_manager.util import TmpDirManager, faster_deepcopy
+from cvat.apps.dataset_manager.util import (
+    TmpDirManager,
+    faster_deepcopy,
+    format_import_exception,
+)
 from cvat.apps.engine import models, serializers
 from cvat.apps.engine.log import DatasetLogManager
 from cvat.apps.engine.plugins import plugin_decorator
@@ -152,8 +156,8 @@ def _validate_input_annotations(
                     f"Interval {interval['id']}" if interval.get("id") is not None else "Interval"
                 )
                 raise ValidationError(
-                    f"{interval_ref} cannot be outside the task boundaries"
-                    f"[{task_start}, {task_stop}], got "
+                    f"{interval_ref} start must be within [{task_start}, {task_stop}] "
+                    f"and stop must be within [{task_start}, {task_stop + 1}], got "
                     f"[{interval['start']}, {interval['stop']}]"
                 )
 
@@ -1410,7 +1414,7 @@ def import_task_annotations(
                 import_mode=import_mode,
             )
         except (DatasetError, DatasetImportError, DatasetNotFoundError) as ex:
-            raise CvatImportError(str(ex))
+            raise CvatImportError(format_import_exception(ex))
 
 
 @transaction.atomic
@@ -1437,4 +1441,4 @@ def import_job_annotations(
                 import_mode=import_mode,
             )
         except (DatasetError, DatasetImportError, DatasetNotFoundError) as ex:
-            raise CvatImportError(str(ex))
+            raise CvatImportError(format_import_exception(ex))

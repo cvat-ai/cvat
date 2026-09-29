@@ -41,7 +41,9 @@
 .cvat-runner-label-mapper {
     @extend .cvat-labels-attributes-mapper-tree;
 
-    width: 100%;
+    max-height: $grid-unit-size * 50;
+    overflow: auto;
+    width: calc(100% - $grid-unit-size);
 
     span {
         text-align: center;

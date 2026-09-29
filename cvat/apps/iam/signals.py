@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 from django.conf import settings
-from django.contrib.auth.models import Group, User
+from django.contrib.auth.models import Group
 from django.db.models.signals import post_migrate, post_save
 
 
@@ -40,6 +40,10 @@ if settings.IAM_TYPE == "BASIC":
 elif settings.IAM_TYPE == "LDAP":
 
     def create_user(sender, user=None, ldap_user=None, **kwargs):
+        from cvat.apps.iam.models import UserCreationMethod
+
+        user.created_via = UserCreationMethod.LDAP
+
         user_groups = []
         for role in settings.IAM_ROLES:
             db_group = Group.objects.get(name=role)
@@ -66,7 +70,11 @@ def register_signals(app_config):
     post_migrate.connect(register_groups, app_config, dispatch_uid=__name__ + ".register_groups")
     if settings.IAM_TYPE == "BASIC":
         # Add default groups and add admin rights to super users.
-        post_save.connect(create_user, sender=User, dispatch_uid=__name__ + ".create_user")
+        post_save.connect(
+            create_user,
+            sender=settings.AUTH_USER_MODEL,
+            dispatch_uid=__name__ + ".create_user",
+        )
     elif settings.IAM_TYPE == "LDAP":
         import django_auth_ldap.backend
 

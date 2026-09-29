@@ -7,12 +7,13 @@ import './styles.scss';
 import React, { useState, useEffect, useCallback } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { shallowEqual } from 'utils/redux';
+import getHiddenZLayers from 'utils/get-hidden-z-layers';
 
 import { ActiveControl, CombinedState, NewIssueSource } from 'reducers';
 
 import { commentIssueAsync, resolveIssueAsync, reopenIssueAsync } from 'actions/review-actions';
 import {
-    AnnotationConflict, ConflictSeverity, ObjectState, QualityConflict,
+    AnnotationConflict, ConflictSeverity, ObjectState, ObjectType, QualityConflict,
 } from 'cvat-core-wrapper';
 import { Canvas, CanvasMode } from 'cvat-canvas-wrapper';
 import { highlightConflict, updateActiveControl } from 'actions/annotation-actions';
@@ -27,6 +28,7 @@ interface ConflictMappingElement {
     x: number;
     y: number;
     serverID: number;
+    objectType: ObjectType;
     conflict: QualityConflict;
 }
 
@@ -39,7 +41,7 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
         issuesResolvedHidden,
         canvasInstance,
         canvasIsReady,
-        annotationsZLayer,
+        hiddenZLayers,
         newIssuePosition,
         newIssueSource,
         issueFetching,
@@ -54,7 +56,7 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
         issuesResolvedHidden: state.review.issuesResolvedHidden,
         canvasInstance: state.annotation.canvas.instance,
         canvasIsReady: state.annotation.canvas.ready,
-        annotationsZLayer: state.annotation.annotations.zLayer.cur,
+        hiddenZLayers: getHiddenZLayers(state),
         newIssuePosition: state.review.newIssue.position,
         newIssueSource: state.review.newIssue.source,
         issueFetching: state.review.fetching.issueId,
@@ -68,9 +70,6 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
     const [expandedIssue, setExpandedIssue] = useState<number | null>(null);
     const [geometry, setGeometry] = useState<Canvas['geometry'] | null>(null);
     const [canvasRect, setCanvasRect] = useState<DOMRect | null>(null);
-    const highlightedObjectsIDs = highlightedConflict?.annotationConflicts
-        ?.map((annotationConflict: AnnotationConflict) => annotationConflict.serverID);
-
     const canvasReady = canvasInstance instanceof Canvas && canvasIsReady;
 
     const onEnter = useCallback((conflict: QualityConflict) => {
@@ -168,7 +167,7 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
                         _state.objectType === mainAnnotationsConflict.type
                     ));
 
-                    if (state && state.zOrder <= annotationsZLayer && !state.hidden) {
+                    if (state && !hiddenZLayers.has(state.zOrder) && !state.hidden) {
                         const points = canvasInstance.setupConflictRegions(state);
                         if (points) {
                             return {
@@ -177,6 +176,7 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
                                 x: points[0],
                                 y: points[1],
                                 serverID: state.serverID,
+                                objectType: state.objectType,
                                 conflict,
                             };
                         }
@@ -189,7 +189,7 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
         } else {
             setConflictMapping([]);
         }
-    }, [geometry, objectStates, showConflicts, canvasReady, qualityConflicts, annotationsZLayer]);
+    }, [geometry, objectStates, showConflicts, canvasReady, qualityConflicts, hiddenZLayers]);
 
     if (!canvasReady || !geometry) {
         return null;
@@ -279,7 +279,12 @@ export default function IssueAggregatorComponent(): JSX.Element | null {
         null;
 
     for (const conflict of conflictMapping) {
-        const isConflictHighlighted = highlightedObjectsIDs?.includes(conflict.serverID) || false;
+        const isConflictHighlighted = highlightedConflict?.annotationConflicts.some(
+            (annotationConflict: AnnotationConflict) => (
+                annotationConflict.serverID === conflict.serverID &&
+                annotationConflict.type === conflict.objectType
+            ),
+        ) || false;
         conflictLabels.push(
             <ConflictLabel
                 key={(Math.random() + 1).toString(36).substring(7)}

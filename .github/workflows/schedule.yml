@@ -46,6 +46,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: CVAT server. Getting cache from the default branch
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
@@ -60,7 +62,7 @@ jobs:
           key: ${{ runner.os }}-build-ui-${{ needs.search_cache.outputs.sha }}
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4.2.0
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
 
       - name: Create artifact directories
         run: |
@@ -69,7 +71,7 @@ jobs:
           mkdir /tmp/cvat_sdk
 
       - name: CVAT server. Build and push
-        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           cache-from: type=local,src=/tmp/cvat_cache_server
           context: .
@@ -78,7 +80,7 @@ jobs:
           outputs: type=docker,dest=/tmp/cvat_server/image.tar
 
       - name: CVAT UI. Build and push
-        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           cache-from: type=local,src=/tmp/cvat_cache_ui
           context: .
@@ -103,6 +105,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
@@ -144,12 +148,7 @@ jobs:
 
       - name: REST API and SDK tests
         run: |
-          echo 'Run 1: without cache'
-          pytest tests/python/ --alluredir=tests/python/allure-results
-          pytest tests/python/ --stop-services
-
-          echo 'Run 2: with cache'
-          CVAT_ALLOW_STATIC_CACHE="true" pytest tests/python
+          pytest tests/python --alluredir=tests/python/allure-results
           pytest tests/python/ --stop-services
 
       - name: Upload allure results for REST API tests
@@ -160,9 +159,6 @@ jobs:
           path: tests/python/allure-results
 
       - name: Unit tests
-        env:
-          HOST_COVERAGE_DATA_DIR: ${{ github.workspace }}
-          CONTAINER_COVERAGE_DATA_DIR: "/coverage_data"
         run: |
           docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d cvat_opa cvat_server cvat_db
           max_tries=12
@@ -180,12 +176,27 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        specs: ['actions_tasks', 'actions_tasks2', 'actions_tasks3', 'actions_tasks4',
-                'actions_objects', 'actions_objects2', 'actions_users',
-                'actions_projects_models', 'canvas3d_functionality',
-                'issues_prs', 'issues_prs2', 'features']
+        specs:
+          [
+              "actions_tasks",
+              "actions_tasks2",
+              "actions_tasks3",
+              "actions_objects",
+              "actions_objects2",
+              "actions_users",
+              "actions_projects_models",
+              "canvas3d_functionality",
+              "canvas3d_functionality_2",
+              "issues_prs",
+              "issues_prs2",
+              "features",
+              "features2",
+              "audio_workspace"
+          ]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
@@ -215,7 +226,7 @@ jobs:
             -f docker-compose.yml \
             -f docker-compose.dev.yml \
             -f tests/docker-compose.file_share.yml \
-            -f tests/docker-compose.minio.yml \
+            -f tests/docker-compose.moto.yml \
             -f components/serverless/docker-compose.serverless.yml up -d
 
       - name: Waiting for server
@@ -254,7 +265,7 @@ jobs:
           DJANGO_SU_EMAIL: "admin@localhost.company"
           DJANGO_SU_PASSWORD: "12qwaszx"
         run: |
-          docker exec -i cvat_server /bin/bash -c "echo \"from django.contrib.auth.models import User; User.objects.create_superuser('${DJANGO_SU_NAME}', '${DJANGO_SU_EMAIL}', '${DJANGO_SU_PASSWORD}')\" | python3 ~/manage.py shell"
+          docker exec -i cvat_server /bin/bash -c "echo \"from django.contrib.auth import get_user_model; get_user_model().objects.create_superuser('${DJANGO_SU_NAME}', '${DJANGO_SU_EMAIL}', '${DJANGO_SU_PASSWORD}')\" | python3 ~/manage.py shell"
 
       - name: Run tests
         run: |
@@ -262,18 +273,29 @@ jobs:
           corepack enable yarn
           yarn --immutable
 
-          shopt -s extglob
-          if [[ ${{ matrix.specs }} == canvas3d_* ]]; then
-            npx cypress run \
-              --headed \
-              --browser chrome \
-              --config-file cypress_canvas3d.config.js \
-              --spec 'cypress/e2e/setup/setup_canvas3d.js,cypress/e2e/canvas3d_*/**/*.js,cypress/e2e/remove_users_tasks_projects_organizations.js'
-          else
-            npx cypress run \
-              --browser chrome \
-              --spec 'cypress/e2e/setup/setup.js,cypress/e2e/setup/setup_project.js,cypress/e2e/${{ matrix.specs }}/**/*.js,cypress/e2e/remove_users_tasks_projects_organizations.js'
-          fi
+          CYPRESS_ARGS=(
+            --browser chrome
+          )
+          CYPRESS_SETUP_SPECS="cypress/e2e/setup/setup.js,cypress/e2e/setup/setup_project.js"
+          case "${{ matrix.specs }}" in
+            canvas3d_*)
+              CYPRESS_ARGS+=(--config-file cypress_canvas3d.config.js)
+              CYPRESS_SETUP_SPECS="cypress/e2e/setup/setup_canvas3d.js"
+              ;;
+            audio_*)
+              CYPRESS_ARGS+=(--config-file cypress_audio.config.js)
+              CYPRESS_SETUP_SPECS="cypress/e2e/setup/setup_audio.js"
+              ;;
+          esac
+
+          CYPRESS_SPECS="cypress/e2e/${{ matrix.specs }}/**/*.js,cypress/e2e/remove_users_tasks_projects_organizations.js"
+
+          echo "CYPRESS_SETUP_SPECS=$CYPRESS_SETUP_SPECS"
+          echo "CYPRESS_SPECS=$CYPRESS_SPECS"
+          echo "CYPRESS_ARGS=${CYPRESS_ARGS[*]}"
+
+          yarn cypress run --headless "${CYPRESS_ARGS[@]}" --env coverage=false --spec "$CYPRESS_SETUP_SPECS" # if fail, further behavior is unpredictable
+          yarn cypress run --headed "${CYPRESS_ARGS[@]}" --spec "${CYPRESS_SPECS}"
 
       - name: Creating a log file from "cvat" container logs
         if: failure()

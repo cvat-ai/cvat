@@ -30,10 +30,12 @@ import requestsReducer from './requests-reducer';
 import serverAPIReducer from './server-api-reducer';
 import navigationReducer from './navigation-reducer';
 import bulkActionsReducer from './bulk-actions-reducer';
+import growthReducer from './growth-reducer';
 
 export default function createRootReducer(): Reducer {
     return combineReducers({
         auth: authReducer,
+        growth: growthReducer,
         projects: projectsReducer,
         tasks: tasksReducer,
         jobs: jobsReducer,

@@ -14,7 +14,7 @@ from django.conf import settings
 from django.db import transaction
 
 from cvat.apps.dataset_manager.task import TaskAnnotation
-from cvat.apps.dataset_manager.util import TmpDirManager
+from cvat.apps.dataset_manager.util import TmpDirManager, format_import_exception
 from cvat.apps.engine import models
 from cvat.apps.engine.log import DatasetLogManager
 from cvat.apps.engine.rq import ImportRQMeta
@@ -231,4 +231,4 @@ def import_dataset_as_project(src_file, project_id, format_name, conv_mask_to_po
         try:
             project.import_dataset(f, importer, conv_mask_to_poly=conv_mask_to_poly)
         except (DatasetError, DatasetImportError, DatasetNotFoundError) as ex:
-            raise CvatImportError(str(ex))
+            raise CvatImportError(format_import_exception(ex))

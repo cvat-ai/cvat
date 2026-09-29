@@ -16,13 +16,17 @@ import {
 import Button from 'antd/lib/button';
 import Text from 'antd/lib/typography/Text';
 
-import { StatesOrdering, Workspace } from 'reducers';
+import { StatesOrdering, Workspace, isMultiSelectionSupported } from 'reducers';
 import { ObjectState } from 'cvat-core-wrapper';
 import ObjectItemContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/object-item';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import {
     OBJECTS_SIDEBAR_EXPAND_Z_LAYER_EVENT,
 } from 'utils/objects-sidebar';
+import { KeyMap } from 'utils/mousetrap-react';
+import {
+    isMultiSelectObjectModifierPressed, sanitizeSelectedObjectIDs,
+} from 'utils/multi-selection';
 
 import ObjectListHeader from './objects-list-header';
 import {
@@ -46,6 +50,9 @@ interface Props {
     statesCollapsedAll: boolean;
     statesOrdering: StatesOrdering;
     currentLayer: number;
+    hiddenLayers: Set<number>;
+    selectedStatesID: number[];
+    keyMap: KeyMap;
     sortedStatesID: number[];
     objectStates: ObjectState[];
     visibleSkeletonElements: Record<number, number[]>;
@@ -54,6 +61,7 @@ interface Props {
     showGroundTruth: boolean;
     changeStatesOrdering(value: StatesOrdering): void;
     selectLayer(zOrder: number): void;
+    toggleLayersVisibility(zOrders: number[]): void;
     moveObjectsToLayer(source: LayerMoveSource, targetZOrder: number): void;
     moveObjectsOnNewLayer(source: LayerMoveSource, placement: LayerPlacement): void;
     compactLayers(): void;
@@ -64,6 +72,7 @@ interface Props {
     hideAllStates(): void;
     showAllStates(): void;
     changeShowGroundTruth(): void;
+    selectObjects(clientIDs: number[]): void;
 }
 
 function ObjectListComponent(props: Props): JSX.Element {
@@ -74,6 +83,9 @@ function ObjectListComponent(props: Props): JSX.Element {
         statesCollapsedAll,
         statesOrdering,
         currentLayer,
+        hiddenLayers,
+        selectedStatesID,
+        keyMap,
         sortedStatesID,
         objectStates,
         visibleSkeletonElements,
@@ -82,6 +94,7 @@ function ObjectListComponent(props: Props): JSX.Element {
         showGroundTruth,
         changeStatesOrdering,
         selectLayer,
+        toggleLayersVisibility,
         moveObjectsToLayer,
         moveObjectsOnNewLayer,
         compactLayers,
@@ -92,7 +105,9 @@ function ObjectListComponent(props: Props): JSX.Element {
         hideAllStates,
         showAllStates,
         changeShowGroundTruth,
+        selectObjects,
     } = props;
+    const multiSelectionSupported = isMultiSelectionSupported(workspace);
 
     const sensors = useSensors(useSensor(PointerSensor, {
         activationConstraint: {
@@ -206,6 +221,17 @@ function ObjectListComponent(props: Props): JSX.Element {
 
             return acc;
         }, {});
+    const selectableObjectIDs = new Set(sanitizeSelectedObjectIDs(
+        layerObjectStates,
+        sortedStatesID,
+        hiddenLayers,
+    ));
+    const selectableObjectIdsByLayer = Object.fromEntries(Object.entries(objectIdsByLayer).map(
+        ([zOrder, clientIDs]): [string, number[]] => [
+            zOrder,
+            clientIDs.filter((clientID: number): boolean => selectableObjectIDs.has(clientID)),
+        ],
+    ));
 
     const onDragEnd = useCallback((event: DragEndEvent): void => {
         const { active, over } = event;
@@ -222,16 +248,20 @@ function ObjectListComponent(props: Props): JSX.Element {
         const sourceZOrder = parseLayerDragID(String(active.id));
         const zOrder = parseLayerDropID(String(over.id));
         const placement = parseLayerInsertDropID(String(over.id));
+        let moved = false;
 
         if (clientID !== null && zOrder !== null) {
             // Dropping an object onto an existing layer moves it into that layer.
             moveObjectsToLayer({ clientID }, zOrder);
+            moved = true;
         } else if (clientID !== null && placement !== null) {
             // Dropping an object between layers creates a new layer before/after a layout boundary.
             moveObjectsOnNewLayer({ clientID }, placement);
+            moved = true;
         } else if (sourceZOrder !== null && zOrder !== null) {
             // Dropping a layer onto an existing layer merges both layers.
             moveObjectsToLayer({ zOrder: sourceZOrder }, zOrder);
+            moved = true;
         } else if (sourceZOrder !== null && placement !== null) {
             if (isLayerDroppedBesideItself(sourceZOrder, placement)) {
                 return;
@@ -239,8 +269,13 @@ function ObjectListComponent(props: Props): JSX.Element {
 
             // Dropping a layer between layers creates a new layer before/after a layout boundary.
             moveObjectsOnNewLayer({ zOrder: sourceZOrder }, placement);
+            moved = true;
         }
-    }, [moveObjectsOnNewLayer, moveObjectsToLayer]);
+
+        if (moved) {
+            selectObjects([]);
+        }
+    }, [moveObjectsOnNewLayer, moveObjectsToLayer, selectObjects]);
 
     const onDragStart = useCallback((event: DragStartEvent): void => {
         setDragActive(true);
@@ -271,6 +306,59 @@ function ObjectListComponent(props: Props): JSX.Element {
         setCollapsedLayers(allLayersCollapsed ? new Set() : new Set(zLayers));
     };
 
+    const toggleLayerVisibility = (zOrder: number, includeLower: boolean): void => {
+        toggleLayersVisibility(includeLower ? [zOrder, ...zLayers.filter((layer) => layer < zOrder)] : [zOrder]);
+        selectObjects([]);
+    };
+    const compactLayerStack = (): void => {
+        compactLayers();
+        selectObjects([]);
+    };
+    const toggleObjectSelection = (clientID: number): void => {
+        selectObjects(selectedStatesID.includes(clientID) ?
+            selectedStatesID.filter((selectedID: number): boolean => selectedID !== clientID) :
+            [...selectedStatesID, clientID]);
+    };
+    const selectObjectRangeWithinLayer = (clientID: number, zOrder: number): void => {
+        const layerObjectIDs = selectableObjectIdsByLayer[zOrder] || [];
+        const anchorID = [...selectedStatesID].reverse().find(
+            (selectedID: number): boolean => layerObjectIDs.includes(selectedID),
+        );
+        if (typeof anchorID !== 'number') {
+            selectObjects([...selectedStatesID, clientID]);
+            return;
+        }
+
+        const from = layerObjectIDs.indexOf(anchorID);
+        const to = layerObjectIDs.indexOf(clientID);
+        const range = layerObjectIDs.slice(Math.min(from, to), Math.max(from, to) + 1);
+        selectObjects([...new Set([...selectedStatesID, ...range])]);
+    };
+    const selectLayerObjects = (event: React.MouseEvent | React.KeyboardEvent, zOrder: number): void => {
+        if (!multiSelectionSupported || ('button' in event && event.button !== 0) ||
+            ('key' in event && !['Enter', ' '].includes(event.key)) ||
+            (event.target as Element).closest('button, [role="button"]')) {
+            return;
+        }
+
+        if (!isMultiSelectObjectModifierPressed(event, keyMap)) {
+            return;
+        }
+
+        event.preventDefault();
+        event.stopPropagation();
+        const affectedIDs = selectableObjectIdsByLayer[zOrder] || [];
+        const selectedIDs = new Set(selectedStatesID);
+        const remove = affectedIDs.length > 0 &&
+            affectedIDs.every((clientID: number): boolean => selectedIDs.has(clientID));
+        selectObjects(remove ?
+            selectedStatesID.filter((clientID: number): boolean => !affectedIDs.includes(clientID)) :
+            [...new Set([...selectedStatesID, ...affectedIDs])]);
+    };
+    const visibleObjectIDs = statesOrdering === StatesOrdering.LAYER ? zLayers
+        .filter((zOrder: number): boolean => !collapsedLayers.has(zOrder))
+        .flatMap((zOrder: number): number[] => objectIdsByLayer[zOrder] || []) : sortedStatesID;
+
     const renderDragOverlay = (): JSX.Element | null => {
         if (!activeDragID) {
             return null;
@@ -284,6 +372,7 @@ function ObjectListComponent(props: Props): JSX.Element {
                     <ObjectItemContainer
                         objectStates={objectStates}
                         clientID={clientID}
+                        visibleObjectIDs={visibleObjectIDs}
                         visibleSkeletonElements={visibleSkeletonElements}
                         allowSimplifyLifecycle
                         zLayerDragging
@@ -298,7 +387,7 @@ function ObjectListComponent(props: Props): JSX.Element {
             return null;
         }
 
-        const visible = zOrder <= currentLayer;
+        const visible = !hiddenLayers.has(zOrder);
 
         return (
             <div className='cvat-objects-sidebar-z-layer-mark cvat-objects-sidebar-z-layer-mark-dragging'>
@@ -342,7 +431,7 @@ function ObjectListComponent(props: Props): JSX.Element {
                                     type='text'
                                     size='small'
                                     icon={<VerticalAlignMiddleOutlined />}
-                                    onClick={compactLayers}
+                                    onClick={compactLayerStack}
                                 />
                             </CVATTooltip>
                             <CVATTooltip title={allLayersCollapsed ? 'Expand all layers' : 'Collapse all layers'}>
@@ -380,10 +469,30 @@ function ObjectListComponent(props: Props): JSX.Element {
                                                 objectStates={layerObjectStates}
                                                 visibleSkeletonElements={visibleSkeletonElements}
                                                 selected={zOrder === currentLayer}
-                                                visible={zOrder <= currentLayer}
+                                                multiSelected={multiSelectionSupported &&
+                                                    !!selectableObjectIdsByLayer[zOrder]?.length &&
+                                                    selectableObjectIdsByLayer[zOrder].every(
+                                                        (clientID: number): boolean => (
+                                                            selectedStatesID.includes(clientID)
+                                                        ),
+                                                    )}
+                                                visible={!hiddenLayers.has(zOrder)}
                                                 collapsed={collapsedLayers.has(zOrder)}
                                                 selectLayer={selectLayer}
+                                                toggleLayerVisibility={toggleLayerVisibility}
                                                 toggleLayerCollapsed={toggleLayerCollapsed}
+                                                onMouseDown={(event: React.MouseEvent): void => (
+                                                    selectLayerObjects(event, zOrder)
+                                                )}
+                                                onKeyDown={(event: React.KeyboardEvent): void => (
+                                                    selectLayerObjects(event, zOrder)
+                                                )}
+                                                toggleObjectSelection={toggleObjectSelection}
+                                                selectObjectRange={(clientID: number): void => (
+                                                    selectObjectRangeWithinLayer(clientID, zOrder)
+                                                )}
+                                                keyMap={keyMap}
+                                                multiSelectionSupported={multiSelectionSupported}
                                             />
                                         </React.Fragment>
                                     );
@@ -411,6 +520,7 @@ function ObjectListComponent(props: Props): JSX.Element {
                         key={id}
                         objectStates={objectStates}
                         clientID={id}
+                        visibleObjectIDs={visibleObjectIDs}
                         visibleSkeletonElements={visibleSkeletonElements}
                         allowSimplifyLifecycle
                     />

@@ -34,6 +34,7 @@ from cvat_sdk.api_client.exceptions import ForbiddenException
 from cvat_sdk.core.exceptions import BackgroundRequestException
 from cvat_sdk.core.helpers import get_paginated_collection
 from cvat_sdk.core.progress import NullProgressReporter
+from cvat_sdk.core.proxies.annotations import AnnotationUpdateAction
 from cvat_sdk.core.proxies.tasks import ResourceType, Task
 from cvat_sdk.core.uploading import Uploader
 from deepdiff import DeepDiff
@@ -54,6 +55,7 @@ from rest_api.utils import (
     import_task_annotations,
 )
 from shared.fixtures.init import container_exec_cvat
+from shared.fixtures.params import CACHE
 from shared.tasks.interface import ITaskSpec
 from shared.tasks.types import SourceDataType
 from shared.tasks.utils import parse_frame_step, to_rel_frames
@@ -264,7 +266,7 @@ class TestGetTasks:
         )
 
     @pytest.mark.parametrize("org, project_id, role", [({"id": 2, "slug": "org2"}, 2, "worker")])
-    def test_org_task_assigneed_to_see_task(
+    def test_org_task_assigned_to_see_task(
         self, org, project_id, role, users, tasks, find_users, is_task_staff
     ):
         users = find_users(org=org["id"], role=role)
@@ -1423,13 +1425,16 @@ class TestPatchTaskLabel:
 class TestWorkWithTask:
     _USERNAME = "admin1"
 
+    # Tests negatively for cloud data corruption, so timeout can be greater
+    @pytest.mark.timeout(25)
     @pytest.mark.with_external_services
     @pytest.mark.parametrize(
         "cloud_storage_id, manifest",
         [(1, "images_with_manifest/manifest.jsonl")],  # public bucket
     )
+    @pytest.mark.parametrize("use_cache", CACHE)
     def test_work_with_task_containing_non_stable_cloud_storage_files(
-        self, cloud_storage_id, manifest, cloud_storages, request
+        self, cloud_storage_id, manifest, use_cache, cloud_storages, request
     ):
         image_name = "images_with_manifest/image_case_65_1.png"
         cloud_storage_content = [image_name, manifest]
@@ -1440,7 +1445,7 @@ class TestWorkWithTask:
 
         data_spec = {
             "image_quality": 75,
-            "use_cache": True,
+            "use_cache": use_cache,
             "cloud_storage_id": cloud_storage_id,
             "server_files": cloud_storage_content,
         }
@@ -1567,9 +1572,13 @@ class TestTaskBackups:
 
         self._test_can_restore_task_from_backup(task_id)
 
+    @pytest.mark.timeout(20)
     @pytest.mark.with_external_services
     @pytest.mark.parametrize("lightweight_backup", [True, False])
-    def test_can_export_and_import_backup_task_with_cloud_storage(self, lightweight_backup):
+    def test_can_export_and_import_backup_task_with_cloud_storage(
+        self,
+        lightweight_backup,
+    ):
         task_spec = {
             "name": "Task with files from cloud storage",
             "labels": [
@@ -1606,7 +1615,9 @@ class TestTaskBackups:
             expected_media.update(["images/image_1.jpg", "images/image_3.jpg"])
         assert files_in_data == expected_media
 
-        self._test_can_restore_task_from_backup(task_id, lightweight_backup=lightweight_backup)
+        self._test_can_restore_task_from_backup(
+            task_id, lightweight_backup=lightweight_backup, backup_file=filename
+        )
 
     @pytest.mark.parametrize("mode", ["annotation", "interpolation"])
     def test_can_import_backup(self, tasks, mode):
@@ -1703,31 +1714,50 @@ class TestTaskBackups:
         task_id = next(t for t in tasks if t["media_type"] == "audio")["id"]
         self._test_can_export_backup(task_id)
 
-    @pytest.mark.with_external_services
-    def test_can_export_and_import_backup_with_backing_cs(self, request, cloud_storages):
+    def _test_can_export_and_import_backup_with_backing_cs(
+        self, request, task, cloud_storages, expected_file_suffixes
+    ):
         cloud_storage_id = next(cs["id"] for cs in cloud_storages if cs["resource"] == "backingcs")
 
-        with make_sdk_client(self.user) as client:
-            task = client.tasks.create_from_data(
-                models.TaskWriteRequest(name="Canvas3D"),
-                [SHARE_DIR / "test_canvas3d.zip"],
-                data_params={"use_cache": True},
-            )
+        container_exec_cvat(
+            request, ["./manage.py", "movetasktobackingcs", str(task.id), str(cloud_storage_id)]
+        )
 
-            container_exec_cvat(
-                request, ["./manage.py", "movetasktobackingcs", str(task.id), str(cloud_storage_id)]
-            )
+        backup_path = self.tmp_dir / "backup.zip"
+        task.download_backup(backup_path)
 
-            backup_path = self.tmp_dir / "backup.zip"
-            task.download_backup(backup_path)
+        with zipfile.ZipFile(backup_path) as zip_file:
+            names = zip_file.namelist()
 
-            with zipfile.ZipFile(backup_path) as zip_file:
-                names = zip_file.namelist()
+            for ext in expected_file_suffixes:
+                assert any(name.endswith(ext) for name in names)
 
-                assert any(name.endswith(".pcd") for name in names)
-                assert any(name.endswith(".png") for name in names)
+        self._test_can_restore_task_from_backup(task.id, backup_file=backup_path)
 
-            self._test_can_restore_task_from_backup(task.id, backup_file=backup_path)
+    @pytest.mark.with_external_services
+    def test_can_export_and_import_backup_with_images_in_backing_cs(self, request, cloud_storages):
+        task = self.client.tasks.create_from_data(
+            models.TaskWriteRequest(name="Canvas3D"),
+            [SHARE_DIR / "test_canvas3d.zip"],
+            data_params={"use_cache": True},
+        )
+
+        self._test_can_export_and_import_backup_with_backing_cs(
+            request, task, cloud_storages, (".pcd", ".png")
+        )
+
+    @pytest.mark.with_external_services
+    def test_can_export_and_import_backup_with_video_in_backing_cs(
+        self, request, tasks, cloud_storages
+    ):
+        task_id = next(
+            t for t in tasks if t["media_type"] == "image" if t["mode"] == "interpolation"
+        )["id"]
+        task = self.client.tasks.retrieve(task_id)
+
+        self._test_can_export_and_import_backup_with_backing_cs(
+            request, task, cloud_storages, (".mp4",)
+        )
 
     def _test_can_restore_task_from_backup(
         self,
@@ -2786,7 +2816,7 @@ class TestGetTaskPreview:
         self._test_assigned_users_to_see_task_preview(tasks, users, is_task_staff)
 
     @pytest.mark.parametrize("org, project_id, role", [({"id": 2, "slug": "org2"}, 2, "worker")])
-    def test_org_task_assigneed_to_see_task_preview(
+    def test_org_task_assigned_to_see_task_preview(
         self, org, project_id, role, users, tasks, find_users, is_task_staff
     ):
         users = find_users(org=org["id"], role=role)
@@ -3629,39 +3659,6 @@ class TestImportTaskAnnotations:
         task.import_annotations(self.import_format, filename)
         self._check_annotations(task_id)
 
-    @pytest.mark.skip("Fails sometimes, needs to be fixed")
-    @pytest.mark.timeout(70)
-    def test_check_import_cache_after_previous_interrupted_upload(self, tasks_with_shapes, request):
-        task_id = tasks_with_shapes[0]["id"]
-        with NamedTemporaryFile() as f:
-            filename = self.tmp_dir / f"task_{task_id}_{Path(f.name).name}_coco.zip"
-        task = self.client.tasks.retrieve(task_id)
-        task.export_dataset(self.export_format, filename, include_images=False)
-
-        params = {"format": self.import_format, "filename": filename.name}
-        url = self.client.api_map.make_endpoint_url(
-            self.client.api_client.tasks_api.create_annotations_endpoint.path
-        ).format(id=task_id)
-
-        uploader = Uploader(self.client)
-        uploader._tus_start_upload(url, query_params=params)
-        uploader._upload_file_data_with_tus(
-            url,
-            filename,
-            meta=params,
-            pbar=NullProgressReporter(),
-        )
-        number_of_files = 1
-        sleep(30)  # wait when the cleaning job from rq worker will be started
-        command = ["/bin/bash", "-c", f"ls data/tasks/{task_id}/tmp | wc -l"]
-        for _ in range(12):
-            sleep(2)
-            result = container_exec_cvat(request, command)
-            number_of_files = int(result)
-            if not number_of_files:
-                break
-        assert not number_of_files
-
     def test_import_annotations_after_deleting_related_cloud_storage(
         self, admin_user: str, tasks_with_shapes
     ):
@@ -3742,6 +3739,21 @@ class TestImportTaskAnnotations:
             for t in tasks
             if t.get("size")
             if t["media_type"] == "audio" and t.get("validation_mode") != "gt_pool"
+        )
+        task_obj = self.client.tasks.retrieve(task["id"])
+        # add an annotation covering the whole interval with exclusive stop after the last frame
+        label = next(label for label in task_obj.get_labels() if label.type == "interval")
+        task_obj.update_annotations(
+            models.PatchedLabeledDataRequest(
+                intervals=[
+                    models.LabeledIntervalRequest(
+                        label_id=label.id,
+                        start=0,
+                        stop=task["size"],
+                    )
+                ]
+            ),
+            action=AnnotationUpdateAction.CREATE,
         )
 
         format_name = "Generic TSV 1.0"

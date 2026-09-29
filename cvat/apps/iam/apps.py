@@ -13,3 +13,7 @@ class IAMConfig(AppConfig):
         from .signals import register_signals
 
         register_signals(self)
+
+        from cvat.apps.iam.email_validation import get_email_validators
+
+        get_email_validators()

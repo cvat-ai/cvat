@@ -31,7 +31,7 @@ from rest_framework.response import Response
 from rest_framework.test import APITestCase
 from scipy.optimize import linear_sum_assignment
 
-from cvat.apps.engine.models import User
+from cvat.apps.iam.models import User
 
 T = TypeVar("T")
 
@@ -106,6 +106,11 @@ def clear_rq_jobs():
                 scheduler.cancel(job)
         finally:
             scheduler.remove_lock()
+
+
+def set_rq_async_mode(is_async: bool) -> None:
+    for config in settings.RQ_QUEUES.values():
+        config["ASYNC"] = is_async
 
 
 class ApiTestBase(APITestCase):

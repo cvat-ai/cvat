@@ -16,6 +16,7 @@ from PIL import Image
 from pytest_cases import fixture, fixture_ref, parametrize
 
 import shared.utils.s3 as s3
+from shared.fixtures.params import STORAGE_METHODS
 from shared.utils.config import (
     SHARE_DIR,
     make_sdk_client,
@@ -84,7 +85,6 @@ class TestAudioTasks:
         assert task.size > 0
 
     @pytest.mark.with_external_services
-    @parametrize("use_cache", [True, False])
     @parametrize(
         "cloud_storage_id",
         [
@@ -92,6 +92,7 @@ class TestAudioTasks:
             2,  # private bucket
         ],
     )
+    @parametrize("use_cache", STORAGE_METHODS)
     def test_can_create_audio_task_from_cloud_data(
         self,
         fxt_test_name: str,
@@ -298,7 +299,7 @@ class TestAudioAnnotations:
             yield
 
     @parametrize("instance_type", ["task", "job"])
-    def test_can_save_intervals(self, tasks, instance_type: str):
+    def test_can_save_interval_ending_at_task_boundary(self, tasks, instance_type: str):
         task_id = next(t for t in tasks if t["media_type"] == "audio")["id"]
 
         task = self.client.tasks.retrieve(task_id)
@@ -310,7 +311,7 @@ class TestAudioAnnotations:
                 models.LabeledIntervalRequest(
                     label_id=label.id,
                     start=0,
-                    stop=task.size - 1,
+                    stop=task.size,
                 ),
             ]
         )
@@ -377,7 +378,7 @@ class TestAudioAnnotations:
                 models.LabeledIntervalRequest(
                     label_id=labels[0].id,
                     start=0,
-                    stop=task.size,
+                    stop=task.size + 1,
                 ),
             ]
         )
@@ -392,4 +393,4 @@ class TestAudioAnnotations:
         with pytest.raises(exceptions.ApiException) as capture:
             instance.set_annotations(payload)
 
-        assert "cannot be outside" in str(capture.value)
+        assert "stop must be within" in str(capture.value)

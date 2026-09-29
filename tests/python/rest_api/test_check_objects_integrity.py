@@ -46,9 +46,7 @@ class TestGetResources:
                 assert set(objects) == {"user"}
 
                 for username, tokens in objects["user"].items():
-                    response = config.get_method(
-                        username, "auth/access_tokens", page_size=100, sort="id"
-                    ).json()["results"]
+                    response = config.get_paginated_collection(username, "auth/access_tokens")
                     assert (
                         DeepDiff(
                             tokens,
@@ -58,16 +56,29 @@ class TestGetResources:
                         == {}
                     )
             else:
-                response = config.get_method("admin1", endpoint, page_size="all")
+                request_params = {}
+                if endpoint == "quality/reports":
+                    request_params["include_legacy"] = "true"
+
+                resp_results = config.get_paginated_collection("admin1", endpoint, **request_params)
                 json_objs = json.load(f)
-                resp_objs = response.json()
+
+                if endpoint == "quality/settings":
+                    for collection in (json_objs["results"], resp_results):
+                        for settings in collection:
+                            settings.pop("updated_date", None)
+                            for requirement in settings.get("requirements", []):
+                                requirement.pop("created_date", None)
+                                requirement.pop("updated_date", None)
 
                 assert (
                     DeepDiff(
-                        json_objs,
-                        resp_objs,
+                        json_objs["results"],
+                        resp_results,
                         ignore_order=True,
-                        exclude_regex_paths=r"root\['results'\]\[\d+\]\['last_login'\]",
+                        exclude_regex_paths=[
+                            r"root\[\d+\]\['last_login'\]",
+                        ],
                     )
                     == {}
                 )

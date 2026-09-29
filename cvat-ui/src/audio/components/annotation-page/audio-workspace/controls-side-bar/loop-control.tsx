@@ -15,6 +15,7 @@ import { subKeyMap } from 'utils/component-subkeymap';
 
 export interface Props {
     loop: boolean;
+    loopShortcut: string;
     onLoopChange(loop: boolean): void;
 }
 
@@ -30,7 +31,7 @@ const componentShortcuts = {
 registerComponentShortcuts(componentShortcuts);
 
 function LoopControl(props: Props): JSX.Element {
-    const { loop, onLoopChange } = props;
+    const { loop, loopShortcut, onLoopChange } = props;
     const { keyMap } = useSelector((state: CombinedState) => state.shortcuts);
 
     const handler = (): void => {
@@ -50,7 +51,7 @@ function LoopControl(props: Props): JSX.Element {
                 keyMap={subKeyMap(componentShortcuts, keyMap)}
                 handlers={handlers}
             />
-            <CVATTooltip title={`Loop interval playback${loop ? ' (on)' : ''} (R)`} placement='right'>
+            <CVATTooltip title={`Loop interval playback${loop ? ' (on)' : ''} ${loopShortcut}`} placement='right'>
                 <RetweetOutlined
                     className={
                         loop ?

@@ -14,8 +14,7 @@ import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import {
     DimensionType, getCore, JobStage, Label, LabelType, ObjectState, ObjectType, ShapeType,
 } from 'cvat-core-wrapper';
-import { clamp } from 'utils/math';
-
+import { sanitizeSelectedObjectIDs } from 'utils/multi-selection';
 import {
     ActiveControl,
     AnnotationState,
@@ -86,6 +85,7 @@ const defaultState: AnnotationState = {
             top: 0,
             left: 0,
         },
+        history: {},
         instance: null,
         ready: false,
         activeControl: ActiveControl.CURSOR,
@@ -99,6 +99,7 @@ const defaultState: AnnotationState = {
             initialOpenGuide: false,
             defaultLabel: null,
             defaultPointsCount: null,
+            defaultRotated: false,
         },
         groundTruthInfo: {
             validationLayout: null,
@@ -143,6 +144,7 @@ const defaultState: AnnotationState = {
         activatedStateID: null,
         activatedElementID: null,
         activatedAttributeID: null,
+        selectedStatesID: [],
         highlightedConflict: null,
         saving: {
             forceExit: false,
@@ -165,6 +167,7 @@ const defaultState: AnnotationState = {
             min: 0,
             max: 0,
             cur: 0,
+            hiddenByFrame: new Map<number, Set<number>>([[0, new Set<number>()]]),
         },
     },
     remove: {
@@ -288,14 +291,17 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                         initialOpenGuide: queryParameters.initialOpenGuide,
                         defaultLabel: queryParameters.defaultLabel,
                         defaultPointsCount: queryParameters.defaultPointsCount,
+                        defaultRotated: queryParameters.defaultRotated,
                     },
                 },
                 annotations: {
                     ...state.annotations,
                     filters,
+                    initialized: false,
                     zLayer: {
                         ...state.annotations.zLayer,
-                        cur: Number.MAX_SAFE_INTEGER,
+                        cur: 0,
+                        hiddenByFrame: new Map<number, Set<number>>([[number, new Set<number>()]]),
                     },
                 },
                 player: {
@@ -388,12 +394,18 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 filename,
                 relatedFiles,
                 states,
+                selectedStatesID,
                 history,
                 delay,
                 changeTime,
                 changeFrameEvent,
             } = action.payload;
             const [minZ, maxZ] = computeZRange(states);
+            const currentZLayer = state.annotations.initialized ? state.annotations.zLayer.cur : maxZ;
+            const hiddenByFrame = new Map(state.annotations.zLayer.hiddenByFrame);
+            if (!hiddenByFrame.has(number)) {
+                hiddenByFrame.set(number, new Set<number>());
+            }
 
             return {
                 ...state,
@@ -413,14 +425,19 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 annotations: {
                     ...state.annotations,
                     activatedStateID: updateActivatedStateID(states, activatedStateID),
+                    selectedStatesID,
                     highlightedConflict: null,
                     states,
+                    initialized: true,
                     renderData: getAnnotationsRenderData(states, state.annotations.filters),
                     history,
                     zLayer: {
+                        ...state.annotations.zLayer,
                         min: minZ,
                         max: maxZ,
-                        cur: maxZ,
+                        // The selected layer may be empty, so only initialize it when the job first opens.
+                        cur: currentZLayer,
+                        hiddenByFrame,
                     },
                 },
             };
@@ -646,17 +663,25 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 }
             }
             const [minZ, maxZ] = computeZRange(nextStates);
+            const hiddenZLayers = state.annotations.zLayer.hiddenByFrame.get(state.player.frame.number) ||
+                new Set<number>();
+            const selectedStatesID = sanitizeSelectedObjectIDs(
+                nextStates,
+                state.annotations.selectedStatesID,
+                hiddenZLayers,
+            );
 
             return {
                 ...state,
                 annotations: {
                     ...state.annotations,
                     zLayer: {
+                        ...state.annotations.zLayer,
                         min: minZ,
                         max: maxZ,
-                        cur: clamp(state.annotations.zLayer.cur, minZ, maxZ),
                     },
                     states: nextStates,
+                    selectedStatesID,
                     renderData: getAnnotationsRenderData(nextStates, state.annotations.filters),
                     history,
                 },
@@ -706,6 +731,41 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
             };
         }
+        case AnnotationActionTypes.SELECT_OBJECTS: {
+            const { selectedStatesID: requestedStatesID, history } = action.payload;
+            const hiddenZLayers = state.annotations.zLayer.hiddenByFrame.get(state.player.frame.number) ||
+                new Set<number>();
+            const selectedStatesID = sanitizeSelectedObjectIDs(
+                state.annotations.states,
+                requestedStatesID,
+                hiddenZLayers,
+            );
+            const closeSelectionContextMenu = !selectedStatesID.length &&
+                state.canvas.contextMenu.type === ContextMenuType.CANVAS_SELECTION &&
+                state.canvas.contextMenu.visible;
+            return {
+                ...state,
+                annotations: {
+                    ...state.annotations,
+                    selectedStatesID,
+                    ...(selectedStatesID.length ? {
+                        activatedStateID: null,
+                        activatedElementID: null,
+                        activatedAttributeID: null,
+                    } : {}),
+                    ...(history ? { history } : {}),
+                },
+                ...(closeSelectionContextMenu ? {
+                    canvas: {
+                        ...state.canvas,
+                        contextMenu: {
+                            ...state.canvas.contextMenu,
+                            visible: false,
+                        },
+                    },
+                } : {}),
+            };
+        }
         case AnnotationActionTypes.REMOVE_OBJECT: {
             const { objectState, force } = action.payload;
             return {
@@ -751,6 +811,9 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     ...state.annotations,
                     history,
                     activatedStateID: null,
+                    selectedStatesID: state.annotations.selectedStatesID.filter(
+                        (clientID: number): boolean => clientID !== objectState.clientID,
+                    ),
                     states: nextStates,
                     renderData: getAnnotationsRenderData(nextStates, state.annotations.filters),
                 },
@@ -803,6 +866,19 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 drawing: {
                     ...state.drawing,
                     activeInitialState: objectState,
+                    // single-shape copy clears any multi-selection clipboard
+                    copiedStates: undefined,
+                },
+            };
+        }
+        case AnnotationActionTypes.COPY_SELECTION: {
+            const { copiedStates } = action.payload;
+
+            return {
+                ...state,
+                drawing: {
+                    ...state.drawing,
+                    copiedStates,
                 },
             };
         }
@@ -965,6 +1041,16 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
             };
         }
+        case AnnotationActionTypes.UPDATE_CANVAS_HISTORY: {
+            const { source, undoAction, redoAction } = action.payload;
+            return {
+                ...state,
+                canvas: {
+                    ...state.canvas,
+                    history: { source, undoAction, redoAction },
+                },
+            };
+        }
         case AnnotationActionTypes.UPDATE_BRUSH_TOOLS_CONFIG: {
             return {
                 ...state,
@@ -981,20 +1067,32 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             const { activatedStateID } = state.annotations;
             const { states, history } = action.payload;
             const [minZ, maxZ] = computeZRange(states);
+            const currentZLayer = state.annotations.initialized ? state.annotations.zLayer.cur : maxZ;
+            const hiddenZLayers = state.annotations.zLayer.hiddenByFrame.get(state.player.frame.number) ||
+                new Set<number>();
+            // An annotation refresh may remove selected objects (for example, when undoing a paste).
+            // Do not leave stale IDs that would keep regular canvas hover interaction disabled.
+            const selectedStatesID = sanitizeSelectedObjectIDs(
+                states,
+                state.annotations.selectedStatesID,
+                hiddenZLayers,
+            );
 
             return {
                 ...state,
                 annotations: {
                     ...state.annotations,
                     activatedStateID: updateActivatedStateID(states, activatedStateID),
+                    selectedStatesID,
                     states,
                     renderData: getAnnotationsRenderData(states, state.annotations.filters),
                     history,
                     initialized: true,
                     zLayer: {
+                        ...state.annotations.zLayer,
                         min: minZ,
                         max: maxZ,
-                        cur: clamp(state.annotations.zLayer.cur, minZ, maxZ),
+                        cur: currentZLayer,
                     },
                 },
             };
@@ -1021,30 +1119,82 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
         }
         case AnnotationActionTypes.SWITCH_Z_LAYER: {
             const { cur } = action.payload;
-            const { max, min } = state.annotations.zLayer;
-
-            let { activatedStateID } = state.annotations;
-            if (activatedStateID !== null) {
-                const idx = state.annotations.states
-                    .map((_state: ObjectState) => _state.clientID)
-                    .indexOf(activatedStateID);
-                if (idx !== -1) {
-                    if (state.annotations.states[idx].zOrder > cur) {
-                        activatedStateID = null;
-                    }
-                } else {
-                    activatedStateID = null;
-                }
-            }
+            const frame = state.player.frame.number;
+            const hiddenByFrame = new Map(state.annotations.zLayer.hiddenByFrame);
+            const nextHidden = new Set<number>(hiddenByFrame.get(frame));
+            nextHidden.delete(cur);
+            hiddenByFrame.set(frame, nextHidden);
 
             return {
                 ...state,
                 annotations: {
                     ...state.annotations,
-                    activatedStateID,
                     zLayer: {
                         ...state.annotations.zLayer,
-                        cur: clamp(cur, min, max),
+                        cur,
+                        hiddenByFrame,
+                    },
+                },
+            };
+        }
+        case AnnotationActionTypes.SHOW_Z_LAYERS: {
+            const shownLayers = new Set<number>(action.payload.zOrders);
+            if (!shownLayers.size) {
+                return state;
+            }
+            const frame = state.player.frame.number;
+            const hiddenByFrame = new Map(state.annotations.zLayer.hiddenByFrame);
+            const nextHidden = new Set<number>(hiddenByFrame.get(frame));
+            shownLayers.forEach((zOrder: number): void => {
+                nextHidden.delete(zOrder);
+            });
+            hiddenByFrame.set(frame, nextHidden);
+
+            return {
+                ...state,
+                annotations: {
+                    ...state.annotations,
+                    zLayer: {
+                        ...state.annotations.zLayer,
+                        hiddenByFrame,
+                    },
+                },
+            };
+        }
+        case AnnotationActionTypes.TOGGLE_Z_LAYERS_VISIBILITY: {
+            const { zOrders } = action.payload;
+            if (!zOrders.length) {
+                return state;
+            }
+
+            const frame = state.player.frame.number;
+            const hiddenByFrame = new Map(state.annotations.zLayer.hiddenByFrame);
+            const currentFrameHidden = hiddenByFrame.get(frame) || new Set<number>();
+            const affectedLayers = new Set<number>(zOrders);
+            const willBeHidden = !currentFrameHidden.has(zOrders[0]);
+            const activatedState = state.annotations.states.find((objectState: ObjectState): boolean => (
+                objectState.clientID === state.annotations.activatedStateID
+            ));
+            const deactivateState = willBeHidden && activatedState && affectedLayers.has(activatedState.zOrder);
+            const nextHidden = new Set(currentFrameHidden);
+            zOrders.forEach((zOrder: number): void => {
+                if (willBeHidden) {
+                    nextHidden.add(zOrder);
+                } else {
+                    nextHidden.delete(zOrder);
+                }
+            });
+            hiddenByFrame.set(frame, nextHidden);
+
+            return {
+                ...state,
+                annotations: {
+                    ...state.annotations,
+                    activatedStateID: deactivateState ?
+                        null : state.annotations.activatedStateID,
+                    zLayer: {
+                        ...state.annotations.zLayer,
+                        hiddenByFrame,
                     },
                 },
             };
@@ -1111,6 +1261,10 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
         case AnnotationActionTypes.RESET_CANVAS: {
             return {
                 ...state,
+                annotations: {
+                    ...state.annotations,
+                    selectedStatesID: [],
+                },
                 canvas: {
                     ...state.canvas,
                     activeControl: ActiveControl.CURSOR,
@@ -1158,7 +1312,10 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 // object may be hidden using annotations filter
                 // it is not guaranteed to be visible
                 const conflictObject = state.annotations.states
-                    .find((_state) => _state.serverID === mainConflict.serverID);
+                    .find((_state) => (
+                        _state.serverID === mainConflict.serverID &&
+                        _state.objectType === mainConflict.type
+                    ));
 
                 return {
                     ...state,

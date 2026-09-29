@@ -12,7 +12,7 @@ context('Delete unlock/lock object', () => {
     const caseId = '24';
 
     const createRectangleShape2Points = {
-        points: 'By 2 Points',
+        points: '2 Points',
         type: 'Shape',
         firstX: 100,
         firstY: 100,

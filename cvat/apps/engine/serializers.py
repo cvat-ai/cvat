@@ -25,11 +25,12 @@ from typing import Any, cast
 from urllib.parse import urlparse
 
 import django_rq
+from allauth.account.models import EmailAddress
 from django.conf import settings
-from django.contrib.auth.models import Group, User
+from django.contrib.auth.models import Group
 from django.core.files.uploadedfile import UploadedFile
 from django.db import transaction
-from django.db.models import Count, Prefetch, prefetch_related_objects
+from django.db.models import Count, Prefetch, QuerySet, prefetch_related_objects
 from django.utils import timezone
 from django.utils.functional import cached_property
 from drf_spectacular.utils import OpenApiExample, extend_schema_field, extend_schema_serializer
@@ -38,14 +39,13 @@ from PIL import Image
 from rest_framework import exceptions, serializers
 from rest_framework.reverse import reverse
 
-from cvat.apps.dataset_manager.formats.utils import get_label_color
 from cvat.apps.engine import field_validation, models
 from cvat.apps.engine.cloud_provider import (
     Credentials,
     Status,
-    db_storage_to_storage_instance,
-    get_cloud_storage_instance,
+    get_cloud_storage_client,
 )
+from cvat.apps.engine.label_colors import get_label_color
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.media_io.frame_provider import TaskFrameProvider
 from cvat.apps.engine.permissions import ProjectPermission, TaskPermission
@@ -64,6 +64,7 @@ from cvat.apps.engine.utils import (
     parse_specific_attributes,
     take_by,
 )
+from cvat.apps.iam.models import User
 from cvat.apps.iam.permissions import get_iam_context
 from cvat.apps.organizations.models import Organization
 from cvat.apps.webhooks.models import Webhook
@@ -340,7 +341,9 @@ class UserSerializer(serializers.ModelSerializer):
         source="profile.has_analytics_access",
         required=False,
         read_only=True,
+        allow_null=True,
     )
+    email_verified = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -358,10 +361,33 @@ class UserSerializer(serializers.ModelSerializer):
             "last_login",
             "date_joined",
             "has_analytics_access",
+            "email_verified",
+            "created_via",
         )
-        read_only_fields = ("last_login", "date_joined", "has_analytics_access")
+        read_only_fields = (
+            "last_login",
+            "date_joined",
+            "has_analytics_access",
+            "created_via",
+        )
         write_only_fields = ("password",)
         extra_kwargs = {"last_login": {"allow_null": True}}
+
+    @extend_schema_field(serializers.BooleanField(allow_null=True))
+    def get_email_verified(self, instance: User) -> bool | None:
+        for email_address in cast(QuerySet[EmailAddress], instance.emailaddress_set.all()):
+            if email_address.primary:
+                if email_address.email != instance.email:
+                    slogger.glob.warning(
+                        f"The primary email address {email_address.email!r} "
+                        f"of the user {instance.username} "
+                        f"does not match their User.email {instance.email!r}"
+                    )
+                    return None
+
+                return email_address.verified
+
+        return None
 
 
 class DelimitedStringListField(serializers.ListField):
@@ -1628,9 +1654,7 @@ class JobValidationLayoutWriteSerializer(serializers.Serializer):
             if bulk_context:
                 frame_selector = bulk_context.honeypot_frame_selector
             else:
-                active_validation_frame_counts = {
-                    validation_frame: 0 for validation_frame in task_active_validation_frames
-                }
+                active_validation_frame_counts = dict.fromkeys(task_active_validation_frames, 0)
                 for task_honeypot_frame in task_honeypot_frames:
                     real_frame = _to_rel_frame(db_frames[task_honeypot_frame].real_frame)
                     if real_frame in task_active_validation_frames:
@@ -1690,9 +1714,13 @@ class JobValidationLayoutWriteSerializer(serializers.Serializer):
 
             # Update chunks
             job_frame_provider = JobFrameProvider(db_job)
-            updated_segment_chunk_ids = set(
-                job_frame_provider.get_chunk_number(updated_segment_frame_id)
-                for updated_segment_frame_id in updated_honeypots
+            updated_segment_chunk_ids = range(
+                # We store chunk update dates only per segment,
+                # so we invalidate all the chunks in the segment.
+                # This allows the cache to check the chunk timestamps before returning them.
+                # Change the granularity to per chunk, if the performance is bad.
+                job_frame_provider.get_chunk_number(min(segment_frame_set)),
+                job_frame_provider.get_chunk_number(max(segment_frame_set)) + 1,
             )
             segment_frames = sorted(segment_frame_set)
             segment_frame_map = dict(zip(segment_honeypots, requested_frames))
@@ -1705,7 +1733,9 @@ class JobValidationLayoutWriteSerializer(serializers.Serializer):
                 ]
 
                 for quality in models.FrameQuality:
-                    if db_data.storage_method == models.StorageMethodChoice.FILE_SYSTEM:
+                    if db_data.storage_method == models.StorageMethodChoice.FILE_SYSTEM and not (
+                        updated_honeypots.keys().isdisjoint(chunk_frames)
+                    ):
                         rq_id = f"segment_{db_segment.id}_write_chunk_{chunk_id}_{quality}"
                         rq_job = enqueue_create_chunk_job(
                             queue=queue,
@@ -1865,7 +1895,7 @@ class JobValidationLayoutReadSerializer(serializers.Serializer):
                 if not frame.is_placeholder:
                     continue
 
-                if not frame.frame in segment_frame_set:
+                if frame.frame not in segment_frame_set:
                     continue
 
                 segment_honeypot_frames.append(
@@ -2030,7 +2060,7 @@ class TaskValidationLayoutWriteSerializer(serializers.Serializer):
                 )
         elif frame_selection_method == models.JobFrameSelectionMethod.RANDOM_UNIFORM:
             # Reset distribution for active validation frames
-            active_validation_frame_counts = {f: 0 for f in active_validation_frames}
+            active_validation_frame_counts = dict.fromkeys(active_validation_frames, 0)
             frame_selector = HoneypotFrameSelector(active_validation_frame_counts)
             bulk_context.honeypot_frame_selector = frame_selector
 
@@ -3721,8 +3751,7 @@ class DataMetaWriteSerializer(serializers.ModelSerializer):
     def validate_cloud_storage_id(self, cloud_storage_id: int):
         try:
             db_storage: models.CloudStorage = models.CloudStorage.objects.get(id=cloud_storage_id)
-            storage = db_storage_to_storage_instance(db_storage)
-            storage_status = storage.get_status()
+            storage_status = db_storage.get_client().get_status()
             if storage_status != Status.AVAILABLE:
                 raise serializers.ValidationError(
                     f"The specified cloud storage '{db_storage.display_name}' is not available."
@@ -4187,8 +4216,15 @@ class LabeledIntervalSerializer(
     AttributedAnnotationSerializer,
     ScoredAnnotationSerializer,
 ):
-    start = serializers.IntegerField(min_value=0)
-    stop = serializers.IntegerField(min_value=0, allow_null=True)
+    start = serializers.IntegerField(
+        min_value=0,
+        help_text="Must be within the task frame bounds.",
+    )
+    stop = serializers.IntegerField(
+        min_value=0,
+        allow_null=True,
+        help_text="Exclusive interval end. May be one greater than the task stop frame.",
+    )
 
 
 class LabeledDataSerializer(serializers.Serializer):
@@ -4501,18 +4537,19 @@ class CloudStorageWriteSerializer(serializers.ModelSerializer):
             credentials_type=validated_data.get("credentials_type"),
             connection_string=validated_data.pop("connection_string", ""),
         )
-        details = {
-            "resource": validated_data.get("resource"),
-            "credentials": credentials,
-            "specific_attributes": parse_specific_attributes(
-                validated_data.get("specific_attributes", "")
-            ),
-        }
+        specific_attributes = parse_specific_attributes(
+            validated_data.get("specific_attributes", "")
+        )
 
-        if prefix := details["specific_attributes"].get("prefix"):
+        if prefix := specific_attributes.get("prefix"):
             self._validate_prefix(prefix)
 
-        storage = get_cloud_storage_instance(cloud_provider=provider_type, **details)
+        storage = get_cloud_storage_client(
+            cloud_provider=provider_type,
+            resource=validated_data.get("resource"),
+            credentials=credentials,
+            specific_attributes=specific_attributes,
+        )
 
         storage_status = storage.get_status()
         if storage_status == Status.AVAILABLE:
@@ -4562,13 +4599,7 @@ class CloudStorageWriteSerializer(serializers.ModelSerializer):
 
     @transaction.atomic
     def update(self, instance, validated_data):
-        credentials = Credentials()
-        credentials.convert_from_db(
-            {
-                "type": instance.credentials_type,
-                "value": instance.credentials,
-            }
-        )
+        credentials = Credentials.from_db(instance.credentials_type, instance.credentials)
         credentials_dict = {
             k: v
             for k, v in validated_data.items()
@@ -4618,7 +4649,7 @@ class CloudStorageWriteSerializer(serializers.ModelSerializer):
             "credentials": credentials,
             "specific_attributes": parse_specific_attributes(instance.specific_attributes),
         }
-        storage = get_cloud_storage_instance(cloud_provider=instance.provider_type, **details)
+        storage = get_cloud_storage_client(cloud_provider=instance.provider_type, **details)
         storage_status = storage.get_status()
         if storage_status == Status.AVAILABLE:
             new_manifest_names = set(i.get("filename") for i in validated_data.get("manifests", []))

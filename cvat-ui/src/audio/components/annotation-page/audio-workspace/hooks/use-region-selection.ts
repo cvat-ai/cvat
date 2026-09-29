@@ -14,7 +14,7 @@ import { ActiveControl, CombinedState } from 'reducers';
 import { shallowEqual, ThunkDispatch } from 'utils/redux';
 
 import {
-    clientIDFromWaveRegionId, intervalEndSeconds, intervalStartSeconds,
+    clientIDFromWaveRegionId,
 } from '../utils/audio-interval';
 import { WaveformRegionRuntime } from './use-audio-waveform';
 import { WaveformViewport } from './use-waveform-viewport';
@@ -32,10 +32,23 @@ interface Params {
     ready: boolean;
 }
 
+export interface RegionSelection {
+    enableSelection(): void;
+    disableSelection(): void;
+    enableHover(): void;
+    disableHover(): void;
+}
+
 /**
  * Resolves waveform region interactions to audio intervals.
  */
-export function useRegionSelection({ regionRuntime, viewport, ready }: Params): void {
+export function useRegionSelection({
+    regionRuntime, viewport, ready,
+}: Params): RegionSelection {
+    const selectionEnabledRef = useRef(true);
+    const hoverEnabledRef = useRef(true);
+    const regionSelectionRef = useRef<RegionSelection | null>(null);
+
     const dispatch = useDispatch<ThunkDispatch>();
     const { activeControl, hoveredIntervalID } = useSelector((state: CombinedState) => ({
         activeControl: state.annotation.canvas.activeControl,
@@ -54,8 +67,32 @@ export function useRegionSelection({ regionRuntime, viewport, ready }: Params): 
     const hoverGuardRef = useRef<object | null>(null);
     const selectionGuardRef = useRef<object | null>(null);
     const lastHoverPointRef = useRef<{ x: number; y: number } | null>(null);
+    if (regionSelectionRef.current === null) {
+        regionSelectionRef.current = {
+            enableSelection: (): void => {
+                selectionEnabledRef.current = true;
+            },
+            disableSelection: (): void => {
+                selectionEnabledRef.current = false;
+            },
+            enableHover: (): void => {
+                if (hoverEnabledRef.current) return;
+                hoverEnabledRef.current = true;
+            },
+            disableHover: (): void => {
+                if (!hoverEnabledRef.current) return;
+                hoverEnabledRef.current = false;
+                hoverGuardRef.current = null;
+                lastHoverPointRef.current = null;
+                if (latestRef.current.hoveredIntervalID !== null) {
+                    dispatch(audioActions.setAudioHoveredInterval(null));
+                }
+            },
+        };
+    }
+    // Stable ref
+    const regionSelection = regionSelectionRef.current;
 
-    // TODO: rework to use semantic interval selection instead of just event target
     const { attachRegionContextMenu, cleanupRegionContextMenu } = useRegionContextMenu((clientID, event) => {
         if (clientID === null) return;
         dispatch(audioActions.setAudioActiveInterval(clientID));
@@ -67,13 +104,6 @@ export function useRegionSelection({ regionRuntime, viewport, ready }: Params): 
         if (!ready) return undefined;
 
         const { regionsPlugin } = regionRuntime;
-        const intervalRange = (clientID: number): { start: number; end: number } | null => {
-            const interval = intervalsRef.current.find((item) => item.clientID === clientID);
-            return interval ? {
-                start: intervalStartSeconds(interval),
-                end: intervalEndSeconds(interval),
-            } : null;
-        };
         const selectInterval = async (region: Region, event: MouseEvent): Promise<number | null> => {
             if (!isIntervalRegionTarget(region)) return null;
 
@@ -93,7 +123,9 @@ export function useRegionSelection({ regionRuntime, viewport, ready }: Params): 
                 const { state } = await currentJob.annotations.selectInterval(intervalsRef.current, time * 1000);
                 clientID = state?.clientID ?? null;
             }
-            if (selectionGuardRef.current !== guard) return null;
+            if (selectionGuardRef.current !== guard || !selectionEnabledRef.current) {
+                return null;
+            }
 
             dispatch(audioActions.setAudioActiveInterval(clientID));
             return clientID;
@@ -109,6 +141,8 @@ export function useRegionSelection({ regionRuntime, viewport, ready }: Params): 
 
         const onRegionClicked = (region: Region, event: MouseEvent): void => {
             if (!isIntervalRegionTarget(region)) return;
+
+            if (!selectionEnabledRef.current) return;
 
             event.stopPropagation();
             event.preventDefault();
@@ -126,16 +160,11 @@ export function useRegionSelection({ regionRuntime, viewport, ready }: Params): 
 
         const onRegionDoubleClicked = (region: Region, event: MouseEvent): void => {
             if (!isIntervalRegionTarget(region)) return;
+            if (!selectionEnabledRef.current) return;
             event.stopPropagation();
             event.preventDefault();
             selectInterval(region, event).then((clientID) => {
                 if (clientID === null) return;
-
-                const range = intervalRange(clientID);
-                if (range) {
-                    viewport.centerTimeRange(range);
-                }
-
                 dispatch(requestPlayAudioIntervalOnce(clientID));
             }).catch(() => {});
         };
@@ -166,7 +195,11 @@ export function useRegionSelection({ regionRuntime, viewport, ready }: Params): 
         if (!element) return undefined;
 
         const onMouseMove = (event: MouseEvent): void => {
-            if (latestRef.current.activeControl !== ActiveControl.CURSOR) return;
+            if (
+                latestRef.current.activeControl !== ActiveControl.CURSOR ||
+                !selectionEnabledRef.current ||
+                !hoverEnabledRef.current
+            ) return;
             const lastPoint = lastHoverPointRef.current;
             const hoverDelta = lastPoint ?
                 Math.hypot(event.clientX - lastPoint.x, event.clientY - lastPoint.y) : null;
@@ -185,7 +218,11 @@ export function useRegionSelection({ regionRuntime, viewport, ready }: Params): 
             if (!currentJob) return;
             currentJob.annotations.selectInterval(intervalsRef.current, time * 1000).then(({ state }) => {
                 const clientID = state?.clientID ?? null;
-                if (hoverGuardRef.current !== guard || clientID === latestRef.current.hoveredIntervalID) {
+                if (
+                    hoverGuardRef.current !== guard ||
+                    !selectionEnabledRef.current ||
+                    clientID === latestRef.current.hoveredIntervalID
+                ) {
                     return;
                 }
 
@@ -208,4 +245,6 @@ export function useRegionSelection({ regionRuntime, viewport, ready }: Params): 
             element.removeEventListener('mouseleave', onMouseLeave);
         };
     }, [ready]);
+
+    return regionSelection;
 }

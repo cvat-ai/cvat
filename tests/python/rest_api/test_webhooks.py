@@ -10,7 +10,13 @@ import pytest
 from cvat_sdk.api_client.api_client import ApiClient, Endpoint
 from deepdiff import DeepDiff
 
-from shared.utils.config import delete_method, get_method, patch_method, post_method
+from shared.utils.config import (
+    delete_method,
+    get_method,
+    get_paginated_collection,
+    patch_method,
+    post_method,
+)
 
 from .utils import CollectionSimpleFilterTestBase
 
@@ -38,6 +44,17 @@ class TestPostWebhooks:
         "secret": "secret",
         "target_url": "http://webhooks.internal",
         "type": "organization",
+    }
+
+    server_webhook = {
+        "description": "webhook description",
+        "content_type": "application/json",
+        "enable_ssl": False,
+        "events": ["create:user"],
+        "is_active": True,
+        "secret": "secret",
+        "target_url": "http://webhooks.internal",
+        "type": "server",
     }
 
     def test_sandbox_admin_can_create_webhook_for_project(self, projects, users):
@@ -370,6 +387,25 @@ class TestPostWebhooks:
 
         assert response.status_code == HTTPStatus.BAD_REQUEST
 
+    def test_admin_can_create_server_webhook(self, users):
+        admin = next(u for u in users if "admin" in u["groups"])
+
+        webhook = deepcopy(self.server_webhook)
+
+        response = post_method(admin["username"], "webhooks", webhook)
+
+        assert response.status_code == HTTPStatus.CREATED
+        assert "secret" not in response.json()
+
+    def test_non_admin_cannot_create_server_webhook(self, find_users):
+        username = next(u["username"] for u in find_users(exclude_privilege="admin"))
+
+        webhook = deepcopy(self.server_webhook)
+
+        response = post_method(username, "webhooks", webhook)
+
+        assert response.status_code == HTTPStatus.FORBIDDEN
+
 
 @pytest.mark.usefixtures("restore_db_per_class")
 class TestGetWebhooks:
@@ -514,6 +550,24 @@ class TestGetWebhooks:
         assert "secret" not in response.json()
         assert DeepDiff(webhook, response.json(), ignore_order=True) == {}
 
+    def test_admin_can_get_server_webhook(self, webhooks, find_users):
+        webhook = next(w for w in webhooks if w["type"] == "server")
+        username = next(u["username"] for u in find_users(privilege="admin"))
+
+        response = get_method(username, f"webhooks/{webhook['id']}")
+
+        assert response.status_code == HTTPStatus.OK
+        assert "secret" not in response.json()
+        assert DeepDiff(webhook, response.json(), ignore_order=True) == {}
+
+    def test_non_admin_cannot_get_server_webhook(self, webhooks, find_users):
+        webhook = next(w for w in webhooks if w["type"] == "server")
+        username = next(u["username"] for u in find_users(exclude_privilege="admin"))
+
+        response = get_method(username, f"webhooks/{webhook['id']}")
+
+        assert response.status_code == HTTPStatus.FORBIDDEN
+
 
 class TestWebhooksListFilters(CollectionSimpleFilterTestBase):
     field_lookups = {
@@ -539,11 +593,10 @@ class TestWebhooksListFilters(CollectionSimpleFilterTestBase):
 @pytest.mark.usefixtures("restore_db_per_class")
 class TestGetListWebhooks:
     def test_can_get_webhooks_list(self, webhooks):
-        response = get_method("admin2", "webhooks")
+        results = get_paginated_collection("admin2", "webhooks")
 
-        assert response.status_code == HTTPStatus.OK
-        assert all(["secret" not in webhook for webhook in response.json()["results"]])
-        assert DeepDiff(webhooks.raw, response.json()["results"], ignore_order=True) == {}
+        assert all(["secret" not in webhook for webhook in results])
+        assert DeepDiff(webhooks.raw, results, ignore_order=True) == {}
 
     def test_admin_can_get_webhooks_for_project(self, webhooks):
         pid = next(
@@ -733,6 +786,24 @@ class TestGetListWebhooks:
         assert response.status_code == HTTPStatus.OK
         assert DeepDiff(list(webhooks), response.json()["results"], ignore_order=True) == {}
 
+    def test_admin_can_see_server_webhook_in_list(self, webhooks, find_users):
+        webhook = next(w for w in webhooks if w["type"] == "server")
+        username = next(u["username"] for u in find_users(privilege="admin"))
+
+        response = get_method(username, "webhooks")
+
+        assert response.status_code == HTTPStatus.OK
+        assert webhook["id"] in {w["id"] for w in response.json()["results"]}
+
+    def test_non_admin_cannot_see_server_webhook_in_list(self, webhooks, find_users):
+        webhook = next(w for w in webhooks if w["type"] == "server")
+        username = next(u["username"] for u in find_users(exclude_privilege="admin"))
+
+        response = get_method(username, "webhooks")
+
+        assert response.status_code == HTTPStatus.OK
+        assert webhook["id"] not in {w["id"] for w in response.json()["results"]}
+
 
 @pytest.mark.usefixtures("restore_db_per_function")
 class TestPatchWebhooks:
@@ -743,7 +814,9 @@ class TestPatchWebhooks:
             (user["username"], deepcopy(webhook))
             for user in find_users(privilege="admin")
             for webhook in webhooks
-            if webhook["owner"]["id"] != user["id"] and webhook["organization"] is None
+            if webhook["owner"]["id"] != user["id"]
+            and webhook["organization"] is None
+            and webhook["type"] == "project"
         )
         patch_data = {
             "target_url": "http://newexample.com",
@@ -962,6 +1035,44 @@ class TestPatchWebhooks:
             == {}
         )
 
+    def test_admin_can_update_server_webhook(self, webhooks, find_users):
+        username, webhook = next(
+            (user["username"], deepcopy(webhook))
+            for user in find_users(privilege="admin")
+            for webhook in webhooks
+            if webhook["type"] == "server" and webhook["owner"]["id"] != user["id"]
+        )
+
+        patch_data = {"target_url": "http://newexample.com"}
+        webhook.update(patch_data)
+
+        response = patch_method(username, f"webhooks/{webhook['id']}", patch_data)
+
+        assert response.status_code == HTTPStatus.OK
+        assert (
+            DeepDiff(
+                webhook,
+                response.json(),
+                ignore_order=True,
+                exclude_paths=["root['updated_date']", "root['secret']"],
+            )
+            == {}
+        )
+
+    def test_non_admin_cannot_update_server_webhook(self, webhooks, find_users):
+        username, webhook = next(
+            (user["username"], deepcopy(webhook))
+            for user in find_users(exclude_privilege="admin")
+            for webhook in webhooks
+            if webhook["type"] == "server"
+        )
+
+        patch_data = {"target_url": "http://newexample.com"}
+
+        response = patch_method(username, f"webhooks/{webhook['id']}", patch_data)
+
+        assert response.status_code == HTTPStatus.FORBIDDEN
+
 
 @pytest.mark.usefixtures("restore_db_per_function")
 class TestDeleteWebhooks:
@@ -1145,3 +1256,59 @@ class TestDeleteWebhooks:
 
         response = get_method(username, f"webhooks/{webhook_id}", org_id=org_id)
         assert response.status_code == HTTPStatus.NOT_FOUND
+
+    def test_admin_can_delete_server_webhook(self, webhooks, find_users):
+        username, webhook_id = next(
+            (user["username"], webhook["id"])
+            for user in find_users(privilege="admin")
+            for webhook in webhooks
+            if webhook["type"] == "server" and webhook["owner"]["id"] != user["id"]
+        )
+
+        response = delete_method(username, f"webhooks/{webhook_id}")
+        assert response.status_code == HTTPStatus.NO_CONTENT
+
+        response = get_method(username, f"webhooks/{webhook_id}")
+        assert response.status_code == HTTPStatus.NOT_FOUND
+
+    def test_non_admin_cannot_delete_server_webhook(self, webhooks, find_users):
+        username, webhook_id = next(
+            (user["username"], webhook["id"])
+            for user in find_users(exclude_privilege="admin")
+            for webhook in webhooks
+            if webhook["type"] == "server"
+        )
+
+        response = delete_method(username, f"webhooks/{webhook_id}")
+        assert response.status_code == HTTPStatus.FORBIDDEN
+
+
+class TestGetWebhookEvents:
+    def _get_events(self, **kwargs):
+        response = get_method("admin1", "webhooks/events", **kwargs)
+        assert response.status_code == HTTPStatus.OK
+        return response.json()
+
+    @pytest.mark.parametrize("webhook_type", ["project", "organization", "server"])
+    def test_can_get_events_of_each_type(self, webhook_type):
+        events = self._get_events(type=webhook_type)
+
+        assert events["webhook_type"] == webhook_type
+        assert events["events"]
+
+    def test_all_type_returns_events_of_every_type(self):
+        events_by_type = {
+            webhook_type: self._get_events(type=webhook_type)["events"]
+            for webhook_type in ["project", "organization", "server"]
+        }
+        expected_keys = {event["key"] for events in events_by_type.values() for event in events}
+
+        all_events = self._get_events(type="all")
+
+        assert all_events["webhook_type"] == "all"
+        assert {event["key"] for event in all_events["events"]} == expected_keys
+
+    def test_cannot_get_events_of_unknown_type(self):
+        response = get_method("admin1", "webhooks/events", type="unknown")
+
+        assert response.status_code == HTTPStatus.BAD_REQUEST

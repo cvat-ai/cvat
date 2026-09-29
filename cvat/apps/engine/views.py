@@ -21,7 +21,6 @@ from typing import Any, cast
 import django_rq
 from attr.converters import to_bool
 from django.conf import settings
-from django.contrib.auth.models import User
 from django.core.files.storage import storages
 from django.db import IntegrityError, transaction
 from django.db.models.query import Prefetch, prefetch_related_objects
@@ -39,10 +38,11 @@ from rest_framework import mixins, serializers, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import APIException, NotFound, PermissionDenied, ValidationError
 from rest_framework.parsers import MultiPartParser
-from rest_framework.permissions import SAFE_METHODS, IsAuthenticated
+from rest_framework.permissions import SAFE_METHODS
 from rest_framework.response import Response
 from rest_framework.settings import api_settings
 from rq.job import Job as RQJob
+from rq.job import JobStatus as RQJobStatus
 
 import cvat.apps.dataset_manager as dm
 from cvat.apps.dataset_manager.serializers import DatasetFormatsSerializer
@@ -55,7 +55,6 @@ from cvat.apps.engine.cache import (
     MediaCache,
 )
 from cvat.apps.engine.cloud_provider import Status as CloudStorageStatus
-from cvat.apps.engine.cloud_provider import db_storage_to_storage_instance
 from cvat.apps.engine.exceptions import CloudStorageMissingError
 from cvat.apps.engine.media_extractors import get_mime, get_video_chapters
 from cvat.apps.engine.media_io.audio_provider import (
@@ -155,7 +154,7 @@ from cvat.apps.engine.view_utils import (
     tus_chunk_action,
 )
 from cvat.apps.iam.filters import ORGANIZATION_OPEN_API_PARAMETERS
-from cvat.apps.iam.permissions import IsAuthenticatedOrReadPublicResource
+from cvat.apps.iam.models import User
 from cvat.apps.redis_handler.serializers import RqIdSerializer
 from cvat.utils import django_database as db_utils
 from cvat.utils.paths import join_untrusted_path, problem_with_untrusted_path
@@ -169,6 +168,7 @@ slogger = ServerLogManager(__name__)
 _UPLOAD_PARSER_CLASSES = api_settings.DEFAULT_PARSER_CLASSES + [MultiPartParser]
 
 _DATA_CHECKSUM_HEADER_NAME = "X-Checksum"
+_DATA_CHUNK_SIZE_HEADER_NAME = "X-Chunk-Size"
 _DATA_UPDATED_DATE_HEADER_NAME = "X-Updated-Date"
 _RETRY_AFTER_TIMEOUT = 10
 
@@ -882,11 +882,12 @@ class _DataGetter(metaclass=ABCMeta):
 
     def _make_chunk_response_headers(
         self,
-        checksum: str,
+        chunk_data: DataWithMeta,
         updated_date: datetime,
     ) -> dict[str, str]:
         return {
-            _DATA_CHECKSUM_HEADER_NAME: str(checksum or ""),
+            _DATA_CHECKSUM_HEADER_NAME: self._get_chunk_checksum(chunk_data),
+            _DATA_CHUNK_SIZE_HEADER_NAME: str(len(chunk_data.data.getbuffer())),
             _DATA_UPDATED_DATE_HEADER_NAME: serializers.DateTimeField().to_representation(
                 updated_date
             ),
@@ -926,7 +927,7 @@ class _TaskDataGetter(_DataGetter):
 
     def _get_chunk_response_headers(self, chunk_data: DataWithMeta) -> dict[str, str]:
         return self._make_chunk_response_headers(
-            self._get_chunk_checksum(chunk_data),
+            chunk_data,
             self._db_task.get_chunks_updated_date(),
         )
 
@@ -1001,7 +1002,7 @@ class _JobDataGetter(_DataGetter):
 
     def _get_chunk_response_headers(self, chunk_data: DataWithMeta) -> dict[str, str]:
         return self._make_chunk_response_headers(
-            self._get_chunk_checksum(chunk_data), self._db_job.segment.chunks_updated_date
+            chunk_data, self._db_job.segment.chunks_updated_date
         )
 
 
@@ -1602,6 +1603,14 @@ class TaskViewSet(
                 description="Data checksum, applicable for chunks only",
             ),
             OpenApiParameter(
+                _DATA_CHUNK_SIZE_HEADER_NAME,
+                location=OpenApiParameter.HEADER,
+                type=OpenApiTypes.INT,
+                required=False,
+                response=[200, 206, 416],
+                description="Decoded chunk size in bytes, applicable for chunks only",
+            ),
+            OpenApiParameter(
                 _DATA_UPDATED_DATE_HEADER_NAME,
                 location=OpenApiParameter.HEADER,
                 type=OpenApiTypes.DATETIME,
@@ -1633,17 +1642,16 @@ class TaskViewSet(
                 # other aggregations that are defined by the viewset queryset,
                 # we just need to lock 1 row with the target Task entity.
                 locked_instance = Task.objects.select_for_update().get(pk=pk)
-                task_data = locked_instance.data
-                if not task_data:
+                if locked_instance.is_initialized:
+                    raise ValidationError("Adding more data is not supported")
+
+                if not locked_instance.data_id:
                     task_data = Data.objects.create()
                     task_data.make_dirs()
                     locked_instance.data = task_data
                     self._object.data = task_data
                     locked_instance.save()
-                elif task_data.size != 0:
-                    return Response(
-                        data="Adding more data is not supported", status=status.HTTP_400_BAD_REQUEST
-                    )
+
                 return self.upload_data(request, append_url_name="append-data-chunk")
         else:
             data_type = request.query_params.get("type", None)
@@ -2594,6 +2602,30 @@ class JobViewSet(
                 type=OpenApiTypes.INT,
                 description="A unique number value identifying chunk, starts from 0 for each job",
             ),
+            OpenApiParameter(
+                _DATA_CHECKSUM_HEADER_NAME,
+                location=OpenApiParameter.HEADER,
+                type=OpenApiTypes.STR,
+                required=False,
+                response=[200, 206],
+                description="Data checksum, applicable for chunks only",
+            ),
+            OpenApiParameter(
+                _DATA_CHUNK_SIZE_HEADER_NAME,
+                location=OpenApiParameter.HEADER,
+                type=OpenApiTypes.INT,
+                required=False,
+                response=[200, 206, 416],
+                description="Decoded chunk size in bytes, applicable for chunks only",
+            ),
+            OpenApiParameter(
+                _DATA_UPDATED_DATE_HEADER_NAME,
+                location=OpenApiParameter.HEADER,
+                type=OpenApiTypes.DATETIME,
+                required=False,
+                response=[200, 206],
+                description="Data update date, applicable for chunks only",
+            ),
         ],
         responses={
             "200": OpenApiResponse(OpenApiTypes.BINARY, description="Data of a specific type"),
@@ -3275,7 +3307,9 @@ class UserViewSet(
     PartialUpdateModelMixin,
     mixins.DestroyModelMixin,
 ):
-    queryset = User.objects.prefetch_related("groups").all()
+    queryset = (
+        User.objects.select_related("profile").prefetch_related("groups", "emailaddress_set").all()
+    )
     iam_supports_organization_params = True
     iam_permission_class = UserPermission
 
@@ -3464,10 +3498,9 @@ class CloudStorageViewSet(
     )
     @action(detail=True, methods=["GET"], url_path="content-v2")
     def content_v2(self, request: ExtendedRequest, pk: int):
-        storage = None
         try:
             db_storage = self.get_object()
-            storage = db_storage_to_storage_instance(db_storage)
+            storage_client = db_storage.get_client()
             prefix = request.query_params.get("prefix", "")
             page_size = request.query_params.get(
                 "page_size", str(settings.BUCKET_CONTENT_MAX_PAGE_SIZE)
@@ -3494,8 +3527,8 @@ class CloudStorageViewSet(
 
                 if not full_manifest_path.exists() or datetime.fromtimestamp(
                     full_manifest_path.stat().st_mtime, tz=timezone.utc
-                ) < storage.get_file_last_modified(manifest_path):
-                    storage.download_file(manifest_path, full_manifest_path)
+                ) < storage_client.get_file_last_modified(manifest_path):
+                    storage_client.download_file(manifest_path, full_manifest_path)
                 manifest = ImageManifestManager(
                     full_manifest_path, db_storage.get_storage_dirname()
                 )
@@ -3511,11 +3544,11 @@ class CloudStorageViewSet(
                     page_size,
                     manifest_prefix=manifest_prefix,
                     prefix=prefix,
-                    default_prefix=storage.prefix,
+                    default_prefix=storage_client.prefix,
                     start_index=start_index,
                 )
             else:
-                content = storage.list_files_on_one_page(
+                content = storage_client.list_files_on_one_page(
                     prefix, next_token=next_token, page_size=page_size, _use_sort=True
                 )
             for i in content["content"]:
@@ -3611,8 +3644,7 @@ class CloudStorageViewSet(
     def status(self, request: ExtendedRequest, pk: int):
         try:
             db_storage = self.get_object()
-            storage = db_storage_to_storage_instance(db_storage)
-            storage_status = storage.get_status()
+            storage_status = db_storage.get_client().get_status()
             return Response(storage_status)
         except CloudStorage.DoesNotExist:
             message = f"Storage {pk} does not exist"
@@ -3634,8 +3666,7 @@ class CloudStorageViewSet(
         """
         try:
             db_storage = self.get_object()
-            storage = db_storage_to_storage_instance(db_storage)
-            actions = storage.supported_actions
+            actions = db_storage.get_client().supported_actions
             return Response(actions, content_type="text/plain")
         except CloudStorage.DoesNotExist:
             message = f"Storage {pk} does not exist"
@@ -3687,16 +3718,6 @@ class AssetsViewSet(
 
     def check_object_permissions(self, request: ExtendedRequest, obj):
         super().check_object_permissions(request, obj.guide)
-
-    def get_permissions(self):
-        permissions = super().get_permissions()
-
-        if self.action == "retrieve":
-            permissions = [IsAuthenticatedOrReadPublicResource()] + [
-                p for p in permissions if not isinstance(p, IsAuthenticated)
-            ]
-
-        return permissions
 
     def get_serializer_class(self):
         if self.request.method in SAFE_METHODS:
@@ -3885,6 +3906,11 @@ class AnnotationGuidesViewSet(
 
 
 def rq_exception_handler(rq_job: RQJob, exc_type: type[Exception], exc_value: Exception, tb):
+    # NOTE @sosov: The worker has already re-queued/re-scheduled the job for another attempt
+    # that is why we can`t use redis_handler.utils.rq_job_will_be_retried there
+    if rq_job.get_status(refresh=False) in (RQJobStatus.QUEUED, RQJobStatus.SCHEDULED):
+        return True
+
     rq_job_meta = RQMetaWithFailureInfo.for_job(rq_job)
     rq_job_meta.formatted_exception = "".join(traceback.format_exception_only(exc_type, exc_value))
     if rq_job.origin == settings.CVAT_QUEUES.CHUNKS.value:

@@ -75,6 +75,11 @@ function AudioContextMenuWrapper(): JSX.Element | null {
 
         dispatch(updateAudioIntervalAsync(clientID, { color }));
     }, [clientID, dispatch]);
+    const onFitInterval = useCallback((): void => {
+        if (clientID === null) return;
+
+        dispatch(audioActions.fitAudioInterval(clientID));
+    }, [clientID, dispatch]);
 
     if (!interval) {
         return null;
@@ -91,6 +96,7 @@ function AudioContextMenuWrapper(): JSX.Element | null {
             onCopyInterval={onCopyInterval}
             onDeleteInterval={onDeleteInterval}
             onChangeIntervalColor={onChangeIntervalColor}
+            onFitInterval={onFitInterval}
         />
     );
 }

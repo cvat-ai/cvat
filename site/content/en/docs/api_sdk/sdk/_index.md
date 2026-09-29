@@ -82,3 +82,5 @@ For the PyTorch adapter:
 ```python
 import cvat_sdk.pytorch
 ```
+
+For complete and copy-and-run scripts see {{< ilink "/docs/api_sdk/sdk/examples" "Usage Examples" >}}.

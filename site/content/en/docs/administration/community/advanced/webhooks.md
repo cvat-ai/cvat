@@ -24,24 +24,32 @@ or has been reviewed. New task creation can also trigger notifications.
 
 These capabilities allow you to keep track of progress and changes in your CVAT workflow instantly.
 
-In CVAT you can create a webhook for a project or organization.
-You can use CVAT GUI or direct API calls.
+In CVAT you can create a webhook for a project, an organization, or the whole server.
+Project and organization webhooks can be set up from the CVAT GUI or via direct API calls.
+Server webhooks are admin-only and are set up through the
+[Django administration panel](#for-server-admin-only) or via direct API calls.
 
 See:
 
 - [Create Webhook](#create-webhook)
   - [For project](#for-project)
   - [For organization](#for-organization)
+  - [For server (admin only)](#for-server-admin-only)
   - [Webhooks forms](#webhooks-forms)
   - [List of events](#list-of-events)
+    - [Entities](#entities)
+    - [Requests](#requests)
 - [Payloads](#payloads)
-  - [Create event](#create-event)
-  - [Update event](#update-event)
-  - [Delete event](#delete-event)
+  - [Entities](#payload-entities)
+    - [Create event](#create-event)
+    - [Update event](#update-event)
+    - [Delete event](#delete-event)
+  - [Requests](#payload-requests)
+    - [Completed event](#completed-event)
 - [Webhook secret](#webhook-secret)
 - [Ping Webhook](#ping-webhook)
 - [Webhooks with API calls](#webhooks-with-api-calls)
-- [Example of setup and use](#example-of-setup-and-use)
+- [Example: setting up email alerts via webhooks](#example-setting-up-email-alerts-via-webhooks)
 
 ## Create Webhook
 
@@ -70,11 +78,55 @@ To create a webhook for **Organization**, do the following:
 
 4. Fill in the **[Setup webhook](#webhooks-forms)** form and click **Submit**.
 
+### For server (admin only)
+
+{{< product-badge "community,enterprise" >}}
+
+Server webhooks receive server-wide events, such as user and organization creation,
+that no project or organization webhook can observe. Only superusers (admins) can
+create, view, edit, or delete server webhooks, and they are not exposed in the CVAT
+GUI, so they are managed either through the
+[Django administration panel](http://localhost:8080/admin) or via the API.
+
+To create a server webhook through the Django administration panel:
+
+1. Log in as a superuser and go to the
+   [Django administration panel](http://localhost:8080/admin).
+2. Under **Webhooks**, click **Webhooks**, then **Add webhook**.
+3. Set **Type** to `server` and leave **Project** and **Organization** empty.
+4. Fill in the target URL, secret, content type, and the other fields described in
+   [Webhooks forms](#webhooks-forms).
+
+   ![Add webhook form in the Django administration panel](/images/webhook_form_server.png)
+
+5. Under **Events**, tick the events you want to receive, grouped by resource
+   (for example **User** or **Organization**). See [List of events](#list-of-events)
+   for the full list available to server webhooks.
+
+   ![Events grouped by resource in the Django administration panel](/images/webhook_form_server2.png)
+
+6. Click **Save**.
+
+The same admin page lists and manages project and organization webhooks as well
+(filterable by type and active state, searchable by target URL), so it doubles as a
+central place for admins to review every webhook on the instance. Once a webhook is
+created, its **Type**, **Project**, and **Organization** fields become read-only.
+
+To create a server webhook via the API instead, send `POST /api/webhooks` with
+`"type": "server"` and no `project_id`/`organization_id`. The list of events available
+to server webhooks can be retrieved with `GET /api/webhooks/events?type=server`.
+
 ### Webhooks forms
 
 The **Setup a webhook** forms look like the following.
 
-![Create Project And Org Webhook Forms ](/images/webhook_form_project_org.jpg)
+**Project**
+
+![Project webhook form](/images/webhook_form_project.png)
+
+**Organization**
+
+![Organization webhook form](/images/webhook_form_organization.png)
 
 Forms have the following fields:
 
@@ -88,26 +140,51 @@ Forms have the following fields:
 | Enable SSL                | A checkbox for enabling or disabling [SSL verification](https://en.wikipedia.org/wiki/Public_key_certificate).                                                   |
 | Active                    | Uncheck this box if you want to stop the delivery of specific webhook payloads.                                                                                  |
 | Send everything           | Check this box to send all event types through the webhook.                                                                                                      |
-| Specify individual events | Choose this option to send only certain event types. <br>Refer to the [List of available events](#list-of-available-events) for more information on event types. |
+| Specify individual events | Choose this option to send only certain event types. <br>Refer to the [List of available events](#list-of-events) for more information on event types. |
 
 ### List of events
 
 The following events are available for webhook alerts.
 
-| Resource     | Create | Update | Delete | Description                                                                         |
-| ------------ | ------ | ------ | ------ | ----------------------------------------------------------------------------------- |
-| Organization |        | ✅     |        | Alerts for changes made to an Organization.                                         |
-| Membership   |        | ✅     | ✅     | Alerts when a member is added to or removed from an organization.                   |
-| Invitation   | ✅     |        | ✅     | Alerts when an invitation to an Organization is issued or revoked.                  |
-| Project      | ✅     | ✅     | ✅     | Alerts for any actions taken within a project.                                      |
-| Task         | ✅     | ✅     | ✅     | Alerts for actions related to a task, such as status changes, assignments, etc.     |
-| Job          |        | ✅     |        | Alerts for any updates made to a job.                                               |
-| Issue        | ✅     | ✅     | ✅     | Alerts for any activities involving issues.                                         |
-| Comment      | ✅     | ✅     | ✅     | Alerts for actions involving comments, such as creation, deletion, or modification. |
+#### Entities
+
+| Resource     | Create                            | Update                            | Delete                            | Description                                                                         |
+| ------------ | --------------------------------- | --------------------------------- | --------------------------------- | ----------------------------------------------------------------------------------- |
+| User         | ✅ ([server][])                    | ✅ ([server][])                    | ✅ ([server][])                    | Alerts for user creation, updates, or deletion.                                     |
+| Organization | ✅ ([server][])                    | ✅ ([organization][])              | ✅ ([server][])                    | Alerts when an Organization is created, updated, or deleted.                        |
+| Membership   | ✅ ([organization][])              | ✅ ([organization][])              | ✅ ([organization][])              | Alerts when a member is added to, changed in, or removed from an organization.      |
+| Invitation   | ✅ ([organization][])              |                                   | ✅ ([organization][])              | Alerts when an invitation to an Organization is issued or revoked.                  |
+| Project      | ✅ ([organization][])              | ✅ ([project][], [organization][]) | ✅ ([project][], [organization][]) | Alerts for any actions taken within a project.                                      |
+| Task         | ✅ ([project][], [organization][]) | ✅ ([project][], [organization][]) | ✅ ([project][], [organization][]) | Alerts for actions related to a task, such as status changes, assignments, etc.     |
+| Job          | ✅ ([project][], [organization][]) | ✅ ([project][], [organization][]) | ✅ ([project][], [organization][]) | Alerts for any updates made to a job.                                               |
+| Issue        | ✅ ([project][], [organization][]) | ✅ ([project][], [organization][]) | ✅ ([project][], [organization][]) | Alerts for any activities involving issues.                                         |
+| Comment      | ✅ ([project][], [organization][]) | ✅ ([project][], [organization][]) | ✅ ([project][], [organization][]) | Alerts for actions involving comments, such as creation, deletion, or modification. |
+
+[project]: #for-project
+[organization]: #for-organization
+[server]: #for-server-admin-only
+
+#### Requests
+
+The following events are sent when a
+{{< ilink "/docs/workspace/requests-page" "request" >}}
+finishes, whether it succeeded or failed.
+
+| Resource                 | Completed | Description                                                          |
+| ------------------------ | --------- | -------------------------------------------------------------------- |
+| Dataset export           | ✅        | Alerts when a dataset or annotations export request completes.       |
+| Backup export            | ✅        | Alerts when a project or task backup export request completes.       |
+| Task data creation       | ✅        | Alerts when a task data creation request completes.                  |
+| Consensus merge          | ✅        | Alerts when a consensus merge request completes.                     |
+| Quality report creation  | ✅        | Alerts when a quality report creation request completes.             |
 
 ## Payloads
 
-### Create event
+### Entities {#payload-entities}
+
+Webhook payloads for create, update, and delete events on resources.
+
+#### Create event
 
 Webhook payload object for `create:<resource>` events:
 
@@ -180,7 +257,7 @@ An example of payload for the `create:task` event:
 }
 {{< /scroll-code >}}
 
-### Update event
+#### Update event
 
 Webhook payload object for `update:<resource>` events:
 
@@ -188,7 +265,6 @@ Webhook payload object for `update:<resource>` events:
 | --------------- | --------- | ---------------------------------------------------------------------------------------------------- |
 | `event`         | `string`  | Identifies the event that triggered the webhook, following the `update:<resource>` pattern.          |
 | `<resource>`    | `object`  | Provides complete information about the updated resource. See the Swagger docs for resource details. |
-| `before_update` | `object`  | Contains keys of `<resource>` that were updated, along with their old values.                        |
 | `webhook_id`    | `integer` | The identifier for the webhook that dispatched the payload.                                          |
 | `sender`        | `object`  | Details about the user that triggered the webhook.                                                   |
 
@@ -264,9 +340,6 @@ An example of `update:<resource>` event:
             "cloud_storage_id": null
         }
     },
-    "before_update": {
-        "name": "task"
-    },
     "webhook_id": 7,
     "sender": {
         "url": "<http://localhost:8080/api/users/1>",
@@ -278,7 +351,7 @@ An example of `update:<resource>` event:
 }
 {{< /scroll-code >}}
 
-### Delete event
+#### Delete event
 
 Webhook payload object for `delete:<resource>` events:
 
@@ -287,7 +360,7 @@ Webhook payload object for `delete:<resource>` events:
 | `event`      | `string`  | Identifies the event that triggered the webhook, following the `delete:<resource>` pattern.          |
 | `<resource>` | `object`  | Provides complete information about the deleted resource. See the Swagger docs for resource details. |
 | `webhook_id` | `integer` | The identifier for the webhook that dispatched the payload.                                          |
-| `sender`     | `object`  | Details about the user that triggered the webhook.                                                   |
+| `sender`     | `object`  | Details about the user that triggered the webhook. |
 
 Here is an example of the payload for the `delete:task` event:
 
@@ -351,6 +424,63 @@ Here is an example of the payload for the `delete:task` event:
 }
 {{< /scroll-code >}}
 
+### Requests {#payload-requests}
+
+Webhook payloads for completed request events.
+
+#### Completed event
+
+Webhook payload object for `completed:<resource>` events:
+
+| Key          | Type      | Description |
+| ------------ | --------- | ----------- |
+| `event`      | `string`  | Identifies the event that triggered the webhook, following the `completed:<resource>` pattern. |
+| `request`    | `object`  | Complete information about the request. Same structure as the retrieve response in the [Swagger](#webhooks-with-api-calls) docs. |
+| `webhook_id` | `integer` | The identifier for the webhook that sends the payload. |
+| `sender`     | `object`  | Details about the user that triggered the webhook. |
+
+An example of payload for a completed task data creation request:
+
+{{< scroll-code lang="json" >}}
+{
+    "event": "completed:request[create:task]",
+    "request": {
+        "status": "finished",
+        "message": "",
+        "id": "action=create&target=task&target_id=1",
+        "operation": {
+            "type": "create:task",
+            "target": "task",
+            "project_id": 2,
+            "task_id": 1,
+            "job_id": null,
+            "org_id": 1,
+            "format": null,
+            "lightweight": null
+        },
+        "progress": 0.0,
+        "created_date": "2026-08-17T08:16:17.540858Z",
+        "started_date": "2026-08-17T08:16:17.551124Z",
+        "finished_date": "2026-08-17T08:16:17.866904Z",
+        "expiry_date": "2026-08-17T08:24:37.866904Z",
+        "owner": {
+            "id": 1,
+            "username": "demo_user"
+        },
+        "result_url": null,
+        "result_id": null
+    },
+    "webhook_id": 1,
+    "sender": {
+        "url": "/api/users/1",
+        "id": 1,
+        "username": "demo_user",
+        "first_name": "",
+        "last_name": ""
+    }
+}
+{{< /scroll-code >}}
+
 ## Webhook secret
 
 To validate that webhook requests originate from CVAT, include a `secret` during the webhook creation process.
@@ -405,6 +535,7 @@ The **Ping** webhook feature helps confirm that CVAT can successfully send webho
 ![Ping Webhook](/images/ping_webhook.jpg)
 
 1. Click the **Ping** button in the CVAT UI. Alternatively, send a `POST /webhooks/{id}/ping` request via the API.
+   [Server][server] webhooks can be pinged only via the API.
 2. CVAT will send a webhook event to the target URL with basic details.
 
 #### Ping webhook payload

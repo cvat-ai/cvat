@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg width="142" height="68" viewBox="0 0 142 68" fill="none" xmlns="http://www.w3.org/2000/svg" xmlns:bx="https://boxy-svg.com">
+  <defs>
+    <bx:export>
+      <bx:file format="svg"/>
+    </bx:export>
+  </defs>
+  <path d="M7 5C3 30 16 51 42 54C64 57 76 48 77 34C78 21 67 17 62 27C55 42 68 57 91 55C108 54 120 46 133 41" stroke="#FF6B00" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M 121.723 36.266 L 134.442 40.382 L 128.239 52.296" stroke="#FF6B00" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

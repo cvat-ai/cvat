@@ -6,7 +6,7 @@
 from datetime import timedelta
 from unittest import mock
 
-from django.contrib.auth.models import Group, User
+from django.contrib.auth.models import Group
 from django.test import override_settings
 from django.utils import timezone
 from rest_framework import status
@@ -14,6 +14,7 @@ from rest_framework import status
 from cvat.apps.access_tokens.cron import clear_unusable_access_tokens
 from cvat.apps.access_tokens.models import AccessToken
 from cvat.apps.engine.tests.utils import ApiTestBase, mock_method
+from cvat.apps.iam.models import User
 
 
 def create_db_users(cls: type[ApiTestBase]):

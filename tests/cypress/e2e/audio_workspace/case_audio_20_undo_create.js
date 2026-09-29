@@ -15,7 +15,7 @@ context('Audio annotation. Undo restores state after create.', () => {
     });
 
     describe(`Testing case "${caseId}"`, () => {
-        it('After create, Ctrl+Z removes the just-created region', () => {
+        it('After create, the platform undo shortcut removes the just-created region', () => {
             cy.get('body').then(($body) => {
                 const initial = $body.find('.cvat-audio-region-item').length;
                 cy.audioCreateRegionViaButton(firstLabelName, 100, 250);

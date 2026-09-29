@@ -6,7 +6,6 @@ from __future__ import annotations
 
 from django.conf import settings
 from django.contrib import admin
-from django.contrib.auth.models import User
 from django.db import models
 from django.db.models import functions as db_functions
 from django.utils import timezone
@@ -70,7 +69,7 @@ class AccessToken(AbstractAPIKey):
     read_only = models.BooleanField(default=True)
 
     owner = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         related_name="access_tokens",
         related_query_name="access_token",
         on_delete=models.CASCADE,

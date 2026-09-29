@@ -240,7 +240,7 @@ class CloudStorageAdmin(admin.ModelAdmin):
 
 
 class AnnotationGuideAdmin(admin.ModelAdmin):
-    list_display = ("__str__", "task", "project", "is_public")
+    list_display = ("__str__", "task", "project")
     search_fields = ("task__name", "project__name")
 
     autocomplete_fields = ("task", "project")

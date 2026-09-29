@@ -13,12 +13,15 @@ context('Audio annotation. Click region on canvas activates it.', () => {
         cy.prepareUserSession();
         cy.openAudioJob(taskName);
         cy.audioCreateRegionViaButton(firstLabelName, 100, 250);
+        cy.audioCreateRegionViaButton(firstLabelName, 300, 450);
     });
 
     describe(`Testing case "${caseId}"`, () => {
         it('Selecting via list updates the active class on the item', () => {
+            cy.get('.cvat-audio-region-item').eq(1).should('have.class', 'cvat-audio-region-item-active');
             cy.clickRegionOnWaveform((100 + 250) / 2);
             cy.get('.cvat-audio-region-item').first().should('have.class', 'cvat-audio-region-item-active');
+            cy.get('.cvat-audio-region-item').eq(1).should('not.have.class', 'cvat-audio-region-item-active');
             cy.get('.cvat-audio-region-details').should('be.visible');
         });
     });

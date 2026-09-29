@@ -1,0 +1,301 @@
+{
+  "count": 21,
+  "next": null,
+  "previous": null,
+  "results": [
+    {
+      "promotion_notifications_allowed": true,
+      "github_prompt_enabled": true,
+      "github_prompt_shown": false,
+      "github_prompt_support_clicked": false,
+      "id": 1,
+      "owner": {
+        "first_name": "User",
+        "id": 20,
+        "last_name": "Sixth",
+        "url": "http://localhost:8080/api/users/20",
+        "username": "user6"
+      }
+    },
+    {
+      "promotion_notifications_allowed": true,
+      "github_prompt_enabled": true,
+      "github_prompt_shown": false,
+      "github_prompt_support_clicked": false,
+      "id": 2,
+      "owner": {
+        "first_name": "Admin",
+        "id": 18,
+        "last_name": "Second",
+        "url": "http://localhost:8080/api/users/18",
+        "username": "admin2"
+      }
+    },
+    {
+      "promotion_notifications_allowed": true,
+      "github_prompt_enabled": true,
+      "github_prompt_shown": false,
+      "github_prompt_support_clicked": false,
+      "id": 3,
+      "owner": {
+        "first_name": "Lonely",
+        "id": 21,
+        "last_name": "User",
+        "url": "http://localhost:8080/api/users/21",
+        "username": "lonely_user"
+      }
+    },
+    {
+      "promotion_notifications_allowed": true,
+      "github_prompt_enabled": true,
+      "github_prompt_shown": false,
+      "github_prompt_support_clicked": false,
+      "id": 4,
+      "owner": {
+        "first_name": "Admin",
+        "id": 1,
+        "last_name": "First",
+        "url": "http://localhost:8080/api/users/1",
+        "username": "admin1"
+      }
+    },
+    {
+      "promotion_notifications_allowed": true,
+      "github_prompt_enabled": true,
+      "github_prompt_shown": false,
+      "github_prompt_support_clicked": false,
+      "id": 5,
+      "owner": {
+        "first_name": "User",
+        "id": 2,
+        "last_name": "First",
+        "url": "http://localhost:8080/api/users/2",
+        "username": "user1"
+      }
+    },
+    {
+      "promotion_notifications_allowed": true,
+      "github_prompt_enabled": true,
+      "github_prompt_shown": false,
+      "github_prompt_support_clicked": false,
+      "id": 6,
+      "owner": {
+        "first_name": "User",
+        "id": 3,
+        "last_name": "Second",
+        "url": "http://localhost:8080/api/users/3",
+        "username": "user2"
+      }
+    },
+    {
+      "promotion_notifications_allowed": true,
+      "github_prompt_enabled": true,
+      "github_prompt_shown": false,
+      "github_prompt_support_clicked": false,
+      "id": 7,
+      "owner": {
+        "first_name": "User",
+        "id": 4,
+        "last_name": "Third",
+        "url": "http://localhost:8080/api/users/4",
+        "username": "user3"
+      }
+    },
+    {
+      "promotion_notifications_allowed": true,
+      "github_prompt_enabled": true,
+      "github_prompt_shown": false,
+      "github_prompt_support_clicked": false,
+      "id": 8,
+      "owner": {
+        "first_name": "User",
+        "id": 5,
+        "last_name": "Fourth",
+        "url": "http://localhost:8080/api/users/5",
+        "username": "user4"
+      }
+    },
+    {
+      "promotion_notifications_allowed": true,
+      "github_prompt_enabled": true,
+      "github_prompt_shown": false,
+      "github_prompt_support_clicked": false,
+      "id": 9,
+      "owner": {
+        "first_name": "Worker",
+        "id": 6,
+        "last_name": "First",
+        "url": "http://localhost:8080/api/users/6",
+        "username": "worker1"
+      }
+    },
+    {
+      "promotion_notifications_allowed": true,
+      "github_prompt_enabled": true,
+      "github_prompt_shown": false,
+      "github_prompt_support_clicked": false,
+      "id": 10,
+      "owner": {
+        "first_name": "Worker",
+        "id": 7,
+        "last_name": "Second",
+        "url": "http://localhost:8080/api/users/7",
+        "username": "worker2"
+      }
+    },
+    {
+      "promotion_notifications_allowed": true,
+      "github_prompt_enabled": true,
+      "github_prompt_shown": false,
+      "github_prompt_support_clicked": false,
+      "id": 11,
+      "owner": {
+        "first_name": "Worker",
+        "id": 8,
+        "last_name": "Third",
+        "url": "http://localhost:8080/api/users/8",
+        "username": "worker3"
+      }
+    },
+    {
+      "promotion_notifications_allowed": true,
+      "github_prompt_enabled": true,
+      "github_prompt_shown": false,
+      "github_prompt_support_clicked": false,
+      "id": 12,
+      "owner": {
+        "first_name": "Worker",
+        "id": 9,
+        "last_name": "Fourth",
+        "url": "http://localhost:8080/api/users/9",
+        "username": "worker4"
+      }
+    },
+    {
+      "promotion_notifications_allowed": true,
+      "github_prompt_enabled": true,
+      "github_prompt_shown": false,
+      "github_prompt_support_clicked": false,
+      "id": 13,
+      "owner": {
+        "first_name": "User",
+        "id": 10,
+        "last_name": "Seventh",
+        "url": "http://localhost:8080/api/users/10",
+        "username": "user7"
+      }
+    },
+    {
+      "promotion_notifications_allowed": true,
+      "github_prompt_enabled": true,
+      "github_prompt_shown": false,
+      "github_prompt_support_clicked": false,
+      "id": 14,
+      "owner": {
+        "first_name": "User",
+        "id": 11,
+        "last_name": "Eighth",
+        "url": "http://localhost:8080/api/users/11",
+        "username": "user8"
+      }
+    },
+    {
+      "promotion_notifications_allowed": true,
+      "github_prompt_enabled": true,
+      "github_prompt_shown": false,
+      "github_prompt_support_clicked": false,
+      "id": 15,
+      "owner": {
+        "first_name": "User",
+        "id": 12,
+        "last_name": "Ninth",
+        "url": "http://localhost:8080/api/users/12",
+        "username": "user9"
+      }
+    },
+    {
+      "promotion_notifications_allowed": true,
+      "github_prompt_enabled": true,
+      "github_prompt_shown": false,
+      "github_prompt_support_clicked": false,
+      "id": 16,
+      "owner": {
+        "first_name": "User",
+        "id": 13,
+        "last_name": "Tenth",
+        "url": "http://localhost:8080/api/users/13",
+        "username": "user10"
+      }
+    },
+    {
+      "promotion_notifications_allowed": true,
+      "github_prompt_enabled": true,
+      "github_prompt_shown": false,
+      "github_prompt_support_clicked": false,
+      "id": 17,
+      "owner": {
+        "first_name": "Dummy",
+        "id": 14,
+        "last_name": "First",
+        "url": "http://localhost:8080/api/users/14",
+        "username": "dummy1"
+      }
+    },
+    {
+      "promotion_notifications_allowed": true,
+      "github_prompt_enabled": true,
+      "github_prompt_shown": false,
+      "github_prompt_support_clicked": false,
+      "id": 18,
+      "owner": {
+        "first_name": "Dummy",
+        "id": 15,
+        "last_name": "Second",
+        "url": "http://localhost:8080/api/users/15",
+        "username": "dummy2"
+      }
+    },
+    {
+      "promotion_notifications_allowed": true,
+      "github_prompt_enabled": true,
+      "github_prompt_shown": false,
+      "github_prompt_support_clicked": false,
+      "id": 19,
+      "owner": {
+        "first_name": "Dummy",
+        "id": 16,
+        "last_name": "Third",
+        "url": "http://localhost:8080/api/users/16",
+        "username": "dummy3"
+      }
+    },
+    {
+      "promotion_notifications_allowed": true,
+      "github_prompt_enabled": true,
+      "github_prompt_shown": false,
+      "github_prompt_support_clicked": false,
+      "id": 20,
+      "owner": {
+        "first_name": "Dummy",
+        "id": 17,
+        "last_name": "Fourth",
+        "url": "http://localhost:8080/api/users/17",
+        "username": "dummy4"
+      }
+    },
+    {
+      "promotion_notifications_allowed": true,
+      "github_prompt_enabled": true,
+      "github_prompt_shown": false,
+      "github_prompt_support_clicked": false,
+      "id": 21,
+      "owner": {
+        "first_name": "User",
+        "id": 19,
+        "last_name": "Fifth",
+        "url": "http://localhost:8080/api/users/19",
+        "username": "user5"
+      }
+    }
+  ]
+}

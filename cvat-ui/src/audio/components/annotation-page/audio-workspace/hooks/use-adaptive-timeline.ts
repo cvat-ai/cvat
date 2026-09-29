@@ -6,7 +6,9 @@ import { useLayoutEffect, useRef } from 'react';
 import TimelinePlugin, { type TimelinePluginOptions } from 'wavesurfer.js/dist/plugins/timeline';
 
 import { formatSecondsWithPrecision } from 'audio/utils/format-audio-time';
+import { MINIMAP_TIMELINE_HEIGHT } from 'audio/utils/waveform-geometry';
 
+import OptimizedTimelinePlugin from '../plugins/optimized-timeline-plugin';
 import type { WaveSurferRuntime } from './use-audio-waveform';
 
 interface TimelineDensityBand {
@@ -145,8 +147,13 @@ function getTimelineDensityBand(pixelsPerSecond: number): TimelineDensityBand {
  * TimelinePlugin has no public API for updating interval options. Replace it
  * only when zoom moves to a different prepared density band.
  */
-export function useAdaptiveTimeline(runtime: WaveSurferRuntime, pixelsPerSecond: number): void {
+export function useAdaptiveTimeline(
+    runtime: WaveSurferRuntime,
+    pixelsPerSecond: number,
+    overviewPixelsPerSecond: number,
+): void {
     const previousBandRef = useRef<TimelineDensityBand | null>(null);
+    const prevMinimapBandRef = useRef<TimelineDensityBand | null>(null);
 
     useLayoutEffect(() => {
         const { instanceRef, timelineRef } = runtime;
@@ -160,9 +167,32 @@ export function useAdaptiveTimeline(runtime: WaveSurferRuntime, pixelsPerSecond:
         if (previousBandRef.current === band) return;
 
         timeline.destroy();
-        const nextTimeline = TimelinePlugin.create(band.options);
+        const nextTimeline = OptimizedTimelinePlugin.create(band.options);
         timelineRef.current = nextTimeline;
         previousBandRef.current = band;
         instance.registerPlugin(nextTimeline);
-    }, [pixelsPerSecond, runtime.instanceRef, runtime.ready, runtime.timelineRef]);
+    }, [pixelsPerSecond, runtime.ready]);
+
+    useLayoutEffect(() => {
+        const { minimap } = runtime;
+        if (!runtime.ready || !minimap) return;
+        const { instanceRef, timelineRef } = minimap;
+        const instance = instanceRef.current;
+        const timeline = timelineRef.current;
+        if (!instance || !timeline) return;
+
+        // The minimap timeline is assumed to have the same width as the main waveform container.
+        // So we use overviewPixelsPerSecond to determine the density band for the minimap timeline.
+        const band = getTimelineDensityBand(overviewPixelsPerSecond);
+        if (prevMinimapBandRef.current === band) return;
+
+        timeline.destroy();
+        const nextTimeline = TimelinePlugin.create({
+            ...band.options,
+            height: MINIMAP_TIMELINE_HEIGHT,
+        });
+        timelineRef.current = nextTimeline;
+        prevMinimapBandRef.current = band;
+        instance.registerPlugin(nextTimeline);
+    }, [overviewPixelsPerSecond, runtime.ready]);
 }

@@ -202,7 +202,11 @@ context('Bulk actions in UI', () => {
         });
 
         it('Delete all tasks, ensure deletion', () => {
-            cy.intercept('DELETE', '/api/tasks/**').as('deleteTask');
+            cy.intercept('DELETE', '/api/tasks/**', (request) => {
+                request.continue((response) => {
+                    response.setDelay(1000);
+                });
+            }).as('deleteTask');
 
             selectAll();
             getBulkActionsMenu().within(() => {
@@ -216,14 +220,13 @@ context('Bulk actions in UI', () => {
             cy.contains('Delete selected')
                 .should('be.visible')
                 .click();
-            // Bulk delete sends one request per selected task. Use the first
-            // response to confirm the delete flow started, then wait for the
-            // second task deletion as well.
-            cy.wait('@deleteTask').then(() => {
-                cy.get('.cvat-bulk-progress-wrapper').should('be.visible');
-            });
+            // Keep the responses pending long enough to observe the progress state reliably.
+            cy.get('.cvat-bulk-progress-wrapper').should('be.visible');
             cy.wait('@deleteTask');
+            cy.wait('@deleteTask');
+            cy.get('.cvat-bulk-progress-wrapper').should('not.exist');
 
+            // Ensure UI shows them as deleted (=becomes non-interactive)
             cy.get('.cvat-tasks-list-item').each(($el) => {
                 cy.wrap($el)
                     .invoke('attr', 'style')

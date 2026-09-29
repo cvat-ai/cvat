@@ -154,10 +154,10 @@ context('Testing annotations actions workflow', () => {
             }]).flat();
 
             cy.window().then((window) => {
-                window.cvat.server.request(`/api/jobs/${jobId}/annotations`, {
+                cy.wrap(window.cvat.server.request(`/api/jobs/${jobId}/annotations`, {
                     method: 'PUT',
                     data: { shapes, tracks, tags },
-                });
+                }));
             });
         });
 
