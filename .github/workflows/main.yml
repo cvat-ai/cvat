@@ -513,6 +513,11 @@ jobs:
         run: |
           pip3 install --user cvat-sdk/ cvat-cli/ -r tests/python/requirements.txt
 
+      - name: Setup upterm session
+        uses: owenthereal/action-upterm@v1
+        with:
+          limit-access-to-actor: true
+
       - name: Wait for CVAT to be ready
         run: |
           max_tries=60
