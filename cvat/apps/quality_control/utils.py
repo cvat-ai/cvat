@@ -17,7 +17,7 @@ def get_report_version(report_data: object) -> int:
     version = report_data.get("version")
     if "version" not in report_data:
         return 2 if "groups" in report_data else 1
-    if type(version) is not int or version < 1:
+    if not isinstance(version, int) or isinstance(version, bool) or version < 1:
         raise ValueError("Invalid quality report version")
     return version
 

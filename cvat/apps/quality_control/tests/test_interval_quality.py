@@ -34,14 +34,14 @@ from cvat.apps.quality_control.tests.test_quality_backends import make_requireme
 from cvat.apps.quality_control.utils import get_report_version, is_current_report_data
 
 
-def interval(id, start=0, stop=1000, *, label=0, job=1, attributes=None, group=0):
+def interval(annotation_id, start=0, stop=1000, *, label=0, job=1, attributes=None, group=0):
     return IntervalAnnotation(
-        id=id,
+        id=annotation_id,
         label=label,
         start=start,
         stop=stop,
         attributes=attributes or {},
-        reference=cdm.AnnotationReference(id, job, cdm.AnnotationReferenceType.INTERVAL),
+        reference=cdm.AnnotationReference(annotation_id, job, cdm.AnnotationReferenceType.INTERVAL),
         source="manual",
         group=group,
         score=1.0,

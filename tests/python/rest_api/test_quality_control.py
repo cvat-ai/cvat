@@ -15,6 +15,7 @@ from cvat_sdk.api_client import exceptions, models
 from cvat_sdk.api_client.api_client import ApiClient, Endpoint
 from cvat_sdk.core.helpers import get_paginated_collection
 from deepdiff import DeepDiff
+
 from shared.tasks.utils import parse_frame_step
 from shared.utils.config import get_method, make_api_client, patch_method
 from shared.utils.helpers import generate_image_files

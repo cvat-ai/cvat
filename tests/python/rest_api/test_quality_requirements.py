@@ -12,6 +12,7 @@ from zipfile import ZipFile
 import pytest
 from cvat_sdk.core.helpers import get_paginated_collection
 from deepdiff import DeepDiff
+
 from rest_api.utils import create_gt_job, create_quality_report, create_task
 from shared.utils.config import (
     delete_method,

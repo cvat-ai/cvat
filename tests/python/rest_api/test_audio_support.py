@@ -9,12 +9,13 @@ from itertools import product
 from pathlib import Path, PurePosixPath
 
 import pytest
-import shared.utils.s3 as s3
 from cvat_sdk import exceptions, models
 from cvat_sdk.core.exceptions import BackgroundRequestException
 from cvat_sdk.core.proxies.tasks import ResourceType, Task
 from PIL import Image
 from pytest_cases import fixture, fixture_ref, parametrize
+
+import shared.utils.s3 as s3
 from shared.fixtures.params import STORAGE_METHODS
 from shared.utils.config import (
     SHARE_DIR,

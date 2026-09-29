@@ -52,7 +52,10 @@ class IntervalBackend(QualityBackend):
 
     def iter_samples(self) -> Iterator[RecordingComparisonSample]:
         start, stop = self._gt_provider.recording_range
-        if type(start) is not int or type(stop) is not int or not 0 <= start < stop:
+        if (
+            any(not isinstance(value, int) or isinstance(value, bool) for value in (start, stop))
+            or not 0 <= start < stop
+        ):
             raise ValueError("Invalid recording boundaries for audio quality")
         if self._ds_provider.recording_range != (start, stop):
             raise ValueError("Audio quality requires identical whole-recording ranges")
@@ -64,8 +67,10 @@ class IntervalBackend(QualityBackend):
                 for annotation in sample.annotations:
                     end = stop if annotation.stop is None else annotation.stop
                     if (
-                        type(annotation.start) is not int
-                        or type(end) is not int
+                        any(
+                            not isinstance(value, int) or isinstance(value, bool)
+                            for value in (annotation.start, end)
+                        )
                         or not start <= annotation.start <= end <= stop
                     ):
                         raise ValueError(
