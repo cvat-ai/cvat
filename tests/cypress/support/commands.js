@@ -1563,15 +1563,8 @@ Cypress.Commands.add('downloadExport', ({ expectNotification = true } = {}) => {
     cy.get('.cvat-header-requests-button').click();
     cy.get('.cvat-spinner').should('not.exist');
     cy.get('.cvat-requests-list').should('be.visible');
-    cy.get('.cvat-requests-card').first().within(() => {
-        cy.get('.cvat-requests-page-actions-button').click();
-    });
     cy.intercept('GET', '**/download?rq_id=*').as('download');
-    cy.get('.ant-dropdown')
-        .not('.ant-dropdown-hidden')
-        .within(() => {
-            cy.contains('[role="menuitem"]', 'Download').click();
-        });
+    cy.get('.cvat-requests-card').first().find('.cvat-requests-page-download-button').click();
     cy.wait('@download', { requestTimeout: 10000 })
         .then((download) => {
             const filename = download.response.headers['content-disposition'].split(';')[1].split('filename=')[1];

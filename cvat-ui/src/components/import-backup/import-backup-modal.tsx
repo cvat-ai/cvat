@@ -5,6 +5,7 @@
 
 import React, { useCallback, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { useHistory } from 'react-router';
 import Modal from 'antd/lib/modal';
 import Form, { RuleObject } from 'antd/lib/form';
 import Text from 'antd/lib/typography/Text';
@@ -15,6 +16,7 @@ import { InboxOutlined } from '@ant-design/icons';
 import { CombinedState } from 'reducers';
 import { importActions, importBackupAsync } from 'actions/import-actions';
 import SourceStorageField from 'components/storage/source-storage-field';
+import CVATMarkdown from 'components/common/cvat-markdown';
 import { shallowEqual } from 'utils/redux';
 import Input from 'antd/lib/input/Input';
 
@@ -34,6 +36,7 @@ const initialValues: FormValues = {
 };
 
 function ImportBackupModal(): JSX.Element {
+    const history = useHistory();
     const [form] = Form.useForm();
     const [file, setFile] = useState<File | null>(null);
     const { instanceType, modalVisible } = useSelector((state: CombinedState) => {
@@ -144,13 +147,19 @@ function ImportBackupModal(): JSX.Element {
                 ),
             );
 
+            const description = sourceStorage.location === StorageLocation.LOCAL ?
+                'The backup is uploading. Once processing starts, you can check progress [here](/requests).' :
+                'You can check import progress [here](/requests).';
             Notification.info({
-                message: `The ${instanceType} creating from the backup has been started`,
+                message: `${instanceType === 'task' ? 'Task' : 'Project'} backup import started`,
+                description: (
+                    <CVATMarkdown history={history}>{description}</CVATMarkdown>
+                ),
                 className: 'cvat-notification-notice-import-backup-start',
             });
             closeModal();
         },
-        [instanceType, file],
+        [instanceType, file, history],
     );
 
     return (
