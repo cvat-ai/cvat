@@ -462,7 +462,13 @@ class PdfReader(ImageListReader):
         # Avoid OOM: https://github.com/openvinotoolkit/cvat/issues/940
         paths = convert_from_path(
             self._pdf_source,
-            last_page=stop,
+            last_page=(
+                # stop is a 0-based index, but last_page is 1-based, both inclusive.
+                # 0 means "up to the last page".
+                1 + stop
+                if stop
+                else None
+            ),
             paths_only=True,
             output_folder=self._tmp_dir,
             fmt="jpeg",
