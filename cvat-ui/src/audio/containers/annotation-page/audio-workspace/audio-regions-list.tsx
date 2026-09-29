@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { connect } from 'react-redux';
 
 import AudioRegionsList from 'audio/components/annotation-page/audio-workspace/audio-regions-list';
@@ -264,6 +264,22 @@ function AudioRegionsListContainer(props: Props): JSX.Element {
         },
     };
 
+    const intervalActionShortcuts = useMemo(() => ({
+        setPlaybackToStart: normalizedKeyMap.AUDIO_SET_PLAYBACK_TO_INTERVAL_START,
+        playInterval: normalizedKeyMap.AUDIO_PLAY_INTERVAL_ONCE,
+        setPlaybackToEnd: normalizedKeyMap.AUDIO_SET_PLAYBACK_TO_INTERVAL_END,
+        switchLock: normalizedKeyMap.AUDIO_SWITCH_LOCK,
+        switchPinned: normalizedKeyMap.AUDIO_SWITCH_PINNED,
+        switchHidden: normalizedKeyMap.AUDIO_SWITCH_HIDDEN,
+    }), [
+        normalizedKeyMap.AUDIO_SET_PLAYBACK_TO_INTERVAL_START,
+        normalizedKeyMap.AUDIO_PLAY_INTERVAL_ONCE,
+        normalizedKeyMap.AUDIO_SET_PLAYBACK_TO_INTERVAL_END,
+        normalizedKeyMap.AUDIO_SWITCH_LOCK,
+        normalizedKeyMap.AUDIO_SWITCH_PINNED,
+        normalizedKeyMap.AUDIO_SWITCH_HIDDEN,
+    ]);
+
     return (
         <>
             <GlobalHotKeys keyMap={subKeyMap(componentShortcuts, keyMap)} handlers={handlers} />
@@ -275,14 +291,7 @@ function AudioRegionsListContainer(props: Props): JSX.Element {
                 labels={labels}
                 colorBy={colorBy}
                 activeControl={activeControl}
-                intervalActionShortcuts={{
-                    setPlaybackToStart: normalizedKeyMap.AUDIO_SET_PLAYBACK_TO_INTERVAL_START,
-                    playInterval: normalizedKeyMap.AUDIO_PLAY_INTERVAL_ONCE,
-                    setPlaybackToEnd: normalizedKeyMap.AUDIO_SET_PLAYBACK_TO_INTERVAL_END,
-                    switchLock: normalizedKeyMap.AUDIO_SWITCH_LOCK,
-                    switchPinned: normalizedKeyMap.AUDIO_SWITCH_PINNED,
-                    switchHidden: normalizedKeyMap.AUDIO_SWITCH_HIDDEN,
-                }}
+                intervalActionShortcuts={intervalActionShortcuts}
                 switchLockAllShortcut={normalizedKeyMap.AUDIO_SWITCH_ALL_LOCK}
                 switchPinAllShortcut={normalizedKeyMap.AUDIO_SWITCH_ALL_PINNED}
                 switchHiddenAllShortcut={normalizedKeyMap.AUDIO_SWITCH_ALL_HIDDEN}
