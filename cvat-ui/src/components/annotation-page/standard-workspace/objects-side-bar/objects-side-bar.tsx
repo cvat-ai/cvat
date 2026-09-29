@@ -5,7 +5,7 @@
 
 import './styles.scss';
 import React, {
-    Dispatch, TransitionEvent, useEffect, useRef, useState,
+    Dispatch, TransitionEvent, useEffect, useState,
 } from 'react';
 import { AnyAction } from 'redux';
 import { connect } from 'react-redux';
@@ -61,15 +61,8 @@ function ObjectsSideBar(props: StateToProps & DispatchToProps & OwnProps): JSX.E
         sidebarCollapsed, collapseSidebar, objectsList, jobInstance,
     } = props;
     const [activeTab, setActiveTab] = useState('objects');
-    const replayOpenZLayerEvent = useRef(false);
-    const objectsListMounted = activeTab === 'objects' && !sidebarCollapsed;
-
     useEffect((): () => void => {
-        const onOpenZLayer = (event: Event): void => {
-            const replayed = (event as CustomEvent<{ replayed?: boolean }>).detail?.replayed;
-            if (!objectsListMounted && !replayed) {
-                replayOpenZLayerEvent.current = true;
-            }
+        const onOpenZLayer = (): void => {
             setActiveTab('objects');
         };
 
@@ -78,16 +71,7 @@ function ObjectsSideBar(props: StateToProps & DispatchToProps & OwnProps): JSX.E
         return (): void => {
             window.removeEventListener(OBJECTS_SIDEBAR_OPEN_Z_LAYER_EVENT, onOpenZLayer);
         };
-    }, [objectsListMounted]);
-
-    useEffect((): void => {
-        if (objectsListMounted && replayOpenZLayerEvent.current) {
-            replayOpenZLayerEvent.current = false;
-            window.dispatchEvent(new CustomEvent(OBJECTS_SIDEBAR_OPEN_Z_LAYER_EVENT, {
-                detail: { replayed: true },
-            }));
-        }
-    }, [objectsListMounted]);
+    }, []);
 
     const collapse = (): void => {
         const [collapser] = window.document.getElementsByClassName('cvat-objects-sidebar');
@@ -133,7 +117,7 @@ function ObjectsSideBar(props: StateToProps & DispatchToProps & OwnProps): JSX.E
                 items={[{
                     key: 'objects',
                     label: 'Objects',
-                    children: objectsListMounted ? objectsList : null,
+                    children: objectsList,
                 }, {
                     key: 'labels',
                     label: 'Labels',
