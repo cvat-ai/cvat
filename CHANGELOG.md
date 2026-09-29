@@ -16,6 +16,76 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.77.0'></a>
+## \[2.77.0\] - 2026-09-28
+
+### Added
+
+- Export and import background jobs (dataset, annotations, backup) are now
+  retried automatically on failure; the number of retries and the delay
+  between them can be configured via the `CVAT_EXPORT_JOB_RETRY_INTERVALS`
+  and `CVAT_IMPORT_JOB_RETRY_INTERVALS` environment variables
+  (<https://github.com/cvat-ai/cvat/pull/11154>)
+
+- Added the `1D` value to dimension filters for task and job lists.
+  (<https://github.com/cvat-ai/cvat/pull/11209>)
+- Added an option to create an audio task from a project's page when its dimension permits it.
+  (<https://github.com/cvat-ai/cvat/pull/11209>)
+
+### Changed
+
+- Eligible video tasks are now automatically moved to the default backing
+  cloud storage upon creation (if the storage is configured and is S3-like)
+  (<https://github.com/cvat-ai/cvat/pull/11169>)
+
+- Improved waveform controls placement when the Objects sidebar is collapsed.
+  (<https://github.com/cvat-ai/cvat/pull/11209>)
+
+- In the audio workspace, selecting a label with a shortcut now sets
+  it as the default label when no interval is active.
+  (<https://github.com/cvat-ai/cvat/pull/11213>)
+
+- \[CLI\] The CLI now uses a distinct `User-Agent` header value when making
+  requests
+  (<https://github.com/cvat-ai/cvat/pull/11237>)
+
+### Removed
+
+- The `CVAT_EXPORT_LOCKED_RETRY_INTERVAL` environment variable (and its
+  deprecated alias `CVAT_DATASET_EXPORT_LOCKED_RETRY_INTERVAL`) no longer
+  have any effect
+  (<https://github.com/cvat-ai/cvat/pull/11154>)
+
+### Fixed
+
+- Fixed undo and redo for hide/show-all and lock/unlock-all operations so all
+  affected objects are restored in one action
+  (<https://github.com/cvat-ai/cvat/pull/11103>)
+
+- Fixed audio interval playback range when playback rate is different than 1x
+  (<https://github.com/cvat-ai/cvat/pull/11189>)
+
+- Preserved compatible attribute values when changing an annotation's label
+  (<https://github.com/cvat-ai/cvat/pull/11198>)
+
+- Fixed final audio playback position when the track is played until the end
+  (<https://github.com/cvat-ai/cvat/pull/11199>)
+
+- Fixed cloud storage browsing when an object key contains an empty path segment
+  (<https://github.com/cvat-ai/cvat/pull/11201>)
+
+- Fixed Jump to end restarting audio from the beginning during playback.
+  (<https://github.com/cvat-ai/cvat/pull/11209>)
+
+- Fixed audio task creation after changing Advanced configuration.
+  (<https://github.com/cvat-ai/cvat/pull/11219>)
+
+- Fixed validation mode settings being hidden after using Submit & Continue when creating a task
+  (<https://github.com/cvat-ai/cvat/pull/11176>)
+
+- Fixed incorrect forward/backward navigation step duration in the audio workspace for long audio files.
+  (<https://github.com/cvat-ai/cvat/pull/11221>)
+
 <a id='changelog-2.76.0'></a>
 ## \[2.76.0\] - 2026-09-16
 
