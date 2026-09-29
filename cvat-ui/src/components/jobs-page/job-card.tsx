@@ -94,6 +94,9 @@ function JobCardComponent(props: Readonly<Props>): JSX.Element {
                     </div>
                     {tag && <div className='cvat-job-page-list-item-type'>{tag}</div>}
                     <div className='cvat-job-page-list-item-dimension'>{job.dimension.toUpperCase()}</div>
+                    <div className='cvat-job-page-list-item-status'>
+                        <JobStageStateBadges stage={job.stage} state={job.state} />
+                    </div>
                 </>
             )}
             hoverable
@@ -101,9 +104,6 @@ function JobCardComponent(props: Readonly<Props>): JSX.Element {
             onContextMenuCapture={handleContextMenuCapture}
         >
             <Descriptions column={1} size='small'>
-                <Descriptions.Item label='Stage and state'>
-                    <JobStageStateBadges stage={job.stage} state={job.state} />
-                </Descriptions.Item>
                 <Descriptions.Item label='Frames'>{job.stopFrame - job.startFrame + 1}</Descriptions.Item>
                 {job.assignee ? (
                     <Descriptions.Item label='Assignee'>{job.assignee.username}</Descriptions.Item>

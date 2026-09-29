@@ -75,7 +75,7 @@ interface JobStageLabelProps {
 
 export function JobStageLabel({ stage }: Readonly<JobStageLabelProps>): JSX.Element {
     return (
-        <span className={`cvat-job-stage-label ${stageClassName(stage)}`}>
+        <span className='cvat-job-stage-label'>
             <JobStageIcon stage={stage} />
             <span>{stage}</span>
         </span>
@@ -88,7 +88,7 @@ interface JobStateLabelProps {
 
 export function JobStateLabel({ state }: Readonly<JobStateLabelProps>): JSX.Element {
     return (
-        <span className={`cvat-job-state-label ${stateClassName(state)}`}>
+        <span className='cvat-job-state-label'>
             <JobStateIcon state={state} />
             <span>{state}</span>
         </span>

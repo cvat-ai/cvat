@@ -2,13 +2,21 @@
 //
 // SPDX-License-Identifier: MIT
 
+@use 'sass:color';
 @import 'base';
 
 .cvat-job-stage-label,
 .cvat-job-state-label {
     display: inline-flex;
     align-items: center;
-    gap: $grid-unit-size * 0.5;
+    gap: $grid-unit-size;
+}
+
+.cvat-job-item-stage.ant-select-single:not(.ant-select-customize-input) .ant-select-selector,
+.cvat-job-item-state.ant-select-single:not(.ant-select-customize-input) .ant-select-selector,
+.cvat-job-item-stage-dropdown .ant-select-item-option,
+.cvat-job-item-state-dropdown .ant-select-item-option {
+    padding-inline-start: $grid-unit-size;
 }
 
 .cvat-job-stage-state-badges {
@@ -20,8 +28,7 @@
     }
 }
 
-.cvat-job-stage-tag-annotation,
-.cvat-job-stage-label.cvat-job-stage-tag-annotation {
+.cvat-job-stage-tag-annotation {
     color: $text-color-secondary;
 
     .anticon {
@@ -29,8 +36,7 @@
     }
 }
 
-.cvat-job-stage-tag-validation,
-.cvat-job-stage-label.cvat-job-stage-tag-validation {
+.cvat-job-stage-tag-validation {
     color: $validation-progress-color;
 
     .anticon {
@@ -38,8 +44,7 @@
     }
 }
 
-.cvat-job-stage-tag-acceptance,
-.cvat-job-stage-label.cvat-job-stage-tag-acceptance {
+.cvat-job-stage-tag-acceptance {
     color: $completed-progress-color;
 
     .anticon {
@@ -47,8 +52,7 @@
     }
 }
 
-.cvat-job-state-tag-new,
-.cvat-job-state-label.cvat-job-state-tag-new {
+.cvat-job-state-tag-new {
     color: $text-color-secondary;
 
     .anticon {
@@ -56,8 +60,7 @@
     }
 }
 
-.cvat-job-state-tag-in-progress,
-.cvat-job-state-label.cvat-job-state-tag-in-progress {
+.cvat-job-state-tag-in-progress {
     color: $validation-progress-color;
 
     .anticon {
@@ -65,8 +68,7 @@
     }
 }
 
-.cvat-job-state-tag-completed,
-.cvat-job-state-label.cvat-job-state-tag-completed {
+.cvat-job-state-tag-completed {
     color: $completed-progress-color;
 
     .anticon {
@@ -74,8 +76,7 @@
     }
 }
 
-.cvat-job-state-tag-rejected,
-.cvat-job-state-label.cvat-job-state-tag-rejected {
+.cvat-job-state-tag-rejected {
     color: $danger-icon-color;
 
     .anticon {
@@ -85,19 +86,19 @@
 
 .cvat-job-stage-tag.cvat-job-stage-tag-annotation {
     color: $text-color;
-    background: rgba($color: $annotation-progress-color, $alpha: 18%);
+    background: color.mix($annotation-progress-color, $background-color-1, 18%);
     border-color: rgba($color: $annotation-progress-color, $alpha: 45%);
 }
 
 .cvat-job-stage-tag.cvat-job-stage-tag-validation {
     color: $validation-progress-color;
-    background: rgba($color: $validation-progress-color, $alpha: 12%);
+    background: color.mix($validation-progress-color, $background-color-1, 12%);
     border-color: rgba($color: $validation-progress-color, $alpha: 35%);
 }
 
 .cvat-job-stage-tag.cvat-job-stage-tag-acceptance {
-    color: darken($completed-progress-color, 8%);
-    background: rgba($color: $completed-progress-color, $alpha: 12%);
+    color: color.adjust($completed-progress-color, $lightness: -8%);
+    background: color.mix($completed-progress-color, $background-color-1, 12%);
     border-color: rgba($color: $completed-progress-color, $alpha: 35%);
 }
 
@@ -109,18 +110,18 @@
 
 .cvat-job-state-tag.cvat-job-state-tag-in-progress {
     color: $validation-progress-color;
-    background: rgba($color: $validation-progress-color, $alpha: 12%);
+    background: color.mix($validation-progress-color, $background-color-1, 12%);
     border-color: rgba($color: $validation-progress-color, $alpha: 35%);
 }
 
 .cvat-job-state-tag.cvat-job-state-tag-completed {
-    color: darken($completed-progress-color, 8%);
-    background: rgba($color: $completed-progress-color, $alpha: 12%);
+    color: color.adjust($completed-progress-color, $lightness: -8%);
+    background: color.mix($completed-progress-color, $background-color-1, 12%);
     border-color: rgba($color: $completed-progress-color, $alpha: 35%);
 }
 
 .cvat-job-state-tag.cvat-job-state-tag-rejected {
     color: $danger-icon-color;
-    background: rgba($color: $danger-icon-color, $alpha: 10%);
+    background: color.mix($danger-icon-color, $background-color-1, 10%);
     border-color: rgba($color: $danger-icon-color, $alpha: 35%);
 }
