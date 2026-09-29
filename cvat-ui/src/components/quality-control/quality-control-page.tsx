@@ -16,7 +16,7 @@ import { useDispatch } from 'react-redux';
 
 import {
     Job, JobType, QualityReport, QualitySettings, Task,
-    TaskValidationLayout, getCore, FramesMetaData,
+    TaskValidationLayout, getCore, FramesMetaData, DimensionType,
     Project,
 } from 'cvat-core-wrapper';
 import CVATLoadingSpinner from 'components/common/loading-spinner';
@@ -242,8 +242,9 @@ function QualityControlPage(): JSX.Element {
                 [receivedInstance] = await core.tasks.get({ id });
                 const gtJob = receivedInstance.jobs.find((job: Job) => job.type === JobType.GROUND_TRUTH) ?? null;
                 if (gtJob) {
-                    const validationLayout: TaskValidationLayout | null = await receivedInstance.validationLayout();
-                    const gtJobMeta = await core.frames.getMeta('job', gtJob.id) as FramesMetaData;
+                    const isAudio = receivedInstance.dimension === DimensionType.DIMENSION_1D;
+                    const validationLayout = isAudio ? null : await receivedInstance.validationLayout();
+                    const gtJobMeta = isAudio ? null : await core.frames.getMeta('job', gtJob.id) as FramesMetaData;
                     dispatch(reducerActions.setGtJob(gtJob));
                     dispatch(reducerActions.setGtJobMeta(gtJobMeta));
                     dispatch(reducerActions.setValidationLayout(validationLayout));
@@ -489,7 +490,7 @@ function QualityControlPage(): JSX.Element {
         );
 
         const tabsItems: QualityControlTabItem[] = [];
-        const isTaskWithGT = instance instanceof Task && !!gtJobInstance && !!gtJobMeta;
+        const isTaskWithGT = instance instanceof Task && !!gtJobInstance;
         const isProject = instance instanceof Project;
 
         const sortedPluginTabs = [...pluginTabs].sort((first, second) => first.weight - second.weight);
@@ -520,7 +521,7 @@ function QualityControlPage(): JSX.Element {
             });
         }
 
-        if (isTaskWithGT && validationLayout && qualitySettings) {
+        if (isTaskWithGT && qualitySettings) {
             tabsItems.push({
                 key: 'management',
                 label: 'Management',

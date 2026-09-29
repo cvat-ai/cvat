@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import json
 from collections.abc import Sequence
 from dataclasses import dataclass
 from enum import Enum
@@ -16,16 +17,11 @@ from django.db import models
 from django.forms.models import model_to_dict
 
 from cvat.apps.engine.models import Job, JobType, Project, ShapeType, Task, TimestampedModel
-from cvat.apps.quality_control.utils import is_current_report_data
+from cvat.apps.quality_control.utils import GENERALIZED_REPORT_VERSIONS, get_report_version
 from cvat.utils import django_database as db_utils
 
 if TYPE_CHECKING:
     from cvat.apps.organizations.models import Organization
-
-
-# QualityReport.data contains a serialized JSON object stored as a JSON string. PostgreSQL's
-# text representation can therefore contain escaped or unescaped quotes around object keys.
-CURRENT_REPORT_DATA_REGEX = r'\\?"groups\\?"\s*:'
 
 
 class AnnotationConflictType(str, Enum):
@@ -240,11 +236,14 @@ class QualityReport(models.Model):
         return self.data
 
     @property
-    def has_readable_data(self) -> bool:
-        from datumaro.util import parse_json
+    def version(self) -> int:
+        report_data = json.loads(self.data) if isinstance(self.data, str) else self.data
+        return get_report_version(report_data)
 
+    @property
+    def has_readable_data(self) -> bool:
         try:
-            report_data = parse_json(self.data)
+            report_data = json.loads(self.data)
         except (TypeError, ValueError):
             return False
 
@@ -255,14 +254,10 @@ class QualityReport(models.Model):
 
     @property
     def has_current_data_format(self) -> bool:
-        from datumaro.util import parse_json
-
         try:
-            report_data = parse_json(self.data)
+            return self.version in GENERALIZED_REPORT_VERSIONS
         except (TypeError, ValueError):
             return False
-
-        return is_current_report_data(report_data)
 
     def get_task(self) -> Task | None:
         if self.task:
@@ -299,7 +294,7 @@ class QualityReport(models.Model):
 
 class AnnotationConflict(models.Model):
     report = models.ForeignKey(QualityReport, on_delete=models.CASCADE, related_name="conflicts")
-    frame = models.PositiveIntegerField()
+    frame = models.PositiveIntegerField(null=True)
     type = models.CharField(max_length=32, choices=AnnotationConflictType.choices())
     severity = models.CharField(max_length=32, choices=AnnotationConflictSeverity.choices())
     attribute_names = models.JSONField(default=list, blank=True)
@@ -315,6 +310,7 @@ class AnnotationType(str, Enum):
     TAG = "tag"
     SHAPE = "shape"
     TRACK = "track"
+    INTERVAL = "interval"
 
     def __str__(self) -> str:
         return self.value
@@ -340,7 +336,7 @@ class AnnotationId(models.Model):
         if self.type in [AnnotationType.SHAPE, AnnotationType.TRACK]:
             if not self.shape_type:
                 raise ValidationError("Annotation kind must be specified")
-        elif self.type == AnnotationType.TAG:
+        elif self.type in (AnnotationType.TAG, AnnotationType.INTERVAL):
             if self.shape_type:
                 raise ValidationError("Annotation kind must be empty")
         else:
@@ -419,6 +415,7 @@ class QualityRequirementAnnotationType(models.TextChoices):
     MASK = "mask"
     POLYGON = "polygon"
     ELLIPSE = "ellipse"
+    INTERVAL = "interval"
 
 
 class QualityRequirement(TimestampedModel):
@@ -528,6 +525,7 @@ _BASE_REQUIREMENT_ANNOTATION_TYPES = (
     QualityRequirementAnnotationType.MASK,
     QualityRequirementAnnotationType.POLYGON,
     QualityRequirementAnnotationType.ELLIPSE,
+    QualityRequirementAnnotationType.INTERVAL,
 )
 
 

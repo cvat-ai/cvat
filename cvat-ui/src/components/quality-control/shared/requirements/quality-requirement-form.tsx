@@ -531,19 +531,21 @@ export default function QualityRequirementForm(props: Readonly<QualityRequiremen
                         </Row>
                     </>
                 )}
-                <Divider />
-                <Row gutter={16}>
-                    <Col span={12}>
-                        {renderCheckbox('matchGroups', 'Match groups', requirementDescriptions.matchGroups)}
-                    </Col>
-                    <Col span={12}>
-                        {renderPercentInput(
-                            'groupMatchThreshold',
-                            'Min group match threshold (%)',
-                            requirementDescriptions.groupMatchThreshold,
-                        )}
-                    </Col>
-                </Row>
+                {annotationType !== QualityRequirementAnnotationType.INTERVAL && (<>
+                    <Divider />
+                    <Row gutter={16}>
+                        <Col span={12}>
+                            {renderCheckbox('matchGroups', 'Match groups', requirementDescriptions.matchGroups)}
+                        </Col>
+                        <Col span={12}>
+                            {renderPercentInput(
+                                'groupMatchThreshold',
+                                'Min group match threshold (%)',
+                                requirementDescriptions.groupMatchThreshold,
+                            )}
+                        </Col>
+                    </Row>
+                </>)}
             </>
         );
     };
@@ -648,6 +650,7 @@ export default function QualityRequirementForm(props: Readonly<QualityRequiremen
                                 noStyle
                             >
                                 <QualityRequirementFilter
+                                    annotationType={annotationType}
                                     labels={labels}
                                     parentFilters={parentFilters}
                                     disabled={disabled}

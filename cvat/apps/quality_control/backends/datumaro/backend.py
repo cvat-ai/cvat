@@ -101,6 +101,8 @@ class Datumaro2DBackend(QualityBackend):
         *,
         requirement_type: QualityRequirementAnnotationType | str,
     ) -> ComparisonSample:
+        if requirement_type == QualityRequirementAnnotationType.INTERVAL:
+            raise ValueError("Interval quality requires audio data")
         if requirement_type != QualityRequirementAnnotationType.SKELETON_KEYPOINT:
             return sample
 

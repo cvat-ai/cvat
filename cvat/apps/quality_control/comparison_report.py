@@ -27,7 +27,12 @@ from cvat.apps.quality_control.models import (
     AnnotationConflictType,
     AnnotationType,
 )
-from cvat.apps.quality_control.utils import array_safe_divide
+from cvat.apps.quality_control.utils import (
+    CURRENT_REPORT_VERSION,
+    GENERALIZED_REPORT_VERSIONS,
+    array_safe_divide,
+    get_report_version,
+)
 
 UNMATCHED_LABEL_NAME = "unmatched"
 
@@ -188,7 +193,7 @@ class AnnotationId(ReportNode):
 
 @define(kw_only=True, init=False, slots=False)
 class AnnotationConflict(ReportNode):
-    frame_id: int
+    frame_id: int | None
     type: AnnotationConflictType
     annotation_ids: list[AnnotationId]
     severity: AnnotationConflictSeverity = AnnotationConflictSeverity.ERROR
@@ -967,6 +972,18 @@ class ComparisonReportSummary(ReportNode):
     tasks: ComparisonReportTaskStats | None
     jobs: ComparisonReportJobStats | None
     requirements: ComparisonReportRequirementsSummary | None = None
+    _has_comparison_scope: bool | None = field(default=None, alias="has_comparison_scope")
+
+    @property
+    def has_comparison_scope(self) -> bool:
+        if self._has_comparison_scope is not None:
+            return self._has_comparison_scope
+        return bool(self.validation_frames)
+
+    def _as_dict(self, **kwargs):
+        result = super()._as_dict(**kwargs)
+        result.pop("_has_comparison_scope", None)
+        return result
 
     @property
     def validation_frame_share(self) -> float:
@@ -999,6 +1016,7 @@ class ComparisonReportSummary(ReportNode):
     def _from_dict_kwargs(cls, d: dict) -> dict[str, Any]:
         return {
             "frames": d.get("frames"),
+            "has_comparison_scope": d.get("has_comparison_scope"),
             "total_frames": d["total_frames"],
             **(dict(validation_frames=d["validation_frames"]) if "validation_frames" in d else {}),
             "conflict_count": d["conflict_count"],
@@ -1227,14 +1245,22 @@ class ComparisonReportRequirementSummary(ReportNode):
     parameters: dict[str, Any]
     comparison_summary: ComparisonReportRequirementComparisonSummary
     frame_results: dict[int, ComparisonReportFrameComparisonSummary] | None
+    _conflicts: list[AnnotationConflict] = field(factory=list, alias="conflicts")
+
+    def _as_dict(self, **kwargs):
+        result = super()._as_dict(**kwargs)
+        result.pop("_conflicts", None)
+        return result
 
     @property
     def conflicts(self) -> list[AnnotationConflict]:
-        if not self.frame_results:
-            return []
-
         return deduplicate_annotation_conflicts(
-            list(itertools.chain.from_iterable(r.conflicts for r in self.frame_results.values()))
+            [
+                *self._conflicts,
+                *itertools.chain.from_iterable(
+                    r.conflicts for r in (self.frame_results or {}).values()
+                ),
+            ]
         )
 
     @classmethod
@@ -1245,6 +1271,7 @@ class ComparisonReportRequirementSummary(ReportNode):
         )
         return cls(
             parameters=parameters,
+            conflicts=[AnnotationConflict.from_dict(v) for v in d.get("conflicts", [])],
             comparison_summary=ComparisonReportRequirementComparisonSummary.from_dict(
                 d["comparison_summary"]
             ),
@@ -1263,6 +1290,7 @@ class ComparisonReportRequirementSummary(ReportNode):
 
 @define(kw_only=True, init=False, slots=False)
 class ComparisonReport(ReportNode):
+    version: int = CURRENT_REPORT_VERSION
     parameters: ComparisonReportParameters
     comparison_summary: ComparisonReportSummary
     groups: dict[str, ComparisonReportRequirementSummary] | None = None
@@ -1281,12 +1309,16 @@ class ComparisonReport(ReportNode):
 
     @classmethod
     def from_dict(cls, d: dict[str, Any]) -> ComparisonReport:
+        version = get_report_version(d)
+        if version not in GENERALIZED_REPORT_VERSIONS:
+            raise ValueError(f"Unsupported quality report version: {version}")
         groups = (
             {k: ComparisonReportRequirementSummary.from_dict(v) for k, v in d["groups"].items()}
             if d.get("groups") is not None
             else None
         )
         return cls(
+            version=version,
             parameters=ComparisonReportParameters.from_dict(d["parameters"]),
             comparison_summary=ComparisonReportSummary.from_dict(d["comparison_summary"]),
             groups=groups,

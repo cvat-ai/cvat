@@ -16,7 +16,7 @@ class TestTaskQualityCalculatorCleanup(unittest.TestCase):
         patches = ExitStack()
         self.addCleanup(patches.close)
         self.task = SimpleNamespace(
-            id=1, updated_date=None, assignee_id=None, assignee_updated_date=None
+            dimension="2d", id=1, updated_date=None, assignee_id=None, assignee_updated_date=None
         )
         self.jobs = [
             SimpleNamespace(

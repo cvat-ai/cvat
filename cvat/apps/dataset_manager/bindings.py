@@ -75,6 +75,14 @@ CVAT_INTERNAL_ATTRIBUTES = {
 }
 
 
+def convert_attribute_value(value, input_type):
+    if input_type == AttributeType.NUMBER:
+        return float(value)
+    if input_type == AttributeType.CHECKBOX:
+        return value.lower() == "true"
+    return value
+
+
 class InstanceLabelData:
     class Attribute(NamedTuple):
         name: str
@@ -2172,11 +2180,7 @@ class CvatToDmAnnotationConverter:
 
             a_value = cvat_attrs.get(a_name, a_desc["default_value"])
             try:
-                if a_desc["input_type"] == AttributeType.NUMBER:
-                    a_value = float(a_value)
-                elif a_desc["input_type"] == AttributeType.CHECKBOX:
-                    a_value = a_value.lower() == "true"
-                dm_attr[a_name] = a_value
+                dm_attr[a_name] = convert_attribute_value(a_value, a_desc["input_type"])
             except Exception as e:
                 raise CvatExportError(
                     "Failed to convert attribute '%s'='%s': %s" % (a_name, a_value, e)

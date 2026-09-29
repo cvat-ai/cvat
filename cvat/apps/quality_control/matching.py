@@ -180,3 +180,9 @@ class MatchingResults:
     all_shape_ann_types: AnnotationMatches
     covered_annotations: list[cdm.Annotation]
     group_comparisons: list[GroupComparison]
+
+
+def temporal_iou(a_start: int, a_stop: int, b_start: int, b_stop: int) -> float:
+    intersection = max(0, min(a_stop, b_stop) - max(a_start, b_start))
+    union = a_stop - a_start + b_stop - b_start - intersection
+    return intersection / union if union > 0 else 0.0
