@@ -667,28 +667,27 @@ Cypress.Commands.add('getObjectSidebarItem', (id) => {
             return cy.wrap(item);
         }
 
-        const visibleIds = Array.from(holder.querySelectorAll('.cvat-objects-sidebar-state-item'))
-            .map((element) => Number(element.id.match(/^cvat-objects-sidebar-state-item-(\d+)$/)?.[1]))
-            .filter(Number.isInteger);
-        if (!visibleIds.length || attempt >= 40) {
+        if (attempt >= 200) {
             throw new Error(`Could not find object ${id} in the virtualized sidebar`);
         }
 
-        const firstId = visibleIds[0];
-        const lastId = visibleIds[visibleIds.length - 1];
-        const ascending = firstId <= lastId;
-        const before = ascending ? id < firstId : id > firstId;
-        const after = ascending ? id > lastId : id < lastId;
-        if (!before && !after) {
-            throw new Error(`Object ${id} is not present among the visible sidebar IDs`);
-        }
-
+        // Scan in rendered order: layer, label, and update-time sorting are not monotonic by ID.
         // Keep successive viewports overlapping so variable-height rows are not skipped.
         const step = Math.max(1, Math.floor(holder.clientHeight * 0.75));
         const maxScroll = holder.scrollHeight - holder.clientHeight;
-        const nextScroll = Math.max(0, Math.min(maxScroll, holder.scrollTop + (before ? -step : step)));
-        if (nextScroll === holder.scrollTop) {
-            throw new Error(`Reached the end of the sidebar without finding object ${id}`);
+        const ordering = holder.ownerDocument.querySelector(
+            '.cvat-objects-sidebar-ordering-selector .ant-select-selection-item',
+        )?.textContent;
+        let nextScroll = attempt === 0 && holder.scrollTop > 0 ? 0 :
+            Math.max(0, Math.min(maxScroll, holder.scrollTop + step));
+        if (ordering === 'ID - ascent' || ordering === 'ID - descent') {
+            const visibleIds = Array.from(holder.querySelectorAll('.cvat-objects-sidebar-state-item'))
+                .map((element) => Number(element.id.replace('cvat-objects-sidebar-state-item-', '')));
+            const firstId = visibleIds[0];
+            const before = ordering === 'ID - ascent' ? id < firstId : id > firstId;
+            nextScroll = Math.max(0, Math.min(maxScroll, holder.scrollTop + (before ? -step : step)));
+        } else if (nextScroll === holder.scrollTop) {
+            nextScroll = 0;
         }
 
         cy.wrap($holder).scrollTo(0, nextScroll, { duration: 0, ensureScrollable: false });

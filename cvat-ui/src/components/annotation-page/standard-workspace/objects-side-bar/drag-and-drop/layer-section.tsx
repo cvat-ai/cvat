@@ -14,6 +14,9 @@ interface LayerSectionProps {
     selected: boolean;
     visible: boolean;
     collapsed: boolean;
+    multiSelected: boolean;
+    onMouseDown(event: React.MouseEvent): void;
+    onKeyDown(event: React.KeyboardEvent): void;
     selectLayer(zOrder: number): void;
     toggleLayerVisibility(zOrder: number, includeLower: boolean): void;
     toggleLayerCollapsed(zOrder: number): void;
@@ -22,7 +25,7 @@ interface LayerSectionProps {
 // The layer header remains a drop target when its object rows are virtualized separately.
 function LayerSection(props: LayerSectionProps): JSX.Element {
     const {
-        zOrder, selected, visible, collapsed, selectLayer,
+        zOrder, selected, visible, collapsed, multiSelected, selectLayer, onMouseDown, onKeyDown,
         toggleLayerCollapsed, toggleLayerVisibility,
     } = props;
 
@@ -36,6 +39,7 @@ function LayerSection(props: LayerSectionProps): JSX.Element {
                 'cvat-objects-sidebar-z-layer-virtual-header',
                 ...(!collapsed ? ['cvat-objects-sidebar-z-layer-virtual-header-expanded'] : []),
                 ...(isOver ? ['cvat-objects-sidebar-z-layer-active'] : []),
+                ...(multiSelected ? ['cvat-objects-sidebar-z-layer-multi-selected'] : []),
             ].join(' ')}
             data-z-order={zOrder}
         >
@@ -44,9 +48,12 @@ function LayerSection(props: LayerSectionProps): JSX.Element {
                 selected={selected}
                 visible={visible}
                 collapsed={collapsed}
+                multiSelected={multiSelected}
                 selectLayer={selectLayer}
                 toggleLayerVisibility={toggleLayerVisibility}
                 toggleLayerCollapsed={toggleLayerCollapsed}
+                onMouseDown={onMouseDown}
+                onKeyDown={onKeyDown}
             />
         </div>
     );

@@ -18,9 +18,10 @@ import {
     switchSimplifyVisibility as switchSimplifyVisibilityAction,
     removeObject as removeObjectAction,
     collapseObjectItems,
+    selectObjectsAsync,
 } from 'actions/annotation-actions';
 import {
-    ActiveControl, CombinedState, ColorBy,
+    ActiveControl, CombinedState, ColorBy, isMultiSelectionSupported,
 } from 'reducers';
 import { openAnnotationsActionModal } from 'components/annotation-page/annotations-actions/annotations-actions-modal';
 import ObjectStateItemComponent from 'components/annotation-page/standard-workspace/objects-side-bar/object-item';
@@ -34,12 +35,14 @@ import { Canvas, CanvasMode } from 'cvat-canvas-wrapper';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import { filterApplicableLabels } from 'utils/filter-applicable-labels';
 import { toClipboard } from 'utils/to-clipboard';
+import { KeyMap } from 'utils/mousetrap-react';
 import changeObjectOrientation, { type OrientationAngle } from 'utils/change-object-orientation';
 import { getObjectStateByClientID } from 'utils/objects-sidebar';
 
 interface OwnProps {
     clientID: number;
     objectStates: ObjectState[];
+    visibleObjectIDs?: number[];
     visibleSkeletonElements?: Record<number, number[]>;
     zLayerDragProps?: React.HTMLAttributes<HTMLElement>;
     zLayerDragging?: boolean;
@@ -52,12 +55,16 @@ interface StateToProps {
     jobInstance: Job;
     frameNumber: number;
     activated: boolean;
+    multiSelected: boolean;
+    multiSelectionSupported: boolean;
+    selectedStatesID: number[];
     colorBy: ColorBy;
     ready: boolean;
     activeControl: ActiveControl;
     minZLayer: number;
     maxZLayer: number;
     normalizedKeyMap: Record<string, string>;
+    keyMap: KeyMap;
     canvasInstance: Canvas | Canvas3d;
     focusedObjectPadding: number;
 }
@@ -73,6 +80,7 @@ interface DispatchToProps {
     changeGroupColor(group: number, color: string): void;
     updateActiveControl(activeControl: ActiveControl): void;
     expandObject(objectState: ObjectState): void;
+    selectObjects(selectedStatesID: number[]): void;
 }
 
 function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
@@ -80,6 +88,7 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
         annotation: {
             annotations: {
                 activatedStateID,
+                selectedStatesID,
                 zLayer: { min: minZLayer, max: maxZLayer },
             },
             job: { attributes: jobAttributes, instance: jobInstance, labels },
@@ -87,12 +96,13 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
                 frame: { number: frameNumber },
             },
             canvas: { instance: canvasInstance, ready, activeControl },
+            workspace,
         },
         settings: {
             shapes: { colorBy },
             workspace: { focusedObjectPadding },
         },
-        shortcuts: { normalizedKeyMap },
+        shortcuts: { normalizedKeyMap, keyMap },
     } = state;
 
     const { objectStates: states, clientID } = own;
@@ -108,9 +118,13 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
         jobInstance,
         frameNumber,
         activated: activatedStateID === clientID,
+        multiSelected: isMultiSelectionSupported(workspace) && selectedStatesID.includes(clientID),
+        multiSelectionSupported: isMultiSelectionSupported(workspace),
+        selectedStatesID,
         minZLayer,
         maxZLayer,
         normalizedKeyMap,
+        keyMap,
         canvasInstance: canvasInstance as Canvas | Canvas3d,
         focusedObjectPadding,
     };
@@ -148,6 +162,9 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         },
         expandObject(objectState: ObjectState): void {
             dispatch(collapseObjectItems([objectState], false));
+        },
+        selectObjects(selectedStatesID: number[]): void {
+            dispatch(selectObjectsAsync(selectedStatesID));
         },
     };
 }
@@ -335,6 +352,67 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
         }
     };
 
+    private activateSingle = (): void => {
+        const {
+            objectState, ready, activeControl, activateObject, selectObjects,
+            updateActiveControl, canvasInstance,
+        } = this.props;
+        if (!ready) return;
+
+        if (canvasInstance instanceof Canvas && activeControl === ActiveControl.SELECT) {
+            canvasInstance.selectObjects({ enabled: false });
+            updateActiveControl(ActiveControl.CURSOR);
+        }
+        selectObjects([]);
+        activateObject(objectState.clientID, null);
+    };
+
+    private toggleSelection = (): void => {
+        const {
+            objectState, selectedStatesID, selectObjects,
+        } = this.props;
+        if (objectState.objectType === ObjectType.TAG) return;
+        const clientID = objectState.clientID as number;
+        const nextSelection = selectedStatesID.includes(clientID) ?
+            selectedStatesID.filter((selectedClientID: number): boolean => selectedClientID !== clientID) :
+            [...selectedStatesID, clientID];
+
+        selectObjects(nextSelection);
+    };
+
+    private selectRange = (): void => {
+        const {
+            objectState, objectStates, selectedStatesID, visibleObjectIDs: orderedObjectIDs, selectObjects,
+        } = this.props;
+        if (objectState.objectType === ObjectType.TAG) return;
+        const visibleObjectIDs = orderedObjectIDs || objectStates.map(
+            (state: ObjectState): number => state.clientID as number,
+        );
+        const clientID = objectState.clientID as number;
+        const anchorID = [...selectedStatesID].reverse().find(
+            (id: number): boolean => visibleObjectIDs.includes(id),
+        );
+
+        if (typeof anchorID !== 'number') {
+            selectObjects([...selectedStatesID, clientID]);
+            return;
+        }
+
+        const from = visibleObjectIDs.indexOf(anchorID);
+        const to = visibleObjectIDs.indexOf(clientID);
+        if (from === -1 || to === -1) {
+            selectObjects([...selectedStatesID, clientID]);
+            return;
+        }
+        const range = visibleObjectIDs.slice(Math.min(from, to), Math.max(from, to) + 1);
+        const nextSelection = [...new Set([
+            ...selectedStatesID.filter((id: number): boolean => id !== clientID),
+            ...range.filter((id: number): boolean => id !== clientID),
+            clientID,
+        ])];
+        selectObjects(nextSelection);
+    };
+
     private focusAndExpand = (): void => {
         const {
             objectState, canvasInstance, focusedObjectPadding, expandObject,
@@ -433,8 +511,12 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
             objectState,
             attributes,
             activated,
+            multiSelected,
+            multiSelectionSupported,
+            selectedStatesID,
             colorBy,
             normalizedKeyMap,
+            keyMap,
             jobInstance,
             zLayerDragProps,
             zLayerDragging,
@@ -449,6 +531,9 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
                 zLayerDragProps={zLayerDragProps}
                 zLayerDragging={zLayerDragging}
                 activated={activated}
+                multiSelected={multiSelected}
+                selectionActive={multiSelectionSupported && selectedStatesID.length > 0}
+                multiSelectionSupported={multiSelectionSupported}
                 objectType={objectState.objectType}
                 shapeType={objectState.shapeType}
                 clientID={objectState.clientID as number}
@@ -460,9 +545,13 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
                 attributes={attributes}
                 elements={elements}
                 normalizedKeyMap={normalizedKeyMap}
+                keyMap={keyMap}
                 labels={labels}
                 colorBy={colorBy}
                 activate={this.activate}
+                activateSingle={this.activateSingle}
+                toggleSelection={this.toggleSelection}
+                selectRange={this.selectRange}
                 focusAndExpand={this.focusAndExpand}
                 remove={this.remove}
                 copy={this.copy}

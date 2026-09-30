@@ -9,6 +9,7 @@ import { taskName, labelName } from '../../support/const_canvas3d';
 
 context('Canvas 3D functionality. Add cuboid.', () => {
     const caseId = '64';
+    const platformModifier = Cypress.platform === 'darwin' ? { metaKey: true } : { ctrlKey: true };
 
     const screenshotsPath = 'cypress/screenshots/canvas3d_functionality_2/case_64_canvas3d_functionality_cuboid.js';
     const cuboidCreationParams = {
@@ -53,6 +54,11 @@ context('Canvas 3D functionality. Add cuboid.', () => {
             });
         });
 
+        it('Does not multi-select cuboids with the platform modifier', () => {
+            cy.get('#cvat-objects-sidebar-state-item-1').click({ ...platformModifier, force: true });
+            cy.get('.cvat-objects-sidebar-state-item-multi-selected').should('not.exist');
+        });
+
         it('Cuboid interaction by mouse.', () => {
             cy.get('.cvat-canvas3d-perspective').trigger('mousemove', 300, 200);
             cy.get('.cvat-canvas3d-perspective').click(300, 200); // Deactivate the cuboid
@@ -62,7 +68,6 @@ context('Canvas 3D functionality. Add cuboid.', () => {
             });
             cy.get('.cvat-canvas3d-perspective').trigger('mousemove', 300, 200); // Interacting with the canvas before interacting with the cuboid.
             cy.get('.cvat-canvas3d-perspective').trigger('mousemove'); // Move cursor to cuboid
-            // eslint-disable-next-line cypress/no-unnecessary-waiting
             cy.wait(1000); // Waiting for the reaction of the cuboid to interact with the mouse cursor
             cy.customScreenshot('.cvat-canvas3d-perspective', 'canvas3d_perspective_after_cursor_movements_to_cuboid');
             cy.compareImagesAndCheckResult(
