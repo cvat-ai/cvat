@@ -61,7 +61,6 @@ function DraggableObjectItem(props: Props): JSX.Element {
                 objectStates={objectStates}
                 clientID={clientID}
                 visibleSkeletonElements={visibleSkeletonElements}
-                allowSimplifyLifecycle
                 zLayerDragging={isDragging}
                 zLayerDragProps={draggable ? {} : undefined}
             />

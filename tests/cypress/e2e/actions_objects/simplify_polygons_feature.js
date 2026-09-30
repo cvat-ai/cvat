@@ -295,6 +295,51 @@ context('Simplify polygons feature', { scrollBehavior: false }, () => {
                 checkLessPointsThan(referenceObjectId, detailedPolygonPoints);
                 approveSimplify();
             });
+
+            it('Keeps simplification active when the object row is virtualized', () => {
+                const rectangle = {
+                    type: 'Shape',
+                    labelName,
+                    points: '2 Points',
+                    firstX: 50,
+                    firstY: 50,
+                    secondX: 100,
+                    secondY: 100,
+                };
+                const existingObjects = 12;
+                const polygonId = existingObjects + 1;
+                const holder = '.cvat-objects-sidebar-virtual-list .rc-virtual-list-holder';
+
+                for (let i = 0; i < existingObjects; i++) {
+                    cy.createRectangle(rectangle);
+                }
+
+                cy.get(holder).scrollTo('top', { duration: 0, ensureScrollable: false });
+                cy.get(`#cvat-objects-sidebar-state-item-${existingObjects}`).should('not.exist');
+
+                cy.createPolygon({ ...createDetailedPolygon }, null, 'shiftHover');
+                cy.get('.cvat-approx-poly-threshold-wrapper').should('be.visible');
+                checkLessPointsThan(polygonId, detailedPolygonPoints);
+
+                cy.get(holder).scrollTo('top', { duration: 0, ensureScrollable: false });
+                cy.get(`#cvat-objects-sidebar-state-item-${polygonId}`).should('not.exist');
+                cy.get('.cvat-approx-poly-threshold-wrapper').should('be.visible');
+                approveSimplify();
+
+                getPolygonStats(polygonId).then((beforeCancel) => {
+                    cy.getObjectSidebarItem(polygonId);
+                    cy.interactAnnotationObjectMenu(`#cvat-objects-sidebar-state-item-${polygonId}`, 'Simplify');
+                    cy.get('.cvat-approx-poly-threshold-wrapper').should('be.visible');
+                    cy.get(holder).scrollTo('top', { duration: 0, ensureScrollable: false });
+                    cy.get(`#cvat-objects-sidebar-state-item-${polygonId}`).should('not.exist');
+                    cy.get('.cvat-approx-poly-threshold-wrapper .anticon-close').click();
+                    cy.get('.cvat-approx-poly-threshold-wrapper').should('not.exist');
+                    getPolygonStats(polygonId).then((afterCancel) => {
+                        expect(afterCancel.pointsCount).to.equal(beforeCancel.pointsCount);
+                        expect(afterCancel.area).to.be.closeTo(beforeCancel.area, 1);
+                    });
+                });
+            });
         });
     });
 

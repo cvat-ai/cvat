@@ -25,7 +25,6 @@ import {
 import { openAnnotationsActionModal } from 'components/annotation-page/annotations-actions/annotations-actions-modal';
 import ObjectStateItemComponent from 'components/annotation-page/standard-workspace/objects-side-bar/object-item';
 import { getObjectStateColor } from 'components/annotation-page/standard-workspace/objects-side-bar/shared';
-import PolySimplifyControl from 'components/annotation-page/standard-workspace/controls-side-bar/poly-simplify-control';
 import openCVWrapper from 'utils/opencv-wrapper/opencv-wrapper';
 import { shift } from 'utils/math';
 import {
@@ -42,7 +41,6 @@ interface OwnProps {
     clientID: number;
     objectStates: ObjectState[];
     visibleSkeletonElements?: Record<number, number[]>;
-    allowSimplifyLifecycle?: boolean;
     zLayerDragProps?: React.HTMLAttributes<HTMLElement>;
     zLayerDragging?: boolean;
 }
@@ -60,14 +58,8 @@ interface StateToProps {
     minZLayer: number;
     maxZLayer: number;
     normalizedKeyMap: Record<string, string>;
-    keyMap: Record<string, { sequences: string[] }>;
     canvasInstance: Canvas | Canvas3d;
     focusedObjectPadding: number;
-    defaultApproxPolyAccuracy: number;
-    simplifyState: {
-        objectState: ObjectState | null;
-        originalPoints: number[] | null;
-    };
 }
 
 interface DispatchToProps {
@@ -95,13 +87,12 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
                 frame: { number: frameNumber },
             },
             canvas: { instance: canvasInstance, ready, activeControl },
-            simplify: simplifyState,
         },
         settings: {
             shapes: { colorBy },
-            workspace: { focusedObjectPadding, defaultApproxPolyAccuracy },
+            workspace: { focusedObjectPadding },
         },
-        shortcuts: { normalizedKeyMap, keyMap },
+        shortcuts: { normalizedKeyMap },
     } = state;
 
     const { objectStates: states, clientID } = own;
@@ -120,11 +111,8 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
         minZLayer,
         maxZLayer,
         normalizedKeyMap,
-        keyMap,
         canvasInstance: canvasInstance as Canvas | Canvas3d,
         focusedObjectPadding,
-        defaultApproxPolyAccuracy,
-        simplifyState,
     };
 }
 
@@ -167,10 +155,6 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
 type Props = StateToProps & DispatchToProps & OwnProps;
 interface State {
     labels: Label[];
-    simplifyMode: boolean;
-    approxPolyAccuracy: number;
-    originalPoints: number[] | null;
-    previewPoints: number[] | null;
 }
 
 class ObjectItemContainer extends React.PureComponent<Props, State> {
@@ -178,10 +162,6 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
         super(props);
         this.state = {
             labels: props.labels,
-            simplifyMode: false,
-            approxPolyAccuracy: props.defaultApproxPolyAccuracy,
-            originalPoints: null,
-            previewPoints: null,
         };
     }
 
@@ -197,47 +177,6 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
         }
 
         return null;
-    }
-
-    public componentDidUpdate(prevProps: Readonly<Props>): void {
-        const {
-            objectState, simplifyState, defaultApproxPolyAccuracy, allowSimplifyLifecycle = true,
-        } = this.props;
-        const { simplifyMode } = this.state;
-
-        if (
-            allowSimplifyLifecycle &&
-            !simplifyMode &&
-            simplifyState.objectState &&
-            simplifyState.objectState.clientID === objectState.clientID &&
-            (!prevProps.simplifyState.objectState ||
-                prevProps.simplifyState.objectState.clientID !== objectState.clientID)
-        ) {
-            this.simplify();
-        }
-
-        // Update approxPolyAccuracy when default setting changes (but not during active simplification)
-        if (!simplifyMode && prevProps.defaultApproxPolyAccuracy !== defaultApproxPolyAccuracy) {
-            this.setState({
-                approxPolyAccuracy: defaultApproxPolyAccuracy,
-            });
-        }
-    }
-
-    public componentWillUnmount(): void {
-        const {
-            objectState, jobInstance, switchSimplifyVisibility, updateState, allowSimplifyLifecycle = true,
-        } = this.props;
-        const { simplifyMode, originalPoints } = this.state;
-
-        if (allowSimplifyLifecycle && simplifyMode) {
-            if (originalPoints) {
-                objectState.points = originalPoints;
-                updateState(objectState);
-            }
-            jobInstance.actions.freeze(false);
-            switchSimplifyVisibility(null);
-        }
     }
 
     private copy = (): void => {
@@ -288,94 +227,9 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
         }
     };
 
-    private simplify = async (): Promise<void> => {
-        const {
-            objectState, canvasInstance, activateObject, jobInstance,
-        } = this.props;
-        if ([ShapeType.POLYGON, ShapeType.POLYLINE].includes(objectState.shapeType)) {
-            const originalPoints = objectState.points ? [...objectState.points] : [];
-
-            activateObject(objectState.clientID as number, null);
-
-            if (canvasInstance instanceof Canvas && canvasInstance.mode() !== CanvasMode.IDLE) {
-                canvasInstance.cancel();
-            }
-
-            await jobInstance.actions.freeze(true);
-
-            this.setState({
-                simplifyMode: true,
-                originalPoints,
-            });
-        }
-    };
-
     private requestSimplification = (): void => {
         const { objectState, switchSimplifyVisibility } = this.props;
         switchSimplifyVisibility(objectState.clientID as number);
-    };
-
-    private applySimplification = async (simplifiedPoints: number[]): Promise<void> => {
-        const {
-            objectState, updateState, switchSimplifyVisibility, jobInstance,
-        } = this.props;
-        const { originalPoints } = this.state;
-
-        try {
-            // Initialize OpenCV if needed
-            if (!openCVWrapper.isInitialized) {
-                await openCVWrapper.initialize(() => {});
-            }
-
-            if (originalPoints) {
-                objectState.points = [...originalPoints];
-                await updateState(objectState);
-            }
-
-            jobInstance.actions.freeze(false);
-
-            objectState.points = [...simplifiedPoints];
-            await updateState(objectState);
-            switchSimplifyVisibility(null);
-
-            this.setState({ simplifyMode: false, previewPoints: null });
-        } catch (error) {
-            jobInstance.actions.freeze(false);
-            switchSimplifyVisibility(null);
-            this.setState({ simplifyMode: false, previewPoints: null });
-            throw error;
-        }
-    };
-
-    private cancelSimplification = async (): Promise<void> => {
-        const {
-            objectState, updateState, switchSimplifyVisibility, jobInstance,
-        } = this.props;
-        const { originalPoints } = this.state;
-
-        if (originalPoints) {
-            objectState.points = originalPoints;
-            await updateState(objectState);
-        }
-
-        jobInstance.actions.freeze(false);
-        switchSimplifyVisibility(null);
-        this.setState({
-            simplifyMode: false,
-            originalPoints: null,
-            previewPoints: null,
-        });
-    };
-
-    private updateSimplificationPreview = async (points: number[]): Promise<void> => {
-        const { objectState, updateState } = this.props;
-        this.setState({ previewPoints: points });
-        objectState.points = points;
-        await updateState(objectState);
-    };
-
-    private onChangeAccuracy = (value: number): void => {
-        this.setState({ approxPolyAccuracy: value });
     };
 
     private remove = (): void => {
@@ -574,16 +428,13 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
     }
 
     public render(): JSX.Element {
-        const {
-            labels, simplifyMode, approxPolyAccuracy,
-        } = this.state;
+        const { labels } = this.state;
         const {
             objectState,
             attributes,
             activated,
             colorBy,
             normalizedKeyMap,
-            keyMap,
             jobInstance,
             zLayerDragProps,
             zLayerDragging,
@@ -593,59 +444,46 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
             objectState.elements.map((el: ObjectState) => el.clientID as number);
 
         return (
-            <>
-                <ObjectStateItemComponent
-                    jobInstance={jobInstance}
-                    zLayerDragProps={zLayerDragProps}
-                    zLayerDragging={zLayerDragging}
-                    activated={activated}
-                    objectType={objectState.objectType}
-                    shapeType={objectState.shapeType}
-                    clientID={objectState.clientID as number}
-                    serverID={objectState.serverID}
-                    locked={objectState.lock}
-                    labelID={objectState.label.id as number}
-                    isGroundTruth={objectState.isGroundTruth}
-                    color={getObjectStateColor(objectState, colorBy).rgbComponents()}
-                    attributes={attributes}
-                    elements={elements}
-                    normalizedKeyMap={normalizedKeyMap}
-                    labels={labels}
-                    colorBy={colorBy}
-                    activate={this.activate}
-                    focusAndExpand={this.focusAndExpand}
-                    remove={this.remove}
-                    copy={this.copy}
-                    createURL={this.createURL}
-                    propagate={this.propagate}
-                    switchOrientation={this.switchOrientation}
-                    changeOrientation={this.changeOrientation}
-                    toBackground={this.toBackground}
-                    toForeground={this.toForeground}
-                    toOneLayerBackward={this.toOneLayerBackward}
-                    toOneLayerForward={this.toOneLayerForward}
-                    toSpecificLayer={this.toSpecificLayer}
-                    zOrder={objectState.zOrder}
-                    changeColor={this.changeColor}
-                    changeLabel={this.changeLabel}
-                    edit={this.edit}
-                    slice={this.slice}
-                    simplify={this.requestSimplification}
-                    resetCuboidPerspective={this.resetCuboidPerspective}
-                    runAnnotationAction={this.runAnnotationAction}
-                />
-                {simplifyMode && (
-                    <PolySimplifyControl
-                        objectState={objectState}
-                        approxPolyAccuracy={approxPolyAccuracy}
-                        repeatDrawShapeShortcut={keyMap.SWITCH_DRAW_MODE_STANDARD_CONTROLS}
-                        onChangeAccuracy={this.onChangeAccuracy}
-                        onApply={this.applySimplification}
-                        onCancel={this.cancelSimplification}
-                        onUpdatePreview={this.updateSimplificationPreview}
-                    />
-                )}
-            </>
+            <ObjectStateItemComponent
+                jobInstance={jobInstance}
+                zLayerDragProps={zLayerDragProps}
+                zLayerDragging={zLayerDragging}
+                activated={activated}
+                objectType={objectState.objectType}
+                shapeType={objectState.shapeType}
+                clientID={objectState.clientID as number}
+                serverID={objectState.serverID}
+                locked={objectState.lock}
+                labelID={objectState.label.id as number}
+                isGroundTruth={objectState.isGroundTruth}
+                color={getObjectStateColor(objectState, colorBy).rgbComponents()}
+                attributes={attributes}
+                elements={elements}
+                normalizedKeyMap={normalizedKeyMap}
+                labels={labels}
+                colorBy={colorBy}
+                activate={this.activate}
+                focusAndExpand={this.focusAndExpand}
+                remove={this.remove}
+                copy={this.copy}
+                createURL={this.createURL}
+                propagate={this.propagate}
+                switchOrientation={this.switchOrientation}
+                changeOrientation={this.changeOrientation}
+                toBackground={this.toBackground}
+                toForeground={this.toForeground}
+                toOneLayerBackward={this.toOneLayerBackward}
+                toOneLayerForward={this.toOneLayerForward}
+                toSpecificLayer={this.toSpecificLayer}
+                zOrder={objectState.zOrder}
+                changeColor={this.changeColor}
+                changeLabel={this.changeLabel}
+                edit={this.edit}
+                slice={this.slice}
+                simplify={this.requestSimplification}
+                resetCuboidPerspective={this.resetCuboidPerspective}
+                runAnnotationAction={this.runAnnotationAction}
+            />
         );
     }
 }

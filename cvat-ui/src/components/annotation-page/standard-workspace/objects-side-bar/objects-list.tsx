@@ -425,7 +425,6 @@ function ObjectListComponent(props: Props): JSX.Element {
                         objectStates={objectStates}
                         clientID={clientID}
                         visibleSkeletonElements={visibleSkeletonElements}
-                        allowSimplifyLifecycle
                         zLayerDragging
                     />
                 </div>
@@ -516,7 +515,6 @@ function ObjectListComponent(props: Props): JSX.Element {
                             objectStates={objectStates}
                             clientID={row.clientID}
                             visibleSkeletonElements={visibleSkeletonElements}
-                            allowSimplifyLifecycle
                         />
                     </div>
                 );
