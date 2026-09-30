@@ -42,14 +42,14 @@ export interface AdvancedConfiguration {
     startFrame?: number;
     stopFrame?: number;
     frameFilter?: string;
-    useZipChunks: boolean;
+    useZipChunks?: boolean;
     dataChunkSize?: number;
-    useCache: boolean;
+    useCache?: boolean;
     copyData?: boolean;
-    sortingMethod: SortingMethod;
-    useProjectSourceStorage: boolean;
-    useProjectTargetStorage: boolean;
-    consensusReplicas: number;
+    sortingMethod?: SortingMethod;
+    useProjectSourceStorage?: boolean;
+    useProjectTargetStorage?: boolean;
+    consensusReplicas?: number;
     sourceStorage: StorageData;
     targetStorage: StorageData;
 }
@@ -76,13 +76,13 @@ export const CV_ADVANCED_CONFIGURATION_SECTIONS = [
     AdvancedConfigurationSection.CONSENSUS,
     AdvancedConfigurationSection.BUG_TRACKER,
     AdvancedConfigurationSection.STORAGE,
-];
+] as const;
 
 export const AUDIO_ADVANCED_CONFIGURATION_SECTIONS = [
     AdvancedConfigurationSection.CONSENSUS,
     AdvancedConfigurationSection.BUG_TRACKER,
     AdvancedConfigurationSection.STORAGE,
-];
+] as const;
 
 const initialValues: AdvancedConfiguration = {
     imageQuality: 70,
@@ -104,6 +104,36 @@ const initialValues: AdvancedConfiguration = {
     },
 };
 
+const defaultFieldsBySection = {
+    [AdvancedConfigurationSection.SORTING]: ['sortingMethod'],
+    [AdvancedConfigurationSection.COPY_DATA]: ['copyData'],
+    [AdvancedConfigurationSection.CHUNKING]: ['useZipChunks', 'useCache'],
+    [AdvancedConfigurationSection.IMAGE_QUALITY]: ['imageQuality'],
+    [AdvancedConfigurationSection.FRAME_RANGE]: [],
+    [AdvancedConfigurationSection.CHUNK_SIZE]: [],
+    [AdvancedConfigurationSection.CONSENSUS]: ['consensusReplicas'],
+    [AdvancedConfigurationSection.BUG_TRACKER]: [],
+    [AdvancedConfigurationSection.STORAGE]: [
+        'useProjectSourceStorage',
+        'useProjectTargetStorage',
+        'sourceStorage',
+        'targetStorage',
+    ],
+} as const satisfies Record<AdvancedConfigurationSection, readonly (keyof AdvancedConfiguration)[]>;
+
+type DefaultFieldsForSections<Sections extends readonly AdvancedConfigurationSection[]> =
+    (typeof defaultFieldsBySection)[Sections[number]][number];
+
+export function getAdvancedConfigurationInitialValues<Sections extends readonly AdvancedConfigurationSection[]>(
+    visibleSections: Sections,
+): Pick<AdvancedConfiguration, DefaultFieldsForSections<Sections>> {
+    const fields = visibleSections.flatMap((section) => defaultFieldsBySection[section]);
+
+    return (
+        Object.fromEntries(fields.map((field) => [field, initialValues[field]]))
+    ) as Pick<AdvancedConfiguration, DefaultFieldsForSections<Sections>>;
+}
+
 interface Props {
     onSubmit(values: AdvancedConfiguration): Promise<void>;
     onChangeUseProjectSourceStorage(value: boolean): void;
@@ -112,12 +142,12 @@ interface Props {
     onChangeTargetStorageLocation: (value: StorageLocation) => void;
     onChangeSortingMethod(value: SortingMethod): void;
     projectId: number | null;
-    useProjectSourceStorage: boolean;
-    useProjectTargetStorage: boolean;
+    useProjectSourceStorage?: boolean;
+    useProjectTargetStorage?: boolean;
     activeFileManagerTab?: string;
     sourceStorageLocation: StorageLocation;
     targetStorageLocation: StorageLocation;
-    visibleSections?: AdvancedConfigurationSection[];
+    visibleSections?: readonly AdvancedConfigurationSection[];
 }
 
 function validateURL(_: RuleObject, value: string): Promise<void> {
@@ -176,7 +206,7 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
             (entry: [string, unknown]): boolean => entry[0] !== 'frameStep',
         );
 
-        return (Object.fromEntries(entries) as any) as AdvancedConfiguration;
+        return Object.fromEntries(entries) as AdvancedConfiguration;
     }
 
     private getFrameFilter(values: Store): Pick<AdvancedConfiguration, 'frameFilter'> {
@@ -199,16 +229,16 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                     this.formRef.current.validateFields(),
                 ]).then(([getProjectResponse, values]) => {
                     const [project] = getProjectResponse;
+                    const sourceStorage = values.useProjectSourceStorage ?
+                        project.sourceStorage : values.sourceStorage;
+                    const targetStorage = values.useProjectTargetStorage ?
+                        project.targetStorage : values.targetStorage;
 
                     return onSubmit({
                         ...this.getValuesWithoutFrameStep(values),
                         ...this.getFrameFilter(values),
-                        sourceStorage: values.useProjectSourceStorage ?
-                            new Storage(project.sourceStorage || { location: StorageLocation.LOCAL }) :
-                            new Storage(values.sourceStorage),
-                        targetStorage: values.useProjectTargetStorage ?
-                            new Storage(project.targetStorage || { location: StorageLocation.LOCAL }) :
-                            new Storage(values.targetStorage),
+                        sourceStorage: new Storage(sourceStorage ?? { location: StorageLocation.LOCAL }),
+                        targetStorage: new Storage(targetStorage ?? { location: StorageLocation.LOCAL }),
                     });
                 });
             }
@@ -219,8 +249,12 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                         onSubmit({
                             ...this.getValuesWithoutFrameStep(values),
                             ...this.getFrameFilter(values),
-                            sourceStorage: new Storage(values.sourceStorage),
-                            targetStorage: new Storage(values.targetStorage),
+                            sourceStorage: new Storage(
+                                values.sourceStorage ?? { location: StorageLocation.LOCAL },
+                            ),
+                            targetStorage: new Storage(
+                                values.targetStorage ?? { location: StorageLocation.LOCAL },
+                            ),
                         })
                     ),
                 );
@@ -498,7 +532,7 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
     }
 
     public render(): JSX.Element {
-        const { activeFileManagerTab } = this.props;
+        const { activeFileManagerTab, visibleSections = CV_ADVANCED_CONFIGURATION_SECTIONS } = this.props;
         const hasSorting = this.hasSection(AdvancedConfigurationSection.SORTING);
         const hasCopyData = this.hasSection(AdvancedConfigurationSection.COPY_DATA);
         const hasChunking = this.hasSection(AdvancedConfigurationSection.CHUNKING);
@@ -510,7 +544,7 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
         const hasStorage = this.hasSection(AdvancedConfigurationSection.STORAGE);
 
         return (
-            <Form initialValues={initialValues} ref={this.formRef} layout='vertical'>
+            <Form initialValues={getAdvancedConfigurationInitialValues(visibleSections)} ref={this.formRef} layout='vertical'>
                 {hasSorting && (
                     <Row>
                         <Col>{this.renderSortingMethodRadio()}</Col>

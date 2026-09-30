@@ -32,10 +32,11 @@ interface Params {
     ready: boolean;
 }
 
-export interface SelectionInteraction {
-    enableSelectionInteraction(): void;
-    disableSelectionInteraction(): void;
-    isSelectionInteractionEnabled(): boolean;
+export interface RegionSelection {
+    enableSelection(): void;
+    disableSelection(): void;
+    enableHover(): void;
+    disableHover(): void;
 }
 
 /**
@@ -43,22 +44,10 @@ export interface SelectionInteraction {
  */
 export function useRegionSelection({
     regionRuntime, viewport, ready,
-}: Params): SelectionInteraction {
-    const selectionInteractionEnabledRef = useRef(true);
-    const selectionInteractionRef = useRef<SelectionInteraction | null>(null);
-    if (selectionInteractionRef.current === null) {
-        selectionInteractionRef.current = {
-            enableSelectionInteraction: (): void => {
-                selectionInteractionEnabledRef.current = true;
-            },
-            disableSelectionInteraction: (): void => {
-                selectionInteractionEnabledRef.current = false;
-            },
-            isSelectionInteractionEnabled: (): boolean => selectionInteractionEnabledRef.current,
-        };
-    }
-    // Stable ref
-    const selectionInteraction = selectionInteractionRef.current;
+}: Params): RegionSelection {
+    const selectionEnabledRef = useRef(true);
+    const hoverEnabledRef = useRef(true);
+    const regionSelectionRef = useRef<RegionSelection | null>(null);
 
     const dispatch = useDispatch<ThunkDispatch>();
     const { activeControl, hoveredIntervalID } = useSelector((state: CombinedState) => ({
@@ -78,8 +67,32 @@ export function useRegionSelection({
     const hoverGuardRef = useRef<object | null>(null);
     const selectionGuardRef = useRef<object | null>(null);
     const lastHoverPointRef = useRef<{ x: number; y: number } | null>(null);
+    if (regionSelectionRef.current === null) {
+        regionSelectionRef.current = {
+            enableSelection: (): void => {
+                selectionEnabledRef.current = true;
+            },
+            disableSelection: (): void => {
+                selectionEnabledRef.current = false;
+            },
+            enableHover: (): void => {
+                if (hoverEnabledRef.current) return;
+                hoverEnabledRef.current = true;
+            },
+            disableHover: (): void => {
+                if (!hoverEnabledRef.current) return;
+                hoverEnabledRef.current = false;
+                hoverGuardRef.current = null;
+                lastHoverPointRef.current = null;
+                if (latestRef.current.hoveredIntervalID !== null) {
+                    dispatch(audioActions.setAudioHoveredInterval(null));
+                }
+            },
+        };
+    }
+    // Stable ref
+    const regionSelection = regionSelectionRef.current;
 
-    // TODO: rework to use semantic interval selection instead of just event target
     const { attachRegionContextMenu, cleanupRegionContextMenu } = useRegionContextMenu((clientID, event) => {
         if (clientID === null) return;
         dispatch(audioActions.setAudioActiveInterval(clientID));
@@ -110,7 +123,7 @@ export function useRegionSelection({
                 const { state } = await currentJob.annotations.selectInterval(intervalsRef.current, time * 1000);
                 clientID = state?.clientID ?? null;
             }
-            if (selectionGuardRef.current !== guard || !selectionInteraction.isSelectionInteractionEnabled()) {
+            if (selectionGuardRef.current !== guard || !selectionEnabledRef.current) {
                 return null;
             }
 
@@ -129,7 +142,7 @@ export function useRegionSelection({
         const onRegionClicked = (region: Region, event: MouseEvent): void => {
             if (!isIntervalRegionTarget(region)) return;
 
-            if (!selectionInteraction.isSelectionInteractionEnabled()) return;
+            if (!selectionEnabledRef.current) return;
 
             event.stopPropagation();
             event.preventDefault();
@@ -147,7 +160,7 @@ export function useRegionSelection({
 
         const onRegionDoubleClicked = (region: Region, event: MouseEvent): void => {
             if (!isIntervalRegionTarget(region)) return;
-            if (!selectionInteraction.isSelectionInteractionEnabled()) return;
+            if (!selectionEnabledRef.current) return;
             event.stopPropagation();
             event.preventDefault();
             selectInterval(region, event).then((clientID) => {
@@ -184,7 +197,8 @@ export function useRegionSelection({
         const onMouseMove = (event: MouseEvent): void => {
             if (
                 latestRef.current.activeControl !== ActiveControl.CURSOR ||
-                !selectionInteraction.isSelectionInteractionEnabled()
+                !selectionEnabledRef.current ||
+                !hoverEnabledRef.current
             ) return;
             const lastPoint = lastHoverPointRef.current;
             const hoverDelta = lastPoint ?
@@ -206,7 +220,7 @@ export function useRegionSelection({
                 const clientID = state?.clientID ?? null;
                 if (
                     hoverGuardRef.current !== guard ||
-                    !selectionInteraction.isSelectionInteractionEnabled() ||
+                    !selectionEnabledRef.current ||
                     clientID === latestRef.current.hoveredIntervalID
                 ) {
                     return;
@@ -232,5 +246,5 @@ export function useRegionSelection({
         };
     }, [ready]);
 
-    return selectionInteraction;
+    return regionSelection;
 }

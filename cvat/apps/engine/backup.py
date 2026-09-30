@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: MIT
 
 import io
+import itertools
 import mimetypes
 import os
 import re
@@ -41,9 +42,6 @@ from cvat.apps.dataset_manager.util import (
 from cvat.apps.dataset_manager.views import (
     EXPORT_CACHE_LOCK_ACQUISITION_TIMEOUT,
     EXPORT_CACHE_LOCK_TTL,
-    EXPORT_LOCKED_RETRY_INTERVAL,
-    LockNotAvailableError,
-    retry_current_rq_job,
 )
 from cvat.apps.engine import models
 from cvat.apps.engine.cache import MediaCache
@@ -123,7 +121,7 @@ def _read_annotation_guide(zip_object, guide_filename, assets_dirname):
         assets = [(x, zip_object.read(x)) for x in assets]
 
         if len(assets) > settings.ASSET_MAX_COUNT_PER_GUIDE:
-            raise ValidationError(f"Maximum number of assets per guide reached")
+            raise ValidationError("Maximum number of assets per guide reached")
         for asset in assets:
             if len(asset[1]) / (1024 * 1024) > settings.ASSET_MAX_SIZE_MB:
                 raise ValidationError(f"Maximum size of asset is {settings.ASSET_MAX_SIZE_MB} MB")
@@ -522,8 +520,6 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
                 assert False, f"Unknown media type '{media_type}' with mode '{mode}'"
 
     def _write_data_from_cloud_storage(self, zip_object: ZipFile, target_dir: str) -> None:
-        assert not hasattr(self._db_data, "video"), "Only images can be stored in cloud storage"
-
         target_data_dir = os.path.join(target_dir, self.DATA_DIRNAME)
         data_dir = self._db_data.get_upload_dirname()
 
@@ -532,7 +528,10 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
         files_for_local_copy = []
 
         media_files_to_download: list[PurePath] = []
-        for media_file in self._db_data.related_files.all():
+        for media_file in itertools.chain(
+            self._db_data.related_files.all(),
+            [self._db_data.video] if hasattr(self._db_data, "video") else [],
+        ):
             media_path = PurePath(media_file.path)
 
             local_path = os.path.join(data_dir, media_path)
@@ -1170,7 +1169,7 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
                     raise ValidationError(f"Unsafe file path in manifest: {problem}")
         else:
             if data_serializer.initial_data["storage"] != StorageChoice.LOCAL:
-                raise ValidationError(f"Unexpected storage type in the backup files")
+                raise ValidationError("Unexpected storage type in the backup files")
 
             db_data.storage = StorageChoice.LOCAL
 
@@ -1467,16 +1466,31 @@ def create_backup(
 ):
     db_instance = Exporter.get_object(instance_id)
 
-    try:
-        instance_type = db_instance.__class__.__name__
-        instance_timestamp = timezone.localtime(db_instance.updated_date).timestamp()
+    instance_type = db_instance.__class__.__name__
+    instance_timestamp = timezone.localtime(db_instance.updated_date).timestamp()
 
-        output_path = ExportCacheManager.make_backup_file_path(
-            instance_id=db_instance.id,
-            instance_type=instance_type,
-            instance_timestamp=instance_timestamp,
-            lightweight=lightweight,
-        )
+    output_path = ExportCacheManager.make_backup_file_path(
+        instance_id=db_instance.id,
+        instance_type=instance_type,
+        instance_timestamp=instance_timestamp,
+        lightweight=lightweight,
+    )
+
+    with get_export_cache_lock(
+        output_path,
+        block=True,
+        acquire_timeout=EXPORT_CACHE_LOCK_ACQUISITION_TIMEOUT,
+        ttl=EXPORT_CACHE_LOCK_TTL,
+    ):
+        # output_path includes timestamp of the last update
+        if os.path.exists(output_path):
+            extend_export_file_lifetime(output_path)
+            return output_path
+
+    with TmpDirManager.get_tmp_directory_for_export(instance_type=instance_type) as tmp_dir:
+        temp_file = os.path.join(tmp_dir, "dump")
+        exporter = Exporter(db_instance.id, lightweight=lightweight)
+        exporter.export_to(temp_file)
 
         with get_export_cache_lock(
             output_path,
@@ -1484,37 +1498,12 @@ def create_backup(
             acquire_timeout=EXPORT_CACHE_LOCK_ACQUISITION_TIMEOUT,
             ttl=EXPORT_CACHE_LOCK_TTL,
         ):
-            # output_path includes timestamp of the last update
-            if os.path.exists(output_path):
-                extend_export_file_lifetime(output_path)
-                return output_path
+            shutil.move(temp_file, output_path)
 
-        with TmpDirManager.get_tmp_directory_for_export(instance_type=instance_type) as tmp_dir:
-            temp_file = os.path.join(tmp_dir, "dump")
-            exporter = Exporter(db_instance.id, lightweight=lightweight)
-            exporter.export_to(temp_file)
-
-            with get_export_cache_lock(
-                output_path,
-                block=True,
-                acquire_timeout=EXPORT_CACHE_LOCK_ACQUISITION_TIMEOUT,
-                ttl=EXPORT_CACHE_LOCK_TTL,
-            ):
-                shutil.move(temp_file, output_path)
-
-            logger.info(
-                f"The {db_instance.__class__.__name__.lower()} '{db_instance.id}' is backed up at {output_path!r} "
-                f"and available for downloading for the next {cache_ttl}."
-            )
-    except LockNotAvailableError:
-        # Need to retry later if the lock was not available
-        retry_current_rq_job(EXPORT_LOCKED_RETRY_INTERVAL)
         logger.info(
-            "Failed to acquire export cache lock. Retrying in {}".format(
-                EXPORT_LOCKED_RETRY_INTERVAL
-            )
+            f"The {db_instance.__class__.__name__.lower()} '{db_instance.id}' is backed up at {output_path!r} "
+            f"and available for downloading for the next {cache_ttl}."
         )
-        raise
 
     return output_path
 

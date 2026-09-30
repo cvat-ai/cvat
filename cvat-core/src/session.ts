@@ -131,10 +131,20 @@ function buildDuplicatedAPI(prototype): void {
                     return result;
                 },
 
-                async bulkSave(states) {
+                async splitInterval(state, position) {
                     const result = await PluginRegistry.apiWrapper.call(
                         this,
-                        prototype.annotations.bulkSave,
+                        prototype.annotations.splitInterval,
+                        state,
+                        position,
+                    );
+                    return result;
+                },
+
+                async saveStates(states) {
+                    const result = await PluginRegistry.apiWrapper.call(
+                        this,
+                        prototype.annotations.saveStates,
                         states,
                     );
                     return result;
@@ -205,6 +215,16 @@ function buildDuplicatedAPI(prototype): void {
                         this,
                         prototype.annotations.compactLayers,
                         frame,
+                    );
+                    return result;
+                },
+
+                async removeBatch(objectStates, force = false) {
+                    const result = await PluginRegistry.apiWrapper.call(
+                        this,
+                        prototype.annotations.removeBatch,
+                        objectStates,
+                        force,
                     );
                     return result;
                 },
@@ -381,6 +401,17 @@ function buildDuplicatedAPI(prototype): void {
                     const result = await PluginRegistry.apiWrapper.call(this, prototype.actions.redo, count);
                     return result;
                 },
+                async recordSelection(previousClientIDs, nextClientIDs, frame, mergeWithPrevious = false) {
+                    const result = await PluginRegistry.apiWrapper.call(
+                        this,
+                        prototype.actions.recordSelection,
+                        previousClientIDs,
+                        nextClientIDs,
+                        frame,
+                        mergeWithPrevious,
+                    );
+                    return result;
+                },
                 async freeze(frozen) {
                     const result = await PluginRegistry.apiWrapper.call(this, prototype.actions.freeze, frozen);
                     return result;
@@ -415,6 +446,7 @@ export class Session {
             objectStates: ObjectState[],
         ) => Promise<ObjectState[]>;
         compactLayers: (frame: number) => Promise<ObjectState[]>;
+        removeBatch: (objectStates: ObjectState[], force?: boolean) => Promise<number[]>;
         clear: (options?: {
             reload?: boolean;
             from?: number;
@@ -454,7 +486,8 @@ export class Session {
             state: AudioIntervalState | null,
             distance: number | null,
         }>;
-        bulkSave: (states: AudioIntervalState[]) => Promise<void>;
+        splitInterval: (state: AudioIntervalState, position: number) => Promise<number | null>;
+        saveStates: (states: (ObjectState | AudioIntervalState)[]) => Promise<void>;
         import: (data: SerializedCollection) => Promise<void>;
         export: () => Promise<SerializedCollection>;
         commit: (
@@ -476,6 +509,12 @@ export class Session {
     public actions: {
         undo: (count?: number) => Promise<number[]>;
         redo: (count?: number) => Promise<number[]>;
+        recordSelection: (
+            previousClientIDs: number[],
+            nextClientIDs: number[],
+            frame: number,
+            mergeWithPrevious?: boolean,
+        ) => Promise<void>;
         freeze: (frozen: boolean) => Promise<void>;
         clear: () => Promise<void>;
         get: () => Promise<{
@@ -534,12 +573,14 @@ export class Session {
             slice: Object.getPrototypeOf(this).annotations.slice.bind(this),
             updateLayer: Object.getPrototypeOf(this).annotations.updateLayer.bind(this),
             compactLayers: Object.getPrototypeOf(this).annotations.compactLayers.bind(this),
+            removeBatch: Object.getPrototypeOf(this).annotations.removeBatch.bind(this),
             clear: Object.getPrototypeOf(this).annotations.clear.bind(this),
             search: Object.getPrototypeOf(this).annotations.search.bind(this),
             upload: Object.getPrototypeOf(this).annotations.upload.bind(this),
             select: Object.getPrototypeOf(this).annotations.select.bind(this),
             selectInterval: Object.getPrototypeOf(this).annotations.selectInterval.bind(this),
-            bulkSave: Object.getPrototypeOf(this).annotations.bulkSave.bind(this),
+            splitInterval: Object.getPrototypeOf(this).annotations.splitInterval.bind(this),
+            saveStates: Object.getPrototypeOf(this).annotations.saveStates.bind(this),
             import: Object.getPrototypeOf(this).annotations.import.bind(this),
             export: Object.getPrototypeOf(this).annotations.export.bind(this),
             commit: Object.getPrototypeOf(this).annotations.commit.bind(this),
@@ -551,6 +592,7 @@ export class Session {
         this.actions = {
             undo: Object.getPrototypeOf(this).actions.undo.bind(this),
             redo: Object.getPrototypeOf(this).actions.redo.bind(this),
+            recordSelection: Object.getPrototypeOf(this).actions.recordSelection.bind(this),
             freeze: Object.getPrototypeOf(this).actions.freeze.bind(this),
             clear: Object.getPrototypeOf(this).actions.clear.bind(this),
             get: Object.getPrototypeOf(this).actions.get.bind(this),

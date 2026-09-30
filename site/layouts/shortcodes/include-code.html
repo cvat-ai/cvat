@@ -1,0 +1,4 @@
+{{- $path := .Get 0 -}}
+{{- $lang := .Get 1 | default "python" -}}
+{{- $code := os.ReadFile $path -}}
+{{- highlight $code $lang "" -}}

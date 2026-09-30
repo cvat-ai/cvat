@@ -20,7 +20,7 @@ import traceback
 import urllib.parse
 from collections import defaultdict, namedtuple
 from collections.abc import Callable, Generator, Iterable, Mapping, Sequence
-from contextlib import nullcontext, suppress
+from contextlib import nullcontext
 from itertools import islice
 from multiprocessing import cpu_count
 from pathlib import Path
@@ -233,20 +233,6 @@ def get_list_view_name(model):
     that refer to instances of the model.
     """
     return "%(model_name)s-list" % {"model_name": model._meta.object_name.lower()}
-
-
-def import_resource_with_clean_up_after(
-    func: Callable[[str, int, int], int] | Callable[[str, int, str, bool], None],
-    filename: str,
-    *args,
-    **kwargs,
-) -> Any:
-    try:
-        result = func(filename, *args, **kwargs)
-    finally:
-        with suppress(FileNotFoundError):
-            os.remove(filename)
-    return result
 
 
 def get_cpu_number() -> int:

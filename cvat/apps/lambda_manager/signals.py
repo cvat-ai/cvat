@@ -4,4 +4,4 @@
 
 from django.dispatch import Signal
 
-interactive_function_call_signal = Signal()
+internal_ai_agent_function_call_signal = Signal()

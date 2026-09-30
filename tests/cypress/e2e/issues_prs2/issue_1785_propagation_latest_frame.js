@@ -10,7 +10,7 @@ import { taskName, advancedConfigurationParams, labelName } from '../../support/
 context('Check propagation work from the latest frame', () => {
     const issueId = '1785';
     const createRectangleShape2Points = {
-        points: 'By 2 Points',
+        points: '2 Points',
         type: 'Shape',
         labelName,
         firstX: 250,

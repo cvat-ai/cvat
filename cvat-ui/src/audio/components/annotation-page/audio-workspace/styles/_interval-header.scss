@@ -1,0 +1,116 @@
+// Copyright (C) CVAT.ai Corporation
+//
+// SPDX-License-Identifier: MIT
+
+.cvat-audio-interval-header {
+    width: 100%;
+    min-width: 0;
+
+    .cvat-audio-interval-header-top {
+        min-width: 0;
+    }
+
+    .cvat-audio-interval-header-index {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex: 0 0 auto;
+        width: $grid-unit-size * 2.5;
+        height: $grid-unit-size * 2.5;
+        padding: $grid-unit-size * 0.75;
+        border-radius: $grid-unit-size * 0.5;
+        background: rgba(255,255,255,72%);
+        color: #303030;
+        font-size: $grid-unit-size * 1.5;
+        font-weight: 600;
+    }
+
+    .cvat-audio-interval-header-label {
+        min-width: 0;
+        color: $text-color;
+        font-size: $grid-unit-size * 1.5;
+        font-weight: 500;
+
+        .cvat-audio-interval-header-label-row {
+            min-width: 0;
+        }
+
+        .cvat-audio-interval-header-label-col {
+            max-width: $grid-unit-size * 30;
+            min-width: 0;
+        }
+
+        .cvat-audio-interval-header-label-selector {
+            max-width: 100%;
+
+            .ant-select-selector {
+                border-color: rgba(0, 0, 0, 12%);
+                border-radius: $border-radius-base;
+                background: rgba(255, 255, 255, 82%);
+            }
+        }
+    }
+
+    .cvat-audio-interval-header-source {
+        color: rgba(0, 0, 0, 60%);
+        font-size: 11px;
+        text-transform: lowercase;
+    }
+
+    .cvat-audio-interval-header-compact-actions {
+        margin-top: $grid-unit-size;
+        padding-top: $grid-unit-size * 0.5;
+        border-top: 1px solid rgba(0, 0, 0, 7%);
+    }
+
+    .cvat-audio-interval-header-actions,
+    .cvat-audio-interval-header-more-actions {
+        display: flex;
+        align-items: center;
+
+        .cvat-audio-region-item-action-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: $grid-unit-size * 3;
+            height: $grid-unit-size * 3;
+            border: 1px solid transparent;
+            border-radius: $border-radius-base;
+            color: rgba(0, 0, 0, 62%);
+            font-size: $grid-unit-size * 2;
+            line-height: $grid-unit-size * 3;
+            cursor: pointer;
+            transition:
+                background-color $box-shadow-transition,
+                color $box-shadow-transition,
+                opacity $box-shadow-transition;
+
+            &:hover {
+                background-color: rgba(0, 0, 0, 8%);
+                opacity: 0.82;
+            }
+
+            &.cvat-audio-region-item-action-btn-disabled {
+                color: rgba(0, 0, 0, 25%);
+                cursor: not-allowed;
+                opacity: 0.5;
+
+                &:hover {
+                    background-color: transparent;
+                    opacity: 0.5;
+                }
+            }
+        }
+    }
+
+    .cvat-audio-interval-header-time {
+        margin-top: $grid-unit-size;
+        color: rgba(0, 0, 0, 60%);
+        font-size: $grid-unit-size * 1.5;
+        line-height: $grid-unit-size * 2.25;
+    }
+}
+
+.cvat-audio-interval-header-label-dropdown {
+    max-width: $grid-unit-size * 30;
+}

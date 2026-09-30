@@ -69,7 +69,7 @@ context('Settings "Intelligent polygon cropping".', () => {
             cy.get('#cvat_canvas_shape_1').should('have.class', 'cvat_canvas_shape_activated');
             testSplitting(); // Split the polygon into 2 parts. 1st part 3 points, 2nd part 4 points.
             checkCountPoints(4);
-            cy.get('body').type('{Ctrl}z'); // Canceling the split
+            cy.pressWithPlatformModifier('z'); // Canceling the split
             testCheckedIntelligentPolygonCropping(true); // Uncheck "Intelligent polygon cropping"
             cy.get('#cvat_canvas_shape_1').trigger('mousemove', { scrollBehavior: false });
             cy.get('#cvat_canvas_shape_1').should('have.class', 'cvat_canvas_shape_activated');

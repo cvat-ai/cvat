@@ -37,7 +37,7 @@ context('Ground truth jobs', () => {
     const groundTruthRectangles = [
         {
             id: 1,
-            points: 'By 2 Points',
+            points: '2 Points',
             type: 'Shape',
             labelName,
             firstX: 570,
@@ -47,7 +47,7 @@ context('Ground truth jobs', () => {
         },
         {
             id: 2,
-            points: 'By 2 Points',
+            points: '2 Points',
             type: 'Shape',
             labelName,
             firstX: 250,
@@ -57,7 +57,7 @@ context('Ground truth jobs', () => {
         },
         {
             id: 3,
-            points: 'By 2 Points',
+            points: '2 Points',
             type: 'Shape',
             labelName,
             firstX: 350,
@@ -67,7 +67,7 @@ context('Ground truth jobs', () => {
         },
         {
             id: 4,
-            points: 'By 2 Points',
+            points: '2 Points',
             type: 'Shape',
             labelName,
             firstX: 350,

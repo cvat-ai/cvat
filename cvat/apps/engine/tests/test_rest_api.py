@@ -1908,6 +1908,11 @@ class _CloudStorageTestBase(ApiTestBase):
             def upload_file(self, file_path: Path, key: str | None = None, /) -> None:
                 self._files[key] = file_path.read_bytes()
 
+            def get_file_stream(self, key: str, /, *, offset: int) -> tuple[BytesIO, int]:
+                stream = io.BytesIO(self._files[key])
+                stream.seek(offset)
+                return stream, len(self._files[key])
+
             def bulk_delete(self, files: Sequence[str]) -> None:
                 for key in files:
                     del self._files[key]
@@ -1961,9 +1966,9 @@ class _CloudStorageTestBase(ApiTestBase):
             "resource": "test",
             "display_name": "Bucket",
             "credentials_type": "KEY_SECRET_KEY_PAIR",
-            "key": "minio_access_key",
-            "secret_key": "minio_secret_key",
-            "specific_attributes": "endpoint_url=http://minio:9000",
+            "key": "moto_access_key",
+            "secret_key": "moto_secret_key",
+            "specific_attributes": "endpoint_url=http://moto:9000",
             "description": "Some description",
             "manifests": [],
         }
@@ -2102,10 +2107,12 @@ class ProjectCloudBackupAPINoStaticChunksTestCase(ProjectBackupAPITestCase, _Clo
         if cls.MAKE_LIGHTWEIGHT_BACKUP or settings.MEDIA_CACHE_ALLOW_STATIC_CACHE:
             # should not load anything from CS anymore
 
-            def disabled(*args):
+            def disabled(*args, **kwargs):
                 raise RuntimeError("Disabled!")
 
             cls.mock_aws._download_fileobj_to_stream = disabled
+            cls.mock_aws._download_range_of_bytes = disabled
+            cls.mock_aws.get_file_stream = disabled
 
     def _compare_tasks(self, original_task, imported_task):
         super()._compare_tasks(original_task, imported_task)
@@ -3731,10 +3738,7 @@ class TaskImportExportAPITestCase(ExportApiTestBase, ImportApiTestBase):
         self._run_api_v2_tasks_id_export_import(None)
 
     def test_can_remove_export_cache_automatically_after_successful_export(self):
-        from cvat.apps.dataset_manager.cron import (
-            cleanup_export_cache_directory,
-            clear_export_cache,
-        )
+        from cvat.apps.dataset_manager.cron import ExportCacheDirectoryCleaner
 
         self._create_tasks()
         task_id = self.tasks[0]["id"]
@@ -3748,13 +3752,8 @@ class TaskImportExportAPITestCase(ExportApiTestBase, ImportApiTestBase):
                 mock.patch(
                     "cvat.apps.dataset_manager.views.TTL_CONSTS", new={"task": TASK_CACHE_TTL}
                 ),
-                mock.patch(
-                    "cvat.apps.dataset_manager.cron.clear_export_cache",
-                    side_effect=clear_export_cache,
-                ) as mock_clear_export_cache,
             ):
-                cleanup_export_cache_directory()
-                mock_clear_export_cache.assert_not_called()
+                self.assertEqual(ExportCacheDirectoryCleaner().cron_cleanup(), 0)
 
                 self._export_task_backup(
                     user,
@@ -3780,8 +3779,7 @@ class TaskImportExportAPITestCase(ExportApiTestBase, ImportApiTestBase):
                         new={"task": timedelta(seconds=0)},
                     ),
                 ):
-                    cleanup_export_cache_directory()
-                    mock_clear_export_cache.assert_called_once()
+                    self.assertEqual(ExportCacheDirectoryCleaner().cron_cleanup(), 1)
                 self.assertFalse(os.path.exists(file_path))
                 queue.finished_job_registry.remove(rq_job_ids[0], delete_job=True)
 
@@ -5698,6 +5696,109 @@ class TaskDataAPITestCase(ApiTestBase):
         )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         assert b"not in canonical form" in response.content
+
+    @override_settings(MEDIA_CACHE_ALLOW_STATIC_CACHE=False)
+    def test_use_cache_false_falls_back_to_cache(self):
+        task_spec = {
+            "name": "task falls back to cache",
+            "owner_id": self.user.id,
+            "assignee_id": self.user.id,
+            "overlap": 0,
+            "segment_size": 100,
+            "labels": [
+                {"name": "car"},
+                {"name": "person"},
+            ],
+        }
+
+        images = copy.deepcopy(self._client_images["images"])
+        n = 3
+        image_sizes = self._client_images["image_sizes"][:n]
+        task_data = {
+            **{f"client_files[{i}]": images[i] for i in range(n)},
+            "image_quality": 75,
+            "use_cache": False,
+        }
+        self._test_api_v2_tasks_id_data_spec(
+            self.user,
+            task_spec,
+            task_data,
+            self.ChunkType.IMAGESET,
+            self.ChunkType.IMAGESET,
+            image_sizes,
+            expected_storage_method=StorageMethodChoice.CACHE.value,
+        )
+
+    def _create_task_from_local_pdf(self, user, **data_params) -> dict:
+        task_spec = {
+            "name": "pdf task with frame range",
+        }
+        response = self._create_task(user, task_spec)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        task_id = response.data["id"]
+
+        task_data = {
+            "client_files[0]": copy.deepcopy(self._client_pdf["pdf"]),
+            "image_quality": 70,
+            **data_params,
+        }
+        response = self._run_api_v2_tasks_id_data_post(task_id, user, task_data)
+        self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED, response.reason_phrase)
+
+        response = self._get_task_creation_status(task_id, user)
+        self.assertEqual(response.data["state"], "Finished", response.data.get("message"))
+
+        with ForceLogin(user, self.client):
+            response = self.client.get(f"/api/tasks/{task_id}/data/meta")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        return response.json()
+
+    def test_can_create_task_from_pdf_without_stop_frame(self):
+        page_count = len(self._client_pdf["image_sizes"])
+
+        data_meta = self._create_task_from_local_pdf(self.admin)
+
+        self.assertEqual(data_meta["size"], page_count)
+        self.assertEqual(len(data_meta["frames"]), page_count)
+
+    def test_can_create_task_from_pdf_with_stop_frame(self):
+        # Check for regressions on https://github.com/cvat-ai/cvat/issues/11175
+
+        page_count = len(self._client_pdf["image_sizes"])
+
+        for stop_frame in [1, 4]:
+            assert stop_frame < page_count
+
+            with self.subTest(stop_frame=stop_frame):
+                data_meta = self._create_task_from_local_pdf(self.admin, stop_frame=stop_frame)
+
+                self.assertEqual(data_meta["size"], stop_frame + 1)
+                self.assertEqual(len(data_meta["frames"]), stop_frame + 1)
+                self.assertEqual(data_meta["stop_frame"], stop_frame)
+
+    def test_can_create_task_from_pdf_with_zero_stop_frame(self):
+        # Like for other media types, an explicit 0 means "up to the last frame"
+        page_count = len(self._client_pdf["image_sizes"])
+
+        data_meta = self._create_task_from_local_pdf(self.admin, stop_frame=0)
+
+        self.assertEqual(data_meta["size"], page_count)
+        self.assertEqual(data_meta["stop_frame"], page_count - 1)
+
+    def test_can_create_task_from_pdf_with_stop_frame_beyond_last_page(self):
+        page_count = len(self._client_pdf["image_sizes"])
+
+        data_meta = self._create_task_from_local_pdf(self.admin, stop_frame=page_count + 5)
+
+        self.assertEqual(data_meta["size"], page_count)
+        self.assertEqual(data_meta["stop_frame"], page_count - 1)
+
+    def test_can_create_task_from_pdf_with_start_and_stop_frame(self):
+        data_meta = self._create_task_from_local_pdf(self.admin, start_frame=1, stop_frame=3)
+
+        self.assertEqual(data_meta["size"], 3)
+        self.assertEqual(data_meta["start_frame"], 1)
+        self.assertEqual(data_meta["stop_frame"], 3)
 
 
 class JobAnnotationAPITestCase(ApiTestBase):
@@ -8199,6 +8300,7 @@ class TaskChangeCloudStorageTestCase(_CloudStorageTestBase):
 
 class TaskBackingCloudStorageTestCase(_CloudStorageTestBase, ExportApiTestBase):
     _IMAGE_PATHS = ["test_1.jpg", "test_2.jpg", "related_images/test_1_jpg/context_1.jpg"]
+    _VIDEO_PATH = "test.mp4"
 
     @classmethod
     def setUpTestData(cls):
@@ -8206,7 +8308,7 @@ class TaskBackingCloudStorageTestCase(_CloudStorageTestBase, ExportApiTestBase):
         cls.client = APIClient()
         cls.cloud_storage_id = cls._create_cloud_storage()
 
-    def _create_local_task(self):
+    def _create_local_task(self, *, mode=TaskMode.ANNOTATION):
         data = {
             "name": "my local task #1",
             "owner_id": self.owner.id,
@@ -8215,61 +8317,74 @@ class TaskBackingCloudStorageTestCase(_CloudStorageTestBase, ExportApiTestBase):
             "labels": [{"name": "person"}],
         }
 
-        f = io.BytesIO()
-        with zipfile.ZipFile(f, "w") as zip_file:
-            for p in self._IMAGE_PATHS:
-                zip_file.writestr(p, generate_random_image_file(p)[1].getbuffer())
+        if mode == TaskMode.ANNOTATION:
+            media_file = io.BytesIO()
+            with zipfile.ZipFile(media_file, "w") as zip_file:
+                for p in self._IMAGE_PATHS:
+                    zip_file.writestr(p, generate_random_image_file(p)[1].getbuffer())
 
-        f.seek(0)
-        f.name = "test.zip"
+            media_file.seek(0)
+            media_file.name = "test.zip"
+        else:
+            self.assertEqual(mode, TaskMode.INTERPOLATION)
+            media_file = generate_video_file(self._VIDEO_PATH)[1]
 
-        image_data = {"client_files[0]": f, "image_quality": 75}
+        image_data = {"client_files[0]": media_file, "image_quality": 75}
         return self._create_task(data, image_data)
 
     def test_can_move_to_backing_cs(self):
-        # Set up task.
-        task = self._create_local_task()
-        task_id = task["id"]
+        for mode in (TaskMode.ANNOTATION, TaskMode.INTERPOLATION):
+            with self.subTest(mode=mode):
+                # Set up task.
+                task = self._create_local_task(mode=mode)
+                task_id = task["id"]
 
-        data = Data.objects.get(task__id=task_id)
-        upload_dir = data.get_upload_dirname()
+                data = Data.objects.get(task__id=task_id)
+                upload_dir = data.get_upload_dirname()
 
-        self.assertTrue(data.images.exists())
-        self.assertTrue(data.related_files.exists())
+                def local_path(rel_path):
+                    return upload_dir / rel_path
 
-        def local_path(rel_path):
-            return upload_dir / rel_path
+                def cloud_key(rel_path):
+                    return PurePath(f"data/{data.id}/raw", rel_path).as_posix()
 
-        def cloud_key(rel_path):
-            return PurePath(f"data/{data.id}/raw", rel_path).as_posix()
+                if mode == TaskMode.ANNOTATION:
+                    self.assertTrue(data.images.exists())
+                    self.assertTrue(data.related_files.exists())
+                    media = [(p, local_path(p).read_bytes()) for p in self._IMAGE_PATHS]
+                else:
+                    self.assertTrue(hasattr(data, "video"))
+                    media = [(self._VIDEO_PATH, local_path(self._VIDEO_PATH).read_bytes())]
 
-        images = [(p, local_path(p).read_bytes()) for p in self._IMAGE_PATHS]
-        self.assertTrue(local_path(Data.MANIFEST_FILENAME).exists())
+                self.assertTrue(local_path(Data.MANIFEST_FILENAME).exists())
 
-        # Move the task to backing cloud storage.
-        with self.captureOnCommitCallbacks(execute=True):
-            data.move_to_backing_cs(CloudStorage.objects.get(id=self.cloud_storage_id))
+                # Move the task to backing cloud storage.
+                with self.captureOnCommitCallbacks(execute=True):
+                    data.move_to_backing_cs(CloudStorage.objects.get(id=self.cloud_storage_id))
 
-        self.assertEqual(data.local_storage_backing_cs_id, self.cloud_storage_id)
+                self.assertEqual(data.local_storage_backing_cs_id, self.cloud_storage_id)
 
-        for image_rel_path, image_bytes in images:
-            self.assertFalse(local_path(image_rel_path).exists())
-            self.assertEqual(self.mock_aws.retrieve_file(cloud_key(image_rel_path)), image_bytes)
-        self.assertFalse(local_path("related_images").exists())
+                for media_rel_path, media_bytes in media:
+                    self.assertFalse(local_path(media_rel_path).exists())
+                    self.assertEqual(
+                        self.mock_aws.retrieve_file(cloud_key(media_rel_path)), media_bytes
+                    )
 
-        # The manifest should still be in the local FS.
-        self.assertTrue(local_path(Data.MANIFEST_FILENAME).exists())
-        self.assertFalse(self.mock_aws.file_exists(cloud_key(Data.MANIFEST_FILENAME)))
+                self.assertFalse(local_path("related_images").exists())
 
-        # Move the task back.
-        with self.captureOnCommitCallbacks(execute=True):
-            data.move_from_backing_cs()
+                # The manifest should still be in the local FS.
+                self.assertTrue(local_path(Data.MANIFEST_FILENAME).exists())
+                self.assertFalse(self.mock_aws.file_exists(cloud_key(Data.MANIFEST_FILENAME)))
 
-        self.assertEqual(data.local_storage_backing_cs_id, None)
+                # Move the task back.
+                with self.captureOnCommitCallbacks(execute=True):
+                    data.move_from_backing_cs()
 
-        for image_rel_path, image_bytes in images:
-            self.assertEqual(local_path(image_rel_path).read_bytes(), image_bytes)
-            self.assertFalse(self.mock_aws.file_exists(cloud_key(image_rel_path)))
+                self.assertEqual(data.local_storage_backing_cs_id, None)
+
+                for media_rel_path, media_bytes in media:
+                    self.assertEqual(local_path(media_rel_path).read_bytes(), media_bytes)
+                    self.assertFalse(self.mock_aws.file_exists(cloud_key(media_rel_path)))
 
     def test_creation_with_default_backing_cs(self):
         with (

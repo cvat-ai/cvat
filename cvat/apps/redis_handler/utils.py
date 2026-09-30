@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any, Self
 
 import rq
+from rq import Retry
 from rq.job import Job as RQJob
 from rq.job import JobStatus
 
@@ -62,6 +63,13 @@ def rq_job_will_be_retried(rq_job: RQJob) -> bool:
     return bool(rq_job.retries_left and rq_job.retries_left > 0)
 
 
+def build_job_retry(intervals: list[int]) -> Retry | None:
+    if not intervals:
+        return None
+
+    return Retry(max=len(intervals), interval=list(intervals))
+
+
 def send_request_succeeded_signal(
     rq_job: RQJob,
     connection: Any,
@@ -96,12 +104,17 @@ def send_request_failed_signal(
 ) -> None:
     from cvat.apps.engine.rq import BaseRQMeta
 
+    meta = BaseRQMeta.for_job(rq_job)
+
     if rq_job_will_be_retried(rq_job=rq_job):
+        meta.reset_on_retry()
         return
 
-    request_manager_cls_path = BaseRQMeta.for_job(rq_job).request_manager_cls
+    request_manager_cls_path = meta.request_manager_cls
     sender = (
-        get_class_from_full_path(request_manager_cls_path) if request_manager_cls_path else None
+        get_class_from_full_path(full_path=request_manager_cls_path)
+        if request_manager_cls_path
+        else None
     )
 
     _ = signals.request_failed.send_robust(

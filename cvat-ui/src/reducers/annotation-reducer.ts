@@ -14,6 +14,7 @@ import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import {
     DimensionType, getCore, JobStage, Label, LabelType, ObjectState, ObjectType, ShapeType,
 } from 'cvat-core-wrapper';
+import { sanitizeSelectedObjectIDs } from 'utils/multi-selection';
 import {
     ActiveControl,
     AnnotationState,
@@ -84,6 +85,7 @@ const defaultState: AnnotationState = {
             top: 0,
             left: 0,
         },
+        history: {},
         instance: null,
         ready: false,
         activeControl: ActiveControl.CURSOR,
@@ -97,6 +99,7 @@ const defaultState: AnnotationState = {
             initialOpenGuide: false,
             defaultLabel: null,
             defaultPointsCount: null,
+            defaultRotated: false,
         },
         groundTruthInfo: {
             validationLayout: null,
@@ -141,6 +144,7 @@ const defaultState: AnnotationState = {
         activatedStateID: null,
         activatedElementID: null,
         activatedAttributeID: null,
+        selectedStatesID: [],
         highlightedConflict: null,
         saving: {
             forceExit: false,
@@ -287,6 +291,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                         initialOpenGuide: queryParameters.initialOpenGuide,
                         defaultLabel: queryParameters.defaultLabel,
                         defaultPointsCount: queryParameters.defaultPointsCount,
+                        defaultRotated: queryParameters.defaultRotated,
                     },
                 },
                 annotations: {
@@ -389,6 +394,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 filename,
                 relatedFiles,
                 states,
+                selectedStatesID,
                 history,
                 delay,
                 changeTime,
@@ -419,6 +425,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 annotations: {
                     ...state.annotations,
                     activatedStateID: updateActivatedStateID(states, activatedStateID),
+                    selectedStatesID,
                     highlightedConflict: null,
                     states,
                     initialized: true,
@@ -656,6 +663,13 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 }
             }
             const [minZ, maxZ] = computeZRange(nextStates);
+            const hiddenZLayers = state.annotations.zLayer.hiddenByFrame.get(state.player.frame.number) ||
+                new Set<number>();
+            const selectedStatesID = sanitizeSelectedObjectIDs(
+                nextStates,
+                state.annotations.selectedStatesID,
+                hiddenZLayers,
+            );
 
             return {
                 ...state,
@@ -667,6 +681,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                         max: maxZ,
                     },
                     states: nextStates,
+                    selectedStatesID,
                     renderData: getAnnotationsRenderData(nextStates, state.annotations.filters),
                     history,
                 },
@@ -716,6 +731,41 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
             };
         }
+        case AnnotationActionTypes.SELECT_OBJECTS: {
+            const { selectedStatesID: requestedStatesID, history } = action.payload;
+            const hiddenZLayers = state.annotations.zLayer.hiddenByFrame.get(state.player.frame.number) ||
+                new Set<number>();
+            const selectedStatesID = sanitizeSelectedObjectIDs(
+                state.annotations.states,
+                requestedStatesID,
+                hiddenZLayers,
+            );
+            const closeSelectionContextMenu = !selectedStatesID.length &&
+                state.canvas.contextMenu.type === ContextMenuType.CANVAS_SELECTION &&
+                state.canvas.contextMenu.visible;
+            return {
+                ...state,
+                annotations: {
+                    ...state.annotations,
+                    selectedStatesID,
+                    ...(selectedStatesID.length ? {
+                        activatedStateID: null,
+                        activatedElementID: null,
+                        activatedAttributeID: null,
+                    } : {}),
+                    ...(history ? { history } : {}),
+                },
+                ...(closeSelectionContextMenu ? {
+                    canvas: {
+                        ...state.canvas,
+                        contextMenu: {
+                            ...state.canvas.contextMenu,
+                            visible: false,
+                        },
+                    },
+                } : {}),
+            };
+        }
         case AnnotationActionTypes.REMOVE_OBJECT: {
             const { objectState, force } = action.payload;
             return {
@@ -761,6 +811,9 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     ...state.annotations,
                     history,
                     activatedStateID: null,
+                    selectedStatesID: state.annotations.selectedStatesID.filter(
+                        (clientID: number): boolean => clientID !== objectState.clientID,
+                    ),
                     states: nextStates,
                     renderData: getAnnotationsRenderData(nextStates, state.annotations.filters),
                 },
@@ -813,6 +866,19 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 drawing: {
                     ...state.drawing,
                     activeInitialState: objectState,
+                    // single-shape copy clears any multi-selection clipboard
+                    copiedStates: undefined,
+                },
+            };
+        }
+        case AnnotationActionTypes.COPY_SELECTION: {
+            const { copiedStates } = action.payload;
+
+            return {
+                ...state,
+                drawing: {
+                    ...state.drawing,
+                    copiedStates,
                 },
             };
         }
@@ -975,6 +1041,16 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 },
             };
         }
+        case AnnotationActionTypes.UPDATE_CANVAS_HISTORY: {
+            const { source, undoAction, redoAction } = action.payload;
+            return {
+                ...state,
+                canvas: {
+                    ...state.canvas,
+                    history: { source, undoAction, redoAction },
+                },
+            };
+        }
         case AnnotationActionTypes.UPDATE_BRUSH_TOOLS_CONFIG: {
             return {
                 ...state,
@@ -992,12 +1068,22 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
             const { states, history } = action.payload;
             const [minZ, maxZ] = computeZRange(states);
             const currentZLayer = state.annotations.initialized ? state.annotations.zLayer.cur : maxZ;
+            const hiddenZLayers = state.annotations.zLayer.hiddenByFrame.get(state.player.frame.number) ||
+                new Set<number>();
+            // An annotation refresh may remove selected objects (for example, when undoing a paste).
+            // Do not leave stale IDs that would keep regular canvas hover interaction disabled.
+            const selectedStatesID = sanitizeSelectedObjectIDs(
+                states,
+                state.annotations.selectedStatesID,
+                hiddenZLayers,
+            );
 
             return {
                 ...state,
                 annotations: {
                     ...state.annotations,
                     activatedStateID: updateActivatedStateID(states, activatedStateID),
+                    selectedStatesID,
                     states,
                     renderData: getAnnotationsRenderData(states, state.annotations.filters),
                     history,
@@ -1175,6 +1261,10 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
         case AnnotationActionTypes.RESET_CANVAS: {
             return {
                 ...state,
+                annotations: {
+                    ...state.annotations,
+                    selectedStatesID: [],
+                },
                 canvas: {
                     ...state.canvas,
                     activeControl: ActiveControl.CURSOR,

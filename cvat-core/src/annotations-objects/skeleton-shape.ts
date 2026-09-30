@@ -274,8 +274,7 @@ export class SkeletonShape extends Shape {
         if (updatedElements.size && actionType) {
             const undoSource = this.source;
             const redoSource = this.readOnlyFields.includes('source') ? this.source : computeNewSource(this.source);
-
-            this.history.beginTransaction(actionType);
+            const ownsTransaction = this.history.beginTransaction(actionType);
             try {
                 for (const [element, state] of updatedElements) {
                     element.save(frame, state);
@@ -296,10 +295,14 @@ export class SkeletonShape extends Shape {
                     frame,
                 );
             } catch (error: unknown) {
-                this.history.abortTransaction();
+                if (ownsTransaction) {
+                    this.history.abortTransaction();
+                }
                 throw error;
             } finally {
-                this.history.endTransaction();
+                if (ownsTransaction) {
+                    this.history.endTransaction();
+                }
             }
         }
 

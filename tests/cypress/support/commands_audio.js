@@ -17,6 +17,18 @@ import { defaultTaskSpec } from './default-specs';
 
 const WAVEFORM_TIMEOUT = 30000;
 
+function removeAudioAnnotations({ save = false } = {}) {
+    cy.get('.cvat-audio-regions-list-wrapper').then(($list) => {
+        if ($list.find('.cvat-audio-region-item').length) {
+            cy.removeAnnotations();
+            if (save) {
+                cy.saveJob('PUT');
+            }
+            cy.get('.cvat-audio-region-item').should('have.length', 0);
+        }
+    });
+}
+
 Cypress.Commands.add('ensureAudioTask', () => {
     cy.window().its('cvat', { timeout: 25000 }).should('not.be.undefined');
     cy.window().then((win) => cy.wrap(win.cvat.tasks.get({ search: AUDIO_TASK_NAME }))).then((tasks) => {
@@ -87,6 +99,14 @@ Cypress.Commands.add('getAudioRegion', () => (
     cy.getAudioWaveformHost().shadow().find('[part~="region"]')
 ));
 
+Cypress.Commands.add('getAudioRegionRects', () => (
+    cy.getAudioRegion().then(($regions) => (
+        Array.from($regions)
+            .map((region) => region.getBoundingClientRect())
+            .sort((left, right) => left.left - right.left)
+    ))
+));
+
 Cypress.Commands.add('getAudioRegionHandle', (side) => (
     cy.getAudioWaveformHost().shadow().find(`[part~="region-handle-${side}"]`)
 ));
@@ -123,6 +143,16 @@ Cypress.Commands.add('audioActivateCreate', (labelName) => {
     }
     cy.get('.cvat-audio-interval-region-popover-content').contains('button', 'Draw').click();
     cy.get('.cvat-audio-interval-region-control').should('have.class', 'cvat-active-canvas-control');
+});
+
+Cypress.Commands.add('clickAudioWaveform', (x) => {
+    cy.getAudioWaveformViewport().first().then(($waveform) => {
+        const y = $waveform[0].getBoundingClientRect().height / 2;
+        cy.getAudioWaveformViewport().first().realClick({
+            position: { x, y },
+            button: 'left',
+        });
+    });
 });
 
 Cypress.Commands.add('clickRegionOnWaveform', (x) => {
@@ -175,11 +205,10 @@ Cypress.Commands.add('audioCreateRegionViaHotkey', (xStart, xEnd) => {
 });
 
 Cypress.Commands.add('audioChangeSelectedRegionLabel', (labelName) => {
-    cy.get('.cvat-audio-region-label-trigger').click();
-    cy.get('.cvat-audio-region-label-popover').filter(':visible').contains(
-        '.cvat-audio-region-label-option', labelName,
-    ).click();
-    cy.get('.cvat-audio-region-label-trigger').should('contain.text', labelName);
+    const labelSelector = '.cvat-audio-region-details .cvat-audio-interval-header-label-selector';
+    cy.get(labelSelector).click();
+    cy.get('.ant-select-dropdown').filter(':visible').contains('.ant-select-item-option', labelName).click();
+    cy.get(labelSelector).should('contain.text', labelName);
 });
 
 Cypress.Commands.add('audioExtendViaButton', (labelName) => {
@@ -201,40 +230,28 @@ Cypress.Commands.add('audioOpenSlider', (controlClass) => {
     cy.get('.cvat-audio-slider-popover-overlay', { timeout: 5000 }).should('exist').and('be.visible');
 });
 
-Cypress.Commands.add('audioSliderSetValue', (controlClass, arrowDirection, steps) => {
-    cy.audioOpenSlider(controlClass);
-    cy.get('.cvat-audio-slider-popover-overlay .ant-slider-handle').should('be.visible').focus();
-    for (let i = 0; i < steps; i += 1) {
-        cy.get('.cvat-audio-slider-popover-overlay .ant-slider-handle').type(arrowDirection);
-    }
-    cy.get('.cvat-audio-canvas-wrapper').click('topLeft', { force: true });
+Cypress.Commands.add('audioCloseSlider', (controlClass) => {
+    cy.get(`.${controlClass}`).click();
+    cy.get('.cvat-audio-slider-popover-overlay', { timeout: 5000 }).should('not.be.visible');
 });
 
-Cypress.Commands.add('audioSaveAnnotations', () => {
-    cy.get('.cvat-annotation-header-save-button').click();
-    cy.get('.cvat-annotation-header-save-button').should('contain.text', 'Saving...');
-    cy.get('.cvat-annotation-header-save-button').should('contain.text', 'Save');
+Cypress.Commands.add('audioSliderSetValue', (controlClass, arrowDirection, steps) => {
+    cy.audioOpenSlider(controlClass);
+    cy.get('.cvat-audio-slider-popover-overlay .ant-slider-handle').filter(':visible').focus();
+    for (let i = 0; i < steps; i += 1) {
+        cy.get('.cvat-audio-slider-popover-overlay .ant-slider-handle').filter(':visible').type(arrowDirection);
+    }
+    cy.audioCloseSlider(controlClass);
 });
 
 Cypress.Commands.add('audioClearAnnotations', () => {
-    cy.get('.cvat-audio-regions-list-wrapper').then(($list) => {
-        if ($list.find('.cvat-audio-region-item').length) {
-            cy.removeAnnotations();
-            cy.get('.cvat-audio-region-item').should('have.length', 0);
-        }
-    });
+    removeAudioAnnotations();
 });
 
 Cypress.Commands.add('audioClearAnnotationsAndSave', () => {
-    cy.get('.cvat-audio-regions-list-wrapper').then(($list) => {
-        if ($list.find('.cvat-audio-region-item').length) {
-            cy.removeAnnotations();
-            cy.get('.cvat-audio-region-item').should('have.length', 0);
-            cy.audioSaveAnnotations();
-        }
-    });
+    removeAudioAnnotations({ save: true });
 });
 
 Cypress.Commands.add('audioUndo', () => {
-    cy.get('body').type('{ctrl}z');
+    cy.pressWithPlatformModifier('z');
 });
