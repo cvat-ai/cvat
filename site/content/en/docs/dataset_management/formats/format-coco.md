@@ -88,5 +88,5 @@ CVAT does not require them to import annotations.
 4. Unpack `annotations_trainval2017.zip`
 
 5. click `Upload annotation` button,
-   choose `COCO 1.1` and select `instances_val2017.json`
+   choose `COCO 1.0` and select `instances_val2017.json`
    annotation file. It can take some time.

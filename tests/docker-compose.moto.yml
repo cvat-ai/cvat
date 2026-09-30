@@ -30,9 +30,10 @@ services:
         - >-
           import urllib.request;
           urllib.request.urlopen('http://localhost:9000/')
-      interval: 2s
-      timeout: 20s
-      retries: 3
+      start_period: 30s
+      interval: 5s
+      timeout: 5s
+      retries: 12
     networks:
       cvat:
         aliases:

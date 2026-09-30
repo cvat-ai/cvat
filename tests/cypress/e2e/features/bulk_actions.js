@@ -202,7 +202,11 @@ context('Bulk actions in UI', () => {
         });
 
         it('Delete all tasks, ensure deletion', () => {
-            cy.intercept('DELETE', '/api/tasks/**').as('deleteTask');
+            cy.intercept('DELETE', '/api/tasks/**', (request) => {
+                request.continue((response) => {
+                    response.setDelay(1000);
+                });
+            }).as('deleteTask');
 
             selectAll();
             getBulkActionsMenu().within(() => {
@@ -216,9 +220,7 @@ context('Bulk actions in UI', () => {
             cy.contains('Delete selected')
                 .should('be.visible')
                 .click();
-            // Because of light load, the wrapper appears before requests finish
-            // leading to flake
-            // So we need to assert on it first
+            // Keep the responses pending long enough to observe the progress state reliably.
             cy.get('.cvat-bulk-progress-wrapper').should('be.visible');
             cy.wait('@deleteTask');
             cy.wait('@deleteTask');

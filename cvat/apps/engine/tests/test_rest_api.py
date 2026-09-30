@@ -5803,6 +5803,77 @@ class TaskDataAPITestCase(ApiTestBase):
             expected_storage_method=StorageMethodChoice.CACHE.value,
         )
 
+    def _create_task_from_local_pdf(self, user, **data_params) -> dict:
+        task_spec = {
+            "name": "pdf task with frame range",
+        }
+        response = self._create_task(user, task_spec)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        task_id = response.data["id"]
+
+        task_data = {
+            "client_files[0]": copy.deepcopy(self._client_pdf["pdf"]),
+            "image_quality": 70,
+            **data_params,
+        }
+        response = self._run_api_v2_tasks_id_data_post(task_id, user, task_data)
+        self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED, response.reason_phrase)
+
+        response = self._get_task_creation_status(task_id, user)
+        self.assertEqual(response.data["state"], "Finished", response.data.get("message"))
+
+        with ForceLogin(user, self.client):
+            response = self.client.get(f"/api/tasks/{task_id}/data/meta")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        return response.json()
+
+    def test_can_create_task_from_pdf_without_stop_frame(self):
+        page_count = len(self._client_pdf["image_sizes"])
+
+        data_meta = self._create_task_from_local_pdf(self.admin)
+
+        self.assertEqual(data_meta["size"], page_count)
+        self.assertEqual(len(data_meta["frames"]), page_count)
+
+    def test_can_create_task_from_pdf_with_stop_frame(self):
+        # Check for regressions on https://github.com/cvat-ai/cvat/issues/11175
+
+        page_count = len(self._client_pdf["image_sizes"])
+
+        for stop_frame in [1, 4]:
+            assert stop_frame < page_count
+
+            with self.subTest(stop_frame=stop_frame):
+                data_meta = self._create_task_from_local_pdf(self.admin, stop_frame=stop_frame)
+
+                self.assertEqual(data_meta["size"], stop_frame + 1)
+                self.assertEqual(len(data_meta["frames"]), stop_frame + 1)
+                self.assertEqual(data_meta["stop_frame"], stop_frame)
+
+    def test_can_create_task_from_pdf_with_zero_stop_frame(self):
+        # Like for other media types, an explicit 0 means "up to the last frame"
+        page_count = len(self._client_pdf["image_sizes"])
+
+        data_meta = self._create_task_from_local_pdf(self.admin, stop_frame=0)
+
+        self.assertEqual(data_meta["size"], page_count)
+        self.assertEqual(data_meta["stop_frame"], page_count - 1)
+
+    def test_can_create_task_from_pdf_with_stop_frame_beyond_last_page(self):
+        page_count = len(self._client_pdf["image_sizes"])
+
+        data_meta = self._create_task_from_local_pdf(self.admin, stop_frame=page_count + 5)
+
+        self.assertEqual(data_meta["size"], page_count)
+        self.assertEqual(data_meta["stop_frame"], page_count - 1)
+
+    def test_can_create_task_from_pdf_with_start_and_stop_frame(self):
+        data_meta = self._create_task_from_local_pdf(self.admin, start_frame=1, stop_frame=3)
+
+        self.assertEqual(data_meta["size"], 3)
+        self.assertEqual(data_meta["start_frame"], 1)
+        self.assertEqual(data_meta["stop_frame"], 3)
+
 
 class JobAnnotationAPITestCase(ApiTestBase):
     @classmethod
