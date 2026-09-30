@@ -14,6 +14,7 @@ import pluginsReducer from './plugins-reducer';
 import modelsReducer from './models-reducer';
 import notificationsReducer from './notifications-reducer';
 import annotationReducer from './annotation-reducer';
+import audioReducer from './audio-reducer';
 import settingsReducer from './settings-reducer';
 import shortcutsReducer from './shortcuts-reducer';
 import userAgreementsReducer from './useragreements-reducer';
@@ -29,10 +30,12 @@ import requestsReducer from './requests-reducer';
 import serverAPIReducer from './server-api-reducer';
 import navigationReducer from './navigation-reducer';
 import bulkActionsReducer from './bulk-actions-reducer';
+import growthReducer from './growth-reducer';
 
 export default function createRootReducer(): Reducer {
     return combineReducers({
         auth: authReducer,
+        growth: growthReducer,
         projects: projectsReducer,
         tasks: tasksReducer,
         jobs: jobsReducer,
@@ -42,6 +45,7 @@ export default function createRootReducer(): Reducer {
         models: modelsReducer,
         notifications: notificationsReducer,
         annotation: annotationReducer,
+        audio: audioReducer,
         settings: settingsReducer,
         shortcuts: shortcutsReducer,
         userAgreements: userAgreementsReducer,

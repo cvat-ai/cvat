@@ -1,0 +1,93 @@
+// Copyright (C) CVAT.ai Corporation
+//
+// SPDX-License-Identifier: MIT
+
+.cvat-audio-regions-list-wrapper {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    background-color: $background-color-2;
+}
+
+.cvat-audio-regions-list-header {
+    flex: 0 0 auto;
+    padding: $grid-unit-size $grid-unit-size * 1.5;
+    border-bottom: 1px solid #e5e7eb;
+    background-color: #bebebe;
+
+    .cvat-audio-regions-list-header-actions {
+        display: flex;
+        align-items: center;
+        gap: $grid-unit-size * 1.5;
+    }
+
+    .cvat-audio-regions-list-ordering {
+        margin-top: $grid-unit-size * 0.75;
+        display: flex;
+        align-items: center;
+        gap: $grid-unit-size;
+        flex-wrap: nowrap;
+
+        .cvat-audio-regions-list-ordering-selector {
+            flex: 1;
+        }
+    }
+
+    .anticon {
+        font-size: $grid-unit-size * 2;
+        color: #595959;
+        cursor: pointer;
+
+        &:hover {
+            color: #1890ff;
+        }
+    }
+}
+
+.cvat-audio-regions-list {
+    background-color: $background-color-2;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    padding: $grid-unit-size * 0.5;
+}
+
+.cvat-audio-regions-list-empty {
+    padding: $grid-unit-size * 3 $grid-unit-size * 1.5;
+}
+
+.cvat-audio-region-item {
+    width: 100%;
+    padding: $grid-unit-size * 0.75;
+    background-color: rgba(var(--region-item-color), 0.53);
+    border: 2px solid rgba(0, 0, 0, 8%);
+    border-radius: $border-radius-base;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 8%);
+    overflow: hidden;
+    cursor: pointer;
+    margin-left: 0;
+    margin-right: 0;
+    transition:
+        border-color $box-shadow-transition,
+        box-shadow $box-shadow-transition;
+
+    &:not(:first-child) {
+        margin-top: $grid-unit-size * 0.5;
+    }
+
+    &:not(:last-child) {
+        margin-bottom: $grid-unit-size * 0.5;
+    }
+
+    &:hover,
+    &.cvat-audio-region-item-hovered {
+        border-color: rgba(0, 0, 0, 42%);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 12%);
+    }
+
+    &.cvat-audio-region-item-active {
+        border-color: rgba(0, 0, 0, 66%);
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 14%);
+    }
+}

@@ -26,6 +26,7 @@ from typing import Any
 
 import numpy as np
 import pytest
+import requests
 from cvat_sdk import exceptions
 from cvat_sdk.api_client import models
 from cvat_sdk.api_client.api_client import ApiClient, Endpoint
@@ -33,6 +34,7 @@ from cvat_sdk.api_client.exceptions import ForbiddenException
 from cvat_sdk.core.exceptions import BackgroundRequestException
 from cvat_sdk.core.helpers import get_paginated_collection
 from cvat_sdk.core.progress import NullProgressReporter
+from cvat_sdk.core.proxies.annotations import AnnotationUpdateAction
 from cvat_sdk.core.proxies.tasks import ResourceType, Task
 from cvat_sdk.core.uploading import Uploader
 from deepdiff import DeepDiff
@@ -49,18 +51,24 @@ from rest_api.utils import (
     create_task,
     export_dataset,
     export_task_dataset,
+    import_job_annotations,
+    import_task_annotations,
 )
 from shared.fixtures.init import container_exec_cvat
+from shared.fixtures.params import CACHE
 from shared.tasks.interface import ITaskSpec
 from shared.tasks.types import SourceDataType
 from shared.tasks.utils import parse_frame_step, to_rel_frames
 from shared.utils.config import (
     ASSETS_DIR,
+    USER_PASS,
     delete_method,
+    get_api_url,
     get_method,
     make_api_client,
     make_sdk_client,
     patch_method,
+    post_method,
     put_method,
 )
 from shared.utils.helpers import generate_image_files
@@ -258,7 +266,7 @@ class TestGetTasks:
         )
 
     @pytest.mark.parametrize("org, project_id, role", [({"id": 2, "slug": "org2"}, 2, "worker")])
-    def test_org_task_assigneed_to_see_task(
+    def test_org_task_assigned_to_see_task(
         self, org, project_id, role, users, tasks, find_users, is_task_staff
     ):
         users = find_users(org=org["id"], role=role)
@@ -356,10 +364,12 @@ class TestListTasksFilters(CollectionSimpleFilterTestBase):
         (
             "assignee",
             "dimension",
+            "media_type",
             "mode",
             "name",
             "owner",
             "project_id",
+            "project_name",
             "status",
             "subset",
             "tracker_link",
@@ -532,6 +542,65 @@ class TestPostTasks:
             labels, _ = api_client.labels_api.list(task_id=task.id)
 
             assert labels.count == 0
+
+    def test_cannot_create_data_with_non_http_remote_files(self, admin_user):
+        """Regression test for https://github.com/cvat-ai/cvat/issues/9647.
+
+        `remote_files` entries are direct download URLs and must use the
+        http(s) scheme. Anything else is rejected synchronously by the
+        DataSerializer with HTTP 400, instead of being enqueued and failing
+        deep in the worker.
+        """
+        bad_url = "not-a-url/foo.jpg"
+
+        with make_api_client(admin_user) as api_client:
+            task, _ = api_client.tasks_api.create({"name": "task with bad remote_files"})
+
+            _, response = api_client.tasks_api.create_data(
+                task.id,
+                data_request=models.DataRequest(
+                    image_quality=70,
+                    remote_files=[bad_url],
+                ),
+                upload_start=True,
+                upload_finish=True,
+                _parse_response=False,
+                _check_status=False,
+            )
+
+            assert response.status == HTTPStatus.BAD_REQUEST
+            assert b"remote_files" in response.data
+            assert bad_url.encode() in response.data
+
+
+@pytest.mark.usefixtures("restore_db_per_function")
+class TestGetTaskDataMeta:
+    def test_cannot_get_data_meta_before_data_upload_is_finished(self, admin_user):
+        """Regression test for https://github.com/cvat-ai/cvat/pull/10855.
+
+        Requesting task metadata after data upload has started but before it
+        has finished used to raise `UnboundLocalError` (HTTP 500), because
+        `Task.data` existed while `Task.media_type` had not been detected yet.
+        The endpoint must now return HTTP 400 with a clear message.
+        """
+        with make_api_client(admin_user) as api_client:
+            task, _ = api_client.tasks_api.create({"name": "task without data"})
+
+            _, upload_response = api_client.tasks_api.create_data(task.id, upload_start=True)
+            assert upload_response.status == HTTPStatus.ACCEPTED
+
+            task, _ = api_client.tasks_api.retrieve(task.id)
+            assert task.data is not None
+            assert not task.media_type
+
+            _, response = api_client.tasks_api.retrieve_data_meta(
+                task.id,
+                _parse_response=False,
+                _check_status=False,
+            )
+
+            assert response.status == HTTPStatus.BAD_REQUEST
+            assert b"Data is not uploaded" in response.data
 
 
 @pytest.mark.usefixtures("restore_db_per_class")
@@ -1013,7 +1082,7 @@ class TestGetTaskDataset:
         default_subset_name,
         subset_path_template,
     ):
-        tasks = filter_tasks(exclude_target_storage__location="cloud_storage")
+        tasks = filter_tasks(exclude_target_storage__location="cloud_storage", dimension="2d")
         group_key_func = itemgetter("subset")
         subsets_and_tasks = [
             (subset, next(group))
@@ -1158,6 +1227,40 @@ class TestPatchTaskLabel:
 
         resulting_labels = self._get_task_labels(task["id"], admin_user)
         assert DeepDiff(resulting_labels, task_labels, ignore_order=True) == {}
+
+    def test_can_delete_attribute(self, admin_user):
+        spec = {
+            "name": "test delete task label attribute",
+            "labels": [
+                {
+                    "name": "car",
+                    "attributes": [
+                        {
+                            "name": "model",
+                            "mutable": False,
+                            "input_type": "text",
+                            "default_value": "mazda",
+                            "values": ["mazda"],
+                        }
+                    ],
+                }
+            ],
+        }
+        response = post_method(admin_user, "tasks", spec)
+        assert response.status_code == HTTPStatus.CREATED, response.content
+        task = response.json()
+        label = self._get_task_labels(task["id"], admin_user)[0]
+        attribute = label["attributes"][0]
+
+        response = patch_method(
+            admin_user,
+            f'tasks/{task["id"]}',
+            {"labels": [{"id": label["id"], "attributes": [{**attribute, "deleted": True}]}]},
+        )
+
+        assert response.status_code == HTTPStatus.OK, response.content
+        label = self._get_task_labels(task["id"], admin_user)[0]
+        assert label["attributes"] == []
 
     def test_can_rename_label(self, tasks_wlc, labels, admin_user):
         task = [t for t in tasks_wlc if t["project_id"] is None and t["labels"]["count"] > 0][0]
@@ -1322,13 +1425,16 @@ class TestPatchTaskLabel:
 class TestWorkWithTask:
     _USERNAME = "admin1"
 
+    # Tests negatively for cloud data corruption, so timeout can be greater
+    @pytest.mark.timeout(25)
     @pytest.mark.with_external_services
     @pytest.mark.parametrize(
         "cloud_storage_id, manifest",
         [(1, "images_with_manifest/manifest.jsonl")],  # public bucket
     )
+    @pytest.mark.parametrize("use_cache", CACHE)
     def test_work_with_task_containing_non_stable_cloud_storage_files(
-        self, cloud_storage_id, manifest, cloud_storages, request
+        self, cloud_storage_id, manifest, use_cache, cloud_storages, request
     ):
         image_name = "images_with_manifest/image_case_65_1.png"
         cloud_storage_content = [image_name, manifest]
@@ -1339,7 +1445,7 @@ class TestWorkWithTask:
 
         data_spec = {
             "image_quality": 75,
-            "use_cache": True,
+            "use_cache": use_cache,
             "cloud_storage_id": cloud_storage_id,
             "server_files": cloud_storage_content,
         }
@@ -1397,20 +1503,32 @@ class TestTaskBackups:
 
     @pytest.mark.parametrize("mode", ["annotation", "interpolation"])
     def test_can_export_backup(self, tasks, mode):
-        task_id = next(t for t in tasks if t["mode"] == mode and not t["validation_mode"])["id"]
+        task_id = next(
+            t
+            for t in tasks
+            if t["dimension"] == "2d"
+            if t["mode"] == mode and not t["validation_mode"]
+        )["id"]
         self._test_can_export_backup(task_id)
 
     def test_can_export_backup_for_consensus_task(self, tasks):
-        task_id = next(t for t in tasks if t["consensus_enabled"])["id"]
+        task_id = next(t for t in tasks if t["dimension"] == "2d" if t["consensus_enabled"])["id"]
         self._test_can_export_backup(task_id)
 
     def test_can_export_backup_for_honeypot_task(self, tasks):
-        task_id = next(t for t in tasks if t["validation_mode"] == "gt_pool")["id"]
+        task_id = next(
+            t for t in tasks if t["dimension"] == "2d" if t["validation_mode"] == "gt_pool"
+        )["id"]
         self._test_can_export_backup(task_id)
 
     @pytest.mark.parametrize("mode", ["annotation", "interpolation"])
     def test_can_export_backup_for_simple_gt_job_task(self, tasks, mode):
-        task_id = next(t for t in tasks if t["mode"] == mode and t["validation_mode"] == "gt")["id"]
+        task_id = next(
+            t
+            for t in tasks
+            if t["dimension"] == "2d"
+            if t["mode"] == mode and t["validation_mode"] == "gt"
+        )["id"]
         self._test_can_export_backup(task_id)
 
     def test_cannot_export_backup_for_task_without_data(self, tasks):
@@ -1420,6 +1538,10 @@ class TestTaskBackups:
             self._test_can_export_backup(task_id)
 
         assert "Backup of a task without data is not allowed" in str(capture.value.body)
+
+    def test_can_export_backup_for_audio_task(self, tasks):
+        task_id = next(t for t in tasks if t["media_type"] == "audio")["id"]
+        self._test_can_export_backup(task_id)
 
     @pytest.mark.with_external_services
     def test_can_export_and_import_backup_task_with_mounted_share(self):
@@ -1450,9 +1572,13 @@ class TestTaskBackups:
 
         self._test_can_restore_task_from_backup(task_id)
 
+    @pytest.mark.timeout(20)
     @pytest.mark.with_external_services
     @pytest.mark.parametrize("lightweight_backup", [True, False])
-    def test_can_export_and_import_backup_task_with_cloud_storage(self, lightweight_backup):
+    def test_can_export_and_import_backup_task_with_cloud_storage(
+        self,
+        lightweight_backup,
+    ):
         task_spec = {
             "name": "Task with files from cloud storage",
             "labels": [
@@ -1489,24 +1615,40 @@ class TestTaskBackups:
             expected_media.update(["images/image_1.jpg", "images/image_3.jpg"])
         assert files_in_data == expected_media
 
-        self._test_can_restore_task_from_backup(task_id, lightweight_backup=lightweight_backup)
+        self._test_can_restore_task_from_backup(
+            task_id, lightweight_backup=lightweight_backup, backup_file=filename
+        )
 
     @pytest.mark.parametrize("mode", ["annotation", "interpolation"])
     def test_can_import_backup(self, tasks, mode):
-        task_id = next(t for t in tasks if t["mode"] == mode if not t["validation_mode"])["id"]
+        task_id = next(
+            t
+            for t in tasks
+            if t["dimension"] == "2d"
+            if t["mode"] == mode
+            if not t["validation_mode"]
+        )["id"]
         self._test_can_restore_task_from_backup(task_id)
 
     @pytest.mark.parametrize("mode", ["annotation", "interpolation"])
     def test_can_import_backup_with_simple_gt_job_task(self, tasks, mode):
-        task_id = next(t for t in tasks if t["mode"] == mode if t["validation_mode"] == "gt")["id"]
+        task_id = next(
+            t
+            for t in tasks
+            if t["dimension"] == "2d"
+            if t["mode"] == mode
+            if t["validation_mode"] == "gt"
+        )["id"]
         self._test_can_restore_task_from_backup(task_id)
 
     def test_can_import_backup_with_honeypot_task(self, tasks):
-        task_id = next(t for t in tasks if t["validation_mode"] == "gt_pool")["id"]
+        task_id = next(
+            t for t in tasks if t["dimension"] == "2d" if t["validation_mode"] == "gt_pool"
+        )["id"]
         self._test_can_restore_task_from_backup(task_id)
 
     def test_can_import_backup_with_consensus_task(self, tasks):
-        task_id = next(t for t in tasks if t["consensus_enabled"])["id"]
+        task_id = next(t for t in tasks if t["dimension"] == "2d" if t["consensus_enabled"])["id"]
         self._test_can_restore_task_from_backup(task_id)
 
     def test_can_import_backup_with_consensus_task_created_before_consensus_replica_removal(self):
@@ -1558,6 +1700,7 @@ class TestTaskBackups:
         gt_job = next(
             j
             for j in jobs
+            if j["dimension"] == "2d"
             if j["type"] == "ground_truth"
             if job_has_annotations(j["id"])
             if tasks[j["task_id"]]["validation_mode"] == "gt"
@@ -1567,31 +1710,54 @@ class TestTaskBackups:
 
         self._test_can_restore_task_from_backup(task["id"])
 
-    @pytest.mark.with_external_services
-    def test_can_export_and_import_backup_with_backing_cs(self, request, cloud_storages):
+    def test_can_import_backup_for_audio_task(self, tasks):
+        task_id = next(t for t in tasks if t["media_type"] == "audio")["id"]
+        self._test_can_export_backup(task_id)
+
+    def _test_can_export_and_import_backup_with_backing_cs(
+        self, request, task, cloud_storages, expected_file_suffixes
+    ):
         cloud_storage_id = next(cs["id"] for cs in cloud_storages if cs["resource"] == "backingcs")
 
-        with make_sdk_client(self.user) as client:
-            task = client.tasks.create_from_data(
-                models.TaskWriteRequest(name="Canvas3D"),
-                [SHARE_DIR / "test_canvas3d.zip"],
-                data_params={"use_cache": True},
-            )
+        container_exec_cvat(
+            request, ["./manage.py", "movetasktobackingcs", str(task.id), str(cloud_storage_id)]
+        )
 
-            container_exec_cvat(
-                request, ["./manage.py", "movetasktobackingcs", str(task.id), str(cloud_storage_id)]
-            )
+        backup_path = self.tmp_dir / "backup.zip"
+        task.download_backup(backup_path)
 
-            backup_path = self.tmp_dir / "backup.zip"
-            task.download_backup(backup_path)
+        with zipfile.ZipFile(backup_path) as zip_file:
+            names = zip_file.namelist()
 
-            with zipfile.ZipFile(backup_path) as zip_file:
-                names = zip_file.namelist()
+            for ext in expected_file_suffixes:
+                assert any(name.endswith(ext) for name in names)
 
-                assert any(name.endswith(".pcd") for name in names)
-                assert any(name.endswith(".png") for name in names)
+        self._test_can_restore_task_from_backup(task.id, backup_file=backup_path)
 
-            self._test_can_restore_task_from_backup(task.id, backup_file=backup_path)
+    @pytest.mark.with_external_services
+    def test_can_export_and_import_backup_with_images_in_backing_cs(self, request, cloud_storages):
+        task = self.client.tasks.create_from_data(
+            models.TaskWriteRequest(name="Canvas3D"),
+            [SHARE_DIR / "test_canvas3d.zip"],
+            data_params={"use_cache": True},
+        )
+
+        self._test_can_export_and_import_backup_with_backing_cs(
+            request, task, cloud_storages, (".pcd", ".png")
+        )
+
+    @pytest.mark.with_external_services
+    def test_can_export_and_import_backup_with_video_in_backing_cs(
+        self, request, tasks, cloud_storages
+    ):
+        task_id = next(
+            t for t in tasks if t["media_type"] == "image" if t["mode"] == "interpolation"
+        )["id"]
+        task = self.client.tasks.retrieve(task_id)
+
+        self._test_can_export_and_import_backup_with_backing_cs(
+            request, task, cloud_storages, (".mp4",)
+        )
 
     def _test_can_restore_task_from_backup(
         self,
@@ -1682,7 +1848,11 @@ class TestTaskBackups:
         assert restored_task_json["id"] != task_json["id"]
         assert restored_task_json["data"] != task_json["data"]
         assert restored_task_json["organization"] is None
-        assert restored_task_json["data_compressed_chunk_type"] in ["imageset", "video"]
+        assert restored_task_json["data_compressed_chunk_type"] in [
+            "imageset",
+            "video",
+            "audio_mp3",
+        ]
         if task_json["jobs"]["count"] == 1:
             assert restored_task_json["overlap"] == 0
         else:
@@ -2646,7 +2816,7 @@ class TestGetTaskPreview:
         self._test_assigned_users_to_see_task_preview(tasks, users, is_task_staff)
 
     @pytest.mark.parametrize("org, project_id, role", [({"id": 2, "slug": "org2"}, 2, "worker")])
-    def test_org_task_assigneed_to_see_task_preview(
+    def test_org_task_assigned_to_see_task_preview(
         self, org, project_id, role, users, tasks, find_users, is_task_staff
     ):
         users = find_users(org=org["id"], role=role)
@@ -2664,6 +2834,90 @@ class TestGetTaskPreview:
         assert len(tasks)
 
         self._test_assigned_users_cannot_see_task_preview(tasks, users, is_task_staff)
+
+    @pytest.mark.usefixtures("restore_db_per_function")
+    @pytest.mark.usefixtures("restore_redis_inmem_per_function")
+    def test_can_get_readable_error_in_task_without_data(self, admin_user, fxt_test_name):
+        with make_api_client(admin_user) as api_client:
+            task_id = api_client.tasks_api.create(
+                task_write_request=models.TaskWriteRequest(name=fxt_test_name)
+            )[0].id
+
+            api_client.tasks_api.create_data(task_id, upload_start=True)
+
+            preview_response = api_client.tasks_api.retrieve_preview(
+                task_id, _parse_response=False, _check_status=False
+            )[1]
+            assert preview_response.status == HTTPStatus.NOT_FOUND
+            assert preview_response.data == b'"Task has no media"'
+
+
+@pytest.mark.usefixtures("restore_db_per_class")
+class TestPreviewPreferHeader:
+    """
+    Covers the ``Prefer: handling=empty`` opt-in on preview endpoints:
+    point-cloud entities respond ``204`` when the preference is honored,
+    everything else (no preference, unrelated token, or an entity with a
+    real preview) keeps the legacy 200-with-PNG behavior.
+    """
+
+    @staticmethod
+    def _request_preview(username: str, endpoint: str, *, prefer: str | None):
+        headers = {"Prefer": prefer} if prefer is not None else {}
+        return requests.get(get_api_url(endpoint), headers=headers, auth=(username, USER_PASS))
+
+    @staticmethod
+    def _pick_entity(tasks, jobs, *, instance_type: str, media_type: str):
+        task = next(t for t in tasks if t.get("media_type") == media_type)
+
+        if instance_type == "task":
+            return f"tasks/{task['id']}/preview"
+        elif instance_type == "job":
+            job = next(j for j in jobs if j["task_id"] == task["id"])
+            return f"jobs/{job['id']}/preview"
+        else:
+            assert False
+
+    @parametrize(
+        "instance_type, media_type, prefer, expected_status, expected_applied",
+        [
+            ("task", "point_cloud", "handling=empty", HTTPStatus.NO_CONTENT, "handling=empty"),
+            ("task", "point_cloud", "HANDLING=Empty", HTTPStatus.NO_CONTENT, "handling=empty"),
+            ("task", "point_cloud", 'handling="empty"', HTTPStatus.NO_CONTENT, "handling=empty"),
+            ("task", "point_cloud", None, HTTPStatus.OK, None),
+            ("task", "point_cloud", "wait=5", HTTPStatus.OK, None),
+            ("task", "image", "handling=empty", HTTPStatus.OK, "handling=empty"),
+            ("job", "point_cloud", "handling=empty", HTTPStatus.NO_CONTENT, "handling=empty"),
+        ],
+    )
+    def test_preview_prefer_opt_in(
+        self,
+        admin_user,
+        tasks,
+        jobs,
+        instance_type,
+        media_type,
+        prefer,
+        expected_status,
+        expected_applied,
+    ):
+        endpoint = self._pick_entity(
+            tasks,
+            jobs,
+            instance_type=instance_type,
+            media_type=media_type,
+        )
+        response = self._request_preview(admin_user, endpoint, prefer=prefer)
+
+        assert response.status_code == expected_status
+        assert response.headers.get("Preference-Applied") == expected_applied
+        assert "Prefer" in (response.headers.get("Vary") or "")
+
+        if expected_status == HTTPStatus.NO_CONTENT:
+            assert response.content == b""
+        else:
+            assert response.headers.get("Content-Type", "").startswith("image/")
+            Image.open(io.BytesIO(response.content))
 
 
 @pytest.mark.usefixtures("restore_redis_ondisk_per_function")
@@ -3137,6 +3391,8 @@ def test_can_report_correct_completed_jobs_count(tasks_wlc, jobs_wlc, admin_user
 
 @pytest.mark.usefixtures("restore_redis_inmem_per_function")
 class TestImportTaskAnnotations:
+    _SENTINEL_GROUP = 987654
+
     @pytest.fixture(autouse=True)
     def setup(self, restore_db_per_function, tmp_path: Path, admin_user: str):
         self.tmp_dir = tmp_path
@@ -3158,6 +3414,198 @@ class TestImportTaskAnnotations:
         with make_api_client(self.user) as api_client:
             _, response = api_client.tasks_api.destroy_annotations(id=task_id)
             assert response.status == HTTPStatus.NO_CONTENT
+
+    def _find_label_id(self, annotations: dict[str, Any]) -> int:
+        for annotation_type in ("tags", "shapes", "tracks"):
+            if annotations[annotation_type]:
+                return annotations[annotation_type][0]["label_id"]
+
+        raise AssertionError("Expected non-empty annotations")
+
+    def _sentinel_annotations(self, label_id: int, *, frame: int = 0) -> dict[str, Any]:
+        return {
+            "version": 0,
+            "tags": [
+                {
+                    "frame": frame,
+                    "label_id": label_id,
+                    "group": self._SENTINEL_GROUP,
+                    "attributes": [],
+                }
+            ],
+            "shapes": [],
+            "tracks": [],
+        }
+
+    def _has_sentinel(self, annotations: dict[str, Any]) -> bool:
+        return any(tag["group"] == self._SENTINEL_GROUP for tag in annotations["tags"])
+
+    def _annotations_count(self, annotations: dict[str, Any]) -> int:
+        return sum(
+            len(annotations[annotation_type]) for annotation_type in ("tags", "shapes", "tracks")
+        )
+
+    def _import_annotations_file(
+        self,
+        target_type: str,
+        target_id: int,
+        annotation_file: bytes,
+        *,
+        import_mode: str | None = None,
+    ) -> None:
+        annotation_file_io = io.BytesIO(annotation_file)
+        annotation_file_io.name = "annotations.zip"
+
+        import_func = {
+            "tasks": import_task_annotations,
+            "jobs": import_job_annotations,
+        }[target_type]
+
+        query_params = {
+            "id": target_id,
+            "format": self.import_format,
+        }
+        if import_mode:
+            query_params["import_mode"] = import_mode
+
+        background_request = import_func(
+            self.user,
+            annotation_file_io,
+            max_retries=300,
+            **query_params,
+        )
+        assert (
+            background_request.status.value
+            == models.RequestStatus.allowed_values[("value",)]["FINISHED"]
+        )
+
+    def _is_2d_annotation_task(self, task: dict[str, Any], *, require_size: bool = False) -> bool:
+        return (
+            task["dimension"] == "2d"
+            and task["mode"] == "annotation"
+            and task["validation_mode"] != "gt_pool"
+            and (not require_size or task["size"] > 0)
+        )
+
+    def _select_annotations_target(
+        self,
+        target_type: str,
+        *,
+        tasks: Iterable[dict],
+        tasks_with_shapes: Iterable[dict],
+        jobs_with_shapes: Iterable[dict],
+    ) -> tuple[int, int]:
+        if target_type == "tasks":
+            task = next(
+                task
+                for task in tasks_with_shapes
+                if self._is_2d_annotation_task(task, require_size=True)
+            )
+            return task["id"], 0
+
+        if target_type == "jobs":
+            tasks_by_id = {task["id"]: task for task in tasks}
+            job = next(
+                job
+                for job in jobs_with_shapes
+                if job["type"] == "annotation"
+                if self._is_2d_annotation_task(tasks_by_id[job["task_id"]])
+            )
+            return job["id"], job["start_frame"]
+
+        raise AssertionError(f"Unexpected annotations target type: {target_type}")
+
+    def _annotations_api(self, api_client, target_type: str):
+        if target_type == "tasks":
+            return api_client.tasks_api
+        if target_type == "jobs":
+            return api_client.jobs_api
+
+        raise AssertionError(f"Unexpected annotations target type: {target_type}")
+
+    def _export_annotations_file(
+        self, target_type: str, target_id: int
+    ) -> tuple[bytes, dict[str, Any]]:
+        with make_api_client(self.user) as api_client:
+            annotations_api = self._annotations_api(api_client, target_type)
+            original_annotations = json.loads(
+                annotations_api.retrieve_annotations(target_id)[1].data
+            )
+            annotation_file = export_dataset(
+                annotations_api,
+                id=target_id,
+                format=self.export_format,
+                save_images=False,
+            )
+
+        assert annotation_file
+        assert self._annotations_count(original_annotations) > 0
+        return annotation_file, original_annotations
+
+    @pytest.mark.timeout(60)
+    @pytest.mark.parametrize(
+        ("import_mode", "should_append"),
+        [
+            pytest.param(None, False, id="replace-default"),
+            pytest.param("replace", False, id="replace"),
+            pytest.param("append", True, id="append"),
+        ],
+    )
+    @pytest.mark.parametrize(
+        "target_type",
+        [
+            pytest.param("tasks", id="task"),
+            pytest.param("jobs", id="job"),
+        ],
+    )
+    def test_import_annotations_respects_import_mode(
+        self,
+        target_type: str,
+        import_mode: str | None,
+        should_append: bool,
+        tasks,
+        tasks_with_shapes,
+        jobs_with_shapes,
+    ):
+        target_id, sentinel_frame = self._select_annotations_target(
+            target_type,
+            tasks=tasks,
+            tasks_with_shapes=tasks_with_shapes,
+            jobs_with_shapes=jobs_with_shapes,
+        )
+        annotation_file, original_annotations = self._export_annotations_file(
+            target_type, target_id
+        )
+
+        replacement = self._sentinel_annotations(
+            self._find_label_id(original_annotations), frame=sentinel_frame
+        )
+        endpoint = f"{target_type}/{target_id}/annotations"
+        response = put_method(self.user, endpoint, replacement)
+        assert response.status_code == HTTPStatus.OK, response.content
+
+        self._import_annotations_file(
+            target_type,
+            target_id,
+            annotation_file,
+            import_mode=import_mode,
+        )
+
+        response = get_method(self.user, endpoint)
+        assert response.status_code == HTTPStatus.OK, response.content
+        imported_annotations = response.json()
+
+        if should_append:
+            assert self._has_sentinel(imported_annotations)
+            assert self._annotations_count(imported_annotations) == (
+                self._annotations_count(original_annotations) + self._annotations_count(replacement)
+            )
+        else:
+            assert not self._has_sentinel(imported_annotations)
+            assert (
+                compare_annotations(original_annotations, imported_annotations, ignore_source=True)
+                == {}
+            )
 
     @pytest.mark.skip("Fails sometimes, needs to be fixed")
     @pytest.mark.timeout(70)
@@ -3210,39 +3658,6 @@ class TestImportTaskAnnotations:
             self._delete_annotations(task_id)
         task.import_annotations(self.import_format, filename)
         self._check_annotations(task_id)
-
-    @pytest.mark.skip("Fails sometimes, needs to be fixed")
-    @pytest.mark.timeout(70)
-    def test_check_import_cache_after_previous_interrupted_upload(self, tasks_with_shapes, request):
-        task_id = tasks_with_shapes[0]["id"]
-        with NamedTemporaryFile() as f:
-            filename = self.tmp_dir / f"task_{task_id}_{Path(f.name).name}_coco.zip"
-        task = self.client.tasks.retrieve(task_id)
-        task.export_dataset(self.export_format, filename, include_images=False)
-
-        params = {"format": self.import_format, "filename": filename.name}
-        url = self.client.api_map.make_endpoint_url(
-            self.client.api_client.tasks_api.create_annotations_endpoint.path
-        ).format(id=task_id)
-
-        uploader = Uploader(self.client)
-        uploader._tus_start_upload(url, query_params=params)
-        uploader._upload_file_data_with_tus(
-            url,
-            filename,
-            meta=params,
-            pbar=NullProgressReporter(),
-        )
-        number_of_files = 1
-        sleep(30)  # wait when the cleaning job from rq worker will be started
-        command = ["/bin/bash", "-c", f"ls data/tasks/{task_id}/tmp | wc -l"]
-        for _ in range(12):
-            sleep(2)
-            result = container_exec_cvat(request, command)
-            number_of_files = int(result)
-            if not number_of_files:
-                break
-        assert not number_of_files
 
     def test_import_annotations_after_deleting_related_cloud_storage(
         self, admin_user: str, tasks_with_shapes
@@ -3313,6 +3728,57 @@ class TestImportTaskAnnotations:
             updated_annotations = json.loads(
                 api_client.tasks_api.retrieve_annotations(task["id"])[1].data
             )
+
+        assert (
+            compare_annotations(original_annotations, updated_annotations, ignore_source=True) == {}
+        )
+
+    def test_can_import_audio_tsv(self, tasks):
+        task = next(
+            t
+            for t in tasks
+            if t.get("size")
+            if t["media_type"] == "audio" and t.get("validation_mode") != "gt_pool"
+        )
+        task_obj = self.client.tasks.retrieve(task["id"])
+        # add an annotation covering the whole interval with exclusive stop after the last frame
+        label = next(label for label in task_obj.get_labels() if label.type == "interval")
+        task_obj.update_annotations(
+            models.PatchedLabeledDataRequest(
+                intervals=[
+                    models.LabeledIntervalRequest(
+                        label_id=label.id,
+                        start=0,
+                        stop=task["size"],
+                    )
+                ]
+            ),
+            action=AnnotationUpdateAction.CREATE,
+        )
+
+        format_name = "Generic TSV 1.0"
+
+        original_annotations = json.loads(
+            self.client.api_client.tasks_api.retrieve_annotations(task["id"])[1].data
+        )
+
+        dataset_file = io.BytesIO(
+            export_dataset(
+                self.client.api_client.tasks_api,
+                id=task["id"],
+                format=format_name,
+                save_images=False,
+            )
+        )
+
+        with TemporaryDirectory() as temp_dir:
+            annotation_file = Path(temp_dir) / "annotations.tsv"
+            annotation_file.write_bytes(dataset_file.getvalue())
+            self.client.tasks.retrieve(task["id"]).import_annotations(format_name, annotation_file)
+
+        updated_annotations = json.loads(
+            self.client.api_client.tasks_api.retrieve_annotations(task["id"])[1].data
+        )
 
         assert (
             compare_annotations(original_annotations, updated_annotations, ignore_source=True) == {}

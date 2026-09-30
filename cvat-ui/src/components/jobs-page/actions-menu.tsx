@@ -3,7 +3,8 @@
 // SPDX-License-Identifier: MIT
 
 import React, { useCallback } from 'react';
-import { shallowEqual, useDispatch, useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
+import { shallowEqual } from 'utils/redux';
 import Dropdown from 'antd/lib/dropdown';
 import Modal from 'antd/lib/modal';
 
@@ -58,6 +59,8 @@ function JobActionsComponent(
     if (selectedIds.includes(jobInstance.id)) {
         jobsToAct = allJobs.filter((m) => selectedIds.includes(m.id));
     }
+    const isExportAnnotationsDisabled = isBulkMode &&
+        new Set(jobsToAct.map((job) => job.dimension)).size > 1;
 
     const {
         dropdownOpen,
@@ -228,6 +231,7 @@ function JobActionsComponent(
             onGoToParent: jobInstance.parentJobId ? onGoToParent : null,
             onGoToReplicas: jobInstance.replicasCount > 0 ? onGoToReplicas : null,
             jobsToAct,
+            isExportAnnotationsDisabled,
         }, props);
     }
 

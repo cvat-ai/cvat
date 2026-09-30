@@ -1,5 +1,5 @@
 {
-  "count": 56,
+  "count": 57,
   "next": null,
   "previous": null,
   "results": [
@@ -1063,6 +1063,39 @@
       "project_id": 18,
       "sublabels": [],
       "type": "tag"
+    },
+    {
+      "attributes": [
+        {
+          "default_value": "Alice",
+          "id": 19,
+          "input_type": "select",
+          "mutable": false,
+          "name": "speaker",
+          "values": [
+            "Alice",
+            "Bob"
+          ]
+        },
+        {
+          "default_value": "",
+          "id": 20,
+          "input_type": "text",
+          "mutable": true,
+          "name": "tr-en",
+          "values": [
+            ""
+          ]
+        }
+      ],
+      "color": "#d76534",
+      "has_parent": false,
+      "id": 93,
+      "name": "event",
+      "parent_id": null,
+      "sublabels": [],
+      "task_id": 36,
+      "type": "interval"
     }
   ]
 }

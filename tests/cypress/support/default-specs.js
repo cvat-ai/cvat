@@ -13,7 +13,7 @@ function defaultTaskSpec({
     frameFilter,
     segmentSize,
     validationParams,
-    projectID,
+    projectId,
     chunkSize,
     consensusReplicas,
 }) {
@@ -33,7 +33,7 @@ function defaultTaskSpec({
     const taskSpec = {
         labels: [{ name: labelName, attributes: convertedAttrs, type: labelType || 'any' }],
         name: taskName,
-        project_id: projectID || null,
+        project_id: projectId || null,
         source_storage: { location: 'local' },
         target_storage: { location: 'local' },
     };

@@ -61,6 +61,31 @@ spec:
           {{- with concat .Values.cvat.backend.additionalEnv $localValues.additionalEnv }}
           {{- toYaml . | nindent 10 }}
           {{- end }}
+          volumeMounts:
+          - mountPath: /tmp/cvat
+            name: cvat-backend-run
+          - mountPath: /home/django/static
+            name: cvat-backend-static
+          - mountPath: /home/django/data
+            name: cvat-backend-data
+            subPath: data
+          - mountPath: /home/django/keys
+            name: cvat-backend-data
+            subPath: keys
+          - mountPath: /home/django/logs
+            name: cvat-backend-data
+            subPath: logs
+          {{- with concat .Values.cvat.backend.additionalVolumeMounts $localValues.additionalVolumeMounts }}
+          {{- toYaml . | nindent 10 }}
+          {{- end }}
+          securityContext:
+            runAsNonRoot: true
+        - name: cvat-nginx
+          image: {{ .Values.cvat.backend.image }}:{{ .Values.cvat.backend.tag }}
+          imagePullPolicy: {{ .Values.cvat.backend.imagePullPolicy }}
+          args:
+          - "run"
+          - "nginx"
           ports:
           - containerPort: 8080
           {{- if $localValues.readinessProbe.enabled }}
@@ -78,18 +103,14 @@ spec:
             {{- toYaml (omit $localValues.livenessProbe "enabled") | nindent 12 }}
           {{- end }}
           volumeMounts:
+          - mountPath: /tmp/cvat
+            name: cvat-backend-run
+          - mountPath: /home/django/static
+            name: cvat-backend-static
+            readOnly: true
           - mountPath: /home/django/data
             name: cvat-backend-data
             subPath: data
-          - mountPath: /home/django/keys
-            name: cvat-backend-data
-            subPath: keys
-          - mountPath: /home/django/logs
-            name: cvat-backend-data
-            subPath: logs
-          {{- with concat .Values.cvat.backend.additionalVolumeMounts $localValues.additionalVolumeMounts }}
-          {{- toYaml . | nindent 10 }}
-          {{- end }}
           securityContext:
             runAsNonRoot: true
       initContainers:
@@ -103,6 +124,10 @@ spec:
       {{- toYaml . | nindent 8 }}
       {{- end }}
       volumes:
+        - name: cvat-backend-run
+          emptyDir: {}
+        - name: cvat-backend-static
+          emptyDir: {}
         {{- if .Values.cvat.backend.defaultStorage.enabled }}
         - name: cvat-backend-data
           persistentVolumeClaim:

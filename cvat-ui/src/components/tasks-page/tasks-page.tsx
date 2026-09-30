@@ -4,7 +4,8 @@
 // SPDX-License-Identifier: MIT
 
 import './styles.scss';
-import { useDispatch, useSelector, shallowEqual } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
+import { shallowEqual } from 'utils/redux';
 import React, { useEffect, useState, useCallback } from 'react';
 import { useHistory } from 'react-router';
 import Spin from 'antd/lib/spin';

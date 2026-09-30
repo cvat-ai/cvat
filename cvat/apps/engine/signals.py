@@ -7,14 +7,15 @@ import re
 import shutil
 
 from django.conf import settings
-from django.contrib.auth.models import User
 from django.db import transaction
 from django.db.models.signals import m2m_changed, post_delete, post_save, pre_delete, pre_save
-from django.dispatch import Signal, receiver
+from django.dispatch import receiver
 from rest_framework.exceptions import ValidationError
 
 from cvat.apps.engine.cache import MediaCache
-from cvat.apps.events.handlers import handle_cache_item_create
+from cvat.apps.engine.cache_signals import cache_item_created_signal, cache_item_read_signal
+from cvat.apps.events.handlers import handle_cache_item_create, handle_cache_item_read
+from cvat.apps.iam.models import User
 
 from .models import Asset, CloudStorage, Data, Job, JobType, Profile, Project, StatusChoice, Task
 
@@ -132,20 +133,34 @@ def __pre_delete_data_handler(instance: Data, **kwargs):
     instance._saved_media_rel_paths = instance.get_all_media_rel_paths()
 
 
+def _delete_from_backing_storage(
+    backing_storage: CloudStorage,
+    data_id: int,
+    media_paths: list[str],
+) -> None:
+    from .cloud_provider import SubdirectoryCloudStorageClient
+
+    # Create the client after commit to avoid retaining one heavyweight client per deleted Data.
+    storage_client = SubdirectoryCloudStorageClient(
+        backing_storage.get_client(is_trusted=True),
+        f"data/{data_id}/raw",
+    )
+    storage_client.bulk_delete(media_paths)
+
+
 @receiver(post_delete, sender=Data)
 def __delete_data_handler(instance: Data, **kwargs):
     transaction.on_commit(
         functools.partial(shutil.rmtree, instance.get_data_dirname(), ignore_errors=True)
     )
 
-    if instance.local_storage_backing_cs:
-        storage_instance = instance.get_cloud_storage_instance()
-        assert storage_instance
-
+    if backing_storage := instance.local_storage_backing_cs:
         transaction.on_commit(
             functools.partial(
-                storage_instance.bulk_delete,
-                [p.as_posix() for p in instance._saved_media_rel_paths],
+                _delete_from_backing_storage,
+                backing_storage=backing_storage,
+                data_id=instance.id,
+                media_paths=[path.as_posix() for path in instance._saved_media_rel_paths],
             ),
             robust=True,
         )
@@ -158,64 +173,77 @@ def __delete_cloudstorage_handler(instance, **kwargs):
     )
 
 
-cache_item_created_signal = Signal()
+def _parse_cache_key(item_key: str) -> dict | None:
+    # Try to match chunk key pattern
+    chunk_pattern = re.compile(
+        r"^(?P<object_type>task|segment|job|cloudstorage)_"
+        r"(?P<object_id>\d+)_chunk_(?P<chunk_number>\d+)_"
+        r"(?P<quality>\w+)$"
+    )
+    match = chunk_pattern.match(item_key)
+    if match:
+        return {
+            "item_type": "chunk",
+            "target": match.group("object_type"),
+            "target_id": int(match.group("object_id")),
+            "number": int(match.group("chunk_number")),
+            "quality": match.group("quality"),
+        }
+
+    # Try to match preview key pattern
+    preview_pattern = re.compile(
+        r"^(?P<object_type>segment|cloudstorage)_(?P<object_id>\d+)_preview$"
+    )
+    match = preview_pattern.match(item_key)
+    if match:
+        return {
+            "item_type": "preview",
+            "target": match.group("object_type"),
+            "target_id": int(match.group("object_id")),
+        }
+
+    # Try to match context images chunk key pattern
+    context_images_pattern = re.compile(r"^context_images_(?P<data_id>\d+)_(?P<frame_number>\d+)$")
+    match = context_images_pattern.match(item_key)
+    if match:
+        return {
+            "item_type": "context_images",
+            "target": "data",
+            "target_id": int(match.group("data_id")),
+            "number": int(match.group("frame_number")),
+        }
+
+    return None
 
 
 @receiver(cache_item_created_signal, sender=MediaCache)
 def __cache_item_created_handler(
     sender, item_key: str, item_data_size: int, rq_queue: str | None = None, **kwargs
 ):
-    def parse_cache_key(item_key: str) -> dict | None:
-        # Try to match chunk key pattern
-        chunk_pattern = re.compile(
-            r"^(?P<object_type>task|segment|job|cloudstorage)_"
-            r"(?P<object_id>\d+)_chunk_(?P<chunk_number>\d+)_"
-            r"(?P<quality>\w+)$"
-        )
-        match = chunk_pattern.match(item_key)
-        if match:
-            return {
-                "item_type": "chunk",
-                "target": match.group("object_type"),
-                "target_id": int(match.group("object_id")),
-                "number": int(match.group("chunk_number")),
-                "quality": match.group("quality"),
-            }
-
-        # Try to match preview key pattern
-        preview_pattern = re.compile(
-            r"^(?P<object_type>segment|cloudstorage)_(?P<object_id>\d+)_preview$"
-        )
-        match = preview_pattern.match(item_key)
-        if match:
-            return {
-                "item_type": "preview",
-                "target": match.group("object_type"),
-                "target_id": int(match.group("object_id")),
-            }
-
-        # Try to match context images chunk key pattern
-        context_images_pattern = re.compile(
-            r"^context_images_(?P<data_id>\d+)_(?P<frame_number>\d+)$"
-        )
-        match = context_images_pattern.match(item_key)
-        if match:
-            return {
-                "item_type": "context_images",
-                "target": "data",
-                "target_id": int(match.group("data_id")),
-                "number": int(match.group("frame_number")),
-            }
-
-        return None
-
-    cache_item_info = parse_cache_key(item_key)
+    cache_item_info = _parse_cache_key(item_key)
     # Handle only known key types.
     # Any other types can be handled in separate receivers if needed
     if cache_item_info is None:
         return
 
     handle_cache_item_create(
+        **cache_item_info,
+        size=item_data_size,
+        queue=rq_queue,
+    )
+
+
+@receiver(cache_item_read_signal, sender=MediaCache)
+def __cache_item_read_handler(
+    sender, item_key: str, item_data_size: int, rq_queue: str | None = None, **kwargs
+):
+    cache_item_info = _parse_cache_key(item_key)
+    # Handle only known key types.
+    # Any other types can be handled in separate receivers if needed
+    if cache_item_info is None:
+        return
+
+    handle_cache_item_read(
         **cache_item_info,
         size=item_data_size,
         queue=rq_queue,

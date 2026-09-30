@@ -11,9 +11,11 @@ import {
     CombinedState,
 } from 'reducers';
 import { OrientationVisibility } from 'cvat-canvas3d-wrapper';
-import { ImageFilter, ImageFilterAlias, SerializedImageFilter } from 'utils/image-processing';
+import { SerializedImageFilter } from 'cvat-core-wrapper';
+import { ImageFilter, ImageFilterAlias } from 'utils/image-processing';
 import GammaCorrection, { GammaFilterOptions } from 'utils/fabric-wrapper/gamma-correction';
 import { resolveConflicts } from 'utils/conflict-detector';
+import { migrateShortcutsSettings, SHORTCUTS_SETTINGS_VERSION } from 'utils/shortcuts-migration';
 import { shortcutsActions } from './shortcuts-actions';
 
 export enum SettingsActionTypes {
@@ -487,6 +489,12 @@ export function restoreSettingsAsync(): ThunkAction {
         dispatch(setSettings(newSettings));
 
         if ('shortcuts' in loadedSettings) {
+            const migratedShortcuts = migrateShortcutsSettings(loadedSettings.shortcuts);
+            if (migratedShortcuts) {
+                loadedSettings.shortcuts = migratedShortcuts;
+                localStorage.setItem('clientSettings', JSON.stringify(loadedSettings));
+            }
+
             const updateKeyMap = structuredClone(shortcuts.keyMap);
 
             Object.entries(loadedSettings.shortcuts.keyMap).forEach(([key, value]) => {
@@ -508,6 +516,7 @@ export function updateCachedSettings(settings: CombinedState['settings'], shortc
         player: settings.player,
         workspace: settings.workspace,
         shortcuts: {
+            version: SHORTCUTS_SETTINGS_VERSION,
             keyMap: Object.entries(shortcuts.keyMap).reduce<Record<string, { sequences: string[] }>>(
                 (acc, [key, value]) => {
                     if (key in shortcuts.defaultState) {

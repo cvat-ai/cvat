@@ -124,6 +124,23 @@ class RequestsManager {
                 } catch (error) {
                     if (requestID in this.listening) {
                         const { onUpdate, request } = this.listening[requestID];
+                        if (
+                            error.code === 404 &&
+                            request &&
+                            [RQStatus.QUEUED, RQStatus.STARTED].includes(request.status)
+                        ) {
+                            const canceledRequest = new Request({
+                                ...request.toJSON(),
+                                status: RQStatus.CANCELED,
+                                message: 'Cancelled',
+                            });
+
+                            onUpdate.forEach((update) => update(canceledRequest));
+                            delete this.listening[requestID];
+                            resolve(canceledRequest);
+                            return;
+                        }
+
                         if (request) {
                             onUpdate
                                 .forEach((update) => update(new Request({

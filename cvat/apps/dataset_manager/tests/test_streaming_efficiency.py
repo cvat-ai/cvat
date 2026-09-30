@@ -10,7 +10,7 @@ from datumaro import AnnotationType, Bbox, LabelCategories
 from datumaro.components import media
 from datumaro.components.dataset import StreamDataset
 from datumaro.components.dataset_base import CategoriesInfo, DatasetBase, DatasetItem
-from django.contrib.auth.models import Group, User
+from django.contrib.auth.models import Group
 from rest_framework import status
 from rq.job import Job as RQJob
 
@@ -35,6 +35,7 @@ from cvat.apps.engine.tests.utils import (
     generate_image_file,
     get_paginated_collection,
 )
+from cvat.apps.iam.models import User
 
 
 class TestExtractors(TestCase):
@@ -372,7 +373,7 @@ class TestImporters(ApiTestBase):
             assert response.status_code == status.HTTP_201_CREATED, response.status_code
             tid = response.data["id"]
 
-            response = self.client.post("/api/tasks/%s/data" % tid, data=image_data)
+            response = self.client.post(f"/api/tasks/{tid}/data", data=image_data)
             assert response.status_code == status.HTTP_202_ACCEPTED, response.status_code
             rq_id = response.json()["rq_id"]
 
@@ -380,12 +381,14 @@ class TestImporters(ApiTestBase):
             assert response.status_code == status.HTTP_200_OK, response.status_code
             assert response.json()["status"] == "finished", response.json().get("status")
 
-            response = self.client.get("/api/tasks/%s" % tid)
+            response = self.client.get(f"/api/tasks/{tid}")
 
             if 200 <= response.status_code < 400:
                 labels_response = list(
                     get_paginated_collection(
-                        lambda page: self.client.get("/api/labels?task_id=%s&page=%s" % (tid, page))
+                        lambda page: self.client.get(
+                            "/api/labels", query_params={"task_id": tid, "page": page}
+                        )
                     )
                 )
                 response.data["labels"] = labels_response
@@ -398,7 +401,7 @@ class TestImporters(ApiTestBase):
         with ForceLogin(self.user, self.client):
             return get_paginated_collection(
                 lambda page: self.client.get(
-                    "/api/jobs?task_id=%s&page=%s" % (tid, page), format="json"
+                    "/api/jobs", query_params={"task_id": tid, "page": page}, format="json"
                 )
             )
 

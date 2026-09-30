@@ -6,7 +6,8 @@
 import './styles.scss';
 import React, { useCallback, useEffect, useState } from 'react';
 import { useHistory } from 'react-router';
-import { useDispatch, useSelector, shallowEqual } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
+import { shallowEqual } from 'utils/redux';
 import Spin from 'antd/lib/spin';
 import { CombinedState, ProjectsQuery, SelectedResourceType } from 'reducers';
 import { getProjectsAsync } from 'actions/projects-actions';

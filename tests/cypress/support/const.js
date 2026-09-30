@@ -5,6 +5,7 @@
 
 /// <reference types="cypress" />
 
+export const keyCodeN = 78;
 export const labelName = 'Main task';
 export const taskName = `New annotation task for ${labelName}`;
 export const CLIPBOARD_ALIAS = 'copyTextToClipboard';

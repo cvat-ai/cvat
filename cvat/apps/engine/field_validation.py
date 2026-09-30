@@ -32,11 +32,11 @@ def require_one_of_values(data: dict[str, Any], key: str, values: Sequence[Any])
     if data.get(key) not in values:
         if len(values) == 1:
             raise serializers.ValidationError(
-                'The "{}" field must be {}'.format(key, ", ".join(f"{k}" for k in values))
+                'The "{}" field must be {}'.format(key, ", ".join(f"'{k}'" for k in values))
             )
         else:
             raise serializers.ValidationError(
-                'The "{}" field must be one of {}'.format(key, ", ".join(f"{k}" for k in values))
+                'The "{}" field must be one of {}'.format(key, ", ".join(f"'{k}'" for k in values))
             )
 
 

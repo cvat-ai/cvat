@@ -254,11 +254,10 @@ class TestGetPostProjectBackup:
 
         self._test_cannot_get_project_backup(user["username"], project["id"])
 
-    # Org worker that in [project:owner, project:assignee] can get project backup.
-    def test_org_worker_can_get_project_backup(
+    # Org worker that does not own the project cannot get project backup.
+    def test_org_worker_cannot_get_project_backup_without_ownership(
         self,
         find_users,
-        is_project_staff,
         is_org_member,
     ):
         users = find_users(role="worker", exclude_privilege="admin")
@@ -266,12 +265,12 @@ class TestGetPostProjectBackup:
         user, project = next(
             (user, project)
             for user, project in product(users, self.projects)
-            if is_project_staff(user["id"], project["id"])
+            if project["owner"]["id"] != user["id"]
             and project["organization"]
             and is_org_member(user["id"], project["organization"])
         )
 
-        self._test_can_get_project_backup(user["username"], project["id"])
+        self._test_cannot_get_project_backup(user["username"], project["id"])
 
     # Org supervisor that in [project:owner, project:assignee] can get project backup.
     def test_org_supervisor_can_get_project_backup(
@@ -1178,6 +1177,40 @@ class TestPatchProjectLabel:
 
         resulting_labels = self._get_project_labels(project["id"], admin_user)
         assert DeepDiff(resulting_labels, project_labels, ignore_order=True) == {}
+
+    def test_can_delete_attribute(self, admin_user):
+        spec = {
+            "name": "test delete project label attribute",
+            "labels": [
+                {
+                    "name": "car",
+                    "attributes": [
+                        {
+                            "name": "model",
+                            "mutable": False,
+                            "input_type": "text",
+                            "default_value": "mazda",
+                            "values": ["mazda"],
+                        }
+                    ],
+                }
+            ],
+        }
+        response = post_method(admin_user, "projects", spec)
+        assert response.status_code == HTTPStatus.CREATED, response.content
+        project = response.json()
+        label = self._get_project_labels(project["id"], admin_user)[0]
+        attribute = label["attributes"][0]
+
+        response = patch_method(
+            admin_user,
+            f'projects/{project["id"]}',
+            {"labels": [{"id": label["id"], "attributes": [{**attribute, "deleted": True}]}]},
+        )
+
+        assert response.status_code == HTTPStatus.OK, response.content
+        label = self._get_project_labels(project["id"], admin_user)[0]
+        assert label["attributes"] == []
 
     def test_can_rename_label(self, projects_wlc, labels, admin_user):
         project = [p for p in projects_wlc if p["labels"]["count"] > 0][0]

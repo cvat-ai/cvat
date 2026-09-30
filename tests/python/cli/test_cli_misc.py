@@ -5,16 +5,24 @@
 import os
 from datetime import timedelta
 from io import BytesIO
+from pathlib import Path
 from unittest import mock
 
 import packaging.version as pv
 import pytest
-from cvat_cli._internal.agent import _Event, _NewReconnectionDelay, _parse_event_stream
+from cvat_cli._internal.agent import (
+    _Event,
+    _NewReconnectionDelay,
+    _parse_event_stream,
+    _TaskCacheLimiter,
+)
 from cvat_sdk import Client
 from cvat_sdk.api_client import models
 from cvat_sdk.core.proxies.tasks import ResourceType
 
-from .util import TestCliBase, generate_images, https_reverse_proxy, run_cli
+from sdk.util import https_reverse_proxy
+
+from .util import TestCliBase, generate_images, run_cli
 
 
 class TestCliMisc(TestCliBase):
@@ -125,11 +133,11 @@ class TestCliMisc(TestCliBase):
 
         from getpass import getuser as original_getuser
 
-        from cvat_cli._internal.common import default_auth_factory
+        from cvat_sdk.core.auth import default_auth_factory
 
         with (
             mock.patch(
-                "cvat_cli._internal.common.default_auth_factory", wraps=default_auth_factory
+                "cvat_sdk.core.auth.default_auth_factory", wraps=default_auth_factory
             ) as mock_auth_factory,
             mock.patch("getpass.getuser", wraps=original_getuser) as mock_getuser,
             mock.patch("getpass.getpass", return_value=self.password) as mock_getpass,
@@ -143,15 +151,13 @@ class TestCliMisc(TestCliBase):
     def test_can_use_pass_env_variable(self, monkeypatch: pytest.MonkeyPatch):
         monkeypatch.setenv("PASS", self.password)
 
-        from getpass import getuser as original_getpass
-
-        from cvat_cli._internal.common import default_auth_factory
+        from cvat_sdk.core.auth import get_auth_factory
 
         with (
             mock.patch(
-                "cvat_cli._internal.common.default_auth_factory", wraps=default_auth_factory
+                "cvat_sdk.core.auth.get_auth_factory", wraps=get_auth_factory
             ) as mock_auth_factory,
-            mock.patch("getpass.getpass", wraps=original_getpass) as mock_getpass,
+            mock.patch("getpass.getpass") as mock_getpass,
         ):
             self.run_cli(f"--auth={self.user}", "task", "ls", authenticate=False)
 
@@ -202,3 +208,33 @@ class TestCliMisc(TestCliBase):
 def test_parse_event_stream(lines, messages):
     stream = BytesIO(b"".join(line.encode() + b"\n" for line in lines))
     assert list(_parse_event_stream(stream)) == messages
+
+
+def test_task_cache_limiter_keeps_last_10_tasks(
+    tmp_path: Path,
+    fxt_login: tuple[Client, str],
+    fxt_logger,
+):
+    client = fxt_login[0]
+    client.logger = fxt_logger[0]
+    client.config.cache_dir = tmp_path / "cache"
+
+    limiter = _TaskCacheLimiter(client)
+
+    for task_id in range(1, 13):
+        limiter._cache_manager.task_dir(task_id).mkdir(parents=True)
+        with limiter.using_cache_for_task(task_id):
+            pass
+
+        if task_id <= 10:
+            for cached_task_id in range(1, task_id + 1):
+                assert limiter._cache_manager.task_dir(cached_task_id).exists()
+        elif task_id == 11:
+            assert not limiter._cache_manager.task_dir(1).exists()
+            for cached_task_id in range(2, 12):
+                assert limiter._cache_manager.task_dir(cached_task_id).exists()
+        elif task_id == 12:
+            assert not limiter._cache_manager.task_dir(1).exists()
+            assert not limiter._cache_manager.task_dir(2).exists()
+            for cached_task_id in range(3, 13):
+                assert limiter._cache_manager.task_dir(cached_task_id).exists()

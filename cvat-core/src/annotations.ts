@@ -93,6 +93,8 @@ async function getAnnotationsFromServer(session: Job | Task): Promise<void> {
 
         const history = cache.history.has(session) ? cache.history.get(session) : new AnnotationsHistory();
         const collection = new AnnotationsCollection({
+            // Job collections use real job metadata. Task collections use constant defaults because
+            // task-level annotations are not tied to a particular job type or consensus replica set.
             jobType: session instanceof Job ? session.type : JobType.ANNOTATION,
             stopFrame: session instanceof Job ? session.stopFrame : session.size - 1,
             labels: session.labels,
@@ -114,9 +116,8 @@ async function getAnnotationsFromServer(session: Job | Task): Promise<void> {
             history,
         });
 
-        // eslint-disable-next-line no-unsanitized/method
         collection.import(serializedAnnotations);
-        const saver = new AnnotationsSaver(serializedAnnotations.version, collection, session);
+        const saver = new AnnotationsSaver(collection, session);
         cache.collection.set(session, { collection, saver });
         cache.history.set(session, history);
     }
@@ -147,6 +148,21 @@ export async function getAnnotations(
         if (error instanceof InstanceNotInitializedError) {
             await getAnnotationsFromServer(session);
             return getCollection(session).get(frame, allTracks, filters);
+        }
+        throw error;
+    }
+}
+
+export async function getAllIntervals(
+    session: Job | Task,
+    filters: object[],
+): Promise<ReturnType<AnnotationsCollection['getAllIntervals']>> {
+    try {
+        return getCollection(session).getAllIntervals(filters);
+    } catch (error) {
+        if (error instanceof InstanceNotInitializedError) {
+            await getAnnotationsFromServer(session);
+            return getCollection(session).getAllIntervals(filters);
         }
         throw error;
     }
@@ -209,15 +225,13 @@ export function importDataset(
     file: File | string,
     options: {
         convMaskToPoly?: boolean,
+        importMode?: 'replace' | 'append',
         updateStatusCallback?: (message: string, progress: number) => void,
     } = {},
 ): Promise<string> {
     const updateStatusCallback = options.updateStatusCallback || (() => {});
-    const convMaskToPoly = 'convMaskToPoly' in options ? options.convMaskToPoly : true;
-    const adjustedOptions = {
-        updateStatusCallback,
-        convMaskToPoly,
-    };
+    const convMaskToPoly = options.convMaskToPoly ?? true;
+    const importMode = options.importMode ?? 'replace';
 
     if (!(instance instanceof Project || instance instanceof Task || instance instanceof Job)) {
         throw new ArgumentError('Instance must be a Project || Task || Job instance');
@@ -228,23 +242,28 @@ export function importDataset(
     if (!(typeof convMaskToPoly === 'boolean')) {
         throw new ArgumentError('Option "convMaskToPoly" must be a boolean');
     }
+    if (importMode !== 'replace' && importMode !== 'append') {
+        throw new ArgumentError('Option "importMode" must be "replace" or "append"');
+    }
     const allowedFileExtensions = [
-        '.zip', '.xml', '.json',
+        '.zip', '.xml', '.json', '.tsv',
     ];
     const allowedFileExtensionsList = allowedFileExtensions.join(', ');
     if (typeof file === 'string' && !(allowedFileExtensions.some((ext) => file.toLowerCase().endsWith(ext)))) {
         throw new ArgumentError(
-            `File must be file instance with one of the following extensions: ${allowedFileExtensionsList}`,
+            `File must be file instance with one of the following extensions: ${allowedFileExtensionsList}. ` +
+            `Found ${file}`,
         );
     }
     const allowedMimeTypes = [
         'application/zip', 'application/x-zip-compressed',
         'application/xml', 'text/xml',
-        'application/json',
+        'application/json', 'text/tab-separated-values',
     ];
     if (file instanceof File && !(allowedMimeTypes.includes(file.type))) {
         throw new ArgumentError(
-            `File must be file instance with one of the following extensions: ${allowedFileExtensionsList}`,
+            `File must be file instance with one of the following extensions: ${allowedFileExtensionsList}. ` +
+            `Found ${file.type}`,
         );
     }
 
@@ -256,7 +275,10 @@ export function importDataset(
                 useDefaultSettings,
                 sourceStorage,
                 file,
-                adjustedOptions,
+                {
+                    updateStatusCallback,
+                    convMaskToPoly,
+                },
             );
     }
 
@@ -269,6 +291,9 @@ export function importDataset(
             useDefaultSettings,
             sourceStorage,
             file,
-            adjustedOptions,
+            {
+                convMaskToPoly,
+                importMode,
+            },
         );
 }

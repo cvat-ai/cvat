@@ -20,15 +20,17 @@ interface Props {
     exampleMultiTaskName?: string;
 }
 
+type InputRef = React.ComponentRef<typeof Input>;
+
 export default class BasicConfigurationForm extends React.PureComponent<Props> {
     private formRef: RefObject<FormInstance>;
-    private inputRef: RefObject<Input>;
+    private inputRef: RefObject<InputRef>;
     private initialName: string;
 
     public constructor(props: Props) {
         super(props);
         this.formRef = React.createRef<FormInstance>();
-        this.inputRef = React.createRef<Input>();
+        this.inputRef = React.createRef<InputRef>();
 
         const { many } = this.props;
         this.initialName = many ? '{{file_name}}' : '';

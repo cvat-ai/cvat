@@ -10,7 +10,7 @@ export async function fetchTask(id: number): Promise<Task> {
     let taskInstance = null;
     try {
         [taskInstance] = await core.tasks.get({ id });
-    } catch (error: unknown) {
+    } catch (_error: unknown) {
         throw new Error('The task was not found on the server');
     }
     return taskInstance;

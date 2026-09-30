@@ -55,7 +55,7 @@ function ShortcutsSettingsComponent(props: Props): JSX.Element {
                         const parsedSettings = JSON.parse(currentSettings);
                         delete parsedSettings.shortcuts;
                         localStorage.setItem('clientSettings', JSON.stringify(parsedSettings));
-                    } catch (error) {
+                    } catch (_error) {
                         localStorage.removeItem('clientSettings');
                     }
                 }
@@ -147,7 +147,7 @@ function ShortcutsSettingsComponent(props: Props): JSX.Element {
             </Row>
             <Row className='cvat-shortcuts-setting'>
                 <Col span={24}>
-                    <Alert message='Shortcut may consist of any combination of modifiers (alt, ctrl, or shift) and one non-modifier at the end. Some key combinations may be reserved by the browser and cannot be overridden in CVAT.' type='warning' showIcon />
+                    <Alert message='Shortcut may consist of any combination of modifiers (alt, ctrl, command, or shift) and one non-modifier at the end. Some key combinations may be reserved by the browser and cannot be overridden in CVAT.' type='warning' showIcon />
                     {items ? (
                         <Collapse
                             items={items}

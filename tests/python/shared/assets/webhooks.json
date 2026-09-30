@@ -1,8 +1,32 @@
 {
-  "count": 4,
+  "count": 5,
   "next": null,
   "previous": null,
   "results": [
+    {
+      "content_type": "application/json",
+      "created_date": "2022-09-29T08:01:00.441000Z",
+      "description": "",
+      "enable_ssl": false,
+      "events": [
+        "create:user"
+      ],
+      "id": 7,
+      "is_active": true,
+      "organization": null,
+      "owner": {
+        "first_name": "Admin",
+        "id": 1,
+        "last_name": "First",
+        "url": "http://localhost:8080/api/users/1",
+        "username": "admin1"
+      },
+      "project_id": null,
+      "target_url": "http://webhooks.internal",
+      "type": "server",
+      "updated_date": "2022-09-29T08:01:00.441000Z",
+      "url": "http://localhost:8080/api/webhooks/7"
+    },
     {
       "content_type": "application/json",
       "created_date": "2022-09-29T08:00:48.440000Z",

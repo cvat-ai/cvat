@@ -24,16 +24,17 @@ import {
     findFrame,
     getContextImage,
     patchMeta,
-    decodePreview,
+    resolvePreviewResponse,
 } from './frames';
 import Issue from './issue';
 import {
-    SerializedLabel, SerializedTask, SerializedJobValidationLayout,
-    SerializedTaskValidationLayout,
+    SerializedTask, SerializedJobValidationLayout, SerializedTaskValidationLayout,
 } from './server-response-types';
+import { getUpdatedLabels } from './labels';
 import { checkInEnum, checkObjectType } from './common';
 import {
     getCollection, getSaver, clearAnnotations, getAnnotations,
+    getAllIntervals,
     importDataset, exportDataset, clearCache, getHistory,
 } from './annotations';
 import AnnotationGuide from './guide';
@@ -99,7 +100,7 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
             const jobSpec = {
                 ...(this.assignee ? { assignee: this.assignee.id } : {}),
                 ...(this.stage ? { stage: this.stage } : {}),
-                ...(this.state ? { stage: this.state } : {}),
+                ...(this.state ? { state: this.state } : {}),
                 type: this.type,
                 task_id: this.taskId,
             };
@@ -277,12 +278,9 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
                 return Promise.resolve('');
             }
 
-            return serverProxy.jobs.getPreview(this.id).then((preview) => {
-                if (!preview) {
-                    return Promise.resolve('');
-                }
-                return decodePreview(preview);
-            });
+            return serverProxy.jobs.getPreview(this.id).then(
+                (response) => resolvePreviewResponse(response, this.mediaType),
+            );
         },
     });
 
@@ -362,6 +360,15 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
 
             const annotationsData = await getAnnotations(this, frame, allTracks, filters);
             return annotationsData;
+        },
+    });
+
+    Object.defineProperty(Job.prototype.annotations.intervals, 'implementation', {
+        value: async function intervalsImplementation(
+            this: JobClass,
+            filters: Parameters<typeof JobClass.prototype.annotations.intervals>[0],
+        ): ReturnType<typeof JobClass.prototype.annotations.intervals> {
+            return getAllIntervals(this, filters);
         },
     });
 
@@ -460,6 +467,26 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
         },
     });
 
+    Object.defineProperty(Job.prototype.annotations.updateLayer, 'implementation', {
+        value: function updateLayerImplementation(
+            this: JobClass,
+            frame: Parameters<typeof JobClass.prototype.annotations.updateLayer>[0],
+            placement: Parameters<typeof JobClass.prototype.annotations.updateLayer>[1],
+            objectStates: Parameters<typeof JobClass.prototype.annotations.updateLayer>[2],
+        ): ReturnType<typeof JobClass.prototype.annotations.updateLayer> {
+            return Promise.resolve(getCollection(this).updateLayer(frame, placement, objectStates));
+        },
+    });
+
+    Object.defineProperty(Job.prototype.annotations.compactLayers, 'implementation', {
+        value: function compactLayersImplementation(
+            this: JobClass,
+            frame: Parameters<typeof JobClass.prototype.annotations.compactLayers>[0],
+        ): ReturnType<typeof JobClass.prototype.annotations.compactLayers> {
+            return Promise.resolve(getCollection(this).compactLayers(frame));
+        },
+    });
+
     Object.defineProperty(Job.prototype.annotations.hasUnsavedChanges, 'implementation', {
         value: function hasUnsavedChangesImplementation(
             this: JobClass,
@@ -488,6 +515,36 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
         },
     });
 
+    Object.defineProperty(Job.prototype.annotations.selectInterval, 'implementation', {
+        value: function selectIntervalAnnotationsImplementation(
+            this: JobClass,
+            intervalStates: Parameters<typeof JobClass.prototype.annotations.selectInterval>[0],
+            position: Parameters<typeof JobClass.prototype.annotations.selectInterval>[1],
+        ): ReturnType<typeof JobClass.prototype.annotations.selectInterval> {
+            return Promise.resolve(getCollection(this).selectInterval(intervalStates, position));
+        },
+    });
+
+    Object.defineProperty(Job.prototype.annotations.splitInterval, 'implementation', {
+        value: function splitIntervalImplementation(
+            this: JobClass,
+            state: Parameters<typeof JobClass.prototype.annotations.splitInterval>[0],
+            position: Parameters<typeof JobClass.prototype.annotations.splitInterval>[1],
+        ): ReturnType<typeof JobClass.prototype.annotations.splitInterval> {
+            return Promise.resolve(getCollection(this).splitInterval(state, position));
+        },
+    });
+
+    Object.defineProperty(Job.prototype.annotations.saveStates, 'implementation', {
+        value: function saveStatesImplementation(
+            this: JobClass,
+            states: Parameters<typeof JobClass.prototype.annotations.saveStates>[0],
+        ): ReturnType<typeof JobClass.prototype.annotations.saveStates> {
+            getCollection(this).saveStates(states);
+            return Promise.resolve();
+        },
+    });
+
     Object.defineProperty(Job.prototype.annotations.statistics, 'implementation', {
         value: function statisticsImplementation(
             this: JobClass,
@@ -502,6 +559,16 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
             objectStates: Parameters<typeof JobClass.prototype.annotations.put>[0],
         ): ReturnType<typeof JobClass.prototype.annotations.put> {
             return Promise.resolve(getCollection(this).put(objectStates));
+        },
+    });
+
+    Object.defineProperty(Job.prototype.annotations.removeBatch, 'implementation', {
+        value: function removeBatchAnnotationsImplementation(
+            this: JobClass,
+            objectStates: Parameters<typeof JobClass.prototype.annotations.removeBatch>[0],
+            force: Parameters<typeof JobClass.prototype.annotations.removeBatch>[1],
+        ): ReturnType<typeof JobClass.prototype.annotations.removeBatch> {
+            return Promise.resolve(getCollection(this).removeBatch(objectStates, force ?? false));
         },
     });
 
@@ -578,6 +645,19 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
             count: Parameters<typeof JobClass.prototype.actions.redo>[0],
         ): ReturnType<typeof JobClass.prototype.actions.redo> {
             return getHistory(this).redo(count);
+        },
+    });
+
+    Object.defineProperty(Job.prototype.actions.recordSelection, 'implementation', {
+        value: function recordSelectionActionImplementation(
+            this: JobClass,
+            previousClientIDs: Parameters<typeof JobClass.prototype.actions.recordSelection>[0],
+            nextClientIDs: Parameters<typeof JobClass.prototype.actions.recordSelection>[1],
+            frame: Parameters<typeof JobClass.prototype.actions.recordSelection>[2],
+            mergeWithPrevious: Parameters<typeof JobClass.prototype.actions.recordSelection>[3],
+        ): ReturnType<typeof JobClass.prototype.actions.recordSelection> {
+            getHistory(this).recordSelection(previousClientIDs, nextClientIDs, frame, mergeWithPrevious);
+            return Promise.resolve();
         },
     });
 
@@ -694,13 +774,21 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
                         sourceStorage: 'source_storage',
                         targetStorage: 'target_storage',
                     }),
+                } as Record<string, unknown> & {
+                    assignee_id?: { id: number } | null;
                 };
 
-                if (taskData.assignee_id) {
-                    taskData.assignee_id = taskData.assignee_id.id;
+                const updatedLabels = fields?.labels ? getUpdatedLabels(this.labels, fields.labels) : [];
+
+                // TODO: update assignee via "fields" instead
+                // It would be better implementation
+                let newAssigneeId: number | null;
+                if ('assignee_id' in taskData) {
+                    newAssigneeId = taskData.assignee_id?.id ?? null;
+                    delete taskData.assignee_id;
                 }
 
-                for await (const label of taskData.labels || []) {
+                for await (const label of updatedLabels) {
                     if (label.deleted) {
                         await serverProxy.labels.delete(label.id);
                     } else if (label.patched) {
@@ -709,20 +797,30 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
                 }
 
                 // leave only new labels to create them via task PATCH request
-                taskData.labels = (taskData.labels || [])
-                    .filter((label: SerializedLabel) => !Number.isInteger(label.id)).map((el) => el.toJSON());
-                if (!taskData.labels.length) {
-                    delete taskData.labels;
-                }
-
+                const labelsToCreate = updatedLabels
+                    .filter((label) => !Number.isInteger(label.id))
+                    .map((el) => el.toJSON());
                 this._updateTrigger.reset();
 
                 let serializedTask: SerializedTask = null;
-                if (Object.keys(taskData).length) {
-                    serializedTask = await serverProxy.tasks.save(this.id, taskData);
+                if (
+                    Object.keys(taskData).length ||
+                    labelsToCreate.length ||
+                    typeof newAssigneeId !== 'undefined'
+                ) {
+                    serializedTask = await serverProxy.tasks.save(this.id, {
+                        ...taskData,
+                        ...(typeof newAssigneeId !== 'undefined' ? { assignee_id: newAssigneeId } : {}),
+                        ...(labelsToCreate.length ? { labels: labelsToCreate } : {}),
+                    });
                 } else {
                     [serializedTask] = (await serverProxy.tasks.get({ id: this.id }));
                 }
+
+                // TODO: optimize labels fetch
+                // We already have patched labels, we may exclude deleted labels
+                // We only need to fetch labels if they have been created
+                // We do not need to perform any logic above if taskData is empty in the beginning of if branch
 
                 const labels = await serverProxy.labels.get({ task_id: this.id });
                 const jobs = await serverProxy.jobs.get({ task_id: this.id }, true);
@@ -742,18 +840,23 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
             if (typeof this.bugTracker !== 'undefined') {
                 taskSpec.bug_tracker = this.bugTracker;
             }
+
             if (typeof this.segmentSize !== 'undefined') {
                 taskSpec.segment_size = this.segmentSize;
             }
+
             if (typeof this.overlap !== 'undefined') {
                 taskSpec.overlap = this.overlap;
             }
+
             if (typeof this.projectId !== 'undefined') {
                 taskSpec.project_id = this.projectId;
             }
+
             if (typeof this.subset !== 'undefined') {
                 taskSpec.subset = this.subset;
             }
+
             if (typeof this.organizationId !== 'undefined') {
                 taskSpec.organization_id = this.organizationId;
             }
@@ -766,25 +869,25 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
                 taskSpec.source_storage = this.sourceStorage.toJSON();
             }
 
-            if (fields.consensus_replicas) {
+            if (fields?.consensus_replicas) {
                 taskSpec.consensus_replicas = fields.consensus_replicas;
             }
 
             const taskDataSpec = {
-                client_files: this.clientFiles,
-                server_files: this.serverFiles,
-                remote_files: this.remoteFiles,
-                image_quality: this.imageQuality,
-                use_zip_chunks: this.useZipChunks,
-                use_cache: this.useCache,
-                sorting_method: this.sortingMethod,
+                ...(typeof this.imageQuality !== 'undefined' ? { image_quality: this.imageQuality } : {}),
+                ...(typeof this.useZipChunks !== 'undefined' ? { use_zip_chunks: this.useZipChunks } : {}),
+                ...(typeof this.useCache !== 'undefined' ? { use_cache: this.useCache } : {}),
+                ...(typeof this.sortingMethod !== 'undefined' ? { sorting_method: this.sortingMethod } : {}),
+                client_files: fields?.clientFiles ?? [],
+                server_files: fields?.serverFiles ?? [],
+                remote_files: fields?.remoteFiles ?? [],
                 ...(typeof this.startFrame !== 'undefined' ? { start_frame: this.startFrame } : {}),
                 ...(typeof this.stopFrame !== 'undefined' ? { stop_frame: this.stopFrame } : {}),
                 ...(typeof this.frameFilter !== 'undefined' ? { frame_filter: this.frameFilter } : {}),
                 ...(typeof this.dataChunkSize !== 'undefined' ? { chunk_size: this.dataChunkSize } : {}),
                 ...(typeof this.copyData !== 'undefined' ? { copy_data: this.copyData } : {}),
                 ...(typeof this.cloudStorageId !== 'undefined' ? { cloud_storage_id: this.cloudStorageId } : {}),
-                ...(fields.validation_params ? { validation_params: fields.validation_params } : {}),
+                ...(fields?.validation_params ? { validation_params: fields.validation_params } : {}),
             };
 
             const { taskID, rqID } = await serverProxy.tasks.create(
@@ -944,12 +1047,9 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
                 return Promise.resolve('');
             }
 
-            return serverProxy.tasks.getPreview(this.id).then((preview) => {
-                if (!preview) {
-                    return Promise.resolve('');
-                }
-                return decodePreview(preview);
-            });
+            return serverProxy.tasks.getPreview(this.id).then(
+                (response) => resolvePreviewResponse(response, this.mediaType),
+            );
         },
     });
 
@@ -1107,6 +1207,15 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
         },
     });
 
+    Object.defineProperty(Task.prototype.annotations.intervals, 'implementation', {
+        value: async function intervalsImplementation(
+            this: TaskClass,
+            filters: Parameters<typeof TaskClass.prototype.annotations.intervals>[0],
+        ): ReturnType<typeof TaskClass.prototype.annotations.intervals> {
+            return getAllIntervals(this, filters);
+        },
+    });
+
     Object.defineProperty(Task.prototype.annotations.search, 'implementation', {
         value: function searchAnnotationsImplementation(
             this: TaskClass,
@@ -1200,6 +1309,26 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
         },
     });
 
+    Object.defineProperty(Task.prototype.annotations.updateLayer, 'implementation', {
+        value: function updateLayerImplementation(
+            this: TaskClass,
+            frame: Parameters<typeof TaskClass.prototype.annotations.updateLayer>[0],
+            placement: Parameters<typeof TaskClass.prototype.annotations.updateLayer>[1],
+            objectStates: Parameters<typeof TaskClass.prototype.annotations.updateLayer>[2],
+        ): ReturnType<typeof TaskClass.prototype.annotations.updateLayer> {
+            return Promise.resolve(getCollection(this).updateLayer(frame, placement, objectStates));
+        },
+    });
+
+    Object.defineProperty(Task.prototype.annotations.compactLayers, 'implementation', {
+        value: function compactLayersImplementation(
+            this: TaskClass,
+            frame: Parameters<typeof TaskClass.prototype.annotations.compactLayers>[0],
+        ): ReturnType<typeof TaskClass.prototype.annotations.compactLayers> {
+            return Promise.resolve(getCollection(this).compactLayers(frame));
+        },
+    });
+
     Object.defineProperty(Task.prototype.annotations.hasUnsavedChanges, 'implementation', {
         value: function hasUnsavedChangesImplementation(
             this: TaskClass,
@@ -1228,6 +1357,36 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
         },
     });
 
+    Object.defineProperty(Task.prototype.annotations.selectInterval, 'implementation', {
+        value: function selectIntervalAnnotationsImplementation(
+            this: TaskClass,
+            intervalStates: Parameters<typeof TaskClass.prototype.annotations.selectInterval>[0],
+            position: Parameters<typeof TaskClass.prototype.annotations.selectInterval>[1],
+        ): ReturnType<typeof TaskClass.prototype.annotations.selectInterval> {
+            return Promise.resolve(getCollection(this).selectInterval(intervalStates, position));
+        },
+    });
+
+    Object.defineProperty(Task.prototype.annotations.splitInterval, 'implementation', {
+        value: function splitIntervalImplementation(
+            this: TaskClass,
+            state: Parameters<typeof TaskClass.prototype.annotations.splitInterval>[0],
+            position: Parameters<typeof TaskClass.prototype.annotations.splitInterval>[1],
+        ): ReturnType<typeof TaskClass.prototype.annotations.splitInterval> {
+            return Promise.resolve(getCollection(this).splitInterval(state, position));
+        },
+    });
+
+    Object.defineProperty(Task.prototype.annotations.saveStates, 'implementation', {
+        value: function saveStatesImplementation(
+            this: TaskClass,
+            states: Parameters<typeof TaskClass.prototype.annotations.saveStates>[0],
+        ): ReturnType<typeof TaskClass.prototype.annotations.saveStates> {
+            getCollection(this).saveStates(states);
+            return Promise.resolve();
+        },
+    });
+
     Object.defineProperty(Task.prototype.annotations.statistics, 'implementation', {
         value: function statisticsImplementation(
             this: TaskClass,
@@ -1242,6 +1401,16 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
             objectStates: Parameters<typeof TaskClass.prototype.annotations.put>[0],
         ): ReturnType<typeof TaskClass.prototype.annotations.put> {
             return Promise.resolve(getCollection(this).put(objectStates));
+        },
+    });
+
+    Object.defineProperty(Task.prototype.annotations.removeBatch, 'implementation', {
+        value: function removeBatchAnnotationsImplementation(
+            this: TaskClass,
+            objectStates: Parameters<typeof TaskClass.prototype.annotations.removeBatch>[0],
+            force: Parameters<typeof TaskClass.prototype.annotations.removeBatch>[1],
+        ): ReturnType<typeof TaskClass.prototype.annotations.removeBatch> {
+            return Promise.resolve(getCollection(this).removeBatch(objectStates, force ?? false));
         },
     });
 
@@ -1318,6 +1487,19 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
             count: Parameters<typeof TaskClass.prototype.actions.redo>[0],
         ): ReturnType<typeof TaskClass.prototype.actions.redo> {
             return getHistory(this).redo(count);
+        },
+    });
+
+    Object.defineProperty(Task.prototype.actions.recordSelection, 'implementation', {
+        value: function recordSelectionActionImplementation(
+            this: TaskClass,
+            previousClientIDs: Parameters<typeof TaskClass.prototype.actions.recordSelection>[0],
+            nextClientIDs: Parameters<typeof TaskClass.prototype.actions.recordSelection>[1],
+            frame: Parameters<typeof TaskClass.prototype.actions.recordSelection>[2],
+            mergeWithPrevious: Parameters<typeof TaskClass.prototype.actions.recordSelection>[3],
+        ): ReturnType<typeof TaskClass.prototype.actions.recordSelection> {
+            getHistory(this).recordSelection(previousClientIDs, nextClientIDs, frame, mergeWithPrevious);
+            return Promise.resolve();
         },
     });
 

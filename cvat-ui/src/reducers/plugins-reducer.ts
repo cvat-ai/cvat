@@ -23,6 +23,9 @@ const defaultState: PluginsState = {
         },
     },
     overridableComponents: {
+        app: {
+            serverUnavailable: [],
+        },
         annotationPage: {
             header: {
                 // not used
@@ -31,11 +34,11 @@ const defaultState: PluginsState = {
         },
         qualityControlPage: {
             task: {
-                overviewTab: [],
+                requirementsTab: [],
                 allocationTable: [],
             },
             project: {
-                overviewTab: [],
+                requirementsTab: [],
             },
         },
         analyticsReportPage: {
@@ -43,6 +46,11 @@ const defaultState: PluginsState = {
         },
     },
     components: {
+        qualityControlPage: {
+            tabs: {
+                items: [],
+            },
+        },
         header: {
             userMenu: {
                 items: [],
@@ -57,6 +65,20 @@ const defaultState: PluginsState = {
             },
             menuActions: {
                 items: [],
+            },
+        },
+        taskPage: {
+            details: {
+                topBar: {
+                    extras: [],
+                },
+            },
+        },
+        projectPage: {
+            details: {
+                topBar: {
+                    extras: [],
+                },
             },
         },
         modelsPage: {

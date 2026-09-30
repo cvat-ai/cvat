@@ -69,7 +69,9 @@ export async function run(
         const exportedCollection = getCollection(instance).export();
         validateClientIDs(exportedCollection);
 
-        const annotationsFilter = new AnnotationsFilter();
+        const annotationsFilter = new AnnotationsFilter(
+            instance instanceof Job ? instance.stopFrame : instance.size - 1,
+        );
         const filteredShapeIDs = annotationsFilter.filterSerializedCollection({
             shapes: exportedCollection.shapes,
             tags: [],

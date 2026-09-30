@@ -18,7 +18,7 @@ import { useAuthQuery } from 'utils/hooks';
 import patterns from 'utils/validation-patterns';
 import validationRules from 'utils/validation-rules';
 
-export interface UserConfirmation {
+interface UserConfirmation {
     name: string;
     value: boolean;
 }

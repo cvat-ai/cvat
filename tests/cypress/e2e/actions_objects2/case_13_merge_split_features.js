@@ -10,7 +10,7 @@ import { taskName, labelName } from '../../support/const';
 context('Merge/split features', () => {
     const caseId = '13';
     const createRectangleShape2Points = {
-        points: 'By 2 Points',
+        points: '2 Points',
         type: 'Shape',
         labelName,
         firstX: 250,
@@ -19,7 +19,7 @@ context('Merge/split features', () => {
         secondY: 450,
     };
     const createRectangleShape2PointsSecond = {
-        points: 'By 2 Points',
+        points: '2 Points',
         type: 'Shape',
         labelName,
         firstX: createRectangleShape2Points.firstX + 300,
@@ -64,7 +64,7 @@ context('Merge/split features', () => {
             cy.get('#cvat_canvas_shape_2').click(); // Select the shape
             cy.get('#cvat_canvas_shape_2').click(); // Unselect the shape
             cy.get('#cvat_canvas_shape_2').click(); // Repeat select the shape
-            cy.get('.cvat-objects-sidebar-states-header').find('[aria-label="eye"]').click(); // To cover "this.highlightedShapes[objectState.clientID] = shape;"
+            cy.get('.cvat-objects-sidebar-states-header').find('[aria-label="eye"]').click(); // To cover "this.highlightedShapes[objectState.clientId] = shape;"
             cy.get('.cvat-objects-sidebar-states-header').find('[aria-label="eye-invisible"]').click(); // Unhide
             cy.goCheckFrameNumber(frameNum);
             cy.get('#cvat_canvas_shape_1').click();

@@ -4,11 +4,11 @@
 # SPDX-License-Identifier: MIT
 
 import io
+import itertools
 import mimetypes
 import os
 import re
 import shutil
-import tempfile
 from abc import ABCMeta, abstractmethod
 from collections import defaultdict, deque
 from collections.abc import Collection, Iterable
@@ -42,15 +42,11 @@ from cvat.apps.dataset_manager.util import (
 from cvat.apps.dataset_manager.views import (
     EXPORT_CACHE_LOCK_ACQUISITION_TIMEOUT,
     EXPORT_CACHE_LOCK_TTL,
-    EXPORT_LOCKED_RETRY_INTERVAL,
-    LockNotAvailableError,
-    log_exception,
-    retry_current_rq_job,
 )
 from cvat.apps.engine import models
 from cvat.apps.engine.cache import MediaCache
 from cvat.apps.engine.log import ServerLogManager
-from cvat.apps.engine.models import DataChoice, StorageChoice
+from cvat.apps.engine.models import DataChoice, StorageChoice, TaskMode
 from cvat.apps.engine.serializers import (
     AnnotationGuideWriteSerializer,
     AssetWriteSerializer,
@@ -66,9 +62,10 @@ from cvat.apps.engine.serializers import (
     TaskReadSerializer,
     ValidationParamsSerializer,
 )
-from cvat.apps.engine.task import JobFileMapping
-from cvat.apps.engine.task import create_thread as create_task
-from cvat.apps.engine.utils import av_scan_paths, transaction_with_repeatable_read
+from cvat.apps.engine.task import JobFileMapping, initialize_task
+from cvat.apps.engine.utils import av_scan_paths
+from cvat.utils import django_database as db_utils
+from cvat.utils.paths import join_untrusted_path, problem_with_untrusted_path
 from utils.dataset_manifest import ImageManifestManager
 
 slogger = ServerLogManager(__name__)
@@ -124,7 +121,7 @@ def _read_annotation_guide(zip_object, guide_filename, assets_dirname):
         assets = [(x, zip_object.read(x)) for x in assets]
 
         if len(assets) > settings.ASSET_MAX_COUNT_PER_GUIDE:
-            raise ValidationError(f"Maximum number of assets per guide reached")
+            raise ValidationError("Maximum number of assets per guide reached")
         for asset in assets:
             if len(asset[1]) / (1024 * 1024) > settings.ASSET_MAX_SIZE_MB:
                 raise ValidationError(f"Maximum size of asset is {settings.ASSET_MAX_SIZE_MB} MB")
@@ -287,6 +284,8 @@ class _TaskBackupBase(_BackupBase):
             "shapes",
             "elements",
             "score",
+            "start",
+            "stop",
         }
 
         def _update_attribute(attribute, label):
@@ -315,30 +314,52 @@ class _TaskBackupBase(_BackupBase):
                 deque(_prepare_shapes(shape.get("elements", []), label), maxlen=0)
 
                 self._prepare_meta(allowed_fields, shape)
+
                 yield shape
 
         def _prepare_tracks(tracks, parent_label=""):
             for track in tracks:
                 label = _update_label(track, parent_label)
+
                 for shape in track["shapes"]:
                     for attr in shape["attributes"]:
                         _update_attribute(attr, label)
+
                     self._prepare_meta(allowed_fields, shape)
 
-                _prepare_tracks(track.get("elements", []), label)
+                deque(_prepare_tracks(track.get("elements", []), label), maxlen=0)
 
                 for attr in track["attributes"]:
                     _update_attribute(attr, label)
+
                 self._prepare_meta(allowed_fields, track)
 
-        for tag in annotations["tags"]:
-            label = _update_label(tag)
-            for attr in tag["attributes"]:
-                _update_attribute(attr, label)
-            self._prepare_meta(allowed_fields, tag)
+                yield track
 
+        def _prepare_intervals(intervals, parent_label=""):
+            for interval in intervals:
+                label = _update_label(interval, parent_label)
+                for attr in interval["attributes"]:
+                    _update_attribute(attr, label)
+
+                self._prepare_meta(allowed_fields, interval)
+
+                yield interval
+
+        def _prepare_tags(tags):
+            for tag in tags:
+                label = _update_label(tag)
+                for attr in tag["attributes"]:
+                    _update_attribute(attr, label)
+
+                self._prepare_meta(allowed_fields, tag)
+
+                yield tag
+
+        annotations["tags"] = _prepare_tags(annotations["tags"])
         annotations["shapes"] = _prepare_shapes(annotations["shapes"])
-        _prepare_tracks(annotations["tracks"])
+        annotations["tracks"] = _prepare_tracks(annotations["tracks"])
+        annotations["intervals"] = _prepare_intervals(annotations["intervals"])
 
         return annotations
 
@@ -412,7 +433,9 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
 
         self._db_task: models.Task = (
             models.Task.objects.prefetch_related("data__images", "annotation_guide__assets")
-            .select_related("data__video", "data__validation_layout", "annotation_guide")
+            .select_related(
+                "data__video", "data__audio", "data__validation_layout", "annotation_guide"
+            )
             .get(pk=pk)
         )
 
@@ -448,41 +471,55 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
 
         target_data_dir = os.path.join(target_dir, self.DATA_DIRNAME)
 
-        if hasattr(self._db_data, "video"):
-            # No filtering necessary; just use the original manifest.
-            self._write_files(
-                source_dir=self._db_data.get_upload_dirname(),
-                zip_object=zip_object,
-                files=[self._db_data.get_manifest_path()],
-                target_dir=target_data_dir,
-            )
-            return
+        match (self._db_task.media_type, self._db_task.mode):
+            case (models.MediaType.AUDIO, models.TaskMode.INTERPOLATION):
+                return  # there are no audio manifests
+            case (models.MediaType.IMAGE, models.TaskMode.INTERPOLATION):
+                # No filtering necessary; just use the original manifest.
+                self._write_files(
+                    source_dir=self._db_data.get_upload_dirname(),
+                    zip_object=zip_object,
+                    files=[self._db_data.get_manifest_path()],
+                    target_dir=target_data_dir,
+                )
+                return
+            case (
+                models.MediaType.IMAGE | models.MediaType.POINT_CLOUD,
+                models.TaskMode.ANNOTATION,
+            ):
+                imm_original = ImageManifestManager(
+                    self._db_data.get_manifest_path(), create_index=False
+                )
 
-        with tempfile.TemporaryDirectory() as tmp_dir:
-            present_frame_nums = {im.frame for im in self._db_data.images.all()}
+                # The task may have been created before we started generating manifests in every task.
+                # If there is no manifest, don't add one to the backup but still set the filtered flag,
+                # so that start_frame and other fields are adjusted properly later.
+                if imm_original.exists:
+                    present_frame_nums = {im.frame for im in self._db_data.images.all()}
 
-            filtered_manifest_path = Path(tmp_dir, self.MEDIA_MANIFEST_FILENAME)
+                    with TmpDirManager.get_tmp_directory() as tmp_dir:
+                        filtered_manifest_path = Path(tmp_dir, self.MEDIA_MANIFEST_FILENAME)
+                        imm_filtered = ImageManifestManager(
+                            filtered_manifest_path, create_index=False
+                        )
+                        imm_filtered.create(
+                            entry
+                            for frame_num, entry in imm_original
+                            if frame_num in present_frame_nums
+                        )
 
-            imm_original = ImageManifestManager(
-                self._db_data.get_manifest_path(), create_index=False
-            )
-            imm_filtered = ImageManifestManager(filtered_manifest_path, create_index=False)
-            imm_filtered.create(
-                entry for frame_num, entry in imm_original if frame_num in present_frame_nums
-            )
+                        self._write_files(
+                            source_dir=tmp_dir,
+                            zip_object=zip_object,
+                            files=[filtered_manifest_path],
+                            target_dir=target_data_dir,
+                        )
 
-            self._write_files(
-                source_dir=tmp_dir,
-                zip_object=zip_object,
-                files=[filtered_manifest_path],
-                target_dir=target_data_dir,
-            )
-
-            self._manifest_was_filtered = True
+                self._manifest_was_filtered = True
+            case (media_type, mode):
+                assert False, f"Unknown media type '{media_type}' with mode '{mode}'"
 
     def _write_data_from_cloud_storage(self, zip_object: ZipFile, target_dir: str) -> None:
-        assert not hasattr(self._db_data, "video"), "Only images can be stored in cloud storage"
-
         target_data_dir = os.path.join(target_dir, self.DATA_DIRNAME)
         data_dir = self._db_data.get_upload_dirname()
 
@@ -491,7 +528,10 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
         files_for_local_copy = []
 
         media_files_to_download: list[PurePath] = []
-        for media_file in self._db_data.related_files.all():
+        for media_file in itertools.chain(
+            self._db_data.related_files.all(),
+            [self._db_data.video] if hasattr(self._db_data, "video") else [],
+        ):
             media_path = PurePath(media_file.path)
 
             local_path = os.path.join(data_dir, media_path)
@@ -502,7 +542,7 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
 
         frame_ids_to_download = []
         frame_names_to_download = []
-        for media_file in self._db_data.images.all():
+        for media_file in self._db_data.images.order_by("frame").all():
             media_path = media_file.path
 
             local_path = os.path.join(data_dir, media_path)
@@ -513,8 +553,8 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
                 frame_names_to_download.append(media_file.path)
 
         if media_files_to_download:
-            storage_client = self._db_data.get_cloud_storage_instance()
-            with tempfile.TemporaryDirectory() as tmp_dir:
+            storage_client = self._db_data.get_cloud_storage_client()
+            with TmpDirManager.get_tmp_directory() as tmp_dir:
                 storage_client.bulk_download_to_dir(
                     files=media_files_to_download, upload_dir=Path(tmp_dir)
                 )
@@ -571,10 +611,20 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
 
         elif self._db_data.storage == StorageChoice.SHARE:
             data_dir = settings.SHARE_ROOT
-            if hasattr(self._db_data, "video"):
-                media_files = (os.path.join(data_dir, self._db_data.video.path),)
-            else:
-                media_files = (os.path.join(data_dir, im.path) for im in self._db_data.images.all())
+            match (self._db_task.media_type, self._db_task.mode):
+                case (models.MediaType.IMAGE, models.TaskMode.INTERPOLATION):
+                    media_files = (os.path.join(data_dir, self._db_data.video.path),)
+                case (models.MediaType.AUDIO, models.TaskMode.INTERPOLATION):
+                    media_files = (os.path.join(data_dir, self._db_data.audio.path),)
+                case (
+                    models.MediaType.IMAGE | models.MediaType.POINT_CLOUD,
+                    models.TaskMode.ANNOTATION,
+                ):
+                    media_files = (
+                        os.path.join(data_dir, im.path) for im in self._db_data.images.all()
+                    )
+                case (media_type, mode):
+                    assert False, f"Unknown media type '{media_type}' with '{mode}' mode"
 
             self._write_files(
                 source_dir=data_dir,
@@ -586,6 +636,12 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
             self._write_filtered_media_manifest(zip_object=zip_object, target_dir=target_dir)
 
         elif self._db_data.storage == StorageChoice.CLOUD_STORAGE:
+            if (self._db_task.media_type, self._db_task.mode) not in (
+                (models.MediaType.IMAGE, models.TaskMode.ANNOTATION),
+                (models.MediaType.POINT_CLOUD, models.TaskMode.ANNOTATION),
+            ):
+                raise AssertionError("Only images can be stored in cloud storage")
+
             data_dir = self._db_data.get_upload_dirname()
 
             if self._lightweight:
@@ -603,7 +659,15 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
     def _write_manifest(self, zip_object: ZipFile, target_dir: str) -> None:
         def serialize_task():
             task_serializer = TaskReadSerializer(self._db_task)
-            for field in ("url", "owner", "assignee"):
+            for field in (
+                "url",
+                "owner",
+                "assignee",
+                "jobs",
+                "labels",
+                "source_storage",
+                "target_storage",
+            ):
                 task_serializer.fields.pop(field)
 
             task_labels = LabelSerializer(self._db_task.get_labels(prefetch=True), many=True)
@@ -630,6 +694,7 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
                 and segment_type == models.SegmentType.RANGE
                 or self._db_data.validation_mode == models.ValidationMode.GT_POOL
             ):
+                assert self._db_task.media_type != models.MediaType.AUDIO
                 serialized_segment.update(serialize_segment_file_names(db_segment))
 
             return serialized_segment
@@ -656,7 +721,7 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
             return serialized_jobs
 
         def serialize_segment_file_names(db_segment: models.Segment):
-            if self._db_task.mode == "annotation":
+            if self._db_task.mode == TaskMode.ANNOTATION:
                 files: Iterable[models.Image] = self._db_data.images.order_by("frame").all()
                 return {"files": [files[f].path for f in sorted(db_segment.frame_set)]}
             else:
@@ -730,7 +795,7 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
             db_jobs = self._get_db_jobs()
             db_job_ids = (j.id for j in db_jobs)
             for db_job_id in db_job_ids:
-                with transaction_with_repeatable_read():
+                with db_utils.transaction_with_repeatable_read():
                     annotations = dm.task.get_job_data(db_job_id, streaming=True)
                     assert not isinstance(annotations["shapes"], list)
                     # Django many=True fields can only handle the list type
@@ -870,10 +935,36 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
 
         raise ValueError("Unsupported type of file argument")
 
+    @staticmethod
+    def _fix_annotation_source(annotation: dict[str, Any]) -> None:
+        # Workaround for the DB records that could have been introduced by the UI before
+        # https://github.com/cvat-ai/cvat/issues/8874 was fixed. Backups can contain
+        # invalid "source" field values. This fix only covers the known "Ground truth" value
+        # errors that we know about, so the value validation keeps working for invalid inputs.
+        # We silently replace them with the default value here, as the id-based workaround
+        # in the serializer will miss the 'id' field in annotations from backups.
+        if annotation.get("source") == "Ground truth":
+            annotation["source"] = str(models.SourceType.MANUAL)
+
+        for shape in annotation.get("shapes", []):
+            TaskImporter._fix_annotation_source(shape)
+
+        for element in annotation.get("elements", []):
+            TaskImporter._fix_annotation_source(element)
+
     def _create_annotations(self, db_job, annotations):
+        for annotation_type in ("tags", "shapes", "tracks", "intervals"):
+            annotations.setdefault(annotation_type, [])
+
         self._prepare_annotations(annotations, self._labels_mapping)
-        assert not isinstance(annotations["shapes"], list)
-        annotations["shapes"] = list(annotations["shapes"])
+
+        for annotation_type in ("tags", "shapes", "tracks", "intervals"):
+            assert not isinstance(annotations[annotation_type], list)
+            annotations[annotation_type] = list(annotations[annotation_type])
+
+            # backward compatibility
+            for annotation in annotations[annotation_type]:
+                self._fix_annotation_source(annotation)
 
         serializer = LabeledDataSerializer(data=annotations)
         serializer.is_valid(raise_exception=True)
@@ -940,7 +1031,11 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
                 continue
 
             if file_name.startswith(input_data_dirname + "/"):
-                target_file = os.path.join(
+                # It should be impossible for file_name to enable a path traversal attack
+                # because it's the result of relpath(), which puts any ".." components in the front,
+                # and the if condition will be false for any path that starts with "..".
+                # But in case the surrounding logic changes, let's treat it as untrusted anyway.
+                target_file = join_untrusted_path(
                     output_data_path, os.path.relpath(file_name, input_data_dirname)
                 )
 
@@ -982,7 +1077,7 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
                     "filename_pattern",
                 ]:
                     d.pop(k, None)
-        else:
+        elif len(jobs) > 1:
             self._manifest["segment_size"], self._manifest["overlap"] = (
                 self._calculate_segment_size(jobs)
             )
@@ -1068,15 +1163,19 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
                 data["server_files"].extend(
                     manifest_entry.get("meta", {}).get("related_images", [])
                 )
+
+            for server_file in data["server_files"]:
+                if problem := problem_with_untrusted_path(server_file):
+                    raise ValidationError(f"Unsafe file path in manifest: {problem}")
         else:
             if data_serializer.initial_data["storage"] != StorageChoice.LOCAL:
-                raise ValidationError(f"Unexpected storage type in the backup files")
+                raise ValidationError("Unexpected storage type in the backup files")
 
             db_data.storage = StorageChoice.LOCAL
 
         db_data.save(update_fields=["storage"])
 
-        create_task(self._db_task.pk, data.copy(), is_backup_restore=True)
+        initialize_task(db_task=self._db_task.pk, data=data.copy(), is_backup_restore=True)
         self._db_task.refresh_from_db()
         db_data.refresh_from_db()
 
@@ -1137,8 +1236,16 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
                     data={
                         "task_id": self._db_task.id,
                         "type": job_type.value,
-                        "frame_selection_method": models.JobFrameSelectionMethod.MANUAL.value,
-                        "frames": job["frames"],
+                        **(
+                            {
+                                "frame_selection_method": (
+                                    models.JobFrameSelectionMethod.MANUAL.value
+                                ),
+                                "frames": job["frames"],
+                            }
+                            if self._db_task.media_type != models.MediaType.AUDIO
+                            else {}
+                        ),
                     }
                 )
                 job_serializer.is_valid(raise_exception=True)
@@ -1358,6 +1465,7 @@ def create_backup(
     lightweight: bool = None,
 ):
     db_instance = Exporter.get_object(instance_id)
+
     instance_type = db_instance.__class__.__name__
     instance_timestamp = timezone.localtime(db_instance.updated_date).timestamp()
 
@@ -1368,50 +1476,36 @@ def create_backup(
         lightweight=lightweight,
     )
 
-    try:
+    with get_export_cache_lock(
+        output_path,
+        block=True,
+        acquire_timeout=EXPORT_CACHE_LOCK_ACQUISITION_TIMEOUT,
+        ttl=EXPORT_CACHE_LOCK_TTL,
+    ):
+        # output_path includes timestamp of the last update
+        if os.path.exists(output_path):
+            extend_export_file_lifetime(output_path)
+            return output_path
+
+    with TmpDirManager.get_tmp_directory_for_export(instance_type=instance_type) as tmp_dir:
+        temp_file = os.path.join(tmp_dir, "dump")
+        exporter = Exporter(db_instance.id, lightweight=lightweight)
+        exporter.export_to(temp_file)
+
         with get_export_cache_lock(
             output_path,
             block=True,
             acquire_timeout=EXPORT_CACHE_LOCK_ACQUISITION_TIMEOUT,
             ttl=EXPORT_CACHE_LOCK_TTL,
         ):
-            # output_path includes timestamp of the last update
-            if os.path.exists(output_path):
-                extend_export_file_lifetime(output_path)
-                return output_path
+            shutil.move(temp_file, output_path)
 
-        with TmpDirManager.get_tmp_directory_for_export(instance_type=instance_type) as tmp_dir:
-            temp_file = os.path.join(tmp_dir, "dump")
-            exporter = Exporter(db_instance.id, lightweight=lightweight)
-            exporter.export_to(temp_file)
-
-            with get_export_cache_lock(
-                output_path,
-                block=True,
-                acquire_timeout=EXPORT_CACHE_LOCK_ACQUISITION_TIMEOUT,
-                ttl=EXPORT_CACHE_LOCK_TTL,
-            ):
-                shutil.move(temp_file, output_path)
-
-            logger.info(
-                f"The {db_instance.__class__.__name__.lower()} '{db_instance.id}' is backed up at {output_path!r} "
-                f"and available for downloading for the next {cache_ttl}."
-            )
-
-        return output_path
-    except LockNotAvailableError:
-        # Need to retry later if the lock was not available
-        retry_current_rq_job(EXPORT_LOCKED_RETRY_INTERVAL)
         logger.info(
-            "Failed to acquire export cache lock. Retrying in {}".format(
-                EXPORT_LOCKED_RETRY_INTERVAL
-            )
+            f"The {db_instance.__class__.__name__.lower()} '{db_instance.id}' is backed up at {output_path!r} "
+            f"and available for downloading for the next {cache_ttl}."
         )
-        raise
 
-    except Exception:
-        log_exception(logger)
-        raise
+    return output_path
 
 
 def get_backup_dirname():

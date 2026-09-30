@@ -1,15 +1,15 @@
 {
-    "compilerOptions": {
-      "target": "ESNext",
-      "allowJs": true,
-      "module": "esnext",
-      "moduleResolution": "node",
-      "esModuleInterop": true,
-      "isolatedModules": true,
-      "noEmit": true,
-      "baseUrl": "src",
-      "types": [],
-      "lib": ["dom", "esnext"],
-    },
-    "include": ["src/ts/*.ts"]
+  "compilerOptions": {
+    "target": "ESNext",
+    "allowJs": true,
+    "module": "esnext",
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "baseUrl": "src",
+    "types": [],
+    "lib": ["dom", "esnext"],
+  },
+  "include": ["src/ts/*.ts"]
 }

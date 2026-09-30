@@ -3,7 +3,8 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-import { shallowEqual, useSelector, useDispatch } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
+import { shallowEqual } from 'utils/redux';
 import Icon from '@ant-design/icons';
 import Button from 'antd/lib/button';
 
@@ -20,7 +21,7 @@ const componentShortcuts = {
     SAVE_JOB: {
         name: 'Save the job',
         description: 'Submit unsaved changes of annotations to the server',
-        sequences: ['ctrl+s'],
+        sequences: ['ctrl+s', 'command+s'],
         scope: ShortcutScope.ANNOTATION_PAGE,
     },
 };

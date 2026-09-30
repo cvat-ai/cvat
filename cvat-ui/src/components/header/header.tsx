@@ -385,7 +385,10 @@ function HeaderComponent(props: Props): JSX.Element {
     }, 50]);
 
     menuItems.push(...plugins
-        .map(({ component, weight }): typeof menuItems[0] => [component({ targetProps: props }), weight]),
+        .map(({ component, weight }): typeof menuItems[0] => [
+            (component as (pluginProps?: any) => NonNullable<MenuProps['items']>[0])({ targetProps: props }),
+            weight,
+        ]),
     );
 
     const getButtonClassName = (value: string, highlightable = true): string => {

@@ -17,8 +17,10 @@ Cypress.Commands.add('openAnnotationsActionsModal', () => {
 
 Cypress.Commands.add('runAnnotationsAction', () => {
     cy.get('.cvat-action-runner-run-btn').click();
-    cy.get('.cvat-action-runner-progress').should('exist').and('be.visible');
     cy.get('.cvat-action-runner-run-btn').should('be.disabled');
+    cy.get('.cvat-action-runner-progress').should('exist').and('be.visible');
+    cy.contains(/Actions? initialization/).should('exist').and('be.visible');
+    cy.contains(/Actions? initialization/).should('not.exist');
 });
 
 Cypress.Commands.add('cancelAnnotationsAction', () => {
@@ -29,18 +31,27 @@ Cypress.Commands.add('cancelAnnotationsAction', () => {
 });
 
 Cypress.Commands.add('selectAnnotationsAction', (name) => {
-    cy.get('.cvat-action-runner-list .ant-select').click();
-    cy.get('.ant-select-dropdown')
-        .not('.ant-select-dropdown-hidden').within(() => {
-            cy.get('.rc-virtual-list-holder')
-                .contains('.ant-select-item-option', name)
-                .click();
-        });
-    cy.get('.cvat-action-runner-list .ant-select-selection-item').should('contain', name);
+    const getOption = () => cy
+        .get('.ant-select-dropdown:visible')
+        .contains('.ant-select-item-option', name);
+
+    cy.get('.cvat-action-runner-list .ant-select')
+        .should('exist').and('be.visible')
+        .click();
+    // Re-query before clicking because Ant Design may re-render the
+    // dropdown and detach the option previously yielded by Cypress.
+    getOption().should('exist');
+    // Virtual-list options may exist while clipped outside
+    // the viewport, so visibility is not a valid readiness condition.
+    getOption().click({ force: true });
+
+    cy.get('.cvat-action-runner-list .ant-select-selection-item')
+        .should('contain', name);
 });
 
 Cypress.Commands.add('waitAnnotationsAction', () => {
-    cy.get('.cvat-action-runner-progress').should('not.exist'); // wait until action ends
+    cy.get('.cvat-action-runner-progress', { timeout: 30_000 }).should('not.exist');
+    // can take longer on enterprise runners
 });
 
 Cypress.Commands.add('setAnnotationActionParameter', (parameterName, type, value) => {

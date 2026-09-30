@@ -2,10 +2,10 @@
 branch = true
 
 source =
-    cvat/apps/
+    cvat.apps
+    utils.dataset_manifest
     cvat-sdk/
     cvat-cli/
-    utils/dataset_manifest
 
 omit =
     cvat/settings/*

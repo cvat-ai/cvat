@@ -1,4 +1,5 @@
 # Copyright (C) 2020-2022 Intel Corporation
+# Copyright (C) CVAT.ai Corporation
 #
 # SPDX-License-Identifier: MIT
 from datumaro.components.errors import AnnotationExportError
@@ -68,16 +69,6 @@ def _wrap_format(
 EXPORT_FORMATS = {}
 
 
-def format_for(export_format, mode):
-    format_name = export_format
-    if export_format not in EXPORT_FORMATS:
-        if mode == "annotation":
-            format_name = "CVAT for images 1.1"
-        else:
-            format_name = "CVAT for video 1.1"
-    return format_name
-
-
 def exporter(name, version, ext, display_name=None, enabled=True, dimension=DimensionType.DIM_2D):
     assert name not in EXPORT_FORMATS, "Export format '%s' already registered" % name
 
@@ -132,6 +123,7 @@ def make_exporter(name):
 
 
 # pylint: disable=unused-import
+import cvat.apps.dataset_manager.formats.audio_tsv
 import cvat.apps.dataset_manager.formats.camvid
 import cvat.apps.dataset_manager.formats.cityscapes
 import cvat.apps.dataset_manager.formats.coco

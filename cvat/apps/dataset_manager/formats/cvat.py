@@ -23,7 +23,7 @@ from datumaro.components.annotation import (
 )
 from datumaro.components.dataset import Dataset, DatasetItem
 from datumaro.components.dataset_base import DEFAULT_SUBSET_NAME, DatasetBase
-from datumaro.components.importer import Importer
+from datumaro.components.importer import ImportContext, Importer
 from datumaro.components.media import Image
 from datumaro.plugins.data_formats.cvat.base import CvatImporter as _CvatImporter
 from defusedxml import ElementTree
@@ -40,8 +40,8 @@ from cvat.apps.dataset_manager.bindings import (
     match_dm_item,
 )
 from cvat.apps.dataset_manager.util import make_zip_archive
-from cvat.apps.engine.frame_provider import FrameOutputType, make_frame_provider
-from cvat.apps.engine.models import FrameQuality
+from cvat.apps.engine.media_io.frame_provider import FrameOutputType, make_frame_provider
+from cvat.apps.engine.models import FrameQuality, TaskMode
 
 from .registry import dm_env, exporter, importer
 
@@ -57,7 +57,7 @@ class CvatPath:
 class CvatExtractor(DatasetBase):
     _SUPPORTED_SHAPES = ("box", "polygon", "polyline", "points", "skeleton")
 
-    def __init__(self, path, subsets=None):
+    def __init__(self, path, subsets=None, *, ctx: ImportContext | None = None):
         assert osp.isfile(path), path
         rootpath = osp.dirname(path)
         images_dir = ""
@@ -69,7 +69,7 @@ class CvatExtractor(DatasetBase):
         if not subsets:
             subsets = self._get_subsets_from_anno(path)
         self._subsets = subsets
-        super().__init__(subsets=self._subsets)
+        super().__init__(subsets=self._subsets, ctx=ctx)
 
         image_items = self._parse_images(images_dir, self._subsets)
         items, categories = self._parse(path)
@@ -496,7 +496,7 @@ class CvatExtractor(DatasetBase):
         )
 
         common_attrs = ["occluded"]
-        if "interpolation" in (t["mode"] for t in tasks_info.values()):
+        if TaskMode.INTERPOLATION in (t["mode"] for t in tasks_info.values()):
             common_attrs.append("keyframe")
             common_attrs.append("outside")
             common_attrs.append("track_id")
@@ -1569,7 +1569,7 @@ def dump_media_files(
     frame_provider = make_frame_provider(instance_data.db_instance)
 
     ext = ""
-    if instance_data.meta[instance_data.META_FIELD]["mode"] == "interpolation":
+    if instance_data.meta[instance_data.META_FIELD]["mode"] == TaskMode.INTERPOLATION:
         ext = frame_provider.VIDEO_FRAME_EXT
 
     frames = frame_provider.iterate_frames(

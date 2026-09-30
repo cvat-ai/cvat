@@ -5,14 +5,13 @@
 
 /// <reference types="cypress" />
 
-/* eslint-disable no-loop-func */
-
 import { taskName, labelName } from '../../support/const';
 
 context('Group features', () => {
+    const platformModifier = Cypress.platform === 'darwin' ? { metaKey: true } : { ctrlKey: true };
     const caseId = '15';
     const createRectangleShape2Points = {
-        points: 'By 2 Points',
+        points: '2 Points',
         type: 'Shape',
         labelName,
         firstX: 250,
@@ -21,7 +20,7 @@ context('Group features', () => {
         secondY: 450,
     };
     const createRectangleShape2PointsSecond = {
-        points: 'By 2 Points',
+        points: '2 Points',
         type: 'Shape',
         labelName,
         firstX: createRectangleShape2Points.firstX + 300,
@@ -30,7 +29,7 @@ context('Group features', () => {
         secondY: createRectangleShape2Points.secondY,
     };
     const createRectangleTrack2Points = {
-        points: 'By 2 Points',
+        points: '2 Points',
         type: 'Track',
         labelName,
         firstX: 250,
@@ -39,7 +38,7 @@ context('Group features', () => {
         secondY: 700,
     };
     const createRectangleTrack2PointsSecond = {
-        points: 'By 2 Points',
+        points: '2 Points',
         type: 'Track',
         labelName,
         firstX: createRectangleTrack2Points.firstX + 300,
@@ -94,7 +93,7 @@ context('Group features', () => {
     }
 
     function testShapesFillEquality(equal) {
-        for (const groupedShape of shapeArray) {
+        shapeArray.forEach((groupedShape) => {
             cy.get(groupedShape)
                 .should('have.css', 'fill')
                 .then(($shapesGroupColor) => {
@@ -105,11 +104,11 @@ context('Group features', () => {
                         shapesGroupColor = $shapesGroupColor;
                     }
                 });
-        }
+        });
     }
 
     function testSidebarItemsBackgroundColorEquality() {
-        for (const objectSideBarShape of shapeSidebarItemArray) {
+        shapeSidebarItemArray.forEach((objectSideBarShape) => {
             cy.get(objectSideBarShape)
                 .should('have.css', 'background-color')
                 .then(($bColorobjectSideBarShape) => {
@@ -120,7 +119,7 @@ context('Group features', () => {
                     // [ 250, 50, 83, index: 4, input: 'rgb(250, 50, 83)', groups: undefined ]
                     expect($bColorobjectSideBarShape).to.be.contain(shapesGroupColor.match(/\d+, \d+, \d+/));
                 });
-        }
+        });
     }
 
     describe(`Testing case "${caseId}"`, () => {
@@ -133,26 +132,80 @@ context('Group features', () => {
 
         it('Set option "Color by" to "Group".', () => {
             cy.changeAppearance('Group');
-            cy.get('.cvat_canvas_shape').then(($listCanvasShapes) => {
-                for (let i = 0; i < $listCanvasShapes.length; i++) {
-                    cy.get($listCanvasShapes[i])
-                        .should('have.css', 'fill')
-                        .then(($fill) => {
-                            defaultGroupColorRgb = $fill;
-                        });
-                }
+            cy.get('.cvat_canvas_shape').each(($canvasShape) => {
+                cy.wrap($canvasShape)
+                    .should('have.css', 'fill')
+                    .then(($fill) => {
+                        defaultGroupColorRgb = $fill;
+                    });
             });
-            cy.get('.cvat-objects-sidebar-state-item').then(($listObjectsSidebarStateItem) => {
-                for (let i = 0; i < $listObjectsSidebarStateItem.length; i++) {
-                    cy.get($listObjectsSidebarStateItem[i])
-                        .should('have.css', 'background-color')
-                        .then(($bColorObjectsSidebarStateItem) => {
-                            // expected rgba(224, 224, 224, 0.533) to include
-                            // [ 224, 224, 224, index: 4, input: 'rgb(224, 224, 224)', groups: undefined ]
-                            expect($bColorObjectsSidebarStateItem).contain(defaultGroupColorRgb.match(/\d+, \d+, \d+/));
-                        });
-                }
+            cy.get('.cvat-objects-sidebar-state-item').each(($objectsSidebarStateItem) => {
+                cy.wrap($objectsSidebarStateItem)
+                    .should('have.css', 'background-color')
+                    .then(($bColorObjectsSidebarStateItem) => {
+                        // expected rgba(224, 224, 224, 0.533) to include
+                        // [ 224, 224, 224, index: 4, input: 'rgb(224, 224, 224)', groups: undefined ]
+                        expect($bColorObjectsSidebarStateItem).contain(defaultGroupColorRgb.match(/\d+, \d+, \d+/));
+                    });
             });
+        });
+
+        it('Group and ungroup a persistent selection.', () => {
+            for (const sidebarItem of shapeSidebarItemArray) {
+                cy.get(sidebarItem).click({ ...platformModifier });
+                cy.get(sidebarItem).should('have.class', 'cvat-objects-sidebar-state-item-multi-selected');
+            }
+
+            cy.get('.cvat-group-control').click();
+            testShapesFillEquality(false);
+            shapeSidebarItemArray.forEach((sidebarItem) => {
+                cy.get(sidebarItem).should('have.class', 'cvat-objects-sidebar-state-item-multi-selected');
+            });
+
+            cy.contains('.cvat-annotation-header-button', 'Undo').click();
+            testShapesFillEquality(true);
+            cy.contains('.cvat-annotation-header-button', 'Redo').click();
+            testShapesFillEquality(false);
+
+            cy.get('.cvat_canvas_selected_objects_box').rightclick({ force: true });
+            cy.get('.cvat-canvas-selected-objects-more-button').click();
+            cy.contains('.cvat-canvas-selected-objects-overflow-menu button', 'Ungroup selection').click();
+            testShapesFillEquality(true);
+
+            cy.get('body').type('g');
+            testShapesFillEquality(false);
+            cy.get('body').type('{Shift}g');
+            testShapesFillEquality(true);
+
+            cy.get('body').type('{Esc}');
+            shapeSidebarItemArray.forEach((sidebarItem) => {
+                cy.get(sidebarItem).should('not.have.class', 'cvat-objects-sidebar-state-item-multi-selected');
+            });
+        });
+
+        it('Select objects in the sidebar when sorted by layer.', () => {
+            cy.sidebarItemSortBy('Layer');
+            for (const sidebarItem of shapeSidebarItemArray) {
+                cy.get(sidebarItem).trigger('mousedown', { button: 0, ...platformModifier });
+                cy.get(sidebarItem).should('have.class', 'cvat-objects-sidebar-state-item-multi-selected');
+            }
+            cy.get('body').type('{Esc}');
+            cy.sidebarItemSortBy('ID - ascent');
+        });
+
+        it('Keep selected tracks when changing frames.', () => {
+            for (const sidebarItem of trackSidebarItemArray) {
+                cy.get(sidebarItem).click({ ...platformModifier });
+            }
+            cy.get('.cvat-player-next-button').click();
+            trackSidebarItemArray.forEach((sidebarItem) => {
+                cy.get(sidebarItem).should('have.class', 'cvat-objects-sidebar-state-item-multi-selected');
+            });
+            cy.get('.cvat-player-previous-button').click();
+            trackSidebarItemArray.forEach((sidebarItem) => {
+                cy.get(sidebarItem).should('have.class', 'cvat-objects-sidebar-state-item-multi-selected');
+            });
+            cy.get('body').type('{Esc}');
         });
 
         it('With group button unite two shapes. They have corresponding colors.', () => {
@@ -174,7 +227,7 @@ context('Group features', () => {
 
         it('With group button unite two track. They have corresponding colors.', () => {
             testGroupObjects(trackArray);
-            for (const groupedTrack of trackArray) {
+            trackArray.forEach((groupedTrack) => {
                 cy.get(groupedTrack)
                     .should('have.css', 'fill')
                     .then(($tracksGroupColor) => {
@@ -182,8 +235,8 @@ context('Group features', () => {
                         expect($tracksGroupColor).to.not.equal(defaultGroupColorRgb);
                         tracksGroupColor = $tracksGroupColor;
                     });
-            }
-            for (const objectSideBarTrack of trackSidebarItemArray) {
+            });
+            trackSidebarItemArray.forEach((objectSideBarTrack) => {
                 cy.get(objectSideBarTrack)
                     .should('have.css', 'background-color')
                     .then(($bColorobjectSideBarTrack) => {
@@ -194,7 +247,7 @@ context('Group features', () => {
                         // [ 52, 209, 183, index: 4, input: 'rgb(52, 209, 183)', groups: undefined ]
                         expect($bColorobjectSideBarTrack).to.be.contain(tracksGroupColor.match(/\d+, \d+, \d+/));
                     });
-            }
+            });
         });
     });
 
@@ -214,14 +267,12 @@ context('Group features', () => {
 
         it('Set option "Color by" to "Group". With group button unite two shapes. They have corresponding colors.', () => {
             cy.changeAppearance('Group');
-            cy.get('.cvat_canvas_shape').then(($listCanvasShapes) => {
-                for (let i = 0; i < $listCanvasShapes.length; i++) {
-                    cy.get($listCanvasShapes[i])
-                        .should('have.attr', 'fill')
-                        .then(($fill) => {
-                            defaultGroupColorHex = $fill;
-                        });
-                }
+            cy.get('.cvat_canvas_shape').each(($canvasShape) => {
+                cy.wrap($canvasShape)
+                    .should('have.attr', 'fill')
+                    .then(($fill) => {
+                        defaultGroupColorHex = $fill;
+                    });
             });
             testGroupObjects(shapeArray);
         });

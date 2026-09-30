@@ -11,15 +11,19 @@
 }
 
 .cvat-action-runner-list,
+.cvat-action-runner-description,
 .cvat-action-runner-frames-predefined {
     margin-top: $grid-unit-size * 2;
 }
 
-.cvat-action-runner-info {
+.cvat-action-runner-info,
+.cvat-action-runner-description {
     .ant-alert {
         text-align: justify;
     }
+}
 
+.cvat-action-runner-info {
     .ant-btn {
         padding-left: 0;
     }
@@ -58,5 +62,26 @@
 
     > .cvat-action-runner-cancel-btn {
         margin-right: $grid-unit-size;
+    }
+}
+
+.cvat-annotation-actions-tooltip-table {
+    width: $grid-unit-size * 57;
+
+    .ant-table-content {
+        font-size: 12px;
+        color: white;
+    }
+
+    .ant-table-wrapper {
+        .ant-table-thead >tr>th {
+            color: white;
+            font-style: bold;
+            background: transparent;
+        }
+
+        .ant-table {
+            background: transparent;
+        }
     }
 }

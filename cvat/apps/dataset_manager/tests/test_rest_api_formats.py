@@ -22,21 +22,26 @@ from tempfile import TemporaryDirectory
 from time import sleep
 from typing import Any, ClassVar, overload
 from unittest.mock import DEFAULT as MOCK_DEFAULT
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import av
 import datumaro
+import django_rq
 import numpy as np
+import rq.worker
 from attr import define, field
 from datumaro.components.comparator import EqualityComparator
 from datumaro.components.dataset import Dataset
-from django.contrib.auth.models import Group, User
+from django.conf import settings
+from django.contrib.auth.models import Group
+from django.test import override_settings
 from PIL import Image
 from rest_framework import status
+from rq.job import JobStatus as RQJobStatus
 
 import cvat.apps.dataset_manager as dm
 from cvat.apps.dataset_manager.bindings import CvatDataExtractor, TaskData
-from cvat.apps.dataset_manager.cron import clear_export_cache
+from cvat.apps.dataset_manager.cron import ExportCacheDirectoryCleaner
 from cvat.apps.dataset_manager.task import TaskAnnotation
 from cvat.apps.dataset_manager.tests.utils import (
     TestDir,
@@ -50,8 +55,11 @@ from cvat.apps.engine.tests.utils import (
     ExportApiTestBase,
     ForceLogin,
     ImportApiTestBase,
+    clear_rq_jobs,
     get_paginated_collection,
+    set_rq_async_mode,
 )
+from cvat.apps.iam.models import User
 
 projects_path = osp.join(osp.dirname(__file__), "assets", "projects.json")
 with open(projects_path) as file:
@@ -170,13 +178,13 @@ class _DbTestBase(ExportApiTestBase, ImportApiTestBase):
 
     def _put_api_v2_task_id_annotations(self, tid, data):
         with ForceLogin(self.admin, self.client):
-            response = self.client.put("/api/tasks/%s/annotations" % tid, data=data, format="json")
+            response = self.client.put(f"/api/tasks/{tid}/annotations", data=data, format="json")
 
         return response
 
     def _put_api_v2_job_id_annotations(self, jid, data):
         with ForceLogin(self.admin, self.client):
-            response = self.client.put("/api/jobs/%s/annotations" % jid, data=data, format="json")
+            response = self.client.put(f"/api/jobs/{jid}/annotations", data=data, format="json")
 
         return response
 
@@ -194,7 +202,7 @@ class _DbTestBase(ExportApiTestBase, ImportApiTestBase):
     @staticmethod
     def _generate_task_images(count, name_offsets=0):  # pylint: disable=no-self-use
         images = {
-            "client_files[%d]" % i: generate_image_file("image_%d.jpg" % (i + name_offsets))
+            f"client_files[{i}]": generate_image_file(f"image_{i + name_offsets}.jpg")
             for i in range(count)
         }
         images["image_quality"] = 75
@@ -202,9 +210,7 @@ class _DbTestBase(ExportApiTestBase, ImportApiTestBase):
 
     @staticmethod
     def _generate_task_videos(count):  # pylint: disable=no-self-use
-        videos = {
-            "client_files[%d]" % i: generate_video_file("video_%d.mp4" % i) for i in range(count)
-        }
+        videos = {f"client_files[{i}]": generate_video_file(f"video_{i}.mp4") for i in range(count)}
         videos["image_quality"] = 75
         return videos
 
@@ -214,7 +220,7 @@ class _DbTestBase(ExportApiTestBase, ImportApiTestBase):
             self.assertEqual(response.status_code, status.HTTP_201_CREATED)
             tid = response.data["id"]
 
-            response = self.client.post("/api/tasks/%s/data" % tid, data=image_data)
+            response = self.client.post(f"/api/tasks/{tid}/data", data=image_data)
             self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
             rq_id = response.json()["rq_id"]
 
@@ -225,12 +231,14 @@ class _DbTestBase(ExportApiTestBase, ImportApiTestBase):
                 response_json["status"], "finished", msg=f"Message: {response_json['message']}"
             )
 
-            response = self.client.get("/api/tasks/%s" % tid)
+            response = self.client.get(f"/api/tasks/{tid}")
 
             if 200 <= response.status_code < 400:
                 labels_response = list(
                     get_paginated_collection(
-                        lambda page: self.client.get("/api/labels?task_id=%s&page=%s" % (tid, page))
+                        lambda page: self.client.get(
+                            "/api/labels", query_params={"task_id": tid, "page": page}
+                        )
                     )
                 )
                 response.data["labels"] = labels_response
@@ -250,7 +258,9 @@ class _DbTestBase(ExportApiTestBase, ImportApiTestBase):
     def _get_jobs(self, task_id):
         with ForceLogin(self.admin, self.client):
             values = get_paginated_collection(
-                lambda page: self.client.get("/api/jobs?task_id={}&page={}".format(task_id, page))
+                lambda page: self.client.get(
+                    "/api/jobs", query_params={"task_id": task_id, "page": page}
+                )
             )
         return values
 
@@ -258,7 +268,7 @@ class _DbTestBase(ExportApiTestBase, ImportApiTestBase):
         with ForceLogin(self.admin, self.client):
             values = get_paginated_collection(
                 lambda page: self.client.get(
-                    "/api/tasks", data={"project_id": project_id, "page": page}
+                    "/api/tasks", query_params={"project_id": project_id, "page": page}
                 )
             )
         return values
@@ -384,6 +394,7 @@ class TaskDumpUploadTest(_DbTestBase):
                     "Kitti Raw Format 1.0",
                     "Sly Point Cloud Format 1.0",
                     "Datumaro 3D 1.0",
+                    "Generic TSV 1.0",
                 ]:
                     continue
                 dump_format_name = dump_format.DISPLAY_NAME
@@ -526,6 +537,7 @@ class TaskDumpUploadTest(_DbTestBase):
                     "Kitti Raw Format 1.0",
                     "Sly Point Cloud Format 1.0",
                     "Datumaro 3D 1.0",
+                    "Generic TSV 1.0",
                 ]:
                     continue
                 dump_format_name = dump_format.DISPLAY_NAME
@@ -870,7 +882,6 @@ class TaskDumpUploadTest(_DbTestBase):
         test_cases = ["all", "first"]
 
         for dump_format_name in dump_formats:
-
             images = self._generate_task_images(10)
             task = self._create_task(tasks["change overlap and segment size"], images)
             task_id = task["id"]
@@ -968,8 +979,9 @@ class TaskDumpUploadTest(_DbTestBase):
 
         with TestDir() as test_dir:
             for dump_format in dump_formats:
-                if not dump_format.ENABLED:
+                if not dump_format.ENABLED or dump_format.DISPLAY_NAME == "Generic TSV 1.0":
                     continue
+
                 dump_format_name = dump_format.DISPLAY_NAME
                 with self.subTest(format=dump_format_name):
                     images = self._generate_task_images(3)
@@ -1031,6 +1043,8 @@ class TaskDumpUploadTest(_DbTestBase):
                         "Cityscapes 1.0",  # expanding annotations due to background mask
                     ]:
                         self.skipTest("Format is fail")
+                    elif dump_format_name == "Generic TSV 1.0":
+                        self.skipTest("Not relevant")  # requires an audio task
 
                     images = self._generate_task_images(3)
                     if dump_format_name in [
@@ -1167,6 +1181,10 @@ class TaskDumpUploadTest(_DbTestBase):
                         "Datumaro 3D 1.0",
                     ]:
                         self.skipTest("Format is fail")
+                    elif dump_format_name == "Generic TSV 1.0":
+                        self.skipTest(
+                            "Not relevant"
+                        )  # requires an audio task, not available in datumaro
 
                     # create task
                     images = self._generate_task_images(3)
@@ -1479,6 +1497,7 @@ class ExportBehaviorTest(_DbTestBase):
         pass
 
     def setUp(self):
+        super().setUp()
         self.export_cache_lock = multiprocessing.Lock()
 
     @contextmanager
@@ -1693,7 +1712,7 @@ class ExportBehaviorTest(_DbTestBase):
                     side_effect(set_condition, clear_removed_the_file),
                 )
 
-                clear_export_cache(file_path=Path(file_path))
+                ExportCacheDirectoryCleaner().cron_cleanup()
                 set_condition(clear_has_been_finished)
 
                 mock_os_remove.assert_not_called()
@@ -1829,10 +1848,10 @@ class ExportBehaviorTest(_DbTestBase):
 
             with (
                 patch(
-                    "cvat.apps.redis_handler.background.get_export_cache_lock",
+                    "cvat.apps.engine.background.get_export_cache_lock",
                     new=self.patched_get_export_cache_lock,
                 ),
-                patch("cvat.apps.redis_handler.background.osp.exists") as mock_osp_exists,
+                patch("cvat.apps.engine.background.osp.exists") as mock_osp_exists,
                 TemporaryDirectory() as temp_dir,
             ):
                 mock_osp_exists.side_effect = patched_osp_exists
@@ -1845,9 +1864,16 @@ class ExportBehaviorTest(_DbTestBase):
                 mock_osp_exists.assert_called()
 
         def _clear(*_, file_path: str):
+            import sys
             from os import remove as original_remove
 
             from cvat.apps.dataset_manager.util import LockNotAvailableError
+
+            swallowed_exceptions = []
+
+            def patched_log_exception(logger=None, exc_info=True):
+                cur_exc_info = sys.exc_info() if exc_info is True else exc_info
+                swallowed_exceptions.append(cur_exc_info[1] if cur_exc_info else None)
 
             with (
                 patch(
@@ -1861,20 +1887,20 @@ class ExportBehaviorTest(_DbTestBase):
                 patch(
                     "cvat.apps.dataset_manager.views.TTL_CONSTS", new={"task": timedelta(seconds=0)}
                 ),
+                patch("cvat.apps.dataset_manager.cron.log_exception", new=patched_log_exception),
             ):
                 mock_os_remove.side_effect = chain_side_effects(
                     original_remove,
                     side_effect(set_condition, clear_removed_the_file),
                 )
 
-                exited_by_timeout = False
-                try:
-                    clear_export_cache(file_path=Path(file_path))
-                except LockNotAvailableError:
-                    # should come from waiting for get_export_cache_lock
-                    exited_by_timeout = True
+                ExportCacheDirectoryCleaner().cron_cleanup()
 
-                assert exited_by_timeout, "LockNotAvailableError should have been raised"
+                # should come from waiting for get_export_cache_lock
+                assert any(
+                    isinstance(e, LockNotAvailableError) for e in swallowed_exceptions
+                ), "LockNotAvailableError should have been raised"
+                mock_os_remove.assert_not_called()
 
         # The problem checked is TOCTOU / race condition for file existence check and
         # further file reading / removal. There are several possible variants of the problem.
@@ -1986,29 +2012,101 @@ class ExportBehaviorTest(_DbTestBase):
             with get_export_cache_lock("test_export_path", ttl=lock_time, acquire_timeout=5):
                 sleep(lock_time + 1)
 
+    def _run_export_job_via_worker(self, rq_id: str):
+        queue = django_rq.get_queue(settings.CVAT_QUEUES.EXPORT_DATA.value)
+
+        with patch.object(queue.connection, "client_list", return_value=[]):
+            worker = rq.worker.SimpleWorker([queue], connection=queue.connection)
+
+        worked = worker.work(burst=True)
+        self.assertTrue(worked, "The worker did not process any job")
+        return queue.fetch_job(rq_id)
+
     def test_export_can_request_retry_on_locking_failure(self):
+        from cvat.apps.dataset_manager.util import LockNotAvailableError
+
         format_name = "CVAT for images 1.1"
         task = self._setup_task_with_annotations(format_name=format_name)
         task_id = task["id"]
 
+        set_rq_async_mode(is_async=True)
+        self.addCleanup(set_rq_async_mode, is_async=False)
+        self.addCleanup(clear_rq_jobs)
+
+        real_get_export_cache_lock = get_export_cache_lock
+        lock_calls = []
+
+        def flaky_get_export_cache_lock(*args, **kwargs):
+            lock_calls.append((args, kwargs))
+            if len(lock_calls) == 1:
+                raise LockNotAvailableError
+            return real_get_export_cache_lock(*args, **kwargs)
+
+        with (
+            patch(
+                "cvat.apps.dataset_manager.views.get_export_cache_lock",
+                side_effect=flaky_get_export_cache_lock,
+            ),
+            override_settings(EXPORT_JOB_RETRY_INTERVALS=[0]),
+        ):
+            response = self._post_request(
+                f"/api/tasks/{task_id}/dataset/export",
+                self.admin,
+                query_params={"format": format_name, "save_images": True},
+            )
+            self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
+            rq_id = response.json()["rq_id"]
+
+            job = self._run_export_job_via_worker(rq_id=rq_id)
+
+        self.assertGreaterEqual(len(lock_calls), 2, "The lock error should have caused a retry")
+        self.assertEqual(job.get_status(refresh=True), RQJobStatus.FINISHED)
+        self.assertEqual(job.retries_left, 0)
+
+        response = self._check_request_status(self.admin, rq_id)
+        self.assertIsNotNone(response.json()["result_url"])
+
+    def test_export_is_scheduled_for_retry_on_locking_failure(self):
         from cvat.apps.dataset_manager.util import LockNotAvailableError
+
+        format_name = "CVAT for images 1.1"
+        task = self._setup_task_with_annotations(format_name=format_name)
+        task_id = task["id"]
+
+        set_rq_async_mode(is_async=True)
+        self.addCleanup(set_rq_async_mode, is_async=False)
+        self.addCleanup(clear_rq_jobs)
 
         with (
             patch(
                 "cvat.apps.dataset_manager.views.get_export_cache_lock",
                 side_effect=LockNotAvailableError,
             ) as mock_get_export_cache_lock,
-            patch("cvat.apps.dataset_manager.views.rq.get_current_job") as mock_rq_get_current_job,
-            patch("cvat.apps.dataset_manager.views.django_rq.get_scheduler"),
-            self.assertRaises(LockNotAvailableError),
+            override_settings(EXPORT_JOB_RETRY_INTERVALS=[60]),
         ):
-            mock_rq_job = MagicMock(timeout=5)
-            mock_rq_get_current_job.return_value = mock_rq_job
+            response = self._post_request(
+                f"/api/tasks/{task_id}/dataset/export",
+                self.admin,
+                query_params={"format": format_name, "save_images": True},
+            )
+            self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
+            rq_id = response.json()["rq_id"]
 
-            export(dst_format=format_name, task_id=task_id)
+            job = self._run_export_job_via_worker(rq_id=rq_id)
 
         mock_get_export_cache_lock.assert_called()
-        self.assertEqual(mock_rq_job.retries_left, 1)
+        self.assertEqual(job.get_status(refresh=True), RQJobStatus.SCHEDULED)
+        self.assertEqual(job.retries_left, 0)
+        self.assertIn(
+            job.id,
+            django_rq.get_queue(
+                settings.CVAT_QUEUES.EXPORT_DATA.value
+            ).scheduled_job_registry.get_job_ids(),
+        )
+
+        response = self._get_request(f"/api/requests/{rq_id}", self.admin)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.json()["status"], "queued")
 
     def test_export_can_reuse_older_file_if_still_relevant(self):
         format_name = "CVAT for images 1.1"
@@ -2072,7 +2170,6 @@ class ExportBehaviorTest(_DbTestBase):
                 ),
                 patch("cvat.apps.dataset_manager.views.shutil.move") as mock_os_replace,
                 patch("cvat.apps.dataset_manager.views.task.export_task") as mock_export_fn,
-                patch("cvat.apps.dataset_manager.views.django_rq.get_scheduler"),
             ):
                 mock_export_fn.side_effect = chain_side_effects(
                     side_effect(set_condition, export_1_checked_file),
@@ -2112,7 +2209,6 @@ class ExportBehaviorTest(_DbTestBase):
                 ),
                 patch("cvat.apps.dataset_manager.views.shutil.move") as mock_os_replace,
                 patch("cvat.apps.dataset_manager.views.task.export_task") as mock_export_fn,
-                patch("cvat.apps.dataset_manager.views.django_rq.get_scheduler"),
             ):
                 mock_export_fn.side_effect = chain_side_effects(
                     side_effect(set_condition, export_2_checked_file),
@@ -2199,15 +2295,20 @@ class ExportBehaviorTest(_DbTestBase):
             patch("cvat.apps.dataset_manager.views.TTL_CONSTS", new={"task": timedelta(seconds=0)}),
         ):
             export_path = export(dst_format=format_name, task_id=task_id)
-            clear_export_cache(file_path=Path(export_path))
+            self.assertEqual(ExportCacheDirectoryCleaner().cron_cleanup(), 1)
 
         self.assertFalse(osp.isfile(export_path))
 
-    def test_cleanup_can_fail_if_no_file(self):
-        from cvat.apps.dataset_manager.util import CacheFileOrDirPathParseError
+    def test_cleanup_can_skip_unparsable_files(self):
+        from cvat.apps.dataset_manager.util import ExportCacheManager
 
-        with self.assertRaises(CacheFileOrDirPathParseError):
-            clear_export_cache(file_path=Path("non existent file path"))
+        unparsable_file = Path(ExportCacheManager.ROOT) / "unparsable_file_name"
+        unparsable_file.touch()
+        try:
+            self.assertEqual(ExportCacheDirectoryCleaner().cron_cleanup(), 0)
+            self.assertTrue(unparsable_file.is_file())
+        finally:
+            unparsable_file.unlink(missing_ok=True)
 
     def test_cleanup_can_defer_removal_if_file_is_used_recently(self):
         from os import remove as original_remove
@@ -2225,14 +2326,12 @@ class ExportBehaviorTest(_DbTestBase):
             ) as mock_os_remove,
         ):
             export_path = export(dst_format=format_name, task_id=task_id)
-            clear_export_cache(file_path=Path(export_path))
+            self.assertEqual(ExportCacheDirectoryCleaner().cron_cleanup(), 0)
             mock_os_remove.assert_not_called()
 
         self.assertTrue(osp.isfile(export_path))
 
     def test_cleanup_cron_job_can_delete_cached_files(self):
-        from cvat.apps.dataset_manager.cron import cleanup_export_cache_directory
-
         def _get_project_task_job_ids():
             project = self._create_project(projects["main"])
             project_id = project["id"]
@@ -2265,13 +2364,8 @@ class ExportBehaviorTest(_DbTestBase):
                         "cvat.apps.dataset_manager.views.TTL_CONSTS",
                         new={resource: timedelta(seconds=0)},
                     ),
-                    patch(
-                        "cvat.apps.dataset_manager.cron.clear_export_cache",
-                        side_effect=clear_export_cache,
-                    ) as mock_clear_export_cache,
                 ):
-                    cleanup_export_cache_directory()
-                    mock_clear_export_cache.assert_called_once()
+                    self.assertEqual(ExportCacheDirectoryCleaner().cron_cleanup(), 1)
 
                 self.assertFalse(osp.exists(export_path))
 
@@ -2295,6 +2389,7 @@ class ProjectDumpUpload(_DbTestBase):
                 if not dump_format.ENABLED or dump_format.DISPLAY_NAME in [
                     "Kitti Raw Format 1.0",
                     "Sly Point Cloud Format 1.0",
+                    "Generic TSV 1.0",
                 ]:
                     continue
                 dump_format_name = dump_format.DISPLAY_NAME
@@ -2421,7 +2516,7 @@ class ProjectDumpUpload(_DbTestBase):
             for dump_format in dump_formats:
                 if (
                     not dump_format.ENABLED
-                    or dump_format.DIMENSION == dm.bindings.DimensionType.DIM_3D
+                    or dump_format.DIMENSION != dm.bindings.DimensionType.DIM_2D
                 ):
                     continue
                 dump_format_name = dump_format.DISPLAY_NAME
@@ -2528,3 +2623,27 @@ class ProjectDumpUpload(_DbTestBase):
             new_task = self._get_tasks(project["id"])[0]
             data_from_task_after_upload = self._get_data_from_task(new_task["id"], True)
             compare_datasets(expected_dataset, data_from_task_after_upload)
+
+
+class ImportErrorMessageTest(_DbTestBase):
+    def test_api_v2_can_include_underlying_reason_in_import_error_message(self):
+        # A YOLO 1.1 archive that passes format detection (obj.data is present)
+        # but fails during import (obj.names is missing): the reported message
+        # must contain the underlying reason, not only the generic
+        # "Failed to import dataset" text
+        images = self._generate_task_images(1)
+        task = self._create_task(tasks["main"], images)
+
+        with TemporaryDirectory() as tmp_dir:
+            archive_path = osp.join(tmp_dir, "dataset.zip")
+            with zipfile.ZipFile(archive_path, "w") as archive:
+                archive.writestr(
+                    "obj.data",
+                    "classes = 1\ntrain = train.txt\nnames = obj.names\nbackup = backup/\n",
+                )
+                archive.writestr("train.txt", "obj_train_data/image_0.jpg\n")
+
+            with self.assertRaisesRegex(dm.bindings.CvatImportError, "obj\\.names"):
+                dm.task.import_task_annotations(
+                    archive_path, task["id"], "YOLO 1.1", conv_mask_to_poly=False
+                )

@@ -37,7 +37,7 @@ function transformSkeletonSVG(value: string): string {
                 idNameMapping[sublabel.id] = sublabel.name;
             }
         }
-    } catch (error: any) {
+    } catch (_error: any) {
         // unsuccessful parsing, return value as is
         return value;
     }
@@ -83,21 +83,55 @@ function validateLabels(_: RuleObject, value: string): Promise<void> {
 interface Props {
     labels: LabelOptColor[];
     onSubmit: (labels: LabelOptColor[]) => void;
+    submitting: boolean;
+}
+
+interface AttributeWithLabelPath {
+    attribute: SerializedAttribute;
+    labelPath: string;
+}
+
+function convertLabel(label: LabelOptColor): LabelOptColor {
+    return {
+        ...label,
+        id: (label.id as number) < 0 ? undefined : label.id,
+        attributes: label.attributes.map(
+            (attribute: any): SerializedAttribute => ({
+                ...attribute,
+                id: attribute.id < 0 ? undefined : attribute.id,
+            }),
+        ),
+        sublabels: label.sublabels?.map(convertLabel),
+    };
 }
 
 function convertLabels(labels: LabelOptColor[]): LabelOptColor[] {
     return labels.map(
-        (label: LabelOptColor): LabelOptColor => ({
-            ...label,
-            id: (label.id as number) < 0 ? undefined : label.id,
-            attributes: label.attributes.map(
-                (attribute: any): SerializedAttribute => ({
-                    ...attribute,
-                    id: attribute.id < 0 ? undefined : attribute.id,
-                }),
-            ),
-        }),
+        (label: LabelOptColor): LabelOptColor => convertLabel(label),
     );
+}
+
+function collectAttributeIDs(labels: SerializedLabel[]): number[] {
+    return labels.flatMap((label: SerializedLabel): number[] => [
+        ...label.attributes
+            .map((attr: SerializedAttribute): number | undefined => attr.id)
+            .filter((id: number | undefined): id is number => typeof id !== 'undefined' && id >= 0),
+        ...collectAttributeIDs(label.sublabels || []),
+    ]);
+}
+
+function collectAttributes(labels: SerializedLabel[], parentPath = ''): AttributeWithLabelPath[] {
+    return labels.flatMap((label: SerializedLabel): AttributeWithLabelPath[] => {
+        const labelPath = parentPath ? `${parentPath} / ${label.name}` : label.name;
+
+        return [
+            ...label.attributes.map((attribute: SerializedAttribute): AttributeWithLabelPath => ({
+                attribute,
+                labelPath,
+            })),
+            ...collectAttributes(label.sublabels || [], labelPath),
+        ];
+    });
 }
 
 export default class RawViewer extends React.PureComponent<Props> {
@@ -124,17 +158,13 @@ export default class RawViewer extends React.PureComponent<Props> {
         ) as SerializedLabel[];
 
         const labelIds: number[] = [];
-        const attrIds: number[] = [];
         for (const label of parsed) {
             label.id = label.id || idGenerator();
             if (label.id >= 0) {
                 labelIds.push(label.id);
             }
-            for (const attr of label.attributes) {
+            for (const { attribute: attr } of collectAttributes([label])) {
                 attr.id = attr.id || idGenerator();
-                if (attr.id >= 0) {
-                    attrIds.push(attr.id);
-                }
             }
         }
 
@@ -144,11 +174,11 @@ export default class RawViewer extends React.PureComponent<Props> {
                 return labelId >= 0 && !labelIds.includes(labelId);
             });
 
-        const deletedAttributes = labels
-            .reduce((acc: SerializedAttribute[], _label) => [...acc, ..._label.attributes], [])
-            .filter((_attr: SerializedAttribute) => {
-                const attrId = _attr.id as number;
-                return attrId >= 0 && !attrIds.includes(attrId);
+        const parsedAttrIds = collectAttributeIDs(parsed);
+        const deletedAttributes = collectAttributes(labels)
+            .filter(({ attribute }: AttributeWithLabelPath) => {
+                const attrId = attribute.id as number;
+                return attrId >= 0 && !parsedAttrIds.includes(attrId);
             });
 
         if (deletedLabels.length || deletedAttributes.length) {
@@ -173,8 +203,8 @@ export default class RawViewer extends React.PureComponent<Props> {
                             <Paragraph>
                                 Following attributes are going to be removed:
                                 <div className='cvat-modal-confirm-content-remove-existing-attributes'>
-                                    {deletedAttributes.map((_attr: SerializedAttribute) => (
-                                        <Tag key={_attr.id as number}>{_attr.name}</Tag>
+                                    {deletedAttributes.map(({ attribute, labelPath }: AttributeWithLabelPath) => (
+                                        <Tag key={attribute.id as number}>{`${labelPath}: ${attribute.name}`}</Tag>
                                     ))}
                                 </div>
                             </Paragraph>
@@ -197,7 +227,7 @@ export default class RawViewer extends React.PureComponent<Props> {
     };
 
     public render(): JSX.Element {
-        const { labels } = this.props;
+        const { labels, submitting } = this.props;
         const convertedLabels = convertLabels(labels);
         const textLabels = JSON.stringify(convertedLabels, null, 2);
         return (
@@ -218,6 +248,7 @@ export default class RawViewer extends React.PureComponent<Props> {
                                     const updatedValue = value
                                         .substr(0, selectionStart) + replaced + value.substr(selectionEnd);
                                     this.formRef.current.setFieldsValue({ labels: updatedValue });
+                                    this.formRef.current.validateFields(['labels']).catch(() => {});
                                     setTimeout(() => {
                                         element.setSelectionRange(selectionEnd, selectionEnd);
                                     });
@@ -229,37 +260,49 @@ export default class RawViewer extends React.PureComponent<Props> {
                         className='cvat-raw-labels-viewer'
                     />
                 </Form.Item>
-                <Row justify='start' align='middle'>
-                    <Col>
-                        <CVATTooltip title='Save labels'>
-                            <Button
-                                className='cvat-submit-raw-labels-conf-button'
-                                style={{ width: '150px' }}
-                                type='primary'
-                                htmlType='submit'
-                            >
-                                Done
-                            </Button>
-                        </CVATTooltip>
-                    </Col>
-                    <Col offset={1}>
-                        <CVATTooltip title='Reset all changes'>
-                            <Button
-                                className='cvat-reset-raw-labels-conf-button'
-                                type='primary'
-                                danger
-                                style={{ width: '150px' }}
-                                onClick={(): void => {
-                                    if (this.formRef.current) {
-                                        this.formRef.current.resetFields();
-                                    }
-                                }}
-                            >
-                                Reset
-                            </Button>
-                        </CVATTooltip>
-                    </Col>
-                </Row>
+                <Form.Item shouldUpdate noStyle>
+                    {({ getFieldError, getFieldValue }) => {
+                        const hasChanges = getFieldValue('labels') !== textLabels;
+                        const hasErrors = getFieldError('labels').length > 0;
+
+                        return (
+                            <Row justify='start' align='middle'>
+                                <Col>
+                                    <CVATTooltip title='Save labels'>
+                                        <Button
+                                            className='cvat-submit-raw-labels-conf-button'
+                                            style={{ width: '150px' }}
+                                            type='primary'
+                                            htmlType='submit'
+                                            loading={submitting}
+                                            disabled={!hasChanges || hasErrors || submitting}
+                                        >
+                                            Save
+                                        </Button>
+                                    </CVATTooltip>
+                                </Col>
+                                <Col offset={1}>
+                                    <CVATTooltip title='Reset all changes'>
+                                        <Button
+                                            className='cvat-reset-raw-labels-conf-button'
+                                            type='primary'
+                                            danger
+                                            style={{ width: '150px' }}
+                                            disabled={!hasChanges}
+                                            onClick={(): void => {
+                                                if (this.formRef.current) {
+                                                    this.formRef.current.resetFields();
+                                                }
+                                            }}
+                                        >
+                                            Cancel
+                                        </Button>
+                                    </CVATTooltip>
+                                </Col>
+                            </Row>
+                        );
+                    }}
+                </Form.Item>
             </Form>
         );
     }

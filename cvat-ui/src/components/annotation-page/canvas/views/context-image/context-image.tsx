@@ -4,7 +4,8 @@
 
 import './styles.scss';
 import React, { useEffect, useRef, useState } from 'react';
-import { shallowEqual, useSelector } from 'react-redux';
+import { useSelector } from 'react-redux';
+import { shallowEqual } from 'utils/redux';
 import PropTypes from 'prop-types';
 import notification from 'antd/lib/notification';
 import Spin from 'antd/lib/spin';

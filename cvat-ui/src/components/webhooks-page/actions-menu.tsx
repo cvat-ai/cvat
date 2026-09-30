@@ -4,7 +4,8 @@
 
 import React, { useCallback } from 'react';
 import { useHistory } from 'react-router';
-import { shallowEqual, useDispatch, useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
+import { shallowEqual } from 'utils/redux';
 import Dropdown from 'antd/lib/dropdown';
 import Modal from 'antd/lib/modal';
 import { MenuProps } from 'antd/lib/menu';
@@ -46,7 +47,7 @@ export default function WebhookActionsMenu(props: Readonly<WebhookActionsMenuPro
             async (webhook) => {
                 await dispatch(deleteWebhookAsync(webhook));
             },
-            (project, idx, total) => `Deleting project #${project.id} (${idx + 1}/${total})`,
+            (webhook, idx, total) => `Deleting webhook #${webhook.id} (${idx + 1}/${total})`,
         ));
     }, [dispatch, webhookInstance]);
 

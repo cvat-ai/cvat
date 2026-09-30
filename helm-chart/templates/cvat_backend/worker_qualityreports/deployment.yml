@@ -52,15 +52,22 @@ spec:
           {{- toYaml . | nindent 12 }}
           {{- end }}
           args:
+          {{- with $localValues.args }}
+          {{- toYaml . | nindent 10 }}
+          {{- else }}
           - "run"
           - "worker"
           - "quality_reports"
+          {{- end }}
           env:
           {{ include "cvat.sharedBackendEnv" . | indent 10 }}
           {{- with concat .Values.cvat.backend.additionalEnv $localValues.additionalEnv }}
           {{- toYaml . | nindent 10 }}
           {{- end }}
-          {{- $probeArgs := list "quality_reports" -}}
+          - name: NUMPROCS
+            value: {{ $localValues.numProcs | quote }}
+          {{- $expectedWorkers := include "cvat.backend.worker.livenessProbe.workers" $localValues -}}
+          {{- $probeArgs := list "quality_reports" "--expected-num-workers" $expectedWorkers -}}
           {{- $probeConfig := dict "args" $probeArgs "livenessProbe" $.Values.cvat.backend.worker.livenessProbe -}}
           {{ include "cvat.backend.worker.livenessProbe" $probeConfig | indent 10 }}
           {{- with concat .Values.cvat.backend.additionalVolumeMounts $localValues.additionalVolumeMounts }}

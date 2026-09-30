@@ -4,8 +4,8 @@
 
 import {
     AnalyticsEventsFilter, QualityConflictsFilter, QualityReportsFilter,
-    QualitySettingsFilter, ConsensusSettingsFilter, ApiTokensFilter,
-} from './server-response-types';
+    QualitySettingsFilter, QualityRequirementsFilter, ConsensusSettingsFilter, ApiTokensFilter,
+} from './server-request-types';
 import PluginRegistry from './plugins';
 import serverProxy from './server-proxy';
 import lambdaManager from './lambda-manager';
@@ -14,7 +14,10 @@ import logger from './logger';
 import * as enums from './enums';
 import config from './config';
 import { mask2Rle, rle2Mask } from './rle-utils';
-import { propagateShapes, validateAttributeValue } from './object-utils';
+import {
+    cropMask, getVisibleSkeletonElements, propagateShapes, validateAttributeValue,
+} from './object-utils';
+import { createOpenCVInterface } from './opencv/opencv-interface';
 import User from './user';
 import Project from './project';
 import { Job, Task } from './session';
@@ -29,12 +32,13 @@ import { FrameData, FramesMetaData } from './frames';
 import CloudStorage from './cloud-storage';
 import Organization, { Invitation } from './organization';
 import Webhook from './webhook';
-import QualityReport from './quality-report';
-import QualityConflict from './quality-conflict';
-import QualitySettings from './quality-settings';
+import {
+    QualityConflict, QualityReport, QualityRequirement, QualitySettings,
+} from './quality';
 import ConsensusSettings from './consensus-settings';
 import AnnotationGuide from './guide';
 import ApiToken from './api-token';
+import UserGrowthData from './growth';
 import { JobValidationLayout, TaskValidationLayout } from './validation-layout';
 import { Request } from './request';
 import AboutData from './about';
@@ -47,6 +51,7 @@ import {
 } from './annotations-actions/annotations-actions';
 import { BaseCollectionAction } from './annotations-actions/base-collection-action';
 import { BaseShapesAction } from './annotations-actions/base-shapes-action';
+import { setActionMetadata } from './annotations-actions/base-action';
 import {
     ArgumentError, DataError, Exception, ScriptingError, ServerError,
 } from './exceptions';
@@ -67,7 +72,9 @@ export default interface CVATCore {
     };
     server: {
         about: () => Promise<AboutData>;
-        share: (dir: string) => Promise<{
+        share: (
+            ...args: Parameters<typeof serverProxy.server.share>
+        ) => Promise<{
             mimeType: string;
             name: string;
             type: enums.ShareFileType;
@@ -76,7 +83,7 @@ export default interface CVATCore {
         userAgreements: typeof serverProxy.server.userAgreements,
         register: (
             ...args: Parameters<typeof serverProxy.server.register>
-        ) => Promise<User>;
+        ) => ReturnType<typeof serverProxy.server.register>;
         login: typeof serverProxy.server.login;
         logout: typeof serverProxy.server.logout;
         changePassword: typeof serverProxy.server.changePassword;
@@ -96,6 +103,9 @@ export default interface CVATCore {
     users: {
         get: any;
     };
+    growth: {
+        get: (userId: number) => Promise<UserGrowthData[]>;
+    };
     apiTokens: {
         get: (filter: ApiTokensFilter) => Promise<PaginatedResource<ApiToken>>;
     };
@@ -107,6 +117,7 @@ export default interface CVATCore {
             search?: string;
             jobID?: number;
             taskID?: number;
+            projectID?: number;
             type?: string;
         }, aggregate?: boolean) => Promise<PaginatedResource<Job>>;
     };
@@ -139,9 +150,14 @@ export default interface CVATCore {
         get: any;
     };
     organizations: {
-        get: any;
-        activate: any;
-        deactivate: any;
+        get: (filter: {
+            page?: number;
+            search?: string;
+            sort?: string;
+            filter?: string;
+        }) => Promise<PaginatedResource<Organization>>;
+        activate: (organization: Organization) => Promise<void>;
+        deactivate: () => Promise<void>;
         acceptInvitation: (key: string) => Promise<string>;
         declineInvitation: (key: string) => Promise<void>;
         invitations: (filter: {
@@ -167,6 +183,12 @@ export default interface CVATCore {
                     aggregate?: boolean,
                 ) => Promise<PaginatedResource<QualitySettings>>;
             };
+            requirements: {
+                get: (
+                    filter: QualityRequirementsFilter,
+                    aggregate?: boolean,
+                ) => Promise<PaginatedResource<QualityRequirement>>;
+            };
         };
         events: {
             export: (filter: AnalyticsEventsFilter) => Promise<string>;
@@ -190,6 +212,9 @@ export default interface CVATCore {
         list: typeof listActions;
         register: typeof registerAction;
         unregister: typeof unregisterAction;
+        metadata: {
+            set: typeof setActionMetadata;
+        };
         run: typeof runAction;
         call: typeof callAction;
     };
@@ -198,6 +223,7 @@ export default interface CVATCore {
         backendAPI: typeof config.backendAPI;
         origin: typeof config.origin;
         uploadChunkSize: typeof config.uploadChunkSize;
+        opencvPath: typeof config.opencvPath;
         removeUnderlyingMaskPixels: {
             enabled: boolean;
             onEmptyMaskOccurrence: () => void | null;
@@ -206,6 +232,7 @@ export default interface CVATCore {
         globalObjectsCounter: typeof config.globalObjectsCounter;
         requestsStatusDelay: typeof config.requestsStatusDelay;
         jobMetaDataReloadPeriod: typeof config.jobMetaDataReloadPeriod;
+        previewPlaceholders: typeof config.previewPlaceholders;
     },
     enums,
     exceptions: {
@@ -238,6 +265,7 @@ export default interface CVATCore {
         QualityReport: typeof QualityReport;
         QualityConflict: typeof QualityConflict;
         QualitySettings: typeof QualitySettings;
+        QualityRequirement: typeof QualityRequirement;
         ApiToken: typeof ApiToken;
         Request: typeof Request;
         FramesMetaData: typeof FramesMetaData;
@@ -247,7 +275,13 @@ export default interface CVATCore {
     utils: {
         mask2Rle: typeof mask2Rle;
         rle2Mask: typeof rle2Mask;
+        cropMask: typeof cropMask;
         propagateShapes: typeof propagateShapes;
         validateAttributeValue: typeof validateAttributeValue;
+        getVisibleSkeletonElements: typeof getVisibleSkeletonElements;
     };
+    opencv: {
+        createOpenCVInterface: typeof createOpenCVInterface;
+    };
+// eslint-disable-next-line semi
 }

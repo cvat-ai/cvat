@@ -3,8 +3,6 @@
 //
 // SPDX-License-Identifier: MIT
 
-/* eslint-disable cypress/no-unnecessary-waiting */
-
 /// <reference types="cypress" />
 
 import { taskName, labelName } from '../../support/const_canvas3d';
@@ -51,6 +49,7 @@ context('Canvas 3D functionality. Grouping.', () => {
         cy.prepareUserSession();
         cy.openTask(taskName);
         cy.openJob();
+        // eslint-disable-next-line cypress/no-unnecessary-waiting
         cy.wait(1000); // Waiting for the point cloud to display
         cy.create3DCuboid(firstCuboidCreationParams);
         cy.create3DCuboid(secondCuboidCreationParams);
@@ -64,6 +63,7 @@ context('Canvas 3D functionality. Grouping.', () => {
             cy.get('.cvat-group-control').click();
             for (const shape of [secondCuboidCreationParams, thirdCuboidCreationParams]) {
                 cy.get('.cvat-canvas3d-perspective').trigger('mousemove', shape.x, shape.y);
+                // eslint-disable-next-line cypress/no-unnecessary-waiting
                 cy.wait(500); // Waiting for mousemove have effect
                 cy.get('.cvat-canvas3d-perspective').click(shape.x, shape.y);
             }
@@ -106,6 +106,7 @@ context('Canvas 3D functionality. Grouping.', () => {
             cy.get('.cvat-group-control').click();
             for (const shape of [secondCuboidCreationParams, thirdCuboidCreationParams]) {
                 cy.get('.cvat-canvas3d-perspective').trigger('mousemove', shape.x, shape.y);
+                // eslint-disable-next-line cypress/no-unnecessary-waiting
                 cy.wait(500); // Waiting for mousemove have effect
                 cy.get('.cvat-canvas3d-perspective').click(shape.x, shape.y);
             }

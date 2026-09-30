@@ -221,10 +221,6 @@ ThunkAction {
         const description: any = {
             name: data.basic.name,
             labels: data.labels,
-            image_quality: 70,
-            use_zip_chunks: data.advanced.useZipChunks,
-            use_cache: data.advanced.useCache,
-            sorting_method: data.advanced.sortingMethod,
             source_storage: new Storage(data.advanced.sourceStorage ?? { location: StorageLocation.LOCAL }).toJSON(),
             target_storage: new Storage(data.advanced.targetStorage ?? { location: StorageLocation.LOCAL }).toJSON(),
         };
@@ -250,7 +246,7 @@ ThunkAction {
         if (data.advanced.frameFilter) {
             description.frame_filter = data.advanced.frameFilter;
         }
-        if (data.advanced.imageQuality) {
+        if (data.advanced.imageQuality !== undefined) {
             description.image_quality = +data.advanced.imageQuality;
         }
         if (data.advanced.dataChunkSize) {
@@ -268,8 +264,26 @@ ThunkAction {
         if (data.advanced.consensusReplicas) {
             description.consensus_replicas = +data.advanced.consensusReplicas;
         }
+        if (data.advanced.useZipChunks !== undefined) {
+            description.use_zip_chunks = data.advanced.useZipChunks;
+        }
+        if (data.advanced.useCache !== undefined) {
+            description.use_cache = data.advanced.useCache;
+        }
+        if (data.advanced.sortingMethod !== undefined) {
+            description.sorting_method = data.advanced.sortingMethod;
+        }
 
-        const extras: Record<string, any> = {};
+        const extras: {
+            [index: string]: any;
+            clientFiles: File[];
+            serverFiles: string[];
+            remoteFiles: string[];
+        } = {
+            clientFiles: data.files.local,
+            serverFiles: data.files.share.concat(data.files.cloudStorage),
+            remoteFiles: data.files.remote,
+        };
 
         if (data.quality.validationMode !== ValidationMode.NONE) {
             extras.validation_params = {
@@ -285,9 +299,6 @@ ThunkAction {
         }
 
         const taskInstance = new cvat.classes.Task(description);
-        taskInstance.clientFiles = data.files.local;
-        taskInstance.serverFiles = data.files.share.concat(data.files.cloudStorage);
-        taskInstance.remoteFiles = data.files.remote;
         try {
             const savedTask = await taskInstance.save(extras, {
                 updateStatusCallback(updateData: Request | UpdateStatusData) {

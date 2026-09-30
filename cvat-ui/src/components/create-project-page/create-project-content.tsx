@@ -48,9 +48,11 @@ interface AdvancedConfigurationProps {
     onChangeTargetStorageLocation?: (value: StorageLocation) => void;
 }
 
+type InputRef = React.ComponentRef<typeof Input>;
+
 function NameConfigurationForm(
     { formRef, inputRef }:
-    { formRef: RefObject<FormInstance>, inputRef: RefObject<Input> },
+    { formRef: RefObject<FormInstance>, inputRef: RefObject<InputRef> },
 ):JSX.Element {
     return (
         <Form layout='vertical' ref={formRef}>
@@ -127,7 +129,7 @@ export default function CreateProjectContent(): JSX.Element {
     const [sourceStorageLocation, setSourceStorageLocation] = useState(StorageLocation.LOCAL);
     const [targetStorageLocation, setTargetStorageLocation] = useState(StorageLocation.LOCAL);
     const nameFormRef = useRef<FormInstance>(null);
-    const nameInputRef = useRef<Input>(null);
+    const nameInputRef = useRef<InputRef>(null);
     const advancedFormRef = useRef<FormInstance>(null);
     const dispatch = useDispatch();
     const history = useHistory();

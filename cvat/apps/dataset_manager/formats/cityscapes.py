@@ -4,10 +4,10 @@
 # SPDX-License-Identifier: MIT
 
 import os.path as osp
+import shutil
 
 from datumaro.components.dataset import StreamDataset
 from datumaro.plugins.data_formats.cityscapes import write_label_map
-from pyunpack import Archive
 
 from cvat.apps.dataset_manager.bindings import (
     GetCVATDataExtractor,
@@ -44,7 +44,7 @@ def _export(dst_file, temp_dir, instance_data, save_images=False):
 
 @importer(name="Cityscapes", ext="ZIP", version="1.0")
 def _import(src_file, temp_dir, instance_data, load_data_callback=None, **kwargs):
-    Archive(src_file.name).extractall(temp_dir)
+    shutil.unpack_archive(src_file.name, temp_dir, "zip")
 
     labelmap_file = osp.join(temp_dir, "label_colors.txt")
     if not osp.isfile(labelmap_file):

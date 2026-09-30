@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: CVAT REST API
-  version: 2.62.1
+  version: 2.77.1
   description: REST API for Computer Vision Annotation Tool (CVAT)
   termsOfService: https://www.google.com/policies/terms/
   contact:
@@ -103,7 +103,7 @@ paths:
 
           Details about the syntax used can be found at the link: https://jsonlogic.com/
 
-           Available filter_fields: ['name', 'id', 'created_date', 'updated_date', 'expiry_date', 'last_used_date', 'read_only'].
+           Available filter_fields: ['created_date', 'expiry_date', 'id', 'last_used_date', 'name', 'read_only', 'updated_date'].
         schema:
           type: string
       - name: name
@@ -123,18 +123,23 @@ paths:
         description: Number of results to return per page.
         schema:
           type: integer
+      - name: read_only
+        in: query
+        description: A simple equality filter for the read_only field
+        schema:
+          type: boolean
       - name: search
         required: false
         in: query
-        description: 'A search term. Available search_fields: (''name'',)'
+        description: 'A search term. Available search_fields: [''name'']'
         schema:
           type: string
       - name: sort
         required: false
         in: query
         description: 'Which field to use when ordering the results. Available ordering_fields:
-          [''name'', ''id'', ''created_date'', ''updated_date'', ''expiry_date'',
-          ''last_used_date'', ''read_only'']'
+          [''created_date'', ''expiry_date'', ''id'', ''last_used_date'', ''name'',
+          ''read_only'', ''updated_date'']'
         schema:
           type: string
       tags:
@@ -433,6 +438,10 @@ paths:
   /api/auth/register:
     post:
       operationId: auth_create_register
+      description: |-
+        Registers a new user.
+
+        Accepts the following POST parameters: username, email, password1, password2.
       tags:
       - auth
       requestBody:
@@ -473,9 +482,14 @@ paths:
       parameters:
       - name: X-Organization
         in: header
-        description: Organization unique slug
+        description: |
+          Organization unique slug.
+          If omitted, results from all organizations available to the user are returned
+          (unfiltered). An empty value ("") selects the personal sandbox workspace only.
+          A non-empty value selects that organization.
         schema:
           type: string
+        allowEmptyValue: true
       - name: credentials_type
         in: query
         description: A simple equality filter for the credentials_type field
@@ -500,7 +514,7 @@ paths:
 
           Details about the syntax used can be found at the link: https://jsonlogic.com/
 
-           Available filter_fields: ['provider_type', 'name', 'resource', 'credentials_type', 'owner', 'description', 'id'].
+           Available filter_fields: ['credentials_type', 'description', 'id', 'name', 'owner', 'provider_type', 'resource'].
         schema:
           type: string
       - name: name
@@ -510,14 +524,24 @@ paths:
           type: string
       - name: org
         in: query
-        description: Organization unique slug
+        description: |
+          Organization unique slug.
+          If omitted, results from all organizations available to the user are returned
+          (unfiltered). An empty value ("") selects the personal sandbox workspace only.
+          A non-empty value selects that organization.
         schema:
           type: string
+        allowEmptyValue: true
       - name: org_id
         in: query
-        description: Organization identifier
+        description: |
+          Organization unique id.
+          If omitted, results from all organizations available to the user are returned
+          (unfiltered). An empty value ("") selects the personal sandbox workspace only.
+          A positive integer selects that organization.
         schema:
           type: integer
+        allowEmptyValue: true
       - name: owner
         in: query
         description: A simple equality filter for the owner field
@@ -552,16 +576,16 @@ paths:
       - name: search
         required: false
         in: query
-        description: 'A search term. Available search_fields: (''provider_type'',
-          ''name'', ''resource'', ''credentials_type'', ''owner'', ''description'')'
+        description: 'A search term. Available search_fields: [''description'', ''name'',
+          ''owner'', ''resource'']'
         schema:
           type: string
       - name: sort
         required: false
         in: query
         description: 'Which field to use when ordering the results. Available ordering_fields:
-          [''provider_type'', ''name'', ''resource'', ''credentials_type'', ''owner'',
-          ''description'', ''id'']'
+          [''credentials_type'', ''description'', ''id'', ''name'', ''owner'', ''provider_type'',
+          ''resource'']'
         schema:
           type: string
       tags:
@@ -588,17 +612,29 @@ paths:
         name: X-Organization
         schema:
           type: string
-        description: Organization unique slug
+        description: |
+          Organization unique slug.
+          If omitted, results from all organizations available to the user are returned
+          (unfiltered). An empty value ("") selects the personal sandbox workspace only.
+          A non-empty value selects that organization.
       - in: query
         name: org
         schema:
           type: string
-        description: Organization unique slug
+        description: |
+          Organization unique slug.
+          If omitted, results from all organizations available to the user are returned
+          (unfiltered). An empty value ("") selects the personal sandbox workspace only.
+          A non-empty value selects that organization.
       - in: query
         name: org_id
         schema:
           type: integer
-        description: Organization identifier
+        description: |
+          Organization unique id.
+          If omitted, results from all organizations available to the user are returned
+          (unfiltered). An empty value ("") selects the personal sandbox workspace only.
+          A positive integer selects that organization.
       tags:
       - cloudstorages
       requestBody:
@@ -935,9 +971,14 @@ paths:
       parameters:
       - name: X-Organization
         in: header
-        description: Organization unique slug
+        description: |
+          Organization unique slug.
+          If omitted, results from all organizations available to the user are returned
+          (unfiltered). An empty value ("") selects the personal sandbox workspace only.
+          A non-empty value selects that organization.
         schema:
           type: string
+        allowEmptyValue: true
       - name: filter
         required: false
         in: query
@@ -951,7 +992,7 @@ paths:
 
           Details about the syntax used can be found at the link: https://jsonlogic.com/
 
-           Available filter_fields: ['owner', 'id', 'issue_id', 'frame_id', 'job_id'].
+           Available filter_fields: ['frame_id', 'id', 'issue_id', 'job_id', 'owner'].
         schema:
           type: string
       - name: frame_id
@@ -971,14 +1012,24 @@ paths:
           type: integer
       - name: org
         in: query
-        description: Organization unique slug
+        description: |
+          Organization unique slug.
+          If omitted, results from all organizations available to the user are returned
+          (unfiltered). An empty value ("") selects the personal sandbox workspace only.
+          A non-empty value selects that organization.
         schema:
           type: string
+        allowEmptyValue: true
       - name: org_id
         in: query
-        description: Organization identifier
+        description: |
+          Organization unique id.
+          If omitted, results from all organizations available to the user are returned
+          (unfiltered). An empty value ("") selects the personal sandbox workspace only.
+          A positive integer selects that organization.
         schema:
           type: integer
+        allowEmptyValue: true
       - name: owner
         in: query
         description: A simple equality filter for the owner field
@@ -999,14 +1050,14 @@ paths:
       - name: search
         required: false
         in: query
-        description: 'A search term. Available search_fields: (''owner'',)'
+        description: 'A search term. Available search_fields: [''owner'']'
         schema:
           type: string
       - name: sort
         required: false
         in: query
         description: 'Which field to use when ordering the results. Available ordering_fields:
-          [''owner'', ''id'', ''issue_id'', ''frame_id'', ''job_id'']'
+          [''frame_id'', ''id'', ''issue_id'', ''job_id'', ''owner'']'
         schema:
           type: string
       tags:
@@ -1033,17 +1084,29 @@ paths:
         name: X-Organization
         schema:
           type: string
-        description: Organization unique slug
+        description: |
+          Organization unique slug.
+          If omitted, results from all organizations available to the user are returned
+          (unfiltered). An empty value ("") selects the personal sandbox workspace only.
+          A non-empty value selects that organization.
       - in: query
         name: org
         schema:
           type: string
-        description: Organization unique slug
+        description: |
+          Organization unique slug.
+          If omitted, results from all organizations available to the user are returned
+          (unfiltered). An empty value ("") selects the personal sandbox workspace only.
+          A non-empty value selects that organization.
       - in: query
         name: org_id
         schema:
           type: integer
-        description: Organization identifier
+        description: |
+          Organization unique id.
+          If omitted, results from all organizations available to the user are returned
+          (unfiltered). An empty value ("") selects the personal sandbox workspace only.
+          A positive integer selects that organization.
       tags:
       - comments
       requestBody:
@@ -1182,9 +1245,14 @@ paths:
       parameters:
       - name: X-Organization
         in: header
-        description: Organization unique slug
+        description: |
+          Organization unique slug.
+          If omitted, results from all organizations available to the user are returned
+          (unfiltered). An empty value ("") selects the personal sandbox workspace only.
+          A non-empty value selects that organization.
         schema:
           type: string
+        allowEmptyValue: true
       - name: filter
         required: false
         in: query
@@ -1203,14 +1271,24 @@ paths:
           type: string
       - name: org
         in: query
-        description: Organization unique slug
+        description: |
+          Organization unique slug.
+          If omitted, results from all organizations available to the user are returned
+          (unfiltered). An empty value ("") selects the personal sandbox workspace only.
+          A non-empty value selects that organization.
         schema:
           type: string
+        allowEmptyValue: true
       - name: org_id
         in: query
-        description: Organization identifier
+        description: |
+          Organization unique id.
+          If omitted, results from all organizations available to the user are returned
+          (unfiltered). An empty value ("") selects the personal sandbox workspace only.
+          A positive integer selects that organization.
         schema:
           type: integer
+        allowEmptyValue: true
       - name: page
         required: false
         in: query
@@ -1397,17 +1475,29 @@ paths:
         name: X-Organization
         schema:
           type: string
-        description: Organization unique slug
+        description: |
+          Organization unique slug.
+          If omitted, results from all organizations available to the user are returned
+          (unfiltered). An empty value ("") selects the personal sandbox workspace only.
+          A non-empty value selects that organization.
       - in: query
         name: org
         schema:
           type: string
-        description: Organization unique slug
+        description: |
+          Organization unique slug.
+          If omitted, results from all organizations available to the user are returned
+          (unfiltered). An empty value ("") selects the personal sandbox workspace only.
+          A non-empty value selects that organization.
       - in: query
         name: org_id
         schema:
           type: integer
-        description: Organization identifier
+        description: |
+          Organization unique id.
+          If omitted, results from all organizations available to the user are returned
+          (unfiltered). An empty value ("") selects the personal sandbox workspace only.
+          A positive integer selects that organization.
       tags:
       - events
       requestBody:
@@ -1506,6 +1596,118 @@ paths:
             application/vnd.cvat+json:
               schema:
                 $ref: '#/components/schemas/RqId'
+          description: ''
+  /api/growth:
+    get:
+      operationId: growth_list
+      summary: List growth data
+      parameters:
+      - name: filter
+        required: false
+        in: query
+        description: |2-
+
+          JSON Logic filter. This filter can be used to perform complex filtering by grouping rules.
+
+          For example, using such a filter you can get all resources created by you:
+
+              - {"and":[{"==":[{"var":"owner"},"<user>"]}]}
+
+          Details about the syntax used can be found at the link: https://jsonlogic.com/
+
+           Available filter_fields: ['id', 'user_id'].
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: sort
+        required: false
+        in: query
+        description: 'Which field to use when ordering the results. Available ordering_fields:
+          [''id'']'
+        schema:
+          type: string
+      tags:
+      - growth
+      security:
+      - tokenAuth: []
+      - accessTokenAuth: []
+      - sessionAuth: []
+        csrfAuth: []
+        csrfHeaderAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/PaginatedUserGrowthDataList'
+          description: ''
+  /api/growth/{id}:
+    get:
+      operationId: growth_retrieve
+      summary: Get growth data
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - growth
+      security:
+      - tokenAuth: []
+      - accessTokenAuth: []
+      - sessionAuth: []
+        csrfAuth: []
+        csrfHeaderAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/UserGrowthData'
+          description: ''
+    patch:
+      operationId: growth_partial_update
+      summary: Update growth data
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - growth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedUserGrowthDataRequest'
+      security:
+      - tokenAuth: []
+      - accessTokenAuth: []
+      - sessionAuth: []
+        csrfAuth: []
+        csrfHeaderAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/UserGrowthData'
           description: ''
   /api/guides:
     post:
@@ -1622,9 +1824,19 @@ paths:
       parameters:
       - name: X-Organization
         in: header
-        description: Organization unique slug
+        description: |
+          Organization unique slug.
+          If omitted, results from all organizations available to the user are returned
+          (unfiltered). An empty value ("") selects the personal sandbox workspace only.
+          A non-empty value selects that organization.
         schema:
           type: string
+        allowEmptyValue: true
+      - name: accepted
+        in: query
+        description: A simple equality filter for the accepted field
+        schema:
+          type: boolean
       - name: filter
         required: false
         in: query
@@ -1638,19 +1850,29 @@ paths:
 
           Details about the syntax used can be found at the link: https://jsonlogic.com/
 
-           Available filter_fields: ['owner', 'user_id', 'accepted'].
+           Available filter_fields: ['accepted', 'id', 'owner', 'user_id'].
         schema:
           type: string
       - name: org
         in: query
-        description: Organization unique slug
+        description: |
+          Organization unique slug.
+          If omitted, results from all organizations available to the user are returned
+          (unfiltered). An empty value ("") selects the personal sandbox workspace only.
+          A non-empty value selects that organization.
         schema:
           type: string
+        allowEmptyValue: true
       - name: org_id
         in: query
-        description: Organization identifier
+        description: |
+          Organization unique id.
+          If omitted, results from all organizations available to the user are returned
+          (unfiltered). An empty value ("") selects the personal sandbox workspace only.
+          A positive integer selects that organization.
         schema:
           type: integer
+        allowEmptyValue: true
       - name: owner
         in: query
         description: A simple equality filter for the owner field
@@ -1671,16 +1893,21 @@ paths:
       - name: search
         required: false
         in: query
-        description: 'A search term. Available search_fields: (''owner'',)'
+        description: 'A search term. Available search_fields: [''owner'']'
         schema:
           type: string
       - name: sort
         required: false
         in: query
         description: 'Which field to use when ordering the results. Available ordering_fields:
-          [''owner'', ''created_date'']'
+          [''accepted'', ''created_date'', ''owner'', ''user_id'']'
         schema:
           type: string
+      - name: user_id
+        in: query
+        description: A simple equality filter for the user_id field
+        schema:
+          type: integer
       tags:
       - invitations
       security:
@@ -1705,17 +1932,29 @@ paths:
         name: X-Organization
         schema:
           type: string
-        description: Organization unique slug
+        description: |
+          Organization unique slug.
+          If omitted, results from all organizations available to the user are returned
+          (unfiltered). An empty value ("") selects the personal sandbox workspace only.
+          A non-empty value selects that organization.
       - in: query
         name: org
         schema:
           type: string
-        description: Organization unique slug
+        description: |
+          Organization unique slug.
+          If omitted, results from all organizations available to the user are returned
+          (unfiltered). An empty value ("") selects the personal sandbox workspace only.
+          A non-empty value selects that organization.
       - in: query
         name: org_id
         schema:
           type: integer
-        description: Organization identifier
+        description: |
+          Organization unique id.
+          If omitted, results from all organizations available to the user are returned
+          (unfiltered). An empty value ("") selects the personal sandbox workspace only.
+          A positive integer selects that organization.
       tags:
       - invitations
       requestBody:
@@ -1751,37 +1990,6 @@ paths:
         required: true
       tags:
       - invitations
-      security:
-      - tokenAuth: []
-      - accessTokenAuth: []
-      - sessionAuth: []
-        csrfAuth: []
-        csrfHeaderAuth: []
-      - basicAuth: []
-      responses:
-        '200':
-          content:
-            application/vnd.cvat+json:
-              schema:
-                $ref: '#/components/schemas/InvitationRead'
-          description: ''
-    patch:
-      operationId: invitations_partial_update
-      summary: Update an invitation
-      parameters:
-      - in: path
-        name: key
-        schema:
-          type: string
-        description: A unique value identifying this invitation.
-        required: true
-      tags:
-      - invitations
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/PatchedInvitationWriteRequest'
       security:
       - tokenAuth: []
       - accessTokenAuth: []
@@ -1902,9 +2110,14 @@ paths:
       parameters:
       - name: X-Organization
         in: header
-        description: Organization unique slug
+        description: |
+          Organization unique slug.
+          If omitted, results from all organizations available to the user are returned
+          (unfiltered). An empty value ("") selects the personal sandbox workspace only.
+          A non-empty value selects that organization.
         schema:
           type: string
+        allowEmptyValue: true
       - name: assignee
         in: query
         description: A simple equality filter for the assignee field
@@ -1923,7 +2136,7 @@ paths:
 
           Details about the syntax used can be found at the link: https://jsonlogic.com/
 
-           Available filter_fields: ['owner', 'assignee', 'id', 'job_id', 'task_id', 'resolved', 'frame_id'].
+           Available filter_fields: ['assignee', 'frame_id', 'id', 'job_id', 'owner', 'resolved', 'task_id'].
         schema:
           type: string
       - name: frame_id
@@ -1938,14 +2151,24 @@ paths:
           type: integer
       - name: org
         in: query
-        description: Organization unique slug
+        description: |
+          Organization unique slug.
+          If omitted, results from all organizations available to the user are returned
+          (unfiltered). An empty value ("") selects the personal sandbox workspace only.
+          A non-empty value selects that organization.
         schema:
           type: string
+        allowEmptyValue: true
       - name: org_id
         in: query
-        description: Organization identifier
+        description: |
+          Organization unique id.
+          If omitted, results from all organizations available to the user are returned
+          (unfiltered). An empty value ("") selects the personal sandbox workspace only.
+          A positive integer selects that organization.
         schema:
           type: integer
+        allowEmptyValue: true
       - name: owner
         in: query
         description: A simple equality filter for the owner field
@@ -1971,15 +2194,15 @@ paths:
       - name: search
         required: false
         in: query
-        description: 'A search term. Available search_fields: (''owner'', ''assignee'')'
+        description: 'A search term. Available search_fields: [''assignee'', ''owner'']'
         schema:
           type: string
       - name: sort
         required: false
         in: query
         description: 'Which field to use when ordering the results. Available ordering_fields:
-          [''owner'', ''assignee'', ''id'', ''job_id'', ''task_id'', ''resolved'',
-          ''frame_id'']'
+          [''assignee'', ''frame_id'', ''id'', ''job_id'', ''owner'', ''resolved'',
+          ''task_id'']'
         schema:
           type: string
       - name: task_id
@@ -2011,17 +2234,29 @@ paths:
         name: X-Organization
         schema:
           type: string
-        description: Organization unique slug
+        description: |
+          Organization unique slug.
+          If omitted, results from all organizations available to the user are returned
+          (unfiltered). An empty value ("") selects the personal sandbox workspace only.
+          A non-empty value selects that organization.
       - in: query
         name: org
         schema:
           type: string
-        description: Organization unique slug
+        description: |
+          Organization unique slug.
+          If omitted, results from all organizations available to the user are returned
+          (unfiltered). An empty value ("") selects the personal sandbox workspace only.
+          A non-empty value selects that organization.
       - in: query
         name: org_id
         schema:
           type: integer
-        description: Organization identifier
+        description: |
+          Organization unique id.
+          If omitted, results from all organizations available to the user are returned
+          (unfiltered). An empty value ("") selects the personal sandbox workspace only.
+          A positive integer selects that organization.
       tags:
       - issues
       requestBody:
@@ -2131,9 +2366,14 @@ paths:
       parameters:
       - name: X-Organization
         in: header
-        description: Organization unique slug
+        description: |
+          Organization unique slug.
+          If omitted, results from all organizations available to the user are returned
+          (unfiltered). An empty value ("") selects the personal sandbox workspace only.
+          A non-empty value selects that organization.
         schema:
           type: string
+        allowEmptyValue: true
       - name: assignee
         in: query
         description: A simple equality filter for the assignee field
@@ -2145,8 +2385,9 @@ paths:
         schema:
           type: string
           enum:
-          - 3d
+          - 1d
           - 2d
+          - 3d
       - name: filter
         required: false
         in: query
@@ -2160,19 +2401,46 @@ paths:
 
           Details about the syntax used can be found at the link: https://jsonlogic.com/
 
-           Available filter_fields: ['task_name', 'project_name', 'assignee', 'state', 'stage', 'id', 'task_id', 'project_id', 'updated_date', 'dimension', 'type', 'parent_job_id'].
+           Available filter_fields: ['assignee', 'dimension', 'id', 'media_type', 'mode', 'parent_job_id', 'project_id', 'project_name', 'stage', 'state', 'task_id', 'task_name', 'type', 'updated_date'].
         schema:
           type: string
+      - name: media_type
+        in: query
+        description: A simple equality filter for the media_type field
+        schema:
+          type: string
+          enum:
+          - image
+          - point_cloud
+          - audio
+      - name: mode
+        in: query
+        description: A simple equality filter for the mode field
+        schema:
+          type: string
+          enum:
+          - annotation
+          - interpolation
       - name: org
         in: query
-        description: Organization unique slug
+        description: |
+          Organization unique slug.
+          If omitted, results from all organizations available to the user are returned
+          (unfiltered). An empty value ("") selects the personal sandbox workspace only.
+          A non-empty value selects that organization.
         schema:
           type: string
+        allowEmptyValue: true
       - name: org_id
         in: query
-        description: Organization identifier
+        description: |
+          Organization unique id.
+          If omitted, results from all organizations available to the user are returned
+          (unfiltered). An empty value ("") selects the personal sandbox workspace only.
+          A positive integer selects that organization.
         schema:
           type: integer
+        allowEmptyValue: true
       - name: page
         required: false
         in: query
@@ -2203,17 +2471,17 @@ paths:
       - name: search
         required: false
         in: query
-        description: 'A search term. Available search_fields: (''task_name'', ''project_name'',
-          ''assignee'', ''state'', ''stage'')'
+        description: 'A search term. Available search_fields: [''assignee'', ''project_name'',
+          ''task_name'']'
         schema:
           type: string
       - name: sort
         required: false
         in: query
         description: 'Which field to use when ordering the results. Available ordering_fields:
-          [''task_name'', ''project_name'', ''assignee'', ''state'', ''stage'', ''id'',
-          ''task_id'', ''project_id'', ''updated_date'', ''dimension'', ''type'',
-          ''parent_job_id'']'
+          [''assignee'', ''dimension'', ''id'', ''media_type'', ''mode'', ''parent_job_id'',
+          ''project_id'', ''project_name'', ''stage'', ''state'', ''task_id'', ''task_name'',
+          ''type'', ''updated_date'']'
         schema:
           type: string
       - name: stage
@@ -2532,6 +2800,15 @@ paths:
         description: A unique integer value identifying this job.
         required: true
       - in: query
+        name: import_mode
+        schema:
+          type: string
+          enum:
+          - append
+          - replace
+          default: replace
+        description: How to import annotations
+      - in: query
         name: location
         schema:
           type: string
@@ -2717,12 +2994,54 @@ paths:
       - basicAuth: []
       responses:
         '200':
+          headers:
+            X-Checksum:
+              schema:
+                type: string
+              description: Data checksum, applicable for chunks only
+            X-Chunk-Size:
+              schema:
+                type: integer
+              description: Decoded chunk size in bytes, applicable for chunks only
+            X-Updated-Date:
+              schema:
+                type: string
+                format: date-time
+              description: Data update date, applicable for chunks only
           content:
             application/vnd.cvat+json:
               schema:
                 type: string
                 format: binary
           description: Data of a specific type
+        '206':
+          headers:
+            X-Checksum:
+              schema:
+                type: string
+              description: Data checksum, applicable for chunks only
+            X-Chunk-Size:
+              schema:
+                type: integer
+              description: Decoded chunk size in bytes, applicable for chunks only
+            X-Updated-Date:
+              schema:
+                type: string
+                format: date-time
+              description: Data update date, applicable for chunks only
+          content:
+            application/vnd.cvat+json:
+              schema:
+                type: string
+                format: binary
+          description: Partial chunk data
+        '416':
+          headers:
+            X-Chunk-Size:
+              schema:
+                type: integer
+              description: Decoded chunk size in bytes, applicable for chunks only
+          description: Requested range is not satisfiable
   /api/jobs/{id}/data/meta:
     get:
       operationId: jobs_retrieve_data_meta
@@ -2858,6 +3177,13 @@ paths:
       operationId: jobs_retrieve_preview
       summary: Get a preview image for a job
       parameters:
+      - in: header
+        name: Prefer
+        schema:
+          type: string
+        description: RFC 7240 preference token. Send `handling=empty` to receive a
+          204 No Content response when no media-derived preview exists. Without the
+          preference, the server returns a default placeholder image with status 200.
       - in: path
         name: id
         schema:
@@ -2876,6 +3202,10 @@ paths:
       responses:
         '200':
           description: Job image preview
+        '204':
+          description: 'No media-derived preview is available. The client should render
+            a placeholder image. Only returned when the request opts in via `Prefer:
+            handling=empty`.'
   /api/jobs/{id}/validation_layout:
     get:
       operationId: jobs_retrieve_validation_layout
@@ -2961,7 +3291,11 @@ paths:
         name: X-Organization
         schema:
           type: string
-        description: Organization unique slug
+        description: |
+          Organization unique slug.
+          If omitted, results from all organizations available to the user are returned
+          (unfiltered). An empty value ("") selects the personal sandbox workspace only.
+          A non-empty value selects that organization.
       - name: color
         in: query
         description: A simple equality filter for the color field
@@ -2980,7 +3314,7 @@ paths:
 
           Details about the syntax used can be found at the link: https://jsonlogic.com/
 
-           Available filter_fields: ['name', 'parent', 'id', 'type', 'color', 'parent_id'].
+           Available filter_fields: ['color', 'id', 'name', 'parent', 'parent_id', 'type'].
         schema:
           type: string
       - in: query
@@ -2997,12 +3331,20 @@ paths:
         name: org
         schema:
           type: string
-        description: Organization unique slug
+        description: |
+          Organization unique slug.
+          If omitted, results from all organizations available to the user are returned
+          (unfiltered). An empty value ("") selects the personal sandbox workspace only.
+          A non-empty value selects that organization.
       - in: query
         name: org_id
         schema:
           type: integer
-        description: Organization identifier
+        description: |
+          Organization unique id.
+          If omitted, results from all organizations available to the user are returned
+          (unfiltered). An empty value ("") selects the personal sandbox workspace only.
+          A positive integer selects that organization.
       - name: page
         required: false
         in: query
@@ -3033,14 +3375,14 @@ paths:
       - name: search
         required: false
         in: query
-        description: 'A search term. Available search_fields: (''name'', ''parent'')'
+        description: 'A search term. Available search_fields: [''name'', ''parent'']'
         schema:
           type: string
       - name: sort
         required: false
         in: query
         description: 'Which field to use when ordering the results. Available ordering_fields:
-          [''name'', ''parent'', ''id'', ''type'', ''color'', ''parent_id'']'
+          [''color'', ''id'', ''name'', ''parent'', ''parent_id'', ''type'']'
         schema:
           type: string
       - in: query
@@ -3063,6 +3405,7 @@ paths:
           - polyline
           - rectangle
           - skeleton
+          - interval
           - tag
       tags:
       - labels
@@ -3189,7 +3532,7 @@ paths:
         name: func_id
         schema:
           type: string
-          pattern: ^[a-zA-Z0-9_.-]+$
+          pattern: ^[a-zA-Z0-9][a-zA-Z0-9_.-]*$
         required: true
       tags:
       - lambda
@@ -3222,7 +3565,7 @@ paths:
         name: func_id
         schema:
           type: string
-          pattern: ^[a-zA-Z0-9_.-]+$
+          pattern: ^[a-zA-Z0-9][a-zA-Z0-9_.-]*$
         required: true
       tags:
       - lambda
@@ -3271,17 +3614,29 @@ paths:
         name: X-Organization
         schema:
           type: string
-        description: Organization unique slug
+        description: |
+          Organization unique slug.
+          If omitted, results from all organizations available to the user are returned
+          (unfiltered). An empty value ("") selects the personal sandbox workspace only.
+          A non-empty value selects that organization.
       - in: query
         name: org
         schema:
           type: string
-        description: Organization unique slug
+        description: |
+          Organization unique slug.
+          If omitted, results from all organizations available to the user are returned
+          (unfiltered). An empty value ("") selects the personal sandbox workspace only.
+          A non-empty value selects that organization.
       - in: query
         name: org_id
         schema:
           type: integer
-        description: Organization identifier
+        description: |
+          Organization unique id.
+          If omitted, results from all organizations available to the user are returned
+          (unfiltered). An empty value ("") selects the personal sandbox workspace only.
+          A positive integer selects that organization.
       tags:
       - lambda
       requestBody:
@@ -3360,9 +3715,14 @@ paths:
       parameters:
       - name: X-Organization
         in: header
-        description: Organization unique slug
+        description: |
+          Organization unique slug.
+          If omitted, results from all organizations available to the user are returned
+          (unfiltered). An empty value ("") selects the personal sandbox workspace only.
+          A non-empty value selects that organization.
         schema:
           type: string
+        allowEmptyValue: true
       - name: filter
         required: false
         in: query
@@ -3376,19 +3736,29 @@ paths:
 
           Details about the syntax used can be found at the link: https://jsonlogic.com/
 
-           Available filter_fields: ['user', 'role', 'id'].
+           Available filter_fields: ['id', 'role', 'user'].
         schema:
           type: string
       - name: org
         in: query
-        description: Organization unique slug
+        description: |
+          Organization unique slug.
+          If omitted, results from all organizations available to the user are returned
+          (unfiltered). An empty value ("") selects the personal sandbox workspace only.
+          A non-empty value selects that organization.
         schema:
           type: string
+        allowEmptyValue: true
       - name: org_id
         in: query
-        description: Organization identifier
+        description: |
+          Organization unique id.
+          If omitted, results from all organizations available to the user are returned
+          (unfiltered). An empty value ("") selects the personal sandbox workspace only.
+          A positive integer selects that organization.
         schema:
           type: integer
+        allowEmptyValue: true
       - name: page
         required: false
         in: query
@@ -3414,14 +3784,14 @@ paths:
       - name: search
         required: false
         in: query
-        description: 'A search term. Available search_fields: (''user'', ''role'')'
+        description: 'A search term. Available search_fields: [''user'']'
         schema:
           type: string
       - name: sort
         required: false
         in: query
         description: 'Which field to use when ordering the results. Available ordering_fields:
-          [''user'', ''role'', ''id'']'
+          [''id'', ''role'', ''user'']'
         schema:
           type: string
       - name: user
@@ -3543,7 +3913,7 @@ paths:
 
           Details about the syntax used can be found at the link: https://jsonlogic.com/
 
-           Available filter_fields: ['name', 'owner', 'slug', 'id'].
+           Available filter_fields: ['id', 'name', 'owner', 'slug'].
         schema:
           type: string
       - name: name
@@ -3571,8 +3941,8 @@ paths:
       - name: search
         required: false
         in: query
-        description: 'A search term. Available search_fields: (''name'', ''owner'',
-          ''slug'')'
+        description: 'A search term. Available search_fields: [''name'', ''owner'',
+          ''slug'']'
         schema:
           type: string
       - name: slug
@@ -3584,7 +3954,7 @@ paths:
         required: false
         in: query
         description: 'Which field to use when ordering the results. Available ordering_fields:
-          [''name'', ''owner'', ''slug'', ''id'']'
+          [''id'', ''name'', ''owner'', ''slug'']'
         schema:
           type: string
       tags:
@@ -3715,9 +4085,14 @@ paths:
       parameters:
       - name: X-Organization
         in: header
-        description: Organization unique slug
+        description: |
+          Organization unique slug.
+          If omitted, results from all organizations available to the user are returned
+          (unfiltered). An empty value ("") selects the personal sandbox workspace only.
+          A non-empty value selects that organization.
         schema:
           type: string
+        allowEmptyValue: true
       - name: assignee
         in: query
         description: A simple equality filter for the assignee field
@@ -3736,7 +4111,7 @@ paths:
 
           Details about the syntax used can be found at the link: https://jsonlogic.com/
 
-           Available filter_fields: ['name', 'owner', 'assignee', 'status', 'id', 'updated_date'].
+           Available filter_fields: ['assignee', 'id', 'name', 'owner', 'status', 'updated_date'].
         schema:
           type: string
       - name: name
@@ -3746,14 +4121,24 @@ paths:
           type: string
       - name: org
         in: query
-        description: Organization unique slug
+        description: |
+          Organization unique slug.
+          If omitted, results from all organizations available to the user are returned
+          (unfiltered). An empty value ("") selects the personal sandbox workspace only.
+          A non-empty value selects that organization.
         schema:
           type: string
+        allowEmptyValue: true
       - name: org_id
         in: query
-        description: Organization identifier
+        description: |
+          Organization unique id.
+          If omitted, results from all organizations available to the user are returned
+          (unfiltered). An empty value ("") selects the personal sandbox workspace only.
+          A positive integer selects that organization.
         schema:
           type: integer
+        allowEmptyValue: true
       - name: owner
         in: query
         description: A simple equality filter for the owner field
@@ -3774,15 +4159,15 @@ paths:
       - name: search
         required: false
         in: query
-        description: 'A search term. Available search_fields: (''name'', ''owner'',
-          ''assignee'', ''status'')'
+        description: 'A search term. Available search_fields: [''assignee'', ''name'',
+          ''owner'']'
         schema:
           type: string
       - name: sort
         required: false
         in: query
         description: 'Which field to use when ordering the results. Available ordering_fields:
-          [''name'', ''owner'', ''assignee'', ''status'', ''id'', ''updated_date'']'
+          [''assignee'', ''id'', ''name'', ''owner'', ''status'', ''updated_date'']'
         schema:
           type: string
       - name: status
@@ -3818,17 +4203,29 @@ paths:
         name: X-Organization
         schema:
           type: string
-        description: Organization unique slug
+        description: |
+          Organization unique slug.
+          If omitted, results from all organizations available to the user are returned
+          (unfiltered). An empty value ("") selects the personal sandbox workspace only.
+          A non-empty value selects that organization.
       - in: query
         name: org
         schema:
           type: string
-        description: Organization unique slug
+        description: |
+          Organization unique slug.
+          If omitted, results from all organizations available to the user are returned
+          (unfiltered). An empty value ("") selects the personal sandbox workspace only.
+          A non-empty value selects that organization.
       - in: query
         name: org_id
         schema:
           type: integer
-        description: Organization identifier
+        description: |
+          Organization unique id.
+          If omitted, results from all organizations available to the user are returned
+          (unfiltered). An empty value ("") selects the personal sandbox workspace only.
+          A positive integer selects that organization.
       tags:
       - projects
       requestBody:
@@ -4143,6 +4540,13 @@ paths:
       operationId: projects_retrieve_preview
       summary: Get a preview image for a project
       parameters:
+      - in: header
+        name: Prefer
+        schema:
+          type: string
+        description: RFC 7240 preference token. Send `handling=empty` to receive a
+          204 No Content response when no media-derived preview exists. Without the
+          preference, the server returns a default placeholder image with status 200.
       - in: path
         name: id
         schema:
@@ -4161,6 +4565,10 @@ paths:
       responses:
         '200':
           description: Project image preview
+        '204':
+          description: 'No media-derived preview is available. The client should render
+            a placeholder image. Only returned when the request opts in via `Prefer:
+            handling=empty`.'
         '404':
           description: Project image preview not found
   /api/projects/backup/:
@@ -4184,7 +4592,11 @@ paths:
         name: X-Organization
         schema:
           type: string
-        description: Organization unique slug
+        description: |
+          Organization unique slug.
+          If omitted, results from all organizations available to the user are returned
+          (unfiltered). An empty value ("") selects the personal sandbox workspace only.
+          A non-empty value selects that organization.
       - in: query
         name: cloud_storage_id
         schema:
@@ -4208,12 +4620,20 @@ paths:
         name: org
         schema:
           type: string
-        description: Organization unique slug
+        description: |
+          Organization unique slug.
+          If omitted, results from all organizations available to the user are returned
+          (unfiltered). An empty value ("") selects the personal sandbox workspace only.
+          A non-empty value selects that organization.
       - in: query
         name: org_id
         schema:
           type: integer
-        description: Organization identifier
+        description: |
+          Organization unique id.
+          If omitted, results from all organizations available to the user are returned
+          (unfiltered). An empty value ("") selects the personal sandbox workspace only.
+          A positive integer selects that organization.
       tags:
       - projects
       requestBody:
@@ -4245,9 +4665,14 @@ paths:
       parameters:
       - name: X-Organization
         in: header
-        description: Organization unique slug
+        description: |
+          Organization unique slug.
+          If omitted, results from all organizations available to the user are returned
+          (unfiltered). An empty value ("") selects the personal sandbox workspace only.
+          A non-empty value selects that organization.
         schema:
           type: string
+        allowEmptyValue: true
       - name: filter
         required: false
         in: query
@@ -4261,7 +4686,7 @@ paths:
 
           Details about the syntax used can be found at the link: https://jsonlogic.com/
 
-           Available filter_fields: ['id', 'frame', 'type', 'job_id', 'task_id', 'project_id', 'severity'].
+           Available filter_fields: ['frame', 'id', 'job_id', 'project_id', 'severity', 'task_id', 'type'].
         schema:
           type: string
       - name: frame
@@ -4276,14 +4701,24 @@ paths:
           type: integer
       - name: org
         in: query
-        description: Organization unique slug
+        description: |
+          Organization unique slug.
+          If omitted, results from all organizations available to the user are returned
+          (unfiltered). An empty value ("") selects the personal sandbox workspace only.
+          A non-empty value selects that organization.
         schema:
           type: string
+        allowEmptyValue: true
       - name: org_id
         in: query
-        description: Organization identifier
+        description: |
+          Organization unique id.
+          If omitted, results from all organizations available to the user are returned
+          (unfiltered). An empty value ("") selects the personal sandbox workspace only.
+          A positive integer selects that organization.
         schema:
           type: integer
+        allowEmptyValue: true
       - name: page
         required: false
         in: query
@@ -4312,13 +4747,13 @@ paths:
         schema:
           type: string
           enum:
-          - warning
           - error
       - name: sort
         required: false
         in: query
         description: 'Which field to use when ordering the results. Available ordering_fields:
-          [''id'', ''frame'', ''type'', ''job_id'', ''task_id'', ''project_id'', ''severity'']'
+          [''frame'', ''id'', ''job_id'', ''project_id'', ''severity'', ''task_id'',
+          ''type'']'
         schema:
           type: string
       - name: task_id
@@ -4335,7 +4770,6 @@ paths:
           - missing_annotation
           - extra_annotation
           - mismatching_label
-          - low_overlap
           - mismatching_direction
           - mismatching_attributes
           - mismatching_groups
@@ -4360,26 +4794,29 @@ paths:
     get:
       operationId: quality_list_reports
       description: |
-        Please note that children reports are included by default
-        if the "task_id", "project_id" filters are used.
-        If you want to restrict the list of results to a specific report type,
-        use the "target" parameter.
+        The "target" parameter is required when the "task_id" or "project_id"
+        filter is used.
 
-        The "parent_id" filter includes all the nested reports recursively.
-        For instance, if the "parent_id" is a project report,
-        all the related task and job reports will be returned.
+        The "parent_id" filter requires the "target" parameter. Valid parent
+        report target to requested target combinations are: task to job,
+        project to task, and project to job.
 
         Please note that a report can be reused in several parent reports,
         but the "parent_id" field in responses will include only the first parent report id.
-        The "parent_id" filter still returns all the relevant nested reports,
-        even though the response "parent_id" values may be different from the requested one.
+        Filtering project report children with target "job" still returns all the relevant
+        nested job reports, even though their response "parent_id" values refer to task reports.
       summary: Method returns a paginated list of quality reports.
       parameters:
       - name: X-Organization
         in: header
-        description: Organization unique slug
+        description: |
+          Organization unique slug.
+          If omitted, results from all organizations available to the user are returned
+          (unfiltered). An empty value ("") selects the personal sandbox workspace only.
+          A non-empty value selects that organization.
         schema:
           type: string
+        allowEmptyValue: true
       - name: filter
         required: false
         in: query
@@ -4393,9 +4830,15 @@ paths:
 
           Details about the syntax used can be found at the link: https://jsonlogic.com/
 
-           Available filter_fields: ['id', 'job_id', 'task_id', 'project_id', 'created_date', 'gt_last_updated', 'target_last_updated'].
+           Available filter_fields: ['created_date', 'gt_last_updated', 'id', 'job_id', 'project_id', 'target_last_updated', 'task_id'].
         schema:
           type: string
+      - in: query
+        name: include_legacy
+        schema:
+          type: boolean
+          default: false
+        description: Include reports stored in the legacy data format
       - name: job_id
         in: query
         description: A simple equality filter for the job_id field
@@ -4403,14 +4846,24 @@ paths:
           type: integer
       - name: org
         in: query
-        description: Organization unique slug
+        description: |
+          Organization unique slug.
+          If omitted, results from all organizations available to the user are returned
+          (unfiltered). An empty value ("") selects the personal sandbox workspace only.
+          A non-empty value selects that organization.
         schema:
           type: string
+        allowEmptyValue: true
       - name: org_id
         in: query
-        description: Organization identifier
+        description: |
+          Organization unique id.
+          If omitted, results from all organizations available to the user are returned
+          (unfiltered). An empty value ("") selects the personal sandbox workspace only.
+          A positive integer selects that organization.
         schema:
           type: integer
+        allowEmptyValue: true
       - name: page
         required: false
         in: query
@@ -4427,7 +4880,7 @@ paths:
         name: parent_id
         schema:
           type: integer
-        description: A simple equality filter for parent id
+        description: A parent report id filter. Requires a compatible target filter
       - in: query
         name: project_id
         schema:
@@ -4437,8 +4890,8 @@ paths:
         required: false
         in: query
         description: 'Which field to use when ordering the results. Available ordering_fields:
-          [''id'', ''job_id'', ''task_id'', ''project_id'', ''created_date'', ''gt_last_updated'',
-          ''target_last_updated'']'
+          [''created_date'', ''gt_last_updated'', ''id'', ''job_id'', ''project_id'',
+          ''target_last_updated'', ''task_id'']'
         schema:
           type: string
       - in: query
@@ -4546,6 +4999,81 @@ paths:
               schema:
                 $ref: '#/components/schemas/QualityReport'
           description: ''
+  /api/quality/reports/{id}/confusion:
+    get:
+      operationId: quality_retrieve_report_confusion
+      summary: Download quality report confusion matrices
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this quality report.
+        required: true
+      tags:
+      - quality
+      security:
+      - tokenAuth: []
+      - accessTokenAuth: []
+      - sessionAuth: []
+        csrfAuth: []
+        csrfHeaderAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                type: string
+                format: binary
+          description: ZIP archive with per-requirement confusion matrices
+  /api/quality/reports/{id}/confusion/matrix:
+    get:
+      operationId: quality_retrieve_report_requirement_confusion
+      summary: Get a quality report requirement confusion matrix
+      parameters:
+      - in: query
+        name: format
+        schema:
+          type: string
+          enum:
+          - csv
+          - json
+          default: json
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this quality report.
+        required: true
+      - in: query
+        name: requirement
+        schema:
+          type: integer
+        description: Quality requirement id in the report
+        required: true
+      tags:
+      - quality
+      security:
+      - tokenAuth: []
+      - accessTokenAuth: []
+      - sessionAuth: []
+        csrfAuth: []
+        csrfHeaderAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QualityReportConfusionMatrix'
+            text/csv:
+              schema:
+                type: string
+                format: binary
+          description: JSON confusion matrix for the requested quality requirement
+        '404':
+          description: Requirement confusion matrix was not found
   /api/quality/reports/{id}/data:
     get:
       operationId: quality_retrieve_report_data
@@ -4556,7 +5084,6 @@ paths:
         schema:
           type: string
           enum:
-          - csv
           - json
           default: json
       - in: path
@@ -4593,9 +5120,14 @@ paths:
       parameters:
       - name: X-Organization
         in: header
-        description: Organization unique slug
+        description: |
+          Organization unique slug.
+          If omitted, results from all organizations available to the user are returned
+          (unfiltered). An empty value ("") selects the personal sandbox workspace only.
+          A non-empty value selects that organization.
         schema:
           type: string
+        allowEmptyValue: true
       - name: filter
         required: false
         in: query
@@ -4609,7 +5141,7 @@ paths:
 
           Details about the syntax used can be found at the link: https://jsonlogic.com/
 
-           Available filter_fields: ['id', 'task_id', 'project_id', 'inherit', 'created_date', 'updated_date'].
+           Available filter_fields: ['created_date', 'id', 'inherit', 'project_id', 'task_id', 'updated_date'].
         schema:
           type: string
       - name: inherit
@@ -4619,14 +5151,24 @@ paths:
           type: boolean
       - name: org
         in: query
-        description: Organization unique slug
+        description: |
+          Organization unique slug.
+          If omitted, results from all organizations available to the user are returned
+          (unfiltered). An empty value ("") selects the personal sandbox workspace only.
+          A non-empty value selects that organization.
         schema:
           type: string
+        allowEmptyValue: true
       - name: org_id
         in: query
-        description: Organization identifier
+        description: |
+          Organization unique id.
+          If omitted, results from all organizations available to the user are returned
+          (unfiltered). An empty value ("") selects the personal sandbox workspace only.
+          A positive integer selects that organization.
         schema:
           type: integer
+        allowEmptyValue: true
       - name: page
         required: false
         in: query
@@ -4656,7 +5198,7 @@ paths:
         required: false
         in: query
         description: 'Which field to use when ordering the results. Available ordering_fields:
-          [''id'', ''task_id'', ''project_id'', ''inherit'', ''created_date'', ''updated_date'']'
+          [''created_date'', ''id'', ''inherit'', ''project_id'', ''task_id'', ''updated_date'']'
         schema:
           type: string
       - name: task_id
@@ -4707,6 +5249,37 @@ paths:
               schema:
                 $ref: '#/components/schemas/QualitySettings'
           description: ''
+    put:
+      operationId: quality_update_settings
+      summary: Replace a quality settings instance
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: An id of a quality settings instance
+        required: true
+      tags:
+      - quality
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QualitySettingsRequest'
+      security:
+      - tokenAuth: []
+      - accessTokenAuth: []
+      - sessionAuth: []
+        csrfAuth: []
+        csrfHeaderAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/QualitySettings'
+          description: ''
     patch:
       operationId: quality_partial_update_settings
       summary: Update a quality settings instance
@@ -4738,6 +5311,291 @@ paths:
               schema:
                 $ref: '#/components/schemas/QualitySettings'
           description: ''
+  /api/quality/settings/requirements:
+    get:
+      operationId: quality_list_settings_requirements
+      summary: List quality requirements
+      parameters:
+      - name: X-Organization
+        in: header
+        description: |
+          Organization unique slug.
+          If omitted, results from all organizations available to the user are returned
+          (unfiltered). An empty value ("") selects the personal sandbox workspace only.
+          A non-empty value selects that organization.
+        schema:
+          type: string
+        allowEmptyValue: true
+      - name: annotation_type
+        in: query
+        description: A simple equality filter for the annotation_type field
+        schema:
+          type: string
+          enum:
+          - tag
+          - rectangle
+          - skeleton
+          - skeleton_keypoint
+          - points
+          - polyline
+          - mask
+          - polygon
+          - ellipse
+      - name: enabled
+        in: query
+        description: A simple equality filter for the enabled field
+        schema:
+          type: boolean
+      - name: filter
+        required: false
+        in: query
+        description: |2-
+
+          JSON Logic filter. This filter can be used to perform complex filtering by grouping rules.
+
+          For example, using such a filter you can get all resources created by you:
+
+              - {"and":[{"==":[{"var":"owner"},"<user>"]}]}
+
+          Details about the syntax used can be found at the link: https://jsonlogic.com/
+
+           Available filter_fields: ['annotation_type', 'created_date', 'enabled', 'id', 'project_id', 'settings_id', 'task_id', 'updated_date'].
+        schema:
+          type: string
+      - name: org
+        in: query
+        description: |
+          Organization unique slug.
+          If omitted, results from all organizations available to the user are returned
+          (unfiltered). An empty value ("") selects the personal sandbox workspace only.
+          A non-empty value selects that organization.
+        schema:
+          type: string
+        allowEmptyValue: true
+      - name: org_id
+        in: query
+        description: |
+          Organization unique id.
+          If omitted, results from all organizations available to the user are returned
+          (unfiltered). An empty value ("") selects the personal sandbox workspace only.
+          A positive integer selects that organization.
+        schema:
+          type: integer
+        allowEmptyValue: true
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - in: query
+        name: project_id
+        schema:
+          type: integer
+        description: Project id filter
+      - in: query
+        name: settings_id
+        schema:
+          type: integer
+        description: Settings id filter
+      - name: sort
+        required: false
+        in: query
+        description: 'Which field to use when ordering the results. Available ordering_fields:
+          [''annotation_type'', ''created_date'', ''enabled'', ''id'', ''name'', ''project_id'',
+          ''settings_id'', ''sort_order'', ''task_id'', ''updated_date'']'
+        schema:
+          type: string
+      - in: query
+        name: task_id
+        schema:
+          type: integer
+        description: Task id filter
+      tags:
+      - quality
+      security:
+      - tokenAuth: []
+      - accessTokenAuth: []
+      - sessionAuth: []
+        csrfAuth: []
+        csrfHeaderAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/PaginatedQualityRequirementListItemList'
+          description: ''
+    post:
+      operationId: quality_create_settings_requirements
+      summary: Create a quality requirement
+      tags:
+      - quality
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QualityRequirementRequest'
+      security:
+      - tokenAuth: []
+      - accessTokenAuth: []
+      - sessionAuth: []
+        csrfAuth: []
+        csrfHeaderAuth: []
+      - basicAuth: []
+      responses:
+        '201':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/QualityRequirement'
+          description: ''
+  /api/quality/settings/requirements/{id}:
+    get:
+      operationId: quality_retrieve_settings_requirements
+      summary: Get quality requirement details
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this quality requirement.
+        required: true
+      tags:
+      - quality
+      security:
+      - tokenAuth: []
+      - accessTokenAuth: []
+      - sessionAuth: []
+        csrfAuth: []
+        csrfHeaderAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/QualityRequirement'
+          description: ''
+    put:
+      operationId: quality_update_settings_requirements
+      summary: Replace a quality requirement
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this quality requirement.
+        required: true
+      tags:
+      - quality
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QualityRequirementRequest'
+      security:
+      - tokenAuth: []
+      - accessTokenAuth: []
+      - sessionAuth: []
+        csrfAuth: []
+        csrfHeaderAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/QualityRequirement'
+          description: ''
+    patch:
+      operationId: quality_partial_update_settings_requirements
+      summary: Update a quality requirement
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this quality requirement.
+        required: true
+      tags:
+      - quality
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedQualityRequirementRequest'
+      security:
+      - tokenAuth: []
+      - accessTokenAuth: []
+      - sessionAuth: []
+        csrfAuth: []
+        csrfHeaderAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                $ref: '#/components/schemas/QualityRequirement'
+          description: ''
+    delete:
+      operationId: quality_destroy_settings_requirements
+      summary: Delete a quality requirement
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this quality requirement.
+        required: true
+      tags:
+      - quality
+      security:
+      - tokenAuth: []
+      - accessTokenAuth: []
+      - sessionAuth: []
+        csrfAuth: []
+        csrfHeaderAuth: []
+      - basicAuth: []
+      responses:
+        '204':
+          description: Requirement deleted
+  /api/quality/settings/requirements/bulk:
+    post:
+      operationId: quality_create_settings_requirements_bulk
+      summary: Create a hierarchy of quality requirements
+      tags:
+      - quality
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QualityRequirementBulkCreateRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      - accessTokenAuth: []
+      - sessionAuth: []
+        csrfAuth: []
+        csrfHeaderAuth: []
+      - basicAuth: []
+      responses:
+        '201':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/QualityRequirement'
+          description: ''
   /api/requests:
     get:
       operationId: requests_list
@@ -4757,7 +5615,7 @@ paths:
 
           Details about the syntax used can be found at the link: https://jsonlogic.com/
 
-           Available filter_fields: ['status', 'project_id', 'task_id', 'job_id', 'action', 'target', 'subresource', 'format'].
+           Available filter_fields: ['action', 'format', 'job_id', 'org', 'org_id', 'project_id', 'status', 'subresource', 'target', 'task_id'].
         schema:
           type: string
       - name: format
@@ -4775,6 +5633,11 @@ paths:
         description: A simple equality filter for the org field
         schema:
           type: string
+      - name: org_id
+        in: query
+        description: A simple equality filter for the org_id field
+        schema:
+          type: integer
       - name: page
         required: false
         in: query
@@ -4796,7 +5659,7 @@ paths:
         required: false
         in: query
         description: 'Which field to use when ordering the results. Available ordering_fields:
-          [''created_date'', ''status'', ''action'']'
+          [''action'', ''created_date'', ''status'']'
         schema:
           type: string
       - name: status
@@ -4994,6 +5857,7 @@ paths:
           - tr
           - tt
           - udm
+          - ug
           - uk
           - ur
           - uz
@@ -5132,9 +5996,14 @@ paths:
       parameters:
       - name: X-Organization
         in: header
-        description: Organization unique slug
+        description: |
+          Organization unique slug.
+          If omitted, results from all organizations available to the user are returned
+          (unfiltered). An empty value ("") selects the personal sandbox workspace only.
+          A non-empty value selects that organization.
         schema:
           type: string
+        allowEmptyValue: true
       - name: assignee
         in: query
         description: A simple equality filter for the assignee field
@@ -5146,8 +6015,9 @@ paths:
         schema:
           type: string
           enum:
-          - 3d
+          - 1d
           - 2d
+          - 3d
       - name: filter
         required: false
         in: query
@@ -5161,7 +6031,7 @@ paths:
 
           Details about the syntax used can be found at the link: https://jsonlogic.com/
 
-           Available filter_fields: ['project_name', 'name', 'owner', 'status', 'assignee', 'subset', 'mode', 'dimension', 'tracker_link', 'validation_mode', 'id', 'project_id', 'updated_date'].
+           Available filter_fields: ['assignee', 'dimension', 'id', 'media_type', 'mode', 'name', 'owner', 'project_id', 'project_name', 'status', 'subset', 'tracker_link', 'updated_date', 'validation_mode'].
 
           There are few examples for complex filtering tasks:
 
@@ -5171,11 +6041,23 @@ paths:
 
         schema:
           type: string
+      - name: media_type
+        in: query
+        description: A simple equality filter for the media_type field
+        schema:
+          type: string
+          enum:
+          - image
+          - point_cloud
+          - audio
       - name: mode
         in: query
         description: A simple equality filter for the mode field
         schema:
           type: string
+          enum:
+          - annotation
+          - interpolation
       - name: name
         in: query
         description: A simple equality filter for the name field
@@ -5183,14 +6065,24 @@ paths:
           type: string
       - name: org
         in: query
-        description: Organization unique slug
+        description: |
+          Organization unique slug.
+          If omitted, results from all organizations available to the user are returned
+          (unfiltered). An empty value ("") selects the personal sandbox workspace only.
+          A non-empty value selects that organization.
         schema:
           type: string
+        allowEmptyValue: true
       - name: org_id
         in: query
-        description: Organization identifier
+        description: |
+          Organization unique id.
+          If omitted, results from all organizations available to the user are returned
+          (unfiltered). An empty value ("") selects the personal sandbox workspace only.
+          A positive integer selects that organization.
         schema:
           type: integer
+        allowEmptyValue: true
       - name: owner
         in: query
         description: A simple equality filter for the owner field
@@ -5221,18 +6113,17 @@ paths:
       - name: search
         required: false
         in: query
-        description: 'A search term. Available search_fields: (''project_name'', ''name'',
-          ''owner'', ''status'', ''assignee'', ''subset'', ''mode'', ''dimension'',
-          ''tracker_link'', ''validation_mode'')'
+        description: 'A search term. Available search_fields: [''assignee'', ''name'',
+          ''owner'', ''project_name'', ''subset'', ''tracker_link'']'
         schema:
           type: string
       - name: sort
         required: false
         in: query
         description: 'Which field to use when ordering the results. Available ordering_fields:
-          [''project_name'', ''name'', ''owner'', ''status'', ''assignee'', ''subset'',
-          ''mode'', ''dimension'', ''tracker_link'', ''validation_mode'', ''id'',
-          ''project_id'', ''updated_date'']'
+          [''assignee'', ''dimension'', ''id'', ''media_type'', ''mode'', ''name'',
+          ''owner'', ''project_id'', ''project_name'', ''status'', ''subset'', ''tracker_link'',
+          ''updated_date'', ''validation_mode'']'
         schema:
           type: string
       - name: status
@@ -5289,17 +6180,29 @@ paths:
         name: X-Organization
         schema:
           type: string
-        description: Organization unique slug
+        description: |
+          Organization unique slug.
+          If omitted, results from all organizations available to the user are returned
+          (unfiltered). An empty value ("") selects the personal sandbox workspace only.
+          A non-empty value selects that organization.
       - in: query
         name: org
         schema:
           type: string
-        description: Organization unique slug
+        description: |
+          Organization unique slug.
+          If omitted, results from all organizations available to the user are returned
+          (unfiltered). An empty value ("") selects the personal sandbox workspace only.
+          A non-empty value selects that organization.
       - in: query
         name: org_id
         schema:
           type: integer
-        description: Organization identifier
+        description: |
+          Organization unique id.
+          If omitted, results from all organizations available to the user are returned
+          (unfiltered). An empty value ("") selects the personal sandbox workspace only.
+          A positive integer selects that organization.
       tags:
       - tasks
       requestBody:
@@ -5521,6 +6424,15 @@ paths:
           type: integer
         description: A unique integer value identifying this task.
         required: true
+      - in: query
+        name: import_mode
+        schema:
+          type: string
+          enum:
+          - append
+          - replace
+          default: replace
+        description: How to import annotations
       - in: query
         name: location
         schema:
@@ -5774,12 +6686,39 @@ paths:
               schema:
                 type: string
               description: Data checksum, applicable for chunks only
+            X-Chunk-Size:
+              schema:
+                type: integer
+              description: Decoded chunk size in bytes, applicable for chunks only
             X-Updated-Date:
               schema:
                 type: string
                 format: date-time
               description: Data update date, applicable for chunks only
           description: Data of a specific type
+        '206':
+          headers:
+            X-Checksum:
+              schema:
+                type: string
+              description: Data checksum, applicable for chunks only
+            X-Chunk-Size:
+              schema:
+                type: integer
+              description: Decoded chunk size in bytes, applicable for chunks only
+            X-Updated-Date:
+              schema:
+                type: string
+                format: date-time
+              description: Data update date, applicable for chunks only
+          description: Partial chunk data
+        '416':
+          headers:
+            X-Chunk-Size:
+              schema:
+                type: integer
+              description: Decoded chunk size in bytes, applicable for chunks only
+          description: Requested range is not satisfiable
     post:
       operationId: tasks_create_data
       description: |
@@ -6019,6 +6958,13 @@ paths:
       operationId: tasks_retrieve_preview
       summary: Get a preview image for a task
       parameters:
+      - in: header
+        name: Prefer
+        schema:
+          type: string
+        description: RFC 7240 preference token. Send `handling=empty` to receive a
+          204 No Content response when no media-derived preview exists. Without the
+          preference, the server returns a default placeholder image with status 200.
       - in: path
         name: id
         schema:
@@ -6037,6 +6983,10 @@ paths:
       responses:
         '200':
           description: Task image preview
+        '204':
+          description: 'No media-derived preview is available. The client should render
+            a placeholder image. Only returned when the request opts in via `Prefer:
+            handling=empty`.'
         '404':
           description: Task image preview not found
   /api/tasks/{id}/status:
@@ -6178,7 +7128,11 @@ paths:
         name: X-Organization
         schema:
           type: string
-        description: Organization unique slug
+        description: |
+          Organization unique slug.
+          If omitted, results from all organizations available to the user are returned
+          (unfiltered). An empty value ("") selects the personal sandbox workspace only.
+          A non-empty value selects that organization.
       - in: query
         name: cloud_storage_id
         schema:
@@ -6202,12 +7156,20 @@ paths:
         name: org
         schema:
           type: string
-        description: Organization unique slug
+        description: |
+          Organization unique slug.
+          If omitted, results from all organizations available to the user are returned
+          (unfiltered). An empty value ("") selects the personal sandbox workspace only.
+          A non-empty value selects that organization.
       - in: query
         name: org_id
         schema:
           type: integer
-        description: Organization identifier
+        description: |
+          Organization unique id.
+          If omitted, results from all organizations available to the user are returned
+          (unfiltered). An empty value ("") selects the personal sandbox workspace only.
+          A positive integer selects that organization.
       tags:
       - tasks
       requestBody:
@@ -6239,9 +7201,14 @@ paths:
       parameters:
       - name: X-Organization
         in: header
-        description: Organization unique slug
+        description: |
+          Organization unique slug.
+          If omitted, results from all organizations available to the user are returned
+          (unfiltered). An empty value ("") selects the personal sandbox workspace only.
+          A non-empty value selects that organization.
         schema:
           type: string
+        allowEmptyValue: true
       - name: filter
         required: false
         in: query
@@ -6255,7 +7222,7 @@ paths:
 
           Details about the syntax used can be found at the link: https://jsonlogic.com/
 
-           Available filter_fields: ['username', 'first_name', 'last_name', 'id', 'is_active'].
+           Available filter_fields: ['first_name', 'id', 'is_active', 'last_name', 'username'].
         schema:
           type: string
       - name: first_name
@@ -6275,14 +7242,24 @@ paths:
           type: string
       - name: org
         in: query
-        description: Organization unique slug
+        description: |
+          Organization unique slug.
+          If omitted, results from all organizations available to the user are returned
+          (unfiltered). An empty value ("") selects the personal sandbox workspace only.
+          A non-empty value selects that organization.
         schema:
           type: string
+        allowEmptyValue: true
       - name: org_id
         in: query
-        description: Organization identifier
+        description: |
+          Organization unique id.
+          If omitted, results from all organizations available to the user are returned
+          (unfiltered). An empty value ("") selects the personal sandbox workspace only.
+          A positive integer selects that organization.
         schema:
           type: integer
+        allowEmptyValue: true
       - name: page
         required: false
         in: query
@@ -6298,15 +7275,15 @@ paths:
       - name: search
         required: false
         in: query
-        description: 'A search term. Available search_fields: (''username'', ''first_name'',
-          ''last_name'')'
+        description: 'A search term. Available search_fields: [''first_name'', ''last_name'',
+          ''username'']'
         schema:
           type: string
       - name: sort
         required: false
         in: query
         description: 'Which field to use when ordering the results. Available ordering_fields:
-          [''username'', ''first_name'', ''last_name'', ''id'', ''is_active'']'
+          [''first_name'', ''id'', ''is_active'', ''last_name'', ''username'']'
         schema:
           type: string
       - name: username
@@ -6438,9 +7415,14 @@ paths:
       parameters:
       - name: X-Organization
         in: header
-        description: Organization unique slug
+        description: |
+          Organization unique slug.
+          If omitted, results from all organizations available to the user are returned
+          (unfiltered). An empty value ("") selects the personal sandbox workspace only.
+          A non-empty value selects that organization.
         schema:
           type: string
+        allowEmptyValue: true
       - name: filter
         required: false
         in: query
@@ -6454,19 +7436,29 @@ paths:
 
           Details about the syntax used can be found at the link: https://jsonlogic.com/
 
-           Available filter_fields: ['target_url', 'owner', 'type', 'description', 'id', 'project_id', 'updated_date'].
+           Available filter_fields: ['description', 'id', 'owner', 'project_id', 'target_url', 'type', 'updated_date'].
         schema:
           type: string
       - name: org
         in: query
-        description: Organization unique slug
+        description: |
+          Organization unique slug.
+          If omitted, results from all organizations available to the user are returned
+          (unfiltered). An empty value ("") selects the personal sandbox workspace only.
+          A non-empty value selects that organization.
         schema:
           type: string
+        allowEmptyValue: true
       - name: org_id
         in: query
-        description: Organization identifier
+        description: |
+          Organization unique id.
+          If omitted, results from all organizations available to the user are returned
+          (unfiltered). An empty value ("") selects the personal sandbox workspace only.
+          A positive integer selects that organization.
         schema:
           type: integer
+        allowEmptyValue: true
       - name: owner
         in: query
         description: A simple equality filter for the owner field
@@ -6492,15 +7484,15 @@ paths:
       - name: search
         required: false
         in: query
-        description: 'A search term. Available search_fields: (''target_url'', ''owner'',
-          ''type'', ''description'')'
+        description: 'A search term. Available search_fields: [''description'', ''owner'',
+          ''target_url'']'
         schema:
           type: string
       - name: sort
         required: false
         in: query
         description: 'Which field to use when ordering the results. Available ordering_fields:
-          [''target_url'', ''owner'', ''type'', ''description'', ''id'', ''project_id'',
+          [''description'', ''id'', ''owner'', ''project_id'', ''target_url'', ''type'',
           ''updated_date'']'
         schema:
           type: string
@@ -6517,6 +7509,7 @@ paths:
           enum:
           - organization
           - project
+          - server
       tags:
       - webhooks
       security:
@@ -6541,17 +7534,29 @@ paths:
         name: X-Organization
         schema:
           type: string
-        description: Organization unique slug
+        description: |
+          Organization unique slug.
+          If omitted, results from all organizations available to the user are returned
+          (unfiltered). An empty value ("") selects the personal sandbox workspace only.
+          A non-empty value selects that organization.
       - in: query
         name: org
         schema:
           type: string
-        description: Organization unique slug
+        description: |
+          Organization unique slug.
+          If omitted, results from all organizations available to the user are returned
+          (unfiltered). An empty value ("") selects the personal sandbox workspace only.
+          A non-empty value selects that organization.
       - in: query
         name: org_id
         schema:
           type: integer
-        description: Organization identifier
+        description: |
+          Organization unique id.
+          If omitted, results from all organizations available to the user are returned
+          (unfiltered). An empty value ("") selects the personal sandbox workspace only.
+          A positive integer selects that organization.
       tags:
       - webhooks
       requestBody:
@@ -6823,6 +7828,12 @@ paths:
         name: type
         schema:
           type: string
+          enum:
+          - all
+          - organization
+          - project
+          - server
+          default: all
         description: Type of webhook
       tags:
       - webhooks
@@ -6934,6 +7945,28 @@ components:
           type: boolean
       required:
       - name
+    AggregationEnum:
+      enum:
+      - micro
+      - mean
+      - label
+      type: string
+      description: |-
+        * `micro` - micro
+        * `mean` - mean
+        * `label` - label
+    AllWebhookType:
+      enum:
+      - organization
+      - project
+      - server
+      - all
+      type: string
+      description: |-
+        * `organization` - ORGANIZATION
+        * `project` - PROJECT
+        * `server` - SERVER
+        * `all` - ALL
     AnnotationConflict:
       type: object
       properties:
@@ -6958,6 +7991,11 @@ components:
           allOf:
           - $ref: '#/components/schemas/AnnotationConflictSeverity'
           readOnly: true
+        attribute_names:
+          type: array
+          items:
+            type: string
+          readOnly: true
       required:
       - annotation_ids
     AnnotationConflictAnnotationType:
@@ -6972,18 +8010,14 @@ components:
         * `track` - TRACK
     AnnotationConflictSeverity:
       enum:
-      - warning
       - error
       type: string
-      description: |-
-        * `warning` - WARNING
-        * `error` - ERROR
+      description: '* `error` - ERROR'
     AnnotationConflictType:
       enum:
       - missing_annotation
       - extra_annotation
       - mismatching_label
-      - low_overlap
       - mismatching_direction
       - mismatching_attributes
       - mismatching_groups
@@ -6993,7 +8027,6 @@ components:
         * `missing_annotation` - MISSING_ANNOTATION
         * `extra_annotation` - EXTRA_ANNOTATION
         * `mismatching_label` - MISMATCHING_LABEL
-        * `low_overlap` - LOW_OVERLAP
         * `mismatching_direction` - MISMATCHING_DIRECTION
         * `mismatching_attributes` - MISMATCHING_ATTRIBUTES
         * `mismatching_groups` - MISMATCHING_GROUPS
@@ -7061,6 +8094,28 @@ components:
           oneOf:
           - $ref: '#/components/schemas/ShapeType'
           - $ref: '#/components/schemas/NullEnum'
+    AnnotationTypeEnum:
+      enum:
+      - tag
+      - rectangle
+      - skeleton
+      - skeleton_keypoint
+      - points
+      - polyline
+      - mask
+      - polygon
+      - ellipse
+      type: string
+      description: |-
+        * `tag` - Tag
+        * `rectangle` - Rectangle
+        * `skeleton` - Skeleton
+        * `skeleton_keypoint` - Skeleton Keypoint
+        * `points` - Points
+        * `polyline` - Polyline
+        * `mask` - Mask
+        * `polygon` - Polygon
+        * `ellipse` - Ellipse
     AssetRead:
       type: object
       properties:
@@ -7119,6 +8174,106 @@ components:
       - mutable
       - name
       - values
+    AttributeComparison:
+      type: object
+      properties:
+        default:
+          allOf:
+          - $ref: '#/components/schemas/AttributeComparisonDefaultRule'
+          nullable: true
+        rules:
+          type: array
+          items:
+            $ref: '#/components/schemas/AttributeComparisonRule'
+    AttributeComparisonDefaultRule:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+          nullable: true
+        comparator:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/ComparatorEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        threshold:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          nullable: true
+    AttributeComparisonDefaultRuleRequest:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+          nullable: true
+        comparator:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/ComparatorEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        threshold:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          nullable: true
+    AttributeComparisonRequest:
+      type: object
+      properties:
+        default:
+          allOf:
+          - $ref: '#/components/schemas/AttributeComparisonDefaultRuleRequest'
+          nullable: true
+        rules:
+          type: array
+          items:
+            $ref: '#/components/schemas/AttributeComparisonRuleRequest'
+    AttributeComparisonRule:
+      type: object
+      properties:
+        spec_id:
+          type: integer
+          description: AttributeSpec id to override.
+        enabled:
+          type: boolean
+        comparator:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/ComparatorEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        threshold:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          nullable: true
+      required:
+      - enabled
+      - spec_id
+    AttributeComparisonRuleRequest:
+      type: object
+      properties:
+        spec_id:
+          type: integer
+          description: AttributeSpec id to override.
+        enabled:
+          type: boolean
+        comparator:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/ComparatorEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        threshold:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          nullable: true
+      required:
+      - enabled
+      - spec_id
     AttributeRequest:
       type: object
       properties:
@@ -7140,6 +8295,10 @@ components:
           items:
             type: string
             maxLength: 200
+        deleted:
+          type: boolean
+          writeOnly: true
+          description: Delete the attribute and all related annotation values.
       required:
       - input_type
       - mutable
@@ -7219,6 +8378,9 @@ components:
           maxLength: 150
       required:
       - username
+    BlankEnum:
+      enum:
+      - ''
     Chapter:
       type: object
       properties:
@@ -7244,12 +8406,12 @@ components:
       enum:
       - video
       - imageset
-      - list
+      - audio_mp3
       type: string
       description: |-
         * `video` - VIDEO
         * `imageset` - IMAGESET
-        * `list` - LIST
+        * `audio_mp3` - AUDIO_MP3
     ClientEvents:
       type: object
       properties:
@@ -7438,6 +8600,14 @@ components:
           type: string
           format: uri
           readOnly: true
+    ComparatorEnum:
+      enum:
+      - exact
+      - levenshtein
+      type: string
+      description: |-
+        * `exact` - exact
+        * `levenshtein` - levenshtein
     ConsensusMergeCreateRequest:
       type: object
       properties:
@@ -7462,6 +8632,20 @@ components:
           maximum: 1
           minimum: 0
           description: Pairwise annotation matching IoU threshold
+    CreatedViaEnum:
+      enum:
+      - registration
+      - social
+      - sso
+      - ldap
+      - invitation
+      type: string
+      description: |-
+        * `registration` - Registration
+        * `social` - Social
+        * `sso` - SSO
+        * `ldap` - LDAP
+        * `invitation` - Invitation
     CredentialsTypeEnum:
       enum:
       - KEY_SECRET_KEY_PAIR
@@ -7539,7 +8723,6 @@ components:
       - chunks_updated_date
       - deleted_frames
       - frames
-      - image_quality
     DataRequest:
       type: object
       description: |-
@@ -7555,8 +8738,9 @@ components:
         image_quality:
           type: integer
           maximum: 100
-          minimum: 0
-          description: Image quality to use during annotation
+          minimum: 1
+          description: Image quality to use during annotation, required for image
+            and video-based tasks
         start_frame:
           type: integer
           maximum: 2147483647
@@ -7712,8 +8896,6 @@ components:
           allOf:
           - $ref: '#/components/schemas/ValidationParamsRequest'
           nullable: true
-      required:
-      - image_quality
     DataResponse:
       oneOf:
       - $ref: '#/components/schemas/RqId'
@@ -7820,6 +9002,12 @@ components:
       required:
       - scope
       - timestamp
+    EventGroup:
+      type: object
+      properties:
+        display_name:
+          type: string
+          readOnly: true
     EventRequest:
       type: object
       properties:
@@ -7888,23 +9076,32 @@ components:
       type: object
       properties:
         webhook_type:
-          $ref: '#/components/schemas/WebhookType'
+          $ref: '#/components/schemas/AllWebhookType'
         events:
           type: array
           items:
-            $ref: '#/components/schemas/EventsEnum'
+            $ref: '#/components/schemas/WebhooksEvent'
+          readOnly: true
       required:
-      - events
       - webhook_type
     EventsEnum:
       enum:
+      - completed:request[calculate:quality]
+      - completed:request[create:task]
+      - completed:request[export:annotations]
+      - completed:request[export:backup]
+      - completed:request[export:dataset]
+      - completed:request[merge:job]
+      - completed:request[merge:task]
       - create:comment
       - create:invitation
       - create:issue
       - create:job
       - create:membership
+      - create:organization
       - create:project
       - create:task
+      - create:user
       - delete:comment
       - delete:invitation
       - delete:issue
@@ -7913,6 +9110,7 @@ components:
       - delete:organization
       - delete:project
       - delete:task
+      - delete:user
       - update:comment
       - update:issue
       - update:job
@@ -7920,15 +9118,25 @@ components:
       - update:organization
       - update:project
       - update:task
+      - update:user
       type: string
       description: |-
+        * `completed:request[calculate:quality]` - COMPLETED:REQUEST[CALCULATE:QUALITY]
+        * `completed:request[create:task]` - COMPLETED:REQUEST[CREATE:TASK]
+        * `completed:request[export:annotations]` - COMPLETED:REQUEST[EXPORT:ANNOTATIONS]
+        * `completed:request[export:backup]` - COMPLETED:REQUEST[EXPORT:BACKUP]
+        * `completed:request[export:dataset]` - COMPLETED:REQUEST[EXPORT:DATASET]
+        * `completed:request[merge:job]` - COMPLETED:REQUEST[MERGE:JOB]
+        * `completed:request[merge:task]` - COMPLETED:REQUEST[MERGE:TASK]
         * `create:comment` - CREATE:COMMENT
         * `create:invitation` - CREATE:INVITATION
         * `create:issue` - CREATE:ISSUE
         * `create:job` - CREATE:JOB
         * `create:membership` - CREATE:MEMBERSHIP
+        * `create:organization` - CREATE:ORGANIZATION
         * `create:project` - CREATE:PROJECT
         * `create:task` - CREATE:TASK
+        * `create:user` - CREATE:USER
         * `delete:comment` - DELETE:COMMENT
         * `delete:invitation` - DELETE:INVITATION
         * `delete:issue` - DELETE:ISSUE
@@ -7937,6 +9145,7 @@ components:
         * `delete:organization` - DELETE:ORGANIZATION
         * `delete:project` - DELETE:PROJECT
         * `delete:task` - DELETE:TASK
+        * `delete:user` - DELETE:USER
         * `update:comment` - UPDATE:COMMENT
         * `update:issue` - UPDATE:ISSUE
         * `update:job` - UPDATE:JOB
@@ -7944,6 +9153,7 @@ components:
         * `update:organization` - UPDATE:ORGANIZATION
         * `update:project` - UPDATE:PROJECT
         * `update:task` - UPDATE:TASK
+        * `update:user` - UPDATE:USER
     FileInfo:
       type: object
       properties:
@@ -7983,10 +9193,8 @@ components:
           type: boolean
           readOnly: true
       required:
-      - height
       - name
       - related_files
-      - width
     FrameSelectionMethod:
       enum:
       - random_uniform
@@ -8090,6 +9298,13 @@ components:
           additionalProperties:
             $ref: '#/components/schemas/LabelMappingEntryRequest'
           description: Label mapping from the model to the task labels
+        roi:
+          type: array
+          items:
+            type: integer
+          description: Region of interest as [xtl, ytl, xbr, ybr]
+          maxItems: 4
+          minItems: 4
       required:
       - function
       - task
@@ -8131,6 +9346,9 @@ components:
           type: boolean
           readOnly: true
           nullable: true
+        accepted:
+          type: boolean
+          readOnly: true
         organization_info:
           $ref: '#/components/schemas/BasicOrganization'
       required:
@@ -8268,7 +9486,12 @@ components:
         dimension:
           type: string
           readOnly: true
-          maxLength: 2
+        mode:
+          type: string
+          readOnly: true
+        media_type:
+          type: string
+          readOnly: true
         bug_tracker:
           type: string
           readOnly: true
@@ -8285,9 +9508,6 @@ components:
         state:
           allOf:
           - $ref: '#/components/schemas/OperationStatus'
-          readOnly: true
-        mode:
-          type: string
           readOnly: true
         frame_count:
           type: integer
@@ -8507,8 +9727,9 @@ components:
           items:
             $ref: '#/components/schemas/Attribute'
           default: []
-          description: The list of attributes. If you want to remove an attribute,
-            you need to recreate the label and specify the remaining attributes.
+          description: The list of attributes. To remove an attribute, pass the full
+            attribute body with deleted=true. Related annotation attribute values
+            will be deleted.
         type:
           allOf:
           - $ref: '#/components/schemas/LabelType'
@@ -8524,6 +9745,7 @@ components:
             * `polyline` - POLYLINE
             * `rectangle` - RECTANGLE
             * `skeleton` - SKELETON
+            * `interval` - INTERVAL
             * `tag` - TAG
         svg:
           type: string
@@ -8578,6 +9800,7 @@ components:
       - polyline
       - rectangle
       - skeleton
+      - interval
       - tag
       type: string
       description: |-
@@ -8590,6 +9813,7 @@ components:
         * `polyline` - POLYLINE
         * `rectangle` - RECTANGLE
         * `skeleton` - SKELETON
+        * `interval` - INTERVAL
         * `tag` - TAG
     LabeledData:
       type: object
@@ -8612,6 +9836,11 @@ components:
           items:
             $ref: '#/components/schemas/LabeledTrack'
           default: []
+        intervals:
+          type: array
+          items:
+            $ref: '#/components/schemas/LabeledInterval'
+          default: []
     LabeledDataRequest:
       type: object
       properties:
@@ -8633,15 +9862,17 @@ components:
           items:
             $ref: '#/components/schemas/LabeledTrackRequest'
           default: []
+        intervals:
+          type: array
+          items:
+            $ref: '#/components/schemas/LabeledIntervalRequest'
+          default: []
     LabeledImage:
       type: object
       properties:
         id:
           type: integer
           nullable: true
-        frame:
-          type: integer
-          minimum: 0
         label_id:
           type: integer
           minimum: 0
@@ -8649,9 +9880,13 @@ components:
           type: integer
           minimum: 0
           nullable: true
+          default: 0
         source:
           type: string
           default: manual
+        frame:
+          type: integer
+          minimum: 0
         attributes:
           type: array
           items:
@@ -8666,9 +9901,6 @@ components:
         id:
           type: integer
           nullable: true
-        frame:
-          type: integer
-          minimum: 0
         label_id:
           type: integer
           minimum: 0
@@ -8676,6 +9908,78 @@ components:
           type: integer
           minimum: 0
           nullable: true
+          default: 0
+        source:
+          type: string
+          minLength: 1
+          default: manual
+        frame:
+          type: integer
+          minimum: 0
+        attributes:
+          type: array
+          items:
+            $ref: '#/components/schemas/AttributeValRequest'
+          default: []
+      required:
+      - frame
+      - label_id
+    LabeledInterval:
+      type: object
+      properties:
+        id:
+          type: integer
+          nullable: true
+        label_id:
+          type: integer
+          minimum: 0
+        group:
+          type: integer
+          minimum: 0
+          nullable: true
+          default: 0
+        source:
+          type: string
+          default: manual
+        attributes:
+          type: array
+          items:
+            $ref: '#/components/schemas/AttributeVal'
+          default: []
+        score:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          default: 1.0
+        start:
+          type: integer
+          minimum: 0
+          description: Must be within the task frame bounds.
+        stop:
+          type: integer
+          minimum: 0
+          nullable: true
+          description: Exclusive interval end. May be one greater than the task stop
+            frame.
+      required:
+      - label_id
+      - start
+      - stop
+    LabeledIntervalRequest:
+      type: object
+      properties:
+        id:
+          type: integer
+          nullable: true
+        label_id:
+          type: integer
+          minimum: 0
+        group:
+          type: integer
+          minimum: 0
+          nullable: true
+          default: 0
         source:
           type: string
           minLength: 1
@@ -8685,9 +9989,26 @@ components:
           items:
             $ref: '#/components/schemas/AttributeValRequest'
           default: []
+        score:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          default: 1.0
+        start:
+          type: integer
+          minimum: 0
+          description: Must be within the task frame bounds.
+        stop:
+          type: integer
+          minimum: 0
+          nullable: true
+          description: Exclusive interval end. May be one greater than the task stop
+            frame.
       required:
-      - frame
       - label_id
+      - start
+      - stop
     LabeledShape:
       type: object
       properties:
@@ -8716,9 +10037,6 @@ components:
         id:
           type: integer
           nullable: true
-        frame:
-          type: integer
-          minimum: 0
         label_id:
           type: integer
           minimum: 0
@@ -8726,9 +10044,13 @@ components:
           type: integer
           minimum: 0
           nullable: true
+          default: 0
         source:
           type: string
           default: manual
+        frame:
+          type: integer
+          minimum: 0
         attributes:
           type: array
           items:
@@ -8776,9 +10098,6 @@ components:
         id:
           type: integer
           nullable: true
-        frame:
-          type: integer
-          minimum: 0
         label_id:
           type: integer
           minimum: 0
@@ -8786,10 +10105,14 @@ components:
           type: integer
           minimum: 0
           nullable: true
+          default: 0
         source:
           type: string
           minLength: 1
           default: manual
+        frame:
+          type: integer
+          minimum: 0
         attributes:
           type: array
           items:
@@ -8815,9 +10138,6 @@ components:
         id:
           type: integer
           nullable: true
-        frame:
-          type: integer
-          minimum: 0
         label_id:
           type: integer
           minimum: 0
@@ -8825,18 +10145,22 @@ components:
           type: integer
           minimum: 0
           nullable: true
+          default: 0
         source:
           type: string
           default: manual
-        shapes:
-          type: array
-          items:
-            $ref: '#/components/schemas/TrackedShape'
+        frame:
+          type: integer
+          minimum: 0
         attributes:
           type: array
           items:
             $ref: '#/components/schemas/AttributeVal'
           default: []
+        shapes:
+          type: array
+          items:
+            $ref: '#/components/schemas/TrackedShape'
         elements:
           type: array
           items:
@@ -8851,9 +10175,6 @@ components:
         id:
           type: integer
           nullable: true
-        frame:
-          type: integer
-          minimum: 0
         label_id:
           type: integer
           minimum: 0
@@ -8861,19 +10182,23 @@ components:
           type: integer
           minimum: 0
           nullable: true
+          default: 0
         source:
           type: string
           minLength: 1
           default: manual
-        shapes:
-          type: array
-          items:
-            $ref: '#/components/schemas/TrackedShapeRequest'
+        frame:
+          type: integer
+          minimum: 0
         attributes:
           type: array
           items:
             $ref: '#/components/schemas/AttributeValRequest'
           default: []
+        shapes:
+          type: array
+          items:
+            $ref: '#/components/schemas/TrackedShapeRequest'
         elements:
           type: array
           items:
@@ -8990,7 +10315,6 @@ components:
           format: date-time
           readOnly: true
         contact:
-          type: object
           readOnly: true
         owner:
           allOf:
@@ -9011,8 +10335,7 @@ components:
           maxLength: 64
         description:
           type: string
-        contact:
-          type: object
+        contact: {}
       required:
       - slug
     PaginatedAccessTokenReadList:
@@ -9337,6 +10660,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/QualityReport'
+    PaginatedQualityRequirementListItemList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/QualityRequirementListItem'
     PaginatedQualitySettingsList:
       type: object
       required:
@@ -9406,6 +10752,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/TaskRead'
+    PaginatedUserGrowthDataList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserGrowthData'
     PaginatedWebhookDeliveryReadList:
       type: object
       required:
@@ -9610,15 +10979,6 @@ components:
         cloud_storage_id:
           type: integer
           nullable: true
-    PatchedInvitationWriteRequest:
-      type: object
-      properties:
-        role:
-          $ref: '#/components/schemas/RoleEnum'
-        email:
-          type: string
-          format: email
-          minLength: 1
     PatchedIssueWriteRequest:
       type: object
       properties:
@@ -9688,8 +11048,9 @@ components:
           items:
             $ref: '#/components/schemas/AttributeRequest'
           default: []
-          description: The list of attributes. If you want to remove an attribute,
-            you need to recreate the label and specify the remaining attributes.
+          description: The list of attributes. To remove an attribute, pass the full
+            attribute body with deleted=true. Related annotation attribute values
+            will be deleted.
         deleted:
           type: boolean
           writeOnly: true
@@ -9710,6 +11071,7 @@ components:
             * `polyline` - POLYLINE
             * `rectangle` - RECTANGLE
             * `skeleton` - SKELETON
+            * `interval` - INTERVAL
             * `tag` - TAG
         svg:
           type: string
@@ -9738,6 +11100,11 @@ components:
           items:
             $ref: '#/components/schemas/LabeledTrackRequest'
           default: []
+        intervals:
+          type: array
+          items:
+            $ref: '#/components/schemas/LabeledIntervalRequest'
+          default: []
     PatchedMembershipWriteRequest:
       type: object
       properties:
@@ -9756,8 +11123,7 @@ components:
           maxLength: 64
         description:
           type: string
-        contact:
-          type: object
+        contact: {}
     PatchedProjectWriteRequest:
       type: object
       properties:
@@ -9794,6 +11160,170 @@ components:
           type: integer
           writeOnly: true
           nullable: true
+    PatchedQualityRequirementRequest:
+      type: object
+      properties:
+        settings_id:
+          type: integer
+        name:
+          type: string
+          minLength: 1
+          maxLength: 250
+        sort_order:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        filter:
+          type: string
+        enabled:
+          type: boolean
+        annotation_type:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/AnnotationTypeEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        metric:
+          nullable: true
+          description: |-
+            The primary metric used for quality estimation
+
+            * `accuracy` - ACCURACY
+            * `precision` - PRECISION
+            * `recall` - RECALL
+            * `jaccard_index` - JACCARD_INDEX
+            * `dice` - DICE
+            * `mean_accuracy` - MEAN_ACCURACY
+            * `mean_precision` - MEAN_PRECISION
+            * `mean_recall` - MEAN_RECALL
+            * `mean_jaccard_index` - MEAN_JACCARD_INDEX
+            * `mean_dice` - MEAN_DICE
+            * `label_accuracy` - LABEL_ACCURACY
+            * `label_precision` - LABEL_PRECISION
+            * `label_recall` - LABEL_RECALL
+            * `label_jaccard_index` - LABEL_JACCARD_INDEX
+            * `label_dice` - LABEL_DICE
+          oneOf:
+          - $ref: '#/components/schemas/QualityTargetMetric'
+          - $ref: '#/components/schemas/NullEnum'
+        required_score:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          nullable: true
+          description: Defines the minimal quality requirements in terms of the selected
+            target metric.
+        parent_requirement:
+          type: integer
+          nullable: true
+          description: The parent requirement. Child requirements inherit comparison
+            settings from it.
+        iou_threshold:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          nullable: true
+          description: Used for distinction between matched / unmatched shapes
+        point_size:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          nullable: true
+          description: |-
+            Like IoU threshold, but for points.
+            The percent of the bbox side, used as the radius of the circle around the GT point,
+            where the checked point is expected to be. For boxes with different width and
+            height, the "side" is computed as a geometric mean of the width and height.
+            Read more: https://cocodataset.org/#keypoints-eval
+        point_size_base:
+          nullable: true
+          description: |-
+            When comparing point annotations (including both separate points and point groups),
+            the point size parameter defines matching area for each GT point based to the
+            object size. The point size base parameter allows to configure how to determine
+            the object size.
+            If image_size, the image size is used. Useful if each point
+            annotation represents a separate object or boxes grouped with points do not
+            represent object boundaries.
+            If group_bbox_size, the object size is based on
+            the point group bbox size. Useful if each point group represents an object
+            or there is a bbox grouped with points, representing the object size.
+
+
+            * `image_size` - IMAGE_SIZE
+            * `group_bbox_size` - GROUP_BBOX_SIZE
+          oneOf:
+          - $ref: '#/components/schemas/QualityPointSizeBase'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        line_thickness:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          nullable: true
+          description: |
+            Thickness of polylines, relatively to the (image area) ^ 0.5.
+            The distance to the boundary around the GT line,
+            inside of which the checked line points should be
+        match_orientation:
+          type: boolean
+          nullable: true
+          description: Enables or disables polyline orientation comparison
+        line_orientation_threshold:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          nullable: true
+          description: |
+            The minimal gain in the GT IoU between the given and reversed line directions
+            to consider the line inverted.
+            Only used when the 'match_orientation' parameter is true
+        match_groups:
+          type: boolean
+          nullable: true
+          description: Enables or disables annotation group checks. Only annotations
+            of the same shape type can form matching groups.
+        group_match_threshold:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          nullable: true
+          description: |
+            Minimal IoU for groups to be considered matching.
+            Only used when the 'match_groups' parameter is true
+        check_covered_annotations:
+          type: boolean
+          nullable: true
+          description: |
+            Check for partially-covered annotations, useful in segmentation tasks
+        object_visibility_threshold:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          nullable: true
+          description: |
+            Minimal visible area percent of the spatial annotations (polygons, masks)
+            for reporting covered annotations.
+            Only used when the 'object_visibility_threshold' parameter is true
+        panoptic_comparison:
+          type: boolean
+          nullable: true
+          description: |
+            Use only the visible part of the masks and polygons in comparisons
+        attribute_comparison:
+          allOf:
+          - $ref: '#/components/schemas/AttributeComparisonRequest'
+          nullable: true
+          description: Incremental attribute comparison settings. The default rule
+            applies to attributes without an override; rules override behavior for
+            individual AttributeSpec ids.
     PatchedQualitySettingsRequest:
       type: object
       properties:
@@ -9808,22 +11338,6 @@ components:
           description: |
             Allow using project settings when computing task quality.
             Only applicable to task quality settings inside projects
-        target_metric:
-          allOf:
-          - $ref: '#/components/schemas/QualityTargetMetric'
-          description: |-
-            The primary metric used for quality estimation
-
-            * `accuracy` - ACCURACY
-            * `precision` - PRECISION
-            * `recall` - RECALL
-        target_metric_threshold:
-          type: number
-          format: double
-          maximum: 1
-          minimum: 0
-          description: |
-            Defines the minimal quality requirements in terms of the selected target metric.
         max_validations_per_job:
           type: integer
           maximum: 2147483647
@@ -9832,121 +11346,10 @@ components:
             The maximum number of job validation attempts for the job assignee.
             The job can be automatically accepted if the job quality is above the required
             threshold, defined by the target threshold parameter.
-        iou_threshold:
-          type: number
-          format: double
-          maximum: 1
-          minimum: 0
-          default: 0.4
-          description: Used for distinction between matched / unmatched shapes
-        oks_sigma:
-          type: number
-          format: double
-          maximum: 1
-          minimum: 0
-          default: 0.09
-          description: |
-            Like IoU threshold, but for points.
-            The percent of the bbox side, used as the radius of the circle around the GT point,
-            where the checked point is expected to be. For boxes with different width and
-            height, the "side" is computed as a geometric mean of the width and height.
-            Read more: https://cocodataset.org/#keypoints-eval
-        point_size_base:
-          allOf:
-          - $ref: '#/components/schemas/QualityPointSizeBase'
-          default: group_bbox_size
-          description: |-
-            When comparing point annotations (including both separate points and point groups),
-            the OKS sigma parameter defines matching area for each GT point based to the
-            object size. The point size base parameter allows to configure how to determine
-            the object size.
-            If image_size, the image size is used. Useful if each point
-            annotation represents a separate object or boxes grouped with points do not
-            represent object boundaries.
-            If group_bbox_size, the object size is based on
-            the point group bbox size. Useful if each point group represents an object
-            or there is a bbox grouped with points, representing the object size.
-
-
-            * `image_size` - IMAGE_SIZE
-            * `group_bbox_size` - GROUP_BBOX_SIZE
-        line_thickness:
-          type: number
-          format: double
-          maximum: 1
-          minimum: 0
-          default: 0.01
-          description: |
-            Thickness of polylines, relatively to the (image area) ^ 0.5.
-            The distance to the boundary around the GT line,
-            inside of which the checked line points should be
-        low_overlap_threshold:
-          type: number
-          format: double
-          maximum: 1
-          minimum: 0
-          default: 0.8
-          description: |
-            Used for distinction between strong / weak (low_overlap) matches
-        compare_line_orientation:
-          type: boolean
-          default: true
-          description: Enables or disables polyline orientation comparison
-        line_orientation_threshold:
-          type: number
-          format: double
-          maximum: 1
-          minimum: 0
-          default: 0.1
-          description: |
-            The minimal gain in the GT IoU between the given and reversed line directions
-            to consider the line inverted.
-            Only used when the 'compare_line_orientation' parameter is true
-        compare_groups:
-          type: boolean
-          default: true
-          description: Enables or disables annotation group checks
-        group_match_threshold:
-          type: number
-          format: double
-          maximum: 1
-          minimum: 0
-          default: 0.5
-          description: |
-            Minimal IoU for groups to be considered matching.
-            Only used when the 'compare_groups' parameter is true
-        check_covered_annotations:
-          type: boolean
-          default: true
-          description: |
-            Check for partially-covered annotations, useful in segmentation tasks
-        object_visibility_threshold:
-          type: number
-          format: double
-          maximum: 1
-          minimum: 0
-          default: 0.05
-          description: |
-            Minimal visible area percent of the spatial annotations (polygons, masks)
-            for reporting covered annotations.
-            Only used when the 'object_visibility_threshold' parameter is true
-        panoptic_comparison:
-          type: boolean
-          default: true
-          description: |
-            Use only the visible part of the masks and polygons in comparisons
-        compare_attributes:
-          type: boolean
-          default: true
-          description: Enables or disables annotation attribute comparison
-        empty_is_annotated:
-          type: boolean
-          default: false
-          description: |
-            Consider empty frames annotated as "empty". This affects target metrics like
-            accuracy in cases there are no annotations. If disabled, frames without annotations
-            are counted as not matching (accuracy is 0). If enabled, accuracy will be 1 instead.
-            This will also add virtual annotations to empty frames in the comparison results.
+        requirements:
+          type: array
+          items:
+            $ref: '#/components/schemas/QualityRequirementListItemRequest'
     PatchedTaskValidationLayoutWriteRequest:
       type: object
       properties:
@@ -10010,6 +11413,15 @@ components:
           type: integer
           writeOnly: true
           nullable: true
+    PatchedUserGrowthDataRequest:
+      type: object
+      properties:
+        github_prompt_shown:
+          type: boolean
+        github_prompt_support_clicked:
+          type: boolean
+        promotion_notifications_allowed:
+          type: boolean
     PatchedUserRequest:
       type: object
       properties:
@@ -10143,7 +11555,6 @@ components:
           type: string
           readOnly: true
           nullable: true
-          maxLength: 16
         organization:
           type: integer
           readOnly: true
@@ -10274,6 +11685,73 @@ components:
       required:
       - summary
       - target
+    QualityReportConfusionMatrix:
+      type: object
+      properties:
+        labels:
+          type: array
+          items:
+            type: string
+        rows:
+          type: array
+          items:
+            type: array
+            items:
+              type: integer
+        axes:
+          $ref: '#/components/schemas/QualityReportConfusionMatrixAxes'
+        precision:
+          type: array
+          items:
+            type: number
+            format: double
+          nullable: true
+        recall:
+          type: array
+          items:
+            type: number
+            format: double
+          nullable: true
+        accuracy:
+          type: array
+          items:
+            type: number
+            format: double
+          nullable: true
+        jaccard_index:
+          type: array
+          items:
+            type: number
+            format: double
+          nullable: true
+        dice:
+          type: array
+          items:
+            type: number
+            format: double
+          nullable: true
+        target_metric_summary:
+          $ref: '#/components/schemas/QualityReportTargetMetricSummary'
+      required:
+      - accuracy
+      - axes
+      - dice
+      - jaccard_index
+      - labels
+      - precision
+      - recall
+      - rows
+      - target_metric_summary
+    QualityReportConfusionMatrixAxes:
+      type: object
+      properties:
+        cols:
+          type: string
+        rows:
+          type: string
+      required:
+      - cols
+      - rows
     QualityReportCreateRequest:
       type: object
       properties:
@@ -10298,31 +11776,109 @@ components:
         included:
           type: integer
           description: Included job count = total - excluded
+        completed:
+          type: integer
+          description: Jobs with all enabled requirements met
       required:
+      - completed
       - excluded
       - included
       - not_checkable
       - total
+    QualityReportRequirementCalculation:
+      type: object
+      properties:
+        status:
+          $ref: '#/components/schemas/QualityReportRequirementCalculationStatusEnum'
+        reason:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/ReasonEnum'
+          - $ref: '#/components/schemas/NullEnum'
+      required:
+      - status
+    QualityReportRequirementCalculationStatusEnum:
+      enum:
+      - computed
+      - not_computed
+      type: string
+      description: |-
+        * `computed` - computed
+        * `not_computed` - not_computed
+    QualityReportRequirementSummaryItem:
+      type: object
+      properties:
+        requirement_id:
+          type: integer
+          nullable: true
+        name:
+          type: string
+        metric:
+          $ref: '#/components/schemas/QualityTargetMetric'
+        score:
+          type: number
+          format: double
+          nullable: true
+        score_components:
+          $ref: '#/components/schemas/QualityReportScoreComponents'
+        calculation:
+          $ref: '#/components/schemas/QualityReportRequirementCalculation'
+        threshold:
+          type: number
+          format: double
+      required:
+      - calculation
+      - metric
+      - name
+      - requirement_id
+      - score
+      - score_components
+      - threshold
+    QualityReportRequirementsSummary:
+      type: object
+      properties:
+        total:
+          type: integer
+        enabled:
+          type: integer
+        completed:
+          type: integer
+        not_computed:
+          type: integer
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/QualityReportRequirementSummaryItem'
+      required:
+      - completed
+      - enabled
+      - items
+      - not_computed
+      - total
+    QualityReportScoreComponents:
+      type: object
+      properties:
+        valid_count:
+          type: integer
+        missing_count:
+          type: integer
+        extra_count:
+          type: integer
+      required:
+      - extra_count
+      - missing_count
+      - valid_count
     QualityReportSummary:
       type: object
       properties:
         total_frames:
           type: integer
-        frame_count:
-          type: integer
-          description: Deprecated. Use 'validation_frames' instead
         validation_frames:
           type: integer
-        frame_share:
-          type: number
-          format: double
-          description: Deprecated. Use 'validation_frame_share' instead
         validation_frame_share:
           type: number
           format: double
         conflict_count:
-          type: integer
-        warning_count:
           type: integer
         error_count:
           type: integer
@@ -10330,23 +11886,6 @@ components:
           type: object
           additionalProperties:
             type: integer
-        valid_count:
-          type: integer
-        ds_count:
-          type: integer
-        gt_count:
-          type: integer
-        total_count:
-          type: integer
-        accuracy:
-          type: number
-          format: double
-        precision:
-          type: number
-          format: double
-        recall:
-          type: number
-          format: double
         tasks:
           allOf:
           - $ref: '#/components/schemas/QualityReportTasksSummary'
@@ -10355,21 +11894,15 @@ components:
           allOf:
           - $ref: '#/components/schemas/QualityReportJobsSummary'
           description: Included only in task and project reports
+        requirements:
+          $ref: '#/components/schemas/QualityReportRequirementsSummary'
       required:
-      - accuracy
       - conflict_count
       - conflicts_by_type
-      - ds_count
       - error_count
-      - gt_count
-      - precision
-      - recall
-      - total_count
       - total_frames
-      - valid_count
       - validation_frame_share
       - validation_frames
-      - warning_count
     QualityReportTarget:
       enum:
       - job
@@ -10380,6 +11913,57 @@ components:
         * `job` - JOB
         * `task` - TASK
         * `project` - PROJECT
+    QualityReportTargetMetricSummary:
+      type: object
+      properties:
+        metric:
+          $ref: '#/components/schemas/QualityReportTargetMetricSummaryMetricEnum'
+        aggregation:
+          $ref: '#/components/schemas/AggregationEnum'
+        values:
+          $ref: '#/components/schemas/QualityReportTargetMetricValues'
+        worst_labels:
+          type: array
+          items:
+            type: string
+      required:
+      - aggregation
+      - metric
+      - values
+      - worst_labels
+    QualityReportTargetMetricSummaryMetricEnum:
+      enum:
+      - accuracy
+      - precision
+      - recall
+      - jaccard_index
+      - dice
+      type: string
+      description: |-
+        * `accuracy` - accuracy
+        * `precision` - precision
+        * `recall` - recall
+        * `jaccard_index` - jaccard_index
+        * `dice` - dice
+    QualityReportTargetMetricValues:
+      type: object
+      properties:
+        micro:
+          type: number
+          format: double
+          nullable: true
+        mean:
+          type: number
+          format: double
+          nullable: true
+        label:
+          type: number
+          format: double
+          nullable: true
+      required:
+      - label
+      - mean
+      - micro
     QualityReportTasksSummary:
       type: object
       properties:
@@ -10398,12 +11982,899 @@ components:
         included:
           type: integer
           description: Included task count = total - custom - non_configured - excluded
+        completed:
+          type: integer
+          description: Tasks with all enabled requirements met
       required:
+      - completed
       - custom
       - excluded
       - included
       - not_configured
       - total
+    QualityRequirement:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        settings_id:
+          type: integer
+        task_id:
+          type: integer
+          readOnly: true
+          nullable: true
+        project_id:
+          type: integer
+          readOnly: true
+          nullable: true
+        name:
+          type: string
+          maxLength: 250
+        is_base:
+          type: boolean
+          readOnly: true
+        sort_order:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        filter:
+          type: string
+        enabled:
+          type: boolean
+        annotation_type:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/AnnotationTypeEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        metric:
+          nullable: true
+          description: |-
+            The primary metric used for quality estimation
+
+            * `accuracy` - ACCURACY
+            * `precision` - PRECISION
+            * `recall` - RECALL
+            * `jaccard_index` - JACCARD_INDEX
+            * `dice` - DICE
+            * `mean_accuracy` - MEAN_ACCURACY
+            * `mean_precision` - MEAN_PRECISION
+            * `mean_recall` - MEAN_RECALL
+            * `mean_jaccard_index` - MEAN_JACCARD_INDEX
+            * `mean_dice` - MEAN_DICE
+            * `label_accuracy` - LABEL_ACCURACY
+            * `label_precision` - LABEL_PRECISION
+            * `label_recall` - LABEL_RECALL
+            * `label_jaccard_index` - LABEL_JACCARD_INDEX
+            * `label_dice` - LABEL_DICE
+          oneOf:
+          - $ref: '#/components/schemas/QualityTargetMetric'
+          - $ref: '#/components/schemas/NullEnum'
+        required_score:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          nullable: true
+          description: Defines the minimal quality requirements in terms of the selected
+            target metric.
+        parent_requirement:
+          type: integer
+          nullable: true
+          description: The parent requirement. Child requirements inherit comparison
+            settings from it.
+        effective:
+          type: object
+          readOnly: true
+        iou_threshold:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          nullable: true
+          description: Used for distinction between matched / unmatched shapes
+        point_size:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          nullable: true
+          description: |-
+            Like IoU threshold, but for points.
+            The percent of the bbox side, used as the radius of the circle around the GT point,
+            where the checked point is expected to be. For boxes with different width and
+            height, the "side" is computed as a geometric mean of the width and height.
+            Read more: https://cocodataset.org/#keypoints-eval
+        point_size_base:
+          nullable: true
+          description: |-
+            When comparing point annotations (including both separate points and point groups),
+            the point size parameter defines matching area for each GT point based to the
+            object size. The point size base parameter allows to configure how to determine
+            the object size.
+            If image_size, the image size is used. Useful if each point
+            annotation represents a separate object or boxes grouped with points do not
+            represent object boundaries.
+            If group_bbox_size, the object size is based on
+            the point group bbox size. Useful if each point group represents an object
+            or there is a bbox grouped with points, representing the object size.
+
+
+            * `image_size` - IMAGE_SIZE
+            * `group_bbox_size` - GROUP_BBOX_SIZE
+          oneOf:
+          - $ref: '#/components/schemas/QualityPointSizeBase'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        line_thickness:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          nullable: true
+          description: |
+            Thickness of polylines, relatively to the (image area) ^ 0.5.
+            The distance to the boundary around the GT line,
+            inside of which the checked line points should be
+        match_orientation:
+          type: boolean
+          nullable: true
+          description: Enables or disables polyline orientation comparison
+        line_orientation_threshold:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          nullable: true
+          description: |
+            The minimal gain in the GT IoU between the given and reversed line directions
+            to consider the line inverted.
+            Only used when the 'match_orientation' parameter is true
+        match_groups:
+          type: boolean
+          nullable: true
+          description: Enables or disables annotation group checks. Only annotations
+            of the same shape type can form matching groups.
+        group_match_threshold:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          nullable: true
+          description: |
+            Minimal IoU for groups to be considered matching.
+            Only used when the 'match_groups' parameter is true
+        check_covered_annotations:
+          type: boolean
+          nullable: true
+          description: |
+            Check for partially-covered annotations, useful in segmentation tasks
+        object_visibility_threshold:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          nullable: true
+          description: |
+            Minimal visible area percent of the spatial annotations (polygons, masks)
+            for reporting covered annotations.
+            Only used when the 'object_visibility_threshold' parameter is true
+        panoptic_comparison:
+          type: boolean
+          nullable: true
+          description: |
+            Use only the visible part of the masks and polygons in comparisons
+        attribute_comparison:
+          allOf:
+          - $ref: '#/components/schemas/AttributeComparison'
+          nullable: true
+          description: Incremental attribute comparison settings. The default rule
+            applies to attributes without an override; rules override behavior for
+            individual AttributeSpec ids.
+        created_date:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_date:
+          type: string
+          format: date-time
+          readOnly: true
+    QualityRequirementBulkCreateNodeRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 250
+        sort_order:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        filter:
+          type: string
+        enabled:
+          type: boolean
+        annotation_type:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/AnnotationTypeEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        metric:
+          nullable: true
+          description: |-
+            The primary metric used for quality estimation
+
+            * `accuracy` - ACCURACY
+            * `precision` - PRECISION
+            * `recall` - RECALL
+            * `jaccard_index` - JACCARD_INDEX
+            * `dice` - DICE
+            * `mean_accuracy` - MEAN_ACCURACY
+            * `mean_precision` - MEAN_PRECISION
+            * `mean_recall` - MEAN_RECALL
+            * `mean_jaccard_index` - MEAN_JACCARD_INDEX
+            * `mean_dice` - MEAN_DICE
+            * `label_accuracy` - LABEL_ACCURACY
+            * `label_precision` - LABEL_PRECISION
+            * `label_recall` - LABEL_RECALL
+            * `label_jaccard_index` - LABEL_JACCARD_INDEX
+            * `label_dice` - LABEL_DICE
+          oneOf:
+          - $ref: '#/components/schemas/QualityTargetMetric'
+          - $ref: '#/components/schemas/NullEnum'
+        required_score:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          nullable: true
+          description: Defines the minimal quality requirements in terms of the selected
+            target metric.
+        parent_requirement:
+          type: integer
+          nullable: true
+          description: Required for root requirements and forbidden for nested requirements.
+            Must identify an existing requirement from the selected quality settings.
+        iou_threshold:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          nullable: true
+          description: Used for distinction between matched / unmatched shapes
+        point_size:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          nullable: true
+          description: |-
+            Like IoU threshold, but for points.
+            The percent of the bbox side, used as the radius of the circle around the GT point,
+            where the checked point is expected to be. For boxes with different width and
+            height, the "side" is computed as a geometric mean of the width and height.
+            Read more: https://cocodataset.org/#keypoints-eval
+        point_size_base:
+          nullable: true
+          description: |-
+            When comparing point annotations (including both separate points and point groups),
+            the point size parameter defines matching area for each GT point based to the
+            object size. The point size base parameter allows to configure how to determine
+            the object size.
+            If image_size, the image size is used. Useful if each point
+            annotation represents a separate object or boxes grouped with points do not
+            represent object boundaries.
+            If group_bbox_size, the object size is based on
+            the point group bbox size. Useful if each point group represents an object
+            or there is a bbox grouped with points, representing the object size.
+
+
+            * `image_size` - IMAGE_SIZE
+            * `group_bbox_size` - GROUP_BBOX_SIZE
+          oneOf:
+          - $ref: '#/components/schemas/QualityPointSizeBase'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        line_thickness:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          nullable: true
+          description: |
+            Thickness of polylines, relatively to the (image area) ^ 0.5.
+            The distance to the boundary around the GT line,
+            inside of which the checked line points should be
+        match_orientation:
+          type: boolean
+          nullable: true
+          description: Enables or disables polyline orientation comparison
+        line_orientation_threshold:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          nullable: true
+          description: |
+            The minimal gain in the GT IoU between the given and reversed line directions
+            to consider the line inverted.
+            Only used when the 'match_orientation' parameter is true
+        match_groups:
+          type: boolean
+          nullable: true
+          description: Enables or disables annotation group checks. Only annotations
+            of the same shape type can form matching groups.
+        group_match_threshold:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          nullable: true
+          description: |
+            Minimal IoU for groups to be considered matching.
+            Only used when the 'match_groups' parameter is true
+        check_covered_annotations:
+          type: boolean
+          nullable: true
+          description: |
+            Check for partially-covered annotations, useful in segmentation tasks
+        object_visibility_threshold:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          nullable: true
+          description: |
+            Minimal visible area percent of the spatial annotations (polygons, masks)
+            for reporting covered annotations.
+            Only used when the 'object_visibility_threshold' parameter is true
+        panoptic_comparison:
+          type: boolean
+          nullable: true
+          description: |
+            Use only the visible part of the masks and polygons in comparisons
+        attribute_comparison:
+          allOf:
+          - $ref: '#/components/schemas/AttributeComparisonRequest'
+          nullable: true
+          description: Incremental attribute comparison settings. The default rule
+            applies to attributes without an override; rules override behavior for
+            individual AttributeSpec ids.
+        children:
+          type: array
+          items:
+            $ref: '#/components/schemas/QualityRequirementBulkCreateNodeRequest'
+          description: Nested requirements to create. Their parent is determined by
+            their position in the hierarchy.
+      required:
+      - name
+    QualityRequirementBulkCreateRequest:
+      type: object
+      properties:
+        settings_id:
+          type: integer
+        requirements:
+          type: array
+          items:
+            $ref: '#/components/schemas/QualityRequirementBulkCreateNodeRequest'
+      required:
+      - requirements
+      - settings_id
+    QualityRequirementListItem:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        settings_id:
+          type: integer
+        task_id:
+          type: integer
+          readOnly: true
+          nullable: true
+        project_id:
+          type: integer
+          readOnly: true
+          nullable: true
+        name:
+          type: string
+          maxLength: 250
+        is_base:
+          type: boolean
+          readOnly: true
+        sort_order:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        filter:
+          type: string
+        enabled:
+          type: boolean
+        annotation_type:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/AnnotationTypeEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        metric:
+          nullable: true
+          description: |-
+            The primary metric used for quality estimation
+
+            * `accuracy` - ACCURACY
+            * `precision` - PRECISION
+            * `recall` - RECALL
+            * `jaccard_index` - JACCARD_INDEX
+            * `dice` - DICE
+            * `mean_accuracy` - MEAN_ACCURACY
+            * `mean_precision` - MEAN_PRECISION
+            * `mean_recall` - MEAN_RECALL
+            * `mean_jaccard_index` - MEAN_JACCARD_INDEX
+            * `mean_dice` - MEAN_DICE
+            * `label_accuracy` - LABEL_ACCURACY
+            * `label_precision` - LABEL_PRECISION
+            * `label_recall` - LABEL_RECALL
+            * `label_jaccard_index` - LABEL_JACCARD_INDEX
+            * `label_dice` - LABEL_DICE
+          oneOf:
+          - $ref: '#/components/schemas/QualityTargetMetric'
+          - $ref: '#/components/schemas/NullEnum'
+        required_score:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          nullable: true
+          description: Defines the minimal quality requirements in terms of the selected
+            target metric.
+        parent_requirement:
+          type: integer
+          nullable: true
+          description: The parent requirement. Child requirements inherit comparison
+            settings from it.
+        iou_threshold:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          nullable: true
+          description: Used for distinction between matched / unmatched shapes
+        point_size:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          nullable: true
+          description: |-
+            Like IoU threshold, but for points.
+            The percent of the bbox side, used as the radius of the circle around the GT point,
+            where the checked point is expected to be. For boxes with different width and
+            height, the "side" is computed as a geometric mean of the width and height.
+            Read more: https://cocodataset.org/#keypoints-eval
+        point_size_base:
+          nullable: true
+          description: |-
+            When comparing point annotations (including both separate points and point groups),
+            the point size parameter defines matching area for each GT point based to the
+            object size. The point size base parameter allows to configure how to determine
+            the object size.
+            If image_size, the image size is used. Useful if each point
+            annotation represents a separate object or boxes grouped with points do not
+            represent object boundaries.
+            If group_bbox_size, the object size is based on
+            the point group bbox size. Useful if each point group represents an object
+            or there is a bbox grouped with points, representing the object size.
+
+
+            * `image_size` - IMAGE_SIZE
+            * `group_bbox_size` - GROUP_BBOX_SIZE
+          oneOf:
+          - $ref: '#/components/schemas/QualityPointSizeBase'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        line_thickness:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          nullable: true
+          description: |
+            Thickness of polylines, relatively to the (image area) ^ 0.5.
+            The distance to the boundary around the GT line,
+            inside of which the checked line points should be
+        match_orientation:
+          type: boolean
+          nullable: true
+          description: Enables or disables polyline orientation comparison
+        line_orientation_threshold:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          nullable: true
+          description: |
+            The minimal gain in the GT IoU between the given and reversed line directions
+            to consider the line inverted.
+            Only used when the 'match_orientation' parameter is true
+        match_groups:
+          type: boolean
+          nullable: true
+          description: Enables or disables annotation group checks. Only annotations
+            of the same shape type can form matching groups.
+        group_match_threshold:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          nullable: true
+          description: |
+            Minimal IoU for groups to be considered matching.
+            Only used when the 'match_groups' parameter is true
+        check_covered_annotations:
+          type: boolean
+          nullable: true
+          description: |
+            Check for partially-covered annotations, useful in segmentation tasks
+        object_visibility_threshold:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          nullable: true
+          description: |
+            Minimal visible area percent of the spatial annotations (polygons, masks)
+            for reporting covered annotations.
+            Only used when the 'object_visibility_threshold' parameter is true
+        panoptic_comparison:
+          type: boolean
+          nullable: true
+          description: |
+            Use only the visible part of the masks and polygons in comparisons
+        attribute_comparison:
+          allOf:
+          - $ref: '#/components/schemas/AttributeComparison'
+          nullable: true
+          description: Incremental attribute comparison settings. The default rule
+            applies to attributes without an override; rules override behavior for
+            individual AttributeSpec ids.
+        created_date:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_date:
+          type: string
+          format: date-time
+          readOnly: true
+    QualityRequirementListItemRequest:
+      type: object
+      properties:
+        settings_id:
+          type: integer
+        name:
+          type: string
+          minLength: 1
+          maxLength: 250
+        sort_order:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        filter:
+          type: string
+        enabled:
+          type: boolean
+        annotation_type:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/AnnotationTypeEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        metric:
+          nullable: true
+          description: |-
+            The primary metric used for quality estimation
+
+            * `accuracy` - ACCURACY
+            * `precision` - PRECISION
+            * `recall` - RECALL
+            * `jaccard_index` - JACCARD_INDEX
+            * `dice` - DICE
+            * `mean_accuracy` - MEAN_ACCURACY
+            * `mean_precision` - MEAN_PRECISION
+            * `mean_recall` - MEAN_RECALL
+            * `mean_jaccard_index` - MEAN_JACCARD_INDEX
+            * `mean_dice` - MEAN_DICE
+            * `label_accuracy` - LABEL_ACCURACY
+            * `label_precision` - LABEL_PRECISION
+            * `label_recall` - LABEL_RECALL
+            * `label_jaccard_index` - LABEL_JACCARD_INDEX
+            * `label_dice` - LABEL_DICE
+          oneOf:
+          - $ref: '#/components/schemas/QualityTargetMetric'
+          - $ref: '#/components/schemas/NullEnum'
+        required_score:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          nullable: true
+          description: Defines the minimal quality requirements in terms of the selected
+            target metric.
+        parent_requirement:
+          type: integer
+          nullable: true
+          description: The parent requirement. Child requirements inherit comparison
+            settings from it.
+        iou_threshold:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          nullable: true
+          description: Used for distinction between matched / unmatched shapes
+        point_size:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          nullable: true
+          description: |-
+            Like IoU threshold, but for points.
+            The percent of the bbox side, used as the radius of the circle around the GT point,
+            where the checked point is expected to be. For boxes with different width and
+            height, the "side" is computed as a geometric mean of the width and height.
+            Read more: https://cocodataset.org/#keypoints-eval
+        point_size_base:
+          nullable: true
+          description: |-
+            When comparing point annotations (including both separate points and point groups),
+            the point size parameter defines matching area for each GT point based to the
+            object size. The point size base parameter allows to configure how to determine
+            the object size.
+            If image_size, the image size is used. Useful if each point
+            annotation represents a separate object or boxes grouped with points do not
+            represent object boundaries.
+            If group_bbox_size, the object size is based on
+            the point group bbox size. Useful if each point group represents an object
+            or there is a bbox grouped with points, representing the object size.
+
+
+            * `image_size` - IMAGE_SIZE
+            * `group_bbox_size` - GROUP_BBOX_SIZE
+          oneOf:
+          - $ref: '#/components/schemas/QualityPointSizeBase'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        line_thickness:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          nullable: true
+          description: |
+            Thickness of polylines, relatively to the (image area) ^ 0.5.
+            The distance to the boundary around the GT line,
+            inside of which the checked line points should be
+        match_orientation:
+          type: boolean
+          nullable: true
+          description: Enables or disables polyline orientation comparison
+        line_orientation_threshold:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          nullable: true
+          description: |
+            The minimal gain in the GT IoU between the given and reversed line directions
+            to consider the line inverted.
+            Only used when the 'match_orientation' parameter is true
+        match_groups:
+          type: boolean
+          nullable: true
+          description: Enables or disables annotation group checks. Only annotations
+            of the same shape type can form matching groups.
+        group_match_threshold:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          nullable: true
+          description: |
+            Minimal IoU for groups to be considered matching.
+            Only used when the 'match_groups' parameter is true
+        check_covered_annotations:
+          type: boolean
+          nullable: true
+          description: |
+            Check for partially-covered annotations, useful in segmentation tasks
+        object_visibility_threshold:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          nullable: true
+          description: |
+            Minimal visible area percent of the spatial annotations (polygons, masks)
+            for reporting covered annotations.
+            Only used when the 'object_visibility_threshold' parameter is true
+        panoptic_comparison:
+          type: boolean
+          nullable: true
+          description: |
+            Use only the visible part of the masks and polygons in comparisons
+        attribute_comparison:
+          allOf:
+          - $ref: '#/components/schemas/AttributeComparisonRequest'
+          nullable: true
+          description: Incremental attribute comparison settings. The default rule
+            applies to attributes without an override; rules override behavior for
+            individual AttributeSpec ids.
+    QualityRequirementRequest:
+      type: object
+      properties:
+        settings_id:
+          type: integer
+        name:
+          type: string
+          minLength: 1
+          maxLength: 250
+        sort_order:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        filter:
+          type: string
+        enabled:
+          type: boolean
+        annotation_type:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/AnnotationTypeEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        metric:
+          nullable: true
+          description: |-
+            The primary metric used for quality estimation
+
+            * `accuracy` - ACCURACY
+            * `precision` - PRECISION
+            * `recall` - RECALL
+            * `jaccard_index` - JACCARD_INDEX
+            * `dice` - DICE
+            * `mean_accuracy` - MEAN_ACCURACY
+            * `mean_precision` - MEAN_PRECISION
+            * `mean_recall` - MEAN_RECALL
+            * `mean_jaccard_index` - MEAN_JACCARD_INDEX
+            * `mean_dice` - MEAN_DICE
+            * `label_accuracy` - LABEL_ACCURACY
+            * `label_precision` - LABEL_PRECISION
+            * `label_recall` - LABEL_RECALL
+            * `label_jaccard_index` - LABEL_JACCARD_INDEX
+            * `label_dice` - LABEL_DICE
+          oneOf:
+          - $ref: '#/components/schemas/QualityTargetMetric'
+          - $ref: '#/components/schemas/NullEnum'
+        required_score:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          nullable: true
+          description: Defines the minimal quality requirements in terms of the selected
+            target metric.
+        parent_requirement:
+          type: integer
+          nullable: true
+          description: The parent requirement. Child requirements inherit comparison
+            settings from it.
+        iou_threshold:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          nullable: true
+          description: Used for distinction between matched / unmatched shapes
+        point_size:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          nullable: true
+          description: |-
+            Like IoU threshold, but for points.
+            The percent of the bbox side, used as the radius of the circle around the GT point,
+            where the checked point is expected to be. For boxes with different width and
+            height, the "side" is computed as a geometric mean of the width and height.
+            Read more: https://cocodataset.org/#keypoints-eval
+        point_size_base:
+          nullable: true
+          description: |-
+            When comparing point annotations (including both separate points and point groups),
+            the point size parameter defines matching area for each GT point based to the
+            object size. The point size base parameter allows to configure how to determine
+            the object size.
+            If image_size, the image size is used. Useful if each point
+            annotation represents a separate object or boxes grouped with points do not
+            represent object boundaries.
+            If group_bbox_size, the object size is based on
+            the point group bbox size. Useful if each point group represents an object
+            or there is a bbox grouped with points, representing the object size.
+
+
+            * `image_size` - IMAGE_SIZE
+            * `group_bbox_size` - GROUP_BBOX_SIZE
+          oneOf:
+          - $ref: '#/components/schemas/QualityPointSizeBase'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        line_thickness:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          nullable: true
+          description: |
+            Thickness of polylines, relatively to the (image area) ^ 0.5.
+            The distance to the boundary around the GT line,
+            inside of which the checked line points should be
+        match_orientation:
+          type: boolean
+          nullable: true
+          description: Enables or disables polyline orientation comparison
+        line_orientation_threshold:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          nullable: true
+          description: |
+            The minimal gain in the GT IoU between the given and reversed line directions
+            to consider the line inverted.
+            Only used when the 'match_orientation' parameter is true
+        match_groups:
+          type: boolean
+          nullable: true
+          description: Enables or disables annotation group checks. Only annotations
+            of the same shape type can form matching groups.
+        group_match_threshold:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          nullable: true
+          description: |
+            Minimal IoU for groups to be considered matching.
+            Only used when the 'match_groups' parameter is true
+        check_covered_annotations:
+          type: boolean
+          nullable: true
+          description: |
+            Check for partially-covered annotations, useful in segmentation tasks
+        object_visibility_threshold:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          nullable: true
+          description: |
+            Minimal visible area percent of the spatial annotations (polygons, masks)
+            for reporting covered annotations.
+            Only used when the 'object_visibility_threshold' parameter is true
+        panoptic_comparison:
+          type: boolean
+          nullable: true
+          description: |
+            Use only the visible part of the masks and polygons in comparisons
+        attribute_comparison:
+          allOf:
+          - $ref: '#/components/schemas/AttributeComparisonRequest'
+          nullable: true
+          description: Incremental attribute comparison settings. The default rule
+            applies to attributes without an override; rules override behavior for
+            individual AttributeSpec ids.
     QualitySettings:
       type: object
       properties:
@@ -10427,22 +12898,6 @@ components:
           description: |
             Allow using project settings when computing task quality.
             Only applicable to task quality settings inside projects
-        target_metric:
-          allOf:
-          - $ref: '#/components/schemas/QualityTargetMetric'
-          description: |-
-            The primary metric used for quality estimation
-
-            * `accuracy` - ACCURACY
-            * `precision` - PRECISION
-            * `recall` - RECALL
-        target_metric_threshold:
-          type: number
-          format: double
-          maximum: 1
-          minimum: 0
-          description: |
-            Defines the minimal quality requirements in terms of the selected target metric.
         max_validations_per_job:
           type: integer
           maximum: 2147483647
@@ -10451,121 +12906,10 @@ components:
             The maximum number of job validation attempts for the job assignee.
             The job can be automatically accepted if the job quality is above the required
             threshold, defined by the target threshold parameter.
-        iou_threshold:
-          type: number
-          format: double
-          maximum: 1
-          minimum: 0
-          default: 0.4
-          description: Used for distinction between matched / unmatched shapes
-        oks_sigma:
-          type: number
-          format: double
-          maximum: 1
-          minimum: 0
-          default: 0.09
-          description: |
-            Like IoU threshold, but for points.
-            The percent of the bbox side, used as the radius of the circle around the GT point,
-            where the checked point is expected to be. For boxes with different width and
-            height, the "side" is computed as a geometric mean of the width and height.
-            Read more: https://cocodataset.org/#keypoints-eval
-        point_size_base:
-          allOf:
-          - $ref: '#/components/schemas/QualityPointSizeBase'
-          default: group_bbox_size
-          description: |-
-            When comparing point annotations (including both separate points and point groups),
-            the OKS sigma parameter defines matching area for each GT point based to the
-            object size. The point size base parameter allows to configure how to determine
-            the object size.
-            If image_size, the image size is used. Useful if each point
-            annotation represents a separate object or boxes grouped with points do not
-            represent object boundaries.
-            If group_bbox_size, the object size is based on
-            the point group bbox size. Useful if each point group represents an object
-            or there is a bbox grouped with points, representing the object size.
-
-
-            * `image_size` - IMAGE_SIZE
-            * `group_bbox_size` - GROUP_BBOX_SIZE
-        line_thickness:
-          type: number
-          format: double
-          maximum: 1
-          minimum: 0
-          default: 0.01
-          description: |
-            Thickness of polylines, relatively to the (image area) ^ 0.5.
-            The distance to the boundary around the GT line,
-            inside of which the checked line points should be
-        low_overlap_threshold:
-          type: number
-          format: double
-          maximum: 1
-          minimum: 0
-          default: 0.8
-          description: |
-            Used for distinction between strong / weak (low_overlap) matches
-        compare_line_orientation:
-          type: boolean
-          default: true
-          description: Enables or disables polyline orientation comparison
-        line_orientation_threshold:
-          type: number
-          format: double
-          maximum: 1
-          minimum: 0
-          default: 0.1
-          description: |
-            The minimal gain in the GT IoU between the given and reversed line directions
-            to consider the line inverted.
-            Only used when the 'compare_line_orientation' parameter is true
-        compare_groups:
-          type: boolean
-          default: true
-          description: Enables or disables annotation group checks
-        group_match_threshold:
-          type: number
-          format: double
-          maximum: 1
-          minimum: 0
-          default: 0.5
-          description: |
-            Minimal IoU for groups to be considered matching.
-            Only used when the 'compare_groups' parameter is true
-        check_covered_annotations:
-          type: boolean
-          default: true
-          description: |
-            Check for partially-covered annotations, useful in segmentation tasks
-        object_visibility_threshold:
-          type: number
-          format: double
-          maximum: 1
-          minimum: 0
-          default: 0.05
-          description: |
-            Minimal visible area percent of the spatial annotations (polygons, masks)
-            for reporting covered annotations.
-            Only used when the 'object_visibility_threshold' parameter is true
-        panoptic_comparison:
-          type: boolean
-          default: true
-          description: |
-            Use only the visible part of the masks and polygons in comparisons
-        compare_attributes:
-          type: boolean
-          default: true
-          description: Enables or disables annotation attribute comparison
-        empty_is_annotated:
-          type: boolean
-          default: false
-          description: |
-            Consider empty frames annotated as "empty". This affects target metrics like
-            accuracy in cases there are no annotations. If disabled, frames without annotations
-            are counted as not matching (accuracy is 0). If enabled, accuracy will be 1 instead.
-            This will also add virtual annotations to empty frames in the comparison results.
+        requirements:
+          type: array
+          items:
+            $ref: '#/components/schemas/QualityRequirementListItem'
         created_date:
           type: string
           format: date-time
@@ -10574,16 +12918,76 @@ components:
           type: string
           format: date-time
           readOnly: true
+    QualitySettingsRequest:
+      type: object
+      properties:
+        job_filter:
+          type: string
+          description: |
+            A JSON-based logic expression used to filter jobs for quality validation.
+            The filter supports various terms to specify conditions on job: ['assignee', 'id', 'stage', 'state', 'task_id', 'task_name', 'type']
+          maxLength: 1024
+        inherit:
+          type: boolean
+          description: |
+            Allow using project settings when computing task quality.
+            Only applicable to task quality settings inside projects
+        max_validations_per_job:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          description: |
+            The maximum number of job validation attempts for the job assignee.
+            The job can be automatically accepted if the job quality is above the required
+            threshold, defined by the target threshold parameter.
+        requirements:
+          type: array
+          items:
+            $ref: '#/components/schemas/QualityRequirementListItemRequest'
     QualityTargetMetric:
       enum:
       - accuracy
       - precision
       - recall
+      - jaccard_index
+      - dice
+      - mean_accuracy
+      - mean_precision
+      - mean_recall
+      - mean_jaccard_index
+      - mean_dice
+      - label_accuracy
+      - label_precision
+      - label_recall
+      - label_jaccard_index
+      - label_dice
       type: string
       description: |-
         * `accuracy` - ACCURACY
         * `precision` - PRECISION
         * `recall` - RECALL
+        * `jaccard_index` - JACCARD_INDEX
+        * `dice` - DICE
+        * `mean_accuracy` - MEAN_ACCURACY
+        * `mean_precision` - MEAN_PRECISION
+        * `mean_recall` - MEAN_RECALL
+        * `mean_jaccard_index` - MEAN_JACCARD_INDEX
+        * `mean_dice` - MEAN_DICE
+        * `label_accuracy` - LABEL_ACCURACY
+        * `label_precision` - LABEL_PRECISION
+        * `label_recall` - LABEL_RECALL
+        * `label_jaccard_index` - LABEL_JACCARD_INDEX
+        * `label_dice` - LABEL_DICE
+    ReasonEnum:
+      enum:
+      - no_annotations
+      - filter_no_matches
+      - required_attributes_missing
+      type: string
+      description: |-
+        * `no_annotations` - no_annotations
+        * `filter_no_matches` - filter_no_matches
+        * `required_attributes_missing` - required_attributes_missing
     RegisterSerializerEx:
       type: object
       properties:
@@ -10709,6 +13113,9 @@ components:
           type: integer
           nullable: true
         job_id:
+          type: integer
+          nullable: true
+        org_id:
           type: integer
           nullable: true
         format:
@@ -10885,9 +13292,6 @@ components:
         id:
           type: integer
           nullable: true
-        frame:
-          type: integer
-          minimum: 0
         label_id:
           type: integer
           minimum: 0
@@ -10895,9 +13299,13 @@ components:
           type: integer
           minimum: 0
           nullable: true
+          default: 0
         source:
           type: string
           default: manual
+        frame:
+          type: integer
+          minimum: 0
         attributes:
           type: array
           items:
@@ -10941,9 +13349,6 @@ components:
         id:
           type: integer
           nullable: true
-        frame:
-          type: integer
-          minimum: 0
         label_id:
           type: integer
           minimum: 0
@@ -10951,10 +13356,14 @@ components:
           type: integer
           minimum: 0
           nullable: true
+          default: 0
         source:
           type: string
           minLength: 1
           default: manual
+        frame:
+          type: integer
+          minimum: 0
         attributes:
           type: array
           items:
@@ -10976,9 +13385,6 @@ components:
         id:
           type: integer
           nullable: true
-        frame:
-          type: integer
-          minimum: 0
         label_id:
           type: integer
           minimum: 0
@@ -10986,18 +13392,22 @@ components:
           type: integer
           minimum: 0
           nullable: true
+          default: 0
         source:
           type: string
           default: manual
-        shapes:
-          type: array
-          items:
-            $ref: '#/components/schemas/TrackedShape'
+        frame:
+          type: integer
+          minimum: 0
         attributes:
           type: array
           items:
             $ref: '#/components/schemas/AttributeVal'
           default: []
+        shapes:
+          type: array
+          items:
+            $ref: '#/components/schemas/TrackedShape'
       required:
       - frame
       - label_id
@@ -11008,9 +13418,6 @@ components:
         id:
           type: integer
           nullable: true
-        frame:
-          type: integer
-          minimum: 0
         label_id:
           type: integer
           minimum: 0
@@ -11018,19 +13425,23 @@ components:
           type: integer
           minimum: 0
           nullable: true
+          default: 0
         source:
           type: string
           minLength: 1
           default: manual
-        shapes:
-          type: array
-          items:
-            $ref: '#/components/schemas/TrackedShapeRequest'
+        frame:
+          type: integer
+          minimum: 0
         attributes:
           type: array
           items:
             $ref: '#/components/schemas/AttributeValRequest'
           default: []
+        shapes:
+          type: array
+          items:
+            $ref: '#/components/schemas/TrackedShapeRequest'
       required:
       - frame
       - label_id
@@ -11052,8 +13463,9 @@ components:
           items:
             $ref: '#/components/schemas/Attribute'
           default: []
-          description: The list of attributes. If you want to remove an attribute,
-            you need to recreate the label and specify the remaining attributes.
+          description: The list of attributes. To remove an attribute, pass the full
+            attribute body with deleted=true. Related annotation attribute values
+            will be deleted.
         type:
           allOf:
           - $ref: '#/components/schemas/LabelType'
@@ -11069,6 +13481,7 @@ components:
             * `polyline` - POLYLINE
             * `rectangle` - RECTANGLE
             * `skeleton` - SKELETON
+            * `interval` - INTERVAL
             * `tag` - TAG
         has_parent:
           type: boolean
@@ -11085,6 +13498,7 @@ components:
           additionalProperties:
             type: string
             minLength: 1
+            maxLength: 64
       required:
       - name
     SublabelRequest:
@@ -11105,8 +13519,9 @@ components:
           items:
             $ref: '#/components/schemas/AttributeRequest'
           default: []
-          description: The list of attributes. If you want to remove an attribute,
-            you need to recreate the label and specify the remaining attributes.
+          description: The list of attributes. To remove an attribute, pass the full
+            attribute body with deleted=true. Related annotation attribute values
+            will be deleted.
         type:
           allOf:
           - $ref: '#/components/schemas/LabelType'
@@ -11122,6 +13537,7 @@ components:
             * `polyline` - POLYLINE
             * `rectangle` - RECTANGLE
             * `skeleton` - SKELETON
+            * `interval` - INTERVAL
             * `tag` - TAG
         has_parent:
           type: boolean
@@ -11154,9 +13570,6 @@ components:
         project_name:
           type: string
           nullable: true
-          readOnly: true
-        mode:
-          type: string
           readOnly: true
         owner:
           allOf:
@@ -11225,6 +13638,13 @@ components:
           readOnly: true
         dimension:
           type: string
+          readOnly: true
+        mode:
+          type: string
+          readOnly: true
+        media_type:
+          type: string
+          readOnly: true
         subset:
           type: string
           readOnly: true
@@ -11403,17 +13823,17 @@ components:
           items:
             type: number
             format: double
+        attributes:
+          type: array
+          items:
+            $ref: '#/components/schemas/AttributeVal'
+          default: []
         id:
           type: integer
           nullable: true
         frame:
           type: integer
           minimum: 0
-        attributes:
-          type: array
-          items:
-            $ref: '#/components/schemas/AttributeVal'
-          default: []
       required:
       - frame
       - type
@@ -11442,17 +13862,17 @@ components:
           items:
             type: number
             format: double
+        attributes:
+          type: array
+          items:
+            $ref: '#/components/schemas/AttributeValRequest'
+          default: []
         id:
           type: integer
           nullable: true
         frame:
           type: integer
           minimum: 0
-        attributes:
-          type: array
-          items:
-            $ref: '#/components/schemas/AttributeValRequest'
-          default: []
       required:
       - frame
       - type
@@ -11513,9 +13933,39 @@ components:
         has_analytics_access:
           type: boolean
           readOnly: true
+          nullable: true
+        email_verified:
+          type: boolean
+          nullable: true
+          readOnly: true
+        created_via:
+          readOnly: true
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/CreatedViaEnum'
+          - $ref: '#/components/schemas/NullEnum'
       required:
       - groups
       - username
+    UserGrowthData:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        owner:
+          allOf:
+          - $ref: '#/components/schemas/BasicUser'
+          readOnly: true
+        github_prompt_shown:
+          type: boolean
+        github_prompt_support_clicked:
+          type: boolean
+        github_prompt_enabled:
+          type: boolean
+          readOnly: true
+        promotion_notifications_allowed:
+          type: boolean
     UserIdentifiers:
       type: object
       properties:
@@ -11589,7 +14039,6 @@ components:
             The share of frames to be included in the validation set from each annotation job.
             Applicable only to the "random_per_job" frame selection method
       required:
-      - frame_selection_method
       - mode
     WebhookContentType:
       enum:
@@ -11615,6 +14064,14 @@ components:
         redelivery:
           type: boolean
           readOnly: true
+        attempt:
+          type: integer
+          readOnly: true
+          nullable: true
+        request_duration:
+          type: integer
+          readOnly: true
+          nullable: true
         created_date:
           type: string
           format: date-time
@@ -11626,11 +14083,10 @@ components:
         changed_fields:
           type: string
           readOnly: true
+          deprecated: true
         request:
-          type: object
           readOnly: true
         response:
-          type: object
           readOnly: true
     WebhookRead:
       type: object
@@ -11698,10 +14154,12 @@ components:
       enum:
       - organization
       - project
+      - server
       type: string
       description: |-
         * `organization` - ORGANIZATION
         * `project` - PROJECT
+        * `server` - SERVER
     WebhookWriteRequest:
       type: object
       properties:
@@ -11737,6 +14195,16 @@ components:
       - events
       - target_url
       - type
+    WebhooksEvent:
+      type: object
+      properties:
+        key:
+          type: string
+          readOnly: true
+        group:
+          allOf:
+          - $ref: '#/components/schemas/EventGroup'
+          readOnly: true
   securitySchemes:
     accessTokenAuth:
       type: http

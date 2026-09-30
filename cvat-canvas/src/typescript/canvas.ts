@@ -4,24 +4,26 @@
 // SPDX-License-Identifier: MIT
 
 import {
-    DrawData, MergeData, SplitData, GroupData,
+    DrawData, MergeData, SplitData, GroupData, SelectData,
     JoinData, SliceData, MasksEditData,
     InteractionData as _InteractionData,
     InteractionResult as _InteractionResult,
     CanvasModel, CanvasModelImpl, RectDrawingMethod,
     CuboidDrawingMethod, Configuration, Geometry, Mode,
     HighlightSeverity as _HighlightSeverity, CanvasHint as _CanvasHint,
-    PolyEditData,
+    CanvasHistorySource,
+    PolyEditData, RenderData as _RenderData,
 } from './canvasModel';
 import { Master } from './master';
 import { CanvasController, CanvasControllerImpl } from './canvasController';
 import { CanvasView, CanvasViewImpl } from './canvasView';
+import { finalizePastedShapePoints } from './paste';
 
 import '../scss/canvas.scss';
 
 interface Canvas {
     html(): HTMLDivElement;
-    setup(frameData: any, objectStates: any[], zLayer?: number): void;
+    setup(frameData: any, objectStates: any[], renderData?: RenderData): void;
     setupIssueRegions(issueRegions: Record<number, { hidden: boolean; points: number[] }>): void;
     translateFromSVG(points: number[]): number[];
     setupConflictRegions(clientID: number): number[];
@@ -41,6 +43,8 @@ interface Canvas {
     split(splitData: SplitData): void;
     merge(mergeData: MergeData): void;
     select(objectState: any): void;
+    selectObjects(selectData: SelectData): void;
+    setSelectedObjects(clientIDs: number[]): void;
 
     fitCanvas(): void;
     bitmap(enable: boolean): void;
@@ -49,6 +53,8 @@ interface Canvas {
     zoomCanvas(enable: boolean): void;
 
     mode(): Mode;
+    undo(): boolean;
+    redo(): boolean;
     cancel(): void;
     configure(configuration: Configuration): void;
     isAbleToChangeFrame(): boolean;
@@ -72,8 +78,8 @@ class CanvasImpl implements Canvas {
         return this.view.html();
     }
 
-    public setup(frameData: any, objectStates: any[], zLayer = 0): void {
-        this.model.setup(frameData, objectStates, zLayer);
+    public setup(frameData: any, objectStates: any[], renderData?: RenderData): void {
+        this.model.setup(frameData, objectStates, renderData);
     }
 
     public setupIssueRegions(issueRegions: Record<number, { hidden: boolean; points: number[] }>): void {
@@ -168,8 +174,24 @@ class CanvasImpl implements Canvas {
         this.model.select(objectState);
     }
 
+    public selectObjects(selectData: SelectData): void {
+        this.model.selectObjects(selectData);
+    }
+
+    public setSelectedObjects(clientIDs: number[]): void {
+        this.model.setSelectedObjects(clientIDs);
+    }
+
     public mode(): Mode {
         return this.model.mode;
+    }
+
+    public undo(): boolean {
+        return this.view.undo();
+    }
+
+    public redo(): boolean {
+        return this.view.redo();
     }
 
     public cancel(): void {
@@ -197,7 +219,9 @@ export type InteractionData = _InteractionData;
 export type CanvasHint = _CanvasHint;
 export type InteractionResult = _InteractionResult;
 export type HighlightSeverity = _HighlightSeverity;
+export type RenderData = _RenderData;
 
 export {
-    CanvasImpl as Canvas, RectDrawingMethod, CuboidDrawingMethod, Mode as CanvasMode,
+    CanvasImpl as Canvas, RectDrawingMethod, CuboidDrawingMethod, Mode as CanvasMode, CanvasHistorySource,
+    finalizePastedShapePoints,
 };

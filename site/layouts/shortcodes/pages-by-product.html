@@ -1,3 +1,15 @@
+{{- /*
+  site/layouts/shortcodes/pages-by-product.html
+
+  Lists pages whose front matter `products` field includes the given product
+  (community / online / enterprise). Only pages explicitly tagged as
+  restricted to that product show up here — untagged pages are assumed to be
+  shared across all products and are intentionally left out of this list.
+  See site/README.md, "How to mark a page as product-specific", before adding
+  or removing a `products` tag.
+
+  Usage: {{< pages-by-product "enterprise" >}}
+*/ -}}
 {{ $product := .Get 0 }}
 <ul class="product-page-list">
   {{ range where site.RegularPages ".Params.products" "intersect" (slice $product) }}

@@ -6,6 +6,9 @@ weight: 40
 description: 'Allow users to login with credentials from a central source'
 aliases:
 - /docs/administration/advanced/ldap/
+products:
+  - community
+  - enterprise
 ---
 
 ### The creation of `settings.py`
@@ -29,7 +32,7 @@ services:
     environment:
       DJANGO_SETTINGS_MODULE: settings
     volumes:
-      - ./settings.py:/home/django/settings.py:ro
+      - ./settings.py:/opt/cvat/settings.py:ro
 ```
 
 ### Active Directory Example

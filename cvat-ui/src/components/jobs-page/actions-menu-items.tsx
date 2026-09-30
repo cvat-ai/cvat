@@ -25,6 +25,7 @@ interface MenuItemsData {
     onGoToReplicas: (() => void) | null;
     startEditField: (key: string) => void;
     jobsToAct: Job[];
+    isExportAnnotationsDisabled: boolean;
 }
 
 enum MenuKeys {
@@ -62,6 +63,7 @@ export default function JobActionsItems(
         jobsToAct,
         onGoToParent,
         onGoToReplicas,
+        isExportAnnotationsDisabled,
     } = menuItemsData;
 
     const isBulkMode = jobsToAct.length > 1;
@@ -69,7 +71,7 @@ export default function JobActionsItems(
         MenuKeys.EDIT_ASSIGNEE, MenuKeys.EDIT_STATE, MenuKeys.EDIT_STAGE, MenuKeys.EXPORT_JOB,
         MenuKeys.DELETE, MenuKeys.GO_TO_PARENT, MenuKeys.GO_TO_REPLICAS,
     ];
-    const isDisabled = (key: string): boolean => isBulkMode && !bulkAllowedKeys.includes(key);
+    const isDisabled = (key: MenuKeys): boolean => isBulkMode && !bulkAllowedKeys.includes(key);
 
     const jobsToActWithParents = jobsToAct.filter((j) => j.parentJobId != null);
     const jobsToActWithReplicas = jobsToAct.filter((j) => j.replicasCount > 0);
@@ -140,7 +142,7 @@ export default function JobActionsItems(
         key: MenuKeys.EXPORT_JOB,
         onClick: onExportAnnotations,
         label: withCount('Export annotations', MenuKeys.EXPORT_JOB),
-        disabled: isDisabled(MenuKeys.EXPORT_JOB),
+        disabled: isExportAnnotationsDisabled || isDisabled(MenuKeys.EXPORT_JOB),
     }, 60]);
 
     if (onMergeConsensusJob) {
@@ -198,6 +200,6 @@ export default function JobActionsItems(
     );
 
     // Sort and return menu items
-    const sortedMenuItems = menuItems.toSorted((menuItem1, menuItem2) => menuItem1[1] - menuItem2[1]);
+    const sortedMenuItems = [...menuItems].sort((menuItem1, menuItem2) => menuItem1[1] - menuItem2[1]);
     return sortedMenuItems.map((menuItem) => menuItem[0]);
 }

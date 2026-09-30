@@ -19,6 +19,7 @@ import {
 import { Workspace } from 'reducers';
 
 import MDEditor from '@uiw/react-md-editor';
+import rehypeSanitize from 'rehype-sanitize';
 
 interface Props {
     showStatistics(): void;
@@ -59,6 +60,7 @@ function RightGroup(props: Props): JSX.Element {
                             preview='preview'
                             hideToolbar
                             value={guide.markdown}
+                            previewOptions={{ rehypePlugins: [[rehypeSanitize]] }}
                         />
                     ),
                 });
@@ -66,7 +68,7 @@ function RightGroup(props: Props): JSX.Element {
         }).catch((error: unknown) => {
             notification.error({
                 message: 'Could not receive annotation guide',
-                description: error instanceof Error ? error.message : console.error('error'),
+                description: error instanceof Error ? error.message : 'Unknown error',
             });
         });
     }, [jobInstance]);
@@ -85,7 +87,7 @@ function RightGroup(props: Props): JSX.Element {
                     if (!Array.isArray(seenGuides) || seenGuides.some((el) => !Number.isInteger(el))) {
                         throw new Error('Wrong structure stored in local storage');
                     }
-                } catch (error: unknown) {
+                } catch (_error: unknown) {
                     seenGuides = [];
                 }
 
@@ -157,6 +159,9 @@ function RightGroup(props: Props): JSX.Element {
                     value={workspace}
                 >
                     {Object.values(Workspace).map((ws) => {
+                        if (jobInstance.mediaType !== 'audio' && ws === Workspace.AUDIO) {
+                            return null;
+                        }
                         if (jobInstance.dimension === DimensionType.DIMENSION_3D) {
                             if (ws === Workspace.STANDARD) {
                                 return null;

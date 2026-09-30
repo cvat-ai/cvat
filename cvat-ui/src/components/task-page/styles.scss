@@ -30,6 +30,12 @@
             }
         }
 
+        > div:first-child {
+            // title and extras
+            display: flex;
+            align-items: start;
+        }
+
         > div:nth-child(2) {
             > div:nth-child(2) {
                 padding-left: 20px;

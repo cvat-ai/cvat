@@ -65,7 +65,7 @@ context('Search frame by filename', () => {
         const { taskSpec, dataSpec, extras } = defaultTaskSpec({
             taskName, serverFiles, labelName,
         });
-        cy.headlessCreateTask(taskSpec, dataSpec, extras).then(({ taskID: tid, jobIDs: [jid] }) => {
+        cy.headlessCreateTask(taskSpec, dataSpec, extras).then(({ taskId: tid, jobIds: [jid] }) => {
             [taskId, jobId] = [tid, jid];
             cy.visit(`/tasks/${taskId}/jobs/${jobId}`);
         });

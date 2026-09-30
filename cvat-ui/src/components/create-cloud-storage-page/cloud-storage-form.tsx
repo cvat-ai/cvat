@@ -4,7 +4,8 @@
 // SPDX-License-Identifier: MIT
 
 import React, { useState, useEffect, useRef } from 'react';
-import { shallowEqual, useDispatch, useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
+import { shallowEqual } from 'utils/redux';
 import { useHistory } from 'react-router';
 import { Row, Col } from 'antd/lib/grid';
 import Button from 'antd/lib/button';
@@ -14,7 +15,7 @@ import Input from 'antd/lib/input';
 import TextArea from 'antd/lib/input/TextArea';
 import notification from 'antd/lib/notification';
 
-import { CombinedState, CloudStorage } from 'reducers';
+import { CombinedState } from 'reducers';
 import { createCloudStorageAsync, updateCloudStorageAsync } from 'actions/cloud-storage-actions';
 import { ProviderType, CredentialsType } from 'utils/enums';
 import { QuestionCircleOutlined, UploadOutlined } from '@ant-design/icons';
@@ -27,7 +28,7 @@ import GCSLocation from './gcs-locatiion';
 import ManifestsManager from './manifests-manager';
 
 export interface Props {
-    cloudStorage?: CloudStorage;
+    cloudStorage?: CombinedState['cloudStorages']['current'][number];
 }
 
 type CredentialsFormNames = 'key' | 'secret_key' | 'account_name' | 'session_token' | 'connection_string';

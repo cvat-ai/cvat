@@ -6,7 +6,8 @@
 import './styles.scss';
 import React, { useCallback, useEffect } from 'react';
 import { useHistory } from 'react-router';
-import { shallowEqual, useDispatch, useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
+import { shallowEqual } from 'utils/redux';
 import dayjs from 'dayjs';
 import { getModelsAsync } from 'actions/models-actions';
 import { updateHistoryFromQuery } from 'components/resource-sorting-filtering';

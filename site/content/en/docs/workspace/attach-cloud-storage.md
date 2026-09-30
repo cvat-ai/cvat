@@ -12,6 +12,7 @@ and **Google Cloud Storage** storages to import and export image datasets for yo
 
 Check out:
 
+- [Object key requirements](#object-key-requirements)
 - [Amazon S3](#amazon-s3)
   - [Create a bucket](#create-a-bucket)
   - [Upload data](#upload-data)
@@ -19,6 +20,7 @@ Check out:
     - [Authenticated access](#authenticated-access)
     - [Anonymous access](#anonymous-access)
   - [Attach Amazon S3 storage](#attach-aws-s3-storage)
+  - [S3-compatible storage on private networks](#s3-compatible-storage-on-private-networks)
   - [Amazon S3 manifest file](#aws-s3-manifest-file)
   - [Video tutorial: Add Amazon S3 as Cloud Storage in CVAT](#video-tutorial-add-aws-s3-as-cloud-storage-in-cvat)
 - [Backblaze B2](#backblaze-b2)
@@ -43,6 +45,13 @@ Check out:
   - [Attach Azure Blob Storage](#attach-azure-blob-storage)
   - [Video tutorial: Add Microsoft Azure Blob Storage as Cloud Storage in CVAT](#video-tutorial-add-microsoft-azure-blob-storage-as-cloud-storage-in-cvat)
 - [Prepare the dataset](#prepare-the-dataset)
+
+## Object key requirements
+
+{{% alert title="Note" color="primary" %}}
+CVAT interprets object keys as canonical relative POSIX paths and uses `/` as the path separator.
+Object keys that start with `/` or contain empty path components (`//`) cannot be used in CVAT.
+{{% /alert %}}
 
 ## Amazon S3
 
@@ -137,6 +146,30 @@ Fill in the following fields:
 | **Manifests**           | (Optional) Select **+ Add manifest** and enter the name of the manifest file with an extension. For example: `manifest.jsonl`. |
 
 After filling in all the fields, select **Submit**.
+
+### S3-compatible storage on private networks
+
+CVAT can connect to S3-compatible services, such as MinIO, by selecting
+**Amazon S3** as the provider and specifying the service endpoint in
+the **Endpoint URL** field.
+
+If the endpoint resolves to a private or otherwise restricted IP address,
+CVAT's outbound request proxy can block the connection. In this case,
+creating or using cloud storage can fail with an error similar to:
+
+```text
+Failed to connect to proxy URL: "http://localhost:4750"
+```
+
+Ask your CVAT administrator to allow the trusted storage IP address with
+[Smokescreen](https://github.com/stripe/smokescreen). See the Docker Compose
+{{< ilink "/docs/administration/community/basics/installation#connecting-to-private-cloud-storage-endpoints"
+     "installation guide" >}}
+or the Kubernetes
+{{< ilink
+     "/docs/administration/community/advanced/k8s_deployment_with_helm#connecting-to-private-cloud-storage-endpoints"
+     "Helm deployment guide" >}}
+for details.
 
 ### Amazon S3 manifest file
 

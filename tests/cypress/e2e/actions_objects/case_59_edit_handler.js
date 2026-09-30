@@ -94,13 +94,13 @@ context('Edit handler.', () => {
                     cy.get('.cvat_canvas_shape_splitting').should('not.exist');
                     cy.get('.cvat-canvas-container').click(530, 340);
                     // Cancel changes, repeat edit handler and select an another shape
-                    cy.get('body').type('{Ctrl}z');
+                    cy.pressWithPlatformModifier('z');
                     testActivatingShape(520, 400, '#cvat_canvas_shape_1');
                     cy.get('.cvat-canvas-container').click(650, 300, { shiftKey: true });
                     cy.get('.cvat-canvas-container').click(450, 350);
                     cy.get('.cvat-canvas-container').click(530, 400);
                     // Cancel changes again, repeat edit handler dblclick to the last point
-                    cy.get('body').type('{Ctrl}z');
+                    cy.pressWithPlatformModifier('z');
                     testActivatingShape(520, 400, '#cvat_canvas_shape_1');
                     cy.get('.cvat-canvas-container').click(650, 300, { shiftKey: true });
                     cy.get('.cvat-canvas-container').click(630, 300);

@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { SerializedAPISchema } from 'server-response-types';
+import { SerializedAPISchema } from './server-response-types';
 import serverProxy from './server-proxy';
 
 let schemaCache: SerializedAPISchema | null = null;

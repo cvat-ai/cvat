@@ -36,7 +36,18 @@ import { NotificationsState } from '.';
 
 const shouldLog = (error: Error): boolean => {
     if (error instanceof ServerError) {
-        const ignoredCodes = [0, 400, 401, 403, 404, 429, 500];
+        const ignoredCodes = [
+            // 0, Network Error: may not to be logged on server. Log it here.
+            400, // client error: not interested
+            401, // client error: not interested
+            403, // client error: not interested
+            404, // client error: not interested
+            429, // client error: not interested
+            500, // usually logged by server
+            // 502, Bad Gateway: may not to be logged on server. Log it here.
+            // 503, Service Unavailable: may not to be logged on server. Log it here.
+            // 504, Gateway Timeout: may not to be logged on server. Log it here.
+        ];
         return !ignoredCodes.includes(error.code);
     }
 
@@ -309,7 +320,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
             };
         }
         case AuthActionTypes.REGISTER_SUCCESS: {
-            if (!action.payload.user.isVerified) {
+            if (!action.payload.isVerified) {
                 return {
                     ...state,
                     messages: {
@@ -318,7 +329,7 @@ export default function (state = defaultState, action: AnyAction): Notifications
                             ...state.messages.auth,
                             registerDone: {
                                 message: `To use your account, you need to confirm the email address. \
-                                We have sent an email with a confirmation link to ${action.payload.user.email}.`,
+                                We have sent an email with a confirmation link to ${action.payload.userEmail}.`,
                             },
                         },
                     },

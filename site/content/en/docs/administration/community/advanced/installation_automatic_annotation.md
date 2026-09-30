@@ -6,6 +6,9 @@ weight: 10
 description: 'Information about the installation of components needed for semi-automatic and automatic annotation.'
 aliases:
 - /docs/administration/advanced/installation_automatic_annotation/
+products:
+  - community
+  - enterprise
 ---
 
 {{% alert title="Warning" color="warning" %}}

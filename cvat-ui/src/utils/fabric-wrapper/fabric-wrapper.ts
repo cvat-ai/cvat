@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { BaseImageFilter } from 'utils/image-processing';
+import { BaseImageFilter } from 'cvat-core-wrapper';
 
 export default class FabricFilter extends BaseImageFilter {
     public processImage(src: ImageData, frameNumber: number): ImageData {

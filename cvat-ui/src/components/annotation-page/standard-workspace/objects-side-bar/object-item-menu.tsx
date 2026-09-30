@@ -8,15 +8,16 @@ import Button from 'antd/lib/button';
 import { MenuProps } from 'antd/lib/menu';
 import Icon, {
     LinkOutlined, CopyOutlined, BlockOutlined, RetweetOutlined, DeleteOutlined, EditOutlined,
-    FunctionOutlined,
+    FunctionOutlined, VerticalAlignBottomOutlined,
 } from '@ant-design/icons';
 
 import {
     BackgroundIcon, ForegroundIcon, ResetPerspectiveIcon, ColorizeIcon, SliceIcon,
-    OneLayerBackwardIcon, OneLayerForwardIcon,
+    OneLayerBackwardIcon, OneLayerForwardIcon, SimplifyIcon, RotateIcon,
 } from 'icons';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import { ColorBy } from 'reducers';
+import type { OrientationAngle } from 'utils/change-object-orientation';
 import {
     DimensionType, Job, ObjectType, ShapeType,
 } from 'cvat-core-wrapper';
@@ -40,20 +41,24 @@ interface Props {
     toOneLayerForwardShortcut: string;
     removeShortcut: string;
     runAnnotationsActionShortcut: string;
+    closeMenu(): void;
     changeColor(value: string): void;
     copy(): void;
     remove(): void;
     propagate(): void;
     createURL(): void;
     switchOrientation(): void;
+    changeOrientation(degrees: OrientationAngle): void;
     toBackground(): void;
     toForeground(): void;
     toOneLayerBackward(): void;
     toOneLayerForward(): void;
     resetCuboidPerspective(): void;
+    setLayerPopoverVisible(visible: boolean): void;
     setColorPickerVisible(visible: boolean): void;
     edit(): void;
     slice(): void;
+    simplify(): void;
     runAnnotationAction(): void;
     jobInstance: Job;
 }
@@ -61,6 +66,21 @@ interface Props {
 interface ItemProps {
     toolProps: Props;
 }
+
+const ORIENTATION_OPTIONS: Record<OrientationAngle, { icon: JSX.Element; label: string }> = {
+    90: {
+        icon: <Icon component={RotateIcon} className='cvat-object-item-menu-orientation-icon clockwise' />,
+        label: '90°',
+    },
+    '-90': {
+        icon: <Icon component={RotateIcon} className='cvat-object-item-menu-orientation-icon' />,
+        label: '90°',
+    },
+    180: {
+        icon: <RetweetOutlined className='cvat-object-item-menu-orientation-icon' />,
+        label: '180°',
+    },
+};
 
 function CreateURLItem(props: ItemProps): JSX.Element {
     const { toolProps } = props;
@@ -129,6 +149,23 @@ function SliceItem(props: ItemProps): JSX.Element {
     );
 }
 
+function SimplifyItem(props: ItemProps): JSX.Element {
+    const { toolProps } = props;
+    const { simplify } = toolProps;
+    return (
+        <CVATTooltip title='Reduce the number of polygon points'>
+            <Button
+                type='link'
+                icon={<Icon component={SimplifyIcon} />}
+                onClick={simplify}
+                className='cvat-object-item-menu-simplify-object'
+            >
+                Simplify
+            </Button>
+        </CVATTooltip>
+    );
+}
+
 function PropagateItem(props: ItemProps): JSX.Element {
     const { toolProps } = props;
     const { propagateShortcut, propagate } = toolProps;
@@ -157,6 +194,34 @@ function SwitchOrientationItem(props: ItemProps): JSX.Element {
             className='cvat-object-item-menu-switch-orientation'
         >
             Switch orientation
+        </Button>
+    );
+}
+
+function ChangeOrientationItem(props: ItemProps & { degrees: OrientationAngle }): JSX.Element {
+    const { toolProps, degrees } = props;
+    const { changeOrientation } = toolProps;
+    const { icon, label } = ORIENTATION_OPTIONS[degrees];
+    return (
+        <Button
+            type='link'
+            icon={icon}
+            onClick={(): void => changeOrientation(degrees)}
+            className={`cvat-object-item-menu-orientation-${degrees}`}
+        >
+            {label}
+        </Button>
+    );
+}
+
+function OrientationItem(): JSX.Element {
+    return (
+        <Button
+            type='link'
+            icon={<RetweetOutlined />}
+            className='cvat-object-item-menu-orientation'
+        >
+            Orientation
         </Button>
     );
 }
@@ -244,6 +309,25 @@ function ToOneLayerForwardItem(props: Readonly<ItemProps>): JSX.Element {
     );
 }
 
+function ToLayerItem(props: Readonly<ItemProps>): JSX.Element {
+    const { toolProps } = props;
+    const { closeMenu, setLayerPopoverVisible } = toolProps;
+
+    return (
+        <Button
+            type='link'
+            icon={<VerticalAlignBottomOutlined />}
+            onClick={(): void => {
+                setLayerPopoverVisible(true);
+                closeMenu();
+            }}
+            className='cvat-object-item-menu-move-to-layer'
+        >
+            Move to layer ...
+        </Button>
+    );
+}
+
 function SwitchColorItem(props: ItemProps): JSX.Element {
     const { toolProps } = props;
     const { changeColorShortcut, colorBy, setColorPickerVisible } = toolProps;
@@ -302,21 +386,24 @@ export default function ItemMenu(props: Props): MenuProps {
         COPY = 'copy',
         PROPAGATE = 'propagate',
         SWITCH_ORIENTATION = 'switch_orientation',
+        ORIENTATION = 'orientation',
         RESET_PERSPECTIVE = 'reset_perspective',
         TO_BACKGROUND = 'to_background',
         TO_FOREGROUND = 'to_foreground',
         TO_ONE_LAYER_BACKWARD = 'to_one_layer_backward',
         TO_ONE_LAYER_FORWARD = 'to_one_layer_forward',
+        MOVE_TO_LAYER = 'move_to_layer',
         SWITCH_COLOR = 'switch_color',
         REMOVE_ITEM = 'remove_item',
         EDIT_MASK = 'edit_mask',
         SLICE_ITEM = 'slice_item',
+        SIMPLIFY_ITEM = 'simplify_item',
         RUN_ANNOTATION_ACTION = 'run_annotation_action',
     }
 
     const is2D = jobInstance.dimension === DimensionType.DIMENSION_2D;
 
-    const items = [{
+    const items: MenuProps['items'] = [{
         key: MenuKeys.CREATE_URL,
         label: <CreateURLItem toolProps={props} />,
     }];
@@ -345,6 +432,16 @@ export default function ItemMenu(props: Props): MenuProps {
         });
     }
 
+    if (
+        !locked && objectType === ObjectType.SHAPE &&
+        [ShapeType.POLYGON, ShapeType.POLYLINE].includes(shapeType)
+    ) {
+        items.push({
+            key: MenuKeys.SIMPLIFY_ITEM,
+            label: <SimplifyItem key={MenuKeys.SIMPLIFY_ITEM} toolProps={props} />,
+        });
+    }
+
     items.push({
         key: MenuKeys.PROPAGATE,
         label: <PropagateItem toolProps={props} />,
@@ -354,6 +451,18 @@ export default function ItemMenu(props: Props): MenuProps {
         items.push({
             key: MenuKeys.SWITCH_ORIENTATION,
             label: <SwitchOrientationItem toolProps={props} />,
+        });
+    }
+
+    if (is2D && !locked && [ShapeType.RECTANGLE, ShapeType.ELLIPSE].includes(shapeType)) {
+        items.push({
+            key: MenuKeys.ORIENTATION,
+            label: <OrientationItem />,
+            popupClassName: 'cvat-object-item-menu',
+            children: ([90, -90, 180] as const).map((degrees: OrientationAngle) => ({
+                key: `${MenuKeys.ORIENTATION}_${degrees}`,
+                label: <ChangeOrientationItem toolProps={props} degrees={degrees} />,
+            })),
         });
     }
 
@@ -384,6 +493,11 @@ export default function ItemMenu(props: Props): MenuProps {
             key: MenuKeys.TO_ONE_LAYER_FORWARD,
             label: <ToOneLayerForwardItem toolProps={props} />,
         });
+
+        items.push({
+            key: MenuKeys.MOVE_TO_LAYER,
+            label: <ToLayerItem toolProps={props} />,
+        });
     }
 
     if (!locked && [ColorBy.INSTANCE, ColorBy.GROUP].includes(colorBy)) {
@@ -405,6 +519,9 @@ export default function ItemMenu(props: Props): MenuProps {
 
     return {
         items,
+        onClick: (event): void => {
+            event.domEvent.stopPropagation();
+        },
         selectable: false,
         className: 'cvat-object-item-menu',
     };

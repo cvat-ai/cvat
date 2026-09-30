@@ -9,6 +9,7 @@ import { taskName, labelName } from '../../support/const_canvas3d';
 
 context('Canvas 3D functionality. Add cuboid.', () => {
     const caseId = '64';
+    const platformModifier = Cypress.platform === 'darwin' ? { metaKey: true } : { ctrlKey: true };
 
     const screenshotsPath = 'cypress/screenshots/canvas3d_functionality_2/case_64_canvas3d_functionality_cuboid.js';
     const cuboidCreationParams = {
@@ -51,6 +52,11 @@ context('Canvas 3D functionality. Add cuboid.', () => {
                     `${screenshotsPath}/${viewAfterAddCuboid}`,
                 );
             });
+        });
+
+        it('Does not multi-select cuboids with the platform modifier', () => {
+            cy.get('#cvat-objects-sidebar-state-item-1').click({ ...platformModifier, force: true });
+            cy.get('.cvat-objects-sidebar-state-item-multi-selected').should('not.exist');
         });
 
         it('Cuboid interaction by mouse.', () => {

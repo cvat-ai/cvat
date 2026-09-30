@@ -20,13 +20,13 @@ from rq.job import Dependency as RQDependency
 from rq.job import Job as RQJob
 from rq.registry import BaseRegistry as RQBaseRegistry
 
-from cvat.apps.engine.types import ExtendedRequest
 from cvat.apps.engine.utils import take_by
 from cvat.apps.redis_handler.apps import SELECTOR_TO_QUEUE
 from cvat.apps.redis_handler.rq import RequestId, RequestIdWithOptionalSubresource
 
 if TYPE_CHECKING:
-    from django.contrib.auth.models import User
+    from cvat.apps.engine.types import ExtendedRequest
+    from cvat.apps.redis_handler.background import AbstractRequestManager
 
 
 class RQJobMetaField:
@@ -34,6 +34,9 @@ class RQJobMetaField:
         ID = "id"
         USERNAME = "username"
         EMAIL = "email"
+        FIRST_NAME = "first_name"
+        LAST_NAME = "last_name"
+        URL = "url"
 
     class RequestField:
         UUID = "uuid"
@@ -54,6 +57,7 @@ class RQJobMetaField:
     JOB_ID = "job_id"
     STATUS = "status"
     PROGRESS = "progress"
+    REQUEST_MANAGER_CLS = "request_manager_cls"
 
     # import-specific fields
     TASK_PROGRESS = "task_progress"
@@ -109,6 +113,9 @@ class UserMeta:
     id: int = ImmutableRQMetaAttribute(RQJobMetaField.UserField.ID)
     username: str = ImmutableRQMetaAttribute(RQJobMetaField.UserField.USERNAME)
     email: str = ImmutableRQMetaAttribute(RQJobMetaField.UserField.EMAIL)
+    first_name: str = ImmutableRQMetaAttribute(RQJobMetaField.UserField.FIRST_NAME)
+    last_name: str = ImmutableRQMetaAttribute(RQJobMetaField.UserField.LAST_NAME)
+    url: str = ImmutableRQMetaAttribute(RQJobMetaField.UserField.URL)
 
     def __init__(self, meta: dict[str, Any]) -> None:
         self._meta = meta
@@ -170,10 +177,9 @@ class AbstractRQMeta(metaclass=ABCMeta):
     def _get_resettable_fields() -> list[str]:
         """Return a list of fields that must be reset on retry"""
 
-    def get_meta_on_retry(self) -> dict[str, Any]:
-        resettable_fields = self._get_resettable_fields()
-
-        return {k: v for k, v in self._meta.items() if k not in resettable_fields}
+    def reset_on_retry(self) -> None:
+        for field in self._get_resettable_fields():
+            self._meta.pop(field, None)
 
 
 class RQMetaWithFailureInfo(AbstractRQMeta):
@@ -229,6 +235,10 @@ class BaseRQMeta(RQMetaWithFailureInfo):
     project_id: int | None = ImmutableRQMetaAttribute(RQJobMetaField.PROJECT_ID, optional=True)
     task_id: int | None = ImmutableRQMetaAttribute(RQJobMetaField.TASK_ID, optional=True)
     job_id: int | None = ImmutableRQMetaAttribute(RQJobMetaField.JOB_ID, optional=True)
+    request_manager_cls: str | None = ImmutableRQMetaAttribute(
+        RQJobMetaField.REQUEST_MANAGER_CLS,
+        optional=True,
+    )
 
     # mutable && optional fields
     org_id: int | None = MutableRQMetaAttribute(
@@ -256,36 +266,65 @@ class BaseRQMeta(RQMetaWithFailureInfo):
         cls,
         *,
         request: ExtendedRequest,
-        db_obj: Model | None,
-    ):
-        # to prevent circular import
-        from cvat.apps.events.handlers import job_id, organization_slug, task_id
-        from cvat.apps.webhooks.signals import organization_id, project_id
+        request_manager_cls: type[AbstractRequestManager],
+        organization_id: int | None,
+        organization_slug: str | None,
+        project_id: int | None,
+        task_id: int | None,
+        job_id: int | None,
+    ) -> dict:
+        from cvat.apps.events.handlers import get_serializer
 
-        oid = organization_id(db_obj)
-        oslug = organization_slug(db_obj)
-        pid = project_id(db_obj)
-        tid = task_id(db_obj)
-        jid = job_id(db_obj)
-
-        user: User = request.user
+        user_data = get_serializer(request.user).data
 
         return {
             RQJobMetaField.USER: {
-                RQJobMetaField.UserField.ID: user.pk,
-                RQJobMetaField.UserField.USERNAME: user.username,
-                RQJobMetaField.UserField.EMAIL: user.email,
+                RQJobMetaField.UserField.ID: user_data["id"],
+                RQJobMetaField.UserField.USERNAME: user_data["username"],
+                RQJobMetaField.UserField.EMAIL: request.user.email,
+                RQJobMetaField.UserField.FIRST_NAME: user_data["first_name"],
+                RQJobMetaField.UserField.LAST_NAME: user_data["last_name"],
+                RQJobMetaField.UserField.URL: user_data["url"],
             },
             RQJobMetaField.REQUEST: {
                 RQJobMetaField.RequestField.UUID: request.uuid,
                 RQJobMetaField.RequestField.TIMESTAMP: timezone.now(),
             },
-            RQJobMetaField.ORG_ID: oid,
-            RQJobMetaField.ORG_SLUG: oslug,
-            RQJobMetaField.PROJECT_ID: pid,
-            RQJobMetaField.TASK_ID: tid,
-            RQJobMetaField.JOB_ID: jid,
+            RQJobMetaField.ORG_ID: organization_id,
+            RQJobMetaField.ORG_SLUG: organization_slug,
+            RQJobMetaField.PROJECT_ID: project_id,
+            RQJobMetaField.TASK_ID: task_id,
+            RQJobMetaField.JOB_ID: job_id,
+            RQJobMetaField.REQUEST_MANAGER_CLS: (
+                f"{request_manager_cls.__module__}.{request_manager_cls.__qualname__}"
+            ),
         }
+
+    @classmethod
+    def build_from_instance(
+        cls,
+        request: ExtendedRequest,
+        request_manager_cls: type[AbstractRequestManager],
+        instance: Model | None,
+    ) -> dict:
+        # to prevent circular import
+        from cvat.apps.events.handlers import (
+            job_id,
+            organization_id,
+            organization_slug,
+            project_id,
+            task_id,
+        )
+
+        return cls.build(
+            request=request,
+            organization_id=organization_id(instance),
+            organization_slug=organization_slug(instance),
+            project_id=project_id(instance),
+            task_id=task_id(instance),
+            job_id=job_id(instance),
+            request_manager_cls=request_manager_cls,
+        )
 
 
 class ExportRQMeta(BaseRQMeta):
@@ -295,21 +334,21 @@ class ExportRQMeta(BaseRQMeta):
     )
     result_filename: str = ImmutableRQMetaAttribute(RQJobMetaField.RESULT_FILENAME)
 
-    @staticmethod
-    def _get_resettable_fields() -> list[str]:
-        base_fields = BaseRQMeta._get_resettable_fields()
-        return base_fields + [RQJobMetaField.RESULT_URL, RQJobMetaField.RESULT_FILENAME]
-
     @classmethod
     def build_for(
         cls,
         *,
         request: ExtendedRequest,
-        db_obj: Model,
+        request_manager_cls: type[AbstractRequestManager],
+        instance: Model,
         result_url: str | None,
         result_filename: str,
     ):
-        base_meta = BaseRQMeta.build(request=request, db_obj=db_obj)
+        base_meta = BaseRQMeta.build_from_instance(
+            request=request,
+            instance=instance,
+            request_manager_cls=request_manager_cls,
+        )
 
         return {
             **base_meta,
@@ -403,12 +442,18 @@ def define_dependent_job(
         queue.deferred_job_registry,
         queue,
         queue.started_job_registry,
+        queue.scheduled_job_registry,
     ]
     # Since there is no cleanup implementation in DeferredJobRegistry,
     # this registry can contain "outdated" jobs that weren't deleted from it
     # but were added to another registry. Probably such situations can occur
     # if there are active or deferred jobs when restarting the worker container.
-    filters = [lambda job: job.is_deferred, lambda _: True, lambda _: True]
+    filters = [
+        lambda job: job.is_deferred,
+        lambda _: True,
+        lambda _: True,
+        lambda job: job.is_scheduled,
+    ]
     all_user_jobs: list[RQJob] = []
     for q, f in zip(queues, filters):
         job_ids = q.get_job_ids()

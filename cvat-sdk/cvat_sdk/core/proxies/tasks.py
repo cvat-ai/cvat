@@ -152,6 +152,7 @@ class Task(
         filename: StrPath,
         *,
         conv_mask_to_poly: bool | None = None,
+        import_mode: str | None = None,
         status_check_period: int | None = None,
         pbar: ProgressReporter | None = None,
     ):
@@ -167,6 +168,7 @@ class Task(
             format_name,
             url_params={"id": self.id},
             conv_mask_to_poly=conv_mask_to_poly,
+            import_mode=import_mode,
             pbar=pbar,
             status_check_period=status_check_period,
         )
@@ -247,7 +249,9 @@ class Task(
         return [
             Job(self._client, model=m)
             for m in get_paginated_collection(
-                self._client.api_client.jobs_api.list_endpoint, task_id=self.id
+                self._client.api_client.jobs_api.list_endpoint,
+                org_id=self.organization,
+                task_id=self.id,
             )
         ]
 
@@ -257,7 +261,9 @@ class Task(
 
     def get_labels(self) -> list[models.ILabel]:
         return get_paginated_collection(
-            self._client.api_client.labels_api.list_endpoint, task_id=self.id
+            self._client.api_client.labels_api.list_endpoint,
+            org_id=self.organization,
+            task_id=self.id,
         )
 
     def get_frames_info(self) -> list[models.IFrameMeta]:

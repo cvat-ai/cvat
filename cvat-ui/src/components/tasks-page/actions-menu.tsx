@@ -3,13 +3,14 @@
 // SPDX-License-Identifier: MIT
 
 import React, { useCallback } from 'react';
-import { shallowEqual, useDispatch, useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
+import { shallowEqual } from 'utils/redux';
 import { useHistory } from 'react-router';
 import Modal from 'antd/lib/modal';
 import Dropdown from 'antd/lib/dropdown';
 
 import {
-    RQStatus, Task, User, Organization,
+    RQStatus, Task, User, Organization, DimensionType,
 } from 'cvat-core-wrapper';
 import { useDropdownEditField, usePlugins } from 'utils/hooks';
 
@@ -62,6 +63,12 @@ function TaskActionsComponent(props: Readonly<Props>): JSX.Element {
     }), shallowEqual);
 
     const isBulkMode = selectedIds.length > 1;
+    const isExportDatasetDisabled = isBulkMode &&
+        new Set(
+            currentTasks
+                .filter((task) => selectedIds.includes(task.id))
+                .map((task) => task.dimension),
+        ).size > 1;
     const {
         dropdownOpen,
         editField,
@@ -136,6 +143,7 @@ function TaskActionsComponent(props: Readonly<Props>): JSX.Element {
         await dispatch(makeBulkOperationAsync(
             tasksToUpdate,
             async (task) => {
+                // eslint-disable-next-line no-param-reassign
                 task.assignee = assignee;
                 if (onUpdateTask && task.id === taskInstance.id) {
                     onUpdateTask(task);
@@ -189,6 +197,7 @@ function TaskActionsComponent(props: Readonly<Props>): JSX.Element {
             dispatch(makeBulkOperationAsync(
                 tasksToUpdate,
                 async (task) => {
+                    // eslint-disable-next-line no-param-reassign
                     task.organizationId = newOrganization?.id ?? null;
                     await dispatch(updateTaskAsync(task, {}, ResourceUpdateTypes.UPDATE_ORGANIZATION));
                 },
@@ -265,6 +274,8 @@ function TaskActionsComponent(props: Readonly<Props>): JSX.Element {
             onMoveTaskToProject,
             onDeleteTask,
             selectedIds,
+            isExportDatasetDisabled,
+            isQualityControlDisabled: taskInstance.dimension === DimensionType.DIMENSION_1D,
         }, props);
     }
 

@@ -8,6 +8,7 @@ import { Row, Col } from 'antd/lib/grid';
 import Button from 'antd/lib/button';
 import InputNumber from 'antd/lib/input-number';
 import Radio, { RadioChangeEvent } from 'antd/lib/radio';
+import Switch from 'antd/lib/switch';
 import Text from 'antd/lib/typography/Text';
 import { RectDrawingMethod, CuboidDrawingMethod } from 'cvat-canvas-wrapper';
 
@@ -25,10 +26,12 @@ interface Props {
     numberOfPoints?: number;
     selectedLabelID: number | null;
     repeatShapeShortcut: string;
+    simplifyPoly?: boolean;
     onChangeLabel(value: Label | null): void;
     onChangePoints(value: number | undefined): void;
     onChangeRectDrawingMethod(event: RadioChangeEvent): void;
     onChangeCuboidDrawingMethod(event: RadioChangeEvent): void;
+    onChangeSimplifyPoly?(value: boolean): void;
     onDrawTrack(): void;
     onDrawShape(): void;
     jobInstance: any;
@@ -44,16 +47,23 @@ function DrawShapePopoverComponent(props: Props): JSX.Element {
         rectDrawingMethod,
         cuboidDrawingMethod,
         repeatShapeShortcut,
+        simplifyPoly,
         onDrawTrack,
         onDrawShape,
         onChangeLabel,
         onChangePoints,
         onChangeRectDrawingMethod,
         onChangeCuboidDrawingMethod,
+        onChangeSimplifyPoly,
         jobInstance,
     } = props;
 
     const is2D = jobInstance.dimension === DimensionType.DIMENSION_2D;
+    const simplifyDisabled = typeof numberOfPoints !== 'undefined';
+    const simplifyTooltip = simplifyDisabled ?
+        'Simplification is unavailable when a predefined number of points is set' :
+        'Automatically start polygon/polyline simplification after shape is drawn';
+
     return (
         <div className='cvat-draw-shape-popover-content'>
             <Row justify='start'>
@@ -76,26 +86,43 @@ function DrawShapePopoverComponent(props: Props): JSX.Element {
                     />
                 </Col>
             </Row>
-            {is2D && shapeType === ShapeType.RECTANGLE && (
+            {is2D && [ShapeType.RECTANGLE, ShapeType.ELLIPSE].includes(shapeType) && (
                 <>
                     <Row>
                         <Col>
                             <Text className='cvat-text-color'> Drawing method </Text>
                         </Col>
                     </Row>
-                    <Row justify='space-around'>
-                        <Col>
+                    <Row className='cvat-draw-shape-popover-drawing-method'>
+                        <Col span={24}>
                             <Radio.Group
-                                style={{ display: 'flex' }}
+                                className='cvat-draw-shape-popover-drawing-method-selector'
                                 value={rectDrawingMethod}
                                 onChange={onChangeRectDrawingMethod}
                             >
-                                <Radio value={RectDrawingMethod.CLASSIC} style={{ width: 'auto' }}>
-                                    By 2 Points
-                                </Radio>
-                                <Radio value={RectDrawingMethod.EXTREME_POINTS} style={{ width: 'auto' }}>
-                                    By 4 Points
-                                </Radio>
+                                <Radio.Button value={RectDrawingMethod.CLASSIC}>
+                                    2 Points
+                                </Radio.Button>
+                                {shapeType === ShapeType.RECTANGLE && (
+                                    <Radio.Button value={RectDrawingMethod.EXTREME_POINTS}>
+                                        4 Points
+                                    </Radio.Button>
+                                )}
+                                <CVATTooltip
+                                    title={
+                                        `Click at least ${shapeType === ShapeType.ELLIPSE ? 'five' : 'three'} contour points. ` +
+                                        'A dashed fitted shape previews the result ' +
+                                        'as points are added or removed; ' +
+                                        `press ${repeatShapeShortcut} or select Done to finish, ` +
+                                        'and right-click to undo the last point.'
+                                    }
+                                >
+                                    <Radio.Button
+                                        value={RectDrawingMethod.ROTATED_POINTS}
+                                    >
+                                        Rotated
+                                    </Radio.Button>
+                                </CVATTooltip>
                             </Radio.Group>
                         </Col>
                     </Row>
@@ -127,26 +154,48 @@ function DrawShapePopoverComponent(props: Props): JSX.Element {
                 </>
             )}
             {is2D && [ShapeType.POLYGON, ShapeType.POLYLINE, ShapeType.POINTS].includes(shapeType) ? (
-                <Row justify='space-around' align='middle'>
-                    <Col span={14}>
-                        <Text className='cvat-text-color'> Number of points: </Text>
-                    </Col>
-                    <Col span={10}>
-                        <InputNumber
-                            onChange={(value: number | undefined | string | null) => {
-                                if (typeof value === 'undefined' || value === null) {
-                                    onChangePoints(undefined);
-                                } else {
-                                    onChangePoints(Math.floor(clamp(+value, minimumPoints, Number.MAX_SAFE_INTEGER)));
-                                }
-                            }}
-                            className='cvat-draw-shape-popover-points-selector'
-                            min={minimumPoints}
-                            value={numberOfPoints}
-                            step={1}
-                        />
-                    </Col>
-                </Row>
+                <>
+                    <Row justify='space-around' align='middle'>
+                        <Col span={14}>
+                            <Text className='cvat-text-color'> Number of points: </Text>
+                        </Col>
+                        <Col span={10}>
+                            <InputNumber
+                                onChange={(value: number | undefined | string | null) => {
+                                    if (typeof value === 'undefined' || value === null) {
+                                        onChangePoints(undefined);
+                                    } else {
+                                        const clampedValue = Math.floor(
+                                            clamp(+value, minimumPoints, Number.MAX_SAFE_INTEGER),
+                                        );
+                                        onChangePoints(clampedValue);
+                                    }
+                                }}
+                                className='cvat-draw-shape-popover-points-selector'
+                                min={minimumPoints}
+                                value={numberOfPoints}
+                                step={1}
+                            />
+                        </Col>
+                    </Row>
+                    {[ShapeType.POLYGON, ShapeType.POLYLINE].includes(shapeType) && (
+                        <CVATTooltip title={simplifyTooltip}>
+                            <Row justify='space-around' align='middle'>
+                                <Col span={14}>
+                                    <Text className='cvat-text-color'> Simplify </Text>
+                                </Col>
+                                <Col span={10}>
+                                    <Switch
+                                        checked={simplifyPoly}
+                                        disabled={simplifyDisabled}
+                                        onChange={onChangeSimplifyPoly}
+                                        className={`cvat-draw-${shapeType}-popover-simplify-switch`}
+                                    />
+                                </Col>
+                            </Row>
+                        </CVATTooltip>
+                    )}
+                </>
             ) : null}
             <Row justify='space-around'>
                 <Col span={24}>

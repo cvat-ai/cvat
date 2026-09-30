@@ -77,6 +77,7 @@
 }
 
 .cvat-cursor-control,
+.cvat-select-control,
 .cvat-move-control,
 .cvat-rotate-canvas-control,
 .cvat-fit-control,
@@ -99,7 +100,10 @@
 .cvat-tools-control,
 .cvat-extra-controls-control,
 .cvat-opencv-control,
-.cvat-snap-tools-control {
+.cvat-snap-tools-control,
+.cvat-audio-interval-region-control,
+.cvat-audio-split-control,
+.cvat-audio-loop-control {
     border-radius: $border-radius-base;
     transition: $annotation-view-control-transition;
     transform: scale(0.65);
@@ -238,6 +242,17 @@
     }
 }
 
+.cvat-automatic-annotation-region-of-interest-overlay {
+    position: absolute;
+    left: 0;
+    top: 0;
+    background: rgba(0, 0, 0, 80%);
+    background-color: rgba(128, 128, 128, 60%);
+    background-image: linear-gradient(45deg, rgba(255, 255, 255, 18%) 25%, transparent 25%), linear-gradient(-45deg, rgba(255, 255, 255, 18%) 25%, transparent 25%), linear-gradient(45deg, transparent 75%, rgba(255, 255, 255, 18%) 75%), linear-gradient(-45deg, transparent 75%, rgba(255, 255, 255, 18%) 75%);
+    background-size: 16px 16px;
+    background-position: 0 0, 0 8px, 8px -8px, -8px 0;
+}
+
 .cvat-opencv-initialization-button {
     width: 100%;
     margin: $grid-unit-size 0;
@@ -319,6 +334,34 @@
 
         button {
             width: $grid-unit-size * 15;
+        }
+    }
+}
+
+.cvat-draw-shape-popover-drawing-method-selector {
+    display: flex;
+    width: 100%;
+
+    .ant-radio-button-wrapper {
+        flex: 1;
+        height: $grid-unit-size * 4;
+        line-height: $grid-unit-size * 4 - 2;
+        padding: 0 $grid-unit-size;
+        text-align: center;
+
+        &::before {
+            background-color: #d9d9d9;
+        }
+
+        &.ant-radio-button-wrapper-checked {
+            z-index: 1;
+            color: $notification-border-color-1;
+            border-color: $notification-border-color-1;
+            box-shadow: none;
+
+            &::before {
+                background-color: $notification-border-color-1;
+            }
         }
     }
 }

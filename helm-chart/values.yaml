@@ -17,6 +17,7 @@ cvat:
     affinity: {}
     tolerations: []
     additionalEnv: []
+    numProxies: 1
 
     # This should only be used by supercharts;
     # to set custom environment for a Helm release, use additionalEnv.
@@ -24,11 +25,17 @@ cvat:
 
     additionalVolumes: []
     additionalVolumeMounts: []
+    # Support for Bitnami legacy chart:
+    # This setting is used to override Redis service name.
+    # Bitnami chart require "cvat-redis-master" override. CloudPirates chart does not need this override.
+    # If you use external Redis, use .Values.redis.external.host = your_redis_service + .Values.redis.enabled = false instead
+    redisInmemHostOverride: "{{ .Release.Name }}-redis-master"
     # -- The service account the backend pods will use to interact with the Kubernetes API
     serviceAccount:
       name: default
 
     initializer:
+      enabled: true
       labels: {}
       annotations: {}
       resources: {}
@@ -66,6 +73,7 @@ cvat:
         timeoutSeconds: 10
       export:
         replicas: 2
+        numProcs: 1
         labels: {}
         annotations: {}
         resources: {}
@@ -76,6 +84,7 @@ cvat:
         additionalVolumeMounts: []
       import:
         replicas: 2
+        numProcs: 1
         labels: {}
         annotations: {}
         resources: {}
@@ -86,6 +95,7 @@ cvat:
         additionalVolumeMounts: []
       annotation:
         replicas: 1
+        numProcs: 1
         labels: {}
         annotations: {}
         resources: {}
@@ -96,6 +106,7 @@ cvat:
         additionalVolumeMounts: []
       webhooks:
         replicas: 1
+        numProcs: 1
         labels: {}
         annotations: {}
         resources: {}
@@ -104,8 +115,10 @@ cvat:
         additionalEnv: []
         additionalVolumes: []
         additionalVolumeMounts: []
+        terminationGracePeriodSeconds: 30
       qualityreports:
         replicas: 1
+        numProcs: 1
         labels: {}
         annotations: {}
         resources: {}
@@ -116,6 +129,7 @@ cvat:
         additionalVolumeMounts: []
       chunks:
         replicas: 2
+        numProcs: 1
         labels: {}
         annotations: {}
         resources: {}
@@ -126,6 +140,7 @@ cvat:
         additionalVolumeMounts: []
       consensus:
         replicas: 1
+        numProcs: 1
         labels: {}
         annotations: {}
         resources: {}
@@ -136,6 +151,7 @@ cvat:
         additionalVolumeMounts: []
       utils:
         replicas: 1
+        numProcs: 1
         labels: {}
         annotations: {}
         resources: {}
@@ -144,7 +160,6 @@ cvat:
         additionalEnv: []
         additionalVolumes: []
         additionalVolumeMounts: []
-        extraArgs: []
     replicas: 1
     image: cvat/server
     tag: dev
@@ -259,7 +274,11 @@ cvat:
     # -   mountPath: /tmp
     #     name: tmp
     #     subPath: test
-    composeCompatibleServiceName: true # Sets service name to opa in order to be compatible with Docker Compose. Necessary because changing IAM_OPA_DATA_URL via environment variables in current images. Hinders multiple deployment due to duplicate name
+    # Keep the default probe tied to bundle availability in normal deployments.
+    # This makes OPA health reflect whether it has successfully loaded policy data
+    # from the CVAT backend. Deployments may override this to plain `/health`
+    # if they intentionally want process-health-only probes.
+    probePath: /health?bundles
     readinessProbe:
       enabled: true
       periodSeconds: 15
@@ -280,13 +299,13 @@ cvat:
     enabled: true
     external:
       host: kvrocks-external.localdomain
-    existingSecret: "cvat-kvrocks-secret"
+    existingSecret: "{{ .Release.Name }}-kvrocks-secret"
     secret:
       create: true
-      name: cvat-kvrocks-secret
+      name: "{{ .Release.Name }}-kvrocks-secret"
       password: cvat_kvrocks
     image: apache/kvrocks
-    tag: 2.12.1
+    tag: 2.15.0
     imagePullPolicy: IfNotPresent
     labels: {}
     #  test: test
@@ -375,20 +394,16 @@ redis:
     registry: public.ecr.aws
     repository: docker/library/redis
     tag: 7.2.11
-  global:
-    security:
-      allowInsecureImages: true
   external:
     host: 127.0.0.1
   architecture: standalone
   auth:
-    existingSecret: "cvat-redis-secret"
+    existingSecret: "{{ .Release.Name }}-redis-secret"
     existingSecretPasswordKey: password
   secret:
     create: true
-    name: cvat-redis-secret
+    name: "{{ .Release.Name }}-redis-secret"
     password: cvat_redis
-  # TODO: persistence options
 
 nuclio:
   enabled: false

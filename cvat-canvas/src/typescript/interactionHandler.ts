@@ -3,12 +3,14 @@
 //
 // SPDX-License-Identifier: MIT
 
+import _ from 'lodash';
 import * as SVG from 'svg.js';
 import consts from './consts';
 import Crosshair from './crosshair';
 import {
     stringifyPoints, translateToCanvas, RLEToImageData,
     imageDataToDataURL, translateFromCanvas, translateToSVG,
+    clamp,
 } from './shared';
 import {
     InteractionData, InteractionResult, Geometry,
@@ -23,7 +25,6 @@ export interface InteractionHandler {
     cancel(): void;
 }
 
-type InteractorSettings = Required<InteractionData['settings']>;
 type SupportedShapes = SVG.Rect | SVG.Circle;
 
 const DELETE_BUTTON_OFFSET = 8;
@@ -52,7 +53,7 @@ function deleteButtonPath(r: number): string {
 }
 
 export class InteractionHandlerImpl implements InteractionHandler {
-    private settings: InteractorSettings;
+    private settings: Omit<Required<InteractionData['settings']>, 'hint' | 'regionOfInterest'>;
     private enabled: boolean;
     private command: 'draw_box' | 'draw_points' | 'put_shapes' | 'refine' | 'idle';
     private currentRectangle: SVG.Rect | null;
@@ -61,6 +62,7 @@ export class InteractionHandlerImpl implements InteractionHandler {
     private allPrompts: SupportedShapes[];
     private deletionButtons: Map<SupportedShapes, SVG.G>;
     private intermediateShapes: (SVG.Image | SVG.Polygon)[];
+    private intermediateMaskOutlines: SVG.Polygon[];
     private onInteraction: (interactionResult: InteractionResult[], finished?: boolean) => void;
     private onMessage: (messages: CanvasHint[] | null, topic: string) => void;
     private geometry: Geometry;
@@ -70,6 +72,7 @@ export class InteractionHandlerImpl implements InteractionHandler {
     private effectivePointSize: number;
     private effectiveShapeOpacity: number;
     private lastMousePosition: { x: number; y: number };
+    private regionOfInterest: InteractionData['settings']['regionOfInterest'] | null;
     private crosshair: Crosshair;
 
     public constructor(
@@ -84,6 +87,7 @@ export class InteractionHandlerImpl implements InteractionHandler {
         this.enabled = false;
         this.command = 'idle';
         this.crosshair = new Crosshair();
+        this.regionOfInterest = null;
         this.settings = {
             crosshair: false,
             points_type: 'any',
@@ -98,6 +102,7 @@ export class InteractionHandlerImpl implements InteractionHandler {
         this.pointPrompts = [];
         this.allPrompts = [];
         this.intermediateShapes = [];
+        this.intermediateMaskOutlines = [];
         this.deletionButtons = new Map();
         this.effectiveStrokeWidth = consts.BASE_STROKE_WIDTH / this.geometry.scale;
         this.effectivePointSize = (configuration.controlPointsSize ?? consts.BASE_POINT_SIZE) / this.geometry.scale;
@@ -147,12 +152,15 @@ export class InteractionHandlerImpl implements InteractionHandler {
             }
             shape.remove();
         });
+        this.intermediateMaskOutlines.forEach((outline) => outline.remove());
         this.intermediateShapes = [];
+        this.intermediateMaskOutlines = [];
     }
 
     private release(): void {
         this.enabled = false;
         this.command = 'idle';
+        this.regionOfInterest = null;
         this.onMessage(null, 'interaction');
         this.clearCurrentRectangle();
         this.clearPromptsAndButtons();
@@ -160,14 +168,24 @@ export class InteractionHandlerImpl implements InteractionHandler {
         this.crosshair.hide();
     }
 
-    private isWithinFrame(x: number, y: number): boolean {
+    private isWithinInteractionBounds(x: number, y: number): boolean {
         const { offset, image } = this.geometry;
-        const { width, height } = image;
+        const { regionOfInterest } = this;
         const [imageX, imageY] = [x - offset, y - offset];
-        return imageX >= 0 && imageX < width && imageY >= 0 && imageY < height;
+
+        if (regionOfInterest) {
+            return (
+                imageX >= regionOfInterest[0] &&
+                imageX <= regionOfInterest[2] &&
+                imageY >= regionOfInterest[1] &&
+                imageY <= regionOfInterest[3]
+            );
+        }
+
+        return imageX >= 0 && imageX < image.width && imageY >= 0 && imageY < image.height;
     }
 
-    private drawBox(): void {
+    private drawBox(hint?: string): void {
         if (this.command === 'draw_box') {
             return;
         }
@@ -189,10 +207,15 @@ export class InteractionHandlerImpl implements InteractionHandler {
                 const right = offset + imWidth;
                 const bottom = offset + imHeight;
 
-                const xtl = Math.max(x, offset);
-                const ytl = Math.max(y, offset);
-                const xbr = Math.min(x + width, right);
-                const ybr = Math.min(y + height, bottom);
+                const { regionOfInterest } = this;
+                const minX = regionOfInterest ? offset + regionOfInterest[0] : offset;
+                const minY = regionOfInterest ? offset + regionOfInterest[1] : offset;
+                const maxX = regionOfInterest ? offset + regionOfInterest[2] : right;
+                const maxY = regionOfInterest ? offset + regionOfInterest[3] : bottom;
+                const xtl = clamp(x, minX, maxX);
+                const ytl = clamp(y, minY, maxY);
+                const xbr = clamp(x + width, minX, maxX);
+                const ybr = clamp(y + height, minY, maxY);
 
                 if (xbr - xtl < 1 || ybr - ytl < 1) {
                     rectangle.remove();
@@ -217,7 +240,7 @@ export class InteractionHandlerImpl implements InteractionHandler {
         this.onMessage([{
             type: 'text',
             icon: 'info',
-            content: 'Draw rectangle prompts',
+            content: hint ?? 'Draw rectangle prompts',
         }, {
             type: 'list',
             content: [
@@ -229,7 +252,7 @@ export class InteractionHandlerImpl implements InteractionHandler {
         initNewDrawingBox();
     }
 
-    private drawPoints(): void {
+    private drawPoints(hint?: string): void {
         const { points_type: pointsType } = this.settings;
 
         this.command = 'draw_points';
@@ -244,7 +267,7 @@ export class InteractionHandlerImpl implements InteractionHandler {
         this.onMessage([{
             type: 'text',
             icon: 'info',
-            content: 'Draw point prompts',
+            content: hint ?? 'Draw point prompts',
         }, {
             type: 'list',
             content: [
@@ -259,7 +282,9 @@ export class InteractionHandlerImpl implements InteractionHandler {
         this.clearIntermediateShapes();
 
         for (const shape of shapes) {
-            const { points, shapeType } = shape;
+            const {
+                points, shapeType, maskOutlines,
+            } = shape;
             if (shapeType === 'polygon') {
                 const isInvalidShape = points.length < 3 * 2;
                 const polygon = this.container
@@ -289,6 +314,23 @@ export class InteractionHandlerImpl implements InteractionHandler {
                 image.move(this.geometry.offset + left, this.geometry.offset + top);
                 this.container.node.prepend(image.node);
                 this.intermediateShapes.push(image);
+
+                let insertionPoint = image.node;
+                for (const outline of maskOutlines ?? []) {
+                    if (outline.length >= 3 * 2) {
+                        const outlinePoints = stringifyPoints(translateToCanvas(this.geometry.offset, outline));
+                        const strokeWidth = consts.BASE_STROKE_WIDTH / this.geometry.scale;
+                        const maskOutline = this.container
+                            .polygon(outlinePoints)
+                            .fill('none')
+                            .stroke({ color: '#000000', width: strokeWidth })
+                            .addClass('cvat_canvas_interact_mask_outline');
+
+                        insertionPoint.after(maskOutline.node);
+                        insertionPoint = maskOutline.node;
+                        this.intermediateMaskOutlines.push(maskOutline);
+                    }
+                }
 
                 imageDataToDataURL(
                     imageBitmap,
@@ -413,7 +455,7 @@ export class InteractionHandlerImpl implements InteractionHandler {
             this.command === 'draw_points' &&
             this.settings.appendCursorPositionAsPoint &&
             this.pointPrompts.length &&
-            this.isWithinFrame(x, y)
+            this.isWithinInteractionBounds(x, y)
         ) {
             const lastPoint = this.pointPrompts[this.pointPrompts.length - 1];
             const [cx, cy] = [lastPoint.cx(), lastPoint.cy()];
@@ -440,7 +482,7 @@ export class InteractionHandlerImpl implements InteractionHandler {
         if (this.command === 'draw_box') {
             (this.currentRectangle as any).draw(e);
         } else if (this.command === 'draw_points') {
-            if (!this.isWithinFrame(x, y)) {
+            if (!this.isWithinInteractionBounds(x, y)) {
                 return;
             }
 
@@ -535,13 +577,17 @@ export class InteractionHandlerImpl implements InteractionHandler {
         this.intermediateShapes.forEach((shape) => {
             shape.fill({ opacity: this.effectiveShapeOpacity });
         });
+
+        this.intermediateMaskOutlines.forEach((outline) => {
+            outline.stroke({ width: this.effectiveStrokeWidth });
+        });
     }
 
     public interact(interactData: InteractionData): void {
-        if (Object.prototype.hasOwnProperty.call(interactData, 'settings')) {
+        if (Object.hasOwn(interactData, 'settings')) {
             this.settings = {
                 ...this.settings,
-                ...interactData.settings,
+                ..._.omit(interactData.settings, ['hint', 'regionOfInterest']),
             };
         }
 
@@ -577,11 +623,13 @@ export class InteractionHandlerImpl implements InteractionHandler {
 
             const { command } = interactData;
             if (['draw_box', 'draw_points'].includes(command)) {
+                const regionOfInterest = interactData.settings?.regionOfInterest;
+                this.regionOfInterest = regionOfInterest ? [...regionOfInterest] : null;
                 if (command === 'draw_box') {
-                    this.drawBox();
+                    this.drawBox(interactData.settings?.hint);
                 } else {
                     this.clearCurrentRectangle();
-                    this.drawPoints();
+                    this.drawPoints(interactData.settings?.hint);
                 }
             } else if (command === 'put_shapes') {
                 this.putShapes(interactData.payload.shapes);

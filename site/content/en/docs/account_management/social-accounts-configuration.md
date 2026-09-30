@@ -5,6 +5,8 @@ weight: 6
 description: 'Social accounts authentication for a Self-Hosted solution'
 aliases:
   - /docs/enterprise/social-accounts-configuration/
+products:
+  - enterprise
 ---
 
 {{% alert title="Note" color="primary" %}}

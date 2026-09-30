@@ -3,13 +3,17 @@
 # SPDX-License-Identifier: MIT
 
 from .command_base import CommandGroup, DeprecatedAlias
+from .commands_config import COMMANDS as COMMANDS_CONFIG
 from .commands_functions import COMMANDS as COMMANDS_FUNCTIONS
+from .commands_profile import COMMANDS as COMMANDS_PROFILE
 from .commands_projects import COMMANDS as COMMANDS_PROJECTS
 from .commands_tasks import COMMANDS as COMMANDS_TASKS
 
 COMMANDS = CommandGroup(description="Perform operations on CVAT resources.")
 
+COMMANDS.add_command("config", COMMANDS_CONFIG)
 COMMANDS.add_command("function", COMMANDS_FUNCTIONS)
+COMMANDS.add_command("profile", COMMANDS_PROFILE)
 COMMANDS.add_command("project", COMMANDS_PROJECTS)
 COMMANDS.add_command("task", COMMANDS_TASKS)
 

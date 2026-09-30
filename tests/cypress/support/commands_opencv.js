@@ -5,10 +5,13 @@
 
 /// <reference types="cypress" />
 
+import { clickCanvasImagePoint } from './utils.cy';
+
 let selectedValueGlobal = '';
 
 Cypress.Commands.add('interactOpenCVControlButton', () => {
     cy.get('.cvat-opencv-control').click();
+    cy.hideTooltips();
     cy.get('.cvat-opencv-control').should('have.class', 'ant-popover-open');
     cy.get('.cvat-opencv-control-popover')
         .should('be.visible')
@@ -27,8 +30,8 @@ Cypress.Commands.add('opencvCreateShape', (opencvShapeParams) => {
         });
         cy.get('.cvat-opencv-drawing-tool').click();
     }
-    opencvShapeParams.pointsMap.forEach((element) => {
-        cy.get('.cvat-canvas-container').click(element.x, element.y);
+    opencvShapeParams.pointsMap.forEach((point) => {
+        clickCanvasImagePoint(point);
     });
     if (opencvShapeParams.finishWithButton) {
         cy.contains('span', 'Done').click();

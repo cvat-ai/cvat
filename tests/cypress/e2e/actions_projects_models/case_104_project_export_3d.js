@@ -8,10 +8,10 @@
 import { defaultTaskSpec } from '../../support/default-specs';
 
 context('Export project dataset with 3D task.', { browser: '!firefox' }, () => {
-    const caseID = 104;
-    const projectName = `Case ${caseID}`;
+    const caseId = 104;
+    const projectName = `Case ${caseId}`;
     const task = {
-        name3d: `Case ${caseID}`,
+        name3d: `Case ${caseId}`,
         label3d: 'label3d',
         attrName3d: 'Kind',
         attrValue3d: 'Oak',
@@ -22,7 +22,7 @@ context('Export project dataset with 3D task.', { browser: '!firefox' }, () => {
         multiAttrParams: false,
     };
     let datasetArchiveName;
-    let projectID;
+    let projectId;
 
     before(() => {
         cy.prepareUserSession();
@@ -38,25 +38,25 @@ context('Export project dataset with 3D task.', { browser: '!firefox' }, () => {
                     input_type: 'text',
                 }],
             }],
-        }).then(({ projectID: pid }) => {
+        }).then(({ projectId: pid }) => {
             const { taskSpec, dataSpec, extras } = defaultTaskSpec({
                 taskName: task.name3d,
                 serverFiles: [task.archiveName],
                 validationParams: task.advancedConfigurationParams,
-                projectID: pid,
+                projectId: pid,
             });
             delete taskSpec.labels;
             cy.headlessCreateTask(taskSpec, dataSpec, extras);
-            projectID = pid;
+            projectId = pid;
         });
     });
 
     after(() => {
-        cy.headlessDeleteProject(projectID);
+        cy.headlessDeleteProject(projectId);
         cy.logout();
     });
 
-    describe(`Testing "Case ${caseID}"`, () => {
+    describe(`Testing "Case ${caseId}"`, () => {
         it('Export project with 3D task. Annotation.', () => {
             cy.goToProjectsList();
             const exportAnnotation3d = {

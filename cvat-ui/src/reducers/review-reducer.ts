@@ -7,7 +7,7 @@ import config from 'config';
 import { AnnotationActionTypes } from 'actions/annotation-actions';
 import { ReviewActionTypes } from 'actions/review-actions';
 import { AuthActionTypes } from 'actions/auth-actions';
-import { QualityConflict } from 'cvat-core-wrapper';
+import { QualityConflict, DimensionType } from 'cvat-core-wrapper';
 import { ReviewState } from '.';
 
 const defaultState: ReviewState = {
@@ -31,11 +31,18 @@ const defaultState: ReviewState = {
 export default function (state: ReviewState = defaultState, action: any): ReviewState {
     switch (action.type) {
         case AnnotationActionTypes.GET_JOB_SUCCESS: {
+            const { job } = action.payload;
+            if (job.dimension === DimensionType.DIMENSION_1D) {
+                // review mode not supported for audio tasks
+                return state;
+            }
+
             const {
                 issues,
                 conflicts,
                 frameData: { number: frame },
             } = action.payload;
+
             const frameIssues = issues.filter((issue: any): boolean => issue.frame === frame);
             const frameConflicts = conflicts.filter((conflict: QualityConflict): boolean => conflict.frame === frame);
 

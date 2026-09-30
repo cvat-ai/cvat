@@ -9,7 +9,7 @@ import Text from 'antd/lib/typography/Text';
 import Collapse from 'antd/lib/collapse';
 import InputNumber from 'antd/lib/input-number';
 import Tag from 'antd/lib/tag';
-import Tooltip from 'antd/lib/tooltip';
+import CVATTooltip from 'components/common/cvat-tooltip';
 
 import { Source } from 'cvat-core-wrapper';
 import ItemAttribute from './object-item-attribute';
@@ -19,6 +19,7 @@ interface Props {
     collapsed: boolean;
     attributes: any[];
     values: Record<number, string>;
+    mixedAttributeIDs?: Set<number>;
     changeAttribute(attrID: number, value: string): void;
     collapse(): void;
     sizeParams: SizeParams | null;
@@ -27,19 +28,47 @@ interface Props {
     score: number;
     votes: number;
     textContent: string;
+    detailsLabel?: string;
 }
 
 export enum SizeType {
+    LENGTH = 'length',
     WIDTH = 'width',
     HEIGHT = 'height',
-    LENGTH = 'length',
 }
 
 export interface SizeParams {
+    length: number;
     width: number;
     height: number;
-    length: number;
 }
+
+// Use point-cloud cuboid terminology in the UI while preserving points[6..8] as X/Y/Z scale storage.
+const sizeFields: {
+    key: keyof SizeParams;
+    type: SizeType;
+    label: string;
+    tooltip: string;
+}[] = [
+    {
+        key: 'length',
+        type: SizeType.LENGTH,
+        label: 'L',
+        tooltip: 'Length along X axis',
+    },
+    {
+        key: 'width',
+        type: SizeType.WIDTH,
+        label: 'W',
+        tooltip: 'Width along Y axis',
+    },
+    {
+        key: 'height',
+        type: SizeType.HEIGHT,
+        label: 'H',
+        tooltip: 'Height along Z axis',
+    },
+];
 
 export function attrValuesAreEqual(next: Record<number, string>, prev: Record<number, string>): boolean {
     const prevKeys = Object.keys(prev);
@@ -52,6 +81,8 @@ export function attrValuesAreEqual(next: Record<number, string>, prev: Record<nu
 }
 
 function attrAreTheSame(prevProps: Props, nextProps: Props): boolean {
+    const prevMixed = prevProps.mixedAttributeIDs || new Set<number>();
+    const nextMixed = nextProps.mixedAttributeIDs || new Set<number>();
     return (
         nextProps.readonly === prevProps.readonly &&
         nextProps.collapsed === prevProps.collapsed &&
@@ -60,14 +91,17 @@ function attrAreTheSame(prevProps: Props, nextProps: Props): boolean {
         nextProps.score === prevProps.score &&
         nextProps.votes === prevProps.votes &&
         nextProps.textContent === prevProps.textContent &&
+        nextProps.detailsLabel === prevProps.detailsLabel &&
+        nextMixed.size === prevMixed.size &&
+        [...nextMixed].every((attributeID: number): boolean => prevMixed.has(attributeID)) &&
         attrValuesAreEqual(nextProps.values, prevProps.values)
     );
 }
 
 function ItemAttributesComponent(props: Props): JSX.Element | null {
     const {
-        collapsed, attributes, values, readonly, changeAttribute, collapse,
-        sizeParams, changeSize, source, score, votes,
+        collapsed, attributes, values, readonly, changeAttribute, collapse, mixedAttributeIDs = new Set(),
+        sizeParams, changeSize, source, score, votes, detailsLabel = 'DETAILS',
     } = props;
 
     const isConsensus = source === Source.CONSENSUS;
@@ -83,7 +117,7 @@ function ItemAttributesComponent(props: Props): JSX.Element | null {
     };
 
     const scoreTag = withScore ? (
-        <Tooltip
+        <CVATTooltip
             title='Consensus score'
             align={{
                 ...baseTooltipAlign,
@@ -93,10 +127,10 @@ function ItemAttributesComponent(props: Props): JSX.Element | null {
             <Tag color='#FFB347' className='cvat-object-item-score-tag'>
                 {score.toFixed(2)}
             </Tag>
-        </Tooltip>
+        </CVATTooltip>
     ) : null;
     const votesTag = withVotes ? (
-        <Tooltip
+        <CVATTooltip
             title='Number of votes'
             align={{
                 ...baseTooltipAlign,
@@ -106,7 +140,7 @@ function ItemAttributesComponent(props: Props): JSX.Element | null {
             <Tag color='#FFB347' className='cvat-object-item-votes-tag'>
                 {votes}
             </Tag>
-        </Tooltip>
+        </CVATTooltip>
     ) : null;
     const scoreVotesElement = scoreTag || votesTag ? (
         <Row className='cvat-object-item-score-votes-wrapper'>
@@ -132,26 +166,25 @@ function ItemAttributesComponent(props: Props): JSX.Element | null {
                     key: 'details',
                     label: (
                         <Row style={{ width: '100%' }} align='middle' justify='space-between'>
-                            <Text style={{ fontSize: 10 }} type='secondary'>DETAILS</Text>
+                            <Text style={{ fontSize: 10 }} type='secondary'>{detailsLabel}</Text>
                             {scoreVotesElement}
                         </Row>
                     ),
                     children: [
                         sizeParams && (
                             <Row key='size' justify='space-around' className='cvat-objects-sidebar-size-params'>
-                                {Object.keys(sizeParams).map((key) => (
-                                    <Col key={key}>
-                                        <Text type='secondary'>
-                                            {`${key.charAt(0).toUpperCase()}:`}
-                                        </Text>
+                                {sizeFields.map((field) => (
+                                    <Col key={field.key}>
+                                        <CVATTooltip title={field.tooltip}>
+                                            <Text type='secondary'>
+                                                {`${field.label}:`}
+                                            </Text>
+                                        </CVATTooltip>
                                         <InputNumber
-                                            value={sizeParams[key as keyof SizeParams] || ''}
+                                            value={sizeParams[field.key] || ''}
                                             onChange={(value) => {
                                                 if (typeof value === 'number') {
-                                                    changeSize(
-                                                        SizeType[key.toUpperCase() as keyof typeof SizeType],
-                                                        value,
-                                                    );
+                                                    changeSize(field.type, value);
                                                 }
                                             }}
                                             disabled={readonly}
@@ -175,6 +208,7 @@ function ItemAttributesComponent(props: Props): JSX.Element | null {
                                         attrName={attribute.name}
                                         attrID={attribute.id}
                                         attrValues={attribute.values}
+                                        mixed={mixedAttributeIDs.has(attribute.id)}
                                         changeAttribute={changeAttribute}
                                     />
                                 </Row>

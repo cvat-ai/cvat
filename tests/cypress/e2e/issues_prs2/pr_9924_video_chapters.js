@@ -2,12 +2,6 @@
 //
 // SPDX-License-Identifier: MIT
 
-function checkFrameNum(frameNum) {
-    cy.get('.cvat-player-frame-selector').within(() => {
-        cy.get('input[role="spinbutton"]').should('have.value', frameNum);
-    });
-}
-
 function switchChapter(chapterNumber) {
     cy.contains('.cvat-player-chapter-menu-list-item', `Kapitel ${chapterNumber}`)
         .should('exist')
@@ -25,7 +19,7 @@ function checkChapterNavigationButtons(direction, expectedSliderPos) {
         .should('exist')
         .and('be.visible')
         .click();
-    checkFrameNum(expectedSliderPos);
+    cy.checkFrameNum(expectedSliderPos);
     cy.get(`.cvat-player-buttons > .cvat-player-${direction}-button-chapter`).rightclick();
     cy.get(`.cvat-player-${direction}-inlined-button`)
         .should('exist')
@@ -52,8 +46,8 @@ context('Video chapters', () => {
         use_cache: true,
     };
 
-    let jobID = null;
-    let taskID = null;
+    let jobId = null;
+    let taskId = null;
 
     before(() => {
         cy.visit('/auth/login');
@@ -61,8 +55,8 @@ context('Video chapters', () => {
         cy.get('.cvat-tasks-page').should('exist').and('be.visible');
         cy.url().should('contain', '/tasks');
         cy.headlessCreateTask(task, storage).then((response) => {
-            taskID = response.taskID;
-            [jobID] = response.jobIDs;
+            taskId = response.taskId;
+            [jobId] = response.jobIds;
         });
     });
 
@@ -72,7 +66,7 @@ context('Video chapters', () => {
 
     describe('Test chapter navigation buttons', () => {
         it('Chapter forward', () => {
-            cy.visit(`/tasks/${taskID}/jobs/${jobID}`);
+            cy.visit(`/tasks/${taskId}/jobs/${jobId}`);
             cy.get('.cvat-player-buttons').should('exist').and('be.visible');
             checkChapterNavigationButtons('next', '20');
         });
@@ -84,11 +78,11 @@ context('Video chapters', () => {
     describe('Test chapter navigation via shortcuts', () => {
         it('Chapter forward (b)', () => {
             cy.realPress('b');
-            checkFrameNum('20');
+            cy.checkFrameNum('20');
         });
         it('Chapter backwards (x)', () => {
             cy.realPress('x');
-            checkFrameNum('0');
+            cy.checkFrameNum('0');
         });
     });
 
@@ -97,9 +91,9 @@ context('Video chapters', () => {
             cy.get('.cvat-player-chapters-menu-button').click();
             cy.get('.cvat-player-chapter-menu-wrapper').should('exist').and('be.visible');
             switchChapter(2);
-            checkFrameNum('20');
+            cy.checkFrameNum('20');
             switchChapter(1);
-            checkFrameNum('0');
+            cy.checkFrameNum('0');
         });
     });
 });

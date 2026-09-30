@@ -41,6 +41,7 @@ export enum JobType {
 }
 
 export enum DimensionType {
+    DIMENSION_1D = '1d',
     DIMENSION_2D = '2d',
     DIMENSION_3D = '3d',
 }
@@ -49,6 +50,7 @@ export enum RQStatus {
     QUEUED = 'queued',
     STARTED = 'started',
     FINISHED = 'finished',
+    CANCELED = 'canceled',
     FAILED = 'failed',
     UNKNOWN = 'unknown',
 }
@@ -56,6 +58,12 @@ export enum RQStatus {
 export enum TaskMode {
     ANNOTATION = 'annotation',
     INTERPOLATION = 'interpolation',
+}
+
+export enum MediaType {
+    IMAGE = 'image',
+    POINT_CLOUD = 'point_cloud',
+    AUDIO = 'audio',
 }
 
 export enum AttributeType {
@@ -70,6 +78,7 @@ export enum ObjectType {
     TAG = 'tag',
     SHAPE = 'shape',
     TRACK = 'track',
+    INTERVAL = 'interval',
 }
 
 export enum ShapeType {
@@ -129,6 +138,7 @@ export enum EventScope {
 }
 
 export enum HistoryActions {
+    CHANGED_OBJECTS = 'Changed objects',
     CHANGED_LABEL = 'Changed label',
     CHANGED_ATTRIBUTES = 'Changed attributes',
     CHANGED_POINTS = 'Changed points',
@@ -141,14 +151,21 @@ export enum HistoryActions {
     CHANGED_PINNED = 'Changed pinned',
     CHANGED_COLOR = 'Changed color',
     CHANGED_HIDDEN = 'Changed hidden',
+    CHANGED_HIDDEN_AND_SELECTION = 'Changed hidden and selection',
     CHANGED_SOURCE = 'Changed source',
+    CHANGED_SKELETON = 'Changed skeleton',
+    CHANGED_AUDIO_POSITION = 'Changed audio position',
+    CHANGED_AUDIO_INTERVALS = 'Changed audio intervals',
+    CHANGED_SELECTION = 'Changed selection',
     MERGED_OBJECTS = 'Merged objects',
     JOINED_OBJECTS = 'Joined objects',
     SLICED_OBJECT = 'Sliced object',
     SPLITTED_TRACK = 'Splitted track',
+    SPLIT_INTERVAL = 'Split interval',
     GROUPED_OBJECTS = 'Grouped objects',
     CREATED_OBJECTS = 'Created objects',
     REMOVED_OBJECT = 'Removed object',
+    REMOVED_SELECTION = 'Removed selection',
     REMOVED_FRAME = 'Removed frame',
     RESTORED_FRAME = 'Restored frame',
     COMMIT_ANNOTATIONS = 'Commit annotations',
@@ -208,6 +225,7 @@ export enum CloudStorageCredentialsType {
     KEY_SECRET_KEY_PAIR = 'KEY_SECRET_KEY_PAIR',
     ACCOUNT_NAME_TOKEN_PAIR = 'ACCOUNT_NAME_TOKEN_PAIR',
     ANONYMOUS_ACCESS = 'ANONYMOUS_ACCESS',
+    CONNECTION_STRING = 'CONNECTION_STRING',
     KEY_FILE_PATH = 'KEY_FILE_PATH',
 }
 
@@ -259,6 +277,7 @@ export enum LabelType {
     POINTS = 'points',
     ELLIPSE = 'ellipse',
     CUBOID = 'cuboid',
+    INTERVAL = 'interval',
     SKELETON = 'skeleton',
     MASK = 'mask',
     TAG = 'tag',

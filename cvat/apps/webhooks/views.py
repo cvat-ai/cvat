@@ -11,22 +11,24 @@ from drf_spectacular.utils import (
 )
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
+from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import SAFE_METHODS
 from rest_framework.response import Response
 
 from cvat.apps.engine.view_utils import list_action, make_paginated_response
 from cvat.apps.iam.filters import ORGANIZATION_OPEN_API_PARAMETERS
 
-from .event_type import AllEvents, OrganizationEvents, ProjectEvents
-from .models import Webhook, WebhookDelivery, WebhookTypeChoice
+from .event_type import AllEvents, OrganizationEvents, ProjectEvents, ServerEvents
+from .models import Webhook, WebhookDelivery
 from .permissions import WebhookPermission
 from .serializers import (
+    AllWebhookTypeChoice,
     EventsSerializer,
     WebhookDeliveryReadSerializer,
     WebhookReadSerializer,
     WebhookWriteSerializer,
 )
-from .signals import ping, redeliver
+from .services import ping, redeliver
 
 
 @extend_schema(tags=["webhooks"])
@@ -65,9 +67,9 @@ class WebhookViewSet(viewsets.ModelViewSet):
     ordering = "-id"
     http_method_names = ["get", "post", "delete", "patch", "put"]
 
-    search_fields = ("target_url", "owner", "type", "description")
-    filter_fields = list(search_fields) + ["id", "project_id", "updated_date"]
-    simple_filters = list(set(search_fields) - {"description"} | {"project_id"})
+    search_fields = ("target_url", "owner", "description")
+    simple_filters = ("target_url", "owner", "type", "project_id")
+    filter_fields = (*simple_filters, "id", "updated_date", "description")
     ordering_fields = list(filter_fields)
     lookup_fields = {"owner": "owner__username"}
     iam_supports_organization_params = True
@@ -106,6 +108,8 @@ class WebhookViewSet(viewsets.ModelViewSet):
                 location=OpenApiParameter.QUERY,
                 type=OpenApiTypes.STR,
                 required=False,
+                enum=[v[0] for v in AllWebhookTypeChoice.choices()],
+                default=AllWebhookTypeChoice.ALL.value,
             )
         ],
         responses={"200": OpenApiResponse(EventsSerializer)},
@@ -117,17 +121,19 @@ class WebhookViewSet(viewsets.ModelViewSet):
         permission_classes=[],
     )
     def events(self, request):
-        webhook_type = request.query_params.get("type", "all")
-        events = None
-        if webhook_type == "all":
-            events = AllEvents
-        elif webhook_type == WebhookTypeChoice.PROJECT:
-            events = ProjectEvents
-        elif webhook_type == WebhookTypeChoice.ORGANIZATION:
-            events = OrganizationEvents
+        webhook_type = request.query_params.get("type", AllWebhookTypeChoice.ALL)
 
-        if events is None:
-            return Response("Incorrect value of type parameter", status=status.HTTP_400_BAD_REQUEST)
+        match webhook_type:
+            case AllWebhookTypeChoice.PROJECT:
+                events = ProjectEvents
+            case AllWebhookTypeChoice.ORGANIZATION:
+                events = OrganizationEvents
+            case AllWebhookTypeChoice.SERVER:
+                events = ServerEvents
+            case AllWebhookTypeChoice.ALL:
+                events = AllEvents
+            case _:
+                raise ValidationError(f"Invalid value of type query parameter, got {webhook_type}")
 
         return Response(EventsSerializer().to_representation(events))
 
@@ -175,7 +181,7 @@ class WebhookViewSet(viewsets.ModelViewSet):
     def redelivery(self, request, pk, delivery_id):
         webhook = self.get_object()
         delivery = webhook.deliveries.get(id=delivery_id)
-        redeliver(webhook, delivery.request)
+        redeliver(webhook=webhook, data=delivery.request)
         return Response({}, status=status.HTTP_200_OK)
 
     @extend_schema(
@@ -188,6 +194,6 @@ class WebhookViewSet(viewsets.ModelViewSet):
         instance = self.get_object()  # force call of check_object_permissions()
         serializer = WebhookReadSerializer(instance, context={"request": request})
 
-        delivery = ping(serializer)
+        delivery = ping(serializer=serializer)
         serializer = WebhookDeliveryReadSerializer(delivery, context={"request": request})
         return Response(serializer.data)

@@ -6,7 +6,7 @@
 
 context('Tests source & target storage for backups.', () => {
     const backupArchiveName = 'project_backup';
-    let projectID = '';
+    let projectId = '';
     let createdCloudStorageId;
     const caseId = '117';
     const taskName = `Case ${caseId}`;
@@ -29,7 +29,7 @@ context('Tests source & target storage for backups.', () => {
         displayName: 'Demo bucket',
         resource: 'public',
         manifest: 'images_with_manifest/manifest.jsonl',
-        endpointUrl: Cypress.config('minioUrl'),
+        endpointUrl: Cypress.config('motoUrl'),
     };
 
     const storageConnectedToCloud = {
@@ -79,9 +79,9 @@ context('Tests source & target storage for backups.', () => {
         },
     };
 
-    function getProjectID() {
+    function getProjectId() {
         cy.url().then((url) => {
-            projectID = Number(url.split('/').slice(-1)[0].split('?')[0]);
+            projectId = Number(url.split('/').slice(-1)[0].split('?')[0]);
         });
     }
 
@@ -118,7 +118,7 @@ context('Tests source & target storage for backups.', () => {
             task.projectName,
         );
         cy.openProject(project.name);
-        getProjectID();
+        getProjectId();
     });
 
     after(() => {
@@ -145,7 +145,7 @@ context('Tests source & target storage for backups.', () => {
             cy.goBack();
         });
 
-        it('Export project to default minio bucket', () => {
+        it('Export project to default moto bucket', () => {
             cy.goToProjectsList();
             cy.backupProject(
                 project.name,
@@ -153,10 +153,10 @@ context('Tests source & target storage for backups.', () => {
                 project.advancedConfiguration.targetStorage,
             );
             cy.waitForFileUploadToCloudStorage();
-            cy.deleteProject(project.name, projectID);
+            cy.deleteProject(project.name, projectId);
         });
 
-        it('Import project from minio bucket', () => {
+        it('Import project from moto bucket', () => {
             cy.restoreProject(
                 `${backupArchiveName}.zip`,
                 project.advancedConfiguration.sourceStorage,

@@ -5,9 +5,9 @@ weight: 1
 description:
 ---
 
-CVAT is an enterprise-grade platform for managing high-quality visual
- datasets for computer vision applications.
-It offers advanced tools for image, video, and 3D annotation,
+CVAT is an enterprise-grade platform for managing high-quality visual and audio
+datasets for computer vision applications.
+It offers advanced tools for image, video, audio, and 3D annotation,
 built-in quality assurance (QA), automation, and secure team collaboration.
 
 Backed by an active open-source community
@@ -62,6 +62,7 @@ Input:
   [**Pillow library**](https://pillow.readthedocs.io/en/stable/handbook/image-file-formats.html),
   including `JPEG`, `PNG`, `BMP`, `GIF`, `PPM`and `TIFF`
 - **Video**: all formats, supported by ffmpeg, including `MP4`, `AVI`, and `MOV`
+- **Audio**: common audio formats, including `WAV`, `MP3`, `FLAC`, and `OPUS`
 - **3D**: `.pcd`, `.bin`
 
 For more information about dataset formats, see
@@ -69,7 +70,7 @@ For more information about dataset formats, see
 
 ## Manual annotation
 
-CVAT supports several tools and modes for manually labeling images, videos, and 3D data.
+CVAT supports several tools and modes for manually labeling images, videos, audio, and 3D data.
 
 These tools define how the editor behaves, how shapes are created,
 and what geometric types you can use during annotation.
@@ -110,6 +111,7 @@ Shapes represent the geometry used to annotate objects. CVAT supports multiple s
 | {{< ilink "/docs/annotation/manual-annotation/shapes/annotation-with-cuboids" "**Cuboids**" >}}      | A tool for creating 3D segmentation masks that capture object volume and position, useful for autonomous driving or robotics.      |
 | {{< ilink "/docs/annotation/manual-annotation/shapes/skeletons" "**Skeletons**" >}}           | A tool for creating segmentation masks of articulated structures, ideal for human pose estimation, animation, and movement analysis. |
 | {{< ilink "/docs/annotation/manual-annotation/shapes/annotation-with-brush-tool" "**Brush Tool**" >}}  | A tool for creating detailed, free-form segmentation masks where pixel-level precision is required, such as in medical imaging.     |
+| {{< ilink "/docs/annotation/audio-editor" "**Interval**" >}}                                | Used to annotate a labeled time range in an audio recording, such as speech, or a sound event. |
 | {{< ilink "/docs/annotation/manual-annotation/modes/annotation-with-tags" "**Tags**" >}}       | Useful for image and video classification tasks, like identifying scenes or themes in a dataset.               |
 
 ## Automated annotation

@@ -25,13 +25,13 @@ const validationPatterns = {
     },
 
     validateUsernameLength: {
-        pattern: /(?=.{5,})/,
-        message: 'Username must have at least 5 characters',
+        pattern: /^.{5,150}$/u,
+        message: 'Username must be between 5 and 150 characters',
     },
 
     validateUsernameCharacters: {
-        pattern: /^[a-zA-Z0-9_\-.]{5,}$/,
-        message: 'Only characters (a-z), (A-Z), (0-9), -, _, . are available',
+        pattern: /^[\p{L}\p{N}_@.+-]+$/u,
+        message: 'Only letters, numbers, and @/./+/-/_ characters are available',
     },
 
     /*
@@ -45,7 +45,7 @@ const validationPatterns = {
         https://stackoverflow.com/questions/6377407/how-to-validate-both-chinese-unicode-and-english-name
     */
     validateName: {
-        // eslint-disable-next-line
+
         pattern: /^(\p{L}|\p{Pd}|\p{Cf}|\p{Pc}|['\s]){2,}$/gu,
         message: 'Invalid name',
     },
@@ -66,7 +66,7 @@ const validationPatterns = {
     },
 
     validateURL: {
-        // eslint-disable-next-line
+
         pattern: /^(https?:\/\/)[^\s$.?#].[^\s]*$/, // url, ip
         message: 'URL is not valid',
     },

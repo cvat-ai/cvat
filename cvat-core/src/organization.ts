@@ -4,9 +4,9 @@
 // SPDX-License-Identifier: MIT
 
 import {
-    OrganizationMembersFilter,
     SerializedInvitationData, SerializedOrganization, SerializedOrganizationContact, SerializedUser,
 } from './server-response-types';
+import { OrganizationMembersFilter } from './server-request-types';
 import {
     checkFilter, checkObjectType, fieldsToSnakeCase, isEnum, isInteger, isString,
 } from './common';
@@ -345,7 +345,7 @@ Object.defineProperties(Organization.prototype.members, {
                         const invitationData = await serverProxy.organizations.invitations({ key: invitation });
                         [rawInvitation] = invitationData.results;
                     // eslint-disable-next-line no-empty
-                    } catch (e) {}
+                    } catch (_e) {}
                 }
 
                 return new Membership({

@@ -13,12 +13,12 @@ context('Filters functionality.', () => {
     const additionalAttrsLabelShape = [
         { name: 'type', values: 'shape', type: 'Text' },
         { name: 'count points', values: '3', type: 'Text' },
-        { name: 'polygon', values: 'True', type: 'Checkbox' },
+        { name: 'polygon', values: 'true', type: 'Checkbox' },
     ];
     const labelTrack = 'track 4 points';
     const additionalAttrsLabelTrack = [
         { name: 'type', values: 'track', type: 'Text' },
-        { name: 'polygon', values: 'True', type: 'Checkbox' },
+        { name: 'polygon', values: 'true', type: 'Checkbox' },
         { name: 'count points', values: '4', type: 'Text' },
     ];
 
@@ -35,7 +35,7 @@ context('Filters functionality.', () => {
         numberOfPoints: null,
     };
     const createRectangleTrack2Points = {
-        points: 'By 2 Points',
+        points: '2 Points',
         type: 'Track',
         labelName: labelTrack,
         firstX: 260,
@@ -44,7 +44,7 @@ context('Filters functionality.', () => {
         secondY: 250,
     };
     const createRectangleShape4Points = {
-        points: 'By 4 Points',
+        points: '4 Points',
         type: 'Shape',
         labelName: labelShape,
         firstX: 550,

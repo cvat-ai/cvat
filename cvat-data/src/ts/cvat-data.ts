@@ -19,8 +19,9 @@ export enum ChunkQuality {
 }
 
 export enum DimensionType {
-    DIMENSION_3D = '3d',
+    DIMENSION_1D = '1d',
     DIMENSION_2D = '2d',
+    DIMENSION_3D = '3d',
 }
 
 export function decodeContextImages(
@@ -407,7 +408,7 @@ export class FrameDecoder {
                     dimension2D: DimensionType.DIMENSION_2D,
                 });
             }
-        } catch (error) {
+        } catch (_error) {
             this.chunkIsBeingDecoded = null;
             release();
         }

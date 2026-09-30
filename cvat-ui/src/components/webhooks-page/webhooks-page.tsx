@@ -4,7 +4,8 @@
 
 import './styles.scss';
 import React, { useCallback, useEffect, useState } from 'react';
-import { useDispatch, useSelector, shallowEqual } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
+import { shallowEqual } from 'utils/redux';
 import {
     useHistory, useRouteMatch,
 } from 'react-router';
@@ -19,6 +20,7 @@ import { getWebhooksAsync } from 'actions/webhooks-actions';
 import { LeftOutlined } from '@ant-design/icons';
 import { useResourceQuery } from 'utils/hooks';
 import { selectionActions } from 'actions/selection-actions';
+import { getCore, type WebhookEvent } from 'cvat-core-wrapper';
 import WebhooksList from './webhooks-list';
 import TopBar from './top-bar';
 import EmptyWebhooksListComponent from './empty-list';
@@ -26,6 +28,8 @@ import EmptyWebhooksListComponent from './empty-list';
 interface ProjectRouteMatch {
     id?: string;
 }
+
+const core = getCore();
 
 function WebhooksPage(): JSX.Element | null {
     const dispatch = useDispatch();
@@ -51,6 +55,7 @@ function WebhooksPage(): JSX.Element | null {
     const projectsMatch = useRouteMatch<ProjectRouteMatch>({ path: '/projects/:id/webhooks' });
 
     const [onCreateParams, setOnCreateParams] = useState<string | null>(null);
+    const [webhookEvents, setWebhookEvents] = useState<WebhookEvent[]>([]);
     const onCreateWebhook = useCallback(() => {
         history.push(`/webhooks/create?${onCreateParams ?? ''}`);
     }, [onCreateParams]);
@@ -74,8 +79,14 @@ function WebhooksPage(): JSX.Element | null {
             const { id } = projectsMatch.params;
             setOnCreateParams(`projectId=${id}`);
             dispatch(getWebhooksAsync({ ...updatedQuery, projectId: +id }));
+            core.classes.Webhook.availableEvents(core.enums.WebhookSourceType.PROJECT)
+                .then(setWebhookEvents)
+                .catch(() => setWebhookEvents([]));
         } else if (organization) {
             dispatch(getWebhooksAsync(updatedQuery));
+            core.classes.Webhook.availableEvents(core.enums.WebhookSourceType.ORGANIZATION)
+                .then(setWebhookEvents)
+                .catch(() => setWebhookEvents([]));
         } else {
             history.push('/');
         }
@@ -96,7 +107,7 @@ function WebhooksPage(): JSX.Element | null {
 
     const content = totalCount ? (
         <>
-            <WebhooksList />
+            <WebhooksList webhookEvents={webhookEvents} />
             <Row justify='center' align='middle' className='cvat-resource-pagination-wrapper'>
                 <Col md={22} lg={18} xl={16} xxl={14}>
                     <Pagination

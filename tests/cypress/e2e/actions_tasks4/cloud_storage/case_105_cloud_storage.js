@@ -22,13 +22,13 @@ context('Cloud storage.', () => {
         resource: 'container',
         display_name: 'Demonstration container',
         prefix: 'GCS_prefix',
-        projectID: 'Some ID',
+        projectId: 'Some ID',
     };
 
     const cloudStorageDataWithoutManifest = {
         displayName: 'Without manifest file',
         resource: 'public',
-        endpointUrl: Cypress.config('minioUrl'),
+        endpointUrl: Cypress.config('motoUrl'),
     };
 
     before(() => {
@@ -157,8 +157,8 @@ context('Cloud storage.', () => {
             cy.get('#prefix').type(dummyData.prefix);
             cy.get('#prefix').should('have.value', dummyData.prefix);
             cy.get('#project_id').should('exist');
-            cy.get('#project_id').type(dummyData.projectID);
-            cy.get('#project_id').should('have.value', dummyData.projectID);
+            cy.get('#project_id').type(dummyData.projectId);
+            cy.get('#project_id').should('have.value', dummyData.projectId);
             cy.get('#location').should('exist').click();
             cy.get('.ant-select-dropdown')
                 .not('.ant-select-dropdown-hidden')
@@ -173,12 +173,12 @@ context('Cloud storage.', () => {
             cy.get('.cvat-cloud-storage-form').should('not.exist');
         });
 
-        it('Check select files from "Cloud Storage" when creating a task.', () => {
+        it('Check select files from "Cloud storage" when creating a task.', () => {
             cy.contains('.cvat-header-button', 'Tasks').click();
             cy.get('.cvat-create-task-dropdown').click();
             cy.get('.cvat-create-task-button').should('be.visible').click();
             cy.get('.cvat-create-task-content').should('be.visible').within(() => {
-                cy.contains('[role="tab"]', 'Cloud Storage').click();
+                cy.contains('[role="tab"]', 'Cloud storage').click();
                 cy.get('#cloudStorageSelect').should('exist');
             });
         });

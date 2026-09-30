@@ -1,0 +1,112 @@
+// Copyright (C) CVAT.ai Corporation
+//
+// SPDX-License-Identifier: MIT
+
+.cvat-audio-region-details {
+    border-radius: $grid-unit-size;
+    box-shadow:
+        0 1px 3px rgba(0, 0, 0, 8%),
+        0 4px 12px rgba(0, 0, 0, 4%);
+    border: 1px solid #e5e7eb;
+    overflow: hidden;
+    flex: 1 1 0;
+    display: flex;
+    min-height: $grid-unit-size * 40;
+    flex-direction: column;
+
+    > .cvat-audio-interval-header {
+        padding: $grid-unit-size $grid-unit-size $grid-unit-size $grid-unit-size * 2;
+        background-color: var(--region-item-color);
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    .cvat-audio-region-details-content {
+        overflow-y: auto;
+        padding: $grid-unit-size;
+        flex: 1;
+
+        &::-webkit-scrollbar {
+            width: $grid-unit-size * 0.75;
+        }
+
+        &::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        &::-webkit-scrollbar-thumb {
+            background-color: rgba(0, 0, 0, 15%);
+            border-radius: 3px;
+
+            &:hover {
+                background-color: rgba(0, 0, 0, 25%);
+            }
+        }
+    }
+
+    .cvat-audio-region-attributes-collapse {
+        border: none;
+        background: transparent;
+
+        .ant-collapse-item {
+            border: 1px solid #f0f0f0;
+            border-radius: $grid-unit-size !important;
+            margin-bottom: $grid-unit-size * 0.75;
+            overflow: hidden;
+            transition: border-color 0.15s ease;
+
+            &:hover {
+                border-color: #40a9ff;
+            }
+
+            &:last-child {
+                margin-bottom: 0;
+            }
+
+            .ant-collapse-header {
+                padding: $grid-unit-size $grid-unit-size * 1.75;
+                font-size: 13px;
+                color: #303030;
+                background-color: #f9fafb;
+                transition: background-color 0.15s ease;
+            }
+
+            &.ant-collapse-item-active .ant-collapse-header {
+                background-color: #f1f1f1;
+            }
+
+            .ant-collapse-content {
+                border-top: 1px solid #f0f0f0;
+
+                .ant-collapse-content-box {
+                    padding: $grid-unit-size * 1.25 $grid-unit-size * 1.75;
+                }
+            }
+        }
+    }
+
+    .cvat-audio-region-attr-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+    }
+
+    .cvat-audio-region-attr-name {
+        font-weight: 500;
+    }
+
+    .cvat-audio-region-attr-type {
+        font-size: 11px;
+        font-style: italic;
+        color: rgba(0, 0, 0, 45%);
+        margin-left: $grid-unit-size;
+    }
+
+    .cvat-audio-region-no-attributes {
+        padding: $grid-unit-size * 2;
+        text-align: center;
+        font-size: 13px;
+        color: #6b7280;
+        font-style: italic;
+    }
+}

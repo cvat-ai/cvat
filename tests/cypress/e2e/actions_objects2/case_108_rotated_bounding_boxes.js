@@ -11,7 +11,7 @@ import { decomposeMatrix } from '../../support/utils';
 context('Rotated bounding boxes.', () => {
     const caseId = '108';
     const createRectangleShape2Points = {
-        points: 'By 2 Points',
+        points: '2 Points',
         type: 'Shape',
         labelName,
         firstX: 250,
@@ -20,7 +20,7 @@ context('Rotated bounding boxes.', () => {
         secondY: 450,
     };
     const createRectangleTrack2Points = {
-        points: 'By 2 Points',
+        points: '2 Points',
         type: 'Track',
         labelName,
         firstX: createRectangleShape2Points.firstX,
@@ -68,8 +68,8 @@ context('Rotated bounding boxes.', () => {
 
     describe(`Testing case "${caseId}"`, () => {
         it('Check that bounding boxes can be rotated.', () => {
-            cy.shapeRotate('#cvat_canvas_shape_1', '15.7');
-            cy.shapeRotate('#cvat_canvas_shape_2', '15.7');
+            cy.shapeRotate('#cvat_canvas_shape_1', '17.3');
+            cy.shapeRotate('#cvat_canvas_shape_2', '17.3');
         });
 
         it('Check interpolation, merging/splitting rotated shapes.', () => {
@@ -87,7 +87,7 @@ context('Rotated bounding boxes.', () => {
                 }
             });
 
-            cy.shapeRotate('#cvat_canvas_shape_2', '29.8');
+            cy.shapeRotate('#cvat_canvas_shape_2', '32.2');
 
             // Comparison of the values of the shape attribute of the current frame with the previous frame
             testCompareRotate('cvat_canvas_shape_2', 0);
@@ -112,7 +112,7 @@ context('Rotated bounding boxes.', () => {
             cy.get('#cvat_canvas_shape_4').should('be.visible');
             cy.goCheckFrameNumber(9);
 
-            cy.shapeRotate('#cvat_canvas_shape_4', '15.7');
+            cy.shapeRotate('#cvat_canvas_shape_4', '17.3');
 
             // Comparison of the values of the shape attribute of the current frame with the previous frame
             testCompareRotate('cvat_canvas_shape_4', 2);
@@ -144,9 +144,9 @@ context('Rotated bounding boxes.', () => {
             cy.get('.cvat-canvas-container').click(500, 385);
             cy.get('#cvat_canvas_shape_5').trigger('mousemove');
             cy.get('#cvat_canvas_shape_5').should('have.class', 'cvat_canvas_shape_activated');
-            cy.get('body').type('{ctrl}c');
+            cy.pressWithPlatformModifier('c');
             cy.get('.cvat-canvas-container').trigger('mousemove', 500, 385);
-            cy.get('body').type('{ctrl}v');
+            cy.pressWithPlatformModifier('v');
             cy.get('.cvat-canvas-container').click(500, 385);
             cy.get('#cvat_canvas_shape_7').should('be.visible');
 

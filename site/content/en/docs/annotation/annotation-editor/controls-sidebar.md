@@ -13,6 +13,7 @@ aliases:
 |Icon |Description |
 |-- |-- |
 |![Cursor icon](/images/image148.jpg)|`Cursor` (`Esc`)- a basic annotation editing tool. |
+|—|`Select objects` - activates persistent selection-box mode for selecting and editing multiple objects. See {{< ilink "/docs/annotation/manual-annotation/utilities/multi-object-selection" "Multi-object selection" >}}.|
 |![Move icon](/images/image149.jpg)|`Move the image`- a tool for moving around the image without<br/> the possibility of editing.|
 |![Rotate icon](/images/image102.jpg)|`Rotate`- two buttons to rotate the current frame<br/> a clockwise (`Ctrl+R`) and anticlockwise (`Ctrl+Shift+R`).<br/> You can enable `Rotate all images` in the settings to rotate all the images in the job|
 
@@ -55,8 +56,8 @@ aliases:
 |![Merge shapes icon](/images/image172.jpg)|`Merge Shapes`(`M`) - starts/stops the merging shapes mode. |{{< ilink "/docs/annotation/manual-annotation/shapes/track-mode-basics" "Track mode (basics)" >}}|
 |![Group shapes icon](/images/image173.jpg)|`Group Shapes` (`G`) - starts/stops the grouping shapes mode.|{{< ilink "/docs/annotation/manual-annotation/shapes/shape-grouping" "Shape grouping" >}}|
 |![Split icon](/images/image174.jpg)|`Split` - splits a track. |{{< ilink "/docs/annotation/manual-annotation/shapes/track-mode-basics" "Track mode (advanced)" >}}|
-|![Join labels icon](/images/join-masks-icon.jpg)|Joins multiple labels into one |{{< ilink "/docs/annotation/manual-annotation/utilities/slice-and-join#joining-cvat-labels" "**Joining mask tool**" >}}|
-|![Slice label icon](/images/slicing-tool-icon.jpg)|Slices one label into several.|{{< ilink "/docs/annotation/manual-annotation/utilities/slice-and-join#slicing-cvat-labels" "**Slice mask/polygon**" >}}|
+|![Join labels icon](/images/join-masks-icon.jpg)|Joins multiple polygon or mask labels into one or more resulting shapes.|{{< ilink "/docs/annotation/manual-annotation/utilities/slice-and-join#joining-polygons-and-masks" "**Join tool**" >}}|
+|![Slice label icon](/images/slicing-tool-icon.jpg)|Slices one label into several.|{{< ilink "/docs/annotation/manual-annotation/utilities/slice-and-join#slicing-polygons-and-masks" "**Slice mask/polygon**" >}}|
 
 ---
 

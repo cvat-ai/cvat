@@ -9,7 +9,7 @@ import { AboutState } from '.';
 import pjson from '../../package.json';
 
 const defaultState: AboutState = {
-    server: {},
+    server: null,
     packageVersion: {
         ui: pjson.version,
     },

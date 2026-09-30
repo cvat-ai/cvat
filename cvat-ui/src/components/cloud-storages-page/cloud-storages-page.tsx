@@ -6,7 +6,8 @@
 import './styles.scss';
 import React, { useCallback, useEffect, useState } from 'react';
 import { useHistory } from 'react-router';
-import { shallowEqual, useDispatch, useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
+import { shallowEqual } from 'utils/redux';
 import { Row } from 'antd/lib/grid';
 import Spin from 'antd/lib/spin';
 

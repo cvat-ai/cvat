@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+from enum import StrEnum
 from typing import cast
 
 from django.conf import settings
@@ -10,7 +11,7 @@ from rest_framework.exceptions import PermissionDenied, ValidationError
 from cvat.apps.engine.models import Job, Project, Task
 from cvat.apps.engine.permissions import TaskPermission
 from cvat.apps.engine.types import ExtendedRequest
-from cvat.apps.iam.permissions import OpenPolicyAgentPermission, StrEnum, get_iam_context
+from cvat.apps.iam.permissions import OpenPolicyAgentPermission, get_iam_context
 
 from .models import ConsensusSettings
 

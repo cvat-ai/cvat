@@ -28,7 +28,7 @@ import { AIToolsIcon } from 'icons';
 import { Canvas, convertShapesForInteractor, InteractionResult } from 'cvat-canvas-wrapper';
 import {
     getCore, Label, MLModel, ObjectState, ObjectType, ShapeType, Job,
-    MinimalShape, InteractorResults, TrackerResults,
+    MinimalShape, InteractorResults, TrackerResults, DimensionType,
 } from 'cvat-core-wrapper';
 import openCVWrapper from 'utils/opencv-wrapper/opencv-wrapper';
 import {
@@ -41,14 +41,16 @@ import {
     updateAnnotationsAsync,
     createAnnotationsAsync,
 } from 'actions/annotation-actions';
-import DetectorRunner, { AnnotateTaskRequestBody } from 'components/model-runner-modal/detector-runner';
+import DetectorRunner, {
+    AnnotateTaskRequestBody,
+    type RegionOfInterest,
+} from 'components/model-runner-modal/detector-runner';
+import RegionOfInterestInputComponent from 'components/model-runner-modal/region-of-interest-input';
 import LabelSelector from 'components/label-selector/label-selector';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import CVATMarkdown from 'components/common/cvat-markdown';
 
-import ApproximationAccuracy, {
-    thresholdFromAccuracy,
-} from 'components/annotation-page/standard-workspace/controls-side-bar/approximation-accuracy';
+import ApproximationAccuracy from 'components/annotation-page/standard-workspace/controls-side-bar/approximation-accuracy';
 import ConfidenceThreshold from 'components/annotation-page/standard-workspace/controls-side-bar/confidence-threshold';
 import { switchToolsBlockerState } from 'actions/settings-actions';
 import withVisibilityHandling from './handle-popover-visibility';
@@ -65,17 +67,17 @@ interface StateToProps {
     interactors: MLModel[];
     detectors: MLModel[];
     trackers: MLModel[];
-    curZOrder: number;
+    currentZOrder: number;
     defaultApproxPolyAccuracy: number;
     toolsBlockerState: ToolsBlockerState;
-    frameIsDeleted: boolean;
+    frameData: { width: number; height: number; deleted?: boolean };
     interactorExtras: PluginComponent[];
 }
 
 interface DispatchToProps {
     updateAnnotations: (states: ObjectState[]) => Promise<void>;
-    createAnnotations: (states: ObjectState[]) => Promise<void>;
-    fetchAnnotations: () => Promise<void>;
+    createAnnotations: (states: ObjectState[]) => void;
+    fetchAnnotations: () => void;
     onInteractionStart: typeof interactWithCanvas;
     onSwitchToolsBlockerState: typeof switchToolsBlockerState;
     switchNavigationBlocked: typeof switchNavigationBlockedAction;
@@ -92,10 +94,10 @@ function mapStateToProps(state: CombinedState): StateToProps {
             job: { instance: jobInstance, labels },
             canvas: { instance: canvasInstance, activeControl },
             player: {
-                frame: { number: frame, data: { deleted: frameIsDeleted } },
+                frame: { number: frame, data: frameData },
             },
             annotations: {
-                zLayer: { cur: curZOrder },
+                zLayer: { cur: currentZOrder },
                 states,
             },
             drawing: { activeLabelID },
@@ -128,10 +130,10 @@ function mapStateToProps(state: CombinedState): StateToProps {
         canvasInstance: canvasInstance as Canvas,
         jobInstance: jobInstance as Job,
         frame,
-        curZOrder,
+        currentZOrder,
         defaultApproxPolyAccuracy,
         toolsBlockerState,
-        frameIsDeleted,
+        frameData,
         interactorExtras,
     };
 }
@@ -165,11 +167,19 @@ interface State {
     showConfidenceControl: boolean;
     approxPolyAccuracy: number;
     thresholdValue: number;
+    activeTab: 'detectors' | 'interactors' | 'trackers';
     mode: 'detection' | 'interaction' | 'tracking';
     portals: React.ReactPortal[];
+    allowROI: boolean;
+    interactorRegionOfInterest: RegionOfInterest;
+    detectorRegionOfInterest: RegionOfInterest;
+    toolsPopoverVisible: boolean;
 }
 
-type DetectorResults = Extract<Awaited<ReturnType<typeof core.lambda.call>>, { version: number }>;
+type DetectorResults = Extract<
+    Awaited<ReturnType<typeof core.lambda.call>>,
+    { tags: unknown[]; shapes: unknown[]; tracks: unknown[] }
+>;
 
 function trackedRectangleMapper(shape: MinimalShape): MinimalShape {
     return {
@@ -234,6 +244,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         latestResponse: {
             rle: Int32Array;
             points: [number, number][];
+            contours: [number, number][][];
             approximatedPoints: [number, number][];
             confidence: number;
         }[];
@@ -268,7 +279,12 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             interactorResponseReceived: false,
             showConfidenceControl: false,
             mode: 'interaction',
+            activeTab: 'interactors',
             portals: [],
+            allowROI: props.jobInstance.dimension === DimensionType.DIMENSION_2D,
+            interactorRegionOfInterest: null,
+            detectorRegionOfInterest: null,
+            toolsPopoverVisible: false,
         };
 
         this.interaction = {
@@ -298,7 +314,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
     public componentDidUpdate(prevProps: Props, prevState: State): void {
         const {
-            isActivated, defaultApproxPolyAccuracy, states, toolsBlockerState,
+            isActivated, defaultApproxPolyAccuracy, states, toolsBlockerState, jobInstance,
         } = this.props;
         const {
             approxPolyAccuracy, mode, activeTracker, thresholdValue,
@@ -307,6 +323,14 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         if (prevProps.states !== states || prevState.activeTracker !== activeTracker) {
             this.setState({
                 portals: this.collectTrackerPortals(),
+            });
+        }
+
+        if (prevProps.jobInstance.dimension !== jobInstance.dimension) {
+            this.setState({
+                allowROI: jobInstance.dimension === DimensionType.DIMENSION_2D,
+                interactorRegionOfInterest: null,
+                detectorRegionOfInterest: null,
             });
         }
 
@@ -380,6 +404,84 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         return trackers.filter((tracker: MLModel) => tracker.supportedShapeTypes!.includes(ShapeType.RECTANGLE));
     }
 
+    private renderROIControls(): JSX.Element | null {
+        const { canvasInstance, frameData } = this.props;
+
+        return (
+            <RegionOfInterestInputComponent
+                frameWidth={frameData.width}
+                frameHeight={frameData.height}
+                canvasInstance={canvasInstance}
+                onSubmit={(interactorRegionOfInterest) => this.setState({ interactorRegionOfInterest })}
+            />
+        );
+    }
+
+    private renderRegionOfInterestOverlay(): ReactPortal | null {
+        const {
+            canvasInstance,
+            frameData: { width: frameWidth, height: frameHeight },
+            isActivated,
+        } = this.props;
+        const {
+            interactorRegionOfInterest, detectorRegionOfInterest, toolsPopoverVisible, mode, activeTab,
+        } = this.state;
+        const attachmentBoard = window.document.getElementById('cvat_canvas_attachment_board');
+        let regionOfInterest = null;
+        if ((activeTab === 'interactors' && toolsPopoverVisible) || (isActivated && mode === 'interaction')) {
+            regionOfInterest = interactorRegionOfInterest;
+        } else if (activeTab === 'detectors' && toolsPopoverVisible) {
+            regionOfInterest = detectorRegionOfInterest;
+        }
+
+        if (
+            !attachmentBoard ||
+            !Number.isInteger(frameWidth) ||
+            !Number.isInteger(frameHeight) ||
+            !regionOfInterest
+        ) {
+            return null;
+        }
+
+        const { offset } = canvasInstance.geometry;
+        const overlayWidth = frameWidth + offset * 2;
+        const overlayHeight = frameHeight + offset * 2;
+        const overlayROI = {
+            xtl: regionOfInterest[0] + offset,
+            ytl: regionOfInterest[1] + offset,
+            xbr: regionOfInterest[2] + offset,
+            ybr: regionOfInterest[3] + offset,
+        };
+
+        const clipPath = `
+            polygon(
+                evenodd,
+                0 0,
+                ${overlayWidth}px 0,
+                ${overlayWidth}px ${overlayHeight}px,
+                0 ${overlayHeight}px,
+                0 0,
+                ${overlayROI.xtl}px ${overlayROI.ytl}px,
+                ${overlayROI.xbr}px ${overlayROI.ytl}px,
+                ${overlayROI.xbr}px ${overlayROI.ybr}px,
+                ${overlayROI.xtl}px ${overlayROI.ybr}px,
+                ${overlayROI.xtl}px ${overlayROI.ytl}px
+            )
+        `;
+
+        return ReactDOM.createPortal(
+            <div
+                className='cvat-automatic-annotation-region-of-interest-overlay'
+                style={{
+                    width: overlayWidth,
+                    height: overlayHeight,
+                    clipPath,
+                }}
+            />,
+            attachmentBoard,
+        );
+    }
+
     private contextmenuDisabler = (e: MouseEvent): void => {
         if (
             e.target &&
@@ -429,7 +531,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                 const response = await core.lambda.call(
                     jobInstance.taskId,
                     interactor,
-                    { ...data, job: jobInstance.id },
+                    { ...data, type: 'interact', job: jobInstance.id },
                 ) as InteractorResults;
 
                 if (this.interaction.id !== interactionId || this.interaction.isAborted) {
@@ -440,18 +542,23 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                 const latestResponse: ToolsControlComponent['interaction']['latestResponse'] = [];
                 let showConfidenceControl = false;
                 for (const item of response.shapes) {
-                    const polygonPoints = this.receivePointsFromMask(item.points);
+                    if (item.type !== ShapeType.MASK) continue;
+
+                    const points = Int32Array.from(item.points);
+                    const contours = this.receiveContoursFromMask(points);
+                    const polygonPoints = this.receivePointsFromMask(contours);
                     if (polygonPoints.length < 3) {
                         continue;
                     }
 
-                    const approximated = this.approximateResponsePoints(polygonPoints!);
+                    const approximated = this.approximateResponsePoints(polygonPoints);
                     const confidenceAttr = item.attributes.find((attr) => attr.spec_id === 0);
                     const confidence = confidenceAttr ? +confidenceAttr.value : 1;
                     showConfidenceControl = showConfidenceControl || !!confidenceAttr;
                     latestResponse.push({
-                        rle: item.points,
+                        rle: points,
                         points: polygonPoints,
+                        contours,
                         approximatedPoints: approximated,
                         confidence,
                     });
@@ -484,7 +591,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
     private onInteraction = (e: Event): void => {
         const { frame, isActivated } = this.props;
-        const { activeInteractor } = this.state;
+        const { activeInteractor, interactorRegionOfInterest } = this.state;
 
         if (!isActivated) {
             return;
@@ -499,6 +606,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         const boxes = convertShapesForInteractor(shapes, 'rectangle', 'positive');
         const posPoints = convertShapesForInteractor(shapes, 'points', 'positive');
         const negPoints = convertShapesForInteractor(shapes, 'points', 'negative');
+
         this.interaction.latestRequest = {
             interactor,
             data: {
@@ -506,6 +614,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                 obj_bbox: boxes,
                 pos_points: posPoints,
                 neg_points: negPoints,
+                ...(interactorRegionOfInterest ? { roi: interactorRegionOfInterest } : {}),
             },
         };
 
@@ -515,10 +624,10 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
     private onTracking = async (e: Event): Promise<void> => {
         const { trackedShapes, activeTracker, activeLabelID } = this.state;
         const {
-            isActivated, jobInstance, frame, curZOrder, fetchAnnotations,
+            isActivated, jobInstance, frame, currentZOrder, fetchAnnotations,
         } = this.props;
 
-        if (!isActivated || !activeLabelID) {
+        if (!isActivated || !activeLabelID || !activeTracker) {
             return;
         }
 
@@ -529,34 +638,37 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             return;
         }
 
-        // TODO: support more rectangles at the same time
-        // OR: drop this tracking method
+        const { shapes } = (e as CustomEvent<{ shapes: InteractionResult[] | null }>).detail;
+        if (!Array.isArray(shapes) || !shapes.length) {
+            return;
+        }
 
         try {
-            const { points } = (e as CustomEvent).detail.shapes[0];
-            const state = new core.classes.ObjectState({
-                shapeType: ShapeType.RECTANGLE,
-                objectType: ObjectType.TRACK,
-                source: core.enums.Source.SEMI_AUTO,
-                zOrder: curZOrder,
-                label,
-                points,
-                frame,
-                occluded: false,
-                attributes: {},
-                descriptions: [`Trackable (${activeTracker?.name})`],
-            });
+            const states = shapes.map(({ points }) => (
+                new core.classes.ObjectState({
+                    shapeType: ShapeType.RECTANGLE,
+                    objectType: ObjectType.TRACK,
+                    source: core.enums.Source.SEMI_AUTO,
+                    zOrder: currentZOrder,
+                    label,
+                    points,
+                    frame,
+                    occluded: false,
+                    attributes: {},
+                    descriptions: [`Trackable (${activeTracker.name})`],
+                })
+            ));
 
-            const [clientID] = await jobInstance.annotations.put([state]);
+            const clientIDs = await jobInstance.annotations.put(states);
             this.setState({
                 trackedShapes: [
                     ...trackedShapes,
-                    {
+                    ...clientIDs.map((clientID: number, index: number): TrackedShape => ({
                         clientID,
                         serverlessState: null,
-                        shapePoints: points,
-                        trackerModel: activeTracker as MLModel,
-                    },
+                        shapePoints: states[index].points!,
+                        trackerModel: activeTracker,
+                    })),
                 ],
             });
 
@@ -573,13 +685,17 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
     private interactionListener = async (e: Event): Promise<void> => {
         const { toolsBlockerState, isActivated, canvasInstance } = this.props;
-        const { activeInteractor, mode } = this.state;
+        const { activeInteractor, mode, interactorRegionOfInterest } = this.state;
 
-        if (!isActivated || !activeInteractor) {
+        if (!isActivated) {
             return;
         }
 
         if (mode === 'interaction') {
+            if (!activeInteractor) {
+                return;
+            }
+
             const { shapes, finished } = (e as CustomEvent<{ shapes: InteractionResult[], finished: boolean }>).detail;
 
             if (finished) {
@@ -603,7 +719,10 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                     canvasInstance.interact({
                         enabled: true,
                         command: 'draw_box',
-                        settings: { crosshair: true },
+                        settings: {
+                            crosshair: true,
+                            ...(interactorRegionOfInterest ? { regionOfInterest: interactorRegionOfInterest } : {}),
+                        },
                     });
                     return;
                 }
@@ -612,7 +731,10 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                 canvasInstance.interact({
                     enabled: true,
                     command: 'draw_points',
-                    settings: { crosshair: false },
+                    settings: {
+                        crosshair: false,
+                        ...(interactorRegionOfInterest ? { regionOfInterest: interactorRegionOfInterest } : {}),
+                    },
                 });
 
                 if (posPoints.length < minPosPoints || negPoints.length < minNegPoints) {
@@ -664,9 +786,10 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         const shapesToBeDrawn = this.interaction.latestResponse
             .filter(({ confidence }) => typeof confidence !== 'number' || confidence >= thresholdValue)
             .filter(({ approximatedPoints }) => !convertMasksToPolygons || approximatedPoints.length >= 3)
-            .map(({ rle, approximatedPoints }) => ({
+            .map(({ rle, contours, approximatedPoints }) => ({
                 shapeType: convertMasksToPolygons ? ShapeType.POLYGON : ShapeType.MASK,
                 points: convertMasksToPolygons ? approximatedPoints.flat() : rle,
+                maskOutlines: contours.map((contour) => contour.flat()),
             }));
 
         canvasInstance.interact({
@@ -914,7 +1037,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                             duration: 0,
                             className: 'cvat-tracking-notice',
                         });
-                        // eslint-disable-next-line no-await-in-loop
+
                         const response = await core.lambda.call(jobInstance.taskId, tracker, {
                             type: 'track',
                             frame,
@@ -961,7 +1084,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
     private async constructFromLatestResponse(): Promise<void> {
         const { convertMasksToPolygons, thresholdValue } = this.state;
         const {
-            frame, labels, curZOrder, activeLabelID, createAnnotations,
+            frame, labels, currentZOrder, activeLabelID, createAnnotations,
         } = this.props;
 
         if (!this.interaction.latestResponse.length) {
@@ -974,7 +1097,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             source: core.enums.Source.SEMI_AUTO,
             label: labels.find((label) => label.id === activeLabelID as number) as Label,
             occluded: false,
-            zOrder: curZOrder,
+            zOrder: currentZOrder,
         };
 
         const objectsToConstruct = this.interaction.latestResponse.filter(
@@ -1023,7 +1146,15 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         }
     }
 
-    private receivePointsFromMask(mask: Int32Array): [number, number][] {
+    private receivePointsFromMask(contours: [number, number][][]): [number, number][] {
+        if (contours.length) {
+            return contours[0].map<[number, number]>((val) => [val[0], val[1]]);
+        }
+
+        return [];
+    }
+
+    private receiveContoursFromMask(mask: Int32Array): [number, number][][] {
         if (!openCVWrapper.isInitialized) {
             throw new Error('OpenCV was not initialized');
         }
@@ -1033,12 +1164,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             return [];
         }
 
-        const polygons = openCVWrapper.getContoursFromStateSync({ points: mask, shapeType: ShapeType.MASK });
-        if (polygons.length) {
-            return polygons[0].map<[number, number]>((val) => [val[0], val[1]]);
-        }
-
-        return [];
+        return openCVWrapper.getContoursFromStateSync({ points: mask, shapeType: ShapeType.MASK });
     }
 
     private approximateResponsePoints(points: [number, number][]): [number, number][] {
@@ -1048,7 +1174,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
         const { approxPolyAccuracy } = this.state;
         if (points.length > 3) {
-            const threshold = thresholdFromAccuracy(approxPolyAccuracy);
+            const threshold = openCVWrapper.utils.thresholdFromAccuracy(approxPolyAccuracy);
             return openCVWrapper.contours.approxPoly(points, threshold);
         }
 
@@ -1155,7 +1281,8 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             interactors, canvasInstance, labels, onInteractionStart, interactorExtras,
         } = this.props;
         const {
-            activeInteractor, activeLabelID, fetching, startInteractingWithBox, convertMasksToPolygons,
+            activeInteractor, activeLabelID, fetching, allowROI,
+            startInteractingWithBox, convertMasksToPolygons,
         } = this.state;
 
         if (!interactors.length) {
@@ -1223,6 +1350,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                     </Col>
                 </Row>
                 <div className='cvat-tools-interactor-setups'>
+                    {allowROI && this.renderROIControls()}
                     <div>
                         <Switch
                             checked={convertMasksToPolygons}
@@ -1232,7 +1360,6 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                         />
                         <Text>Convert masks to polygons</Text>
                     </div>
-
                     {renderStartWithBox && (
                         <div>
                             <Switch
@@ -1273,6 +1400,9 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                                             removalStrategy: 'any' as const,
                                             points_type: 'any' as const,
                                             crosshair: startWithBox,
+                                            ...(this.state.interactorRegionOfInterest ? {
+                                                regionOfInterest: this.state.interactorRegionOfInterest,
+                                            } : {}),
                                         },
                                     };
                                     canvasInstance.interact({ enabled: true, ...parameters });
@@ -1290,7 +1420,8 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
     private renderDetectorBlock(): JSX.Element {
         const {
-            jobInstance, detectors, curZOrder, frame, labels, createAnnotations,
+            jobInstance, detectors, currentZOrder, frame, labels, frameData,
+            createAnnotations,
         } = this.props;
 
         if (!detectors.length) {
@@ -1311,6 +1442,12 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                 models={detectors}
                 labels={labels}
                 dimension={jobInstance.dimension}
+                frameWidth={frameData.width}
+                frameHeight={frameData.height}
+                canvasInstance={this.props.canvasInstance}
+                onRegionOfInterestChange={(detectorRegionOfInterest) => (
+                    this.setState({ detectorRegionOfInterest })
+                )}
                 runInference={async (model: MLModel, body: AnnotateTaskRequestBody) => {
                     function loadAttributes(
                         attributes: { spec_id: number; value: string }[],
@@ -1322,7 +1459,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                         this.setState({ mode: 'detection', fetching: true });
 
                         // The function call endpoint doesn't support the cleanup parameter.
-                        const { cleanup, ...restOfBody } = body;
+                        const restOfBody = lodash.omit(body, 'cleanup');
 
                         const result = await core.lambda.call(jobInstance.taskId, model, {
                             ...restOfBody, type: 'annotate_frame', frame, job: jobInstance.id,
@@ -1371,7 +1508,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                                 rotation: shape.rotation,
                                 shapeType: shape.type,
                                 source: core.enums.Source.AUTO,
-                                zOrder: curZOrder,
+                                zOrder: currentZOrder,
                             });
                         });
 
@@ -1403,6 +1540,8 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                 <Tabs
                     type='card'
                     tabBarGutter={8}
+                    activeKey={this.state.activeTab}
+                    onChange={(key) => this.setState({ activeTab: key as 'interactors' | 'detectors' | 'trackers' })}
                     items={[{
                         key: 'interactors',
                         label: 'Interactors',
@@ -1434,7 +1573,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
     public render(): JSX.Element | null {
         const {
             interactors, detectors, trackers, isActivated,
-            canvasInstance, labels, frameIsDeleted,
+            canvasInstance, labels, frameData,
         } = this.props;
         const {
             fetching, approxPolyAccuracy, interactorResponseReceived, thresholdValue,
@@ -1462,7 +1601,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                 className: 'cvat-tools-control',
             };
 
-        const showAnyContent = labels.length && !frameIsDeleted;
+        const showAnyContent = labels.length && !frameData.deleted;
         const showInteractionContent = isActivated && mode === 'interaction' && interactorResponseReceived;
         const showDetectionContent = fetching && mode === 'detection';
 
@@ -1503,7 +1642,13 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
         return showAnyContent ? (
             <>
-                <CustomPopover {...dynamicPopoverProps} placement='right' content={this.renderPopoverContent()}>
+                {this.renderRegionOfInterestOverlay()}
+                <CustomPopover
+                    {...dynamicPopoverProps}
+                    placement='right'
+                    content={this.renderPopoverContent()}
+                    onVisibleChange={(visible: boolean) => this.setState({ toolsPopoverVisible: visible })}
+                >
                     <Icon {...dynamicIconProps} component={AIToolsIcon} />
                 </CustomPopover>
                 {interactionContent}

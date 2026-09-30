@@ -12,14 +12,15 @@ import Text from 'antd/lib/typography/Text';
 import Title from 'antd/lib/typography/Title';
 
 import {
-    User, getCore, Project, Task, FramesMetaData,
+    User, getCore, Project, Task, FramesMetaData, CloudStorage,
 } from 'cvat-core-wrapper';
 import AutomaticAnnotationProgress from 'components/tasks-page/automatic-annotation-progress';
 import MdGuideControl from 'components/md-guide/md-guide-control';
 import Preview from 'components/common/preview';
 import { cancelInferenceAsync } from 'actions/models-actions';
-import { CombinedState, ActiveInference, CloudStorage } from 'reducers';
+import { CombinedState, ActiveInference } from 'reducers';
 import CVATTag, { TagType } from 'components/common/cvat-tag';
+import { usePlugins } from 'utils/hooks';
 import UserSelector from './user-selector';
 import BugTrackerEditor from './bug-tracker-editor';
 import CloudStorageEditor from './cloud-storage-editor';
@@ -28,10 +29,11 @@ import ProjectSubsetField from '../create-task-page/project-subset-field';
 
 interface OwnProps {
     task: Task;
-    onUpdateTask: (task: Task) => Promise<Task>;
+    onUpdateTask: (task: Task, fields?: Parameters<Task['save']>[0]) => Promise<Task>;
     taskMeta: FramesMetaData;
     cloudStorageInstance: CloudStorage | null;
     onUpdateTaskMeta: (meta: FramesMetaData) => Promise<void>;
+    labelsEditorProps?: Record<string, unknown>;
 }
 
 interface StateToProps {
@@ -68,6 +70,29 @@ interface State {
 }
 
 type Props = DispatchToProps & StateToProps & OwnProps;
+
+function DetailsTopBarExtras({ targetProps, targetState }: {
+    targetProps: Props;
+    targetState: State;
+}): JSX.Element {
+    // the component is used as a plugin entrypoint
+    // only implemented as a separated functional component in order to use usePlugins inside
+    const extras = usePlugins(
+        (state: CombinedState) => state.plugins.components.taskPage.details.topBar.extras,
+        targetProps,
+        targetState,
+    );
+
+    return (
+        <>
+            {extras.sort((left, right) => left.weight - right.weight).map(({
+                component: Component,
+            }, index) => (
+                <Component key={index} targetProps={targetProps} targetState={targetState} />
+            ))}
+        </>
+    );
+}
 
 class DetailsComponent extends React.PureComponent<Props, State> {
     constructor(props: Props) {
@@ -127,6 +152,7 @@ class DetailsComponent extends React.PureComponent<Props, State> {
             cloudStorageInstance,
             onUpdateTaskMeta,
         } = this.props;
+
         const { consensusEnabled } = this.state;
         const owner = taskInstance.owner ? taskInstance.owner.username : null;
         const assignee = taskInstance.assignee ? taskInstance.assignee : null;
@@ -172,17 +198,19 @@ class DetailsComponent extends React.PureComponent<Props, State> {
     }
 
     private renderLabelsEditor(): JSX.Element {
-        const { task: taskInstance, onUpdateTask } = this.props;
+        const { task: taskInstance, onUpdateTask, labelsEditorProps } = this.props;
 
         return (
             <Row>
                 <Col span={24}>
                     <LabelsEditorComponent
-                        labels={taskInstance.labels.map((label: any): string => label.toJSON())}
-                        onSubmit={(labels: any[]): void => {
-                            taskInstance.labels = labels.map((labelData): any => new core.classes.Label(labelData));
-                            onUpdateTask(taskInstance);
-                        }}
+                        {...labelsEditorProps}
+                        labels={taskInstance.labels.map((label) => label.toJSON())}
+                        onSubmit={(labels: any[]): Promise<Task> => (
+                            onUpdateTask(taskInstance, {
+                                labels: labels.map((labelData): any => new core.classes.Label(labelData)),
+                            })
+                        )}
                     />
                 </Col>
             </Row>
@@ -227,8 +255,11 @@ class DetailsComponent extends React.PureComponent<Props, State> {
 
         return (
             <div className='cvat-task-details'>
-                <Row justify='start' align='middle'>
+                <Row justify='space-between' align='middle'>
                     <Col className='cvat-task-details-task-name'>{this.renderTaskName()}</Col>
+                    <Col>
+                        <DetailsTopBarExtras targetProps={this.props} targetState={this.state} />
+                    </Col>
                 </Row>
                 <Row justify='space-between' align='top'>
                     <Col md={8} lg={7} xl={7} xxl={6}>

@@ -5,6 +5,9 @@ weight: 2
 description: 'A CVAT installation guide to create a superuser.'
 aliases:
 - /docs/administration/basics/admin-account/
+products:
+  - community
+  - enterprise
 ---
 
 This section is for users who want to be a bit more flexible with CVAT use.

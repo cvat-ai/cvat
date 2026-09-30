@@ -5,7 +5,8 @@
 
 import './styles.scss';
 import React, { useEffect, useState } from 'react';
-import { useSelector, useDispatch, shallowEqual } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
+import { shallowEqual } from 'utils/redux';
 import Tabs from 'antd/lib/tabs';
 import Text from 'antd/lib/typography/Text';
 import Modal from 'antd/lib/modal/Modal';

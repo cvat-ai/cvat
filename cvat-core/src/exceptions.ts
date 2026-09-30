@@ -103,7 +103,9 @@ export class RequestError extends Exception {}
 
 export class ServerError extends Exception {
     public code: number;
-    constructor(message, code) {
+    public statusText: string;
+
+    constructor(message, code, statusText = '') {
         super(message);
 
         Object.defineProperties(
@@ -111,6 +113,9 @@ export class ServerError extends Exception {
             Object.freeze({
                 code: {
                     get: () => code,
+                },
+                statusText: {
+                    get: () => statusText,
                 },
             }),
         );

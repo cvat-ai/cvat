@@ -7,7 +7,8 @@ import './styles.scss';
 
 import React, { useState, useEffect, useCallback } from 'react';
 import Tag from 'antd/lib/tag';
-import { shallowEqual, useDispatch, useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
+import { shallowEqual } from 'utils/redux';
 
 import {
     removeObject as removeObjectAction,
@@ -39,7 +40,9 @@ function FrameTags(): JSX.Element {
 
     const tagClassName = useCallback((tag: ObjectState): string => {
         const tagHighlighted = (highlightedConflict?.annotationConflicts || [])
-            .find((conflict: AnnotationConflict) => conflict.serverID === tag.serverID);
+            .find((conflict: AnnotationConflict) => (
+                conflict.serverID === tag.serverID && conflict.type === tag.objectType
+            ));
         return tagHighlighted ? 'cvat-frame-tag-highlighted' : 'cvat-frame-tag';
     }, [highlightedConflict]);
 

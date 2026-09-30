@@ -3,13 +3,13 @@
 #
 # SPDX-License-Identifier: MIT
 import os.path as osp
+import shutil
 from collections.abc import Callable
 from glob import glob
 
 from datumaro.components.annotation import AnnotationType
 from datumaro.components.dataset import StreamDataset
 from datumaro.components.dataset_base import DatasetItem
-from pyunpack import Archive
 
 from cvat.apps.dataset_manager.bindings import (
     CommonData,
@@ -58,7 +58,7 @@ def _import_common(
     import_kwargs: dict | None = None,
     **kwargs,
 ):
-    Archive(src_file.name).extractall(temp_dir)
+    shutil.unpack_archive(src_file.name, temp_dir, "zip")
 
     detect_dataset(temp_dir, format_name=format_name, importer=dm_env.importers.get(format_name))
 

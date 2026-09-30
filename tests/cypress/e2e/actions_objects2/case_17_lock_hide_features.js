@@ -6,6 +6,7 @@
 /// <reference types="cypress" />
 
 import { labelName, taskName } from '../../support/const';
+import { fullMatch } from '../../support/utils';
 
 context('Lock/hide features.', () => {
     const caseId = '17';
@@ -27,7 +28,7 @@ context('Lock/hide features.', () => {
         numberOfPoints: null,
     };
     const createRectangleTrack2Points = {
-        points: 'By 2 Points',
+        points: '2 Points',
         type: 'Track',
         labelName,
         firstX: 260,
@@ -67,7 +68,7 @@ context('Lock/hide features.', () => {
         numberOfPoints: null,
     };
     const createRectangleShape4Points = {
-        points: 'By 4 Points',
+        points: '4 Points',
         type: 'Shape',
         labelName: newLabelName3,
         firstX: 550,
@@ -132,6 +133,14 @@ context('Lock/hide features.', () => {
                     cy.get('.cvat-object-item-button-lock-enabled').should('exist');
                 });
             });
+            cy.contains('.cvat-annotation-header-button', 'Undo').click();
+            cy.get('.cvat-object-item-button-lock-enabled').should('not.exist');
+            cy.contains('.cvat-annotation-header-button', 'Redo').click();
+            cy.get('.cvat-objects-sidebar-state-item').each((item) => {
+                cy.get(item).within(() => {
+                    cy.get('.cvat-object-item-button-lock-enabled').should('exist');
+                });
+            });
         });
         it('Hide all the objects. Objects are still visible because they cannot be hidden while locked.', () => {
             cy.get('.cvat-objects-sidebar-states-header').within(() => {
@@ -163,6 +172,12 @@ context('Lock/hide features.', () => {
                         }
                     });
             });
+            cy.get('.cvat_canvas_shape').each((item) => {
+                cy.get(item).should('have.class', 'cvat_canvas_hidden');
+            });
+            cy.contains('.cvat-annotation-header-button', 'Undo').click();
+            cy.get('.cvat_canvas_shape').should('not.have.class', 'cvat_canvas_hidden');
+            cy.contains('.cvat-annotation-header-button', 'Redo').click();
             cy.get('.cvat_canvas_shape').each((item) => {
                 cy.get(item).should('have.class', 'cvat_canvas_hidden');
             });
@@ -246,7 +261,7 @@ context('Lock/hide features.', () => {
             // Objects that have a label different from the "Main task" should not be blocked.
             cy.get('.cvat-objects-sidebar-state-item').then((objectSidebarList) => {
                 for (let i = 0; i < objectSidebarList.length; i++) {
-                    if (!objectSidebarList[i].textContent.match(new RegExp(`${labelName}`, 'g'))) {
+                    if (!objectSidebarList[i].textContent.match(fullMatch(labelName))) {
                         cy.get(objectSidebarList[i]).within(() => {
                             cy.get('.ant-select-selection-item').click({ force: true });
                         });

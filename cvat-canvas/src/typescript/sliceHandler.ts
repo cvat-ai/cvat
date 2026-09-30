@@ -182,6 +182,7 @@ export class SliceHandlerImpl implements SliceHandler {
                 // if intersection is too close to edge points
                 // it is an intersection in a point, ignore it
                 if (d1 < 2e-3 || d2 < 2e-3) {
+                    // eslint-disable-next-line no-param-reassign
                     delete intersections[key];
                 }
             }
@@ -362,6 +363,12 @@ export class SliceHandlerImpl implements SliceHandler {
                 drawOverOffscreenCanvas(context, shape as any as SVGImageElement);
                 applyOffscreenCanvasMask(context, polygon2);
                 const secondShape = imageDataToRLE(context.getImageData(0, 0, width, height).data);
+
+                if (firstShape.length < 2 || secondShape.length < 2) {
+                    this.slice({ enabled: false });
+                    return;
+                }
+
                 this.onSliceDone(sliceData.state, [firstShape, secondShape], Date.now() - this.startTimestamp);
             } else if (sliceData.shapeType === 'polygon') {
                 this.onSliceDone(

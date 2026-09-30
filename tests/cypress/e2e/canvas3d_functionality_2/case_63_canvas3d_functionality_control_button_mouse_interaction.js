@@ -21,6 +21,7 @@ context('Canvas 3D functionality. Control button. Mouse interaction.', () => {
         arrow,
     ) {
         cy.customScreenshot('.cvat-canvas3d-perspective', screenshotNameBefore);
+        // eslint-disable-next-line cypress/no-unnecessary-waiting
         cy.wait(300);
         if (arrow) {
             cy.get(button).trigger('mouseover');

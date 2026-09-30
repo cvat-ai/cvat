@@ -13,6 +13,7 @@ import Progress from 'antd/lib/progress';
 import { MoreOutlined } from '@ant-design/icons';
 import Button from 'antd/lib/button';
 import { MenuProps } from 'antd/lib/menu';
+import { BaseType } from 'antd/lib/typography/Base';
 
 import { RQStatus, Request } from 'cvat-core-wrapper';
 import { useContextMenuClick } from 'utils/hooks';
@@ -65,6 +66,18 @@ function constructName(operation: Request['operation']): string | null {
     return null;
 }
 
+function constructTypeText(type: string): string {
+    return type.split(':').map((word) => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+}
+
+function renderEllipsisText(text: string, type?: BaseType): JSX.Element {
+    return (
+        <Text ellipsis={{ tooltip: text }} type={type}>
+            {text}
+        </Text>
+    );
+}
+
 function constructTimestamps(request: Request): JSX.Element {
     const started = dayjs(request.startedDate).format('MMM Do YY, H:mm');
     const finished = dayjs(request.finishedDate).format('MMM Do YY, H:mm');
@@ -79,7 +92,7 @@ function constructTimestamps(request: Request): JSX.Element {
                 return (
                     <>
                         <Row>
-                            <Text type='secondary'>{`Started by ${request.owner.username} on ${started}`}</Text>
+                            {renderEllipsisText(`Started by ${request.owner.username} on ${started}`, 'secondary')}
                         </Row>
                         <Row>
                             <Text type='secondary'>{`Expires on ${expired}`}</Text>
@@ -90,7 +103,7 @@ function constructTimestamps(request: Request): JSX.Element {
             return (
                 <>
                     <Row>
-                        <Text type='secondary'>{`Started by ${request.owner.username} on ${started}`}</Text>
+                        {renderEllipsisText(`Started by ${request.owner.username} on ${started}`, 'secondary')}
                     </Row>
                     <Row>
                         <Text type='secondary'>{`Finished on ${finished}`}</Text>
@@ -101,11 +114,11 @@ function constructTimestamps(request: Request): JSX.Element {
         case RQStatus.FAILED: {
             return (request.startedDate ? (
                 <Row>
-                    <Text type='secondary'>{`Started by ${request.owner.username} on ${started}`}</Text>
+                    {renderEllipsisText(`Started by ${request.owner.username} on ${started}`, 'secondary')}
                 </Row>
             ) : (
                 <Row>
-                    <Text type='secondary'>{`Enqueued by ${request.owner.username} on ${created}`}</Text>
+                    {renderEllipsisText(`Enqueued by ${request.owner.username} on ${created}`, 'secondary')}
                 </Row>
             ));
         }
@@ -113,7 +126,7 @@ function constructTimestamps(request: Request): JSX.Element {
             return (
                 <>
                     <Row>
-                        <Text type='secondary'>{`Enqueued by ${request.owner.username} on ${created}`}</Text>
+                        {renderEllipsisText(`Enqueued by ${request.owner.username} on ${created}`, 'secondary')}
                     </Row>
                     <Row>
                         <Text type='secondary'>{`Started on ${started}`}</Text>
@@ -124,7 +137,7 @@ function constructTimestamps(request: Request): JSX.Element {
         default: {
             return (
                 <Row>
-                    <Text type='secondary'>{`Enqueued by ${request.owner.username} on ${created}`}</Text>
+                    {renderEllipsisText(`Enqueued by ${request.owner.username} on ${created}`, 'secondary')}
                 </Row>
             );
         }
@@ -137,7 +150,7 @@ const dimensions = {
     md: 8,
     lg: 8,
     xl: 8,
-    xxl: 6,
+    xxl: 7,
 };
 
 function RequestCard(props: Readonly<Props>): JSX.Element {
@@ -151,6 +164,7 @@ function RequestCard(props: Readonly<Props>): JSX.Element {
     const linkToEntity = constructLink(request);
     const percent = request.status === RQStatus.FINISHED ? 100 : (request.progress ?? 0) * 100;
     const timestamps = constructTimestamps(request);
+    const typeText = constructTypeText(type);
 
     const name = constructName(operation);
 
@@ -172,12 +186,9 @@ function RequestCard(props: Readonly<Props>): JSX.Element {
         >
             <Row justify='space-between'>
                 <Col span={12}>
-                    <Row style={{ paddingBottom: [RQStatus.FAILED].includes(request.status) ? '10px' : '0' }}>
+                    <Row style={{ paddingBottom: [RQStatus.FAILED].includes(request.status) ? '10px' : '0' }} gutter={8}>
                         <Col className='cvat-requests-type' {...dimensions}>
-                            <Text>
-                                {type.split(':').map((word) => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
-                                {' '}
-                            </Text>
+                            {renderEllipsisText(typeText)}
                         </Col>
                         {name && (
                             <Col className='cvat-requests-name'>
@@ -220,7 +231,7 @@ function RequestCard(props: Readonly<Props>): JSX.Element {
                             {operation?.format && (
                                 <Row>
                                     <Col className='cvat-format-name'>
-                                        <Text type='secondary'>{operation.format}</Text>
+                                        {renderEllipsisText(operation.format, 'secondary')}
                                     </Col>
                                 </Row>
                             )}

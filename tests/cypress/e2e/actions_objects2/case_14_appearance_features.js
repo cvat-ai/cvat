@@ -14,7 +14,7 @@ context('Appearance features', () => {
     let fill = '';
     let fillOpacity = '';
     const createRectangleShape2Points = {
-        points: 'By 2 Points',
+        points: '2 Points',
         type: 'Shape',
         labelName,
         firstX: 100,
@@ -94,8 +94,8 @@ context('Appearance features', () => {
                 });
             cy.get('.cvat_canvas_shape').each((object) => {
                 cy.get(object).then((obj) => {
-                    const clientID = obj.attr('clientID');
-                    cy.get(`#cvat-objects-sidebar-state-item-${clientID}`).then((sidebarObj) => {
+                    const clientId = obj.attr('clientID');
+                    cy.get(`#cvat-objects-sidebar-state-item-${clientId}`).then((sidebarObj) => {
                         const text = sidebarObj.text();
                         if (text.includes('POLYLINE') || text.includes('POINTS')) {
                             expect(Number(object.attr('fill-opacity'))).to.be.lt(Number(fillOpacity)); // expected 0 to be below 0.03
@@ -158,8 +158,8 @@ context('Appearance features', () => {
             cy.changeAppearance('Group');
             cy.get('.cvat_canvas_shape').each((object) => {
                 cy.get(object).then((obj) => {
-                    const clientID = obj.attr('clientID');
-                    cy.get(`#cvat-objects-sidebar-state-item-${clientID}`).then((sidebarObj) => {
+                    const clientId = obj.attr('clientID');
+                    cy.get(`#cvat-objects-sidebar-state-item-${clientId}`).then((sidebarObj) => {
                         const text = sidebarObj.text();
                         if (!(text.includes('POLYLINE') || text.includes('POINTS'))) {
                             expect(object.css('fill')).to.be.equal('rgb(224, 224, 224)'); // expected rgb(224, 224, 224) to equal rgb(224, 224, 224)
@@ -186,7 +186,9 @@ context('Appearance features', () => {
                 cy.interactControlButton(`draw-${shape}`);
                 cy.get(`.cvat-draw-${shape}-popover`).within(() => {
                     if (drawingMethod) {
-                        cy.contains('.ant-radio-wrapper', drawingMethod).click();
+                        const drawingMethodSelector = shape === 'rectangle' ?
+                            '.ant-radio-button-wrapper' : '.ant-radio-wrapper';
+                        cy.contains(drawingMethodSelector, drawingMethod).click();
                     }
                     cy.contains('button', shapeType).click();
                 });
@@ -210,7 +212,7 @@ context('Appearance features', () => {
             // affect opacity level
             testDrawShapeCheckOpacity({
                 shape: 'rectangle',
-                drawingMethod: 'By 2 Points',
+                drawingMethod: '2 Points',
                 shapeType: 'Shape',
                 fillOpacityBefore: 0,
                 fillOpacityAfter: 1,
@@ -218,7 +220,7 @@ context('Appearance features', () => {
             // not affect opacity level
             testDrawShapeCheckOpacity({
                 shape: 'rectangle',
-                drawingMethod: 'By 4 Points',
+                drawingMethod: '4 Points',
                 shapeType: 'Shape',
                 opacityBefore: 0,
                 opacityAfter: 0,

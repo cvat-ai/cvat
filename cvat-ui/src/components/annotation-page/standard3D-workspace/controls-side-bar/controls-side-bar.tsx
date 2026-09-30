@@ -51,7 +51,7 @@ const componentShortcuts: Record<string, KeyMapItem> = {
     PASTE_SHAPE: {
         name: 'Paste shape',
         description: 'Paste a shape from internal CVAT clipboard',
-        sequences: ['ctrl+v'],
+        sequences: ['ctrl+v', 'command+v'],
         scope: ShortcutScope.OBJECTS_SIDEBAR,
     },
     SWITCH_DRAW_MODE_STANDARD_3D_CONTROLS: {
@@ -157,22 +157,22 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
             };
 
     const dynamicGroupIconProps =
-    activeControl === ActiveControl.GROUP ?
-        {
-            className: 'cvat-group-control cvat-active-canvas-control',
-            onClick: (): void => {
-                canvasInstance.group({ enabled: false });
-                updateActiveControl(ActiveControl.CURSOR);
-            },
-        } :
-        {
-            className: 'cvat-group-control',
-            onClick: (): void => {
-                canvasInstance.cancel();
-                canvasInstance.group({ enabled: true });
-                updateActiveControl(ActiveControl.GROUP);
-            },
-        };
+        activeControl === ActiveControl.GROUP ?
+            {
+                className: 'cvat-group-control cvat-active-canvas-control',
+                onClick: (): void => {
+                    canvasInstance.group({ enabled: false });
+                    updateActiveControl(ActiveControl.CURSOR);
+                },
+            } :
+            {
+                className: 'cvat-group-control',
+                onClick: (): void => {
+                    canvasInstance.cancel();
+                    canvasInstance.group({ enabled: true });
+                    updateActiveControl(ActiveControl.GROUP);
+                },
+            };
 
     const dynamicTrackIconProps = activeControl === ActiveControl.SPLIT ?
         {

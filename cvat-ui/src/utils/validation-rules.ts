@@ -9,6 +9,10 @@ import { RuleType } from 'rc-field-form/lib/interface';
 import patterns from './validation-patterns';
 
 export function validateUsername(_: RuleObject, value: string): Promise<void> {
+    if (!value) {
+        return Promise.resolve();
+    }
+
     if (!patterns.validateUsernameLength.pattern.test(value)) {
         return Promise.reject(new Error(patterns.validateUsernameLength.message));
     }

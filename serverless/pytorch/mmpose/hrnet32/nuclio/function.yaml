@@ -191,10 +191,9 @@ spec:
         - kind: RUN
           value: git clone -b v1.2.0 --depth=1 https://github.com/open-mmlab/mmpose.git
         - kind: ADD
-          value: https://download.openmmlab.com/mmpose/v1/wholebody_2d_keypoint/ubody/td-hm_hrnet-w32_8xb64-210e_ubody-coco-256x192-7c227391_20230807.pth ./
+          value: https://mmassets.onedl.ai/mmpose/v1/projects/rtmpose/rtmdet_nano_8xb32-100e_coco-obj365-person-05d8511e.pth ./
         - kind: ADD
-          value: https://download.openmmlab.com/mmpose/v1/projects/rtmpose/rtmdet_nano_8xb32-100e_coco-obj365-person-05d8511e.pth ./
-
+          value: https://mmassets.onedl.ai/mmpose/v1/wholebody_2d_keypoint/ubody/td-hm_hrnet-w32_8xb64-210e_ubody-coco-256x192-7c227391_20230807.pth ./
   triggers:
     myHttpTrigger:
       numWorkers: 2

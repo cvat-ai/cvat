@@ -8,7 +8,8 @@ import {
     FrameDecoder, BlockType, DimensionType, ChunkQuality, decodeContextImages, RequestOutdatedError,
 } from 'cvat-data';
 import PluginRegistry from './plugins';
-import serverProxy from './server-proxy';
+import { MediaType } from './enums';
+import serverProxy, { PREVIEW_DEFAULT, PreviewResponse } from './server-proxy';
 import { SerializedChapterMetaData, SerializedFramesMetaData } from './server-response-types';
 import { ArgumentError } from './exceptions';
 import { FieldUpdateTrigger } from './common';
@@ -878,6 +879,21 @@ export function decodePreview(preview: Blob): Promise<string> {
         };
         reader.readAsDataURL(preview);
     });
+}
+
+export async function resolvePreviewResponse(
+    response: PreviewResponse,
+    mediaType?: MediaType,
+): Promise<string> {
+    if (response === PREVIEW_DEFAULT) {
+        return (mediaType && config.previewPlaceholders[mediaType]) || '';
+    }
+
+    if (response) {
+        return decodePreview(response);
+    }
+
+    return '';
 }
 
 export async function getFrame(

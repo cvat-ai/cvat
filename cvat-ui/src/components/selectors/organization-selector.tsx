@@ -5,7 +5,8 @@
 import './styles.scss';
 import _ from 'lodash';
 import React, { useEffect, useState } from 'react';
-import { useSelector, useDispatch, shallowEqual } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
+import { shallowEqual } from 'utils/redux';
 import { CombinedState } from 'reducers';
 import AutoComplete from 'antd/lib/auto-complete';
 import { useInView } from 'react-intersection-observer';

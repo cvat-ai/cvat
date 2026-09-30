@@ -58,14 +58,14 @@ spec:
           readinessProbe:
             httpGet:
               port: 8181
-              path: "/health?bundles"
+              path: {{ .Values.cvat.opa.probePath | quote }}
             {{- toYaml (omit .Values.cvat.opa.readinessProbe "enabled") | nindent 12 }}
           {{- end }}
           {{- if .Values.cvat.opa.livenessProbe.enabled }}
           livenessProbe:
             httpGet:
               port: 8181
-              path: "/health?bundles"
+              path: {{ .Values.cvat.opa.probePath | quote }}
             {{- toYaml (omit .Values.cvat.opa.livenessProbe "enabled") | nindent 12 }}
           {{- end }}
           {{- with .Values.cvat.opa.additionalVolumeMounts }}

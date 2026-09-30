@@ -11,9 +11,12 @@ import pytest
 from cvat_sdk import Client, models
 from cvat_sdk.core.client import AccessTokenCredentials, Config, PasswordCredentials, make_client
 from cvat_sdk.core.exceptions import IncompatibleVersionException, InvalidHostException
+from cvat_sdk.core.utils import normalize_server_url
 from cvat_sdk.exceptions import ApiException
 
 from shared.utils.config import BASE_URL, USER_PASS
+
+from .util import https_reverse_proxy
 
 
 class TestClientUsecases:
@@ -80,13 +83,13 @@ class TestClientUsecases:
 class TestClientFactory:
     def test_can_make_client_with_pat_auth(self, access_tokens_by_username):
         user, token = next((u, t) for u, ts in access_tokens_by_username.items() for t in ts)
-        host, port = BASE_URL.split("://", maxsplit=1)[1].rsplit(":", maxsplit=1)
+        host, port = BASE_URL.rsplit(":", maxsplit=1)
 
         with make_client(host=host, port=port, access_token=token["private_key"]) as client:
             assert client.users.retrieve_current_user().username == user
 
     def test_can_strip_trailing_slash_in_hostname(self, admin_user: str):
-        host, port = BASE_URL.split("://", maxsplit=1)[1].rsplit(":", maxsplit=1)
+        host, port = BASE_URL.rsplit(":", maxsplit=1)
 
         with make_client(host=host + "/", port=port, credentials=(admin_user, USER_PASS)) as client:
             assert client.api_map.host == BASE_URL
@@ -96,17 +99,13 @@ class TestClientFactory:
             client.login((admin_user, USER_PASS))
             assert client.api_map.host == BASE_URL
 
-    def test_can_detect_server_schema_if_not_provided(self):
-        host, port = BASE_URL.split("://", maxsplit=1)[1].rsplit(":", maxsplit=1)
-        client = make_client(host=host, port=int(port))
-        assert client.api_map.host == "http://" + host + ":" + port
-
-    def test_can_fail_to_detect_server_schema_if_not_provided(self):
-        host, port = BASE_URL.split("://", maxsplit=1)[1].rsplit(":", maxsplit=1)
-        with pytest.raises(InvalidHostException) as capture:
-            make_client(host=host, port=int(port) + 1)
-
-        assert capture.match(r"Failed to detect host schema automatically")
+    def test_can_add_default_server_schema(self):
+        assert normalize_server_url("localhost:8080/") == "https://localhost:8080"
+        with https_reverse_proxy() as proxy_url:
+            with Client(
+                url=proxy_url.removeprefix("https://"), config=Config(verify_ssl=False)
+            ) as client:
+                assert client.api_map.host == proxy_url
 
     def test_can_reject_invalid_server_schema(self):
         host, port = BASE_URL.split("://", maxsplit=1)[1].rsplit(":", maxsplit=1)

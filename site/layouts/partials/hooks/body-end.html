@@ -1,0 +1,56 @@
+{{- /*
+  site/layouts/partials/hooks/body-end.html
+
+  Project override of themes/docsy/layouts/partials/hooks/body-end.html
+  (an intentional Docsy extension point, rendered right before </body>).
+  Keeps the theme's original algolia_docsearch stub and adds one thing:
+  Bootstrap 5's built-in ScrollSpy, wired up to the right-hand "On this
+  page" ToC so the current section is highlighted while scrolling
+  (see .td-toc a.active in assets/scss/_custom.scss).
+
+  Bootstrap's JS is already loaded as vendor/bootstrap/dist/js/bootstrap.bundle.js
+  in themes/docsy/layouts/partials/scripts.html, so no extra script tag is needed.
+*/ -}}
+{{ with .Site.Params.algolia_docsearch }}
+<!-- scripts for algolia docsearch -->
+{{ end }}
+<script>
+(function () {
+  'use strict';
+  document.addEventListener('DOMContentLoaded', function () {
+    var toc = document.getElementById('TableOfContents');
+    if (!toc || typeof bootstrap === 'undefined' || !bootstrap.ScrollSpy) {
+      return;
+    }
+    // eslint-disable-next-line no-new
+    new bootstrap.ScrollSpy(document.body, {
+      target: '#TableOfContents',
+      rootMargin: '0px 0px -75%',
+      smoothScroll: true,
+    });
+  });
+}());
+</script>
+<script>
+(function () {
+  'use strict';
+  document.addEventListener('DOMContentLoaded', function () {
+    // The left sidebar (.td-sidebar-nav) scrolls independently of the page
+    // (overflow-y: auto in themes/docsy/assets/scss/_sidebar-tree.scss).
+    // Every link click is a normal full-page navigation, not client-side
+    // routing, so that box re-renders from scratch and its scroll position
+    // resets to the top on every page load -- a reader deep in a nested
+    // section loses their place after every click. Re-center the current
+    // page in the sidebar instead of leaving it scrolled to the top.
+    var nav = document.querySelector('.td-sidebar-nav');
+    var active = nav && nav.querySelector('a.active');
+    if (!nav || !active) {
+      return;
+    }
+    var navRect = nav.getBoundingClientRect();
+    var activeRect = active.getBoundingClientRect();
+    var delta = (activeRect.top - navRect.top) - (nav.clientHeight / 2) + (activeRect.height / 2);
+    nav.scrollTop += delta;
+  });
+}());
+</script>
