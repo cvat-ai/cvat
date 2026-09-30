@@ -281,8 +281,7 @@ function QualityControlPage(): JSX.Element {
             } else if (type === InstanceType.TASK) {
                 [settings] = await core.analytics.quality.settings.get({ taskID: id });
 
-                // A task that inherits project settings has no requirements of its own; they
-                // live on the project settings, so load them for the requirement-based views.
+                // Inherited task settings remain stored, but project settings apply to its quality views.
                 const projectId = targetInstance instanceof Task ? targetInstance.projectId : null;
                 if (settings?.inherit && typeof projectId === 'number') {
                     [parentSettings] = await core.analytics.quality.settings.get(
@@ -342,8 +341,15 @@ function QualityControlPage(): JSX.Element {
                 return updatedSetting || childSetting;
             }) ?? null;
 
+            let parentSettings: QualitySettings | null = null;
+            if (instance instanceof Task && instance.projectId !== null && updatedInstanceSettings.inherit) {
+                [parentSettings] = await core.analytics.quality.settings.get({
+                    projectID: instance.projectId, parentType: 'project',
+                });
+            }
+
             dispatch(reducerActions.setQualitySettings(
-                updatedInstanceSettings, updatedChildrenSettings, state.qualitySettings.parentSettings,
+                updatedInstanceSettings, updatedChildrenSettings, parentSettings,
             ));
             notification.info({ message: 'Settings have been updated' });
         } catch (error: unknown) {
@@ -358,7 +364,7 @@ function QualityControlPage(): JSX.Element {
     }, [
         state.qualitySettings.settings,
         state.qualitySettings.childrenSettings,
-        state.qualitySettings.parentSettings,
+        instance,
     ]);
 
     const refreshQualitySettings = useCallback(async (): Promise<void> => {
@@ -548,7 +554,7 @@ function QualityControlPage(): JSX.Element {
                     <QualitySettingsTab
                         instance={instance}
                         fetching={qualitySettingsFetching}
-                        qualitySettings={{ settings: qualitySettings, childrenSettings: childrenQualitySettings }}
+                        qualitySettings={state.qualitySettings}
                         labels={instance.labels}
                         setQualitySettings={onSaveQualitySettings}
                         refreshQualitySettings={refreshQualitySettings}

@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { Task } from 'cvat-core-wrapper';
+import { Project, QualitySettings, Task } from 'cvat-core-wrapper';
 
 export function sorter(path: string) {
     return (obj1: any, obj2: any): number => {
@@ -61,4 +61,16 @@ export function validationModeText(task: Task): string | null {
         result = 'Honeypots';
     }
     return result;
+}
+
+export function getEffectiveQualitySettings(
+    instance: Task | Project,
+    settings: QualitySettings | null,
+    parentSettings: QualitySettings | null = null,
+): QualitySettings | null {
+    if (instance instanceof Task && instance.projectId !== null && settings?.inherit) {
+        return parentSettings;
+    }
+
+    return settings;
 }
