@@ -50,6 +50,7 @@
         flex-direction: column;
 
         .ant-card-cover {
+            position: relative;
             flex: 1;
             height: 0;
             margin: 0;
@@ -106,6 +107,18 @@
 
             &:hover {
                 cursor: pointer;
+            }
+        }
+
+        .cvat-job-page-list-item-status {
+            position: absolute;
+            bottom: $grid-unit-size;
+            right: $grid-unit-size;
+            max-width: calc(100% - #{$grid-unit-size * 2});
+            pointer-events: none;
+
+            .cvat-job-stage-state-badges {
+                justify-content: flex-end;
             }
         }
 
