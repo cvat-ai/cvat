@@ -1,6 +1,6 @@
 -r ../../utils/dataset_manifest/requirements.in
 
-attrs>=22.1.0
+attrs>=26.1.0
 
 av==16.0.1
 
