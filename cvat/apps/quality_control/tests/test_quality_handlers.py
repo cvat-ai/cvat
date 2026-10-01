@@ -9,6 +9,7 @@ from unittest import mock
 
 import datumaro as dm
 import numpy as np
+from rest_framework.renderers import JSONRenderer
 
 from cvat.apps.dataset_manager import data_model as cdm
 from cvat.apps.dataset_manager.data_model.adapters.datumaro import adapt_annotation
@@ -454,6 +455,30 @@ class TestRequirementCompletion(unittest.TestCase):
                 "worst_labels": [],
             },
         )
+
+    @mock.patch("cvat.apps.quality_control.export._get_requirement_report")
+    def test_confusion_matrix_with_unmatched_annotations_is_json_serializable(
+        self, get_requirement_report: mock.Mock
+    ) -> None:
+        get_requirement_report.return_value = mock.Mock(
+            parameters={"requirement_id": 1, "metric": "precision"},
+            comparison_summary=mock.Mock(
+                calculation=mock.Mock(status="computed"),
+                confusion_matrix=ConfusionMatrix(
+                    labels=["car", "unmatched"],
+                    rows=np.asarray([[2, 1], [1, 0]]),
+                ),
+            ),
+        )
+        response = prepare_requirement_confusion_matrix_json(mock.Mock(), requirement_id=1)
+
+        self.assertIsNotNone(response)
+        for metric in models.QualityMetric:
+            self.assertIsNone(response[metric.value][-1])
+        self.assertAlmostEqual(response["precision"][0], 2 / 3)
+        self.assertEqual(response["rows"], [[2, 1], [1, 0]])
+        # DRF rejects NaN and infinity even though Python's default JSON encoder accepts them.
+        JSONRenderer().render(response)
 
     def test_mean_and_label_metrics_include_classes_present_on_only_one_side(self) -> None:
         matrix = ConfusionMatrix(
