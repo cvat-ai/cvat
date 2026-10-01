@@ -5,11 +5,13 @@
 /// <reference types="cypress" />
 
 import * as allure from 'allure-js-commons';
-import { taskName, labelName } from '../../support/const';
+import { labelName } from '../../support/const';
+import { defaultTaskSpec } from '../../support/default-specs';
 import { getShapeCoord, toggleAutoSimplify } from '../../support/utils.cy';
 import { translatePoint } from '../../support/utils';
 
 context('Simplify polygons feature', { scrollBehavior: false }, () => {
+    let taskId = null;
     const polygonCenter = { x: 510, y: 324 };
     const detailedPolygonPoints = [
         // a jagged shape with redundant points
@@ -234,8 +236,23 @@ context('Simplify polygons feature', { scrollBehavior: false }, () => {
     }
 
     before(() => {
-        cy.prepareUserSession();
-        cy.openTaskJob(taskName);
+        cy.visit('/auth/login');
+        cy.headlessLogin();
+        const { taskSpec, dataSpec, extras } = defaultTaskSpec({
+            taskName: 'Simplify polygons feature',
+            labelName,
+            attributes: [{ name: 'attribute', type: 'text', values: '' }],
+            serverFiles: ['images/image_1.jpg'],
+        });
+        cy.headlessCreateTask(taskSpec, dataSpec, extras).then(({ taskId: tid, jobIds: [jobId] }) => {
+            taskId = tid;
+            cy.visit(`/tasks/${taskId}/jobs/${jobId}`);
+            cy.get('.cvat-canvas-container').should('be.visible');
+        });
+    });
+
+    after(() => {
+        if (taskId !== null) cy.headlessDeleteTask(taskId);
     });
 
     afterEach(() => {

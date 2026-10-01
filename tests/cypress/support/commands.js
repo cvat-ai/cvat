@@ -662,13 +662,30 @@ Cypress.Commands.add('getObjectSidebarItem', (id) => {
 
     const findItem = (attempt) => cy.get(holderSelector).then(($holder) => {
         const holder = $holder[0];
-        const item = holder.querySelector(selector);
-        if (item) {
-            return cy.wrap(item);
-        }
-
         if (attempt >= 200) {
             throw new Error(`Could not find object ${id} in the virtualized sidebar`);
+        }
+
+        const item = holder.querySelector(selector);
+        if (item) {
+            const holderBounds = holder.getBoundingClientRect();
+            const itemBounds = item.getBoundingClientRect();
+            const viewportTop = holderBounds.top + holder.clientTop;
+            const viewportBottom = viewportTop + holder.clientHeight;
+            const visibleHeight = Math.min(itemBounds.height, holder.clientHeight);
+
+            // Overscan rows exist in the DOM even when they are clipped behind Appearance.
+            // Align the row before returning it so its controls can be clicked normally.
+            if (itemBounds.top < viewportTop - 1 || itemBounds.top + visibleHeight > viewportBottom + 1) {
+                const nextScroll = Math.max(0, Math.min(
+                    holder.scrollHeight - holder.clientHeight,
+                    holder.scrollTop + itemBounds.top - viewportTop,
+                ));
+                cy.wrap($holder).scrollTo(0, nextScroll, { duration: 0, ensureScrollable: false });
+                return cy.wait(50).then(() => findItem(attempt + 1));
+            }
+
+            return cy.wrap(item);
         }
 
         // Scan in rendered order: layer, label, and update-time sorting are not monotonic by ID.
