@@ -59,16 +59,16 @@ context('Audio annotation. Interval navigation and overlap selection.', () => {
                 .find('.cvat-audio-region-item-action-btn:has(.anticon-eye)').click();
             cy.get('.cvat-audio-region-item').eq(1).should('have.class', 'cvat-audio-region-item-hidden');
 
-            cy.get('.cvat-audio-region-item').eq(2)
+            cy.get('.cvat-audio-region-item').eq(3)
                 .find('.cvat-audio-interval-header-index').click();
             cy.realPress('Tab');
-            cy.get('.cvat-audio-region-item').eq(3).should('have.class', 'cvat-audio-region-item-active');
+            cy.get('.cvat-audio-region-item').eq(0).should('have.class', 'cvat-audio-region-item-active');
 
             cy.realPress('Tab');
-            cy.get('.cvat-audio-region-item').first().should('have.class', 'cvat-audio-region-item-active');
+            cy.get('.cvat-audio-region-item').eq(2).should('have.class', 'cvat-audio-region-item-active');
 
             cy.realPress(['Shift', 'Tab']);
-            cy.get('.cvat-audio-region-item').eq(3).should('have.class', 'cvat-audio-region-item-active');
+            cy.get('.cvat-audio-region-item').eq(0).should('have.class', 'cvat-audio-region-item-active');
         });
 
         it('Selects the Core-chosen interval when visible regions overlap', () => {
