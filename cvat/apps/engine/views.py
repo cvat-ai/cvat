@@ -173,17 +173,27 @@ _DATA_UPDATED_DATE_HEADER_NAME = "X-Updated-Date"
 _RETRY_AFTER_TIMEOUT = 10
 
 
-class AnnotationGetThrottleMixin:
+class SelectiveThrottleMixin:
     annotations_get_throttle_scope: str
+    frame_download_throttle_scope = "frame_download"
 
     def get_throttles(self):
-        throttle_scope = self.annotations_get_throttle_scope
-        if (
-            self.action == "annotations"
-            and self.request.method == "GET"
-            and throttle_scope in api_settings.DEFAULT_THROTTLE_RATES
-        ):
+        throttle_scope = None
+
+        is_get = self.request.method == "GET"
+        is_annotations_request = is_get and self.action == "annotations"
+        is_frame_download = (
+            is_get and self.action == "data" and self.request.query_params.get("type") == "frame"
+        )
+
+        if is_annotations_request:
+            throttle_scope = self.annotations_get_throttle_scope
+        elif is_frame_download:
+            throttle_scope = self.frame_download_throttle_scope
+
+        if throttle_scope in api_settings.DEFAULT_THROTTLE_RATES:
             self.throttle_scope = throttle_scope
+
         return super().get_throttles()
 
 
@@ -1119,7 +1129,7 @@ class _JobDataGetter(_DataGetter):
     ),
 )
 class TaskViewSet(
-    AnnotationGetThrottleMixin,
+    SelectiveThrottleMixin,
     viewsets.GenericViewSet,
     mixins.ListModelMixin,
     mixins.RetrieveModelMixin,
@@ -2224,7 +2234,7 @@ class TaskViewSet(
     ),
 )
 class JobViewSet(
-    AnnotationGetThrottleMixin,
+    SelectiveThrottleMixin,
     viewsets.GenericViewSet,
     mixins.ListModelMixin,
     mixins.CreateModelMixin,
