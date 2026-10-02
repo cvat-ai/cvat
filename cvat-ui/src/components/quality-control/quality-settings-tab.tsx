@@ -15,7 +15,7 @@ import Modal from 'antd/lib/modal';
 import {
     Label, Project, QualitySettings, QualitySettingsSaveFields, Task,
 } from 'cvat-core-wrapper';
-import { getEffectiveQualitySettings } from 'utils/quality';
+import { getEffectiveQualitySettings, inheritsProjectQualitySettings } from 'utils/quality';
 import CVATLoadingSpinner from 'components/common/loading-spinner';
 import QualitySettingsForm from './shared/settings/quality-settings-form';
 import {
@@ -51,7 +51,7 @@ function QualitySettingsTab(props: Readonly<Props>): JSX.Element | null {
     const [form] = Form.useForm();
     const [requirementFormVisible, setRequirementFormVisible] = useState(false);
 
-    const inherited = !!settings?.inherit && instance instanceof Task && instance.projectId !== null;
+    const inherited = inheritsProjectQualitySettings(instance, settings);
     const effectiveSettings = getEffectiveQualitySettings(instance, settings, parentSettings);
 
     const onSave = useCallback(async () => {

@@ -26,6 +26,7 @@ import { CombinedState, InstanceType } from 'reducers';
 import { updateJobAsync } from 'actions/jobs-actions';
 import { ActionUnion, createAction } from 'utils/redux';
 import { useInstanceId, useInstanceType, usePlugins } from 'utils/hooks';
+import { inheritsProjectQualitySettings } from 'utils/quality';
 import QualityRequirementsTab from './quality-requirements-tab';
 import QualityManagementTab from './task-quality/quality-magement-tab';
 import QualitySettingsTab, { UpdateSettingsData } from './quality-settings-tab';
@@ -282,10 +283,9 @@ function QualityControlPage(): JSX.Element {
                 [settings] = await core.analytics.quality.settings.get({ taskID: id });
 
                 // Inherited task settings remain stored, but project settings apply to its quality views.
-                const projectId = targetInstance instanceof Task ? targetInstance.projectId : null;
-                if (settings?.inherit && typeof projectId === 'number') {
+                if (inheritsProjectQualitySettings(targetInstance, settings)) {
                     [parentSettings] = await core.analytics.quality.settings.get(
-                        { projectID: projectId, parentType: 'project' },
+                        { projectID: targetInstance.projectId, parentType: 'project' },
                     );
                 }
             } else {
@@ -342,7 +342,7 @@ function QualityControlPage(): JSX.Element {
             }) ?? null;
 
             let parentSettings: QualitySettings | null = null;
-            if (instance instanceof Task && instance.projectId !== null && updatedInstanceSettings.inherit) {
+            if (inheritsProjectQualitySettings(instance, updatedInstanceSettings)) {
                 [parentSettings] = await core.analytics.quality.settings.get({
                     projectID: instance.projectId, parentType: 'project',
                 });

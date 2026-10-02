@@ -63,12 +63,19 @@ export function validationModeText(task: Task): string | null {
     return result;
 }
 
+export function inheritsProjectQualitySettings(
+    instance: Task | Project | null,
+    settings: QualitySettings | null,
+): instance is Task & { projectId: number } {
+    return instance instanceof Task && instance.projectId !== null && !!settings?.inherit;
+}
+
 export function getEffectiveQualitySettings(
     instance: Task | Project,
     settings: QualitySettings | null,
     parentSettings: QualitySettings | null = null,
 ): QualitySettings | null {
-    if (instance instanceof Task && instance.projectId !== null && settings?.inherit) {
+    if (inheritsProjectQualitySettings(instance, settings)) {
         return parentSettings;
     }
 
