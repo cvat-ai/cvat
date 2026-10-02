@@ -6,6 +6,7 @@
 import React, { useCallback } from 'react';
 import Text from 'antd/lib/typography/Text';
 import Collapse from 'antd/lib/collapse';
+import Button from 'antd/lib/button';
 
 import ObjectButtonsContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/object-buttons';
 import ItemDetailsContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/object-item-details';
@@ -48,6 +49,9 @@ interface Props {
     selectRange(): void;
     focusAndExpand(): void;
     copy(): void;
+    copyPreviousPose(): void;
+    copyingPreviousPose: boolean;
+    canCopyPreviousPose: boolean;
     propagate(): void;
     switchOrientation(): void;
     changeOrientation(degrees: OrientationAngle): void;
@@ -95,6 +99,9 @@ function ObjectItemComponent(props: Props): JSX.Element {
         selectRange,
         focusAndExpand,
         copy,
+        copyPreviousPose,
+        copyingPreviousPose,
+        canCopyPreviousPose,
         propagate,
         createURL,
         switchOrientation,
@@ -232,6 +239,21 @@ function ObjectItemComponent(props: Props): JSX.Element {
                     runAnnotationAction={runAnnotationAction}
                 />
                 <ObjectButtonsContainer clientID={clientID} />
+                {objectType === ObjectType.TRACK && shapeType === ShapeType.SKELETON && !isGroundTruth && (
+                    <div style={{ padding: '4px 8px' }}>
+                        <Button
+                            block
+                            size='small'
+                            className='cvat-copy-previous-pose'
+                            title='Copy this track’s point positions from the previous frame. Undo: Ctrl+Z. Save: Ctrl+S.'
+                            loading={copyingPreviousPose}
+                            disabled={!canCopyPreviousPose}
+                            onClick={copyPreviousPose}
+                        >
+                            Copy previous pose
+                        </Button>
+                    </div>
+                )}
                 <ItemDetailsContainer
                     readonly={locked}
                     clientID={clientID}
