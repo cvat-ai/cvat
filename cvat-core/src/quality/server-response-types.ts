@@ -15,6 +15,7 @@ export enum QualityRequirementAnnotationType {
     MASK = 'mask',
     POLYGON = 'polygon',
     ELLIPSE = 'ellipse',
+    INTERVAL = 'interval',
 }
 
 export enum QualityMetric {
@@ -242,7 +243,7 @@ export interface SerializedAnnotationConflictData {
 
 export interface SerializedQualityConflictData {
     id: number;
-    frame: number;
+    frame: number | null;
     type: string;
     annotation_ids: SerializedAnnotationConflictData[];
     report_id: number;
@@ -251,6 +252,7 @@ export interface SerializedQualityConflictData {
 }
 
 export interface SerializedQualityReportData {
+    version: number;
     id: number;
     parent_id: number | null;
     project_id: number | null;
@@ -262,6 +264,7 @@ export interface SerializedQualityReportData {
     gt_last_updated: string | null;
     assignee?: SerializedUser | null;
     summary: {
+        has_comparison_scope?: boolean;
         total_frames: number;
         frame_count?: number;
         validation_frames: number;

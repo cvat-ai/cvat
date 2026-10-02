@@ -40,6 +40,7 @@ class _QualityRequirementsTestBase(_PermissionTestBase):
         "mask",
         "polygon",
         "ellipse",
+        "interval",
     }
 
     @staticmethod
@@ -694,7 +695,7 @@ class TestQualityRequirementsApi(_QualityRequirementsTestBase):
                         "parent_requirement": base_requirement["id"],
                     }
                 ],
-                "already exists",
+                "reserved for a base quality requirement",
             ),
         ]
 

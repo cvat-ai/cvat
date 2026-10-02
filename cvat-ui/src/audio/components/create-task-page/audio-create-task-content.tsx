@@ -584,7 +584,6 @@ class AudioCreateTaskContent extends React.PureComponent<Props & RouteComponentP
         return (
             <Col span={24}>
                 <Collapse
-                    collapsible='disabled'
                     className='cvat-quality-configuration-wrapper'
                     items={[{
                         key: '1',

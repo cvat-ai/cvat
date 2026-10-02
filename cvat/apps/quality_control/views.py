@@ -33,7 +33,6 @@ from cvat.apps.quality_control.export import (
     prepare_requirement_confusion_matrix_json,
 )
 from cvat.apps.quality_control.models import (
-    CURRENT_REPORT_DATA_REGEX,
     AnnotationConflict,
     QualityReport,
     QualityReportTarget,
@@ -60,6 +59,7 @@ from cvat.apps.quality_control.serializers import (
     QualitySettingsParentType,
     QualitySettingsSerializer,
 )
+from cvat.apps.quality_control.utils import filter_current_reports
 from cvat.apps.redis_handler.serializers import RqIdSerializer
 from cvat.utils import django_database as db_utils
 
@@ -322,7 +322,7 @@ class QualityReportViewSet(
             if not query_serializer.validated_data["include_legacy"]:
                 # The new UI only understands generalized reports. Legacy reports remain
                 # downloadable, and API clients can discover them with include_legacy=true.
-                queryset = queryset.filter(data__regex=CURRENT_REPORT_DATA_REGEX)
+                queryset = filter_current_reports(queryset)
             queryset = queryset.defer("data")  # heavy field, should be excluded from COUNT(*)
 
         if self.action != "list":

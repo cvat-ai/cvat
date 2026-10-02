@@ -4212,11 +4212,16 @@ class TestTrackImportExport:
         with zipfile.ZipFile(dataset_file, "r") as f:
             f.extractall(dataset_dir)
 
-        parsed_dataset = json.loads((dataset_dir / "annotations" / "default.json").read_text())
+        annotations_file = dataset_dir / "annotations" / "default.json"
+        parsed_dataset = json.loads(annotations_file.read_text())
         parsed_dataset["items"][0]["annotations"].append(
             parsed_dataset["items"][0]["annotations"][0]
         )
-        dataset_file.write_text(json.dumps(parsed_dataset))
+        annotations_file.write_text(json.dumps(parsed_dataset))
+        with zipfile.ZipFile(dataset_file, "w") as archive:
+            for path in dataset_dir.rglob("*"):
+                if path.is_file():
+                    archive.write(path, path.relative_to(dataset_dir))
 
         with pytest.raises(
             BackgroundRequestException, match="several track shapes on the same frame '0'"

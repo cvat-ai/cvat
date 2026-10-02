@@ -29,6 +29,7 @@ export const ANNOTATION_TYPE_LABELS: Record<string, string> = {
     [QualityRequirementAnnotationType.MASK]: 'Mask',
     [QualityRequirementAnnotationType.POLYGON]: 'Polygon',
     [QualityRequirementAnnotationType.ELLIPSE]: 'Ellipse',
+    [QualityRequirementAnnotationType.INTERVAL]: 'Interval',
 };
 
 const BASE_METRIC_LABELS: Record<QualityMetric, string> = {

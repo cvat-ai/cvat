@@ -173,6 +173,7 @@ class QualityReportTargetSerializer(serializers.ChoiceField):
 
 
 class QualityReportSummarySerializer(serializers.Serializer):
+    has_comparison_scope = serializers.BooleanField()
     total_frames = serializers.IntegerField()
     validation_frames = serializers.IntegerField()
     validation_frame_share = serializers.FloatField()
@@ -241,6 +242,7 @@ class QualityReportListSerializer(serializers.ListSerializer):
 
 
 class QualityReportSerializer(serializers.ModelSerializer):
+    version = serializers.IntegerField(read_only=True)
     target = QualityReportTargetSerializer()
     assignee = engine_serializers.BasicUserSerializer(allow_null=True, read_only=True)
     summary = QualityReportSummarySerializer()
@@ -256,6 +258,7 @@ class QualityReportSerializer(serializers.ModelSerializer):
         model = models.QualityReport
         fields = (
             "id",
+            "version",
             "job_id",
             "task_id",
             "project_id",
@@ -733,6 +736,24 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
                 extra_kwargs.setdefault(field_name, {}).setdefault("min_value", 0)
                 extra_kwargs.setdefault(field_name, {}).setdefault("max_value", 1)
 
+    def validate_name(self, value: str) -> str:
+        if (
+            self.instance is not None
+            and self.instance.is_base
+            and value == models.get_base_requirement_name(self.instance.annotation_type)
+        ):
+            return value
+
+        if value in {
+            models.get_base_requirement_name(annotation_type)
+            for annotation_type in models.QualityRequirementAnnotationType
+        }:
+            raise serializers.ValidationError(
+                "This name is reserved for a base quality requirement."
+            )
+
+        return value
+
     def validate(self, attrs):
         attrs = super().validate(attrs)
 
@@ -1147,7 +1168,12 @@ class QualitySettingsRequirementsSerializer(QualityRequirementListSerializer):
         if not attrs:
             raise serializers.ValidationError("At least one quality requirement must be specified.")
 
-        if len(attrs) > QualityRequirementSerializer._get_requirement_limit():
+        existing_count = (
+            self.parent.instance.requirements.count()
+            if getattr(self.parent, "instance", None) is not None
+            else 0
+        )
+        if len(attrs) > max(QualityRequirementSerializer._get_requirement_limit(), existing_count):
             raise serializers.ValidationError(
                 QualityRequirementSerializer.get_requirement_limit_error_message()
             )

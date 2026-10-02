@@ -65,7 +65,7 @@ if TYPE_CHECKING:
 
 
 @attrs.define
-class RequirementFrameResult:
+class RequirementResult:
     summary: ComparisonReportFrameComparisonSummary
     calculation: ComparisonReportRequirementCalculation
     matched_pairs: list[tuple[cdm.Annotation, cdm.Annotation]] = attrs.Factory(list)
@@ -102,6 +102,7 @@ class EffectiveQualityRequirement:
         """Resolve the requirement target to an annotation interface."""
         return {
             models.QualityRequirementAnnotationType.TAG: cdm.Tag,
+            models.QualityRequirementAnnotationType.INTERVAL: cdm.Interval,
             models.QualityRequirementAnnotationType.RECTANGLE: cdm.Rectangle,
             models.QualityRequirementAnnotationType.POLYGON: cdm.Polygon,
             models.QualityRequirementAnnotationType.POLYLINE: cdm.Polyline,
@@ -488,11 +489,12 @@ def build_requirement_report(
     frame_results: dict[int, ComparisonReportFrameComparisonSummary],
     calculation: ComparisonReportRequirementCalculation | None = None,
     include_frame_results: bool = True,
+    sample_results: list[ComparisonReportFrameComparisonSummary] | None = None,
 ) -> ComparisonReportRequirementSummary:
     conflicts: list[AnnotationConflict] = []
     annotations_summary = ComparisonReportAnnotationsSummary.create_empty()
 
-    for frame_result in frame_results.values():
+    for frame_result in (sample_results if sample_results is not None else frame_results.values()):
         conflicts += frame_result.conflicts
         merge_annotations_summary(annotations_summary, frame_result.annotation_summary)
 
@@ -507,6 +509,7 @@ def build_requirement_report(
             calculation=calculation,
         ),
         frame_results=deepcopy(frame_results) if include_frame_results else None,
+        conflicts=conflicts,
     )
 
 
@@ -790,8 +793,8 @@ class RequirementHandler(ABC):
     @abstractmethod
     def match_annotations(
         self,
-        sample: FrameComparisonSample,
-    ) -> RequirementFrameResult:
+        sample: ComparisonSample,
+    ) -> RequirementResult:
         """Match annotations between dataset and ground truth items.
 
         Must be implemented in subclasses.
@@ -870,10 +873,10 @@ class RequirementHandler(ABC):
 class TagRequirementHandler(RequirementHandler):
     def match_annotations(
         self,
-        sample: FrameComparisonSample,
-    ) -> RequirementFrameResult:
+        sample: ComparisonSample,
+    ) -> RequirementResult:
         conflicts = []
-        frame_id = sample.frame_id
+        frame_id = sample.frame_id if isinstance(sample, FrameComparisonSample) else None
         sample = self._backend.prepare_sample(
             sample, requirement_type=self.requirement.annotation_type
         )
@@ -935,7 +938,7 @@ class TagRequirementHandler(RequirementHandler):
             gt_label_idx = label_id_map[gt_ann.label] if gt_ann else self._UNMATCHED_IDX
             confusion_matrix[ds_label_idx, gt_label_idx] += 1
 
-        return RequirementFrameResult(
+        return RequirementResult(
             summary=self._make_frame_summary(
                 annotation_summary=self._compute_annotations_summary(
                     confusion_matrix, confusion_matrix_labels
@@ -951,10 +954,10 @@ class TagRequirementHandler(RequirementHandler):
 class ShapeRequirementHandler(RequirementHandler):
     def match_annotations(
         self,
-        sample: FrameComparisonSample,
-    ) -> RequirementFrameResult:
+        sample: ComparisonSample,
+    ) -> RequirementResult:
         conflicts = []
-        frame_id = sample.frame_id
+        frame_id = sample.frame_id if isinstance(sample, FrameComparisonSample) else None
         sample = self._backend.prepare_sample(
             sample, requirement_type=self.requirement.annotation_type
         )
@@ -1092,7 +1095,7 @@ class ShapeRequirementHandler(RequirementHandler):
             gt_label_idx = label_id_map[gt_ann.label] if gt_ann else self._UNMATCHED_IDX
             confusion_matrix[ds_label_idx, gt_label_idx] += 1
 
-        return RequirementFrameResult(
+        return RequirementResult(
             summary=self._make_frame_summary(
                 annotation_summary=self._compute_annotations_summary(
                     confusion_matrix, confusion_matrix_labels
@@ -1120,6 +1123,9 @@ class DatasetQualityEstimator:
         self._backend = make_quality_backend(ds_data_provider, gt_data_provider)
 
         self._results: dict[str, dict[int, ComparisonReportFrameComparisonSummary]] = {}
+        self._sample_results: dict[str, list[ComparisonReportFrameComparisonSummary]] = {}
+        self._has_comparison_scope = False
+        self._has_recording_scope = False
         self._calculations: dict[str, ComparisonReportRequirementCalculation] = {}
 
     def _get_total_samples(self) -> int:
@@ -1133,8 +1139,8 @@ class DatasetQualityEstimator:
             self._backend.close()
 
     def _compare_samples(self, sample: ComparisonSample):
-        if not isinstance(sample, FrameComparisonSample):
-            raise ValueError("Only frame comparison reports are implemented")
+        self._has_comparison_scope = True
+        self._has_recording_scope |= not isinstance(sample, FrameComparisonSample)
 
         for requirement in self._requirements:
             if not requirement.enabled:
@@ -1144,7 +1150,9 @@ class DatasetQualityEstimator:
                 backend=self._backend,
             )
             result = handler.match_annotations(sample)
-            self._results.setdefault(requirement.name, {})[sample.frame_id] = result.summary
+            self._sample_results.setdefault(requirement.name, []).append(result.summary)
+            if isinstance(sample, FrameComparisonSample):
+                self._results.setdefault(requirement.name, {})[sample.frame_id] = result.summary
             self._calculations[requirement.name] = select_requirement_calculation(
                 self._calculations.get(requirement.name),
                 result.calculation,
@@ -1154,7 +1162,12 @@ class DatasetQualityEstimator:
         self,
     ) -> tuple[list[int], list[AnnotationConflict]]:
         intersection_frames: set[int] = set()
-        conflicts: list[AnnotationConflict] = []
+        conflicts = [
+            conflict
+            for results in self._sample_results.values()
+            for result in results
+            for conflict in result.conflicts
+        ]
 
         enabled_requirement_names = {
             requirement.name for requirement in self._requirements if requirement.enabled
@@ -1164,9 +1177,8 @@ class DatasetQualityEstimator:
             if requirement_name not in enabled_requirement_names:
                 continue
 
-            for frame_id, frame_result in requirement_metrics.items():
+            for frame_id in requirement_metrics:
                 intersection_frames.add(frame_id)
-                conflicts.extend(frame_result.conflicts)
 
         return (
             sorted(intersection_frames),
@@ -1185,6 +1197,8 @@ class DatasetQualityEstimator:
             requirement.name: build_requirement_report(
                 requirement=requirement,
                 frame_results=self._results.get(requirement.name, {}),
+                sample_results=self._sample_results.get(requirement.name, []),
+                include_frame_results=not self._has_recording_scope,
                 calculation=(
                     self._calculations.get(requirement.name) or make_empty_requirement_calculation()
                 ),
@@ -1196,7 +1210,8 @@ class DatasetQualityEstimator:
             parameters=self._report_parameters,
             comparison_summary=ComparisonReportSummary(
                 frames=intersection_frames,
-                total_frames=self._get_total_samples(),
+                total_frames=0 if self._has_recording_scope else self._get_total_samples(),
+                has_comparison_scope=self._has_comparison_scope,
                 conflict_count=len(conflicts),
                 error_count=len(conflicts),
                 conflicts_by_type=Counter(c.type for c in conflicts),
@@ -1206,3 +1221,6 @@ class DatasetQualityEstimator:
             ),
             groups=group_reports,
         )
+
+
+RequirementFrameResult = RequirementResult

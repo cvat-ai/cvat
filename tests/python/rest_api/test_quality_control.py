@@ -738,6 +738,7 @@ class TestGetQualityReportData(_PermissionTestBase):
             assert key in report_data.keys(), key
         assert "frame_results" not in report_data
         assert isinstance(report_data["groups"], dict)
+        assert report_data["version"] == 3
 
     def test_cannot_get_report_data_as_csv(self, admin_user, quality_reports):
         report_id = next(iter(quality_reports))["id"]
@@ -782,6 +783,7 @@ class TestGetQualityReportData(_PermissionTestBase):
         report_data = response.json()
         assert "parameters" in report_data
         assert "comparison_summary" in report_data
+        assert report_data["version"] == 1
         assert "groups" not in report_data
 
         response = get_method(admin_user, f"quality/reports/{report_id}")

@@ -62,6 +62,7 @@ export const POINT_SIZE_BASE_OPTIONS: QualityRequirementPointSizeBase[] = Object
     QualityRequirementPointSizeBase,
 );
 export const IOU_ANNOTATION_TYPES = new Set<QualityRequirementAnnotationType>([
+    QualityRequirementAnnotationType.INTERVAL,
     QualityRequirementAnnotationType.RECTANGLE,
     QualityRequirementAnnotationType.ELLIPSE,
     QualityRequirementAnnotationType.POLYGON,

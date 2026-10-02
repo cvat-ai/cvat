@@ -29,6 +29,12 @@ class FrameComparisonSample(ComparisonSample):
     frame_id: int = field(validator=validators.instance_of(int))
 
 
+@define(frozen=True)
+class RecordingComparisonSample(ComparisonSample):
+    start: int
+    stop: int
+
+
 class QualityBackend(ABC):
     """Data and geometry boundary for shared requirement evaluation.
 

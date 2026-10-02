@@ -54,8 +54,15 @@ class QualityReportQueueManager(AbstractRequestManager):
         if isinstance(self.db_instance, Project):
             return  # nothing prevents project reports
         elif isinstance(self.db_instance, Task):
-            if self.db_instance.dimension != DimensionType.DIM_2D:
-                raise serializers.ValidationError("Quality reports are only supported in 2d tasks")
+            from cvat.apps.quality_control.interval_data_provider import (
+                validate_audio_quality_scope,
+            )
+
+            validate_audio_quality_scope(self.db_instance)
+            if self.db_instance.dimension not in (DimensionType.DIM_2D, DimensionType.DIM_1D):
+                raise serializers.ValidationError(
+                    "Quality reports are only supported in 1d and 2d tasks"
+                )
 
             if self.db_instance.gt_job is None:
                 raise serializers.ValidationError(

@@ -84,9 +84,19 @@ class JobDataProvider(ABC):
 
 
 def make_job_data_provider(job_id: int, *, queryset=None, included_frames=None) -> JobDataProvider:
+    from cvat.apps.engine.models import Job
     from cvat.apps.quality_control.datumaro_data_provider import DatumaroJobDataProvider
+    from cvat.apps.quality_control.interval_data_provider import IntervalJobDataProvider
 
-    return DatumaroJobDataProvider(job_id, queryset=queryset, included_frames=included_frames)
+    job = (queryset if queryset is not None else Job.objects.select_related("segment__task")).get(
+        id=job_id
+    )
+    provider_type = (
+        IntervalJobDataProvider
+        if job.segment.task.dimension == DimensionType.DIM_1D
+        else DatumaroJobDataProvider
+    )
+    return provider_type(job_id, queryset=queryset, included_frames=included_frames)
 
 
 class QualitySettingsManager:
