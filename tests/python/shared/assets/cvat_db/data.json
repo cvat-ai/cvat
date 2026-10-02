@@ -14344,8 +14344,13 @@
     "model": "engine.profile",
     "pk": 1,
     "fields": {
+      "cvat_usage_reason": null,
+      "data_types": [],
+      "discovery_source": null,
       "has_analytics_access": true,
       "last_activity_date": "2026-01-17T12:23:53.610Z",
+      "planned_activities": [],
+      "primary_role": null,
       "rating": 0.0,
       "user": [
         "admin1"
@@ -14356,8 +14361,13 @@
     "model": "engine.profile",
     "pk": 2,
     "fields": {
+      "cvat_usage_reason": null,
+      "data_types": [],
+      "discovery_source": null,
       "has_analytics_access": false,
       "last_activity_date": "2026-01-17T12:23:58.680Z",
+      "planned_activities": [],
+      "primary_role": null,
       "rating": 0.0,
       "user": [
         "user1"
@@ -14368,8 +14378,13 @@
     "model": "engine.profile",
     "pk": 3,
     "fields": {
+      "cvat_usage_reason": null,
+      "data_types": [],
+      "discovery_source": null,
       "has_analytics_access": false,
       "last_activity_date": "2026-01-17T12:23:58.658Z",
+      "planned_activities": [],
+      "primary_role": null,
       "rating": 0.0,
       "user": [
         "user2"
@@ -14380,8 +14395,13 @@
     "model": "engine.profile",
     "pk": 4,
     "fields": {
+      "cvat_usage_reason": null,
+      "data_types": [],
+      "discovery_source": null,
       "has_analytics_access": false,
       "last_activity_date": "2026-01-17T12:23:58.634Z",
+      "planned_activities": [],
+      "primary_role": null,
       "rating": 0.0,
       "user": [
         "user3"
@@ -14392,8 +14412,13 @@
     "model": "engine.profile",
     "pk": 5,
     "fields": {
+      "cvat_usage_reason": null,
+      "data_types": [],
+      "discovery_source": null,
       "has_analytics_access": true,
       "last_activity_date": "2026-01-17T12:23:58.610Z",
+      "planned_activities": [],
+      "primary_role": null,
       "rating": 0.0,
       "user": [
         "user4"
@@ -14404,8 +14429,13 @@
     "model": "engine.profile",
     "pk": 6,
     "fields": {
+      "cvat_usage_reason": null,
+      "data_types": [],
+      "discovery_source": null,
       "has_analytics_access": false,
       "last_activity_date": "2026-01-17T12:23:58.586Z",
+      "planned_activities": [],
+      "primary_role": null,
       "rating": 0.0,
       "user": [
         "worker1"
@@ -14416,8 +14446,13 @@
     "model": "engine.profile",
     "pk": 7,
     "fields": {
+      "cvat_usage_reason": null,
+      "data_types": [],
+      "discovery_source": null,
       "has_analytics_access": false,
       "last_activity_date": "2026-01-17T12:23:58.564Z",
+      "planned_activities": [],
+      "primary_role": null,
       "rating": 0.0,
       "user": [
         "worker2"
@@ -14428,8 +14463,13 @@
     "model": "engine.profile",
     "pk": 8,
     "fields": {
+      "cvat_usage_reason": null,
+      "data_types": [],
+      "discovery_source": null,
       "has_analytics_access": false,
       "last_activity_date": "2026-01-17T12:23:58.542Z",
+      "planned_activities": [],
+      "primary_role": null,
       "rating": 0.0,
       "user": [
         "worker3"
@@ -14440,8 +14480,13 @@
     "model": "engine.profile",
     "pk": 9,
     "fields": {
+      "cvat_usage_reason": null,
+      "data_types": [],
+      "discovery_source": null,
       "has_analytics_access": true,
       "last_activity_date": "2026-01-17T12:23:58.523Z",
+      "planned_activities": [],
+      "primary_role": null,
       "rating": 0.0,
       "user": [
         "worker4"
@@ -14452,8 +14497,13 @@
     "model": "engine.profile",
     "pk": 10,
     "fields": {
+      "cvat_usage_reason": null,
+      "data_types": [],
+      "discovery_source": null,
       "has_analytics_access": false,
       "last_activity_date": "2026-01-17T12:23:58.504Z",
+      "planned_activities": [],
+      "primary_role": null,
       "rating": 0.0,
       "user": [
         "user7"
@@ -14464,8 +14514,13 @@
     "model": "engine.profile",
     "pk": 11,
     "fields": {
+      "cvat_usage_reason": null,
+      "data_types": [],
+      "discovery_source": null,
       "has_analytics_access": false,
       "last_activity_date": "2026-01-17T12:23:58.486Z",
+      "planned_activities": [],
+      "primary_role": null,
       "rating": 0.0,
       "user": [
         "user8"
@@ -14476,8 +14531,13 @@
     "model": "engine.profile",
     "pk": 12,
     "fields": {
+      "cvat_usage_reason": null,
+      "data_types": [],
+      "discovery_source": null,
       "has_analytics_access": false,
       "last_activity_date": "2026-01-17T12:23:58.465Z",
+      "planned_activities": [],
+      "primary_role": null,
       "rating": 0.0,
       "user": [
         "user9"
@@ -14488,8 +14548,13 @@
     "model": "engine.profile",
     "pk": 13,
     "fields": {
+      "cvat_usage_reason": null,
+      "data_types": [],
+      "discovery_source": null,
       "has_analytics_access": false,
       "last_activity_date": "2026-01-17T12:23:58.442Z",
+      "planned_activities": [],
+      "primary_role": null,
       "rating": 0.0,
       "user": [
         "user10"
@@ -14500,8 +14565,13 @@
     "model": "engine.profile",
     "pk": 14,
     "fields": {
+      "cvat_usage_reason": null,
+      "data_types": [],
+      "discovery_source": null,
       "has_analytics_access": false,
       "last_activity_date": "2026-01-17T12:23:58.420Z",
+      "planned_activities": [],
+      "primary_role": null,
       "rating": 0.0,
       "user": [
         "dummy1"
@@ -14512,8 +14582,13 @@
     "model": "engine.profile",
     "pk": 15,
     "fields": {
+      "cvat_usage_reason": null,
+      "data_types": [],
+      "discovery_source": null,
       "has_analytics_access": false,
       "last_activity_date": "2026-01-17T12:23:58.407Z",
+      "planned_activities": [],
+      "primary_role": null,
       "rating": 0.0,
       "user": [
         "dummy2"
@@ -14524,8 +14599,13 @@
     "model": "engine.profile",
     "pk": 16,
     "fields": {
+      "cvat_usage_reason": null,
+      "data_types": [],
+      "discovery_source": null,
       "has_analytics_access": false,
       "last_activity_date": "2026-01-17T12:23:58.390Z",
+      "planned_activities": [],
+      "primary_role": null,
       "rating": 0.0,
       "user": [
         "dummy3"
@@ -14536,8 +14616,13 @@
     "model": "engine.profile",
     "pk": 17,
     "fields": {
+      "cvat_usage_reason": null,
+      "data_types": [],
+      "discovery_source": null,
       "has_analytics_access": false,
       "last_activity_date": "2026-01-17T12:23:58.377Z",
+      "planned_activities": [],
+      "primary_role": null,
       "rating": 0.0,
       "user": [
         "dummy4"
@@ -14548,8 +14633,13 @@
     "model": "engine.profile",
     "pk": 18,
     "fields": {
+      "cvat_usage_reason": null,
+      "data_types": [],
+      "discovery_source": null,
       "has_analytics_access": true,
       "last_activity_date": "2026-01-17T12:23:58.363Z",
+      "planned_activities": [],
+      "primary_role": null,
       "rating": 0.0,
       "user": [
         "admin2"
@@ -14560,8 +14650,13 @@
     "model": "engine.profile",
     "pk": 19,
     "fields": {
+      "cvat_usage_reason": null,
+      "data_types": [],
+      "discovery_source": null,
       "has_analytics_access": false,
       "last_activity_date": "2026-01-17T12:23:58.344Z",
+      "planned_activities": [],
+      "primary_role": null,
       "rating": 0.0,
       "user": [
         "user5"
@@ -14572,8 +14667,13 @@
     "model": "engine.profile",
     "pk": 20,
     "fields": {
+      "cvat_usage_reason": null,
+      "data_types": [],
+      "discovery_source": null,
       "has_analytics_access": false,
       "last_activity_date": "2026-01-17T12:23:58.324Z",
+      "planned_activities": [],
+      "primary_role": null,
       "rating": 0.0,
       "user": [
         "user6"
@@ -14584,8 +14684,13 @@
     "model": "engine.profile",
     "pk": 21,
     "fields": {
+      "cvat_usage_reason": null,
+      "data_types": [],
+      "discovery_source": null,
       "has_analytics_access": false,
       "last_activity_date": "2026-01-17T12:23:58.306Z",
+      "planned_activities": [],
+      "primary_role": null,
       "rating": 0.0,
       "user": [
         "lonely_user"

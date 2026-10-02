@@ -193,6 +193,11 @@ class UserPermission(OpenPolicyAgentPermission):
                     {
                         "email": Scopes.UPDATE_EMAIL,
                         "first_name": Scopes.UPDATE_PERSONAL_DATA,
+                        "cvat_usage_reason": Scopes.UPDATE_PERSONAL_DATA,
+                        "primary_role": Scopes.UPDATE_PERSONAL_DATA,
+                        "planned_activities": Scopes.UPDATE_PERSONAL_DATA,
+                        "data_types": Scopes.UPDATE_PERSONAL_DATA,
+                        "discovery_source": Scopes.UPDATE_PERSONAL_DATA,
                         "groups": Scopes.UPDATE_PERMISSIONS,
                         "is_active": Scopes.UPDATE_PERMISSIONS,
                         "is_staff": Scopes.UPDATE_PERMISSIONS,

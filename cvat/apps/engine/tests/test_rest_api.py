@@ -737,6 +737,11 @@ class UserAPITestCase(ApiTestBase):
         extra_check("last_login", data)
         extra_check("date_joined", data)
         extra_check("has_analytics_access", data)
+        extra_check("cvat_usage_reason", data)
+        extra_check("primary_role", data)
+        extra_check("planned_activities", data)
+        extra_check("data_types", data)
+        extra_check("discovery_source", data)
 
 
 class UserListAPITestCase(UserAPITestCase):
@@ -891,6 +896,75 @@ class UserPartialUpdateAPITestCase(UserAPITestCase):
         data = {"username": "annotator01", "first_name": "slave"}
         response = self._run_api_v2_users_id(self.user, self.annotator.id, data)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_api_v2_users_id_user_can_update_registration_survey(self):
+        data = {
+            "cvat_usage_reason": "work_project",
+            "primary_role": "ml_engineer",
+            "planned_activities": ["annotate_data", "review_quality"],
+            "data_types": ["images", "video"],
+            "discovery_source": "search_engine",
+        }
+
+        response = self._run_api_v2_users_id(self.user, self.user.id, data)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        for field_name, value in data.items():
+            self.assertEqual(response.data[field_name], value)
+
+        self.user.profile.refresh_from_db()
+        for field_name, value in data.items():
+            self.assertEqual(getattr(self.user.profile, field_name), value)
+
+    def test_api_v2_users_id_user_can_update_primary_role_only(self):
+        self.user.profile.cvat_usage_reason = "teaching_or_coursework"
+        self.user.profile.primary_role = "student"
+        self.user.profile.save(update_fields=["cvat_usage_reason", "primary_role"])
+
+        response = self._run_api_v2_users_id(
+            self.user, self.user.id, {"primary_role": "project_manager"}
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["primary_role"], "project_manager")
+
+        response = self._run_api_v2_users_id(
+            self.user, self.user.id, {"primary_role": "Research software engineer"}
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["primary_role"], "Research software engineer")
+
+    def test_api_v2_users_id_rejects_invalid_registration_survey_values(self):
+        invalid_payloads = (
+            {"cvat_usage_reason": "invalid"},
+            {"planned_activities": ["invalid"]},
+            {"data_types": ["not_sure", "images"]},
+            {"data_types": ["Custom one", "Custom two"]},
+            {"discovery_source": "other"},
+            {
+                "cvat_usage_reason": "teaching_or_coursework",
+                "primary_role": "project_manager",
+            },
+        )
+
+        for data in invalid_payloads:
+            with self.subTest(data=data):
+                response = self._run_api_v2_users_id(self.user, self.user.id, data)
+                self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_api_v2_users_id_invalid_survey_update_is_atomic(self):
+        old_username = self.user.username
+
+        response = self._run_api_v2_users_id(
+            self.user,
+            self.user.id,
+            {"username": "changed-name", "planned_activities": ["invalid"]},
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.username, old_username)
 
     def test_api_v2_users_id_no_auth_partial(self):
         data = {"username": "user12"}

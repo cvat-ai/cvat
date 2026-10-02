@@ -1725,6 +1725,11 @@ class Profile(models.Model):
         default=False,
         help_text=_("Designates whether the user can access analytics."),
     )
+    cvat_usage_reason = models.CharField(max_length=255, null=True, blank=True)
+    primary_role = models.CharField(max_length=255, null=True, blank=True)
+    planned_activities = models.JSONField(default=list, blank=True)
+    data_types = models.JSONField(default=list, blank=True)
+    discovery_source = models.CharField(max_length=255, null=True, blank=True)
 
 
 class Issue(TimestampedModel, AssignableModel):
