@@ -227,4 +227,21 @@ context('Selection in the virtualized sidebar', { scrollBehavior: false }, () =>
             expect($shape.attr('points').trim().split(/\s+/)).to.have.length(8);
         });
     });
+
+    it('Checks horizontal and vertical polylines while the sidebar is virtualized', () => {
+        [
+            [{ x: 500, y: 100 }, { x: 600, y: 100 }],
+            [{ x: 500, y: 200 }, { x: 500, y: 300 }],
+        ].forEach((pointsMap, index) => {
+            cy.createPolyline({
+                type: 'Shape', labelName, pointsMap, numberOfPoints: 2,
+            });
+            cy.get(`#cvat_canvas_shape_${objectCount + index + 1}`).should(($shape) => {
+                const { width, height } = $shape[0].getBoundingClientRect();
+                expect(index === 0 ? height : width, 'zero-area polyline bounding box').to.equal(0);
+                expect(index === 0 ? width : height, 'nonzero polyline length').to.be.greaterThan(0);
+            });
+            cy.get(`${holder} .cvat-objects-sidebar-state-item`).should('have.length.lessThan', objectCount);
+        });
+    });
 });
