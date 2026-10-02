@@ -2,7 +2,9 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React from 'react';
+import React, {
+    useCallback, useEffect, useRef, useState,
+} from 'react';
 import { connect } from 'react-redux';
 
 import {
@@ -42,180 +44,210 @@ interface SessionProps extends Omit<Props, 'objectState' | 'jobInstance'> {
     jobInstance: Job;
 }
 
-interface SessionState {
+interface SessionControls {
     active: boolean;
     approxPolyAccuracy: number;
+    onChangeAccuracy(value: number): void;
+    apply(points: number[]): Promise<void>;
+    cancel(): Promise<void>;
+    updatePreview(points: number[]): Promise<void>;
 }
 
-class PolySimplifySession extends React.PureComponent<SessionProps, SessionState> {
-    private readonly originalPoints: number[];
-    private mounted = false;
-    private frozen = false;
-    private finished = false;
-    private finishing = false;
+interface SimplifySession {
+    mounted: boolean;
+    active: boolean;
+    frozen: boolean;
+    finished: boolean;
+    finishing: boolean;
+    needsRestore: boolean;
+    pending: Promise<void>;
+    jobInstance: Job;
+    frameNumber: number;
+}
 
-    public constructor(props: SessionProps) {
-        super(props);
-        this.originalPoints = props.originalPoints ? [...props.originalPoints] : [...(props.objectState.points || [])];
-        this.state = {
-            active: false,
-            approxPolyAccuracy: props.defaultApproxPolyAccuracy,
-        };
-    }
+function usePolySimplifySession(props: SessionProps): SessionControls {
+    const [active, setActive] = useState(false);
+    const [approxPolyAccuracy, setApproxPolyAccuracy] = useState(props.defaultApproxPolyAccuracy);
+    const [originalPoints] = useState(() => [...(props.originalPoints || props.objectState.points || [])]);
+    const propsRef = useRef(props);
+    propsRef.current = props;
+    const sessionRef = useRef<SimplifySession | null>(null);
 
-    public componentDidMount(): void {
-        this.mounted = true;
-        this.start();
-    }
+    const enqueue = useCallback((currentSession: SimplifySession, operation: () => Promise<void>): Promise<void> => {
+        const session = currentSession;
+        const pending = session.pending.then(operation);
+        // Keep cleanup runnable even if an earlier operation fails.
+        session.pending = pending.catch(() => {});
+        return pending;
+    }, []);
 
-    public componentDidUpdate(prevProps: SessionProps): void {
-        if (prevProps.frameNumber !== this.props.frameNumber ||
-            prevProps.jobInstance !== this.props.jobInstance
-        ) {
-            this.cancel();
-        } else if (!this.state.active &&
-            prevProps.defaultApproxPolyAccuracy !== this.props.defaultApproxPolyAccuracy
-        ) {
-            this.setState({ approxPolyAccuracy: this.props.defaultApproxPolyAccuracy });
+    const unfreeze = useCallback(async (currentSession: SimplifySession): Promise<void> => {
+        const session = currentSession;
+        if (session.frozen) {
+            session.frozen = false;
+            await session.jobInstance.actions.freeze(false);
         }
-    }
+    }, []);
 
-    public componentWillUnmount(): void {
-        this.mounted = false;
-        if (!this.finished) {
-            if (this.state.active) {
-                this.props.objectState.points = [...this.originalPoints];
-                this.props.updateState(this.props.objectState);
+    const restore = useCallback(async (currentSession: SimplifySession, currentProps: SessionProps): Promise<void> => {
+        const session = currentSession;
+        const { objectState, updateState } = currentProps;
+        try {
+            if (!session.finished && session.needsRestore) {
+                objectState.points = [...originalPoints];
+                await updateState(objectState);
+                session.needsRestore = false;
             }
-            this.unfreeze();
-            this.props.close(this.props.objectState.clientID as number);
+        } finally {
+            await unfreeze(session);
+            session.finished = true;
         }
-    }
+    }, [originalPoints, unfreeze]);
 
-    private unfreeze = async (): Promise<void> => {
-        if (this.frozen) {
-            this.frozen = false;
-            await this.props.jobInstance.actions.freeze(false);
-        }
-    };
+    const cancel = useCallback(async (): Promise<void> => {
+        const session = sessionRef.current;
+        if (!session || session.finishing || session.finished) return;
+        session.finishing = true;
+        const currentProps = propsRef.current;
+        await enqueue(session, async (): Promise<void> => {
+            try {
+                await restore(session, currentProps);
+            } finally {
+                if (session.mounted) currentProps.close(currentProps.objectState.clientID as number);
+                session.finishing = false;
+            }
+        });
+    }, [enqueue, restore]);
 
-    private start = async (): Promise<void> => {
+    const apply = useCallback(async (simplifiedPoints: number[]): Promise<void> => {
+        const session = sessionRef.current;
+        if (!session || !session.mounted || !session.active || session.finishing || session.finished) return;
+        session.finishing = true;
+        const currentProps = propsRef.current;
+        const { objectState, updateState, close } = currentProps;
+        await enqueue(session, async (): Promise<void> => {
+            try {
+                if (!openCVWrapper.isInitialized) {
+                    await openCVWrapper.initialize(() => {});
+                }
+                if (!session.mounted) return;
+
+                // Restore while history is frozen, then record only the final simplification.
+                objectState.points = [...originalPoints];
+                await updateState(objectState);
+                session.needsRestore = false;
+                if (!session.mounted) return;
+
+                await unfreeze(session);
+                if (!session.mounted) return;
+
+                objectState.points = [...simplifiedPoints];
+                session.needsRestore = true;
+                await updateState(objectState);
+                // A final save already in flight completes the commit, even after unmount.
+                session.finished = true;
+                if (session.mounted) close(objectState.clientID as number);
+            } catch (error) {
+                await restore(session, currentProps);
+                if (session.mounted) close(objectState.clientID as number);
+                throw error;
+            } finally {
+                session.finishing = false;
+            }
+        });
+    }, [enqueue, originalPoints, restore, unfreeze]);
+
+    const updatePreview = useCallback(async (points: number[]): Promise<void> => {
+        const session = sessionRef.current;
+        if (!session || !session.mounted || !session.active || session.finishing || session.finished) return;
+        await enqueue(session, async (): Promise<void> => {
+            if (!session.mounted || session.finishing || session.finished) return;
+            const { objectState, updateState } = propsRef.current;
+            session.needsRestore = true;
+            objectState.points = [...points];
+            await updateState(objectState);
+        });
+    }, [enqueue]);
+
+    useEffect((): (() => void) => {
+        const currentProps = propsRef.current;
         const {
             objectState, canvasInstance, activateObject, jobInstance, close,
-        } = this.props;
-        if (![ShapeType.POLYGON, ShapeType.POLYLINE].includes(objectState.shapeType)) {
-            close(objectState.clientID as number);
-            return;
-        }
+        } = currentProps;
+        const session: SimplifySession = {
+            mounted: true,
+            active: false,
+            frozen: false,
+            finished: false,
+            finishing: false,
+            needsRestore: false,
+            pending: Promise.resolve(),
+            jobInstance,
+            frameNumber: currentProps.frameNumber,
+        };
+        sessionRef.current = session;
 
-        activateObject(objectState.clientID as number);
-        if (canvasInstance instanceof Canvas && canvasInstance.mode() !== CanvasMode.IDLE) {
-            canvasInstance.cancel();
-        }
-
-        try {
-            await jobInstance.actions.freeze(true);
-            this.frozen = true;
-            if (this.mounted) {
-                this.setState({ active: true });
-            } else {
-                await this.unfreeze();
-            }
-        } catch (_error) {
-            await this.unfreeze();
-            if (this.mounted) {
+        enqueue(session, async (): Promise<void> => {
+            if (!session.mounted) return;
+            if (![ShapeType.POLYGON, ShapeType.POLYLINE].includes(objectState.shapeType)) {
                 close(objectState.clientID as number);
+                return;
             }
-        }
-    };
-
-    private apply = async (simplifiedPoints: number[]): Promise<void> => {
-        if (this.finishing || !this.state.active) {
-            return;
-        }
-        this.finishing = true;
-        const { objectState, updateState, close } = this.props;
-
-        try {
-            if (!openCVWrapper.isInitialized) {
-                await openCVWrapper.initialize(() => {});
+            activateObject(objectState.clientID as number);
+            if (canvasInstance instanceof Canvas && canvasInstance.mode() !== CanvasMode.IDLE) {
+                canvasInstance.cancel();
             }
-            if (!this.mounted) return;
-
-            // Preserve the existing undo/history behavior: restore the original before saving the result.
-            objectState.points = [...this.originalPoints];
-            await updateState(objectState);
-            if (!this.mounted) return;
-
-            await this.unfreeze();
-            if (!this.mounted) return;
-
-            objectState.points = [...simplifiedPoints];
-            await updateState(objectState);
-            if (!this.mounted) return;
-
-            this.finished = true;
-            close(objectState.clientID as number);
-        } catch (error) {
-            this.finishing = false;
-            await this.cancel();
-            throw error;
-        } finally {
-            this.finishing = false;
-        }
-    };
-
-    private cancel = async (): Promise<void> => {
-        if (this.finishing || this.finished) {
-            return;
-        }
-        this.finishing = true;
-        const { objectState, updateState, close } = this.props;
-
-        try {
-            if (this.state.active) {
-                objectState.points = [...this.originalPoints];
-                await updateState(objectState);
+            try {
+                await jobInstance.actions.freeze(true);
+                session.frozen = true;
+                if (session.mounted) {
+                    session.active = true;
+                    setActive(true);
+                }
+            } catch (_error) {
+                await unfreeze(session);
+                if (session.mounted) close(objectState.clientID as number);
             }
-        } finally {
-            await this.unfreeze();
-            if (this.mounted) {
-                this.finished = true;
-                close(objectState.clientID as number);
-            }
-            this.finishing = false;
+        });
+
+        return (): void => {
+            session.mounted = false;
+            const lastProps = propsRef.current;
+            if (!session.finished) lastProps.close(lastProps.objectState.clientID as number);
+            // Wait for freeze/preview/Apply to settle before restoring and releasing history.
+            enqueue(session, () => restore(session, lastProps));
+        };
+    }, [enqueue, restore, unfreeze]);
+
+    useEffect((): void => {
+        const session = sessionRef.current;
+        if (session && (session.frameNumber !== props.frameNumber || session.jobInstance !== props.jobInstance)) {
+            cancel();
         }
+    }, [cancel, props.frameNumber, props.jobInstance]);
+
+    useEffect((): void => {
+        if (!active) setApproxPolyAccuracy(props.defaultApproxPolyAccuracy);
+    }, [active, props.defaultApproxPolyAccuracy]);
+
+    return {
+        active, approxPolyAccuracy, onChangeAccuracy: setApproxPolyAccuracy, apply, cancel, updatePreview,
     };
+}
 
-    private updatePreview = async (points: number[]): Promise<void> => {
-        if (this.mounted && this.state.active && !this.finishing) {
-            const { objectState, updateState } = this.props;
-            objectState.points = points;
-            await updateState(objectState);
-        }
-    };
-
-    private onChangeAccuracy = (approxPolyAccuracy: number): void => {
-        this.setState({ approxPolyAccuracy });
-    };
-
-    public render(): JSX.Element | null {
-        if (!this.state.active) {
-            return null;
-        }
-
-        return (
-            <PolySimplifyControl
-                objectState={this.props.objectState}
-                approxPolyAccuracy={this.state.approxPolyAccuracy}
-                repeatDrawShapeShortcut={this.props.repeatDrawShapeShortcut}
-                onChangeAccuracy={this.onChangeAccuracy}
-                onApply={this.apply}
-                onCancel={this.cancel}
-                onUpdatePreview={this.updatePreview}
-            />
-        );
-    }
+function PolySimplifySession(props: SessionProps): JSX.Element | null {
+    const { active, ...controls } = usePolySimplifySession(props);
+    return active ? (
+        <PolySimplifyControl
+            objectState={props.objectState}
+            approxPolyAccuracy={controls.approxPolyAccuracy}
+            repeatDrawShapeShortcut={props.repeatDrawShapeShortcut}
+            onChangeAccuracy={controls.onChangeAccuracy}
+            onApply={controls.apply}
+            onCancel={controls.cancel}
+            onUpdatePreview={controls.updatePreview}
+        />
+    ) : null;
 }
 
 function PolySimplifyController(props: Props): JSX.Element | null {

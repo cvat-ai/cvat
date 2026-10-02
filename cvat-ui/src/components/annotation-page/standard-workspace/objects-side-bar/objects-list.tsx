@@ -51,7 +51,6 @@ import LayerSection from './drag-and-drop/layer-section';
 
 const OBJECT_ITEM_ESTIMATED_HEIGHT = 88;
 const LAYER_ITEM_ESTIMATED_HEIGHT = 100;
-const SCROLL_TARGET_MAX_FRAMES = 60;
 
 interface PendingScrollTarget {
     itemID: string;
@@ -60,10 +59,16 @@ interface PendingScrollTarget {
     parentID: number | null;
 }
 
+enum SidebarRowKind {
+    OBJECT = 'object',
+    LAYER = 'layer',
+    INSERT = 'insert',
+}
+
 type SidebarRow =
-    | { kind: 'object'; key: string; clientID: number; zOrder: number | null; lastInLayer: boolean }
-    | { kind: 'layer'; key: string; zOrder: number; placement: LayerPlacement }
-    | { kind: 'insert'; key: string; placement: LayerPlacement };
+    | { kind: SidebarRowKind.OBJECT; key: string; clientID: number; zOrder: number | null; lastInLayer: boolean }
+    | { kind: SidebarRowKind.LAYER; key: string; zOrder: number; placement: LayerPlacement }
+    | { kind: SidebarRowKind.INSERT; key: string; placement: LayerPlacement };
 
 interface Props {
     workspace: Workspace;
@@ -170,7 +175,7 @@ function ObjectListComponent(props: Props): JSX.Element {
     const sidebarRows = useMemo((): SidebarRow[] => {
         if (statesOrdering !== StatesOrdering.LAYER) {
             return sortedStatesID.map((clientID: number): SidebarRow => ({
-                kind: 'object', key: `flat-object:${clientID}`, clientID, zOrder: null, lastInLayer: false,
+                kind: SidebarRowKind.OBJECT, key: `flat-object:${clientID}`, clientID, zOrder: null, lastInLayer: false,
             }));
         }
 
@@ -178,14 +183,14 @@ function ObjectListComponent(props: Props): JSX.Element {
         zLayers.forEach((zOrder: number, index: number): void => {
             const placement: LayerPlacement = index === 0 ? { before: zOrder } : { after: zLayers[index - 1] };
             rows.push({
-                kind: 'layer', key: `layer:${zOrder}`, zOrder, placement,
+                kind: SidebarRowKind.LAYER, key: `layer:${zOrder}`, zOrder, placement,
             });
 
             if (!collapsedLayers.has(zOrder)) {
                 const objectIds = objectIdsByLayer[zOrder] || [];
                 objectIds.forEach((clientID: number, objectIndex: number): void => {
                     rows.push({
-                        kind: 'object',
+                        kind: SidebarRowKind.OBJECT,
                         key: `layer-object:${clientID}`,
                         clientID,
                         zOrder,
@@ -196,7 +201,7 @@ function ObjectListComponent(props: Props): JSX.Element {
         });
         if (zLayers.length) {
             const placement: LayerPlacement = { after: zLayers[zLayers.length - 1] };
-            rows.push({ kind: 'insert', key: layerInsertDropID(placement), placement });
+            rows.push({ kind: SidebarRowKind.INSERT, key: layerInsertDropID(placement), placement });
         }
         return rows;
     }, [collapsedLayers, objectIdsByLayer, sortedStatesID, statesOrdering, zLayers]);
@@ -246,7 +251,7 @@ function ObjectListComponent(props: Props): JSX.Element {
     useEffect((): void => {
         if (pendingScrollTarget) {
             const index = sidebarRows.findIndex((row: SidebarRow): boolean => (
-                row.kind === 'object' && row.clientID === pendingScrollTarget.rootClientID
+                row.kind === SidebarRowKind.OBJECT && row.clientID === pendingScrollTarget.rootClientID
             ));
             if (index !== -1) {
                 virtualListRef.current?.scrollTo({ index, align: 'top' });
@@ -259,44 +264,69 @@ function ObjectListComponent(props: Props): JSX.Element {
             return undefined;
         }
 
-        let frame: number;
-        let attempts = 0;
-        let stableFrames = 0;
-        const alignTarget = (): void => {
-            const item = window.document.getElementById(pendingScrollTarget.itemID) || (
-                pendingScrollTarget.parentID !== null ?
-                    window.document.getElementById(pendingScrollTarget.rootID) : null
-            );
-            const scrollContainer = statesListRef.current?.querySelector<HTMLElement>('.rc-virtual-list-holder');
+        if (!sidebarRows.some((row: SidebarRow): boolean => (
+            row.kind === SidebarRowKind.OBJECT && row.clientID === pendingScrollTarget.rootClientID
+        ))) {
+            setPendingScrollTarget(null);
+            return undefined;
+        }
 
-            if (item && scrollContainer) {
+        let frame: number;
+        let previousGeometry: string;
+        const alignTarget = (): void => {
+            const scrollContainer = statesListRef.current?.querySelector<HTMLElement>('.rc-virtual-list-holder');
+            if (!scrollContainer || !scrollContainer.clientHeight) {
+                setPendingScrollTarget(null);
+                return;
+            }
+
+            const item = scrollContainer.querySelector<HTMLElement>(`#${pendingScrollTarget.itemID}`) || (
+                pendingScrollTarget.parentID !== null ?
+                    scrollContainer.querySelector<HTMLElement>(`#${pendingScrollTarget.rootID}`) : null
+            );
+
+            if (item) {
                 const scrollPaddingTop = Number.parseFloat(
                     window.getComputedStyle(scrollContainer).scrollPaddingTop,
                 ) || 0;
                 const delta = item.getBoundingClientRect().top -
-                    scrollContainer.getBoundingClientRect().top - scrollPaddingTop;
-                if (Math.abs(delta) > 1) {
-                    scrollContainer.scrollTop += delta;
-                    stableFrames = 0;
-                } else {
-                    stableFrames++;
-                }
+                    scrollContainer.getBoundingClientRect().top - scrollContainer.clientTop - scrollPaddingTop;
+                const maxScrollTop = Math.max(0, scrollContainer.scrollHeight - scrollContainer.clientHeight);
+                const scrollTop = Math.max(0, Math.min(scrollContainer.scrollTop + delta, maxScrollTop));
+                const alignedOrAtBoundary = Math.abs(delta) <= 1 ||
+                    Math.abs(scrollTop - scrollContainer.scrollTop) <= 1;
+                const geometry = [
+                    delta, scrollContainer.scrollTop, scrollContainer.scrollHeight, scrollContainer.clientHeight,
+                ].join(',');
 
-                if (stableFrames >= 2) {
+                if (alignedOrAtBoundary && geometry === previousGeometry) {
                     setPendingScrollTarget(null);
                     return;
                 }
+                previousGeometry = geometry;
+                if (!alignedOrAtBoundary) {
+                    virtualListRef.current?.scrollTo(scrollTop);
+                }
             }
 
-            if (++attempts < SCROLL_TARGET_MAX_FRAMES) {
-                frame = window.requestAnimationFrame(alignTarget);
-            } else {
-                setPendingScrollTarget(null);
-            }
+            frame = window.requestAnimationFrame(alignTarget);
         };
 
+        const cancelScroll = (): void => {
+            window.cancelAnimationFrame(frame);
+            setPendingScrollTarget(null);
+        };
+        const container = statesListRef.current;
+        container?.addEventListener('wheel', cancelScroll, { passive: true });
+        container?.addEventListener('touchmove', cancelScroll, { passive: true });
+        container?.addEventListener('pointerdown', cancelScroll);
         frame = window.requestAnimationFrame(alignTarget);
-        return (): void => window.cancelAnimationFrame(frame);
+        return (): void => {
+            window.cancelAnimationFrame(frame);
+            container?.removeEventListener('wheel', cancelScroll);
+            container?.removeEventListener('touchmove', cancelScroll);
+            container?.removeEventListener('pointerdown', cancelScroll);
+        };
     }, [pendingScrollTarget, sidebarRows]);
 
     // React to external requests to expand the layer containing a target object.
@@ -546,7 +576,7 @@ function ObjectListComponent(props: Props): JSX.Element {
             itemKey={(row: SidebarRow): string => row.key}
         >
             {(row: SidebarRow): JSX.Element => {
-                if (row.kind === 'layer') {
+                if (row.kind === SidebarRowKind.LAYER) {
                     return (
                         <div className='cvat-objects-sidebar-layer-virtual-row'>
                             <LayerInsertDropArea
@@ -573,7 +603,7 @@ function ObjectListComponent(props: Props): JSX.Element {
                     );
                 }
 
-                if (row.kind === 'insert') {
+                if (row.kind === SidebarRowKind.INSERT) {
                     return (
                         <div className='cvat-objects-sidebar-layer-virtual-row'>
                             <LayerInsertDropArea

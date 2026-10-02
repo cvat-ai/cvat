@@ -12,6 +12,7 @@ import { translatePoint } from '../../support/utils';
 
 context('Simplify polygons feature', { scrollBehavior: false }, () => {
     let taskId = null;
+    let jobId = null;
     const polygonCenter = { x: 510, y: 324 };
     const detailedPolygonPoints = [
         // a jagged shape with redundant points
@@ -244,8 +245,9 @@ context('Simplify polygons feature', { scrollBehavior: false }, () => {
             attributes: [{ name: 'attribute', type: 'text', values: '' }],
             serverFiles: ['images/image_1.jpg'],
         });
-        cy.headlessCreateTask(taskSpec, dataSpec, extras).then(({ taskId: tid, jobIds: [jobId] }) => {
+        cy.headlessCreateTask(taskSpec, dataSpec, extras).then(({ taskId: tid, jobIds: [jid] }) => {
             taskId = tid;
+            jobId = jid;
             cy.visit(`/tasks/${taskId}/jobs/${jobId}`);
             cy.get('.cvat-canvas-container').should('be.visible');
         });
@@ -282,23 +284,24 @@ context('Simplify polygons feature', { scrollBehavior: false }, () => {
         });
 
         context('Auto-simplify', () => {
+            function setAutoSimplify(enabled) {
+                ['polyline', 'polygon'].forEach((shape) => {
+                    cy.interactControlButton(`draw-${shape}`);
+                    cy.get(`.cvat-draw-${shape}-popover-simplify-switch`).then(($switch) => {
+                        if ($switch.hasClass('ant-switch-checked') !== enabled) {
+                            toggleAutoSimplify(enabled, shape);
+                        }
+                    });
+                    cy.interactControlButton(`draw-${shape}`);
+                    cy.get(`.cvat-${shape}-popover`).should('not.exist');
+                });
+            }
+
             before(() => {
-                cy.interactControlButton('draw-polyline');
-                toggleAutoSimplify(true, 'polyline');
-                cy.interactControlButton('draw-polyline');
-                cy.interactControlButton('draw-polygon');
-                toggleAutoSimplify(true, 'polygon');
-                cy.interactControlButton('draw-polygon');
+                setAutoSimplify(true);
             });
             after(() => {
-                cy.interactControlButton('draw-polygon');
-                toggleAutoSimplify(false, 'polygon');
-                cy.interactControlButton('draw-polygon');
-                cy.get('.cvat-polygon-popover').should('not.exist');
-                cy.interactControlButton('draw-polyline');
-                toggleAutoSimplify(false, 'polyline');
-                cy.interactControlButton('draw-polyline');
-                cy.get('.cvat-polyline-popover').should('not.exist');
+                setAutoSimplify(false);
             });
 
             it('Auto-simplify when drawing a polyline', () => {
@@ -314,22 +317,19 @@ context('Simplify polygons feature', { scrollBehavior: false }, () => {
             });
 
             it('Keeps simplification active when the object row is virtualized', () => {
-                const rectangle = {
-                    type: 'Shape',
-                    labelName,
-                    points: '2 Points',
-                    firstX: 50,
-                    firstY: 50,
-                    secondX: 100,
-                    secondY: 100,
-                };
                 const existingObjects = 12;
                 const polygonId = existingObjects + 1;
                 const holder = '.cvat-objects-sidebar-virtual-list .rc-virtual-list-holder';
-
-                for (let i = 0; i < existingObjects; i++) {
-                    cy.createRectangle(rectangle);
-                }
+                cy.headlessCreateObjects(Array.from({ length: existingObjects }, () => ({
+                    objectType: 'shape',
+                    type: 'rectangle',
+                    labelName,
+                    frame: 0,
+                    points: [50, 50, 100, 100],
+                })), jobId);
+                cy.reload();
+                cy.get('.cvat_canvas_shape').should('have.length', existingObjects);
+                setAutoSimplify(true);
 
                 cy.get(holder).scrollTo('top', { duration: 0, ensureScrollable: false });
                 cy.get(`#cvat-objects-sidebar-state-item-${existingObjects}`).should('not.exist');
