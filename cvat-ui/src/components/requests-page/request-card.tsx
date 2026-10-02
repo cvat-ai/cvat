@@ -10,7 +10,7 @@ import { Row, Col } from 'antd/lib/grid';
 import Card from 'antd/lib/card';
 import Text from 'antd/lib/typography/Text';
 import Progress from 'antd/lib/progress';
-import { DownloadOutlined, MoreOutlined } from '@ant-design/icons';
+import { MoreOutlined } from '@ant-design/icons';
 import Button from 'antd/lib/button';
 import { MenuProps } from 'antd/lib/menu';
 import { BaseType } from 'antd/lib/typography/Base';
@@ -176,16 +176,13 @@ function RequestCard(props: Readonly<Props>): JSX.Element {
         style.opacity = 0.5;
     }
 
-    const card = (
-        menuItems: NonNullable<MenuProps['items']>,
-        directDownload?: () => void,
-    ): JSX.Element => (
+    const card = (menuItems: NonNullable<MenuProps['items']>): JSX.Element => (
         <Card
             ref={itemRef}
             className={`cvat-requests-card${selected ? ' cvat-item-selected' : ''}`}
             style={style}
             onClick={onClick}
-            onContextMenuCapture={directDownload ? undefined : handleContextMenuCapture}
+            onContextMenuCapture={handleContextMenuCapture}
         >
             <Row justify='space-between'>
                 <Col span={12}>
@@ -251,16 +248,9 @@ function RequestCard(props: Readonly<Props>): JSX.Element {
                                 <Button
                                     type='link'
                                     size='middle'
-                                    className={`cvat-requests-page-actions-button ${
-                                        directDownload ? 'cvat-requests-page-download-button' : 'cvat-actions-menu-button'
-                                    }`}
-                                    aria-label={directDownload ? 'Download' : 'Actions'}
-                                    title={directDownload ? 'Download' : undefined}
-                                    icon={directDownload ? <DownloadOutlined /> : <MoreOutlined className='cvat-menu-icon' />}
-                                    onClick={directDownload ? (event: React.MouseEvent): void => {
-                                        event.stopPropagation();
-                                        directDownload();
-                                    } : handleContextMenuClick}
+                                    className='cvat-requests-page-actions-button cvat-actions-menu-button'
+                                    icon={<MoreOutlined className='cvat-menu-icon' />}
+                                    onClick={handleContextMenuClick}
                                 />
                             )}
                         </Col>

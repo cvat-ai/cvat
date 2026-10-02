@@ -14,10 +14,7 @@ import { CombinedState } from 'reducers';
 
 interface Props {
     requestInstance: Request;
-    triggerElement: (
-        menuItems: NonNullable<MenuProps['items']>,
-        directDownload?: () => void,
-    ) => JSX.Element | null;
+    triggerElement: (menuItems: NonNullable<MenuProps['items']>) => JSX.Element | null;
     dropdownTrigger?: ('click' | 'hover' | 'contextMenu')[];
 }
 
@@ -119,14 +116,9 @@ function RequestActionsComponent(props: Readonly<Props>): JSX.Element | null {
         });
     }
 
-    const directDownload = requestsToAct.length === 1 && downloadableCount === 1 && queuedCount === 0;
-    const renderedTrigger = triggerElement(menuItems, directDownload ? onDownload : undefined);
+    const renderedTrigger = triggerElement(menuItems);
     if (!renderedTrigger) {
         return null;
-    }
-
-    if (directDownload) {
-        return renderedTrigger;
     }
 
     return (

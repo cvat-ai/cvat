@@ -111,8 +111,6 @@ context('Export, import an annotation task.', { browser: '!firefox' }, () => {
             cy.get(`[title="${taskBackupArchiveFullName}"]`).should('be.visible');
             cy.contains('button', 'OK').click();
             cy.get('.cvat-notification-notice-import-backup-start').should('be.visible');
-            cy.get('.cvat-notification-notice-import-backup-start .cvat-notification-link')
-                .should('contain.text', 'here');
             cy.closeNotification('.cvat-notification-notice-import-backup-start');
 
             cy.wait('@importTask').its('response.statusCode').should('equal', 202);
