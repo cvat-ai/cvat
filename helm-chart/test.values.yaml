@@ -67,8 +67,5 @@ keydb:
 
 
 traefik:
-  logs:
-    general:
-      level: DEBUG
-    access:
-      enabled: true
+  log:
+    level: DEBUG
