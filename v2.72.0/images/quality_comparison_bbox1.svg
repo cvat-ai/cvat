@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="132.86768mm"
+   height="65.067589mm"
+   viewBox="0 0 132.86768 65.067589"
+   version="1.1"
+   id="svg1"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs1" />
+  <g
+     id="layer1"
+     transform="translate(-54.515317,-116.4422)">
+    <rect
+       style="fill:#ffeeaa;stroke:#000000;stroke-width:1;stroke-linejoin:round;stroke-miterlimit:1;stroke-dasharray:none;stroke-dashoffset:0"
+       id="rect1"
+       width="52.740253"
+       height="46.742336"
+       x="55.01532"
+       y="117.47633" />
+    <rect
+       style="fill:#e9afaf;stroke:#000000;stroke-width:1;stroke-linejoin:round;stroke-miterlimit:1;stroke-dasharray:none;stroke-dashoffset:0"
+       id="rect1-0"
+       width="52.740253"
+       height="46.742336"
+       x="73.28083"
+       y="134.26746" />
+    <rect
+       style="fill:none;stroke:#000000;stroke-width:0;stroke-linejoin:round;stroke-miterlimit:1;stroke-dasharray:none;stroke-dashoffset:0"
+       id="rect2"
+       width="34.539692"
+       height="29.575905"
+       x="73.215881"
+       y="134.64276" />
+    <rect
+       style="fill:#00ff00;stroke:#000000;stroke-width:1.0257;stroke-linejoin:round;stroke-miterlimit:1;stroke-dasharray:none;stroke-dashoffset:0"
+       id="rect3"
+       width="34.307167"
+       height="29.963833"
+       x="73.435547"
+       y="134.24194" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:300;font-stretch:normal;font-size:6.35px;font-family:Sora;-inkscape-font-specification:'Sora Light';text-align:start;writing-mode:lr-tb;direction:ltr;text-anchor:start;opacity:1;fill:#000000;stroke:none;stroke-width:0.499999;stroke-linejoin:round;stroke-miterlimit:1;stroke-dasharray:0.499999, 1.5;stroke-dashoffset:0"
+       x="166.68744"
+       y="121.2047"
+       id="text21"><tspan
+         id="tspan21"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:Sora;-inkscape-font-specification:Sora;text-align:center;text-anchor:middle;fill:#000000;stroke-width:0.5"
+         x="166.68744"
+         y="121.2047">Intersection</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:6.35px;font-family:FreeSans;-inkscape-font-specification:FreeSans;text-align:start;writing-mode:lr-tb;direction:ltr;text-anchor:start;fill:#000000;stroke:none;stroke-width:0.499999;stroke-linejoin:round;stroke-miterlimit:1;stroke-dasharray:0.499999, 1.5;stroke-dashoffset:0"
+       x="166.78905"
+       y="129.02063"
+       id="text21-6"><tspan
+         id="tspan21-3"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:Sora;-inkscape-font-specification:Sora;text-align:center;text-anchor:middle;fill:#000000;stroke-width:0.5"
+         x="166.78905"
+         y="129.02063">Union</tspan></text>
+    <path
+       style="opacity:1;fill:#000000;stroke:#000000;stroke-width:1;stroke-linejoin:round;stroke-miterlimit:1;stroke-dasharray:none;stroke-dashoffset:0"
+       d="m 145.81128,122.85933 h 41.57173"
+       id="path21" />
+    <text
+       xml:space="preserve"
+       style="font-size:6.35px;font-family:FreeSans;-inkscape-font-specification:FreeSans;text-align:start;writing-mode:lr-tb;direction:ltr;text-anchor:start;fill:#000000;stroke:none;stroke-width:0.499999;stroke-linejoin:round;stroke-miterlimit:1;stroke-dasharray:0.499999, 1.5;stroke-dashoffset:0"
+       x="143.67934"
+       y="124.22081"
+       id="text21-1"><tspan
+         id="tspan21-2"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:Sora;-inkscape-font-specification:Sora;text-align:end;text-anchor:end;fill:#000000;stroke-width:0.5"
+         x="143.67934"
+         y="124.22081">IoU =</tspan></text>
+  </g>
+</svg>
