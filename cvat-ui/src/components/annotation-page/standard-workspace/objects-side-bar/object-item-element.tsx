@@ -10,6 +10,7 @@ import Text from 'antd/lib/typography/Text';
 import { ObjectState } from 'cvat-core-wrapper';
 import { CombinedState } from 'reducers';
 import { activateObject } from 'actions/annotation-actions';
+import { getObjectStateByClientID } from 'utils/objects-sidebar';
 import ObjectButtonsContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/object-buttons';
 import ItemDetailsContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/object-item-details';
 import { getObjectStateColor } from './shared';
@@ -40,8 +41,7 @@ function ObjectItemElementComponent(props: OwnProps): JSX.Element {
         dispatch(activateObject(parentID, clientID, null));
     }, [parentID, clientID]);
 
-    const state = states.find((_state: ObjectState) => _state.clientID === parentID);
-    const element = state.elements.find((_element: ObjectState) => _element.clientID === clientID);
+    const element = getObjectStateByClientID(states, clientID) as ObjectState;
     const elementColor = getObjectStateColor(element, colorBy).rgbComponents();
     const elementClassName = element.clientID === activatedElementId ?
         'cvat-objects-sidebar-state-item-elements cvat-objects-sidebar-state-active-element' :
