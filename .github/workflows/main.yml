@@ -53,7 +53,7 @@ jobs:
           key: ${{ runner.os }}-build-ui-${{ needs.search_cache.outputs.sha }}
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4.3.0
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
 
       - name: Create artifact directories
         run: |
@@ -62,7 +62,7 @@ jobs:
           mkdir /tmp/cvat_sdk
 
       - name: CVAT server. Build and push
-        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           build-args: |
               "COVERAGE_PROCESS_START=.coveragerc"
@@ -79,7 +79,7 @@ jobs:
           yarn run coverage
 
       - name: CVAT UI. Build and push
-        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           cache-from: type=local,src=/tmp/cvat_cache_ui
           context: .
@@ -515,7 +515,7 @@ jobs:
 
       - name: Wait for CVAT to be ready
         run: |
-          max_tries=60
+          max_tries=90
           while [[ $(kubectl get pods -l component=server -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}') != "True" && max_tries -gt 0 ]]; do echo "waiting for CVAT pod" && (( max_tries-- )) && sleep 5; done
           while [[ $(kubectl get pods -l app.kubernetes.io/name=postgresql -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}') != "True" && max_tries -gt 0 ]]; do echo "waiting for DB pod" && (( max_tries-- )) && sleep 5; done
           while [[ $(curl -s -o /tmp/server_response -w "%{http_code}" cvat.local/api/server/about) != "200" && max_tries -gt 0 ]]; do echo "waiting for CVAT" && (( max_tries-- )) && sleep 5; done
@@ -623,6 +623,6 @@ jobs:
           name: coverage_results
 
       - name: Upload coverage reports to Codecov with GitHub Action
-        uses: codecov/codecov-action@0b35c9ecc4f0529d0eb674914510c22f85b196b4 # v7.1.0
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}

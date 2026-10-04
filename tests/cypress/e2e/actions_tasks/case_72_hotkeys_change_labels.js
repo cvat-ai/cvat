@@ -6,6 +6,7 @@
 /// <reference types="cypress" />
 
 context('Hotkeys to change labels feature.', () => {
+    const platformModifier = Cypress.platform === 'darwin' ? { metaKey: true } : { ctrlKey: true };
     const caseId = '72';
     const labelName = `Case ${caseId}`;
     const taskName = labelName;
@@ -128,6 +129,28 @@ context('Hotkeys to change labels feature.', () => {
             cy.get('#cvat-objects-sidebar-state-item-2')
                 .find('.cvat-objects-sidebar-state-item-label-selector')
                 .should('have.text', secondLabelCurrentVal);
+        });
+
+        it('Changing a label for a multi-selection using hotkey.', () => {
+            for (const clientId of [1, 2]) {
+                cy.get(`#cvat-objects-sidebar-state-item-${clientId}`)
+                    .trigger('mousedown', { button: 0, ...platformModifier });
+                cy.get(`#cvat-objects-sidebar-state-item-${clientId}`)
+                    .should('have.class', 'cvat-objects-sidebar-state-item-multi-selected');
+            }
+
+            cy.get('body').type('{Ctrl}1');
+            for (const clientId of [1, 2]) {
+                cy.get(`#cvat-objects-sidebar-state-item-${clientId}`)
+                    .find('.cvat-objects-sidebar-state-item-label-selector')
+                    .should('have.text', firstLabelCurrentVal);
+            }
+
+            cy.get('#cvat-objects-sidebar-state-item-1')
+                .find('.cvat-object-item-button-lock')
+                .click({ force: true });
+            cy.get('body').type('{Ctrl}2');
+            cy.contains(`Label "${secondLabelCurrentVal}" cannot be applied to every selected object`).should('exist');
         });
     });
 });

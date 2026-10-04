@@ -17,7 +17,9 @@ import {
     isAudioIntervalSplittableAtPlaybackPosition,
     isAudioIntervalWithinSplitRange,
 } from 'audio/utils/audio-interval';
-import type { AudioPlaybackRange } from 'audio/components/annotation-page/audio-workspace/utils/audio-interval';
+import {
+    AudioRegionsOrdering, type AudioPlaybackRange,
+} from 'audio/components/annotation-page/audio-workspace/utils/audio-interval';
 
 import { updateActiveControl } from './annotation-actions';
 
@@ -43,6 +45,7 @@ export enum AudioActionTypes {
     SET_AUDIO_ACTIVE_INTERVAL = 'SET_AUDIO_ACTIVE_INTERVAL',
     SET_AUDIO_HOVERED_INTERVAL = 'SET_AUDIO_HOVERED_INTERVAL',
     SET_AUDIO_INTERACTING_INTERVAL = 'SET_AUDIO_INTERACTING_INTERVAL',
+    SET_AUDIO_INTERVALS_ORDERING = 'SET_AUDIO_INTERVALS_ORDERING',
     UPDATE_AUDIO_CONTEXT_MENU = 'UPDATE_AUDIO_CONTEXT_MENU',
     LOAD_AUDIO_DATA = 'LOAD_AUDIO_DATA',
     LOAD_AUDIO_DATA_SUCCESS = 'LOAD_AUDIO_DATA_SUCCESS',
@@ -63,10 +66,10 @@ export const audioActions = {
     reportAudioCurrentTime: (time: number) => (
         createAction(AudioActionTypes.REPORT_AUDIO_CURRENT_TIME, { time })
     ),
-    seekAudio: (time: number) => (
-        createAction(AudioActionTypes.SEEK_AUDIO, { request: { time } })
+    seekAudio: (request: AudioSeekRequest) => (
+        createAction(AudioActionTypes.SEEK_AUDIO, { request })
     ),
-    completeAudioSeek: (request: { time: number }) => (
+    completeAudioSeek: (request: AudioSeekRequest) => (
         createAction(AudioActionTypes.COMPLETE_AUDIO_SEEK, { request })
     ),
     setAudioDuration: (duration: number) => (
@@ -111,6 +114,9 @@ export const audioActions = {
     setAudioInteractingInterval: (clientID: number | null) => (
         createAction(AudioActionTypes.SET_AUDIO_INTERACTING_INTERVAL, { clientID })
     ),
+    setAudioIntervalsOrdering: (ordering: AudioRegionsOrdering) => (
+        createAction(AudioActionTypes.SET_AUDIO_INTERVALS_ORDERING, { ordering })
+    ),
     updateAudioContextMenu: (left: number, top: number, clientID: number | null = null) => (
         createAction(AudioActionTypes.UPDATE_AUDIO_CONTEXT_MENU, {
             left, top, clientID,
@@ -150,12 +156,10 @@ export function toggleAudioPlayback(): ThunkAction {
     };
 }
 
-export type AudioSeekIntent =
+export type AudioSeekRequest =
+    | number
     | { kind: 'boundary'; boundary: 'start' | 'end' }
-    | { kind: 'step'; direction: -1 | 1; size: 'short' | 'long' };
-
-const AUDIO_SHORT_JUMP_FRACTION = 0.005;
-const AUDIO_LONG_JUMP_FRACTION = 0.05;
+    | { kind: 'visible-range-offset'; fraction: number };
 
 type AudioIntervalPatch = Partial<Pick<
     AudioIntervalState,
@@ -225,24 +229,6 @@ export function releaseAudioDataAsync(audioDataToken: string): ThunkAction {
     return async (dispatch: ThunkDispatch): Promise<void> => {
         removeCachedAudioData(audioDataToken);
         dispatch(audioActions.setWaveformReady(audioDataToken, false));
-    };
-}
-
-export function requestAudioSeekByIntent(intent: AudioSeekIntent): ThunkAction {
-    return async (dispatch: ThunkDispatch, getState): Promise<void> => {
-        const { currentTime, duration, zoom } = getState().audio.player;
-        if (duration <= 0) return;
-
-        let target: number;
-        if (intent.kind === 'boundary') {
-            target = intent.boundary === 'start' ? 0 : duration;
-        } else {
-            const safeZoom = Number.isFinite(zoom) && zoom > 0 ? zoom : 1;
-            const fraction = intent.size === 'short' ? AUDIO_SHORT_JUMP_FRACTION : AUDIO_LONG_JUMP_FRACTION;
-            target = currentTime + intent.direction * ((duration / safeZoom) * fraction);
-        }
-
-        dispatch(audioActions.seekAudio(clamp(target, 0, duration)));
     };
 }
 
