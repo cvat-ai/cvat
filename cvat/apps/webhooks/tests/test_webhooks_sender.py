@@ -100,11 +100,11 @@ class TestServerWebhooksOnRegistration(ApiTestBase):
             "created_via": "registration",
         }
         _empty_profile_body = {
-            "cvat_usage_reason": None,
-            "primary_role": None,
+            "cvat_usage_reason": "",
+            "primary_role": "",
             "planned_activities": [],
             "data_types": [],
-            "discovery_source": None,
+            "discovery_source": "",
         }
 
         expected_webhook_deliveries_after_registration = [
