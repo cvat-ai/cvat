@@ -11479,7 +11479,6 @@ components:
           description: Designates whether this user should be treated as active. Unselect
             this instead of deleting accounts.
         cvat_usage_reason:
-          nullable: true
           description: |-
             The main reason the user uses CVAT.
 
@@ -11489,11 +11488,9 @@ components:
             * `personal_project` - personal_project
           oneOf:
           - $ref: '#/components/schemas/CvatUsageReasonEnum'
-          - $ref: '#/components/schemas/NullEnum'
+          - $ref: '#/components/schemas/BlankEnum'
         primary_role:
           type: string
-          nullable: true
-          minLength: 1
           description: A predefined role code or custom role text.
           maxLength: 255
         planned_activities:
@@ -11512,8 +11509,6 @@ components:
           maxItems: 6
         discovery_source:
           type: string
-          nullable: true
-          minLength: 1
           description: A predefined discovery source code or custom text.
           maxLength: 255
     PatchedWebhookWriteRequest:
@@ -14025,7 +14020,6 @@ components:
           readOnly: true
           nullable: true
         cvat_usage_reason:
-          nullable: true
           description: |-
             The main reason the user uses CVAT.
 
@@ -14035,10 +14029,9 @@ components:
             * `personal_project` - personal_project
           oneOf:
           - $ref: '#/components/schemas/CvatUsageReasonEnum'
-          - $ref: '#/components/schemas/NullEnum'
+          - $ref: '#/components/schemas/BlankEnum'
         primary_role:
           type: string
-          nullable: true
           description: A predefined role code or custom role text.
           maxLength: 255
         planned_activities:
@@ -14056,7 +14049,6 @@ components:
           maxItems: 6
         discovery_source:
           type: string
-          nullable: true
           description: A predefined discovery source code or custom text.
           maxLength: 255
         email_verified:

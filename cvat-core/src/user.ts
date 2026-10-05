@@ -23,11 +23,11 @@ export default class User {
     public readonly isActive: boolean;
     public readonly isVerified: boolean;
     public readonly hasAnalyticsAccess: boolean;
-    public readonly cvatUsageReason: string | null;
-    public readonly primaryRole: string | null;
+    public readonly cvatUsageReason: string;
+    public readonly primaryRole: string;
     public readonly plannedActivities: string[];
     public readonly dataTypes: string[];
-    public readonly discoverySource: string | null;
+    public readonly discoverySource: string;
 
     constructor(initialData: SerializedUser) {
         const data = {
@@ -44,11 +44,11 @@ export default class User {
             is_active: null,
             email_verification_required: null,
             has_analytics_access: null,
-            cvat_usage_reason: null,
-            primary_role: null,
+            cvat_usage_reason: '',
+            primary_role: '',
             planned_activities: [] as string[],
             data_types: [] as string[],
-            discovery_source: null,
+            discovery_source: '',
         };
 
         for (const property in data) {

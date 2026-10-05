@@ -389,14 +389,13 @@ class UserSerializer(serializers.ModelSerializer):
         choices=CVAT_USAGE_REASONS,
         source="profile.cvat_usage_reason",
         required=False,
-        allow_null=True,
+        allow_blank=True,
         help_text="The main reason the user uses CVAT.",
     )
     primary_role = serializers.CharField(
         source="profile.primary_role",
         required=False,
-        allow_null=True,
-        allow_blank=False,
+        allow_blank=True,
         max_length=255,
         help_text="A predefined role code or custom role text.",
     )
@@ -419,8 +418,7 @@ class UserSerializer(serializers.ModelSerializer):
     discovery_source = serializers.CharField(
         source="profile.discovery_source",
         required=False,
-        allow_null=True,
-        allow_blank=False,
+        allow_blank=True,
         max_length=255,
         help_text="A predefined discovery source code or custom text.",
     )

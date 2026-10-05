@@ -13,7 +13,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name="profile",
             name="cvat_usage_reason",
-            field=models.CharField(blank=True, max_length=255, null=True),
+            field=models.CharField(blank=True, default="", max_length=255),
         ),
         migrations.AddField(
             model_name="profile",
@@ -23,7 +23,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name="profile",
             name="discovery_source",
-            field=models.CharField(blank=True, max_length=255, null=True),
+            field=models.CharField(blank=True, default="", max_length=255),
         ),
         migrations.AddField(
             model_name="profile",
@@ -33,6 +33,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name="profile",
             name="primary_role",
-            field=models.CharField(blank=True, max_length=255, null=True),
+            field=models.CharField(blank=True, default="", max_length=255),
         ),
     ]

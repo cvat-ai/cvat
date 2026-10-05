@@ -916,27 +916,32 @@ class UserPartialUpdateAPITestCase(UserAPITestCase):
         for field_name, value in data.items():
             self.assertEqual(getattr(self.user.profile, field_name), value)
 
-    def test_api_v2_users_id_user_can_update_primary_role_only(self):
-        self.user.profile.cvat_usage_reason = "teaching_or_coursework"
-        self.user.profile.primary_role = "student"
-        self.user.profile.save(update_fields=["cvat_usage_reason", "primary_role"])
+    def test_api_v2_users_id_user_can_clear_survey_text_fields(self):
+        answers = {
+            "cvat_usage_reason": "work_project",
+            "primary_role": "ml_engineer",
+            "discovery_source": "search_engine",
+        }
+        self.user.profile.refresh_from_db()
+        for field_name, value in answers.items():
+            self.assertEqual(getattr(self.user.profile, field_name), "")
+            setattr(self.user.profile, field_name, value)
+        self.user.profile.save(update_fields=answers.keys())
 
-        response = self._run_api_v2_users_id(
-            self.user, self.user.id, {"primary_role": "project_manager"}
-        )
+        data = dict.fromkeys(answers, "")
+        response = self._run_api_v2_users_id(self.user, self.user.id, data)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data["primary_role"], "project_manager")
-
-        response = self._run_api_v2_users_id(
-            self.user, self.user.id, {"primary_role": "Research software engineer"}
-        )
-
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data["primary_role"], "Research software engineer")
+        self.user.profile.refresh_from_db()
+        for field_name in data:
+            self.assertEqual(response.data[field_name], "")
+            self.assertEqual(getattr(self.user.profile, field_name), "")
 
     def test_api_v2_users_id_rejects_invalid_registration_survey_values(self):
         invalid_payloads = (
+            {"cvat_usage_reason": None},
+            {"primary_role": None},
+            {"discovery_source": None},
             {"cvat_usage_reason": "invalid"},
             {"planned_activities": ["invalid"]},
             {"data_types": ["not_sure", "images"]},
