@@ -106,7 +106,11 @@ Service name is release-redis-master for replication architecture and if Sentine
 - name: CVAT_POSTGRES_HOST
   value: "{{ .Release.Name }}-postgresql"
 - name: CVAT_POSTGRES_PORT
+  {{- if and .Values.postgresql.service.ports (hasKey .Values.postgresql.service.ports "postgresql") }}
   value: "{{ .Values.postgresql.service.ports.postgresql }}"
+  {{- else }}
+  value: "{{ .Values.postgresql.service.port }}"
+  {{- end }}
 {{- else }}
 {{- if .Values.postgresql.external.host }}
 - name: CVAT_POSTGRES_HOST

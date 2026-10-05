@@ -553,3 +553,397 @@ after data was validated.
 1. Bitnami Redis uses AOF, while CloudPirates Redis does not.
    AOF can be enabled using Helm values after the migration is complete.
 1. Do not delete backups immediately after migration.
+
+# Migrate PostgreSQL from Bitnami to CloudPirates
+
+This procedure applies to CVAT installations deployed with the Helm chart. It
+migrates the CVAT database from the Bitnami PostgreSQL chart to the
+CloudPirates PostgreSQL chart by creating a logical dump and restoring it into
+a new persistent volume claim (PVC).
+
+The migration requires downtime. Do not start it while imports, exports,
+backups, or other background jobs are running.
+
+## Before you begin
+
+1. Back up all CVAT data as described in the
+   {{< ilink "/docs/administration/community/advanced/backup_guide" "backup guide" >}}.
+1. Keep the PostgreSQL major version unchanged during the chart migration. The
+   example configuration migrates PostgreSQL 15 to PostgreSQL 15. Upgrade the
+   database major version in a separate maintenance operation.
+1. Check the source database size and make sure that both the migration PVC and
+   the new PostgreSQL PVC have enough free space. The supplied migration
+   manifest requests 20 GiB; increase it before applying the manifest when
+   necessary.
+1. Record every values file used by the current Helm release and its order. Use
+   the same files in every `helm upgrade` command below, with
+   `values-maintenance.yaml` last while maintenance mode is required.
+1. The supplied migration manifest assumes that the Helm release is named
+   `cvat`. If another release name is used, update `PGHOST` and the referenced
+   secret name in `postgres-migration/pg-dump-pod.yaml` before applying it.
+
+This guide uses the following environment variables:
+
+```shell
+export CVAT_NAMESPACE="cvat"
+export CVAT_RELEASE="cvat"
+export POSTGRES_STS="${CVAT_RELEASE}-postgresql"
+export POSTGRES_POD="${POSTGRES_STS}-0"
+export OLD_POSTGRES_PVC="data-${POSTGRES_STS}-0"
+export MIGRATION_POD="postgres-migration-dump"
+```
+
+The StatefulSet, pod, and PVC names above are the defaults for the CVAT chart.
+Confirm them before continuing:
+
+```shell
+kubectl get statefulset,pod,pvc --namespace "$CVAT_NAMESPACE"
+```
+
+## Put CVAT into maintenance mode
+
+Before changing `Chart.yaml` or the PostgreSQL values, upgrade the existing
+release with the Bitnami PostgreSQL chart still configured:
+
+```shell
+cd your_cvat_helm_chart_directory
+
+helm upgrade \
+  --namespace "$CVAT_NAMESPACE" \
+  "$CVAT_RELEASE" \
+  . \
+  -f your-cvat-values.yaml \
+  -f values-maintenance.yaml
+```
+
+Wait until the CVAT frontend, backend server, initializer, and worker pods have
+terminated. The Bitnami PostgreSQL pod must remain running and ready. Do not
+create the final dump until all database writers have stopped.
+
+## Create and verify the database dump
+
+Apply the supplied migration manifest:
+
+```shell
+kubectl apply \
+  --namespace "$CVAT_NAMESPACE" \
+  -f postgres-migration/pg-dump-pod.yaml
+
+kubectl wait \
+  --namespace "$CVAT_NAMESPACE" \
+  --for=condition=Ready \
+  "pod/$MIGRATION_POD" \
+  --timeout=5m
+```
+
+Follow the migration pod logs:
+
+```shell
+kubectl logs \
+  --namespace "$CVAT_NAMESPACE" \
+  --follow "$MIGRATION_POD"
+```
+
+Wait for the following message, then stop following the logs with `Ctrl+C`:
+
+```text
+Dump saved to /backup/cvat.dump
+```
+
+Do not continue if `pg_dump` reports an error. Verify that the custom-format
+dump is readable and record the source roles, database owner, and tables:
+
+```shell
+kubectl exec --namespace "$CVAT_NAMESPACE" "$MIGRATION_POD" -- \
+  pg_restore --list /backup/cvat.dump > /dev/null
+
+kubectl exec --namespace "$CVAT_NAMESPACE" "$MIGRATION_POD" -- \
+  psql -d postgres -c 'SHOW server_version;'
+
+kubectl exec --namespace "$CVAT_NAMESPACE" "$MIGRATION_POD" -- \
+  psql -d postgres -c '\du'
+
+kubectl exec --namespace "$CVAT_NAMESPACE" "$MIGRATION_POD" -- \
+  psql -d postgres -c '\l'
+
+kubectl exec --namespace "$CVAT_NAMESPACE" "$MIGRATION_POD" -- \
+  psql -d cvat -c '\dt'
+
+kubectl exec --namespace "$CVAT_NAMESPACE" "$MIGRATION_POD" -- \
+  psql -d cvat -c \
+    'SELECT pg_size_pretty(pg_database_size(current_database())) AS database_size;'
+```
+
+The source installation must contain both the `postgres` and `cvat` roles, and
+the `cvat` role must own the `cvat` database. Investigate any different setup
+before continuing because the target chart creates this standard role and
+ownership layout.
+
+Copy the dump to a machine with enough free disk space. Keep this independent
+copy even though the migration pod retains another copy on its PVC:
+
+```shell
+kubectl cp \
+  --namespace "$CVAT_NAMESPACE" \
+  "$MIGRATION_POD:/backup/cvat.dump" \
+  ./cvat.dump
+```
+
+## Protect the old PostgreSQL volume
+
+Check the StatefulSet PVC retention policy. An empty result means that the
+Kubernetes default, `Retain`, applies:
+
+```shell
+kubectl get statefulset \
+  --namespace "$CVAT_NAMESPACE" \
+  "$POSTGRES_STS" \
+  -o jsonpath='{.spec.persistentVolumeClaimRetentionPolicy}{"\n"}'
+```
+
+If either `whenDeleted` or `whenScaled` is `Delete`, change both values to
+`Retain` before deleting the StatefulSet:
+
+```shell
+kubectl patch statefulset \
+  --namespace "$CVAT_NAMESPACE" \
+  "$POSTGRES_STS" \
+  --type merge \
+  -p '{"spec":{"persistentVolumeClaimRetentionPolicy":{"whenDeleted":"Retain","whenScaled":"Retain"}}}'
+```
+
+Find the persistent volume (PV) bound to the old PVC and check its reclaim
+policy:
+
+```shell
+OLD_POSTGRES_PV=$(kubectl get pvc \
+  --namespace "$CVAT_NAMESPACE" \
+  "$OLD_POSTGRES_PVC" \
+  -o jsonpath='{.spec.volumeName}')
+
+kubectl get pv "$OLD_POSTGRES_PV" \
+  -o jsonpath='{.spec.persistentVolumeReclaimPolicy}{"\n"}'
+```
+
+If the reclaim policy is `Delete`, change it to `Retain`:
+
+```shell
+kubectl patch pv "$OLD_POSTGRES_PV" \
+  --type merge \
+  -p '{"spec":{"persistentVolumeReclaimPolicy":"Retain"}}'
+```
+
+The StatefulSet retention policy protects the PVC when the StatefulSet is
+deleted. The PV reclaim policy protects the underlying storage if the PVC is
+deleted later. These are separate safeguards, and both must be checked.
+
+## Prepare the CloudPirates chart
+
+In the target CVAT version, `Chart.yaml` must refer to the CloudPirates chart
+using the `postgresql` alias:
+
+```yaml
+- name: postgres
+  version: "0.20.5"
+  repository: https://cloudpirates-io.github.io/helm-charts
+  condition: postgresql.enabled
+  alias: postgresql
+```
+
+Update the chart dependencies and check the result:
+
+```shell
+helm dependency update
+helm dependency list
+```
+
+The dependency list must contain a `postgres` entry for the CloudPirates
+repository with an `ok` status.
+
+Replace the Bitnami-specific `postgresql` values with the CloudPirates values.
+The important settings for the standard CVAT chart are:
+
+```yaml
+postgresql:
+  enabled: true
+
+  image:
+    registry: docker.io
+    repository: postgres
+    tag: "15.19@sha256:9b1d34adbce1dd07ee6e94b4a2cf698884b89bd44a6c9c12f5da8f3acbfe4957"
+    imagePullPolicy: IfNotPresent
+
+  auth:
+    username: postgres
+    database: postgres
+    existingSecret: "{{ .Release.Name }}-postgres-secret"
+    secretKeys:
+      adminPasswordKey: postgres-password
+
+  customUser:
+    name: cvat
+    database: cvat
+    existingSecret: "{{ .Release.Name }}-postgres-secret"
+    secretKeys:
+      name: username
+      database: database
+      password: password
+
+  service:
+    port: 5432
+    targetPort: 5432
+
+  persistence:
+    enabled: true
+    volumeName: data-cloudpirates
+    size: 8Gi
+
+  secret:
+    create: true
+    name: "{{ .Release.Name }}-postgres-secret"
+    password: cvat_postgresql
+    postgres_password: cvat_postgresql_postgres
+    replication_password: cvat_postgresql_replica
+```
+
+Set `persistence.size` and, when required, `persistence.storageClass` for the
+target cluster. `volumeName: data-cloudpirates` is intentional: it makes the
+new StatefulSet create a new PVC instead of mounting the Bitnami data volume.
+Do not reuse the old PVC because the charts use different data directory
+layouts and container user IDs.
+
+Keep the existing database passwords or existing secret during this migration.
+Do not combine the chart migration with credential rotation or a PostgreSQL
+major-version upgrade. Also translate any custom resources, scheduling,
+security context, PostgreSQL configuration, and storage settings from the old
+chart to their CloudPirates equivalents.
+
+## Install CloudPirates PostgreSQL
+
+Delete the old StatefulSet, then immediately confirm that its PVC still exists:
+
+```shell
+kubectl delete statefulset \
+  --namespace "$CVAT_NAMESPACE" \
+  "$POSTGRES_STS"
+
+kubectl wait \
+  --namespace "$CVAT_NAMESPACE" \
+  --for=delete \
+  "pod/$POSTGRES_POD" \
+  --timeout=5m
+
+kubectl get pvc \
+  --namespace "$CVAT_NAMESPACE" \
+  "$OLD_POSTGRES_PVC"
+```
+
+Do not continue if the old PVC is missing. Install the new chart while keeping
+CVAT in maintenance mode:
+
+```shell
+helm upgrade \
+  --namespace "$CVAT_NAMESPACE" \
+  "$CVAT_RELEASE" \
+  . \
+  -f your-cvat-values.yaml \
+  -f values-maintenance.yaml
+```
+
+Wait for the new PostgreSQL StatefulSet to become ready:
+
+```shell
+kubectl rollout status \
+  --namespace "$CVAT_NAMESPACE" \
+  "statefulset/$POSTGRES_STS" \
+  --timeout=10m
+```
+
+Confirm that the new PostgreSQL pod uses a new PVC and that the old PVC is
+still present. With the values above, the new PVC is named
+`data-cloudpirates-<release>-postgresql-0`:
+
+```shell
+kubectl get pod,pvc --namespace "$CVAT_NAMESPACE"
+```
+
+## Restore and verify the database
+
+The migration pod now connects to the new PostgreSQL service. Confirm that the
+target database contains the expected roles and database ownership:
+
+```shell
+kubectl exec --namespace "$CVAT_NAMESPACE" "$MIGRATION_POD" -- \
+  psql -d postgres -c 'SHOW server_version;'
+
+kubectl exec --namespace "$CVAT_NAMESPACE" "$MIGRATION_POD" -- \
+  psql -d postgres -c '\du'
+
+kubectl exec --namespace "$CVAT_NAMESPACE" "$MIGRATION_POD" -- \
+  psql -d postgres -c '\l'
+
+kubectl exec --namespace "$CVAT_NAMESPACE" "$MIGRATION_POD" -- \
+  psql -d cvat -c '\dt'
+```
+
+Both the `postgres` and `cvat` roles must exist, the `cvat` role must own the
+`cvat` database, and the new `cvat` database must not contain application
+tables before the restore.
+
+Restore the dump as one transaction and stop on the first error:
+
+```shell
+kubectl exec --namespace "$CVAT_NAMESPACE" "$MIGRATION_POD" -- \
+  pg_restore \
+    --verbose \
+    --exit-on-error \
+    --single-transaction \
+    --dbname=cvat \
+    /backup/cvat.dump
+```
+
+Do not bring CVAT back online if the restore reports an error. After a
+successful restore, list the restored tables and compare them with the source
+table list recorded earlier:
+
+```shell
+kubectl exec --namespace "$CVAT_NAMESPACE" "$MIGRATION_POD" -- \
+  psql -d cvat -c '\dt'
+```
+
+## Bring CVAT back online
+
+Run the upgrade again without `values-maintenance.yaml`. Keep every other
+values file and its order unchanged:
+
+```shell
+helm upgrade \
+  --namespace "$CVAT_NAMESPACE" \
+  "$CVAT_RELEASE" \
+  . \
+  -f your-cvat-values.yaml
+```
+
+Wait for all CVAT workloads to become ready. Check the backend and worker logs
+for database connection or migration errors, then verify login and perform a
+small read/write operation such as creating a task and an export.
+
+Keep the local dump, the migration PVC, and the old Bitnami PostgreSQL PVC and
+PV until all checks have passed and the normal backup policy has produced a new
+verified backup. The retained old volume is also the rollback path: if the
+restore or verification fails, keep CVAT in maintenance mode, restore the
+Bitnami dependency and values, delete the new PostgreSQL StatefulSet, and run
+the Helm upgrade again so that Bitnami reattaches its original PVC.
+
+After the migration has been fully validated, the migration pod and PVC can be
+removed:
+
+```shell
+kubectl delete \
+  --namespace "$CVAT_NAMESPACE" \
+  -f postgres-migration/pg-dump-pod.yaml
+```
+
+Deleting the old Bitnami PVC after its PV policy was changed to `Retain` leaves
+the PV and underlying storage for manual cleanup; remove them only when the old
+database and rollback path are no longer needed.
