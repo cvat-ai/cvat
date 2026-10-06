@@ -322,6 +322,23 @@
     }
 }
 
+.cvat-objects-sidebar-object-list {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+
+    > .cvat-objects-sidebar-states-header {
+        flex: 0 0 auto;
+    }
+
+    > .cvat-objects-sidebar-states-list {
+        flex: 1 1 0;
+        height: auto;
+        min-height: 0;
+    }
+}
+
 .cvat-objects-sidebar-states-list {
     background-color: $background-color-2;
     height: calc(100% - $grid-unit-size * 9);
@@ -356,6 +373,8 @@
 
 .cvat-objects-sidebar-virtual-list {
     box-sizing: border-box;
+    height: 100%;
+    min-height: 0;
     padding: $grid-unit-size * 0.5 0 $grid-unit-size * 0.5 $grid-unit-size * 0.5;
 }
 

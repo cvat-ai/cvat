@@ -46,6 +46,8 @@ interface OwnProps {
     visibleSkeletonElements?: Record<number, number[]>;
     zLayerDragProps?: React.HTMLAttributes<HTMLElement>;
     zLayerDragging?: boolean;
+    partsExpanded?: boolean;
+    onPartsExpandedChange?(clientID: number, expanded: boolean): void;
 }
 
 interface StateToProps {
@@ -106,7 +108,7 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
     } = state;
 
     const { objectStates: states, clientID } = own;
-    const objectState = getObjectStateByClientID(states, clientID) as ObjectState;
+    const objectState = getObjectStateByClientID(states, clientID)!;
 
     return {
         objectState,
@@ -521,6 +523,8 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
             zLayerDragProps,
             zLayerDragging,
             visibleSkeletonElements = {},
+            partsExpanded,
+            onPartsExpandedChange,
         } = this.props;
         const elements = visibleSkeletonElements[objectState.clientID as number] ??
             objectState.elements.map((el: ObjectState) => el.clientID as number);
@@ -544,6 +548,8 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
                 color={getObjectStateColor(objectState, colorBy).rgbComponents()}
                 attributes={attributes}
                 elements={elements}
+                partsExpanded={partsExpanded}
+                onPartsExpandedChange={onPartsExpandedChange}
                 normalizedKeyMap={normalizedKeyMap}
                 keyMap={keyMap}
                 labels={labels}

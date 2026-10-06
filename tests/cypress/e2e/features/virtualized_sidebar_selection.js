@@ -9,7 +9,7 @@ import { defaultTaskSpec } from '../../support/default-specs';
 context('Selection in the virtualized sidebar', { scrollBehavior: false }, () => {
     const labelName = 'polygon';
     const objectCount = 40;
-    const holder = '.cvat-objects-sidebar-virtual-list .rc-virtual-list-holder';
+    const holder = '.cvat-objects-sidebar-virtual-list [data-virtual-list-viewport]';
     const platformModifier = Cypress.platform === 'darwin' ? { metaKey: true } : { ctrlKey: true };
     let taskId = null;
 
@@ -54,6 +54,10 @@ context('Selection in the virtualized sidebar', { scrollBehavior: false }, () =>
         const { taskSpec, dataSpec, extras } = defaultTaskSpec({
             taskName: 'Virtualized sidebar selection regression',
             labelName,
+            attributes: [
+                { name: 'description', type: 'text', values: '' },
+                { name: 'notes', type: 'text', values: '' },
+            ],
             serverFiles: ['images/image_1.jpg'],
         });
         cy.headlessCreateTask(taskSpec, dataSpec, extras).then(({ taskId: tid, jobIds: [jobId] }) => {
@@ -132,6 +136,9 @@ context('Selection in the virtualized sidebar', { scrollBehavior: false }, () =>
                 };
                 cy.wrap($source).trigger('pointerdown', pointer);
                 cy.document().trigger('pointermove', { ...pointer, clientX: pointer.clientX + 10 });
+                cy.get(holder).scrollTo('bottom', { duration: 0, ensureScrollable: false });
+                cy.get(`${holder} #cvat-objects-sidebar-state-item-${sourceId}`).should('exist');
+                cy.get(holder).scrollTo('top', { duration: 0, ensureScrollable: false });
                 const destination = {
                     ...pointer,
                     clientX: targetBox.left + targetBox.width / 2,
@@ -147,12 +154,32 @@ context('Selection in the virtualized sidebar', { scrollBehavior: false }, () =>
     });
 
     it('Finishes object jumps at alignment or the bottom boundary in both orderings', () => {
+        const viewportSize = [Cypress.config('viewportWidth'), Cypress.config('viewportHeight')];
+        function checkBottomFits() {
+            cy.get(`${holder} #cvat-objects-sidebar-state-item-${objectCount}`).should(($item) => {
+                const item = $item[0];
+                const viewport = item.closest('[data-virtual-list-viewport]');
+                const wrapper = viewport.closest('.cvat-objects-sidebar-virtual-list');
+                const list = wrapper.closest('.cvat-objects-sidebar-states-list');
+                const appearance = item.ownerDocument.querySelector('.cvat-objects-appearance-collapse');
+                const styles = item.ownerDocument.defaultView.getComputedStyle(wrapper);
+                const paddingBottom = Number.parseFloat(styles.paddingBottom) || 0;
+                const borderBottom = Number.parseFloat(styles.borderBottomWidth) || 0;
+                expect(viewport.getBoundingClientRect().bottom, 'viewport fits wrapper content box')
+                    .to.be.at.most(wrapper.getBoundingClientRect().bottom - paddingBottom - borderBottom + 1);
+                expect(item.getBoundingClientRect().bottom, 'last row fits the visible list')
+                    .to.be.at.most(list.getBoundingClientRect().bottom + 1);
+                expect(item.getBoundingClientRect().bottom, 'last row is above Appearance')
+                    .to.be.at.most(appearance.getBoundingClientRect().top + 1);
+            });
+        }
+
         function jumpToObject(clientId) {
             cy.get(`#cvat_canvas_shape_${clientId}`).trigger('mousemove', { force: true });
             cy.get(`#cvat_canvas_shape_${clientId}`)
                 .should('have.class', 'cvat_canvas_shape_activated').dblclick({ force: true });
             cy.get(`${holder} #cvat-objects-sidebar-state-item-${clientId}`).should(($item) => {
-                const viewport = $item[0].closest('.rc-virtual-list-holder');
+                const viewport = $item[0].closest('[data-virtual-list-viewport]');
                 const viewportTop = viewport.getBoundingClientRect().top + viewport.clientTop;
                 const padding = Number.parseFloat(viewport.ownerDocument.defaultView.getComputedStyle(viewport)
                     .scrollPaddingTop) || 0;
@@ -168,6 +195,19 @@ context('Selection in the virtualized sidebar', { scrollBehavior: false }, () =>
         ['ID - ascent', 'Layer'].forEach((ordering) => {
             cy.sidebarItemSortBy(ordering);
             jumpToObject(objectCount);
+            checkBottomFits();
+            for (let toggle = 0; toggle < 2; toggle++) {
+                cy.get('.cvat-objects-appearance-collapse-header').click();
+                cy.get('.cvat-objects-appearance-collapse .ant-motion-collapse').should('not.exist');
+                cy.get(holder).scrollTo('bottom', { duration: 0, ensureScrollable: false });
+                checkBottomFits();
+            }
+            cy.viewport(1280, 800);
+            cy.get(holder).scrollTo('bottom', { duration: 0, ensureScrollable: false });
+            checkBottomFits();
+            cy.viewport(...viewportSize);
+            cy.get(holder).scrollTo('bottom', { duration: 0, ensureScrollable: false });
+            checkBottomFits();
             cy.window().then((win) => new Promise((resolve) => {
                 win.requestAnimationFrame(() => win.requestAnimationFrame(resolve));
             }));
@@ -182,7 +222,47 @@ context('Selection in the virtualized sidebar', { scrollBehavior: false }, () =>
                 });
             });
             jumpToObject(1);
+            jumpToObject(objectCount / 2);
+            const details = `#cvat-objects-sidebar-state-item-${objectCount / 2} ` +
+                '.cvat-objects-sidebar-state-item-collapse';
+            cy.get(`${details} .ant-collapse-content-active`).should('exist');
+            cy.get(`${details} .ant-collapse-header`).click();
+            cy.get(`${details} .ant-collapse-content-active`).should('not.exist');
+            jumpToObject(objectCount / 2);
+            cy.get(`${details} .ant-collapse-content-active`).should('exist');
+            cy.get(holder).should(($holder) => {
+                const viewport = $holder[0].getBoundingClientRect();
+                const rows = Array.from($holder[0].querySelectorAll('[data-virtual-list-row]'))
+                    .map((row) => row.getBoundingClientRect());
+                expect(rows.some((row) => row.bottom <= viewport.top), 'buffer before viewport').to.be.true;
+                expect(rows.some((row) => row.top >= viewport.bottom), 'buffer after viewport').to.be.true;
+            });
+            [0.8, 0.2, 1, 0.45, 0].forEach((fraction) => {
+                cy.get(holder).then(($holder) => {
+                    const max = $holder[0].scrollHeight - $holder[0].clientHeight;
+                    cy.wrap($holder).scrollTo(0, max * fraction, { duration: 0, ensureScrollable: false });
+                });
+                cy.get(holder).should(($holder) => {
+                    const viewport = $holder[0].getBoundingClientRect();
+                    const rows = Array.from($holder[0].querySelectorAll('[data-virtual-list-row]'))
+                        .map((row) => row.getBoundingClientRect())
+                        .filter((row) => row.height && row.bottom > viewport.top && row.top < viewport.bottom)
+                        .sort((a, b) => a.top - b.top);
+                    let edge = viewport.top;
+                    rows.forEach((row) => {
+                        expect(row.top, 'no empty gap between visible rows').to.be.at.most(edge + 1);
+                        edge = Math.max(edge, row.bottom);
+                    });
+                    expect(edge, 'rows cover the viewport after a fast scroll').to.be.at.least(viewport.bottom - 1);
+                });
+            });
+            cy.get('.cvat-objects-sidebar-tabs').contains('[role="tab"]', 'Labels').click();
             jumpToObject(objectCount - 3);
+            cy.get('.cvat-objects-sidebar-tabs [role="tab"][aria-selected="true"]').should('have.text', 'Objects');
+            cy.get('.cvat-objects-sidebar-sider').click();
+            cy.get('.cvat-objects-sidebar').should('not.be.visible');
+            jumpToObject(objectCount - 5);
+            cy.get('.cvat-objects-sidebar').should('be.visible');
             cy.get(`${holder} .cvat-objects-sidebar-state-item`).should('have.length.lessThan', objectCount);
         });
         cy.get('.cvat-fit-control').click({ force: true });

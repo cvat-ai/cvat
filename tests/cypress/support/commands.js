@@ -658,7 +658,7 @@ Cypress.Commands.add('checkPopoverHidden', (objectType) => {
 
 Cypress.Commands.add('getObjectSidebarItem', (id) => {
     const selector = `#cvat-objects-sidebar-state-item-${id}`;
-    const holderSelector = '.cvat-objects-sidebar-virtual-list .rc-virtual-list-holder';
+    const holderSelector = '.cvat-objects-sidebar-virtual-list [data-virtual-list-viewport]';
 
     const findItem = (attempt) => cy.get(holderSelector).then(($holder) => {
         const holder = $holder[0];
@@ -1932,9 +1932,12 @@ Cypress.Commands.add('interactAnnotationObjectMenu', (parentSelector, button) =>
         cy.get('[aria-label="more"]').click();
     });
 
-    cy.document().find('.cvat-object-item-menu:visible')
+    // AntD renders the menu outside the row, even when the caller is inside .within().
+    // Keep this a query so Cypress can reacquire a menu replaced during row updates.
+    cy.get('.cvat-object-item-menu:visible button', { withinSubject: null })
+        .filter((index, element) => element.textContent.includes(button))
         .should('have.length', 1)
-        .contains('button', button).click();
+        .click();
 });
 
 Cypress.Commands.add('hideTooltips', () => {

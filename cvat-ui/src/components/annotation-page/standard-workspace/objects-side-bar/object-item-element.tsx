@@ -7,7 +7,6 @@ import { useDispatch, useSelector } from 'react-redux';
 import { shallowEqual } from 'utils/redux';
 import Text from 'antd/lib/typography/Text';
 
-import { ObjectState } from 'cvat-core-wrapper';
 import { CombinedState } from 'reducers';
 import { activateObject } from 'actions/annotation-actions';
 import { getObjectStateByClientID } from 'utils/objects-sidebar';
@@ -41,7 +40,7 @@ function ObjectItemElementComponent(props: OwnProps): JSX.Element {
         dispatch(activateObject(parentID, clientID, null));
     }, [parentID, clientID]);
 
-    const element = getObjectStateByClientID(states, clientID) as ObjectState;
+    const element = getObjectStateByClientID(states, clientID)!;
     const elementColor = getObjectStateColor(element, colorBy).rgbComponents();
     const elementClassName = element.clientID === activatedElementId ?
         'cvat-objects-sidebar-state-item-elements cvat-objects-sidebar-state-active-element' :

@@ -317,9 +317,10 @@ context('Simplify polygons feature', { scrollBehavior: false }, () => {
             });
 
             it('Keeps simplification active when the object row is virtualized', () => {
-                const existingObjects = 12;
+                // Leave enough rows to scroll the polygon beyond the larger overscan buffer.
+                const existingObjects = 30;
                 const polygonId = existingObjects + 1;
-                const holder = '.cvat-objects-sidebar-virtual-list .rc-virtual-list-holder';
+                const holder = '.cvat-objects-sidebar-virtual-list [data-virtual-list-viewport]';
                 cy.headlessCreateObjects(Array.from({ length: existingObjects }, () => ({
                     objectType: 'shape',
                     type: 'rectangle',

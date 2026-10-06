@@ -24,6 +24,8 @@ interface Props {
     selectRange(): void;
     keyMap: KeyMap;
     multiSelectionSupported: boolean;
+    partsExpanded?: boolean;
+    onPartsExpandedChange?(clientID: number, expanded: boolean): void;
 }
 
 function isRangeModifierPressed(event: React.MouseEvent | React.PointerEvent): boolean {
@@ -34,7 +36,7 @@ function isRangeModifierPressed(event: React.MouseEvent | React.PointerEvent): b
 function DraggableObjectItem(props: Props): JSX.Element {
     const {
         objectStates, clientID, zOrder, lastInLayer, visibleObjectIDs, draggable, visibleSkeletonElements,
-        toggleSelection, selectRange, keyMap, multiSelectionSupported,
+        toggleSelection, selectRange, keyMap, multiSelectionSupported, partsExpanded, onPartsExpandedChange,
     } = props;
 
     const {
@@ -92,6 +94,8 @@ function DraggableObjectItem(props: Props): JSX.Element {
                 clientID={clientID}
                 visibleObjectIDs={visibleObjectIDs}
                 visibleSkeletonElements={visibleSkeletonElements}
+                partsExpanded={partsExpanded}
+                onPartsExpandedChange={onPartsExpandedChange}
                 zLayerDragging={isDragging}
                 zLayerDragProps={draggable ? {} : undefined}
             />

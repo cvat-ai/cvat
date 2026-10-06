@@ -41,6 +41,8 @@ interface Props {
     jobInstance: any;
     zLayerDragProps?: React.HTMLAttributes<HTMLElement>;
     zLayerDragging?: boolean;
+    partsExpanded?: boolean;
+    onPartsExpandedChange?(clientID: number, expanded: boolean): void;
     zOrder: number;
     activate(activeElementID?: number): void;
     activateSingle(): void;
@@ -82,6 +84,8 @@ function ObjectItemComponent(props: Props): JSX.Element {
         color,
         colorBy,
         elements,
+        partsExpanded,
+        onPartsExpandedChange,
         labels,
         zLayerDragProps,
         zLayerDragging,
@@ -172,6 +176,7 @@ function ObjectItemComponent(props: Props): JSX.Element {
         }
     }, [keyMap, multiSelectionSupported, objectType, toggleSelection]);
 
+    const activeParts = partsExpanded ? ['elements'] : [];
     return (
         <div style={{ display: 'flex', marginBottom: '1px' }}>
             <div
@@ -240,6 +245,8 @@ function ObjectItemComponent(props: Props): JSX.Element {
                 {!!elements.length && (
                     <Collapse
                         className='cvat-objects-sidebar-state-item-elements-collapse'
+                        activeKey={partsExpanded === undefined ? undefined : activeParts}
+                        onChange={(keys): void => onPartsExpandedChange?.(clientID, keys.includes('elements'))}
                         items={[{
                             key: 'elements',
                             label: <Text style={{ fontSize: 10 }} type='secondary'>PARTS</Text>,

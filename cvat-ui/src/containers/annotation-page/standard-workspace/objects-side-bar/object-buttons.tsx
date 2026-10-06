@@ -61,7 +61,7 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
     const {
         clientID, outsideDisabled, hiddenDisabled, keyframeDisabled,
     } = own;
-    const objectState = getObjectStateByClientID(states, clientID) as ObjectState;
+    const objectState = getObjectStateByClientID(states, clientID)!;
 
     return {
         objectState,

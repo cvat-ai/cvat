@@ -137,7 +137,7 @@ context('Multi-object selection', { scrollBehavior: false }, () => {
     }
 
     function getFirstLayerHeader() {
-        cy.get('.cvat-objects-sidebar-virtual-list .rc-virtual-list-holder')
+        cy.get('.cvat-objects-sidebar-virtual-list [data-virtual-list-viewport]')
             .scrollTo('top', { duration: 0, ensureScrollable: false });
         return cy.get('.cvat-objects-sidebar-z-layer-mark').first();
     }
