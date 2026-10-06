@@ -2,14 +2,15 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { Row, Col } from 'antd/lib/grid';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Card from 'antd/lib/card';
 import Select from 'antd/lib/select';
 import Button from 'antd/lib/button';
 import Spin from 'antd/lib/spin';
 import Alert from 'antd/lib/alert';
 import Empty from 'antd/lib/empty';
+import Tag from 'antd/lib/tag';
+import Badge from 'antd/lib/badge';
 import Text from 'antd/lib/typography/Text';
 import Title from 'antd/lib/typography/Title';
 import { ReloadOutlined } from '@ant-design/icons';
@@ -32,6 +33,8 @@ interface Props {
     taskId: number;
 }
 
+type WsStatus = 'connected' | 'reconnecting' | 'disconnected';
+
 const SHAPE_OPTIONS = [
     { label: 'All Shapes', value: '' },
     { label: 'Rectangle (Box)', value: 'rectangle' },
@@ -49,9 +52,14 @@ export default function TaskAnnotationAnalytics({ taskId }: Props): JSX.Element 
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
     const [selectedShape, setSelectedShape] = useState<string>('');
+    const [wsStatus, setWsStatus] = useState<WsStatus>('disconnected');
 
-    const fetchCounts = useCallback(async () => {
-        setLoading(true);
+    const isMountedRef = useRef<boolean>(true);
+
+    const fetchCounts = useCallback(async (isSilent = false) => {
+        if (!isSilent) {
+            setLoading(true);
+        }
         setError(null);
 
         const params = new URLSearchParams();
@@ -84,18 +92,104 @@ export default function TaskAnnotationAnalytics({ taskId }: Props): JSX.Element 
             }
 
             const json: AnalyticsResponse = await response.json();
-            setData(json);
+            if (isMountedRef.current) {
+                setData(json);
+            }
         } catch (err: any) {
-            setError(err.message || 'Failed to fetch annotation analytics');
-            setData(null);
+            if (isMountedRef.current) {
+                setError(err.message || 'Failed to fetch annotation analytics');
+                setData(null);
+            }
         } finally {
-            setLoading(false);
+            if (isMountedRef.current) {
+                setLoading(false);
+            }
         }
     }, [taskId, selectedShape]);
 
+    // Initial and filter-change fetch
     useEffect(() => {
         fetchCounts();
     }, [fetchCounts]);
+
+    // Live WebSocket connection and automatic recovery
+    useEffect(() => {
+        isMountedRef.current = true;
+        let socket: WebSocket | null = null;
+        let reconnectTimer: NodeJS.Timeout | null = null;
+        let retryAttempt = 0;
+
+        function connect() {
+            if (!isMountedRef.current) return;
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsUrl = `${protocol}//${window.location.host}/api/test/ws/tasks/${taskId}`;
+
+            try {
+                socket = new WebSocket(wsUrl);
+
+                socket.onopen = () => {
+                    if (!isMountedRef.current) return;
+                    setWsStatus('connected');
+                    retryAttempt = 0;
+                    // Reconcile on connection or recovery
+                    fetchCounts(true);
+                };
+
+                socket.onmessage = (event) => {
+                    if (!isMountedRef.current) return;
+                    try {
+                        const payload = JSON.parse(event.data);
+                        if (payload.event === 'annotations_changed') {
+                            fetchCounts(true);
+                        }
+                    } catch {
+                        // ignore heartbeat or invalid payload
+                    }
+                };
+
+                socket.onclose = () => {
+                    if (!isMountedRef.current) return;
+                    setWsStatus('reconnecting');
+                    scheduleReconnect();
+                };
+
+                socket.onerror = () => {
+                    if (!isMountedRef.current) return;
+                    setWsStatus('reconnecting');
+                    if (socket) {
+                        socket.close();
+                    }
+                };
+            } catch {
+                if (isMountedRef.current) {
+                    setWsStatus('reconnecting');
+                    scheduleReconnect();
+                }
+            }
+        }
+
+        function scheduleReconnect() {
+            if (!isMountedRef.current) return;
+            const delay = Math.min(1000 * Math.pow(1.5, retryAttempt), 10000);
+            retryAttempt += 1;
+            if (reconnectTimer) clearTimeout(reconnectTimer);
+            reconnectTimer = setTimeout(() => {
+                connect();
+            }, delay);
+        }
+
+        connect();
+
+        return () => {
+            isMountedRef.current = false;
+            if (reconnectTimer) clearTimeout(reconnectTimer);
+            if (socket) {
+                socket.onclose = null;
+                socket.onerror = null;
+                socket.close();
+            }
+        };
+    }, [taskId, fetchCounts]);
 
     const maxCount = data && data.counts.length > 0
         ? Math.max(...data.counts.map((c) => c.count))
@@ -107,14 +201,30 @@ export default function TaskAnnotationAnalytics({ taskId }: Props): JSX.Element 
                 title={<Title level={4} style={{ margin: 0 }}>Annotation Class Distribution</Title>}
                 extra={(
                     <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                        {wsStatus === 'connected' && (
+                            <Tag color='success' style={{ display: 'flex', alignItems: 'center', gap: '4px', margin: 0 }}>
+                                <Badge status='processing' color='#52c41a' /> Live Sync
+                            </Tag>
+                        )}
+                        {wsStatus === 'reconnecting' && (
+                            <Tag color='warning' style={{ display: 'flex', alignItems: 'center', gap: '4px', margin: 0 }}>
+                                <Badge status='warning' /> Reconnecting...
+                            </Tag>
+                        )}
+                        {wsStatus === 'disconnected' && (
+                            <Tag color='default' style={{ display: 'flex', alignItems: 'center', gap: '4px', margin: 0 }}>
+                                <Badge status='default' /> Offline
+                            </Tag>
+                        )}
+
                         <Select
                             value={selectedShape}
                             onChange={(val) => setSelectedShape(val)}
                             options={SHAPE_OPTIONS}
-                            style={{ width: 180 }}
+                            style={{ width: 170 }}
                             placeholder='Filter by Shape'
                         />
-                        <Button icon={<ReloadOutlined />} onClick={fetchCounts} disabled={loading}>
+                        <Button icon={<ReloadOutlined />} onClick={() => fetchCounts(false)} disabled={loading}>
                             Refresh
                         </Button>
                     </div>
@@ -134,7 +244,7 @@ export default function TaskAnnotationAnalytics({ taskId }: Props): JSX.Element 
                         message='Error Loading Analytics'
                         description={error}
                         action={(
-                            <Button size='small' danger onClick={fetchCounts}>
+                            <Button size='small' danger onClick={() => fetchCounts(false)}>
                                 Retry
                             </Button>
                         )}
