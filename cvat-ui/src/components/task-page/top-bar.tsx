@@ -48,6 +48,15 @@ export default function DetailsComponent(props: DetailsComponentProps): JSX.Elem
                 )}
             </Col>
             <Col>
+                <Button
+                    className='cvat-task-page-class-analytics-button'
+                    onClick={() => history.push(`/tasks/${taskInstance.id}/class-analytics`)}
+                    type='primary'
+                    size='middle'
+                    style={{ marginRight: 10 }}
+                >
+                    Class Analytics
+                </Button>
                 <TaskActionsComponent
                     taskInstance={taskInstance}
                     onUpdateTask={onUpdateTask}
