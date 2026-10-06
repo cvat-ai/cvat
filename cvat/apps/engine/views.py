@@ -915,15 +915,15 @@ class _TaskDataGetter(_DataGetter):
         self._db_task = db_task
 
     def _get_media_provider(self) -> TaskFrameProvider | TaskAudioProvider:
-        match self._db_task.media_type:
-            case models.MediaType.AUDIO:
-                return TaskAudioProvider(self._db_task)
-            case models.MediaType.IMAGE | models.MediaType.POINT_CLOUD:
-                return TaskFrameProvider(self._db_task)
-            case "":
-                raise NotFound("Task has no media")
-            case _ as media_type:
-                assert False, f"Unknown media type {media_type}"
+        media_type = self._db_task.media_type
+        if media_type == models.MediaType.AUDIO:
+            return TaskAudioProvider(self._db_task)
+        elif media_type in (models.MediaType.IMAGE, models.MediaType.POINT_CLOUD):
+            return TaskFrameProvider(self._db_task)
+        elif media_type == "":
+            raise NotFound("Task has no media")
+        else:
+            assert False, f"Unknown media type {media_type}"
 
     def _get_chunk_response_headers(self, chunk_data: DataWithMeta) -> dict[str, str]:
         return self._make_chunk_response_headers(
@@ -974,13 +974,13 @@ class _JobDataGetter(_DataGetter):
         self._db_job = db_job
 
     def _get_media_provider(self) -> JobFrameProvider | JobAudioProvider:
-        match self._db_job.segment.task.media_type:
-            case models.MediaType.AUDIO:
-                return JobAudioProvider(self._db_job)
-            case models.MediaType.IMAGE | models.MediaType.POINT_CLOUD:
-                return JobFrameProvider(self._db_job)
-            case _ as media_type:
-                assert False, f"Unknown media type {media_type}"
+        media_type = self._db_job.segment.task.media_type
+        if media_type == models.MediaType.AUDIO:
+            return JobAudioProvider(self._db_job)
+        elif media_type in (models.MediaType.IMAGE, models.MediaType.POINT_CLOUD):
+            return JobFrameProvider(self._db_job)
+        else:
+            assert False, f"Unknown media type {media_type}"
 
     def _get_data_response(self):
         if self.type == "chunk":
@@ -1931,28 +1931,25 @@ class TaskViewSet(
             data_queryset = models.Data.objects.select_related("validation_layout")
             extra_prefetches = []
 
-            match (db_task.media_type, db_task.mode):
-                case (models.MediaType.AUDIO, models.TaskMode.INTERPOLATION):
-                    data_queryset = data_queryset.select_related("audio")
-                case (models.MediaType.IMAGE, models.TaskMode.INTERPOLATION):
-                    data_queryset = data_queryset.select_related("video")
-                case (
-                    models.MediaType.IMAGE | models.MediaType.POINT_CLOUD,
-                    models.TaskMode.ANNOTATION,
-                ):
-                    # Could also be done via data_qs.prefetch_related(),
-                    # but it results in more requests
-                    extra_prefetches += [
-                        Prefetch(
-                            "data__images",
-                            queryset=models.Image.objects.order_by("frame"),
-                        ),
-                        "data__images__related_files",
-                    ]
-                case ("", ""):
-                    pass  # noop, nothing to load
-                case (media_type, mode):
-                    assert False, f"Unknown media type '{media_type}' with mode '{mode}'"
+            media_type, mode = db_task.media_type, db_task.mode
+            if media_type == models.MediaType.AUDIO and mode == models.TaskMode.INTERPOLATION:
+                data_queryset = data_queryset.select_related("audio")
+            elif media_type == models.MediaType.IMAGE and mode == models.TaskMode.INTERPOLATION:
+                data_queryset = data_queryset.select_related("video")
+            elif media_type in (models.MediaType.IMAGE, models.MediaType.POINT_CLOUD) and mode == models.TaskMode.ANNOTATION:
+                # Could also be done via data_qs.prefetch_related(),
+                # but it results in more requests
+                extra_prefetches += [
+                    Prefetch(
+                        "data__images",
+                        queryset=models.Image.objects.order_by("frame"),
+                    ),
+                    "data__images__related_files",
+                ]
+            elif media_type == "" and mode == "":
+                pass  # noop, nothing to load
+            else:
+                assert False, f"Unknown media type '{media_type}' with mode '{mode}'"
 
             prefetch_related_objects(
                 [db_task],
@@ -2129,6 +2126,7 @@ class TaskViewSet(
 
         response_serializer = TaskValidationLayoutReadSerializer(validation_layout)
         return Response(response_serializer.data, status=status.HTTP_200_OK)
+
 
 
 @extend_schema(tags=["jobs"])
@@ -2690,28 +2688,25 @@ class JobViewSet(
             data_queryset = models.Data.objects.select_related("validation_layout")
             extra_prefetches = []
 
-            match (db_task.media_type, db_task.mode):
-                case (models.MediaType.AUDIO, models.TaskMode.INTERPOLATION):
-                    data_queryset = data_queryset.select_related("audio")
-                case (models.MediaType.IMAGE, models.TaskMode.INTERPOLATION):
-                    data_queryset = data_queryset.select_related("video")
-                case (
-                    models.MediaType.IMAGE | models.MediaType.POINT_CLOUD,
-                    models.TaskMode.ANNOTATION,
-                ):
-                    # Could also be done via data_qs.prefetch_related(),
-                    # but it results in more requests
-                    extra_prefetches += [
-                        Prefetch(
-                            "segment__task__data__images",
-                            queryset=models.Image.objects.order_by("frame"),
-                        ),
-                        "segment__task__data__images__related_files",
-                    ]
-                case ("", ""):
-                    pass  # noop, nothing to load
-                case (media_type, mode):
-                    assert False, f"Unknown media type '{media_type}' with mode '{mode}'"
+            media_type, mode = db_task.media_type, db_task.mode
+            if media_type == models.MediaType.AUDIO and mode == models.TaskMode.INTERPOLATION:
+                data_queryset = data_queryset.select_related("audio")
+            elif media_type == models.MediaType.IMAGE and mode == models.TaskMode.INTERPOLATION:
+                data_queryset = data_queryset.select_related("video")
+            elif media_type in (models.MediaType.IMAGE, models.MediaType.POINT_CLOUD) and mode == models.TaskMode.ANNOTATION:
+                # Could also be done via data_qs.prefetch_related(),
+                # but it results in more requests
+                extra_prefetches += [
+                    Prefetch(
+                        "segment__task__data__images",
+                        queryset=models.Image.objects.order_by("frame"),
+                    ),
+                    "segment__task__data__images__related_files",
+                ]
+            elif media_type == "" and mode == "":
+                pass  # noop, nothing to load
+            else:
+                assert False, f"Unknown media type '{media_type}' with mode '{mode}'"
 
             prefetch_related_objects(
                 [db_job],
