@@ -23,7 +23,7 @@ export function getObjectStateByClientID(states: ObjectState[], clientID: number
         objectStateIndexes.set(states, index);
     }
 
-    return index.get(clientID) || null;
+    return index.get(clientID) ?? null;
 }
 
 function getSidebarItemId(state: ObjectState): string {
