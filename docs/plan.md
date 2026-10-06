@@ -56,6 +56,10 @@ Different models need different shape types. A model that draws boxes needs boxe
 
 | When | What changed | Why |
 |------|--------------|-----|
+| Before step 2 | I did not build the server from my code. I mount my `cvat/` folder into the downloaded containers instead. | I compared the code inside the downloaded image with my commit: no file is different. So mounting runs exactly my code and saves a long build. |
+| Step 2 | Grouped shapes are identified by job, **image** and group number, not just job and group number. | In the database, group numbers start again from 1 on every image (the highest is 7). Without the image, different objects on different images would be merged. |
+| Step 2 | The "old way" speed number (step 7) is measured after the API was written, not before. | The old way does not use any of my code, so measuring it now gives the same result. I missed doing it first. |
+| Step 4 | Set up the web page tools differently than planned: Yarn downloaded from the npm registry, the code checker (ESLint) not run, and no live development server. I build the page once and CVAT's own web container serves it at `localhost:8080`. | My network could not reach Yarn's own download site. ESLint needs a newer Node version than I have (20.17). The development server crashed on my laptop while only about 2 GB of memory was free. |
 
 ## Main decision
 
