@@ -45,8 +45,14 @@ Priority is a **working, explainable 1–4** over stretching to 8–9.
 | Item | Likely skip? | Reason |
 |------|--------------|--------|
 | #8–#9 WebSocket + reconnect | Yes, if behind schedule | Assessment says not to start until #4 works; live updates are stretch |
-| #7 Extra filter/grouping | Maybe | Implement if #1–#5 stable; otherwise document as not reached |
+| #7 Extra filter/grouping | Done | Chose optional `job_id` filter (see below) |
 | #10 Decision record in Plan | Only if #10 reached | Add closing section: chosen vs rejected approach |
+
+### #7 choice (extra filter)
+
+- **Took:** `?job_id=` on class-counts (UI: Filter by job).
+- **Why:** Tasks are split into jobs; reviewers need class totals for one job without the whole task.
+- **Rejected:** filter by shape type only — less useful in day-to-day CVAT review than job scope.
 
 If I skip anything, it will be listed in Definition of Done with **why**, not hidden.
 

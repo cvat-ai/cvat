@@ -5,12 +5,14 @@
 from collections import Counter
 
 from django.db.models import Count
-from drf_spectacular.utils import OpenApiResponse, extend_schema
+from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, OpenApiTypes, extend_schema
 from rest_framework import viewsets
 from rest_framework.decorators import action
+from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 
 from cvat.apps.engine.models import (
+    Job,
     LabeledImage,
     LabeledInterval,
     LabeledShape,
@@ -39,8 +41,11 @@ class TaskClassCountsViewSet(viewsets.GenericViewSet):
         return Task.objects.select_related("organization", "project").all()
 
     @staticmethod
-    def _counts_for_task(task: Task) -> list[dict]:
-        task_filter = {"job__segment__task_id": task.id}
+    def _counts_for_task(task: Task, *, job_id: int | None = None) -> list[dict]:
+        task_filter: dict = {"job__segment__task_id": task.id}
+        if job_id is not None:
+            task_filter["job_id"] = job_id
+
         # Top-level shapes/tracks only (exclude skeleton element children).
         shape_filter = {**task_filter, "parent__isnull": True}
         track_filter = {**task_filter, "parent__isnull": True}
@@ -71,10 +76,40 @@ class TaskClassCountsViewSet(viewsets.GenericViewSet):
 
         return counts
 
+    @staticmethod
+    def _parse_job_id(request: ExtendedRequest, task: Task) -> int | None:
+        raw = request.query_params.get("job_id")
+        if raw in (None, ""):
+            return None
+        try:
+            job_id = int(raw)
+        except (TypeError, ValueError) as ex:
+            raise ValidationError({"job_id": "Must be an integer."}) from ex
+
+        belongs = Job.objects.filter(id=job_id, segment__task_id=task.id).exists()
+        if not belongs:
+            raise ValidationError(
+                {"job_id": f"Job {job_id} does not belong to task {task.id}."}
+            )
+        return job_id
+
     @extend_schema(
         summary="Get annotation counts per class for a task",
+        parameters=[
+            OpenApiParameter(
+                "job_id",
+                location=OpenApiParameter.QUERY,
+                type=OpenApiTypes.INT,
+                required=False,
+                description=(
+                    "Optional filter: limit counts to annotations in this job "
+                    "(must belong to the task)."
+                ),
+            ),
+        ],
         responses={
             "200": OpenApiResponse(description="Per-class annotation counts"),
+            "400": OpenApiResponse(description="Invalid job_id filter"),
             "401": OpenApiResponse(description="Not authenticated"),
             "403": OpenApiResponse(description="No access to the task"),
             "404": OpenApiResponse(description="Task not found"),
@@ -83,9 +118,12 @@ class TaskClassCountsViewSet(viewsets.GenericViewSet):
     @action(detail=True, methods=["GET"], url_path="class-counts")
     def class_counts(self, request: ExtendedRequest, pk: int | None = None):
         task = self.get_object()
+        job_id = self._parse_job_id(request, task)
         return Response(
             {
                 "task_id": task.id,
-                "counts": self._counts_for_task(task),
+                "job_id": job_id,
+                "filter": {"job_id": job_id} if job_id is not None else None,
+                "counts": self._counts_for_task(task, job_id=job_id),
             }
         )

@@ -30,8 +30,8 @@ Personal checklist for when work is **finished**, not merely stopped. Each line 
   - Logged in as `ameerulaman3` on owner’s task → **403** “You do not have permission…” — [`docs/evidence/06-403-no-permission.png`](evidence/06-403-no-permission.png). Owner `Ameer_JS` → **200**.
 - [x] #6 Objective measured (5 runs, median + spread in `Objectives.md`).  
   **Evidence:** [`docs/Objectives.md`](Objectives.md) MO-1 — median **64.72 ms**, target ≤ 100 ms, **met**
-- [ ] #7 One extra filter or grouping documented with rationale.  
-  **Evidence:** ___
+- [x] #7 One extra filter or grouping documented with rationale.  
+  **Evidence:** optional query `job_id` on `GET /api/test/tasks/{id}/class-counts` (+ UI “Filter by job” select). **Why:** CVAT splits tasks into jobs; reviewers need per-job class totals without exporting the whole task. Invalid/foreign `job_id` → 400. Screenshot: [`docs/evidence/08-filter-by-job-in-class-count.png`](evidence/08-filter-by-job-in-class-count.png) (task 9, Job #5 selected).
 - [ ] #8–#9 Live WebSocket updates and reconnect (only if 1–4 were done first).  
   **Evidence:** ___
 
@@ -46,6 +46,5 @@ Personal checklist for when work is **finished**, not merely stopped. Each line 
 
 | Requirement | Status | Reason |
 |-------------|--------|--------|
-| #7 Extra filter | Not started | — |
 | #8–#9 WebSocket | Skipped for now | Optional stretch after floor |
 | Submission | Not started | Loom + PR later |

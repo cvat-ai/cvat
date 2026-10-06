@@ -12,6 +12,8 @@ import Table from 'antd/lib/table';
 import Result from 'antd/lib/result';
 import Empty from 'antd/lib/empty';
 import Button from 'antd/lib/button';
+import Select from 'antd/lib/select';
+import Space from 'antd/lib/space';
 import Text from 'antd/lib/typography/Text';
 import {
     Chart as ChartJS,
@@ -24,7 +26,7 @@ import {
 } from 'chart.js';
 import { Bar } from 'react-chartjs-2';
 
-import { getCore, Task } from 'cvat-core-wrapper';
+import { getCore, Job, Task } from 'cvat-core-wrapper';
 import CVATLoadingSpinner from 'components/common/loading-spinner';
 import GoBackButton from 'components/common/go-back-button';
 import { fetchTask } from 'utils/fetch';
@@ -36,6 +38,7 @@ ChartJS.register(CategoryScale, LinearScale, BarElement, ChartTitle, Tooltip, Le
 
 const core = getCore();
 const CHART_TOP_N = 25;
+const ALL_JOBS = 'all';
 
 interface ClassCountRow {
     label: string;
@@ -44,6 +47,7 @@ interface ClassCountRow {
 
 interface ClassCountsResponse {
     task_id: number;
+    job_id: number | null;
     counts: ClassCountRow[];
 }
 
@@ -61,6 +65,8 @@ function formatLoadError(err: unknown): Error {
 function ClassCountsPage(): JSX.Element {
     const taskId = +useParams<{ tid: string }>().tid;
     const [task, setTask] = useState<Task | null>(null);
+    const [jobs, setJobs] = useState<Job[]>([]);
+    const [selectedJob, setSelectedJob] = useState<string>(ALL_JOBS);
     const [counts, setCounts] = useState<ClassCountRow[]>([]);
     const [fetching, setFetching] = useState(true);
     const [error, setError] = useState<Error | null>(null);
@@ -78,11 +84,14 @@ function ClassCountsPage(): JSX.Element {
                 setFetching(true);
                 setError(null);
 
-                const [fetchedTask, response] = await Promise.all([
+                const query = selectedJob === ALL_JOBS
+                    ? `/api/test/tasks/${taskId}/class-counts`
+                    : `/api/test/tasks/${taskId}/class-counts?job_id=${selectedJob}`;
+
+                const [fetchedTask, jobList, response] = await Promise.all([
                     fetchTask(taskId),
-                    core.server.request(`/api/test/tasks/${taskId}/class-counts`, {
-                        method: 'GET',
-                    }),
+                    core.jobs.get({ taskID: taskId }),
+                    core.server.request(query, { method: 'GET' }),
                 ]);
 
                 if (cancelled) {
@@ -91,6 +100,7 @@ function ClassCountsPage(): JSX.Element {
 
                 const payload = (response?.data ?? response) as ClassCountsResponse;
                 setTask(fetchedTask);
+                setJobs(Array.isArray(jobList) ? jobList : []);
                 setCounts(Array.isArray(payload?.counts) ? payload.counts : []);
             } catch (err) {
                 if (!cancelled) {
@@ -109,7 +119,7 @@ function ClassCountsPage(): JSX.Element {
         return () => {
             cancelled = true;
         };
-    }, [taskId, reloadToken]);
+    }, [taskId, reloadToken, selectedJob]);
 
     const total = useMemo(
         () => counts.reduce((sum, row) => sum + row.count, 0),
@@ -163,6 +173,14 @@ function ClassCountsPage(): JSX.Element {
         },
     }), [chartRows.length]);
 
+    const jobOptions = useMemo(() => [
+        { value: ALL_JOBS, label: 'All jobs (whole task)' },
+        ...jobs.map((job) => ({
+            value: String(job.id),
+            label: `Job #${job.id}`,
+        })),
+    ], [jobs]);
+
     const backNavigation = (
         <Row justify='center'>
             <Col span={22} xl={18} xxl={14}>
@@ -193,7 +211,7 @@ function ClassCountsPage(): JSX.Element {
         );
     }
 
-    if (fetching) {
+    if (fetching && !task) {
         return (
             <div className='cvat-class-counts-page'>
                 <div className='cvat-class-counts-loading'>
@@ -212,16 +230,31 @@ function ClassCountsPage(): JSX.Element {
                         {'Class counts for '}
                         {task ? <ResourceLink resource={task} /> : `task #${taskId}`}
                     </Title>
-                    <Text type='secondary'>
-                        {`${counts.length} classes · ${total} annotations total`}
-                    </Text>
+                    <Space className='cvat-class-counts-filters' wrap>
+                        <Text type='secondary'>Filter by job</Text>
+                        <Select
+                            className='cvat-class-counts-job-select'
+                            value={selectedJob}
+                            options={jobOptions}
+                            onChange={(value: string) => setSelectedJob(value)}
+                            disabled={fetching}
+                        />
+                        <Text type='secondary'>
+                            {fetching
+                                ? 'Loading…'
+                                : `${counts.length} classes · ${total} annotations total`}
+                        </Text>
+                    </Space>
 
                     {isEmpty ? (
                         <div className='cvat-class-counts-empty'>
                             <Empty
                                 description={(
                                     <span>
-                                        No annotations for this task yet.
+                                        No annotations for this
+                                        {selectedJob === ALL_JOBS ? ' task' : ' job'}
+                                        {' '}
+                                        yet.
                                         <br />
                                         Upload or draw annotations, then refresh this page.
                                     </span>
