@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import collections.abc
 import json
 import atexit
 import mimetypes
@@ -694,7 +695,7 @@ class ApiClient(object):
         self,
         headers: dict[str, str],
         queries: list[tuple[str, typing.Any]],
-        auth_settings: typing.Optional[typing.Iterable[str]] = None,
+        auth_settings: typing.Optional[collections.abc.Iterable[str]] = None,
         resource_path: typing.Optional[str] = None,
         method: str = "GET",
         body: typing.Optional[typing.Any] = None,
