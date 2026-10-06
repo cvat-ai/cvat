@@ -36,16 +36,23 @@ Personal checklist for when work is **finished**, not merely stopped. Each line 
   **Evidence:**  
   - **#8 Live:** WS `/api/test/ws/tasks/{id}/class-counts` (session auth); Redis pub/sub when annotations change (`handle_annotations_change` → `cvat.apps.test.realtime`); UI **Live** badge, quiet refetch, toast + “Last live update” timestamp. Side-by-side demo (class-counts + job editor): before [`docs/evidence/09-before-updating-labels.png`](evidence/09-before-updating-labels.png) → after live update [`docs/evidence/10-after-updating-labels.png`](evidence/10-after-updating-labels.png).  
   - **#9 Reconnect:** client reconnects with exponential backoff; badge shows **Reconnecting…** then **Live** again after a dropped socket.
+- [x] #10 Decision record in Plan.  
+  **Evidence:** [`docs/Plan.md`](Plan.md) — Decision record (approach taken / rejected / cost of rejection).
 
 ## Submission
 
-- [ ] All unfinished requirements listed with reason (also in Plan or here).
-- [ ] Loom ≤ 5 minutes; four knowledge questions answered on camera.
-- [ ] PR: `dev-test01` → default branch on **my fork** (not upstream cvat-ai/cvat).
+- [x] All unfinished requirements listed with reason (also in Plan or here).  
+  **Evidence:** table below — implementation items 1–10 complete; only recording + reply remain for the human submitter.
+- [ ] Loom ≤ 5 minutes; four knowledge questions answered on camera.  
+  **Evidence:** _(add Loom URL after recording)_
+- [ ] PR: `dev-test01` → default branch on **my fork** (not upstream cvat-ai/cvat).  
+  **Evidence:** _(add PR URL after open)_
 - [ ] Reply with PR link + Loom link within 8 hours of start.
 
 ## Not finished (declare at end)
 
 | Requirement | Status | Reason |
 |-------------|--------|--------|
-| Submission | Not started | Loom + PR later |
+| Loom recording (§7) | Pending submitter | Must be recorded on camera (≤5 min, K1–K4); cannot be automated |
+| PR on own fork (§10) | In progress | Opening `dev-test01` → fork default branch after this docs close-out |
+| Email/reply with links | Pending submitter | Needs PR URL + Loom URL together |

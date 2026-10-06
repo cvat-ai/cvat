@@ -46,7 +46,7 @@ Priority is a **working, explainable 1–4** over stretching to 8–9.
 |------|--------------|--------|
 | #8–#9 WebSocket + reconnect | Done | Redis pub/sub + `/api/test/ws/tasks/{id}/class-counts`; UI auto-reconnect |
 | #7 Extra filter/grouping | Done | Chose optional `job_id` filter (see below) |
-| #10 Decision record in Plan | Only if #10 reached | Add closing section: chosen vs rejected approach |
+| #10 Decision record in Plan | Done | Closing section filled below |
 
 ### #7 choice (extra filter)
 
@@ -62,10 +62,10 @@ If I skip anything, it will be listed in Definition of Done with **why**, not hi
 - **Docker/UI rebuild:** Prefer changes that work with the running Compose stack; note if a frontend rebuild is required.
 - **Over-scoping WebSocket:** Defer until REST path is demo-ready for the recording.
 
-## Decision record (fill if requirement #10 is reached)
+## Decision record (requirement #10)
 
-_To be completed at end of work if time allows._
+Closing note after finishing items 1–9.
 
-- **Approach taken:** _TBD_
-- **Approach rejected:** _TBD_
-- **Cost of rejection:** _TBD_
+- **Approach taken:** Keep analytics in a small `cvat.apps.test` Django app with a dedicated `GET .../class-counts` view that aggregates existing annotation models (`LabeledShape`, `LabeledImage`, `LabeledTrack`, `LabeledInterval`) via `label__name`. Live updates use Redis pub/sub from CVAT’s annotation-change hook plus a task-scoped WebSocket that only signals “annotations changed”; the UI then quietly refetches the same REST endpoint. Optional `job_id` scopes counts to one job.
+- **Approach rejected:** Pushing full count payloads over the WebSocket (or computing counts in the browser from exported annotations). Also rejected a separate analytics microservice / duplicated annotation tables.
+- **Cost of rejection:** Clients do an extra HTTP refetch after each live event (slightly more latency than a push-of-counts design, and the toast/remount UX was needed so small deltas are visible). In return: one source of truth for counts, reuse of IAM on the REST path, and no second counting implementation to keep in sync.
