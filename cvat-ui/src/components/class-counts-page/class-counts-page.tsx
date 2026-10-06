@@ -2,13 +2,23 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router';
 import { Row, Col } from 'antd/lib/grid';
 import Title from 'antd/lib/typography/Title';
 import Table from 'antd/lib/table';
 import Result from 'antd/lib/result';
 import Text from 'antd/lib/typography/Text';
+import {
+    Chart as ChartJS,
+    CategoryScale,
+    LinearScale,
+    BarElement,
+    Title as ChartTitle,
+    Tooltip,
+    Legend,
+} from 'chart.js';
+import { Bar } from 'react-chartjs-2';
 
 import { getCore, Task } from 'cvat-core-wrapper';
 import CVATLoadingSpinner from 'components/common/loading-spinner';
@@ -18,7 +28,10 @@ import ResourceLink from 'components/common/resource-link';
 
 import './styles.scss';
 
+ChartJS.register(CategoryScale, LinearScale, BarElement, ChartTitle, Tooltip, Legend);
+
 const core = getCore();
+const CHART_TOP_N = 25;
 
 interface ClassCountRow {
     label: string;
@@ -76,6 +89,54 @@ function ClassCountsPage(): JSX.Element {
         };
     }, [taskId]);
 
+    const chartRows = useMemo(
+        () => [...counts]
+            .filter((row) => row.count > 0)
+            .sort((a, b) => b.count - a.count)
+            .slice(0, CHART_TOP_N),
+        [counts],
+    );
+
+    const chartData = useMemo(() => ({
+        labels: chartRows.map((row) => row.label),
+        datasets: [
+            {
+                label: 'Annotations',
+                data: chartRows.map((row) => row.count),
+                backgroundColor: 'rgba(24, 144, 255, 0.65)',
+                borderColor: 'rgba(24, 144, 255, 1)',
+                borderWidth: 1,
+            },
+        ],
+    }), [chartRows]);
+
+    const chartOptions = useMemo(() => ({
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: { display: false },
+            title: {
+                display: true,
+                text: chartRows.length
+                    ? `Top ${chartRows.length} classes by annotation count`
+                    : 'No annotations to chart',
+            },
+        },
+        scales: {
+            x: {
+                ticks: {
+                    maxRotation: 60,
+                    minRotation: 45,
+                    autoSkip: false,
+                },
+            },
+            y: {
+                beginAtZero: true,
+                ticks: { precision: 0 },
+            },
+        },
+    }), [chartRows.length]);
+
     const backNavigation = (
         <Row justify='center'>
             <Col span={22} xl={18} xxl={14}>
@@ -123,6 +184,9 @@ function ClassCountsPage(): JSX.Element {
                     <Text type='secondary'>
                         {`${counts.length} classes · ${total} annotations total`}
                     </Text>
+                    <div className='cvat-class-counts-chart'>
+                        <Bar data={chartData} options={chartOptions} />
+                    </div>
                     <Table
                         className='cvat-class-counts-table'
                         rowKey='label'
