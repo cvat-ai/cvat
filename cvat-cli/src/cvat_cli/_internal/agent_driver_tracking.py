@@ -3,8 +3,9 @@
 # SPDX-License-Identifier: MIT
 
 from collections import OrderedDict
+from collections.abc import Callable
 from datetime import datetime, timedelta, timezone
-from typing import Any, Callable, TypeAlias, cast
+from typing import Any, TypeAlias, cast
 
 import attrs
 import cvat_sdk.auto_annotation as cvataa
