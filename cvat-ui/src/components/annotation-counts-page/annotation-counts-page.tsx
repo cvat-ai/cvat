@@ -8,6 +8,7 @@ import { useParams } from 'react-router';
 import { Row, Col } from 'antd/lib/grid';
 import Title from 'antd/lib/typography/Title';
 import Text from 'antd/lib/typography/Text';
+import Badge from 'antd/lib/badge';
 import Button from 'antd/lib/button';
 import Empty from 'antd/lib/empty';
 import Result from 'antd/lib/result';
@@ -20,9 +21,15 @@ import GoBackButton from 'components/common/go-back-button';
 import CVATLoadingSpinner from 'components/common/loading-spinner';
 import ResourceLink from 'components/common/resource-link';
 import AnnotationCountsChart, { LabelCount } from './annotation-counts-chart';
-import useAnnotationCountsUpdates from './use-annotation-counts-updates';
+import useAnnotationCountsUpdates, { LiveStatus } from './use-annotation-counts-updates';
 
 const core = getCore();
+
+const LIVE_STATUS_BADGES: Record<LiveStatus, { status: 'success' | 'processing' | 'warning'; text: string }> = {
+    connecting: { status: 'processing', text: 'Connecting…' },
+    live: { status: 'success', text: 'Live: updates as annotations change' },
+    reconnecting: { status: 'warning', text: 'Connection lost. Reconnecting…' },
+};
 
 interface AnnotationCounts {
     task_id: number;
@@ -115,7 +122,7 @@ function AnnotationCountsPage(): JSX.Element {
     }, [load]);
 
     const organizationSlug = useSelector((state: CombinedState) => state.organizations.current?.slug ?? '');
-    useAnnotationCountsUpdates(taskId, organizationSlug, refreshCounts);
+    const liveStatus = useAnnotationCountsUpdates(taskId, organizationSlug, refreshCounts);
 
     let content: JSX.Element | null = null;
     if (fetching) {
@@ -154,6 +161,11 @@ function AnnotationCountsPage(): JSX.Element {
                             </>
                         )}
                     </Title>
+                    <Badge
+                        className='cvat-annotation-counts-live-status'
+                        status={LIVE_STATUS_BADGES[liveStatus].status}
+                        text={LIVE_STATUS_BADGES[liveStatus].text}
+                    />
                     {content}
                 </Col>
             </Row>

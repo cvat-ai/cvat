@@ -12,6 +12,10 @@
     margin-top: $grid-unit-size * 2;
 }
 
+.cvat-annotation-counts-live-status {
+    display: block;
+}
+
 .cvat-annotation-counts-summary,
 .cvat-annotation-counts-unused {
     display: block;
