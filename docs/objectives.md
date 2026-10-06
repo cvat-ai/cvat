@@ -90,9 +90,22 @@ Only measured if I finish plan step 9.
 
 ### Result
 
+Measured with `cvat/apps/test/measure_live_update.js` on 6 October 2026, on task 2 (an empty task: each run adds one box and deletes it again), with only CVAT running in Docker. Each run times what the page does: save a box, wait for the "changed" message, then reload the counts and check that the box is included.
+
 | | Run 1 | Run 2 | Run 3 | Run 4 | Run 5 | Median | Spread |
 |---|---|---|---|---|---|---|---|
-| Chart update | | | | | | | |
+| Chart update | 243 ms | 248 ms | 225 ms | 240 ms | 320 ms | **243 ms** | 95 ms |
 
-Target met: _to fill in_
-Raw output: _to paste here_
+**Target met, with a wide margin:** the median is 243 ms against a target of 1 second. This target was easy to reach. The time includes saving the box itself, which CVAT does before my code is involved, and one reload of the counts (about 100 ms, see MO-1).
+
+Raw output:
+
+```
+Measured at 2026-10-06T17:33:42.655Z, task 2, 5 runs
+  run 1: 243.2 ms
+  run 2: 247.5 ms
+  run 3: 224.8 ms
+  run 4: 239.7 ms
+  run 5: 320.0 ms
+  median 243.2 ms, spread 95.2 ms (fastest 224.8 ms, slowest 320.0 ms)
+```
