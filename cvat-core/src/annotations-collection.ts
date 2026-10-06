@@ -65,6 +65,11 @@ function getSaveAction(states: AnnotationState[]): HistoryActions | null {
         return null;
     }
 
+    if (actions.size === 2 &&
+        actions.has(HistoryActions.CHANGED_POINTS) && actions.has(HistoryActions.CHANGED_ROTATION)) {
+        return HistoryActions.CHANGED_ROTATION;
+    }
+
     return actions.size === 1 ? [...actions][0] : HistoryActions.CHANGED_OBJECTS;
 }
 
@@ -238,6 +243,59 @@ export default class Collection {
         }
 
         return updatedStates;
+    }
+
+    public removeBatch(objectStates: ObjectState[], force: boolean): number[] {
+        checkObjectType('objectStates', objectStates, null, { cls: Array, name: 'Array' });
+
+        const clientIDs = new Set<number>();
+        const uniqueStates = objectStates.filter((state) => {
+            if (clientIDs.has(state.clientID)) {
+                return false;
+            }
+            clientIDs.add(state.clientID);
+            return true;
+        });
+        const objects = uniqueStates.map((state) => {
+            const object = this.objects[state.clientID];
+            if (!(object instanceof Shape || object instanceof Track || object instanceof Tag)) {
+                throw new ArgumentError(`Object with client ID ${state.clientID} cannot be removed`);
+            }
+            return object;
+        });
+
+        const removedObjects: (Shape | Track | Tag)[] = [];
+        const ownsTransaction = this.history.beginTransaction(HistoryActions.REMOVED_SELECTION);
+        try {
+            for (let index = 0; index < uniqueStates.length; index++) {
+                const state = uniqueStates[index];
+                const object = objects[index];
+                if (object.removed) {
+                    removedObjects.push(object);
+                    continue;
+                }
+                if (object.lock && !force) {
+                    continue;
+                }
+                if (state.isGroundTruth) {
+                    continue;
+                }
+                if (object.delete(state.frame, force)) {
+                    removedObjects.push(object);
+                }
+            }
+        } catch (error: unknown) {
+            if (ownsTransaction) {
+                this.history.abortTransaction();
+            }
+            throw error;
+        } finally {
+            if (ownsTransaction) {
+                this.history.endTransaction();
+            }
+        }
+
+        return removedObjects.map((object) => object.clientID);
     }
 
     public import(data: Partial<SerializedCollection>): {
@@ -1316,7 +1374,7 @@ export default class Collection {
                         attributes,
                         descriptions: state.descriptions,
                         frame: state.frame,
-                        group: 0,
+                        group: state.group?.id ?? 0,
                         label_id: state.label.id,
                         outside: state.outside || false,
                         occluded: state.occluded || false,
@@ -1346,7 +1404,7 @@ export default class Collection {
                         attributes: attributes.filter((attr) => !labelAttributes[attr.spec_id].mutable),
                         descriptions: state.descriptions,
                         frame: state.frame,
-                        group: 0,
+                        group: state.group?.id ?? 0,
                         source: state.source,
                         label_id: state.label.id,
                         shapes: [

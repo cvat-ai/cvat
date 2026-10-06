@@ -16,6 +16,52 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.78.0'></a>
+## \[2.78.0\] - 2026-10-06
+
+### Added
+
+- Added multi-object selection and batch operations to the 2D annotation workspace,
+  with canvas and sidebar selection methods and undo and redo support
+  (<https://github.com/cvat-ai/cvat/pull/11084>)
+
+- Annotations from audio projects now can be exported
+  (<https://github.com/cvat-ai/cvat/pull/11238>)
+
+### Changed
+
+- Show icons and colors for job stages and states on the Jobs page
+  and in stage/state selectors on the task job list
+  (<https://github.com/cvat-ai/cvat/pull/10981>)
+
+### Fixed
+
+- Invalid handling of the `stop_frame` option in task creation from PDF.
+  It was producing 1 less frame than specified.
+  (<https://github.com/cvat-ai/cvat/issues/11175>)
+
+- Made audio interval Tab navigation deterministic by following the selected right bar ordering.
+  (<https://github.com/cvat-ai/cvat/pull/11236>)
+
+- Kept the layout toolbar attached to the top edge of the 3D canvas frame
+  (<https://github.com/cvat-ai/cvat/pull/11244>)
+
+- Restored the missing overlap threshold setting in point-based quality requirements.
+  Improved documentation on the point and skeleton matching.
+  (<https://github.com/cvat-ai/cvat/pull/11259>)
+
+- Task quality settings now display the inherited project settings and requirements as read-only
+  when "Use project settings" is enabled.
+  (<https://github.com/cvat-ai/cvat/pull/11256>)
+
+### Security
+
+- Prevented arbitrary file reads via imported dataset media paths
+  (<https://github.com/cvat-ai/cvat/security/advisories/GHSA-8p5p-rh49-4qc9>)
+
+- Prevented arbitrary file reads via symlinks in task data
+  (<https://github.com/cvat-ai/cvat/security/advisories/GHSA-rvw4-fjrw-pqf4>)
+
 <a id='changelog-2.77.0'></a>
 ## \[2.77.0\] - 2026-09-28
 
