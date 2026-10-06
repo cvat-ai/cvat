@@ -36,3 +36,21 @@
 - Record the loom video.
 
 # 1 Hour for buffer
+
+
+## Change of Plan
+First planned to cover everything, but as I started the project got to know it is was more complex than i anticipated. BUT I have successfully implemented  7 of 10 the features that were required for the assessment.
+
+However, due to time constraint I was not able to implement the following features:
+
+- [ ] The graph updates live as annotations change, over WebSocket.
+- [ ] The page recovers when the connection drops and comes back.
+
+# Requirement 10 Decision Record
+To be honest I didn't find any where to take a decision I used AI to write most of the code.
+
+And that was also a decision in itself: USING AI for most of the code, BECAUSE I have not worked on this project before and I wanted to make sure that I was following the best practices and the code was up to date.
+
+BUT what I made sure to read the document inside out, to understand what is required what is not required.
+
+I implemented the feature which were most important and I left the features which were less important because of time contraint.
