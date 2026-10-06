@@ -64,4 +64,20 @@ Different models need different shape types. A model that draws boxes needs boxe
 
 ## Main decision
 
-To be written at step 11: what approach I chose, what approach I rejected, and what rejecting it cost.
+**The decision:** how to make the chart update live over WebSocket (step 9).
+
+**What I chose.** I wrote the live connection myself, as a small piece of code in front of CVAT's server (`cvat/apps/test/live.py`, plus 8 lines in `cvat/asgi.py`). It does three things:
+
+1. When a page connects, it asks my normal counts API, as the same user, whether that user may see the task. If the API would refuse, the connection is refused.
+2. When annotations are saved, it passes a short "changed" message through Redis, which CVAT already runs.
+3. The page then reloads the numbers through the normal API.
+
+**What I rejected.** Django Channels, the usual add-on for WebSockets in Django. It would have sent the numbers over the connection directly, with its own login handling and its own way to reach every open page.
+
+**Why.** Channels is a new package, so I would have had to rebuild CVAT's server image, which takes a long time on my laptop and network, and set up a new message layer. CVAT's server already accepts WebSocket connections, so the step needed no new package at all. Also, the numbers and the access check now live in one place (the API), which my automated tests already cover.
+
+**What rejecting it cost:**
+
+- **I wrote and debugged the connection code myself.** My first version hung on every connection (an internal request answered Django's "has the client disconnected?" question wrongly), and it took time to find. Channels would have handled this for me.
+- **One extra request per update.** Each change makes every open page reload the counts through the API (about 100 ms, see MO-1). With Channels the numbers would come with the message. The live update still takes only 243 ms (MO-2), so this cost is small here.
+- **It would not scale as far.** Every open page keeps its own connection to Redis. For a few annotators that is fine. For thousands of open pages, Channels' shared message layer would be the better choice.
