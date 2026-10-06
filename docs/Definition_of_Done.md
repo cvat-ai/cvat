@@ -1,7 +1,7 @@
 # Definition of Done
 
-- [ ] **Endpoint returns correct counts from database**
-  - *Evidence:*
+- [x] **Endpoint returns correct counts from database**
+  - *Evidence:* Python benchmark confirmed correct aggregation across tables (LabeledShape, LabeledTrack, etc.) via `TestTaskViewSet` on endpoint `GET /api/test/tasks/{id}/annotations/stats`.
 
 - [ ] **Frontend renders counts as a graph**
   - *Evidence:*
@@ -12,17 +12,17 @@
 - [ ] **Resilience: Failed request state handled cleanly**
   - *Evidence:*
 
-- [ ] **Auth: Refuses unauthenticated requests**
-  - *Evidence:*
+- [x] **Auth: Refuses unauthenticated requests**
+  - *Evidence:* `cvat/apps/test/tests.py::test_unauthenticated_request` passing with HTTP 401.
 
-- [ ] **Auth: Refuses user with no access to task**
-  - *Evidence:* `
+- [x] **Auth: Refuses user with no access to task**
+  - *Evidence:* `cvat/apps/test/tests.py::test_unauthorized_request` passing with HTTP 403. Uses CVAT `TaskPermission` IAM class.
 
-- [ ] **Performance: Objective measured (5 runs)**
-  - *Evidence:*
+- [x] **Performance: Objective measured (5 runs)**
+  - *Evidence:* Recorded in `docs/Objectives.md`. Median: 12.02 ms.
 
-- [ ] **Performance: Target evaluation documented**
-  - *Evidence:*
+- [x] **Performance: Target evaluation documented**
+  - *Evidence:* Target of 200ms comfortably met (Median 12.02 ms).
 
 - [ ] **Scope: Incomplete items transparently documented**
   - *Evidence:*

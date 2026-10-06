@@ -9,12 +9,12 @@
 
 | Run # | Response Time (ms) |
 |---|---|:---|:---|
-| Run 1 | *(To fill at benchmark phase)* |
-| Run 2 | *(To fill at benchmark phase)* |
-| Run 3 | *(To fill at benchmark phase)* |
-| Run 4 | *(To fill at benchmark phase)* |
-| Run 5 | *(To fill at benchmark phase)* |
+| Run 1 | 32.40 |
+| Run 2 | 13.26 |
+| Run 3 | 12.02 |
+| Run 4 | 9.43 |
+| Run 5 | 8.58 |
 
-- **Median:** *(To fill at benchmark phase)*
-- **Spread (Min - Max):** *(To fill at benchmark phase)*
-- **Status:** [ ] Target Met / [ ] Target Missed (Provide brief explanation if missed)
+- **Median:** 12.02 ms
+- **Spread (Min - Max):** 8.58 ms - 32.40 ms
+- **Status:** [x] Target Met / [ ] Target Missed (Provide brief explanation if missed)
