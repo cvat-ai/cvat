@@ -7,6 +7,10 @@ import Alert from 'antd/lib/alert';
 import Button from 'antd/lib/button';
 import { LeftOutlined } from '@ant-design/icons';
 import { Empty } from 'antd';
+import Select from 'antd/lib/select';
+
+const { Option } = Select;
+type FilterType = 'total' | 'shapes' | 'tracks' | 'tags' | 'intervals';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -54,6 +58,7 @@ export default function TaskClassAnalyticsPage(): JSX.Element {
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
     const [data, setData] = useState<TaskAnnotationStats | null>(null);
+    const [filterType, setFilterType] = useState<FilterType>('total');
 
     const fetchData = async () => {
         setLoading(true);
@@ -125,15 +130,26 @@ export default function TaskClassAnalyticsPage(): JSX.Element {
                     )}
 
                     {!loading && !error && data && data.total_annotations > 0 && (
-                        <div style={{ width: '100%', height: '500px' }}>
-                            <Bar
-                                data={{
-                                    labels: data.classes.map(c => c.name),
-                                    datasets: [
-                                        {
-                                            label: 'Annotations',
-                                            data: data.classes.map(c => c.total),
-                                            backgroundColor: data.classes.map(c => c.color),
+                        <div style={{ width: '100%' }}>
+                            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 16 }}>
+                                <Text strong style={{ marginRight: 8, alignSelf: 'center' }}>Filter by Type:</Text>
+                                <Select value={filterType} onChange={setFilterType} style={{ width: 150 }}>
+                                    <Option value="total">All Types</Option>
+                                    <Option value="shapes">Shapes</Option>
+                                    <Option value="tracks">Tracks</Option>
+                                    <Option value="tags">Tags</Option>
+                                    <Option value="intervals">Intervals</Option>
+                                </Select>
+                            </div>
+                            <div style={{ height: '500px' }}>
+                                <Bar
+                                    data={{
+                                        labels: data.classes.map(c => c.name),
+                                        datasets: [
+                                            {
+                                                label: filterType.charAt(0).toUpperCase() + filterType.slice(1),
+                                                data: data.classes.map(c => c[filterType]),
+                                                backgroundColor: data.classes.map(c => c.color),
                                             borderColor: 'rgba(0, 0, 0, 0.1)',
                                             borderWidth: 1,
                                             borderRadius: 4,
@@ -163,6 +179,7 @@ export default function TaskClassAnalyticsPage(): JSX.Element {
                                     }
                                 }}
                             />
+                            </div>
                         </div>
                     )}
                 </Col>
