@@ -4,13 +4,16 @@ from rest_framework.response import Response
 from drf_spectacular.utils import extend_schema
 from django.db.models import Count
 from cvat.apps.engine.models import Task, LabeledShape, LabeledTrack, LabeledImage, LabeledInterval
-from cvat.apps.engine.permissions import TaskPermission
+from .permissions import TestTaskPermission
 from .serializers import TaskAnnotationStatsSerializer
 
 class TestTaskViewSet(viewsets.GenericViewSet):
     queryset = Task.objects.all()
     iam_supports_organization_params = True
-    iam_permission_class = TaskPermission
+    iam_permission_class = TestTaskPermission
+    search_fields = ("name",)
+    ordering_fields = ("id",)
+    ordering = "-id"
 
     @extend_schema(
         summary="Get annotation counts per class for a task",
