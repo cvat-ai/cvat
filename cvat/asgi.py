@@ -39,3 +39,11 @@ if debug.is_debugging_enabled():
             return await super().handle(*args, **kwargs)
 
     application = DebuggerApp()
+
+
+from django.apps import apps  # noqa: E402 (Django is set up by get_asgi_application above)
+
+if apps.is_installed("cvat.apps.test"):
+    from cvat.apps.test.live import AnnotationCountsWebSocket
+
+    application = AnnotationCountsWebSocket(application)

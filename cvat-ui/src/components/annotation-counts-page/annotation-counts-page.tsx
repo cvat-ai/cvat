@@ -3,6 +3,7 @@
 import './styles.scss';
 
 import React, { useCallback, useEffect, useState } from 'react';
+import { useSelector } from 'react-redux';
 import { useParams } from 'react-router';
 import { Row, Col } from 'antd/lib/grid';
 import Title from 'antd/lib/typography/Title';
@@ -13,11 +14,13 @@ import Result from 'antd/lib/result';
 import Switch from 'antd/lib/switch';
 
 import { Task, getCore } from 'cvat-core-wrapper';
+import { CombinedState } from 'reducers';
 import { fetchTask } from 'utils/fetch';
 import GoBackButton from 'components/common/go-back-button';
 import CVATLoadingSpinner from 'components/common/loading-spinner';
 import ResourceLink from 'components/common/resource-link';
 import AnnotationCountsChart, { LabelCount } from './annotation-counts-chart';
+import useAnnotationCountsUpdates from './use-annotation-counts-updates';
 
 const core = getCore();
 
@@ -98,9 +101,21 @@ function AnnotationCountsPage(): JSX.Element {
         }
     }, [taskId, byShapeType]);
 
+    // Reloads only the numbers, without the loading spinner, so the chart updates in place
+    const refreshCounts = useCallback(async (): Promise<void> => {
+        try {
+            setCounts(await fetchAnnotationCounts(taskId, byShapeType));
+        } catch (receivedError: unknown) {
+            setError(receivedError instanceof Error ? receivedError : new Error('Unknown error'));
+        }
+    }, [taskId, byShapeType]);
+
     useEffect(() => {
         load();
     }, [load]);
+
+    const organizationSlug = useSelector((state: CombinedState) => state.organizations.current?.slug ?? '');
+    useAnnotationCountsUpdates(taskId, organizationSlug, refreshCounts);
 
     let content: JSX.Element | null = null;
     if (fetching) {

@@ -60,6 +60,7 @@ Different models need different shape types. A model that draws boxes needs boxe
 | Step 2 | Grouped shapes are identified by job, **image** and group number, not just job and group number. | In the database, group numbers start again from 1 on every image (the highest is 7). Without the image, different objects on different images would be merged. |
 | Step 2 | The "old way" speed number (step 7) is measured after the API was written, not before. | The old way does not use any of my code, so measuring it now gives the same result. I missed doing it first. |
 | Step 4 | Set up the web page tools differently than planned: Yarn downloaded from the npm registry, the code checker (ESLint) not run, and no live development server. I build the page once and CVAT's own web container serves it at `localhost:8080`. | My network could not reach Yarn's own download site. ESLint needs a newer Node version than I have (20.17). The development server crashed on my laptop while only about 2 GB of memory was free. |
+| Step 9 | The live connection does not send the numbers. It only sends a short "changed" message, and the page then reloads the numbers through the normal API. When the connection opens, the server checks access by asking the normal API, as the same user. | CVAT's access check needs information that only normal API requests carry, so copying it for the live connection would be fragile. This way one piece of code checks access and builds the numbers, and the "split by shape type" switch keeps working. |
 
 ## Main decision
 
