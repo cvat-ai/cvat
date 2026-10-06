@@ -11,9 +11,10 @@ import Alert from 'antd/lib/alert';
 import Empty from 'antd/lib/empty';
 import Tag from 'antd/lib/tag';
 import Badge from 'antd/lib/badge';
-import Text from 'antd/lib/typography/Text';
-import Title from 'antd/lib/typography/Title';
+import Typography from 'antd/lib/typography';
 import { ReloadOutlined } from '@ant-design/icons';
+
+const { Text, Title } = Typography;
 
 interface ClassCount {
     label_id: number;
@@ -116,7 +117,7 @@ export default function TaskAnnotationAnalytics({ taskId }: Props): JSX.Element 
     useEffect(() => {
         isMountedRef.current = true;
         let socket: WebSocket | null = null;
-        let reconnectTimer: NodeJS.Timeout | null = null;
+        let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
         let retryAttempt = 0;
 
         function connect() {
