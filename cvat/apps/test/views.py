@@ -4,12 +4,13 @@
 
 from django.db.models import Count
 from django.shortcuts import get_object_or_404
-from drf_spectacular.utils import OpenApiResponse, extend_schema
+from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from rest_framework.exceptions import PermissionDenied
+from rest_framework.authentication import BasicAuthentication, SessionAuthentication
+from rest_framework.exceptions import NotAuthenticated, PermissionDenied
 from rest_framework.permissions import IsAuthenticated
 
 from cvat.apps.engine.models import LabeledShape, ShapeType, Task
@@ -67,9 +68,13 @@ def query_task_annotation_counts(task_id: int, shape_type: str | None = None):
     },
 )
 class TaskAnnotationCountsView(APIView):
+    authentication_classes = [BasicAuthentication, SessionAuthentication]
     permission_classes = [IsAuthenticated]
 
     def get(self, request, pk: int):
+        if not request.user or not request.user.is_authenticated:
+            raise NotAuthenticated("Authentication credentials were not provided.")
+
         task = get_object_or_404(Task, pk=pk)
 
         if not check_task_access(request, task):
