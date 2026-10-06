@@ -15,4 +15,5 @@ class ClassAnnotationCountSerializer(serializers.Serializer):
 class TaskAnnotationAnalyticsResponseSerializer(serializers.Serializer):
     task_id = serializers.IntegerField(help_text="ID of the task")
     total_annotations = serializers.IntegerField(min_value=0, help_text="Total count across all matching classes")
+    shape_type = serializers.CharField(required=False, allow_null=True, help_text="Optional shape type filter applied")
     counts = ClassAnnotationCountSerializer(many=True, help_text="Per-class annotation distribution")
