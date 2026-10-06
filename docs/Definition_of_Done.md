@@ -12,6 +12,9 @@
 - [x] **Resilience: Failed request state handled cleanly**
   - *Evidence:* Implemented `<Alert />` block triggering on non-200 responses with an actionable "Retry" `<Button />`.
 
+- [x] **Additional feature: Filtering / Grouping**
+  - *Evidence:* Implemented a dropdown filter in the UI allowing users to dynamically switch the graph view between Annotation Types (All Types, Shapes, Tracks, Tags, Intervals). This distinguishes manual frame-by-frame effort (shapes) from interpolated automated effort (tracks).
+
 - [x] **Auth: Refuses unauthenticated requests**
   - *Evidence:* `cvat/apps/test/tests.py::test_unauthenticated_request` passing with HTTP 401.
 

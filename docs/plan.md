@@ -25,6 +25,7 @@
      - Normal loaded state
      - Zero annotations / empty state
      - Failed network / unauthorized error state
+- Implement a custom filter: Add an interactive dropdown to let users filter the graph by "Annotation Type" (Shapes vs. Tracks vs. Tags) to analyze manual vs. interpolated workloads.
 
 ## Phase 4: Benchmarking & Testing (2 Hour)
 - Benchmark the endpoint using 5 repeated runs with cache disabled
