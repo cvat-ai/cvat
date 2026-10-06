@@ -1932,11 +1932,9 @@ Cypress.Commands.add('interactAnnotationObjectMenu', (parentSelector, button) =>
         cy.get('[aria-label="more"]').click();
     });
 
-    cy.get('.cvat-object-item-menu:visible')
+    cy.document().find('.cvat-object-item-menu:visible')
         .should('have.length', 1)
-        .within(() => {
-            cy.contains('button', button).click();
-        });
+        .contains('button', button).click();
 });
 
 Cypress.Commands.add('hideTooltips', () => {
