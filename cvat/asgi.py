@@ -20,7 +20,21 @@ import cvat.utils.remote_debugger as debug
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "cvat.settings.development")
 
-application = get_asgi_application()
+django_application = get_asgi_application()
+
+
+async def application(scope, receive, send):
+    if scope["type"] == "websocket":
+        path = scope.get("path", "")
+        if path.startswith("/api/test/ws/"):
+            from cvat.apps.test.websocket import class_counts_websocket
+
+            await class_counts_websocket(scope, receive, send)
+            return
+        await send({"type": "websocket.close", "code": 4404})
+        return
+
+    await django_application(scope, receive, send)
 
 
 if debug.is_debugging_enabled():
@@ -38,4 +52,17 @@ if debug.is_debugging_enabled():
             self.__debugger.attach_current_thread()
             return await super().handle(*args, **kwargs)
 
-    application = DebuggerApp()
+    # Keep debugger HTTP path; websockets still go through ``application`` above.
+    _debug_http = DebuggerApp()
+
+    async def application(scope, receive, send):  # noqa: F811
+        if scope["type"] == "websocket":
+            path = scope.get("path", "")
+            if path.startswith("/api/test/ws/"):
+                from cvat.apps.test.websocket import class_counts_websocket
+
+                await class_counts_websocket(scope, receive, send)
+                return
+            await send({"type": "websocket.close", "code": 4404})
+            return
+        await _debug_http(scope, receive, send)

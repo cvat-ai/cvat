@@ -571,6 +571,17 @@ def handle_annotations_change(instance: Job, annotations, action, **kwargs):
                 payload={"tracks": tracks},
             )
 
+    # Assessment: notify class-counts WebSocket listeners (cvat.apps.test)
+    try:
+        from django.apps import apps as django_apps
+
+        if django_apps.is_installed("cvat.apps.test"):
+            from cvat.apps.test.realtime import notify_from_job
+
+            notify_from_job(instance, action)
+    except Exception:
+        pass
+
 
 def handle_dataset_io(
     instance: Project | Task | Job,

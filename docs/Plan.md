@@ -44,7 +44,7 @@ Priority is a **working, explainable 1–4** over stretching to 8–9.
 
 | Item | Likely skip? | Reason |
 |------|--------------|--------|
-| #8–#9 WebSocket + reconnect | Yes, if behind schedule | Assessment says not to start until #4 works; live updates are stretch |
+| #8–#9 WebSocket + reconnect | Done | Redis pub/sub + `/api/test/ws/tasks/{id}/class-counts`; UI auto-reconnect |
 | #7 Extra filter/grouping | Done | Chose optional `job_id` filter (see below) |
 | #10 Decision record in Plan | Only if #10 reached | Add closing section: chosen vs rejected approach |
 

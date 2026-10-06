@@ -32,8 +32,10 @@ Personal checklist for when work is **finished**, not merely stopped. Each line 
   **Evidence:** [`docs/Objectives.md`](Objectives.md) MO-1 — median **64.72 ms**, target ≤ 100 ms, **met**
 - [x] #7 One extra filter or grouping documented with rationale.  
   **Evidence:** optional query `job_id` on `GET /api/test/tasks/{id}/class-counts` (+ UI “Filter by job” select). **Why:** CVAT splits tasks into jobs; reviewers need per-job class totals without exporting the whole task. Invalid/foreign `job_id` → 400. Screenshot: [`docs/evidence/08-filter-by-job-in-class-count.png`](evidence/08-filter-by-job-in-class-count.png) (task 9, Job #5 selected).
-- [ ] #8–#9 Live WebSocket updates and reconnect (only if 1–4 were done first).  
-  **Evidence:** ___
+- [x] #8–#9 Live WebSocket updates and reconnect (only if 1–4 were done first).  
+  **Evidence:**  
+  - **#8 Live:** WS `/api/test/ws/tasks/{id}/class-counts` (session auth); Redis pub/sub when annotations change (`handle_annotations_change` → `cvat.apps.test.realtime`); UI **Live** badge and quiet refetch of class-counts. Demo: open class-counts + save a shape in a job → counts update without refresh.  
+  - **#9 Reconnect:** client reconnects with exponential backoff; badge shows **Reconnecting…** then **Live** again after a dropped socket.
 
 ## Submission
 
@@ -46,5 +48,4 @@ Personal checklist for when work is **finished**, not merely stopped. Each line 
 
 | Requirement | Status | Reason |
 |-------------|--------|--------|
-| #8–#9 WebSocket | Skipped for now | Optional stretch after floor |
 | Submission | Not started | Loom + PR later |

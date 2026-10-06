@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import React, {
-    useCallback, useEffect, useMemo, useState,
+    useCallback, useEffect, useMemo, useRef, useState,
 } from 'react';
 import { useParams } from 'react-router';
 import { Row, Col } from 'antd/lib/grid';
@@ -14,6 +14,7 @@ import Empty from 'antd/lib/empty';
 import Button from 'antd/lib/button';
 import Select from 'antd/lib/select';
 import Space from 'antd/lib/space';
+import Badge from 'antd/lib/badge';
 import Text from 'antd/lib/typography/Text';
 import {
     Chart as ChartJS,
@@ -51,6 +52,8 @@ interface ClassCountsResponse {
     counts: ClassCountRow[];
 }
 
+type LiveStatus = 'connecting' | 'live' | 'reconnecting' | 'offline';
+
 function formatLoadError(err: unknown): Error {
     if (err instanceof Error) {
         const withCode = err as Error & { code?: number };
@@ -71,55 +74,137 @@ function ClassCountsPage(): JSX.Element {
     const [fetching, setFetching] = useState(true);
     const [error, setError] = useState<Error | null>(null);
     const [reloadToken, setReloadToken] = useState(0);
+    const [liveStatus, setLiveStatus] = useState<LiveStatus>('connecting');
+    const selectedJobRef = useRef(selectedJob);
+    selectedJobRef.current = selectedJob;
 
     const retry = useCallback(() => {
         setReloadToken((value) => value + 1);
     }, []);
 
-    useEffect(() => {
-        let cancelled = false;
-
-        const load = async (): Promise<void> => {
-            try {
+    const fetchCounts = useCallback(async (options?: { quiet?: boolean }): Promise<void> => {
+        const quiet = options?.quiet ?? false;
+        try {
+            if (!quiet) {
                 setFetching(true);
                 setError(null);
-
-                const query = selectedJob === ALL_JOBS
-                    ? `/api/test/tasks/${taskId}/class-counts`
-                    : `/api/test/tasks/${taskId}/class-counts?job_id=${selectedJob}`;
-
-                const [fetchedTask, jobList, response] = await Promise.all([
-                    fetchTask(taskId),
-                    core.jobs.get({ taskID: taskId }),
-                    core.server.request(query, { method: 'GET' }),
-                ]);
-
-                if (cancelled) {
-                    return;
-                }
-
-                const payload = (response?.data ?? response) as ClassCountsResponse;
-                setTask(fetchedTask);
-                setJobs(Array.isArray(jobList) ? jobList : []);
-                setCounts(Array.isArray(payload?.counts) ? payload.counts : []);
-            } catch (err) {
-                if (!cancelled) {
-                    setTask(null);
-                    setCounts([]);
-                    setError(formatLoadError(err));
-                }
-            } finally {
-                if (!cancelled) {
-                    setFetching(false);
-                }
             }
-        };
 
-        load();
+            const job = selectedJobRef.current;
+            const query = job === ALL_JOBS
+                ? `/api/test/tasks/${taskId}/class-counts`
+                : `/api/test/tasks/${taskId}/class-counts?job_id=${job}`;
+
+            const [fetchedTask, jobList, response] = await Promise.all([
+                fetchTask(taskId),
+                core.jobs.get({ taskID: taskId }),
+                core.server.request(query, { method: 'GET' }),
+            ]);
+
+            const payload = (response?.data ?? response) as ClassCountsResponse;
+            setTask(fetchedTask);
+            setJobs(Array.isArray(jobList) ? jobList : []);
+            setCounts(Array.isArray(payload?.counts) ? payload.counts : []);
+            setError(null);
+        } catch (err) {
+            if (!quiet) {
+                setTask(null);
+                setCounts([]);
+                setError(formatLoadError(err));
+            }
+        } finally {
+            if (!quiet) {
+                setFetching(false);
+            }
+        }
+    }, [taskId]);
+
+    useEffect(() => {
+        let cancelled = false;
+        (async () => {
+            if (cancelled) {
+                return;
+            }
+            await fetchCounts({ quiet: false });
+        })();
         return () => {
             cancelled = true;
         };
-    }, [taskId, reloadToken, selectedJob]);
+    }, [taskId, reloadToken, selectedJob, fetchCounts]);
+
+    // WebSocket live updates (#8) with reconnect (#9)
+    useEffect(() => {
+        let closed = false;
+        let socket: WebSocket | null = null;
+        let retryDelay = 1000;
+        let reconnectTimer: number | undefined;
+
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const url = `${protocol}//${window.location.host}/api/test/ws/tasks/${taskId}/class-counts`;
+
+        const connect = (): void => {
+            if (closed) {
+                return;
+            }
+            setLiveStatus((prev) => (prev === 'live' ? 'live' : 'connecting'));
+            socket = new WebSocket(url);
+
+            socket.onopen = () => {
+                if (closed) {
+                    return;
+                }
+                retryDelay = 1000;
+                setLiveStatus('live');
+            };
+
+            socket.onmessage = (event: MessageEvent) => {
+                try {
+                    const data = JSON.parse(String(event.data));
+                    if (data?.type === 'annotations_changed') {
+                        const jobFilter = selectedJobRef.current;
+                        if (
+                            jobFilter === ALL_JOBS ||
+                            data.job_id == null ||
+                            String(data.job_id) === jobFilter
+                        ) {
+                            fetchCounts({ quiet: true });
+                        }
+                    }
+                } catch {
+                    // ignore malformed payloads
+                }
+            };
+
+            socket.onclose = () => {
+                if (closed) {
+                    return;
+                }
+                setLiveStatus('reconnecting');
+                reconnectTimer = window.setTimeout(() => {
+                    retryDelay = Math.min(retryDelay * 2, 15000);
+                    connect();
+                }, retryDelay);
+            };
+
+            socket.onerror = () => {
+                socket?.close();
+            };
+        };
+
+        connect();
+
+        return () => {
+            closed = true;
+            if (reconnectTimer) {
+                window.clearTimeout(reconnectTimer);
+            }
+            if (socket) {
+                socket.onclose = null;
+                socket.close();
+            }
+            setLiveStatus('offline');
+        };
+    }, [taskId, fetchCounts]);
 
     const total = useMemo(
         () => counts.reduce((sum, row) => sum + row.count, 0),
@@ -181,6 +266,19 @@ function ClassCountsPage(): JSX.Element {
         })),
     ], [jobs]);
 
+    const liveBadgeStatus = liveStatus === 'live'
+        ? 'success'
+        : liveStatus === 'reconnecting' || liveStatus === 'connecting'
+            ? 'warning'
+            : 'default';
+    const liveBadgeText = liveStatus === 'live'
+        ? 'Live'
+        : liveStatus === 'reconnecting'
+            ? 'Reconnecting…'
+            : liveStatus === 'connecting'
+                ? 'Connecting…'
+                : 'Offline';
+
     const backNavigation = (
         <Row justify='center'>
             <Col span={22} xl={18} xxl={14}>
@@ -231,6 +329,7 @@ function ClassCountsPage(): JSX.Element {
                         {task ? <ResourceLink resource={task} /> : `task #${taskId}`}
                     </Title>
                     <Space className='cvat-class-counts-filters' wrap>
+                        <Badge status={liveBadgeStatus} text={liveBadgeText} />
                         <Text type='secondary'>Filter by job</Text>
                         <Select
                             className='cvat-class-counts-job-select'
