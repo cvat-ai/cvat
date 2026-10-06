@@ -2,8 +2,13 @@
 ## OBJ-1 API Endpoint
 
 | Field | Entry |
-|---|---|---|---|:---|:---|:---|:---|:---|
-| What is measured | Time for the API endpoint to return the per-class annotation counts for a given task | Browser Network tab, measuring the duration of the fetch request from the UI to the backend endpoint | Median of 5 runs at or below 200 ms | Chrome, cache disabled, local Docker stack, COCO val2017 annotations loaded, superuser session. Specs: [Insert RAM, CPU, OS here], Base CVAT SHA: [Insert SHA from `git rev-parse HEAD`] | First request immediately following a cold Docker container start |
+|---|---|
+| **ID** | OBJ-1 |
+| **What is measured** | Time for the API endpoint to return the per-class annotation counts for a given task |
+| **How it is measured** | Using a direct Python request (or Browser Network tab) measuring the duration of the fetch request from the UI to the backend endpoint |
+| **Target** | Median of 5 runs at or below 200 ms |
+| **Conditions** | Local Docker stack (`localhost:8080`), COCO val2017 annotations loaded, superuser session. Specs: macOS 25.6.0 (ARM64), 12-core CPU, 24GB RAM, Base CVAT SHA: `d8193c584be9ce6cf9882dad06c0dd920cc0b9c5` |
+| **What is not included** | First request immediately following a cold Docker container start (cache warm-up) |
 
 ## Raw Benchmark Results
 
