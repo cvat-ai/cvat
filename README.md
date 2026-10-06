@@ -109,7 +109,7 @@ _For alternative deployments (AWS, Kubernetes, external PostgreSQL, backups, upg
 ## Key Capabilities
 
 - **[Manual & Auto-labeling](https://docs.cvat.ai/docs/annotation/manual-annotation/):** Annotate images, videos, audio,
- and 3D point clouds with bounding boxes, polygons, masks, keypoints, cuboids, tags, audio intervals and more.
+ and 3D point clouds with bounding boxes, polygons, masks, keypoints, cuboids, tags, intervals and more.
 Speed up labeling by connecting your own models for automatic annotation.
 - **[Task Management](https://docs.cvat.ai/docs/workspace/):** Organize datasets into projects, split them into tasks
   and jobs, assign work to annotators, and track progress in real time.
