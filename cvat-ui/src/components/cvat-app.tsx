@@ -83,6 +83,7 @@ import CreateJobPage from './create-job-page/create-job-page';
 import QualityControlPage from './quality-control/quality-control-page';
 import AnalyticsReportPage from './analytics-report/analytics-report-page';
 import ConsensusManagementPage from './consensus-management-page/consensus-management-page';
+import ClassCountsPage from './class-counts-page/class-counts-page';
 import InvitationWatcher from './invitation-watcher/invitation-watcher';
 import SelectOrganizationModal from './select-organization-modal/select-organization-modal';
 import BulkProgress from './bulk-progress';
@@ -569,6 +570,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                                         <Route exact path='/tasks/:tid/quality-control' component={QualityControlPage} />
                                         <Route exact path='/tasks/:tid/analytics' component={AnalyticsReportPage} />
                                         <Route exact path='/tasks/:tid/consensus' component={ConsensusManagementPage} />
+                                        <Route exact path='/tasks/:tid/class-counts' component={ClassCountsPage} />
                                         <Route exact path='/tasks/:id/jobs/create' component={CreateJobPage} />
                                         <Route exact path='/tasks/:id/guide' component={AnnotationGuidePage} />
                                         <Route exact path='/tasks/:tid/jobs/:jid' component={AnnotationPageContainer} />
