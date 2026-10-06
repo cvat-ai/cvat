@@ -419,3 +419,21 @@ $excluded-background: #d9d9d973;
     padding-left: $grid-unit-size * 2;
     padding-right: 0;
 }
+
+.cvat-quality-page-navigation {
+    display: flex;
+    align-items: center;
+    gap: $grid-unit-size;
+
+    .ant-btn {
+        padding-left: 0;
+    }
+
+    .ant-breadcrumb a {
+        color: #1677ff;
+
+        &:hover {
+            color: #4096ff;
+        }
+    }
+}

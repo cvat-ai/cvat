@@ -31,6 +31,10 @@ import QualityRequirementsTab from './quality-requirements-tab';
 import QualityManagementTab from './task-quality/quality-magement-tab';
 import QualitySettingsTab, { UpdateSettingsData } from './quality-settings-tab';
 
+import {
+    QualityPageNavigation, QualityPageNavigationContext, QualityPageNavigationHeader,
+} from './quality-page-navigation';
+
 const core = getCore();
 
 type QualityControlTabItem = NonNullable<TabsProps['items']>[0];
@@ -201,6 +205,7 @@ function getQualityTabFromHash(): string {
 
 function QualityControlPage(): JSX.Element {
     const reduxDispatch = useDispatch();
+    const [matrixNavigation, setMatrixNavigation] = useState<QualityPageNavigation | null>(null);
     const [state, dispatch] = useReducer(reducer, {
         instance: null,
         instanceType: null,
@@ -439,7 +444,9 @@ function QualityControlPage(): JSX.Element {
     const backNavigation: JSX.Element | null = (
         <Row justify='center'>
             <Col span={22} xl={18} xxl={14} className='cvat-task-top-bar'>
-                <GoBackButton />
+                {matrixNavigation?.tab === activeTab ? (
+                    <QualityPageNavigationHeader navigation={matrixNavigation} />
+                ) : <GoBackButton />}
             </Col>
         </Row>
     );
@@ -579,17 +586,19 @@ function QualityControlPage(): JSX.Element {
     }
 
     return (
-        <Row className='cvat-quality-control-page'>
-            <Col className='cvat-quality-control-wrapper' span={24}>
-                {backNavigation}
-                <Row justify='center' className='cvat-quality-control-inner-wrapper'>
-                    <Col span={22} xl={18} xxl={14} className='cvat-quality-control-inner'>
-                        {title}
-                        {tabs}
-                    </Col>
-                </Row>
-            </Col>
-        </Row>
+        <QualityPageNavigationContext.Provider value={setMatrixNavigation}>
+            <Row className='cvat-quality-control-page'>
+                <Col className='cvat-quality-control-wrapper' span={24}>
+                    {backNavigation}
+                    <Row justify='center' className='cvat-quality-control-inner-wrapper'>
+                        <Col span={22} xl={18} xxl={14} className='cvat-quality-control-inner'>
+                            {title}
+                            {tabs}
+                        </Col>
+                    </Row>
+                </Col>
+            </Row>
+        </QualityPageNavigationContext.Provider>
     );
 }
 
