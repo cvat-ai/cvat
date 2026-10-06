@@ -13,7 +13,7 @@ export function getObjectStateByClientID(states: ObjectState[], clientID: number
 
         const addState = (state: ObjectState): void => {
             if (typeof state.clientID === 'number') {
-                index?.set(state.clientID, state);
+                index!.set(state.clientID, state);
             }
 
             state.elements.forEach(addState);
