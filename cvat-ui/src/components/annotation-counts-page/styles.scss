@@ -18,6 +18,14 @@
     margin: $grid-unit-size * 2 0;
 }
 
+.cvat-annotation-counts-shape-type-switch {
+    display: inline-flex;
+    align-items: center;
+    gap: $grid-unit-size;
+    margin-bottom: $grid-unit-size * 2;
+    cursor: pointer;
+}
+
 .cvat-annotation-counts-chart {
     position: relative;
     width: 100%;

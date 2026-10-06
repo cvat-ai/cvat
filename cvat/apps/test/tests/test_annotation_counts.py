@@ -83,6 +83,30 @@ class AnnotationCountsTest(ApiTestBase):
             [("cat", 5), ("dog", 2), ("bird", 0)],
         )
 
+    def test_counts_per_shape_type(self):
+        with ForceLogin(self.admin, self.client):
+            response = self.client.get(
+                f"/api/test/tasks/{self.task.id}/annotation-counts", {"group_by": "shape_type"}
+            )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            [(label["name"], label["shape_types"]) for label in response.data["labels"]],
+            [
+                ("cat", {"rectangle": 4, "skeleton": 1}),
+                ("dog", {"other": 2}),  # a track and a tag have no single shape type
+                ("bird", {}),
+            ],
+        )
+
+    def test_unknown_grouping_is_refused(self):
+        with ForceLogin(self.admin, self.client):
+            response = self.client.get(
+                f"/api/test/tasks/{self.task.id}/annotation-counts", {"group_by": "frame"}
+            )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
     def test_task_without_annotations(self):
         response = self._get_counts(self.admin, self.empty_task)
 

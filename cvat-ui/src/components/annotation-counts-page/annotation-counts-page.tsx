@@ -10,6 +10,7 @@ import Text from 'antd/lib/typography/Text';
 import Button from 'antd/lib/button';
 import Empty from 'antd/lib/empty';
 import Result from 'antd/lib/result';
+import Switch from 'antd/lib/switch';
 
 import { Task, getCore } from 'cvat-core-wrapper';
 import { fetchTask } from 'utils/fetch';
@@ -26,15 +27,21 @@ interface AnnotationCounts {
     labels: LabelCount[];
 }
 
-async function fetchAnnotationCounts(taskId: number): Promise<AnnotationCounts> {
+async function fetchAnnotationCounts(taskId: number, byShapeType: boolean): Promise<AnnotationCounts> {
     const response = await core.server.request<{ data: AnnotationCounts }>(
         `${core.config.backendAPI}/test/tasks/${taskId}/annotation-counts`,
-        { method: 'GET' },
+        { method: 'GET', params: byShapeType ? { group_by: 'shape_type' } : {} },
     );
     return response.data;
 }
 
-function AnnotationCountsContent({ counts }: { counts: AnnotationCounts }): JSX.Element {
+interface ContentProps {
+    counts: AnnotationCounts;
+    byShapeType: boolean;
+    onByShapeTypeChange: (byShapeType: boolean) => void;
+}
+
+function AnnotationCountsContent({ counts, byShapeType, onByShapeTypeChange }: ContentProps): JSX.Element {
     if (counts.total === 0) {
         return (
             <Empty
@@ -52,7 +59,11 @@ function AnnotationCountsContent({ counts }: { counts: AnnotationCounts }): JSX.
             <Text className='cvat-annotation-counts-summary'>
                 {`${counts.total} annotations in ${usedLabels.length} of ${counts.labels.length} labels`}
             </Text>
-            <AnnotationCountsChart labels={usedLabels} />
+            <label className='cvat-annotation-counts-shape-type-switch'>
+                <Switch size='small' checked={byShapeType} onChange={onByShapeTypeChange} />
+                <Text>Split by shape type</Text>
+            </label>
+            <AnnotationCountsChart labels={usedLabels} byShapeType={byShapeType} />
             {unusedLabels.length > 0 && (
                 <Text type='secondary' className='cvat-annotation-counts-unused'>
                     {`No annotations yet: ${unusedLabels.map((label) => label.name).join(', ')}`}
@@ -68,6 +79,7 @@ function AnnotationCountsPage(): JSX.Element {
     const [counts, setCounts] = useState<AnnotationCounts | null>(null);
     const [error, setError] = useState<Error | null>(null);
     const [fetching, setFetching] = useState(true);
+    const [byShapeType, setByShapeType] = useState(false);
 
     const load = useCallback(async (): Promise<void> => {
         setFetching(true);
@@ -75,7 +87,7 @@ function AnnotationCountsPage(): JSX.Element {
         try {
             const [receivedTask, receivedCounts] = await Promise.all([
                 fetchTask(taskId),
-                fetchAnnotationCounts(taskId),
+                fetchAnnotationCounts(taskId, byShapeType),
             ]);
             setTask(receivedTask);
             setCounts(receivedCounts);
@@ -84,7 +96,7 @@ function AnnotationCountsPage(): JSX.Element {
         } finally {
             setFetching(false);
         }
-    }, [taskId]);
+    }, [taskId, byShapeType]);
 
     useEffect(() => {
         load();
@@ -104,7 +116,13 @@ function AnnotationCountsPage(): JSX.Element {
             />
         );
     } else if (counts) {
-        content = <AnnotationCountsContent counts={counts} />;
+        content = (
+            <AnnotationCountsContent
+                counts={counts}
+                byShapeType={byShapeType}
+                onByShapeTypeChange={setByShapeType}
+            />
+        );
     }
 
     return (
