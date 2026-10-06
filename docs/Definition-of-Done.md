@@ -7,21 +7,20 @@ Personal checklist for when work is **finished**, not merely stopped. Each line 
 - [x] Plan committed on `dev-test01` before any feature code (`docs/Plan.md`).  
   **Evidence:** commit `49ea1f63f` — `docs: add assessment plan and tracking documents before implementation`
 - [x] CVAT running at http://localhost:8080 with login.  
-  **Evidence:** http://localhost:8080 ; user `Ameer_JS` (setup used `createsuperuser` per Task.pdf §4)
+  **Evidence:** http://localhost:8080 ; user `Ameer_JS` (active account; `is_superuser=False` — normal user is fine)
 - [x] Sample task created; COCO 1.0 annotations imported; labelled boxes visible in a job.  
-  **Evidence:** task id = **8** (`test_task`); images/frames = **5000**; COCO import; labelled boxes visible in job UI
+  **Evidence:** task id = **8** (`test_task`); images/frames = **5000**; screenshot [`docs/evidence/01-job-boxes.png`](evidence/01-job-boxes.png)
 
 ## Floor (requirements 1–4)
 
 - [x] `test` Django app registered; endpoint returns correct per-class counts for a known task.  
-  **Evidence:** task id **8**; `GET /api/test/tasks/8/class-counts` → 80 classes, 41866 annotations; commit `0929950fb`
+  **Evidence:** task id **8**; `GET /api/test/tasks/8/class-counts` → 80 classes / 41866 annotations; commit `0929950fb`; screenshot [`docs/evidence/02-api-class-counts.png`](evidence/02-api-class-counts.png)
 - [x] UI page calls the endpoint for that task.  
-  **Evidence:** route `/tasks/8/class-counts`; Actions → Class counts; commit `160b2af7b`
+  **Evidence:** route `/tasks/8/class-counts`; Actions → Class counts; commit `160b2af7b`; screenshot [`docs/evidence/03-page-graph.png`](evidence/03-page-graph.png)
 - [x] Counts shown as a graph.  
-  **Evidence:** bar chart on `/tasks/8/class-counts` (Chart.js / react-chartjs-2, top 25 classes by count); local UI change pending push with this docs update
-- [ ] Empty state (no annotations) and error state (failed request) handled cleanly.  
-  **Evidence:** how triggered ___ ; screenshot ___  
-  *(Partial: failed-request Result UI exists; dedicated empty-state demo not done yet.)*
+  **Evidence:** bar chart on `/tasks/8/class-counts` (top 25 by count); screenshot [`docs/evidence/03-page-graph.png`](evidence/03-page-graph.png); commit `5d37d6c25`
+- [x] Empty state (no annotations) and error state (failed request) handled cleanly.  
+  **Evidence:** empty → task **#10**, `0 classes · 0 annotations`, Empty + Refresh — [`docs/evidence/04-empty-state.png`](evidence/04-empty-state.png); error → `/tasks/999999/class-counts`, Result + Retry (`Request failed (404)`) — [`docs/evidence/05-error-state.png`](evidence/05-error-state.png)
 
 ## Stretch (if reached)
 
@@ -46,9 +45,8 @@ Personal checklist for when work is **finished**, not merely stopped. Each line 
 
 | Requirement | Status | Reason |
 |-------------|--------|--------|
-| #4 Empty + error states | In progress / partial | Error Result exists; empty case not fully demonstrated |
-| #5 Auth demos | Partial | Need second user for 403 |
+| #5 Auth demos | Partial | Need second user for 403; 401 without login works |
 | #6 Objective | Not started | No 5-run measurement yet |
 | #7 Extra filter | Not started | — |
-| #8–#9 WebSocket | Skipped for now | Floor #4 first per brief |
+| #8–#9 WebSocket | Skipped for now | Optional stretch after floor |
 | Submission | Not started | Loom + PR later |
