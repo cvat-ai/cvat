@@ -5,6 +5,7 @@
 import { AnnotationActionTypes } from 'actions/annotation-actions';
 import { AudioActions, AudioActionTypes } from 'actions/audio-actions';
 import { BoundariesActionTypes } from 'actions/boundaries-actions';
+import { AudioRegionsOrdering } from 'audio/components/annotation-page/audio-workspace/utils/audio-interval';
 import { limitZoom } from 'audio/utils/waveform-geometry';
 import {
     DimensionType, LabelType,
@@ -26,6 +27,7 @@ const defaultState: AudioState = {
         playbackRangeSource: null,
         fitIntervalRequest: null,
         intervals: [],
+        intervalsOrdering: AudioRegionsOrdering.ID_ASCENT,
         activeIntervalID: null,
         hoveredIntervalID: null,
         interactingIntervalID: null,
@@ -285,6 +287,15 @@ export default function audioReducer(state: AudioState = defaultState, action: A
                 player: {
                     ...state.player,
                     interactingIntervalID: action.payload.clientID,
+                },
+            };
+        }
+        case AudioActionTypes.SET_AUDIO_INTERVALS_ORDERING: {
+            return {
+                ...state,
+                player: {
+                    ...state.player,
+                    intervalsOrdering: action.payload.ordering,
                 },
             };
         }

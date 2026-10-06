@@ -17,7 +17,9 @@ import {
     isAudioIntervalSplittableAtPlaybackPosition,
     isAudioIntervalWithinSplitRange,
 } from 'audio/utils/audio-interval';
-import type { AudioPlaybackRange } from 'audio/components/annotation-page/audio-workspace/utils/audio-interval';
+import {
+    AudioRegionsOrdering, type AudioPlaybackRange,
+} from 'audio/components/annotation-page/audio-workspace/utils/audio-interval';
 
 import { updateActiveControl } from './annotation-actions';
 
@@ -43,6 +45,7 @@ export enum AudioActionTypes {
     SET_AUDIO_ACTIVE_INTERVAL = 'SET_AUDIO_ACTIVE_INTERVAL',
     SET_AUDIO_HOVERED_INTERVAL = 'SET_AUDIO_HOVERED_INTERVAL',
     SET_AUDIO_INTERACTING_INTERVAL = 'SET_AUDIO_INTERACTING_INTERVAL',
+    SET_AUDIO_INTERVALS_ORDERING = 'SET_AUDIO_INTERVALS_ORDERING',
     UPDATE_AUDIO_CONTEXT_MENU = 'UPDATE_AUDIO_CONTEXT_MENU',
     LOAD_AUDIO_DATA = 'LOAD_AUDIO_DATA',
     LOAD_AUDIO_DATA_SUCCESS = 'LOAD_AUDIO_DATA_SUCCESS',
@@ -110,6 +113,9 @@ export const audioActions = {
     ),
     setAudioInteractingInterval: (clientID: number | null) => (
         createAction(AudioActionTypes.SET_AUDIO_INTERACTING_INTERVAL, { clientID })
+    ),
+    setAudioIntervalsOrdering: (ordering: AudioRegionsOrdering) => (
+        createAction(AudioActionTypes.SET_AUDIO_INTERVALS_ORDERING, { ordering })
     ),
     updateAudioContextMenu: (left: number, top: number, clientID: number | null = null) => (
         createAction(AudioActionTypes.UPDATE_AUDIO_CONTEXT_MENU, {
