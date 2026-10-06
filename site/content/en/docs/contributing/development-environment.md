@@ -9,7 +9,7 @@ description: 'Installing a development environment for different operating syste
 
 - Install necessary dependencies:
 
-  Ubuntu 22.04/20.04
+  Ubuntu 24.04
 
   ```bash
   sudo apt-get update && sudo apt-get --no-install-recommends install -y build-essential curl git python3-dev python3-pip python3-venv python3-tk libldap2-dev libsasl2-dev libgeos-dev cargo
@@ -42,8 +42,8 @@ description: 'Installing a development environment for different operating syste
   ```
 
   ```bash
-  # CVAT supports only Python 3.10, so install it if you don’t have it:
-  pikaur -S python310
+  # CVAT supports only Python 3.12, so install it if you don’t have it:
+  pikaur -S python312
   ```
 
   ```bash
@@ -83,7 +83,7 @@ yarn --version # should show 4.x
   - [Trailing Spaces](https://marketplace.visualstudio.com/items?itemName=shardulm94.trailing-spaces)
   - [Code Spell Checker](https://marketplace.visualstudio.com/items?itemName=streetsidesoftware.code-spell-checker)
 
-- Make sure to use Python 3.10.0 or higher
+- Make sure to use Python 3.12.0 or higher
 
   ```bash
   python3 --version
