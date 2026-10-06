@@ -29,17 +29,49 @@ Each test is run 5 times. For each test I report:
 | Conditions | CVAT running in Docker on this computer. Logged in before the test starts. No one editing annotations during the test. |
 | Not included | The first call after the server starts. The time the page takes to draw the chart. |
 
-To compare, I also measure the old way of getting these numbers: download all annotations of the task and count them. I measure this before writing my API.
+To compare, I also measure the old way of getting these numbers: download all annotations of the task and count them. (I planned to measure this before writing my API but did it afterwards; see "Changes to this plan" in `plan.md`.)
 
 ### Result
 
+Measured with `cvat/apps/test/measure_latency.sh` on 6 October 2026, with only CVAT running in Docker.
+
 | | Run 1 | Run 2 | Run 3 | Run 4 | Run 5 | Median | Spread |
 |---|---|---|---|---|---|---|---|
-| Old way | | | | | | | |
-| My API | | | | | | | |
+| Old way | 1029 ms | 1515 ms | 1417 ms | 1131 ms | 1261 ms | 1261 ms | 487 ms |
+| My API | 99 ms | 103 ms | 57 ms | 66 ms | 147 ms | **99 ms** | 90 ms |
 
-Target met: _to fill in_
-Raw output: _to paste here_
+**Target met, but only just:** the median is 99.2 ms against a target of 100 ms. The spread is large (57 to 147 ms), so another set of 5 runs could easily land above 100 ms. I report this one set as measured and did not re-run it to get a better number.
+
+My API is about **13 times faster** than the old way (99 ms against 1261 ms).
+
+**Where the time goes.** I also timed only the counting itself, inside the server, 5 times: 15.6, 16.7, 15.7, 15.3 and 14.3 ms (median 15.6 ms, spread 2.4 ms). So the database counting takes about 16 ms and is steady. The other ~80 ms, and almost all of the variation, is the rest of the request: checking the login, CVAT's permission check (a separate service), and Docker's network on Windows. Making the counting faster would not change the result much. Most of the time is spent outside my code.
+
+Raw output:
+
+```
+Measured at 2026-10-06 15:52:59 UTC, task 1, 5 runs each
+Old way (download all annotations): http://localhost:8080/api/tasks/1/annotations
+  run 1: 1.028685 s
+  run 2: 1.515357 s
+  run 3: 1.416504 s
+  run 4: 1.130505 s
+  run 5: 1.260827 s
+  median 1260.8 ms, spread 486.7 ms (fastest 1028.7 ms, slowest 1515.4 ms)
+Annotation counts API: http://localhost:8080/api/test/tasks/1/annotation-counts
+  run 1: 0.099192 s
+  run 2: 0.102661 s
+  run 3: 0.056914 s
+  run 4: 0.065719 s
+  run 5: 0.146519 s
+  median 99.2 ms, spread 89.6 ms (fastest 56.9 ms, slowest 146.5 ms)
+```
+
+Counting only (inside the server, Django shell):
+
+```
+counting only, ms: [15.6, 16.7, 15.7, 15.3, 14.3]
+median 15.6 ms, spread 2.4 ms
+```
 
 ---
 
