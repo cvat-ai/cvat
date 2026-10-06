@@ -9,8 +9,12 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from rest_framework.exceptions import PermissionDenied
+from rest_framework.permissions import IsAuthenticated
+
 from cvat.apps.engine.models import LabeledShape, Task
 
+from .permissions import check_task_access
 from .serializers import TaskAnnotationAnalyticsResponseSerializer
 
 
@@ -42,12 +46,21 @@ def query_task_annotation_counts(task_id: int):
         200: OpenApiResponse(
             response=TaskAnnotationAnalyticsResponseSerializer,
             description="Per-class annotation distribution",
-        )
+        ),
+        401: OpenApiResponse(description="Authentication credentials were not provided"),
+        403: OpenApiResponse(description="User does not have access to this task"),
+        404: OpenApiResponse(description="Task not found"),
     },
 )
 class TaskAnnotationCountsView(APIView):
+    permission_classes = [IsAuthenticated]
+
     def get(self, request, pk: int):
         task = get_object_or_404(Task, pk=pk)
+
+        if not check_task_access(request, task):
+            raise PermissionDenied("You do not have permission to access this task.")
+
         total, counts = query_task_annotation_counts(task.id)
 
         data = {
