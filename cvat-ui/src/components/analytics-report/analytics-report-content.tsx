@@ -11,6 +11,8 @@ import { CombinedState } from 'reducers';
 import PaidFeaturePlaceholder from 'components/paid-feature-placeholder/paid-feature-placeholder';
 import { TimePeriod } from '.';
 
+import TaskAnnotationAnalytics from './task-annotation-analytics';
+
 interface Props {
     resource: Project | Task | Job;
     timePeriod: TimePeriod | null;
@@ -30,6 +32,10 @@ function AnalyticsReportContentWrap(props: Readonly<Props>): JSX.Element {
     if (overrides.length) {
         const [Component] = overrides.slice(-1);
         return <Component {...props} />;
+    }
+
+    if (props.resource instanceof Task) {
+        return <TaskAnnotationAnalytics taskId={props.resource.id} />;
     }
 
     return <AnalyticsReportContent />;
