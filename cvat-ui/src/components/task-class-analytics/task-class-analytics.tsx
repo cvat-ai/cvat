@@ -6,6 +6,26 @@ import Spin from 'antd/lib/spin';
 import Alert from 'antd/lib/alert';
 import Button from 'antd/lib/button';
 import { LeftOutlined } from '@ant-design/icons';
+import { Empty } from 'antd';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title as ChartTitle,
+  Tooltip,
+  Legend,
+} from 'chart.js';
+import { Bar } from 'react-chartjs-2';
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  ChartTitle,
+  Tooltip,
+  Legend
+);
 
 interface RouteParams {
     tid: string;
@@ -71,7 +91,7 @@ export default function TaskClassAnalyticsPage(): JSX.Element {
             </Button>
 
             <Row justify="center" align="middle" style={{ minHeight: '60vh' }}>
-                <Col span={16}>
+                <Col span={20}>
                     {loading && (
                         <div style={{ textAlign: 'center' }}>
                             <Spin size="large" />
@@ -93,12 +113,56 @@ export default function TaskClassAnalyticsPage(): JSX.Element {
                         />
                     )}
 
-                    {!loading && !error && data && (
-                        <div style={{ textAlign: 'center' }}>
-                            <Text strong style={{ fontSize: 24 }}>Data fetched successfully!</Text>
-                            <br />
-                            <Text>Total annotations: {data.total_annotations}</Text>
-                            {/* Chart will go here in Step 3 */}
+                    {!loading && !error && data && data.total_annotations === 0 && (
+                        <Empty 
+                            description={
+                                <span>
+                                    No annotations found for this task.<br/>
+                                    Start annotating to see class statistics!
+                                </span>
+                            }
+                        />
+                    )}
+
+                    {!loading && !error && data && data.total_annotations > 0 && (
+                        <div style={{ width: '100%', height: '500px' }}>
+                            <Bar
+                                data={{
+                                    labels: data.classes.map(c => c.name),
+                                    datasets: [
+                                        {
+                                            label: 'Annotations',
+                                            data: data.classes.map(c => c.total),
+                                            backgroundColor: data.classes.map(c => c.color),
+                                            borderColor: 'rgba(0, 0, 0, 0.1)',
+                                            borderWidth: 1,
+                                            borderRadius: 4,
+                                        },
+                                    ],
+                                }}
+                                options={{
+                                    responsive: true,
+                                    maintainAspectRatio: false,
+                                    plugins: {
+                                        legend: {
+                                            display: false,
+                                        },
+                                        title: {
+                                            display: true,
+                                            text: `Annotations per Class (Total: ${data.total_annotations})`,
+                                            font: { size: 18 }
+                                        },
+                                    },
+                                    scales: {
+                                        y: {
+                                            beginAtZero: true,
+                                            ticks: {
+                                                precision: 0
+                                            }
+                                        }
+                                    }
+                                }}
+                            />
                         </div>
                     )}
                 </Col>
