@@ -35,3 +35,15 @@
     height: 360px;
     width: 100%;
 }
+
+.cvat-class-counts-empty {
+    margin-top: 48px;
+    margin-bottom: 24px;
+}
+
+.cvat-class-counts-error-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+}
