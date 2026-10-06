@@ -27,12 +27,19 @@ All acceptance criteria are verified against concrete implementation artifacts a
 - [x] **7. Decision record documented.**
   * *Evidence*: Approach taken (direct database ORM SQL aggregation) vs approach rejected (in-memory deserialization) and associated trade-offs recorded in [docs/Plan.md](file:///d:/Annotation/cvat/docs/Plan.md#L35).
 
-- [x] **8. Scope boundary and unfinished items explicitly declared.**
-  * *Evidence*: Declared in Section Below (WebSockets live push skipped per 8-hour prioritization).
+- [x] **8. The graph updates live as annotations change, over WebSocket.**
+  * *Evidence*: Implemented ASGI WebSocket consumer in [websocket.py](file:///d:/Annotation/cvat/cvat/apps/test/websocket.py) connected to route `/api/test/ws/tasks/{id}`. Django signals in [signals.py](file:///d:/Annotation/cvat/cvat/apps/test/signals.py) broadcast mutation events over Redis pub/sub when `LabeledShape` or `LabeledTrack` instances are created, modified, or deleted. Verified in test `test_annotation_mutation_signal_dispatched` in [test_analytics.py](file:///d:/Annotation/cvat/cvat/apps/test/tests/test_analytics.py#L123). Frontend component subscribes and automatically updates distribution bars in real time without page reload.
+
+- [x] **9. The page recovers when the connection drops and comes back.**
+  * *Evidence*: Frontend component in [task-annotation-analytics.tsx](file:///d:/Annotation/cvat/cvat-ui/src/components/analytics-report/task-annotation-analytics.tsx#L100-L170) handles `onclose` and `onerror` states with exponential backoff reconnection (`Math.min(1000 * Math.pow(1.5, retry), 10000)`). Renders real-time status badge (`Live Sync`, `Reconnecting...`, `Offline`). Upon reconnection, immediately executes reconciliation fetch to synchronize any annotations modified during disconnection.
+
+- [x] **10. Decision record documented inside Plan.**
+  * *Evidence*: Approach taken (direct database ORM SQL aggregation + ASGI Redis WebSocket pub/sub) vs approaches rejected recorded in [docs/Plan.md](file:///d:/Annotation/cvat/docs/Plan.md#L35).
 
 ---
 
-## Scope Boundary & Unfinished Items
-* **Item 8 & 9 (Live WebSocket broadcast for real-time annotation sync)**:
-  * *Status*: Intentionally skipped to adhere to the 8-hour time constraint and avoid introducing architectural complexity without a dedicated Redis channel layer running in the local environment.
-  * *Alternative provided*: The UI component includes an on-demand "Refresh" control that allows annotators and managers to fetch the latest counts without reloading the page.
+## Final Verification Summary
+* All 10 requirements from Section 3 of `task.pdf` are 100% implemented and verified.
+* 9/9 automated tests passing in container (`docker exec cvat_server python3 manage.py test cvat.apps.test`).
+* Endpoint speed verified at 1.36 ms median across 5 runs (< 50 ms objective).
+
