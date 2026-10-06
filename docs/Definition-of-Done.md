@@ -24,11 +24,12 @@ Personal checklist for when work is **finished**, not merely stopped. Each line 
 
 ## Stretch (if reached)
 
-- [ ] #5 Auth: unauthenticated → refused; no task access → refused.  
-  **Evidence:** status codes / screenshots ___  
-  *(Partial: unauthenticated → 401 observed; no-access user not demonstrated.)*
-- [ ] #6 Objective measured (5 runs, median + spread in `Objectives.md`).  
-  **Evidence:** link to raw block in Objectives.md
+- [x] #5 Auth: unauthenticated → refused; no task access → refused.  
+  **Evidence:** Task.pdf §3 item 5 requires **both**.  
+  - No login → UI redirects to CVAT login (`/auth/login?next=/tasks/9/class-counts`); console shows **401** on auth APIs — [`docs/evidence/07-401-no-login.png`](evidence/07-401-no-login.png). Direct API `GET /api/test/tasks/8/class-counts` without credentials → **401**.  
+  - Logged in as `ameerulaman3` on owner’s task → **403** “You do not have permission…” — [`docs/evidence/06-403-no-permission.png`](evidence/06-403-no-permission.png). Owner `Ameer_JS` → **200**.
+- [x] #6 Objective measured (5 runs, median + spread in `Objectives.md`).  
+  **Evidence:** [`docs/Objectives.md`](Objectives.md) MO-1 — median **64.72 ms**, target ≤ 100 ms, **met**
 - [ ] #7 One extra filter or grouping documented with rationale.  
   **Evidence:** ___
 - [ ] #8–#9 Live WebSocket updates and reconnect (only if 1–4 were done first).  
@@ -45,8 +46,6 @@ Personal checklist for when work is **finished**, not merely stopped. Each line 
 
 | Requirement | Status | Reason |
 |-------------|--------|--------|
-| #5 Auth demos | Partial | Need second user for 403; 401 without login works |
-| #6 Objective | Not started | No 5-run measurement yet |
 | #7 Extra filter | Not started | — |
 | #8–#9 WebSocket | Skipped for now | Optional stretch after floor |
 | Submission | Not started | Loom + PR later |
