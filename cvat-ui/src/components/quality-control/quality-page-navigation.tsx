@@ -6,6 +6,7 @@ import React, { createContext, Dispatch, SetStateAction } from 'react';
 import { Link } from 'react-router-dom';
 import Breadcrumb from 'antd/lib/breadcrumb';
 import Button from 'antd/lib/button';
+import Text from 'antd/lib/typography/Text';
 import { LeftOutlined } from '@ant-design/icons';
 
 export interface QualityPageNavigation {
@@ -40,9 +41,8 @@ export function QualityPageNavigationHeader({ navigation }: {
 
     return (
         <div className='cvat-quality-page-navigation'>
-            <Button type='link' icon={<LeftOutlined />} aria-label={backLabel} onClick={onBack}>
-                Back
-            </Button>
+            <Button className='cvat-back-btn' icon={<LeftOutlined />} aria-label={backLabel} onClick={onBack} />
+            <Text style={{ userSelect: 'none' }} strong>Back</Text>
             <Breadcrumb items={items} />
         </div>
     );
