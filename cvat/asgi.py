@@ -20,22 +20,13 @@ import cvat.utils.remote_debugger as debug
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "cvat.settings.development")
 
-application = get_asgi_application()
+django_http_app = get_asgi_application()
 
 
-if debug.is_debugging_enabled():
+async def application(scope, receive, send):
+    if scope.get("type") == "websocket" and scope.get("path", "").startswith("/api/test/ws/"):
+        from cvat.apps.test.websocket import handle_websocket_connection
+        await handle_websocket_connection(scope, receive, send)
+    else:
+        await django_http_app(scope, receive, send)
 
-    class DebuggerApp(ASGIHandler):
-        """
-        Support for VS code debugger
-        """
-
-        def __init__(self) -> None:
-            super().__init__()
-            self.__debugger = debug.RemoteDebugger()
-
-        async def handle(self, *args, **kwargs):
-            self.__debugger.attach_current_thread()
-            return await super().handle(*args, **kwargs)
-
-    application = DebuggerApp()

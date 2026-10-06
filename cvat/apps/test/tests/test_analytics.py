@@ -118,3 +118,13 @@ class AnnotationAnalyticsAPITests(APITestCase):
         median = timings[2]
         spread = timings[-1] - timings[0]
         self.assertLess(median, 200.0)
+
+    def test_annotation_mutation_signal_dispatched(self):
+        from unittest.mock import patch
+        with patch("cvat.apps.test.signals.broadcast_annotation_change") as mock_broadcast:
+            self._create_sample_shapes()
+            self.assertTrue(mock_broadcast.called)
+            # Verify called with the task id
+            call_args = [call[0][0] for call in mock_broadcast.call_args_list]
+            self.assertIn(self.task.id, call_args)
+
