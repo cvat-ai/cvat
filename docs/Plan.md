@@ -38,3 +38,16 @@ Add per-class annotation distribution analytics to CVAT. The feature provides an
   * Cannot reuse existing serialized export formatters directly; requires writing a targeted query.
   * Bypasses client-side filtering logic, requiring explicit SQL query parameters for filters (such as `shape_type`).
   * *Gain*: Eliminates high memory spikes and reduces response latency from multiple seconds to milliseconds on large tasks.
+
+---
+
+## 5. Plan Revision & Extension (Items 8 & 9)
+* **Context**: Having successfully achieved all baseline floor requirements (Items 1–7, Item 10) and established sub-2ms query performance with test coverage ahead of time (~5.5 hours in), the remaining budget is allocated to implementing live synchronization.
+* **Phase 9 (Item 8 - Real-Time WebSockets)**:
+  - Utilize CVAT's existing ASGI/Uvicorn server architecture to route WebSocket upgrade requests at `/api/test/ws/tasks/{id}`.
+  - Dispatch task-level mutation notifications via Django ORM signals (`post_save`, `post_delete` on `LabeledShape`) bridged through Redis pub/sub.
+  - Client component listens for broadcast events and automatically refreshes annotation distributions without full page reloads.
+* **Phase 10 (Item 9 - Connection Drop & Recovery)**:
+  - Frontend detects socket disconnects, renders a non-intrusive status badge (`Connecting...` / `Reconnecting...`), and initiates exponential backoff reconnect attempts.
+  - Upon reconnection, triggers a reconciliation fetch to ensure counts reflect any modifications made while offline.
+
