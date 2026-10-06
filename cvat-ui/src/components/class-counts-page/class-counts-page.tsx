@@ -16,6 +16,7 @@ import Select from 'antd/lib/select';
 import Space from 'antd/lib/space';
 import Badge from 'antd/lib/badge';
 import Text from 'antd/lib/typography/Text';
+import notification from 'antd/lib/notification';
 import {
     Chart as ChartJS,
     CategoryScale,
@@ -75,6 +76,8 @@ function ClassCountsPage(): JSX.Element {
     const [error, setError] = useState<Error | null>(null);
     const [reloadToken, setReloadToken] = useState(0);
     const [liveStatus, setLiveStatus] = useState<LiveStatus>('connecting');
+    const [lastLiveUpdate, setLastLiveUpdate] = useState<string | null>(null);
+    const [chartNonce, setChartNonce] = useState(0);
     const selectedJobRef = useRef(selectedJob);
     selectedJobRef.current = selectedJob;
 
@@ -167,7 +170,17 @@ function ClassCountsPage(): JSX.Element {
                             data.job_id == null ||
                             String(data.job_id) === jobFilter
                         ) {
-                            fetchCounts({ quiet: true });
+                            fetchCounts({ quiet: true }).then(() => {
+                                const stamp = new Date().toLocaleTimeString();
+                                setLastLiveUpdate(stamp);
+                                setChartNonce((n) => n + 1);
+                                notification.success({
+                                    message: 'Class counts updated live',
+                                    description: `Annotations changed (${data.action || 'update'}) · ${stamp}`,
+                                    placement: 'bottomRight',
+                                    duration: 2.5,
+                                });
+                            });
                         }
                     }
                 } catch {
@@ -343,6 +356,11 @@ function ClassCountsPage(): JSX.Element {
                                 ? 'Loading…'
                                 : `${counts.length} classes · ${total} annotations total`}
                         </Text>
+                        {lastLiveUpdate ? (
+                            <Text type='success'>
+                                {`Last live update: ${lastLiveUpdate}`}
+                            </Text>
+                        ) : null}
                     </Space>
 
                     {isEmpty ? (
@@ -367,7 +385,7 @@ function ClassCountsPage(): JSX.Element {
                     ) : (
                         <>
                             <div className='cvat-class-counts-chart'>
-                                <Bar data={chartData} options={chartOptions} />
+                                <Bar key={chartNonce} data={chartData} options={chartOptions} />
                             </div>
                             <Table
                                 className='cvat-class-counts-table'
