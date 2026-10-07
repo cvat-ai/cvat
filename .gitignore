@@ -21,6 +21,7 @@ __pycache__
 
 # Ignore generated test files
 docker-compose.tests.yml
+myplan.md
 
 # Ignore npm logs file
 npm-debug.log*
