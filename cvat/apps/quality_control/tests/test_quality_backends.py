@@ -19,7 +19,7 @@ from cvat.apps.dataset_manager import data_model as cdm
 from cvat.apps.dataset_manager.bindings import CommonData
 from cvat.apps.dataset_manager.data_model.adapters.datumaro import adapt_annotation
 from cvat.apps.engine.models import DimensionType
-from cvat.apps.quality_control import data_providers, filters, models
+from cvat.apps.quality_control import data_providers, filters, models, quality_handlers
 from cvat.apps.quality_control.attribute_comparison import CVAT_ATTRIBUTE_SPEC_IDS_ATTR
 from cvat.apps.quality_control.backends import (
     FrameComparisonSample,
