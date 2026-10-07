@@ -129,8 +129,8 @@ export class MasksHandlerImpl implements MasksHandler {
                 selectable: false,
                 objectCaching: false,
                 opacity: 0.75,
-                left: this.latestMousePos.x - this.tool.size / 2,
-                top: this.latestMousePos.y - this.tool.size / 2,
+                left: Math.round(this.latestMousePos.x - this.tool.size / 2),
+                top: Math.round(this.latestMousePos.y - this.tool.size / 2),
                 strokeWidth: 1,
                 stroke: 'white',
             };
@@ -544,8 +544,10 @@ export class MasksHandlerImpl implements MasksHandler {
             }
 
             if (this.brushMarker) {
-                this.brushMarker.left = this.snapToDevicePixel(position.x - tool.size / 2);
-                this.brushMarker.top = this.snapToDevicePixel(position.y - tool.size / 2);
+                // Rounding prevents flickering of the brush marker edge
+                // when mouse moves
+                this.brushMarker.left = Math.round(position.x - tool.size / 2);
+                this.brushMarker.top = Math.round(position.y - tool.size / 2);
                 this.renderBrushMarker();
             }
 
@@ -628,14 +630,6 @@ export class MasksHandlerImpl implements MasksHandler {
             this.latestMousePos.y = position.y;
             this.resizeBrushToolLatestX = position.x;
         });
-    }
-
-    /**
-     * Fractional offsets changes aliassing pattern which distorts thin lines
-     * Snapping keeps it stable and prevents flickering
-     */
-    private snapToDevicePixel(position: number): number {
-        return Math.round(position * devicePixelRatio) / devicePixelRatio;
     }
 
     public configure(configuration: Configuration): void {
