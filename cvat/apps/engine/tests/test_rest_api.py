@@ -11,6 +11,7 @@ import logging
 import os
 import random
 import shutil
+import tarfile
 import tempfile
 import xml.etree.ElementTree as ET
 import zipfile
@@ -4734,6 +4735,46 @@ class TaskDataAPITestCase(ApiTestBase):
             self.ChunkType.IMAGESET,
             image_sizes,
         )
+
+    def test_irregular_files_are_deleted(self):
+        _, image_file = generate_random_image_file("image.jpg")
+
+        archive_file = BytesIO()
+        with tarfile.open(fileobj=archive_file, mode="w") as tar:
+            image_info = tarfile.TarInfo("image.jpg")
+            image_info.size = len(image_file.getbuffer())
+            tar.addfile(image_info, image_file)
+
+            symlink_info = tarfile.TarInfo("symlink.jpg")
+            symlink_info.type = tarfile.SYMTYPE
+            symlink_info.linkname = "image.jpg"
+            tar.addfile(symlink_info)
+
+            fifo_info = tarfile.TarInfo("pipe.jpg")
+            fifo_info.type = tarfile.FIFOTYPE
+            tar.addfile(fifo_info)
+
+        archive_file.name = "test.tar"
+        archive_file.seek(0)
+
+        response = self._create_task(self.admin, {"name": "symlink test"})
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        task_id = response.data["id"]
+
+        response = self._run_api_v2_tasks_id_data_post(
+            task_id,
+            self.admin,
+            {"client_files[0]": archive_file, "image_quality": 75},
+        )
+        self.assertEqual(response.status_code, status.HTTP_202_ACCEPTED)
+
+        response = self._get_task_creation_status(task_id, self.admin)
+        self.assertEqual(response.data["state"], "Finished")
+
+        upload_dir = Data.objects.get(task__id=task_id).get_upload_dirname()
+        jpegs = list(upload_dir.glob("*.jpg"))
+        self.assertEqual(len(jpegs), 1)
+        self.assertEqual(jpegs[0].name, "image.jpg")
 
     def _test_api_v2_tasks_id_data_create_can_use_cached_server_video(self, user):
         task_spec = {
