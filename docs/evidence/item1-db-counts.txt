@@ -1,0 +1,84 @@
+     label      | count 
+----------------+-------
+ airplane       |   160
+ apple          |   243
+ backpack       |   430
+ banana         |   398
+ baseball bat   |   185
+ baseball glove |   149
+ bear           |    73
+ bed            |   227
+ bench          |   557
+ bicycle        |   412
+ bird           |   467
+ boat           |   477
+ book           |  1184
+ bottle         |  1085
+ bowl           |   657
+ broccoli       |   321
+ bus            |   338
+ cake           |   329
+ car            |  2315
+ carrot         |   391
+ cat            |   211
+ cell phone     |   296
+ chair          |  2141
+ clock          |   267
+ couch          |   378
+ cow            |   432
+ cup            |   932
+ dining table   |   960
+ dog            |   237
+ donut          |   339
+ elephant       |   322
+ fire hydrant   |   103
+ fork           |   255
+ frisbee        |   129
+ giraffe        |   271
+ hair drier     |    14
+ handbag        |   598
+ horse          |   359
+ hot dog        |   128
+ keyboard       |   158
+ kite           |   340
+ knife          |   366
+ laptop         |   248
+ microwave      |    56
+ motorcycle     |   462
+ mouse          |   108
+ orange         |   296
+ oven           |   161
+ parking meter  |    60
+ person         | 12451
+ pizza          |   314
+ potted plant   |   398
+ refrigerator   |   134
+ remote         |   353
+ sandwich       |   180
+ scissors       |    41
+ sheep          |   415
+ sink           |   238
+ skateboard     |   218
+ skis           |   522
+ snowboard      |    84
+ spoon          |   288
+ sports ball    |   280
+ stop sign      |    80
+ suitcase       |   325
+ surfboard      |   350
+ teddy bear     |   219
+ tennis racket  |   296
+ tie            |   285
+ toaster        |    10
+ toilet         |   196
+ toothbrush     |    68
+ traffic light  |   653
+ train          |   224
+ truck          |   465
+ tv             |   288
+ umbrella       |   449
+ vase           |   287
+ wine glass     |   407
+ zebra          |   323
+(80 rows)
+
