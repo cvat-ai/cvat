@@ -1420,7 +1420,7 @@ export default class Collection {
                             },
                         ],
                         elements: state.shapeType === 'skeleton' ? state.elements.map((element) => {
-                            const elementAttrValues = validateAttributesList(objectAttributesAsList(state));
+                            const elementAttrValues = validateAttributesList(objectAttributesAsList(element));
                             const elementAttributes = element.label.attributes.reduce((accumulator, attribute) => {
                                 accumulator[attribute.id] = attribute;
                                 return accumulator;
@@ -1441,7 +1441,7 @@ export default class Collection {
                                     occluded: element.occluded || false,
                                     rotation: element.rotation || 0,
                                     attributes: elementAttrValues
-                                        .filter((attr) => !elementAttributes[attr.spec_id].mutable),
+                                        .filter((attr) => elementAttributes[attr.spec_id].mutable),
                                 }],
                             });
                         }) : undefined,
