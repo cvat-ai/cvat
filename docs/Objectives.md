@@ -1,6 +1,6 @@
 # Objectives
 
-The target below is set before the endpoint is implemented or measured. I will not change the target after seeing the results. If the target is missed, the measured result and reason will be reported.
+The target below was set before the endpoint was implemented or measured. I will not change the target after seeing the results. If the target is missed, the measured result and reason will be reported.
 
 ## Environment
 
@@ -35,7 +35,7 @@ If the endpoint misses the target, I will report the result and investigate the 
 
 ## Results
 
-To be completed after implementation.
+Not measured yet. Item 6 remains incomplete.
 
 | Run | Time (ms) |
 |---|---:|

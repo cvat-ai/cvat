@@ -13,7 +13,7 @@ I will work through the assessment requirements in order. Items 1–4 are the fi
 
 For the backend, I will create the required Django app named `test`. The annotation-count endpoint will read from CVAT's existing database models and return counts grouped by class for a task. I will reuse CVAT's existing authentication and task permissions rather than creating separate access rules. I will verify the result against PostgreSQL directly.
 
-For the frontend, I will create a page in CVAT's web interface that requests the endpoint and displays the counts as a graph. The page will also handle an empty task and a failed request clearly.
+For the frontend, I will create a page in CVAT's web interface that requests the endpoint and displays the counts as a graph. The page will also handle an empty task and a failed request clearly. The frontend Docker environment does not bind-mount the host source, so frontend changes require rebuilding `cvat_ui`; this has made frontend iterations more expensive than initially expected.
 
 For the extra grouping, I plan to group class counts by annotation shape type if the existing models support it cleanly. I chose this because shape type is directly related to the annotations being counted and does not require another data source.
 
@@ -43,20 +43,25 @@ Docker images and the dataset import were started before implementation. Their u
 
 ## Scope and priorities
 
-Items 1–4 are the floor and will be completed and evidenced first. All ten requirements are planned, but if time runs out I will stop at a working point and document anything unfinished rather than rushing later requirements.
+Items 1–4 are the floor and remain the priority. Items 1–3 are implemented and evidenced; Item 4 is implemented but still needs runtime evidence for its empty and failed-request states. I will complete and evidence Items 1–4 before progressing further. The remaining items are conditional on time and environment feasibility; I will document anything unfinished rather than claiming completion.
 
 The initial annotation count covers shape annotations created by the supplied COCO import. I will keep the implementation contained and avoid new database tables or unrelated CVAT changes.
 
-## Decision record
+## Decision record (draft)
 
-**Approach taken:** calculate the counts from CVAT's existing annotation data when the API is requested.
+This is the current implementation decision, but the Item 10 decision record is not complete until the final assessment status is reviewed.
+
+**Approach taken:** calculate the counts from CVAT's existing annotation data when the API is requested. This is the implementation used for Items 1–3.
 
 **Approach rejected:** maintain a separate counts table or cached counter that must be updated whenever annotations change.
 
-**Cost of rejecting it:** the database aggregation runs again for each request, so response time depends on task size. I will measure that cost under MO-1. For live updates, the WebSocket will signal that something changed and the page will request the current counts again.
+**Cost of rejecting it:** the database aggregation runs again for each request, so response time depends on task size. I will measure that cost under MO-1 if Item 6 is reached. For live updates, a possible WebSocket approach would signal that something changed and the page would request the current counts again.
 
 ## Changes to the plan
 
-No changes yet.
+- Items 1–3 are complete and verified with the evidence referenced in `Definition-of-Done.md`.
+- Item 4 is implemented, but frontend Docker rebuild/runtime verification is still in progress. It remains open until both no-data and failed-request behavior are evidenced.
+- Item 5 permission behavior has been tested, but it remains open while the Items 1–4 floor is unfinished.
+- The priority remains getting Items 1–4 fully working and evidenced before progressing to later items.
 
 If the plan changes during implementation, I will record what changed and why here rather than rewriting the original plan.

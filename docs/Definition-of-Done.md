@@ -11,11 +11,11 @@ A line is marked complete only when evidence is recorded beside it.
 
 | # | Done when | Evidence | Done |
 |---|---|---|---|
-| 1 | The endpoint returns annotation counts per class for a task from the database, and the result matches a direct database check. | Endpoint output + SQL output | [ ] |
-| 2 | A page in the CVAT web interface calls the endpoint successfully. | Screenshot + browser request | [ ] |
-| 3 | Per-class counts are displayed as a graph. | Screenshot | [ ] |
+| 1 | The endpoint returns annotation counts per class for a task from the database, and the result matches a direct database check. | `docs/evidence/item1-api-counts.json` + `docs/evidence/item1-db-counts.txt` | [x] |
+| 2 | A page in the CVAT web interface calls the endpoint successfully. | `docs/evidence/item3-ui-build-success.png` | [x] |
+| 3 | Per-class counts are displayed as a graph. | `docs/evidence/item3-graph.png` | [x] |
 | 4 | The page clearly handles both an empty result and a failed request. | Screenshots of both cases | [ ] |
-| 5 | A request without login is refused, a logged-in user without task access is refused, and a user with access succeeds. | Request/response outputs | [ ] |
+| 5 | A request without login is refused, a logged-in user without task access is refused, and a user with access succeeds. | `docs/evidence/item5-unauthenticated.txt`, `docs/evidence/item5-authenticated-no-task-access.txt`, `docs/evidence/item5-authenticated-task-access.txt` | [ ] |
 | 6 | MO-1 is measured 5 times under the documented conditions and compared with the target. | `docs/evidence/mo-1-raw.txt` + Objectives result | [ ] |
 | 7 | One useful grouping beyond the basic class count works and its reason is documented. | Screenshot + explanation | [ ] |
 | 8 | The graph updates over WebSocket after annotations change. | Recording or logs showing the update | [ ] |
@@ -38,4 +38,6 @@ A line is marked complete only when evidence is recorded beside it.
 
 ## Not finished
 
-To be completed at the end if any planned requirement is not reached.
+- Item 4 is implemented in source code, but runtime evidence for both the empty-data and failed-request states is still pending.
+- Item 5 has request/response evidence, but remains open until the Items 1–4 assessment floor is complete.
+- Items 6–10 remain incomplete.
