@@ -4,7 +4,13 @@
 
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router';
+import {
+    BarElement, CategoryScale, Chart as ChartJS, Legend, LinearScale, Title, Tooltip,
+} from 'chart.js';
+import { Bar } from 'react-chartjs-2';
 import { getCore } from 'cvat-core-wrapper';
+
+ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
 interface AnnotationCount {
     label: string;
@@ -30,22 +36,37 @@ function AnnotationAnalyticsPage(): JSX.Element {
     return (
         <div style={{ padding: 24 }}>
             <h1>Annotation analytics</h1>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Class</th>
-                        <th>Count</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {counts.map(({ label, count }) => (
-                        <tr key={label}>
-                            <td>{label}</td>
-                            <td>{count}</td>
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
+            <div style={{ height: Math.max(400, counts.length * 24) }}>
+                <Bar
+                    data={{
+                        labels: counts.map(({ label }) => label),
+                        datasets: [{
+                            label: 'Annotations',
+                            data: counts.map(({ count }) => count),
+                        }],
+                    }}
+                    options={{
+                        indexAxis: 'y',
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            x: {
+                                beginAtZero: true,
+                                title: {
+                                    display: true,
+                                    text: 'Annotation count',
+                                },
+                            },
+                            y: {
+                                title: {
+                                    display: true,
+                                    text: 'Class',
+                                },
+                            },
+                        },
+                    }}
+                />
+            </div>
         </div>
     );
 }
