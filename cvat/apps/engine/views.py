@@ -103,7 +103,12 @@ from cvat.apps.engine.permissions import (
     UserPermission,
     get_iam_context,
 )
-from cvat.apps.engine.rq import ImportRequestId, ImportRQMeta, save_job_failure_metadata
+from cvat.apps.engine.rq import (
+    ImportRequestId,
+    ImportRQMeta,
+    RQMetaWithFailureInfo,
+    save_job_failure_metadata,
+)
 from cvat.apps.engine.serializers import (
     AboutSerializer,
     AnnotationFileSerializer,
