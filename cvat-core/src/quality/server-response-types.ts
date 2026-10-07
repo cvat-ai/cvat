@@ -252,7 +252,7 @@ export interface SerializedQualityConflictData {
 }
 
 export interface SerializedQualityReportData {
-    version: number;
+    version: number | null;
     id: number;
     parent_id: number | null;
     project_id: number | null;

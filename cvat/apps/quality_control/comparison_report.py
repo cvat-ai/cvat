@@ -1336,7 +1336,10 @@ class ComparisonReport(ReportNode):
 
     @classmethod
     def from_json(cls, data: str) -> ComparisonReport:
-        return cls.from_dict(parse_json(data))
+        report_data = parse_json(data)
+        if not isinstance(report_data, dict):
+            raise ValueError("Quality report data must be an object")
+        return cls.from_dict(report_data)
 
     @classmethod
     def summary_from_json(cls, data: str) -> ComparisonReportSummary:

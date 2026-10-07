@@ -1121,11 +1121,19 @@ class DatasetQualityEstimator:
         self._report_parameters = report_parameters
 
         self._backend = make_quality_backend(ds_data_provider, gt_data_provider)
+        for requirement in self._requirements:
+            if (
+                requirement.enabled
+                and requirement.annotation_type not in self._backend.supported_annotation_types
+            ):
+                raise AssertionError(
+                    f"Quality requirement '{requirement.name}' is incompatible with the backend"
+                )
 
         self._results: dict[str, dict[int, ComparisonReportFrameComparisonSummary]] = {}
         self._sample_results: dict[str, list[ComparisonReportFrameComparisonSummary]] = {}
         self._has_comparison_scope = False
-        self._has_recording_scope = False
+        self._has_recording_scope = not self._backend.uses_frames
         self._calculations: dict[str, ComparisonReportRequirementCalculation] = {}
 
     def _get_total_samples(self) -> int:

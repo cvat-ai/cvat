@@ -26,6 +26,7 @@ import {
     formatAnnotationType,
     formatBaseMetric,
     formatMetric,
+    isQualityAnnotationTypeSupported,
 } from './quality-requirements-utils';
 import QualityRequirementFilter from './quality-requirement-filter';
 import QualityRequirementAttributeRules from './quality-requirement-attribute-rules';
@@ -70,6 +71,7 @@ export default function QualityRequirementForm(props: Readonly<QualityRequiremen
     const {
         settings,
         labels,
+        mediaType,
         requirement,
         enabledOverride,
         parentRequirement,
@@ -97,6 +99,7 @@ export default function QualityRequirementForm(props: Readonly<QualityRequiremen
         [settings.requirements, requirement],
     );
     const watchedAnnotationType = Form.useWatch('annotationType', form);
+    const watchedEnabled = Form.useWatch('enabled', form);
     const watchedParentRequirement = Form.useWatch('parentRequirement', form);
     const attributeOptions = useMemo(() => buildAttributeOptions(labels), [labels]);
     const attributeOptionsBySpecId = useMemo(() => (
@@ -706,8 +709,24 @@ export default function QualityRequirementForm(props: Readonly<QualityRequiremen
                     {renderPercentInput('requiredScore', 'Target metric threshold (%)')}
                 </Col>
                 <Col span={12}>
-                    <Form.Item name='enabled' valuePropName='checked'>
-                        <Checkbox>Enabled</Checkbox>
+                    <Form.Item
+                        name='enabled'
+                        valuePropName='checked'
+                        rules={[{
+                            validator: (_, enabled: boolean): Promise<void> => (
+                                enabled && !isQualityAnnotationTypeSupported(annotationType, mediaType) ?
+                                    Promise.reject(new Error('This annotation type is not supported by this task.')) :
+                                    Promise.resolve()
+                            ),
+                        }]}
+                    >
+                        <Checkbox
+                            disabled={!(watchedEnabled ?? initialValues.enabled) && (
+                                !isQualityAnnotationTypeSupported(annotationType, mediaType)
+                            )}
+                        >
+                            Enabled
+                        </Checkbox>
                     </Form.Item>
                 </Col>
             </Row>

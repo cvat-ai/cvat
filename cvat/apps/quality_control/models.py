@@ -4,20 +4,24 @@
 
 from __future__ import annotations
 
-import json
 from collections.abc import Sequence
 from dataclasses import dataclass
 from enum import Enum
 from functools import cached_property
 from typing import TYPE_CHECKING, Any
 
+from datumaro.util import parse_json
 from django.conf import settings
 from django.core.exceptions import ValidationError
-from django.db import models
+from django.db import models, transaction
 from django.forms.models import model_to_dict
 
 from cvat.apps.engine.models import Job, JobType, Project, ShapeType, Task, TimestampedModel
-from cvat.apps.quality_control.utils import GENERALIZED_REPORT_VERSIONS, get_report_version
+from cvat.apps.quality_control.utils import (
+    GENERALIZED_REPORT_VERSIONS,
+    INVALID_REPORT_VERSION,
+    detect_report_version,
+)
 from cvat.utils import django_database as db_utils
 
 if TYPE_CHECKING:
@@ -186,6 +190,13 @@ class QualityReport(models.Model):
     assignee_last_updated = models.DateTimeField(null=True)
 
     data = models.JSONField()
+    # NULL means not inspected yet; 0 caches an unrecognizable format.
+    # 1: legacy reports before Quality Requirements.
+    # 2: the first Quality Requirements report format, with frame-based results.
+    # 3: the format introduced for audio quality, supporting scopes independent of frames.
+    # All newly calculated reports, including 2D reports, use version 3.
+    # Report writers set the current version explicitly.
+    version = models.PositiveIntegerField(null=True, db_index=True)
 
     conflicts: models.manager.RelatedManager[AnnotationConflict]
 
@@ -226,6 +237,7 @@ class QualityReport(models.Model):
     def _parse_report_summary(self):
         from cvat.apps.quality_control.comparison_report import ComparisonReport
 
+        self.resolve_version()
         return ComparisonReport.summary_from_json(self.data)
 
     @property
@@ -233,17 +245,26 @@ class QualityReport(models.Model):
         return self._parse_report_summary()
 
     def get_report_data(self) -> str:
+        self.resolve_version()
         return self.data
 
-    @property
-    def version(self) -> int:
-        report_data = json.loads(self.data) if isinstance(self.data, str) else self.data
-        return get_report_version(report_data)
+    def resolve_version(self) -> int:
+        """Determine and cache a historical report's format on first access."""
+        if self.version is None:
+            version = detect_report_version(self.data)
+            if not self._state.adding:
+                reports = type(self)._base_manager.using(self._state.db).filter(pk=self.pk)
+                if not reports.filter(version__isnull=True).update(version=version):
+                    version = reports.values_list("version", flat=True).get()
+            self.version = version
+        return self.version
 
     @property
     def has_readable_data(self) -> bool:
+        if self.resolve_version() == INVALID_REPORT_VERSION:
+            return False
         try:
-            report_data = json.loads(self.data)
+            report_data = parse_json(self.data) if isinstance(self.data, str) else self.data
         except (TypeError, ValueError):
             return False
 
@@ -254,10 +275,7 @@ class QualityReport(models.Model):
 
     @property
     def has_current_data_format(self) -> bool:
-        try:
-            return self.version in GENERALIZED_REPORT_VERSIONS
-        except (TypeError, ValueError):
-            return False
+        return self.resolve_version() in GENERALIZED_REPORT_VERSIONS
 
     def get_task(self) -> Task | None:
         if self.task:
@@ -533,7 +551,10 @@ def get_base_requirement_name(annotation_type: str) -> str:
     return f"Base {str(annotation_type).replace('_', ' ')}"
 
 
+@transaction.atomic
 def ensure_base_quality_requirements(quality_settings: QualitySettings) -> bool:
+    # Share the quota lock with settings replacement and individual requirement writes.
+    QualitySettings.objects.select_for_update().get(pk=quality_settings.pk)
     existing_base_annotation_types = set(
         quality_settings.requirements.filter(
             parent__isnull=True,
@@ -561,8 +582,6 @@ def ensure_base_quality_requirements(quality_settings: QualitySettings) -> bool:
     if not requirements_to_create:
         return False
 
-    # Avoid using upsert as it can lead to a deadlock when there are concurrent transactions.
-    # A simple insert should just fail on a constraint in such cases, which is what we need.
     db_utils.bulk_create(QualityRequirement, requirements_to_create)
     db_utils.clear_prefetched_relation_cache(quality_settings, "requirements")
     quality_settings.touch()

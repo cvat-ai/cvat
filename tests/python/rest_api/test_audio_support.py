@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 import io
+import json
 import math
 from collections.abc import Generator
 from itertools import product
@@ -87,6 +88,31 @@ class TestAudioTasks:
         assert task.dimension == "1d"
         assert task.mode == "interpolation"
         assert task.size > 0
+
+    @parametrize("task", [fixture_ref(fxt_audio_task_from_uploaded_data)])
+    def test_audio_quality_rejects_non_interval_requirements(self, task: Task):
+        response = get_method(self.user, "quality/settings", task_id=task.id)
+        assert response.status_code == 200
+        settings = response.json()["results"][0]
+        rectangle = next(
+            item for item in settings["requirements"] if item["annotation_type"] == "rectangle"
+        )
+        endpoint = f"quality/settings/requirements/{rectangle['id']}"
+        response = patch_method(self.user, endpoint, {"enabled": True})
+        assert response.status_code == 400
+        assert "only interval" in response.text
+        response = get_method(self.user, endpoint)
+        assert response.status_code == 200
+        assert response.json()["enabled"] is False
+
+    @parametrize("task", [fixture_ref(fxt_audio_task_from_uploaded_data)])
+    def test_metadata_api_rejects_deleted_audio_frames(self, task: Task):
+        endpoints = [f"tasks/{task.id}/data/meta"]
+        endpoints.extend(f"jobs/{job.id}/data/meta" for job in task.get_jobs())
+        for endpoint in endpoints:
+            response = patch_method(self.user, endpoint, {"deleted_frames": [0]})
+            assert response.status_code == 400
+            assert "Audio metadata cannot be edited" in response.text
 
     @pytest.mark.with_external_services
     @parametrize(
@@ -305,6 +331,13 @@ class TestAudioTasks:
         requirement = next(
             item for item in settings["requirements"] if item["annotation_type"] == "interval"
         )
+        response = patch_method(
+            self.user,
+            f"quality/settings/requirements/{requirement['id']}",
+            {"filter": json.dumps({">": [{"var": "shape.area"}, 1]})},
+        )
+        assert response.status_code == 400
+        assert "shape.area" in response.json()["filter"][0]
         response = patch_method(
             self.user,
             f"quality/settings/requirements/{requirement['id']}",

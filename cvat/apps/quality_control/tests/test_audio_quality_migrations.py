@@ -7,6 +7,7 @@ import json
 from django.db import connection
 from django.db.migrations.executor import MigrationExecutor
 from django.test import TransactionTestCase
+from django.test.utils import CaptureQueriesContext
 from django.utils import timezone
 
 
@@ -54,25 +55,36 @@ class TestAudioQualityMigrations(TransactionTestCase):
                 parent_id=original["id"]
             )
             Report = apps.get_model("quality_control", "QualityReport")
-            legacy_payload = json.dumps(
-                {"parameters": {}, "comparison_summary": {}, "name": '"groups": {}'}
-            )
-            v1 = Report.objects.create(
-                task_id=task.id, target_last_updated=timezone.now(), data=legacy_payload
-            )
-            v2 = Report.objects.create(
-                task_id=task.id, target_last_updated=timezone.now(), data=json.dumps({"groups": {}})
-            )
-            created = v2.created_date
+            historical_reports = []
+            for data in [
+                json.dumps({"parameters": {}, "comparison_summary": {}}),
+                json.dumps({"groups": {}}),
+                {"version": 3},
+                "not JSON",
+            ]:
+                historical = Report.objects.create(
+                    task_id=task.id, target_last_updated=timezone.now(), data=data
+                )
+                historical_reports.append(historical)
             executor = MigrationExecutor(connection)
-            executor.migrate(new_target)
+            with CaptureQueriesContext(connection) as queries:
+                executor.migrate(new_target)
+            for query in queries.captured_queries:
+                sql = query["sql"]
+                self.assertFalse(
+                    sql.startswith("SELECT") and 'FROM "quality_control_qualityreport"' in sql,
+                    sql,
+                )
+                self.assertFalse(sql.startswith('UPDATE "quality_control_qualityreport"'), sql)
             apps = executor.loader.project_state(new_target).apps
             Report = apps.get_model("quality_control", "QualityReport")
             Requirement = apps.get_model("quality_control", "QualityRequirement")
-            self.assertEqual(Report.objects.get(id=v1.id).data, legacy_payload)
-            restored = Report.objects.get(id=v2.id)
-            self.assertEqual(restored.data, v2.data)
-            self.assertEqual(restored.created_date, created)
+            for historical in historical_reports:
+                with self.subTest(report_id=historical.id):
+                    restored = Report.objects.get(id=historical.id)
+                    self.assertIsNone(restored.version)
+                    self.assertEqual(restored.data, historical.data)
+                    self.assertEqual(restored.created_date, historical.created_date)
             self.assertEqual(Requirement.objects.filter(settings_id=settings.id).count(), 101)
             renamed = Requirement.objects.filter(id=original["id"]).values().get()
             self.assertGreater(renamed["updated_date"], original["updated_date"])

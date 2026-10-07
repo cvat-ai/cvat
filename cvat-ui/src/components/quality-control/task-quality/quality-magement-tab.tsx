@@ -45,7 +45,7 @@ function QualityManagementTab(props: Readonly<Props>): JSX.Element {
 
     return (
         <div className='cvat-quality-control-management-tab' ref={tabRef}>
-            {isAudio ? <Text>Ground Truth covers the whole recording.</Text> : (
+            {isAudio ? <Text>Quality is compared where the job and Ground Truth time ranges overlap.</Text> : (
                 <Row className='cvat-quality-control-management-tab-summary'>
                     <Card
                         title='Total validation frames'

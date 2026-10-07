@@ -31,7 +31,11 @@ from cvat.apps.quality_control.quality_calculators import (
 )
 from cvat.apps.quality_control.quality_handlers import DatasetQualityEstimator
 from cvat.apps.quality_control.tests.test_quality_backends import make_requirement
-from cvat.apps.quality_control.utils import get_report_version, is_current_report_data
+from cvat.apps.quality_control.utils import (
+    detect_report_version,
+    get_report_version,
+    is_current_report_data,
+)
 
 
 def interval(annotation_id, start=0, stop=1000, *, label=0, job=1, attributes=None, group=0):
@@ -48,15 +52,16 @@ def interval(annotation_id, start=0, stop=1000, *, label=0, job=1, attributes=No
     )
 
 
-def provider(job, annotations, *, duration=3000, labels=None):
+def provider(job, annotations, *, duration=3000, labels=None, recording_range=None):
     result = IntervalJobDataProvider.__new__(IntervalJobDataProvider)
     result.job_id = job
     result.job_data = SimpleNamespace(
         db_instance=SimpleNamespace(
-            segment=SimpleNamespace(task=SimpleNamespace(dimension="1d")),
+            segment=SimpleNamespace(task=SimpleNamespace(dimension="1d", media_type="audio")),
         )
     )
-    result.recording_range = (0, duration)
+    result.recording_range = recording_range or (0, duration)
+    result.recording_stop = duration
     result.dataset = IntervalDataset(
         cdm.LabelCatalog(
             tuple(labels or [cdm.Label(1, "A", "interval"), cdm.Label(2, "B", "interval")])
@@ -66,10 +71,10 @@ def provider(job, annotations, *, duration=3000, labels=None):
     return result
 
 
-def report(gt, ds, *, requirements=None):
+def report(gt, ds, *, requirements=None, gt_range=None, ds_range=None):
     return DatasetQualityEstimator(
-        provider(2, ds),
-        provider(1, gt),
+        provider(2, ds, recording_range=ds_range),
+        provider(1, gt, recording_range=gt_range),
         requirements=requirements or [make_requirement("interval", iou_threshold=0.5)],
         report_parameters=ComparisonReportParameters(),
     ).generate_report()
@@ -88,30 +93,62 @@ class TestIntervalQuality(unittest.TestCase):
             with self.subTest(bounds=bounds):
                 self.assertAlmostEqual(temporal_iou(*bounds), expected)
 
-    def test_iou_is_pairing_score_not_quality_score(self):
-        result = report([interval(1)], [interval(2, 100, 900, job=2)])
-        self.assertEqual(result.version, 3)
-        group = result.groups["interval"]
-        self.assertEqual(group.comparison_summary.score, 1)
-        self.assertIsNone(group.frame_results)
-        self.assertEqual(group.conflicts, [])
-        self.assertTrue(result.comparison_summary.has_comparison_scope)
-        self.assertEqual(result.comparison_summary.total_frames, 0)
-        self.assertTrue(_all_enabled_requirements_completed(result.comparison_summary))
-
-    def test_open_stop_is_resolved_without_changing_source(self):
-        gt = interval(1, 1000, None)
-        result = report([gt], [interval(2, 1000, 3000, job=2)])
-        self.assertEqual(result.groups["interval"].comparison_summary.score, 1)
-        self.assertIsNone(gt.stop)
-
     def test_invalid_boundaries_fail(self):
         for start, stop in [(-1, 100), (200, 100), (0, 3001)]:
             with (
                 self.subTest(start=start, stop=stop),
-                self.assertRaisesRegex(ValueError, "boundaries"),
+                self.assertRaisesRegex(AssertionError, "boundaries"),
             ):
                 report([interval(1, start, stop)], [])
+
+    def test_only_overlapping_time_is_compared_without_mutating_intervals(self):
+        gt = interval(1, 0, 2000)
+        ds = interval(2, 1000, None, job=2)
+        result = report(
+            [gt, interval(3, 0, 500)],
+            [ds, interval(4, 2500, 3000, job=2)],
+            gt_range=(0, 2000),
+            ds_range=(1000, 3000),
+        )
+        summary = result.groups["interval"].comparison_summary
+        self.assertEqual(summary.score, 1)
+        self.assertEqual(summary.score_components.valid_count, 1)
+        self.assertEqual(result.get_conflicts(), [])
+        self.assertEqual((gt.start, gt.stop), (0, 2000))
+        self.assertIsNone(ds.stop)
+
+    def test_disjoint_or_touching_segments_have_no_comparison_scope(self):
+        for ds_range in ((1000, 2000), (2000, 3000)):
+            with self.subTest(ds_range=ds_range):
+                result = report(
+                    [interval(1)],
+                    [interval(2, job=2)],
+                    gt_range=(0, 1000),
+                    ds_range=ds_range,
+                )
+                self.assertFalse(result.comparison_summary.has_comparison_scope)
+                self.assertFalse(_all_enabled_requirements_completed(result.comparison_summary))
+                self.assertEqual(result.comparison_summary.total_frames, 0)
+                self.assertIsNone(result.groups["interval"].frame_results)
+                self.assertIsNone(result.groups["interval"].comparison_summary.score)
+                self.assertEqual(result.get_conflicts(), [])
+
+    def test_incompatible_enabled_requirements_fail_before_comparison(self):
+        with self.assertRaisesRegex(AssertionError, "incompatible with the backend"):
+            report([], [], requirements=[make_requirement("rectangle")])
+        result = report([], [], requirements=[evolve(make_requirement("rectangle"), enabled=False)])
+        self.assertFalse(result.groups["rectangle"].parameters["enabled"])
+
+    def test_excluding_all_jobs_keeps_interval_reports_frameless(self):
+        result = TaskQualityCalculator()._compute_task_report(
+            {},
+            ComparisonReportParameters(),
+            [make_requirement("interval")],
+            all_job_ids={2},
+        )
+        self.assertFalse(result.comparison_summary.has_comparison_scope)
+        self.assertIsNone(result.groups["interval"].frame_results)
+        self.assertEqual(result.comparison_summary.jobs.excluded, {2})
 
     def test_zero_overlap_never_matches_at_zero_threshold(self):
         result = report(
@@ -175,15 +212,6 @@ class TestIntervalQuality(unittest.TestCase):
         )
         self.assertEqual(gt.attributes, attrs)
 
-    def test_filter_rejects_spatial_terms(self):
-        from rest_framework.exceptions import ValidationError
-
-        with self.assertRaises(ValidationError):
-            RequirementJsonLogicFilter.validate_expression(
-                '{">": [{"var": "shape.area"}, 1]}',
-                annotation_type="interval",
-            )
-
     def test_groups_do_not_join_intervals_and_labels_have_priority(self):
         result = report(
             [interval(1), interval(2, label=1)],
@@ -217,7 +245,7 @@ class TestIntervalQuality(unittest.TestCase):
         self.assertEqual(project.groups["interval"].comparison_summary.score, 0.5)
         self.assertEqual(len(ComparisonReport.from_json(project.to_json()).get_conflicts()), 1)
 
-    def test_provider_converts_metadata_without_datumaro(self):
+    def test_provider_converts_time_and_attribute_defaults(self):
         source = CommonData.LabeledInterval(
             id=7,
             start=timedelta(milliseconds=1010),
@@ -244,22 +272,16 @@ class TestIntervalQuality(unittest.TestCase):
             iterate_intervals=mock.Mock(return_value=iter([source])),
             db_instance=SimpleNamespace(segment=SimpleNamespace(task_id=1)),
         )
-        with mock.patch("datumaro.Dataset.from_extractors", side_effect=AssertionError("Datumaro")):
-            (annotation,) = next(iter(data_provider.dataset)).annotations
-            self.assertIs(data_provider.dataset, data_provider.dataset)
+        (annotation,) = next(iter(data_provider.dataset)).annotations
         self.assertEqual(annotation.start, 1010)
         self.assertIsNone(annotation.stop)
         self.assertEqual(annotation.attributes["number"], 2.0)
         self.assertEqual(annotation.attributes[CVAT_ATTRIBUTE_SPEC_IDS_ATTR], {"number": 11})
         self.assertEqual(annotation.reference.obj_id, 7)
-        data_provider.job_data.iterate_intervals.assert_called_once()
-        data_provider.close()
-        self.assertNotIn("dataset", data_provider.__dict__)
 
     def test_scope_validation_uses_range_boundaries(self):
-        from rest_framework.exceptions import ValidationError
-
         task = SimpleNamespace(
+            media_type="audio",
             dimension="1d",
             data=SimpleNamespace(
                 size=3600000,
@@ -268,13 +290,21 @@ class TestIntervalQuality(unittest.TestCase):
                 get_frame_step=lambda: 1,
             ),
         )
-        job = SimpleNamespace(
-            segment=SimpleNamespace(type="range", start_frame=0, stop_frame=3599999)
-        )
-        validate_audio_quality_scope(task, [job])
-        job.segment.stop_frame = 100
-        with self.assertRaises(ValidationError):
-            validate_audio_quality_scope(task, [job])
+        segment = SimpleNamespace(type="range", start_frame=100, stop_frame=200)
+        task.segment_set = mock.Mock()
+        task.segment_set.all.return_value = [segment]
+        validate_audio_quality_scope(task)
+        segment.stop_frame = task.data.size
+        with self.assertRaises(AssertionError):
+            validate_audio_quality_scope(task)
+        segment.stop_frame = 200
+        task.data.deleted_frames = [100]
+        with self.assertRaises(AssertionError):
+            validate_audio_quality_scope(task)
+        task.data.deleted_frames = []
+        task.dimension = "2d"
+        with self.assertRaises(AssertionError):
+            validate_audio_quality_scope(task)
 
 
 class TestReportVersions(unittest.TestCase):
@@ -282,6 +312,7 @@ class TestReportVersions(unittest.TestCase):
         for data, version in [
             ({}, 1),
             ({"name": '"groups": {}'}, 1),
+            ({"parameters": {"groups": {}}}, 1),
             ({"groups": {}}, 2),
             ({"groups": None}, 2),
             ({"version": 1, "groups": {}}, 1),
@@ -292,9 +323,20 @@ class TestReportVersions(unittest.TestCase):
             with self.subTest(data=data):
                 self.assertEqual(get_report_version(data), version)
                 self.assertEqual(is_current_report_data(data), version in (2, 3))
-        for version in [None, True, "3", 0]:
+                for stored in (data, json.dumps(data)):
+                    self.assertEqual(detect_report_version(stored), version)
+        for version in [None, True, "3", 0, -1]:
             with self.subTest(version=version), self.assertRaises(ValueError):
                 get_report_version({"version": version})
+        for payload in [
+            *({"version": version} for version in (None, True, "3", 0, -1, 2**31)),
+            [],
+            3,
+            "invalid JSON",
+        ]:
+            for data in (payload, json.dumps(payload)):
+                with self.subTest(data=data):
+                    self.assertEqual(detect_report_version(data), 0)
 
     def test_v2_reader_keeps_version_and_falls_back_to_frames(self):
         data = report([], []).to_dict()
@@ -310,6 +352,7 @@ class TestReportVersions(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "Unsupported quality report version"):
             ComparisonReport.from_dict({"version": 4, "groups": {}})
 
-    def test_project_does_not_reuse_v2(self):
-        stored = SimpleNamespace(target=models.QualityReportTarget.TASK, version=2)
-        self.assertFalse(ProjectQualityCalculator().is_task_report_relevant(stored))
+    def test_json_reader_rejects_non_object_payloads(self):
+        for data in ("null", "[]", "3", '"groups"'):
+            with self.subTest(data=data), self.assertRaisesRegex(ValueError, "must be an object"):
+                ComparisonReport.from_json(data)

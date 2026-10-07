@@ -11653,6 +11653,9 @@ components:
         version:
           type: integer
           readOnly: true
+          nullable: true
+          description: Report format version, determined on first access. 0 means unrecognized
+            data.
         job_id:
           type: integer
           nullable: true

@@ -2,42 +2,36 @@
 #
 # SPDX-License-Identifier: MIT
 
-from collections.abc import Iterator, Mapping, Sequence
+from collections.abc import Iterator, Mapping
 from datetime import timedelta
 from functools import cached_property
 from types import MappingProxyType
 from typing import Any
 
 from attrs import define
-from rest_framework.exceptions import ValidationError
 
 from cvat.apps.dataset_manager import data_model as cdm
 from cvat.apps.dataset_manager.bindings import convert_attribute_value
-from cvat.apps.engine.models import DimensionType, Job, SegmentType, Task
+from cvat.apps.engine.models import DimensionType, MediaType, SegmentType, Task
 from cvat.apps.quality_control.attribute_comparison import CVAT_ATTRIBUTE_SPEC_IDS_ATTR
 from cvat.apps.quality_control.data_providers import JobDataProvider
 
 
-def validate_audio_quality_scope(task: Task, jobs: Sequence[Job] | None = None) -> None:
-    if task.dimension != DimensionType.DIM_1D:
+def validate_audio_quality_scope(task: Task) -> None:
+    if task.media_type != MediaType.AUDIO:
         return
+    if task.dimension != DimensionType.DIM_1D:
+        raise AssertionError("Audio tasks must have 1d data")
     data = task.data
     layout = getattr(data, "validation_layout", None)
     if data.deleted_frames or (layout and layout.disabled_frames) or data.get_frame_step() != 1:
-        raise ValidationError("Audio quality requires the whole recording without excluded times")
-    if jobs is None:
-        segments = task.segment_set.all()
-    else:
-        segments = (job.segment for job in jobs)
-    for segment in segments:
+        raise AssertionError("Audio data must not contain excluded times or a frame step")
+    for segment in task.segment_set.all():
         if (
             segment.type != SegmentType.RANGE
-            or segment.start_frame != 0
-            or segment.stop_frame != data.size - 1
+            or not 0 <= segment.start_frame <= segment.stop_frame < data.size
         ):
-            raise ValidationError(
-                "Audio quality requires full-recording RANGE jobs and Ground Truth"
-            )
+            raise AssertionError("Audio jobs must have valid RANGE segments")
 
 
 @define(frozen=True)
@@ -87,6 +81,12 @@ class IntervalJobDataProvider(JobDataProvider):
             self.job_data.abs_frame_id(self.job_data.rel_range.start),
             self.job_data.abs_interval_stop(self.job_data.rel_range.stop),
         )
+
+    @cached_property
+    def recording_stop(self) -> int:
+        """Exclusive end of the recording, independent of the job's segment."""
+        data = self.job_data.db_instance.segment.task.data
+        return data.start_frame + data.size * data.get_frame_step()
 
     @cached_property
     def dataset(self) -> IntervalDataset:
@@ -141,3 +141,4 @@ class IntervalJobDataProvider(JobDataProvider):
     def close(self) -> None:
         self.__dict__.pop("dataset", None)
         self.__dict__.pop("recording_range", None)
+        self.__dict__.pop("recording_stop", None)

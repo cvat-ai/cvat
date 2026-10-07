@@ -64,6 +64,11 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
+        migrations.AddField(
+            model_name="qualityreport",
+            name="version",
+            field=models.PositiveIntegerField(null=True, db_index=True),
+        ),
         migrations.RunPython(add_interval_requirements, migrations.RunPython.noop),
         migrations.AlterField(
             model_name="annotationconflict",

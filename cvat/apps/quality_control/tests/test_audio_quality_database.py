@@ -3,9 +3,12 @@
 # SPDX-License-Identifier: MIT
 
 import json
+from concurrent.futures import ThreadPoolExecutor
+from threading import Barrier
 from unittest import mock
 
-from django.test import TestCase, TransactionTestCase, override_settings
+from django.db import connections
+from django.test import TestCase, TransactionTestCase, override_settings, skipUnlessDBFeature
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
@@ -17,8 +20,14 @@ from cvat.apps.quality_control.quality_calculators import (
     ProjectQualityCalculator,
     TaskQualityCalculator,
 )
-from cvat.apps.quality_control.serializers import QualityReportSerializer, QualitySettingsSerializer
+from cvat.apps.quality_control.serializers import (
+    QualityReportSerializer,
+    QualityRequirementBulkCreateSerializer,
+    QualityRequirementSerializer,
+    QualitySettingsSerializer,
+)
 from cvat.apps.quality_control.utils import filter_current_reports
+from cvat.apps.quality_control.validation import validate_task_quality_settings
 
 
 class TestReportVersionDetection(TestCase):
@@ -26,65 +35,146 @@ class TestReportVersionDetection(TestCase):
     def setUpTestData(cls):
         cls.task = engine.Task.objects.create(name="historical quality reports")
 
-    def test_versions_are_inferred_without_rewriting_data(self):
-        payloads = [
+    def test_list_filters_by_stored_version_without_reading_data(self):
+        reports = {
+            version: models.QualityReport.objects.create(
+                task=self.task,
+                target_last_updated=timezone.now(),
+                data=json.dumps({"groups": {}, "version": 3}),
+                version=version,
+            )
+            for version in (0, 1, 2, 3, 4)
+        }
+        with mock.patch(
+            "cvat.apps.quality_control.utils.detect_report_version",
+            side_effect=AssertionError("known payload inspected"),
+        ):
+            queryset = filter_current_reports(models.QualityReport.objects.all()).defer("data")
+        with self.assertNumQueries(1):
+            self.assertEqual(queryset.count(), 2)
+        with self.assertNumQueries(1):
+            results = list(queryset)
+            self.assertEqual({report.id for report in results}, {reports[2].id, reports[3].id})
+            self.assertTrue(all(report.has_current_data_format for report in results))
+            self.assertTrue(all("data" in report.get_deferred_fields() for report in results))
+
+    def test_unknown_version_is_resolved_once_without_changing_payload(self):
+        for payload, version in [
             ({}, 1),
-            ({"name": '"groups": {}'}, 1),
-            ({"parameters": {"groups": {}}}, 1),
             ({"groups": {}}, 2),
-            ({"groups": None}, 2),
-            ({"groups": {}, "parameters": {"version": 1}}, 2),
-            ({"version": 1, "groups": {}}, 1),
-            ({"version": 2}, 2),
-            ({"version": 3, "groups": {}}, 3),
-            ({"version": 4, "groups": {}}, 4),
-        ]
-        report_ids = {version: set() for version in (1, 2, 3, 4)}
-        for payload, version in payloads:
+            ({"version": 3}, 3),
+            ({"version": 4}, 4),
+            ("invalid JSON", 0),
+        ]:
             for data in (payload, json.dumps(payload)):
                 with self.subTest(data=data):
-                    stored = models.QualityReport.objects.create(
+                    report = models.QualityReport.objects.create(
                         task=self.task, target_last_updated=timezone.now(), data=data
                     )
-                    stored.refresh_from_db()
-                    self.assertEqual(stored.version, version)
-                    self.assertEqual(stored.has_current_data_format, version in (2, 3))
-                    self.assertEqual(stored.data, data)
-                    report_ids[version].add(stored.id)
+                    created = report.created_date
+                    self.assertIsNone(report.version)
+                    self.assertEqual(report.resolve_version(), version)
+                    report.refresh_from_db()
+                    self.assertEqual(report.version, version)
+                    self.assertEqual(report.data, data)
+                    self.assertEqual(report.created_date, created)
+                    report = models.QualityReport.objects.only("id", "version").get(pk=report.pk)
+                    with self.assertNumQueries(0):
+                        self.assertEqual(report.resolve_version(), version)
+                        self.assertEqual(report.has_current_data_format, version in (2, 3))
+                        if version == 0:
+                            self.assertFalse(report.has_readable_data)
 
-        # An explicit invalid version must not fall back to the presence of groups.
-        for payload in [
-            {"version": version, "groups": {}} for version in (None, True, "3", 0, 2.5)
-        ] + [None, [], ["groups"], 3, True]:
-            for data in (payload, json.dumps(payload)):
-                if data is None:
-                    continue  # The data column is not nullable.
-                stored = models.QualityReport.objects.create(
-                    task=self.task, target_last_updated=timezone.now(), data=data
-                )
-                self.assertFalse(stored.has_current_data_format)
-
-        self.assertSetEqual(
-            set(
-                filter_current_reports(models.QualityReport.objects.all()).values_list(
-                    "id", flat=True
-                )
-            ),
-            report_ids[2] | report_ids[3],
+    def test_stale_reader_does_not_overwrite_a_resolved_version(self):
+        report = models.QualityReport.objects.create(
+            task=self.task, target_last_updated=timezone.now(), data='{"groups": {}}'
         )
+        models.QualityReport.objects.filter(pk=report.pk).update(version=4)
+        self.assertEqual(report.resolve_version(), 4)
+        report.refresh_from_db()
+        self.assertEqual(report.version, 4)
 
-    def test_export_infers_historical_versions_without_changing_data(self):
+    def test_version_resolution_only_updates_the_supplied_queryset(self):
+        def create_report(task):
+            return models.QualityReport.objects.create(
+                task=task, target_last_updated=timezone.now(), data='{"groups": {}}'
+            )
+
+        selected = create_report(self.task)
+        excluded = create_report(self.task)
+        unrelated = create_report(engine.Task.objects.create(name="unrelated reports"))
+        queryset = models.QualityReport.objects.filter(task=self.task).exclude(pk=excluded.pk)
+
+        self.assertEqual(list(filter_current_reports(queryset)), [selected])
+        selected.refresh_from_db()
+        self.assertEqual(selected.version, 2)
+        for report in (excluded, unrelated):
+            report.refresh_from_db()
+            self.assertIsNone(report.version)
+
+    def test_list_resolves_multiple_batches_and_caches_invalid_data(self):
+        reports = models.QualityReport.objects.bulk_create(
+            [
+                models.QualityReport(
+                    task=self.task, target_last_updated=timezone.now(), data='{"groups": {}}'
+                )
+                for _ in range(501)
+            ]
+        )
+        broken = models.QualityReport.objects.create(
+            task=self.task, target_last_updated=timezone.now(), data="invalid JSON"
+        )
+        queryset = models.QualityReport.objects.filter(task=self.task)
+        self.assertEqual(filter_current_reports(queryset).count(), len(reports))
+        broken.refresh_from_db()
+        self.assertEqual(broken.version, 0)
+        self.assertFalse(queryset.filter(version__isnull=True).exists())
+        with mock.patch(
+            "cvat.apps.quality_control.utils.detect_report_version",
+            side_effect=AssertionError("payload inspected again"),
+        ):
+            self.assertEqual(filter_current_reports(queryset).count(), len(reports))
+
+    def test_serializer_resolves_only_serialized_reports(self):
+        data = json.dumps(
+            {
+                "parameters": {},
+                "comparison_summary": {
+                    "total_frames": 0,
+                    "frames": [],
+                    "validation_frames": 0,
+                    "conflict_count": 0,
+                    "error_count": 0,
+                },
+                "groups": {},
+            }
+        )
+        accessed, untouched = [
+            models.QualityReport.objects.create(
+                task=self.task, target_last_updated=timezone.now(), data=data
+            )
+            for _ in range(2)
+        ]
+        self.assertEqual(QualityReportSerializer([accessed], many=True).data[0]["version"], 2)
+        accessed.refresh_from_db()
+        untouched.refresh_from_db()
+        self.assertEqual(accessed.version, 2)
+        self.assertIsNone(untouched.version)
+
+    def test_export_preserves_historical_versions_without_changing_data(self):
         for payload, version in (({}, 1), ({"groups": {}}, 2)):
             with self.subTest(version=version):
                 data = json.dumps({"parameters": {}, "comparison_summary": {}, **payload})
                 stored = models.QualityReport.objects.create(
                     task=self.task, target_last_updated=timezone.now(), data=data
                 )
+                self.assertIsNone(stored.version)
                 exported = json.loads(
                     prepare_json_report_for_downloading(stored, host="http://test/").read()
                 )
                 self.assertEqual(exported["version"], version)
                 stored.refresh_from_db()
+                self.assertEqual(stored.version, version)
                 self.assertEqual(stored.data, data)
 
 
@@ -94,7 +184,11 @@ class TestAudioQualityDatabase(TransactionTestCase):
             size=3000, start_frame=0, stop_frame=2999, image_quality=70
         )
         self.task = engine.Task.objects.create(
-            name="audio quality", dimension="1d", mode="interpolation", data=data
+            name="audio quality",
+            dimension="1d",
+            media_type="audio",
+            mode="interpolation",
+            data=data,
         )
         self.label = engine.Label.objects.create(task=self.task, name="speech", type="interval")
         self.job = engine.Job.objects.create(
@@ -155,6 +249,7 @@ class TestAudioQualityDatabase(TransactionTestCase):
         requirement.save()
         engine.LabeledInterval.objects.create(job=self.gt, label=self.label, start=0, stop=1000)
         old_report = models.QualityReport.objects.create(
+            version=2,
             task=self.task,
             target_last_updated=timezone.now(),
             data=json.dumps({"version": 2, "groups": {}}),
@@ -169,18 +264,25 @@ class TestAudioQualityDatabase(TransactionTestCase):
         self.assertTrue(result.comparison_summary.has_comparison_scope)
         self.assertEqual(result.groups[requirement.name].comparison_summary.score, 0)
 
+        # Imported or historical v3 reports with an unknown column are still reusable.
+        models.QualityReport.objects.filter(pk=task_report.pk).update(version=None)
         with mock.patch.object(
             TaskQualityCalculator, "compute_report", side_effect=AssertionError("recomputed v3")
         ):
             next_report = ProjectQualityCalculator().compute_report(project)
         self.assertEqual(next_report.children.get(task=self.task).id, task_report.id)
+        task_report.refresh_from_db()
+        self.assertEqual(task_report.version, 3)
 
         # Only the latest report is inspected. Unsupported or unreadable data triggers
         # recalculation instead of scanning older report payloads in the database.
-        for data in (json.dumps({"version": 4, "groups": {}}), "invalid JSON"):
+        for data, version in (
+            (json.dumps({"version": 4, "groups": {}}), 4),
+            ("invalid JSON", None),
+        ):
             with self.subTest(data=data):
                 old_report = models.QualityReport.objects.create(
-                    task=self.task, target_last_updated=timezone.now(), data=data
+                    task=self.task, target_last_updated=timezone.now(), data=data, version=version
                 )
                 next_report = ProjectQualityCalculator().compute_report(project)
                 recalculated = next_report.children.get(task=self.task)
@@ -188,10 +290,56 @@ class TestAudioQualityDatabase(TransactionTestCase):
                 self.assertNotIn(recalculated.id, (old_report.id, task_report.id))
                 task_report = recalculated
 
-        # Even a fresh v3 report cannot bypass the whole-recording scope restriction.
+        # Even a fresh v3 report cannot bypass the audio metadata invariants.
         engine.Data.objects.filter(id=self.task.data_id).update(deleted_frames=[1])
-        with self.assertRaisesRegex(ValidationError, "whole recording"):
+        with self.assertRaisesRegex(AssertionError, "excluded times"):
             ProjectQualityCalculator().compute_report(project)
+
+    def test_incompatible_legacy_requirements_can_be_disabled_individually(self):
+        incompatible = self.task.quality_settings.requirements.filter(
+            annotation_type__in=("rectangle", "tag")
+        )
+        incompatible.update(enabled=True)
+        for requirement in incompatible:
+            serializer = QualityRequirementSerializer(
+                requirement,
+                data={
+                    "enabled": False,
+                    "parent_requirement": None,
+                    "settings_id": requirement.settings_id,
+                },
+                partial=True,
+            )
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+        validate_task_quality_settings(self.task)
+
+    def test_inherited_incompatible_settings_are_rejected_before_computation(self):
+        project = engine.Project.objects.create(name="incompatible project requirements")
+        self.task.project = project
+        self.task.save()
+        rectangle = project.quality_settings.requirements.get(annotation_type="rectangle")
+        # Simulate an existing configuration from before compatibility validation.
+        rectangle.enabled = True
+        rectangle.save()
+        with self.assertRaisesRegex(ValidationError, "only interval"):
+            validate_task_quality_settings(self.task)
+        settings = self.task.quality_settings
+        settings.inherit = False
+        settings.save()
+        validate_task_quality_settings(self.task)
+
+    def test_database_reports_for_disjoint_segments_are_not_checkable(self):
+        self.gt.segment.stop_frame = 999
+        self.gt.segment.save()
+        self.job.segment.start_frame = 1000
+        self.job.segment.save()
+        stored = TaskQualityCalculator().compute_report(self.task)
+        result = ComparisonReport.from_json(stored.data)
+        self.assertFalse(result.comparison_summary.has_comparison_scope)
+        self.assertEqual(result.comparison_summary.jobs.not_checkable, {self.job.id})
+        self.assertIsNone(result.groups[self.requirement.name].frame_results)
+        self.assertEqual(result.get_conflicts(), [])
 
     @override_settings(MAX_QUALITY_REQUIREMENTS_PER_SETTINGS=9)
     def test_existing_over_quota_settings_can_be_saved(self):
@@ -221,3 +369,61 @@ class TestAudioQualityDatabase(TransactionTestCase):
             self.task.quality_settings.requirements.get(annotation_type="interval").name,
             "Base interval",
         )
+
+
+class TestRequirementQuotaTransactions(TransactionTestCase):
+    def setUp(self):
+        self.task = engine.Task.objects.create(name="requirement quota", media_type="image")
+        self.settings = self.task.quality_settings
+        self.parent = self.settings.requirements.get(annotation_type="rectangle")
+
+    def _create_serializer(self, name):
+        serializer = QualityRequirementSerializer(
+            data={
+                "settings_id": self.settings.id,
+                "parent_requirement": self.parent.id,
+                "name": name,
+                "enabled": False,
+            }
+        )
+        serializer.is_valid(raise_exception=True)
+        return serializer
+
+    @override_settings(MAX_QUALITY_REQUIREMENTS_PER_SETTINGS=11)
+    def test_bulk_create_rechecks_quota_after_validation(self):
+        serializer = QualityRequirementBulkCreateSerializer(
+            data={
+                "settings_id": self.settings.id,
+                "requirements": [
+                    {"name": "bulk", "parent_requirement": self.parent.id, "enabled": False}
+                ],
+            }
+        )
+        serializer.is_valid(raise_exception=True)
+        self._create_serializer("concurrent").save()
+        with self.assertRaisesRegex(ValidationError, "No more than 11"):
+            serializer.save()
+        self.assertEqual(self.settings.requirements.count(), 11)
+        self.assertFalse(self.settings.requirements.filter(name="bulk").exists())
+
+    @override_settings(MAX_QUALITY_REQUIREMENTS_PER_SETTINGS=11)
+    @skipUnlessDBFeature("has_select_for_update")
+    def test_concurrent_creates_cannot_exceed_quota(self):
+        validated = Barrier(2)
+
+        def create(name):
+            try:
+                serializer = self._create_serializer(name)
+                validated.wait(timeout=10)
+                try:
+                    serializer.save()
+                except ValidationError:
+                    return False
+                return True
+            finally:
+                connections.close_all()
+
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            results = list(executor.map(create, ["first", "second"]))
+        self.assertEqual(sorted(results), [False, True])
+        self.assertEqual(self.settings.requirements.count(), 11)

@@ -24,19 +24,25 @@ from cvat.apps.quality_control.matching import (
     match_segments,
     temporal_iou,
 )
+from cvat.apps.quality_control.models import QualityRequirementAnnotationType
 
 if TYPE_CHECKING:
     from cvat.apps.quality_control.interval_data_provider import IntervalJobDataProvider
-    from cvat.apps.quality_control.models import QualityRequirementAnnotationType
     from cvat.apps.quality_control.quality_handlers import EffectiveQualityRequirement
 
 
 class IntervalBackend(QualityBackend):
+    uses_frames = False
+
     def __init__(
         self, ds_provider: IntervalJobDataProvider, gt_provider: IntervalJobDataProvider
     ) -> None:
         self._ds_provider = ds_provider
         self._gt_provider = gt_provider
+
+    @property
+    def supported_annotation_types(self) -> Collection[QualityRequirementAnnotationType]:
+        return (QualityRequirementAnnotationType.INTERVAL,)
 
     @property
     def catalog(self) -> cdm.LabelCatalog:
@@ -51,35 +57,37 @@ class IntervalBackend(QualityBackend):
         return 1
 
     def iter_samples(self) -> Iterator[RecordingComparisonSample]:
-        start, stop = self._gt_provider.recording_range
-        if (
-            any(not isinstance(value, int) or isinstance(value, bool) for value in (start, stop))
-            or not 0 <= start < stop
+        gt_start, gt_stop = self._gt_provider.recording_range
+        ds_start, ds_stop = self._ds_provider.recording_range
+        if not (
+            0 <= gt_start < gt_stop <= self._gt_provider.recording_stop
+            and 0 <= ds_start < ds_stop <= self._ds_provider.recording_stop
         ):
-            raise ValueError("Invalid recording boundaries for audio quality")
-        if self._ds_provider.recording_range != (start, stop):
-            raise ValueError("Audio quality requires identical whole-recording ranges")
+            raise AssertionError("Invalid recording boundaries for audio quality")
+        start, stop = max(gt_start, ds_start), min(gt_stop, ds_stop)
+        if start >= stop:
+            return
         indices = {label.id: index for index, label in enumerate(self.catalog.labels)}
 
         def annotations(provider):
             result = []
             for sample in provider.dataset:
                 for annotation in sample.annotations:
-                    end = stop if annotation.stop is None else annotation.stop
-                    if (
-                        any(
-                            not isinstance(value, int) or isinstance(value, bool)
-                            for value in (annotation.start, end)
-                        )
-                        or not start <= annotation.start <= end <= stop
-                    ):
-                        raise ValueError(
+                    end = provider.recording_stop if annotation.stop is None else annotation.stop
+                    if not 0 <= annotation.start <= end <= provider.recording_stop:
+                        raise AssertionError(
                             f"Invalid audio interval boundaries: {annotation.reference}"
                         )
+                    if annotation.start == end:
+                        if not start <= annotation.start < stop:
+                            continue
+                    elif end <= start or annotation.start >= stop:
+                        continue
                     result.append(
                         evolve(
                             annotation,
-                            stop=end,
+                            start=max(annotation.start, start),
+                            stop=min(end, stop),
                             label=indices[provider.label_catalog.labels[annotation.label].id],
                         )
                     )
@@ -98,8 +106,8 @@ class IntervalBackend(QualityBackend):
         *,
         requirement_type: QualityRequirementAnnotationType | str,
     ) -> ComparisonSample:
-        if requirement_type != "interval":
-            raise ValueError("Audio quality only supports interval requirements")
+        if requirement_type != QualityRequirementAnnotationType.INTERVAL:
+            raise AssertionError("Audio quality only supports interval requirements")
         return sample
 
     def compare(

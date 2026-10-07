@@ -29,6 +29,7 @@ from cvat.apps.quality_control.comparison_report import (
     RequirementCalculationStatus,
 )
 from cvat.apps.quality_control.filters import RequirementJsonLogicFilter
+from cvat.apps.quality_control.validation import validate_quality_settings
 from cvat.utils import django_database as db_utils
 
 
@@ -242,7 +243,12 @@ class QualityReportListSerializer(serializers.ListSerializer):
 
 
 class QualityReportSerializer(serializers.ModelSerializer):
-    version = serializers.IntegerField(read_only=True)
+    version = serializers.IntegerField(
+        source="resolve_version",
+        read_only=True,
+        allow_null=True,
+        help_text="Report format version, determined on first access. 0 means unrecognized data.",
+    )
     target = QualityReportTargetSerializer()
     assignee = engine_serializers.BasicUserSerializer(allow_null=True, read_only=True)
     summary = QualityReportSummarySerializer()
@@ -885,18 +891,46 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
         for field_name in _INHERITED_REQUIREMENT_FIELDS:
             validated_data.setdefault(field_name, None)
 
+    @transaction.atomic
     def create(self, validated_data):
+        quality_settings = models.QualitySettings.objects.select_for_update().get(
+            pk=validated_data["settings"].pk
+        )
+        self._validate_requirement_limit_for_settings(quality_settings)
         self._clear_child_inherited_defaults(validated_data)
 
         instance = super().create(validated_data)
         if self._should_touch_settings():
+            if instance.enabled:
+                validate_quality_settings(quality_settings)
             self._touch_settings(instance.settings)
         return instance
 
+    @transaction.atomic
     def update(self, instance, validated_data):
+        target_settings = validated_data.get("settings", instance.settings)
+        locked_settings = list(
+            models.QualitySettings.objects.select_for_update()
+            .filter(pk__in={instance.settings_id, target_settings.pk})
+            .order_by("pk")
+        )
+        target_settings = next(
+            settings for settings in locked_settings if settings.pk == target_settings.pk
+        )
+        hierarchy_changed = (
+            target_settings.pk != instance.settings_id
+            or getattr(validated_data.get("parent", instance.parent), "pk", None)
+            != instance.parent_id
+        )
+        self._validate_requirement_limit_for_settings(target_settings)
         instance = super().update(instance, validated_data)
         if self._should_touch_settings():
-            self._touch_settings(instance.settings)
+            for quality_settings in locked_settings:
+                # Allow incompatible legacy requirements to be disabled one at a time.
+                # Reparenting can also change the effective type of enabled descendants.
+                if instance.enabled or hierarchy_changed:
+                    validate_quality_settings(quality_settings)
+                self._touch_settings(quality_settings)
         return instance
 
 
@@ -1131,6 +1165,19 @@ class QualityRequirementBulkCreateSerializer(serializers.Serializer):
                 )
 
         with transaction.atomic():
+            quality_settings = models.QualitySettings.objects.select_for_update().get(
+                pk=quality_settings.pk
+            )
+            if (
+                quality_settings.requirements.count()
+                + sum(1 for _ in self._iter_nodes(requirements))
+                > QualityRequirementSerializer._get_requirement_limit()
+            ):
+                raise serializers.ValidationError(
+                    {
+                        "requirements": QualityRequirementSerializer.get_requirement_limit_error_message()
+                    }
+                )
             for index, requirement in enumerate(requirements):
                 create_node(
                     requirement,
@@ -1138,6 +1185,7 @@ class QualityRequirementBulkCreateSerializer(serializers.Serializer):
                     path=(("requirements", index),),
                 )
 
+            validate_quality_settings(quality_settings)
             quality_settings.save()
 
         return created_requirements
@@ -1162,16 +1210,6 @@ class QualitySettingsRequirementsSerializer(QualityRequirementListSerializer):
     def validate(self, attrs: list[dict[str, Any]]) -> list[dict[str, Any]]:
         if not attrs:
             raise serializers.ValidationError("At least one quality requirement must be specified.")
-
-        existing_count = (
-            self.parent.instance.requirements.count()
-            if getattr(self.parent, "instance", None) is not None
-            else 0
-        )
-        if len(attrs) > max(QualityRequirementSerializer._get_requirement_limit(), existing_count):
-            raise serializers.ValidationError(
-                QualityRequirementSerializer.get_requirement_limit_error_message()
-            )
 
         return attrs
 
@@ -1331,6 +1369,18 @@ class QualitySettingsSerializer(WriteOnceMixin, serializers.ModelSerializer):
             requirement.id: requirement
             for requirement in instance.requirements.select_related("parent").all()
         }
+        if len(requirements_data) > max(
+            QualityRequirementSerializer._get_requirement_limit(), len(existing_requirements)
+        ):
+            raise serializers.ValidationError(
+                {
+                    "requirements": {
+                        "non_field_errors": [
+                            QualityRequirementSerializer.get_requirement_limit_error_message()
+                        ]
+                    }
+                }
+            )
         retained_requirement_ids: set[int] = set()
         seen_requirement_ids: set[int] = set()
         seen_requirement_names: set[str] = set()
@@ -1454,6 +1504,7 @@ class QualitySettingsSerializer(WriteOnceMixin, serializers.ModelSerializer):
         requirements_data = validated_data.pop("requirements", serializers.empty)
 
         with transaction.atomic():
+            instance = models.QualitySettings.objects.select_for_update().get(pk=instance.pk)
             models.ensure_base_quality_requirements(instance)
             instance = super().update(instance, validated_data)
 
@@ -1461,6 +1512,8 @@ class QualitySettingsSerializer(WriteOnceMixin, serializers.ModelSerializer):
                 self._sync_requirements(instance, requirements_data)
                 db_utils.clear_prefetched_relation_cache(instance, "requirements")
                 instance.touch()
+
+            validate_quality_settings(instance)
 
             if instance.task_id:
                 instance.task.touch()

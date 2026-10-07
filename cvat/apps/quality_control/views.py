@@ -5,6 +5,7 @@
 import textwrap
 from datetime import datetime, timezone
 
+from django.db import transaction
 from django.db.models import Q
 from django.http import HttpResponse
 from drf_spectacular.types import OpenApiTypes
@@ -228,8 +229,6 @@ class QualityReportViewSet(
         queryset = super().get_queryset()
 
         if self.action == "list":
-            query_serializer = QualityReportListQuerySerializer(data=self.request.query_params)
-            query_serializer.is_valid(raise_exception=True)
             iam_context = None
             target = self.request.query_params.get(REPORT_TARGET_PARAM_NAME, None)
 
@@ -319,10 +318,6 @@ class QualityReportViewSet(
                         )
                     )
 
-            if not query_serializer.validated_data["include_legacy"]:
-                # The new UI only understands generalized reports. Legacy reports remain
-                # downloadable, and API clients can discover them with include_legacy=true.
-                queryset = filter_current_reports(queryset)
             queryset = queryset.defer("data")  # heavy field, should be excluded from COUNT(*)
 
         if self.action != "list":
@@ -336,6 +331,17 @@ class QualityReportViewSet(
                 "project",
             )
 
+        return queryset
+
+    def filter_queryset(self, queryset):
+        queryset = super().filter_queryset(queryset)
+        if self.action == "list":
+            query_serializer = QualityReportListQuerySerializer(data=self.request.query_params)
+            query_serializer.is_valid(raise_exception=True)
+            if not query_serializer.validated_data["include_legacy"]:
+                # Resolve versions after permissions and all request filters, but before
+                # pagination/counting. Known versions never require reading their payloads.
+                queryset = filter_current_reports(queryset)
         return queryset
 
     CREATE_REPORT_RQ_ID_PARAMETER = "rq_id"
@@ -890,7 +896,9 @@ class QualityRequirementViewSet(
         )
         return Response(response_serializer.data, status=status.HTTP_201_CREATED)
 
+    @transaction.atomic
     def perform_destroy(self, instance):
+        settings = QualitySettings.objects.select_for_update().get(pk=instance.settings_id)
         if instance.is_base:
             raise ValidationError("Base quality requirements cannot be deleted.")
 
@@ -899,7 +907,6 @@ class QualityRequirementViewSet(
                 "A quality requirement with child requirements cannot be deleted."
             )
 
-        settings = instance.settings
         result = super().perform_destroy(instance)
         settings.save()
         return result

@@ -42,6 +42,13 @@ class QualityBackend(ABC):
     native media and identity mappings for the duration of that sample.
     """
 
+    uses_frames: bool = True
+
+    @property
+    @abstractmethod
+    def supported_annotation_types(self) -> Collection[QualityRequirementAnnotationType]:
+        raise NotImplementedError
+
     @property
     @abstractmethod
     def catalog(self) -> cdm.LabelCatalog:

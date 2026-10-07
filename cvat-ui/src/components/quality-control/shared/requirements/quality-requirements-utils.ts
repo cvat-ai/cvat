@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { QualityRequirement } from 'cvat-core-wrapper';
+import { MediaType, QualityRequirement } from 'cvat-core-wrapper';
 import {
     QUALITY_REQUIREMENT_METRICS,
     parseQualityTargetMetric,
@@ -31,6 +31,14 @@ export const ANNOTATION_TYPE_LABELS: Record<string, string> = {
     [QualityRequirementAnnotationType.ELLIPSE]: 'Ellipse',
     [QualityRequirementAnnotationType.INTERVAL]: 'Interval',
 };
+
+export function isQualityAnnotationTypeSupported(
+    annotationType: QualityRequirementAnnotationType,
+    mediaType?: MediaType,
+): boolean {
+    return typeof mediaType === 'undefined' ||
+        (annotationType === QualityRequirementAnnotationType.INTERVAL) === (mediaType === MediaType.AUDIO);
+}
 
 const BASE_METRIC_LABELS: Record<QualityMetric, string> = {
     [QualityMetric.ACCURACY]: 'Accuracy',

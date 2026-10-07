@@ -11,6 +11,8 @@ from rest_framework import serializers
 
 from cvat.apps.engine.models import (
     DimensionType,
+    Job,
+    JobType,
     Project,
     RequestTarget,
     Task,
@@ -21,6 +23,7 @@ from cvat.apps.quality_control.quality_calculators import (
     TaskQualityCalculator,
 )
 from cvat.apps.quality_control.rq import QualityRequestId
+from cvat.apps.quality_control.validation import validate_task_quality_settings
 from cvat.apps.redis_handler.background import AbstractRequestManager
 
 
@@ -52,7 +55,10 @@ class QualityReportQueueManager(AbstractRequestManager):
         super().validate_request()
 
         if isinstance(self.db_instance, Project):
-            return  # nothing prevents project reports
+            for task in self.db_instance.tasks.filter(
+                id__in=Job.objects.filter(type=JobType.GROUND_TRUTH).values("segment__task_id")
+            ):
+                validate_task_quality_settings(task)
         elif isinstance(self.db_instance, Task):
             from cvat.apps.quality_control.interval_data_provider import (
                 validate_audio_quality_scope,
@@ -68,6 +74,7 @@ class QualityReportQueueManager(AbstractRequestManager):
                 raise serializers.ValidationError(
                     "Quality reports require a Ground Truth job in the task"
                 )
+            validate_task_quality_settings(self.db_instance)
         else:
             assert False
 

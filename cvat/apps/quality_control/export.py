@@ -79,7 +79,7 @@ def prepare_json_report_for_downloading(db_report: models.QualityReport, *, host
 
     serialized_data = dict(
         id=db_report.id,
-        version=db_report.version,
+        version=db_report.resolve_version(),
         **dict(job_id=db_report.job.id) if job_id else {},
         **dict(task_id=task_id) if task_id else {},
         **dict(project_id=project_id) if project_id else {},

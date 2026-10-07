@@ -333,6 +333,32 @@ class TestListQualityReports(_PermissionTestBase):
         self._test_list_reports_200(admin_user, sort="-id", expected_data=[])
 
     @pytest.mark.usefixtures("restore_db_per_function")
+    def test_report_filters_are_applied_before_pagination(
+        self, admin_user, find_sandbox_task_without_gt
+    ):
+        task, user = find_sandbox_task_without_gt(True)
+        create_gt_job(admin_user, task["id"])
+        reports = [create_quality_report(user=admin_user, task_id=task["id"]) for _ in range(3)]
+        included = sorted(report["id"] for report in reports[:2])
+        for page, report_id in enumerate(included, start=1):
+            response = get_method(
+                user["username"],
+                "quality/reports",
+                task_id=task["id"],
+                target="task",
+                filter=json.dumps({"!": {"==": [{"var": "id"}, reports[2]["id"]]}}),
+                sort="id",
+                page_size=1,
+                page=page,
+            )
+            assert response.status_code == HTTPStatus.OK
+            data = response.json()
+            assert data["count"] == 2
+            assert [report["id"] for report in data["results"]] == [report_id]
+            assert data["results"][0]["version"] == 3
+            assert bool(data["next"]) == (page == 1)
+
+    @pytest.mark.usefixtures("restore_db_per_function")
     @pytest.mark.parametrize("target", ["project", "task", "job"])
     @pytest.mark.parametrize(*_PermissionTestBase._default_sandbox_cases)
     def test_user_list_reports_in_sandbox(
@@ -777,6 +803,23 @@ class TestGetQualityReportData(_PermissionTestBase):
         assert response.status_code == HTTPStatus.OK
         legacy_reports = response.json()["results"]
         discovered_report = next(report for report in legacy_reports if report["id"] == report_id)
+        assert discovered_report["version"] == 1
+
+        response = get_method(
+            admin_user,
+            "quality/reports",
+            task_id=fixture_report["task_id"],
+            target="task",
+            include_legacy="true",
+            filter=json.dumps({"==": [{"var": "id"}, report_id]}),
+            page_size=1,
+        )
+        assert response.status_code == HTTPStatus.OK
+        page = response.json()
+        assert page["count"] == 1
+        assert [report["id"] for report in page["results"]] == [report_id]
+        assert page["results"][0]["version"] == 1
+        assert page["next"] is None
 
         response = get_method(admin_user, f"quality/reports/{discovered_report['id']}/data")
         assert response.status_code == HTTPStatus.OK

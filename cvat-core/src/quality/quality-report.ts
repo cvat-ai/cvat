@@ -72,7 +72,7 @@ export interface QualitySummary {
 
 export default class QualityReport {
     #id: number;
-    #version: number;
+    #version: number | null;
     #parentID: number;
     #projectId: number;
     #taskID: number;
@@ -102,7 +102,7 @@ export default class QualityReport {
         }
     }
 
-    get version(): number {
+    get version(): number | null {
         return this.#version;
     }
 

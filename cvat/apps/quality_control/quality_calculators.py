@@ -328,6 +328,10 @@ class TaskQualityCalculator:
                 build_requirement_report(
                     requirement=requirement,
                     frame_results={},
+                    include_frame_results=(
+                        requirement.annotation_type
+                        != models.QualityRequirementAnnotationType.INTERVAL
+                    ),
                 ),
             )
 
@@ -357,6 +361,7 @@ class TaskQualityCalculator:
 
     def _save_reports(self, *, task_report: dict, job_reports: list[dict]) -> models.QualityReport:
         db_task_report = models.QualityReport(
+            version=CURRENT_REPORT_VERSION,
             task=task_report["task"],
             target_last_updated=task_report["target_last_updated"],
             gt_last_updated=task_report["gt_last_updated"],
@@ -369,6 +374,7 @@ class TaskQualityCalculator:
         db_job_reports = []
         for job_report in job_reports:
             db_job_report = models.QualityReport(
+                version=CURRENT_REPORT_VERSION,
                 job=job_report["job"],
                 target_last_updated=job_report["target_last_updated"],
                 gt_last_updated=job_report["gt_last_updated"],
@@ -428,11 +434,7 @@ class ProjectQualityCalculator:
     def is_task_report_relevant(self, quality_report: models.QualityReport) -> bool:
         assert quality_report.target == models.QualityReportTarget.TASK
 
-        try:
-            version = quality_report.version
-        except (TypeError, ValueError):
-            return False
-        if version != CURRENT_REPORT_VERSION:
+        if quality_report.resolve_version() != CURRENT_REPORT_VERSION:
             return False
         task = quality_report.task
         validate_audio_quality_scope(task)
@@ -561,6 +563,7 @@ class ProjectQualityCalculator:
         with transaction.atomic():
             project_report = self._save_report(
                 models.QualityReport(
+                    version=CURRENT_REPORT_VERSION,
                     project=project,
                     target_last_updated=project.updated_date,
                     gt_last_updated=None,
