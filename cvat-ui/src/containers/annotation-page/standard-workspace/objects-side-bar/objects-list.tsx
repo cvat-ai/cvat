@@ -960,7 +960,6 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                     currentLayer={currentZLayer}
                     hiddenLayers={hiddenZLayers}
                     selectedStatesID={selectedStatesID}
-                    keyMap={keyMap}
                     sortedStatesID={sortedStatesID}
                     showGroundTruth={showGroundTruth}
                     objectStates={filteredStates}
