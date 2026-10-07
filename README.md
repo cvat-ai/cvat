@@ -140,8 +140,8 @@ and script common CVAT workflows from the terminal.
 ## Data and Formats
 
 CVAT Community supports image, video, audio, and 3D (point cloud) annotation workflows. You can move data in and out
-using 20+ industry-standard formats: CVAT (XML), COCO (JSON), YOLO (TXT), Ultralytics YOLO (TXT/YAML), Pascal VOC (XML),
-KITTI (TXT), MOT (TXT), TSV (audio) and more.
+using 20+ supported formats: CVAT (XML), COCO (JSON), YOLO (TXT), Ultralytics YOLO (TXT/YAML), Pascal VOC (XML),
+KITTI (TXT), MOT (TXT), Generic TSV (TSV), and more.
 
 [Full list of supported formats.](https://docs.cvat.ai/docs/dataset_management/formats/)
 
