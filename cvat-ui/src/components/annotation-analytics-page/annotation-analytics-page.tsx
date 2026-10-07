@@ -22,21 +22,45 @@ const core = getCore();
 function AnnotationAnalyticsPage(): JSX.Element {
     const { tid } = useParams<{ tid: string }>();
     const [counts, setCounts] = useState<AnnotationCount[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(false);
 
     useEffect(() => {
         const taskID = Number(tid);
+        let active = true;
+        setLoading(true);
+        setError(false);
+        setCounts([]);
+
         core.server.request(
             `${core.config.backendAPI}/test/tasks/${taskID}/annotation-counts`,
             { method: 'GET' },
         ).then((response: { data: { counts: AnnotationCount[] } }) => {
-            setCounts(response.data.counts);
+            if (active) {
+                setCounts(response.data.counts);
+                setLoading(false);
+            }
+        }).catch(() => {
+            if (active) {
+                setError(true);
+                setLoading(false);
+            }
         });
+
+        return () => {
+            active = false;
+        };
     }, [tid]);
 
     return (
         <div style={{ padding: 24 }}>
             <h1>Annotation analytics</h1>
-            <div style={{ height: Math.max(400, counts.length * 24) }}>
+            {loading && <div>Loading annotation counts...</div>}
+            {!loading && error && <div>Failed to load annotation counts.</div>}
+            {!loading && !error && counts.length === 0 && (
+                <div>No annotation counts are available for this task.</div>
+            )}
+            {!loading && !error && counts.length > 0 && <div style={{ height: 600 }}>
                 <Bar
                     data={{
                         labels: counts.map(({ label }) => label),
@@ -66,7 +90,7 @@ function AnnotationAnalyticsPage(): JSX.Element {
                         },
                     }}
                 />
-            </div>
+            </div>}
         </div>
     );
 }
