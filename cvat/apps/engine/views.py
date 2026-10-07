@@ -3910,6 +3910,8 @@ def rq_exception_handler(rq_job: RQJob, exc_type: type[Exception], exc_value: Ex
     if rq_job.get_status(refresh=False) in (RQJobStatus.QUEUED, RQJobStatus.SCHEDULED):
         return True
 
+    # Chunk jobs already save failure metadata in on_failure, before RQ publishes FAILED,
+    # so API readers can reconstruct the exception. Avoid writing it again here.
     if rq_job.origin != settings.CVAT_QUEUES.CHUNKS.value:
         save_job_failure_metadata(rq_job, exc_type, exc_value)
 
