@@ -8,7 +8,7 @@ import ObjectState, { type SerializedData } from '../object-state';
 import { ObjectType, HistoryActions } from '../enums';
 import type { Label } from '../labels';
 import type { SerializedTrack } from '../server-response-types';
-import { attrsAsAnObject } from '../object-utils';
+import { attrsAsAnObject, validateAttributeValue } from '../object-utils';
 import { Drawn } from './drawn';
 import { InterpolationNotPossibleError } from './image-object';
 import type { AnnotationInjection, InterpolatedPosition, TrackedShape } from './types';
@@ -216,6 +216,40 @@ export class Track extends Drawn {
             shape.attributes = new Map();
         }
         this.appendDefaultAttributes(label);
+
+        for (const attribute of redoLabel.attributes) {
+            for (const oldAttribute of undoLabel.attributes) {
+                if (attribute.name !== oldAttribute.name || attribute.mutable !== oldAttribute.mutable) {
+                    continue;
+                }
+
+                if (!attribute.mutable) {
+                    const oldValue = undoAttributes.unmutable.get(oldAttribute.id!) ?? oldAttribute.defaultValue;
+                    if (validateAttributeValue(oldValue, attribute)) {
+                        this.attributes.set(attribute.id!, oldValue);
+                    }
+                    continue;
+                }
+
+                if (
+                    oldAttribute.defaultValue !== attribute.defaultValue &&
+                    validateAttributeValue(oldAttribute.defaultValue, attribute)
+                ) {
+                    // Mutable values propagate forward, so seed the carried default at the track start.
+                    this.shapes[this.frame].attributes.set(attribute.id!, oldAttribute.defaultValue);
+                }
+
+                for (const { frame: keyframe, attributes } of undoAttributes.mutable) {
+                    const oldValue = attributes.get(oldAttribute.id!);
+                    if (typeof oldValue === 'undefined') {
+                        continue;
+                    }
+
+                    const value = validateAttributeValue(oldValue, attribute) ? oldValue : attribute.defaultValue;
+                    this.shapes[keyframe].attributes.set(attribute.id!, value);
+                }
+            }
+        }
 
         const redoAttributes = {
             unmutable: new Map(this.attributes),

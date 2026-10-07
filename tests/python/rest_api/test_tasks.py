@@ -3659,39 +3659,6 @@ class TestImportTaskAnnotations:
         task.import_annotations(self.import_format, filename)
         self._check_annotations(task_id)
 
-    @pytest.mark.skip("Fails sometimes, needs to be fixed")
-    @pytest.mark.timeout(70)
-    def test_check_import_cache_after_previous_interrupted_upload(self, tasks_with_shapes, request):
-        task_id = tasks_with_shapes[0]["id"]
-        with NamedTemporaryFile() as f:
-            filename = self.tmp_dir / f"task_{task_id}_{Path(f.name).name}_coco.zip"
-        task = self.client.tasks.retrieve(task_id)
-        task.export_dataset(self.export_format, filename, include_images=False)
-
-        params = {"format": self.import_format, "filename": filename.name}
-        url = self.client.api_map.make_endpoint_url(
-            self.client.api_client.tasks_api.create_annotations_endpoint.path
-        ).format(id=task_id)
-
-        uploader = Uploader(self.client)
-        uploader._tus_start_upload(url, query_params=params)
-        uploader._upload_file_data_with_tus(
-            url,
-            filename,
-            meta=params,
-            pbar=NullProgressReporter(),
-        )
-        number_of_files = 1
-        sleep(30)  # wait when the cleaning job from rq worker will be started
-        command = ["/bin/bash", "-c", f"ls data/tasks/{task_id}/tmp | wc -l"]
-        for _ in range(12):
-            sleep(2)
-            result = container_exec_cvat(request, command)
-            number_of_files = int(result)
-            if not number_of_files:
-                break
-        assert not number_of_files
-
     def test_import_annotations_after_deleting_related_cloud_storage(
         self, admin_user: str, tasks_with_shapes
     ):

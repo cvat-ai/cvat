@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: CVAT REST API
-  version: 2.76.1
+  version: 2.78.1
   description: REST API for Computer Vision Annotation Tool (CVAT)
   termsOfService: https://www.google.com/policies/terms/
   contact:
@@ -11225,7 +11225,11 @@ components:
           maximum: 1
           minimum: 0
           nullable: true
-          description: Used for distinction between matched / unmatched shapes
+          description: |
+            The overlap threshold used for distinction between matched / unmatched objects.
+            The specific meaning can vary depending on the shape type:
+            for rectangles, polygons, ellipses, lines and masks it's the IoU threshold;
+            for points and skeletons, it's the OKS threshold.
         point_size:
           type: number
           format: double
@@ -11233,11 +11237,11 @@ components:
           minimum: 0
           nullable: true
           description: |-
-            Like IoU threshold, but for points.
-            The percent of the bbox side, used as the radius of the circle around the GT point,
-            where the checked point is expected to be. For boxes with different width and
-            height, the "side" is computed as a geometric mean of the width and height.
-            Read more: https://cocodataset.org/#keypoints-eval
+            The point "size" (the OKS sigma), as a fraction of the object size, defined by
+            the point size base. Corresponds to the standard deviation of the keypoint position.
+            Larger values give larger areas around the GT points, where the checked points
+            are accepted.
+            Read more about the point matching in the documentation.
         point_size_base:
           nullable: true
           description: |-
@@ -12073,7 +12077,11 @@ components:
           maximum: 1
           minimum: 0
           nullable: true
-          description: Used for distinction between matched / unmatched shapes
+          description: |
+            The overlap threshold used for distinction between matched / unmatched objects.
+            The specific meaning can vary depending on the shape type:
+            for rectangles, polygons, ellipses, lines and masks it's the IoU threshold;
+            for points and skeletons, it's the OKS threshold.
         point_size:
           type: number
           format: double
@@ -12081,11 +12089,11 @@ components:
           minimum: 0
           nullable: true
           description: |-
-            Like IoU threshold, but for points.
-            The percent of the bbox side, used as the radius of the circle around the GT point,
-            where the checked point is expected to be. For boxes with different width and
-            height, the "side" is computed as a geometric mean of the width and height.
-            Read more: https://cocodataset.org/#keypoints-eval
+            The point "size" (the OKS sigma), as a fraction of the object size, defined by
+            the point size base. Corresponds to the standard deviation of the keypoint position.
+            Larger values give larger areas around the GT points, where the checked points
+            are accepted.
+            Read more about the point matching in the documentation.
         point_size_base:
           nullable: true
           description: |-
@@ -12243,7 +12251,11 @@ components:
           maximum: 1
           minimum: 0
           nullable: true
-          description: Used for distinction between matched / unmatched shapes
+          description: |
+            The overlap threshold used for distinction between matched / unmatched objects.
+            The specific meaning can vary depending on the shape type:
+            for rectangles, polygons, ellipses, lines and masks it's the IoU threshold;
+            for points and skeletons, it's the OKS threshold.
         point_size:
           type: number
           format: double
@@ -12251,11 +12263,11 @@ components:
           minimum: 0
           nullable: true
           description: |-
-            Like IoU threshold, but for points.
-            The percent of the bbox side, used as the radius of the circle around the GT point,
-            where the checked point is expected to be. For boxes with different width and
-            height, the "side" is computed as a geometric mean of the width and height.
-            Read more: https://cocodataset.org/#keypoints-eval
+            The point "size" (the OKS sigma), as a fraction of the object size, defined by
+            the point size base. Corresponds to the standard deviation of the keypoint position.
+            Larger values give larger areas around the GT points, where the checked points
+            are accepted.
+            Read more about the point matching in the documentation.
         point_size_base:
           nullable: true
           description: |-
@@ -12440,7 +12452,11 @@ components:
           maximum: 1
           minimum: 0
           nullable: true
-          description: Used for distinction between matched / unmatched shapes
+          description: |
+            The overlap threshold used for distinction between matched / unmatched objects.
+            The specific meaning can vary depending on the shape type:
+            for rectangles, polygons, ellipses, lines and masks it's the IoU threshold;
+            for points and skeletons, it's the OKS threshold.
         point_size:
           type: number
           format: double
@@ -12448,11 +12464,11 @@ components:
           minimum: 0
           nullable: true
           description: |-
-            Like IoU threshold, but for points.
-            The percent of the bbox side, used as the radius of the circle around the GT point,
-            where the checked point is expected to be. For boxes with different width and
-            height, the "side" is computed as a geometric mean of the width and height.
-            Read more: https://cocodataset.org/#keypoints-eval
+            The point "size" (the OKS sigma), as a fraction of the object size, defined by
+            the point size base. Corresponds to the standard deviation of the keypoint position.
+            Larger values give larger areas around the GT points, where the checked points
+            are accepted.
+            Read more about the point matching in the documentation.
         point_size_base:
           nullable: true
           description: |-
@@ -12612,7 +12628,11 @@ components:
           maximum: 1
           minimum: 0
           nullable: true
-          description: Used for distinction between matched / unmatched shapes
+          description: |
+            The overlap threshold used for distinction between matched / unmatched objects.
+            The specific meaning can vary depending on the shape type:
+            for rectangles, polygons, ellipses, lines and masks it's the IoU threshold;
+            for points and skeletons, it's the OKS threshold.
         point_size:
           type: number
           format: double
@@ -12620,11 +12640,11 @@ components:
           minimum: 0
           nullable: true
           description: |-
-            Like IoU threshold, but for points.
-            The percent of the bbox side, used as the radius of the circle around the GT point,
-            where the checked point is expected to be. For boxes with different width and
-            height, the "side" is computed as a geometric mean of the width and height.
-            Read more: https://cocodataset.org/#keypoints-eval
+            The point "size" (the OKS sigma), as a fraction of the object size, defined by
+            the point size base. Corresponds to the standard deviation of the keypoint position.
+            Larger values give larger areas around the GT points, where the checked points
+            are accepted.
+            Read more about the point matching in the documentation.
         point_size_base:
           nullable: true
           description: |-
@@ -12776,7 +12796,11 @@ components:
           maximum: 1
           minimum: 0
           nullable: true
-          description: Used for distinction between matched / unmatched shapes
+          description: |
+            The overlap threshold used for distinction between matched / unmatched objects.
+            The specific meaning can vary depending on the shape type:
+            for rectangles, polygons, ellipses, lines and masks it's the IoU threshold;
+            for points and skeletons, it's the OKS threshold.
         point_size:
           type: number
           format: double
@@ -12784,11 +12808,11 @@ components:
           minimum: 0
           nullable: true
           description: |-
-            Like IoU threshold, but for points.
-            The percent of the bbox side, used as the radius of the circle around the GT point,
-            where the checked point is expected to be. For boxes with different width and
-            height, the "side" is computed as a geometric mean of the width and height.
-            Read more: https://cocodataset.org/#keypoints-eval
+            The point "size" (the OKS sigma), as a fraction of the object size, defined by
+            the point size base. Corresponds to the standard deviation of the keypoint position.
+            Larger values give larger areas around the GT points, where the checked points
+            are accepted.
+            Read more about the point matching in the documentation.
         point_size_base:
           nullable: true
           description: |-

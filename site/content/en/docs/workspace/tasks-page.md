@@ -65,9 +65,9 @@ For clear all filters press `Clear filters`.
 
 | Properties     | Supported values                             | Description                                 |
 | -------------- | -------------------------------------------- | ------------------------------------------- |
-| `Dimension`    | `2D` or `3D`                                 | Depends on the data format <br>(read more in {{< ilink "/docs/workspace/tasks-page#create-annotation-task" "creating an annotation task" >}}) |
+| `Dimension`    | `1D`, `2D`, or `3D`                          | Depends on the data format <br>(read more in {{< ilink "/docs/workspace/tasks-page#create-annotation-task" "creating an annotation task" >}}) |
 | `Status`       | `annotation`, `validation` or `completed`    |                                             |
-| `Data`         | `video`, `images`                            | Depends on the data format <br>(read more in {{< ilink "/docs/workspace/tasks-page#create-annotation-task" "creating an annotation task" >}}) |
+| `Data`         | `audio`, `video`, `images`                   | Depends on the data format <br>(read more in {{< ilink "/docs/workspace/tasks-page#create-annotation-task" "creating an annotation task" >}}) |
 | `Subset`       | `test`, `train`, `validation` or custom subset | {{< ilink "/docs/getting_started/vocabulary#subset" "learn more" >}} |
 | `Assignee`     | username                                     | Assignee is the user who is working on the project, task or job <br>(they are specified on task page) |
 | `Owner`        | username                                     | The user who owns the project, task, or job |
@@ -177,11 +177,21 @@ Next, specify the task parameters in the configurator:
 1. Select **Submit and open** to submit the configuration and open the created task,
     <br>or **Submit and continue**, to submit the configuration and start a new task.
 
+### Create an audio task
+
+To create a task for audio annotation, on the **Tasks** page select **+** and then
+**Create a new audio task**. Add labels, attributes, and an audio file in the same way as for a standard task.
+
+ ![Create audio task](/images/create_audio_task_01.webp)
+
+Audio tasks accept audio files only. Common supported formats include `WAV`, `MP3`, `FLAC`, and
+`OPUS`. An audio file cannot be longer than 4 hours.
+
 ### Label shape
 
 Labels (or classes) are categories of objects that you can annotate.
 
-**Label shape** limits the use of the label to certain
+For image, video, and 3D tasks, **Label shape** limits the use of the label to certain
 {{< ilink "/docs/annotation/annotation-editor/controls-sidebar#shapes" "shape tool" >}}.
 
 `Any` is the default setting that does not limit the use of the

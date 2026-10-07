@@ -48,6 +48,7 @@ cvat:
         - "export"
         - "import"
         - "quality_reports"
+        - "--with-scheduler"
 
     # Images are already present in the node
     imagePullPolicy: Never

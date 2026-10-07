@@ -1632,7 +1632,7 @@ const validationLayout = (instance: 'tasks' | 'jobs') => async (
     }
 };
 
-async function getUsers(filter: Record<string, unknown> = { page_size: 'all' }): Promise<SerializedUser[]> {
+async function getUsers(filter: Record<string, unknown> = {}): Promise<SerializedUser[]> {
     const { backendAPI } = config;
 
     let response = null;

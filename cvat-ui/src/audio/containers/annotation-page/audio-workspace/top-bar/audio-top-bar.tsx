@@ -16,8 +16,9 @@ import {
     showStatistics as showStatisticsAction,
 } from 'actions/annotation-actions';
 import {
-    AudioSeekIntent, audioRedoAsync, audioUndoAsync, requestAudioSeekByIntent, toggleAudioPlayback,
+    audioActions, audioRedoAsync, audioUndoAsync, toggleAudioPlayback,
 } from 'actions/audio-actions';
+import type { AudioSeekRequest } from 'actions/audio-actions';
 import AudioTopBarComponent from 'audio/components/annotation-page/audio-workspace/top-bar/audio-top-bar';
 import { Job } from 'cvat-core-wrapper';
 import { CombinedState, Workspace } from 'reducers';
@@ -51,7 +52,7 @@ interface DispatchToProps {
     setForceExitAnnotationFlag(forceExit: boolean): void;
     changeWorkspace(workspace: Workspace): void;
     onAudioPlayPause(): void;
-    onAudioSeek(intent: AudioSeekIntent): void;
+    onAudioSeek(request: AudioSeekRequest): void;
 }
 
 function mapStateToProps(state: CombinedState): StateToProps {
@@ -128,8 +129,8 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         onAudioPlayPause(): void {
             dispatch(toggleAudioPlayback());
         },
-        onAudioSeek(intent: AudioSeekIntent): void {
-            dispatch(requestAudioSeekByIntent(intent));
+        onAudioSeek(request: AudioSeekRequest): void {
+            dispatch(audioActions.seekAudio(request));
         },
     };
 }

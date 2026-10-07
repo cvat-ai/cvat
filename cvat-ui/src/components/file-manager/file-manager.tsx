@@ -195,7 +195,7 @@ export class FileManager extends React.PureComponent<Props, State> {
 
         return {
             key: 'cloudStorage',
-            label: 'Cloud Storage',
+            label: 'Cloud storage',
             className: 'cvat-create-task-page-cloud-storage-tab',
             children: (
                 <CloudStorageTab
