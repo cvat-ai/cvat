@@ -11,7 +11,6 @@ import ObjectButtonsContainer from 'containers/annotation-page/standard-workspac
 import ItemDetailsContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/object-item-details';
 import { ColorBy } from 'reducers';
 import { ObjectType, ShapeType } from 'cvat-core-wrapper';
-import { KeyMap } from 'utils/mousetrap-react';
 import { isMultiSelectObjectModifierPressed } from 'utils/multi-selection';
 import type { OrientationAngle } from 'utils/change-object-orientation';
 import ObjectItemElementComponent from './object-item-element';
@@ -21,7 +20,6 @@ const INTERACTIVE_ELEMENT_SELECTOR = 'a, button, input, textarea, [role="button"
 
 interface Props {
     normalizedKeyMap: Record<string, string>;
-    keyMap: KeyMap;
     activated: boolean;
     multiSelected: boolean;
     selectionActive: boolean;
@@ -87,7 +85,6 @@ function ObjectItemComponent(props: Props): JSX.Element {
         zLayerDragging,
         zOrder,
         normalizedKeyMap,
-        keyMap,
         isGroundTruth,
         activate,
         activateSingle,
@@ -130,10 +127,10 @@ function ObjectItemComponent(props: Props): JSX.Element {
     }
 
     const activateState = useCallback((event: React.MouseEvent): void => {
-        if (!selectionActive && !(multiSelectionSupported && isMultiSelectObjectModifierPressed(event, keyMap))) {
+        if (!selectionActive && !(multiSelectionSupported && isMultiSelectObjectModifierPressed(event))) {
             activate();
         }
-    }, [activate, keyMap, multiSelectionSupported, selectionActive]);
+    }, [activate, multiSelectionSupported, selectionActive]);
     const activateAfterElement = useCallback((): void => activate(), [activate]);
 
     const onMouseDown = useCallback((event: React.MouseEvent): void => {
@@ -141,7 +138,7 @@ function ObjectItemComponent(props: Props): JSX.Element {
             const interactiveElement = (event.target as Element).closest(INTERACTIVE_ELEMENT_SELECTOR);
             const rangeModifier = multiSelectionSupported && event.shiftKey &&
                 !event.ctrlKey && !event.altKey && !event.metaKey;
-            const objectModifier = multiSelectionSupported && isMultiSelectObjectModifierPressed(event, keyMap);
+            const objectModifier = multiSelectionSupported && isMultiSelectObjectModifierPressed(event);
             if (!interactiveElement && objectType === ObjectType.TAG && (rangeModifier || objectModifier)) {
                 event.preventDefault();
                 event.stopPropagation();
@@ -159,18 +156,18 @@ function ObjectItemComponent(props: Props): JSX.Element {
                 activateSingle();
             }
         }
-    }, [activateSingle, keyMap, multiSelectionSupported, objectType, selectRange, selectionActive, toggleSelection]);
+    }, [activateSingle, multiSelectionSupported, objectType, selectRange, selectionActive, toggleSelection]);
 
     const onKeyDown = useCallback((event: React.KeyboardEvent): void => {
         if (multiSelectionSupported && ['Enter', ' '].includes(event.key) &&
-            isMultiSelectObjectModifierPressed(event, keyMap)) {
+            isMultiSelectObjectModifierPressed(event)) {
             event.preventDefault();
             event.stopPropagation();
             if (objectType !== ObjectType.TAG) {
                 toggleSelection();
             }
         }
-    }, [keyMap, multiSelectionSupported, objectType, toggleSelection]);
+    }, [multiSelectionSupported, objectType, toggleSelection]);
 
     return (
         <div style={{ display: 'flex', marginBottom: '1px' }}>

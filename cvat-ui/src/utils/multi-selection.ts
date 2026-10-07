@@ -2,7 +2,6 @@
 //
 // SPDX-License-Identifier: MIT
 
-import { KeyMap } from 'utils/mousetrap-react';
 import {
     Attribute, ObjectState, ObjectType, ShapeType,
 } from 'cvat-core-wrapper';
@@ -155,21 +154,9 @@ export function getSelectionAttributeState(states: ObjectState[]): SelectionAttr
     };
 }
 
-function modifierFromKeyMap(
-    keyMap: KeyMap,
-    shortcut: 'CANVAS_MULTI_SELECT_MODIFIER' | 'CANVAS_MULTI_SELECT_OBJECT_MODIFIER',
-    fallback: MultiSelectModifier,
-): MultiSelectModifier {
-    const [sequence] = keyMap[shortcut]?.sequences ?? [];
-    if (sequence === 'mod') {
-        return /Mac|iPod|iPhone|iPad/.test(navigator.platform) ? 'meta' : 'ctrl';
-    }
-    if (sequence === 'ctrl' || sequence === 'control') return 'ctrl';
-    if (sequence === 'alt' || sequence === 'option') return 'alt';
-    if (sequence === 'meta' || sequence === 'command' || sequence === 'cmd') return 'meta';
-    if (sequence === 'shift') return 'shift';
-    return fallback;
-}
+export const MULTI_SELECT_MODIFIER: MultiSelectModifier = 'shift';
+export const MULTI_SELECT_OBJECT_MODIFIER: MultiSelectModifier =
+    /Mac|iPod|iPhone|iPad/.test(navigator.platform) ? 'meta' : 'ctrl';
 
 function isModifierPressed(event: ModifierEvent, modifier: MultiSelectModifier): boolean {
     const modifiers = {
@@ -183,19 +170,10 @@ function isModifierPressed(event: ModifierEvent, modifier: MultiSelectModifier):
         .every(([key, pressed]) => key === modifier || !pressed);
 }
 
-export function multiSelectModifierFromKeyMap(keyMap: KeyMap): MultiSelectModifier {
-    return modifierFromKeyMap(keyMap, 'CANVAS_MULTI_SELECT_MODIFIER', 'shift');
+export function isMultiSelectModifierPressed(event: ModifierEvent): boolean {
+    return isModifierPressed(event, MULTI_SELECT_MODIFIER);
 }
 
-export function multiSelectObjectModifierFromKeyMap(keyMap: KeyMap): MultiSelectModifier {
-    const platformModifier = /Mac|iPod|iPhone|iPad/.test(navigator.platform) ? 'meta' : 'ctrl';
-    return modifierFromKeyMap(keyMap, 'CANVAS_MULTI_SELECT_OBJECT_MODIFIER', platformModifier);
-}
-
-export function isMultiSelectModifierPressed(event: ModifierEvent, keyMap: KeyMap): boolean {
-    return isModifierPressed(event, multiSelectModifierFromKeyMap(keyMap));
-}
-
-export function isMultiSelectObjectModifierPressed(event: ModifierEvent, keyMap: KeyMap): boolean {
-    return isModifierPressed(event, multiSelectObjectModifierFromKeyMap(keyMap));
+export function isMultiSelectObjectModifierPressed(event: ModifierEvent): boolean {
+    return isModifierPressed(event, MULTI_SELECT_OBJECT_MODIFIER);
 }

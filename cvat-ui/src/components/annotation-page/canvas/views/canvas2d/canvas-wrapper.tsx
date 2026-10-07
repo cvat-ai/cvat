@@ -75,8 +75,8 @@ import { subKeyMap } from 'utils/component-subkeymap';
 import {
     isMultiSelectModifierPressed,
     isMultiSelectObjectModifierPressed,
-    multiSelectModifierFromKeyMap,
-    multiSelectObjectModifierFromKeyMap,
+    MULTI_SELECT_MODIFIER,
+    MULTI_SELECT_OBJECT_MODIFIER,
     getSelectedStates,
 } from 'utils/multi-selection';
 import ImageSetupsContent from './image-setups-content';
@@ -325,27 +325,6 @@ const componentShortcuts = {
 
 registerComponentShortcuts(componentShortcuts);
 
-// registered so users can rebind the modifier in the regular shortcuts settings,
-// but deliberately not passed to GlobalHotKeys: it is a mouse modifier read by the
-// canvas, not a keyboard-triggered action
-const multiSelectShortcut = {
-    CANVAS_MULTI_SELECT_MODIFIER: {
-        name: 'Multi-selection modifier',
-        description: 'Hold this key and drag with the left mouse button in cursor mode to select ' +
-            'several objects with a selection box (supported: shift, ctrl, alt, meta - other keys are ignored)',
-        sequences: ['shift'],
-        scope: ShortcutScope.STANDARD_WORKSPACE,
-    },
-    CANVAS_MULTI_SELECT_OBJECT_MODIFIER: {
-        name: 'Add/remove selection modifier',
-        description: 'Hold this key and click an object on the canvas or in the Objects sidebar to add or remove it ' +
-            'from the selection (supported: shift, ctrl, alt, mod - other keys are ignored)',
-        sequences: ['mod'],
-        scope: ShortcutScope.STANDARD_WORKSPACE,
-    },
-};
-registerComponentShortcuts(multiSelectShortcut);
-
 function mapDispatchToProps(dispatch: any): DispatchToProps {
     return {
         onSetupCanvas(): void {
@@ -504,8 +483,8 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             textContent,
             resetZoom,
             focusedObjectPadding,
-            multiSelectModifier: multiSelectModifierFromKeyMap(this.props.keyMap),
-            multiSelectObjectModifier: multiSelectObjectModifierFromKeyMap(this.props.keyMap),
+            multiSelectModifier: MULTI_SELECT_MODIFIER,
+            multiSelectObjectModifier: MULTI_SELECT_OBJECT_MODIFIER,
         });
 
         this.initialSetup();
@@ -574,10 +553,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             prevProps.outlined !== outlined ||
             prevProps.showGroundTruth !== showGroundTruth ||
             prevProps.resetZoom !== resetZoom ||
-            prevProps.focusedObjectPadding !== focusedObjectPadding ||
-            multiSelectModifierFromKeyMap(prevProps.keyMap) !== multiSelectModifierFromKeyMap(this.props.keyMap) ||
-            multiSelectObjectModifierFromKeyMap(prevProps.keyMap) !==
-                multiSelectObjectModifierFromKeyMap(this.props.keyMap)
+            prevProps.focusedObjectPadding !== focusedObjectPadding
         ) {
             canvasInstance.configure({
                 undefinedAttrValue: config.UNDEFINED_ATTRIBUTE_VALUE,
@@ -599,8 +575,6 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
                 showConflicts: showGroundTruth,
                 resetZoom,
                 focusedObjectPadding,
-                multiSelectModifier: multiSelectModifierFromKeyMap(this.props.keyMap),
-                multiSelectObjectModifier: multiSelectObjectModifierFromKeyMap(this.props.keyMap),
             });
         }
 
@@ -894,12 +868,12 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
 
     private onCanvasMouseDown = (e: MouseEvent): void => {
         const {
-            workspace, activatedStateID, selectedStatesID, onActivateObject, onSelectObjects, keyMap, activeControl,
+            workspace, activatedStateID, selectedStatesID, onActivateObject, onSelectObjects, activeControl,
         } = this.props;
         const shapeElement = (e.target as Element)?.closest?.('.cvat_canvas_shape');
         const selectionBox = (e.target as Element)?.closest?.('.cvat_canvas_selected_objects_box');
-        const multiSelectModifierPressed = isMultiSelectModifierPressed(e, keyMap);
-        const multiSelectObjectModifierPressed = isMultiSelectObjectModifierPressed(e, keyMap);
+        const multiSelectModifierPressed = isMultiSelectModifierPressed(e);
+        const multiSelectObjectModifierPressed = isMultiSelectObjectModifierPressed(e);
 
         // An unmodified click outside the selected objects returns to regular single-object interaction.
         if (activeControl !== ActiveControl.SELECT && e.button === 0 &&
