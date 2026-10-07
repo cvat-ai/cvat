@@ -11,16 +11,13 @@
     overflow: hidden;
     flex: 1 1 0;
     display: flex;
+    min-height: $grid-unit-size * 40;
     flex-direction: column;
 
     > .cvat-audio-interval-header {
         padding: $grid-unit-size $grid-unit-size $grid-unit-size $grid-unit-size * 2;
         background-color: var(--region-item-color);
         border-bottom: 1px solid #e5e7eb;
-
-        .cvat-audio-interval-header-time {
-            padding-left: $grid-unit-size * 3.75;
-        }
     }
 
     .cvat-audio-region-details-content {
@@ -73,8 +70,9 @@
                 transition: background-color 0.15s ease;
             }
 
-            &.ant-collapse-item-active .ant-collapse-header {
+            &.ant-collapse-item-active > .ant-collapse-header {
                 background-color: #f1f1f1;
+                border-radius: $grid-unit-size $grid-unit-size 0 0;
             }
 
             .ant-collapse-content {

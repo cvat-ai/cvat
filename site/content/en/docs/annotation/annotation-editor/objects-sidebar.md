@@ -32,6 +32,18 @@ The way how to use filters is described in the advanced guide {{< ilink
 - Expand/collapse all - collapses/expands the details field of all objects in the frame.
 - Sorting - sort the list of objects: updated time, ID - accent, ID - descent
 
+### Selecting multiple objects
+
+Use **Ctrl+Click** on Windows and Linux, or **Command+Click** on macOS,
+to add or remove an object card from a multi-object selection.
+Use **Shift+Click** to select a continuous range in the current visible order,
+or press **Ctrl/Command+A** to select all selectable objects visible on the canvas.
+
+You can also select all objects associated with a label from the **Labels** tab
+or all selectable objects on a layer from the **Layer Stack**.
+For selection-box behavior, batch actions, movement, copy and paste, and history behavior,
+see {{< ilink "/docs/annotation/manual-annotation/utilities/multi-object-selection" "Multi-object selection" >}}.
+
 ---
 
 **Objects** on the sidebar

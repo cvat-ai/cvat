@@ -10,7 +10,7 @@ from typing import cast
 import datumaro as dm
 import numpy as np
 
-from cvat.apps.quality_control.annotation_matching import (
+from cvat.apps.quality_control.backends.datumaro.matching import (
     AttributeMatchingResult,
     Comparator,
     DistanceComparator,

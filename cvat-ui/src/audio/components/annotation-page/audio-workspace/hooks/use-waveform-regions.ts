@@ -3,7 +3,6 @@
 // SPDX-License-Identifier: MIT
 
 import { useCallback } from 'react';
-import type { Region } from 'wavesurfer.js/dist/plugins/regions';
 
 import { AudioTimeRange, clampRange } from '../utils/audio-interval';
 import { WaveformRegionRuntime } from './use-audio-waveform';
@@ -25,6 +24,10 @@ export interface RegionPreviewHandle {
      */
     updateRange(range: AudioTimeRange): void;
     /**
+     * Updates the color of the preview region. If the preview region has been removed, this method does nothing.
+     */
+    updateColor(color: string): void;
+    /**
      * Removes the preview region from the waveform.
      */
     remove(): void;
@@ -35,6 +38,8 @@ export interface WaveformRegions {
      * Creates a preview region on the waveform. A preview region is a temporary not interactive region.
      */
     createPreview(options: RegionPreviewOptions): RegionPreviewHandle | null;
+    /** A reactive class for the waveform wrapper. */
+    wrapperClassName: string;
 }
 
 interface Params {
@@ -45,12 +50,8 @@ interface Params {
     durationRef: React.MutableRefObject<number>;
 }
 
-interface PreviewCapability extends WaveformRegions {
-    isPreviewRegion(region: Region): boolean;
-}
-
-function isPreviewRegion(region: Region): boolean {
-    return region.id.startsWith(PREVIEW_REGION_PREFIX);
+interface PreviewCapability {
+    createPreview(options: RegionPreviewOptions): RegionPreviewHandle | null;
 }
 
 function generatePreviewRegionId(): string {
@@ -65,33 +66,53 @@ function useRegionPreviewCapability(
     const createPreview = useCallback((options: RegionPreviewOptions): RegionPreviewHandle | null => {
         if (!readyRef.current || durationRef.current <= 0) return null;
         const { regionsPlugin } = regionRuntime;
-        const range = clampRange(options.range, durationRef.current);
+        let range = clampRange(options.range, durationRef.current);
+        let removed = false;
+        let { color } = options;
         const region = regionsPlugin.addRegion({
             id: generatePreviewRegionId(),
             start: range.start,
             end: range.end,
-            color: options.color,
+            color,
             drag: false,
             resize: false,
         });
-        if (region.element) region.element.style.pointerEvents = 'none';
+        const updateAppearance = (): void => {
+            if (!region.element) return;
 
-        let removed = false;
-        const remove = (): void => {
-            if (removed) return;
-            removed = true;
-            if (regionsPlugin.getRegions().includes(region)) region.remove();
+            const isMarker = range.start === range.end;
+            region.element.style.pointerEvents = 'none';
+            region.element.style.backgroundColor = isMarker ? 'none' : color;
+            region.element.style.borderLeft = isMarker ? `2px solid ${color}` : 'none';
         };
+        updateAppearance();
+
         return {
             updateRange: (nextRange: AudioTimeRange): void => {
                 if (removed || !regionsPlugin.getRegions().includes(region)) return;
-                region.setOptions(clampRange(nextRange, durationRef.current));
+                range = clampRange(nextRange, durationRef.current);
+                region.setOptions(range);
+                updateAppearance();
             },
-            remove,
+            updateColor: (nextColor: string): void => {
+                if (removed || !regionsPlugin.getRegions().includes(region)) return;
+
+                color = nextColor;
+                region.setOptions({ color });
+                updateAppearance();
+            },
+            remove: (): void => {
+                if (removed) return;
+
+                removed = true;
+                if (regionsPlugin.getRegions().includes(region)) {
+                    region.remove();
+                }
+            },
         };
     }, []);
 
-    return { createPreview, isPreviewRegion };
+    return { createPreview };
 }
 
 /**
@@ -103,16 +124,17 @@ export function useWaveformRegions({
     const previewCapability = useRegionPreviewCapability(regionRuntime, readyRef, durationRef);
     const regionSelection = useRegionSelection({ regionRuntime, viewport, ready });
     const regionHighlighting = useRegionProjection({ regionRuntime, ready });
-    useRegionEditing({
+    const editing = useRegionEditing({
         regionRuntime,
         regionHighlighting,
         regionSelection,
         viewport,
         durationRef,
-        isPreviewRegion: previewCapability.isPreviewRegion,
+        createPreview: previewCapability.createPreview,
         ready,
     });
     return {
         createPreview: previewCapability.createPreview,
+        wrapperClassName: editing.wrapperClassName,
     };
 }

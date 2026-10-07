@@ -1325,7 +1325,7 @@ class JobQuerySet(models.QuerySet):
         return self.annotate(child_jobs__count=models.Count("child_job"))
 
 
-class Job(DirtyFieldsMixin, TimestampedModel, AssignableModel, FileSystemRelatedModel):
+class Job(TimestampedModel, AssignableModel, FileSystemRelatedModel):
     objects = JobQuerySet.as_manager()
 
     segment = models.ForeignKey(Segment, on_delete=models.CASCADE)
@@ -1727,7 +1727,7 @@ class Profile(models.Model):
     )
 
 
-class Issue(DirtyFieldsMixin, TimestampedModel, AssignableModel):
+class Issue(TimestampedModel, AssignableModel):
     frame = models.PositiveIntegerField()
     position = FloatArrayField()
     job = models.ForeignKey(
@@ -1755,7 +1755,7 @@ class Issue(DirtyFieldsMixin, TimestampedModel, AssignableModel):
         return self.job_id
 
 
-class Comment(DirtyFieldsMixin, TimestampedModel):
+class Comment(TimestampedModel):
     issue = models.ForeignKey(
         Issue, related_name="comments", related_query_name="comment", on_delete=models.CASCADE
     )

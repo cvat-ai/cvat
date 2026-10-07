@@ -31,6 +31,48 @@ import AnnotationHistory from './annotations-history';
 type AnnotationObject = Shape | Tag | Track | AudioInterval;
 type AnnotationState = ObjectState | AudioIntervalState;
 
+const SAVE_ACTION_BY_PROPERTY: Readonly<Record<string, HistoryActions>> = {
+    label: HistoryActions.CHANGED_LABEL,
+    attributes: HistoryActions.CHANGED_ATTRIBUTES,
+    points: HistoryActions.CHANGED_POINTS,
+    rotation: HistoryActions.CHANGED_ROTATION,
+    outside: HistoryActions.CHANGED_OUTSIDE,
+    occluded: HistoryActions.CHANGED_OCCLUDED,
+    zOrder: HistoryActions.CHANGED_ZORDER,
+    keyframe: HistoryActions.CHANGED_KEYFRAME,
+    lock: HistoryActions.CHANGED_LOCK,
+    pinned: HistoryActions.CHANGED_PINNED,
+    color: HistoryActions.CHANGED_COLOR,
+    hidden: HistoryActions.CHANGED_HIDDEN,
+    position: HistoryActions.CHANGED_AUDIO_POSITION,
+};
+
+function getSaveAction(states: AnnotationState[]): HistoryActions | null {
+    const actions = new Set<HistoryActions>();
+    const collectActions = (state: AnnotationState): void => {
+        Object.entries(state.updateFlags).forEach(([property, updated]) => {
+            if (updated) {
+                actions.add(SAVE_ACTION_BY_PROPERTY[property] ?? HistoryActions.CHANGED_OBJECTS);
+            }
+        });
+        if (state instanceof ObjectState) {
+            state.elements.forEach(collectActions);
+        }
+    };
+    states.forEach(collectActions);
+
+    if (!actions.size) {
+        return null;
+    }
+
+    if (actions.size === 2 &&
+        actions.has(HistoryActions.CHANGED_POINTS) && actions.has(HistoryActions.CHANGED_ROTATION)) {
+        return HistoryActions.CHANGED_ROTATION;
+    }
+
+    return actions.size === 1 ? [...actions][0] : HistoryActions.CHANGED_OBJECTS;
+}
+
 const validateAttributesList = (
     attributes: { spec_id: number, value: string }[],
 ): { spec_id: number, value: string }[] => {
@@ -159,7 +201,7 @@ export default class Collection {
 
     private _applyZOrderUpdates(frame: number, zOrders: Map<number, number>): ObjectState[] {
         const updatedStates: ObjectState[] = [];
-        this.history.beginTransaction(HistoryActions.CHANGED_ZORDER);
+        const ownsTransaction = this.history.beginTransaction(HistoryActions.CHANGED_ZORDER);
 
         try {
             for (const [clientID, zOrder] of zOrders) {
@@ -190,13 +232,70 @@ export default class Collection {
                 updatedStates.push(updatedState);
             }
         } catch (error: unknown) {
-            this.history.abortTransaction();
+            if (ownsTransaction) {
+                this.history.abortTransaction();
+            }
             throw error;
         } finally {
-            this.history.endTransaction();
+            if (ownsTransaction) {
+                this.history.endTransaction();
+            }
         }
 
         return updatedStates;
+    }
+
+    public removeBatch(objectStates: ObjectState[], force: boolean): number[] {
+        checkObjectType('objectStates', objectStates, null, { cls: Array, name: 'Array' });
+
+        const clientIDs = new Set<number>();
+        const uniqueStates = objectStates.filter((state) => {
+            if (clientIDs.has(state.clientID)) {
+                return false;
+            }
+            clientIDs.add(state.clientID);
+            return true;
+        });
+        const objects = uniqueStates.map((state) => {
+            const object = this.objects[state.clientID];
+            if (!(object instanceof Shape || object instanceof Track || object instanceof Tag)) {
+                throw new ArgumentError(`Object with client ID ${state.clientID} cannot be removed`);
+            }
+            return object;
+        });
+
+        const removedObjects: (Shape | Track | Tag)[] = [];
+        const ownsTransaction = this.history.beginTransaction(HistoryActions.REMOVED_SELECTION);
+        try {
+            for (let index = 0; index < uniqueStates.length; index++) {
+                const state = uniqueStates[index];
+                const object = objects[index];
+                if (object.removed) {
+                    removedObjects.push(object);
+                    continue;
+                }
+                if (object.lock && !force) {
+                    continue;
+                }
+                if (state.isGroundTruth) {
+                    continue;
+                }
+                if (object.delete(state.frame, force)) {
+                    removedObjects.push(object);
+                }
+            }
+        } catch (error: unknown) {
+            if (ownsTransaction) {
+                this.history.abortTransaction();
+            }
+            throw error;
+        } finally {
+            if (ownsTransaction) {
+                this.history.endTransaction();
+            }
+        }
+
+        return removedObjects.map((object) => object.clientID);
     }
 
     public import(data: Partial<SerializedCollection>): {
@@ -1275,7 +1374,7 @@ export default class Collection {
                         attributes,
                         descriptions: state.descriptions,
                         frame: state.frame,
-                        group: 0,
+                        group: state.group?.id ?? 0,
                         label_id: state.label.id,
                         outside: state.outside || false,
                         occluded: state.occluded || false,
@@ -1305,7 +1404,7 @@ export default class Collection {
                         attributes: attributes.filter((attr) => !labelAttributes[attr.spec_id].mutable),
                         descriptions: state.descriptions,
                         frame: state.frame,
-                        group: 0,
+                        group: state.group?.id ?? 0,
                         source: state.source,
                         label_id: state.label.id,
                         shapes: [
@@ -1321,7 +1420,7 @@ export default class Collection {
                             },
                         ],
                         elements: state.shapeType === 'skeleton' ? state.elements.map((element) => {
-                            const elementAttrValues = validateAttributesList(objectAttributesAsList(state));
+                            const elementAttrValues = validateAttributesList(objectAttributesAsList(element));
                             const elementAttributes = element.label.attributes.reduce((accumulator, attribute) => {
                                 accumulator[attribute.id] = attribute;
                                 return accumulator;
@@ -1342,7 +1441,7 @@ export default class Collection {
                                     occluded: element.occluded || false,
                                     rotation: element.rotation || 0,
                                     attributes: elementAttrValues
-                                        .filter((attr) => !elementAttributes[attr.spec_id].mutable),
+                                        .filter((attr) => elementAttributes[attr.spec_id].mutable),
                                 }],
                             });
                         }) : undefined,
@@ -1614,20 +1713,100 @@ export default class Collection {
         };
     }
 
-    public bulkSave(states: AudioIntervalState[]): void {
-        this.history.beginTransaction(HistoryActions.CHANGED_AUDIO_INTERVALS);
-        try {
-            states.forEach((state) => {
-                const interval = state.clientID === null ? null : this.objects[state.clientID];
-                if (!(interval instanceof AudioInterval)) return;
+    public splitInterval(state: AudioIntervalState, position: number): number | null {
+        checkObjectType('interval state', state, null, { cls: AudioIntervalState, name: 'AudioIntervalState' });
+        checkObjectType('interval position', position, 'number', null);
 
-                interval.save(state);
-            });
+        const { clientID } = state;
+        const interval = clientID === null ? null : this.objects[clientID];
+        if (!(interval instanceof AudioInterval) || interval.lock || interval.hidden) {
+            return null;
+        }
+
+        const currentState = interval.get();
+        const stop = currentState.stop ?? this.stopFrame + 1;
+        if (position <= currentState.start || position >= stop) {
+            return null;
+        }
+
+        const right = AudioIntervalState.create({
+            label: currentState.label,
+            start: position,
+            stop,
+            source: currentState.source,
+        });
+        right.attributes = { ...currentState.attributes };
+        right.color = currentState.color;
+
+        const ownsTransaction = this.history.beginTransaction(HistoryActions.SPLIT_INTERVAL);
+        try {
+            // update current as left
+            const updatedState = interval.get();
+            updatedState.stop = position;
+            interval.save(updatedState);
+
+            const [nextClientID] = this.put([right]);
+            return nextClientID;
         } catch (error: unknown) {
-            this.history.abortTransaction();
+            if (ownsTransaction) {
+                this.history.abortTransaction();
+            }
             throw error;
         } finally {
-            this.history.endTransaction();
+            if (ownsTransaction) {
+                this.history.endTransaction();
+            }
+        }
+    }
+
+    public saveStates(states: AnnotationState[]): void {
+        checkObjectType('states', states, null, { cls: Array, name: 'Array' });
+        if (!states.length) {
+            return;
+        }
+        states.forEach((state) => {
+            if (!(state instanceof ObjectState || state instanceof AudioIntervalState)) {
+                throw new ArgumentError(
+                    'Only annotation states for shapes, tracks, tags, and audio intervals can be saved',
+                );
+            }
+        });
+
+        const action = getSaveAction(states);
+        if (action === null) {
+            return;
+        }
+
+        const ownsTransaction = this.history.beginTransaction(action);
+        try {
+            states.forEach((state) => {
+                const object = state.clientID === null ? null : this.objects[state.clientID];
+                if (!object) {
+                    throw new ArgumentError(`Annotation with client ID ${state.clientID} was not found`);
+                }
+
+                if (state instanceof AudioIntervalState && object instanceof AudioInterval) {
+                    object.save(state);
+                } else if (
+                    state instanceof ObjectState &&
+                    (object instanceof Shape || object instanceof Track || object instanceof Tag)
+                ) {
+                    object.save(state.frame, state);
+                } else {
+                    throw new ArgumentError(
+                        `Annotation state does not match the annotation type for client ID ${state.clientID}`,
+                    );
+                }
+            });
+        } catch (error: unknown) {
+            if (ownsTransaction) {
+                this.history.abortTransaction();
+            }
+            throw error;
+        } finally {
+            if (ownsTransaction) {
+                this.history.endTransaction();
+            }
         }
     }
 

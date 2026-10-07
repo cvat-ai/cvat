@@ -14,10 +14,7 @@ import {
     ShapeSizeElement,
     stringifyPoints,
     BBox,
-    Box,
-    Point,
     readPointsFromShape,
-    clamp,
     translateToCanvas,
     computeWrappingBox,
     makeSVGFromTemplate,
@@ -31,8 +28,27 @@ import consts from './consts';
 import {
     DrawData, Geometry, RectDrawingMethod, Configuration, CuboidDrawingMethod,
 } from './canvasModel';
-
-import { cuboidFrom4Points, intersection } from './cuboid';
+import { cuboidFrom4Points } from './cuboid';
+import {
+    FinalCoordinates,
+    checkPasteConstraint as checkConstraint,
+    finalizePastedShapePoints,
+    getFinalCuboidCoordinates,
+    getFinalEllipseCoordinates,
+    getFinalPolyshapeCoordinates,
+    getFinalRectCoordinates,
+} from './paste';
+import {
+    fitRotatedShape,
+    fitRotatedPreviewFromGuide,
+    getClosestEquivalentFit,
+    interpolateRotatedShapeFit,
+    MIN_FITTED_ELLIPSE_POINTS,
+    needsAnotherFitAnimationFrame,
+    RotatedShapeFit,
+    RotatedShapeTopEdge,
+    withTopEdge,
+} from './rotatedShapeFitter';
 
 export interface DrawHandler {
     configure(configuration: Configuration): void;
@@ -41,52 +57,13 @@ export interface DrawHandler {
     cancel(): void;
 }
 
-interface FinalCoordinates {
-    points: number[];
-    box: Box;
-}
-
-function checkConstraint(shapeType: string, points: number[], box: Box | null = null): boolean {
-    if (shapeType === 'rectangle') {
-        const [xtl, ytl, xbr, ybr] = points;
-        const [width, height] = [xbr - xtl, ybr - ytl];
-        return width >= consts.SIZE_THRESHOLD && height >= consts.SIZE_THRESHOLD;
-    }
-
-    if (shapeType === 'polygon') {
-        const [width, height] = [box.xbr - box.xtl, box.ybr - box.ytl];
-        return (width >= consts.SIZE_THRESHOLD || height > consts.SIZE_THRESHOLD) && points.length >= 3 * 2;
-    }
-
-    if (shapeType === 'polyline') {
-        const [width, height] = [box.xbr - box.xtl, box.ybr - box.ytl];
-        return (width >= consts.SIZE_THRESHOLD || height >= consts.SIZE_THRESHOLD) && points.length >= 2 * 2;
-    }
-
-    if (shapeType === 'points') {
-        return points.length > 2 || (points.length === 2 && points[0] !== 0 && points[1] !== 0);
-    }
-
-    if (shapeType === 'ellipse') {
-        const [width, height] = [(points[2] - points[0]) * 2, (points[1] - points[3]) * 2];
-        return width >= consts.SIZE_THRESHOLD && height > consts.SIZE_THRESHOLD;
-    }
-
-    if (shapeType === 'cuboid') {
-        return points.length === 4 * 2 || points.length === 8 * 2 ||
-            (points.length === 2 * 2 &&
-                (points[2] - points[0]) >= consts.SIZE_THRESHOLD &&
-                (points[3] - points[1]) >= consts.SIZE_THRESHOLD
-            );
-    }
-
-    if (shapeType === 'skeleton') {
-        const [xtl, ytl, xbr, ybr] = points;
-        const [width, height] = [xbr - xtl, ybr - ytl];
-        return width >= consts.SIZE_THRESHOLD || height >= consts.SIZE_THRESHOLD;
-    }
-
-    return false;
+interface RotatedShapePreviewState {
+    svg: SVG.G | null;
+    animationFrame: number | null;
+    pendingPoints: number[] | null;
+    displayedFit: RotatedShapeFit | null;
+    targetFit: RotatedShapeFit | null;
+    topEdgeReference: RotatedShapeTopEdge | null;
 }
 
 export class DrawHandlerImpl implements DrawHandler {
@@ -124,238 +101,224 @@ export class DrawHandlerImpl implements DrawHandler {
     private canceled: boolean;
     private pointsGroup: SVG.G | null;
     private shapeSizeElement: ShapeSizeElement | null;
+    private controlPointsAnimationFrame: number | null;
+    private rotatedShapePreview: RotatedShapePreviewState;
+
+    private usesEllipseFit(): boolean {
+        return this.drawData.shapeType === 'ellipse' &&
+            this.drawData.rectDrawingMethod === RectDrawingMethod.ROTATED_POINTS;
+    }
+
+    private fitRotatedShape(points: number[]): RotatedShapeFit | null {
+        const preview = this.rotatedShapePreview;
+        const fitted = fitRotatedShape(points, {
+            fitter: this.drawData.rotatedShapeFitter,
+            useEllipseFit: this.usesEllipseFit(),
+            previousTopEdge: preview.topEdgeReference,
+            scale: this.geometry.scale,
+        });
+
+        if (fitted?.topEdge) {
+            preview.topEdgeReference = fitted.topEdge;
+        }
+
+        return fitted;
+    }
+
+    private fitRotatedPreview(points: number[]): RotatedShapeFit | null {
+        if (this.usesEllipseFit()) {
+            return points.length >= MIN_FITTED_ELLIPSE_POINTS * 2 ? this.fitRotatedShape(points) : null;
+        }
+
+        return points.length > 6 ? this.fitRotatedShape(points) : fitRotatedPreviewFromGuide(points);
+    }
+
+    private updateFitPreview(fitted: RotatedShapeFit | null): void {
+        const preview = this.rotatedShapePreview;
+        if (!fitted || fitted.size.width < consts.SIZE_THRESHOLD || fitted.size.height < consts.SIZE_THRESHOLD) {
+            if (preview.svg) {
+                preview.svg.remove();
+                preview.svg = null;
+            }
+            return;
+        }
+
+        const previewAttributes = {
+            'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
+            'stroke-dasharray': `${6 / this.geometry.scale} ${4 / this.geometry.scale}`,
+            'pointer-events': 'none',
+            fill: 'none',
+            stroke: this.outlinedBorders,
+        };
+
+        if (!preview.svg) {
+            preview.svg = this.canvas.group().attr({ 'pointer-events': 'none' });
+            preview.svg.rect().attr(previewAttributes);
+            if (this.drawData.shapeType === 'ellipse') {
+                preview.svg.ellipse().attr(previewAttributes);
+            }
+            preview.svg.circle().attr(previewAttributes);
+        }
+
+        preview.svg.untransform();
+        const [rectanglePreview, ...remainingPreviews] = preview.svg.children();
+        const ellipsePreview = this.drawData.shapeType === 'ellipse' ? remainingPreviews[0] : null;
+        const rotationPreview = this.drawData.shapeType === 'ellipse' ? remainingPreviews[1] : remainingPreviews[0];
+        rectanglePreview.attr({
+            ...previewAttributes,
+            x: fitted.center.x - fitted.size.width / 2,
+            y: fitted.center.y - fitted.size.height / 2,
+            width: fitted.size.width,
+            height: fitted.size.height,
+            fill: 'white',
+            'fill-opacity': 0.1,
+            stroke: 'black',
+            'stroke-dasharray': this.drawData.shapeType === 'ellipse' ? previewAttributes['stroke-dasharray'] : 'none',
+            'stroke-opacity': 1,
+        });
+        if (ellipsePreview) {
+            ellipsePreview.attr({
+                ...previewAttributes,
+                cx: fitted.center.x,
+                cy: fitted.center.y,
+                rx: fitted.size.width / 2,
+                ry: fitted.size.height / 2,
+                'stroke-dasharray': 'none',
+            });
+        }
+        const topEdge = fitted.topEdge || withTopEdge(fitted).topEdge;
+        const normalLength = Math.hypot(topEdge.normal.x, topEdge.normal.y);
+        const rotationPointOffset = (2 * this.controlPointsSize + 5) / this.geometry.scale;
+        const rotationPoint = {
+            x: topEdge.point.x + (topEdge.normal.x / normalLength) * rotationPointOffset,
+            y: topEdge.point.y + (topEdge.normal.y / normalLength) * rotationPointOffset,
+        };
+        const angleRadians = (fitted.angle * Math.PI) / 180;
+        const relativeX = rotationPoint.x - fitted.center.x;
+        const relativeY = rotationPoint.y - fitted.center.y;
+        rotationPreview.attr({
+            // The rectangle preview can use a 90-degree equivalent orientation to
+            // smooth its motion. Transform the semantic top-edge marker into that
+            // local coordinate system before the group itself is rotated.
+            cx: fitted.center.x + relativeX * Math.cos(angleRadians) + relativeY * Math.sin(angleRadians),
+            cy: fitted.center.y - relativeX * Math.sin(angleRadians) + relativeY * Math.cos(angleRadians),
+            r: this.controlPointsSize / this.geometry.scale,
+            fill: 'white',
+            stroke: CIRCLE_STROKE,
+            'stroke-width': consts.POINTS_STROKE_WIDTH / this.geometry.scale,
+            'stroke-dasharray': 'none',
+            'pointer-events': 'none',
+        });
+        preview.svg.rotate(fitted.angle, fitted.center.x, fitted.center.y);
+    }
+
+    private renderFitPreview(): void {
+        const preview = this.rotatedShapePreview;
+        preview.animationFrame = null;
+        const { pendingPoints } = preview;
+        if (pendingPoints) {
+            const fitted = this.fitRotatedPreview(pendingPoints);
+            const hasEnoughPointsForEllipse = this.usesEllipseFit() &&
+                pendingPoints.length >= MIN_FITTED_ELLIPSE_POINTS * 2;
+
+            preview.targetFit = fitted || (hasEnoughPointsForEllipse ?
+                preview.targetFit || preview.displayedFit : null);
+            preview.pendingPoints = null;
+        }
+
+        if (!preview.targetFit) {
+            preview.displayedFit = null;
+            this.updateFitPreview(null);
+            return;
+        }
+
+        const targetFit = preview.displayedFit ?
+            getClosestEquivalentFit(preview.targetFit, preview.displayedFit) : preview.targetFit;
+        const isExpandingFromLine = preview.displayedFit &&
+            Math.min(
+                preview.displayedFit.size.width,
+                preview.displayedFit.size.height,
+            ) < consts.SIZE_THRESHOLD;
+        let smoothingFactor = 0.1;
+        let topEdgeSmoothingFactor = 0.06;
+        if (isExpandingFromLine) {
+            smoothingFactor = 0.02;
+            topEdgeSmoothingFactor = 0.02;
+        } else if (this.usesEllipseFit()) {
+            smoothingFactor = 0.2;
+            topEdgeSmoothingFactor = 0.12;
+        }
+        const nextFit = preview.displayedFit ? interpolateRotatedShapeFit(
+            preview.displayedFit,
+            targetFit,
+            smoothingFactor,
+            topEdgeSmoothingFactor,
+        ) : targetFit;
+
+        preview.displayedFit = nextFit;
+        preview.targetFit = targetFit;
+        this.updateFitPreview(nextFit);
+
+        if (needsAnotherFitAnimationFrame(targetFit, nextFit)) {
+            preview.animationFrame = window.requestAnimationFrame((): void => this.renderFitPreview());
+        }
+    }
+
+    private scheduleFitPreview(points: number[]): void {
+        const preview = this.rotatedShapePreview;
+        preview.pendingPoints = points;
+        if (preview.animationFrame !== null) {
+            return;
+        }
+
+        preview.animationFrame = window.requestAnimationFrame((): void => this.renderFitPreview());
+    }
+
+    private resizeDrawControlPoints(): void {
+        if (!this.drawInstance) {
+            return;
+        }
+
+        const paintHandler = this.drawInstance.remember('_paintHandler');
+        if (paintHandler) {
+            for (const point of (paintHandler as any).set.members) {
+                this.strokePoint(point);
+                point.attr('stroke-width', `${consts.POINTS_STROKE_WIDTH / this.geometry.scale}`);
+                point.attr('r', `${this.controlPointsSize / this.geometry.scale}`);
+            }
+        }
+    }
+
+    private scheduleDrawControlPointsResize(): void {
+        if (this.controlPointsAnimationFrame !== null) {
+            return;
+        }
+
+        this.controlPointsAnimationFrame = window.requestAnimationFrame((): void => {
+            this.controlPointsAnimationFrame = null;
+            this.resizeDrawControlPoints();
+        });
+    }
 
     private getFinalEllipseCoordinates(points: number[], fitIntoFrame: boolean): number[] {
-        const { offset } = this.geometry;
-        const [cx, cy, rightX, topY] = points.map((coord: number) => coord - offset);
-        const [rx, ry] = [rightX - cx, cy - topY];
-        const frameWidth = this.geometry.image.width;
-        const frameHeight = this.geometry.image.height;
-        const [fitCX, fitCY] = fitIntoFrame ?
-            [clamp(cx, 0, frameWidth), clamp(cy, 0, frameHeight)] : [cx, cy];
-        const [fitRX, fitRY] = fitIntoFrame ?
-            [Math.min(rx, frameWidth - cx, cx), Math.min(ry, frameHeight - cy, cy)] : [rx, ry];
-        return [fitCX, fitCY, fitCX + fitRX, fitCY - fitRY];
+        return getFinalEllipseCoordinates(points, fitIntoFrame, this.geometry);
     }
 
     private getFinalRectCoordinates(points: number[], fitIntoFrame: boolean): number[] {
-        const frameWidth = this.geometry.image.width;
-        const frameHeight = this.geometry.image.height;
-        const { offset } = this.geometry;
-
-        let [xtl, ytl, xbr, ybr] = points.map((coord: number): number => coord - offset);
-
-        if (fitIntoFrame) {
-            xtl = Math.min(Math.max(xtl, 0), frameWidth);
-            xbr = Math.min(Math.max(xbr, 0), frameWidth);
-            ytl = Math.min(Math.max(ytl, 0), frameHeight);
-            ybr = Math.min(Math.max(ybr, 0), frameHeight);
-        }
-
-        return [xtl, ytl, xbr, ybr];
+        return getFinalRectCoordinates(points, fitIntoFrame, this.geometry);
     }
 
     private getFinalPolyshapeCoordinates(targetPoints: number[], fitIntoFrame: boolean): FinalCoordinates {
-        const { offset } = this.geometry;
-        let points = targetPoints.map((coord: number): number => coord - offset);
-        const box = {
-            xtl: Number.MAX_SAFE_INTEGER,
-            ytl: Number.MAX_SAFE_INTEGER,
-            xbr: Number.MIN_SAFE_INTEGER,
-            ybr: Number.MIN_SAFE_INTEGER,
-        };
-
-        const frameWidth = this.geometry.image.width;
-        const frameHeight = this.geometry.image.height;
-
-        enum Direction {
-            Horizontal,
-            Vertical,
-        }
-
-        function isBetween(x1: number, x2: number, c: number): boolean {
-            return c >= Math.min(x1, x2) && c <= Math.max(x1, x2);
-        }
-
-        const isInsideFrame = (p: Point, direction: Direction): boolean => {
-            if (direction === Direction.Horizontal) {
-                return isBetween(0, frameWidth, p.x);
-            }
-            return isBetween(0, frameHeight, p.y);
-        };
-
-        const findInersection = (p1: Point, p2: Point, p3: Point, p4: Point): number[] => {
-            const intersectionPoint = intersection(p1, p2, p3, p4);
-            if (
-                intersectionPoint &&
-                isBetween(p1.x, p2.x, intersectionPoint.x) &&
-                isBetween(p1.y, p2.y, intersectionPoint.y)
-            ) {
-                return [intersectionPoint.x, intersectionPoint.y];
-            }
-            return [];
-        };
-
-        const findIntersectionsWithFrameBorders = (p1: Point, p2: Point, direction: Direction): number[] => {
-            const resultPoints = [];
-            const leftLine = [
-                { x: 0, y: 0 },
-                { x: 0, y: frameHeight },
-            ];
-            const topLine = [
-                { x: frameWidth, y: 0 },
-                { x: 0, y: 0 },
-            ];
-            const rightLine = [
-                { x: frameWidth, y: frameHeight },
-                { x: frameWidth, y: 0 },
-            ];
-            const bottomLine = [
-                { x: 0, y: frameHeight },
-                { x: frameWidth, y: frameHeight },
-            ];
-
-            if (direction === Direction.Horizontal) {
-                resultPoints.push(...findInersection(p1, p2, leftLine[0], leftLine[1]));
-                resultPoints.push(...findInersection(p1, p2, rightLine[0], rightLine[1]));
-            } else {
-                resultPoints.push(...findInersection(p1, p2, bottomLine[0], bottomLine[1]));
-                resultPoints.push(...findInersection(p1, p2, topLine[0], topLine[1]));
-            }
-
-            if (resultPoints.length === 4) {
-                if (
-                    (p1.x === p2.x || Math.sign(resultPoints[0] - resultPoints[2]) !== Math.sign(p1.x - p2.x)) &&
-                    (p1.y === p2.y || Math.sign(resultPoints[1] - resultPoints[3]) !== Math.sign(p1.y - p2.y))
-                ) {
-                    [resultPoints[0], resultPoints[2]] = [resultPoints[2], resultPoints[0]];
-                    [resultPoints[1], resultPoints[3]] = [resultPoints[3], resultPoints[1]];
-                }
-            }
-            return resultPoints;
-        };
-
-        const crop = (shapePoints: number[], direction: Direction): number[] => {
-            const resultPoints = [];
-            const isPolyline = this.drawData.shapeType === 'polyline';
-            const isPolygon = this.drawData.shapeType === 'polygon';
-
-            for (let i = 0; i < shapePoints.length - 1; i += 2) {
-                const curPoint = { x: shapePoints[i], y: shapePoints[i + 1] };
-                if (isInsideFrame(curPoint, direction)) {
-                    resultPoints.push(shapePoints[i], shapePoints[i + 1]);
-                }
-                const isLastPoint = i === shapePoints.length - 2;
-                if (isLastPoint && (isPolyline || (isPolygon && shapePoints.length === 4))) {
-                    break;
-                }
-                const nextPoint = isLastPoint ?
-                    { x: shapePoints[0], y: shapePoints[1] } :
-                    { x: shapePoints[i + 2], y: shapePoints[i + 3] };
-                const intersectionPoints = findIntersectionsWithFrameBorders(curPoint, nextPoint, direction);
-                if (intersectionPoints.length !== 0) {
-                    resultPoints.push(...intersectionPoints);
-                }
-            }
-            return resultPoints;
-        };
-
-        if (fitIntoFrame) {
-            points = crop(points, Direction.Horizontal);
-            points = crop(points, Direction.Vertical);
-        }
-
-        for (let i = 0; i < points.length - 1; i += 2) {
-            box.xtl = Math.min(box.xtl, points[i]);
-            box.ytl = Math.min(box.ytl, points[i + 1]);
-            box.xbr = Math.max(box.xbr, points[i]);
-            box.ybr = Math.max(box.ybr, points[i + 1]);
-        }
-
-        return {
-            points,
-            box,
-        };
+        return getFinalPolyshapeCoordinates(
+            targetPoints,
+            fitIntoFrame,
+            this.drawData.shapeType,
+            this.geometry,
+        );
     }
 
     private getFinalCuboidCoordinates(targetPoints: number[]): FinalCoordinates {
-        const { offset } = this.geometry;
-        let points = targetPoints;
-
-        const box = {
-            xtl: Number.MAX_SAFE_INTEGER,
-            ytl: Number.MAX_SAFE_INTEGER,
-            xbr: Number.MIN_SAFE_INTEGER,
-            ybr: Number.MIN_SAFE_INTEGER,
-        };
-
-        const frameWidth = this.geometry.image.width;
-        const frameHeight = this.geometry.image.height;
-
-        const cuboidOffsets = [];
-        const minCuboidOffset = {
-            d: Number.MAX_SAFE_INTEGER,
-            dx: 0,
-            dy: 0,
-        };
-
-        for (let i = 0; i < points.length - 1; i += 2) {
-            const [x, y] = points.slice(i);
-
-            if (x >= offset && x <= offset + frameWidth && y >= offset && y <= offset + frameHeight) continue;
-
-            let xOffset = 0;
-            let yOffset = 0;
-
-            if (x < offset) {
-                xOffset = offset - x;
-            } else if (x > offset + frameWidth) {
-                xOffset = offset + frameWidth - x;
-            }
-
-            if (y < offset) {
-                yOffset = offset - y;
-            } else if (y > offset + frameHeight) {
-                yOffset = offset + frameHeight - y;
-            }
-
-            cuboidOffsets.push([xOffset, yOffset]);
-        }
-
-        if (cuboidOffsets.length === points.length / 2) {
-            cuboidOffsets.forEach((offsetCoords: number[]): void => {
-                const dx = offsetCoords[0] ** 2;
-                const dy = offsetCoords[1] ** 2;
-                if (Math.sqrt(dx + dy) < minCuboidOffset.d) {
-                    minCuboidOffset.d = Math.sqrt(dx + dy);
-                    [minCuboidOffset.dx, minCuboidOffset.dy] = offsetCoords;
-                }
-            });
-
-            points = points.map((coord: number, i: number): number => {
-                if (i % 2) {
-                    return coord + minCuboidOffset.dy;
-                }
-                return coord + minCuboidOffset.dx;
-            });
-        }
-
-        points.forEach((coord: number, i: number): number => {
-            if (i % 2 === 0) {
-                box.xtl = Math.min(box.xtl, coord);
-                box.xbr = Math.max(box.xbr, coord);
-            } else {
-                box.ytl = Math.min(box.ytl, coord);
-                box.ybr = Math.max(box.ybr, coord);
-            }
-
-            return coord;
-        });
-
-        return {
-            points: points.map((coord: number): number => coord - offset),
-            box,
-        };
+        return getFinalCuboidCoordinates(targetPoints, this.geometry);
     }
 
     private addCrosshair(): void {
@@ -393,6 +356,7 @@ export class DrawHandlerImpl implements DrawHandler {
         // We check if it is activated with remember function
         if (this.drawInstance.remember('_paintHandler')) {
             if (['polygon', 'polyline', 'points'].includes(this.drawData.shapeType) ||
+                this.drawData.rectDrawingMethod === RectDrawingMethod.ROTATED_POINTS ||
                 (this.drawData.shapeType === 'cuboid' &&
                 this.drawData.cuboidDrawingMethod === CuboidDrawingMethod.CORNER_POINTS)) {
                 // Check for unsaved drawn shapes
@@ -411,6 +375,24 @@ export class DrawHandlerImpl implements DrawHandler {
             this.pointsGroup.remove();
             this.pointsGroup = null;
         }
+
+        if (this.rotatedShapePreview.svg) {
+            this.rotatedShapePreview.svg.remove();
+            this.rotatedShapePreview.svg = null;
+        }
+
+        if (this.rotatedShapePreview.animationFrame !== null) {
+            window.cancelAnimationFrame(this.rotatedShapePreview.animationFrame);
+            this.rotatedShapePreview.animationFrame = null;
+        }
+        if (this.controlPointsAnimationFrame !== null) {
+            window.cancelAnimationFrame(this.controlPointsAnimationFrame);
+            this.controlPointsAnimationFrame = null;
+        }
+        this.rotatedShapePreview.pendingPoints = null;
+        this.rotatedShapePreview.displayedFit = null;
+        this.rotatedShapePreview.targetFit = null;
+        this.rotatedShapePreview.topEdgeReference = null;
 
         this.drawInstance.off();
         this.drawInstance.remove();
@@ -529,6 +511,92 @@ export class DrawHandlerImpl implements DrawHandler {
                 );
             } else {
                 this.onDrawDone(null);
+            }
+        });
+    }
+
+    private drawRotatedShapeByPoints(): void {
+        let placedPoints = 0;
+        this.drawInstance = (this.canvas as any)
+            .polygon()
+            .addClass('cvat_canvas_shape_drawing')
+            .attr({
+                'stroke-width': consts.BASE_STROKE_WIDTH / this.geometry.scale,
+                'stroke-dasharray': `${3 / this.geometry.scale} ${3 / this.geometry.scale}`,
+                'fill-opacity': 0,
+                stroke: this.outlinedBorders,
+            });
+
+        const updatePreview = (shape: SVG.Shape): void => {
+            const points = readPointsFromShape(shape);
+            const shouldShowEllipsePreview = this.drawData.shapeType !== 'ellipse' || placedPoints >= 5;
+            this.scheduleFitPreview(shouldShowEllipsePreview ? points : []);
+            this.scheduleDrawControlPointsResize();
+        };
+
+        this.drawInstance
+            .on('drawstart', (e: CustomEvent): void => {
+                placedPoints = 1;
+                updatePreview((e.target as any as { instance: SVG.Shape }).instance);
+            })
+            .on('drawpoint', (e: CustomEvent): void => {
+                placedPoints += 1;
+                updatePreview((e.target as any as { instance: SVG.Shape }).instance);
+            })
+            .on('drawupdate', (e: CustomEvent): void => {
+                updatePreview((e.target as any as { instance: SVG.Shape }).instance);
+            })
+            .on('undopoint', (e: CustomEvent): void => {
+                placedPoints = Math.max(1, placedPoints - 1);
+                updatePreview((e.target as any as { instance: SVG.Shape }).instance);
+            })
+            .on('drawdone', (e: CustomEvent): void => {
+                const fitted = this.fitRotatedShape(
+                    readPointsFromShape((e.target as any as { instance: SVG.Shape }).instance),
+                );
+                const { shapeType, redraw: clientID } = this.drawData;
+
+                if (this.canceled || !fitted ||
+                    fitted.size.width < consts.SIZE_THRESHOLD || fitted.size.height < consts.SIZE_THRESHOLD) {
+                    this.release();
+                    this.onDrawDone(null);
+                    return;
+                }
+
+                const box = [
+                    fitted.center.x - fitted.size.width / 2,
+                    fitted.center.y - fitted.size.height / 2,
+                    fitted.center.x + fitted.size.width / 2,
+                    fitted.center.y + fitted.size.height / 2,
+                ];
+                const points = shapeType === 'ellipse' ?
+                    this.getFinalEllipseCoordinates([
+                        fitted.center.x,
+                        fitted.center.y,
+                        fitted.center.x + fitted.size.width / 2,
+                        fitted.center.y - fitted.size.height / 2,
+                    ], false) :
+                    this.getFinalRectCoordinates(box, false);
+
+                this.release();
+                if (checkConstraint(shapeType, points)) {
+                    this.onDrawDone({
+                        clientID,
+                        shapeType,
+                        points,
+                        rotation: fitted.angle,
+                    }, Date.now() - this.startTimestamp);
+                } else {
+                    this.onDrawDone(null);
+                }
+            });
+
+        // Undoing a point is provided by the same right-click interaction as polygons.
+        this.canvas.on('mousedown.draw', (e: MouseEvent): void => {
+            if (e.button === 2) {
+                e.stopPropagation();
+                e.preventDefault();
+                this.drawInstance.draw('undo');
             }
         });
     }
@@ -926,11 +994,14 @@ export class DrawHandlerImpl implements DrawHandler {
                 .map((coord: string): number => +coord);
 
             const { shapeType } = this.drawData.initialState;
-            const { points, box } = shapeType === 'cuboid' ?
-                this.getFinalCuboidCoordinates(targetPoints) :
-                this.getFinalPolyshapeCoordinates(targetPoints, true);
+            const points = finalizePastedShapePoints(
+                shapeType,
+                targetPoints,
+                this.drawData.initialState.rotation,
+                this.geometry,
+            );
 
-            if (checkConstraint(shapeType, points, box)) {
+            if (points) {
                 this.onDrawDone(
                     {
                         shapeType,
@@ -985,13 +1056,18 @@ export class DrawHandlerImpl implements DrawHandler {
 
         this.drawInstance.on('done', (e: CustomEvent): void => {
             const points = readPointsFromShape((e.target as any as { instance: SVG.Rect }).instance);
-            const [xtl, ytl, xbr, ybr] = this.getFinalRectCoordinates(points, !this.drawData.initialState.rotation);
-            if (checkConstraint('rectangle', [xtl, ytl, xbr, ybr])) {
+            const finalPoints = finalizePastedShapePoints(
+                'rectangle',
+                points,
+                this.drawData.initialState.rotation,
+                this.geometry,
+            );
+            if (finalPoints) {
                 this.onDrawDone(
                     {
                         shapeType: this.drawData.initialState.shapeType,
                         objectType: this.drawData.initialState.objectType,
-                        points: [xtl, ytl, xbr, ybr],
+                        points: finalPoints,
                         occluded: this.drawData.initialState.occluded,
                         attributes: { ...this.drawData.initialState.attributes },
                         label: this.drawData.initialState.label,
@@ -1023,10 +1099,13 @@ export class DrawHandlerImpl implements DrawHandler {
         this.pasteShape();
 
         this.drawInstance.on('done', (e: CustomEvent): void => {
-            const points = this.getFinalEllipseCoordinates(
-                readPointsFromShape((e.target as any as { instance: SVG.Ellipse }).instance), false,
+            const points = finalizePastedShapePoints(
+                'ellipse',
+                readPointsFromShape((e.target as any as { instance: SVG.Ellipse }).instance),
+                this.drawData.initialState.rotation,
+                this.geometry,
             );
-            if (checkConstraint('ellipse', points)) {
+            if (points) {
                 this.onDrawDone(
                     {
                         shapeType: this.drawData.initialState.shapeType,
@@ -1271,7 +1350,9 @@ export class DrawHandlerImpl implements DrawHandler {
             this.setupPasteEvents();
         } else {
             if (this.drawData.shapeType === 'rectangle') {
-                if (this.drawData.rectDrawingMethod === RectDrawingMethod.EXTREME_POINTS) {
+                if (this.drawData.rectDrawingMethod === RectDrawingMethod.ROTATED_POINTS) {
+                    this.drawRotatedShapeByPoints();
+                } else if (this.drawData.rectDrawingMethod === RectDrawingMethod.EXTREME_POINTS) {
                     this.drawBoxBy4Points(); // draw box by extreme clicking
                 } else {
                     this.drawBox(); // default box drawing
@@ -1285,8 +1366,12 @@ export class DrawHandlerImpl implements DrawHandler {
             } else if (this.drawData.shapeType === 'points') {
                 this.drawPoints();
             } else if (this.drawData.shapeType === 'ellipse') {
-                this.drawEllipse();
-                this.shapeSizeElement = displayShapeSize(this.canvas, this.text);
+                if (this.drawData.rectDrawingMethod === RectDrawingMethod.ROTATED_POINTS) {
+                    this.drawRotatedShapeByPoints();
+                } else {
+                    this.drawEllipse();
+                    this.shapeSizeElement = displayShapeSize(this.canvas, this.text);
+                }
             } else if (this.drawData.shapeType === 'cuboid') {
                 if (this.drawData.cuboidDrawingMethod === CuboidDrawingMethod.CORNER_POINTS) {
                     this.drawCuboidBy4Points();
@@ -1298,7 +1383,8 @@ export class DrawHandlerImpl implements DrawHandler {
                 this.drawSkeleton();
             }
 
-            if (this.drawData.shapeType !== 'ellipse') {
+            if (this.drawData.shapeType !== 'ellipse' ||
+                this.drawData.rectDrawingMethod === RectDrawingMethod.ROTATED_POINTS) {
                 this.setupDrawEvents();
             }
         }
@@ -1335,6 +1421,15 @@ export class DrawHandlerImpl implements DrawHandler {
         this.crosshair = new Crosshair();
         this.drawInstance = null;
         this.pointsGroup = null;
+        this.controlPointsAnimationFrame = null;
+        this.rotatedShapePreview = {
+            svg: null,
+            animationFrame: null,
+            pendingPoints: null,
+            displayedFit: null,
+            targetFit: null,
+            topEdgeReference: null,
+        };
         this.getDrawnStates = getDrawnStates;
         this.isCtrlKeyDown = isCtrlKeyDown;
         this.cursorPosition = {
@@ -1444,14 +1539,18 @@ export class DrawHandlerImpl implements DrawHandler {
             this.drawInstance.attr({
                 'stroke-width': consts.BASE_STROKE_WIDTH / geometry.scale,
             });
+            this.resizeDrawControlPoints();
+        }
 
-            const paintHandler = this.drawInstance.remember('_paintHandler');
-            if (paintHandler) {
-                for (const point of (paintHandler as any).set.members) {
-                    this.strokePoint(point);
-                    point.attr('stroke-width', `${consts.POINTS_STROKE_WIDTH / geometry.scale}`);
-                    point.attr('r', `${this.controlPointsSize / geometry.scale}`);
-                }
+        if (this.rotatedShapePreview.svg) {
+            this.rotatedShapePreview.svg.children().forEach((preview: SVG.Element): void => {
+                preview.attr({
+                    'stroke-width': consts.BASE_STROKE_WIDTH / geometry.scale,
+                    'stroke-dasharray': `${6 / geometry.scale} ${4 / geometry.scale}`,
+                });
+            });
+            if (this.rotatedShapePreview.displayedFit) {
+                this.updateFitPreview(this.rotatedShapePreview.displayedFit);
             }
         }
     }

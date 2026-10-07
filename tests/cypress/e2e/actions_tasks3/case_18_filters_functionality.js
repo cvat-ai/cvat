@@ -35,7 +35,7 @@ context('Filters functionality.', () => {
         numberOfPoints: null,
     };
     const createRectangleTrack2Points = {
-        points: 'By 2 Points',
+        points: '2 Points',
         type: 'Track',
         labelName: labelTrack,
         firstX: 260,
@@ -44,7 +44,7 @@ context('Filters functionality.', () => {
         secondY: 250,
     };
     const createRectangleShape4Points = {
-        points: 'By 4 Points',
+        points: '4 Points',
         type: 'Shape',
         labelName: labelShape,
         firstX: 550,

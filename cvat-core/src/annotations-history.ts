@@ -11,8 +11,8 @@ interface ActionItem {
     action: HistoryActions;
     clientIds: number[];
     frame: number | null;
-    undo: () => void;
-    redo: () => void;
+    undo: () => void | number[] | Promise<void | number[]>;
+    redo: () => void | number[] | Promise<void | number[]>;
 }
 
 class HistoryTransaction implements ActionItem {
@@ -41,16 +41,22 @@ class HistoryTransaction implements ActionItem {
         this.actions.push(action);
     }
 
-    public async undo(): Promise<void> {
+    public async undo(): Promise<void | number[]> {
+        let affectedIDs: number[] | undefined;
         for (let index = this.actions.length - 1; index >= 0; index--) {
-            await this.actions[index].undo();
+            const result = await this.actions[index].undo();
+            if (result) affectedIDs = result;
         }
+        return affectedIDs;
     }
 
-    public async redo(): Promise<void> {
+    public async redo(): Promise<void | number[]> {
+        let affectedIDs: number[] | undefined;
         for (const action of this.actions) {
-            await action.redo();
+            const result = await action.redo();
+            if (result) affectedIDs = result;
         }
+        return affectedIDs;
     }
 }
 
@@ -82,8 +88,8 @@ export default class AnnotationHistory {
 
     public do(
         action: HistoryActions,
-        undo: () => void,
-        redo: () => void,
+        undo: ActionItem['undo'],
+        redo: ActionItem['redo'],
         clientIds: number[],
         frame: number | null,
     ): void {
@@ -107,9 +113,49 @@ export default class AnnotationHistory {
         this._redo = [];
     }
 
-    public beginTransaction(action: HistoryActions): void {
-        if (this.transaction) throw new Error('Another history transaction is already active');
+    public recordSelection(
+        previousClientIDs: number[],
+        nextClientIDs: number[],
+        frame: number,
+        mergeWithPrevious = false,
+    ): void {
+        if (!mergeWithPrevious) {
+            this.do(
+                HistoryActions.CHANGED_SELECTION,
+                () => [...previousClientIDs],
+                () => [...nextClientIDs],
+                [...new Set([...previousClientIDs, ...nextClientIDs])],
+                frame,
+            );
+            return;
+        }
+
+        if (this.frozen) return;
+        const previousAction = this._undo.pop();
+        if (!previousAction || previousAction.action !== HistoryActions.CHANGED_HIDDEN ||
+            previousAction.frame !== frame) {
+            if (previousAction) this._undo.push(previousAction);
+            throw new Error('Only a hidden-state change can be merged with a selection change');
+        }
+
+        const transaction = new HistoryTransaction(HistoryActions.CHANGED_HIDDEN_AND_SELECTION);
+        transaction.add(previousAction);
+        transaction.add({
+            action: HistoryActions.CHANGED_SELECTION,
+            undo: () => [...previousClientIDs],
+            redo: () => [...nextClientIDs],
+            clientIds: [...new Set([...previousClientIDs, ...nextClientIDs])],
+            frame,
+        });
+        this._undo.push(transaction);
+        this._redo = [];
+    }
+
+    public beginTransaction(action: HistoryActions): boolean {
+        if (this.transaction) return false;
+
         this.transaction = new HistoryTransaction(action);
+        return true;
     }
 
     public endTransaction(): void {
@@ -133,9 +179,9 @@ export default class AnnotationHistory {
         for (let i = 0; i < count; i++) {
             const action = this._undo.pop();
             if (action) {
-                await action.undo();
+                const clientIds = await action.undo();
                 this._redo.push(action);
-                affectedObjects.push(...action.clientIds);
+                affectedObjects.push(...(clientIds || action.clientIds));
             } else {
                 break;
             }
@@ -149,9 +195,9 @@ export default class AnnotationHistory {
         for (let i = 0; i < count; i++) {
             const action = this._redo.pop();
             if (action) {
-                await action.redo();
+                const clientIds = await action.redo();
                 this._undo.push(action);
-                affectedObjects.push(...action.clientIds);
+                affectedObjects.push(...(clientIds || action.clientIds));
             } else {
                 break;
             }

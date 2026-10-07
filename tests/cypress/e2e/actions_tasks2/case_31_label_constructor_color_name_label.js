@@ -29,7 +29,7 @@ context('Label constructor. Color label. Label name editing', () => {
     const labelAdditionalAttrs = false;
 
     const createRectangleShape2Points = {
-        points: 'By 2 Points',
+        points: '2 Points',
         type: 'Shape',
         labelName: colorRed,
         firstX: 100,

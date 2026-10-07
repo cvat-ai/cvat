@@ -4,16 +4,16 @@
 
 /// <reference types="cypress" />
 
-import { taskName, firstLabelName } from '../../support/const_audio';
+import { audioFile, taskName, firstLabelName } from '../../support/const_audio';
 
 context('Audio annotation. Import transcriptions from a TSV file.', () => {
     const caseId = 'audio_29';
 
     const tsvFile = 'audio_transcriptions.tsv';
     const tsvContent = [
-        ['start', 'stop', 'label', 'transcription'].join('\t'),
-        ['00:00:00.000000', '00:00:01.000000', firstLabelName, 'hello world'].join('\t'),
-        ['00:00:01.000000', '00:00:02.000000', firstLabelName, 'second line'].join('\t'),
+        ['filename', 'start', 'stop', 'label', 'transcription'].join('\t'),
+        [audioFile, '00:00:00.000000', '00:00:01.000000', firstLabelName, 'hello world'].join('\t'),
+        [audioFile, '00:00:01.000000', '00:00:02.000000', firstLabelName, 'second line'].join('\t'),
         '',
     ].join('\n');
 
@@ -35,6 +35,8 @@ context('Audio annotation. Import transcriptions from a TSV file.', () => {
             cy.intercept('GET', '/api/jobs/**/annotations?**').as('uploadAnnotationsGet');
 
             cy.interactMenu('Upload annotations');
+            // Option for 2D export is not present
+            cy.contains('.cvat-modal-import-dataset', 'Convert masks to polygons').should('not.exist');
             cy.get('.cvat-modal-import-dataset').find('.cvat-modal-import-select').click();
             cy.contains('.cvat-modal-import-dataset-option-item', format).click();
             cy.get('.cvat-modal-import-select').should('contain.text', format);

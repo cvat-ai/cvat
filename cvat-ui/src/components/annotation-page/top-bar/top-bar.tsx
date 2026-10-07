@@ -10,6 +10,7 @@ import {
     ActiveControl, NavigationType, ToolsBlockerState, Workspace,
 } from 'reducers';
 import { Job } from 'cvat-core-wrapper';
+import { RectDrawingMethod } from 'cvat-canvas-wrapper';
 import { KeyMap } from 'utils/mousetrap-react';
 import { Chapter } from 'cvat-core/src/frames';
 import LeftGroup from './left-group';
@@ -45,6 +46,7 @@ interface Props {
     focusFrameInputShortcut: string;
     searchFrameByNameShortcut: string;
     activeControl: ActiveControl;
+    rectDrawingMethod?: RectDrawingMethod;
     toolsBlockerState: ToolsBlockerState;
     annotationFilters: object[];
     initialOpenGuide: boolean;
@@ -110,6 +112,7 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
         focusFrameInputShortcut,
         searchFrameByNameShortcut,
         activeControl,
+        rectDrawingMethod,
         toolsBlockerState,
         annotationFilters,
         initialOpenGuide,
@@ -215,6 +218,7 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
                 undoShortcut={undoShortcut}
                 redoShortcut={redoShortcut}
                 activeControl={activeControl}
+                rectDrawingMethod={rectDrawingMethod}
                 drawShortcut={drawShortcut}
                 switchToolsBlockerShortcut={switchToolsBlockerShortcut}
                 toolsBlockerState={toolsBlockerState}

@@ -4,8 +4,20 @@
 
 import { QualityRequirement } from 'cvat-core-wrapper';
 import {
-    QualityRequirementAnnotationType, QualityRequirementMetric, SerializedQualityRequirementSaveData,
+    QUALITY_REQUIREMENT_METRICS,
+    parseQualityTargetMetric,
+} from 'cvat-core/src/quality/quality-requirement-utils';
+import {
+    QualityMetric, QualityMetricAggregation, QualityRequirementAnnotationType,
+    QualityRequirementMetric, SerializedQualityRequirementSaveData,
 } from 'cvat-core/src/quality/server-response-types';
+
+export {
+    parseQualityTargetMetric,
+    QualityMetric,
+    QualityMetricAggregation,
+    QualityRequirementMetric,
+};
 
 export const ANNOTATION_TYPE_LABELS: Record<string, string> = {
     [QualityRequirementAnnotationType.TAG]: 'Tag',
@@ -19,15 +31,36 @@ export const ANNOTATION_TYPE_LABELS: Record<string, string> = {
     [QualityRequirementAnnotationType.ELLIPSE]: 'Ellipse',
 };
 
+const BASE_METRIC_LABELS: Record<QualityMetric, string> = {
+    [QualityMetric.ACCURACY]: 'Accuracy',
+    [QualityMetric.PRECISION]: 'Precision',
+    [QualityMetric.RECALL]: 'Recall',
+    [QualityMetric.JACCARD_INDEX]: 'Jaccard Index',
+    [QualityMetric.DICE]: 'Dice Coefficient',
+};
+
+export function formatBaseMetric(value: QualityRequirementMetric): string {
+    return BASE_METRIC_LABELS[parseQualityTargetMetric(value).metric];
+}
+
 export const METRIC_LABELS: Record<string, string> = {
-    [QualityRequirementMetric.ACCURACY]: 'Accuracy',
-    [QualityRequirementMetric.PRECISION]: 'Precision',
-    [QualityRequirementMetric.RECALL]: 'Recall',
-    f1_score: 'F1 Score',
+    ...Object.fromEntries(QUALITY_REQUIREMENT_METRICS.map((value) => {
+        const { metric, aggregation } = parseQualityTargetMetric(value);
+        const label = BASE_METRIC_LABELS[metric];
+
+        if (aggregation === QualityMetricAggregation.MEAN) {
+            return [value, `${label} (macro/mean)`];
+        }
+        if (aggregation === QualityMetricAggregation.LABEL) {
+            return [value, `${label} (worst label)`];
+        }
+
+        return [value, `${label} (micro)`];
+    })),
 };
 
 export const ANNOTATION_TYPES: QualityRequirementAnnotationType[] = Object.values(QualityRequirementAnnotationType);
-export const METRICS: QualityRequirementMetric[] = Object.values(QualityRequirementMetric);
+export const METRICS: QualityRequirementMetric[] = QUALITY_REQUIREMENT_METRICS;
 export const QUALITY_REQUIREMENTS_ENABLED_FIELD = 'requirementsEnabled';
 
 export function buildRequirementsById(requirements: QualityRequirement[]): Map<number, QualityRequirement> {

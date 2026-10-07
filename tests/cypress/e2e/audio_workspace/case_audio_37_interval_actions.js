@@ -42,6 +42,11 @@ context('Audio annotation. Interval actions.', () => {
         cy.getAudioRegionHandle('right').should(exists ? 'exist' : 'not.exist');
     };
 
+    const expectRegionResizeControls = (exists) => {
+        cy.getAudioRegionHandle('left').should(exists ? 'exist' : 'not.exist');
+        cy.getAudioRegionHandle('right').should(exists ? 'exist' : 'not.exist');
+    };
+
     const expectCursorAtIntervalBoundary = (boundary) => {
         cy.getAudioWaveformCursor().then(($cursor) => {
             cy.getAudioRegion().should('have.length', 1).then(($region) => {
@@ -90,14 +95,15 @@ context('Audio annotation. Interval actions.', () => {
         });
 
         it('Plays the selected interval once with Shift+Space', () => {
-            createInterval(100, 112);
+            createInterval(100, 140);
 
             cy.realPress(['Shift', 'Space']);
             cy.get('.cvat-player-pause-button').should('exist');
             cy.get('.cvat-player-play-button', { timeout: 8000 }).should('exist');
+            expectCursorAtIntervalBoundary('end');
         });
 
-        it('Fits the selected interval into the waveform viewport with I', () => {
+        it('Fits the selected interval into the waveform viewport with I shortcut', () => {
             createInterval(300, 450);
             cy.audioSliderSetValue('cvat-audio-zoom-control', '{downarrow}', 40);
             cy.getAudioWaveformScrollContainer().then(($scroll) => {
@@ -127,11 +133,12 @@ context('Audio annotation. Interval actions.', () => {
                 });
 
                 it('Plays the selected interval once from its action', () => {
-                    createInterval(100, 112);
+                    createInterval(100, 140);
 
                     clickIntervalAction('playInterval');
                     cy.get('.cvat-player-pause-button').should('exist');
                     cy.get('.cvat-player-play-button', { timeout: 8000 }).should('exist');
+                    expectCursorAtIntervalBoundary('end');
                 });
 
                 it('Fits the selected interval into the waveform viewport from the menu', () => {
@@ -180,7 +187,8 @@ context('Audio annotation. Interval actions.', () => {
                         clickIntervalAction('pin');
                         getIntervalAction('unpin')
                             .find('.anticon-pushpin').invoke('html').should('not.equal', outlinedMarkup);
-                        expectRegionEditingControls(false);
+                        cy.getAudioRegion().should('not.have.css', 'cursor', 'grab');
+                        expectRegionResizeControls(true);
 
                         cy.get('body').type('p');
                         getIntervalAction('pin').find('.anticon-pushpin').invoke('html').should('equal', outlinedMarkup);
