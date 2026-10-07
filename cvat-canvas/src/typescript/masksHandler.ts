@@ -450,6 +450,7 @@ export class MasksHandlerImpl implements MasksHandler {
             fireRightClick: true,
             selection: false,
             defaultCursor: 'inherit',
+            enableRetinaScaling: false,
         });
         this.canvas.imageSmoothingEnabled = false;
         this.drawnObjects = this.createDrawnObjectsArray();
