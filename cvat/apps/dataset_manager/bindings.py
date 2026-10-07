@@ -2831,31 +2831,41 @@ def load_dataset_data(
 
         subset_dataset = subset.as_dataset()
 
-        dataset_files = {
-            "media": [],
-            "data_root": dataset.data_path + osp.sep,
-        }
-
+        dataset_root = dataset.data_path + osp.sep
         root_paths = set()
+
+        media_paths = []
+
+        def add_media_path(media_path: str, item_id: str | None = None) -> None:
+            media_path = osp.abspath(media_path)
+            if not media_path.startswith(dataset_root):
+                raise CvatImportError(f"Media file {media_path!r} is outside of the dataset root")
+
+            media_paths.append(media_path)
+
+            if item_id is not None:
+                match media_path.rsplit(item_id, 1):
+                    case [root, _] if root.startswith(dataset_root):
+                        root_paths.add(root)
+
         for dataset_item in subset_dataset:
             if isinstance(dataset_item.media, dm.Image) and dataset_item.media.has_data:
-                dataset_files["media"].append(dataset_item.media.path)
-                data_root = dataset_item.media.path.rsplit(dataset_item.id, 1)
-                if len(data_root) == 2:
-                    root_paths.add(data_root[0])
+                add_media_path(dataset_item.media.path, dataset_item.id)
             elif isinstance(dataset_item.media, dm.PointCloud):
-                dataset_files["media"].append(dataset_item.media.path)
-                data_root = dataset_item.media.path.rsplit(dataset_item.id, 1)
-                if len(data_root) == 2:
-                    root_paths.add(data_root[0])
+                add_media_path(dataset_item.media.path, dataset_item.id)
 
                 if isinstance(dataset_item.media.extra_images, list):
-                    dataset_files["media"] += [ri.path for ri in dataset_item.media.extra_images]
+                    for ri in dataset_item.media.extra_images:
+                        add_media_path(ri.path)
 
         if len(root_paths):
-            dataset_files["data_root"] = osp.commonpath(root_paths) + osp.sep
+            dataset_root = osp.commonpath(root_paths) + osp.sep
 
-        project_annotation.add_task(task_fields, dataset_files, project_data)
+        project_annotation.add_task(
+            task_fields,
+            {"media": media_paths, "data_root": dataset_root},
+            project_data,
+        )
 
 
 class NoMediaInAnnotationFileError(CvatImportError):
