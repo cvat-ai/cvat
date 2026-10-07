@@ -5,6 +5,7 @@
 import {
     Attribute, ObjectState, ObjectType, ShapeType,
 } from 'cvat-core-wrapper';
+import { isMacOS } from 'utils/platform-checker';
 
 type MultiSelectModifier = 'shift' | 'ctrl' | 'alt' | 'meta';
 type ModifierEvent = Pick<MouseEvent, 'shiftKey' | 'ctrlKey' | 'altKey' | 'metaKey'>;
@@ -156,7 +157,7 @@ export function getSelectionAttributeState(states: ObjectState[]): SelectionAttr
 
 export const MULTI_SELECT_MODIFIER: MultiSelectModifier = 'shift';
 export const MULTI_SELECT_OBJECT_MODIFIER: MultiSelectModifier =
-    /Mac|iPod|iPhone|iPad/.test(navigator.platform) ? 'meta' : 'ctrl';
+    isMacOS() ? 'meta' : 'ctrl';
 
 function isModifierPressed(event: ModifierEvent, modifier: MultiSelectModifier): boolean {
     const modifiers = {
