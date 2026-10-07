@@ -1,0 +1,76 @@
+server {
+    root /usr/share/nginx/html;
+
+    # Disable server signature to make it slightly harder for
+    # attackers to find known vulnerabilities. See
+    # https://datatracker.ietf.org/doc/html/rfc9110#name-server
+    server_tokens off;
+
+    gzip on;
+    gzip_comp_level 6;
+    gzip_http_version 1.1;
+    gzip_types
+        text/html
+        application/javascript
+        application/x-javascript
+        text/javascript
+        application/wasm
+        image/x-icon;
+
+    location / {
+        # Any route that doesn't exist on the server (e.g. /devices)
+        try_files $uri $uri/ /index.html;
+        include /etc/nginx/snippets/index-common.conf;
+    }
+
+    location = /index.html {
+        include /etc/nginx/snippets/index-common.conf;
+        add_header Content-Security-Policy "${CVAT_CSP_MAIN_SPA_ENFORCE}" always;
+        add_header Content-Security-Policy-Report-Only "${CVAT_CSP_MAIN_SPA_REPORT_ONLY}" always;
+        add_header Reporting-Endpoints "${CVAT_CSP_MAIN_SPA_REPORTING_ENDPOINTS}" always;
+    }
+
+    location ~ \.map$ {
+        return 404;
+        access_log off;
+    }
+
+    location ^~ /assets/workers/imageUnzipWorker/ {
+        include /etc/nginx/snippets/assets-common.conf;
+        add_header Content-Security-Policy "${CVAT_CSP_IMAGE_UNZIP_WORKER_ENFORCE}" always;
+        add_header Content-Security-Policy-Report-Only "${CVAT_CSP_IMAGE_UNZIP_WORKER_REPORT_ONLY}" always;
+        add_header Reporting-Endpoints "${CVAT_CSP_IMAGE_UNZIP_WORKER_REPORTING_ENDPOINTS}" always;
+    }
+
+    location ^~ /assets/workers/videoDecoderWorker/ {
+        include /etc/nginx/snippets/assets-common.conf;
+        add_header Content-Security-Policy "${CVAT_CSP_VIDEO_DECODER_WORKER_ENFORCE}" always;
+        add_header Content-Security-Policy-Report-Only "${CVAT_CSP_VIDEO_DECODER_WORKER_REPORT_ONLY}" always;
+        add_header Reporting-Endpoints "${CVAT_CSP_VIDEO_DECODER_WORKER_REPORTING_ENDPOINTS}" always;
+    }
+
+    location ^~ /assets/workers/downloadWorker/ {
+        include /etc/nginx/snippets/assets-common.conf;
+        add_header Content-Security-Policy "${CVAT_CSP_DOWNLOAD_WORKER_ENFORCE}" always;
+        add_header Content-Security-Policy-Report-Only "${CVAT_CSP_DOWNLOAD_WORKER_REPORT_ONLY}" always;
+        add_header Reporting-Endpoints "${CVAT_CSP_DOWNLOAD_WORKER_REPORTING_ENDPOINTS}" always;
+    }
+
+    location ^~ /assets/workers/polygonSimplifierWorker/ {
+        include /etc/nginx/snippets/assets-common.conf;
+        add_header Content-Security-Policy "${CVAT_CSP_POLYGON_SIMPLIFIER_WORKER_ENFORCE}" always;
+        add_header Content-Security-Policy-Report-Only "${CVAT_CSP_POLYGON_SIMPLIFIER_WORKER_REPORT_ONLY}" always;
+        add_header Reporting-Endpoints "${CVAT_CSP_POLYGON_SIMPLIFIER_WORKER_REPORTING_ENDPOINTS}" always;
+    }
+
+    location ^~ /assets/workers/samInferenceWorker/ {
+        include /etc/nginx/snippets/assets-common.conf;
+        add_header Content-Security-Policy "${CVAT_CSP_SAM_INFERENCE_WORKER_ENFORCE}" always;
+        add_header Content-Security-Policy-Report-Only "${CVAT_CSP_SAM_INFERENCE_WORKER_REPORT_ONLY}" always;
+        add_header Reporting-Endpoints "${CVAT_CSP_SAM_INFERENCE_WORKER_REPORTING_ENDPOINTS}" always;
+    }
+
+    location /assets {
+        include /etc/nginx/snippets/assets-common.conf;
+    }
+}
