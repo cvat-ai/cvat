@@ -337,7 +337,7 @@ class TestAudioQualityDatabase(TransactionTestCase):
         stored = TaskQualityCalculator().compute_report(self.task)
         result = ComparisonReport.from_json(stored.data)
         self.assertFalse(result.comparison_summary.has_comparison_scope)
-        self.assertEqual(result.comparison_summary.jobs.not_checkable, {self.job.id})
+        self.assertCountEqual(result.comparison_summary.jobs.not_checkable, [self.job.id])
         self.assertIsNone(result.groups[self.requirement.name].frame_results)
         self.assertEqual(result.get_conflicts(), [])
 

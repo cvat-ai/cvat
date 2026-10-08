@@ -78,7 +78,7 @@ context('Audio quality requirements and version 3 reports', () => {
         cy.get('.cvat-quality-settings-save-btn').contains('button', 'Save').click();
         cy.wait('@saveQualitySettings').its('response.statusCode').should('eq', 200);
         cy.contains('.ant-tabs-tab', 'Management').click();
-        cy.contains('Ground Truth covers the whole recording.').should('be.visible');
+        cy.contains('Quality is compared where the job and Ground Truth time ranges overlap.').should('be.visible');
         cy.get('.cvat-frame-allocation-table').should('not.exist');
         cy.get('@frameMetadata.all').should('have.length', 0);
 
