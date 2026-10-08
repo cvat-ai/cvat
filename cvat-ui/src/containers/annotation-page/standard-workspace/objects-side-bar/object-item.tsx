@@ -692,7 +692,6 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
                     attributes={attributes}
                     elements={elements}
                     normalizedKeyMap={normalizedKeyMap}
-                    keyMap={keyMap}
                     labels={labels}
                     colorBy={colorBy}
                     activate={this.activate}

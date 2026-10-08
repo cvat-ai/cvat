@@ -206,7 +206,7 @@ function LabelsListComponent(): JSX.Element {
                 Math.min(anchorIndex, currentIndex),
                 Math.max(anchorIndex, currentIndex) + 1,
             );
-        } else if (isMultiSelectObjectModifierPressed(event, keyMap)) {
+        } else if (isMultiSelectObjectModifierPressed(event)) {
             affectedLabelIDs = [labelID];
         } else {
             return;
