@@ -26,6 +26,7 @@ import { CombinedState, InstanceType } from 'reducers';
 import { updateJobAsync } from 'actions/jobs-actions';
 import { ActionUnion, createAction } from 'utils/redux';
 import { useInstanceId, useInstanceType, usePlugins } from 'utils/hooks';
+import { inheritsProjectQualitySettings } from 'utils/quality';
 import QualityRequirementsTab from './quality-requirements-tab';
 import QualityManagementTab from './task-quality/quality-magement-tab';
 import QualitySettingsTab, { UpdateSettingsData } from './quality-settings-tab';
@@ -282,12 +283,10 @@ function QualityControlPage(): JSX.Element {
             } else if (type === InstanceType.TASK) {
                 [settings] = await core.analytics.quality.settings.get({ taskID: id });
 
-                // A task that inherits project settings has no requirements of its own; they
-                // live on the project settings, so load them for the requirement-based views.
-                const projectId = targetInstance instanceof Task ? targetInstance.projectId : null;
-                if (settings?.inherit && typeof projectId === 'number') {
+                // Inherited task settings remain stored, but project settings apply to its quality views.
+                if (inheritsProjectQualitySettings(targetInstance, settings)) {
                     [parentSettings] = await core.analytics.quality.settings.get(
-                        { projectID: projectId, parentType: 'project' },
+                        { projectID: targetInstance.projectId, parentType: 'project' },
                     );
                 }
             } else {
@@ -343,8 +342,15 @@ function QualityControlPage(): JSX.Element {
                 return updatedSetting || childSetting;
             }) ?? null;
 
+            let parentSettings: QualitySettings | null = null;
+            if (inheritsProjectQualitySettings(instance, updatedInstanceSettings)) {
+                [parentSettings] = await core.analytics.quality.settings.get({
+                    projectID: instance.projectId, parentType: 'project',
+                });
+            }
+
             dispatch(reducerActions.setQualitySettings(
-                updatedInstanceSettings, updatedChildrenSettings, state.qualitySettings.parentSettings,
+                updatedInstanceSettings, updatedChildrenSettings, parentSettings,
             ));
             notification.info({ message: 'Settings have been updated' });
         } catch (error: unknown) {
@@ -359,7 +365,7 @@ function QualityControlPage(): JSX.Element {
     }, [
         state.qualitySettings.settings,
         state.qualitySettings.childrenSettings,
-        state.qualitySettings.parentSettings,
+        instance,
     ]);
 
     const refreshQualitySettings = useCallback(async (): Promise<void> => {
@@ -549,7 +555,7 @@ function QualityControlPage(): JSX.Element {
                     <QualitySettingsTab
                         instance={instance}
                         fetching={qualitySettingsFetching}
-                        qualitySettings={{ settings: qualitySettings, childrenSettings: childrenQualitySettings }}
+                        qualitySettings={state.qualitySettings}
                         labels={instance.labels}
                         setQualitySettings={onSaveQualitySettings}
                         refreshQualitySettings={refreshQualitySettings}

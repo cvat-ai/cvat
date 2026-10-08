@@ -22,7 +22,7 @@ For more information, see:
 - **ICDAR Recognition 1.0** (Text recognition):
   - Supported annotations: Tags with the `icdar` label
   - Attributes: `caption`.
-- **ICDAR Detection 1.0** (Text detection):
+- **ICDAR Localization 1.0** (Text detection):
   - Supported annotations: Bounding Boxes, Polygons with the `icdar` label
   - Attributes: `text`.
 - **ICDAR Segmentation 1.0** (Text segmentation):

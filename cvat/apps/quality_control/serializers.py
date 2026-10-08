@@ -449,11 +449,11 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
         min_value=0,
         max_value=1,
         help_text=textwrap.dedent("""
-            Like IoU threshold, but for points.
-            The percent of the bbox side, used as the radius of the circle around the GT point,
-            where the checked point is expected to be. For boxes with different width and
-            height, the "side" is computed as a geometric mean of the width and height.
-            Read more: https://cocodataset.org/#keypoints-eval
+            The point "size" (the OKS sigma), as a fraction of the object size, defined by
+            the point size base. Corresponds to the standard deviation of the keypoint position.
+            Larger values give larger areas around the GT points, where the checked points
+            are accepted.
+            Read more about the point matching in the documentation.
             """).strip(),
     )
     match_orientation = serializers.BooleanField(
@@ -682,7 +682,12 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
         extra_kwargs = {k: {"required": False} for k in fields}
 
         for field_name, help_text in {
-            "iou_threshold": "Used for distinction between matched / unmatched shapes",
+            "iou_threshold": """
+                The overlap threshold used for distinction between matched / unmatched objects.
+                The specific meaning can vary depending on the shape type:
+                for rectangles, polygons, ellipses, lines and masks it's the IoU threshold;
+                for points and skeletons, it's the OKS threshold.
+            """,
             "point_size_base": """
                 When comparing point annotations (including both separate points and point groups),
                 the point size parameter defines matching area for each GT point based to the
