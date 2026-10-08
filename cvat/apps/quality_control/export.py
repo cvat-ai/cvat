@@ -5,7 +5,6 @@
 from __future__ import annotations
 
 import csv
-import math
 from io import BytesIO, StringIO
 from typing import IO, Any
 from zipfile import ZIP_DEFLATED, ZipFile
@@ -263,13 +262,6 @@ def prepare_requirement_confusion_matrix_json(
         else None
     )
     result = confusion_matrix.to_dict()
-    # The unmatched row has undefined metrics (NaN); JSON represents these as null.
-    for matrix_metric in models.QualityMetric:
-        values = result.get(matrix_metric.value)
-        if values is not None:
-            result[matrix_metric.value] = [
-                value if value is not None and math.isfinite(value) else None for value in values
-            ]
     result["target_metric_summary"] = {
         "metric": metric.metric.value,
         "aggregation": metric.aggregation.value,
