@@ -102,13 +102,15 @@ def send_request_failed_signal(
     exc_value: BaseException,
     exc_traceback: Any,
 ) -> None:
-    from cvat.apps.engine.rq import BaseRQMeta
+    from cvat.apps.engine.rq import BaseRQMeta, save_job_failure_metadata
 
     meta = BaseRQMeta.for_job(rq_job)
 
     if rq_job_will_be_retried(rq_job=rq_job):
         meta.reset_on_retry()
         return
+
+    save_job_failure_metadata(rq_job, exc_type, exc_value)
 
     request_manager_cls_path = meta.request_manager_cls
     sender = (
