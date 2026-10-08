@@ -90,7 +90,7 @@ django-crum==0.7.9
     # via -r cvat/requirements/base.in
 django-dirtyfields==1.9.9
     # via -r cvat/requirements/base.in
-django-filter==25.2
+django-filter==26.1
     # via -r cvat/requirements/base.in
 django-health-check==3.20.0
     # via -r cvat/requirements/base.in

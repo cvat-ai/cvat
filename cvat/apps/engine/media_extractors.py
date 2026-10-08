@@ -9,6 +9,7 @@ import io
 import itertools
 import os
 import shutil
+import stat
 import tempfile
 import zipfile
 from abc import ABC, abstractmethod
@@ -424,6 +425,13 @@ class ArchiveReader(DirectoryReader):
         extract_with_patool(self._archive_source, tmp_dir)
         if not extract_dir:
             os.remove(self._archive_source)
+
+        # Remove all irregular files to prevent unexpected behavior.
+        for path in Path(tmp_dir).rglob("*"):
+            mode = path.lstat().st_mode
+            if not (stat.S_ISREG(mode) or stat.S_ISDIR(mode)):
+                path.unlink()
+
         super().__init__(
             source_paths=[tmp_dir],
             step=step,
