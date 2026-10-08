@@ -3915,8 +3915,6 @@ def rq_exception_handler(rq_job: RQJob, exc_type: type[Exception], exc_value: Ex
     if rq_job.get_status(refresh=False) in (RQJobStatus.QUEUED, RQJobStatus.SCHEDULED):
         return True
 
-    # Chunk jobs already save failure metadata in on_failure, before RQ publishes FAILED,
-    # so API readers can reconstruct the exception. Avoid writing it again here.
     # The global exception handlers, like this function, are called by RQ AFTER the job status is
     # set to FAILED. In some queues (e.g. chunk and request), jobs already save failure metadata in
     # on_failure(), which is called before RQ publishes status, so API readers can reconstruct the
