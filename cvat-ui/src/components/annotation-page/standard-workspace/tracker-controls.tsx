@@ -12,6 +12,7 @@ import CVATTooltip from 'components/common/cvat-tooltip';
 interface TrackerControls {
     trackerName: string;
     trackedClientIDs: ReadonlySet<number>;
+    savingClientIDs: ReadonlySet<number>;
     toggleTracking(objectState: ObjectState): Promise<void>;
 }
 
@@ -36,18 +37,22 @@ export function TrackerButton({ objectState }: { objectState: ObjectState }): JS
     if (!controls) return null;
 
     const isTracked = controls.trackedClientIDs.has(objectState.clientID as number);
+    const isSaving = controls.savingClientIDs.has(objectState.clientID as number);
     const title = isTracked ? 'Disable tracking' : `Enable tracking using ${controls.trackerName}`;
     const onClick = (): void => {
         controls.toggleTracking(objectState);
     };
+    const TrackingIcon = isTracked ? EnvironmentFilled : EnvironmentOutlined;
     return (
         <Col>
             <CVATTooltip overlay={title}>
-                {isTracked ? (
-                    <EnvironmentFilled className='cvat-object-item-button-tracking' onClick={onClick} />
-                ) : (
-                    <EnvironmentOutlined className='cvat-object-item-button-tracking' onClick={onClick} />
-                )}
+                <TrackingIcon
+                    className='cvat-object-item-button-tracking'
+                    onClick={isSaving ? undefined : onClick}
+                    aria-disabled={isSaving}
+                    aria-busy={isSaving}
+                    style={isSaving ? { opacity: 0.5, cursor: 'not-allowed' } : undefined}
+                />
             </CVATTooltip>
         </Col>
     );

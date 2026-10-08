@@ -236,6 +236,7 @@ const onRemoveAnnotations = registerPlugin();
 export class ToolsControlComponent extends React.PureComponent<Props, State> {
     public static contextType = TrackerControlsUpdateContext;
     private mounted = false;
+    private savingTrackingClientIDs = new Set<number>();
     private get updateTrackerControls(): React.ContextType<typeof TrackerControlsUpdateContext> {
         return this.context as React.ContextType<typeof TrackerControlsUpdateContext>;
     }
@@ -822,6 +823,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         this.updateTrackerControls(activeTracker && trackers.length && labels.length && !frameData.deleted ? {
             trackerName: activeTracker.name,
             trackedClientIDs: new Set(trackedShapes.map((shape) => shape.clientID)),
+            savingClientIDs: new Set(this.savingTrackingClientIDs),
             toggleTracking: this.toggleTracking,
         } : null);
     };
@@ -834,24 +836,42 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         ) return;
 
         const clientID = objectState.clientID as number;
+        if (this.savingTrackingClientIDs.has(clientID)) return;
+        this.savingTrackingClientIDs.add(clientID);
         const isTracked = trackedShapes.some((shape) => shape.clientID === clientID);
-        objectState.descriptions = isTracked ? [] : [`Trackable (${activeTracker.name})`];
-        if (!isTracked) objectState.keyframe = true;
-        await objectState.save();
-        if (!this.mounted) return;
+        const originalDescriptions = [...objectState.descriptions];
+        const originalKeyframe = objectState.keyframe;
+        try {
+            this.publishTrackerControls();
+            objectState.descriptions = isTracked ? [] : [`Trackable (${activeTracker.name})`];
+            if (!isTracked) objectState.keyframe = true;
+            await objectState.save();
+            if (!this.mounted) return;
 
-        this.setState((state) => ({
-            trackedShapes: isTracked ? state.trackedShapes.filter((shape) => shape.clientID !== clientID) : [
-                ...state.trackedShapes.filter((shape) => shape.clientID !== clientID),
-                {
-                    clientID,
-                    serverlessState: null,
-                    shapePoints: objectState.points as number[],
-                    trackerModel: activeTracker,
-                },
-            ],
-        }));
-        this.props.fetchAnnotations();
+            this.setState((state) => ({
+                trackedShapes: isTracked ? state.trackedShapes.filter((shape) => shape.clientID !== clientID) : [
+                    ...state.trackedShapes.filter((shape) => shape.clientID !== clientID),
+                    {
+                        clientID,
+                        serverlessState: null,
+                        shapePoints: objectState.points as number[],
+                        trackerModel: activeTracker,
+                    },
+                ],
+            }));
+            this.props.fetchAnnotations();
+        } catch (error: unknown) {
+            objectState.descriptions = originalDescriptions;
+            objectState.keyframe = originalKeyframe;
+            notification.error({
+                message: 'Tracking error occurred',
+                description: <CVATMarkdown>{error instanceof Error ? error.message : String(error)}</CVATMarkdown>,
+                duration: null,
+            });
+        } finally {
+            this.savingTrackingClientIDs.delete(clientID);
+            if (this.mounted) this.publishTrackerControls();
+        }
     };
 
     private async checkTrackedStates(prevProps: Props): Promise<void> {
