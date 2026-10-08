@@ -35,7 +35,6 @@ import { Canvas, CanvasMode } from 'cvat-canvas-wrapper';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import { filterApplicableLabels } from 'utils/filter-applicable-labels';
 import { toClipboard } from 'utils/to-clipboard';
-import { KeyMap } from 'utils/mousetrap-react';
 import changeObjectOrientation, { type OrientationAngle } from 'utils/change-object-orientation';
 import { getObjectStateByClientID } from 'utils/objects-sidebar';
 
@@ -66,7 +65,6 @@ interface StateToProps {
     minZLayer: number;
     maxZLayer: number;
     normalizedKeyMap: Record<string, string>;
-    keyMap: KeyMap;
     canvasInstance: Canvas | Canvas3d;
     focusedObjectPadding: number;
 }
@@ -104,7 +102,7 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
             shapes: { colorBy },
             workspace: { focusedObjectPadding },
         },
-        shortcuts: { normalizedKeyMap, keyMap },
+        shortcuts: { normalizedKeyMap },
     } = state;
 
     const { objectStates: states, clientID } = own;
@@ -126,7 +124,6 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
         minZLayer,
         maxZLayer,
         normalizedKeyMap,
-        keyMap,
         canvasInstance: canvasInstance as Canvas | Canvas3d,
         focusedObjectPadding,
     };
@@ -518,7 +515,6 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
             selectedStatesID,
             colorBy,
             normalizedKeyMap,
-            keyMap,
             jobInstance,
             zLayerDragProps,
             zLayerDragging,
@@ -551,7 +547,6 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
                 partsExpanded={partsExpanded}
                 onPartsExpandedChange={onPartsExpandedChange}
                 normalizedKeyMap={normalizedKeyMap}
-                keyMap={keyMap}
                 labels={labels}
                 colorBy={colorBy}
                 activate={this.activate}

@@ -8,7 +8,6 @@ import { useDraggable, useDroppable } from '@dnd-kit/core';
 
 import { ObjectState } from 'cvat-core-wrapper';
 import ObjectItemContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/object-item';
-import { KeyMap } from 'utils/mousetrap-react';
 import { isMultiSelectObjectModifierPressed } from 'utils/multi-selection';
 import { layerObjectDropID, objectDragID } from './index';
 
@@ -22,7 +21,6 @@ interface Props {
     visibleSkeletonElements: Record<number, number[]>;
     toggleSelection(): void;
     selectRange(): void;
-    keyMap: KeyMap;
     multiSelectionSupported: boolean;
     partsExpanded?: boolean;
     onPartsExpandedChange?(clientID: number, expanded: boolean): void;
@@ -36,7 +34,7 @@ function isRangeModifierPressed(event: React.MouseEvent | React.PointerEvent): b
 function DraggableObjectItem(props: Props): JSX.Element {
     const {
         objectStates, clientID, zOrder, lastInLayer, visibleObjectIDs, draggable, visibleSkeletonElements,
-        toggleSelection, selectRange, keyMap, multiSelectionSupported, partsExpanded, onPartsExpandedChange,
+        toggleSelection, selectRange, multiSelectionSupported, partsExpanded, onPartsExpandedChange,
     } = props;
 
     const {
@@ -65,7 +63,7 @@ function DraggableObjectItem(props: Props): JSX.Element {
             {...(draggable ? listeners : {})}
             onPointerDown={(event: React.PointerEvent): void => {
                 if (draggable && (!multiSelectionSupported ||
-                    (!isRangeModifierPressed(event) && !isMultiSelectObjectModifierPressed(event, keyMap)))) {
+                    (!isRangeModifierPressed(event) && !isMultiSelectObjectModifierPressed(event)))) {
                     listeners?.onPointerDown?.(event);
                 }
             }}
@@ -75,7 +73,7 @@ function DraggableObjectItem(props: Props): JSX.Element {
                     event.preventDefault();
                     event.stopPropagation();
                     selectRange();
-                } else if (isMultiSelectObjectModifierPressed(event, keyMap)) {
+                } else if (isMultiSelectObjectModifierPressed(event)) {
                     event.preventDefault();
                     event.stopPropagation();
                     toggleSelection();

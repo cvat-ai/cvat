@@ -26,7 +26,6 @@ import VirtualList, { VirtualListScrollTarget } from 'components/common/virtual-
 import {
     OBJECTS_SIDEBAR_EXPAND_Z_LAYER_EVENT,
 } from 'utils/objects-sidebar';
-import { KeyMap } from 'utils/mousetrap-react';
 import {
     isMultiSelectObjectModifierPressed, sanitizeSelectedObjectIDs,
 } from 'utils/multi-selection';
@@ -81,7 +80,6 @@ interface Props {
     currentLayer: number;
     hiddenLayers: Set<number>;
     selectedStatesID: number[];
-    keyMap: KeyMap;
     sortedStatesID: number[];
     objectStates: ObjectState[];
     visibleSkeletonElements: Record<number, number[]>;
@@ -114,7 +112,6 @@ function ObjectListComponent(props: Props): JSX.Element {
         currentLayer,
         hiddenLayers,
         selectedStatesID,
-        keyMap,
         sortedStatesID,
         objectStates,
         visibleSkeletonElements,
@@ -429,7 +426,7 @@ function ObjectListComponent(props: Props): JSX.Element {
             return;
         }
 
-        if (!isMultiSelectObjectModifierPressed(event, keyMap)) {
+        if (!isMultiSelectObjectModifierPressed(event)) {
             return;
         }
 
@@ -568,7 +565,6 @@ function ObjectListComponent(props: Props): JSX.Element {
                                 selectRange={(): void => (
                                     selectObjectRangeWithinLayer(row.clientID, row.zOrder as number)
                                 )}
-                                keyMap={keyMap}
                                 multiSelectionSupported={multiSelectionSupported}
                             />
                         </div>
