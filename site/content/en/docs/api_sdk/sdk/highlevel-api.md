@@ -78,6 +78,75 @@ with make_client("http://localhost", credentials=('user', 'password')) as client
     # untouched.
     task2.remove()
 ```
+## Creating a task from data sources
+
+`client.tasks.create_from_data()` can create a task from three kinds of data sources,
+selected with the `resource_type` argument:
+
+- `ResourceType.LOCAL` - files located on the client machine (the default, used in the
+  example above).
+- `ResourceType.SHARE` - files located on the server's mounted share or in a connected
+  cloud storage. The `resources` are file names as seen by the server.
+- `ResourceType.REMOTE` - files downloaded by the server from the given URLs.
+
+Options that control how the data is read (chunking, caching, sorting, cloud storage id,
+etc.) are passed as a dictionary via the `data_params` argument. These keys correspond to
+the fields of the [data request model](../lowlevel-api) accepted by the server.
+
+### Creating a task from cloud storage with a manifest
+
+To create a task from files stored in a connected cloud storage, pass the cloud storage id
+and the file names through `data_params` and use `ResourceType.SHARE`. When you reference a
+manifest file (`manifest.jsonl`), the server requires **either** `use_cache=True` **or**
+`sorting_method="predefined"` - otherwise task creation fails with:
+
+​```
+A manifest file can only be used with the 'use cache' option
+or when 'sorting_method' is 'predefined'
+​```
+
+The following example creates a task from a manifest stored in cloud storage with id `1`,
+using the on-demand cache:
+
+​```python
+from cvat_sdk import make_client
+from cvat_sdk.core.proxies.tasks import ResourceType
+
+with make_client("https://app.cvat.ai", credentials=("user", "password")) as client:
+    client.organization_slug = "myorg"
+
+    task_spec = {
+        "name": "cloud storage task",
+        "labels": [{"name": "car"}],
+    }
+
+    task = client.tasks.create_from_data(
+        spec=task_spec,
+        resource_type=ResourceType.SHARE,
+        resources=["manifest.jsonl"],
+        data_params={
+            "cloud_storage_id": 1,
+            "use_cache": True,
+            # or, instead of use_cache, read all frames up front in manifest order:
+            # "sorting_method": "predefined",
+            "filename_pattern": "*",  # select every file described by the manifest
+        },
+    )
+
+    print(f"Created task {task.id} with {task.size} frames")
+​```
+
+To attach the task's exports/imports to the same cloud storage, add `source_storage` and
+`target_storage` to `task_spec`:
+
+​```python
+    task_spec = {
+        "name": "cloud storage task",
+        "labels": [{"name": "car"}],
+        "source_storage": {"location": "cloud_storage", "cloud_storage_id": 1},
+        "target_storage": {"location": "cloud_storage", "cloud_storage_id": 1},
+    }
+​```
 
 ## Client
 
