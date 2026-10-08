@@ -230,6 +230,34 @@ context('Selection in the virtualized sidebar', { scrollBehavior: false }, () =>
             cy.get(`${details} .ant-collapse-content-active`).should('not.exist');
             jumpToObject(objectCount / 2);
             cy.get(`${details} .ant-collapse-content-active`).should('exist');
+            cy.get(`${details} .ant-motion-collapse`).should('not.exist');
+            cy.get(holder).then(($holder) => {
+                const savedOffset = $holder[0].scrollTop;
+                const savedWidth = $holder[0].clientWidth;
+                const rowSelector = `#cvat-objects-sidebar-state-item-${objectCount / 2}`;
+                const savedHeight = $holder[0].querySelector(rowSelector).getBoundingClientRect().height;
+                expect(savedOffset, 'test starts away from the top').to.be.greaterThan(0);
+                const checkRestored = () => {
+                    cy.get(holder).should(($current) => {
+                        expect($current[0].clientWidth, 'viewport is fully reopened').to.equal(savedWidth);
+                        expect($current[0].scrollTop, 'previous scroll position is preserved').to.be.closeTo(savedOffset, 1);
+                    });
+                    cy.get(`${holder} ${rowSelector}`).should(($row) => {
+                        expect($row[0].getBoundingClientRect().height, 'expanded row height is preserved')
+                            .to.be.closeTo(savedHeight, 1);
+                    });
+                };
+                for (let repetition = 0; repetition < 2; repetition++) {
+                    cy.get('.cvat-objects-sidebar-tabs').contains('[role="tab"]', 'Labels').click();
+                    cy.get(holder).should(($hidden) => expect($hidden[0].clientHeight).to.equal(0));
+                    cy.get('.cvat-objects-sidebar-tabs').contains('[role="tab"]', 'Objects').click();
+                    checkRestored();
+                    cy.get('.cvat-objects-sidebar-sider').click();
+                    cy.get(holder).should(($hidden) => expect($hidden[0].clientWidth).to.equal(0));
+                    cy.get('.cvat-objects-sidebar-sider').click();
+                    checkRestored();
+                }
+            });
             cy.get(holder).should(($holder) => {
                 const viewport = $holder[0].getBoundingClientRect();
                 const rows = Array.from($holder[0].querySelectorAll('[data-virtual-list-row]'))

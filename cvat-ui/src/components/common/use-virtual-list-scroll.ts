@@ -21,6 +21,7 @@ interface Props {
     virtualizer: Virtualizer<HTMLDivElement, HTMLDivElement>;
     viewportRef: React.RefObject<HTMLDivElement>;
     expectedScrollRef: React.MutableRefObject<number | null>;
+    isViewportVisible(): boolean;
     onComplete(target: VirtualListScrollTarget, reason: ScrollCompletion): void;
 }
 
@@ -67,7 +68,7 @@ export default function useVirtualListScroll(props: Props): {
             }
         };
         alignTarget = (): void => {
-            if (!viewport.clientHeight || !viewport.clientWidth) return;
+            if (!propsRef.current.isViewportVisible()) return;
             const row = virtualizer.elementsCache.get(target.key);
             if (!row?.isConnected) return;
 
@@ -159,7 +160,7 @@ export default function useVirtualListScroll(props: Props): {
         cancel: () => cancelRef.current(),
         onScroll: (): void => {
             const viewport = propsRef.current.viewportRef.current;
-            if (!viewport) return;
+            if (!viewport || !propsRef.current.isViewportVisible()) return;
             const offset = viewport.scrollTop;
             const expected = propsRef.current.expectedScrollRef.current;
             const max = Math.max(0, viewport.scrollHeight - viewport.clientHeight);

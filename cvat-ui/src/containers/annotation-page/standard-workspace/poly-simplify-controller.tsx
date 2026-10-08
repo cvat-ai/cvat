@@ -45,7 +45,7 @@ interface SessionProps extends Omit<Props, 'objectState' | 'jobInstance'> {
 }
 
 interface SessionControls {
-    active: boolean;
+    visible: boolean;
     approxPolyAccuracy: number;
     onChangeAccuracy(value: number): void;
     apply(points: number[]): Promise<void>;
@@ -53,12 +53,17 @@ interface SessionControls {
     updatePreview(points: number[]): Promise<void>;
 }
 
+enum SimplifyState {
+    INITIALIZING = 'initializing',
+    ACTIVE = 'active',
+    FINISHING = 'finishing',
+    FINISHED = 'finished',
+}
+
 interface SimplifySession extends Pick<SessionProps, 'objectState' | 'jobInstance' | 'updateState' | 'close'> {
     mounted: boolean;
-    active: boolean;
+    phase: SimplifyState;
     frozen: boolean;
-    finished: boolean;
-    finishing: boolean;
     needsRestore: boolean;
     pending: Promise<void>;
     frameNumber: number;
@@ -69,7 +74,7 @@ interface SimplifySession extends Pick<SessionProps, 'objectState' | 'jobInstanc
 const sessionCompletionByJob = new WeakMap<Job, Promise<void>>();
 
 function usePolySimplifySession(props: SessionProps): SessionControls {
-    const [active, setActive] = useState(false);
+    const [controlsVisible, setControlsVisible] = useState(false);
     const [approxPolyAccuracy, setApproxPolyAccuracy] = useState(props.defaultApproxPolyAccuracy);
     const propsRef = useRef(props);
     propsRef.current = props;
@@ -98,36 +103,34 @@ function usePolySimplifySession(props: SessionProps): SessionControls {
         const session = currentSession;
         const { objectState, updateState } = session;
         try {
-            if (!session.finished && session.needsRestore) {
+            if (session.phase !== SimplifyState.FINISHED && session.needsRestore) {
                 objectState.points = [...session.originalPoints];
                 await updateState(objectState);
                 session.needsRestore = false;
             }
         } finally {
             await unfreeze(session);
-            session.finished = true;
+            session.phase = SimplifyState.FINISHED;
         }
     }, [unfreeze]);
 
     const cancel = useCallback(async (): Promise<void> => {
         const session = sessionRef.current;
-        if (!session || session.finishing || session.finished) return;
-        session.finishing = true;
+        if (!session || session.phase === SimplifyState.FINISHING || session.phase === SimplifyState.FINISHED) return;
+        session.phase = SimplifyState.FINISHING;
         await enqueue(session, async (): Promise<void> => {
             try {
                 await restore(session);
             } finally {
                 if (session.mounted) session.close(session.objectState.clientID as number);
-                session.finishing = false;
             }
         });
     }, [enqueue, restore]);
 
     const apply = useCallback(async (simplifiedPoints: number[]): Promise<void> => {
         const session = sessionRef.current;
-        if (!session || !session.mounted || !session.active || session.finishing ||
-            session.finished || !isCurrentFrame(session)) return;
-        session.finishing = true;
+        if (!session || !session.mounted || session.phase !== SimplifyState.ACTIVE || !isCurrentFrame(session)) return;
+        session.phase = SimplifyState.FINISHING;
         const { objectState, updateState, close } = session;
         await enqueue(session, async (): Promise<void> => {
             try {
@@ -149,26 +152,30 @@ function usePolySimplifySession(props: SessionProps): SessionControls {
                 session.needsRestore = true;
                 await updateState(objectState);
                 // A final save already in flight completes the commit, even after unmount.
-                session.finished = true;
+                session.phase = SimplifyState.FINISHED;
                 if (session.mounted) close(objectState.clientID as number);
             } catch (error) {
                 await restore(session);
                 if (session.mounted) close(objectState.clientID as number);
                 throw error;
             } finally {
-                session.finishing = false;
-                // Navigation may have requested cancellation while Apply was still in flight.
-                if (session.mounted && !isCurrentFrame(session)) cancel();
+                // An interrupted Apply still finishes cleanup, even if navigation tried to cancel it mid-flight.
+                if (session.phase === SimplifyState.FINISHING) {
+                    try {
+                        await restore(session);
+                    } finally {
+                        if (session.mounted) close(objectState.clientID as number);
+                    }
+                }
             }
         });
-    }, [cancel, enqueue, isCurrentFrame, restore, unfreeze]);
+    }, [enqueue, isCurrentFrame, restore, unfreeze]);
 
     const updatePreview = useCallback(async (points: number[]): Promise<void> => {
         const session = sessionRef.current;
-        if (!session || !session.mounted || !session.active || session.finishing ||
-            session.finished || !isCurrentFrame(session)) return;
+        if (!session || !session.mounted || session.phase !== SimplifyState.ACTIVE || !isCurrentFrame(session)) return;
         await enqueue(session, async (): Promise<void> => {
-            if (!session.mounted || session.finishing || session.finished || !isCurrentFrame(session)) return;
+            if (!session.mounted || session.phase !== SimplifyState.ACTIVE || !isCurrentFrame(session)) return;
             const { objectState, updateState } = session;
             session.needsRestore = true;
             objectState.points = [...points];
@@ -183,10 +190,8 @@ function usePolySimplifySession(props: SessionProps): SessionControls {
         } = currentProps;
         const session: SimplifySession = {
             mounted: true,
-            active: false,
+            phase: SimplifyState.INITIALIZING,
             frozen: false,
-            finished: false,
-            finishing: false,
             needsRestore: false,
             pending: Promise.resolve(),
             // Track client IDs persist across frames; all mutations must use the originating state.
@@ -209,7 +214,7 @@ function usePolySimplifySession(props: SessionProps): SessionControls {
         enqueue(session, async (): Promise<void> => {
             // Even superseded sessions wait, keeping subsequent sessions behind the same cleanup barrier.
             await previousCompletion;
-            if (!session.mounted || session.finishing || !isCurrentFrame(session)) return;
+            if (!session.mounted || session.phase !== SimplifyState.INITIALIZING || !isCurrentFrame(session)) return;
             if (![ShapeType.POLYGON, ShapeType.POLYLINE].includes(objectState.shapeType)) {
                 close(objectState.clientID as number);
                 return;
@@ -221,7 +226,8 @@ function usePolySimplifySession(props: SessionProps): SessionControls {
             try {
                 if (previousCompletion) {
                     const states = await jobInstance.annotations.get(session.frameNumber, false, []);
-                    if (!session.mounted || session.finishing || !isCurrentFrame(session)) return;
+                    if (!session.mounted || session.phase !== SimplifyState.INITIALIZING ||
+                        !isCurrentFrame(session)) return;
                     const restoredState = getObjectStateByClientID(states, objectState.clientID as number);
                     if (!restoredState) {
                         close(objectState.clientID as number);
@@ -233,19 +239,23 @@ function usePolySimplifySession(props: SessionProps): SessionControls {
                 }
                 await jobInstance.actions.freeze(true);
                 session.frozen = true;
-                if (session.mounted && !session.finishing && isCurrentFrame(session)) {
-                    session.active = true;
-                    setActive(true);
+                if (session.mounted && session.phase === SimplifyState.INITIALIZING && isCurrentFrame(session)) {
+                    session.phase = SimplifyState.ACTIVE;
+                    setControlsVisible(true);
                 }
             } catch (_error) {
                 await unfreeze(session);
+                session.phase = SimplifyState.FINISHED;
                 if (session.mounted) close(objectState.clientID as number);
             }
         });
 
         return (): void => {
             session.mounted = false;
-            if (!session.finished) close(objectState.clientID as number);
+            if (session.phase !== SimplifyState.FINISHED) {
+                session.phase = SimplifyState.FINISHING;
+                close(objectState.clientID as number);
+            }
             // Wait for freeze/preview/Apply to settle before restoring and releasing history.
             enqueue(session, async (): Promise<void> => {
                 try {
@@ -268,17 +278,22 @@ function usePolySimplifySession(props: SessionProps): SessionControls {
     }, [cancel, props.frameNumber, props.jobInstance]);
 
     useEffect((): void => {
-        if (!active) setApproxPolyAccuracy(props.defaultApproxPolyAccuracy);
-    }, [active, props.defaultApproxPolyAccuracy]);
+        if (!controlsVisible) setApproxPolyAccuracy(props.defaultApproxPolyAccuracy);
+    }, [controlsVisible, props.defaultApproxPolyAccuracy]);
 
     return {
-        active, approxPolyAccuracy, onChangeAccuracy: setApproxPolyAccuracy, apply, cancel, updatePreview,
+        visible: controlsVisible,
+        approxPolyAccuracy,
+        onChangeAccuracy: setApproxPolyAccuracy,
+        apply,
+        cancel,
+        updatePreview,
     };
 }
 
 function PolySimplifySession(props: SessionProps): JSX.Element | null {
-    const { active, ...controls } = usePolySimplifySession(props);
-    return active ? (
+    const { visible, ...controls } = usePolySimplifySession(props);
+    return visible ? (
         <PolySimplifyControl
             objectState={props.objectState}
             approxPolyAccuracy={controls.approxPolyAccuracy}
