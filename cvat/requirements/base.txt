@@ -63,7 +63,7 @@ dj-pagination==2.5.0
     # via -r cvat/requirements/base.in
 dj-rest-auth[with-social]==7.2.0
     # via -r cvat/requirements/base.in
-django==5.2.14
+django==5.2.18
     # via
     #   -r cvat/requirements/base.in
     #   dj-rest-auth
@@ -237,7 +237,7 @@ pycocotools==2.0.10
     # via datumaro
 pycparser==2.22
     # via cffi
-pyjwt[crypto]==2.13.0
+pyjwt[crypto]==2.15.1
     # via django-allauth
 pylogbeat==2.1.0
     # via python-logstash-async
@@ -344,7 +344,7 @@ tzdata==2025.2
     # via pandas
 uritemplate==4.2.0
     # via drf-spectacular
-urllib3==2.7.0
+urllib3==2.8.0
     # via
     #   botocore
     #   clickhouse-connect
