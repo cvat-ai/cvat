@@ -1,0 +1,890 @@
+<!doctype html>
+<html itemscope itemtype="http://schema.org/WebPage" lang="en" class="no-js">
+  <head>
+    <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="generator" content="Hugo 0.110.0">
+<link rel="canonical" type="text/html" href="https://docs.cvat.ai/docs/account_management/subscription-management/">
+<meta name="robots" content="noindex, nofollow">
+
+
+<link rel="shortcut icon" href="/favicons/favicon.ico" >
+<link rel="apple-touch-icon" href="/favicons/apple-touch-icon-180x180.png" sizes="180x180">
+<link rel="icon" type="image/png" href="/favicons/favicon-16x16.png" sizes="16x16">
+<link rel="icon" type="image/png" href="/favicons/favicon-32x32.png" sizes="32x32">
+<link rel="icon" type="image/png" href="/favicons/android-36x36.png" sizes="36x36">
+<link rel="icon" type="image/png" href="/favicons/android-48x48.png" sizes="48x48">
+<link rel="icon" type="image/png" href="/favicons/android-72x72.png" sizes="72x72">
+<link rel="icon" type="image/png" href="/favicons/android-96x96.png" sizes="96x96">
+<link rel="icon" type="image/png" href="/favicons/android-144x144.png" sizes="144x144">
+<link rel="icon" type="image/png" href="/favicons/android-192x192.png" sizes="192x192">
+
+<title>Subscription management | CVAT</title>
+<meta name="description" content="How to manage your subscription">
+<meta property="og:title" content="Subscription management" />
+<meta property="og:description" content="How to manage your subscription" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://docs.cvat.ai/docs/account_management/subscription-management/" /><meta property="og:site_name" content="CVAT" />
+<meta itemprop="name" content="Subscription management">
+<meta itemprop="description" content="How to manage your subscription"><meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="Subscription management"/>
+<meta name="twitter:description" content="How to manage your subscription"/>
+
+
+
+
+<link rel="preload" href="/scss/main.min.7643620a8d58b86ce56dea2169e9b31415bebe5012be06f109155734fcc9508b.css" as="style">
+<link href="/scss/main.min.7643620a8d58b86ce56dea2169e9b31415bebe5012be06f109155734fcc9508b.css" rel="stylesheet" integrity="">
+
+<script
+  src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.3/jquery.min.js"
+  integrity="sha512-STof4xm1wgkfm7heWqFJVn58Hm3EtS31XFaagaa8VMReCXAkQnJZ+jEy8PCC/iT18dFy95WcExNHFTqLyp72eQ=="
+  crossorigin="anonymous"></script>
+<script defer
+  src="https://unpkg.com/lunr@2.3.9/lunr.min.js"
+  integrity="sha384-203J0SNzyqHby3iU6hzvzltrWi/M41wOP5Gu+BiJMz5nwKykbkUx8Kp7iti0Lpli"
+  crossorigin="anonymous"></script>
+<link rel="stylesheet" href="/css/prism.css"/>
+<style>
+     
+    .td-content a:not(.btn):not(.nav-link) {
+      color: #000000 !important;
+      text-decoration: underline;
+    }
+    .td-content a:not(.btn):not(.nav-link):hover,
+    .td-content a:not(.btn):not(.nav-link):focus {
+      color: #f97526 !important;
+      text-decoration: underline;  
+    }
+  </style>
+<style>
+     
+    .td-breadcrumbs a {
+      color: #000000 !important;
+      text-decoration: none !important;
+    }
+    .td-breadcrumbs a:hover,
+    .td-breadcrumbs a:focus {
+      color: #f97526 !important;
+      text-decoration: none !important;
+    }
+
+     
+    .td-sidebar a.td-sidebar-link {
+      color: #000000 !important;
+      text-decoration: none !important;
+    }
+    .td-sidebar a.td-sidebar-link:hover,
+    .td-sidebar a.td-sidebar-link:focus {
+      color: #f97526 !important;
+      text-decoration: none !important;
+    }
+     
+    .td-sidebar .td-sidebar-nav-active-item,
+    .td-sidebar a.td-sidebar-link.active,
+    .td-sidebar a.td-sidebar-link.active:hover {
+      color: #f97526 !important;
+    }
+
+     
+    .td-sidebar-toc a {
+      color: #000000 !important;
+      text-decoration: none !important;
+    }
+    .td-sidebar-toc a:hover,
+    .td-sidebar-toc a:focus {
+      color: #f97526 !important;
+      text-decoration: none !important;
+    }
+
+     
+    .td-page-meta a {
+      color: #000000 !important;
+      text-decoration: none !important;
+    }
+    .td-page-meta a:hover,
+    .td-page-meta a:focus {
+      color: #f97526 !important;
+      text-decoration: underline;  
+    }
+     
+    .td-page-meta { display: none !important; }
+
+     
+  .td-toc::before {
+    content: "TABLE OF CONTENTS";    
+    display: block;
+    font-weight: 600;
+    font-size: 0.9rem;
+    margin-bottom: .5rem;
+  }
+  </style>
+
+  </head>
+  <body class="td-section">
+    <header>
+      <nav class="td-navbar navbar-dark js-navbar-scroll">
+<div class="container-fluid flex-column flex-md-row">
+<a class="navbar-brand" href="/docs/"><span class="navbar-brand__logo navbar-logo"><svg width="80" height="15" viewBox="0 0 80 15" xmlns="http://www.w3.org/2000/svg"><path d="M6.63399 15C2.37083 15 0 12.5333.0 7.48889.0 2.46667 2.34908.0 6.63399.0H10.6576V2.62222H6.63399c-2.84935.0-4.0674 1.44445-4.0674 4.86667.0 3.44441 1.2398 4.88891 4.0674 4.88891H15.0638V15H6.63399z"/><path d="M22.412.0l4.8346 13.1004C27.7814 14.5415 28.8724 15 30.2842 15 31.7817 15 32.7657 14.476 33.3005 13.1004L38.3918.0H35.5895L30.9902 11.8559C30.8404 12.2052 30.6265 12.3581 30.2842 12.3581 29.942 12.3581 29.7067 12.2052 29.5783 11.8559L25.1929.0H22.412z"/><path d="M53.0989 3.1441C53.2487 2.79476 53.484 2.64192 53.8262 2.64192 54.1685 2.64192 54.4038 2.79476 54.5322 3.1441L58.9176 15h2.8023L56.8425 1.89956C56.3291.524017 55.3451.0 53.8476.0 52.3288.0 51.3448.524017 50.81 1.89956L45.74 15h2.781L53.0989 3.1441z"/><path d="M69.0681.0V2.5665H73.2661V15H75.802V2.5665H80V0H69.0681z"/></svg></span></a>
+<div class="td-navbar-nav-scroll ms-md-auto" style="height: auto;" id="main_navbar">
+  <ul class="navbar-nav d-flex flex-wrap" style="padding-bottom: 0;">
+    
+      
+        <li class="nav-item">
+          <a class="nav-link "
+             href="/docs/"
+             ><span>Docs</span></a>
+        </li>
+      
+    
+      
+        <li class="nav-item">
+          <a class="nav-link "
+             href="/docs/getting_started/overview/"
+             ><span>Quickstart</span></a>
+        </li>
+      
+    
+      
+        <li class="nav-item">
+          <a class="nav-link "
+             href="/docs/guides/"
+             ><span>Guides</span></a>
+        </li>
+      
+    
+      
+        <li class="nav-item">
+          <a class="nav-link "
+             href="https://app.cvat.ai/auth/login"
+             rel="noopener"><span>Sign in</span></a>
+        </li>
+      
+    
+      
+        <li class="nav-item dropdown">
+          <a
+          class="nav-link dropdown-toggle "
+          href="#"
+          id="nav-get-started"
+          data-bs-toggle="dropdown"
+          aria-haspopup="true"
+          aria-expanded="false"
+          aria-label="Toggle Get started dropdown"
+          onkeydown="if(event.key === ' ' || event.key === 'Enter'){ this.click(); }"
+        ><span>Get started</span></a>
+          <ul class="dropdown-menu" aria-labelledby="nav-get-started">
+            
+              <li>
+                <a class="dropdown-item"
+                   href="/docs/administration/community/basics/installation"
+                   >CVAT Сommunity</a>
+              </li>
+            
+              <li>
+                <a class="dropdown-item"
+                   href="https://app.cvat.ai/auth/register"
+                   rel="noopener">CVAT Online</a>
+              </li>
+            
+              <li>
+                <a class="dropdown-item"
+                   href="https://www.cvat.ai/sales#enterprise"
+                   rel="noopener">CVAT Enterprise</a>
+              </li>
+            
+          </ul>
+        </li>
+      
+    
+      
+        <li class="nav-item">
+          <a class="nav-link "
+             href="/docs/getting_started/overview/#get-in-touch"
+             ><span>Contact us</span></a>
+        </li>
+      
+    <li class="nav-item dropdown d-none d-lg-block">
+      <div class="dropdown">
+  <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">develop</a>
+  <ul class="dropdown-menu">
+    <li><a class="dropdown-item" href="/">Latest version</a></li>
+    <li><a class="dropdown-item" href="/v2.78.0">v2.78.0</a></li>
+    <li><a class="dropdown-item" href="/v2.77.0">v2.77.0</a></li>
+    <li><a class="dropdown-item" href="/v2.76.0">v2.76.0</a></li>
+    <li><a class="dropdown-item" href="/v2.75.0">v2.75.0</a></li>
+    <li><a class="dropdown-item" href="/v2.74.1">v2.74.1</a></li>
+    <li><a class="dropdown-item" href="/v2.73.0">v2.73.0</a></li>
+    </ul>
+</div></li>
+    </ul>
+</div>
+<div class="d-none d-lg-block">
+  <div class="td-search td-search--offline">
+  <div class="td-search__icon"></div>
+  <input
+    type="search"
+    class="td-search__input form-control"
+    placeholder="Search this site…"
+    aria-label="Search this site…"
+    autocomplete="off"
+    
+    data-offline-search-index-json-src="/offline-search-index.89d4f39f1776404d127b2e4338b77c19.json"
+    data-offline-search-base-href="/"
+    data-offline-search-max-results="10"
+  >
+</div>
+
+</div>
+</div>
+</nav>
+    </header>
+    <div class="container-fluid td-outer">
+      <div class="td-main">
+        <div class="row flex-xl-nowrap">
+          <main class="col-12 col-md-9 col-xl-8 ps-md-5" role="main">
+            
+
+
+
+
+<div class="td-content">
+<div class="pageinfo pageinfo-primary d-print-none">
+<p>
+This is the multi-page printable view of this section.
+<a href="#" onclick="print();return false;">Click here to print</a>.
+</p><p>
+<a href="/docs/account_management/subscription-management/">Return to the regular view of this page</a>.
+</p>
+</div>
+
+
+
+<h1 class="title">Subscription management</h1>
+<div class="lead">How to manage your subscription</div>
+
+
+
+
+    <ul>
+    
+  
+  
+  
+  
+
+  
+    
+    
+	
+<li>1: <a href="#pg-6fe1b1ad924738cd9bcae7dc3cc10706">Plan expiration</a></li>
+
+
+    
+  
+
+    </ul>
+
+
+<div class="content">
+      <p>This article provides tips on how to effectively manage your
+CVAT Online subscriptions, including tracking expenses and canceling
+unnecessary subscriptions, to optimize your finances and save time.</p>
+<p>Whether you&rsquo;re a business owner or an individual,
+you&rsquo;ll learn how to take control of your subscriptions and manage them.</p>
+<p>See:</p>
+<ul>
+<li><a href="#available-paid-plans">Available paid plans</a>
+<ul>
+<li><a href="#monthly-plans">Monthly plans</a></li>
+<li><a href="#annual-plans">Annual plans</a></li>
+</ul>
+</li>
+<li><a href="#billing">Billing</a>
+<ul>
+<li><a href="#how-to-add-vattax-and-other-information-to-the-cvat-online-invoice-before-the-first-payment">How to add VAT/tax and other information to the CVAT Online invoice before the first payment?</a></li>
+<li><a href="#how-to-update-vattax-information-and-other-details-for-upcoming-invoices-from-cvat-online">How to update VAT/tax information and other details for upcoming invoices from CVAT Online?</a></li>
+<li><a href="#can-a-paid-invoice-be-modified">Can a paid invoice be modified?</a></li>
+<li><a href="#how-can-i-get-a-quote-before-i-subscribe-how-to-add-a-po-number-to-my-invoices">How can I get a quote before I subscribe? How to add a PO number to my invoices?</a></li>
+<li><a href="#can-you-sign-an-agreement-before-i-subscribe">Can you sign an agreement before I subscribe?</a></li>
+<li><a href="#can-you-handle-a-bank-transfer-with-30-day-payment-terms">Can you handle a bank transfer with 30-day payment terms?</a></li>
+<li><a href="#where-can-i-find-my-invoices">Where can I find my invoices?</a></li>
+<li><a href="#i-am-a-student-can-i-have-a-discount-or-free-access">I am a student, can I have a discount or free access?</a></li>
+</ul>
+</li>
+<li><a href="#payment-methods">Payment methods</a>
+<ul>
+<li><a href="#paying-with-bank-transfer">Paying with bank transfer</a></li>
+<li><a href="#how-to-change-the-payment-method">How to change the payment method?</a></li>
+</ul>
+</li>
+<li><a href="#adding-and-removing-team-members">Adding and removing team members</a></li>
+<li><a href="#change-plan">Change plan</a>
+<ul>
+<li><a href="#how-to-change-the-plan-from-solo-to-team">How to change the plan from Solo to Team?</a></li>
+<li><a href="#how-to-switch-from-a-monthly-subscription-to-an-annual-one">How to switch from a monthly subscription to an annual one?</a></li>
+</ul>
+</li>
+<li><a href="#can-i-subscribe-to-several-plans">Can I subscribe to several plans?</a></li>
+<li><a href="#cancel-plan">Cancel plan</a>
+<ul>
+<li><a href="#what-will-happen-to-my-data">What will happen to my data?</a></li>
+<li><a href="#how-to-cancel-any-plan">How to cancel any plan?</a></li>
+<li><a href="#how-can-i-get-a-refund">How can I get a refund?</a></li>
+</ul>
+</li>
+<li><a href="#plan-renewal">Plan renewal</a></li>
+<li><a href="plan-expiration/">Plan expiration</a></li>
+<li><a href="#subscription-management-video-tutorial">Subscription management video tutorial</a></li>
+</ul>
+<h2 id="available-paid-plans">Available paid plans</h2>
+<p>This section outlines the paid plans available on CVAT Online.</p>
+<h3 id="monthly-plans">Monthly plans</h3>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Solo</strong></td>
+<td>The <strong>Solo</strong> plan has a fixed price and is designed <strong>for personal use only</strong>. <br><br>It does not assume collaboration with team members and is not suitable for use within organizations, but it removes all other limitations of the <strong>Free</strong> plan. <Br><br> <strong>Note</strong>: Although it allows the creation of an organization and access for up to 2 members &ndash; it is <em>for trial purposes</em> only! <br>Organization and members <em>will have all the limitations of the <strong>Free</strong> plan</em>.</td>
+</tr>
+<tr>
+<td><strong>Team</strong></td>
+<td>The <strong>Team</strong> is <strong>for collaboration</strong>, it removes limitations of the <strong>Free</strong> plan for the whole organization, allowing you to share paid benefits with your colleagues. <br><br>The <strong>monthly payment for the plan depends on the number of team members you&rsquo;ve added</strong>. All limits of the <strong>Free</strong> plan will be removed. <Br><br> <strong>Note</strong>: The organization owner is also part of the team. So, if you have two annotators working, you&rsquo;ll need to pay for 3 seats (2 annotators + 1 organization owner).</td>
+</tr>
+</tbody>
+</table>
+<h3 id="annual-plans">Annual plans</h3>
+<p>Whether you&rsquo;re a new user, or have a subscription to <strong>Team</strong> or <strong>Solo</strong> plan, <a href="https://www.cvat.ai/post/cvat-annual-plans">you can
+subscribe to our annual plan</a>
+and save up to 30% on CVAT Online usage costs.</p>
+<p>The annual subscription offers all the benefits of our paid plans but at
+a more affordable monthly rate.</p>
+<p>For more information, see <a href="#how-to-switch-from-monthly-subscription-to-annual">How to switch from monthly subscription to annual?</a></p>
+<h2 id="billing">Billing</h2>
+<p>This section describes the billing model and gives short a
+description of limitations for each plan.</p>
+<p>There are two types of subscriptions available for both the Solo
+and Team plans: monthly and annual.</p>
+<p>For more information,
+see: <a href="https://www.cvat.ai/post/new-pricing-plans">Pricing Plans</a></p>
+<h3 id="how-to-add-vattax-and-other-information-to-the-cvat-online-invoice-before-the-first-payment">How to add VAT/tax and other information to the CVAT Online invoice before the first payment?</h3>
+<p>To ensure VAT (tax) information and other relevant details are included on your
+CVAT Online invoices,
+it&rsquo;s important to add this information before making the first payment.</p>
+<p>Here’s how you can do it:</p>
+<ol>
+<li>Sign up for a CVAT Online account and log in.</li>
+<li>(Optional) If you add the VAT/tax number to the organization,
+first create an <a href="/docs/account_management/organization/">organization</a> and
+switch to an <strong>Organization</strong> account.</li>
+<li>Navigate to the top right corner, next to the nickname,
+click on the arrow &gt; upgrade to the plan.</li>
+<li>Switch on the <strong>I would like the invoice to include additional
+data (address, phone number, VAT information)</strong> toggle, select the
+best payment period for you, and click <strong>Get Started</strong>.</li>
+</ol>
+<p><img src="/images/add-invoice.png" alt="Stripe Link"></p>
+<ol start="5">
+<li>You will see the billing page:</li>
+</ol>
+<p><img src="/images/add-vat.png" alt="Stripe Link"></p>
+<ul>
+<li>Phone number <strong>(1)</strong>.</li>
+<li><strong>Billing Address</strong>: Enter the billing address you want to appear on the invoice
+   in the address field <strong>(2)</strong>.</li>
+<li><strong>VAT Information</strong> and <strong>Business Name</strong>: Select the checkbox <strong>I am purchasing as a business</strong> and enter
+your VAT and business name information <strong>(3)</strong>.</li>
+</ul>
+<ol start="6">
+<li>
+<p>Select checkbox <strong>I agree to refund policy</strong> <strong>(4)</strong>.</p>
+
+
+
+
+<div class="alert alert-primary" role="alert">
+<h4 class="alert-heading"><i class="fas fa-circle-info" aria-hidden="true"></i> Note</h4>
+
+    Please read the <strong>Refund policy</strong> before selecting the checkbox.
+
+</div>
+
+</li>
+<li>
+<p>Click <strong>Pay &amp; Subscribe</strong>.</p>
+</li>
+</ol>
+<p>All information you&rsquo;ve added will appear on the billing page and in the invoice.</p>
+<p><img src="/images/sm-profile-upd-inf.png" alt="Stripe Payment Info"></p>
+<p>By following these steps, you can seamlessly add VAT and other crucial information to your
+invoices, making your financial transactions with CVAT Online transparent and compliant.</p>
+<h3 id="how-to-update-vattax-information-and-other-details-for-upcoming-invoices-from-cvat-online">How to update VAT/tax information and other details for upcoming invoices from CVAT Online?</h3>
+<p>In the top right corner, near the nickname, click on the arrow &gt; manage plan.</p>
+<p>You will see the Stripe page. Go to the <strong>Billing Information</strong> &gt; <strong>Update Information</strong>.</p>
+<p><img src="/images/sm-profile-upd-inf-2.png" alt="Stripe Payment Info"></p>
+<h3 id="can-a-paid-invoice-be-modified">Can a paid invoice be modified?</h3>
+<p>Once an invoice has been paid, it is not possible to modify it. This restriction is due to the
+limitations of the payment processing platform used, which in the case of CVAT Online,
+is <a href="https://stripe.com/">Stripe</a>.</p>
+<p>Stripe&rsquo;s policy dictates that revisions to an invoice can only be made before payment.
+For more comprehensive information on this policy, please refer to Stripe&rsquo;s official documentation
+on <a href="https://docs.stripe.com/invoicing/invoice-edits#:~:text=Stripe%20lets%20you%20revise%20a,Edit%20the%20invoice%20description.">invoice edits</a>
+at their website.</p>
+<h3 id="how-can-i-get-a-quote-before-i-subscribe-how-to-add-a-po-number-to-my-invoices">How can I get a quote before I subscribe? How to add a PO number to my invoices?</h3>
+<p>If you require a quote from CVAT Online for payment via bank transfer, certain criteria must be met:</p>
+<ul>
+<li>The <strong>total subscription cost must be $396 and up per year</strong>.</li>
+<li>Quotes are available exclusively <strong>for annual subscriptions</strong>.</li>
+</ul>
+<p>Should you meet these requirements, please write to <a href="mailto:support@cvat.ai">support@cvat.ai</a></p>
+<h3 id="can-you-sign-an-agreement-before-i-subscribe">Can you sign an agreement before I subscribe?</h3>
+<p>Sign of specific agreements and approvals are available if you meet specific criteria
+(the <strong>total subscription cost must be $10,000 and up per year</strong>), for more details contact <a href="mailto:support@cvat.ai">support@cvat.ai</a></p>
+<h3 id="can-you-handle-a-bank-transfer-with-30-day-payment-terms">Can you handle a bank transfer with 30-day payment terms?</h3>
+<p>Yes, it is available if you fit the quota criteria, for details contact <a href="mailto:support@cvat.ai">support@cvat.ai</a>.</p>
+<h3 id="where-can-i-find-my-invoices">Where can I find my invoices?</h3>
+<p>In the top right corner, near the nickname, click on the arrow &gt; manage plan.</p>
+<p>You will see the Stripe page.
+At the bottom of the page, you will see the <strong>Invoice History</strong> section with all invoices.</p>
+<p>Invoices are automatically sent to the account owner&rsquo;s address used for the registration.</p>
+<p>To see the invoice click on the <strong>Show Invoice Icon</strong><img src="/images/invoice-icon.png" alt="Stripe Invoice Icon"> icon.</p>
+<p><img src="/images/show-invoice.png" alt="Show Invoice"></p>
+<h3 id="i-am-a-student-can-i-have-a-discount-or-free-access">I am a student, can I have a discount or free access?</h3>
+<p>To consider your request for a discount, we&rsquo;d need a few details from you:</p>
+<ul>
+<li>A copy of your valid student ID or any document confirming your university affiliation.</li>
+<li>Your university advisor&rsquo;s contact details.</li>
+<li>The name and contact information of the dean of your faculty.</li>
+<li>A brief outline of your project plan. This helps us understand how we might collaborate
+ on a joint marketing statement highlighting your use of CVAT Online, and how it can benefit your project.</li>
+<li>We&rsquo;d also appreciate a positive LinkedIn post about your experience using CVAT Online,
+making sure to tag @CVAT.ai.</li>
+</ul>
+<p>All these details must be sent to <a href="mailto:support@cvat.ai">support@cvat.ai</a>. Once we have this
+information, we&rsquo;ll gladly offer you a 50% discount for one year.</p>
+<h2 id="payment-methods">Payment methods</h2>
+<p>This section describes how to change or add payment methods.</p>
+<h3 id="paying-with-bank-transfer">Paying with bank transfer</h3>
+
+
+
+
+<div class="alert alert-primary" role="alert">
+<h4 class="alert-heading"><i class="fas fa-circle-info" aria-hidden="true"></i> Note</h4>
+
+    At the moment this method of payment
+works only with US banks.
+
+</div>
+
+<p>To pay with a bank transfer:</p>
+<ol>
+<li>Go to the <strong>Upgrade to Solo</strong>/<strong>Team plan</strong>&gt; <strong>Get started</strong>.</li>
+<li>Click <strong>US Bank Transfer</strong>.</li>
+<li>Upon successful completion of the payment, you will receive a receipt via email.</li>
+</ol>
+
+
+
+
+<div class="alert alert-primary" role="alert">
+<h4 class="alert-heading"><i class="fas fa-circle-info" aria-hidden="true"></i> Note</h4>
+
+    The completion of the payment process may take up to three banking days.
+
+</div>
+
+<p><img src="/images/bank_transfer_payment.png" alt="Bank Transfer Payment"></p>
+<h3 id="how-to-change-the-payment-method">How to change the payment method?</h3>
+<p>In the top right corner, near the nickname, click on the arrow &gt; manage plan &gt; <strong>+Add Payment Method</strong></p>
+<p><img src="/images/update_payment_team.png" alt="Payment team"></p>
+<h2 id="adding-and-removing-team-members">Adding and removing team members</h2>
+
+
+
+
+<div class="alert alert-primary" role="alert">
+<h4 class="alert-heading"><i class="fas fa-circle-info" aria-hidden="true"></i> Note</h4>
+
+    <strong>Solo plan</strong> is <strong>for personal use only</strong>, you cannot add or remove team members.
+
+</div>
+
+<p><strong>Team plan</strong> is for collaboration. To add members to your
+<a href="/docs/account_management/organization/">Organization</a>,
+go to the <strong>Manage Team plan</strong> &gt; <strong>Update quantity</strong>.</p>
+<p><img src="/images/change_members_number_team.gif" alt="Add members"></p>
+<p>If you&rsquo;ve added a user <strong>before the current billing period ends</strong>,
+the payment will be prorated for the remaining time until the
+next billing cycle begins. From the following month onward,
+the full payment will be charged.</p>
+<p>In case you <strong>removed the user before the current billing period ends</strong>,
+funds will not be returned to your account,
+but next month you will pay less by the amount of unused funds.</p>
+<h2 id="change-plan">Change plan</h2>
+<h3 id="how-to-change-the-plan-from-solo-to-team">How to change the plan from Solo to Team?</h3>
+<p>The procedure is the same for both <strong>Solo</strong> and <strong>Team</strong> plans.</p>
+<p>If for some reason you want to change your plan, you need to:</p>
+<ol>
+<li>Unsubscribe from the previous plan.</li>
+<li>If you need a refund, contact us at <a href="mailto:support@cvat.ai">support@cvat.ai</a>.</li>
+<li>Subscribe to a new plan.</li>
+</ol>
+<h3 id="how-to-switch-from-a-monthly-subscription-to-an-annual-one">How to switch from a monthly subscription to an annual one?</h3>
+<p>If you have <strong>monthly subscription</strong>, and wish to switch to the
+<strong>Annual plan</strong>, please follow these steps:</p>
+<ol>
+<li>In the top-right corner, near the nickname, click on the arrow.</li>
+<li>Select <strong>Manage Solo</strong>/<strong>Team Plan</strong>.</li>
+<li>On the Stripe page that appears, click <strong>Update Plan</strong>.</li>
+</ol>
+<p><img src="/images/switch-to-annual.png" alt="Stripe Update Plan"></p>
+<ol start="4">
+<li>Choose <strong>Yearly</strong> and then click <strong>Continue</strong>.</li>
+</ol>
+<p><img src="/images/yearly-plan.png" alt="Stripe Yearly Plan"></p>
+<p>The price will be adjusted according to the number of members, selected in the
+<strong>Quantity</strong> field (if updated), taking into account the amount of money
+that was not spent in the current period.</p>
+<p>Upon payment, your subscription will be renewed and the start
+date will be reset to the day you switch to the new plan.</p>
+<h2 id="can-i-subscribe-to-several-plans">Can I subscribe to several plans?</h2>
+<p>Paid plans are not mutually exclusive.
+You can have several active subscriptions,
+for example, the <strong>Solo</strong> plan and several <strong>Team</strong>
+plans for different organizations.</p>
+<h2 id="cancel-plan">Cancel plan</h2>
+<p>This section describes how to cancel your CVAT subscription
+and what will happen to your data.</p>
+<h3 id="what-will-happen-to-my-data">What will happen to my data?</h3>
+<p>When your paid access ends, Free plan limits apply to the affected workspace.
+Depending on your usage, some actions on existing resources may also be restricted.
+You can still create task and project backups to keep a copy of your work.</p>
+<p>For details about restrictions, recovery, and data retention, see
+<a href="/docs/account_management/subscription-management/plan-expiration/">Plan expiration</a>.</p>
+<h3 id="how-to-cancel-any-plan">How to cancel any plan?</h3>
+<p>To cancel the plan, in the top right corner, near the nickname,
+click on the arrow&gt; manage plan &gt; <strong>Cancel plan</strong></p>
+<p>Please, fill out the feedback form, to help us improve our platform.</p>
+<p><img src="/images/cancel-plan.png" alt="Cancel pro"></p>
+<h3 id="how-can-i-get-a-refund">How can I get a refund?</h3>
+<p>To understand if you are eligible for a refund,
+see <a href="https://www.cvat.ai/refund-policy">Refund policy</a>.</p>
+<ol>
+<li>Cancel the subscription before asking for a refund.</li>
+<li>Contact our support team at <a href="mailto:support@cvat.ai">support@cvat.ai</a>
+or use the &ldquo;Support&rdquo; option in the app.cvat.ai interface.</li>
+<li>Provide your account details and a brief explanation of the reason for the refund:
+<ul>
+<li>Send us your last invoice.</li>
+<li>Send us the username and e-mail address you’ve used to register in CVAT Online.</li>
+</ul>
+</li>
+</ol>
+<p>Our team will review your request. We may request additional information if needed.
+Once approved, the refund will be processed to your original
+payment method <a href="https://docs.stripe.com/refunds#tracing-refunds">within 5-10 business days</a>.</p>
+<h2 id="plan-renewal">Plan renewal</h2>
+<p>To renew your CVAT Online subscription, in the top right corner, near the nickname,
+click on the arrow&gt; manage plan &gt; <strong>Renew plan</strong>.</p>
+<h2 id="subscription-management-video-tutorial">Subscription management video tutorial</h2>
+<iframe width="560" height="315" src="https://www.youtube.com/embed/AMPtbmqZKNY?si=2TLhdytDIlSJ3Fwd" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+
+</div>
+</div>
+
+
+  
+  
+  
+  
+
+  
+  
+
+  
+    
+    
+	
+    
+
+<div class="td-content" style="page-break-before: always">
+    
+	<h1 id="pg-6fe1b1ad924738cd9bcae7dc3cc10706">1 - Plan expiration</h1>
+    <div class="lead">What happens when paid access expires, how to restore access, and how to keep your data.</div>
+	<p>If a renewal payment for a self-managed subscription cannot be completed, you usually
+have a <strong>grace period</strong> to resolve it.
+<strong>Free plan limits</strong> apply as soon as your paid access expires. If payment remains unresolved
+after the grace period, additional restrictions may apply to existing resources.</p>
+<p>These changes affect the workspace covered by the subscription: your personal workspace
+for a Solo plan, or the organization for a Team plan. Other workspaces with active
+subscriptions are not affected.</p>
+<h2 id="grace-period">Grace period</h2>
+<p>The usual grace period for card payments is <strong>seven days</strong>. For bank debit payments,
+the grace period may vary depending on payment processing and retry timing.
+Paid features may remain available while the first payment attempt for an invoice is processing.</p>
+<p>For subscriptions paid manually by invoice, paid access remains active until the invoice due date.</p>
+<p>For self-managed subscriptions, the grace period starts when your paid access expires
+because the renewal payment has not been completed. It gives you time to review your billing details and resolve the
+payment while payment retries take place.</p>
+<h3 id="what-changes-during-the-grace-period">What changes during the grace period?</h3>
+<p>Free plan limits and features apply immediately. This means:</p>
+<ul>
+<li><strong>Higher usage limits no longer apply.</strong> Creating tasks, projects, cloud storage connections,
+webhooks, or AI agents, and inviting members, is subject to Free plan quotas.
+See the <a href="https://www.cvat.ai/pricing">pricing page</a> for the current allowances.</li>
+<li><strong>Analytics and quality reports are unavailable in the interface.</strong> This includes the paid
+analytics and quality-control views.</li>
+<li><strong>Background automatic annotation is unavailable.</strong> Interactive AI tools remain subject
+to Free plan allowances for built-in and external AI agent calls; they are not all disabled.</li>
+<li><strong>Dataset exports that include images or videos are unavailable.</strong> Annotation-only exports
+and task/project backups remain available, subject to your normal permissions.</li>
+</ul>
+<p>During this period, exceeding the Free plan task, storage, or membership limits does not
+yet trigger the additional restrictions on working with existing resources described below.
+For example, you can continue saving annotation changes.</p>
+<p>The personal account holder and organization owners or maintainers may see a
+<strong>Subscription payment needs attention</strong> dialog. To resolve the payment, follow
+<a href="#restore-paid-access">Restore paid access</a>.</p>
+<p><img src="/images/subscription-payment-notice.webp"
+alt="Payment reminder showing unavailable paid features and a warning about further restrictions"
+style="display: block; margin: 0 auto; width: 100%; max-width: 650px; height: auto; border: 1px solid #d9d9d9; border-radius: 8px;"></p>
+
+
+
+
+<div class="alert alert-warning" role="alert">
+<h4 class="alert-heading"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i> Before the grace period ends</h4>
+
+    Please resolve the payment or reduce your usage to fit the Free plan.
+If payment remains unresolved when your grace period ends, usage above the limits can restrict
+actions such as modifying existing resources.
+
+</div>
+
+<h2 id="restriction-period">Restriction period</h2>
+<p>The <strong>restriction period</strong> begins if payment has not been resolved by the end of the grace period.
+Your workspace returns to the Free plan. Additional restrictions depend on which limits your usage exceeds:</p>
+<table>
+<thead>
+<tr>
+<th>Exceeded limit</th>
+<th>Additional restrictions</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Task count or internal storage</td>
+<td>Creating or modifying tasks and jobs, saving annotation changes, importing annotations into tasks, jobs, or projects, and exporting datasets or annotations are blocked.</td>
+</tr>
+<tr>
+<td>Organization members and invitations</td>
+<td>Saving annotation changes and importing annotations into tasks, jobs, or projects are blocked. Further invitations are subject to the membership quota.</td>
+</tr>
+</tbody>
+</table>
+<p>If both conditions apply, both sets of restrictions apply. Exceeding other resource limits,
+such as the project limit, prevents creating more of those resources; it does not by itself
+trigger the annotation restrictions above. New resources cannot be created once the
+applicable quota is reached, even if usage has not exceeded it.</p>
+<p>You can still view and delete resources and <strong>export task and project backups</strong>, subject
+to your role and permissions. A <strong>Restricted Mode</strong> dialog explains the restrictions
+that affect your workspace. If your usage fits within the Free plan, you can continue
+using its available features without these additional restrictions.</p>
+<p><img src="/images/subscription-restricted-mode.webp"
+alt="Restricted Mode dialog showing exceeded task and membership limits and recovery options"
+style="display: block; margin: 0 auto; width: 100%; max-width: 650px; height: auto; border: 1px solid #d9d9d9; border-radius: 8px;"></p>
+<h3 id="restore-paid-access">Restore paid access</h3>
+<ol>
+<li>Switch to the personal workspace or organization whose subscription has expired.</li>
+<li>Select <strong>Manage subscription</strong> in the payment dialog, or open <strong>Manage Solo plan</strong>
+or <strong>Manage Team plan</strong> from the user menu. If the subscription has already ended,
+use <strong>Upgrade to Solo</strong> or <strong>Upgrade to Team</strong> to subscribe again.</li>
+<li>Review your billing status, update the payment method if needed, and complete the payment.
+Choose a plan and, for an organization, enough seats to cover your usage.</li>
+</ol>
+<p>Paid access is restored automatically once the payment and subscription update are processed.
+For organization subscriptions, the <strong>organization owner</strong> must manage the payment.
+If you are a team member, please contact your organization owner.</p>
+<p>Alternatively, you can stay on the Free plan by deleting excess tasks or other resources
+and removing excess members or pending invitations. Each usage-based restriction is
+lifted automatically when usage is at or below the corresponding limit. Paid features
+still require an active paid subscription.</p>
+<h3 id="keep-your-data-without-renewing">Keep your data without renewing</h3>
+<p>You do not need to renew your subscription to download task or project backups.
+Backups remain available in Restricted Mode so you can preserve your work before
+removing resources from CVAT Online.</p>
+<ol>
+<li>Open the task or project action menu and select <strong>Backup Task</strong> or <strong>Backup Project</strong>.</li>
+<li>Download the backup and keep it in a safe location outside CVAT Online.</li>
+<li>Check that you have saved the backups and any separately stored media you need
+before deleting resources.</li>
+</ol>
+<p>See <a href="/docs/dataset_management/backup/">Backup Task and Project</a>
+for detailed instructions and restoration options. <strong>Lightweight backups</strong> for cloud-backed
+tasks do not include the original media: please retain those files in your cloud storage
+or make a separate copy. Restoring a backup into CVAT Online is subject to your current
+plan limits and restrictions.</p>
+<h2 id="data-retention">Data retention</h2>
+
+
+
+
+<div class="alert alert-warning" role="alert">
+<h4 class="alert-heading"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i> Please keep a copy of your work</h4>
+
+    Data left in an over-limit workspace may be removed automatically 30 days after paid
+access expires. Please download task or project backups before that deadline if you
+do not plan to renew or reduce your usage to fit the Free plan.
+
+</div>
+
+<p>The grace period is part of this 30-day period. Downloading a backup does not extend
+the <strong>retention period</strong> for the copy stored in CVAT Online.</p>
+<p>If you need help with payment or access, please contact
+<a href="http://cvat.ai/support/saas">CVAT support</a>.</p>
+
+</div>
+
+
+
+    
+	
+  
+
+
+
+          </main>
+        </div>
+      </div>
+      <footer class="bg-dark py-5 row d-print-none" style="min-height: 0">
+  <div class="container-fluid">
+    <div class="row align-items-center">
+      
+      <div class="col-12 col-lg-8 d-flex align-items-center justify-content-start">
+        <ul class="list-inline mb-0">
+          <li class="list-inline-item me-4">© 2026 CVAT.ai Corporation.</li>
+          <li class="list-inline-item me-4"><a class="text-white" href="https://www.cvat.ai/terms-of-use">Terms of Service</a></li>
+          <li class="list-inline-item me-4"><a class="text-white" href="https://www.cvat.ai/privacy">Privacy Policy</a></li>
+          <li class="list-inline-item me-4"><a class="text-white" href="https://www.cvat.ai/refund-policy">Refund Policy</a></li>
+          <li class="list-inline-item me-4"><a class="text-white" href="https://www.cvat.ai/fair-usage-policy">Fair Usage Policy</a></li>
+          <li class="list-inline-item me-4"><a class="text-white" href="https://status.cvat.ai">Status</a></li>
+        </ul>
+      </div>
+
+      
+      <div class="col-12 col-lg-4 d-flex align-items-center justify-content-lg-end justify-content-center mt-3 mt-lg-0">
+        
+        
+        
+<ul class="list-inline mb-0">
+  
+  <li class="list-inline-item mx-2 h3" data-bs-toggle="tooltip" data-placement="top" title="GitHub" aria-label="GitHub">
+    <a class="text-white" rel="noopener noreferrer" href="https://github.com/cvat-ai/cvat">
+      <i class="fab fa-github"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-bs-toggle="tooltip" data-placement="top" title="LinkedIn" aria-label="LinkedIn">
+    <a class="text-white" rel="noopener noreferrer" href="https://www.linkedin.com/company/cvat-ai/">
+      <i class="fab fa-linkedin"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-bs-toggle="tooltip" data-placement="top" title="Discord" aria-label="Discord">
+    <a class="text-white" rel="noopener noreferrer" href="https://discord.gg/fNR3eXfk6C">
+      <i class="fab fa-discord"></i>
+    </a>
+  </li>
+  
+  <li class="list-inline-item mx-2 h3" data-bs-toggle="tooltip" data-placement="top" title="YouTube" aria-label="YouTube">
+    <a class="text-white" rel="noopener noreferrer" href="https://www.youtube.com/@cvat-ai">
+      <i class="fab fa-youtube"></i>
+    </a>
+  </li>
+  
+</ul>
+
+        
+        
+      </div>
+    </div>
+  </div>
+  
+
+
+<div id="cookie-consent-banner">
+  <p>
+    We use Google Analytics cookies to improve functionality and analyze traffic. You can change your preference at any time using the "Cookie Settings" link in the footer.
+  </p>
+  <div class="button-group">
+    <button onclick="acceptCookies()">Accept</button>
+    <button class="reject" onclick="rejectCookies()">Reject</button>
+  </div>
+</div>
+
+
+<script>
+window.GOOGLE_TAG_ID = 'G-GVSBK1DNK5';
+</script>
+
+
+<script defer src="/js/cookie-consent.min.93cb75ea0d8a602f1db231ed823839f4fc4c6fbfe6d98e78c702dbdf32e8ce95.js" integrity="sha256-k8t16g2KYC8dsjHtgjg59PxMb7/m2Y54xwLb3zLozpU=" crossorigin="anonymous"></script>
+
+</footer>
+
+
+    </div>
+    
+  <script src="/js/main.min.526b9a0efe05e64aed014e26a8012f179897a1fb5e008e36cc88157497fdeb44.js" integrity="sha256-UmuaDv4F5krtAU4mqAEvF5iXofteAI42zIgVdJf960Q=" crossorigin="anonymous"></script>
+<script src='/js/prism.js'></script>
+<script src='/js/tabpane-persist.js'></script>
+
+<script>
+(function () {
+  'use strict';
+  document.addEventListener('DOMContentLoaded', function () {
+    var toc = document.getElementById('TableOfContents');
+    if (!toc || typeof bootstrap === 'undefined' || !bootstrap.ScrollSpy) {
+      return;
+    }
+    
+    new bootstrap.ScrollSpy(document.body, {
+      target: '#TableOfContents',
+      rootMargin: '0px 0px -75%',
+      smoothScroll: true,
+    });
+  });
+}());
+</script>
+<script>
+(function () {
+  'use strict';
+  document.addEventListener('DOMContentLoaded', function () {
+    
+    
+    
+    
+    
+    
+    
+    var nav = document.querySelector('.td-sidebar-nav');
+    var active = nav && nav.querySelector('a.active');
+    if (!nav || !active) {
+      return;
+    }
+    var navRect = nav.getBoundingClientRect();
+    var activeRect = active.getBoundingClientRect();
+    var delta = (activeRect.top - navRect.top) - (nav.clientHeight / 2) + (activeRect.height / 2);
+    nav.scrollTop += delta;
+  });
+}());
+</script>
+
+  </body>
+</html>
