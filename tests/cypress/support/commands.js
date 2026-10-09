@@ -656,6 +656,67 @@ Cypress.Commands.add('checkPopoverHidden', (objectType) => {
     cy.get(`.cvat-${objectType}-popover`).should('be.hidden');
 });
 
+Cypress.Commands.add('getObjectSidebarItem', (id) => {
+    const selector = `#cvat-objects-sidebar-state-item-${id}`;
+    const holderSelector = '.cvat-objects-sidebar-virtual-list [data-virtual-list-viewport]';
+
+    const findItem = (attempt) => cy.get(holderSelector).then(($holder) => {
+        const holder = $holder[0];
+        if (attempt >= 200) {
+            throw new Error(`Could not find object ${id} in the virtualized sidebar`);
+        }
+
+        const item = holder.querySelector(selector);
+        if (item) {
+            const holderBounds = holder.getBoundingClientRect();
+            const itemBounds = item.getBoundingClientRect();
+            const viewportTop = holderBounds.top + holder.clientTop;
+            const viewportBottom = viewportTop + holder.clientHeight;
+            const visibleHeight = Math.min(itemBounds.height, holder.clientHeight);
+
+            // Overscan rows exist in the DOM even when they are clipped behind Appearance.
+            // Align the row before returning it so its controls can be clicked normally.
+            if (itemBounds.top < viewportTop - 1 || itemBounds.top + visibleHeight > viewportBottom + 1) {
+                const nextScroll = Math.max(0, Math.min(
+                    holder.scrollHeight - holder.clientHeight,
+                    holder.scrollTop + itemBounds.top - viewportTop,
+                ));
+                cy.wrap($holder).scrollTo(0, nextScroll, { duration: 0, ensureScrollable: false });
+                return cy.wait(50).then(() => findItem(attempt + 1));
+            }
+
+            return cy.wrap(item);
+        }
+
+        // Scan in rendered order: layer, label, and update-time sorting are not monotonic by ID.
+        // Keep successive viewports overlapping so variable-height rows are not skipped.
+        const step = Math.max(1, Math.floor(holder.clientHeight * 0.75));
+        const maxScroll = holder.scrollHeight - holder.clientHeight;
+        const ordering = holder.ownerDocument.querySelector(
+            '.cvat-objects-sidebar-ordering-selector .ant-select-selection-item',
+        )?.textContent;
+        let nextScroll = attempt === 0 && holder.scrollTop > 0 ? 0 :
+            Math.max(0, Math.min(maxScroll, holder.scrollTop + step));
+        if (ordering === 'ID - ascent' || ordering === 'ID - descent') {
+            const visibleIds = Array.from(holder.querySelectorAll('.cvat-objects-sidebar-state-item'))
+                .map((element) => Number(element.id.replace('cvat-objects-sidebar-state-item-', '')));
+            const firstId = visibleIds[0];
+            const before = ordering === 'ID - ascent' ? id < firstId : id > firstId;
+            nextScroll = Math.max(0, Math.min(maxScroll, holder.scrollTop + (before ? -step : step)));
+        } else if (nextScroll === holder.scrollTop) {
+            nextScroll = 0;
+        }
+
+        cy.wrap($holder).scrollTo(0, nextScroll, { duration: 0, ensureScrollable: false });
+        // Let the virtual list mount rows at the new scroll position.
+        return cy.wait(50).then(() => findItem(attempt + 1));
+    });
+
+    return cy.get('.cvat-objects-sidebar-states-list').then(($list) => (
+        $list.find(holderSelector).length ? findItem(0) : cy.get(selector)
+    ));
+});
+
 Cypress.Commands.add('checkObjectParameters', (objectParameters, objectType) => {
     const listCanvasShapeId = [];
     cy.document().then((doc) => {
@@ -684,7 +745,7 @@ Cypress.Commands.add('checkObjectParameters', (objectParameters, objectType) => 
 
             cy.wrap($shape).should('be.visible');
         });
-        cy.get(`#cvat-objects-sidebar-state-item-${maxId}`)
+        cy.getObjectSidebarItem(maxId)
             .should('contain', maxId)
             .and('contain', `${objectType} ${objectParameters.type.toUpperCase()}`)
             .within(() => {
@@ -1865,13 +1926,18 @@ Cypress.Commands.add('joinShapes', (
 });
 
 Cypress.Commands.add('interactAnnotationObjectMenu', (parentSelector, button) => {
-    cy.get(parentSelector).within(() => {
+    const sidebarItemId = parentSelector.match(/^#cvat-objects-sidebar-state-item-(\d+)$/)?.[1];
+    const parent = sidebarItemId ? cy.getObjectSidebarItem(Number(sidebarItemId)) : cy.get(parentSelector);
+    parent.within(() => {
         cy.get('[aria-label="more"]').click();
     });
 
-    cy.document().find('.cvat-object-item-menu').within(() => {
-        cy.contains('button', button).click();
-    });
+    // AntD renders the menu outside the row, even when the caller is inside .within().
+    // Keep this a query so Cypress can reacquire a menu replaced during row updates.
+    cy.get('.cvat-object-item-menu:visible button', { withinSubject: null })
+        .filter((index, element) => element.textContent.includes(button))
+        .should('have.length', 1)
+        .click();
 });
 
 Cypress.Commands.add('hideTooltips', () => {

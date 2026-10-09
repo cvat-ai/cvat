@@ -5,11 +5,14 @@
 /// <reference types="cypress" />
 
 import * as allure from 'allure-js-commons';
-import { taskName, labelName } from '../../support/const';
+import { labelName } from '../../support/const';
+import { defaultTaskSpec } from '../../support/default-specs';
 import { getShapeCoord, toggleAutoSimplify } from '../../support/utils.cy';
 import { translatePoint } from '../../support/utils';
 
 context('Simplify polygons feature', { scrollBehavior: false }, () => {
+    let taskId = null;
+    let jobId = null;
     const polygonCenter = { x: 510, y: 324 };
     const detailedPolygonPoints = [
         // a jagged shape with redundant points
@@ -234,8 +237,24 @@ context('Simplify polygons feature', { scrollBehavior: false }, () => {
     }
 
     before(() => {
-        cy.prepareUserSession();
-        cy.openTaskJob(taskName);
+        cy.visit('/auth/login');
+        cy.headlessLogin();
+        const { taskSpec, dataSpec, extras } = defaultTaskSpec({
+            taskName: 'Simplify polygons feature',
+            labelName,
+            attributes: [{ name: 'attribute', type: 'text', values: '' }],
+            serverFiles: ['images/image_1.jpg', 'images/image_2.jpg'],
+        });
+        cy.headlessCreateTask(taskSpec, dataSpec, extras).then(({ taskId: tid, jobIds: [jid] }) => {
+            taskId = tid;
+            jobId = jid;
+            cy.visit(`/tasks/${taskId}/jobs/${jobId}`);
+            cy.get('.cvat-canvas-container').should('be.visible');
+        });
+    });
+
+    after(() => {
+        if (taskId !== null) cy.headlessDeleteTask(taskId);
     });
 
     afterEach(() => {
@@ -243,6 +262,80 @@ context('Simplify polygons feature', { scrollBehavior: false }, () => {
     });
 
     context('Simplify one polygon', () => {
+        it('Restores polygon and polyline tracks only on the originating frame when navigating', () => {
+            // Tracks share a client ID across frames, but cancellation must restore only the originating frame.
+            const tracks = ['polygon', 'polyline'].map((type, index) => {
+                const sourcePoints = detailedPolygonPoints.flatMap(({ x, y }) => [x - index * 300, y - index * 100]);
+                const destinationPoints = sourcePoints.map((value, coordinate) => value + (coordinate % 2 ? 50 : 100));
+                return { type, sourcePoints, destinationPoints };
+            });
+            cy.headlessCreateObjects(tracks.map(({ type, sourcePoints, destinationPoints }) => ({
+                objectType: 'track',
+                labelName,
+                frame: 0,
+                shapes: [
+                    { type, frame: 0, points: sourcePoints },
+                    { type, frame: 1, points: destinationPoints },
+                ],
+            })), jobId);
+            cy.reload();
+            cy.openSettings();
+            cy.contains('Shortcuts').click();
+            cy.get('.cvat-shortcuts-settings-search input').type('Simplify polygon');
+            cy.get('.cvat-shortcuts-settings-collapse-item .cvat-shortcuts-settings-select').click();
+            cy.realPress(['Alt', 'Z']);
+            cy.get('.cvat-shortcuts-settings-collapse-item .ant-select-selection-overflow-item').should('contain', 'alt+z');
+            cy.closeSettings();
+            function checkTrackPoints(clientId, points) {
+                cy.get(`#cvat_canvas_shape_${clientId}`).should(($shape) => {
+                    const doc = $shape[0].ownerDocument;
+                    const content = doc.getElementById('cvat_canvas_content');
+                    const background = doc.getElementById('cvat_canvas_background');
+                    // SVG shape coordinates include the canvas's drawing margin; model coordinates do not.
+                    const offset = (Number.parseFloat(content.style.width) -
+                        Number.parseFloat(background.style.width)) / 2;
+                    const actual = parsePolygonPoints($shape.attr('points').trim().split(/\s+/))
+                        .flat().map((coordinate) => coordinate - offset);
+                    expect(actual).to.deep.equal(points);
+                });
+            }
+            tracks.forEach(({ type, sourcePoints, destinationPoints }, index) => {
+                const clientId = index + 1;
+                cy.goCheckFrameNumber(0);
+                checkTrackPoints(clientId, sourcePoints);
+                cy.get('.cvat-player-frame-selector input').blur();
+                cy.getObjectSidebarItem(clientId).trigger('mouseover');
+                cy.get(`#cvat_canvas_shape_${clientId}`).should('have.class', 'cvat_canvas_shape_activated');
+                cy.realPress(['Alt', 'Z']);
+                cy.get('.cvat-approx-poly-threshold-wrapper').should('be.visible');
+                setSimplifyAccuracy(0);
+                checkLessPointsThan(clientId, detailedPolygonPoints);
+
+                // Enter applies simplification, so use the navigation button while the controls are active.
+                cy.goToNextFrame(1);
+                cy.get('.cvat-approx-poly-threshold-wrapper').should('not.exist');
+                checkTrackPoints(clientId, destinationPoints);
+                cy.goCheckFrameNumber(0);
+                checkTrackPoints(clientId, sourcePoints);
+                cy.get('.cvat-annotation-header-undo-button').should('have.css', 'pointer-events', 'none');
+                cy.clickSaveAnnotationView();
+                cy.get('.cvat-annotation-header-save-button').should('not.have.class', 'cvat-annotation-disabled-header-button');
+                cy.request(`/api/jobs/${jobId}/annotations`).its('body.tracks').should((savedTracks) => {
+                    expect(savedTracks).to.have.length(2);
+                    const track = savedTracks.find((candidate) => candidate.shapes[0].type === type);
+                    expect(track.shapes.find((shape) => shape.frame === 0).points).to.deep.equal(sourcePoints);
+                    expect(track.shapes.find((shape) => shape.frame === 1).points).to.deep.equal(destinationPoints);
+                });
+            });
+            cy.clearAnnotationsAndSave();
+            cy.openSettings();
+            cy.contains('Shortcuts').click();
+            cy.get('.cvat-shortcuts-settings-search input').clear();
+            cy.get('.cvat-shortcuts-settings-search input').type('Simplify polygon');
+            cy.get('.cvat-shortcuts-settings-collapse-item .ant-select-selection-item-remove').click();
+            cy.closeSettings();
+        });
+
         it("'Simplify' removes points, decreases areas. Higher accuracy restores shape", () => {
             cy.createPolygon(createDetailedPolygon, null, 'shiftHover');
             makeCopy(firstSimplifiedObjectId, polygonCenter);
@@ -265,23 +358,24 @@ context('Simplify polygons feature', { scrollBehavior: false }, () => {
         });
 
         context('Auto-simplify', () => {
+            function setAutoSimplify(enabled) {
+                ['polyline', 'polygon'].forEach((shape) => {
+                    cy.interactControlButton(`draw-${shape}`);
+                    cy.get(`.cvat-draw-${shape}-popover-simplify-switch`).then(($switch) => {
+                        if ($switch.hasClass('ant-switch-checked') !== enabled) {
+                            toggleAutoSimplify(enabled, shape);
+                        }
+                    });
+                    cy.interactControlButton(`draw-${shape}`);
+                    cy.get(`.cvat-${shape}-popover`).should('not.exist');
+                });
+            }
+
             before(() => {
-                cy.interactControlButton('draw-polyline');
-                toggleAutoSimplify(true, 'polyline');
-                cy.interactControlButton('draw-polyline');
-                cy.interactControlButton('draw-polygon');
-                toggleAutoSimplify(true, 'polygon');
-                cy.interactControlButton('draw-polygon');
+                setAutoSimplify(true);
             });
             after(() => {
-                cy.interactControlButton('draw-polygon');
-                toggleAutoSimplify(false, 'polygon');
-                cy.interactControlButton('draw-polygon');
-                cy.get('.cvat-polygon-popover').should('not.exist');
-                cy.interactControlButton('draw-polyline');
-                toggleAutoSimplify(false, 'polyline');
-                cy.interactControlButton('draw-polyline');
-                cy.get('.cvat-polyline-popover').should('not.exist');
+                setAutoSimplify(false);
             });
 
             it('Auto-simplify when drawing a polyline', () => {
@@ -294,6 +388,49 @@ context('Simplify polygons feature', { scrollBehavior: false }, () => {
                 cy.createPolygon({ ...createDetailedPolygon }, null, 'shiftHover');
                 checkLessPointsThan(referenceObjectId, detailedPolygonPoints);
                 approveSimplify();
+            });
+
+            it('Keeps simplification active when the object row is virtualized', () => {
+                // Leave enough rows to scroll the polygon beyond the larger overscan buffer.
+                const existingObjects = 30;
+                const polygonId = existingObjects + 1;
+                const holder = '.cvat-objects-sidebar-virtual-list [data-virtual-list-viewport]';
+                cy.headlessCreateObjects(Array.from({ length: existingObjects }, () => ({
+                    objectType: 'shape',
+                    type: 'rectangle',
+                    labelName,
+                    frame: 0,
+                    points: [50, 50, 100, 100],
+                })), jobId);
+                cy.reload();
+                cy.get('.cvat_canvas_shape').should('have.length', existingObjects);
+                setAutoSimplify(true);
+
+                cy.get(holder).scrollTo('top', { duration: 0, ensureScrollable: false });
+                cy.get(`#cvat-objects-sidebar-state-item-${existingObjects}`).should('not.exist');
+
+                cy.createPolygon({ ...createDetailedPolygon }, null, 'shiftHover');
+                cy.get('.cvat-approx-poly-threshold-wrapper').should('be.visible');
+                checkLessPointsThan(polygonId, detailedPolygonPoints);
+
+                cy.get(holder).scrollTo('top', { duration: 0, ensureScrollable: false });
+                cy.get(`#cvat-objects-sidebar-state-item-${polygonId}`).should('not.exist');
+                cy.get('.cvat-approx-poly-threshold-wrapper').should('be.visible');
+                approveSimplify();
+
+                getPolygonStats(polygonId).then((beforeCancel) => {
+                    cy.getObjectSidebarItem(polygonId);
+                    cy.interactAnnotationObjectMenu(`#cvat-objects-sidebar-state-item-${polygonId}`, 'Simplify');
+                    cy.get('.cvat-approx-poly-threshold-wrapper').should('be.visible');
+                    cy.get(holder).scrollTo('top', { duration: 0, ensureScrollable: false });
+                    cy.get(`#cvat-objects-sidebar-state-item-${polygonId}`).should('not.exist');
+                    cy.get('.cvat-approx-poly-threshold-wrapper .anticon-close').click();
+                    cy.get('.cvat-approx-poly-threshold-wrapper').should('not.exist');
+                    getPolygonStats(polygonId).then((afterCancel) => {
+                        expect(afterCancel.pointsCount).to.equal(beforeCancel.pointsCount);
+                        expect(afterCancel.area).to.be.closeTo(beforeCancel.area, 1);
+                    });
+                });
             });
         });
     });

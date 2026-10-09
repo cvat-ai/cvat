@@ -60,13 +60,12 @@ context('Repeat draw feature.', () => {
     const keyCodeN = 78;
 
     function checkCountShapes(expectedCount) {
-        cy.get('.cvat-objects-sidebar-state-item').then(($sidebarItem) => {
-            expect($sidebarItem.length).to.be.equal(expectedCount);
-        });
+        cy.get('.cvat-objects-sidebar-states-header').should('contain.text', `Items: ${expectedCount}`);
     }
 
     function checkShapeType(id, expectedType) {
-        cy.get(id).find('.cvat-objects-sidebar-state-item-object-type-text').should('have.text', expectedType);
+        cy.getObjectSidebarItem(id).find('.cvat-objects-sidebar-state-item-object-type-text')
+            .should('have.text', expectedType);
     }
 
     function repeatDrawingStart() {
@@ -91,7 +90,7 @@ context('Repeat draw feature.', () => {
             cy.get('.cvat-canvas-container').click(createRectangleShape2Points.secondX, createRectangleShape2Points.secondY - 200);
             cy.get('#cvat_canvas_shape_2').should('exist');
             checkCountShapes(2);
-            checkShapeType('#cvat-objects-sidebar-state-item-2', 'RECTANGLE SHAPE');
+            checkShapeType(2, 'RECTANGLE SHAPE');
         });
 
         it('Draw and repeat the drawing of the polygon.', () => {
@@ -103,7 +102,7 @@ context('Repeat draw feature.', () => {
             repeatDrawingFinish();
             cy.get('#cvat_canvas_shape_4').should('exist');
             checkCountShapes(4);
-            checkShapeType('#cvat-objects-sidebar-state-item-4', 'POLYGON SHAPE');
+            checkShapeType(4, 'POLYGON SHAPE');
         });
 
         it('Draw and repeat the drawing of the polyline.', () => {
@@ -115,7 +114,7 @@ context('Repeat draw feature.', () => {
             repeatDrawingFinish();
             cy.get('#cvat_canvas_shape_6').should('exist');
             checkCountShapes(6);
-            checkShapeType('#cvat-objects-sidebar-state-item-6', 'POLYLINE SHAPE');
+            checkShapeType(6, 'POLYLINE SHAPE');
         });
 
         it('Draw and repeat the drawing of the point.', () => {
@@ -127,7 +126,7 @@ context('Repeat draw feature.', () => {
             repeatDrawingFinish();
             cy.get('#cvat_canvas_shape_8').should('exist');
             checkCountShapes(8);
-            checkShapeType('#cvat-objects-sidebar-state-item-8', 'POINTS SHAPE');
+            checkShapeType(8, 'POINTS SHAPE');
         });
 
         it('Draw and repeat the drawing of the cuboid.', () => {
@@ -137,7 +136,7 @@ context('Repeat draw feature.', () => {
             cy.get('.cvat-canvas-container').click(createCuboidShape2Points.secondX, createCuboidShape2Points.secondY - 200);
             cy.get('#cvat_canvas_shape_10').should('exist');
             checkCountShapes(10);
-            checkShapeType('#cvat-objects-sidebar-state-item-10', 'CUBOID SHAPE');
+            checkShapeType(10, 'CUBOID SHAPE');
         });
     });
 });

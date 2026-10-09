@@ -9,6 +9,7 @@ import ObjectItemDetails, { SizeType } from 'components/annotation-page/standard
 import { updateAnnotationsAsync, collapseObjectItems } from 'actions/annotation-actions';
 import { connect } from 'react-redux';
 import { ThunkDispatch } from 'utils/redux';
+import { getObjectStateByClientID } from 'utils/objects-sidebar';
 
 interface OwnProps {
     readonly: boolean;
@@ -29,18 +30,9 @@ interface DispatchToProps {
 }
 
 function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
-    const { clientID, parentID } = own;
-    let objectState: ObjectState | null = null;
+    const { clientID } = own;
     const { states } = state.annotation.annotations;
-    if (parentID) {
-        const parentState = (states as ObjectState[])
-            .find((_objectState: ObjectState) => _objectState.clientID === parentID);
-        if (parentState) {
-            objectState = parentState.elements.find((el: ObjectState) => el.clientID === clientID) || null;
-        }
-    } else {
-        objectState = (states as ObjectState[]).find((el: ObjectState) => el.clientID === clientID) || null;
-    }
+    const objectState = getObjectStateByClientID(states, clientID);
 
     const {
         annotation: {

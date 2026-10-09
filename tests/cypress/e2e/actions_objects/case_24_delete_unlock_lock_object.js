@@ -5,11 +5,13 @@
 
 /// <reference types="cypress" />
 
-import { taskName, labelName } from '../../support/const';
+import { labelName } from '../../support/const';
+import { defaultTaskSpec } from '../../support/default-specs';
 import { fullMatch } from '../../support/utils';
 
 context('Delete unlock/lock object', () => {
     const caseId = '24';
+    let taskId = null;
 
     const createRectangleShape2Points = {
         points: '2 Points',
@@ -73,7 +75,20 @@ context('Delete unlock/lock object', () => {
 
     before(() => {
         cy.prepareUserSession();
-        cy.openTaskJob(taskName);
+        const { taskSpec, dataSpec, extras } = defaultTaskSpec({
+            taskName: 'Delete unlock/lock object regression',
+            labelName,
+            serverFiles: ['images/image_1.jpg'],
+        });
+        cy.headlessCreateTask(taskSpec, dataSpec, extras).then(({ taskId: tid, jobIds: [jobId] }) => {
+            taskId = tid;
+            cy.visit(`/tasks/${taskId}/jobs/${jobId}`);
+            cy.get('.cvat-canvas-container').should('be.visible');
+        });
+    });
+
+    after(() => {
+        if (taskId !== null) cy.headlessDeleteTask(taskId);
     });
 
     describe(`Testing case "${caseId}"`, () => {

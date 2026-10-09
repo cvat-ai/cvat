@@ -3,7 +3,9 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, {
+    useCallback, useEffect, useMemo, useState,
+} from 'react';
 
 import {
     DndContext, DragEndEvent, DragOverlay, DragStartEvent, PointerSensor,
@@ -20,6 +22,7 @@ import { StatesOrdering, Workspace, isMultiSelectionSupported } from 'reducers';
 import { ObjectState } from 'cvat-core-wrapper';
 import ObjectItemContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/object-item';
 import CVATTooltip from 'components/common/cvat-tooltip';
+import VirtualList, { VirtualListScrollTarget } from 'components/common/virtual-list';
 import {
     OBJECTS_SIDEBAR_EXPAND_Z_LAYER_EVENT,
 } from 'utils/objects-sidebar';
@@ -34,13 +37,39 @@ import {
     type LayerMoveSource,
     isLayerState,
     isLayerDroppedBesideItself,
+    layerInsertDropID,
     parseLayerDragID,
     parseLayerDropID,
     parseLayerInsertDropID,
+    parseLayerObjectDropID,
     parseObjectDragID,
 } from './drag-and-drop';
+import DraggableObjectItem from './drag-and-drop/draggable-object-item';
 import LayerInsertDropArea from './drag-and-drop/layer-insert-drop-area';
 import LayerSection from './drag-and-drop/layer-section';
+
+interface PendingScrollTarget {
+    itemID: string;
+    rootID: string;
+    rootClientID: number;
+    parentID: number | null;
+}
+
+enum SidebarRowKind {
+    OBJECT = 'object',
+    LAYER = 'layer',
+    INSERT = 'insert',
+}
+
+type SidebarRow =
+    | { kind: SidebarRowKind.OBJECT; key: string; clientID: number; zOrder: number | null; lastInLayer: boolean }
+    | { kind: SidebarRowKind.LAYER; key: string; zOrder: number; placement: LayerPlacement }
+    | { kind: SidebarRowKind.INSERT; key: string; placement: LayerPlacement };
+
+const sidebarRowKey = (row: SidebarRow): string => row.key;
+const sidebarRowType = (row: SidebarRow): string => (
+    row.kind === SidebarRowKind.OBJECT && row.zOrder !== null ? 'layer-object' : row.kind
+);
 
 interface Props {
     workspace: Workspace;
@@ -113,14 +142,81 @@ function ObjectListComponent(props: Props): JSX.Element {
     }));
     // Keep collapse state in the list so expand/open events and collapse-all can coordinate all sections.
     const [collapsedLayers, setCollapsedLayers] = useState<Set<number>>(() => new Set());
+    const [expandedSkeletons, setExpandedSkeletons] = useState<Set<number>>(() => new Set());
+    const toggleSkeletonParts = useCallback((clientID: number, expanded: boolean): void => {
+        setExpandedSkeletons((current) => {
+            const next = new Set(current);
+            if (expanded) next.add(clientID);
+            else next.delete(clientID);
+            return next;
+        });
+    }, []);
+    useEffect(() => {
+        // A deleted object may be replaced by a new object with the same client ID after clearing annotations.
+        const existing = new Set(objectStates.map((state) => state.clientID));
+        setExpandedSkeletons((current) => {
+            const retained = new Set([...current].filter((clientID) => existing.has(clientID)));
+            return retained.size === current.size ? current : retained;
+        });
+    }, [objectStates]);
     const [dragActive, setDragActive] = useState<boolean>(false);
     const [activeDragID, setActiveDragID] = useState<string | null>(null);
     const [dragPointerPosition, setDragPointerPosition] = useState<PointerPosition | null>(null);
-    const [pendingExpandedLayerItemID, setPendingExpandedLayerItemID] = useState<string | null>(null);
-    const layerObjectStates = objectStates.filter(isLayerState);
-    const zLayers = Array.from(
+    const [pendingScrollTarget, setPendingScrollTarget] = useState<PendingScrollTarget | null>(null);
+    const layerObjectStates = useMemo(() => objectStates.filter(isLayerState), [objectStates]);
+    const layerStatesById = useMemo(() => new Map(
+        layerObjectStates.map((state: ObjectState): [number, ObjectState] => [state.clientID, state]),
+    ), [layerObjectStates]);
+    const zLayers = useMemo(() => Array.from(
         new Set(layerObjectStates.map((state) => state.zOrder)),
-    ).sort((left: number, right: number): number => left - right);
+    ).sort((left: number, right: number): number => left - right), [layerObjectStates]);
+    const objectIdsByLayer = useMemo(() => {
+        if (statesOrdering !== StatesOrdering.LAYER) {
+            return {} as Record<number, number[]>;
+        }
+
+        return sortedStatesID.reduce((acc: Record<number, number[]>, id: number): Record<number, number[]> => {
+            const object = layerStatesById.get(id);
+            if (object) {
+                acc[object.zOrder] = acc[object.zOrder] || [];
+                acc[object.zOrder].push(id);
+            }
+            return acc;
+        }, {});
+    }, [layerStatesById, sortedStatesID, statesOrdering]);
+    const sidebarRows = useMemo((): SidebarRow[] => {
+        if (statesOrdering !== StatesOrdering.LAYER) {
+            return sortedStatesID.map((clientID: number): SidebarRow => ({
+                kind: SidebarRowKind.OBJECT, key: `flat-object:${clientID}`, clientID, zOrder: null, lastInLayer: false,
+            }));
+        }
+
+        const rows: SidebarRow[] = [];
+        zLayers.forEach((zOrder: number, index: number): void => {
+            const placement: LayerPlacement = index === 0 ? { before: zOrder } : { after: zLayers[index - 1] };
+            rows.push({
+                kind: SidebarRowKind.LAYER, key: `layer:${zOrder}`, zOrder, placement,
+            });
+
+            if (!collapsedLayers.has(zOrder)) {
+                const objectIds = objectIdsByLayer[zOrder] || [];
+                objectIds.forEach((clientID: number, objectIndex: number): void => {
+                    rows.push({
+                        kind: SidebarRowKind.OBJECT,
+                        key: `layer-object:${clientID}`,
+                        clientID,
+                        zOrder,
+                        lastInLayer: objectIndex === objectIds.length - 1,
+                    });
+                });
+            }
+        });
+        if (zLayers.length) {
+            const placement: LayerPlacement = { after: zLayers[zLayers.length - 1] };
+            rows.push({ kind: SidebarRowKind.INSERT, key: layerInsertDropID(placement), placement });
+        }
+        return rows;
+    }, [collapsedLayers, objectIdsByLayer, sortedStatesID, statesOrdering, zLayers]);
 
     const allLayersCollapsed = !!zLayers.length && zLayers.every((zOrder: number): boolean => (
         collapsedLayers.has(zOrder)
@@ -143,18 +239,14 @@ function ObjectListComponent(props: Props): JSX.Element {
         });
     }, [zLayers.join(',')]);
 
-    useEffect((): void => {
-        if (!pendingExpandedLayerItemID) {
-            return;
-        }
-
-        const sidebarItem = window.document.getElementById(pendingExpandedLayerItemID);
-
-        if (sidebarItem) {
-            sidebarItem.scrollIntoView({ block: 'nearest' });
-            setPendingExpandedLayerItemID(null);
-        }
-    }, [collapsedLayers, pendingExpandedLayerItemID]);
+    const scrollTarget = useMemo((): VirtualListScrollTarget | null => (pendingScrollTarget ? {
+        key: `${statesOrdering === StatesOrdering.LAYER ? 'layer' : 'flat'}-object:${pendingScrollTarget.rootClientID}`,
+        getElement: (row) => row.querySelector<HTMLElement>(`#${pendingScrollTarget.itemID}`) ||
+            row.querySelector<HTMLElement>(`#${pendingScrollTarget.rootID}`),
+    } : null), [pendingScrollTarget, statesOrdering]);
+    const finishScroll = useCallback((): void => {
+        setPendingScrollTarget((current) => (current === pendingScrollTarget ? null : current));
+    }, [pendingScrollTarget]);
 
     // React to external requests to expand the layer containing a target object.
     useEffect((): () => void => {
@@ -162,26 +254,32 @@ function ObjectListComponent(props: Props): JSX.Element {
             const { clientID, parentID } = (
                 event as CustomEvent<{ clientID: number; parentID: number | null }>
             ).detail;
+            const rootClientID = parentID ?? clientID;
 
-            const expandedState = objectStates.find((state: ObjectState): boolean => (
-                state.clientID === (parentID ?? clientID)
-            ));
-
-            if (expandedState) {
-                if (collapsedLayers.has(expandedState.zOrder)) {
-                    const itemID = Number.isInteger(parentID) ?
-                        `cvat-objects-sidebar-state-item-element-${clientID}` :
-                        `cvat-objects-sidebar-state-item-${clientID}`;
-
-                    setPendingExpandedLayerItemID(itemID);
+            if (statesOrdering === StatesOrdering.LAYER) {
+                const expandedState = layerStatesById.get(rootClientID);
+                if (!expandedState) {
+                    return;
                 }
-
                 setCollapsedLayers((current: Set<number>): Set<number> => {
                     const next = new Set(current);
                     next.delete(expandedState.zOrder);
                     return next;
                 });
+            } else if (!sortedStatesID.includes(rootClientID)) {
+                return;
             }
+
+            if (Number.isInteger(parentID)) toggleSkeletonParts(rootClientID, true);
+
+            setPendingScrollTarget({
+                itemID: Number.isInteger(parentID) ?
+                    `cvat-objects-sidebar-state-item-element-${clientID}` :
+                    `cvat-objects-sidebar-state-item-${clientID}`,
+                rootID: `cvat-objects-sidebar-state-item-${rootClientID}`,
+                rootClientID,
+                parentID,
+            });
         };
 
         window.addEventListener(OBJECTS_SIDEBAR_EXPAND_Z_LAYER_EVENT, onExpandLayer);
@@ -189,7 +287,7 @@ function ObjectListComponent(props: Props): JSX.Element {
         return (): void => {
             window.removeEventListener(OBJECTS_SIDEBAR_EXPAND_Z_LAYER_EVENT, onExpandLayer);
         };
-    }, [collapsedLayers, objectStates]);
+    }, [layerStatesById, sortedStatesID, statesOrdering, toggleSkeletonParts]);
 
     // Track the pointer only during drag so nearby insert gaps can expand.
     useEffect((): (() => void) | undefined => {
@@ -207,28 +305,18 @@ function ObjectListComponent(props: Props): JSX.Element {
         };
     }, [dragActive]);
 
-    const objectIdsByLayer = sortedStatesID
-        .reduce((acc: Record<number, number[]>, id: number): Record<number, number[]> => {
-            const object = layerObjectStates.find((state: ObjectState): boolean => state.clientID === id);
-
-            if (object) {
-                acc[object.zOrder] = acc[object.zOrder] || [];
-                acc[object.zOrder].push(id);
-            }
-
-            return acc;
-        }, {});
-    const selectableObjectIDs = new Set(sanitizeSelectedObjectIDs(
+    const selectableObjectIDs = useMemo(() => new Set(sanitizeSelectedObjectIDs(
         layerObjectStates,
         sortedStatesID,
         hiddenLayers,
-    ));
-    const selectableObjectIdsByLayer = Object.fromEntries(Object.entries(objectIdsByLayer).map(
+    )), [layerObjectStates, sortedStatesID, hiddenLayers]);
+    const selectableObjectIdsByLayer = useMemo(() => Object.fromEntries(Object.entries(objectIdsByLayer).map(
         ([zOrder, clientIDs]): [string, number[]] => [
             zOrder,
             clientIDs.filter((clientID: number): boolean => selectableObjectIDs.has(clientID)),
         ],
-    ));
+    )), [objectIdsByLayer, selectableObjectIDs]);
+    const selectedObjectIDs = useMemo(() => new Set(selectedStatesID), [selectedStatesID]);
 
     const onDragEnd = useCallback((event: DragEndEvent): void => {
         const { active, over } = event;
@@ -243,7 +331,7 @@ function ObjectListComponent(props: Props): JSX.Element {
 
         const clientID = parseObjectDragID(String(active.id));
         const sourceZOrder = parseLayerDragID(String(active.id));
-        const zOrder = parseLayerDropID(String(over.id));
+        const zOrder = parseLayerDropID(String(over.id)) ?? parseLayerObjectDropID(String(over.id));
         const placement = parseLayerInsertDropID(String(over.id));
         let moved = false;
 
@@ -352,9 +440,10 @@ function ObjectListComponent(props: Props): JSX.Element {
             selectedStatesID.filter((clientID: number): boolean => !affectedIDs.includes(clientID)) :
             [...new Set([...selectedStatesID, ...affectedIDs])]);
     };
-    const visibleObjectIDs = statesOrdering === StatesOrdering.LAYER ? zLayers
+    const visibleObjectIDs = useMemo(() => (statesOrdering === StatesOrdering.LAYER ? zLayers
         .filter((zOrder: number): boolean => !collapsedLayers.has(zOrder))
-        .flatMap((zOrder: number): number[] => objectIdsByLayer[zOrder] || []) : sortedStatesID;
+        .flatMap((zOrder: number): number[] => objectIdsByLayer[zOrder] || []) : sortedStatesID),
+    [statesOrdering, zLayers, collapsedLayers, objectIdsByLayer, sortedStatesID]);
 
     const renderDragOverlay = (): JSX.Element | null => {
         if (!activeDragID) {
@@ -371,7 +460,6 @@ function ObjectListComponent(props: Props): JSX.Element {
                         clientID={clientID}
                         visibleObjectIDs={visibleObjectIDs}
                         visibleSkeletonElements={visibleSkeletonElements}
-                        allowSimplifyLifecycle
                         zLayerDragging
                     />
                 </div>
@@ -396,8 +484,111 @@ function ObjectListComponent(props: Props): JSX.Element {
         );
     };
 
+    const layerOrdering = statesOrdering === StatesOrdering.LAYER;
+    const keepMountedKeys = useMemo((): string[] => {
+        if (!activeDragID) return [];
+        const clientID = parseObjectDragID(activeDragID);
+        if (clientID !== null) return [`layer-object:${clientID}`];
+        const zOrder = parseLayerDragID(activeDragID);
+        return zOrder !== null ? [`layer:${zOrder}`] : [];
+    }, [activeDragID]);
+    const virtualList = (
+        <VirtualList<SidebarRow>
+            className={`cvat-objects-sidebar-virtual-list${
+                layerOrdering ? ' cvat-objects-sidebar-z-layers-virtual-list' : ''
+            }`}
+            data={sidebarRows}
+            itemKey={sidebarRowKey}
+            itemType={sidebarRowType}
+            keepMountedKeys={keepMountedKeys}
+            scrollTarget={scrollTarget}
+            onScrollTargetComplete={finishScroll}
+        >
+            {(row: SidebarRow): JSX.Element => {
+                if (row.kind === SidebarRowKind.LAYER) {
+                    return (
+                        <div className='cvat-objects-sidebar-layer-virtual-row'>
+                            <LayerInsertDropArea
+                                placement={row.placement}
+                                pointerPosition={dragPointerPosition}
+                            />
+                            <LayerSection
+                                zOrder={row.zOrder}
+                                selected={row.zOrder === currentLayer}
+                                multiSelected={multiSelectionSupported &&
+                                    !!selectableObjectIdsByLayer[row.zOrder]?.length &&
+                                    selectableObjectIdsByLayer[row.zOrder].every(
+                                        (clientID: number): boolean => selectedObjectIDs.has(clientID),
+                                    )}
+                                visible={!hiddenLayers.has(row.zOrder)}
+                                collapsed={collapsedLayers.has(row.zOrder)}
+                                selectLayer={selectLayer}
+                                toggleLayerVisibility={toggleLayerVisibility}
+                                toggleLayerCollapsed={toggleLayerCollapsed}
+                                onMouseDown={(event: React.MouseEvent): void => (
+                                    selectLayerObjects(event, row.zOrder)
+                                )}
+                                onKeyDown={(event: React.KeyboardEvent): void => (
+                                    selectLayerObjects(event, row.zOrder)
+                                )}
+                            />
+                        </div>
+                    );
+                }
+
+                if (row.kind === SidebarRowKind.INSERT) {
+                    return (
+                        <div className='cvat-objects-sidebar-layer-virtual-row'>
+                            <LayerInsertDropArea
+                                placement={row.placement}
+                                pointerPosition={dragPointerPosition}
+                            />
+                        </div>
+                    );
+                }
+
+                if (row.zOrder !== null) {
+                    const object = layerStatesById.get(row.clientID);
+                    return (
+                        <div className='cvat-objects-sidebar-layer-virtual-row'>
+                            <DraggableObjectItem
+                                objectStates={layerObjectStates}
+                                clientID={row.clientID}
+                                zOrder={row.zOrder}
+                                lastInLayer={row.lastInLayer}
+                                visibleObjectIDs={objectIdsByLayer[row.zOrder] || []}
+                                visibleSkeletonElements={visibleSkeletonElements}
+                                partsExpanded={expandedSkeletons.has(row.clientID)}
+                                onPartsExpandedChange={toggleSkeletonParts}
+                                draggable={!!object && !object.lock}
+                                toggleSelection={(): void => toggleObjectSelection(row.clientID)}
+                                selectRange={(): void => (
+                                    selectObjectRangeWithinLayer(row.clientID, row.zOrder as number)
+                                )}
+                                multiSelectionSupported={multiSelectionSupported}
+                            />
+                        </div>
+                    );
+                }
+
+                return (
+                    <div className='cvat-objects-sidebar-virtual-row'>
+                        <ObjectItemContainer
+                            objectStates={objectStates}
+                            clientID={row.clientID}
+                            visibleObjectIDs={visibleObjectIDs}
+                            visibleSkeletonElements={visibleSkeletonElements}
+                            partsExpanded={expandedSkeletons.has(row.clientID)}
+                            onPartsExpandedChange={toggleSkeletonParts}
+                        />
+                    </div>
+                );
+            }}
+        </VirtualList>
+    );
+
     return (
-        <>
+        <div className='cvat-objects-sidebar-object-list'>
             <ObjectListHeader
                 workspace={workspace}
                 statesHidden={statesHidden}
@@ -417,8 +608,13 @@ function ObjectListComponent(props: Props): JSX.Element {
                 showAllStates={showAllStates}
                 changeShowGroundTruth={changeShowGroundTruth}
             />
-            <div className='cvat-objects-sidebar-states-list'>
-                {statesOrdering === StatesOrdering.LAYER ? (
+            <div
+                className={`cvat-objects-sidebar-states-list ${
+                    layerOrdering ? 'cvat-objects-sidebar-states-list-layer-virtualized' :
+                        'cvat-objects-sidebar-states-list-virtualized'
+                }`}
+            >
+                {layerOrdering ? (
                     <div className='cvat-objects-sidebar-z-layers-panel'>
                         <div className='cvat-objects-sidebar-z-layers-title'>
                             <Text strong>Layer stack</Text>
@@ -449,56 +645,7 @@ function ObjectListComponent(props: Props): JSX.Element {
                             onDragEnd={onDragEnd}
                         >
                             <div className='cvat-objects-sidebar-z-layers-stack'>
-                                {zLayers.map((zOrder: number, index: number): JSX.Element => {
-                                    const placement: LayerPlacement = index === 0 ?
-                                        { before: zOrder } :
-                                        { after: zLayers[index - 1] };
-
-                                    return (
-                                        <React.Fragment key={zOrder}>
-                                            <LayerInsertDropArea
-                                                placement={placement}
-                                                pointerPosition={dragPointerPosition}
-                                            />
-                                            <LayerSection
-                                                zOrder={zOrder}
-                                                layerObjectIds={objectIdsByLayer[zOrder] || []}
-                                                objectStates={layerObjectStates}
-                                                visibleSkeletonElements={visibleSkeletonElements}
-                                                selected={zOrder === currentLayer}
-                                                multiSelected={multiSelectionSupported &&
-                                                    !!selectableObjectIdsByLayer[zOrder]?.length &&
-                                                    selectableObjectIdsByLayer[zOrder].every(
-                                                        (clientID: number): boolean => (
-                                                            selectedStatesID.includes(clientID)
-                                                        ),
-                                                    )}
-                                                visible={!hiddenLayers.has(zOrder)}
-                                                collapsed={collapsedLayers.has(zOrder)}
-                                                selectLayer={selectLayer}
-                                                toggleLayerVisibility={toggleLayerVisibility}
-                                                toggleLayerCollapsed={toggleLayerCollapsed}
-                                                onMouseDown={(event: React.MouseEvent): void => (
-                                                    selectLayerObjects(event, zOrder)
-                                                )}
-                                                onKeyDown={(event: React.KeyboardEvent): void => (
-                                                    selectLayerObjects(event, zOrder)
-                                                )}
-                                                toggleObjectSelection={toggleObjectSelection}
-                                                selectObjectRange={(clientID: number): void => (
-                                                    selectObjectRangeWithinLayer(clientID, zOrder)
-                                                )}
-                                                multiSelectionSupported={multiSelectionSupported}
-                                            />
-                                        </React.Fragment>
-                                    );
-                                })}
-                                {!!zLayers.length && (
-                                    <LayerInsertDropArea
-                                        placement={{ after: zLayers[zLayers.length - 1] }}
-                                        pointerPosition={dragPointerPosition}
-                                    />
-                                )}
+                                {virtualList}
                             </div>
                             <DragOverlay
                                 // dnd-kit's default drop animation scrolls the source node back into view.
@@ -511,18 +658,9 @@ function ObjectListComponent(props: Props): JSX.Element {
                             </DragOverlay>
                         </DndContext>
                     </div>
-                ) : sortedStatesID.map((id: number): JSX.Element => (
-                    <ObjectItemContainer
-                        key={id}
-                        objectStates={objectStates}
-                        clientID={id}
-                        visibleObjectIDs={visibleObjectIDs}
-                        visibleSkeletonElements={visibleSkeletonElements}
-                        allowSimplifyLifecycle
-                    />
-                ))}
+                ) : virtualList}
             </div>
-        </>
+        </div>
     );
 }
 
