@@ -6,6 +6,7 @@ import React, {
     useCallback, useEffect, useRef, useState,
 } from 'react';
 import { connect } from 'react-redux';
+import notification from 'antd/lib/notification';
 
 import {
     activateObject as activateObjectAction,
@@ -13,6 +14,7 @@ import {
     updateAnnotationsAsync,
 } from 'actions/annotation-actions';
 import PolySimplifyControl from 'components/annotation-page/standard-workspace/controls-side-bar/poly-simplify-control';
+import CVATMarkdown from 'components/common/cvat-markdown';
 import { Canvas, CanvasMode } from 'cvat-canvas-wrapper';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import { Job, ObjectState, ShapeType } from 'cvat-core-wrapper';
@@ -243,10 +245,18 @@ function usePolySimplifySession(props: SessionProps): SessionControls {
                     session.phase = SimplifyState.ACTIVE;
                     setControlsVisible(true);
                 }
-            } catch (_error) {
-                await unfreeze(session);
-                session.phase = SimplifyState.FINISHED;
-                if (session.mounted) close(objectState.clientID as number);
+            } catch (error: unknown) {
+                notification.error({
+                    message: 'Could not initialize simplification',
+                    description: <CVATMarkdown>{error instanceof Error ? error.message : String(error)}</CVATMarkdown>,
+                    duration: null,
+                });
+                try {
+                    await unfreeze(session);
+                } finally {
+                    session.phase = SimplifyState.FINISHED;
+                    if (session.mounted) close(objectState.clientID as number);
+                }
             }
         });
 
