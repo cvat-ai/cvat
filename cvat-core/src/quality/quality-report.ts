@@ -31,6 +31,7 @@ export interface QualityReportRequirementSummaryItem {
 }
 
 export interface QualitySummary {
+    hasComparisonScope: boolean;
     totalFrames: number;
     validationFrames: number;
     validationFrameShare: number;
@@ -71,6 +72,7 @@ export interface QualitySummary {
 
 export default class QualityReport {
     #id: number;
+    #version: number | null;
     #parentID: number;
     #projectId: number;
     #taskID: number;
@@ -83,6 +85,7 @@ export default class QualityReport {
 
     constructor(initialData: SerializedQualityReportData) {
         this.#id = initialData.id;
+        this.#version = initialData.version;
         this.#parentID = initialData.parent_id;
         this.#projectId = initialData.project_id;
         this.#taskID = initialData.task_id;
@@ -97,6 +100,10 @@ export default class QualityReport {
         } else {
             this.#assignee = null;
         }
+    }
+
+    get version(): number | null {
+        return this.#version;
     }
 
     get id(): number {
@@ -137,6 +144,7 @@ export default class QualityReport {
 
     get summary(): QualitySummary {
         return {
+            hasComparisonScope: this.#summary.has_comparison_scope ?? Boolean(this.#summary.validation_frames),
             totalFrames: this.#summary.total_frames,
             validationFrames: this.#summary.validation_frames,
             validationFrameShare: this.#summary.validation_frame_share,

@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import {
-    Label, QualityRequirement, QualityRequirementSaveFields, QualitySettings,
+    Label, MediaType, QualityRequirement, QualityRequirementSaveFields, QualitySettings,
 } from 'cvat-core-wrapper';
 import {
     QualityRequirementAnnotationType, QualityRequirementAttributeComparator,
@@ -62,6 +62,7 @@ export const POINT_SIZE_BASE_OPTIONS: QualityRequirementPointSizeBase[] = Object
     QualityRequirementPointSizeBase,
 );
 export const IOU_ANNOTATION_TYPES = new Set<QualityRequirementAnnotationType>([
+    QualityRequirementAnnotationType.INTERVAL,
     QualityRequirementAnnotationType.RECTANGLE,
     QualityRequirementAnnotationType.ELLIPSE,
     QualityRequirementAnnotationType.POLYGON,
@@ -186,6 +187,7 @@ export interface RequirementFormValues {
 export interface QualityRequirementFormProps {
     settings: QualitySettings;
     labels: Label[];
+    mediaType?: MediaType;
     requirement: QualityRequirement | null;
     enabledOverride?: boolean;
     parentRequirement: QualityRequirement | null;
@@ -213,7 +215,7 @@ function fromPercent(value: number | null | undefined): number | null {
     return typeof value === 'number' ? Number((value / 100).toFixed(6)) : null;
 }
 
-function getAnnotationType(
+export function getAnnotationType(
     requirement: QualityRequirement | null,
     requirementsById: Map<number, QualityRequirement>,
 ): QualityRequirementAnnotationType {

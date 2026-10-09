@@ -29,12 +29,25 @@ class FrameComparisonSample(ComparisonSample):
     frame_id: int = field(validator=validators.instance_of(int))
 
 
+@define(frozen=True)
+class RecordingComparisonSample(ComparisonSample):
+    start: int
+    stop: int
+
+
 class QualityBackend(ABC):
     """Data and geometry boundary for shared requirement evaluation.
 
     Consume each sample before advancing the iterator. A backend may retain
     native media and identity mappings for the duration of that sample.
     """
+
+    uses_frames: bool = True
+
+    @property
+    @abstractmethod
+    def supported_annotation_types(self) -> Collection[QualityRequirementAnnotationType]:
+        raise NotImplementedError
 
     @property
     @abstractmethod

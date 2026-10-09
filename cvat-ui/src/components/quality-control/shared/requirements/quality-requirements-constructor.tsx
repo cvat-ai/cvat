@@ -17,6 +17,7 @@ import Text from 'antd/lib/typography/Text';
 import CVATTable from 'components/common/cvat-table';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import {
+    MediaType,
     QualityRequirement,
     QualitySettings,
 } from 'cvat-core-wrapper';
@@ -29,7 +30,9 @@ import {
     formatMetric,
     formatThreshold,
     getRequirementDisplayValue,
+    isQualityAnnotationTypeSupported,
 } from './quality-requirements-utils';
+import { getAnnotationType } from './quality-requirement-form-utils';
 
 // The table rows hold formatted display labels (see buildRequirementTree), so the select
 // option values must be those labels for jsonLogic filtering to match.
@@ -88,6 +91,7 @@ interface RequirementRow {
 interface Props {
     form: FormInstance;
     settings: QualitySettings;
+    mediaType?: MediaType;
     disabled: boolean;
     onReload: () => Promise<void>;
     onCreateRequirement: (parentRequirement: QualityRequirement) => void;
@@ -208,6 +212,7 @@ export default function QualityRequirementsConstructor(props: Readonly<Props>): 
     const {
         form,
         settings,
+        mediaType,
         disabled,
         onReload,
         onCreateRequirement,
@@ -222,6 +227,7 @@ export default function QualityRequirementsConstructor(props: Readonly<Props>): 
     );
     const [enabledValues, setEnabledValues] = useState<Record<string, boolean>>({});
     const data = useMemo(() => buildRequirementTree(settings.requirements), [settings.requirements]);
+    const requirementsById = useMemo(() => buildRequirementsById(settings.requirements), [settings.requirements]);
 
     useEffect(() => {
         setExpandedRowKeys(readExpandedRowKeys(expandedRowsStorageKey));
@@ -345,7 +351,11 @@ export default function QualityRequirementsConstructor(props: Readonly<Props>): 
                 render: (_: boolean, record: RequirementRow): JSX.Element => (
                     <Switch
                         checked={isRequirementEnabled(record.requirement)}
-                        disabled={disabled || pendingRequirementId !== null}
+                        disabled={disabled || pendingRequirementId !== null || (
+                            !isRequirementEnabled(record.requirement) && !isQualityAnnotationTypeSupported(
+                                getAnnotationType(record.requirement, requirementsById), mediaType,
+                            )
+                        )}
                         onChange={(enabled: boolean) => onEnabledChange(record.requirement, enabled)}
                     />
                 ),

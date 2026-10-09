@@ -15,6 +15,7 @@ from django.db.models import OuterRef, Subquery, prefetch_related_objects
 from cvat.apps.engine.filters import JsonLogicFilter
 from cvat.apps.engine.media_io.frame_provider import TaskFrameProvider
 from cvat.apps.engine.models import (
+    DimensionType,
     Image,
     Job,
     JobType,
@@ -42,6 +43,7 @@ from cvat.apps.quality_control.data_providers import (
     QualitySettingsManager,
     make_job_data_provider,
 )
+from cvat.apps.quality_control.interval_data_provider import validate_audio_quality_scope
 from cvat.apps.quality_control.quality_handlers import (
     DatasetQualityEstimator,
     EffectiveQualityRequirement,
@@ -52,6 +54,7 @@ from cvat.apps.quality_control.quality_handlers import (
     resolve_effective_requirements,
     select_requirement_calculation,
 )
+from cvat.apps.quality_control.utils import CURRENT_REPORT_VERSION
 from cvat.utils import django_database as db_utils
 
 _DEFAULT_FETCH_CHUNK_SIZE = 1000
@@ -60,7 +63,7 @@ _DEFAULT_FETCH_CHUNK_SIZE = 1000
 def _all_enabled_requirements_completed(summary: ComparisonReportSummary) -> bool:
     requirements = summary.requirements
     return bool(
-        summary.validation_frames
+        summary.has_comparison_scope
         and requirements
         and requirements.enabled_count
         and requirements.completed_count == requirements.enabled_count
@@ -96,6 +99,7 @@ class TaskQualityCalculator:
             if not gt_job_id:
                 return None
 
+            validate_audio_quality_scope(task)
             quality_settings = QualitySettingsManager().get_task_settings(task)
             report_parameters = self.get_report_parameters(task)
 
@@ -148,8 +152,10 @@ class TaskQualityCalculator:
             with closing(
                 make_job_data_provider(gt_job.id, queryset=job_queryset)
             ) as gt_job_data_provider:
-                active_validation_frames = self.get_active_validation_frames(
-                    task, gt_job_data_provider
+                active_validation_frames = (
+                    None
+                    if task.dimension == DimensionType.DIM_1D
+                    else self.get_active_validation_frames(task, gt_job_data_provider)
                 )
                 for job in jobs:
                     with closing(
@@ -237,7 +243,7 @@ class TaskQualityCalculator:
         job_stats.all.update(all_job_ids)
         job_stats.excluded.update(all_job_ids - job_reports.keys())
         job_stats.not_checkable.update(
-            jid for jid, r in job_reports.items() if not r.comparison_summary.validation_frames
+            jid for jid, r in job_reports.items() if not r.comparison_summary.has_comparison_scope
         )
         job_stats.completed.update(
             jid
@@ -256,6 +262,9 @@ class TaskQualityCalculator:
         task_total_frames = 0  # in included and non-checkable jobs
         task_conflicts: list[AnnotationConflict] = []
         task_group_frame_results: dict[str, dict[int, ComparisonReportFrameComparisonSummary]] = {}
+        task_group_annotations: dict[str, ComparisonReportAnnotationsSummary] = {}
+        task_group_conflicts: dict[str, list[AnnotationConflict]] = {}
+        frameless_groups: set[str] = set()
         task_group_parameters: dict[str, dict] = {}
         task_group_calculations: dict[str, ComparisonReportRequirementCalculation] = {}
         for r in job_reports.values():
@@ -270,6 +279,16 @@ class TaskQualityCalculator:
                     task_group_calculations.get(group_name),
                     group_report.comparison_summary.calculation,
                 )
+                task_group_annotations.setdefault(
+                    group_name, ComparisonReportAnnotationsSummary.create_empty()
+                ).accumulate(
+                    ComparisonReportAnnotationsSummary.from_confusion_matrix(
+                        group_report.comparison_summary.confusion_matrix
+                    )
+                )
+                task_group_conflicts.setdefault(group_name, []).extend(group_report.conflicts)
+                if group_report.frame_results is None:
+                    frameless_groups.add(group_name)
                 group_frame_results = task_group_frame_results.setdefault(group_name, {})
 
                 for frame_id, group_frame_result in (group_report.frame_results or {}).items():
@@ -285,12 +304,20 @@ class TaskQualityCalculator:
         task_conflicts = deduplicate_annotation_conflicts(task_conflicts)
 
         requirement_groups = {
-            group_name: build_requirement_report(
-                requirement=task_group_parameters[group_name],
-                frame_results=group_frame_results,
-                calculation=task_group_calculations[group_name],
+            group_name: ComparisonReportRequirementSummary(
+                parameters=task_group_parameters[group_name],
+                comparison_summary=build_requirement_comparison_summary(
+                    requirement=task_group_parameters[group_name],
+                    annotations=annotations,
+                    conflicts=deduplicate_annotation_conflicts(task_group_conflicts[group_name]),
+                    calculation=task_group_calculations[group_name],
+                ),
+                conflicts=deduplicate_annotation_conflicts(task_group_conflicts[group_name]),
+                frame_results=(
+                    None if group_name in frameless_groups else task_group_frame_results[group_name]
+                ),
             )
-            for group_name, group_frame_results in task_group_frame_results.items()
+            for group_name, annotations in task_group_annotations.items()
         }
         for requirement in requirements:
             if not requirement.enabled:
@@ -301,6 +328,10 @@ class TaskQualityCalculator:
                 build_requirement_report(
                     requirement=requirement,
                     frame_results={},
+                    include_frame_results=(
+                        requirement.annotation_type
+                        != models.QualityRequirementAnnotationType.INTERVAL
+                    ),
                 ),
             )
 
@@ -310,6 +341,9 @@ class TaskQualityCalculator:
         task_report_data = ComparisonReport(
             parameters=report_parameters,
             comparison_summary=ComparisonReportSummary(
+                has_comparison_scope=any(
+                    r.comparison_summary.has_comparison_scope for r in job_reports.values()
+                ),
                 validation_frames=task_validation_frames_count,
                 total_frames=task_total_frames,
                 frames=sorted(task_validated_frames),
@@ -327,6 +361,7 @@ class TaskQualityCalculator:
 
     def _save_reports(self, *, task_report: dict, job_reports: list[dict]) -> models.QualityReport:
         db_task_report = models.QualityReport(
+            version=CURRENT_REPORT_VERSION,
             task=task_report["task"],
             target_last_updated=task_report["target_last_updated"],
             gt_last_updated=task_report["gt_last_updated"],
@@ -339,6 +374,7 @@ class TaskQualityCalculator:
         db_job_reports = []
         for job_report in job_reports:
             db_job_report = models.QualityReport(
+                version=CURRENT_REPORT_VERSION,
                 job=job_report["job"],
                 target_last_updated=job_report["target_last_updated"],
                 gt_last_updated=job_report["gt_last_updated"],
@@ -398,7 +434,10 @@ class ProjectQualityCalculator:
     def is_task_report_relevant(self, quality_report: models.QualityReport) -> bool:
         assert quality_report.target == models.QualityReportTarget.TASK
 
+        if quality_report.resolve_version() != CURRENT_REPORT_VERSION:
+            return False
         task = quality_report.task
+        validate_audio_quality_scope(task)
         quality_settings = QualitySettingsManager().get_task_settings(task)
 
         return (quality_report.target_last_updated >= task.updated_date) and (
@@ -449,7 +488,6 @@ class ProjectQualityCalculator:
                             models.QualityReport.objects.filter(
                                 created_date__isnull=False,
                                 task_id=OuterRef("id"),
-                                data__regex=models.CURRENT_REPORT_DATA_REGEX,
                             )
                             .order_by("-created_date")
                             .values("id")[:1]
@@ -525,6 +563,7 @@ class ProjectQualityCalculator:
         with transaction.atomic():
             project_report = self._save_report(
                 models.QualityReport(
+                    version=CURRENT_REPORT_VERSION,
                     project=project,
                     target_last_updated=project.updated_date,
                     gt_last_updated=None,
@@ -648,6 +687,7 @@ class ProjectQualityCalculator:
                     calculation=project_group_calculations[group_name],
                 ),
                 frame_results=None,
+                conflicts=group_conflicts,
             )
 
         for requirement in requirements:
@@ -670,6 +710,11 @@ class ProjectQualityCalculator:
         project_report_data = ComparisonReport(
             parameters=report_parameters,
             comparison_summary=ComparisonReportSummary(
+                has_comparison_scope=any(
+                    r.comparison_summary.has_comparison_scope
+                    for task_id, r in task_reports.items()
+                    if task_id in included_tasks
+                ),
                 total_frames=total_frames,
                 validation_frames=total_validated_frames,
                 frames=None,  # project reports do not provide this info

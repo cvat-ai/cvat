@@ -11,7 +11,7 @@ from django.db import transaction
 from cvat.apps.dataset_manager import data_model as cdm
 from cvat.apps.dataset_manager.bindings import JobData
 from cvat.apps.dataset_manager.task import JobAnnotation
-from cvat.apps.engine.models import DimensionType, Project, Task
+from cvat.apps.engine.models import DimensionType, MediaType, Project, Task
 from cvat.apps.quality_control import models
 
 
@@ -84,9 +84,24 @@ class JobDataProvider(ABC):
 
 
 def make_job_data_provider(job_id: int, *, queryset=None, included_frames=None) -> JobDataProvider:
+    from cvat.apps.engine.models import Job
     from cvat.apps.quality_control.datumaro_data_provider import DatumaroJobDataProvider
+    from cvat.apps.quality_control.interval_data_provider import IntervalJobDataProvider
 
-    return DatumaroJobDataProvider(job_id, queryset=queryset, included_frames=included_frames)
+    job = (queryset if queryset is not None else Job.objects.select_related("segment__task")).get(
+        id=job_id
+    )
+    task = job.segment.task
+    match task.media_type:
+        case MediaType.AUDIO:
+            if task.dimension != DimensionType.DIM_1D:
+                raise AssertionError("Audio tasks must have 1d data")
+            provider_type = IntervalJobDataProvider
+        case _ if task.dimension == DimensionType.DIM_2D:
+            provider_type = DatumaroJobDataProvider
+        case _:
+            raise AssertionError("No quality data provider is available for this task")
+    return provider_type(job_id, queryset=queryset, included_frames=included_frames)
 
 
 class QualitySettingsManager:

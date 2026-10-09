@@ -4,6 +4,7 @@
 
 import csv
 import io
+import json
 import math
 from collections.abc import Generator, Sequence
 from datetime import timedelta
@@ -23,11 +24,15 @@ import shared.utils.s3 as s3
 from shared.fixtures.params import STORAGE_METHODS
 from shared.utils.config import (
     SHARE_DIR,
+    get_method,
     make_sdk_client,
+    patch_method,
+    put_method,
 )
 from shared.utils.helpers import read_audio_pcm
 
 from ._test_base import TestTasksBase
+from .utils import create_quality_report
 
 
 @fixture(scope="session")
@@ -87,6 +92,31 @@ class TestAudioTasks:
         assert task.dimension == "1d"
         assert task.mode == "interpolation"
         assert task.size > 0
+
+    @parametrize("task", [fixture_ref(fxt_audio_task_from_uploaded_data)])
+    def test_audio_quality_rejects_non_interval_requirements(self, task: Task):
+        response = get_method(self.user, "quality/settings", task_id=task.id)
+        assert response.status_code == 200
+        settings = response.json()["results"][0]
+        rectangle = next(
+            item for item in settings["requirements"] if item["annotation_type"] == "rectangle"
+        )
+        endpoint = f"quality/settings/requirements/{rectangle['id']}"
+        response = patch_method(self.user, endpoint, {"enabled": True})
+        assert response.status_code == 400
+        assert "only interval" in response.text
+        response = get_method(self.user, endpoint)
+        assert response.status_code == 200
+        assert response.json()["enabled"] is False
+
+    @parametrize("task", [fixture_ref(fxt_audio_task_from_uploaded_data)])
+    def test_metadata_api_rejects_deleted_audio_frames(self, task: Task):
+        endpoints = [f"tasks/{task.id}/data/meta"]
+        endpoints.extend(f"jobs/{job.id}/data/meta" for job in task.get_jobs())
+        for endpoint in endpoints:
+            response = patch_method(self.user, endpoint, {"deleted_frames": [0]})
+            assert response.status_code == 400
+            assert "Audio metadata cannot be edited" in response.text
 
     @pytest.mark.with_external_services
     @parametrize(
@@ -268,6 +298,84 @@ class TestAudioTasks:
 
         assert gt_job.type == "ground_truth"
         assert gt_job.frame_count == task.size
+
+    @parametrize("source_filename", [fixture_ref("fxt_local_audio_file_path")])
+    def test_audio_quality_report_v3(self, fxt_test_name: str, source_filename: Path):
+        task = self.client.tasks.create_from_data(
+            spec={"name": fxt_test_name, "labels": [{"name": "speech", "type": "interval"}]},
+            resources=[source_filename],
+            data_params={"validation_params": {"mode": "gt"}},
+        )
+        jobs = task.get_jobs()
+        gt = next(job for job in jobs if job.type == "ground_truth")
+        ds = next(job for job in jobs if job.type == "annotation")
+        label = task.get_labels()[0]
+        gt_response = put_method(
+            self.user,
+            f"jobs/{gt.id}/annotations",
+            {
+                "intervals": [
+                    {"label_id": label.id, "start": 0, "stop": 1000, "attributes": []},
+                    {"label_id": label.id, "start": 2000, "stop": None, "attributes": []},
+                ]
+            },
+        )
+        assert gt_response.status_code == 200
+        response = put_method(
+            self.user,
+            f"jobs/{ds.id}/annotations",
+            {
+                "intervals": [
+                    {"label_id": label.id, "start": 100, "stop": 900, "attributes": []},
+                ]
+            },
+        )
+        assert response.status_code == 200
+        settings = get_method(self.user, "quality/settings", task_id=task.id).json()["results"][0]
+        requirement = next(
+            item for item in settings["requirements"] if item["annotation_type"] == "interval"
+        )
+        response = patch_method(
+            self.user,
+            f"quality/settings/requirements/{requirement['id']}",
+            {"filter": json.dumps({">": [{"var": "shape.area"}, 1]})},
+        )
+        assert response.status_code == 400
+        assert "shape.area" in response.json()["filter"][0]
+        response = patch_method(
+            self.user,
+            f"quality/settings/requirements/{requirement['id']}",
+            {
+                "enabled": True,
+                "iou_threshold": 0.5,
+                "metric": "accuracy",
+                "required_score": 0.8,
+            },
+        )
+        assert response.status_code == 200
+        report = create_quality_report(user=self.user, task_id=task.id)
+        assert report["version"] == 3
+        assert report["summary"]["has_comparison_scope"]
+        assert report["summary"]["validation_frames"] == 0
+        data = get_method(self.user, f"quality/reports/{report['id']}/data").json()
+        group = data["groups"][requirement["name"]]
+        assert data["version"] == 3
+        assert group["frame_results"] is None
+        assert group["comparison_summary"]["score"] == 0.5
+        (conflict,) = group["conflicts"]
+        assert conflict["frame_id"] is None
+        (reference,) = conflict["annotation_ids"]
+        assert reference["obj_id"] == gt_response.json()["intervals"][1]["id"]
+        assert reference["type"] == "interval"
+        assert "frame=" not in reference["url"]
+        assert "?type=interval&serverID=" in reference["url"]
+        job_reports = get_method(
+            self.user, "quality/reports", parent_id=report["id"], target="job"
+        ).json()["results"]
+        conflicts = get_method(
+            self.user, "quality/conflicts", report_id=job_reports[0]["id"]
+        ).json()["results"]
+        assert len(conflicts) == 1 and conflicts[0]["frame"] is None
 
     @parametrize("task", [fixture_ref(fxt_audio_task_from_uploaded_data)])
     def test_cant_export_dataset(self, task: Task):
