@@ -17,6 +17,19 @@ class UnsupportedDatasetError(cvat_sdk.core.exceptions.CvatSdkException):
     pass
 
 
+def chunk_suffix_for_original_type(original_chunk_type: str) -> str:
+    try:
+        return {
+            "imageset": ".zip",
+            "video": ".mp4",
+        }[original_chunk_type]
+    except KeyError:
+        raise UnsupportedDatasetError(
+            "Chunk-based media access is not supported for original chunk type "
+            f"{original_chunk_type!r}"
+        ) from None
+
+
 @attrs.frozen
 class FrameAnnotations:
     """
@@ -68,18 +81,12 @@ class MediaDownloadPolicy(Enum):
 
     PRELOAD_ALL = auto()
     """
-    Download and cache all media data when the dataset object is created.
-
-    This requires the task's original chunks to be image sets, meaning that each chunk
-    contains individual images. Tasks created from video may still satisfy this requirement.
+    Download and cache all original media chunks when the dataset object is created.
     """
 
     FETCH_CHUNKS_ON_DEMAND = auto()
     """
-    Download image-set chunks lazily as they are needed and cache them locally.
-
-    This requires the task's original chunks to be image sets, meaning that each chunk
-    contains individual images. Tasks created from video may still satisfy this requirement.
+    Download original media chunks lazily as they are needed and cache them locally.
     """
 
     FETCH_FRAMES_ON_DEMAND = auto()
