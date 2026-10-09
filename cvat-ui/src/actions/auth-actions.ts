@@ -11,7 +11,7 @@ import {
     getCore, User, ApiToken, ApiTokenModifiableFields,
     ApiTokensFilter, SerializedApiToken,
 } from 'cvat-core-wrapper';
-import { ChangePasswordData } from 'reducers';
+import { ChangePasswordData, CombinedState } from 'reducers';
 
 const cvat = getCore();
 
@@ -103,9 +103,14 @@ export const authActions = {
 
 export type AuthActions = ActionUnion<typeof authActions>;
 
+function notifyAuthenticationStart(state: CombinedState): void {
+    state.plugins.callbacks.auth.onAuthenticationStart.forEach((callback) => callback());
+}
+
 export const registerAsync = (
     registerData: RegisterData,
-): ThunkAction => async (dispatch) => {
+): ThunkAction => async (dispatch, getState) => {
+    notifyAuthenticationStart(getState());
     dispatch(authActions.register());
 
     const {
@@ -136,7 +141,8 @@ export const registerAsync = (
     }
 };
 
-export const loginAsync = (credential: string, password: string): ThunkAction => async (dispatch) => {
+export const loginAsync = (credential: string, password: string): ThunkAction => async (dispatch, getState) => {
+    notifyAuthenticationStart(getState());
     dispatch(authActions.login());
 
     try {
