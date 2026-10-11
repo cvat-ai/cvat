@@ -571,6 +571,7 @@ class TaskPermission(
     OpenPolicyAgentPermission, DownloadExportedExtension, ExportableResourceExtension
 ):
     obj: Task | None
+    obj_model = Task
 
     class Scopes(StrEnum):
         CREATE = "create"
@@ -897,6 +898,7 @@ class TaskPermission(
 class JobPermission(OpenPolicyAgentPermission, DownloadExportedExtension):
     task_id: int | None
     obj: Job | None
+    obj_model = Job
 
     class Scopes(StrEnum):
         CREATE = "create"

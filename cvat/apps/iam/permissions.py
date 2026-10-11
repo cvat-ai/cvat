@@ -350,7 +350,31 @@ class PolicyEnforcer(BasePermission):
             return True  # has_object_permission will be called later
 
     def has_object_permission(self, request, view, obj):
+        # BrowsableAPIRenderer may pass serializer.instance (e.g. Data for
+        # /api/jobs|tasks/.../data/meta) instead of the view's detail object.
+        # Permission handlers expect the detail model; resolve it from the
+        # queryset without calling get_object() to avoid recursion.
+        # https://github.com/cvat-ai/cvat/issues/11182
+        try:
+            obj = self._resolve_detail_object(view, obj)
+        except Exception:
+            return False
+
         return self.check_permission(request, view, obj)
+
+    @staticmethod
+    def _resolve_detail_object(view: ViewSet, obj: Any) -> Any:
+        if obj is None or not getattr(view, "detail", False):
+            return obj
+
+        perm_class = getattr(view, "iam_permission_class", None)
+        expected_model = getattr(perm_class, "obj_model", None) if perm_class else None
+        if expected_model is None or isinstance(obj, expected_model):
+            return obj
+
+        lookup_url_kwarg = getattr(view, "lookup_url_kwarg", None) or view.lookup_field
+        filter_kwargs = {view.lookup_field: view.kwargs[lookup_url_kwarg]}
+        return view.filter_queryset(view.get_queryset()).get(**filter_kwargs)
 
     @staticmethod
     def is_metadata_request(request, view):
