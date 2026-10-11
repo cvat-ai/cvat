@@ -664,7 +664,26 @@ Cypress.Commands.add('checkObjectParameters', (objectParameters, objectType) => 
             listCanvasShapeId.push(listCanvasShape[i].id.match(/\d+$/));
         }
         const maxId = Math.max(...listCanvasShapeId);
-        cy.get(`#cvat_canvas_shape_${maxId}`).should('be.visible');
+        cy.get(`#cvat_canvas_shape_${maxId}`).should('exist').then(($shape) => {
+            const shape = $shape[0];
+
+            // A horizontal/vertical polyline can have a zero-area SVG bounding box.
+            // Cypress treats those elements as hidden starting v14
+            // even when the shape is rendered with a stroke.
+            if (shape.tagName.toLowerCase() === 'polyline') {
+                const {
+                    width, height,
+                } = shape.getBoundingClientRect();
+                const isHorizontalOrVerticalPolyline = (width === 0 && height !== 0) ||
+                    (width !== 0 && height === 0);
+
+                if (isHorizontalOrVerticalPolyline) {
+                    return;
+                }
+            }
+
+            cy.wrap($shape).should('be.visible');
+        });
         cy.get(`#cvat-objects-sidebar-state-item-${maxId}`)
             .should('contain', maxId)
             .and('contain', `${objectType} ${objectParameters.type.toUpperCase()}`)

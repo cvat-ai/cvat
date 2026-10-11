@@ -8,7 +8,7 @@ import { Col, Row } from 'antd/lib/grid';
 import { Workspace } from 'reducers';
 import { Job } from 'cvat-core-wrapper';
 import { KeyMap } from 'utils/mousetrap-react';
-import { AudioSeekIntent } from 'actions/audio-actions';
+import type { AudioSeekRequest } from 'actions/audio-actions';
 
 import AudioLeftGroup from './audio-left-group';
 import AudioPlayerNavigation from './audio-player-navigation';
@@ -38,7 +38,7 @@ interface Props {
     onUndoClick(): void;
     onRedoClick(): void;
     onAudioPlayPause(): void;
-    onAudioSeek(intent: AudioSeekIntent): void;
+    onAudioSeek(request: AudioSeekRequest): void;
 }
 
 export default function AudioTopBarComponent(props: Props): JSX.Element {

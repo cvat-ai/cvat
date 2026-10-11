@@ -27,7 +27,7 @@ export interface WaveformPlayback {
 /**
  * Responsible for playback interactions. Exposes a stable API for the rest of the waveform hooks to use.
  */
-export function useWaveformPlayback(runtime: WaveSurferRuntime): WaveformPlayback {
+export function useWaveformPlayback(runtime: WaveSurferRuntime, getVisibleDuration: () => number): WaveformPlayback {
     const dispatch = useDispatch<ThunkDispatch>();
     const {
         playing, duration, volume, playbackRate, seekRequest, playbackRange, loop,
@@ -249,16 +249,25 @@ export function useWaveformPlayback(runtime: WaveSurferRuntime): WaveformPlaybac
     // Handle seek requests from redux
     useEffect(() => {
         const instance = runtime.instanceRef.current;
-        if (!instance || !seekRequest || duration <= 0) return;
+        if (!instance || seekRequest === null || duration <= 0) return;
 
-        const target = clamp(seekRequest.time, 0, duration);
-        // WaveSurfer's WebAudio player restarts from zero when it resumes at the exact duration.
-        // And it internally pauses/resumes on setTime when playing, so when seeking to the end
-        // Give it a small offset to let it stop naturally
+        let target: number;
+        if (typeof seekRequest === 'number') {
+            target = seekRequest;
+        } else if (seekRequest.kind === 'boundary') {
+            target = seekRequest.boundary === 'start' ? 0 : duration;
+        } else {
+            const visibleDuration = getVisibleDuration();
+            if (visibleDuration <= 0) return;
+            target = instance.getCurrentTime() + visibleDuration * seekRequest.fraction;
+        }
+
+        target = clamp(target, 0, duration);
         const seekTime = playingRef.current && target === duration ?
             duration - Math.min(0.001, duration / 2) : target;
 
         instance.setTime(seekTime);
+        // it's correct to keep using precise "target" here
         syncPlaybackRangeAfterSeek(target);
 
         dispatch(audioActions.completeAudioSeek(seekRequest));

@@ -152,9 +152,9 @@ class TestPostCloudStorage:
         "resource": "test",
         "display_name": "Bucket",
         "credentials_type": "KEY_SECRET_KEY_PAIR",
-        "key": "minio_access_key",
-        "secret_key": "minio_secret_key",
-        "specific_attributes": "endpoint_url=http://minio:9000",
+        "key": "moto_access_key",
+        "secret_key": "moto_secret_key",
+        "specific_attributes": "endpoint_url=http://moto:9000",
         "description": "Some description",
         "manifests": ["images_with_manifest/manifest.jsonl"],
     }
@@ -758,7 +758,7 @@ class TestCloudStorageStatus:
             (4, "NOT_FOUND"),
         ],
     )
-    def test_minio_connection_status(self, cloud_storage_id, expected_response, admin_user):
+    def test_moto_connection_status(self, cloud_storage_id, expected_response, admin_user):
         with make_api_client(admin_user) as api_client:
             data, _ = api_client.cloudstorages_api.retrieve_status(cloud_storage_id)
             assert data == expected_response

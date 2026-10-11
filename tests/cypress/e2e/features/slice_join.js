@@ -124,7 +124,7 @@ context('Slice and join tools', { scrollBehavior: false }, () => {
             cy.sliceShape('#cvat_canvas_shape_1', [[1, 1], [150, 230], [300, 230]]);
             checkSliceSuccess();
 
-            cy.joinShapes(['#cvat_canvas_shape_2', '#cvat_canvas_shape_3'], [[1, 1], [1, 1]]);
+            cy.joinShapes(['#cvat_canvas_shape_2', '#cvat_canvas_shape_3'], [[2, 2], [2, 2]]);
             checkJoinSuccess();
         });
 

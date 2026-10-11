@@ -5,10 +5,15 @@ weight: 14
 description: 'Import and export audio interval annotations in Generic TSV 1.0 format.'
 ---
 
-Generic TSV 1.0 is CVAT's import and export format for audio interval annotations. It applies to
-audio tasks only and contains annotations, not the audio recording.
+Generic TSV is CVAT's custom format for audio datasets. It only contains annotations
+without audio recordings.
 
 ## Generic TSV export
+
+Applicable to all audio tasks.
+
+- Supported annotations: Intervals.
+- Attributes: Supported.
 
 Exporting an audio task or job in **Generic TSV 1.0** produces a tab-separated `.tsv` file. The
 file contains these columns:
@@ -17,6 +22,7 @@ file contains these columns:
 | --- | --- |
 | `id` | Interval identifier. |
 | `filename` | Source audio filename. |
+| `subset` | Source task subset name, or `default` if not specified. |
 | `start` | Interval start timestamp. |
 | `stop` | Interval end timestamp. |
 | `label` | Interval label. |
@@ -29,13 +35,13 @@ the exported dataset.
 ## Generic TSV import
 
 To upload interval annotations, select **Generic TSV 1.0** in **Upload annotations** or
-**Import annotations**, then provide a tab-separated `.tsv` file. The file must include `start`, `stop`, and
-`label` columns:
+**Import annotations**, then provide a tab-separated `.tsv` file.
+The file must include the `filename`, `start`, `stop`, and `label` columns:
 
 ```tsv
-start	        stop	        label	    transcript
-00:00:00.000	00:00:02.450	speech	    Hello, world.
-00:00:03.100	00:00:04.000	music
+filename	    start	        stop	        label	    transcript
+recording.mp3	00:00:00.000	00:00:02.450	speech	    Hello, world.
+recording.mp3	00:00:03.100	00:00:04.000	music
 ```
 
 `start` and `stop` accept `HH:MM:SS.fraction` timestamps. The optional `score` column sets the
