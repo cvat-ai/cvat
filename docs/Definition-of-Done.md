@@ -12,7 +12,8 @@ command with its output, a commit, or a screenshot. A tick with no evidence coun
 
 - [x] The counts are correct. I counted the same classes straight from the COCO annotation
   file for the images I uploaded, and the two sets of numbers match.
-  Evidence: output of `validation-scripts/compare_counts.py`, run against task 2 with all
+  **Evidence**:
+  output of `validation-scripts/compare_counts.py`, run against task 2 with all
   5,000 images. All 80 classes match.
 
   <details>
@@ -113,7 +114,7 @@ command with its output, a commit, or a screenshot. A tick with no evidence coun
   polygons and 446 masks in the database. The `coco` column shows that expected number.
 
 - [x] The page opens from the task menu and calls the endpoint.
-  Evidence:
+  **Evidence**:
   There is a new 'Class Count' actions in tasks - I actually figured this will be the best place to put it because I was able to find the other options there (such as quality control)'s code and I decided to just mimic the existing implementation.
 
   ![alt text](doc-assets/image2.png)
@@ -122,8 +123,10 @@ command with its output, a commit, or a screenshot. A tick with no evidence coun
 
   ![alt text](doc-assets/image3.png)
 
-- [ ] The counts are drawn as a bar chart, one bar per class.
-  Evidence:
+- [x] The counts are drawn as a chart. Initially, it was decided that i'll be using a bar chart with one bar per class. However, after trying that out, histograms are more visually appealign and look tighter
+  **Evidence**:
+  ![](doc-assets/image5.png)
+
 - [ ] A task with no annotations shows a clear "no annotations yet" message, not a blank chart.
   Evidence:
 - [ ] When the request fails, the page shows an error message and a way to retry. Tested by
