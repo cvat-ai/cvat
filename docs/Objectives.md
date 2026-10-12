@@ -7,9 +7,9 @@ The target below was set before any measurement was taken.
 | Field | Entry |
 | --- | --- |
 | What is measured | Time for the server to answer one request for a task's counts per class, from sending the request to receiving the full answer. |
-| How | `curl` on the same machine as the server, logged in as a user who can see the task, printing the total time. Run 5 times in a row. |
+| How | `curl` on the same machine as the server, logged in as a user who can see the task, printing the total time. Run 5 times in a row. The script `validation-scripts/measure_speed.sh` logs in once and reuses the login token for every run, as the web page does. |
 | Target | Median of 5 runs at or below **150 ms**. |
-| Conditions | Local Docker stack, the COCO 2017 validation sample, the task named under "Sample data" below, nothing else running. |
+| Conditions | Local Docker stack, the COCO 2017 validation sample, the task named under "Sample data" below, nothing else running. Laptop plugged in, not in power-saving mode. Measured as the admin user who owns the task. |
 | Not included | The first request after the server starts, the time the browser takes to draw the chart, and any network delay between two machines. |
 
 ## Why 150 ms
@@ -34,9 +34,12 @@ I will say which of the three parts took the time.
 
 ## Sample data
 
-TODO
-To be filled in once the task is created: number of images uploaded, and number of annotations
-imported.
+| | |
+| --- | --- |
+| Task | #2, "TEST COCO" |
+| Images | 5,000 (COCO 2017 validation set) |
+| Annotations | 41,866 shapes in 80 classes |
+| Jobs | 1 |
 
 ## Result
 
