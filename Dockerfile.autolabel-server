@@ -1,0 +1,15 @@
+# Extend the matching CVAT 2.76.1 image without rebuilding its dependencies.
+# The two source files must match the base revision apart from the AutoLabel action.
+ARG CVAT_BASE_IMAGE=cvat/server:dev
+FROM ${CVAT_BASE_IMAGE}
+USER root
+# Windows-built base images can contain CRLF component arrays. Bash then sees
+# one key "0" instead of chunks/import/etc., so every RQ worker restart-loops.
+RUN python -c "from pathlib import Path; configs=list(Path('/opt/cvat/backend_entrypoint.d').glob('*.conf')); assert configs, 'CVAT worker component config missing'; [p.write_bytes(p.read_bytes().replace(b'\r\n',b'\n')) for p in configs]"
+# Measured base files from this fork's HEAD; reject a different CVAT revision.
+RUN python -c "import hashlib,pathlib,cvat; assert cvat.__version__ == '2.76.1'; p=pathlib.Path('/opt/cvat/cvat/apps/engine'); expected={'../dataset_manager/task.py':'7ac502941561dece6062a96e86631b1c0d29e873bbafd3ffa76823efc6acc7dd','views.py':'9aefd528a7e16113564db400bdb97de6db299141ee070bc1425b487a203af90a','permissions.py':'2a60e746eb18e8c6d1897337aa919557d874d839f4b823f096e89020e74b930d'}; assert all(hashlib.sha256((p/n).read_bytes().replace(b'\r\n',b'\n')).hexdigest() == h for n,h in expected.items()), 'CVAT base source differs: build the full fork instead'"
+COPY cvat/apps/engine/views.py cvat/apps/engine/permissions.py /opt/cvat/cvat/apps/engine/
+COPY cvat/apps/dataset_manager/task.py /opt/cvat/cvat/apps/dataset_manager/
+COPY cvat/apps/engine/autolabel_revision.py /opt/cvat/cvat/apps/engine/
+RUN python -m compileall -q /opt/cvat/cvat/apps/engine/views.py /opt/cvat/cvat/apps/engine/permissions.py
+USER 1000:1000

@@ -1,0 +1,35 @@
+# Apply after docker-compose.yml and docker-compose.dev.yml.
+# Reuses the cached, matching CVAT server image; no database schema changes.
+services:
+  cvat_server:
+    image: cvat/server-autolabel:dev
+    build:
+      context: .
+      dockerfile: Dockerfile.autolabel-server
+      args:
+        CVAT_BASE_IMAGE: ${CVAT_BASE_IMAGE:-cvat/server:dev}
+
+  cvat_worker_import:
+    image: cvat/server-autolabel:dev
+
+  cvat_worker_annotation:
+    image: cvat/server-autolabel:dev
+
+  cvat_worker_consensus:
+    image: cvat/server-autolabel:dev
+
+  cvat_worker_utils:
+    image: cvat/server-autolabel:dev
+
+  cvat_worker_quality_reports:
+    image: cvat/server-autolabel:dev
+
+  cvat_worker_export:
+    image: cvat/server-autolabel:dev
+    ports: !reset []  # No public debugger port; avoids competing with Kafka on 9092.
+
+  cvat_worker_webhooks:
+    image: cvat/server-autolabel:dev
+
+  cvat_worker_chunks:
+    image: cvat/server-autolabel:dev

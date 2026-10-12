@@ -4,6 +4,7 @@
 # SPDX-License-Identifier: MIT
 
 import itertools
+from cvat.apps.engine.autolabel_revision import annotation_revision, guarded_create
 import os
 import os.path as osp
 import re
@@ -2297,6 +2298,16 @@ class JobViewSet(
         else:
             return JobWriteSerializer
 
+    @extend_schema(
+        methods=["GET"],
+        summary="Check permission to run AutoLabel on a job",
+        responses={"200": OpenApiResponse(description="User may update job annotations")},
+    )
+    @action(detail=True, methods=["GET"], url_path="autolabel-permission")
+    def autolabel_permission(self, request: ExtendedRequest, pk: int):
+        self.get_object()  # Enforce the same OPA scope as updating job annotations.
+        return Response({"allowed": True})
+
     @transaction.atomic
     def perform_create(self, serializer):
         super().perform_create(serializer)
@@ -2520,6 +2531,9 @@ class JobViewSet(
                 )
 
             annotations = dm.task.get_job_data(self._object.pk)
+            if request.headers.get("X-Autolabel-Revision") == "1":
+                return Response({**annotations, "autolabel_revision": annotation_revision(annotations)},
+                                headers={"X-Autolabel-Revision-Guard": "1"})
             return Response(annotations)
 
         elif request.method == "POST" or request.method == "OPTIONS":
@@ -2552,6 +2566,18 @@ class JobViewSet(
             )
             if serializer.is_valid(raise_exception=True):
                 try:
+                    expected = request.headers.get("X-Autolabel-Expected-Revision")
+                    if expected is not None:
+                        proposal_id = request.headers.get("X-Autolabel-Proposal-Id", "")
+                        if action != "create" or not proposal_id or len(proposal_id) > 200:
+                            return Response({"detail": "Invalid AutoLabel proposal create"}, status=400)
+                        code, data = guarded_create(
+                            job_id=pk, data=serializer.validated_data,
+                            expected_revision=expected, proposal_id=proposal_id,
+                            transaction=transaction, job_model=models.Job,
+                            get_annotations=dm.task.get_job_data, patch_annotations=dm.task.patch_job_data,
+                        )
+                        return Response(data, status=code, headers={"X-Autolabel-Revision-Guard": "1"})
                     data = dm.task.patch_job_data(pk, serializer.validated_data, action)
                 except (AttributeError, IntegrityError) as e:
                     return Response(data=str(e), status=status.HTTP_400_BAD_REQUEST)

@@ -1216,6 +1216,34 @@ class TestGetAnnotations:
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
+class TestAutoLabelJobPermission:
+    @pytest.mark.parametrize(
+        "role, job_staff, expected_status",
+        [
+            ("maintainer", False, HTTPStatus.OK),
+            ("supervisor", False, HTTPStatus.FORBIDDEN),
+            ("supervisor", True, HTTPStatus.OK),
+            ("worker", False, HTTPStatus.FORBIDDEN),
+        ],
+    )
+    def test_probe_matches_annotation_update_scope(
+        self, role, job_staff, expected_status, find_job_staff_user, find_users, jobs_by_org,
+    ):
+        users = find_users(role=role, org=2)
+        username, job_id = find_job_staff_user(jobs_by_org[2], users, job_staff)
+        with make_api_client(username) as client:
+            _, response = client.call_api(
+                f"/api/jobs/{job_id}/autolabel-permission",
+                method="GET",
+                _parse_response=False,
+                _check_status=False,
+            )
+        assert response.status == expected_status
+        if expected_status == HTTPStatus.OK:
+            assert json.loads(response.data) == {"allowed": True}
+
+
+@pytest.mark.usefixtures("restore_db_per_function")
 class TestPatchJobAnnotations:
     def _check_response(self, username, jid, expect_success, data=None):
         with make_api_client(username) as client:

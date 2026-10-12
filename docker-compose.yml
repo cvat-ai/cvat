@@ -250,7 +250,12 @@ services:
 
   cvat_ui:
     container_name: cvat_ui
-    image: cvat/ui:${CVAT_VERSION:-dev}
+    build:
+      context: .
+      dockerfile: Dockerfile.autolabel-ui
+      args:
+        CVAT_VERSION: ${CVAT_VERSION:-dev}
+    image: cvat/ui-autolabel:${CVAT_VERSION:-dev}
     restart: always
     depends_on:
       - cvat_server

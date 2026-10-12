@@ -543,7 +543,10 @@ class JobAnnotation:
         self._save_tracks_to_db(data["tracks"])
         self._save_intervals_to_db(data["intervals"])
 
+    @transaction.atomic
     def create(self, data):
+        # Serialize every writer with the AutoLabel content-revision guard.
+        models.Job.objects.select_for_update().get(pk=self.db_job.pk)
         data = self._validate_input_annotations(data)
 
         self._create(data)
@@ -552,7 +555,10 @@ class JobAnnotation:
         if not self._data_is_empty(self.data):
             self._set_updated_date()
 
+    @transaction.atomic
     def put(self, data):
+        # Serialize every writer with the AutoLabel content-revision guard.
+        models.Job.objects.select_for_update().get(pk=self.db_job.pk)
         data = self._validate_input_annotations(data)
 
         deleted_data = self._delete()
@@ -566,7 +572,10 @@ class JobAnnotation:
         if not deleted_data_is_empty or not self._data_is_empty(self.data):
             self._set_updated_date()
 
+    @transaction.atomic
     def update(self, data):
+        # Serialize every writer with the AutoLabel content-revision guard.
+        models.Job.objects.select_for_update().get(pk=self.db_job.pk)
         data = self._validate_input_annotations(data)
 
         # in case with "update" must be called prior any annotations in database changes
@@ -680,7 +689,10 @@ class JobAnnotation:
         self.reset()
         return deleted_data
 
+    @transaction.atomic
     def delete(self, data=None):
+        # Serialize every writer with the AutoLabel content-revision guard.
+        models.Job.objects.select_for_update().get(pk=self.db_job.pk)
         deleted_data = self._delete(data)
         if not self._data_is_empty(deleted_data):
             self._set_updated_date()

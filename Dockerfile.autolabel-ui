@@ -1,0 +1,5 @@
+ARG CVAT_VERSION=dev
+FROM cvat/ui:${CVAT_VERSION}
+
+COPY cvat-ui/react_nginx_autolabel.conf /etc/nginx/conf.d/default.conf
+COPY cvat-ui/autolabel-panel.js /usr/share/nginx/html/autolabel-panel.js
