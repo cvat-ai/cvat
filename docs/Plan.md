@@ -115,6 +115,12 @@ This is with bar chart:
 
 It isn't fitting so yeah switched to a histogram
 
+
+3. In step 6, i initially planned on adding a permissions.py to cvat/app/test when writing the plan for the first time because I noticed a few apps do that so I figured that perhaps i should do the same. However the goal was achieved by only tweaking the `cvat/apps/test/views.py` file so I didn't go through with it. It also saved me some time.
+
+
+
+
 ## Decision record
 
 To be written if I reach item 10.
