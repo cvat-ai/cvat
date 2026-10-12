@@ -55,3 +55,12 @@ run 5: HTTP 200  57.5 ms
 median: 57.5 ms
 spread: 53.6 to 58.7 ms (range 5.1 ms)
 ```
+
+### After the grouping was added
+
+The endpoint changed after the measurement above. It now also lists the task's jobs and counts
+the images per class, which makes the database query slower. The result above is for the
+endpoint before that change.
+
+TODO
+Measure again with the same script and paste the output here.

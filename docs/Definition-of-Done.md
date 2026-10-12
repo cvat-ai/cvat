@@ -187,6 +187,9 @@ command with its output, a commit, or a screenshot. A tick with no evidence coun
 - [ ] The page can show counts for a single job, and the numbers for all jobs add up to the
   task total.
   Evidence:
+- [ ] Added later, see change 4 in the Plan. The page can switch from counting annotations to
+  counting the images that contain each class, and the image numbers match the COCO file.
+  Evidence:
 
 ## Live updates (items 8 and 9)
 

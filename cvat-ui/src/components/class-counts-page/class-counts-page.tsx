@@ -10,8 +10,11 @@ import Table from 'antd/lib/table';
 import Empty from 'antd/lib/empty';
 import Result from 'antd/lib/result';
 import Button from 'antd/lib/button';
+import Select from 'antd/lib/select';
+import Radio from 'antd/lib/radio';
+import Space from 'antd/lib/space';
 import {
-    Chart as ChartJS, CategoryScale, LinearScale, BarElement, Tooltip,
+    Chart as ChartJS, CategoryScale, LinearScale, BarElement, Tooltip, ChartOptions,
 } from 'chart.js';
 import { Bar } from 'react-chartjs-2';
 
@@ -25,7 +28,14 @@ const core = getCore();
 
 const CHART_HEIGHT = 480;
 
-const chartOptions = {
+type Measure = 'count' | 'images';
+
+const measureTitles: Record<Measure, string> = {
+    count: 'Annotations',
+    images: 'Images containing the class',
+};
+
+const getChartOptions = (measure: Measure): ChartOptions<'bar'> => ({
     maintainAspectRatio: false,
     plugins: { legend: { display: false } },
     scales: {
@@ -37,20 +47,23 @@ const chartOptions = {
         },
         y: {
             beginAtZero: true,
+            ticks: { precision: 0 },
             grid: { color: '#f0f0f0' },
-            title: { display: true, text: 'Annotations' },
+            title: { display: true, text: measureTitles[measure] },
         },
     },
-};
+});
 
 const columns = [
     { title: 'Class', dataIndex: 'name' },
     { title: 'Annotations', dataIndex: 'count' },
+    { title: 'Images', dataIndex: 'images' },
 ];
 
 interface ClassCount {
     name: string;
     count: number;
+    images: number;
 }
 
 interface Failure {
@@ -93,12 +106,17 @@ function ClassCountsPage(): JSX.Element {
     const [counts, setCounts] = useState<ClassCount[]>([]);
     const [fetching, setFetching] = useState(true);
     const [failure, setFailure] = useState<Failure | null>(null);
+    const [jobs, setJobs] = useState<number[]>([]);
+    const [jobId, setJobId] = useState<number | null>(null);
+    const [measure, setMeasure] = useState<Measure>('count');
 
     const load = useCallback(() => {
         setFetching(true);
-        core.server.request<{ data: { counts: ClassCount[] } }>(
-            `${core.config.backendAPI}/tasks/${taskId}/class-counts`, { method: 'GET' },
+        core.server.request<{ data: { jobs: number[], counts: ClassCount[] } }>(
+            `${core.config.backendAPI}/tasks/${taskId}/class-counts`,
+            { method: 'GET', params: jobId === null ? {} : { job: jobId } },
         ).then((response) => {
+            setJobs(response.data.jobs);
             setCounts(response.data.counts);
             setFailure(null);
         }).catch((reason: unknown) => {
@@ -106,7 +124,7 @@ function ClassCountsPage(): JSX.Element {
         }).finally(() => {
             setFetching(false);
         });
-    }, [taskId]);
+    }, [taskId, jobId]);
 
     useEffect(load, [load]);
 
@@ -129,20 +147,22 @@ function ClassCountsPage(): JSX.Element {
         content = (
             <Empty
                 className='cvat-class-counts-empty'
-                description='No annotations yet in this task'
+                description={jobId === null ?
+                    'No annotations yet in this task' : `No annotations yet in job #${jobId}`}
             />
         );
     } else {
+        const sorted = [...counts].sort((a, b) => b[measure] - a[measure]);
         content = (
             <>
-                <div className='cvat-class-counts-chart' style={{ height: CHART_HEIGHT }}>
+                <div className='cvat-class-counts-chart' style={{ height: CHART_HEIGHT, marginTop: 16 }}>
                     <Bar
-                        options={chartOptions}
+                        options={getChartOptions(measure)}
                         data={{
-                            labels: counts.map((item) => item.name),
+                            labels: sorted.map((item) => item.name),
                             datasets: [{
-                                label: 'Annotations',
-                                data: counts.map((item) => item.count),
+                                label: measureTitles[measure],
+                                data: sorted.map((item) => item[measure]),
                                 backgroundColor: '#1677ff',
                                 categoryPercentage: 1,
                                 barPercentage: 0.9,
@@ -153,7 +173,7 @@ function ClassCountsPage(): JSX.Element {
                 <Table
                     className='cvat-class-counts-table'
                     columns={columns}
-                    dataSource={counts}
+                    dataSource={sorted}
                     rowKey='name'
                     size='small'
                     pagination={false}
@@ -172,6 +192,27 @@ function ClassCountsPage(): JSX.Element {
             <Row justify='center'>
                 <Col span={22} xl={18} xxl={14}>
                     <Title level={4}>{`Annotations per class in task #${taskId}`}</Title>
+                    { jobs.length > 0 && (
+                        <Space>
+                            <Select
+                                className='cvat-class-counts-job-select'
+                                value={jobId ?? 0}
+                                onChange={(value: number) => setJobId(value || null)}
+                                options={[
+                                    { value: 0, label: 'Whole task' },
+                                    ...jobs.map((id) => ({ value: id, label: `Job #${id}` })),
+                                ]}
+                            />
+                            <Radio.Group
+                                className='cvat-class-counts-measure'
+                                value={measure}
+                                onChange={(event) => setMeasure(event.target.value)}
+                            >
+                                <Radio.Button value='count'>Count annotations</Radio.Button>
+                                <Radio.Button value='images'>Count images</Radio.Button>
+                            </Radio.Group>
+                        </Space>
+                    ) }
                     { content }
                 </Col>
             </Row>
