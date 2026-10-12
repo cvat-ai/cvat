@@ -5,11 +5,113 @@ command with its output, a commit, or a screenshot. A tick with no evidence coun
 
 ## The floor (items 1 to 4)
 
-- [ ] The endpoint returns counts per class for a task.
-  Evidence:
-- [ ] The counts are correct. I counted the same classes straight from the COCO annotation
+- [x] The endpoint returns counts per class for a task.
+  Evidence: calling `/api/tasks/<task id>/class-counts` returns every class with its count.
+
+  ![Response of the class-counts endpoint](doc-assets/image1.png)
+
+- [x] The counts are correct. I counted the same classes straight from the COCO annotation
   file for the images I uploaded, and the two sets of numbers match.
-  Evidence:
+  Evidence: output of `validation-scripts/compare_counts.py`, run against task 2 with all
+  5,000 images. All 80 classes match.
+
+  <details>
+  <summary>Raw output (80 classes)</summary>
+
+  ```txt
+  class               coco  endpoint
+  person             12451     12451
+  car                 2315      2315
+  chair               2141      2141
+  book                1184      1184
+  bottle              1085      1085
+  dining table         960       960
+  cup                  932       932
+  bowl                 657       657
+  traffic light        653       653
+  handbag              598       598
+  bench                557       557
+  skis                 522       522
+  boat                 477       477
+  bird                 467       467
+  truck                465       465
+  motorcycle           462       462
+  umbrella             449       449
+  cow                  432       432
+  backpack             430       430
+  sheep                415       415
+  bicycle              412       412
+  wine glass           407       407
+  potted plant         398       398
+  banana               398       398
+  carrot               391       391
+  couch                378       378
+  knife                366       366
+  horse                359       359
+  remote               353       353
+  surfboard            350       350
+  kite                 340       340
+  donut                339       339
+  bus                  338       338
+  cake                 329       329
+  suitcase             325       325
+  zebra                323       323
+  elephant             322       322
+  broccoli             321       321
+  pizza                314       314
+  cell phone           296       296
+  orange               296       296
+  tennis racket        296       296
+  tv                   288       288
+  spoon                288       288
+  vase                 287       287
+  tie                  285       285
+  sports ball          280       280
+  giraffe              271       271
+  clock                267       267
+  fork                 255       255
+  laptop               248       248
+  apple                243       243
+  sink                 238       238
+  dog                  237       237
+  bed                  227       227
+  train                224       224
+  teddy bear           219       219
+  skateboard           218       218
+  cat                  211       211
+  toilet               196       196
+  baseball bat         185       185
+  sandwich             180       180
+  oven                 161       161
+  airplane             160       160
+  keyboard             158       158
+  baseball glove       149       149
+  refrigerator         134       134
+  frisbee              129       129
+  hot dog              128       128
+  mouse                108       108
+  fire hydrant         103       103
+  snowboard             84        84
+  stop sign             80        80
+  bear                  73        73
+  toothbrush            68        68
+  parking meter         60        60
+  microwave             56        56
+  scissors              41        41
+  hair drier            14        14
+  toaster               10        10
+
+  total: coco=41866 endpoint=41866
+  MATCH
+  ```
+
+  </details>
+
+  The totals are 41,866, not the 36,781 annotations in the COCO file. COCO counts objects, and
+  CVAT stores each polygon piece of an object as its own shape. The script therefore expects one
+  shape per polygon piece, plus one mask per crowd object, which is the same as the 41,420
+  polygons and 446 masks in the database. The `coco` column shows that expected number.
+
 - [ ] The page opens from the task menu and calls the endpoint.
   Evidence:
 - [ ] The counts are drawn as a bar chart, one bar per class.
