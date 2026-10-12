@@ -107,7 +107,7 @@ I got.
 
 ## Changes to this plan
 
-Nothing yet.
+1. When doing the second requirement (A page in the web interface that calls it.) which is part of step 3 and 4 in this doc, I figured I don't need to touch cvat-core. I just found the code implementing other pages under tasks > actions and placed one more page there that will show annotations. This, was I figured a minimal way to go through this and touching cvat-core which I don't understand yet was overkill for this so yeah.
 
 ## Decision record
 

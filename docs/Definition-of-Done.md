@@ -16,7 +16,7 @@ command with its output, a commit, or a screenshot. A tick with no evidence coun
   5,000 images. All 80 classes match.
 
   <details>
-  <summary>Raw output (80 classes)</summary>
+  <summary>**Raw output (80 classes)**</summary>
 
   ```txt
   class               coco  endpoint
@@ -112,8 +112,16 @@ command with its output, a commit, or a screenshot. A tick with no evidence coun
   shape per polygon piece, plus one mask per crowd object, which is the same as the 41,420
   polygons and 446 masks in the database. The `coco` column shows that expected number.
 
-- [ ] The page opens from the task menu and calls the endpoint.
+- [x] The page opens from the task menu and calls the endpoint.
   Evidence:
+  There is a new 'Class Count' actions in tasks - I actually figured this will be the best place to put it because I was able to find the other options there (such as quality control)'s code and I decided to just mimic the existing implementation.
+
+  ![alt text](doc-assets/image2.png)
+
+  Clicking on class counts shows the following in a list - which i need to now convert into bar charts:
+
+  ![alt text](doc-assets/image3.png)
+
 - [ ] The counts are drawn as a bar chart, one bar per class.
   Evidence:
 - [ ] A task with no annotations shows a clear "no annotations yet" message, not a blank chart.
