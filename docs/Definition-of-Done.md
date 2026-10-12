@@ -12,6 +12,7 @@ command with its output, a commit, or a screenshot. A tick with no evidence coun
 
 - [x] The counts are correct. I counted the same classes straight from the COCO annotation
   file for the images I uploaded, and the two sets of numbers match.
+
   **Evidence**:
   output of `validation-scripts/compare_counts.py`, run against task 2 with all
   5,000 images. All 80 classes match.
@@ -127,11 +128,18 @@ command with its output, a commit, or a screenshot. A tick with no evidence coun
   **Evidence**:
   ![](doc-assets/image5.png)
 
-- [ ] A task with no annotations shows a clear "no annotations yet" message, not a blank chart.
-  Evidence:
-- [ ] When the request fails, the page shows an error message and a way to retry. Tested by
+- [x] A task with no annotations shows a clear "no annotations yet" message, not a blank chart.
+  **Evidence:**
+  To test this, I made a new task that wasn't annotated yet;
+  ![](doc-assets/image6.png)
+
+- [x] When the request fails, the page shows an error message and a way to retry. Tested by
   stopping the server.
-  Evidence:
+  **Evidence:**
+  I would refresh the page, then immediately run `docker stop cvat_server` and a try-again option along with a brief error message is being shown;
+
+![](doc-assets/image7.png)
+
 
 ## Access (item 5)
 

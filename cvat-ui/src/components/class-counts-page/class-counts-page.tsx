@@ -15,7 +15,7 @@ import {
 } from 'chart.js';
 import { Bar } from 'react-chartjs-2';
 
-import { getCore } from 'cvat-core-wrapper';
+import { getCore, ServerError } from 'cvat-core-wrapper';
 import GoBackButton from 'components/common/go-back-button';
 import CVATLoadingSpinner from 'components/common/loading-spinner';
 
@@ -53,21 +53,56 @@ interface ClassCount {
     count: number;
 }
 
+interface Failure {
+    status: 'warning' | '403' | '404';
+    title: string;
+    text: string;
+    canRetry: boolean;
+}
+
+function describeFailure(reason: unknown, taskId: number): Failure {
+    const code = reason instanceof ServerError ? reason.code : 0;
+    if (code === 404) {
+        return {
+            status: '404',
+            title: `Task #${taskId} was not found`,
+            text: 'It may have been deleted, or the address may be wrong.',
+            canRetry: false,
+        };
+    }
+
+    if (code === 403) {
+        return {
+            status: '403',
+            title: 'You do not have access to this task',
+            text: 'Ask the task owner to share it with you.',
+            canRetry: false,
+        };
+    }
+
+    return {
+        status: 'warning',
+        title: 'The class counts could not be loaded',
+        text: 'The server did not answer. This is usually temporary, and nothing in the task was changed.',
+        canRetry: true,
+    };
+}
+
 function ClassCountsPage(): JSX.Element {
     const taskId = +useParams<{ tid: string }>().tid;
     const [counts, setCounts] = useState<ClassCount[]>([]);
     const [fetching, setFetching] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+    const [failure, setFailure] = useState<Failure | null>(null);
 
     const load = useCallback(() => {
         setFetching(true);
-        setError(null);
         core.server.request<{ data: { counts: ClassCount[] } }>(
             `${core.config.backendAPI}/tasks/${taskId}/class-counts`, { method: 'GET' },
         ).then((response) => {
             setCounts(response.data.counts);
+            setFailure(null);
         }).catch((reason: unknown) => {
-            setError(reason instanceof Error ? reason.message : 'Unknown error');
+            setFailure(describeFailure(reason, taskId));
         }).finally(() => {
             setFetching(false);
         });
@@ -76,18 +111,20 @@ function ClassCountsPage(): JSX.Element {
     useEffect(load, [load]);
 
     let content = null;
-    if (fetching) {
-        content = <CVATLoadingSpinner size='large' />;
-    } else if (error !== null) {
+    if (failure !== null) {
         content = (
             <Result
                 className='cvat-class-counts-error'
-                status='error'
-                title='Could not load the class counts'
-                subTitle={error}
-                extra={<Button type='primary' onClick={load}>Retry</Button>}
+                status={failure.status}
+                title={failure.title}
+                subTitle={failure.text}
+                extra={failure.canRetry && (
+                    <Button type='primary' loading={fetching} onClick={load}>Try again</Button>
+                )}
             />
         );
+    } else if (fetching) {
+        content = <CVATLoadingSpinner size='large' />;
     } else if (!counts.length) {
         content = (
             <Empty
