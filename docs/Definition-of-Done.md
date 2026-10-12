@@ -165,12 +165,22 @@ command with its output, a commit, or a screenshot. A tick with no evidence coun
 
 ## Speed (item 6)
 
-- [ ] The target was written in `Objectives.md` before I measured anything.
-  Evidence:
-- [ ] Measured 5 times, raw output saved in `Objectives.md`.
-  Evidence:
-- [ ] Target met, or missed with the reason written down.
-  Evidence:
+- [x] The target was written in `Objectives.md` before I measured anything.
+  **Evidence:**
+  Target was written in commit: `71dabc983561b4c0412a1d83880bb9b6b4a0e0c2`
+  Validation was done in commit: `c72d76bd2849772cd0907dab7f92cc63238368c5`
+
+- [x] Measured 5 times, raw output saved in `Objectives.md`.
+  **Evidence:**
+  Output has been pasted into objectives.md
+
+- [x] Target met, or missed with the reason written down.
+  **Evidence:**
+  Target met . I estimated 150ms but got back ~50ms.
+  Three reasons i believe the counting part is fast:
+- **The database does the counting.** One query groups 41,866 rows and hands back 80. Python never loops over the annotations.
+- **An index already exists.** CVAT's shape table has an index on the job, so the database jumps straight to this task's rows instead of scanning the whole table.
+- **The answer is tiny.** 80 names and numbers, so there is almost nothing to send.
 
 ## Grouping (item 7)
 

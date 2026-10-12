@@ -23,6 +23,7 @@ login, ask CVAT's permission service whether this user may see the task, and cou
 Only the last one is my code, so I can miss this target for reasons I do not control. If I do,
 I will say which of the three parts took the time.
 
+
 ## Machine
 
 | | |
@@ -42,6 +43,15 @@ I will say which of the three parts took the time.
 | Jobs | 1 |
 
 ## Result
+I may have understated when I set the target to be under 150ms because the results were achieved easily:
 
-TODO
-Not measured yet. The command, the raw output of all 5 runs, the median and the spread go here.
+```
+GET http://localhost:8080/api/tasks/2/class-counts
+run 1: HTTP 200  58.3 ms
+run 2: HTTP 200  58.7 ms
+run 3: HTTP 200  53.6 ms
+run 4: HTTP 200  55.5 ms
+run 5: HTTP 200  57.5 ms
+median: 57.5 ms
+spread: 53.6 to 58.7 ms (range 5.1 ms)
+```
