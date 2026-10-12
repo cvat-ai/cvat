@@ -254,7 +254,12 @@ context('Simplify polygons feature', { scrollBehavior: false }, () => {
     });
 
     after(() => {
-        if (taskId !== null) cy.headlessDeleteTask(taskId);
+        if (taskId !== null) {
+            // Unmount the annotation workspace before Cypress unloads its iframe at the end of the spec.
+            cy.get('.cvat-header-tasks-button').click();
+            cy.get('.cvat-canvas-container').should('not.exist');
+            cy.headlessDeleteTask(taskId);
+        }
     });
 
     afterEach(() => {
