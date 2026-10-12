@@ -2,16 +2,20 @@
 #
 # SPDX-License-Identifier: MIT
 
+import csv
 import io
 import math
-from collections.abc import Generator
+from collections.abc import Generator, Sequence
+from datetime import timedelta
 from itertools import product
 from pathlib import Path, PurePosixPath
 
 import pytest
 from cvat_sdk import exceptions, models
 from cvat_sdk.core.exceptions import BackgroundRequestException
+from cvat_sdk.core.proxies.projects import Project
 from cvat_sdk.core.proxies.tasks import ResourceType, Task
+from deepdiff import DeepDiff
 from PIL import Image
 from pytest_cases import fixture, fixture_ref, parametrize
 
@@ -394,3 +398,146 @@ class TestAudioAnnotations:
             instance.set_annotations(payload)
 
         assert "stop must be within" in str(capture.value)
+
+
+class TestAudioProjectAnnotations:
+    FORMAT_NAME = "Generic TSV 1.0"
+    LABEL_NAME = "speech"
+
+    @pytest.fixture(autouse=True)
+    def setup(
+        self,
+        restore_db_per_function,
+        restore_cvat_data_per_function,
+        restore_redis_inmem_per_function,
+        restore_redis_ondisk_per_function,
+        tmp_path: Path,
+        admin_user: str,
+    ):
+        self.tmp_dir = tmp_path
+
+        self.user = admin_user
+
+        with make_sdk_client(self.user) as client:
+            self.client = client
+            yield
+
+    def _create_project_with_audio_tasks(
+        self, name: str, source_files: Sequence[Path], *, subsets: Sequence[str] | None = None
+    ) -> tuple[Project, list[Task]]:
+        project = self.client.projects.create(
+            spec={
+                "name": name,
+                "labels": [{"name": self.LABEL_NAME, "type": "interval"}],
+            }
+        )
+
+        tasks = [
+            self.client.tasks.create_from_data(
+                spec={
+                    "name": f"{name}-{i}",
+                    "project_id": project.id,
+                    **({"subset": subsets[i]} if subsets else {}),
+                },
+                resources=[source_file],
+            )
+            for i, source_file in enumerate(source_files)
+        ]
+
+        return project, tasks
+
+    def _upload_intervals(self, task: Task, intervals: Sequence[tuple[int, int | None]]) -> None:
+        label = next(label for label in task.get_labels() if label.type == "interval")
+
+        task.set_annotations(
+            models.LabeledDataRequest(
+                intervals=[
+                    models.LabeledIntervalRequest(label_id=label.id, start=start, stop=stop)
+                    for start, stop in intervals
+                ]
+            )
+        )
+
+    @staticmethod
+    def _timestamp(frame: int) -> str:
+        # the exporter writes timedeltas, which are converted by csv.DictWriter with str()
+        return str(timedelta(milliseconds=frame))
+
+    @parametrize("subsets", [None, ["subset1", "subset2"]])
+    def test_can_export_annotations(
+        self,
+        fxt_test_name: str,
+        fxt_local_audio_file_path: Path,
+        subsets: list[str] | None,
+    ):
+        source_files = [fxt_local_audio_file_path, SHARE_DIR / "audio" / "sample2_with_cover.mp3"]
+        project, tasks = self._create_project_with_audio_tasks(
+            fxt_test_name, source_files, subsets=subsets
+        )
+
+        expected_intervals = [[(0, 1000)], [(500, 2500)]]
+        for task, task_intervals in zip(tasks, expected_intervals):
+            self._upload_intervals(task, task_intervals)
+
+        filename = self.tmp_dir / "annotations.tsv"
+        project.export_dataset(self.FORMAT_NAME, filename, include_images=False)
+
+        with filename.open() as f:
+            rows = list(csv.DictReader(f, delimiter="\t"))
+
+        expected_subsets = subsets or ["default"] * len(source_files)
+        expected_rows = []
+        for source_file, subset, task_intervals in zip(
+            source_files, expected_subsets, expected_intervals
+        ):
+            for start, stop in task_intervals:
+                expected_rows.append(
+                    {
+                        "filename": source_file.name,
+                        "subset": subset,
+                        "start": self._timestamp(start),
+                        "stop": self._timestamp(stop) if stop is not None else "",
+                        "label": self.LABEL_NAME,
+                    }
+                )
+
+        checked_fields = ("filename", "subset", "start", "stop", "label")
+        assert (
+            DeepDiff(
+                [{k: v for k, v in r.items() if k in checked_fields} for r in rows],
+                expected_rows,
+                ignore_order=True,
+            )
+            == {}
+        )
+
+    def test_cant_import_task_annotations_with_wrong_filename(
+        self, fxt_test_name: str, fxt_local_audio_file_path: Path
+    ):
+        source_files = [fxt_local_audio_file_path, SHARE_DIR / "audio" / "sample2_with_cover.mp3"]
+        project, tasks = self._create_project_with_audio_tasks(fxt_test_name, source_files)
+
+        for task, task_intervals in zip(tasks, [[(0, 1000)], [(500, 2500)]]):
+            self._upload_intervals(task, task_intervals)
+
+        # the project export contains rows for both tasks
+        filename = self.tmp_dir / "annotations.tsv"
+        project.export_dataset(self.FORMAT_NAME, filename, include_images=False)
+
+        target_task = tasks[0]
+
+        with pytest.raises(BackgroundRequestException) as capture:
+            target_task.import_annotations(self.FORMAT_NAME, filename)
+
+        assert f"Unknown audio file '{source_files[1].name}'" in str(capture.value)
+
+    def test_cant_import_dataset(self, fxt_test_name: str):
+        project = self.client.projects.create({"name": fxt_test_name})
+
+        annotation_file = self.tmp_dir / "dataset.tsv"
+        annotation_file.write_text("\n")
+
+        with pytest.raises(BackgroundRequestException) as capture:
+            project.import_dataset(self.FORMAT_NAME, annotation_file)
+
+        assert "media import from dataset is not supported for audio" in str(capture.value).lower()

@@ -16,7 +16,7 @@ from datumaro.util.annotation_util import mean_bbox
 from datumaro.util.attrs_util import ensure_cls
 
 from cvat.apps.dataset_manager.bindings import CVAT_INTERNAL_ATTRIBUTES
-from cvat.apps.quality_control.annotation_matching import DistanceComparator, segment_iou
+from cvat.apps.quality_control.backends.datumaro.matching import DistanceComparator, segment_iou
 from cvat.apps.quality_control.comparison_report import ComparisonParameters
 
 

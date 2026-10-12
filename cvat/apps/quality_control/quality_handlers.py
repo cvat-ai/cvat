@@ -13,16 +13,11 @@ from copy import deepcopy
 from typing import TYPE_CHECKING, Any, cast
 
 import attrs
-import datumaro as dm
 import numpy as np
 
+from cvat.apps.dataset_manager import data_model as cdm
 from cvat.apps.engine.models import LabelType
 from cvat.apps.quality_control import models
-from cvat.apps.quality_control.annotation_matching import (
-    AttributeMatchingResult,
-    Comparator,
-    MatchingResults,
-)
 from cvat.apps.quality_control.attribute_comparators import (
     AttributeComparisonRule,
     match_attribute_values,
@@ -34,11 +29,16 @@ from cvat.apps.quality_control.attribute_comparison import (
     merge_attribute_comparison,
     normalize_attribute_comparison,
 )
+from cvat.apps.quality_control.backends import (
+    ComparisonSample,
+    FrameComparisonSample,
+    QualityBackend,
+    make_quality_backend,
+)
 from cvat.apps.quality_control.comparison_report import (
     UNMATCHED_LABEL_NAME,
     AnnotationConflict,
     AnnotationId,
-    ComparisonParameters,
     ComparisonReport,
     ComparisonReportAnnotationsSummary,
     ComparisonReportFrameComparisonSummary,
@@ -57,6 +57,7 @@ from cvat.apps.quality_control.comparison_report import (
     deduplicate_annotation_conflicts,
 )
 from cvat.apps.quality_control.filters import RequirementJsonLogicFilter
+from cvat.apps.quality_control.matching import AttributeMatchingResult, MatchingResults
 from cvat.apps.quality_control.models import AnnotationConflictSeverity, AnnotationConflictType
 
 if TYPE_CHECKING:
@@ -67,14 +68,7 @@ if TYPE_CHECKING:
 class RequirementFrameResult:
     summary: ComparisonReportFrameComparisonSummary
     calculation: ComparisonReportRequirementCalculation
-    matched_pairs: list[tuple[dm.Annotation, dm.Annotation]] = attrs.Factory(list)
-
-
-@attrs.define
-class MatchingContext:
-    frame_id: int
-    estimator: DatasetQualityEstimator
-    categories: dm.CategoriesInfo
+    matched_pairs: list[tuple[cdm.Annotation, cdm.Annotation]] = attrs.Factory(list)
 
 
 @attrs.define(slots=False)
@@ -102,6 +96,21 @@ class EffectiveQualityRequirement:
     compare_attributes: bool | None = None
     attribute_comparison: dict[str, Any] | None = None
     _effective_requirement: bool = True
+
+    @property
+    def comparison_annotation_type(self) -> type[cdm.Annotation]:
+        """Resolve the requirement target to an annotation interface."""
+        return {
+            models.QualityRequirementAnnotationType.TAG: cdm.Tag,
+            models.QualityRequirementAnnotationType.RECTANGLE: cdm.Rectangle,
+            models.QualityRequirementAnnotationType.POLYGON: cdm.Polygon,
+            models.QualityRequirementAnnotationType.POLYLINE: cdm.Polyline,
+            models.QualityRequirementAnnotationType.POINTS: cdm.Points,
+            models.QualityRequirementAnnotationType.ELLIPSE: cdm.Ellipse,
+            models.QualityRequirementAnnotationType.MASK: cdm.Mask,
+            models.QualityRequirementAnnotationType.SKELETON: cdm.Skeleton,
+            models.QualityRequirementAnnotationType.SKELETON_KEYPOINT: cdm.Points,
+        }[models.QualityRequirementAnnotationType(self.annotation_type)]
 
 
 _INHERITED_REQUIREMENT_FIELDS = (
@@ -556,83 +565,19 @@ def build_requirements_summary(
 
 
 class RequirementHandler(ABC):
-    def __init__(self, *, requirement: EffectiveQualityRequirement, context: MatchingContext):
+    def __init__(self, *, requirement: EffectiveQualityRequirement, backend: QualityBackend):
         self.requirement = requirement
-        self.context = context
-
-        # Set up commonly used references from context
-        self._ds_dataset = self.context.estimator._ds_dataset
-        self._gt_dataset = self.context.estimator._gt_dataset
-        self._ds_data_provider = self.context.estimator._ds_data_provider
-        self._gt_data_provider = self.context.estimator._gt_data_provider
-
-        # Create comparison parameters from requirement
-        self.settings = self._create_comparison_parameters()
-
-        # Create comparator with these settings
-        self._comparator = Comparator(
-            self.context.categories,
-            settings=self.settings,
-            attribute_matcher=self._match_attrs,
-        )
+        self._backend = backend
+        self._included_annotation_types = (requirement.comparison_annotation_type,)
         self._filter = RequirementJsonLogicFilter(
             expression=self.requirement.filter,
-            categories=self.context.categories,
-            included_annotation_types=self.settings.included_annotation_types,
+            catalog=self._backend.catalog,
+            included_annotation_types=self._included_annotation_types,
         )
-
-    def _create_comparison_parameters(self) -> ComparisonParameters:
-        """Create ComparisonParameters from requirement settings"""
-        # Start with default parameters
-        params = ComparisonParameters()
-
-        # Map requirement fields to ComparisonParameters fields
-        # TODO: Refactor it
-
-        items = [
-            "iou_threshold",
-            "oks_sigma",
-            "line_thickness",
-            "point_size_base",
-            "compare_line_orientation",
-            "line_orientation_threshold",
-            "compare_attributes",
-            "compare_groups",
-            "group_match_threshold",
-            "check_covered_annotations",
-            "object_visibility_threshold",
-            "panoptic_comparison",
-        ]
-        field_mapping = {i: i for i in items}  # direct mapping for all fields
-
-        for req_field, param_field in field_mapping.items():
-            value = getattr(self.requirement, req_field)
-            if value is not None:
-                setattr(params, param_field, value)
-
-        attribute_comparison = self.requirement.attribute_comparison
-        params.compare_attributes = attribute_comparison_may_compare(attribute_comparison)
-
-        params.included_annotation_types = self._get_included_annotation_types()
-        return params
-
-    def _get_included_annotation_types(self) -> list[dm.AnnotationType]:
-        mapping = {
-            models.QualityRequirementAnnotationType.TAG: [dm.AnnotationType.label],
-            models.QualityRequirementAnnotationType.RECTANGLE: [dm.AnnotationType.bbox],
-            models.QualityRequirementAnnotationType.SKELETON: [dm.AnnotationType.skeleton],
-            models.QualityRequirementAnnotationType.SKELETON_KEYPOINT: [dm.AnnotationType.points],
-            models.QualityRequirementAnnotationType.POINTS: [dm.AnnotationType.points],
-            models.QualityRequirementAnnotationType.POLYLINE: [dm.AnnotationType.polyline],
-            models.QualityRequirementAnnotationType.MASK: [dm.AnnotationType.mask],
-            models.QualityRequirementAnnotationType.POLYGON: [dm.AnnotationType.polygon],
-            models.QualityRequirementAnnotationType.ELLIPSE: [dm.AnnotationType.ellipse],
-        }
-        return mapping.get(self.requirement.annotation_type, [])
 
     def _get_explicit_comparison_attribute_names(
         self,
-        annotations: list[dm.Annotation],
+        annotations: list[cdm.Annotation],
     ) -> set[str]:
         attribute_comparison = normalize_attribute_comparison(
             self.requirement.attribute_comparison,
@@ -664,7 +609,7 @@ class RequirementHandler(ABC):
 
     @staticmethod
     def _get_available_attribute_names(
-        annotations: list[dm.Annotation],
+        annotations: list[cdm.Annotation],
     ) -> set[str]:
         return {
             name
@@ -676,8 +621,8 @@ class RequirementHandler(ABC):
     def _make_calculation_side(
         self,
         *,
-        candidates: list[dm.Annotation],
-        selected: list[dm.Annotation],
+        candidates: list[cdm.Annotation],
+        selected: list[cdm.Annotation],
         required_comparison_attributes: set[str],
     ) -> ComparisonReportRequirementCalculationSide:
         selected_attributes = self._get_available_attribute_names(selected)
@@ -691,30 +636,17 @@ class RequirementHandler(ABC):
             missing_attributes=sorted(missing_attributes),
         )
 
-    def _filter_items(
-        self,
-        *,
-        ds_item: dm.DatasetItem,
-        gt_item: dm.DatasetItem,
-    ) -> tuple[
-        dm.DatasetItem,
-        dm.DatasetItem,
-        ComparisonReportRequirementCalculation,
-    ]:
+    def _filter_sample(
+        self, sample: ComparisonSample
+    ) -> tuple[ComparisonSample, ComparisonReportRequirementCalculation]:
         ds_candidates = [
-            annotation
-            for annotation in ds_item.annotations
-            if annotation.type in self.settings.included_annotation_types
+            a for a in sample.ds_annotations if isinstance(a, self._included_annotation_types)
         ]
         gt_candidates = [
-            annotation
-            for annotation in gt_item.annotations
-            if annotation.type in self.settings.included_annotation_types
+            a for a in sample.gt_annotations if isinstance(a, self._included_annotation_types)
         ]
-        ds_item = self._filter.filter_item(ds_item)
-        gt_item = self._filter.filter_item(gt_item)
-        ds_selected = list(ds_item.annotations)
-        gt_selected = list(gt_item.annotations)
+        ds_selected = self._filter.filter_annotations(sample.ds_annotations)
+        gt_selected = self._filter.filter_annotations(sample.gt_annotations)
 
         required_comparison_attributes = self._get_explicit_comparison_attribute_names(
             [*ds_candidates, *gt_candidates]
@@ -732,12 +664,15 @@ class RequirementHandler(ABC):
             ),
         )
 
-        return ds_item, gt_item, calculation
+        return (
+            attrs.evolve(sample, ds_annotations=ds_selected, gt_annotations=gt_selected),
+            calculation,
+        )
 
     def _match_attrs(
         self,
-        ann_a: dm.Annotation,
-        ann_b: dm.Annotation,
+        ann_a: cdm.Annotation,
+        ann_b: cdm.Annotation,
     ) -> AttributeMatchingResult:
         attribute_comparison = normalize_attribute_comparison(
             self.requirement.attribute_comparison,
@@ -754,7 +689,9 @@ class RequirementHandler(ABC):
         }
         attrs_a = ann_a.attributes
         attrs_b = ann_b.attributes
-        keys_to_match = (attrs_a.keys() | attrs_b.keys()).difference(self._comparator.ignored_attrs)
+        keys_to_match = (attrs_a.keys() | attrs_b.keys()).difference(
+            self._backend.ignored_attributes
+        )
         spec_ids_a = attrs_a.get(CVAT_ATTRIBUTE_SPEC_IDS_ATTR, {}) or {}
         spec_ids_b = attrs_b.get(CVAT_ATTRIBUTE_SPEC_IDS_ATTR, {}) or {}
 
@@ -792,18 +729,22 @@ class RequirementHandler(ABC):
             b_only=tuple(b_extra),
         )
 
-    def _dm_ann_to_ann_id(self, ann: dm.Annotation, dataset: dm.Dataset) -> AnnotationId:
-        """Convert Datumaro annotation to AnnotationId"""
-        return self.context.estimator._dm_ann_to_ann_id(ann, dataset)
-
-    def _dm_item_to_frame_id(self, item: dm.DatasetItem, dataset: dm.Dataset) -> int:
-        """Convert Datumaro item to frame ID"""
-        return self.context.estimator._dm_item_to_frame_id(item, dataset)
+    @staticmethod
+    def _annotation_id(ann: cdm.Annotation) -> AnnotationId:
+        reference = ann.reference
+        return AnnotationId.from_dict(
+            {
+                "obj_id": reference.obj_id,
+                "job_id": reference.job_id,
+                "type": reference.type,
+                "shape_type": reference.shape_type,
+            }
+        )
 
     def _make_conflict(
         self,
         *,
-        frame_id: int,
+        frame_id: int | None,
         conflict_type: AnnotationConflictType,
         annotation_ids: list[AnnotationId],
         attribute_names: list[str] | None = None,
@@ -832,7 +773,7 @@ class RequirementHandler(ABC):
 
     @classmethod
     def for_requirement(
-        cls, requirement: EffectiveQualityRequirement, *, context: MatchingContext
+        cls, requirement: EffectiveQualityRequirement, *, backend: QualityBackend
     ) -> RequirementHandler:
         """Factory method to create appropriate handler based on requirement type"""
         from cvat.apps.quality_control.models import QualityRequirementAnnotationType
@@ -841,17 +782,15 @@ class RequirementHandler(ABC):
 
         # Map annotation types to handlers
         if ann_type == QualityRequirementAnnotationType.TAG:
-            return TagRequirementHandler(requirement=requirement, context=context)
+            return TagRequirementHandler(requirement=requirement, backend=backend)
         else:
             # All shape types use ShapeRequirementHandler
-            return ShapeRequirementHandler(requirement=requirement, context=context)
+            return ShapeRequirementHandler(requirement=requirement, backend=backend)
 
     @abstractmethod
     def match_annotations(
         self,
-        *,
-        ds_item: dm.DatasetItem,
-        gt_item: dm.DatasetItem,
+        sample: FrameComparisonSample,
     ) -> RequirementFrameResult:
         """Match annotations between dataset and ground truth items.
 
@@ -862,19 +801,19 @@ class RequirementHandler(ABC):
     # row/column index in the confusion matrix corresponding to unmatched annotations
     _UNMATCHED_IDX = -1
 
-    def _is_label_compatible_with_requirement(self, label: dm.LabelCategories.Category) -> bool:
+    def _is_label_compatible_with_requirement(self, label: cdm.Label) -> bool:
         if (
             self.requirement.annotation_type
             == models.QualityRequirementAnnotationType.SKELETON_KEYPOINT
         ):
-            return bool(label.parent) and self._gt_data_provider.get_label_type(
-                label.parent
-            ) == str(LabelType.SKELETON)
+            return bool(label.parent) and self._backend.catalog.find(label.parent).type == str(
+                LabelType.SKELETON
+            )
 
         if label.parent:
             return False
 
-        label_type = self._gt_data_provider.get_label_type(label.name)
+        label_type = label.type
         if self.requirement.annotation_type == models.QualityRequirementAnnotationType.SKELETON:
             return label_type == str(LabelType.SKELETON)
 
@@ -886,7 +825,7 @@ class RequirementHandler(ABC):
     def _make_zero_confusion_matrix(self) -> tuple[list[str], np.ndarray, dict[int, int]]:
         label_id_idx_map = {}
         label_names = []
-        for label_id, label in enumerate(self._gt_dataset.categories()[dm.AnnotationType.label]):
+        for label_id, label in enumerate(self._backend.catalog.labels):
             if not self._is_label_compatible_with_requirement(label):
                 continue
 
@@ -931,22 +870,22 @@ class RequirementHandler(ABC):
 class TagRequirementHandler(RequirementHandler):
     def match_annotations(
         self,
-        *,
-        gt_item: dm.DatasetItem,
-        ds_item: dm.DatasetItem,
+        sample: FrameComparisonSample,
     ) -> RequirementFrameResult:
         conflicts = []
-        frame_id = self.context.frame_id
-        ds_item, gt_item, calculation = self._filter_items(
-            ds_item=ds_item,
-            gt_item=gt_item,
+        frame_id = sample.frame_id
+        sample = self._backend.prepare_sample(
+            sample, requirement_type=self.requirement.annotation_type
         )
+        sample, calculation = self._filter_sample(sample)
 
         # Call comparator to match annotations
-        matching_results: MatchingResults = self._comparator.match_annotations(gt_item, ds_item)
+        matching_results: MatchingResults = self._backend.compare(
+            sample, requirement=self.requirement, attribute_matcher=self._match_attrs
+        )
 
         # Unpack results for all annotation types (tags are in here)
-        all_ann_types_result = matching_results["all_ann_types"]
+        all_ann_types_result = matching_results.all_ann_types
         matches, mismatches, gt_unmatched, ds_unmatched, _ = all_ann_types_result
 
         # Generate conflicts for mismatches
@@ -957,8 +896,8 @@ class TagRequirementHandler(RequirementHandler):
                         frame_id=frame_id,
                         conflict_type=AnnotationConflictType.MISMATCHING_LABEL,
                         annotation_ids=[
-                            self._dm_ann_to_ann_id(ds_ann, self._ds_dataset),
-                            self._dm_ann_to_ann_id(gt_ann, self._gt_dataset),
+                            self._annotation_id(ds_ann),
+                            self._annotation_id(gt_ann),
                         ],
                     )
                 )
@@ -969,7 +908,7 @@ class TagRequirementHandler(RequirementHandler):
                 self._make_conflict(
                     frame_id=frame_id,
                     conflict_type=AnnotationConflictType.MISSING_ANNOTATION,
-                    annotation_ids=[self._dm_ann_to_ann_id(unmatched_ann, self._gt_dataset)],
+                    annotation_ids=[self._annotation_id(unmatched_ann)],
                 )
             )
 
@@ -979,7 +918,7 @@ class TagRequirementHandler(RequirementHandler):
                 self._make_conflict(
                     frame_id=frame_id,
                     conflict_type=AnnotationConflictType.EXTRA_ANNOTATION,
-                    annotation_ids=[self._dm_ann_to_ann_id(unmatched_ann, self._ds_dataset)],
+                    annotation_ids=[self._annotation_id(unmatched_ann)],
                 )
             )
 
@@ -1010,77 +949,28 @@ class TagRequirementHandler(RequirementHandler):
 
 
 class ShapeRequirementHandler(RequirementHandler):
-    def _prepare_item_for_requirement(
-        self, item: dm.DatasetItem, data_provider: JobDataProvider
-    ) -> dm.DatasetItem:
-        if (
-            self.requirement.annotation_type
-            != models.QualityRequirementAnnotationType.SKELETON_KEYPOINT
-        ):
-            return item
-
-        used_group_ids = {ann.group for ann in item.annotations if ann.group}
-        virtual_group_ids = itertools.count(max({0, *used_group_ids}) + 1)
-        flattened_annotations: list[dm.Annotation] = []
-        for ann in item.annotations:
-            if ann.type != dm.AnnotationType.skeleton:
-                continue
-
-            skeleton_group = ann.group or next(virtual_group_ids)
-            parent_skeleton_context = self._filter.build_shape_context_for_annotation(ann)
-            parent_attrs = dict(ann.attributes or {})
-            for element in ann.elements:
-                element_attrs = dict(element.attributes or {})
-                if "source" not in element_attrs and "source" in parent_attrs:
-                    element_attrs["source"] = parent_attrs["source"]
-                if "track_id" not in element_attrs and "track_id" in parent_attrs:
-                    element_attrs["track_id"] = parent_attrs["track_id"]
-                if "keyframe" not in element_attrs and "keyframe" in parent_attrs:
-                    element_attrs["keyframe"] = parent_attrs["keyframe"]
-
-                visibility = list(element.visibility or [])
-                if visibility:
-                    element_visibility = visibility[0]
-                    element_attrs.setdefault(
-                        "outside", element_visibility == dm.Points.Visibility.absent
-                    )
-                    element_attrs.setdefault(
-                        "occluded", element_visibility == dm.Points.Visibility.hidden
-                    )
-
-                element_attrs[RequirementJsonLogicFilter.PARENT_SKELETON_CONTEXT_KEY] = (
-                    parent_skeleton_context
-                )
-                wrapped_element = element.wrap(attributes=element_attrs, group=skeleton_group)
-                data_provider.remember_dm_ann_alias(element, wrapped_element)
-                flattened_annotations.append(wrapped_element)
-
-        return item.wrap(annotations=flattened_annotations)
-
     def match_annotations(
         self,
-        *,
-        gt_item: dm.DatasetItem,
-        ds_item: dm.DatasetItem,
+        sample: FrameComparisonSample,
     ) -> RequirementFrameResult:
         conflicts = []
-        frame_id = self.context.frame_id
-        gt_item = self._prepare_item_for_requirement(gt_item, self._gt_data_provider)
-        ds_item = self._prepare_item_for_requirement(ds_item, self._ds_data_provider)
-        ds_item, gt_item, calculation = self._filter_items(
-            ds_item=ds_item,
-            gt_item=gt_item,
+        frame_id = sample.frame_id
+        sample = self._backend.prepare_sample(
+            sample, requirement_type=self.requirement.annotation_type
         )
+        sample, calculation = self._filter_sample(sample)
 
         # Call comparator to match annotations
-        matching_results: MatchingResults = self._comparator.match_annotations(gt_item, ds_item)
+        matching_results: MatchingResults = self._backend.compare(
+            sample, requirement=self.requirement, attribute_matcher=self._match_attrs
+        )
 
         # Unpack results for all annotation types
-        all_ann_types_result = matching_results["all_ann_types"]
+        all_ann_types_result = matching_results.all_ann_types
         matches, mismatches, gt_unmatched, ds_unmatched, _ = all_ann_types_result
 
         # Unpack results for shape annotation types
-        all_shape_types_result = matching_results["all_shape_ann_types"]
+        all_shape_types_result = matching_results.all_shape_ann_types
         (
             shape_matches,
             shape_mismatches,
@@ -1089,19 +979,15 @@ class ShapeRequirementHandler(RequirementHandler):
             shape_pairwise_comparisons,
         ) = all_shape_types_result
 
-        def _get_comparison(gt_ann: dm.Annotation, ds_ann: dm.Annotation) -> Any:
-            return self._comparator.get_comparison(
-                shape_pairwise_comparisons,
-                gt_ann,
-                ds_ann,
-            )
+        def _get_comparison(gt_ann: cdm.Annotation, ds_ann: cdm.Annotation) -> Any:
+            return shape_pairwise_comparisons.get((id(gt_ann), id(ds_ann)))
 
         for unmatched_ann in gt_unmatched:
             conflicts.append(
                 self._make_conflict(
                     frame_id=frame_id,
                     conflict_type=AnnotationConflictType.MISSING_ANNOTATION,
-                    annotation_ids=[self._dm_ann_to_ann_id(unmatched_ann, self._gt_dataset)],
+                    annotation_ids=[self._annotation_id(unmatched_ann)],
                 )
             )
 
@@ -1110,7 +996,7 @@ class ShapeRequirementHandler(RequirementHandler):
                 self._make_conflict(
                     frame_id=frame_id,
                     conflict_type=AnnotationConflictType.EXTRA_ANNOTATION,
-                    annotation_ids=[self._dm_ann_to_ann_id(unmatched_ann, self._ds_dataset)],
+                    annotation_ids=[self._annotation_id(unmatched_ann)],
                 )
             )
 
@@ -1120,20 +1006,44 @@ class ShapeRequirementHandler(RequirementHandler):
                     frame_id=frame_id,
                     conflict_type=AnnotationConflictType.MISMATCHING_LABEL,
                     annotation_ids=[
-                        self._dm_ann_to_ann_id(ds_ann, self._ds_dataset),
-                        self._dm_ann_to_ann_id(gt_ann, self._gt_dataset),
+                        self._annotation_id(ds_ann),
+                        self._annotation_id(gt_ann),
                     ],
                 )
             )
 
+        for annotation in matching_results.covered_annotations:
+            conflicts.append(
+                self._make_conflict(
+                    frame_id=frame_id,
+                    conflict_type=AnnotationConflictType.COVERED_ANNOTATION,
+                    annotation_ids=[self._annotation_id(annotation)],
+                )
+            )
+
+        for comparison in matching_results.group_comparisons:
+            if (
+                comparison.gt_group_size == 1 and comparison.ds_group_size != 1
+            ) or not comparison.groups_match:
+                conflicts.append(
+                    self._make_conflict(
+                        frame_id=frame_id,
+                        conflict_type=AnnotationConflictType.MISMATCHING_GROUPS,
+                        annotation_ids=[
+                            self._annotation_id(comparison.ds_annotation),
+                            self._annotation_id(comparison.gt_annotation),
+                        ],
+                    )
+                )
+
         # NOTE @grigorii: Direction mismatches prevent annotations from matching with the
         # current single-stage matcher. Keep this handling for a future multi-stage matcher.
         if (
-            self.settings.compare_line_orientation
-            and dm.AnnotationType.polyline in self._comparator.included_ann_types
+            self.requirement.compare_line_orientation is not False
+            and cdm.Polyline in self._included_annotation_types
         ):
-            for gt_ann, ds_ann in itertools.chain(matches, mismatches):
-                if gt_ann.type != ds_ann.type or gt_ann.type != dm.AnnotationType.polyline:
+            for gt_ann, ds_ann in itertools.chain(shape_matches, shape_mismatches):
+                if not isinstance(gt_ann, cdm.Polyline) or not isinstance(ds_ann, cdm.Polyline):
                     continue
 
                 comparison = _get_comparison(gt_ann, ds_ann)
@@ -1143,29 +1053,15 @@ class ShapeRequirementHandler(RequirementHandler):
                             frame_id=frame_id,
                             conflict_type=AnnotationConflictType.MISMATCHING_DIRECTION,
                             annotation_ids=[
-                                self._dm_ann_to_ann_id(ds_ann, self._ds_dataset),
-                                self._dm_ann_to_ann_id(gt_ann, self._gt_dataset),
+                                self._annotation_id(ds_ann),
+                                self._annotation_id(gt_ann),
                             ],
                         )
                     )
 
-        if self.settings.check_covered_annotations:
-            ds_covered_anns = self._comparator.find_covered(ds_item)
-
-            for ds_ann in ds_covered_anns:
-                conflicts.append(
-                    self._make_conflict(
-                        frame_id=frame_id,
-                        conflict_type=AnnotationConflictType.COVERED_ANNOTATION,
-                        annotation_ids=[
-                            self._dm_ann_to_ann_id(ds_ann, self._ds_dataset),
-                        ],
-                    )
-                )
-
         # NOTE @grigorii: Attribute mismatches prevent annotations from matching with the
         # current single-stage matcher. Keep this handling for a future multi-stage matcher.
-        if self.settings.compare_attributes:
+        if attribute_comparison_may_compare(self.requirement.attribute_comparison):
             for gt_ann, ds_ann in matches:
                 comparison = _get_comparison(gt_ann, ds_ann)
                 conflicting_attribute_names = (
@@ -1177,41 +1073,10 @@ class ShapeRequirementHandler(RequirementHandler):
                             frame_id=frame_id,
                             conflict_type=AnnotationConflictType.MISMATCHING_ATTRIBUTES,
                             annotation_ids=[
-                                self._dm_ann_to_ann_id(ds_ann, self._ds_dataset),
-                                self._dm_ann_to_ann_id(gt_ann, self._gt_dataset),
+                                self._annotation_id(ds_ann),
+                                self._annotation_id(gt_ann),
                             ],
                             attribute_names=conflicting_attribute_names,
-                        )
-                    )
-
-        if self.settings.compare_groups:
-            gt_groups, gt_group_map = self._comparator.find_groups(gt_item)
-            ds_groups, ds_group_map = self._comparator.find_groups(ds_item)
-            shape_matched_objects = shape_matches + shape_mismatches
-            ds_to_gt_groups = self._comparator.match_groups(
-                gt_groups, ds_groups, shape_matched_objects
-            )
-
-            for gt_ann, ds_ann in shape_matched_objects:
-                gt_group = gt_groups.get(gt_group_map[id(gt_ann)], [gt_ann])
-                ds_group = ds_groups.get(ds_group_map[id(ds_ann)], [ds_ann])
-                ds_gt_group = ds_to_gt_groups.get(ds_group_map[id(ds_ann)], None)
-
-                if (
-                    # Check ungrouped objects
-                    (len(gt_group) == 1 and len(ds_group) != 1)
-                    or
-                    # Check grouped objects
-                    ds_gt_group != gt_group_map[id(gt_ann)]
-                ):
-                    conflicts.append(
-                        self._make_conflict(
-                            frame_id=frame_id,
-                            conflict_type=AnnotationConflictType.MISMATCHING_GROUPS,
-                            annotation_ids=[
-                                self._dm_ann_to_ann_id(ds_ann, self._ds_dataset),
-                                self._dm_ann_to_ann_id(gt_ann, self._gt_dataset),
-                            ],
                         )
                     )
 
@@ -1252,69 +1117,34 @@ class DatasetQualityEstimator:
         self._requirements = resolve_effective_requirements(requirements)
         self._report_parameters = report_parameters
 
-        self._ds_data_provider = ds_data_provider
-        self._gt_data_provider = gt_data_provider
-        self._ds_dataset = self._ds_data_provider.dm_dataset
-        self._gt_dataset = self._gt_data_provider.dm_dataset
+        self._backend = make_quality_backend(ds_data_provider, gt_data_provider)
 
         self._results: dict[str, dict[int, ComparisonReportFrameComparisonSummary]] = {}
         self._calculations: dict[str, ComparisonReportRequirementCalculation] = {}
 
-    def _dm_item_to_frame_id(self, item: dm.DatasetItem, dataset: dm.Dataset) -> int:
-        if dataset is self._ds_dataset:
-            source_data_provider = self._ds_data_provider
-        elif dataset is self._gt_dataset:
-            source_data_provider = self._gt_data_provider
-        else:
-            assert False
-
-        return source_data_provider.dm_item_id_to_frame_id(item)
-
-    def _dm_ann_to_ann_id(self, ann: dm.Annotation, dataset: dm.Dataset) -> AnnotationId:
-        if dataset is self._ds_dataset:
-            source_data_provider = self._ds_data_provider
-        elif dataset is self._gt_dataset:
-            source_data_provider = self._gt_data_provider
-        else:
-            assert False
-
-        return source_data_provider.dm_ann_to_ann_id(ann)
-
-    def _get_total_frames(self) -> int:
-        return len(self._ds_data_provider.job_data)
+    def _get_total_samples(self) -> int:
+        return self._backend.total_samples
 
     def _compare_datasets(self):
-        ds_job_dataset = self._ds_dataset
-        gt_job_dataset = self._gt_dataset
+        try:
+            for sample in self._backend.iter_samples():
+                self._compare_samples(sample)
+        finally:
+            self._backend.close()
 
-        for gt_item in gt_job_dataset:
-            ds_item = ds_job_dataset.get(id=gt_item.id, subset=gt_item.subset)
-            if not ds_item:
-                continue
-
-            self._compare_samples(ds_item, gt_item)
-
-    def _compare_samples(self, ds_item: dm.DatasetItem, gt_item: dm.DatasetItem):
-        frame_id = self._dm_item_to_frame_id(ds_item, self._ds_dataset)
-
-        if not self._requirements:
-            return
+    def _compare_samples(self, sample: ComparisonSample):
+        if not isinstance(sample, FrameComparisonSample):
+            raise ValueError("Only frame comparison reports are implemented")
 
         for requirement in self._requirements:
             if not requirement.enabled:
                 continue
-
             handler = RequirementHandler.for_requirement(
                 requirement,
-                context=MatchingContext(
-                    frame_id=frame_id,
-                    estimator=self,
-                    categories=self._gt_dataset.categories(),
-                ),
+                backend=self._backend,
             )
-
-            result = handler.match_annotations(ds_item=ds_item, gt_item=gt_item)
-            self._results.setdefault(requirement.name, {})[frame_id] = result.summary
+            result = handler.match_annotations(sample)
+            self._results.setdefault(requirement.name, {})[sample.frame_id] = result.summary
             self._calculations[requirement.name] = select_requirement_calculation(
                 self._calculations.get(requirement.name),
                 result.calculation,
@@ -1366,7 +1196,7 @@ class DatasetQualityEstimator:
             parameters=self._report_parameters,
             comparison_summary=ComparisonReportSummary(
                 frames=intersection_frames,
-                total_frames=self._get_total_frames(),
+                total_frames=self._get_total_samples(),
                 conflict_count=len(conflicts),
                 error_count=len(conflicts),
                 conflicts_by_type=Counter(c.type for c in conflicts),

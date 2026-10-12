@@ -24,6 +24,10 @@ export interface RegionPreviewHandle {
      */
     updateRange(range: AudioTimeRange): void;
     /**
+     * Updates the color of the preview region. If the preview region has been removed, this method does nothing.
+     */
+    updateColor(color: string): void;
+    /**
      * Removes the preview region from the waveform.
      */
     remove(): void;
@@ -62,40 +66,49 @@ function useRegionPreviewCapability(
     const createPreview = useCallback((options: RegionPreviewOptions): RegionPreviewHandle | null => {
         if (!readyRef.current || durationRef.current <= 0) return null;
         const { regionsPlugin } = regionRuntime;
-        const range = clampRange(options.range, durationRef.current);
+        let range = clampRange(options.range, durationRef.current);
+        let removed = false;
+        let { color } = options;
         const region = regionsPlugin.addRegion({
             id: generatePreviewRegionId(),
             start: range.start,
             end: range.end,
-            color: options.color,
+            color,
             drag: false,
             resize: false,
         });
-        if (region.element) {
+        const updateAppearance = (): void => {
+            if (!region.element) return;
+
             const isMarker = range.start === range.end;
             region.element.style.pointerEvents = 'none';
-            region.element.style.backgroundColor = isMarker ? 'none' : options.color;
-            region.element.style.borderLeft = isMarker ? `2px solid ${options.color}` : 'none';
-        }
-
-        let removed = false;
-        const remove = (): void => {
-            if (removed) return;
-            removed = true;
-            if (regionsPlugin.getRegions().includes(region)) region.remove();
+            region.element.style.backgroundColor = isMarker ? 'none' : color;
+            region.element.style.borderLeft = isMarker ? `2px solid ${color}` : 'none';
         };
+        updateAppearance();
+
         return {
             updateRange: (nextRange: AudioTimeRange): void => {
                 if (removed || !regionsPlugin.getRegions().includes(region)) return;
-                const next = clampRange(nextRange, durationRef.current);
-                region.setOptions(next);
-                if (!region.element) return;
-
-                const isMarker = next.start === next.end;
-                region.element.style.backgroundColor = isMarker ? 'none' : options.color;
-                region.element.style.borderLeft = isMarker ? `2px solid ${options.color}` : 'none';
+                range = clampRange(nextRange, durationRef.current);
+                region.setOptions(range);
+                updateAppearance();
             },
-            remove,
+            updateColor: (nextColor: string): void => {
+                if (removed || !regionsPlugin.getRegions().includes(region)) return;
+
+                color = nextColor;
+                region.setOptions({ color });
+                updateAppearance();
+            },
+            remove: (): void => {
+                if (removed) return;
+
+                removed = true;
+                if (regionsPlugin.getRegions().includes(region)) {
+                    region.remove();
+                }
+            },
         };
     }, []);
 

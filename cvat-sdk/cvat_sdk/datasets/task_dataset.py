@@ -8,10 +8,10 @@ import contextlib
 import itertools
 import tempfile
 import zipfile
-from collections.abc import Iterable, Sequence
+from collections.abc import Generator, Iterable, Iterator, Sequence
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
-from typing import Any, Generator, Iterator
+from typing import Any
 
 import attrs
 import PIL.Image

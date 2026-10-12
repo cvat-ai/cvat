@@ -5,14 +5,14 @@
 from __future__ import annotations
 
 import operator
-from collections.abc import Collection
+from collections.abc import Collection, Sequence
 from functools import cached_property
 from typing import Any
 
 import attrs
-import datumaro as dm
 from rest_framework.exceptions import ValidationError
 
+from cvat.apps.dataset_manager import data_model as cdm
 from cvat.apps.engine.filters import JsonLogicFilter
 from cvat.apps.quality_control import models
 
@@ -27,38 +27,6 @@ def _with_replaced_prefix(
         key.replace(source_prefix, target_prefix, 1): value.replace(source_prefix, target_prefix, 1)
         for key, value in lookup_fields.items()
     }
-
-
-def _get_label_name(ann: dm.Annotation, categories: dm.Categories) -> str | None:
-    if getattr(ann, "label", None) is None:
-        return None
-
-    try:
-        label_categories = categories[dm.AnnotationType.label]
-    except KeyError:
-        return None
-
-    return label_categories[ann.label].name
-
-
-def _get_annotation_area(ann: dm.Annotation) -> float | None:
-    if ann.type == dm.AnnotationType.label or not hasattr(ann, "get_area"):
-        return None
-
-    return ann.get_area()
-
-
-def _dm_type_to_requirement_type(ann_type: dm.AnnotationType) -> str:
-    return {
-        dm.AnnotationType.label: models.QualityRequirementAnnotationType.TAG,
-        dm.AnnotationType.bbox: models.QualityRequirementAnnotationType.RECTANGLE,
-        dm.AnnotationType.skeleton: models.QualityRequirementAnnotationType.SKELETON,
-        dm.AnnotationType.points: models.QualityRequirementAnnotationType.POINTS,
-        dm.AnnotationType.polyline: models.QualityRequirementAnnotationType.POLYLINE,
-        dm.AnnotationType.mask: models.QualityRequirementAnnotationType.MASK,
-        dm.AnnotationType.polygon: models.QualityRequirementAnnotationType.POLYGON,
-        dm.AnnotationType.ellipse: models.QualityRequirementAnnotationType.ELLIPSE,
-    }.get(ann_type, str(ann_type))
 
 
 @attrs.define(slots=False)
@@ -100,37 +68,37 @@ class _AnnotationAttributesFilterContext:
 
 @attrs.define(slots=False)
 class _ShapeFilterContext:
-    _ann: dm.Annotation
-    _categories: dm.Categories
+    _ann: cdm.Annotation
+    _catalog: cdm.LabelCatalog
     _attributes: dict[str, Any]
     _include_track: bool = True
 
     @classmethod
     def from_annotation(
         cls,
-        ann: dm.Annotation,
+        ann: cdm.Annotation,
         *,
-        categories: dm.Categories,
+        catalog: cdm.LabelCatalog,
         include_track: bool = True,
     ) -> "_ShapeFilterContext":
         return cls(
             ann,
-            categories,
+            catalog,
             dict(ann.attributes),
             include_track=include_track,
         )
 
     @property
     def label(self) -> str | None:
-        return _get_label_name(self._ann, self._categories)
+        return self._catalog.labels[self._ann.label].name if self._ann.label is not None else None
 
     @property
     def type(self) -> str:
-        return _dm_type_to_requirement_type(self._ann.type)
+        return self._ann.annotation_type
 
     @cached_property
     def area(self) -> float | None:
-        return _get_annotation_area(self._ann)
+        return self._ann.get_area() if isinstance(self._ann, cdm.Annotation2D) else None
 
     @property
     def source(self) -> Any:
@@ -171,7 +139,7 @@ class _ShapeFilterContext:
 
         return self.__class__(
             self._ann,
-            self._categories,
+            self._catalog,
             self._attributes,
             include_track=False,
         )
@@ -246,11 +214,11 @@ class RequirementJsonLogicFilter(JsonLogicFilter):
         self,
         *,
         expression: str,
-        categories: dm.Categories,
-        included_annotation_types: Collection[dm.AnnotationType],
+        catalog: cdm.LabelCatalog,
+        included_annotation_types: Collection[type[cdm.Annotation]],
     ) -> None:
-        self._categories = categories
-        self._included_annotation_types = set(included_annotation_types)
+        self._catalog = catalog
+        self._included_annotation_types = tuple(included_annotation_types)
 
         filter_expression = expression.strip()
         self._rules = (
@@ -396,25 +364,14 @@ class RequirementJsonLogicFilter(JsonLogicFilter):
         if arg not in allowed_terms:
             raise ValidationError(f"filter: term '{arg}' is not supported")
 
-    def matches_annotation(self, ann: dm.Annotation) -> bool:
-        if ann.type not in self._included_annotation_types:
+    def matches_annotation(self, ann: cdm.Annotation) -> bool:
+        if not isinstance(ann, self._included_annotation_types):
             return False
 
         return self._matches(self._build_shape_filter_context(ann))
 
-    def filter_item(self, item: dm.DatasetItem) -> dm.DatasetItem:
-        filtered_annotations = [ann for ann in item.annotations if self.matches_annotation(ann)]
-
-        if len(filtered_annotations) == len(item.annotations):
-            return item
-
-        return dm.DatasetItem(
-            id=item.id,
-            subset=item.subset,
-            annotations=filtered_annotations,
-            media=item.media,
-            attributes=dict(item.attributes or {}),
-        )
+    def filter_annotations(self, annotations: Sequence[cdm.Annotation]) -> list[cdm.Annotation]:
+        return [ann for ann in annotations if self.matches_annotation(ann)]
 
     def _matches(self, filter_obj: _FilterContext) -> bool:
         if not self._rules:
@@ -647,11 +604,11 @@ class RequirementJsonLogicFilter(JsonLogicFilter):
                 f"filter: {op} operation with {args} arguments is not implemented"
             )
 
-    def build_shape_context_for_annotation(self, ann: dm.Annotation) -> _ShapeFilterContext:
+    def build_shape_context_for_annotation(self, ann: cdm.Annotation) -> _ShapeFilterContext:
         return _ShapeFilterContext.from_annotation(
             ann,
-            categories=self._categories,
+            catalog=self._catalog,
         )
 
-    def _build_shape_filter_context(self, ann: dm.Annotation) -> _FilterContext:
+    def _build_shape_filter_context(self, ann: cdm.Annotation) -> _FilterContext:
         return _FilterContext(shape=self.build_shape_context_for_annotation(ann))

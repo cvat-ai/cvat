@@ -51,7 +51,7 @@ Cypress.Commands.add(
 
 Cypress.Commands.add('deleteProjects', (authHeaders, projectsToDelete) => {
     cy.request({
-        url: '/api/projects?page_size=all',
+        url: '/api/projects?page_size=500',
         headers: authHeaders,
     }).then((_response) => {
         const responseResult = _response.body.results;
