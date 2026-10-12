@@ -109,6 +109,12 @@ I got.
 
 1. When doing the second requirement (A page in the web interface that calls it.) which is part of step 3 and 4 in this doc, I figured I don't need to touch cvat-core. I just found the code implementing other pages under tasks > actions and placed one more page there that will show annotations. This, was I figured a minimal way to go through this and touching cvat-core which I don't understand yet was overkill for this so yeah.
 
+2. I initially planned on using the bar chart but since coco has a lot of classes, it was appearing too long like stretched out vertically so I switched to histograms because they're horizontally stretched and can be fit into one view.
+This is with bar chart:
+![alt text](image.png)
+
+It isn't fitting so yeah switched to a histogram
+
 ## Decision record
 
 To be written if I reach item 10.
