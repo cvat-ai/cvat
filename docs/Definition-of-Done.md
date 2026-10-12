@@ -6,14 +6,14 @@ command with its output, a commit, or a screenshot. A tick with no evidence coun
 ## The floor (items 1 to 4)
 
 - [x] The endpoint returns counts per class for a task.
-  Evidence: calling `/api/tasks/<task id>/class-counts` returns every class with its count.
+  **Evidence:** calling `/api/tasks/<task id>/class-counts` returns every class with its count.
 
   ![Response of the class-counts endpoint](doc-assets/image1.png)
 
 - [x] The counts are correct. I counted the same classes straight from the COCO annotation
   file for the images I uploaded, and the two sets of numbers match.
 
-  **Evidence**:
+  **Evidence:**
   output of `validation-scripts/compare_counts.py`, run against task 2 with all
   5,000 images. All 80 classes match.
 
@@ -115,7 +115,7 @@ command with its output, a commit, or a screenshot. A tick with no evidence coun
   polygons and 446 masks in the database. The `coco` column shows that expected number.
 
 - [x] The page opens from the task menu and calls the endpoint.
-  **Evidence**:
+  **Evidence:**
   There is a new 'Class Count' actions in tasks - I actually figured this will be the best place to put it because I was able to find the other options there (such as quality control)'s code and I decided to just mimic the existing implementation.
 
   ![alt text](doc-assets/image2.png)
@@ -125,13 +125,15 @@ command with its output, a commit, or a screenshot. A tick with no evidence coun
   ![alt text](doc-assets/image3.png)
 
 - [x] The counts are drawn as a chart. Initially, it was decided that i'll be using a bar chart with one bar per class. However, after trying that out, histograms are more visually appealign and look tighter
-  **Evidence**:
+  **Evidence:**
+
   ![](doc-assets/image5.png)
 
 - [x] A task with no annotations shows a clear "no annotations yet" message, not a blank chart.
 
   **Evidence:**
   To test this, I made a new task that wasn't annotated yet;
+
   ![](doc-assets/image6.png)
 
 - [x] When the request fails, the page shows an error message and a way to retry. Tested by
@@ -139,29 +141,28 @@ command with its output, a commit, or a screenshot. A tick with no evidence coun
   **Evidence:**
   I would refresh the page, then immediately run `docker stop cvat_server` and a try-again option along with a brief error message is being shown;
 
-![](doc-assets/image7.png)
-
+  ![](doc-assets/image7.png)
 
 ## Access (item 5)
 
 - [x] A request with no login is refused.
 
-    **Evidence:**
-    If no user is logged in and I attempt to access the url, I'm redirected back to the login page.
-
+  **Evidence:**
+  If no user is logged in and I attempt to access the url, I'm redirected back to the login page.
 
 - [x] A logged-in user with no access to the task is refused.
 
-    **Evidence:**
-    Created a new regular user and tried to manually access the class counts created by a super user;
+  **Evidence:**
+  Created a new regular user and tried to manually access the class counts created by a super user;
 
-    ![alt text](doc-assets/image8.png)
+  ![alt text](doc-assets/image8.png)
 
-  - [X] A user who can open the task gets the counts.
+- [x] A user who can open the task gets the counts.
 
   **Evidence:**
-   Heading to the url after logging in shows the actual class coutn
-   !()[doc-assets/image9.png]
+  Heading to the url after logging in shows the actual class coutn
+
+  ![](doc-assets/image9.png)
 
 ## Speed (item 6)
 
@@ -178,42 +179,60 @@ command with its output, a commit, or a screenshot. A tick with no evidence coun
   **Evidence:**
   Target met . I estimated 150ms but got back ~50ms.
   Three reasons i believe the counting part is fast:
-- **The database does the counting.** One query groups 41,866 rows and hands back 80. Python never loops over the annotations.
-- **An index already exists.** CVAT's shape table has an index on the job, so the database jumps straight to this task's rows instead of scanning the whole table.
-- **The answer is tiny.** 80 names and numbers, so there is almost nothing to send.
+  - **The database does the counting.** One query groups 41,866 rows and hands back 80. Python never loops over the annotations.
+  - **An index already exists.** CVAT's shape table has an index on the job, so the database jumps straight to this task's rows instead of scanning the whole table.
+  - **The answer is tiny.** 80 names and numbers, so there is almost nothing to send.
 
 ## Grouping (item 7)
 
-- [ ] The page can show counts for a single job, and the numbers for all jobs add up to the
+- [x] The page can show counts for a single job, and the numbers for all jobs add up to the
   task total.
-  Evidence:
-- [ ] Added later, see change 4 in the Plan. The page can switch from counting annotations to
+  **Evidence:** task 2 has only one job, so I checked this on task #5, a small test task with 2 jobs
+  and 8 boxes. The two jobs add up to the task total for both classes.
+
+  | | cat | dog |
+  | --- | --- | --- |
+  | Job #6 | 3 | 1 |
+  | Job #7 | 1 | 3 |
+  | Whole task | 4 | 4 |
+
+- [x] Added later, see change 4 in the Plan. The page can switch from counting annotations to
   counting the images that contain each class, and the image numbers match the COCO file.
-  Evidence:
+  **Evidence:** `validation-scripts/compare_counts.py` now compares the image numbers too. On task 2
+  all 80 classes match, for example person is in 2,693 images, car in 535 and chair in 580.
 
 ## Live updates (items 8 and 9)
 
 - [ ] Adding or deleting an annotation in one browser tab changes the chart in another tab
   without a refresh.
-  Evidence:
+  **Evidence:** not done, see "Not finished".
 - [ ] After the server is restarted, the page reconnects by itself and shows the current counts.
-  Evidence:
+  **Evidence:** not done, see "Not finished".
 
 ## Housekeeping
 
 - [ ] The plan was the first commit, before any code.
-  Evidence:
+  **Evidence:**
 - [ ] Every commit message says what changed and why.
-  Evidence:
+  **Evidence:**
 - [ ] No leftover files, commented-out code or unused code in the pull request.
-  Evidence:
+  **Evidence:**
 - [ ] The pull request goes into my own fork, not the real CVAT repository.
-  Evidence:
+  **Evidence:**
 - [ ] Recording is 5 minutes or less and answers all four questions.
-  Evidence:
+  **Evidence:**
 
 ## Not finished
 
 Everything I did not reach is listed here, with the reason.
 
-- Nothing yet.
+- **Live updates over WebSocket (item 8).** Not started. I ran out of time. CVAT has no
+  WebSocket support today, so this meant adding it from nothing, and it was the step I was least
+  sure about. To see new counts, the page has to be reloaded.
+- **Recovering when the connection drops (item 9).** Not started. It depends on item 8.
+- **Decision record (item 10).** Not written. I ran out of time.
+- **Measuring the speed again after the grouping.** Not done. The result in `Objectives.md` is
+  for the endpoint before the grouping was added. The endpoint is slower now because it also
+  counts images, and I did not measure by how much.
+
+No unfinished code for these is in the pull request.

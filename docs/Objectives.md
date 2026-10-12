@@ -43,9 +43,10 @@ I will say which of the three parts took the time.
 | Jobs | 1 |
 
 ## Result
+
 I may have understated when I set the target to be under 150ms because the results were achieved easily:
 
-```
+```txt
 GET http://localhost:8080/api/tasks/2/class-counts
 run 1: HTTP 200  58.3 ms
 run 2: HTTP 200  58.7 ms
@@ -62,5 +63,5 @@ The endpoint changed after the measurement above. It now also lists the task's j
 the images per class, which makes the database query slower. The result above is for the
 endpoint before that change.
 
-TODO
-Measure again with the same script and paste the output here.
+I did not measure again, because I ran out of time. So the result above does not describe the
+endpoint as submitted, and I cannot say whether the target is still met.
