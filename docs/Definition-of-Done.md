@@ -129,6 +129,7 @@ command with its output, a commit, or a screenshot. A tick with no evidence coun
   ![](doc-assets/image5.png)
 
 - [x] A task with no annotations shows a clear "no annotations yet" message, not a blank chart.
+
   **Evidence:**
   To test this, I made a new task that wasn't annotated yet;
   ![](doc-assets/image6.png)
@@ -143,12 +144,24 @@ command with its output, a commit, or a screenshot. A tick with no evidence coun
 
 ## Access (item 5)
 
-- [ ] A request with no login is refused.
-  Evidence:
-- [ ] A logged-in user with no access to the task is refused.
-  Evidence:
-- [ ] A user who can open the task gets the counts.
-  Evidence:
+- [x] A request with no login is refused.
+
+    **Evidence:**
+    If no user is logged in and I attempt to access the url, I'm redirected back to the login page.
+
+
+- [x] A logged-in user with no access to the task is refused.
+
+    **Evidence:**
+    Created a new regular user and tried to manually access the class counts created by a super user;
+
+    ![alt text](doc-assets/image8.png)
+
+  - [X] A user who can open the task gets the counts.
+
+  **Evidence:**
+   Heading to the url after logging in shows the actual class coutn
+   !()[doc-assets/image9.png]
 
 ## Speed (item 6)
 
