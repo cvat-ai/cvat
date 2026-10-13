@@ -149,7 +149,7 @@ Agents support three kinds of functions:
 
 The setup has three steps:
 
-1. Prepare a Python function for your model, **or choose a ready-to-use function below**.
+1. [Prepare a Python function for your model](#use-another-model), **or choose a ready-to-use function below**.
 2. Choose a deployment scope and register the model with `cvat-cli function create-native`.
 3. Start the agent with `cvat-cli function run-agent` and keep it running while using the model in CVAT.
 
@@ -443,6 +443,14 @@ In older CVAT versions, **AI assistance → Auto-labeling** is named **AI Tools 
 
 For a model without a ready-to-use function, implement the
 {{< ilink "/docs/api_sdk/sdk/auto-annotation#auto-annotation-interface" "CVAT SDK function interface" >}}.
+Start with the {{< ilink "/docs/api_sdk/sdk/auto-annotation#example" "Python detection function example" >}},
+which shows how to load a model, define its labels, and return predictions in CVAT format.
+For prompt-based models or trackers, see the
+{{< ilink "/docs/api_sdk/sdk/auto-annotation#interaction-function-protocol" "interaction protocol" >}} or
+{{< ilink "/docs/api_sdk/sdk/auto-annotation#tracking-function-protocol" "tracking protocol" >}}.
+
+The {{< ilink "/docs/api_sdk/cli#auto-annotate" "CLI function-loading examples" >}}
+explain how to expose a function through a Python file or a `create` factory and pass parameters with `-p`.
 Then use the same registration and agent commands with your Python file and its parameters.
 Native functions can be detectors, interactors, or trackers.
 
