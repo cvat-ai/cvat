@@ -232,6 +232,10 @@
     border-radius: $grid-unit-size;
     background: $background-color-2;
 
+    .ant-tabs {
+        margin-top: $grid-unit-size * 2;
+    }
+
     .ant-tabs-tab {
         width: $grid-unit-size * 14;
         justify-content: center;
@@ -432,7 +436,6 @@
     margin-top: $grid-unit-size * 2;
 }
 
-// Use the orange from cvat-icon.svg; reserve the surface highlight for interaction.
 .cvat-tools-control:not(.cvat-disabled-canvas-control) {
     &:hover,
     &:focus-visible {
@@ -452,13 +455,4 @@
 
 .cvat-tools-control.cvat-disabled-canvas-control > svg {
     filter: grayscale(1) opacity(0.45);
-}
-
-// Balance filled silhouettes against the lighter outlines without changing their artwork.
-.cvat-opencv-control,
-.cvat-snap-tools-control,
-.cvat-draw-skeleton-control {
-    > svg {
-        opacity: 0.82;
-    }
 }
