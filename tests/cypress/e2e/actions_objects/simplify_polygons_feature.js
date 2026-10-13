@@ -255,9 +255,10 @@ context('Simplify polygons feature', { scrollBehavior: false }, () => {
 
     after(() => {
         if (taskId !== null) {
-            // Unmount the annotation workspace before Cypress unloads its iframe at the end of the spec.
-            cy.get('.cvat-header-tasks-button').click();
-            cy.get('.cvat-canvas-container').should('not.exist');
+            // Persist the cleanup so beforeunload does not block Cypress's final iframe navigation.
+            cy.saveJob('PUT');
+            cy.get('.cvat-annotation-header-save-button')
+                .should('not.have.class', 'cvat-annotation-disabled-header-button');
             cy.headlessDeleteTask(taskId);
         }
     });
