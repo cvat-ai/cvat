@@ -669,6 +669,238 @@
     }
   },
   {
+    "model": "consensus.consensussettings",
+    "pk": 3,
+    "fields": {
+      "iou_threshold": 0.4,
+      "task": 2
+    }
+  },
+  {
+    "model": "consensus.consensussettings",
+    "pk": 4,
+    "fields": {
+      "iou_threshold": 0.4,
+      "task": 5
+    }
+  },
+  {
+    "model": "consensus.consensussettings",
+    "pk": 5,
+    "fields": {
+      "iou_threshold": 0.4,
+      "task": 6
+    }
+  },
+  {
+    "model": "consensus.consensussettings",
+    "pk": 6,
+    "fields": {
+      "iou_threshold": 0.4,
+      "task": 7
+    }
+  },
+  {
+    "model": "consensus.consensussettings",
+    "pk": 7,
+    "fields": {
+      "iou_threshold": 0.4,
+      "task": 8
+    }
+  },
+  {
+    "model": "consensus.consensussettings",
+    "pk": 8,
+    "fields": {
+      "iou_threshold": 0.4,
+      "task": 9
+    }
+  },
+  {
+    "model": "consensus.consensussettings",
+    "pk": 9,
+    "fields": {
+      "iou_threshold": 0.4,
+      "task": 11
+    }
+  },
+  {
+    "model": "consensus.consensussettings",
+    "pk": 10,
+    "fields": {
+      "iou_threshold": 0.4,
+      "task": 12
+    }
+  },
+  {
+    "model": "consensus.consensussettings",
+    "pk": 11,
+    "fields": {
+      "iou_threshold": 0.4,
+      "task": 13
+    }
+  },
+  {
+    "model": "consensus.consensussettings",
+    "pk": 12,
+    "fields": {
+      "iou_threshold": 0.4,
+      "task": 14
+    }
+  },
+  {
+    "model": "consensus.consensussettings",
+    "pk": 13,
+    "fields": {
+      "iou_threshold": 0.4,
+      "task": 15
+    }
+  },
+  {
+    "model": "consensus.consensussettings",
+    "pk": 14,
+    "fields": {
+      "iou_threshold": 0.4,
+      "task": 17
+    }
+  },
+  {
+    "model": "consensus.consensussettings",
+    "pk": 15,
+    "fields": {
+      "iou_threshold": 0.4,
+      "task": 18
+    }
+  },
+  {
+    "model": "consensus.consensussettings",
+    "pk": 16,
+    "fields": {
+      "iou_threshold": 0.4,
+      "task": 19
+    }
+  },
+  {
+    "model": "consensus.consensussettings",
+    "pk": 17,
+    "fields": {
+      "iou_threshold": 0.4,
+      "task": 20
+    }
+  },
+  {
+    "model": "consensus.consensussettings",
+    "pk": 18,
+    "fields": {
+      "iou_threshold": 0.4,
+      "task": 21
+    }
+  },
+  {
+    "model": "consensus.consensussettings",
+    "pk": 19,
+    "fields": {
+      "iou_threshold": 0.4,
+      "task": 22
+    }
+  },
+  {
+    "model": "consensus.consensussettings",
+    "pk": 20,
+    "fields": {
+      "iou_threshold": 0.4,
+      "task": 23
+    }
+  },
+  {
+    "model": "consensus.consensussettings",
+    "pk": 21,
+    "fields": {
+      "iou_threshold": 0.4,
+      "task": 24
+    }
+  },
+  {
+    "model": "consensus.consensussettings",
+    "pk": 22,
+    "fields": {
+      "iou_threshold": 0.4,
+      "task": 25
+    }
+  },
+  {
+    "model": "consensus.consensussettings",
+    "pk": 23,
+    "fields": {
+      "iou_threshold": 0.4,
+      "task": 26
+    }
+  },
+  {
+    "model": "consensus.consensussettings",
+    "pk": 24,
+    "fields": {
+      "iou_threshold": 0.4,
+      "task": 27
+    }
+  },
+  {
+    "model": "consensus.consensussettings",
+    "pk": 25,
+    "fields": {
+      "iou_threshold": 0.4,
+      "task": 28
+    }
+  },
+  {
+    "model": "consensus.consensussettings",
+    "pk": 26,
+    "fields": {
+      "iou_threshold": 0.4,
+      "task": 29
+    }
+  },
+  {
+    "model": "consensus.consensussettings",
+    "pk": 27,
+    "fields": {
+      "iou_threshold": 0.4,
+      "task": 32
+    }
+  },
+  {
+    "model": "consensus.consensussettings",
+    "pk": 28,
+    "fields": {
+      "iou_threshold": 0.4,
+      "task": 33
+    }
+  },
+  {
+    "model": "consensus.consensussettings",
+    "pk": 29,
+    "fields": {
+      "iou_threshold": 0.4,
+      "task": 34
+    }
+  },
+  {
+    "model": "consensus.consensussettings",
+    "pk": 30,
+    "fields": {
+      "iou_threshold": 0.4,
+      "task": 35
+    }
+  },
+  {
+    "model": "consensus.consensussettings",
+    "pk": 31,
+    "fields": {
+      "iou_threshold": 0.4,
+      "task": 36
+    }
+  },
+  {
     "model": "engine.attributespec",
     "pk": 1,
     "fields": {
@@ -5973,7 +6205,7 @@
       "stage": "annotation",
       "state": "in progress",
       "status": "annotation",
-      "type": "consensus_replica",
+      "type": "replica",
       "updated_date": "2025-02-03T15:25:32.413Z"
     }
   },
@@ -5989,7 +6221,7 @@
       "stage": "annotation",
       "state": "new",
       "status": "annotation",
-      "type": "consensus_replica",
+      "type": "replica",
       "updated_date": "2025-01-14T17:19:51.388Z"
     }
   },
@@ -6005,7 +6237,7 @@
       "stage": "annotation",
       "state": "in progress",
       "status": "annotation",
-      "type": "consensus_replica",
+      "type": "replica",
       "updated_date": "2025-02-03T15:22:52.241Z"
     }
   },
@@ -6037,7 +6269,7 @@
       "stage": "annotation",
       "state": "in progress",
       "status": "annotation",
-      "type": "consensus_replica",
+      "type": "replica",
       "updated_date": "2025-01-14T17:23:55.551Z"
     }
   },
@@ -6053,7 +6285,7 @@
       "stage": "annotation",
       "state": "new",
       "status": "annotation",
-      "type": "consensus_replica",
+      "type": "replica",
       "updated_date": "2025-01-14T17:19:51.388Z"
     }
   },
@@ -6069,7 +6301,7 @@
       "stage": "annotation",
       "state": "in progress",
       "status": "annotation",
-      "type": "consensus_replica",
+      "type": "replica",
       "updated_date": "2025-01-14T17:24:51.333Z"
     }
   },
@@ -6117,7 +6349,7 @@
       "stage": "annotation",
       "state": "in progress",
       "status": "annotation",
-      "type": "consensus_replica",
+      "type": "replica",
       "updated_date": "2025-01-27T16:43:07.696Z"
     }
   },
@@ -6133,7 +6365,7 @@
       "stage": "annotation",
       "state": "completed",
       "status": "annotation",
-      "type": "consensus_replica",
+      "type": "replica",
       "updated_date": "2025-01-27T16:43:47.462Z"
     }
   },

@@ -308,7 +308,7 @@ def get_serializer(instance: Model) -> BaseSerializer | None:
 SERIALIZER_CLEAN_UP_FIELDS = [
     (ProjectReadSerializer, ["tasks", "labels"]),
     (TaskReadSerializer, ["jobs", "labels"]),
-    (JobReadSerializer, ["labels", "issues", "replicas_count", "consensus_replicas"]),
+    (JobReadSerializer, ["labels", "issues", "replicas_count"]),
     (IssueReadSerializer, ["comments"]),
 ]
 

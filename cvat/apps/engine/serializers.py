@@ -1205,7 +1205,6 @@ class JobReadListSerializer(serializers.ListSerializer):
         return super().to_representation(data)
 
 
-@extend_schema_serializer(deprecate_fields=["consensus_replicas"])
 class JobReadSerializer(serializers.ModelSerializer):
     task_id = serializers.ReadOnlyField(source="get_task_id")
     task_name = serializers.SerializerMethodField()
@@ -1246,7 +1245,6 @@ class JobReadSerializer(serializers.ModelSerializer):
     target_storage = StorageSerializer(required=False, allow_null=True)
     source_storage = StorageSerializer(required=False, allow_null=True)
     parent_job_id = serializers.ReadOnlyField(allow_null=True)
-    consensus_replicas = serializers.IntegerField(read_only=True)
     replicas_count = serializers.IntegerField(read_only=True)
 
     class Meta:
@@ -1283,7 +1281,6 @@ class JobReadSerializer(serializers.ModelSerializer):
             "source_storage",
             "assignee_updated_date",
             "parent_job_id",
-            "consensus_replicas",
             "replicas_count",
         )
         read_only_fields = fields
@@ -1332,7 +1329,6 @@ class JobReadSerializer(serializers.ModelSerializer):
 
         if "replicas_count" in self.fields:
             data["replicas_count"] = getattr(instance, "child_jobs__count", 0)
-            data["consensus_replicas"] = data["replicas_count"]
 
         if self._can_see_task(instance):
             if task_source_storage := instance.get_source_storage():
@@ -3158,9 +3154,6 @@ class TaskReadSerializer(serializers.ModelSerializer):
         allow_null=True,
         help_text="Describes how the task validation is performed. Configured at task creation",
     )
-    consensus_enabled = serializers.BooleanField(
-        source="get_consensus_enabled", required=False, read_only=True
-    )
 
     class Meta:
         model = models.Task
@@ -3198,7 +3191,6 @@ class TaskReadSerializer(serializers.ModelSerializer):
             "labels",
             "assignee_updated_date",
             "validation_mode",
-            "consensus_enabled",
         )
         read_only_fields = fields
         extra_kwargs = {
@@ -3206,9 +3198,6 @@ class TaskReadSerializer(serializers.ModelSerializer):
             "overlap": {"allow_null": True},
         }
         list_serializer_class = TaskReadListSerializer
-
-    def get_consensus_enabled(self, instance: models.Task) -> bool:
-        return instance.consensus_replicas > 0
 
     def _can_see_project(self, instance: models.Task) -> bool:
         request = self.context.get("request")
@@ -3231,7 +3220,6 @@ class TaskReadSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)
-        representation["consensus_enabled"] = self.get_consensus_enabled(instance)
 
         if instance.media_type not in (
             models.MediaType.IMAGE,

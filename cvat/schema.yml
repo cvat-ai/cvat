@@ -2521,7 +2521,7 @@ paths:
           enum:
           - annotation
           - ground_truth
-          - consensus_replica
+          - replica
       tags:
       - jobs
       security:
@@ -9585,10 +9585,6 @@ components:
           type: integer
           nullable: true
           readOnly: true
-        consensus_replicas:
-          type: integer
-          readOnly: true
-          deprecated: true
         replicas_count:
           type: integer
           readOnly: true
@@ -9619,12 +9615,12 @@ components:
       enum:
       - annotation
       - ground_truth
-      - consensus_replica
+      - replica
       type: string
       description: |-
         * `annotation` - ANNOTATION
         * `ground_truth` - GROUND_TRUTH
-        * `consensus_replica` - CONSENSUS_REPLICA
+        * `replica` - REPLICA
     JobValidationLayoutRead:
       type: object
       properties:
@@ -13764,9 +13760,6 @@ components:
           nullable: true
           description: Describes how the task validation is performed. Configured
             at task creation
-        consensus_enabled:
-          type: boolean
-          readOnly: true
       required:
       - jobs
       - labels
