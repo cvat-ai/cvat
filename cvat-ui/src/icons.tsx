@@ -7,6 +7,8 @@ import React from 'react';
 
 import SVGCVATIcon from './assets/cvat-icon.svg';
 import SVGCursorIcon from './assets/cursor-icon.svg';
+import SVGSelectIcon from './assets/select-icon.svg';
+import SVGIssueIcon from './assets/issue-icon.svg';
 import SVGMoveIcon from './assets/move-icon.svg';
 import SVGRotateIcon from './assets/rotate-icon.svg';
 import SVGFitIcon from './assets/fit-to-window-icon.svg';
@@ -85,6 +87,8 @@ import SVGSeekToStartIcon from './assets/seek-to-start-icon.svg';
 import SVGSeekToEndIcon from './assets/seek-to-end-icon.svg';
 
 export const CVATIcon = React.memo((): JSX.Element => <SVGCVATIcon />);
+export const IssueIcon = React.memo((): JSX.Element => <SVGIssueIcon />);
+export const SelectIcon = React.memo((): JSX.Element => <SVGSelectIcon />);
 export const CursorIcon = React.memo((): JSX.Element => <SVGCursorIcon />);
 export const MoveIcon = React.memo((): JSX.Element => <SVGMoveIcon />);
 export const RotateIcon = React.memo((): JSX.Element => <SVGRotateIcon />);
