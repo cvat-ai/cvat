@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
+require('./csp-violation-observer');
 require('./commands');
 require('./commands_projects');
 require('./commands_review_pipeline');

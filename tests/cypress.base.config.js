@@ -15,6 +15,14 @@ module.exports = {
     viewportWidth: 1300,
     viewportHeight: 960,
     defaultCommandTimeout: 25000,
+    experimentalCspAllowList: [
+        'default-src',
+        'child-src',
+        'frame-src',
+        'script-src',
+        'script-src-elem',
+        'form-action',
+    ],
     requestTimeout: 15000,
     downloadsFolder: 'cypress/fixtures',
     env: {
