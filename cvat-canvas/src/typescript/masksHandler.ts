@@ -339,7 +339,7 @@ export class MasksHandlerImpl implements MasksHandler {
         this.canvas.defaultCursor = newCursor;
     }
 
-    private updateBrushTools(brushTool?: BrushTool, opts: Partial<BrushTool> = {}): void {
+    private updateBrushTools(brushTool: BrushTool | null = this.tool, opts: Partial<BrushTool> = {}): void {
         if (this.isPolygonDrawing) {
             // tool was switched from polygon to brush for example
             this.keepDrawnPolygon();
@@ -731,12 +731,13 @@ export class MasksHandlerImpl implements MasksHandler {
 
                 this.isInsertion = true;
             } else {
-                this.updateBrushTools(drawData.brushTool);
                 if (!this.isDrawing) {
                     // initialize drawing pipeline if not started
                     this.isDrawing = true;
                     this.redraw = drawData.redraw || null;
                 }
+                // Reuse the current tool when restarting before the toolbox sends its configuration.
+                this.updateBrushTools(drawData.brushTool);
             }
 
             this.canvas.getElement().parentElement.style.display = 'block';
