@@ -171,12 +171,16 @@ class TestPostConsensusMerge(_PermissionTestBase):
         create_consensus_merge(user=admin_user, job_id=job_id)
 
     def test_cannot_merge_task_without_consensus_jobs(self, admin_user, tasks, tasks_with_replicas):
-        task_id = next(t["id"] for t in tasks if t["id"] not in tasks_with_replicas.map)
+        task_id = next(
+            t["id"]
+            for t in tasks
+            if t["id"] not in tasks_with_replicas.map and t["dimension"] == "2d"
+        )
 
         with pytest.raises(exceptions.ApiException) as capture:
             create_consensus_merge(user=admin_user, task_id=task_id)
 
-        assert "Consensus is not enabled in this task" in capture.value.body
+        assert "No annotation jobs in the annotation stage" in capture.value.body
 
     def test_cannot_merge_task_without_mergeable_parent_jobs(
         self, admin_user, tasks_with_replicas, jobs

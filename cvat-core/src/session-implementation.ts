@@ -869,10 +869,6 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
                 taskSpec.source_storage = this.sourceStorage.toJSON();
             }
 
-            if (fields?.consensus_replicas) {
-                taskSpec.consensus_replicas = fields.consensus_replicas;
-            }
-
             const taskDataSpec = {
                 ...(typeof this.imageQuality !== 'undefined' ? { image_quality: this.imageQuality } : {}),
                 ...(typeof this.useZipChunks !== 'undefined' ? { use_zip_chunks: this.useZipChunks } : {}),
@@ -888,6 +884,7 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
                 ...(typeof this.copyData !== 'undefined' ? { copy_data: this.copyData } : {}),
                 ...(typeof this.cloudStorageId !== 'undefined' ? { cloud_storage_id: this.cloudStorageId } : {}),
                 ...(fields?.validation_params ? { validation_params: fields.validation_params } : {}),
+                ...(fields?.replicas_per_job ? { replicas_per_job: fields.replicas_per_job } : {}),
             };
 
             const { taskID, rqID } = await serverProxy.tasks.create(

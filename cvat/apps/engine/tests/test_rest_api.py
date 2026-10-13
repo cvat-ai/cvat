@@ -8672,15 +8672,12 @@ class TaskJobLimitAPITestCase(ApiTestBase):
     def setUpTestData(cls):
         create_db_users(cls)
 
-    def _create_task(self, segment_size: int, img_size: int, consensus_replicas: int | None = None):
+    def _create_task(self, segment_size: int, img_size: int, replicas_per_job: int | None = None):
         data = {
             "name": "test_for_job_limit",
             "labels": [{"name": "car"}],
             "segment_size": segment_size,
         }
-
-        if consensus_replicas:
-            data["consensus_replicas"] = consensus_replicas
 
         image_files = {}
         for i in range(img_size):
@@ -8690,6 +8687,9 @@ class TaskJobLimitAPITestCase(ApiTestBase):
             **image_files,
             "image_quality": 75,
         }
+
+        if replicas_per_job:
+            image_data["replicas_per_job"] = replicas_per_job
 
         with ForceLogin(self.admin, self.client):
             response = self.client.post("/api/tasks", data=data, format="json")
@@ -8763,7 +8763,7 @@ class TaskJobLimitAPITestCase(ApiTestBase):
         response = self._create_task(
             segment_size=10,
             img_size=100,
-            consensus_replicas=2,
+            replicas_per_job=2,
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["status"], RequestStatus.FINISHED)
@@ -8777,7 +8777,7 @@ class TaskJobLimitAPITestCase(ApiTestBase):
         response = self._create_task(
             segment_size=10,
             img_size=100,
-            consensus_replicas=2,
+            replicas_per_job=2,
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["status"], RequestStatus.FAILED)

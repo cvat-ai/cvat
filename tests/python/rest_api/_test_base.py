@@ -45,14 +45,13 @@ class TestTasksBase:
         segment_size: int | None = None,
         server_files: Sequence[str] | None = None,
         cloud_storage_id: int | None = None,
-        job_replication: int | None = None,
+        replicas_per_job: int | None = None,
         **data_kwargs,
     ) -> tuple[ImagesTaskSpec, int]:
         task_params = {
             "name": f"{request.node.name}[{request.fixturename}]",
             "labels": [{"name": "a"}],
             **({"segment_size": segment_size} if segment_size else {}),
-            **({"consensus_replicas": job_replication} if job_replication else {}),
         }
 
         if server_files is not None:
@@ -76,6 +75,7 @@ class TestTasksBase:
             "image_quality": 70,
             "sorting_method": "natural",
             "chunk_size": max(1, (segment_size or resulting_task_size) // 2),
+            **({"replicas_per_job": replicas_per_job} if replicas_per_job else {}),
             **(
                 {
                     "server_files": server_files,
@@ -155,7 +155,7 @@ class TestTasksBase:
     def fxt_uploaded_images_task_with_segments_and_consensus(
         self, request: pytest.FixtureRequest
     ) -> tuple[ITaskSpec, int]:
-        return self._image_task_fxt_base(request=request, segment_size=4, job_replication=2)
+        return self._image_task_fxt_base(request=request, segment_size=4, replicas_per_job=2)
 
     def _image_task_with_honeypots_and_segments_base(
         self,
@@ -339,7 +339,7 @@ class TestTasksBase:
         start_frame: int | None = None,
         step: int | None = None,
         frame_selection_method: str = "random_uniform",
-        job_replication: int | None = None,
+        replicas_per_job: int | None = None,
     ) -> tuple[ITaskSpec, int]:
         used_frames_count = 16
         total_frame_count = (start_frame or 0) + used_frames_count * (step or 1)
@@ -389,7 +389,7 @@ class TestTasksBase:
             start_frame=start_frame,
             step=step,
             validation_params=validation_params,
-            job_replication=job_replication,
+            replicas_per_job=replicas_per_job,
         )
 
     @fixture(scope="class")
@@ -397,7 +397,7 @@ class TestTasksBase:
         self, request: pytest.FixtureRequest
     ) -> tuple[ITaskSpec, int]:
         return self._uploaded_images_task_with_gt_and_segments_base(
-            request=request, job_replication=2
+            request=request, replicas_per_job=2
         )
 
     @fixture(scope="class")

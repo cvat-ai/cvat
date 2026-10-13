@@ -11,7 +11,7 @@ import re
 import shutil
 import stat
 from abc import ABCMeta, abstractmethod
-from collections import defaultdict, deque
+from collections import deque
 from collections.abc import Collection, Iterable
 from contextlib import closing
 from copy import deepcopy
@@ -246,6 +246,7 @@ class _TaskBackupBase(_BackupBase):
             "custom_segments",
             "job_file_mapping",
             "validation_layout",
+            "replicas_per_job",
         }
 
         self._prepare_meta(allowed_fields, data)
@@ -1130,8 +1131,6 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
             # DataSerializer checks for this, but we don't need it for tasks with a GT pool
             data["job_file_mapping"] = job_file_mapping
 
-        self._manifest["consensus_replicas"] = self._determine_replica_counts(jobs)
-
         self._db_task = models.Task.objects.create(**self._manifest, organization_id=self._org_id)
 
         task_data_path = self._db_task.get_dirname()
@@ -1213,32 +1212,6 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
         except ValueError:
             raise ValidationError(f"Unexpected job type {raw_job_type}")
         return job_type
-
-    def _collect_replica_counts(self, jobs: dict) -> dict[models.JobType, list[int]]:
-        replica_counts = []
-        for job in jobs:
-            job_type = self._get_job_type(job)
-
-            if job_type != models.JobType.REPLICA:
-                replica_counts.append([job_type, 0])
-            else:
-                if not replica_counts:
-                    raise ValidationError(
-                        f"Invalid job order, jobs of type '{job_type}' "
-                        "must follow their parent jobs."
-                    )
-
-                replica_counts[-1][1] += 1
-
-        replica_counts_map = defaultdict(list)
-        for primary_type, count in replica_counts:
-            replica_counts_map[primary_type].append(count)
-
-        return replica_counts_map
-
-    def _determine_replica_counts(self, jobs: dict) -> int:
-        replica_counts = self._collect_replica_counts(jobs)
-        return min(replica_counts.get(models.JobType.ANNOTATION, [0]))
 
     def _import_gt_jobs(self, jobs):
         for job in jobs:
