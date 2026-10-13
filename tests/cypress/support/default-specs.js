@@ -15,7 +15,7 @@ function defaultTaskSpec({
     validationParams,
     projectId,
     chunkSize,
-    consensusReplicas,
+    replicasPerJob,
 }) {
     const convertedAttrs = [];
     if (attributes !== undefined) {
@@ -93,8 +93,8 @@ function defaultTaskSpec({
         extras.validation_params = convertedParams;
     }
 
-    if (consensusReplicas) {
-        extras.consensus_replicas = consensusReplicas;
+    if (replicasPerJob) {
+        extras.replicas_per_job = replicasPerJob;
     }
 
     return {

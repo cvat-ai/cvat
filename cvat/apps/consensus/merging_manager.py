@@ -36,9 +36,6 @@ class _TaskMerger:
     _settings: ConsensusSettings
 
     def check_merging_available(self, *, parent_job_id: int | None = None):
-        if not self._task.consensus_replicas:
-            raise MergingNotAvailable("Consensus is not enabled in this task")
-
         if self._task.dimension != DimensionType.DIM_2D:
             raise MergingNotAvailable("Merging is only supported in 2d tasks")
 

@@ -2882,12 +2882,16 @@ class DataSerializer(serializers.ModelSerializer):
             "job_file_mapping",
             "upload_file_order",
             "validation_params",
+            "replicas_per_job",
         )
         extra_kwargs = {
             "chunk_size": {"help_text": "Maximum number of frames per chunk"},
             "start_frame": {"help_text": "First frame index"},
             "stop_frame": {"help_text": "Last frame index"},
             "frame_filter": {"help_text": "Frame filter. The only supported syntax is: 'step=N'"},
+            "replicas_per_job": {
+                "help_text": "Number of replica jobs for each annotation job, 0 means no replicas"
+            },
         }
 
     def __init__(self, *args, **kwargs):
@@ -3244,15 +3248,6 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer, OrgTransf
     organization_id = serializers.IntegerField(write_only=True, required=False, allow_null=True)
     target_storage = StorageSerializer(required=False, allow_null=False)
     source_storage = StorageSerializer(required=False, allow_null=False)
-    consensus_replicas = serializers.IntegerField(
-        required=False,
-        default=0,
-        min_value=0,
-        help_text=textwrap.dedent("""\
-            The number of consensus replica jobs for each annotation job.
-            Configured at task creation
-        """),
-    )
 
     class Meta:
         model = models.Task
@@ -3270,10 +3265,9 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer, OrgTransf
             "subset",
             "target_storage",
             "source_storage",
-            "consensus_replicas",
             "organization_id",
         )
-        write_once_fields = ("overlap", "segment_size", "consensus_replicas")
+        write_once_fields = ("overlap", "segment_size")
         update_only_fields = ("organization_id",)
 
     def __init__(self, *args, **kwargs):
@@ -3286,17 +3280,6 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer, OrgTransf
     def to_representation(self, instance):
         serializer = TaskReadSerializer(instance, context=self.context)
         return serializer.data
-
-    def validate_consensus_replicas(self, value):
-        max_replicas = settings.MAX_CONSENSUS_REPLICAS
-        if value and (value == 1 or value < 0 or value > max_replicas):
-            raise serializers.ValidationError(
-                f"Consensus replicas must be 0 "
-                f"or a positive number more than 1 and less than {max_replicas + 1}, "
-                f"got {value}"
-            )
-
-        return value or 0
 
     # pylint: disable=no-self-use
     @transaction.atomic

@@ -1852,12 +1852,12 @@ class TestPostTaskData:
         task_params = {
             "name": request.node.name,
             "segment_size": segment_size,
-            "consensus_replicas": replication,
         }
 
         data_params = {
             "image_quality": 70,
             "client_files": images,
+            "replicas_per_job": replication,
         }
 
         task_id, _ = create_task(self._USERNAME, spec=task_params, data=data_params)
@@ -2532,7 +2532,7 @@ class TestTaskData(TestTasksBase):
             annotation_jobs = [j for j in jobs if j.type == "annotation"]
             assert (
                 len([j for j in jobs if j.type == "replica"])
-                == len(annotation_jobs) * task_spec.consensus_replicas
+                == len(annotation_jobs) * task_spec.replicas_per_job
             )
 
             for job in annotation_jobs:
@@ -2541,7 +2541,7 @@ class TestTaskData(TestTasksBase):
                 )
 
                 replicas = [j for j in jobs if j.type == "replica" if j.parent_job_id == job.id]
-                assert len(replicas) == task_spec.consensus_replicas
+                assert len(replicas) == task_spec.replicas_per_job
 
                 for replica_job in replicas:
                     replica_job_meta = json.loads(
