@@ -3,7 +3,9 @@
 // SPDX-License-Identifier: MIT
 
 /* eslint-disable */
-import * as SVG from 'svg.js';
+// svg.patch extends the svg.js export, so it must import the mutable CommonJS export
+// rather than an ES module namespace.
+import SVG from 'svg.js';
 import 'svg.draggable.js';
 import 'svg.resize.js';
 import 'svg.select.js';

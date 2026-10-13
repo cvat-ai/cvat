@@ -1,3 +1,28 @@
+# Supported modes: report, enforce. Any other value or missing value disables CSP.
+map $host $csp_mode {
+    default '${CVAT_CSP_MODE}';
+}
+
+map $csp_mode $csp_main_enforce_policy {
+    default '';
+    enforce "default-src 'none'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; script-src 'self' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self' data:; worker-src 'self'; report-to csp-endpoint";
+}
+
+map $csp_mode $csp_main_report_only_policy {
+    default '';
+    report "default-src 'none'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; script-src 'self' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self' data:; worker-src 'self'; report-to csp-endpoint";
+}
+
+map $csp_mode $csp_worker_enforce_policy {
+    default '';
+    enforce "default-src 'none'; script-src 'self' 'unsafe-eval'; connect-src 'self' data:; report-to csp-endpoint";
+}
+
+map $csp_mode $csp_worker_report_only_policy {
+    default '';
+    report "default-src 'none'; script-src 'self' 'unsafe-eval'; connect-src 'self' data:; report-to csp-endpoint";
+}
+
 server {
     root /usr/share/nginx/html;
 
@@ -20,14 +45,16 @@ server {
     location / {
         # Any route that doesn't exist on the server (e.g. /devices)
         try_files $uri $uri/ /index.html;
-        include /etc/nginx/snippets/index-common.conf;
-    }
-
-    location = /index.html {
-        include /etc/nginx/snippets/index-common.conf;
-        add_header Content-Security-Policy "${CVAT_CSP_MAIN_SPA_ENFORCE}" always;
-        add_header Content-Security-Policy-Report-Only "${CVAT_CSP_MAIN_SPA_REPORT_ONLY}" always;
-        add_header Reporting-Endpoints "${CVAT_CSP_MAIN_SPA_REPORTING_ENDPOINTS}" always;
+        add_header Cache-Control "no-cache, no-store, must-revalidate";
+        add_header Pragma "no-cache";
+        add_header Cross-Origin-Opener-Policy "same-origin";
+        add_header Cross-Origin-Embedder-Policy "credentialless";
+        add_header Expires 0;
+        add_header X-Frame-Options "deny";
+        add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+        add_header X-Content-Type-Options "nosniff" always;
+        add_header Content-Security-Policy $csp_main_enforce_policy always;
+        add_header Content-Security-Policy-Report-Only $csp_main_report_only_policy always;
     }
 
     location ~ \.map$ {
@@ -35,42 +62,35 @@ server {
         access_log off;
     }
 
-    location /assets/workers/imageUnzipWorker/ {
-        include /etc/nginx/snippets/assets-common.conf;
-        add_header Content-Security-Policy "${CVAT_CSP_IMAGE_UNZIP_WORKER_ENFORCE}" always;
-        add_header Content-Security-Policy-Report-Only "${CVAT_CSP_IMAGE_UNZIP_WORKER_REPORT_ONLY}" always;
-        add_header Reporting-Endpoints "${CVAT_CSP_IMAGE_UNZIP_WORKER_REPORTING_ENDPOINTS}" always;
-    }
+    location /assets/workers/ {
+        expires 1y;
+        add_header Cache-Control "public";
+        add_header Cross-Origin-Embedder-Policy "require-corp";
+        add_header Service-Worker-Allowed "/" always;
+        add_header Content-Security-Policy $csp_worker_enforce_policy always;
+        add_header Content-Security-Policy-Report-Only $csp_worker_report_only_policy always;
 
-    location /assets/workers/videoDecoderWorker/ {
-        include /etc/nginx/snippets/assets-common.conf;
-        add_header Content-Security-Policy "${CVAT_CSP_VIDEO_DECODER_WORKER_ENFORCE}" always;
-        add_header Content-Security-Policy-Report-Only "${CVAT_CSP_VIDEO_DECODER_WORKER_REPORT_ONLY}" always;
-        add_header Reporting-Endpoints "${CVAT_CSP_VIDEO_DECODER_WORKER_REPORTING_ENDPOINTS}" always;
-    }
+        include /etc/nginx/mime.types;
+        types {
+            # mjs modules must have application/javascript, not default application/octet-stream
+            application/javascript mjs;
+        }
 
-    location /assets/workers/downloadWorker/ {
-        include /etc/nginx/snippets/assets-common.conf;
-        add_header Content-Security-Policy "${CVAT_CSP_DOWNLOAD_WORKER_ENFORCE}" always;
-        add_header Content-Security-Policy-Report-Only "${CVAT_CSP_DOWNLOAD_WORKER_REPORT_ONLY}" always;
-        add_header Reporting-Endpoints "${CVAT_CSP_DOWNLOAD_WORKER_REPORTING_ENDPOINTS}" always;
-    }
-
-    location /assets/workers/polygonSimplifierWorker/ {
-        include /etc/nginx/snippets/assets-common.conf;
-        add_header Content-Security-Policy "${CVAT_CSP_POLYGON_SIMPLIFIER_WORKER_ENFORCE}" always;
-        add_header Content-Security-Policy-Report-Only "${CVAT_CSP_POLYGON_SIMPLIFIER_WORKER_REPORT_ONLY}" always;
-        add_header Reporting-Endpoints "${CVAT_CSP_POLYGON_SIMPLIFIER_WORKER_REPORTING_ENDPOINTS}" always;
-    }
-
-    location /assets/workers/samInferenceWorker/ {
-        include /etc/nginx/snippets/assets-common.conf;
-        add_header Content-Security-Policy "${CVAT_CSP_SAM_INFERENCE_WORKER_ENFORCE}" always;
-        add_header Content-Security-Policy-Report-Only "${CVAT_CSP_SAM_INFERENCE_WORKER_REPORT_ONLY}" always;
-        add_header Reporting-Endpoints "${CVAT_CSP_SAM_INFERENCE_WORKER_REPORTING_ENDPOINTS}" always;
+        access_log off;
     }
 
     location /assets {
-        include /etc/nginx/snippets/assets-common.conf;
+        expires 1y;
+        add_header Cache-Control "public";
+        add_header Cross-Origin-Embedder-Policy "require-corp";
+        add_header Service-Worker-Allowed "/" always;
+
+        include /etc/nginx/mime.types;
+        types {
+            # mjs modules must have application/javascript, not default application/octet-stream
+            application/javascript mjs;
+        }
+
+        access_log off;
     }
 }

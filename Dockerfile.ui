@@ -34,9 +34,7 @@ SOURCE_MAPS_ENABLED="${SOURCE_MAPS_ENABLED}" yarn run build:cvat-ui
 
 FROM nginxinc/nginx-unprivileged:1.31.6-alpine3.24-slim
 
-# Expand the Nginx configuration template from CSP environment variables at container startup.
+# Render the nginx configuration template at container startup.
 COPY cvat-ui/react_nginx.conf.template /etc/nginx/templates/default.conf.template
-COPY cvat-ui/react_nginx_assets-common.conf /etc/nginx/snippets/assets-common.conf
-COPY cvat-ui/react_nginx_index-common.conf /etc/nginx/snippets/index-common.conf
 COPY cvat-ui/robots.txt /usr/share/nginx/html/
 COPY --from=cvat-ui /tmp/cvat-ui/dist /usr/share/nginx/html/

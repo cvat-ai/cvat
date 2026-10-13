@@ -9,12 +9,6 @@ const HtmlWebpackPlugin = require('html-webpack-plugin');
 const Dotenv = require('dotenv-webpack');
 const CopyPlugin = require('copy-webpack-plugin');
 const ExecScriptsPlugin = require('./exec-scripts-webpack-plugin.cjs');
-const {
-    CSPWorkerViolationBootstrapPlugin,
-    CSPViolationBootstrapPlugin,
-    cspHeadersGetterFactory,
-    getCSPMode,
-} = require('../csp/webpack-helpers.cjs');
 
 const PROXIED_PATH_REGEXP = /^(?:\/api\/|\/analytics\/|\/static\/|\/admin(?:\/|$)|\/profiler(?:\/|$)|\/documentation\/|\/django-rq(?:\/|$))/;
 
@@ -55,9 +49,13 @@ module.exports = (env, argv = {}) => {
 
     const host = process.env.CVAT_UI_HOST ?? 'localhost';
     const port = process.env.CVAT_UI_PORT ?? 3000;
-    const cspMode = getCSPMode(isDevMode, env?.CVAT_UI_CSP_MODE);
-    console.log('CSP checking: ', cspMode);
-    const getCspHeaders = cspHeadersGetterFactory(cspMode, isProxiedPath);
+    const cspHelpers = isDevMode ? require('../csp/webpack-helpers.cjs') : null;
+    const cspMode = cspHelpers ? cspHelpers.getCSPMode(isDevMode, env?.CVAT_CSP_MODE) : 'off';
+    if (isDevMode) {
+        console.log('CSP checking: ', cspMode);
+    }
+    const getCspHeaders = cspHelpers ?
+        cspHelpers.cspHeadersGetterFactory(cspMode, isProxiedPath) : () => ({});
     return {
         target: 'web',
         mode: isDevMode ? 'development' : 'production',
@@ -241,8 +239,8 @@ module.exports = (env, argv = {}) => {
                     excludeChunks: ['csp-violation-bootstrap'],
                 } : {}),
             }),
-            ...(isDevMode ? [new CSPViolationBootstrapPlugin()] : []),
-            ...(isDevMode ? [new CSPWorkerViolationBootstrapPlugin(
+            ...(isDevMode ? [new cspHelpers.CSPViolationBootstrapPlugin()] : []),
+            ...(isDevMode ? [new cspHelpers.CSPWorkerViolationBootstrapPlugin(
                 /^workers\//,
             )] : []),
             new Dotenv({
