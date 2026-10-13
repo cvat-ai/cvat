@@ -106,16 +106,16 @@
 .cvat-audio-loop-control {
     border-radius: $border-radius-base;
     transition: $annotation-view-control-transition;
-    transform: scale(0.65);
+    transform: scale(0.75);
     padding: 2px;
 
     &:hover:not(.cvat-disabled-canvas-control) {
         background: $header-color;
-        transform: scale(0.75);
+        transform: scale(0.8);
     }
 
     &:active:not(.cvat-disabled-canvas-control) {
-        transform: scale(0.65);
+        transform: scale(0.75);
     }
 
     > svg {
@@ -430,4 +430,35 @@
     display: flex;
     justify-content: center;
     margin-top: $grid-unit-size * 2;
+}
+
+// Use the orange from cvat-icon.svg; reserve the surface highlight for interaction.
+.cvat-tools-control:not(.cvat-disabled-canvas-control) {
+    &:hover,
+    &:focus-visible {
+        background: rgba(#ff4800, 0.09);
+    }
+
+    &:focus-visible {
+        outline: 2px solid #ff4800;
+        outline-offset: 2px;
+    }
+
+    &.cvat-active-canvas-control {
+        background: rgba(#ff4800, 0.14);
+        box-shadow: inset 0 0 0 1px rgba(#ff4800, 0.25);
+    }
+}
+
+.cvat-tools-control.cvat-disabled-canvas-control > svg {
+    filter: grayscale(1) opacity(0.45);
+}
+
+// Balance filled silhouettes against the lighter outlines without changing their artwork.
+.cvat-opencv-control,
+.cvat-snap-tools-control,
+.cvat-draw-skeleton-control {
+    > svg {
+        opacity: 0.82;
+    }
 }
