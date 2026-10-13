@@ -1219,7 +1219,7 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
         for job in jobs:
             job_type = self._get_job_type(job)
 
-            if job_type != models.JobType.CONSENSUS_REPLICA:
+            if job_type != models.JobType.REPLICA:
                 replica_counts.append([job_type, 0])
             else:
                 if not replica_counts:
@@ -1263,7 +1263,7 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
                 )
                 job_serializer.is_valid(raise_exception=True)
                 job_serializer.save()
-            elif job_type in [models.JobType.ANNOTATION, models.JobType.CONSENSUS_REPLICA]:
+            elif job_type in [models.JobType.ANNOTATION, models.JobType.REPLICA]:
                 continue
             else:
                 assert False
