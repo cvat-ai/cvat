@@ -18,14 +18,12 @@ const MAIN_SPA_POLICY = `
     connect-src 'self'
     data: ws:;
     worker-src 'self';
-    report-to csp-endpoint
-`;
+`.replace(/\s+/g, ' ').trim();
 const WORKER_POLICY = `
     default-src 'none';
     script-src 'self' 'unsafe-eval';
     connect-src 'self' data:;
-    report-to csp-endpoint
-`;
+`.replace(/\s+/g, ' ').trim();
 const CSP_MODE_TO_HEADER = {
     enforce: 'Content-Security-Policy',
     report: 'Content-Security-Policy-Report-Only',
