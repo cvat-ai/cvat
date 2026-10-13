@@ -18,6 +18,7 @@ from rest_framework.views import exception_handler as drf_exception_handler
 from cvat.apps.access_tokens.models import AccessToken
 from cvat.apps.access_tokens.serializers import AccessTokenReadSerializer
 from cvat.apps.dataset_manager.tracks_counter import TracksCounter
+from cvat.apps.dataset_manager.util import LockNotAvailableError
 from cvat.apps.engine.models import (
     CloudStorage,
     Comment,
@@ -689,6 +690,8 @@ def exception_handler(exc: Exception, context) -> Response | None:
     if isinstance(exc, DatabaseError):
         if db_utils.is_lock_timeout_error(exc):
             exc = ResourceIsBusyApiException()
+    elif isinstance(exc, LockNotAvailableError):
+        exc = ResourceIsBusyApiException()
 
     return drf_exception_handler(exc=exc, context=context)
 

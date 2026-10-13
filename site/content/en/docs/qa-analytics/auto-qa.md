@@ -388,6 +388,10 @@ The **Settings** tab has the following sections:
 
 #### Requirements configuration
 
+A quality requirement defines which annotations to check and the minimum score they must achieve.
+For example, you can require at least 90% recall for car bounding boxes while using a different
+threshold for pedestrians.
+
 Each enabled quality requirement has its own annotation type, target metric, threshold,
 filter, and comparison options. CVAT provides non-removable base requirements for supported
 annotation types. You can rename a base requirement, change its settings, or disable it.
@@ -474,7 +478,8 @@ The available controls depend on the requirement target:
 | General | Target metric threshold | The minimum target-metric score required to complete the requirement. |
 | General | Enabled | Includes or excludes the requirement from reports and immediate feedback. |
 | Shape comparison | IoU threshold | The minimum overlap used to distinguish matching and unmatched spatial annotations. Applies to rectangles, ellipses, polygons, masks, and polylines. |
-| Shape comparison | Point size | The relative radius of the region used to match points and skeleton keypoints. |
+| Shape comparison | OKS threshold | The minimum [OKS](#point-matching) value used to distinguish matching and unmatched points, skeletons, and skeleton keypoints. |
+| Shape comparison | Point size | The point "size", relative to the object size. Determines the size of the area used to match points, skeletons, and skeleton keypoints. Read more in [Point matching](#point-matching). |
 | Shape comparison | Point size base | Uses either the image size or the group bounding-box size as the reference for point size. |
 | Shape comparison | Line thickness | The relative thickness of the area used to match polylines. |
 | Shape comparison | Panoptic comparison | Uses only the visible parts of masks and polygons for comparison. |
@@ -488,7 +493,83 @@ The available controls depend on the requirement target:
 | Attribute comparison | Attribute rules | Configures a comparator for individual attributes. The Levenshtein comparator also has a similarity threshold. |
 
 Save the settings after editing them. Changes apply when the next quality report is
-calculated; they do not alter existing reports.
+calculated; they do not alter existing reports. Open the **Requirements** tab to see the results.
+A requirement passes when its score meets or exceeds its threshold.
+
+### Quality target metrics
+
+The target metric determines what a requirement measures. CVAT matches annotations against
+ground truth, then calculates a score. Higher scores indicate better quality.
+
+#### Choose a metric
+
+The descriptions below refer to micro scores, calculated from the combined annotation counts.
+You can also evaluate each label separately, as explained in the next section.
+
+| Metric | What it measures | When to use it |
+| - | - | - |
+| Accuracy | The share of correct annotation comparisons. | To measure overall correctness. |
+| Precision | The share of actual annotations that are correct. | When extra or incorrectly labeled annotations are costly. |
+| Recall | The share of ground-truth annotations found correctly. | When missing objects is costly. |
+| Jaccard Index | Correct matches relative to the combined actual and expected annotations, counting each correct match once. | To account for both extra and missing annotations. |
+| Dice Coefficient | Twice the correct matches divided by the sum of actual and expected annotations. | To balance precision and recall in one score. |
+
+For example, if ground truth contains 10 cars and an annotator correctly marks 8 cars with no
+extra annotations, precision is 100%, recall is 80%, Jaccard Index is 80%, and Dice Coefficient
+is about 88.9%. A recall requirement with a 90% threshold would fail.
+
+#### Choose how to combine labels
+
+Each metric offers three ways to combine results across labels:
+
+| Option | How the score is calculated | When to use it |
+| - | - | - |
+| Micro average | Calculates one score from the combined annotation counts. This is the default. | To evaluate annotations overall; frequent labels have more influence. |
+| Macro average | Calculates a score for each label, then takes their arithmetic mean. | To give rare and frequent labels equal importance. |
+| Worst label | Takes the lowest per-label score. | To require every evaluated label to meet the threshold. |
+
+For example, suppose ground truth contains 90 cars and 10 pedestrians. The annotator correctly
+marks all 90 cars but only 5 pedestrians. Recall is 100% for cars and 50% for pedestrians:
+
+- **Micro average:** `95 / 100 = 95%`.
+- **Macro average:** `(100% + 50%) / 2 = 75%`.
+- **Worst label:** `50%`, for pedestrians.
+
+With an 80% recall threshold, the micro requirement passes, while the macro and worst-label
+requirements fail. Choose worst label if good results for cars must not hide missed pedestrians.
+
+**Empty labels are excluded from both macro average and worst-label scores.** A label is empty
+when it is absent from both the actual annotations and ground truth for the evaluated requirement.
+It does not count toward the number of labels in the macro average and cannot be
+selected as the worst label, even if its per-label metrics are displayed in the confusion matrix.
+In the example above, an unused bicycle label would leave macro recall at 75% and worst-label
+recall at 50%.
+
+Labels with annotations on only one side are still included: for example, a label present in
+ground truth but entirely missed by the annotator has 0% recall. If a metric has a zero denominator
+for an included label, its score is 0%. If there are no applicable annotation samples for the
+requirement, the report shows **Not computed**.
+
+#### Metric formulas
+
+For micro scores, `V` is the number of correct matches, `D` is the number of actual annotations,
+`G` is the number of ground-truth annotations, and `T` is the total number of annotation comparison
+outcomes, including unmatched annotations.
+
+Per-label scores treat the selected label as the positive class and all other labels as negative:
+
+- `TP` (true positives): correct matches for the label.
+- `FP` (false positives): annotations assigned to the label without a matching ground-truth annotation of that label.
+- `FN` (false negatives): ground-truth annotations of the label without a matching actual annotation of that label.
+- `TN` (true negatives): comparison outcomes involving neither an actual nor an expected annotation of the label.
+
+| Metric | Micro score | Per-label score used by macro average and worst label |
+| - | - | - |
+| Accuracy | `V / T` | `(TP + TN) / (TP + TN + FP + FN)` |
+| Precision | `V / D` | `TP / (TP + FP)` |
+| Recall | `V / G` | `TP / (TP + FN)` |
+| Jaccard Index | `V / (D + G - V)` | `TP / (TP + FP + FN)` |
+| Dice Coefficient | `2 * V / (D + G)` | `2 * TP / (2 * TP + FP + FN)` |
 
 ### Project quality settings
 
@@ -557,30 +638,17 @@ Each shape type can have their own spatial matching details. Specifically:
   objects will be cut to only the visible (non-covered) parts only, which is determined by the
   shape z order.
 - skeletons - The OKS metric [from the COCO](https://cocodataset.org/#keypoints-eval)
-  dataset is used. Briefly, each skeleton point gets a circular area around,
+  dataset is used. Each skeleton point gets a circular area around,
   determined by the _object size_ (bounding box side) and _Point size_ values,
-  where this point can be matched with the specified probability. If a bounding box is grouped
+  where this point can be matched. If a bounding box is grouped
   with the skeleton, it is used for object size computation, otherwise a bounding box of
   visible points of the skeleton is used.
-
-  For example, consider a skeleton with 6 points and a square bounding box attached:
-
-  ![Skeleton OKS](/images/quality_comparison_skeleton1.svg)
-
-  In this example, the _Point size_ parameter is `0.05` (5%) of the bbox side.
-  Areas shown in the green color cover ~68.2% (1 sigma) of the points,
-  corresponding to each GT point. A point on the boundary of such an area will have ~88% of
-  probability to be correct. The blue-colored zone contains ~95% (2 sigma) of the correct points
-  for the corresponding GT point. A point on the boundary of such an area will have ~60% of
-  probability to be correct. These probabilities are then averaged over the visible points of the
-  skeleton to calculate their similarity. The point-size value corresponds to one standard
-  deviation in the [normal distribution](https://en.wikipedia.org/wiki/Normal_distribution).
-
+  The exact formulas are described in [Point matching](#point-matching).
 - points - The OKS metric is used for each point group annotation. Same as for skeletons,
   _Point size_ determines relative point sizes. The _Point size base_ setting allows
   configuring whether points in point groups should use the group bounding box or the image space.
   Using image space for object size can be useful if you want to treat each point
-  as a separate annotation.
+  as a separate annotation. Read more in [Point matching](#point-matching).
 - polylines - A pair of lines is considered matching if all the points of one line lie within
   a "hull" of the other one. The "hull" is determined as the area around the polyline, such as
   if the line had some "thickness". For example, the black polyline can have a hull shown in
@@ -595,6 +663,78 @@ Each shape type can have their own spatial matching details. Specifically:
 {{% alert title="Note" color="primary" %}}
 2D cuboids are not supported.
 {{% /alert %}}
+
+#### Point matching
+
+Points, skeletons, and skeleton keypoints are matched using the
+[OKS](https://cocodataset.org/#keypoints-eval) (Object Keypoint Similarity) metric,
+following the COCO approach. For a GT point and a checked point, the OKS is computed as:
+
+```
+OKS = exp(-d^2 / (2 * s^2 * k^2)), k = 2 * sigma
+```
+
+where:
+- `d` is the distance between the points, in pixels
+- `s` is the object size, in pixels, computed as `sqrt(object area)`
+- `sigma` is the _Point size_ value, a fraction of the object size
+
+The object area depends on the annotation type:
+- for skeletons, it's the area of the mean bounding box of the compared GT and checked skeletons
+- for points and skeleton keypoints, it depends on the _Point size base_ setting:
+  _Image size_ - the image area, _Group bbox size_ - the area of the mean bounding box
+  of the compared GT and checked objects (point groups or skeletons).
+  Single points without a group are always compared in the image space.
+
+The bounding box of an object is the bounding box of all its visible parts,
+including the grouped bounding boxes, if any. When the object bounding boxes are used,
+the objects are not matched, if their bounding boxes don't overlap.
+
+In COCO, `sigma` is the standard deviation of the keypoint position in human annotations,
+relative to the object size, measured for each keypoint type in redundantly annotated images.
+With CVAT, such values can be estimated from a consensus-based annotation round on a set of images.
+The OKS formula models the annotation errors using the normal distribution with the doubled
+standard deviation (`k = 2 * sigma`). This is an empirical constant chosen in COCO to make
+the similarity values perceptually meaningful: small annotation errors still get high similarity.
+At the distances of 1, 2, and 3 `sigma * s` from the GT point, the OKS is `0.88`, `0.61`,
+and `0.32` respectively. CVAT uses the same constant, so the _Point size_ has the same meaning
+as in COCO, and COCO sigma values can be used as a reference.
+
+After the OKS is computed for a pair of annotations, the _Overlap threshold_ `t`
+is used to determine if they match:
+- single points and skeleton keypoints are matched, if their `OKS >= t`
+- skeletons and point annotations with multiple points are matched, if the mean OKS of
+  their points is `>= t`. The mean is computed over the points present in any of the compared
+  annotations (including occluded points): a point present only in one of the annotations
+  gets `OKS = 0`.
+
+For single points and skeleton keypoints, it means that a checked point is matched, if it is
+inside the circle around the GT point with the radius:
+
+```
+r = 2 * sigma * s * sqrt(-2 * ln(t))
+```
+
+For example, with the _Point size_ of `5%`, the _Point size base_ set to _Group bbox size_,
+the _Overlap threshold_ of `80%` and a skeleton bounding box of `200x200` pixels,
+the radius is `2 * 0.05 * 200 * sqrt(-2 * ln(0.8)) = ~13.4` pixels.
+Larger point sizes and smaller thresholds give larger matching areas.
+With the threshold of `~88%`, the radius is exactly `sigma * s`.
+
+For skeletons and point annotations with multiple points, the mean OKS is used,
+so the radii of individual points can't be derived easily. A point can be further
+from the GT point, if the other points of the object are closer to their GT points.
+
+For example, consider a skeleton with 6 points and a square bounding box attached:
+
+![Skeleton OKS](/images/quality_comparison_skeleton1.svg)
+
+In this example, the _Point size_ is `5%` of the bbox side.
+The green circles have the radius of `sigma * s`, the OKS on their boundaries is `~0.88`.
+Following the normal distribution, ~68% of human annotations are expected to be within
+such circles around the GT points, and ~95% are expected to be within the circles of
+the doubled radius, where the OKS is `~0.61` (in practice, the values are typically higher).
+The OKS values of the skeleton points are then averaged to get the skeleton similarity.
 
 ### Tracks
 

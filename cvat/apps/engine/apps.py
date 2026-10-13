@@ -26,4 +26,9 @@ class EngineConfig(AppConfig):
 
         from cvat.apps.iam.permissions import load_app_iam_rules
 
+        # Required in order to silent "unused-import" in pyflake
+        from . import request_handlers
+
+        assert request_handlers
+
         load_app_iam_rules(self)

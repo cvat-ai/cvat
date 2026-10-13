@@ -18,14 +18,13 @@ from cvat.apps.engine.models import Job
 from cvat.apps.iam.models import User
 from cvat.apps.quality_control import models
 from cvat.apps.quality_control.comparison_report import (
-    UNMATCHED_LABEL_NAME,
     ComparisonReport,
+    ComparisonReportAnnotationsSummary,
+    ComparisonReportRequirementSummary,
     ConfusionMatrix,
-)
-from cvat.apps.quality_control.statistics import (
-    Averaging,
-    compute_accuracy,
-    compute_dice_coefficient,
+    RequirementCalculationStatus,
+    compute_quality_metric_summary,
+    compute_target_metric,
 )
 from cvat.apps.quality_control.utils import is_current_report_data
 
@@ -157,26 +156,24 @@ def _serialize_confusion_matrix_csv(confusion_matrix: ConfusionMatrix) -> str:
     precisions = confusion_matrix.precision
     recalls = confusion_matrix.recall
     jaccards = confusion_matrix.jaccard_index
+    dice_coefficients = confusion_matrix.dice
     assert precisions is not None
     assert recalls is not None
     assert jaccards is not None
+    assert dice_coefficients is not None
 
-    unmatched_label_idx = (
-        labels.index(UNMATCHED_LABEL_NAME) if UNMATCHED_LABEL_NAME in labels else None
+    annotation_summary = ComparisonReportAnnotationsSummary.from_confusion_matrix(confusion_matrix)
+    dataset_accuracy_micro = compute_target_metric(
+        annotation_summary,
+        models.QualityTargetMetricType(metric=models.QualityMetric.ACCURACY),
     )
-    dataset_accuracy_micro, _ = compute_accuracy(
-        rows,
-        excluded_label_idx=unmatched_label_idx,
+    dataset_dice_coeff_avg_macro = compute_target_metric(
+        annotation_summary,
+        models.QualityTargetMetricType(
+            metric=models.QualityMetric.DICE,
+            aggregation=models.QualityMetricAggregation.MEAN,
+        ),
     )
-    dataset_dice_coeff_avg_macro, dataset_dice_coeff_by_class, _ = compute_dice_coefficient(
-        rows,
-        averaging=Averaging.macro,
-        excluded_label_idx=unmatched_label_idx,
-    )
-
-    jaccards = jaccards.copy()
-    if unmatched_label_idx is not None:
-        jaccards[unmatched_label_idx] = float("nan")
 
     output = StringIO(newline="")
     writer = csv.writer(output)
@@ -186,7 +183,7 @@ def _serialize_confusion_matrix_csv(confusion_matrix: ConfusionMatrix) -> str:
         writer.writerow([label, *row.tolist(), precision])
 
     writer.writerow(["recall", *recalls.tolist()])
-    writer.writerow(["dice coefficient", *dataset_dice_coeff_by_class.tolist()])
+    writer.writerow(["dice coefficient", *dice_coefficients.tolist()])
     writer.writerow(["jaccard index", *jaccards.tolist()])
     writer.writerow([""])
     writer.writerow(["avg. accuracy (micro)", dataset_accuracy_micro])
@@ -209,12 +206,12 @@ def _get_group_requirement_id(group_report) -> int | None:
     return int(requirement_id) if requirement_id is not None else None
 
 
-def _get_requirement_confusion_matrix(
+def _get_requirement_report(
     db_report: models.QualityReport, *, requirement_id: int
-) -> ConfusionMatrix | None:
+) -> ComparisonReportRequirementSummary | None:
     comparison_report = ComparisonReport.from_json(db_report.get_report_data())
     groups = comparison_report.groups or {}
-    group_report = next(
+    return next(
         (
             group_report
             for group_report in groups.values()
@@ -222,6 +219,12 @@ def _get_requirement_confusion_matrix(
         ),
         None,
     )
+
+
+def _get_requirement_confusion_matrix(
+    db_report: models.QualityReport, *, requirement_id: int
+) -> ConfusionMatrix | None:
+    group_report = _get_requirement_report(db_report, requirement_id=requirement_id)
 
     if not group_report:
         return None
@@ -236,14 +239,39 @@ def _get_requirement_confusion_matrix(
 def prepare_requirement_confusion_matrix_json(
     db_report: models.QualityReport, *, requirement_id: int
 ) -> dict[str, Any] | None:
-    confusion_matrix = _get_requirement_confusion_matrix(
-        db_report,
-        requirement_id=requirement_id,
-    )
-    if confusion_matrix is None:
+    group_report = _get_requirement_report(db_report, requirement_id=requirement_id)
+    if group_report is None:
         return None
 
-    return confusion_matrix.to_dict()
+    confusion_matrix = group_report.comparison_summary.confusion_matrix
+    if not _has_downloadable_confusion_matrix(confusion_matrix):
+        return None
+
+    metric = models.QualityTargetMetricType.parse(
+        group_report.parameters.get("metric", models.QualityMetric.ACCURACY)
+    )
+    is_computed = (
+        group_report.comparison_summary.calculation.status == RequirementCalculationStatus.COMPUTED
+    )
+    metric_summary = (
+        compute_quality_metric_summary(
+            ComparisonReportAnnotationsSummary.from_confusion_matrix(confusion_matrix),
+            metric,
+        )
+        if is_computed
+        else None
+    )
+    result = confusion_matrix.to_dict()
+    result["target_metric_summary"] = {
+        "metric": metric.metric.value,
+        "aggregation": metric.aggregation.value,
+        "values": {
+            aggregation.value: metric_summary.values[aggregation] if metric_summary else None
+            for aggregation in models.QualityMetricAggregation
+        },
+        "worst_labels": list(metric_summary.worst_labels) if metric_summary else [],
+    }
+    return result
 
 
 def prepare_requirement_confusion_matrix_for_downloading(

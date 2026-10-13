@@ -3,7 +3,9 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useCallback, useRef, useState } from 'react';
+import React, {
+    useCallback, useEffect, useRef, useState,
+} from 'react';
 import { Row, Col } from 'antd/lib/grid';
 import { CloseOutlined, MoreOutlined } from '@ant-design/icons';
 import Button from 'antd/lib/button';
@@ -28,7 +30,7 @@ interface LayerPickerProps {
     onVisibleChange(visible: boolean): void;
 }
 
-function LayerPicker(props: LayerPickerProps): JSX.Element {
+export function LayerPicker(props: LayerPickerProps): JSX.Element {
     const {
         children, value, visible, onChange, onVisibleChange,
     } = props;
@@ -193,6 +195,12 @@ function ItemTopComponent(props: Props): JSX.Element {
     const [colorPickerVisible, setColorPickerVisible] = useState(false);
     const [layerPopoverVisible, setLayerPopoverVisible] = useState(false);
     const [objectMenuVisible, setObjectMenuVisible] = useState(false);
+
+    useEffect(() => {
+        const closeObjectMenu = (): void => setObjectMenuVisible(false);
+        window.document.addEventListener('canvas.selectionmenu', closeObjectMenu);
+        return () => window.document.removeEventListener('canvas.selectionmenu', closeObjectMenu);
+    }, []);
 
     let objectActions: JSX.Element | null = null;
 

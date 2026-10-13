@@ -25,6 +25,11 @@ require('cy-verify-downloads').addCustomCommand();
 
 let selectedValueGlobal = '';
 
+Cypress.Commands.add('pressWithPlatformModifier', (key) => {
+    const modifier = Cypress.platform === 'darwin' ? 'meta' : 'ctrl';
+    cy.get('body').type(`{${modifier}}${key}`);
+});
+
 Cypress.Commands.add('activateCanvasShape', (selector) => {
     cy.get(selector).then(([shapeWrapper]) => {
         const tagName = (element) => element.tagName.toLowerCase();
@@ -134,7 +139,7 @@ Cypress.Commands.add('userRegistration', (firstName, lastName, userName, emailAd
 
 Cypress.Commands.add('deleteUsers', (authHeaders, accountsToDelete) => {
     cy.request({
-        url: '/api/users?page_size=all',
+        url: '/api/users?page_size=500',
         headers: authHeaders,
     }).then((_response) => {
         const responseResult = _response.body.results;
@@ -190,7 +195,7 @@ Cypress.Commands.add('headlessGetUserId', (username) => cy.window().its('cvat')
 
 Cypress.Commands.add('deleteTasks', (authHeaders, tasksToDelete) => {
     cy.request({
-        url: '/api/tasks?page_size=all',
+        url: '/api/tasks?page_size=500',
         headers: authHeaders,
     }).then((_response) => {
         const responseResult = _response.body.results;
@@ -651,6 +656,67 @@ Cypress.Commands.add('checkPopoverHidden', (objectType) => {
     cy.get(`.cvat-${objectType}-popover`).should('be.hidden');
 });
 
+Cypress.Commands.add('getObjectSidebarItem', (id) => {
+    const selector = `#cvat-objects-sidebar-state-item-${id}`;
+    const holderSelector = '.cvat-objects-sidebar-virtual-list [data-virtual-list-viewport]';
+
+    const findItem = (attempt) => cy.get(holderSelector).then(($holder) => {
+        const holder = $holder[0];
+        if (attempt >= 200) {
+            throw new Error(`Could not find object ${id} in the virtualized sidebar`);
+        }
+
+        const item = holder.querySelector(selector);
+        if (item) {
+            const holderBounds = holder.getBoundingClientRect();
+            const itemBounds = item.getBoundingClientRect();
+            const viewportTop = holderBounds.top + holder.clientTop;
+            const viewportBottom = viewportTop + holder.clientHeight;
+            const visibleHeight = Math.min(itemBounds.height, holder.clientHeight);
+
+            // Overscan rows exist in the DOM even when they are clipped behind Appearance.
+            // Align the row before returning it so its controls can be clicked normally.
+            if (itemBounds.top < viewportTop - 1 || itemBounds.top + visibleHeight > viewportBottom + 1) {
+                const nextScroll = Math.max(0, Math.min(
+                    holder.scrollHeight - holder.clientHeight,
+                    holder.scrollTop + itemBounds.top - viewportTop,
+                ));
+                cy.wrap($holder).scrollTo(0, nextScroll, { duration: 0, ensureScrollable: false });
+                return cy.wait(50).then(() => findItem(attempt + 1));
+            }
+
+            return cy.wrap(item);
+        }
+
+        // Scan in rendered order: layer, label, and update-time sorting are not monotonic by ID.
+        // Keep successive viewports overlapping so variable-height rows are not skipped.
+        const step = Math.max(1, Math.floor(holder.clientHeight * 0.75));
+        const maxScroll = holder.scrollHeight - holder.clientHeight;
+        const ordering = holder.ownerDocument.querySelector(
+            '.cvat-objects-sidebar-ordering-selector .ant-select-selection-item',
+        )?.textContent;
+        let nextScroll = attempt === 0 && holder.scrollTop > 0 ? 0 :
+            Math.max(0, Math.min(maxScroll, holder.scrollTop + step));
+        if (ordering === 'ID - ascent' || ordering === 'ID - descent') {
+            const visibleIds = Array.from(holder.querySelectorAll('.cvat-objects-sidebar-state-item'))
+                .map((element) => Number(element.id.replace('cvat-objects-sidebar-state-item-', '')));
+            const firstId = visibleIds[0];
+            const before = ordering === 'ID - ascent' ? id < firstId : id > firstId;
+            nextScroll = Math.max(0, Math.min(maxScroll, holder.scrollTop + (before ? -step : step)));
+        } else if (nextScroll === holder.scrollTop) {
+            nextScroll = 0;
+        }
+
+        cy.wrap($holder).scrollTo(0, nextScroll, { duration: 0, ensureScrollable: false });
+        // Let the virtual list mount rows at the new scroll position.
+        return cy.wait(50).then(() => findItem(attempt + 1));
+    });
+
+    return cy.get('.cvat-objects-sidebar-states-list').then(($list) => (
+        $list.find(holderSelector).length ? findItem(0) : cy.get(selector)
+    ));
+});
+
 Cypress.Commands.add('checkObjectParameters', (objectParameters, objectType) => {
     const listCanvasShapeId = [];
     cy.document().then((doc) => {
@@ -659,8 +725,27 @@ Cypress.Commands.add('checkObjectParameters', (objectParameters, objectType) => 
             listCanvasShapeId.push(listCanvasShape[i].id.match(/\d+$/));
         }
         const maxId = Math.max(...listCanvasShapeId);
-        cy.get(`#cvat_canvas_shape_${maxId}`).should('be.visible');
-        cy.get(`#cvat-objects-sidebar-state-item-${maxId}`)
+        cy.get(`#cvat_canvas_shape_${maxId}`).should('exist').then(($shape) => {
+            const shape = $shape[0];
+
+            // A horizontal/vertical polyline can have a zero-area SVG bounding box.
+            // Cypress treats those elements as hidden starting v14
+            // even when the shape is rendered with a stroke.
+            if (shape.tagName.toLowerCase() === 'polyline') {
+                const {
+                    width, height,
+                } = shape.getBoundingClientRect();
+                const isHorizontalOrVerticalPolyline = (width === 0 && height !== 0) ||
+                    (width !== 0 && height === 0);
+
+                if (isHorizontalOrVerticalPolyline) {
+                    return;
+                }
+            }
+
+            cy.wrap($shape).should('be.visible');
+        });
+        cy.getObjectSidebarItem(maxId)
             .should('contain', maxId)
             .and('contain', `${objectType} ${objectParameters.type.toUpperCase()}`)
             .within(() => {
@@ -1134,7 +1219,7 @@ Cypress.Commands.add(
             cy.contains('Annotations have been loaded').should('be.visible');
             cy.closeNotification('.ant-notification-notice-info');
         } else if (expectedResult === 'fail') {
-            cy.contains('Could not upload annotation').should('be.visible');
+            cy.contains('Could not upload annotation', { timeout: 120000 }).should('be.visible');
             cy.closeNotification('.ant-notification-notice-error');
         }
     },
@@ -1841,13 +1926,18 @@ Cypress.Commands.add('joinShapes', (
 });
 
 Cypress.Commands.add('interactAnnotationObjectMenu', (parentSelector, button) => {
-    cy.get(parentSelector).within(() => {
+    const sidebarItemId = parentSelector.match(/^#cvat-objects-sidebar-state-item-(\d+)$/)?.[1];
+    const parent = sidebarItemId ? cy.getObjectSidebarItem(Number(sidebarItemId)) : cy.get(parentSelector);
+    parent.within(() => {
         cy.get('[aria-label="more"]').click();
     });
 
-    cy.document().find('.cvat-object-item-menu').within(() => {
-        cy.contains('button', button).click();
-    });
+    // AntD renders the menu outside the row, even when the caller is inside .within().
+    // Keep this a query so Cypress can reacquire a menu replaced during row updates.
+    cy.get('.cvat-object-item-menu:visible button', { withinSubject: null })
+        .filter((index, element) => element.textContent.includes(button))
+        .should('have.length', 1)
+        .click();
 });
 
 Cypress.Commands.add('hideTooltips', () => {

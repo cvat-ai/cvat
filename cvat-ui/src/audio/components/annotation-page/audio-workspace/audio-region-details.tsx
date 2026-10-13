@@ -186,10 +186,19 @@ function AudioRegionDetails(props: AudioRegionDetailsProps): JSX.Element {
             style={{ '--region-item-color': regionColor } as React.CSSProperties}
         >
             <AudioIntervalHeader
-                interval={interval}
+                clientID={interval.clientID as number}
+                serverID={interval.serverID}
+                labelID={interval.label.id ?? null}
+                labelType={interval.label.type}
+                start={interval.start}
+                stop={interval.stop}
+                source={interval.source}
+                color={interval.color}
+                locked={isReadonly}
+                pinned={interval.pinned}
+                hidden={interval.hidden}
                 intervalIndex={intervalIndex}
                 labels={labels}
-                isReadonly={isReadonly}
                 showSource
                 colorBy={colorBy}
                 shortcuts={intervalActionShortcuts}

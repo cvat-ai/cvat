@@ -148,11 +148,13 @@ export function useRegionProjection({ regionRuntime, ready }: Params): RegionHig
             const isInteracting = clientID === interactingIntervalID;
             const isHovered = interactingIntervalID === null && clientID === hoveredIntervalID;
             const isHighlighted = isActive || isInteracting || isHovered || highlightedRegionIDs.has(clientID);
-            const canDrag = activeControl === ActiveControl.CURSOR && !interval.lock && !interval.pinned;
+            const canMove = activeControl === ActiveControl.CURSOR && !interval.lock && !interval.pinned;
             const canResize = activeControl === ActiveControl.CURSOR && !interval.lock;
             region.setOptions({
                 color: getAudioRegionColor(interval, labels, colorBy, opacity, selectedOpacity, isActive),
-                drag: canDrag,
+                // Movement is implemented by useRegionEditing so it can use the same interaction
+                // lifecycle as resizing. Keep WaveSurfer from mutating the region itself.
+                drag: false,
                 // Keep handles mounted for every editable region so their pointer targets
                 // take precedence over dragging as soon as the pointer reaches a boundary.
                 resize: canResize,
@@ -160,6 +162,8 @@ export function useRegionProjection({ regionRuntime, ready }: Params): RegionHig
 
             const { element } = region;
             if (!element) return;
+
+            element.style.cursor = canMove ? 'grab' : 'default';
 
             // Hidden handles remain interactive, giving unselected intervals an immediate
             // resize cursor at their boundaries without showing the handles until hover.

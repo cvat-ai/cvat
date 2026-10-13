@@ -5,11 +5,14 @@ weight: 3
 description: 'Create one task or a batch of tasks from a bucket; inspect and export existing tasks'
 ---
 
-Three recipes cover the task lifecycle: `task_create_from_cloud.py` creates one
+Five recipes cover the task lifecycle: `task_create_from_cloud.py` creates one
 task from object keys already in a registered bucket,
 `tasks_bulk_from_cloud.py` creates a whole batch of tasks in a project from
-that same bucket, and `task_inspect_and_export.py` inspects an existing task,
-exports its dataset locally, and reports analytics from its event log.
+that same bucket, `task_inspect_and_export.py` inspects an existing task,
+exports its dataset locally, and reports analytics from its event log,
+`tasks_create_per_label_group.py` splits annotation work over one set of images
+into several tasks, one per shape type, and `task_create_job_mapping.py` creates
+a task with an explicit file-to-job mapping.
 
 ## Create a task from cloud object keys
 
@@ -104,6 +107,86 @@ python task_inspect_and_export.py --host 'https://app.cvat.ai' --token '<your to
 
 {{< include-code "assets/sdk-examples/task_inspect_and_export.py" >}}
 
+## Split work into one task per label group
+
+Creates one task per `--task 'NAME:TYPE:label1,label2'` spec over the same
+images, with that spec's labels typed to its shape type. Boxes, polygons, and
+tags then get annotated in parallel, each in a task that shows only the labels
+its annotator needs.
+
+The tasks are **standalone, not tasks of one project**: tasks in a project share
+the project's label set, so a per-task label set cannot exist inside a single
+project — the SDK rejects labels on a task that has a `project_id`. Every spec
+is validated before anything is created, and `--cleanup` deletes the tasks
+created so far even if a later one fails.
+
+| Flag | Required | Meaning |
+| --- | --- | --- |
+| `--host` | yes | Server URL |
+| `--token` | yes | Personal Access Token |
+| `--image-dir` | yes | Directory with the images to annotate; every file in it is uploaded |
+| `--task NAME:TYPE:LABELS` | yes | One task; repeat for more |
+| `--segment-size` | no | Frames per job, in every task |
+| `--cleanup` | no | Delete the created tasks at the end |
+
+`TYPE` is one of `rectangle`, `polygon`, `polyline`, `points`, `ellipse`,
+`cuboid`, `mask`, `tag`, `any`.
+
+```bash
+python tasks_create_per_label_group.py --host 'https://app.cvat.ai' --token '<your token>' \
+    --image-dir ./images \
+    --task 'boxes:rectangle:car,person' \
+    --task 'roads:polygon:road,lane' \
+    --task 'weather:tag:rain,snow'
+```
+
+### The script
+
+{{< include-code "assets/sdk-examples/tasks_create_per_label_group.py" >}}
+
+## Decide which files go into which job
+
+Normally CVAT cuts a task into jobs of `segment_size` frames. The
+`job_file_mapping` data parameter replaces that with an explicit grouping: one
+job per camera, per scene, or per delivery batch. Group the files yourself with
+repeated `--job` flags, or chunk the directory with `--files-per-job N` — a
+count of files, the explicit equivalent of `segment_size`.
+
+Every file in `--image-dir` must belong to exactly one job — unknown files,
+duplicates, and leftovers are rejected before the task is created. Afterwards
+the recipe reads the jobs back from the server and writes
+`job_file_mapping.csv`, one `job_id,frame,file_name` row per file: the mapping
+you see is the one that exists, and every file names the frame it actually
+landed on. Frame numbers are zero-based indexes within the task.
+
+The example creates one `object` label so the task is ready for annotation.
+
+`job_file_mapping` implies predefined file ordering and takes one file per
+frame, so it applies to image tasks only: a video is a single file the server
+cuts into frames itself, and there is nothing to map. CVAT rejects the request
+if the task's data turns out to be a video.
+
+| Flag | Required | Meaning |
+| --- | --- | --- |
+| `--host` | yes | Server URL |
+| `--token` | yes | Personal Access Token |
+| `--image-dir` | yes | Directory with the task's images, one file per frame |
+| `--job FILE [FILE ...]` | one of `--job` / `--files-per-job` | The files of one job; repeat for more |
+| `--files-per-job N` | one of `--job` / `--files-per-job` | Number of files per job: chunk the directory into jobs of N files each |
+| `--name` | no | Task name |
+| `--output` | no | Mapping CSV path (default `job_file_mapping.csv`) |
+| `--cleanup` | no | Delete the created task at the end |
+
+```bash
+python task_create_job_mapping.py --host 'https://app.cvat.ai' --token '<your token>' \
+    --image-dir ./images \
+    --job 'cam1_001.png' 'cam1_002.png' --job 'cam2_001.png' 'cam2_002.png'
+```
+
+### The script
+
+{{< include-code "assets/sdk-examples/task_create_job_mapping.py" >}}
+
 _Other SDK options:_
 
 | SDK method / parameter | What it adds |
@@ -123,6 +206,9 @@ _Other SDK options:_
 | `Task.export_dataset(filename=<directory>)` | Pass a directory as `filename` for a local export and the server-generated file name is used. |
 | `Task.export_dataset(..., location=Location.CLOUD_STORAGE, cloud_storage_id=<int>)` | Export straight to a registered cloud storage instead of downloading locally. |
 | `client.api_client.events_api.create_export(project_id=, job_id=, user_id=, _from=, to=)` | Scope or time-bound the event-log export beyond a single task. |
+| `data_params={"job_file_mapping": [[...], [...]]}` | Define each job's files explicitly instead of using `segment_size`. |
+| `PatchedLabelRequest(name=..., type="polygon")` | Restrict a label to one shape type, as the per-label-group recipe does. |
+| `Job.get_frames_info()` | The frames a job really holds, names included. |
 
 _Notes:_
 
@@ -136,4 +222,6 @@ _Notes:_
 - Full recipes:
   [`task_create_from_cloud.py`](https://github.com/cvat-ai/cvat/tree/develop/cvat-sdk/examples/task_create_from_cloud.py),
   [`tasks_bulk_from_cloud.py`](https://github.com/cvat-ai/cvat/tree/develop/cvat-sdk/examples/tasks_bulk_from_cloud.py),
-  [`task_inspect_and_export.py`](https://github.com/cvat-ai/cvat/tree/develop/cvat-sdk/examples/task_inspect_and_export.py).
+  [`task_inspect_and_export.py`](https://github.com/cvat-ai/cvat/tree/develop/cvat-sdk/examples/task_inspect_and_export.py),
+  [`tasks_create_per_label_group.py`](https://github.com/cvat-ai/cvat/tree/develop/cvat-sdk/examples/tasks_create_per_label_group.py),
+  [`task_create_job_mapping.py`](https://github.com/cvat-ai/cvat/tree/develop/cvat-sdk/examples/task_create_job_mapping.py).

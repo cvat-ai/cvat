@@ -53,6 +53,7 @@ function AudioCanvas({
             >
                 <div
                     ref={containerRef}
+                    className={annotations.wrapperClassName}
                     style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', overflow: 'hidden' }}
                 >
                 </div>

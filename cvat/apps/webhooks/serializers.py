@@ -2,6 +2,8 @@
 #
 # SPDX-License-Identifier: MIT
 
+from enum import Enum
+
 from django.db import models
 from drf_spectacular.utils import extend_schema_serializer
 from rest_framework import serializers
@@ -9,8 +11,22 @@ from rest_framework import serializers
 from cvat.apps.engine.models import Project
 from cvat.apps.engine.serializers import BasicUserSerializer, WriteOnceMixin
 
-from .event_type import EventKeyChoice, OrganizationEvents, ProjectEvents
+from .event_type import AllEvents, EventKeyChoice, OrganizationEvents, ProjectEvents, ServerEvents
 from .models import Webhook, WebhookContentTypeChoice, WebhookDelivery, WebhookTypeChoice
+
+
+class AllWebhookTypeChoice(str, Enum):
+    ORGANIZATION = WebhookTypeChoice.ORGANIZATION.value
+    PROJECT = WebhookTypeChoice.PROJECT.value
+    SERVER = WebhookTypeChoice.SERVER.value
+    ALL = AllEvents.webhook_type
+
+    @classmethod
+    def choices(cls):
+        return tuple((x.value, x.name) for x in cls)
+
+    def __str__(self):
+        return self.value
 
 
 class EventKeysValidator:
@@ -24,14 +40,19 @@ class EventKeysValidator:
     def __call__(self, attrs, serializer):
         if attrs.get("events") is not None:
             webhook_type = self.get_webhook_type(attrs, serializer)
+
+            match webhook_type:
+                case WebhookTypeChoice.PROJECT:
+                    allowed_events = ProjectEvents.events
+                case WebhookTypeChoice.ORGANIZATION:
+                    allowed_events = OrganizationEvents.events
+                case WebhookTypeChoice.SERVER:
+                    allowed_events = ServerEvents.events
+                case _:
+                    raise serializers.ValidationError(f"Unknown webhook type {webhook_type}")
+
             events_keys = set(EventKeysField().to_representation(attrs["events"]))
-            if (
-                webhook_type == WebhookTypeChoice.PROJECT
-                and not events_keys.issubset({event.key for event in ProjectEvents.events})
-            ) or (
-                webhook_type == WebhookTypeChoice.ORGANIZATION
-                and not events_keys.issubset({event.key for event in OrganizationEvents.events})
-            ):
+            if not events_keys.issubset({event.key for event in allowed_events}):
                 raise serializers.ValidationError(f"Invalid events list for {webhook_type} webhook")
 
 
@@ -60,7 +81,7 @@ class EventSerializer(serializers.Serializer):
 
 
 class EventsSerializer(serializers.Serializer):
-    webhook_type = serializers.ChoiceField(choices=WebhookTypeChoice.choices())
+    webhook_type = serializers.ChoiceField(choices=AllWebhookTypeChoice.choices())
     events = EventSerializer(many=True, read_only=True)
 
 
@@ -161,8 +182,14 @@ class WebhookWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
         validators = [EventKeysValidator()]
 
     def create(self, validated_data):
-        if (project_id := validated_data.get("project_id")) is not None:
-            validated_data["organization"] = Project.objects.get(pk=project_id).organization
+        match validated_data["type"]:
+            case WebhookTypeChoice.PROJECT:
+                validated_data["organization"] = Project.objects.get(
+                    pk=validated_data["project_id"]
+                ).organization
+            case WebhookTypeChoice.SERVER:
+                validated_data["organization"] = None
+                validated_data["project_id"] = None
 
         db_webhook = Webhook.objects.create(**validated_data)
         return db_webhook

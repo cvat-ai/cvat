@@ -11,6 +11,8 @@ const DISCORD_URL = 'https://discord.gg/fNR3eXfk6C';
 const GITHUB_URL = 'https://github.com/cvat-ai/cvat';
 const GITHUB_IMAGE_URL = 'https://github.com/cvat-ai/cvat/raw/develop/site/content/en/images/cvat.jpg';
 const GUIDE_URL = 'https://docs.cvat.ai/docs';
+const QUALITY_TARGET_METRICS_GUIDE_URL =
+    `${GUIDE_URL}/qa-analytics/auto-qa/#quality-target-metrics`;
 const UPGRADE_GUIDE_URL = 'https://docs.cvat.ai/docs/administration/advanced/upgrade_guide';
 const SHARE_MOUNT_GUIDE_URL =
     'https://docs.cvat.ai/docs/administration/basics/installation/#share-path';
@@ -146,6 +148,7 @@ export default {
     GITHUB_URL,
     GITHUB_IMAGE_URL,
     GUIDE_URL,
+    QUALITY_TARGET_METRICS_GUIDE_URL,
     UPGRADE_GUIDE_URL,
     SHARE_MOUNT_GUIDE_URL,
     CANVAS_BACKGROUND_COLORS,

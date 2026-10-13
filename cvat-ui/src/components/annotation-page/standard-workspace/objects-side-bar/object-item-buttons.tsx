@@ -26,6 +26,7 @@ import {
 } from 'icons';
 
 interface Props {
+    trackingControl?: React.ReactNode;
     parentID: number | null;
     objectType: ObjectType;
     shapeType: ShapeType;
@@ -284,6 +285,7 @@ function ItemButtonsComponent(props: Props): JSX.Element {
     const {
         objectType, shapeType, parentID,
     } = props;
+    const canSwitchPinned = shapeType !== ShapeType.POINTS || !Number.isInteger(parentID);
 
     if (objectType === ObjectType.TRACK) {
         return (
@@ -302,6 +304,7 @@ function ItemButtonsComponent(props: Props): JSX.Element {
                         <Col>
                             <NavigateLastKeyframe {...props} />
                         </Col>
+                        {props.trackingControl}
                     </Row>
                     <Row justify='space-around'>
                         <Col>
@@ -319,7 +322,7 @@ function ItemButtonsComponent(props: Props): JSX.Element {
                         <Col>
                             <SwitchKeyframe {...props} />
                         </Col>
-                        {shapeType !== ShapeType.POINTS && (
+                        {canSwitchPinned && (
                             <Col>
                                 <SwitchPinned {...props} />
                             </Col>
@@ -349,7 +352,7 @@ function ItemButtonsComponent(props: Props): JSX.Element {
                         <Col>
                             <SwitchHidden {...props} />
                         </Col>
-                        {shapeType !== ShapeType.POINTS && (
+                        {canSwitchPinned && (
                             <Col>
                                 <SwitchPinned {...props} />
                             </Col>

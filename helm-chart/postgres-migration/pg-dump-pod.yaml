@@ -1,0 +1,55 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-migration-backup
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 20Gi
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: postgres-migration-dump
+spec:
+  restartPolicy: Never
+  securityContext:
+    fsGroup: 1001
+  containers:
+    - name: postgres-client
+      image: public.ecr.aws/b8u7h5e8/postgresql:15.2.0-debian-11-r0
+      imagePullPolicy: IfNotPresent
+      env:
+        - name: PGHOST
+          value: cvat-postgresql
+        - name: PGPORT
+          value: "5432"
+        - name: PGUSER
+          value: postgres
+        - name: PGDATABASE
+          valueFrom:
+            secretKeyRef:
+              name: cvat-postgres-secret
+              key: database
+        - name: PGPASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: cvat-postgres-secret
+              key: postgres-password
+      command:
+        - /bin/bash
+        - -ec
+      args:
+        - |
+          pg_dump --format=custom --verbose --file=/backup/cvat.dump
+          echo "Dump saved to /backup/cvat.dump"
+          sleep infinity
+      volumeMounts:
+        - name: backup
+          mountPath: /backup
+  volumes:
+    - name: backup
+      persistentVolumeClaim:
+        claimName: postgres-migration-backup

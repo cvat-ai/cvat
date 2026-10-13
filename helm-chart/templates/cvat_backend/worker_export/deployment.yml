@@ -58,6 +58,7 @@ spec:
           - "run"
           - "worker"
           - "export"
+          - "--with-scheduler"
           {{- end }}
           env:
           {{ include "cvat.sharedBackendEnv" . | indent 10 }}

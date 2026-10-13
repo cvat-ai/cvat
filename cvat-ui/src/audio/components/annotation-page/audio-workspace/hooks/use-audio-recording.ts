@@ -9,12 +9,11 @@ import { useDispatch, useSelector } from 'react-redux';
 
 import { createAudioIntervalAsync } from 'actions/audio-actions';
 import { ActiveControl, CombinedState } from 'reducers';
-import { AudioIntervalState, Source } from 'cvat-core-wrapper';
 import { shallowEqual, ThunkDispatch } from 'utils/redux';
 import { usePrevious } from 'utils/hooks';
 import { MIN_INTERVAL_DURATION, MIN_RECORDING_DURATION } from 'audio/utils/waveform-geometry';
 
-import { getAudioRegionColor } from '../audio-region-colors';
+import { getAudioLabelPreviewColor } from '../audio-region-colors';
 import { WaveformPlayback } from './use-waveform-playback';
 import { RegionPreviewHandle, WaveformRegions } from './use-waveform-regions';
 
@@ -39,22 +38,20 @@ export function useAudioRecording({ playback, regions, ready }: Params): void {
     const { createPreview } = regions;
     const {
         activeControl, playing, duration, labels, activeLabelID,
-        colorBy, opacity, selectedOpacity,
+        selectedOpacity,
     } = useSelector((state: CombinedState) => ({
         activeControl: state.annotation.canvas.activeControl,
         playing: state.audio.player.playing,
         duration: state.audio.player.duration,
         labels: state.annotation.job.labels,
         activeLabelID: state.audio.player.activeLabelId,
-        colorBy: state.settings.shapes.colorBy,
-        opacity: state.settings.shapes.opacity,
         selectedOpacity: state.settings.shapes.selectedOpacity,
     }), shallowEqual);
     const latestRef = useRef({
-        duration, labels, activeLabelID, colorBy, opacity, selectedOpacity,
+        duration, labels, activeLabelID, selectedOpacity,
     });
     latestRef.current = {
-        duration, labels, activeLabelID, colorBy, opacity, selectedOpacity,
+        duration, labels, activeLabelID, selectedOpacity,
     };
     const sessionRef = useRef<RecordingSession | null>(null);
     const prevPlaying = usePrevious(playing);
@@ -67,22 +64,13 @@ export function useAudioRecording({ playback, regions, ready }: Params): void {
         if (!label || label.id === undefined) return;
 
         const start = getCurrentTime();
-        const interval = AudioIntervalState.create({
-            label,
-            start: Math.round(start * 1000),
-            stop: Math.round(start * 1000),
-            source: Source.MANUAL,
-        });
         const initialEnd = Math.min(latest.duration, start + MIN_INTERVAL_DURATION);
         const preview = createPreview({
             range: { start, end: Math.max(start, initialEnd) },
-            color: getAudioRegionColor(
-                interval,
+            color: getAudioLabelPreviewColor(
+                label.id,
                 latest.labels,
-                latest.colorBy,
-                latest.opacity,
                 latest.selectedOpacity,
-                true,
             ),
         });
         if (!preview) return;
@@ -127,6 +115,22 @@ export function useAudioRecording({ playback, regions, ready }: Params): void {
             finishSession();
         }
     }, [activeControl, ready]);
+
+    // apply label color to the preview when active label changes during recording
+    useEffect(() => {
+        if (activeControl !== ActiveControl.AUDIO_REGION_RECORD || activeLabelID === null) return;
+
+        const { current: session } = sessionRef;
+        if (!session || session.labelID === activeLabelID) return;
+
+        const { current: latest } = latestRef;
+        session.labelID = activeLabelID;
+        session.preview.updateColor(getAudioLabelPreviewColor(
+            activeLabelID,
+            latest.labels,
+            latest.selectedOpacity,
+        ));
+    }, [activeControl, activeLabelID]);
 
     useEffect(() => {
         if (activeControl !== ActiveControl.AUDIO_REGION_RECORD) return;

@@ -25,11 +25,17 @@ cvat:
 
     additionalVolumes: []
     additionalVolumeMounts: []
+    # Support for Bitnami legacy chart:
+    # This setting is used to override Redis service name.
+    # Bitnami chart require "cvat-redis-master" override. CloudPirates chart does not need this override.
+    # If you use external Redis, use .Values.redis.external.host = your_redis_service + .Values.redis.enabled = false instead
+    redisInmemHostOverride: "{{ .Release.Name }}-redis-master"
     # -- The service account the backend pods will use to interact with the Kubernetes API
     serviceAccount:
       name: default
 
     initializer:
+      enabled: true
       labels: {}
       annotations: {}
       resources: {}
@@ -381,6 +387,56 @@ postgresql:
     postgres_password: cvat_postgresql_postgres
     replication_password: cvat_postgresql_replica
 
+## Values for cloudpirates pgsql
+#postgresql:
+#  enabled: true
+#  nameOverride: postgresql
+#  external:
+#    # Ignored if an empty value is set
+#    host: ""
+#    # Ignored if an empty value is set
+#    port: ""
+#  image:
+#    registry: docker.io
+#    repository: postgres
+#    # We want to go with 15 version as Bitnami has, but with some patches.
+#    tag: "15.19@sha256:9b1d34adbce1dd07ee6e94b4a2cf698884b89bd44a6c9c12f5da8f3acbfe4957"
+#    imagePullPolicy: IfNotPresent
+#
+## Create postgres superuser.
+#  auth:
+#    username: postgres
+#    database: postgres
+#    existingSecret: "{{ .Release.Name }}-postgres-secret"
+#    secretKeys:
+#      adminPasswordKey: postgres-password
+#
+## Create cvat user and database for CVAT. This is not a superuser.
+#  customUser:
+#    name: cvat
+#    database: cvat
+#    existingSecret: "{{ .Release.Name }}-postgres-secret"
+#    secretKeys:
+#      name: username
+#      database: database
+#      password: password
+#
+#  service:
+#    port: 5432
+#    targetPort: 5432
+## We are using new PVC. Precaution not to connect existing PVC
+#  persistence:
+#    enabled: true
+#    volumeName: data-cloudpirates
+#    size: 8Gi
+#  secret:
+#    create: true
+#    name: "{{ .Release.Name }}-postgres-secret"
+#    password: cvat_postgresql
+#    postgres_password: cvat_postgresql_postgres
+#    replication_password: cvat_postgresql_replica
+
+
 # https://artifacthub.io/packages/helm/bitnami/redis
 redis:
   enabled: true
@@ -388,9 +444,6 @@ redis:
     registry: public.ecr.aws
     repository: docker/library/redis
     tag: 7.2.11
-  global:
-    security:
-      allowInsecureImages: true
   external:
     host: 127.0.0.1
   architecture: standalone
@@ -401,7 +454,6 @@ redis:
     create: true
     name: "{{ .Release.Name }}-redis-secret"
     password: cvat_redis
-  # TODO: persistence options
 
 nuclio:
   enabled: false
