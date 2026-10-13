@@ -9,6 +9,18 @@ const HtmlWebpackPlugin = require('html-webpack-plugin');
 const Dotenv = require('dotenv-webpack');
 const CopyPlugin = require('copy-webpack-plugin');
 const ExecScriptsPlugin = require('./exec-scripts-webpack-plugin.cjs');
+const {
+    CSPWorkerViolationBootstrapPlugin,
+    CSPViolationBootstrapPlugin,
+    cspHeadersGetterFactory,
+    getCSPMode,
+} = require('../csp/webpack-helpers.cjs');
+
+const PROXIED_PATH_REGEXP = /^(?:\/api\/|\/analytics\/|\/static\/|\/admin(?:\/|$)|\/profiler(?:\/|$)|\/documentation\/|\/django-rq(?:\/|$))/;
+
+function isProxiedPath(pathname) {
+    return PROXIED_PATH_REGEXP.test(pathname);
+}
 
 module.exports = (env, argv = {}) => {
     const isDevMode = argv.mode === 'development' || process.env.WEBPACK_SERVE === 'true';
@@ -43,12 +55,28 @@ module.exports = (env, argv = {}) => {
 
     const host = process.env.CVAT_UI_HOST ?? 'localhost';
     const port = process.env.CVAT_UI_PORT ?? 3000;
+    const cspMode = getCSPMode(isDevMode, env?.CVAT_UI_CSP_MODE);
+    console.log('CSP checking: ', cspMode);
+    const getCspHeaders = cspHeadersGetterFactory(cspMode, isProxiedPath);
     return {
         target: 'web',
         mode: isDevMode ? 'development' : 'production',
         devtool: sourceMapsEnabled ? (isDevMode ? 'source-map' : 'hidden-source-map') : false,
+        watchOptions: isDevMode ? {
+            ignored: [
+                '**/node_modules/**',
+                '**/src/utils/csp/csp-violation-bootstrap.ts',
+                '**/src/utils/csp/csp-violation-observer.ts',
+            ],
+        } : {},
         entry: {
-            'cvat-ui': './src/index.tsx',
+            ...(isDevMode ? {
+                'csp-violation-bootstrap': './src/utils/csp/csp-violation-bootstrap.ts',
+            } : {}),
+            'cvat-ui': isDevMode ? {
+                dependOn: 'csp-violation-bootstrap',
+                import: './src/index.tsx',
+            } : './src/index.tsx',
             ...pluginPaths.reduce((acc, { entrypoint }, index) => ({
                 ...acc,
                 [`plugin_${index}`]: {
@@ -62,6 +90,7 @@ module.exports = (env, argv = {}) => {
         output: {
             path: path.resolve(__dirname, 'dist'),
             filename: 'assets/[name].[contenthash].min.js',
+            workerChunkFilename: 'assets/[name].[contenthash].min.js',
             publicPath: '/',
         },
         devServer: {
@@ -75,23 +104,26 @@ module.exports = (env, argv = {}) => {
             historyApiFallback: true,
             static: {
                 directory: path.join(__dirname, 'dist'),
+                watch: false,
             },
-            headers: {
+            headers: (request) => ({
                 // to enable SharedArrayBuffer and ONNX multithreading
                 // https://cloudblogs.microsoft.com/opensource/2021/09/02/onnx-runtime-web-running-your-machine-learning-model-in-browser/
                 'Cross-Origin-Opener-Policy': 'same-origin',
                 'Cross-Origin-Embedder-Policy': 'credentialless',
                 'Service-Worker-Allowed': '/',
-            },
+                ...getCspHeaders(request),
+            }),
             proxy: [{
-                context: (param) =>
-                    param.match(
-                        /\/api\/.*|analytics\/.*|static\/.*|admin(?:\/(.*))?.*|profiler(?:\/(.*))?.*|documentation\/.*|django-rq(?:\/(.*))?/gm,
-                    ),
+                context: isProxiedPath,
                 target: env && env.API_URL,
                 secure: false,
                 changeOrigin: true,
                 onProxyReq: (proxyReq) => {
+                    // Traefik uses the upstream Host to populate X-Forwarded-Host.
+                    // Keep it equal to the browser-facing dev server so generated
+                    // TUS upload locations are proxied through this server as well.
+                    proxyReq.setHeader('Host', `${host}:${port}`);
                     proxyReq.setHeader('X-FORWARDED-HOST', `${host}:${port}`);
                 },
             }],
@@ -205,16 +237,19 @@ module.exports = (env, argv = {}) => {
             new HtmlWebpackPlugin({
                 template: './src/index.html',
                 inject: 'body',
+                ...(isDevMode ? {
+                    excludeChunks: ['csp-violation-bootstrap'],
+                } : {}),
             }),
+            ...(isDevMode ? [new CSPViolationBootstrapPlugin()] : []),
+            ...(isDevMode ? [new CSPWorkerViolationBootstrapPlugin(
+                /^workers\//,
+            )] : []),
             new Dotenv({
                 systemvars: true,
             }),
             new CopyPlugin({
                 patterns: [
-                    {
-                        from: '../cvat-data/src/ts/3rdparty/avc.wasm',
-                        to: 'assets/3rdparty/',
-                    },
                     {
                         from: '../node_modules/onnxruntime-web/dist/*.wasm',
                         to  : 'assets/[name][ext]',

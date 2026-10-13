@@ -304,7 +304,10 @@ function prepareData(details) {
 
 class WorkerWrappedAxios {
     constructor() {
-        const worker = new Worker(new URL('./download.worker', import.meta.url));
+        const worker = new Worker(
+            /* webpackChunkName: "workers/downloadWorker/download.worker" */
+            new URL('./download.worker', import.meta.url),
+        );
         const requests = {};
         let requestId = 0;
 

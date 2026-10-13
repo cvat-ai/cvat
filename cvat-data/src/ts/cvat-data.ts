@@ -28,6 +28,7 @@ export function decodeContextImages(
     block: any, start: number, end: number,
 ): Promise<Record<string, ImageBitmap>> {
     const decodeZipWorker = (decodeContextImages as any).zipWorker || new Worker(
+        /* webpackChunkName: "workers/imageUnzipWorker/unzip_imgs.worker" */
         new URL('./unzip_imgs.worker', import.meta.url),
     );
     (decodeContextImages as any).zipWorker = decodeZipWorker;
@@ -297,6 +298,7 @@ export class FrameDecoder {
 
             if (this.blockType === BlockType.MP4VIDEO) {
                 this.videoWorker = new Worker(
+                    /* webpackChunkName: "workers/videoDecoderWorker/Decoder.worker" */
                     new URL('./3rdparty/Decoder.worker', import.meta.url),
                 );
                 let index = 0;
@@ -368,6 +370,7 @@ export class FrameDecoder {
                 }
             } else {
                 this.zipWorker = this.zipWorker || new Worker(
+                    /* webpackChunkName: "workers/imageUnzipWorker/unzip_imgs.worker" */
                     new URL('./unzip_imgs.worker', import.meta.url),
                 );
                 let decodedCount = 0;

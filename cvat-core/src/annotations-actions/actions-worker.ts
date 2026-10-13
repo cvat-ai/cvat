@@ -85,9 +85,13 @@ if ((self as any).importScripts) {
                 })
                 .catch((error: unknown) => {
                     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-                    postMessage({
-                        error: `Could not initialize OpenCV in worker: ${errorMessage}`,
-                    } as WorkerResponse);
+                    // Allow async error events (like CSP violations report) to be processed
+                    // before finalizing the worker with an error message.
+                    setTimeout(() => {
+                        postMessage({
+                            error: `Could not initialize OpenCV in worker: ${errorMessage}`,
+                        } as WorkerResponse);
+                    }, 0);
                 });
         } else if (command === WorkerAction.SIMPLIFY_POLYGONS) {
             const { shapes, threshold } = event.data;

@@ -26,6 +26,7 @@ import { getUserAgreementsAsync } from 'actions/useragreements-actions';
 import CVATApplication from 'components/cvat-app';
 import PluginsEntrypoint from 'components/plugins-entrypoint';
 import LayoutGrid from 'components/layout-grid/layout-grid';
+import CSPViolationOverlay from 'components/csp-violation-overlay/csp-violation-overlay';
 import { logError } from 'cvat-logger';
 import createCVATStore, { getCVATStore } from 'cvat-store';
 import createRootReducer from 'reducers/root-reducer';
@@ -37,6 +38,7 @@ import { getServerAPISchemaAsync } from 'actions/server-actions';
 import { getGrowthDataAsync, updateGrowthDataAsync } from 'actions/growth-actions';
 import { navigationActions } from 'actions/navigation-actions';
 import { UserGrowthDataModifiableFields } from 'cvat-core-wrapper';
+import { isDev } from 'utils/environment';
 import {
     CombinedState, GrowthState, NotificationsState, PluginsState,
 } from './reducers';
@@ -169,6 +171,7 @@ root.render((
             <ReduxAppWrapper />
         </BrowserRouter>
         <LayoutGrid />
+        {isDev() && <CSPViolationOverlay />}
     </Provider>
 ));
 
