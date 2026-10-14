@@ -1,0 +1,41 @@
+<aside class="cvat-announcement" id="cvat-audio-announcement" aria-label="Product announcement" hidden>
+  <div class="cvat-announcement__content">
+    <svg aria-hidden="true" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>
+    <span>Beyond Vision: CVAT Goes Multimodal and Introduces Audio Annotation.</span>
+    <a href="https://www.cvat.ai/resources/changelog/2026-09-24">Learn more <span aria-hidden="true">→</span></a>
+  </div>
+  <button class="cvat-announcement__close" type="button" aria-label="Dismiss announcement" title="Dismiss announcement">×</button>
+</aside>
+<script>
+(function () {
+  var banner = document.getElementById('cvat-audio-announcement');
+  if (!banner) return;
+  var storageKey = 'cvat-audio-announcement-dismissed';
+  try {
+    if (sessionStorage.getItem(storageKey) === '1') return;
+  } catch (error) {
+    // Still display the announcement if storage is unavailable.
+  }
+  banner.hidden = false;
+  document.documentElement.classList.add('cvat-announcement-visible');
+  function setOffset() {
+    document.documentElement.style.setProperty('--cvat-announcement-height', banner.offsetHeight + 'px');
+  }
+  setOffset();
+  if (window.ResizeObserver) {
+    new ResizeObserver(setOffset).observe(banner);
+  } else {
+    window.addEventListener('resize', setOffset);
+  }
+  banner.querySelector('.cvat-announcement__close').addEventListener('click', function () {
+    banner.hidden = true;
+    document.documentElement.classList.remove('cvat-announcement-visible');
+    document.documentElement.style.removeProperty('--cvat-announcement-height');
+    try {
+      sessionStorage.setItem(storageKey, '1');
+    } catch (error) {
+      // Dismiss the announcement for this page even without storage.
+    }
+  });
+})();
+</script>
