@@ -232,7 +232,7 @@ provides Python functions for supported models. You can use them directly withou
 | Example | What it does | Where to use it |
 | ------- | ------------ | --------------- |
 | YOLO | Detection, segmentation, or pose estimation | AI assistance → Auto-labeling |
-| Transformers | Detection, segmentation, or classification | AI assistance → Auto-labeling |
+| Hugging Face Transformers | Detection, segmentation, or classification | AI assistance → Auto-labeling |
 | SAM2 tracking | Tracks an existing mask or polygon | Run annotation action |
 | [SAM2 interactor](https://github.com/cvat-ai/cvat-models/tree/develop/interactor/sam2) | Segments objects from points and boxes | AI assistance → Prompting |
 
