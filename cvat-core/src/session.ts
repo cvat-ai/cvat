@@ -936,7 +936,6 @@ export class Task extends Session {
         annotationJobs: number,
     };
     public readonly jobs: Job[];
-    public readonly consensusEnabled: boolean;
 
     public readonly startFrame: number;
     public readonly stopFrame: number;
@@ -1003,7 +1002,6 @@ export class Task extends Session {
             use_cache: undefined,
             copy_data: undefined,
             sorting_method: undefined,
-            consensus_enabled: undefined,
 
             validation_mode: null,
         };
@@ -1189,9 +1187,6 @@ export class Task extends Session {
                 },
                 copyData: {
                     get: () => data.copy_data,
-                },
-                consensusEnabled: {
-                    get: () => data.consensus_enabled,
                 },
                 labels: {
                     get: () => [...data.labels],

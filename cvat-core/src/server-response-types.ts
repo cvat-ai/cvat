@@ -118,7 +118,6 @@ export interface SerializedTask {
     subset: string;
     updated_date: string;
     url: string;
-    consensus_enabled: boolean;
 }
 
 export interface SerializedJob {
