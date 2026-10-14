@@ -26,11 +26,18 @@
   annotation job that has replica jobs
   (<https://github.com/cvat-ai/cvat/pull/11305>)
 
+### Deprecated
+
+- \[Server API\] The `consensus_replicas` parameter of the task creation request
+  (`POST /api/tasks`) is deprecated: it sets the number of replica jobs of the task
+  unless the task data request has `replicas_per_job`
+  (<https://github.com/cvat-ai/cvat/pull/11305>)
+- \[Server API\] The `consensus_replica` job type is still accepted as an alias of
+  `replica` in the `type` and `filter` parameters of `GET /api/jobs`
+  (<https://github.com/cvat-ai/cvat/pull/11305>)
+
 ### Removed
 
 - \[Server API\] The `consensus_enabled` field of tasks and the deprecated
   `consensus_replicas` field of jobs are removed from the REST API responses
-  (<https://github.com/cvat-ai/cvat/pull/11305>)
-- \[Server API\] The `consensus_replicas` parameter of the task creation request
-  (`POST /api/tasks`) is removed, use `replicas_per_job` in the task data request instead
   (<https://github.com/cvat-ai/cvat/pull/11305>)

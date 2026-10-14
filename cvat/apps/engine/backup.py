@@ -11,7 +11,7 @@ import re
 import shutil
 import stat
 from abc import ABCMeta, abstractmethod
-from collections import deque
+from collections import defaultdict, deque
 from collections.abc import Collection, Iterable
 from contextlib import closing
 from copy import deepcopy
@@ -1131,6 +1131,11 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
             # DataSerializer checks for this, but we don't need it for tasks with a GT pool
             data["job_file_mapping"] = job_file_mapping
 
+        if "replicas_per_job" not in data:
+            # NOTE @sosov consensus_replica -> replica backward compatibility: backups created
+            # before the replica count was stored in the data section
+            data["replicas_per_job"] = self._determine_replica_counts(jobs=jobs)
+
         self._db_task = models.Task.objects.create(**self._manifest, organization_id=self._org_id)
 
         task_data_path = self._db_task.get_dirname()
@@ -1208,10 +1213,42 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
         try:
             # The type field will be missing in backups created before the GT jobs were introduced
             raw_job_type = job.get("type", models.JobType.ANNOTATION.value)
+            # NOTE @sosov consensus_replica -> replica backward compatibility: backups created
+            # before the rename have the legacy job type
+            if raw_job_type == "consensus_replica":
+                raw_job_type = models.JobType.REPLICA.value
             job_type = models.JobType(raw_job_type)
         except ValueError:
             raise ValidationError(f"Unexpected job type {raw_job_type}")
         return job_type
+
+    # NOTE @sosov consensus_replica -> replica backward compatibility: the replica count
+    # of backups created before data.replicas_per_job was stored is derived from the job order
+    def _collect_replica_counts(self, jobs: list[dict]) -> dict[models.JobType, list[int]]:
+        replica_counts = []
+        for job in jobs:
+            job_type = self._get_job_type(job)
+
+            if job_type != models.JobType.REPLICA:
+                replica_counts.append([job_type, 0])
+            else:
+                if not replica_counts:
+                    raise ValidationError(
+                        f"Invalid job order, jobs of type '{job_type}' "
+                        "must follow their parent jobs."
+                    )
+
+                replica_counts[-1][1] += 1
+
+        replica_counts_map = defaultdict(list)
+        for primary_type, count in replica_counts:
+            replica_counts_map[primary_type].append(count)
+
+        return replica_counts_map
+
+    def _determine_replica_counts(self, jobs: list[dict]) -> int:
+        replica_counts = self._collect_replica_counts(jobs)
+        return min(replica_counts.get(models.JobType.ANNOTATION, [0]))
 
     def _import_gt_jobs(self, jobs):
         for job in jobs:

@@ -42,8 +42,9 @@ class Migration(migrations.Migration):
             field=models.PositiveIntegerField(default=0),
         ),
         migrations.RunPython(copy_consensus_replicas_to_data, copy_replicas_per_job_to_task),
-        migrations.RemoveField(
+        migrations.AlterField(
             model_name="task",
             name="consensus_replicas",
+            field=models.PositiveIntegerField(default=None, null=True),
         ),
     ]
