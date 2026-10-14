@@ -134,7 +134,7 @@ context('Join polygons feature', { scrollBehavior: false }, () => {
         cy.createPolygon(selfIntersectingPolygonPoints);
         joinShapes([
             { objectId: '#cvat_canvas_shape_1', position: 'top' },
-            { objectId: '#cvat_canvas_shape_2', position: 'right' },
+            { objectId: '#cvat_canvas_shape_2', position: 'bottomRight' },
         ]);
         cy.get('.cvat-notification-notice-canvas-error-occurred')
             .should('exist').and('be.visible');
