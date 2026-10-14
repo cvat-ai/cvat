@@ -294,8 +294,34 @@ html.cvat-announcement-visible .td-navbar {
   top: var(--cvat-announcement-height, 0) !important;
 }
 
-html.cvat-announcement-visible body {
-  padding-top: var(--cvat-announcement-height, 0);
+/* Keep Docsy's existing body offset; padding the body again creates a blank gap. */
+@media (max-width: 1199.98px) {
+  .cvat-announcement {
+    padding: 10px 44px 10px 16px;
+    text-align: left;
+  }
+
+  .cvat-announcement-content {
+    display: grid;
+    grid-template-columns: 28px minmax(0, 1fr);
+    column-gap: 12px;
+    row-gap: 2px;
+    justify-content: start;
+    font-size: 14px;
+  }
+
+  .cvat-announcement-icon {
+    grid-row: 1 / 3;
+    align-self: center;
+    flex-basis: 28px;
+    width: 28px;
+    height: 28px;
+  }
+
+  .cvat-announcement-content a {
+    grid-column: 2;
+    justify-self: start;
+  }
 }
 
 @media (max-width: 767.98px) {
@@ -305,7 +331,7 @@ html.cvat-announcement-visible body {
 
   .cvat-announcement-content {
     font-size: 12px;
-    gap: 5px 8px;
+    column-gap: 8px;
   }
 
   .cvat-announcement-icon {
