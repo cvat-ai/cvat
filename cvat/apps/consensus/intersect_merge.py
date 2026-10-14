@@ -12,6 +12,7 @@ from typing import ClassVar, TypeAlias
 import attrs
 import datumaro as dm
 import datumaro.components.merge.intersect_merge
+from datumaro.components.dataset_item_storage import DatasetItemStorageDatasetView
 from datumaro.util.annotation_util import mean_bbox
 from datumaro.util.attrs_util import ensure_cls
 
@@ -45,8 +46,13 @@ class IntersectMerge(datumaro.components.merge.intersect_merge.IntersectMerge):
 
     conf: Conf = attrs.field(converter=ensure_cls(Conf), factory=Conf)
 
-    def __call__(self, *datasets):
-        return dm.Dataset(super().__call__(*datasets))
+    def __call__(self, *datasets) -> dm.Dataset | DatasetItemStorageDatasetView:
+        merged = super().__call__(*datasets)
+
+        if not len(merged):
+            return merged
+
+        return dm.Dataset(merged)
 
     def _get_user_defined_attributes(self) -> set[str]:
         label_categories = self._categories.get(dm.AnnotationType.label)
