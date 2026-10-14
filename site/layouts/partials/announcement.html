@@ -1,6 +1,6 @@
 <aside class="cvat-announcement" id="cvat-audio-announcement" aria-label="Product announcement" hidden>
   <div class="cvat-announcement-content">
-    <svg aria-hidden="true" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>
+    <span class="cvat-announcement-icon" aria-hidden="true"></span>
     <span>Beyond Vision: CVAT Goes Multimodal and Introduces Audio Annotation.</span>
     <a href="https://www.cvat.ai/resources/changelog/2026-09-24">Learn more <span aria-hidden="true">→</span></a>
   </div>
@@ -17,6 +17,21 @@
     // Still display the announcement if storage is unavailable.
   }
   banner.hidden = false;
+  var icon = banner.querySelector('.cvat-announcement-icon');
+  var script = document.createElement('script');
+  script.src = 'https://cdnjs.cloudflare.com/ajax/libs/bodymovin/5.12.2/lottie.min.js';
+  script.async = true;
+  script.onload = function () {
+    if (!window.lottie || banner.hidden) return;
+    window.lottie.loadAnimation({
+      container: icon,
+      renderer: 'svg',
+      loop: true,
+      autoplay: true,
+      path: 'https://cdn.prod.website-files.com/62bebfb83044de7f13ae257e/6ab4fac0449188fc152d0687_icon_morph.json'
+    });
+  };
+  document.head.appendChild(script);
   document.documentElement.classList.add('cvat-announcement-visible');
   function setOffset() {
     document.documentElement.style.setProperty('--cvat-announcement-height', banner.offsetHeight + 'px');
