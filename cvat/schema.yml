@@ -13854,6 +13854,14 @@ components:
           $ref: '#/components/schemas/StorageRequest'
         source_storage:
           $ref: '#/components/schemas/StorageRequest'
+        consensus_replicas:
+          type: integer
+          minimum: 0
+          writeOnly: true
+          description: |
+            Deprecated. The number of replica jobs for each annotation job.
+            Use the 'replicas_per_job' parameter of the task data request instead
+          deprecated: true
       required:
       - name
     TasksSummary:

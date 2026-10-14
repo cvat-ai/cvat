@@ -1652,9 +1652,20 @@ class TestTaskBackups:
         self._test_can_restore_task_from_backup(task_id)
 
     def test_can_import_backup_with_consensus_task_created_before_consensus_replica_removal(self):
+        # The backup has "consensus_replica" jobs and no data.replicas_per_job
         original_task_id = 30
         backup_file = ASSETS_DIR / "backups" / "task_30_backup_pre_consensus_replica_removal.zip"
-        self._test_can_restore_task_from_backup(original_task_id, backup_file=backup_file)
+
+        new_task = self._test_can_restore_task_from_backup(
+            task_id=original_task_id, backup_file=backup_file
+        )
+
+        # Task 30 has 2 annotation jobs with 3 replica jobs each
+        jobs = new_task.get_jobs()
+        annotation_job_ids = [j.id for j in jobs if j.type == "annotation"]
+        replica_parent_job_ids = [j.parent_job_id for j in jobs if j.type == "replica"]
+        assert len(annotation_job_ids) == 2
+        assert [replica_parent_job_ids.count(job_id) for job_id in annotation_job_ids] == [3, 3]
 
     def test_can_import_backup_with_annotation_scores(self, tasks, jobs, labels, annotations):
         task_id = next(
@@ -1904,6 +1915,8 @@ class TestTaskBackups:
             )
             == {}
         )
+
+        return new_task
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
