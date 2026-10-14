@@ -2535,7 +2535,9 @@ export class CanvasViewImpl implements CanvasView, Listener {
     public notify(model: CanvasModel & Master, reason: UpdateReasons): void {
         if ([UpdateReasons.CANCEL, UpdateReasons.DESTROY, UpdateReasons.OBJECTS_UPDATED,
             UpdateReasons.SELECTED_OBJECTS_UPDATED,
-            UpdateReasons.FITTED_CANVAS].includes(reason)) {
+            UpdateReasons.FITTED_CANVAS, UpdateReasons.IMAGE_ZOOMED, UpdateReasons.IMAGE_FITTED,
+            UpdateReasons.IMAGE_ROTATED, UpdateReasons.IMAGE_MOVED].includes(reason)) {
+            // A canvas transform invalidates the pointer coordinates cached at drag start.
             this.cancelSelectionDrag?.();
         }
         this.geometry = this.controller.geometry;
