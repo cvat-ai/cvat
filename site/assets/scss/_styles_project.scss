@@ -250,8 +250,16 @@ footer.bg-dark .col-12.col-lg-4 { justify-content: flex-end; }
   font-weight: 400;
 }
 
-.cvat-announcement-content svg {
-  flex: none;
+.cvat-announcement-icon {
+  display: block;
+  flex: 0 0 32px;
+  width: 32px;
+  height: 32px;
+}
+
+.cvat-announcement-icon svg {
+  width: 100%;
+  height: 100%;
 }
 
 .cvat-announcement-content a {
@@ -300,9 +308,10 @@ html.cvat-announcement-visible body {
     gap: 5px 8px;
   }
 
-  .cvat-announcement-content svg {
-    width: 18px;
-    height: 18px;
+  .cvat-announcement-icon {
+    flex-basis: 24px;
+    width: 24px;
+    height: 24px;
   }
 
   .cvat-announcement-close {
