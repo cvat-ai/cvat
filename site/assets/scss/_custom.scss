@@ -75,6 +75,12 @@ li > details {
     max-width: 80%;
 }
 
+.ai-models-page .tab-content,
+.ai-models-page .tab-content > .tab-pane {
+    width: 100%;
+    max-width: 100%;
+}
+
 .highlight > .code-toolbar,
 details > summary > .code-toolbar,
 details > .code-toolbar {
