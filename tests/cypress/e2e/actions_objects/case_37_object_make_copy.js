@@ -68,12 +68,9 @@ context('Object make a copy.', () => {
     const countObject = 6;
 
     function checkObjectArrSize(expectedValueShape, expectedValueSidebar) {
-        cy.get('.cvat_canvas_shape').then(($cvatCanvasShape) => {
-            cy.get('.cvat-objects-sidebar-state-item').then(($cvatObjectsSidebarStateItem) => {
-                expect($cvatCanvasShape.length).be.equal(expectedValueShape);
-                expect($cvatObjectsSidebarStateItem.length).be.equal(expectedValueSidebar);
-            });
-        });
+        cy.get('.cvat_canvas_shape').should('have.length', expectedValueShape);
+        cy.get('.cvat-objects-sidebar-states-header')
+            .should('contain.text', `Items: ${expectedValueSidebar}`);
     }
 
     function compareObjectsAttr(object1, object2) {
@@ -85,13 +82,15 @@ context('Object make a copy.', () => {
         });
     }
 
-    function compareObjectsSidebarAttr(objectSidebar1, objectSidebar2) {
-        cy.get(objectSidebar1).then(($cvatObjectsSidebarStateItem1) => {
-            cy.get(objectSidebar2).then(($cvatObjectsSidebarStateItem2) => {
+    function compareObjectsSidebarAttr(id1, id2) {
+        cy.getObjectSidebarItem(id1).then(($cvatObjectsSidebarStateItem1) => {
+            const objectType = $cvatObjectsSidebarStateItem1.text().match(/[a-zA-Z]+/)[0];
+            const style = $cvatObjectsSidebarStateItem1.attr('style');
+            cy.getObjectSidebarItem(id2).then(($cvatObjectsSidebarStateItem2) => {
                 // Check type of a shape
-                expect($cvatObjectsSidebarStateItem1.text().match(/[a-zA-Z]+/)[0])
+                expect(objectType)
                     .be.eq($cvatObjectsSidebarStateItem2.text().match(/[a-zA-Z]+/)[0]);
-                expect($cvatObjectsSidebarStateItem1.attr('style')).be.eq($cvatObjectsSidebarStateItem2.attr('style'));
+                expect(style).be.eq($cvatObjectsSidebarStateItem2.attr('style'));
             });
         });
     }
@@ -127,8 +126,8 @@ context('Object make a copy.', () => {
             }
             for (let idSidebar = 1; idSidebar < 7; idSidebar++) {
                 compareObjectsSidebarAttr(
-                    `#cvat-objects-sidebar-state-item-${idSidebar}`,
-                    `#cvat-objects-sidebar-state-item-${idSidebar + countObject}`,
+                    idSidebar,
+                    idSidebar + countObject,
                 ); // Parameters sidebar id 1 equal parameters sidebar id 8, 2 to 9, etc.
             }
         });
@@ -140,7 +139,7 @@ context('Object make a copy.', () => {
             const coordY = 400;
             for (let id = 1; id < countObject; id++) {
                 // Point doesn't have a context menu
-                cy.get(`#cvat-objects-sidebar-state-item-${id}`).click();
+                cy.getObjectSidebarItem(id).click();
                 cy.get(`#cvat_canvas_shape_${id}`).should('have.class', 'cvat_canvas_shape_activated');
                 cy.get(`#cvat_canvas_shape_${id}`).rightclick({ force: true });
                 cy.get('.cvat-canvas-context-menu').should('be.visible');
@@ -164,8 +163,8 @@ context('Object make a copy.', () => {
                 }
                 for (let idSidebar = 1; idSidebar < countObject; idSidebar++) {
                     compareObjectsSidebarAttr(
-                        `#cvat-objects-sidebar-state-item-${idSidebar}`,
-                        `#cvat-objects-sidebar-state-item-${idSidebar + 2 * countObject}`,
+                        idSidebar,
+                        idSidebar + 2 * countObject,
                     ); // Parameters sidebar id 1 equal parameters sidebar id 15, 2 to 16, etc.
                 }
             },
@@ -188,9 +187,7 @@ context('Object make a copy.', () => {
             cy.pressWithPlatformModifier('v');
             cy.get('.cvat-player-next-button').click();
             cy.get('.cvat-canvas-container').click(300, 300);
-            cy.get('.cvat-objects-sidebar-state-item').then((sidebarItems) => {
-                expect(sidebarItems.length).to.be.equal(2);
-            });
+            cy.get('.cvat-objects-sidebar-states-header').should('contain.text', 'Items: 2');
         });
 
         it('Copy a shape with the platform shortcut modifier held.', () => {
@@ -210,9 +207,7 @@ context('Object make a copy.', () => {
             cy.get('body').type(`{${modifier}}`); // Unhold
             cy.get('.cvat-canvas-container').click(600, 300);
             cy.get('.cvat_canvas_shape_drawing').should('not.exist');
-            cy.get('.cvat-objects-sidebar-state-item').then((sidebarItems) => {
-                expect(sidebarItems.length).to.be.equal(5);
-            });
+            cy.get('.cvat-objects-sidebar-states-header').should('contain.text', 'Items: 5');
             cy.get('.cvat_canvas_shape').then((shapes) => {
                 expect(shapes.length).to.be.equal(5);
             });

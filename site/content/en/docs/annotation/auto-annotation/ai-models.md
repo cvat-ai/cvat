@@ -136,55 +136,324 @@ This video demonstrates the process:
 
 {{< product-badge "online,enterprise" >}}
 
-A native function is a resource stored in CVAT
-that contains only meta-information, such as its type, label specifications,
-or the number of points the user must place to interact with it.
-A native function cannot be used just by itself;
-instead, its owner must power it
-by running one or more CVAT AI Agents on their own infrastructure.
-These agents will wait for requests from CVAT, process them, and upload
-the results back to CVAT.
+You can connect your own model to CVAT using `cvat-cli`.
+The model runs on your machine as an **AI agent**: it receives requests from CVAT and sends back annotations.
+CVAT stores the model's name, labels, and capabilities as a **native function**.
 
-To create and power a native function, you will need to do the following:
+Agents support three kinds of functions:
 
-1. Implement an object in Python
-   that implements the {{< ilink "/docs/api_sdk/sdk/auto-annotation#auto-annotation-interface"
-   "auto-annotation function interface" >}} in the CVAT SDK.
+- **Detectors** run automatically and produce boxes, masks, tags, or poses, depending on the model.
+- **Interactors** use your prompts, such as points and bounding boxes,
+  to annotate objects in **AI assistance → Prompting**.
+- **Trackers** follow objects across frames, through **Tracking** or annotation actions depending on their shape types.
 
-2. Use the `function create-native` subcommands of {{< ilink "/docs/api_sdk/cli" "CVAT CLI" >}}
-   to create the function on the server.
+The setup has three steps:
 
-3. Use the `function run-agent` subcommand of CVAT CLI to run one or more agents.
+1. [Prepare a Python function for your model](#use-another-model), **or choose a ready-to-use function below**.
+2. Choose a deployment scope and register the model with `cvat-cli function create-native`.
+3. Start the agent with `cvat-cli function run-agent` and keep it running while using the model in CVAT.
 
-There are three possible scopes in which a native function can be created:
+### Set up CVAT CLI
 
-- Any user can create a function in their personal workspace.
-  In this case, it will only be accessible to them.
+Run these commands on the machine that will run the model. The examples use a Linux/macOS shell and require Git
+and a Python version supported by the model's dependencies.
 
-  This will be the default
-  if no relevant options are passed to the `function create-native` subcommand.
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip cvat-cli
+```
 
-- An organization maintainer may create a function within the organization.
-  In this case, it will be accessible by all members of the organization.
+Create a {{< ilink "/docs/api_sdk/access_tokens" "Personal Access Token" >}} in CVAT, then configure your connection:
 
-  To do this, pass the `--org=<SLUG>` option
-  to the `function create-native` and `function run-agent` subcommands.
+```bash
+export CVAT_SERVER_URL="https://app.cvat.ai"
+export CVAT_ACCESS_TOKEN="replace-with-your-token"
+```
 
-- A CVAT instance administrator may create a public function.
-  In this case, it will be accessible by all users of the instance.
+For Enterprise, use your instance URL instead of `https://app.cvat.ai`.
 
-  To do this, pass the `--visibility=public` option
-  to the `function create-native` subcommand.
+### Choose a deployment scope
 
-Native functions can have kinds "detector", "interactor", and "tracker".
+Choose **one** of these settings before running the examples.
 
-### Predefined native functions
+{{< tabpane text=true >}}
 
-The [cvat-models](https://github.com/cvat-ai/cvat-models) repository
-contains several native function implementations
-based on popular AI models and model libraries.
-These can be used directly or as examples for implementing custom functions.
+{{% tab header="Personal workspace" %}}
 
-This includes a tracker function based on SAM 2.
-Consult {{< ilink "/docs/annotation/auto-annotation/segment-anything-2-tracker" >}}
-for more information.
+Only you can use the model.
+
+```bash
+export CVAT_ORG=""
+```
+
+{{% /tab %}}
+
+{{% tab header="Organization workspace" %}}
+
+Organization members can use the model.
+
+```bash
+export CVAT_ORG="your-organization-slug"
+```
+
+<div class="alert alert-primary" role="alert">
+<h4 class="alert-heading"><i class="fas fa-circle-info" aria-hidden="true"></i> Note</h4>
+<ul>
+<li>Use the organization's <strong>slug</strong>, not its display name.</li>
+<li>Registering an organization model requires the <strong>owner</strong> or <strong>maintainer</strong> role.</li>
+</ul>
+</div>
+
+{{% /tab %}}
+
+{{% tab header="Global deployment" %}}
+
+**CVAT Enterprise only.** All users of the instance can use the model.
+
+Use an instance administrator's token and set:
+
+```bash
+export CVAT_ORG=""
+```
+
+Add `--visibility=public` to the `create-native` command in your chosen example.
+The `run-agent` command does not need this option.
+
+{{% /tab %}}
+
+{{< /tabpane >}}
+
+### Ready-to-use models
+
+The [cvat-ai/cvat-models repository](https://github.com/cvat-ai/cvat-models)
+provides Python functions for supported models. You can use them directly without writing a wrapper:
+
+| Example | What it does | Where to use it |
+| ------- | ------------ | --------------- |
+| YOLO | Detection, segmentation, or pose estimation | AI assistance → Auto-labeling |
+| Hugging Face Transformers | Detection, segmentation, or classification | AI assistance → Auto-labeling |
+| SAM2 tracking | Tracks an existing mask or polygon | Run annotation action |
+| [SAM2 interactor](https://github.com/cvat-ai/cvat-models/tree/develop/interactor/sam2) | Segments objects from points and boxes | AI assistance → Prompting |
+
+Clone the repository and run the examples from its directory:
+
+```bash
+git clone https://github.com/cvat-ai/cvat-models.git
+cd cvat-models
+```
+
+Choose an example below. After registration, replace `<function_id>` (including the angle brackets)
+with the numeric ID shown in the command output.
+For example, if the output says `Created function #8`, use `8`.
+Use the same model parameters and workspace when registering and starting the agent.
+The examples use the CPU; for a GPU, install compatible CUDA-enabled PyTorch dependencies and change
+`-p device=str:cpu` to `-p device=str:cuda` in both commands.
+
+{{< tabpane text=true >}}
+
+{{% tab header="Ultralytics YOLO" %}}
+
+1. Install dependencies:
+
+   ```bash
+   python -m pip install --upgrade -r detector/yolo/requirements.txt
+   ```
+
+2. Register the model:
+
+   ```bash
+   cvat-cli --server-host "$CVAT_SERVER_URL" --org "$CVAT_ORG" function create-native "YOLO" \
+     --function-file detector/yolo/func.py \
+     -p model=str:yolo26n.pt -p device=str:cpu
+   ```
+
+3. Start the agent:
+
+   ```bash
+   cvat-cli --server-host "$CVAT_SERVER_URL" --org "$CVAT_ORG" function run-agent <function_id> \
+     --function-file detector/yolo/func.py \
+     -p model=str:yolo26n.pt -p device=str:cpu
+   ```
+
+In a CVAT job, select **AI assistance → Auto-labeling → Model → YOLO**, map the model labels to task labels, and run it.
+You can also use the model for task automatic annotation.
+
+The table shows example weights, not a complete list of supported models.
+You can use other compatible numbered YOLO models, including newer versions supported by your installed
+Ultralytics library and the CVAT YOLO function. These examples use
+[YOLO26](https://docs.ultralytics.com/models/yolo26/).
+See the [Ultralytics model catalog](https://docs.ultralytics.com/models/) for available weights and model capabilities.
+YOLO-World and YOLOE are not supported by this CVAT function.
+Use the same `model` value when registering the function and starting the agent.
+
+| Purpose | Example `model` value |
+| ------- | --------------------- |
+| Detection | `str:yolo26n.pt` |
+| Instance segmentation | `str:yolo26n-seg.pt` |
+| Human pose estimation | `str:yolo26n-pose.pt` |
+| Custom weights | `str:/absolute/path/to/best.pt` |
+
+Pretrained weights are downloaded automatically. Pose models need a matching skeleton label in CVAT.
+For custom pose keypoint names and supported models, see the
+[YOLO README](https://github.com/cvat-ai/cvat-models/tree/develop/detector/yolo),
+which also links to the Ultralytics licensing terms.
+
+{{% /tab %}}
+
+{{% tab header="Hugging Face Transformers" %}}
+
+This example runs a DETR detector on your machine using the Transformers library.
+
+1. Install dependencies:
+
+   ```bash
+   python -m pip install -r detector/transformers/requirements.txt
+   ```
+
+2. Register the model:
+
+   ```bash
+   cvat-cli --server-host "$CVAT_SERVER_URL" --org "$CVAT_ORG" function create-native "DETR" \
+     --function-file detector/transformers/func.py \
+     -p task=str:object-detection -p model=str:facebook/detr-resnet-50 -p device=str:cpu
+   ```
+
+3. Start the agent:
+
+   ```bash
+   cvat-cli --server-host "$CVAT_SERVER_URL" --org "$CVAT_ORG" function run-agent <function_id> \
+     --function-file detector/transformers/func.py \
+     -p task=str:object-detection -p model=str:facebook/detr-resnet-50 -p device=str:cpu
+   ```
+
+Select **AI assistance → Auto-labeling → Model → DETR**, map the labels, and run it.
+For segmentation or classification, use the corresponding `task` and `model` values below in **both** commands.
+Register each model as a separate function with a descriptive name.
+
+| Purpose | `task` value | Example `model` value | Output |
+| ------- | ------------ | --------------------- | ------ |
+| Object detection | `str:object-detection` | `str:facebook/detr-resnet-50` | Boxes |
+| Panoptic segmentation | `str:image-segmentation` | `str:facebook/detr-resnet-50-panoptic` | Masks |
+| Semantic segmentation | `str:image-segmentation` | `str:nvidia/segformer-b0-finetuned-ade-512-512` | Masks |
+| Image classification | `str:image-classification` | `str:google/vit-base-patch16-224` | Tags |
+
+**Where to find more models**
+
+- Check the CVAT agent's
+  [expected-compatible model architectures](https://github.com/cvat-ai/cvat-models/blob/develop/detector/transformers/agent/supported_models).
+  This lists architecture classes, not model IDs; it is not a guarantee that every checkpoint will work.
+- Browse Hugging Face models filtered by
+  [object detection](https://huggingface.co/models?pipeline_tag=object-detection&library=transformers),
+  [image segmentation](https://huggingface.co/models?pipeline_tag=image-segmentation&library=transformers), or
+  [image classification](https://huggingface.co/models?pipeline_tag=image-classification&library=transformers).
+  Choose a model supported by the corresponding Transformers pipeline and check its model card for dependencies.
+
+The model ID is the `owner/model-name` shown on its Hugging Face page.
+See the [Transformers function README](https://github.com/cvat-ai/cvat-models/tree/develop/detector/transformers)
+for supported parameters. These agents run locally; a hosted Hugging Face inference provider is not required.
+
+{{% /tab %}}
+
+{{% tab header="SAM2 interactor" %}}
+
+Use points and bounding boxes to segment an object in the current frame.
+
+1. Install dependencies:
+
+   ```bash
+   python -m pip install -r interactor/sam2/requirements.txt
+   ```
+
+2. Register the interactor:
+
+   ```bash
+   cvat-cli --server-host "$CVAT_SERVER_URL" --org "$CVAT_ORG" function create-native "SAM2 interactor" \
+     --function-file interactor/sam2/func.py \
+     -p model_id=str:facebook/sam2.1-hiera-tiny -p device=str:cpu
+   ```
+
+3. Start the agent:
+
+   ```bash
+   cvat-cli --server-host "$CVAT_SERVER_URL" --org "$CVAT_ORG" function run-agent <function_id> \
+     --function-file interactor/sam2/func.py \
+     -p model_id=str:facebook/sam2.1-hiera-tiny -p device=str:cpu
+   ```
+
+In a job, open **AI assistance → Prompting**, select **SAM2 interactor** and the annotation label,
+then click **Add visual prompts**. Add points or a bounding box around the object, refine the mask with
+positive and negative points, and finish the interaction to create the annotation.
+
+In older CVAT versions, use **AI Tools → Interactors → Interact**.
+See the [SAM2 interactor README](https://github.com/cvat-ai/cvat-models/tree/develop/interactor/sam2)
+for model options.
+
+{{% /tab %}}
+
+{{% tab header="SAM2 tracking" %}}
+
+1. Install dependencies:
+
+   ```bash
+   python -m pip install -r tracker/sam2/requirements.txt
+   ```
+
+2. Register the tracker:
+
+   ```bash
+   cvat-cli --server-host "$CVAT_SERVER_URL" --org "$CVAT_ORG" function create-native "SAM2 Tracker" \
+     --function-file tracker/sam2/func.py \
+     -p model_id=str:facebook/sam2.1-hiera-tiny -p device=str:cpu
+   ```
+
+3. Start the agent:
+
+   ```bash
+   cvat-cli --server-host "$CVAT_SERVER_URL" --org "$CVAT_ORG" function run-agent <function_id> \
+     --function-file tracker/sam2/func.py \
+     -p model_id=str:facebook/sam2.1-hiera-tiny -p device=str:cpu
+   ```
+
+In a video job, draw a mask or polygon, open its menu, and choose **Run annotation action → AI Tracker: SAM2**.
+Set the target frame, click **Run**, and review the results. A GPU is recommended for practical tracking.
+
+SAM2 tracks masks and polygons through annotation actions, not the sidebar's rectangle-based Tracking selector.
+See {{< ilink "/docs/annotation/auto-annotation/segment-anything-2-tracker" "SAM2 tracking" >}}
+for the full workflow and required enhanced actions plugin.
+
+{{% /tab %}}
+
+{{< /tabpane >}}
+
+### After setup
+
+Keep the agent terminal open while using the model. **Ctrl+C** stops the agent but leaves the model registered;
+run the same `run-agent` command to restart it. To remove the model after stopping the agent:
+
+```bash
+cvat-cli --server-host "$CVAT_SERVER_URL" --org "$CVAT_ORG" function delete <function_id>
+```
+
+If the model is missing, check the selected server and workspace. If requests wait without results,
+check the agent's terminal and function ID.
+In older CVAT versions, **AI assistance → Auto-labeling** is named **AI Tools → Detectors**.
+
+### Use another model
+
+For a model without a ready-to-use function, implement the
+{{< ilink "/docs/api_sdk/sdk/auto-annotation#auto-annotation-interface" "CVAT SDK function interface" >}}.
+Start with the {{< ilink "/docs/api_sdk/sdk/auto-annotation#example" "Python detection function example" >}},
+which shows how to load a model, define its labels, and return predictions in CVAT format.
+For prompt-based models or trackers, see the
+{{< ilink "/docs/api_sdk/sdk/auto-annotation#interaction-function-protocol" "interaction protocol" >}} or
+{{< ilink "/docs/api_sdk/sdk/auto-annotation#tracking-function-protocol" "tracking protocol" >}}.
+
+The {{< ilink "/docs/api_sdk/cli#auto-annotate" "CLI function-loading examples" >}}
+explain how to expose a function through a Python file or a `create` factory and pass parameters with `-p`.
+Then use the same registration and agent commands with your Python file and its parameters.
+Native functions can be detectors, interactors, or trackers.
+
+For container deployment, see the
+{{< ilink "/docs/guides/compose-agents-userguide" "Docker Compose guide" >}} or
+{{< ilink "/docs/guides/helm-agents-userguide" "Helm guide" >}}.

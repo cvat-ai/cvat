@@ -2,24 +2,28 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React from 'react';
+import React, { useCallback } from 'react';
 
-import { useDraggable } from '@dnd-kit/core';
+import { useDraggable, useDroppable } from '@dnd-kit/core';
 
 import { ObjectState } from 'cvat-core-wrapper';
 import ObjectItemContainer from 'containers/annotation-page/standard-workspace/objects-side-bar/object-item';
 import { isMultiSelectObjectModifierPressed } from 'utils/multi-selection';
-import { objectDragID } from './index';
+import { layerObjectDropID, objectDragID } from './index';
 
 interface Props {
     objectStates: ObjectState[];
     clientID: number;
+    zOrder: number;
+    lastInLayer: boolean;
     visibleObjectIDs: number[];
     draggable: boolean;
     visibleSkeletonElements: Record<number, number[]>;
     toggleSelection(): void;
     selectRange(): void;
     multiSelectionSupported: boolean;
+    partsExpanded?: boolean;
+    onPartsExpandedChange?(clientID: number, expanded: boolean): void;
 }
 
 function isRangeModifierPressed(event: React.MouseEvent | React.PointerEvent): boolean {
@@ -29,16 +33,23 @@ function isRangeModifierPressed(event: React.MouseEvent | React.PointerEvent): b
 // Wraps an object item with dnd-kit drag behavior while preserving the original object item rendering.
 function DraggableObjectItem(props: Props): JSX.Element {
     const {
-        objectStates, clientID, visibleObjectIDs, draggable, visibleSkeletonElements,
-        toggleSelection, selectRange, multiSelectionSupported,
+        objectStates, clientID, zOrder, lastInLayer, visibleObjectIDs, draggable, visibleSkeletonElements,
+        toggleSelection, selectRange, multiSelectionSupported, partsExpanded, onPartsExpandedChange,
     } = props;
 
     const {
-        attributes, listeners, setNodeRef, isDragging,
+        attributes, listeners, setNodeRef: setDraggableNodeRef, isDragging,
     } = useDraggable({
         id: objectDragID(clientID),
         disabled: !draggable,
     });
+    const { isOver, setNodeRef: setDroppableNodeRef } = useDroppable({
+        id: layerObjectDropID(zOrder, clientID),
+    });
+    const setNodeRef = useCallback((element: HTMLDivElement | null): void => {
+        setDraggableNodeRef(element);
+        setDroppableNodeRef(element);
+    }, [setDraggableNodeRef, setDroppableNodeRef]);
 
     const style = {
         ...(isDragging ? { pointerEvents: 'none' as const } : {}),
@@ -47,11 +58,12 @@ function DraggableObjectItem(props: Props): JSX.Element {
     return (
         <div
             ref={setNodeRef}
+            data-z-order={zOrder}
             {...(draggable ? attributes : {})}
             {...(draggable ? listeners : {})}
             onPointerDown={(event: React.PointerEvent): void => {
-                if (!multiSelectionSupported ||
-                    (!isRangeModifierPressed(event) && !isMultiSelectObjectModifierPressed(event))) {
+                if (draggable && (!multiSelectionSupported ||
+                    (!isRangeModifierPressed(event) && !isMultiSelectObjectModifierPressed(event)))) {
                     listeners?.onPointerDown?.(event);
                 }
             }}
@@ -67,7 +79,12 @@ function DraggableObjectItem(props: Props): JSX.Element {
                     toggleSelection();
                 }
             }}
-            className={isDragging ? 'cvat-objects-sidebar-z-layer-dragging' : undefined}
+            className={[
+                'cvat-objects-sidebar-z-layer-object-row',
+                ...(lastInLayer ? ['cvat-objects-sidebar-z-layer-object-row-last'] : []),
+                ...(isDragging ? ['cvat-objects-sidebar-z-layer-dragging'] : []),
+                ...(isOver ? ['cvat-objects-sidebar-z-layer-active'] : []),
+            ].join(' ')}
             style={style}
         >
             <ObjectItemContainer
@@ -75,7 +92,8 @@ function DraggableObjectItem(props: Props): JSX.Element {
                 clientID={clientID}
                 visibleObjectIDs={visibleObjectIDs}
                 visibleSkeletonElements={visibleSkeletonElements}
-                allowSimplifyLifecycle
+                partsExpanded={partsExpanded}
+                onPartsExpandedChange={onPartsExpandedChange}
                 zLayerDragging={isDragging}
                 zLayerDragProps={draggable ? {} : undefined}
             />

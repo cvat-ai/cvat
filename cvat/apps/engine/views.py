@@ -9,7 +9,6 @@ import os.path as osp
 import re
 import shutil
 import textwrap
-import traceback
 import zlib
 from abc import ABCMeta, abstractmethod
 from contextlib import suppress
@@ -104,7 +103,12 @@ from cvat.apps.engine.permissions import (
     UserPermission,
     get_iam_context,
 )
-from cvat.apps.engine.rq import ImportRequestId, ImportRQMeta, RQMetaWithFailureInfo
+from cvat.apps.engine.rq import (
+    ImportRequestId,
+    ImportRQMeta,
+    RQMetaWithFailureInfo,
+    save_job_failure_metadata,
+)
 from cvat.apps.engine.serializers import (
     AboutSerializer,
     AnnotationFileSerializer,
@@ -3911,11 +3915,11 @@ def rq_exception_handler(rq_job: RQJob, exc_type: type[Exception], exc_value: Ex
     if rq_job.get_status(refresh=False) in (RQJobStatus.QUEUED, RQJobStatus.SCHEDULED):
         return True
 
-    rq_job_meta = RQMetaWithFailureInfo.for_job(rq_job)
-    rq_job_meta.formatted_exception = "".join(traceback.format_exception_only(exc_type, exc_value))
-    if rq_job.origin == settings.CVAT_QUEUES.CHUNKS.value:
-        rq_job_meta.exc_type = exc_type
-        rq_job_meta.exc_args = exc_value.args
-    rq_job_meta.save()
+    # The global exception handlers, like this function, are called by RQ AFTER the job status is
+    # set to FAILED. In some queues (e.g. chunk and request), jobs already save failure metadata in
+    # on_failure(), which is called before RQ publishes status, so API readers can reconstruct the
+    # exception. Avoid writing it again here, only do this for jobs that have no such callback.
+    if RQMetaWithFailureInfo.for_job(rq_job).formatted_exception is None:
+        save_job_failure_metadata(rq_job, exc_type, exc_value)
 
     return True

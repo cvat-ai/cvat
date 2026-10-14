@@ -106,11 +106,13 @@ context('Multi-object selection', { scrollBehavior: false }, () => {
     }
 
     function assertSelection(expectedIds) {
-        cy.get('.cvat-objects-sidebar-state-item-multi-selected')
-            .should('have.length', expectedIds.length);
-        expectedIds.forEach((clientId) => {
-            cy.get(sidebarItem(clientId))
-                .should('have.class', 'cvat-objects-sidebar-state-item-multi-selected');
+        cy.get('.cvat-objects-sidebar [role="tab"][aria-selected="true"]').then(($tab) => {
+            if ($tab.text() === 'Objects') {
+                expectedIds.forEach((clientId) => {
+                    cy.getObjectSidebarItem(clientId)
+                        .should('have.class', 'cvat-objects-sidebar-state-item-multi-selected');
+                });
+            }
         });
         if (expectedIds.length) {
             cy.get('.cvat_canvas_selected_objects_label_title')
@@ -124,7 +126,7 @@ context('Multi-object selection', { scrollBehavior: false }, () => {
 
     function selectFromSidebar(clientIds) {
         clientIds.forEach((clientId) => {
-            cy.get(sidebarItem(clientId)).click({ ...platformModifier, force: true });
+            cy.getObjectSidebarItem(clientId).click({ ...platformModifier, force: true });
         });
         assertSelection(clientIds);
     }
@@ -132,6 +134,12 @@ context('Multi-object selection', { scrollBehavior: false }, () => {
     function clearSelection() {
         cy.get('body').type('{esc}', { force: true });
         assertSelection([]);
+    }
+
+    function getFirstLayerHeader() {
+        cy.get('.cvat-objects-sidebar-virtual-list [data-virtual-list-viewport]')
+            .scrollTo('top', { duration: 0, ensureScrollable: false });
+        return cy.get('.cvat-objects-sidebar-z-layer-mark').first();
     }
 
     function openSelectionMenu() {
@@ -267,7 +275,7 @@ context('Multi-object selection', { scrollBehavior: false }, () => {
 
         // Drawn objects are pinned by default. Keep this fixture movable for movement tests.
         rectangleIds.forEach((clientId) => {
-            cy.get(sidebarItem(clientId)).within(() => {
+            cy.getObjectSidebarItem(clientId).within(() => {
                 cy.get('.cvat-object-item-button-pinned').then(($button) => {
                     if ($button.hasClass('cvat-object-item-button-pinned-enabled')) {
                         cy.wrap($button).click();
@@ -344,7 +352,7 @@ context('Multi-object selection', { scrollBehavior: false }, () => {
         cy.get(`#cvat_canvas_shape_${objectIds.carShape1}`).click({ ...platformModifier, force: true });
         assertSelection([objectIds.carShape1]);
 
-        cy.get(sidebarItem(objectIds.carShape2)).click({ ...platformModifier });
+        cy.getObjectSidebarItem(objectIds.carShape2).click({ ...platformModifier });
         assertSelection([objectIds.carShape1, objectIds.carShape2]);
 
         cy.get(`#cvat_canvas_shape_${objectIds.carShape1}`).click({ ...platformModifier, force: true });
@@ -354,9 +362,9 @@ context('Multi-object selection', { scrollBehavior: false }, () => {
         assertSelection([]);
 
         selectFromSidebar([objectIds.carShape1, objectIds.carShape2]);
-        cy.get(sidebarItem(objectIds.personTrack1)).click();
+        cy.getObjectSidebarItem(objectIds.personTrack1).click();
         assertSelection([]);
-        cy.get(sidebarItem(objectIds.personTrack1)).should('have.class', 'cvat-objects-sidebar-state-active-item');
+        cy.getObjectSidebarItem(objectIds.personTrack1).should('have.class', 'cvat-objects-sidebar-state-active-item');
     });
 
     it('Replaces objects selected with Mod-click when starting a Shift-drag selection', () => {
@@ -379,8 +387,8 @@ context('Multi-object selection', { scrollBehavior: false }, () => {
     });
 
     it('Selects a sidebar range with Shift and all selectable objects with Mod+A', () => {
-        cy.get(sidebarItem(objectIds.carShape1)).click({ ...platformModifier, force: true });
-        cy.get(sidebarItem(objectIds.personTrack2)).click({ shiftKey: true, force: true });
+        cy.getObjectSidebarItem(objectIds.carShape1).click({ ...platformModifier, force: true });
+        cy.getObjectSidebarItem(objectIds.personTrack2).click({ shiftKey: true, force: true });
         assertSelection([
             objectIds.carShape1,
             objectIds.carShape2,
@@ -391,7 +399,7 @@ context('Multi-object selection', { scrollBehavior: false }, () => {
         clearSelection();
         runSelectAllShortcut();
         assertSelection(selectableObjectIds);
-        cy.get(sidebarItem(objectIds.tag))
+        cy.getObjectSidebarItem(objectIds.tag)
             .should('not.have.class', 'cvat-objects-sidebar-state-item-multi-selected');
     });
 
@@ -534,23 +542,23 @@ context('Multi-object selection', { scrollBehavior: false }, () => {
     });
 
     it('Excludes hidden objects and tags from selection', () => {
-        cy.get(sidebarItem(objectIds.carShape1)).within(() => {
+        cy.getObjectSidebarItem(objectIds.carShape1).within(() => {
             cy.get('.cvat-object-item-button-hidden').click({ force: true });
         });
         runSelectAllShortcut();
         assertSelection(selectableObjectIds.filter((clientId) => clientId !== objectIds.carShape1));
 
         clearSelection();
-        cy.get(sidebarItem(objectIds.carShape1)).within(() => {
+        cy.getObjectSidebarItem(objectIds.carShape1).within(() => {
             cy.get('.cvat-object-item-button-hidden-enabled').click({ force: true });
         });
-        cy.get(sidebarItem(objectIds.tag)).click({ ...platformModifier, force: true });
+        cy.getObjectSidebarItem(objectIds.tag).click({ ...platformModifier, force: true });
         assertSelection([]);
     });
 
     it('Removes an object from the active selection when it is hidden', () => {
         selectFromSidebar([objectIds.carShape1, objectIds.carShape2]);
-        cy.get(sidebarItem(objectIds.carShape1)).within(() => {
+        cy.getObjectSidebarItem(objectIds.carShape1).within(() => {
             cy.get('.cvat-object-item-button-hidden').click({ force: true });
         });
         assertSelection([objectIds.carShape2]);
@@ -561,7 +569,7 @@ context('Multi-object selection', { scrollBehavior: false }, () => {
         cy.pressWithPlatformModifier('{shift}z');
         assertSelection([objectIds.carShape2]);
 
-        cy.get(sidebarItem(objectIds.carShape1)).within(() => {
+        cy.getObjectSidebarItem(objectIds.carShape1).within(() => {
             cy.get('.cvat-object-item-button-hidden-enabled').click({ force: true });
         });
         assertSelection([objectIds.carShape2]);
@@ -569,19 +577,19 @@ context('Multi-object selection', { scrollBehavior: false }, () => {
     });
 
     it('Toggles a layer selection when the layer contains hidden objects', () => {
-        cy.get(sidebarItem(objectIds.carShape1)).within(() => {
+        cy.getObjectSidebarItem(objectIds.carShape1).within(() => {
             cy.get('.cvat-object-item-button-hidden').click({ force: true });
         });
         cy.sidebarItemSortBy('Layer');
 
-        cy.get('.cvat-objects-sidebar-z-layer-mark').first().click({ ...platformModifier, force: true });
+        getFirstLayerHeader().click({ ...platformModifier, force: true });
         assertSelection(selectableObjectIds.filter((clientId) => clientId !== objectIds.carShape1));
-        cy.get('.cvat-objects-sidebar-z-layer-mark').first().click({ shiftKey: true, force: true });
+        getFirstLayerHeader().click({ shiftKey: true, force: true });
         assertSelection(selectableObjectIds.filter((clientId) => clientId !== objectIds.carShape1));
-        cy.get('.cvat-objects-sidebar-z-layer-mark').first().click({ ...platformModifier, force: true });
+        getFirstLayerHeader().click({ ...platformModifier, force: true });
         assertSelection([]);
 
-        cy.get(sidebarItem(objectIds.carShape1)).within(() => {
+        cy.getObjectSidebarItem(objectIds.carShape1).within(() => {
             cy.get('.cvat-object-item-button-hidden-enabled').click({ force: true });
         });
         cy.sidebarItemSortBy('ID - ascent');
@@ -599,12 +607,12 @@ context('Multi-object selection', { scrollBehavior: false }, () => {
         clearSelection();
         cy.contains('[role="tab"]', 'Objects').click();
         cy.sidebarItemSortBy('Layer');
-        cy.get(sidebarItem(objectIds.carShape1)).click({ ...platformModifier, force: true });
-        cy.get(sidebarItem(objectIds.carShape2)).click({ ...platformModifier, force: true });
+        cy.getObjectSidebarItem(objectIds.carShape1).click({ ...platformModifier, force: true });
+        cy.getObjectSidebarItem(objectIds.carShape2).click({ ...platformModifier, force: true });
         assertSelection([objectIds.carShape1, objectIds.carShape2]);
 
         clearSelection();
-        cy.get('.cvat-objects-sidebar-z-layer-mark').first().click({ ...platformModifier, force: true });
+        getFirstLayerHeader().click({ ...platformModifier, force: true });
         assertSelection(selectableObjectIds);
         clearSelection();
         cy.sidebarItemSortBy('ID - ascent');
@@ -612,27 +620,27 @@ context('Multi-object selection', { scrollBehavior: false }, () => {
     });
 
     it('Limits Layer Stack Shift-click ranges to one layer', () => {
-        cy.get(sidebarItem(objectIds.carShape1)).find('[aria-label="more"]').click({ force: true });
+        cy.getObjectSidebarItem(objectIds.carShape1).find('[aria-label="more"]').click({ force: true });
         cy.contains('.cvat-object-item-menu:visible button', 'To foreground').click();
-        cy.get(sidebarItem(objectIds.carShape2)).find('[aria-label="more"]').click({ force: true });
+        cy.getObjectSidebarItem(objectIds.carShape2).find('[aria-label="more"]').click({ force: true });
         cy.contains('.cvat-object-item-menu:visible button', 'To one layer forward').click();
         cy.sidebarItemSortBy('Layer');
 
-        cy.get(sidebarItem(objectIds.personTrack1)).click({ ...platformModifier, force: true });
-        cy.get(sidebarItem(objectIds.carShape1))
+        cy.getObjectSidebarItem(objectIds.personTrack1).click({ ...platformModifier, force: true });
+        cy.getObjectSidebarItem(objectIds.carShape1)
             .find('.cvat-objects-sidebar-state-item-object-type-text')
             .click({ shiftKey: true, force: true });
         assertSelection([objectIds.personTrack1, objectIds.carShape1]);
 
-        cy.get(sidebarItem(objectIds.carShape2))
+        cy.getObjectSidebarItem(objectIds.carShape2)
             .find('.cvat-objects-sidebar-state-item-object-type-text')
             .click({ shiftKey: true, force: true });
         assertSelection([objectIds.personTrack1, objectIds.carShape1, objectIds.carShape2]);
 
         clearSelection();
-        cy.get(sidebarItem(objectIds.carShape1)).find('[aria-label="more"]').click({ force: true });
+        cy.getObjectSidebarItem(objectIds.carShape1).find('[aria-label="more"]').click({ force: true });
         cy.contains('.cvat-object-item-menu:visible button', 'To one layer backward').click();
-        cy.get(sidebarItem(objectIds.carShape2)).find('[aria-label="more"]').click({ force: true });
+        cy.getObjectSidebarItem(objectIds.carShape2).find('[aria-label="more"]').click({ force: true });
         cy.contains('.cvat-object-item-menu:visible button', 'To one layer backward').click();
         cy.sidebarItemSortBy('ID - ascent');
     });
@@ -738,7 +746,7 @@ context('Multi-object selection', { scrollBehavior: false }, () => {
         });
 
         cy.contains('.cvat-annotation-header-button', 'Undo').click();
-        cy.get(sidebarItem(objectIds.carShape2)).click({ ...platformModifier, force: true });
+        cy.getObjectSidebarItem(objectIds.carShape2).click({ ...platformModifier, force: true });
         assertSelection([objectIds.carShape1, objectIds.carShape2]);
         cy.pressWithPlatformModifier('c');
         cy.pressWithPlatformModifier('v');
@@ -763,7 +771,7 @@ context('Multi-object selection', { scrollBehavior: false }, () => {
     });
 
     it('Moves unlocked members while locked members stay selected and stationary', () => {
-        cy.get(sidebarItem(objectIds.carShape1)).within(() => {
+        cy.getObjectSidebarItem(objectIds.carShape1).within(() => {
             cy.get('.cvat-object-item-button-lock').click();
         });
         selectFromSidebar([objectIds.carShape1, objectIds.carShape2]);
@@ -780,7 +788,7 @@ context('Multi-object selection', { scrollBehavior: false }, () => {
         });
 
         clearSelection();
-        cy.get(sidebarItem(objectIds.carShape1)).within(() => {
+        cy.getObjectSidebarItem(objectIds.carShape1).within(() => {
             cy.get('.cvat-object-item-button-lock-enabled').click();
         });
     });
@@ -790,7 +798,7 @@ context('Multi-object selection', { scrollBehavior: false }, () => {
         openSelectionMenu();
         cy.get('.cvat-canvas-selected-objects-menu-content button[aria-label="Lock selection"]').click();
         [objectIds.carShape1, objectIds.carShape2].forEach((clientId) => {
-            cy.get(sidebarItem(clientId)).find('.cvat-object-item-button-lock-enabled').should('exist');
+            cy.getObjectSidebarItem(clientId).find('.cvat-object-item-button-lock-enabled').should('exist');
         });
         cy.get('.cvat-canvas-selected-objects-menu-content').should('be.visible');
 
@@ -798,7 +806,7 @@ context('Multi-object selection', { scrollBehavior: false }, () => {
         cy.get('.cvat-canvas-selected-objects-menu-content').should('be.visible');
         cy.get('.cvat-canvas-selected-objects-menu-content button[aria-label="Pin selection"]').click();
         [objectIds.carShape1, objectIds.carShape2].forEach((clientId) => {
-            cy.get(sidebarItem(clientId)).find('.cvat-object-item-button-pinned-enabled').should('exist');
+            cy.getObjectSidebarItem(clientId).find('.cvat-object-item-button-pinned-enabled').should('exist');
         });
         cy.get('.cvat-canvas-selected-objects-menu-content').should('be.visible');
 
@@ -812,38 +820,38 @@ context('Multi-object selection', { scrollBehavior: false }, () => {
         openSelectionMenu();
         cy.get('.cvat-canvas-selected-objects-menu-content button[aria-label="Occlude selection"]').click();
         selectedIds.forEach((clientId) => {
-            cy.get(sidebarItem(clientId)).find('.cvat-object-item-button-occluded-enabled').should('exist');
+            cy.getObjectSidebarItem(clientId).find('.cvat-object-item-button-occluded-enabled').should('exist');
         });
         assertSelection(selectedIds);
 
         cy.contains('.cvat-annotation-header-button', 'Undo').click();
         selectedIds.forEach((clientId) => {
-            cy.get(sidebarItem(clientId)).find('.cvat-object-item-button-occluded-enabled').should('not.exist');
+            cy.getObjectSidebarItem(clientId).find('.cvat-object-item-button-occluded-enabled').should('not.exist');
         });
         assertSelection(selectedIds);
 
         cy.get('body').type('q');
         selectedIds.forEach((clientId) => {
-            cy.get(sidebarItem(clientId)).find('.cvat-object-item-button-occluded-enabled').should('exist');
+            cy.getObjectSidebarItem(clientId).find('.cvat-object-item-button-occluded-enabled').should('exist');
         });
         cy.contains('.cvat-annotation-header-button', 'Undo').click();
 
         openSelectionMenu();
         cy.get('.cvat-canvas-selected-objects-menu-content button[aria-label="Hide selection"]').click();
         selectedIds.forEach((clientId) => {
-            cy.get(sidebarItem(clientId)).find('.cvat-object-item-button-hidden-enabled').should('exist');
+            cy.getObjectSidebarItem(clientId).find('.cvat-object-item-button-hidden-enabled').should('exist');
         });
         assertSelection([]);
 
         cy.contains('.cvat-annotation-header-button', 'Undo').click();
         selectedIds.forEach((clientId) => {
-            cy.get(sidebarItem(clientId)).find('.cvat-object-item-button-hidden-enabled').should('not.exist');
+            cy.getObjectSidebarItem(clientId).find('.cvat-object-item-button-hidden-enabled').should('not.exist');
         });
         assertSelection(selectedIds);
 
         cy.contains('.cvat-annotation-header-button', 'Redo').click();
         selectedIds.forEach((clientId) => {
-            cy.get(sidebarItem(clientId)).find('.cvat-object-item-button-hidden-enabled').should('exist');
+            cy.getObjectSidebarItem(clientId).find('.cvat-object-item-button-hidden-enabled').should('exist');
         });
         assertSelection([]);
 
@@ -851,7 +859,7 @@ context('Multi-object selection', { scrollBehavior: false }, () => {
         assertSelection(selectedIds);
         cy.get('body').type('h');
         selectedIds.forEach((clientId) => {
-            cy.get(sidebarItem(clientId)).find('.cvat-object-item-button-hidden-enabled').should('exist');
+            cy.getObjectSidebarItem(clientId).find('.cvat-object-item-button-hidden-enabled').should('exist');
         });
         assertSelection([]);
         cy.contains('.cvat-annotation-header-button', 'Undo').click();
@@ -868,7 +876,7 @@ context('Multi-object selection', { scrollBehavior: false }, () => {
         cy.get('.cvat-canvas-selected-objects-menu-content').should('be.visible');
         cy.get('.cvat-canvas-selected-objects-menu-content button[aria-label="Show selection"]').click();
         selectedIds.forEach((clientId) => {
-            cy.get(sidebarItem(clientId)).find('.cvat-object-item-button-hidden-enabled').should('not.exist');
+            cy.getObjectSidebarItem(clientId).find('.cvat-object-item-button-hidden-enabled').should('not.exist');
         });
         cy.get('.cvat-canvas-selected-objects-menu-content').should('be.visible');
 
@@ -877,7 +885,7 @@ context('Multi-object selection', { scrollBehavior: false }, () => {
     });
 
     it('Disables incompatible actions and normalizes a mixed lock state', () => {
-        cy.get(sidebarItem(objectIds.carShape1)).within(() => {
+        cy.getObjectSidebarItem(objectIds.carShape1).within(() => {
             cy.get('.cvat-object-item-button-lock').click();
         });
         selectFromSidebar([objectIds.carShape1, objectIds.carShape2]);
@@ -898,7 +906,7 @@ context('Multi-object selection', { scrollBehavior: false }, () => {
 
         cy.get('.cvat-canvas-selected-objects-menu-content button[aria-label="Lock selection"]').click();
         [objectIds.carShape1, objectIds.carShape2].forEach((clientId) => {
-            cy.get(sidebarItem(clientId)).find('.cvat-object-item-button-lock-enabled').should('exist');
+            cy.getObjectSidebarItem(clientId).find('.cvat-object-item-button-lock-enabled').should('exist');
         });
         cy.get('.cvat_canvas_selected_objects_box')
             .should('have.class', 'cvat_canvas_selected_objects_box_not_draggable');
@@ -907,7 +915,7 @@ context('Multi-object selection', { scrollBehavior: false }, () => {
         openSelectionMenu();
         cy.get('.cvat-canvas-selected-objects-menu-content button[aria-label="Unlock selection"]').click();
         [objectIds.carShape1, objectIds.carShape2].forEach((clientId) => {
-            cy.get(sidebarItem(clientId)).find('.cvat-object-item-button-lock-enabled').should('not.exist');
+            cy.getObjectSidebarItem(clientId).find('.cvat-object-item-button-lock-enabled').should('not.exist');
         });
     });
 
@@ -1030,7 +1038,7 @@ context('Multi-object selection', { scrollBehavior: false }, () => {
     });
 
     it('Closes an object menu before opening selection actions', () => {
-        cy.get(sidebarItem(objectIds.carShape1)).within(() => {
+        cy.getObjectSidebarItem(objectIds.carShape1).within(() => {
             cy.get('[aria-label="more"]').click();
         });
         cy.get('.cvat-object-item-menu:visible').should('have.length', 1);
@@ -1068,7 +1076,7 @@ context('Multi-object selection', { scrollBehavior: false }, () => {
     });
 
     it('Applies layer actions only to editable selection members', () => {
-        cy.get(sidebarItem(objectIds.carShape1)).within(() => {
+        cy.getObjectSidebarItem(objectIds.carShape1).within(() => {
             cy.get('.cvat-object-item-button-lock').click();
         });
         selectFromSidebar([objectIds.carShape1, objectIds.carShape2]);
@@ -1090,7 +1098,7 @@ context('Multi-object selection', { scrollBehavior: false }, () => {
         });
 
         clearSelection();
-        cy.get(sidebarItem(objectIds.carShape1)).within(() => {
+        cy.getObjectSidebarItem(objectIds.carShape1).within(() => {
             cy.get('.cvat-object-item-button-lock-enabled').click();
         });
     });
@@ -1112,7 +1120,7 @@ context('Multi-object selection', { scrollBehavior: false }, () => {
             labels.person,
         ).click();
         [objectIds.carShape1, objectIds.carShape2].forEach((clientId) => {
-            cy.get(sidebarItem(clientId))
+            cy.getObjectSidebarItem(clientId)
                 .find('.cvat-objects-sidebar-state-item-label-selector .ant-select-selection-item')
                 .should('have.text', labels.person);
         });
@@ -1187,10 +1195,10 @@ context('Multi-object selection', { scrollBehavior: false }, () => {
     });
 
     it('Uses normal client-state defaults for pasted selection objects', () => {
-        cy.get(sidebarItem(objectIds.carShape1)).within(() => {
+        cy.getObjectSidebarItem(objectIds.carShape1).within(() => {
             cy.get('.cvat-object-item-button-lock').click();
         });
-        cy.get(sidebarItem(objectIds.carShape2)).within(() => {
+        cy.getObjectSidebarItem(objectIds.carShape2).within(() => {
             cy.get('.cvat-object-item-button-pinned').click();
         });
         selectFromSidebar([objectIds.carShape1, objectIds.carShape2]);
@@ -1200,17 +1208,18 @@ context('Multi-object selection', { scrollBehavior: false }, () => {
         cy.get('.cvat_canvas_shape_drawing').should('have.length', 2);
         cy.get('.cvat-canvas-container').click(600, 500);
 
-        cy.get('.cvat-objects-sidebar-state-item-multi-selected').should('have.length', 2).each(($item) => {
-            cy.wrap($item).find('.cvat-object-item-button-lock-enabled').should('not.exist');
-            cy.wrap($item).find('.cvat-object-item-button-pinned-enabled').should('not.exist');
+        cy.get('.cvat_canvas_shape_selected_object').should('have.length', 2).each(($shape) => {
+            const clientId = Number($shape.attr('clientID'));
+            cy.getObjectSidebarItem(clientId).find('.cvat-object-item-button-lock-enabled').should('not.exist');
+            cy.getObjectSidebarItem(clientId).find('.cvat-object-item-button-pinned-enabled').should('not.exist');
         });
 
         cy.pressWithPlatformModifier('z');
         assertSelection([]);
-        cy.get(sidebarItem(objectIds.carShape1)).within(() => {
+        cy.getObjectSidebarItem(objectIds.carShape1).within(() => {
             cy.get('.cvat-object-item-button-lock-enabled').click();
         });
-        cy.get(sidebarItem(objectIds.carShape2)).within(() => {
+        cy.getObjectSidebarItem(objectIds.carShape2).within(() => {
             cy.get('.cvat-object-item-button-pinned-enabled').click();
         });
     });
@@ -1303,7 +1312,7 @@ context('Multi-object selection', { scrollBehavior: false }, () => {
     });
 
     it('Skips locked objects when deleting a selection', () => {
-        cy.get(sidebarItem(objectIds.carShape1)).within(() => {
+        cy.getObjectSidebarItem(objectIds.carShape1).within(() => {
             cy.get('.cvat-object-item-button-lock').click();
         });
         selectFromSidebar([objectIds.carShape1, objectIds.carShape2]);
@@ -1325,7 +1334,7 @@ context('Multi-object selection', { scrollBehavior: false }, () => {
 
         cy.contains('.cvat-annotation-header-button', 'Undo').click();
         clearSelection();
-        cy.get(sidebarItem(objectIds.carShape1)).within(() => {
+        cy.getObjectSidebarItem(objectIds.carShape1).within(() => {
             cy.get('.cvat-object-item-button-lock-enabled').click();
         });
     });

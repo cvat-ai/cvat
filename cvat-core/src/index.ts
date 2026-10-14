@@ -56,8 +56,12 @@ import {
     ArgumentError, DataError, Exception, ScriptingError, ServerError,
 } from './exceptions';
 import { PaginatedResource } from './core-types';
+import { observe } from './capabilities';
 
 export default interface CVATCore {
+    capabilities: {
+        observe: (...args: Parameters<typeof observe>) => Promise<ReturnType<typeof observe>>;
+    };
     plugins: {
         list: typeof PluginRegistry.list;
         register: typeof PluginRegistry.register;

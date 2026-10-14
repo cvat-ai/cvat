@@ -7,6 +7,7 @@ import { ObjectState, ObjectType } from 'cvat-core-wrapper';
 const OBJECT_DRAG_ID_PREFIX = 'object:';
 const LAYER_DRAG_ID_PREFIX = 'drag-layer:';
 const LAYER_DROP_ID_PREFIX = 'layer:';
+const LAYER_OBJECT_DROP_ID_PREFIX = 'layer-object:';
 const LAYER_INSERT_DROP_ID_PREFIX = 'insert-layer:';
 
 export const INSERT_DROP_AREA_PROXIMITY = 16;
@@ -25,6 +26,10 @@ export function layerDragID(zOrder: number): string {
 
 export function layerDropID(zOrder: number): string {
     return `${LAYER_DROP_ID_PREFIX}${zOrder}`;
+}
+
+export function layerObjectDropID(zOrder: number, clientID: number): string {
+    return `${LAYER_OBJECT_DROP_ID_PREFIX}${zOrder}:${clientID}`;
 }
 
 export function layerInsertDropID(placement: LayerPlacement): string {
@@ -60,6 +65,15 @@ export function parseLayerDropID(id: string): number | null {
 
     const zOrder = Number(id.slice(LAYER_DROP_ID_PREFIX.length));
     return Number.isInteger(zOrder) ? zOrder : null;
+}
+
+export function parseLayerObjectDropID(id: string): number | null {
+    if (!id.startsWith(LAYER_OBJECT_DROP_ID_PREFIX)) {
+        return null;
+    }
+
+    const [layer, object] = id.slice(LAYER_OBJECT_DROP_ID_PREFIX.length).split(':').map(Number);
+    return Number.isInteger(layer) && Number.isInteger(object) ? layer : null;
 }
 
 export function parseLayerInsertDropID(id: string): LayerPlacement | null {
