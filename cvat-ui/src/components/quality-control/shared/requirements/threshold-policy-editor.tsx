@@ -335,7 +335,7 @@ export default function ThresholdPolicyEditor(props: Readonly<Props>): JSX.Eleme
                         IoU threshold (%)
                         <InputNumber
                             id={`${controlID}-constant`}
-                            value={value.value * 100}
+                            value={Number((value.value * 100).toPrecision(15))}
                             min={0}
                             max={100}
                             disabled={disabled}

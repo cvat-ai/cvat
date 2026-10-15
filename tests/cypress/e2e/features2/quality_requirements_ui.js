@@ -451,7 +451,7 @@ context('Quality requirements UI', () => {
         }
         cy.get(rows).first().find('button').should('be.disabled');
 
-        cy.intercept('PATCH', '**/api/quality/requirements/*').as('saveIouPolicy');
+        cy.intercept('PATCH', '**/api/quality/settings/requirements/*').as('saveIouPolicy');
         submitForm();
         expectPolicyRequest('@saveIouPolicy', linearIouPolicy);
         expectNotification('Requirement has been updated');
@@ -468,7 +468,7 @@ context('Quality requirements UI', () => {
         clickRowAction(childRequirementName, 'edit');
         expectLinearThreshold();
         setFormThreshold(91);
-        cy.intercept('PATCH', '**/api/quality/requirements/*').as('saveInheritedIou');
+        cy.intercept('PATCH', '**/api/quality/settings/requirements/*').as('saveInheritedIou');
         submitForm();
         cy.wait('@saveInheritedIou').then(({ request, response }) => {
             expect(response.statusCode).to.equal(200);
@@ -513,7 +513,7 @@ context('Quality requirements UI', () => {
         cy.get(thresholdRows).last().find('input[id*="iou"]').type('85');
         cy.get(thresholdRows).last().find('input[id*="iou"]').blur();
         const sourcePolicy = { ...linearIouPolicy, points: [{ x: 100, y: 0.4 }, { x: 1000, y: 0.85 }] };
-        cy.intercept('PATCH', '**/api/quality/requirements/*').as('saveLocalIou');
+        cy.intercept('PATCH', '**/api/quality/settings/requirements/*').as('saveLocalIou');
         submitForm();
         expectPolicyRequest('@saveLocalIou', sourcePolicy);
         expectNotification('Requirement has been updated');
@@ -524,7 +524,7 @@ context('Quality requirements UI', () => {
         cy.get(thresholdRows).last().find('input[id*="iou"]').type('75');
         cy.get(thresholdRows).last().find('input[id*="iou"]').blur();
         const copiedPolicy = { ...linearIouPolicy, points: [{ x: 100, y: 0.4 }, { x: 1000, y: 0.75 }] };
-        cy.intercept('POST', '**/api/quality/requirements*').as('copyIouPolicy');
+        cy.intercept('POST', '**/api/quality/settings/requirements*').as('copyIouPolicy');
         submitForm();
         expectPolicyRequest('@copyIouPolicy', copiedPolicy, 201);
         expectNotification('Requirement has been created');
@@ -552,7 +552,7 @@ context('Quality requirements UI', () => {
         expectLinearThreshold();
         selectThresholdMode('Constant');
         cy.get(`${thresholdEditor} input.ant-input-number-input`).should('have.value', '70');
-        cy.intercept('PATCH', '**/api/quality/requirements/*').as('saveConstantIou');
+        cy.intercept('PATCH', '**/api/quality/settings/requirements/*').as('saveConstantIou');
         submitForm();
         expectPolicyRequest('@saveConstantIou', { type: 'iou', mode: 'constant', value: 0.7 });
         expectNotification('Requirement has been updated');
