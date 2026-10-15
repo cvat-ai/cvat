@@ -241,7 +241,7 @@ class Datumaro2DBackend(QualityBackend):
             if invalid_count:
                 raise InvalidGroundTruthArea(invalid_count)
 
-            def gt_threshold(annotations):
+            def evaluate_gt_threshold(annotations):
                 key = tuple(id(ann) for ann in annotations)
                 if key not in thresholds:
                     try:
@@ -252,6 +252,8 @@ class Datumaro2DBackend(QualityBackend):
                     except (ValueError, TypeError, ArithmeticError, ShapelyError) as error:
                         raise InvalidGroundTruthArea(len(annotations)) from error
                 return thresholds[key]
+
+            gt_threshold = evaluate_gt_threshold
 
         comparator = Comparator(
             self._gt_provider.dataset.native_dataset.categories(),
