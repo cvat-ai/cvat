@@ -38,7 +38,9 @@ _IOU_LINEAR_POLICY = {
     "points": [{"x": 100, "y": 0.4}, {"x": 1000, "y": 0.9}],
 }
 _IOU_POLICY_FIXTURES = json.loads(
-    (Path(__file__).parents[1] / "shared/assets/iou_threshold_policies.json").read_text()
+    (
+        Path(__file__).parents[1] / "shared/assets/quality_control/iou_threshold_policies.json"
+    ).read_text()
 )
 
 

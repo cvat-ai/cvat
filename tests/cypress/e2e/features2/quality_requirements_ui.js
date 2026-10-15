@@ -444,7 +444,7 @@ context('Quality requirements UI', () => {
                     expect(Number($input.val())).to.be.greaterThan(Number(area));
                 });
             });
-            cy.contains(`${editor} button`, 'Undo').click();
+            cy.contains(`${editor} button`, 'Undo').click({ scrollBehavior: 'center' });
             cy.get(canvas).scrollIntoView();
             cy.get(canvas).realClick({ button: 'right', position: 'center', scrollBehavior: false });
             cy.get(rows).should('have.length', 2);
