@@ -32,6 +32,7 @@ import { Canvas } from 'cvat-canvas-wrapper';
 import { fetchAnnotationsAsync } from 'actions/annotation-actions';
 import { clamp } from 'utils/math';
 import CVATTooltip from 'components/common/cvat-tooltip';
+import CVATMarkdown from 'components/common/cvat-markdown';
 
 const core = getCore();
 
@@ -722,7 +723,7 @@ function AnnotationsActionsModalContent(props: Props): JSX.Element {
                                 }).catch((error: unknown) => {
                                     if (error instanceof Error) {
                                         notification.error({
-                                            message: error.message,
+                                            message: <CVATMarkdown>{error.message}</CVATMarkdown>,
                                         });
                                     }
                                 });

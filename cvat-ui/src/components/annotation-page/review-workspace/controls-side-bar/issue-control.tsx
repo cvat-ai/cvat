@@ -8,7 +8,7 @@ import Icon from '@ant-design/icons';
 
 import { ActiveControl, CombinedState } from 'reducers';
 import { Canvas } from 'cvat-canvas-wrapper';
-import { RectangleIcon } from 'icons';
+import { IssueIcon } from 'icons';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import GlobalHotKeys from 'utils/mousetrap-react';
 import { ShortcutScope } from 'utils/enums';
@@ -61,7 +61,7 @@ function CreateIssueControl(props: Props): JSX.Element {
 
     return (
         disabled ? (
-            <Icon component={RectangleIcon} className='cvat-issue-control cvat-disabled-canvas-control' />
+            <Icon component={IssueIcon} className='cvat-issue-control cvat-disabled-canvas-control' />
         ) : (
             <>
                 <GlobalHotKeys
@@ -70,7 +70,7 @@ function CreateIssueControl(props: Props): JSX.Element {
                 />
                 <CVATTooltip title='Open an issue' placement='right'>
                     <Icon
-                        component={RectangleIcon}
+                        component={IssueIcon}
                         className={
                             activeControl === ActiveControl.OPEN_ISSUE ?
                                 'cvat-issue-control cvat-active-canvas-control' :

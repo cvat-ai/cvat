@@ -26,6 +26,7 @@ import {
 } from 'icons';
 
 interface Props {
+    trackingControl?: React.ReactNode;
     parentID: number | null;
     objectType: ObjectType;
     shapeType: ShapeType;
@@ -303,6 +304,7 @@ function ItemButtonsComponent(props: Props): JSX.Element {
                         <Col>
                             <NavigateLastKeyframe {...props} />
                         </Col>
+                        {props.trackingControl}
                     </Row>
                     <Row justify='space-around'>
                         <Col>
