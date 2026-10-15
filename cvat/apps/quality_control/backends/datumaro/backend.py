@@ -10,6 +10,10 @@ from typing import TYPE_CHECKING, cast
 
 import attrs
 import datumaro as dm
+import numpy as np
+from shapely.errors import ShapelyError
+from shapely.geometry import Polygon
+from shapely.ops import unary_union
 
 from cvat.apps.dataset_manager import data_model as cdm
 from cvat.apps.dataset_manager.data_model.adapters.datumaro import (
@@ -33,6 +37,10 @@ from cvat.apps.quality_control.matching import (
     MatchingResults,
 )
 from cvat.apps.quality_control.models import QualityRequirementAnnotationType
+from cvat.apps.quality_control.threshold_policy import (
+    InvalidGroundTruthArea,
+    ThresholdPolicyEvaluator,
+)
 
 if TYPE_CHECKING:
     from cvat.apps.quality_control.datumaro_data_provider import DatumaroJobDataProvider
@@ -175,6 +183,23 @@ class Datumaro2DBackend(QualityBackend):
         ]
         return settings
 
+    def shape_area(self, annotations):
+        native = [cast(DatumaroAnnotationAdapter, ann).native_annotation for ann in annotations]
+        if not native:
+            raise InvalidGroundTruthArea()
+        if all(ann.type == dm.AnnotationType.polygon for ann in native):
+            return float(
+                unary_union([Polygon(np.asarray(ann.points).reshape(-1, 2)) for ann in native]).area
+            )
+        if all(ann.type == dm.AnnotationType.mask for ann in native):
+            mask = np.array(native[0].image, dtype=bool, copy=True)
+            for ann in native[1:]:
+                np.logical_or(mask, ann.image, out=mask)
+            return float(np.count_nonzero(mask))
+        if len(native) == 1 and native[0].type == dm.AnnotationType.bbox:
+            return float(native[0].get_area())
+        raise InvalidGroundTruthArea()
+
     def compare(
         self,
         sample: ComparisonSample,
@@ -196,9 +221,42 @@ class Datumaro2DBackend(QualityBackend):
             ]
         )
         settings = self._comparison_parameters(requirement)
+        policy = requirement.similarity_threshold_policy
+        evaluator = ThresholdPolicyEvaluator(policy) if policy is not None else None
+        gt_threshold = None
+        if evaluator is not None and evaluator.policy.mode == "constant":
+            settings.iou_threshold = evaluator()
+        if evaluator is not None and evaluator.policy.mode == "linear":
+            invalid_count = 0
+            thresholds = {}
+            for ann in sample.gt_annotations:
+                try:
+                    area = self.shape_area([ann])
+                    threshold = evaluator(area)
+                    thresholds[(id(cast(DatumaroAnnotationAdapter, ann).native_annotation),)] = (
+                        threshold
+                    )
+                except (ValueError, TypeError, ArithmeticError, ShapelyError):
+                    invalid_count += 1
+            if invalid_count:
+                raise InvalidGroundTruthArea(invalid_count)
+
+            def gt_threshold(annotations):
+                key = tuple(id(ann) for ann in annotations)
+                if key not in thresholds:
+                    try:
+                        area = self.shape_area(
+                            [self._view(ann, self._gt_provider) for ann in annotations]
+                        )
+                        thresholds[key] = evaluator(area)
+                    except (ValueError, TypeError, ArithmeticError, ShapelyError) as error:
+                        raise InvalidGroundTruthArea(len(annotations)) from error
+                return thresholds[key]
+
         comparator = Comparator(
             self._gt_provider.dataset.native_dataset.categories(),
             settings=settings,
+            gt_threshold=gt_threshold,
             attribute_matcher=lambda a, b: attribute_matcher(
                 self._view(a, self._gt_provider), self._view(b, self._ds_provider)
             ),

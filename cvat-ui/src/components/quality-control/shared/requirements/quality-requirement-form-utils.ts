@@ -10,6 +10,7 @@ import {
     QualityMetricAggregation, QualityRequirementMetric, QualityRequirementPointSizeBase,
     SerializedQualityRequirementAttributeComparison,
     SerializedQualityRequirementAttributeRule,
+    SimilarityThresholdPolicy,
 } from 'cvat-core/src/quality/server-response-types';
 import { serializeQualityTargetMetric } from 'cvat-core/src/quality/quality-requirement-utils';
 import {
@@ -68,6 +69,11 @@ export const IOU_ANNOTATION_TYPES = new Set<QualityRequirementAnnotationType>([
     QualityRequirementAnnotationType.MASK,
     QualityRequirementAnnotationType.POLYLINE,
 ]);
+export const ADAPTIVE_IOU_ANNOTATION_TYPES = new Set<QualityRequirementAnnotationType>([
+    QualityRequirementAnnotationType.RECTANGLE,
+    QualityRequirementAnnotationType.POLYGON,
+    QualityRequirementAnnotationType.MASK,
+]);
 export const POINT_ANNOTATION_TYPES = new Set<QualityRequirementAnnotationType>([
     QualityRequirementAnnotationType.POINTS,
     QualityRequirementAnnotationType.SKELETON,
@@ -83,6 +89,7 @@ export type InheritedFormFieldName =
     'metric' |
     'requiredScore' |
     'iouThreshold' |
+    'similarityThresholdPolicy' |
     'pointSize' |
     'pointSizeBase' |
     'lineThickness' |
@@ -102,6 +109,7 @@ export const INHERITED_FORM_FIELDS = new Set<InheritedFormFieldName>([
     'metric',
     'requiredScore',
     'iouThreshold',
+    'similarityThresholdPolicy',
     'pointSize',
     'pointSizeBase',
     'lineThickness',
@@ -119,6 +127,7 @@ export const OVERRIDABLE_FORM_FIELDS: OverridableFormFieldName[] = [
     'metric',
     'requiredScore',
     'iouThreshold',
+    'similarityThresholdPolicy',
     'pointSize',
     'pointSizeBase',
     'lineThickness',
@@ -139,6 +148,11 @@ const LOCAL_INHERITED_FIELD_GETTERS: Record<
     metric: (requirement: QualityRequirement) => requirement.metric,
     requiredScore: (requirement: QualityRequirement) => requirement.requiredScore,
     iouThreshold: (requirement: QualityRequirement) => requirement.iouThreshold,
+    similarityThresholdPolicy: (requirement: QualityRequirement) => (
+        requirement.similarityThresholdPolicy ?? (
+            typeof requirement.iouThreshold === 'number' ? { type: 'iou', mode: 'constant', value: requirement.iouThreshold } : null
+        )
+    ),
     pointSize: (requirement: QualityRequirement) => requirement.pointSize,
     pointSizeBase: (requirement: QualityRequirement) => requirement.pointSizeBase,
     lineThickness: (requirement: QualityRequirement) => requirement.lineThickness,
@@ -169,6 +183,7 @@ export interface RequirementFormValues {
     filter?: string;
     enabled: boolean;
     iouThreshold?: number | null;
+    similarityThresholdPolicy?: SimilarityThresholdPolicy;
     pointSize?: number | null;
     pointSizeBase?: QualityRequirementPointSizeBase | null;
     lineThickness?: number | null;
@@ -368,6 +383,24 @@ export function buildAttributeOptions(labels: Label[]): AttributeOption[] {
     return options.sort((first, second) => first.label.localeCompare(second.label));
 }
 
+function getThresholdPolicy(
+    requirement: QualityRequirement | null,
+    requirementsById: Map<number, QualityRequirement>,
+): SimilarityThresholdPolicy {
+    let current = requirement;
+    const visited = new Set<number>();
+    while (current && !visited.has(current.id)) {
+        visited.add(current.id);
+        const policy = current.similarityThresholdPolicy ?? (
+            typeof current.iouThreshold === 'number' ? { type: 'iou', mode: 'constant' as const, value: current.iouThreshold } :
+                current.effective?.similarityThresholdPolicy
+        );
+        if (policy) return JSON.parse(JSON.stringify(policy)) as SimilarityThresholdPolicy;
+        current = requirementsById.get(current.parentRequirementId) ?? null;
+    }
+    return { type: 'iou', mode: 'constant', value: ROOT_DEFAULTS.iouThreshold / 100 };
+}
+
 export function getInitialValues(
     requirement: QualityRequirement | null,
     parentRequirement: QualityRequirement | null,
@@ -422,6 +455,7 @@ export function getInitialValues(
             ROOT_DEFAULTS.requiredScore,
         ),
         filter: requirement?.filter ?? '',
+        similarityThresholdPolicy: getThresholdPolicy(sourceRequirement, requirementsById),
         enabled: requirement?.enabled ?? true,
         iouThreshold: getNumberPercentValue(
             sourceRequirement,
@@ -666,6 +700,9 @@ const SERIALIZED_INHERITED_FIELD_DESCRIPTORS: SerializedInheritedFieldDescriptor
     fieldName: 'iouThreshold',
     getValue: (values: RequirementFormValues) => fromPercent(values.iouThreshold),
 }, {
+    fieldName: 'similarityThresholdPolicy',
+    getValue: (values: RequirementFormValues) => values.similarityThresholdPolicy,
+}, {
     fieldName: 'pointSize',
     getValue: (values: RequirementFormValues) => fromPercent(values.pointSize),
 }, {
@@ -730,6 +767,12 @@ export function serializeRequirementValues(
     );
 
     for (const descriptor of SERIALIZED_INHERITED_FIELD_DESCRIPTORS) {
+        if (descriptor.fieldName === 'iouThreshold' && ADAPTIVE_IOU_ANNOTATION_TYPES.has(values.annotationType)) {
+            continue;
+        }
+        if (descriptor.fieldName === 'similarityThresholdPolicy' && !ADAPTIVE_IOU_ANNOTATION_TYPES.has(values.annotationType)) {
+            continue;
+        }
         if (!includeInheritedOrResetField(descriptor.fieldName)) {
             continue;
         }

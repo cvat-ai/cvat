@@ -9166,6 +9166,11 @@ components:
         * `update:project` - UPDATE:PROJECT
         * `update:task` - UPDATE:TASK
         * `update:user` - UPDATE:USER
+    ExtrapolationEnum:
+      enum:
+      - clamp
+      type: string
+      description: '* `clamp` - clamp'
     FileInfo:
       type: object
       properties:
@@ -9320,6 +9325,11 @@ components:
       required:
       - function
       - task
+    InputEnum:
+      enum:
+      - gt.shape_area
+      type: string
+      description: '* `gt.shape_area` - gt.shape_area'
     InputTypeEnum:
       enum:
       - checkbox
@@ -11242,6 +11252,12 @@ components:
             The specific meaning can vary depending on the shape type:
             for rectangles, polygons, ellipses, lines and masks it's the IoU threshold;
             for points and skeletons, it's the OKS threshold.
+        similarity_threshold_policy:
+          allOf:
+          - $ref: '#/components/schemas/SimilarityThresholdPolicyRequest'
+          nullable: true
+          description: Constant IoU or piecewise linear IoU by GT shape area (rectangle,
+            polygon, mask).
         point_size:
           type: number
           format: double
@@ -12143,6 +12159,12 @@ components:
             The specific meaning can vary depending on the shape type:
             for rectangles, polygons, ellipses, lines and masks it's the IoU threshold;
             for points and skeletons, it's the OKS threshold.
+        similarity_threshold_policy:
+          allOf:
+          - $ref: '#/components/schemas/SimilarityThresholdPolicy'
+          nullable: true
+          description: Constant IoU or piecewise linear IoU by GT shape area (rectangle,
+            polygon, mask).
         point_size:
           type: number
           format: double
@@ -12317,6 +12339,12 @@ components:
             The specific meaning can vary depending on the shape type:
             for rectangles, polygons, ellipses, lines and masks it's the IoU threshold;
             for points and skeletons, it's the OKS threshold.
+        similarity_threshold_policy:
+          allOf:
+          - $ref: '#/components/schemas/SimilarityThresholdPolicyRequest'
+          nullable: true
+          description: Constant IoU or piecewise linear IoU by GT shape area (rectangle,
+            polygon, mask).
         point_size:
           type: number
           format: double
@@ -12518,6 +12546,12 @@ components:
             The specific meaning can vary depending on the shape type:
             for rectangles, polygons, ellipses, lines and masks it's the IoU threshold;
             for points and skeletons, it's the OKS threshold.
+        similarity_threshold_policy:
+          allOf:
+          - $ref: '#/components/schemas/SimilarityThresholdPolicy'
+          nullable: true
+          description: Constant IoU or piecewise linear IoU by GT shape area (rectangle,
+            polygon, mask).
         point_size:
           type: number
           format: double
@@ -12694,6 +12728,12 @@ components:
             The specific meaning can vary depending on the shape type:
             for rectangles, polygons, ellipses, lines and masks it's the IoU threshold;
             for points and skeletons, it's the OKS threshold.
+        similarity_threshold_policy:
+          allOf:
+          - $ref: '#/components/schemas/SimilarityThresholdPolicyRequest'
+          nullable: true
+          description: Constant IoU or piecewise linear IoU by GT shape area (rectangle,
+            polygon, mask).
         point_size:
           type: number
           format: double
@@ -12862,6 +12902,12 @@ components:
             The specific meaning can vary depending on the shape type:
             for rectangles, polygons, ellipses, lines and masks it's the IoU threshold;
             for points and skeletons, it's the OKS threshold.
+        similarity_threshold_policy:
+          allOf:
+          - $ref: '#/components/schemas/SimilarityThresholdPolicyRequest'
+          nullable: true
+          description: Constant IoU or piecewise linear IoU by GT shape area (rectangle,
+            polygon, mask).
         point_size:
           type: number
           format: double
@@ -13068,11 +13114,13 @@ components:
       - no_annotations
       - filter_no_matches
       - required_attributes_missing
+      - invalid_gt_area
       type: string
       description: |-
         * `no_annotations` - no_annotations
         * `filter_no_matches` - filter_no_matches
         * `required_attributes_missing` - required_attributes_missing
+        * `invalid_gt_area` - invalid_gt_area
     RegisterSerializerEx:
       type: object
       properties:
@@ -13300,6 +13348,77 @@ components:
         * `cuboid` - CUBOID
         * `mask` - MASK
         * `skeleton` - SKELETON
+    SimilarityThresholdPolicy:
+      type: object
+      properties:
+        type:
+          allOf:
+          - $ref: '#/components/schemas/SimilarityThresholdPolicyTypeEnum'
+          description: |-
+            Threshold type. Omitted type is accepted as IoU for compatibility; responses always include it.
+
+            * `iou` - iou
+        mode:
+          $ref: '#/components/schemas/SimilarityThresholdPolicyModeEnum'
+        value:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+        input:
+          $ref: '#/components/schemas/InputEnum'
+        extrapolation:
+          $ref: '#/components/schemas/ExtrapolationEnum'
+        points:
+          type: array
+          items:
+            $ref: '#/components/schemas/ThresholdPolicyPoint'
+          description: 'Required in linear mode: 2–200 points sorted by unique positive
+            GT area.'
+      required:
+      - mode
+    SimilarityThresholdPolicyModeEnum:
+      enum:
+      - constant
+      - linear
+      type: string
+      description: |-
+        * `constant` - constant
+        * `linear` - linear
+    SimilarityThresholdPolicyRequest:
+      type: object
+      properties:
+        type:
+          allOf:
+          - $ref: '#/components/schemas/SimilarityThresholdPolicyTypeEnum'
+          description: |-
+            Threshold type. Omitted type is accepted as IoU for compatibility; responses always include it.
+
+            * `iou` - iou
+        mode:
+          $ref: '#/components/schemas/SimilarityThresholdPolicyModeEnum'
+        value:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+        input:
+          $ref: '#/components/schemas/InputEnum'
+        extrapolation:
+          $ref: '#/components/schemas/ExtrapolationEnum'
+        points:
+          type: array
+          items:
+            $ref: '#/components/schemas/ThresholdPolicyPointRequest'
+          description: 'Required in linear mode: 2–200 points sorted by unique positive
+            GT area.'
+      required:
+      - mode
+    SimilarityThresholdPolicyTypeEnum:
+      enum:
+      - iou
+      type: string
+      description: '* `iou` - iou'
     SortingMethod:
       enum:
       - lexicographical
@@ -13874,6 +13993,38 @@ components:
           type: string
           format: uri
           readOnly: true
+    ThresholdPolicyPoint:
+      type: object
+      properties:
+        x:
+          type: number
+          format: double
+          minimum: 0
+          description: Finite GT shape area in px², strictly greater than zero.
+        y:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+      required:
+      - x
+      - y
+    ThresholdPolicyPointRequest:
+      type: object
+      properties:
+        x:
+          type: number
+          format: double
+          minimum: 0
+          description: Finite GT shape area in px², strictly greater than zero.
+        y:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+      required:
+      - x
+      - y
     Token:
       type: object
       description: Serializer for Token model.
