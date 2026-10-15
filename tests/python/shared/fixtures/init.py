@@ -256,6 +256,7 @@ def _get_redis_inmem_keys_to_keep():
         "rq:worker:",
         "rq:workers",
         "rq:scheduler_instance:",
+        "rq:scheduler-lock:",
         "rq:queues:",
         "cvat:applied_migrations",
         "cvat:applied_migration:",
