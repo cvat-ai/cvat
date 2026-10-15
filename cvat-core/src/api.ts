@@ -189,6 +189,12 @@ function build(): CVATCore {
                 return result;
             },
         },
+        capabilities: {
+            async observe(name, callback) {
+                const result = await PluginRegistry.apiWrapper(cvat.capabilities.observe, name, callback);
+                return result;
+            },
+        },
         plugins: {
             async list() {
                 const result = await PluginRegistry.apiWrapper(cvat.plugins.list);
@@ -527,6 +533,7 @@ function build(): CVATCore {
     cvat.users = Object.freeze(cvat.users);
     cvat.growth = Object.freeze(cvat.growth);
     cvat.plugins = Object.freeze(cvat.plugins);
+    cvat.capabilities = Object.freeze(cvat.capabilities);
     cvat.lambda = Object.freeze(cvat.lambda);
     // logger: todo: logger storage implemented other way
     cvat.config = Object.freeze(cvat.config);

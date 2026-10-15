@@ -7,7 +7,7 @@ import React from 'react';
 
 import { connect } from 'react-redux';
 import message from 'antd/lib/message';
-import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
+import GlobalHotKeys, { Handlers, KeyMap } from 'utils/mousetrap-react';
 
 import ObjectsListComponent from 'components/annotation-page/standard-workspace/objects-side-bar/objects-list';
 import {
@@ -701,7 +701,7 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
             return null;
         };
 
-        const handlers: Record<keyof typeof componentShortcuts, (event?: KeyboardEvent) => void> = {
+        const handlers: Record<keyof typeof componentShortcuts, Handlers[string]> = {
             SWITCH_ALL_LOCK: (event?: KeyboardEvent) => {
                 preventDefault(event);
                 this.lockAllStates(!statesLocked);
@@ -858,16 +858,20 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                     updateAnnotations([state]);
                 }
             },
-            COPY_SHAPE: () => {
+            COPY_SHAPE: (_event: KeyboardEvent, combo: string) => {
+                if (['ctrl+c', 'command+c'].includes(combo) && window.getSelection()?.type === 'Range') {
+                    return true;
+                }
+
                 if (selectedStatesID.length) {
                     const selectedStates = getSelectedStates(objectStates, selectedStatesID);
                     if (selectedStates.length === 1) {
                         copyShape(selectedStates[0]);
-                        return;
+                        return false;
                     }
                     if (selectedStates.length > 1) {
                         copySelection(selectedStates);
-                        return;
+                        return false;
                     }
                 }
 
@@ -875,6 +879,8 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                 if (state) {
                     copyShape(state);
                 }
+
+                return !state;
             },
             RUN_ANNOTATIONS_ACTION: () => {
                 if (selectedStatesID.length) {
@@ -954,7 +960,6 @@ class ObjectsListContainer extends React.PureComponent<Props, State> {
                     currentLayer={currentZLayer}
                     hiddenLayers={hiddenZLayers}
                     selectedStatesID={selectedStatesID}
-                    keyMap={keyMap}
                     sortedStatesID={sortedStatesID}
                     showGroundTruth={showGroundTruth}
                     objectStates={filteredStates}

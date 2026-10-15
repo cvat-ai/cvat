@@ -23,17 +23,16 @@
 ## What is CVAT Community?
 
 **CVAT Community** is the free, self-hosted open-source edition of [CVAT](https://www.cvat.ai/) — one of
-the most widely used data annotation platforms for building high-quality visual datasets for
-computer vision and visual AI.
+the most widely used platforms for image, video, audio, and 3D annotation.
 Since 2018, CVAT has become one of the best-known data annotation tools in computer vision, with a
 large open-source community, millions of Docker pulls, and broad adoption across research and
 production AI teams.
 
-CVAT Community supports image, video, and 3D annotation, dataset management, team collaboration, cloud storage
+CVAT Community supports image, video, audio, and 3D annotation, dataset management, team collaboration, cloud storage
 integration, developer-friendly SDKs and APIs, and gives your team full control over your data
 and annotation infrastructure.
 The platform serves as the foundation of
-[CVAT Online](https://www.cvat.ai/pricing/cvat-online) and
+[CVAT Online](https://www.cvat.ai/cvat-online) and
 [CVAT Enterprise](https://www.cvat.ai/enterprise), and is actively maintained by the CVAT engineering team.
 
 Why teams choose CVAT Community:
@@ -50,7 +49,7 @@ assets and dependencies may have separate licenses.
 This repository contains the source code and deployment assets for CVAT Community.
 
 For a fully managed setup, annotation services, or enterprise features, see
-[CVAT Online](https://www.cvat.ai/pricing/cvat-online),
+[CVAT Online](https://www.cvat.ai/cvat-online),
 [CVAT Enterprise](https://www.cvat.ai/enterprise) and
 [CVAT Labeling Services](https://www.cvat.ai/annotation-services).
 
@@ -99,7 +98,8 @@ instructions and OS-specific setup.
 
 - Open [http://localhost:8080](http://localhost:8080) (or your `CVAT_HOST`) in your browser.
 - Log in with your superuser account.
-- Create a project or task, upload your data (images, videos, or point clouds), and define labels to start annotating.
+- Create a project or task, upload your data (images, videos, audio files, or point clouds),
+and define labels to start annotating.
 
 Learn more about annotation tools and workflows in the [CVAT Documentation](https://docs.cvat.ai/docs/) or
 take our free course – [CVAT Academy](https://www.cvat.ai/resources/academy).
@@ -108,9 +108,9 @@ _For alternative deployments (AWS, Kubernetes, external PostgreSQL, backups, upg
 
 ## Key Capabilities
 
-- **[Manual & Auto-labeling](https://docs.cvat.ai/docs/annotation/manual-annotation/):** Annotate images, videos, and
-  3D point clouds with bounding boxes, polygons, masks, keypoints, cuboids, tags, and more. Speed up labeling
-  by connecting your own models for automatic annotation.
+- **[Manual & Auto-labeling](https://docs.cvat.ai/docs/annotation/manual-annotation/):** Annotate images, videos, audio,
+ and 3D point clouds with bounding boxes, polygons, masks, keypoints, cuboids, tags, intervals and more.
+Speed up labeling by connecting your own models for automatic annotation.
 - **[Task Management](https://docs.cvat.ai/docs/workspace/):** Organize datasets into projects, split them into tasks
   and jobs, assign work to annotators, and track progress in real time.
 - **[Collaboration](https://docs.cvat.ai/docs/account_management/user-roles/):** Create organizations, invite teammates,
@@ -139,9 +139,9 @@ and script common CVAT workflows from the terminal.
 
 ## Data and Formats
 
-CVAT Community supports image, video, and 3D (point cloud) annotation workflows. You can move data in and out using 20+
-industry-standard formats: CVAT (XML), COCO (JSON), YOLO (TXT), Ultralytics YOLO (TXT/YAML), Pascal VOC (XML),
-KITTI (TXT), MOT (TXT), and more.
+CVAT Community supports image, video, audio, and 3D (point cloud) annotation workflows. You can move data in and out
+using 20+ supported formats: CVAT (XML), COCO (JSON), YOLO (TXT), Ultralytics YOLO (TXT/YAML), Pascal VOC (XML),
+KITTI (TXT), MOT (TXT), Generic TSV (TSV), and more.
 
 [Full list of supported formats.](https://docs.cvat.ai/docs/dataset_management/formats/)
 

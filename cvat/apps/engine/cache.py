@@ -45,7 +45,7 @@ from cvat.apps.engine.media_extractors import (
     ZipCompressedChunkWriter,
     load_image,
 )
-from cvat.apps.engine.rq import RQMetaWithFailureInfo
+from cvat.apps.engine.rq import RQMetaWithFailureInfo, save_job_failure_metadata
 from cvat.apps.engine.utils import (
     CvatChunkTimestampMismatchError,
     format_list,
@@ -91,6 +91,11 @@ def _build_chunk_job_failure_exception(
         )
 
 
+def chunk_failure_callback(rq_job, connection, exc_type, exc_value, tb):
+    # RQ runs this before publishing FAILED, so readers can reconstruct the exception.
+    save_job_failure_metadata(rq_job, exc_type, exc_value)
+
+
 def enqueue_create_chunk_job(
     queue: rq.Queue,
     rq_job_id: str,
@@ -115,6 +120,7 @@ def enqueue_create_chunk_job(
                     job_id=rq_job_id,
                     result_ttl=rq_job_result_ttl,
                     failure_ttl=rq_job_failure_ttl,
+                    on_failure=chunk_failure_callback,
                 )
     except LockError:
         raise TimeoutError(f"Cannot acquire lock for {rq_job_id}")
