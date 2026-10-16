@@ -17,7 +17,9 @@ from cvat.apps.events import handlers
 class TestHandleViewsetException(unittest.TestCase):
     def test_organization_context(self):
         org = SimpleNamespace(id=35127, slug="chaindetection")
-        invalid_context = SimpleLazyObject(Mock(side_effect=NotFound("Organization does not exist")))
+        invalid_context = SimpleLazyObject(
+            Mock(side_effect=NotFound("Organization does not exist"))
+        )
         cases = [
             ("organization", {"organization": org}, 35127, "chaindetection"),
             ("personal workspace", {"organization": None}, None, None),
