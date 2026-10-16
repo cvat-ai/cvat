@@ -62,6 +62,7 @@ import {
     changeBrightnessLevel,
     changeContrastLevel,
     changeSaturationLevel,
+    changeRelatedOverlayEnabled,
     switchAutomaticBordering,
     switchSnapToPoint,
 } from 'actions/settings-actions';
@@ -114,6 +115,9 @@ interface StateToProps {
     brightnessLevel: number;
     contrastLevel: number;
     saturationLevel: number;
+    relatedOverlayEnabled: boolean;
+    relatedOverlayOpacity: number;
+    relatedOverlayIndex: number;
     resetZoom: boolean;
     smoothImage: boolean;
     focusedObjectPadding: number;
@@ -161,6 +165,7 @@ interface DispatchToProps {
     onChangeBrightnessLevel(level: number): void;
     onChangeContrastLevel(level: number): void;
     onChangeSaturationLevel(level: number): void;
+    onChangeRelatedOverlayEnabled(enabled: boolean): void;
     onChangeGridOpacity(opacity: number): void;
     onChangeGridColor(color: GridColor): void;
     onSwitchGrid(enabled: boolean): void;
@@ -208,6 +213,9 @@ function mapStateToProps(state: CombinedState): StateToProps {
                 brightnessLevel,
                 contrastLevel,
                 saturationLevel,
+                relatedOverlayEnabled,
+                relatedOverlayOpacity,
+                relatedOverlayIndex,
                 resetZoom,
                 smoothImage,
             },
@@ -263,6 +271,9 @@ function mapStateToProps(state: CombinedState): StateToProps {
         brightnessLevel: brightnessLevel / 100,
         contrastLevel: contrastLevel / 100,
         saturationLevel: saturationLevel / 100,
+        relatedOverlayEnabled,
+        relatedOverlayOpacity: relatedOverlayOpacity / 100,
+        relatedOverlayIndex,
         resetZoom,
         smoothImage,
         focusedObjectPadding,
@@ -306,6 +317,12 @@ const componentShortcuts = {
     SWITCH_SNAP_TO_POINT: {
         name: 'Toggle snap to point',
         description: 'Toggle automatic snapping to nearby points',
+        sequences: [],
+        scope: ShortcutScope.STANDARD_WORKSPACE,
+    },
+    SWITCH_RELATED_OVERLAY: {
+        name: 'Toggle related image overlay',
+        description: 'Toggle related image overlay',
         sequences: [],
         scope: ShortcutScope.STANDARD_WORKSPACE,
     },
@@ -391,6 +408,9 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         },
         onChangeSaturationLevel(level: number): void {
             dispatch(changeSaturationLevel(level));
+        },
+        onChangeRelatedOverlayEnabled(enabled: boolean): void {
+            dispatch(changeRelatedOverlayEnabled(enabled));
         },
         onChangeGridOpacity(opacity: number): void {
             dispatch(changeGridOpacity(opacity));
@@ -513,6 +533,9 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             brightnessLevel,
             contrastLevel,
             saturationLevel,
+            relatedOverlayEnabled,
+            relatedOverlayOpacity,
+            relatedOverlayIndex,
             showObjectsTextAlways,
             textFontSize,
             controlPointsSize,
@@ -645,7 +668,10 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             prevProps.annotations !== annotations ||
             prevProps.frameData !== frameData ||
             prevProps.hiddenZLayers !== hiddenZLayers ||
-            prevProps.renderData !== renderData
+            prevProps.renderData !== renderData ||
+            prevProps.relatedOverlayEnabled !== relatedOverlayEnabled ||
+            prevProps.relatedOverlayOpacity !== relatedOverlayOpacity ||
+            prevProps.relatedOverlayIndex !== relatedOverlayIndex
         ) {
             this.updateCanvas();
         } else if (prevProps.imageFilters !== imageFilters) {
@@ -1146,8 +1172,9 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
 
     private updateCanvas(): void {
         const {
-            hiddenZLayers, annotations, frameData,
+            hiddenZLayers, annotations, frameData, jobInstance,
             workspace, frame, imageFilters, renderData,
+            relatedOverlayEnabled, relatedOverlayIndex,
         } = this.props;
 
         const { canvasInstance } = this.props as { canvasInstance: Canvas };
@@ -1162,6 +1189,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
                     if (prop === 'data') {
                         return async (...args: any[]) => {
                             const originalImage = await _frameData.data(...args);
+                            let result = originalImage;
                             const imageIsNotProcessed = imageFilters.some((imageFilter: ImageFilter) => (
                                 imageFilter.modifier.currentProcessedImage !== frame
                             ));
@@ -1179,7 +1207,7 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
                                         .reduce((oldImageData, activeImageModifier) => activeImageModifier
                                             .modifier.processImage(oldImageData, frame), imageData);
                                     const newImageBitmap = await createImageBitmap(newImageData);
-                                    return {
+                                    result = {
                                         renderWidth,
                                         renderHeight,
                                         imageData: newImageBitmap,
@@ -1193,7 +1221,52 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
                                 }
                             }
 
-                            return originalImage;
+                            if (relatedOverlayEnabled) {
+                                try {
+                                    const relatedImages: Record<string, ImageBitmap> =
+                                        await jobInstance.frames.contextImage(frame);
+
+                                    const relatedKeys = Object.keys(relatedImages).sort();
+                                    const selectedRelatedKey =
+                                        relatedKeys[relatedOverlayIndex] ?? relatedKeys[0];
+                                    const relatedBitmap = relatedImages[selectedRelatedKey];
+
+                                    if (relatedBitmap) {
+                                        const { renderWidth, renderHeight } = result;
+
+                                        const offscreen = new OffscreenCanvas(
+                                            renderWidth,
+                                            renderHeight,
+                                        );
+
+                                        const ctx = offscreen.getContext(
+                                            '2d',
+                                        ) as OffscreenCanvasRenderingContext2D;
+
+                                        ctx.drawImage(
+                                            relatedBitmap,
+                                            0,
+                                            0,
+                                            renderWidth,
+                                            renderHeight,
+                                        );
+
+                                        result = {
+                                            renderWidth,
+                                            renderHeight,
+                                            imageData: await createImageBitmap(offscreen),
+                                        };
+                                    }
+                                } catch (error: any) {
+                                    notification.error({
+                                        description: error.toString(),
+                                        message: 'Could not display related image',
+                                        className: 'cvat-notification-notice-image-processing-error',
+                                    });
+                                }
+                            }
+
+                            return result;
                         };
                     }
                     return Reflect.get(_frameData, prop, receiver);
@@ -1301,6 +1374,8 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             focusedObjectPadding,
             onSwitchAutomaticBordering,
             onSwitchSnapToPoint,
+            relatedOverlayEnabled,
+            onChangeRelatedOverlayEnabled,
             onOpenLayerStack,
             onActivateObject,
             onExpandObject,
@@ -1344,6 +1419,10 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
             SWITCH_SNAP_TO_POINT: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
                 onSwitchSnapToPoint(!snapToPoint);
+            },
+            SWITCH_RELATED_OVERLAY: (event: KeyboardEvent | undefined) => {
+                preventDefault(event);
+                onChangeRelatedOverlayEnabled(!relatedOverlayEnabled);
             },
             NEXT_OBJECT: (event: KeyboardEvent | undefined) => {
                 preventDefault(event);
