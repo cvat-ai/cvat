@@ -42,7 +42,7 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
 package-dir = {"" = "."}
-packages = {find = {include = ["cvat_sdk*"]}}
+packages = {find = {include = ["cvat_sdk*", "cvat_video_openh264*"]}}
 
 [tool.setuptools.dynamic]
 version = {attr = "cvat_sdk.version.VERSION"}
@@ -52,4 +52,4 @@ profile = "black"
 forced_separate = ["tests"]
 line_length = 100
 skip_gitignore = true # align tool behavior with Black
-known_first_party = ["cvat_sdk"]
+known_first_party = ["cvat_sdk", "cvat_video_openh264"]
