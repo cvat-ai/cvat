@@ -2882,16 +2882,12 @@ class DataSerializer(serializers.ModelSerializer):
             "job_file_mapping",
             "upload_file_order",
             "validation_params",
-            "replicas_per_job",
         )
         extra_kwargs = {
             "chunk_size": {"help_text": "Maximum number of frames per chunk"},
             "start_frame": {"help_text": "First frame index"},
             "stop_frame": {"help_text": "Last frame index"},
             "frame_filter": {"help_text": "Frame filter. The only supported syntax is: 'step=N'"},
-            "replicas_per_job": {
-                "help_text": "Number of replica jobs for each annotation job, 0 means no replicas"
-            },
         }
 
     def __init__(self, *args, **kwargs):
@@ -3174,6 +3170,7 @@ class TaskReadSerializer(serializers.ModelSerializer):
             "updated_date",
             "overlap",
             "segment_size",
+            "initial_replicas",
             "status",
             "data_chunk_size",
             "data_original_chunk_type",
@@ -3250,14 +3247,14 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer, OrgTransf
     target_storage = StorageSerializer(required=False, allow_null=False)
     source_storage = StorageSerializer(required=False, allow_null=False)
     # NOTE @sosov consensus_replica -> replica backward compatibility: clients created before the
-    # rename send the replica count in the task request instead of the data request
+    # rename send the replica count as consensus_replicas
     consensus_replicas = serializers.IntegerField(
         required=False,
         write_only=True,
         min_value=0,
         help_text=textwrap.dedent("""\
             Deprecated. The number of replica jobs for each annotation job.
-            Use the 'replicas_per_job' parameter of the task data request instead
+            Use 'initial_replicas' instead
         """),
     )
 
@@ -3277,11 +3274,18 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer, OrgTransf
             "subset",
             "target_storage",
             "source_storage",
+            "initial_replicas",
             "consensus_replicas",
             "organization_id",
         )
-        write_once_fields = ("overlap", "segment_size", "consensus_replicas")
+        write_once_fields = ("overlap", "segment_size", "initial_replicas", "consensus_replicas")
         update_only_fields = ("organization_id",)
+        extra_kwargs = {
+            "initial_replicas": {
+                "help_text": "The number of replica jobs for each annotation job. "
+                "Configured at task creation"
+            },
+        }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -3329,6 +3333,12 @@ class TaskWriteSerializer(WriteOnceMixin, serializers.ModelSerializer, OrgTransf
                 )
 
         labels = validated_data.pop("label_set", [])
+
+        # NOTE @sosov consensus_replica -> replica backward compatibility: initial_replicas
+        # takes precedence over the deprecated field
+        consensus_replicas = validated_data.pop("consensus_replicas", None)
+        if consensus_replicas is not None:
+            validated_data.setdefault("initial_replicas", consensus_replicas)
 
         # configure source/target storages for import/export
         storages = _configure_related_storages(

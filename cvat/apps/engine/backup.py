@@ -227,6 +227,7 @@ class _TaskBackupBase(_BackupBase):
             "status",
             "subset",
             "labels",
+            "initial_replicas",
         }
 
         return self._prepare_meta(allowed_fields, task)
@@ -246,7 +247,6 @@ class _TaskBackupBase(_BackupBase):
             "custom_segments",
             "job_file_mapping",
             "validation_layout",
-            "replicas_per_job",
         }
 
         self._prepare_meta(allowed_fields, data)
@@ -1131,10 +1131,10 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
             # DataSerializer checks for this, but we don't need it for tasks with a GT pool
             data["job_file_mapping"] = job_file_mapping
 
-        if "replicas_per_job" not in data:
+        if "initial_replicas" not in self._manifest:
             # NOTE @sosov consensus_replica -> replica backward compatibility: backups created
-            # before the replica count was stored in the data section
-            data["replicas_per_job"] = self._determine_replica_counts(jobs=jobs)
+            # before initial_replicas was stored, derive it from the job list
+            self._manifest["initial_replicas"] = self._determine_replica_counts(jobs=jobs)
 
         self._db_task = models.Task.objects.create(**self._manifest, organization_id=self._org_id)
 
@@ -1222,8 +1222,8 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
             raise ValidationError(f"Unexpected job type {raw_job_type}")
         return job_type
 
-    # NOTE @sosov consensus_replica -> replica backward compatibility: the replica count
-    # of backups created before data.replicas_per_job was stored is derived from the job order
+    # NOTE @sosov consensus_replica -> replica backward compatibility: the replica count of backups
+    # created before task.initial_replicas was stored is derived from the job order
     def _collect_replica_counts(self, jobs: list[dict]) -> dict[models.JobType, list[int]]:
         replica_counts = []
         for job in jobs:

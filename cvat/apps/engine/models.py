@@ -511,8 +511,6 @@ class Data(models.Model):
     sorting_method = models.CharField(
         max_length=15, choices=SortingMethod.choices(), default=SortingMethod.LEXICOGRAPHICAL
     )
-    replicas_per_job = models.PositiveIntegerField(default=0)
-    "Requested number of replica jobs per annotation job at task creation"
     client_files: models.manager.RelatedManager[ClientFile]
     server_files: models.manager.RelatedManager[ServerFile]
     remote_files: models.manager.RelatedManager[RemoteFile]
@@ -1006,10 +1004,8 @@ class Task(DirtyFieldsMixin, TimestampedModel, AssignableModel, FileSystemRelate
     target_storage = models.ForeignKey(
         Storage, null=True, default=None, blank=True, on_delete=models.SET_NULL, related_name="+"
     )
-    # NOTE @sosov consensus_replica -> replica backward compatibility: the replica count sent by
-    # clients created before the rename, applied when the task data is created. Not exposed in
-    # the API responses, null for the clients that use Data.replicas_per_job
-    consensus_replicas = models.PositiveIntegerField(null=True, default=None)
+    initial_replicas = models.PositiveIntegerField(default=0)
+    "The number of replica jobs created for each annotation job at task creation"
 
     segment_set: models.manager.RelatedManager[Segment]
 

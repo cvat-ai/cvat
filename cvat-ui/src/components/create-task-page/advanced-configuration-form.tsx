@@ -49,7 +49,7 @@ export interface AdvancedConfiguration {
     sortingMethod?: SortingMethod;
     useProjectSourceStorage?: boolean;
     useProjectTargetStorage?: boolean;
-    replicasPerJob?: number;
+    initialReplicas?: number;
     sourceStorage: StorageData;
     targetStorage: StorageData;
 }
@@ -92,7 +92,7 @@ const initialValues: AdvancedConfiguration = {
     sortingMethod: SortingMethod.LEXICOGRAPHICAL,
     useProjectSourceStorage: true,
     useProjectTargetStorage: true,
-    replicasPerJob: 0,
+    initialReplicas: 0,
 
     sourceStorage: {
         location: StorageLocation.LOCAL,
@@ -111,7 +111,7 @@ const defaultFieldsBySection = {
     [AdvancedConfigurationSection.IMAGE_QUALITY]: ['imageQuality'],
     [AdvancedConfigurationSection.FRAME_RANGE]: [],
     [AdvancedConfigurationSection.CHUNK_SIZE]: [],
-    [AdvancedConfigurationSection.REPLICAS]: ['replicasPerJob'],
+    [AdvancedConfigurationSection.REPLICAS]: ['initialReplicas'],
     [AdvancedConfigurationSection.BUG_TRACKER]: [],
     [AdvancedConfigurationSection.STORAGE]: [
         'useProjectSourceStorage',
@@ -463,11 +463,11 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
         );
     }
 
-    private renderReplicasPerJob(): JSX.Element {
+    private renderInitialReplicas(): JSX.Element {
         return (
             <Form.Item
-                label='Replicas per job'
-                name='replicasPerJob'
+                label='Initial replicas'
+                name='initialReplicas'
                 rules={[{ validator: isInteger({ min: 0 }) }]}
             >
                 <Input
@@ -582,7 +582,7 @@ class AdvancedConfigurationForm extends React.PureComponent<Props> {
                 {hasReplicas && (
                     <Row justify='start'>
                         <Col span={7}>
-                            {this.renderReplicasPerJob()}
+                            {this.renderInitialReplicas()}
                         </Col>
                     </Row>
                 )}

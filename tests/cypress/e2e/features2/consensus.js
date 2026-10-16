@@ -11,9 +11,9 @@ context('Basic manipulations with consensus job replicas', () => {
     const labelName = 'Consensus';
     const taskName = 'Test consensus';
     const serverFiles = ['archive.zip'];
-    const replicasPerJob = 4;
+    const initialReplicas = 4;
     const { taskSpec, dataSpec, extras } = defaultTaskSpec({
-        serverFiles, labelName, taskName, replicasPerJob,
+        serverFiles, labelName, taskName, initialReplicas,
     });
 
     before(() => {
@@ -74,7 +74,7 @@ context('Basic manipulations with consensus job replicas', () => {
             cy.get('.cvat-clear-filters-button').click();
         });
 
-        it("Check new merge buttons exist and are visible. Merging 'new' replicas should not trigger errors", () => {
+        it("Check new merge buttons exist and are visible. Trying to merge 'new' jobs should trigger errors", () => {
             function parseJobId(jobItem) {
                 const jobItemText = jobItem.innerText;
                 const [start, stop] = [0, jobItemText.indexOf('\n')];
@@ -85,25 +85,22 @@ context('Basic manipulations with consensus job replicas', () => {
                 jobIds.sort((a, b) => a - b);
             });
 
-            // Merge one consensus job, the replicas are not started yet, so the job gets no annotations
+            // Merge one consensus job
             cy.then(() => {
-                cy.mergeConsensusJob(jobIds[0]);
-                cy.get('.cvat-notification-notice-consensus-merge-task-failed').should('not.exist');
-                cy.get('.ant-notification-notice-message')
-                    .should('be.visible')
-                    .invoke('text')
-                    .should('eq', `Consensus job #${jobIds[0]} has been merged`);
-                cy.closeNotification('.ant-notification-notice-closable');
+                cy.mergeConsensusJob(jobIds[0], 400);
             });
+            cy.get('.cvat-notification-notice-consensus-merge-task-failed')
+                .should('be.visible')
+                .invoke('text').should('include', 'Could not merge the job');
+            cy.closeNotification('.cvat-notification-notice-consensus-merge-task-failed');
 
             // Merge all consensus jobs in task
-            cy.mergeConsensusTask();
-            cy.get('.cvat-notification-notice-consensus-merge-task-failed').should('not.exist');
-            cy.get('.ant-notification-notice-message')
+            cy.mergeConsensusTask(400);
+            cy.get('.cvat-notification-notice-consensus-merge-task-failed')
                 .should('be.visible')
                 .invoke('text')
-                .should('eq', `Consensus jobs in the task #${consensusTaskId} have been merged`);
-            cy.closeNotification('.ant-notification-notice-closable');
+                .should('include', 'Could not merge the task');
+            cy.closeNotification('.cvat-notification-notice-consensus-merge-task-failed');
         });
 
         it('Check consensus management page', () => {
@@ -150,7 +147,7 @@ context('Basic manipulations with consensus job replicas', () => {
             // Create annotations for job replicas
             const delta = 50;
             const [consensusJobID, ...replicaJobIds] = jobIds;
-            for (let i = 0, shape = baseShape; i < replicasPerJob; i++) {
+            for (let i = 0, shape = baseShape; i < initialReplicas; i++) {
                 cy.headlessCreateObjects([shape], jobIds[i]); // only 'in progress' jobs can be merged
                 cy.headlessUpdateJob(replicaJobIds[i], { state: 'in progress' });
                 const points = translatePoints(shape.points, delta, 'x');

@@ -46,14 +46,23 @@ class _TaskMerger:
                     f"in the {StageChoice.ANNOTATION} stage"
                 )
 
-            parent_job_ids = [parent_job_id]
-        else:
-            if not self._parent_jobs:
+            if parent_job_id not in self._jobs:
                 raise MergingNotAvailable(
-                    f"No {JobType.ANNOTATION} jobs in the {StageChoice.ANNOTATION} stage found"
+                    f"No annotated {JobType.REPLICA} jobs found for parent job {parent_job_id}. "
+                    f"Make sure at least one {JobType.REPLICA} job is not "
+                    f"in the {StageChoice.ANNOTATION} - {StateChoice.NEW} state"
                 )
 
-            parent_job_ids = list(self._parent_jobs)
+            parent_job_ids = [parent_job_id]
+        else:
+            if not self._jobs:
+                raise MergingNotAvailable(
+                    f"No {JobType.ANNOTATION} jobs in the {StageChoice.ANNOTATION} stage or "
+                    f"no {JobType.REPLICA} jobs "
+                    f"not in the {StageChoice.ANNOTATION} - {StateChoice.NEW} state found"
+                )
+
+            parent_job_ids = list(self._jobs)
 
         for job_id in parent_job_ids:
             replicas_count = len(self._jobs[job_id])
@@ -82,9 +91,8 @@ class _TaskMerger:
             )
         }
 
-        job_map: dict[int, list[tuple[int, User]]] = {
-            parent_job_id: [] for parent_job_id in self._parent_jobs
-        }  # parent_job_id -> [(replica_job_id, assignee)]
+        # parent_job_id -> [(replica_job_id, assignee)], only the parent jobs with replicas to merge
+        job_map: dict[int, list[tuple[int, User]]] = {}
         for job in (
             Job.objects.select_related("assignee")
             .filter(
@@ -94,7 +102,7 @@ class _TaskMerger:
             )
             .exclude(stage=StageChoice.ANNOTATION, state=StateChoice.NEW)
         ):
-            job_map[job.parent_job_id].append((job.id, job.assignee))
+            job_map.setdefault(job.parent_job_id, []).append((job.id, job.assignee))
 
         self._jobs = job_map
 
@@ -149,7 +157,7 @@ class _TaskMerger:
 
     @transaction.atomic
     def merge_all_consensus_jobs(self) -> None:
-        for parent_job_id in self._parent_jobs:
+        for parent_job_id in self._jobs:
             self._merge_consensus_jobs(parent_job_id)
 
     @transaction.atomic

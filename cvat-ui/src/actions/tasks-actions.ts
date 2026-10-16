@@ -291,8 +291,8 @@ ThunkAction {
             };
         }
 
-        if (data.advanced.replicasPerJob) {
-            extras.replicas_per_job = +data.advanced.replicasPerJob;
+        if (data.advanced.initialReplicas) {
+            extras.initial_replicas = +data.advanced.initialReplicas;
         }
 
         const taskInstance = new cvat.classes.Task(description);
