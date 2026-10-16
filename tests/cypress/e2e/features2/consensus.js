@@ -54,6 +54,34 @@ context('Basic manipulations with consensus job replicas', () => {
         });
     });
 
+    describe('Replica job deletion', () => {
+        let consensusTaskId = null;
+        before(() => {
+            cy.headlessCreateTask(taskSpec, dataSpec, extras).then(({ taskId }) => {
+                consensusTaskId = taskId;
+            });
+        });
+        it('Delete a replica job, the parent job stays untouched', () => {
+            cy.openTaskById(consensusTaskId);
+            cy.get('.cvat-task-details-wrapper').should('be.visible');
+            cy.get('.cvat-clear-filters-button').click();
+
+            cy.get('.cvat-job-item:has(.cvat-tag-replica)').first()
+                .invoke('attr', 'data-row-id').then((replicaId) => {
+                    cy.deleteJob(replicaId);
+                });
+            cy.get('.cvat-job-item:has(.cvat-tag-parent)')
+                .should('have.length', 1)
+                .and('have.css', 'opacity', '1');
+            cy.get('.cvat-job-item:has(.cvat-tag-replica)')
+                .filter((_, el) => el.style.opacity !== '0.5')
+                .should('have.length', initialReplicas - 1);
+        });
+        after(() => {
+            cy.headlessDeleteTask(consensusTaskId);
+        });
+    });
+
     describe('Consensus jobs merging', () => {
         let consensusTaskId = null;
         const baseShape = {
