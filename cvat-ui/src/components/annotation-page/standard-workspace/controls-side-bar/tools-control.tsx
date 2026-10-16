@@ -44,6 +44,7 @@ import DetectorRunner, {
     type RegionOfInterest,
 } from 'components/model-runner-modal/detector-runner';
 import RegionOfInterestInputComponent from 'components/model-runner-modal/region-of-interest-input';
+import ModelSelectorDropdownContent from 'components/model-runner-modal/model-selector-dropdown-content';
 import LabelSelector from 'components/label-selector/label-selector';
 import CVATMarkdown from 'components/common/cvat-markdown';
 import { TrackerControlsUpdateContext } from 'components/annotation-page/standard-workspace/tracker-controls';
@@ -1199,31 +1200,23 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
         const supportedTrackers = this.getSupportedTrackers();
 
-        if (!supportedTrackers.length) {
-            return (
-                <Row justify='center' align='middle' style={{ marginTop: '5px' }}>
-                    <Col>
-                        <Text type='warning' className='cvat-text-color'>
-                            No available trackers found
-                        </Text>
-                    </Col>
-                </Row>
-            );
-        }
-
         return (
             <>
                 <Row justify='start'>
                     <Col>
-                        <Text className='cvat-text-color'>Tracker</Text>
+                        <Text className='cvat-text-color'>Model</Text>
                     </Col>
                 </Row>
                 <Row align='middle' justify='center'>
                     <Col span={24}>
                         <Select
                             style={{ width: '100%' }}
-                            defaultValue={supportedTrackers[0].name}
+                            defaultValue={supportedTrackers[0]?.name}
+                            placeholder='Select a model'
                             onChange={this.setActiveTracker}
+                            dropdownRender={(menu) => (
+                                <ModelSelectorDropdownContent>{menu}</ModelSelectorDropdownContent>
+                            )}
                         >
                             {supportedTrackers.map(
                                 (tracker: MLModel): JSX.Element => (
@@ -1235,6 +1228,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                         </Select>
                     </Col>
                 </Row>
+                {this.renderLabelBlock()}
                 <Row align='middle' justify='end'>
                     <Col>
                         <Button
@@ -1271,18 +1265,6 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             startInteractingWithBox, convertMasksToPolygons,
         } = this.state;
 
-        if (!interactors.length) {
-            return (
-                <Row justify='center' align='middle' style={{ marginTop: '5px' }}>
-                    <Col>
-                        <Text type='warning' className='cvat-text-color'>
-                            No available interactors found
-                        </Text>
-                    </Col>
-                </Row>
-            );
-        }
-
         const minNegVertices = activeInteractor?.params?.canvas?.minNegVertices ?? -1;
         const renderStartWithBox = activeInteractor?.params?.canvas?.startWithBoxOptional ?? false;
 
@@ -1297,15 +1279,19 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             <>
                 <Row justify='start'>
                     <Col>
-                        <Text className='cvat-text-color'>Interactor</Text>
+                        <Text className='cvat-text-color'>Model</Text>
                     </Col>
                 </Row>
                 <Row align='middle' justify='space-between'>
                     <Col span={22}>
                         <Select
                             style={{ width: '100%' }}
-                            defaultValue={interactors[0].name}
+                            defaultValue={interactors[0]?.name}
+                            placeholder='Select a model'
                             onChange={this.setActiveInteractor}
+                            dropdownRender={(menu) => (
+                                <ModelSelectorDropdownContent>{menu}</ModelSelectorDropdownContent>
+                            )}
                         >
                             {interactors.map(
                                 (interactor: MLModel): JSX.Element => (
@@ -1335,6 +1321,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                         </Popover>
                     </Col>
                 </Row>
+                {this.renderLabelBlock()}
                 <div className='cvat-tools-interactor-setups'>
                     {allowROI && this.renderROIControls()}
                     <div>
@@ -1396,7 +1383,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                                 }
                             }}
                         >
-                            Interact
+                            Add visual prompts
                         </Button>
                     </Col>
                 </Row>
@@ -1409,18 +1396,6 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             jobInstance, detectors, currentZOrder, frame, labels, frameData,
             createAnnotations,
         } = this.props;
-
-        if (!detectors.length) {
-            return (
-                <Row justify='center' align='middle' style={{ marginTop: '5px' }}>
-                    <Col>
-                        <Text type='warning' className='cvat-text-color'>
-                            No available detectors found
-                        </Text>
-                    </Col>
-                </Row>
-            );
-        }
 
         return (
             <DetectorRunner
@@ -1519,7 +1494,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                 <Row justify='start'>
                     <Col>
                         <Text className='cvat-text-color' strong>
-                            AI Tools
+                            AI assistance
                         </Text>
                     </Col>
                 </Row>
@@ -1530,26 +1505,16 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                     onChange={(key) => this.setState({ activeTab: key as 'interactors' | 'detectors' | 'trackers' })}
                     items={[{
                         key: 'interactors',
-                        label: 'Interactors',
-                        children: (
-                            <>
-                                {this.renderLabelBlock()}
-                                {this.renderInteractorBlock()}
-                            </>
-                        ),
+                        label: 'Prompting',
+                        children: this.renderInteractorBlock(),
                     }, {
                         key: 'detectors',
-                        label: 'Detectors',
+                        label: 'Auto-labeling',
                         children: this.renderDetectorBlock(),
                     }, {
                         key: 'trackers',
-                        label: 'Trackers',
-                        children: (
-                            <>
-                                {this.renderLabelBlock()}
-                                {this.renderTrackerBlock()}
-                            </>
-                        ),
+                        label: 'Tracking',
+                        children: this.renderTrackerBlock(),
                     }]}
                 />
             </div>
@@ -1558,15 +1523,13 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
     public render(): JSX.Element | null {
         const {
-            interactors, detectors, trackers, isActivated,
+            isActivated,
             canvasInstance, labels, frameData,
         } = this.props;
         const {
             fetching, approxPolyAccuracy, interactorResponseReceived, thresholdValue,
             showConfidenceControl, mode, convertMasksToPolygons,
         } = this.state;
-
-        if (![...interactors, ...detectors, ...trackers].length) return null;
 
         const dynamicPopoverProps = isActivated ?
             {

@@ -75,8 +75,10 @@ li > details {
     max-width: 80%;
 }
 
-.ai-models-page .tab-content,
-.ai-models-page .tab-content > .tab-pane {
+// Override Docsy's 80% panel limit so tab content aligns with its navigation
+// and leaves more room for commands and examples throughout the documentation.
+.td-content .tab-content,
+.td-content .tab-content > .tab-pane {
     width: 100%;
     max-width: 100%;
 }
