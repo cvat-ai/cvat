@@ -925,6 +925,10 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
         )
 
         key = "similarity_threshold_policy"
+        # Root requirements may use the legacy scalar without a JSON policy.
+        if parent is None and attrs.get(key) is None:
+            attrs.pop(key, None)
+
         if key in attrs:
             policy = attrs[key]
             effective_type = annotation_type or self._get_effective_annotation_type(parent)
@@ -933,8 +937,6 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
                     {key: "Threshold policies support rectangle, polygon and mask requirements."}
                 )
             if policy is None:
-                if parent is None:
-                    raise serializers.ValidationError({key: "Root requirements cannot inherit."})
                 attrs["iou_threshold"] = None
             else:
                 scalar = attrs.get("iou_threshold")
