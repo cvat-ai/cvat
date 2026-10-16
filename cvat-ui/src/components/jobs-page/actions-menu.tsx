@@ -115,7 +115,7 @@ function JobActionsComponent(
                     dispatch(makeBulkOperationAsync(
                         jobsToAct,
                         async (job) => {
-                            if (job.type === JobType.GROUND_TRUTH) {
+                            if (job.type === JobType.GROUND_TRUTH || job.type === JobType.REPLICA) {
                                 await dispatch(deleteJobAsync(job));
                             }
                         },
@@ -225,7 +225,9 @@ function JobActionsComponent(
             onImportAnnotations,
             onExportAnnotations,
             onMergeConsensusJob: jobInstance.replicasCount > 0 ? onMergeConsensusJob : null,
-            onDeleteJob: jobInstance.type === JobType.GROUND_TRUTH ? onDeleteJob : null,
+            onDeleteJob: (
+                jobInstance.type === JobType.GROUND_TRUTH || jobInstance.type === JobType.REPLICA
+            ) ? onDeleteJob : null,
             onGoToParent: jobInstance.parentJobId ? onGoToParent : null,
             onGoToReplicas: jobInstance.replicasCount > 0 ? onGoToReplicas : null,
             jobsToAct,

@@ -81,7 +81,9 @@ export default function JobActionsItems(
         [MenuKeys.EDIT_STATE]: jobsToAct,
         [MenuKeys.EDIT_STAGE]: jobsToAct,
         [MenuKeys.EXPORT_JOB]: jobsToAct,
-        [MenuKeys.DELETE]: jobsToAct.filter((j) => j.type === JobType.GROUND_TRUTH),
+        [MenuKeys.DELETE]: jobsToAct.filter((j) => (
+            j.type === JobType.GROUND_TRUTH || j.type === JobType.REPLICA
+        )),
         [MenuKeys.GO_TO_PARENT]: jobsToActWithParents,
         [MenuKeys.GO_TO_REPLICAS]: jobsToActWithReplicas,
     };

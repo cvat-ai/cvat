@@ -28,6 +28,7 @@ from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema_field
+from rest_framework.exceptions import ValidationError as DRFValidationError
 
 from cvat.apps.engine.exceptions import CloudStorageMissingError
 from cvat.apps.engine.lazy_list import LazyList
@@ -1425,11 +1426,27 @@ class Job(TimestampedModel, AssignableModel, FileSystemRelatedModel):
     @cache_deleted
     @transaction.atomic(savepoint=False)
     def delete(self, using=None, keep_parents=False):
-        clear_annotations_in_jobs([self.id])
-        segment = self.segment
-        super().delete(using, keep_parents)
-        if segment:
-            segment.delete()
+        match self.type:
+            case JobType.GROUND_TRUTH:
+                validation_layout = getattr(self.segment.task.data, "validation_layout", None)
+                if validation_layout and validation_layout.mode == ValidationMode.GT_POOL:
+                    raise DRFValidationError(
+                        "GT jobs cannot be removed when task validation mode is "
+                        f'"{ValidationMode.GT_POOL}"'
+                    )
+
+                clear_annotations_in_jobs([self.id])
+
+                super().delete(using, keep_parents)
+                self.segment.delete()
+
+                if validation_layout:
+                    validation_layout.delete()
+            case JobType.REPLICA:
+                clear_annotations_in_jobs([self.id])
+                super().delete(using, keep_parents)
+            case _:
+                raise DRFValidationError("Only ground truth and replica jobs can be removed")
 
     def make_dirs(self):
         job_path = self.get_dirname()

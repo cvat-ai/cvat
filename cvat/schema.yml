@@ -2671,7 +2671,7 @@ paths:
         Related annotations will be deleted as well.
 
         Please note, that not every job can be removed. Currently,
-        it is only available for Ground Truth jobs.
+        it is only available for Ground Truth and replica jobs.
       summary: Delete a job
       parameters:
       - in: path

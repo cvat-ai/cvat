@@ -54,6 +54,43 @@ context('Basic manipulations with consensus job replicas', () => {
         });
     });
 
+    describe('Replica job deletion', () => {
+        let consensusTaskId = null;
+        before(() => {
+            cy.headlessCreateTask(taskSpec, dataSpec, extras).then(({ taskId }) => {
+                consensusTaskId = taskId;
+            });
+        });
+        it('Delete a replica job, the parent job stays untouched', () => {
+            cy.openTaskById(consensusTaskId);
+            cy.get('.cvat-clear-filters-button').click();
+
+            cy.get('.cvat-job-item:has(.cvat-tag-replica)').first()
+                .invoke('attr', 'data-row-id').then((replicaId) => {
+                    cy.deleteJob(replicaId);
+
+                    // the job list is not refetched after a delete: reload to see what the server kept
+                    cy.openTaskById(consensusTaskId);
+                    cy.get('.cvat-clear-filters-button').click();
+                    cy.get('.cvat-job-item:has(.cvat-tag-replica)').should('have.length', initialReplicas - 1);
+                    cy.get('.cvat-job-item:has(.cvat-tag-parent)').should('have.length', 1);
+                    cy.get(`.cvat-job-item[data-row-id="${replicaId}"]`).should('not.exist');
+                });
+
+            // the parent job can't be deleted
+            cy.get('.cvat-job-item:has(.cvat-tag-parent) .cvat-job-item-more-button').click();
+            cy.get('.ant-dropdown').not('.ant-dropdown-hidden').within(() => {
+                cy.contains('[role="menuitem"]', 'Export annotations').should('be.visible'); // menu is rendered
+                cy.contains('[role="menuitem"]', 'Delete').should('not.exist');
+            });
+            cy.get('body').type('{esc}');
+            cy.get('.cvat-job-item-menu').should('not.exist');
+        });
+        after(() => {
+            if (consensusTaskId !== null) cy.headlessDeleteTask(consensusTaskId);
+        });
+    });
+
     describe('Consensus jobs merging', () => {
         let consensusTaskId = null;
         const baseShape = {
