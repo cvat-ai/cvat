@@ -84,6 +84,7 @@ class TestCliTasks(TestCliBase):
         files = generate_images(self.tmp_path, 7)
         files.sort(reverse=True)
         frame_step = 3
+        subset = "Validation"
 
         stdout = self.run_cli(
             "task",
@@ -101,6 +102,8 @@ class TestCliTasks(TestCliBase):
             str(frame_step),
             "--bug_tracker",
             "http://localhost/bug",
+            "--subset",
+            subset,
         )
 
         task_id = int(stdout.rstrip("\n"))
@@ -111,6 +114,7 @@ class TestCliTasks(TestCliBase):
         ]
         assert task.get_meta().frame_filter == f"step={frame_step}"
         assert task.bug_tracker == "http://localhost/bug"
+        assert task.subset == subset
 
     def test_can_list_tasks_in_simple_format(self, fxt_new_task: Task):
         output = self.run_cli("task", "ls")

@@ -3,12 +3,52 @@
 # SPDX-License-Identifier: MIT
 
 import unittest
-from unittest.mock import patch
+from types import SimpleNamespace
+from unittest.mock import Mock, patch
 
+from django.utils.functional import SimpleLazyObject
 from rest_framework import serializers
+from rest_framework.exceptions import NotFound, PermissionDenied
 
 from cvat.apps.engine.serializers import JobReadSerializer
 from cvat.apps.events import handlers
+
+
+class TestHandleViewsetException(unittest.TestCase):
+    def test_organization_context(self):
+        org = SimpleNamespace(id=35127, slug="chaindetection")
+        invalid_context = SimpleLazyObject(
+            Mock(side_effect=NotFound("Organization does not exist"))
+        )
+        cases = [
+            ("organization", {"organization": org}, 35127, "chaindetection"),
+            ("personal workspace", {"organization": None}, None, None),
+            ("invalid organization", invalid_context, None, None),
+        ]
+
+        for name, iam_context, expected_org_id, expected_org_slug in cases:
+            with self.subTest(name=name):
+                request = SimpleNamespace(
+                    iam_context=iam_context,
+                    user=SimpleNamespace(id=1, username="user", email="user@example.com"),
+                    get_full_path=lambda: "/api/jobs/4592943/annotations",
+                    query_params={},
+                    content_type="application/json",
+                    method="PATCH",
+                )
+                with (
+                    patch.object(handlers, "record_server_event") as record,
+                    patch.object(handlers, "request_info", return_value={}),
+                ):
+                    response = handlers.handle_viewset_exception(
+                        PermissionDenied("Not enough permissions"),
+                        {"request": request, "view": SimpleNamespace()},
+                    )
+
+                self.assertEqual(response.status_code, 403)
+                record.assert_called_once()
+                self.assertEqual(record.call_args.kwargs["org_id"], expected_org_id)
+                self.assertEqual(record.call_args.kwargs["org_slug"], expected_org_slug)
 
 
 class TestGetCleanedUpSerializer(unittest.TestCase):
