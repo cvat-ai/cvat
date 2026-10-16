@@ -21,7 +21,7 @@ from cvat.apps.quality_control.matching import (
     AttributeMatchingFunction,
     MatchingResults,
     PairwiseComparison,
-    match_segments,
+    match_intervals,
     temporal_iou,
 )
 from cvat.apps.quality_control.models import QualityRequirementAnnotationType
@@ -131,7 +131,7 @@ class IntervalBackend(QualityBackend):
                 return 0.0
             return 0.0 if attribute_matcher(gt, ds).conflicting_names else iou
 
-        matches, mismatches, gt_unmatched, ds_unmatched = match_segments(
+        matches, mismatches, gt_unmatched, ds_unmatched = match_intervals(
             sample.gt_annotations,
             sample.ds_annotations,
             distance=similarity,

@@ -8,11 +8,12 @@ from datetime import timedelta
 from types import SimpleNamespace
 from unittest import mock
 
+import numpy as np
 from attrs import evolve
 
 from cvat.apps.dataset_manager import data_model as cdm
 from cvat.apps.dataset_manager.bindings import CommonData
-from cvat.apps.quality_control import models
+from cvat.apps.quality_control import matching, models
 from cvat.apps.quality_control.attribute_comparison import CVAT_ATTRIBUTE_SPEC_IDS_ATTR
 from cvat.apps.quality_control.comparison_report import ComparisonReport, ComparisonReportParameters
 from cvat.apps.quality_control.filters import RequirementJsonLogicFilter
@@ -23,7 +24,7 @@ from cvat.apps.quality_control.interval_data_provider import (
     RecordingSample,
     validate_audio_quality_scope,
 )
-from cvat.apps.quality_control.matching import match_segments, temporal_iou
+from cvat.apps.quality_control.matching import match_intervals, match_segments, temporal_iou
 from cvat.apps.quality_control.quality_calculators import (
     ProjectQualityCalculator,
     TaskQualityCalculator,
@@ -71,10 +72,10 @@ def provider(job, annotations, *, duration=3000, labels=None, recording_range=No
     return result
 
 
-def report(gt, ds, *, requirements=None, gt_range=None, ds_range=None):
+def report(gt, ds, *, requirements=None, gt_range=None, ds_range=None, duration=3000):
     return DatasetQualityEstimator(
-        provider(2, ds, recording_range=ds_range),
-        provider(1, gt, recording_range=gt_range),
+        provider(2, ds, recording_range=ds_range, duration=duration),
+        provider(1, gt, recording_range=gt_range, duration=duration),
         requirements=requirements or [make_requirement("interval", iou_threshold=0.5)],
         report_parameters=ComparisonReportParameters(),
     ).generate_report()
@@ -120,6 +121,128 @@ class TestIntervalQuality(unittest.TestCase):
                         else models.AnnotationConflictType.EXTRA_ANNOTATION
                     },
                 )
+
+    def test_large_nonempty_sets_do_not_allocate_a_recording_wide_matrix(self) -> None:
+        count = 10000
+        gt = [interval(index, index * 200, index * 200 + 100) for index in range(count)]
+        ds = [
+            interval(index, index * 200 + 1, index * 200 + 101, job=2) for index in range(count)
+        ]
+        array = matching.np.array
+        matrix_count = 0
+
+        def small_matrix(rows: list[list[float]]) -> np.ndarray:
+            nonlocal matrix_count
+            self.assertEqual((len(rows), len(rows[0])), (1, 1))
+            matrix_count += 1
+            return array(rows)
+
+        with mock.patch("cvat.apps.quality_control.matching.np.array", side_effect=small_matrix):
+            result = report(gt, ds, duration=count * 200)
+        summary = result.groups["interval"].comparison_summary
+        self.assertEqual(summary.score, 1)
+        self.assertEqual(summary.score_components.valid_count, count)
+        self.assertEqual(result.get_conflicts(), [])
+        self.assertEqual(matrix_count, count)
+
+    def test_overlapping_intervals_share_a_component_below_the_iou_threshold(self) -> None:
+        gt, ds = interval(1, 0, 1000), interval(2, 900, 1900, job=2)
+        self.assertEqual(list(matching._interval_matching_components([gt], [ds])), [([gt], [ds])])
+        for threshold, expected in (
+            (0.05, ([(gt, ds)], [], [], [])),
+            (0.5, ([], [], [gt], [ds])),
+        ):
+            with self.subTest(threshold=threshold):
+                self.assertEqual(
+                    match_intervals(
+                        [gt],
+                        [ds],
+                        distance=lambda a, b: temporal_iou(a.start, a.stop, b.start, b.stop),
+                        dist_thresh=threshold,
+                    ),
+                    expected,
+                )
+
+    def test_overlap_components_preserve_chains_input_order_and_exclusive_ends(self) -> None:
+        gt = [
+            interval(1, 1800, 2800),
+            interval(2, 0, 1000),
+            interval(3, 2800, 3800),
+            interval(4, 1000, 1000),
+            interval(7, 100, 200),
+        ]
+        ds = [interval(5, 900, 1900, job=2), interval(6, 3800, 4800, job=2)]
+        self.assertCountEqual(
+            list(matching._interval_matching_components(gt, ds)),
+            [([gt[0], gt[1], gt[4]], ds[:1]), ([gt[2]], []), ([gt[3]], []), ([], [ds[1]])],
+        )
+
+    def test_equal_iou_assignments_are_independent_of_distant_intervals(self) -> None:
+        gt = [
+            interval(1, 6, 13),
+            interval(2, 13, 21),
+            interval(3, 7, 10),
+            interval(4, 8, 16),
+        ]
+        ds = [
+            interval(5, 6, 8, job=2),
+            interval(6, 3, 7, job=2),
+            interval(7, 11, 13, job=2),
+        ]
+        kwargs = {
+            "distance": lambda a, b: temporal_iou(a.start, a.stop, b.start, b.stop),
+            "dist_thresh": 0.25,
+        }
+        baseline = match_intervals(gt, ds, **kwargs)
+        distant_gt = interval(8, 100, 101)
+        distant_ds = interval(9, 100, 101, job=2)
+        for prepend in (True, False):
+            with self.subTest(prepend=prepend):
+                result = match_intervals(
+                    [distant_gt, *gt] if prepend else [*gt, distant_gt],
+                    [distant_ds, *ds] if prepend else [*ds, distant_ds],
+                    **kwargs,
+                )
+                self.assertIn((distant_gt, distant_ds), result[0])
+                self.assertEqual(
+                    ([pair for pair in result[0] if pair != (distant_gt, distant_ds)], *result[1:]),
+                    baseline,
+                )
+
+    def test_components_preserve_label_priority_and_conflict_types(self) -> None:
+        gt = [
+            interval(1, 0, 100),
+            interval(2, 70, 170, label=1),
+            interval(3, 1000, 1200),
+            interval(4, 2000, 2000),
+        ]
+        ds = [
+            interval(5, 60, 160, job=2),
+            interval(6, 10, 110, label=1, job=2),
+            interval(7, 1020, 1200, label=1, job=2),
+            interval(8, 2500, 2600, job=2),
+        ]
+        kwargs = {
+            "distance": lambda a, b: temporal_iou(a.start, a.stop, b.start, b.stop),
+            "dist_thresh": 0.25,
+        }
+        expected = ([(gt[0], ds[0]), (gt[1], ds[1])], [(gt[2], ds[2])], [gt[3]], [ds[3]])
+        self.assertEqual(match_intervals(gt, ds, **kwargs), expected)
+        self.assertEqual(match_segments(gt, ds, **kwargs), expected)
+
+        result = report(gt, ds, requirements=[make_requirement("interval", iou_threshold=0.25)])
+        components = result.groups["interval"].comparison_summary.score_components
+        self.assertEqual(components.valid_count, 2)
+        self.assertEqual(components.missing_count, 1)
+        self.assertEqual(components.extra_count, 1)
+        self.assertCountEqual(
+            [conflict.type for conflict in result.get_conflicts()],
+            [
+                models.AnnotationConflictType.MISMATCHING_LABEL,
+                models.AnnotationConflictType.MISSING_ANNOTATION,
+                models.AnnotationConflictType.EXTRA_ANNOTATION,
+            ],
+        )
 
     def test_temporal_iou(self):
         for bounds, expected in [
