@@ -1842,6 +1842,51 @@ class TestPostTaskData:
                     for img, img_meta in zip(chunk_images.values(), job_meta.frames):
                         assert (img.shape[0], img.shape[1]) == (img_meta.height, img_meta.width)
 
+    @pytest.mark.parametrize(
+        "consensus_replicas, initial_replicas, expected_initial_replicas",
+        [
+            pytest.param(2, None, 2, id="only_deprecated_param"),
+            pytest.param(3, 1, 1, id="initial_replicas_wins"),
+        ],
+    )
+    def test_can_create_task_with_deprecated_consensus_replicas_task_param(
+        self,
+        request: pytest.FixtureRequest,
+        consensus_replicas: int,
+        initial_replicas: int | None,
+        expected_initial_replicas: int,
+    ):
+        # Clients created before the rename send the replica count as consensus_replicas
+        segment_size = 2
+        regular_job_count = 2
+
+        task_params = {
+            "name": request.node.name,
+            "labels": [{"name": "car"}],
+            "segment_size": segment_size,
+            "consensus_replicas": consensus_replicas,
+            **({"initial_replicas": initial_replicas} if initial_replicas is not None else {}),
+        }
+        data_params = {
+            "image_quality": 70,
+            "client_files": generate_image_files(count=segment_size * regular_job_count),
+        }
+
+        task_id, _ = create_task(username=self._USERNAME, spec=task_params, data=data_params)
+
+        with make_api_client(user=self._USERNAME) as api_client:
+            jobs = get_paginated_collection(
+                endpoint=api_client.jobs_api.list_endpoint, task_id=task_id
+            )
+
+        annotation_jobs = [j for j in jobs if j.type == "annotation"]
+        replica_jobs = [j for j in jobs if j.type == "replica"]
+        assert len(annotation_jobs) == regular_job_count
+        assert len(replica_jobs) == regular_job_count * expected_initial_replicas
+        for annotation_job in annotation_jobs:
+            replicas = [j for j in replica_jobs if j.parent_job_id == annotation_job.id]
+            assert len(replicas) == expected_initial_replicas
+
     def test_can_create_task_with_consensus(self, request: pytest.FixtureRequest):
         segment_size = 2
         regular_job_count = 2
@@ -1852,7 +1897,7 @@ class TestPostTaskData:
         task_params = {
             "name": request.node.name,
             "segment_size": segment_size,
-            "consensus_replicas": replication,
+            "initial_replicas": replication,
         }
 
         data_params = {
@@ -1875,7 +1920,7 @@ class TestPostTaskData:
             consensus_job_metas = {
                 job.id: json.loads(api_client.jobs_api.retrieve_data_meta(job.id)[1].data)
                 for job in jobs
-                if job.type == "consensus_replica"
+                if job.type == "replica"
             }
 
         assert task.segment_size == segment_size
@@ -2531,8 +2576,8 @@ class TestTaskData(TestTasksBase):
             # Only annotation jobs can have replicas
             annotation_jobs = [j for j in jobs if j.type == "annotation"]
             assert (
-                len([j for j in jobs if j.type == "consensus_replica"])
-                == len(annotation_jobs) * task_spec.consensus_replicas
+                len([j for j in jobs if j.type == "replica"])
+                == len(annotation_jobs) * task_spec.initial_replicas
             )
 
             for job in annotation_jobs:
@@ -2540,10 +2585,8 @@ class TestTaskData(TestTasksBase):
                     api_client.jobs_api.retrieve_data_meta(job.id)[1].data
                 )
 
-                replicas = [
-                    j for j in jobs if j.type == "consensus_replica" if j.parent_job_id == job.id
-                ]
-                assert len(replicas) == task_spec.consensus_replicas
+                replicas = [j for j in jobs if j.type == "replica" if j.parent_job_id == job.id]
+                assert len(replicas) == task_spec.initial_replicas
 
                 for replica_job in replicas:
                     replica_job_meta = json.loads(
