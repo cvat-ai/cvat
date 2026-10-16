@@ -16,6 +16,53 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.79.0'></a>
+## \[2.79.0\] - 2026-10-15
+
+### Added
+
+- Added registration survey fields to user profiles and made the primary role
+  editable on the profile page
+  (<https://github.com/cvat-ai/cvat/pull/11216>)
+
+### Changed
+
+- Multi-selection now uses fixed Shift-drag and Ctrl/Cmd-click modifiers instead of configurable shortcuts,
+  eliminating false conflict warnings involving these modifiers
+  (<https://github.com/cvat-ai/cvat/pull/11281>)
+
+- Improved annotation workspace performance for jobs with many objects
+  (<https://github.com/cvat-ai/cvat/pull/11220>)
+
+### Fixed
+
+- Improve performance while using the brush tool for larger segments
+  (<https://github.com/cvat-ai/cvat/pull/11119>)
+
+- Model loading now waits for organization initialization, preventing functions from switching organization context
+  between pages.
+  (<https://github.com/cvat-ai/cvat/pull/11266>)
+
+- Copying and pasting skeleton tracks with attributes could fail or lose keypoint attribute values
+  (<https://github.com/cvat-ai/cvat/pull/11279>)
+
+- Keyboard shortcuts preventing selected text from being copied and interfering with text editing.
+  (<https://github.com/cvat-ai/cvat/pull/11280>)
+
+- Fixed intermittent generic errors when retrieving chunks so the API reliably reports the underlying failure
+  (<https://github.com/cvat-ai/cvat/pull/11282>)
+
+- Links in quality control card tooltips could be difficult to click because the tooltip closed too quickly
+  (<https://github.com/cvat-ai/cvat/pull/11284>)
+
+### Security
+
+- Fixed disclosure of user/task names and IDs via the browsable API
+  (<https://github.com/cvat-ai/cvat/security/advisories/GHSA-pv9q-68mq-qwpm>)
+
+- Fixed multiple path traversal vulnerabilities
+  (<https://github.com/cvat-ai/cvat/security/advisories/GHSA-qpmj-jxq7-67fg>)
+
 <a id='changelog-2.78.0'></a>
 ## \[2.78.0\] - 2026-10-06
 
