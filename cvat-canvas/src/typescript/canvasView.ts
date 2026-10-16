@@ -1648,7 +1648,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 groupStates = groupDragging ? this.getMovableSelectedStates() : [];
                 groupSiblingIDs = groupStates.filter((member) => member.clientID !== state.clientID)
                     .map((member) => member.clientID);
-                groupPreviewShapes = this.cacheSelectionPreviewShapes(groupStates);
+                groupPreviewShapes = this.prepareSelectionPreviewShapes(groupStates);
                 groupIncludesMask = groupStates.some((member) => member.shapeType === 'mask');
                 groupOffset = { x: 0, y: 0 };
                 start = Date.now();
@@ -1739,29 +1739,20 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
                 onDragEnd();
                 this.draggableShape = null;
-                const { cx, cy } = groupDragging ? {
-                    cx: startCenter.x + groupOffset.x,
-                    cy: startCenter.y + groupOffset.y,
-                } : shape.bbox();
+                let hasMoved = groupDragging && (groupOffset.x !== 0 || groupOffset.y !== 0);
+                if (!groupDragging) {
+                    const { cx, cy } = shape.bbox();
+                    const dx2 = (startCenter.x - cx) ** 2;
+                    const dy2 = (startCenter.y - cy) ** 2;
+                    hasMoved = Math.sqrt(dx2 + dy2) > 0;
+                }
 
-                const dx2 = (startCenter.x - cx) ** 2;
-                const dy2 = (startCenter.y - cy) ** 2;
-                if (Math.sqrt(dx2 + dy2) > 0) {
+                if (hasMoved) {
                     if (groupDragging) {
                         // Move all editable members together and record them as a single change.
-                        const { dx: totalDx, dy: totalDy } = this.normalizeSelectionTranslation(
-                            groupIncludesMask,
-                            cx - startCenter.x,
-                            cy - startCenter.y,
-                        );
-                        if (!totalDx && !totalDy) {
-                            this.setSelectedObjectsOverlayDragging(false);
-                            this.updateSelectedObjectsOverlay();
-                            return;
-                        }
                         const movedStates = groupStates.map((movedState: any) => ({
                             state: movedState,
-                            points: this.translateStatePoints(movedState, totalDx, totalDy),
+                            points: this.translateStatePoints(movedState, groupOffset.x, groupOffset.y),
                         }));
 
                         movedStates.forEach(({ state: movedState }) => this.markStateEdited(movedState));
@@ -3841,7 +3832,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
         this.finishSelectionPreviewShapes(this.selectionPasteShapes);
         this.addObjects(this.selectionPasteStates);
-        this.selectionPasteShapes = this.cacheSelectionPreviewShapes(this.selectionPasteStates);
+        this.selectionPasteShapes = this.prepareSelectionPreviewShapes(this.selectionPasteStates);
         const boxes = this.selectionPasteStates
             .map((state: any): SVG.RBox | null => this.svgShapes[state.clientID]?.rbox(this.adoptedContent) || null)
             .filter((box: SVG.RBox | null): box is SVG.RBox => box !== null);
@@ -3975,7 +3966,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         this.selectionPreviewUpdate = null;
     }
 
-    private cacheSelectionPreviewShapes(states: any[]): SelectionPreviewShape[] {
+    private prepareSelectionPreviewShapes(states: any[]): SelectionPreviewShape[] {
         return states.filter((state) => !!this.svgShapes[state.clientID]).map((state) => {
             const shape = this.svgShapes[state.clientID];
             const controlShape = state.shapeType === 'skeleton' ?
@@ -4043,8 +4034,10 @@ export class CanvasViewImpl implements CanvasView, Listener {
             ));
     }
 
-    private getMovableSelectedObjectIDs(): number[] {
-        return this.getMovableSelectedStates().map((state: any): number => state.clientID);
+    private hasMovableSelectedObjects(): boolean {
+        return this.controller.objects.some((state: any): boolean => (
+            this.selectedObjectsSet.has(state.clientID) && this.isStateMovableInSelection(state)
+        ));
     }
 
     private normalizeSelectionTranslation(includesMask: boolean, dx: number, dy: number): { dx: number; dy: number } {
@@ -4087,7 +4080,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             sourceEvent.stopPropagation();
             if (this.isMultiSelectModifierPressed(sourceEvent) ||
                 this.isMultiSelectObjectModifierPressed(sourceEvent) ||
-                !this.getMovableSelectedObjectIDs().length) {
+                !this.hasMovableSelectedObjects()) {
                 sourceEvent.preventDefault();
                 event.preventDefault();
             }
@@ -4096,7 +4089,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             this.closeSelectedObjectsMenu();
             dragging = true;
             movableStates = this.getMovableSelectedStates();
-            previewShapes = this.cacheSelectionPreviewShapes(movableStates);
+            previewShapes = this.prepareSelectionPreviewShapes(movableStates);
             includesMask = movableStates.some((state) => state.shapeType === 'mask');
             startPointer = { x: p.x, y: p.y };
             renderedOffset = { x: 0, y: 0 };
@@ -4249,7 +4242,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             .front();
         this.selectedObjectsBox.node.classList.toggle(
             'cvat_canvas_selected_objects_box_not_draggable',
-            !this.getMovableSelectedObjectIDs().length,
+            !this.hasMovableSelectedObjects(),
         );
 
         this.selectedObjectsBox.node.setAttribute('aria-label', 'Move selection');
@@ -4272,7 +4265,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 event.preventDefault();
                 event.stopPropagation();
                 if (this.isMultiSelectModifierPressed(event) || this.isMultiSelectObjectModifierPressed(event) ||
-                    !this.getMovableSelectedObjectIDs().length || !this.selectedObjectsBox) {
+                    !this.hasMovableSelectedObjects() || !this.selectedObjectsBox) {
                     return;
                 }
 
@@ -4301,7 +4294,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         }
         this.selectedObjectsLabel.classList.toggle(
             'cvat_canvas_selected_objects_label_not_draggable',
-            !this.getMovableSelectedObjectIDs().length,
+            !this.hasMovableSelectedObjects(),
         );
 
         const title = this.selectedObjectsLabel.querySelector('.cvat_canvas_selected_objects_label_title');

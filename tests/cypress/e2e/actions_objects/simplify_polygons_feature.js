@@ -259,9 +259,6 @@ context('Simplify polygons feature', { scrollBehavior: false }, () => {
             cy.saveJob('PUT');
             cy.get('.cvat-annotation-header-save-button')
                 .should('not.have.class', 'cvat-annotation-disabled-header-button');
-            // Unmount the annotation workspace before deleting the task and unloading the spec's iframe.
-            cy.get('.cvat-header-tasks-button').click();
-            cy.get('.cvat-canvas-container').should('not.exist');
             cy.headlessDeleteTask(taskId);
         }
     });

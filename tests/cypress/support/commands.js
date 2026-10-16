@@ -1933,8 +1933,7 @@ Cypress.Commands.add('interactAnnotationObjectMenu', (parentSelector, button) =>
     });
 
     // AntD renders the menu outside the row, even when the caller is inside .within().
-    const getMenuButton = () => cy.document().its('body')
-        .find('.cvat-object-item-menu:visible button')
+    const getMenuButton = () => cy.get('.cvat-object-item-menu:visible button', { withinSubject: null })
         .filter((index, element) => element.textContent.includes(button));
     getMenuButton().should('have.length', 1);
     // A passed assertion locks in its subject. Start a fresh query so click can
