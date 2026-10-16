@@ -1,8 +1,8 @@
 ### Added
 
-- \[Server API\] The `replicas_per_job` parameter of the task data request
-  (`POST /api/tasks/{id}/data`) sets the number of replica jobs created for each
-  annotation job
+- \[Server API\] The `initial_replicas` parameter of the task creation request
+  (`POST /api/tasks`) sets the number of replica jobs created for each
+  annotation job. The value is returned in the task responses (`GET /api/tasks`)
   (<https://github.com/cvat-ai/cvat/pull/11305>)
 
 ### Changed
@@ -10,10 +10,10 @@
 - \[Server API\] The `consensus_replica` job type is renamed to `replica`
   (<https://github.com/cvat-ai/cvat/pull/11305>)
 - The "Consensus Replicas" field of the task creation form is renamed to
-  "Replicas per job"
+  "Initial replicas"
   (<https://github.com/cvat-ai/cvat/pull/11305>)
-- \[Server API\] Any annotation job in the annotation stage of a 2D task can be
-  merged (`POST /api/consensus/merges`), whether it has none, one or several
+- \[Server API\] An annotation job in the annotation stage of a 2D task can be
+  merged (`POST /api/consensus/merges`) when it has one or several started
   replica jobs
   (<https://github.com/cvat-ai/cvat/pull/11305>)
 - \[Server API\] The number of replica jobs per annotation job is no longer
@@ -29,8 +29,7 @@
 ### Deprecated
 
 - \[Server API\] The `consensus_replicas` parameter of the task creation request
-  (`POST /api/tasks`) is deprecated: it sets the number of replica jobs of the task
-  unless the task data request has `replicas_per_job`
+  (`POST /api/tasks`) is deprecated, use `initial_replicas` instead
   (<https://github.com/cvat-ai/cvat/pull/11305>)
 - \[Server API\] The `consensus_replica` job type is still accepted as an alias of
   `replica` in the `type` and `filter` parameters of `GET /api/jobs`

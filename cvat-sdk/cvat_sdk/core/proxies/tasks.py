@@ -101,7 +101,6 @@ class Task(
                     "cloud_storage_id",
                     "server_files_exclude",
                     "validation_params",
-                    "replicas_per_job",
                 ],
             )
         )

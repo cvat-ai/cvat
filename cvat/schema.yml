@@ -8908,12 +8908,6 @@ components:
           allOf:
           - $ref: '#/components/schemas/ValidationParamsRequest'
           nullable: true
-        replicas_per_job:
-          type: integer
-          maximum: 2147483647
-          minimum: 0
-          description: Number of replica jobs for each annotation job, 0 means no
-            replicas
     DataResponse:
       oneOf:
       - $ref: '#/components/schemas/RqId'
@@ -13684,6 +13678,9 @@ components:
         segment_size:
           type: integer
           readOnly: true
+        initial_replicas:
+          type: integer
+          readOnly: true
         status:
           allOf:
           - $ref: '#/components/schemas/JobStatus'
@@ -13854,13 +13851,19 @@ components:
           $ref: '#/components/schemas/StorageRequest'
         source_storage:
           $ref: '#/components/schemas/StorageRequest'
+        initial_replicas:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          description: The number of replica jobs for each annotation job. Configured
+            at task creation
         consensus_replicas:
           type: integer
           minimum: 0
           writeOnly: true
           description: |
             Deprecated. The number of replica jobs for each annotation job.
-            Use the 'replicas_per_job' parameter of the task data request instead
+            Use 'initial_replicas' instead
           deprecated: true
       required:
       - name

@@ -635,7 +635,7 @@ class TestPatchSettings(_PermissionTestBase):
 @pytest.mark.usefixtures("restore_db_per_function")
 @pytest.mark.usefixtures("restore_redis_inmem_per_function")
 class TestMerging(_PermissionTestBase):
-    def _create_task(self, user: str, replicas_per_job: int, segments: int = 1) -> int:
+    def _create_task(self, user: str, initial_replicas: int, segments: int = 1) -> int:
         segment_size = 2
 
         task_id, _ = create_task(
@@ -644,11 +644,11 @@ class TestMerging(_PermissionTestBase):
                 "name": "A task to merge jobs in",
                 "labels": [{"name": "car"}],
                 "segment_size": segment_size,
+                "initial_replicas": initial_replicas,
             },
             data={
                 "image_quality": 70,
                 "client_files": generate_image_files(count=segment_size * segments),
-                "replicas_per_job": replicas_per_job,
             },
         )
         return task_id
@@ -792,51 +792,19 @@ class TestMerging(_PermissionTestBase):
                 ignore_score=False,
             )
 
-    def test_can_merge_task_without_replicas(self, admin_user):
-        task_id = self._create_task(user=admin_user, replicas_per_job=0, segments=3)
+    def test_cannot_merge_task_without_replicas(self, admin_user):
+        task_id = self._create_task(user=admin_user, initial_replicas=0, segments=2)
 
-        with make_api_client(admin_user) as api_client:
-            (label,) = self._retrieve_task_labels(api_client=api_client, task_id=task_id)
-            jobs = self._retrieve_jobs(api_client=api_client, task_id=task_id)
-            assert len(jobs) == 3
-            assert {j["type"] for j in jobs} == {"annotation"}
-
-            *annotation_stage_jobs, validation_stage_job = jobs
-            for job in jobs:
-                self._annotate_job(
-                    api_client=api_client, job=job, label_id=label["id"], boxes=[[0, 0, 2, 2]]
-                )
-            self._patch_job(
-                api_client=api_client, job_id=validation_stage_job["id"], stage="validation"
-            )
-            validation_stage_job = self._retrieve_job(
-                api_client=api_client, job_id=validation_stage_job["id"]
-            )
-
+        with pytest.raises(exceptions.ApiException) as capture:
             create_consensus_merge(user=admin_user, task_id=task_id)
 
-            # nothing to merge in the annotation stage: the jobs are left without annotations
-            for job in annotation_stage_jobs:
-                annotations = self._retrieve_job_annotations(
-                    api_client=api_client, job_id=job["id"]
-                )
-                assert annotations["shapes"] == []
-
-                job = self._retrieve_job(api_client=api_client, job_id=job["id"])
-                assert (job["stage"], job["state"]) == ("annotation", "completed")
-
-            # the jobs in the other stages are not touched
-            annotations = self._retrieve_job_annotations(
-                api_client=api_client, job_id=validation_stage_job["id"]
-            )
-            assert len(annotations["shapes"]) == 1
-            assert (
-                self._retrieve_job(api_client=api_client, job_id=validation_stage_job["id"])
-                == validation_stage_job
-            )
+        assert (
+            "No annotation jobs in the annotation stage or "
+            "no replica jobs not in the annotation - new state found"
+        ) in capture.value.body
 
     def test_can_merge_job_with_one_replica(self, admin_user):
-        task_id = self._create_task(user=admin_user, replicas_per_job=1)
+        task_id = self._create_task(user=admin_user, initial_replicas=1)
 
         with make_api_client(admin_user) as api_client:
             (label,) = self._retrieve_task_labels(api_client=api_client, task_id=task_id)
@@ -879,45 +847,21 @@ class TestMerging(_PermissionTestBase):
                 == "completed"
             )
 
-    def test_can_merge_job_without_replicas(self, admin_user):
-        task_id = self._create_task(user=admin_user, replicas_per_job=0, segments=2)
+    def test_cannot_merge_job_without_replicas(self, admin_user):
+        task_id = self._create_task(user=admin_user, initial_replicas=0)
 
         with make_api_client(admin_user) as api_client:
-            (label,) = self._retrieve_task_labels(api_client=api_client, task_id=task_id)
-            jobs = self._retrieve_jobs(api_client=api_client, task_id=task_id)
-            assert {j["type"] for j in jobs} == {"annotation"}
+            (job,) = self._retrieve_jobs(api_client=api_client, task_id=task_id)
 
-            job_to_merge, untouched_job = jobs
-            for job in jobs:
-                self._annotate_job(
-                    api_client=api_client, job=job, label_id=label["id"], boxes=[[0, 0, 2, 2]]
-                )
+        with pytest.raises(exceptions.ApiException) as capture:
+            create_consensus_merge(user=admin_user, job_id=job["id"])
 
-            create_consensus_merge(user=admin_user, job_id=job_to_merge["id"])
-
-            annotations = self._retrieve_job_annotations(
-                api_client=api_client, job_id=job_to_merge["id"]
-            )
-            assert annotations["shapes"] == []
-            assert (
-                self._retrieve_job(api_client=api_client, job_id=job_to_merge["id"])["state"]
-                == "completed"
-            )
-
-            # the other jobs of the task are not touched
-            annotations = self._retrieve_job_annotations(
-                api_client=api_client, job_id=untouched_job["id"]
-            )
-            assert len(annotations["shapes"]) == 1
-            assert (
-                self._retrieve_job(api_client=api_client, job_id=untouched_job["id"])["state"]
-                == "new"
-            )
+        assert f"No annotated replica jobs found for parent job {job['id']}" in capture.value.body
 
     def test_cannot_merge_more_replicas_than_allowed(self, admin_user):
         # the default of the MAX_CONSENSUS_REPLICAS server setting
         max_replicas = 11
-        task_id = self._create_task(user=admin_user, replicas_per_job=max_replicas + 1)
+        task_id = self._create_task(user=admin_user, initial_replicas=max_replicas + 1)
 
         with make_api_client(admin_user) as api_client:
             jobs = self._retrieve_jobs(api_client=api_client, task_id=task_id)

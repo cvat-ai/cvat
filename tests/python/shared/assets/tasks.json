@@ -16,6 +16,7 @@
       "dimension": "1d",
       "guide_id": null,
       "id": 36,
+      "initial_replicas": 0,
       "jobs": {
         "completed": 0,
         "count": 2,
@@ -64,6 +65,7 @@
       "guide_id": null,
       "id": 35,
       "image_quality": 70,
+      "initial_replicas": 0,
       "jobs": {
         "completed": 0,
         "count": 1,
@@ -120,6 +122,7 @@
       "guide_id": null,
       "id": 34,
       "image_quality": 70,
+      "initial_replicas": 0,
       "jobs": {
         "completed": 0,
         "count": 4,
@@ -176,6 +179,7 @@
       "guide_id": null,
       "id": 33,
       "image_quality": 70,
+      "initial_replicas": 0,
       "jobs": {
         "completed": 1,
         "count": 3,
@@ -224,6 +228,7 @@
       "guide_id": null,
       "id": 32,
       "image_quality": 70,
+      "initial_replicas": 0,
       "jobs": {
         "completed": 1,
         "count": 2,
@@ -272,6 +277,7 @@
       "guide_id": null,
       "id": 31,
       "image_quality": 70,
+      "initial_replicas": 2,
       "jobs": {
         "completed": 0,
         "count": 3,
@@ -328,6 +334,7 @@
       "guide_id": null,
       "id": 30,
       "image_quality": 70,
+      "initial_replicas": 3,
       "jobs": {
         "completed": 0,
         "count": 9,
@@ -384,6 +391,7 @@
       "guide_id": null,
       "id": 29,
       "image_quality": 70,
+      "initial_replicas": 0,
       "jobs": {
         "completed": 0,
         "count": 4,
@@ -432,6 +440,7 @@
       "guide_id": null,
       "id": 28,
       "image_quality": 70,
+      "initial_replicas": 0,
       "jobs": {
         "completed": 0,
         "count": 1,
@@ -494,6 +503,7 @@
       "guide_id": null,
       "id": 27,
       "image_quality": 70,
+      "initial_replicas": 0,
       "jobs": {
         "completed": 0,
         "count": 1,
@@ -556,6 +566,7 @@
       "guide_id": null,
       "id": 26,
       "image_quality": 70,
+      "initial_replicas": 0,
       "jobs": {
         "completed": 0,
         "count": 1,
@@ -612,6 +623,7 @@
       "guide_id": null,
       "id": 25,
       "image_quality": 70,
+      "initial_replicas": 0,
       "jobs": {
         "completed": 0,
         "count": 1,
@@ -668,6 +680,7 @@
       "guide_id": null,
       "id": 24,
       "image_quality": 70,
+      "initial_replicas": 0,
       "jobs": {
         "completed": 0,
         "count": 1,
@@ -724,6 +737,7 @@
       "guide_id": null,
       "id": 23,
       "image_quality": 70,
+      "initial_replicas": 0,
       "jobs": {
         "completed": 4,
         "count": 4,
@@ -772,6 +786,7 @@
       "guide_id": null,
       "id": 22,
       "image_quality": 70,
+      "initial_replicas": 0,
       "jobs": {
         "completed": 1,
         "count": 2,
@@ -820,6 +835,7 @@
       "guide_id": null,
       "id": 21,
       "image_quality": 70,
+      "initial_replicas": 0,
       "jobs": {
         "completed": 0,
         "count": 2,
@@ -876,6 +892,7 @@
       "guide_id": null,
       "id": 20,
       "image_quality": 70,
+      "initial_replicas": 0,
       "jobs": {
         "completed": 0,
         "count": 1,
@@ -932,6 +949,7 @@
       "guide_id": null,
       "id": 19,
       "image_quality": 70,
+      "initial_replicas": 0,
       "jobs": {
         "completed": 0,
         "count": 1,
@@ -988,6 +1006,7 @@
       "guide_id": null,
       "id": 18,
       "image_quality": 70,
+      "initial_replicas": 0,
       "jobs": {
         "completed": 0,
         "count": 1,
@@ -1050,6 +1069,7 @@
       "guide_id": null,
       "id": 17,
       "image_quality": 70,
+      "initial_replicas": 0,
       "jobs": {
         "completed": 0,
         "count": 1,
@@ -1098,6 +1118,7 @@
       "guide_id": null,
       "id": 15,
       "image_quality": 70,
+      "initial_replicas": 0,
       "jobs": {
         "completed": 0,
         "count": 1,
@@ -1154,6 +1175,7 @@
       "guide_id": null,
       "id": 14,
       "image_quality": 70,
+      "initial_replicas": 0,
       "jobs": {
         "completed": 0,
         "count": 1,
@@ -1216,6 +1238,7 @@
       "guide_id": null,
       "id": 13,
       "image_quality": 70,
+      "initial_replicas": 0,
       "jobs": {
         "completed": 0,
         "count": 1,
@@ -1259,6 +1282,7 @@
       "dimension": "",
       "guide_id": null,
       "id": 12,
+      "initial_replicas": 0,
       "jobs": {
         "completed": 0,
         "count": 0,
@@ -1312,6 +1336,7 @@
       "guide_id": null,
       "id": 11,
       "image_quality": 70,
+      "initial_replicas": 0,
       "jobs": {
         "completed": 0,
         "count": 1,
@@ -1374,6 +1399,7 @@
       "guide_id": null,
       "id": 9,
       "image_quality": 70,
+      "initial_replicas": 0,
       "jobs": {
         "completed": 0,
         "count": 4,
@@ -1428,6 +1454,7 @@
       "guide_id": null,
       "id": 8,
       "image_quality": 70,
+      "initial_replicas": 0,
       "jobs": {
         "completed": 0,
         "count": 1,
@@ -1482,6 +1509,7 @@
       "guide_id": null,
       "id": 7,
       "image_quality": 70,
+      "initial_replicas": 0,
       "jobs": {
         "completed": 0,
         "count": 1,
@@ -1530,6 +1558,7 @@
       "guide_id": null,
       "id": 6,
       "image_quality": 70,
+      "initial_replicas": 0,
       "jobs": {
         "completed": 0,
         "count": 1,
@@ -1584,6 +1613,7 @@
       "guide_id": null,
       "id": 5,
       "image_quality": 70,
+      "initial_replicas": 0,
       "jobs": {
         "completed": 0,
         "count": 1,
@@ -1638,6 +1668,7 @@
       "guide_id": null,
       "id": 2,
       "image_quality": 70,
+      "initial_replicas": 0,
       "jobs": {
         "completed": 0,
         "count": 1,

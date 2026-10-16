@@ -1652,7 +1652,7 @@ class TestTaskBackups:
         self._test_can_restore_task_from_backup(task_id)
 
     def test_can_import_backup_with_consensus_task_created_before_consensus_replica_removal(self):
-        # The backup has "consensus_replica" jobs and no data.replicas_per_job
+        # The backup has "consensus_replica" jobs
         original_task_id = 30
         backup_file = ASSETS_DIR / "backups" / "task_30_backup_pre_consensus_replica_removal.zip"
 

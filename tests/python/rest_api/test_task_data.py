@@ -1842,23 +1842,13 @@ class TestPostTaskData:
                     for img, img_meta in zip(chunk_images.values(), job_meta.frames):
                         assert (img.shape[0], img.shape[1]) == (img_meta.height, img_meta.width)
 
-    @pytest.mark.parametrize(
-        "consensus_replicas, replicas_per_job, expected_replicas_per_job",
-        [
-            pytest.param(2, None, 2, id="only_task_param"),
-            pytest.param(3, 1, 1, id="data_param_wins"),
-        ],
-    )
     def test_can_create_task_with_deprecated_consensus_replicas_task_param(
-        self,
-        request: pytest.FixtureRequest,
-        consensus_replicas: int,
-        replicas_per_job: int | None,
-        expected_replicas_per_job: int,
+        self, request: pytest.FixtureRequest
     ):
-        # Clients created before the rename send the replica count in POST /api/tasks
+        # Clients created before the rename send the replica count as consensus_replicas
         segment_size = 2
         regular_job_count = 2
+        consensus_replicas = 2
 
         task_params = {
             "name": request.node.name,
@@ -1869,7 +1859,6 @@ class TestPostTaskData:
         data_params = {
             "image_quality": 70,
             "client_files": generate_image_files(count=segment_size * regular_job_count),
-            **({"replicas_per_job": replicas_per_job} if replicas_per_job is not None else {}),
         }
 
         task_id, _ = create_task(username=self._USERNAME, spec=task_params, data=data_params)
@@ -1882,10 +1871,10 @@ class TestPostTaskData:
         annotation_jobs = [j for j in jobs if j.type == "annotation"]
         replica_jobs = [j for j in jobs if j.type == "replica"]
         assert len(annotation_jobs) == regular_job_count
-        assert len(replica_jobs) == regular_job_count * expected_replicas_per_job
+        assert len(replica_jobs) == regular_job_count * consensus_replicas
         for annotation_job in annotation_jobs:
             replicas = [j for j in replica_jobs if j.parent_job_id == annotation_job.id]
-            assert len(replicas) == expected_replicas_per_job
+            assert len(replicas) == consensus_replicas
 
     def test_can_create_task_with_consensus(self, request: pytest.FixtureRequest):
         segment_size = 2
@@ -1897,12 +1886,12 @@ class TestPostTaskData:
         task_params = {
             "name": request.node.name,
             "segment_size": segment_size,
+            "initial_replicas": replication,
         }
 
         data_params = {
             "image_quality": 70,
             "client_files": images,
-            "replicas_per_job": replication,
         }
 
         task_id, _ = create_task(self._USERNAME, spec=task_params, data=data_params)
@@ -2577,7 +2566,7 @@ class TestTaskData(TestTasksBase):
             annotation_jobs = [j for j in jobs if j.type == "annotation"]
             assert (
                 len([j for j in jobs if j.type == "replica"])
-                == len(annotation_jobs) * task_spec.replicas_per_job
+                == len(annotation_jobs) * task_spec.initial_replicas
             )
 
             for job in annotation_jobs:
@@ -2586,7 +2575,7 @@ class TestTaskData(TestTasksBase):
                 )
 
                 replicas = [j for j in jobs if j.type == "replica" if j.parent_job_id == job.id]
-                assert len(replicas) == task_spec.replicas_per_job
+                assert len(replicas) == task_spec.initial_replicas
 
                 for replica_job in replicas:
                     replica_job_meta = json.loads(

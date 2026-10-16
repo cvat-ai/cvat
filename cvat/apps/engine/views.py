@@ -1396,14 +1396,6 @@ class TaskViewSet(
                 serializer = DataSerializer(task_data, data=request.data)
                 serializer.is_valid(raise_exception=True)
 
-                # NOTE @sosov consensus_replica -> replica backward compatibility: clients created
-                # before the rename send the replica count in the task creation request
-                if (
-                    "replicas_per_job" not in serializer.validated_data
-                    and self._object.consensus_replicas is not None
-                ):
-                    serializer.validated_data["replicas_per_job"] = self._object.consensus_replicas
-
                 # Append new files to the previous ones
                 if uploaded_files := serializer.validated_data.get("client_files", None):
                     self.append_files(request)
@@ -2307,7 +2299,7 @@ class JobViewSet(
         # NOTE @sosov consensus_replica -> replica backward compatibility: old clients and saved
         # filters send the legacy job type in the "type" and "filter" parameters
         params = self.request.query_params
-        if params.get("type") == "consensus_replica" or "consensus_replica" in params.get(
+        if params.get("type") == "consensus_replica" or '"consensus_replica"' in params.get(
             "filter", ""
         ):
             params = params.copy()
