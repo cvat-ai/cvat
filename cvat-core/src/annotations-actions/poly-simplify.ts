@@ -19,7 +19,10 @@ export class PolySimplify extends BaseShapesAction {
         this.#threshold = parameters.Distance as number;
 
         return new Promise((resolve, reject) => {
-            this.#worker = new Worker(new URL('./actions-worker.ts', import.meta.url));
+            this.#worker = new Worker(
+                /* webpackChunkName: "workers/polygonSimplifierWorker/actions-worker" */
+                new URL('./actions-worker.ts', import.meta.url),
+            );
 
             this.#worker.onmessage = (event: MessageEvent<WorkerResponse>) => {
                 const result = event.data;

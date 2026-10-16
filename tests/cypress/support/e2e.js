@@ -4,6 +4,7 @@
 // SPDX-License-Identifier: MIT
 
 require('allure-cypress');
+require('./csp-violation-observer');
 require('./commands');
 require('./commands_projects');
 require('./commands_review_pipeline');

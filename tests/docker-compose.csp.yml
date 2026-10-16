@@ -1,0 +1,4 @@
+services:
+  cvat_ui:
+    environment:
+      CVAT_CSP_MODE: 'enforce'

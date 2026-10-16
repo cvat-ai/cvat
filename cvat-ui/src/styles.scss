@@ -130,6 +130,7 @@ html, body {
     top: $header-height !important;
     right: 0 !important;
     margin-right: 0;
+    z-index: 10002;
 }
 
 .cvat-info-circle-icon {

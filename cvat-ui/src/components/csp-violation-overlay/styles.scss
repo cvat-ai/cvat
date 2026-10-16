@@ -1,0 +1,81 @@
+// Copyright (C) CVAT.ai Corporation
+//
+// SPDX-License-Identifier: MIT
+
+@import './../../base';
+
+.cvat-csp-violation-overlay-widget {
+    position: fixed;
+    right: $grid-unit-size * 3;
+    bottom: $grid-unit-size * 3;
+    z-index: 10001;
+}
+
+.cvat-csp-violation-overlay-drawer {
+    .ant-drawer-body {
+        padding: $grid-unit-size * 2;
+    }
+
+    .ant-list-item {
+        padding: $grid-unit-size 0;
+    }
+}
+
+.cvat-csp-violation-overlay-drawer-title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: $grid-unit-size;
+}
+
+.cvat-csp-violation-overlay-drawer-actions,
+.cvat-csp-violation-overlay-item-actions {
+    display: flex;
+    gap: $grid-unit-size;
+}
+
+.cvat-csp-violation-overlay-item {
+    width: 100%;
+    max-width: 100%;
+
+    .ant-collapse-header {
+        align-items: stretch;
+        padding: $grid-unit-size $grid-unit-size * 1.5;
+    }
+
+    .ant-collapse-content-box {
+        padding: $grid-unit-size * 1.5;
+    }
+
+    code {
+        overflow-wrap: anywhere;
+    }
+}
+
+.cvat-csp-violation-overlay-item-directive {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    gap: $grid-unit-size;
+
+    .cvat-csp-violation-overlay-item-actions {
+        margin-left: auto;
+    }
+}
+
+.cvat-csp-violation-overlay-item-blocked-resource {
+    .ant-descriptions-item-container {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}
+
+.cvat-csp-violation-overlay-item-blocked-resource-value {
+    display: block;
+    box-sizing: border-box;
+    width: 100%;
+    padding: $grid-unit-size;
+    border: 1px solid $border-color-1;
+    cursor: text;
+    user-select: text;
+}
