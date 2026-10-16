@@ -213,7 +213,7 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
         if (canvasInstance instanceof Canvas &&
             [ShapeType.POLYGON, ShapeType.MASK].includes(objectState.shapeType)
         ) {
-            if (canvasInstance.mode() !== CanvasMode.IDLE) {
+            if (![CanvasMode.IDLE, CanvasMode.EDIT].includes(canvasInstance.mode())) {
                 canvasInstance.cancel();
             }
 

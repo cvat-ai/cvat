@@ -884,10 +884,14 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
             throw Error('State must be specified when call edit() editing process');
         }
 
-        if (this.data.editData.enabled && editData.enabled &&
-            editData.state.clientID !== this.data.editData.state.clientID
-        ) {
-            throw Error('State cannot be updated during editing, need to finish current editing first');
+        if (editData.enabled && (this.data.editData.enabled || this.data.mode === Mode.EDIT)) {
+            if (this.data.editData.enabled && editData.state.clientID === this.data.editData.state.clientID) {
+                if (!('brushTool' in editData) && !('onUpdateConfiguration' in editData) && !('pointID' in editData)) {
+                    return;
+                }
+            } else {
+                this.cancel();
+            }
         }
 
         if (editData.enabled) {
