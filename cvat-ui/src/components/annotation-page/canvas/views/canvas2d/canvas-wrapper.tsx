@@ -300,7 +300,7 @@ const componentShortcuts = {
     SWITCH_AUTOMATIC_BORDERING: {
         name: 'Toggle snap to contour',
         description: 'Toggle automatic snap to contour for polygons and polylines during drawing/editing',
-        sequences: [],
+        sequences: ['ctrl+q', 'command+q'],
         scope: ShortcutScope.STANDARD_WORKSPACE,
     },
     SWITCH_SNAP_TO_POINT: {

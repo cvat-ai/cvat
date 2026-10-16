@@ -39,7 +39,7 @@ function SnapToolsControlComponent(): JSX.Element {
             </Row>
             <Row justify='start' className='cvat-snap-tools-row'>
                 <Col>
-                    <CVATTooltip title={`Snap to contour ${normalizedKeyMap.SWITCH_AUTOMATIC_BORDERING}`}>
+                    <CVATTooltip title={`Toggle snap to contour ${normalizedKeyMap.SWITCH_AUTOMATIC_BORDERING}`}>
                         <Button
                             className={
                                 automaticBordering ?
