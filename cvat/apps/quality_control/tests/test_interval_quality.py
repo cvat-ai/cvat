@@ -116,18 +116,18 @@ class TestIntervalQuality(unittest.TestCase):
                 self.assertEqual(
                     {conflict.type for conflict in conflicts},
                     {
-                        models.AnnotationConflictType.MISSING_ANNOTATION
-                        if missing
-                        else models.AnnotationConflictType.EXTRA_ANNOTATION
+                        (
+                            models.AnnotationConflictType.MISSING_ANNOTATION
+                            if missing
+                            else models.AnnotationConflictType.EXTRA_ANNOTATION
+                        )
                     },
                 )
 
     def test_large_nonempty_sets_do_not_allocate_a_recording_wide_matrix(self) -> None:
         count = 10000
         gt = [interval(index, index * 200, index * 200 + 100) for index in range(count)]
-        ds = [
-            interval(index, index * 200 + 1, index * 200 + 101, job=2) for index in range(count)
-        ]
+        ds = [interval(index, index * 200 + 1, index * 200 + 101, job=2) for index in range(count)]
         array = matching.np.array
         matrix_count = 0
 
