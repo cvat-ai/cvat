@@ -731,12 +731,12 @@ export class MasksHandlerImpl implements MasksHandler {
 
                 this.isInsertion = true;
             } else {
-                this.updateBrushTools(drawData.brushTool);
                 if (!this.isDrawing) {
                     // initialize drawing pipeline if not started
                     this.isDrawing = true;
                     this.redraw = drawData.redraw || null;
                 }
+                this.updateBrushTools(drawData.brushTool);
             }
 
             this.canvas.getElement().parentElement.style.display = 'block';
