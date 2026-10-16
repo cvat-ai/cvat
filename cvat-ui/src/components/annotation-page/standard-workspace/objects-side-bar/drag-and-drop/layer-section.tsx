@@ -6,29 +6,26 @@ import React from 'react';
 
 import { useDroppable } from '@dnd-kit/core';
 
-import { ObjectState } from 'cvat-core-wrapper';
-import { isLayerState, layerDropID } from './index';
-import DraggableObjectItem from './draggable-object-item';
+import { layerDropID } from './index';
 import LayerHeader from './layer-header';
 
 interface LayerSectionProps {
     zOrder: number;
-    layerObjectIds: number[];
-    objectStates: ObjectState[];
-    visibleSkeletonElements: Record<number, number[]>;
     selected: boolean;
     visible: boolean;
     collapsed: boolean;
+    multiSelected: boolean;
+    onMouseDown(event: React.MouseEvent): void;
+    onKeyDown(event: React.KeyboardEvent): void;
     selectLayer(zOrder: number): void;
     toggleLayerVisibility(zOrder: number, includeLower: boolean): void;
     toggleLayerCollapsed(zOrder: number): void;
 }
 
-// Owns a complete layer block: drop target, header, and draggable object rows.
+// The layer header remains a drop target when its object rows are virtualized separately.
 function LayerSection(props: LayerSectionProps): JSX.Element {
     const {
-        zOrder, layerObjectIds, objectStates, visibleSkeletonElements,
-        selected, visible, collapsed, selectLayer,
+        zOrder, selected, visible, collapsed, multiSelected, selectLayer, onMouseDown, onKeyDown,
         toggleLayerCollapsed, toggleLayerVisibility,
     } = props;
 
@@ -37,7 +34,13 @@ function LayerSection(props: LayerSectionProps): JSX.Element {
     return (
         <div
             ref={setNodeRef}
-            className={`cvat-objects-sidebar-z-layer${isOver ? ' cvat-objects-sidebar-z-layer-active' : ''}`}
+            className={[
+                'cvat-objects-sidebar-z-layer',
+                'cvat-objects-sidebar-z-layer-virtual-header',
+                ...(!collapsed ? ['cvat-objects-sidebar-z-layer-virtual-header-expanded'] : []),
+                ...(isOver ? ['cvat-objects-sidebar-z-layer-active'] : []),
+                ...(multiSelected ? ['cvat-objects-sidebar-z-layer-multi-selected'] : []),
+            ].join(' ')}
             data-z-order={zOrder}
         >
             <LayerHeader
@@ -45,23 +48,13 @@ function LayerSection(props: LayerSectionProps): JSX.Element {
                 selected={selected}
                 visible={visible}
                 collapsed={collapsed}
+                multiSelected={multiSelected}
                 selectLayer={selectLayer}
                 toggleLayerVisibility={toggleLayerVisibility}
                 toggleLayerCollapsed={toggleLayerCollapsed}
+                onMouseDown={onMouseDown}
+                onKeyDown={onKeyDown}
             />
-            {!collapsed && layerObjectIds.map((id: number): JSX.Element => {
-                const object = objectStates.find((state: ObjectState): boolean => state.clientID === id);
-
-                return (
-                    <DraggableObjectItem
-                        key={id}
-                        objectStates={objectStates}
-                        clientID={id}
-                        visibleSkeletonElements={visibleSkeletonElements}
-                        draggable={!!object && isLayerState(object) && !object.lock}
-                    />
-                );
-            })}
         </div>
     );
 }

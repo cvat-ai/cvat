@@ -4,6 +4,92 @@
 
 @import 'base';
 
+.cvat-canvas-selected-objects-menu-content.cvat-objects-sidebar-state-item {
+    box-sizing: border-box;
+    width: 100%;
+    margin: 0;
+    padding: $grid-unit-size;
+    background: $background-color-2;
+
+    .cvat-canvas-selected-objects-more-button {
+        cursor: pointer;
+        text-align: center;
+
+        > span {
+            font-size: 25px;
+        }
+    }
+
+    .cvat-canvas-selected-objects-type {
+        line-height: 14px;
+
+        .cvat-canvas-selected-objects-count {
+            font-size: 12px;
+        }
+
+        .cvat-canvas-selected-objects-type-text {
+            box-sizing: border-box;
+            display: inline-block;
+            overflow: hidden;
+            width: 100%;
+            padding-left: $grid-unit-size * 0.5;
+            font-size: 10px;
+            line-height: 14px;
+            text-overflow: ellipsis;
+            vertical-align: bottom;
+            white-space: nowrap;
+        }
+    }
+
+    .cvat-canvas-selected-objects-quick-actions {
+        display: flex;
+        justify-content: space-around;
+        margin-top: $grid-unit-size;
+        padding-top: $grid-unit-size;
+        border-top: 1px solid rgba(0, 0, 0, 7%);
+
+        > span,
+        > button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: $grid-unit-size * 4;
+        }
+
+        button {
+            color: $objects-bar-icons-color;
+            font-size: 16px;
+        }
+
+        button[disabled] {
+            opacity: 0.5;
+        }
+    }
+}
+
+.cvat-canvas-selection-context-menu {
+    overflow-x: hidden;
+}
+
+.cvat-canvas-selected-objects-label-selector {
+    min-width: 0;
+
+    > .ant-select {
+        width: 100%;
+    }
+
+    .ant-select-selector {
+        padding-right: $grid-unit-size * 3 !important;
+        border-color: rgba(0, 0, 0, 12%) !important;
+        border-radius: $border-radius-base !important;
+        background: rgba(255, 255, 255, 82%) !important;
+    }
+
+    .ant-select-arrow {
+        z-index: 1;
+    }
+}
+
 .cvat-image-setups-filters {
     margin-bottom: $grid-unit-size * 3;
 }

@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import traceback
 from abc import ABCMeta, abstractmethod
 from collections.abc import Callable
 from types import NoneType
@@ -206,6 +207,15 @@ class RQMetaWithFailureInfo(AbstractRQMeta):
             RQJobMetaField.EXCEPTION_TYPE,
             RQJobMetaField.EXCEPTION_ARGS,
         ]
+
+
+def save_job_failure_metadata(rq_job: RQJob, exc_type: type[Exception], exc_value: Exception):
+    rq_job_meta = RQMetaWithFailureInfo.for_job(rq_job)
+    rq_job_meta.formatted_exception = "".join(traceback.format_exception_only(exc_type, exc_value))
+    if rq_job.origin == settings.CVAT_QUEUES.CHUNKS.value:
+        rq_job_meta.exc_type = exc_type
+        rq_job_meta.exc_args = exc_value.args
+    rq_job_meta.save()
 
 
 class BaseRQMeta(RQMetaWithFailureInfo):

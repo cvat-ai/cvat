@@ -7,6 +7,7 @@ import { omit } from 'lodash';
 import config from './config';
 
 import PluginRegistry from './plugins';
+import { observe } from './capabilities';
 import serverProxy from './server-proxy';
 import lambdaManager from './lambda-manager';
 import requestsManager from './requests-manager';
@@ -58,6 +59,7 @@ function implementationMixin(func: Function, implementation: Function): void {
 }
 
 export default function implementAPI(cvat: CVATCore): CVATCore {
+    implementationMixin(cvat.capabilities.observe, observe);
     implementationMixin(cvat.plugins.list, PluginRegistry.list);
     implementationMixin(cvat.plugins.register, PluginRegistry.register.bind(cvat));
     implementationMixin(cvat.actions.list, listActions);
@@ -381,7 +383,7 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
             organizationSlug: organization.slug,
         };
     });
-    implementationMixin(cvat.organizations.deactivate, async () => {
+    implementationMixin(cvat.organizations.deactivate, () => {
         config.organization = {
             organizationID: null,
             organizationSlug: null,
