@@ -23,7 +23,7 @@ from cvat.apps.quality_control.interval_data_provider import (
     RecordingSample,
     validate_audio_quality_scope,
 )
-from cvat.apps.quality_control.matching import temporal_iou
+from cvat.apps.quality_control.matching import match_segments, temporal_iou
 from cvat.apps.quality_control.quality_calculators import (
     ProjectQualityCalculator,
     TaskQualityCalculator,
@@ -81,6 +81,46 @@ def report(gt, ds, *, requirements=None, gt_range=None, ds_range=None):
 
 
 class TestIntervalQuality(unittest.TestCase):
+    def test_empty_side_does_not_allocate_a_matching_matrix(self) -> None:
+        annotations = [interval(index) for index in range(10000)]
+        for gt, ds in ((annotations, []), ([], annotations), ([], [])):
+            with (
+                self.subTest(gt_count=len(gt), ds_count=len(ds)),
+                mock.patch(
+                    "cvat.apps.quality_control.matching.np.array",
+                    side_effect=AssertionError("An empty side must not allocate a matrix"),
+                ),
+            ):
+                distance = mock.Mock()
+                self.assertEqual(
+                    match_segments(gt, ds, distance=distance, dist_thresh=0.5),
+                    ([], [], gt, ds),
+                )
+                distance.assert_not_called()
+
+    def test_large_empty_side_preserves_audio_conflicts_and_scores(self) -> None:
+        count = 10000
+        for missing in (True, False):
+            with self.subTest(missing=missing):
+                annotations = [interval(index, job=1 if missing else 2) for index in range(count)]
+                result = report(annotations if missing else [], [] if missing else annotations)
+                summary = result.groups["interval"].comparison_summary
+                self.assertTrue(result.comparison_summary.has_comparison_scope)
+                self.assertEqual(summary.score, 0)
+                self.assertEqual(summary.score_components.valid_count, 0)
+                self.assertEqual(summary.score_components.missing_count, count if missing else 0)
+                self.assertEqual(summary.score_components.extra_count, 0 if missing else count)
+                conflicts = result.get_conflicts()
+                self.assertEqual(len(conflicts), count)
+                self.assertEqual(
+                    {conflict.type for conflict in conflicts},
+                    {
+                        models.AnnotationConflictType.MISSING_ANNOTATION
+                        if missing
+                        else models.AnnotationConflictType.EXTRA_ANNOTATION
+                    },
+                )
+
     def test_temporal_iou(self):
         for bounds, expected in [
             ((0, 1000, 0, 1000), 1),

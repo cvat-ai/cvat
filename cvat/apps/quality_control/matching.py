@@ -68,6 +68,9 @@ def _match_segments_once(
     dist_thresh: float = 1.0,
     label_matcher: LabelEqualityFunction[_ShapeT1, _ShapeT2] = lambda a, b: a.label == b.label,
 ) -> SegmentMatchingResult[_ShapeT1, _ShapeT2]:
+    if not a_segms or not b_segms:
+        return [], [], list(a_segms), list(b_segms)
+
     max_anns = max(len(a_segms), len(b_segms))
     distances = np.array(
         [
