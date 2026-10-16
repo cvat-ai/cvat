@@ -444,6 +444,8 @@ class TestDeleteJobs:
             ("gt", "annotation", False),
             ("gt_pool", "ground_truth", False),
             ("gt_pool", "annotation", False),
+            (None, "replica", True),
+            ("gt_pool", "replica", True),
         ),
     )
     def test_destroy_job(self, admin_user, tasks, jobs, validation_mode, job_type, allow):

@@ -79,7 +79,6 @@ from cvat.apps.engine.models import (
     FrameQuality,
     Issue,
     Job,
-    JobType,
     Label,
     Location,
     Project,
@@ -2220,7 +2219,7 @@ class TaskViewSet(
             Related annotations will be deleted as well.
 
             Please note, that not every job can be removed. Currently,
-            it is only available for Ground Truth jobs.
+            it is only available for Ground Truth and replica jobs.
             """),
         responses={
             "204": OpenApiResponse(description="The job has been deleted"),
@@ -2324,26 +2323,6 @@ class JobViewSet(
 
         # Required for the extra summary information added in the queryset
         serializer.instance = self.get_queryset().get(pk=serializer.instance.pk)
-
-    @transaction.atomic
-    def perform_destroy(self, instance):
-        if instance.type != JobType.GROUND_TRUTH:
-            raise ValidationError("Only ground truth jobs can be removed")
-
-        validation_layout: models.ValidationLayout | None = getattr(
-            instance.segment.task.data, "validation_layout", None
-        )
-        if validation_layout and validation_layout.mode == models.ValidationMode.GT_POOL:
-            raise ValidationError(
-                'GT jobs cannot be removed when task validation mode is "{}"'.format(
-                    models.ValidationMode.GT_POOL
-                )
-            )
-
-        super().perform_destroy(instance)
-
-        if validation_layout:
-            validation_layout.delete()
 
     # UploadMixin method
     def get_upload_dir(self):
