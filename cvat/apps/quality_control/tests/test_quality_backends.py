@@ -22,7 +22,6 @@ from cvat.apps.engine.models import DimensionType
 from cvat.apps.quality_control import data_providers, filters, models, quality_handlers
 from cvat.apps.quality_control.attribute_comparison import CVAT_ATTRIBUTE_SPEC_IDS_ATTR
 from cvat.apps.quality_control.backends import (
-    ComparisonSample,
     FrameComparisonSample,
     QualityBackend,
     make_quality_backend,
@@ -477,10 +476,10 @@ class TestDatumaroQualityBackend(unittest.TestCase):
         self.assertEqual(estimator._backend._views, {})
         self.assertIsNone(estimator._backend._native_items)
 
-    def test_audio_is_not_enabled_by_the_new_contract(self):
+    def test_audio_requires_an_interval_provider(self):
         provider = mock.Mock()
         provider.dimension = DimensionType.DIM_1D
-        with self.assertRaisesRegex(ValueError, "only supported for 2D"):
+        with self.assertRaisesRegex(AssertionError, "No interval quality backend"):
             make_quality_backend(provider, provider)
 
 
@@ -492,20 +491,6 @@ class TestQualityBackendBoundary(unittest.TestCase):
         filtered = evolve(sample, ds_annotations=[])
         self.assertIsInstance(filtered, FrameComparisonSample)
         self.assertEqual(filtered.frame_id, 7)
-
-    def test_frame_report_rejects_a_generic_sample_and_closes_backend(self):
-        backend = mock.Mock(spec=QualityBackend)
-        backend.iter_samples.return_value = iter([ComparisonSample((), ())])
-        with mock.patch.object(quality_handlers, "make_quality_backend", return_value=backend):
-            estimator = DatasetQualityEstimator(
-                mock.Mock(),
-                mock.Mock(),
-                requirements=[],
-                report_parameters=ComparisonReportParameters(),
-            )
-        with self.assertRaisesRegex(ValueError, "Only frame comparison reports"):
-            estimator.generate_report()
-        backend.close.assert_called_once_with()
 
     def test_filters_accept_new_annotation_types_and_their_subclasses(self):
         class Event(cdm.Annotation):

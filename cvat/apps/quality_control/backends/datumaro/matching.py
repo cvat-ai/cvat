@@ -292,7 +292,7 @@ class DistanceComparator(datumaro.components.comparator.DistanceComparator):
     ):
         super().__init__(iou_threshold=iou_threshold)
         if return_distances and return_comparisons:
-            raise ValueError("Pairwise distances and comparisons cannot be returned together")
+            raise AssertionError("Pairwise distances and comparisons cannot be returned together")
 
         self.categories = categories
         self._skeleton_info = {}

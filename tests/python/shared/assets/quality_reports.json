@@ -4,6 +4,7 @@
   "previous": null,
   "results": [
     {
+      "version": 1,
       "assignee": null,
       "created_date": "2025-05-06T16:27:52.046000Z",
       "gt_last_updated": null,
@@ -36,13 +37,15 @@
         },
         "total_frames": 12,
         "validation_frame_share": 0.5,
-        "validation_frames": 6
+        "validation_frames": 6,
+        "has_comparison_scope": true
       },
       "target": "project",
       "target_last_updated": "2025-05-05T15:35:00.542000Z",
       "task_id": null
     },
     {
+      "version": 1,
       "assignee": null,
       "created_date": "2025-05-06T16:27:52.036000Z",
       "gt_last_updated": "2025-05-05T15:38:37.188000Z",
@@ -59,13 +62,15 @@
         "error_count": 3,
         "total_frames": 3,
         "validation_frame_share": 0.6666666666666666,
-        "validation_frames": 2
+        "validation_frames": 2,
+        "has_comparison_scope": true
       },
       "target": "job",
       "target_last_updated": "2025-05-05T15:35:00.515000Z",
       "task_id": 33
     },
     {
+      "version": 1,
       "assignee": null,
       "created_date": "2025-05-06T16:27:52.036000Z",
       "gt_last_updated": "2025-05-05T15:38:37.188000Z",
@@ -82,13 +87,15 @@
         "error_count": 3,
         "total_frames": 5,
         "validation_frame_share": 0.4,
-        "validation_frames": 2
+        "validation_frames": 2,
+        "has_comparison_scope": true
       },
       "target": "job",
       "target_last_updated": "2025-05-05T15:35:00.493000Z",
       "task_id": 33
     },
     {
+      "version": 1,
       "assignee": null,
       "created_date": "2025-05-06T16:27:52.034000Z",
       "gt_last_updated": "2025-05-05T15:38:37.188000Z",
@@ -113,13 +120,15 @@
         },
         "total_frames": 8,
         "validation_frame_share": 0.5,
-        "validation_frames": 4
+        "validation_frames": 4,
+        "has_comparison_scope": true
       },
       "target": "task",
       "target_last_updated": "2025-05-05T15:36:34.341000Z",
       "task_id": 33
     },
     {
+      "version": 1,
       "assignee": null,
       "created_date": "2025-05-06T16:27:51.967000Z",
       "gt_last_updated": "2025-05-05T15:38:29.597000Z",
@@ -136,13 +145,15 @@
         "error_count": 4,
         "total_frames": 4,
         "validation_frame_share": 0.5,
-        "validation_frames": 2
+        "validation_frames": 2,
+        "has_comparison_scope": true
       },
       "target": "job",
       "target_last_updated": "2025-05-05T15:35:00.294000Z",
       "task_id": 32
     },
     {
+      "version": 1,
       "assignee": null,
       "created_date": "2025-05-06T16:27:51.965000Z",
       "gt_last_updated": "2025-05-05T15:38:29.597000Z",
@@ -166,13 +177,15 @@
         },
         "total_frames": 4,
         "validation_frame_share": 0.5,
-        "validation_frames": 2
+        "validation_frames": 2,
+        "has_comparison_scope": true
       },
       "target": "task",
       "target_last_updated": "2025-05-05T15:38:46.662000Z",
       "task_id": 32
     },
     {
+      "version": 1,
       "assignee": null,
       "created_date": "2025-03-31T13:38:00.464000Z",
       "gt_last_updated": "2023-11-24T15:18:55.216000Z",
@@ -194,13 +207,15 @@
         "error_count": 42,
         "total_frames": 11,
         "validation_frame_share": 0.2727272727272727,
-        "validation_frames": 3
+        "validation_frames": 3,
+        "has_comparison_scope": true
       },
       "target": "job",
       "target_last_updated": "2023-11-24T15:23:30.269000Z",
       "task_id": 22
     },
     {
+      "version": 1,
       "assignee": null,
       "created_date": "2025-03-31T13:38:00.460000Z",
       "gt_last_updated": "2023-11-24T15:18:55.216000Z",
@@ -229,13 +244,15 @@
         },
         "total_frames": 11,
         "validation_frame_share": 0.2727272727272727,
-        "validation_frames": 3
+        "validation_frames": 3,
+        "has_comparison_scope": true
       },
       "target": "task",
       "target_last_updated": "2023-11-24T15:23:30.045000Z",
       "task_id": 22
     },
     {
+      "version": 1,
       "assignee": null,
       "created_date": "2024-03-21T20:52:03.552000Z",
       "gt_last_updated": "2024-03-21T20:50:20.020000Z",
@@ -252,13 +269,15 @@
         "error_count": 2,
         "total_frames": 5,
         "validation_frame_share": 0.2,
-        "validation_frames": 1
+        "validation_frames": 1,
+        "has_comparison_scope": true
       },
       "target": "job",
       "target_last_updated": "2024-03-21T20:50:39.585000Z",
       "task_id": 23
     },
     {
+      "version": 1,
       "assignee": null,
       "created_date": "2024-03-21T20:52:03.552000Z",
       "gt_last_updated": "2024-03-21T20:50:20.020000Z",
@@ -274,13 +293,15 @@
         "error_count": 1,
         "total_frames": 5,
         "validation_frame_share": 0.4,
-        "validation_frames": 2
+        "validation_frames": 2,
+        "has_comparison_scope": true
       },
       "target": "job",
       "target_last_updated": "2024-03-21T20:50:33.610000Z",
       "task_id": 23
     },
     {
+      "version": 1,
       "assignee": null,
       "created_date": "2024-03-21T20:52:03.552000Z",
       "gt_last_updated": "2024-03-21T20:50:20.020000Z",
@@ -294,13 +315,15 @@
         "error_count": 0,
         "total_frames": 0,
         "validation_frame_share": 0.0,
-        "validation_frames": 0
+        "validation_frames": 0,
+        "has_comparison_scope": false
       },
       "target": "job",
       "target_last_updated": "2024-03-21T20:50:27.594000Z",
       "task_id": 23
     },
     {
+      "version": 1,
       "assignee": null,
       "created_date": "2024-03-21T20:52:03.542000Z",
       "gt_last_updated": "2024-03-21T20:50:20.020000Z",
@@ -318,13 +341,15 @@
         "error_count": 3,
         "total_frames": 11,
         "validation_frame_share": 0.2727272727272727,
-        "validation_frames": 3
+        "validation_frames": 3,
+        "has_comparison_scope": true
       },
       "target": "task",
       "target_last_updated": "2024-03-21T20:50:05.947000Z",
       "task_id": 23
     },
     {
+      "version": 1,
       "assignee": null,
       "created_date": "2024-03-21T11:16:21.847000Z",
       "gt_last_updated": "2023-11-24T15:18:55.216000Z",
@@ -346,13 +371,15 @@
         "error_count": 40,
         "total_frames": 11,
         "validation_frame_share": 0.2727272727272727,
-        "validation_frames": 3
+        "validation_frames": 3,
+        "has_comparison_scope": true
       },
       "target": "job",
       "target_last_updated": "2023-11-24T15:23:30.269000Z",
       "task_id": 22
     },
     {
+      "version": 1,
       "assignee": null,
       "created_date": "2024-03-21T11:16:21.845000Z",
       "gt_last_updated": "2023-11-24T15:18:55.216000Z",
@@ -374,13 +401,15 @@
         "error_count": 40,
         "total_frames": 11,
         "validation_frame_share": 0.2727272727272727,
-        "validation_frames": 3
+        "validation_frames": 3,
+        "has_comparison_scope": true
       },
       "target": "task",
       "target_last_updated": "2023-11-24T15:23:30.045000Z",
       "task_id": 22
     },
     {
+      "version": 1,
       "assignee": null,
       "created_date": "2023-11-24T15:24:25.357000Z",
       "gt_last_updated": "2023-11-24T15:18:55.216000Z",
@@ -402,13 +431,15 @@
         "error_count": 40,
         "total_frames": 11,
         "validation_frame_share": 0.2727272727272727,
-        "validation_frames": 3
+        "validation_frames": 3,
+        "has_comparison_scope": true
       },
       "target": "job",
       "target_last_updated": "2023-11-24T15:23:30.269000Z",
       "task_id": 22
     },
     {
+      "version": 1,
       "assignee": null,
       "created_date": "2023-11-24T15:24:25.355000Z",
       "gt_last_updated": "2023-11-24T15:18:55.216000Z",
@@ -430,13 +461,15 @@
         "error_count": 40,
         "total_frames": 11,
         "validation_frame_share": 0.2727272727272727,
-        "validation_frames": 3
+        "validation_frames": 3,
+        "has_comparison_scope": true
       },
       "target": "task",
       "target_last_updated": "2023-11-24T15:23:30.045000Z",
       "task_id": 22
     },
     {
+      "version": 1,
       "assignee": null,
       "created_date": "2023-05-26T16:25:36.616000Z",
       "gt_last_updated": "2023-05-26T16:16:50.630000Z",
@@ -458,13 +491,15 @@
         "error_count": 37,
         "total_frames": 11,
         "validation_frame_share": 0.2727272727272727,
-        "validation_frames": 3
+        "validation_frames": 3,
+        "has_comparison_scope": true
       },
       "target": "job",
       "target_last_updated": "2023-05-26T16:11:24.294000Z",
       "task_id": 22
     },
     {
+      "version": 1,
       "assignee": null,
       "created_date": "2023-05-26T16:25:36.613000Z",
       "gt_last_updated": "2023-05-26T16:16:50.630000Z",
@@ -486,7 +521,8 @@
         "error_count": 37,
         "total_frames": 11,
         "validation_frame_share": 0.2727272727272727,
-        "validation_frames": 3
+        "validation_frames": 3,
+        "has_comparison_scope": true
       },
       "target": "task",
       "target_last_updated": "2023-05-26T16:17:02.635000Z",

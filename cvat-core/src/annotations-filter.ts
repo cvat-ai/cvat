@@ -160,6 +160,7 @@ interface ConvertedAudioIntervalData {
     serverID: number | null;
     source: string | null;
     start: number;
+    type: ObjectType.INTERVAL;
 }
 
 function getRotation(shapeType: ShapeType, rotation?: number | null): number | null {
@@ -217,6 +218,7 @@ export default class AnnotationsFilter {
                 serverID: interval.serverID ?? null,
                 source: interval.source ?? null,
                 start: interval.start,
+                type: ObjectType.INTERVAL,
             };
         });
     }

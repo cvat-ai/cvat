@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import itertools
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Iterator, Sequence
 from typing import NamedTuple, TypeAlias, TypeVar
 
 import numpy as np
@@ -68,6 +68,9 @@ def _match_segments_once(
     dist_thresh: float = 1.0,
     label_matcher: LabelEqualityFunction[_ShapeT1, _ShapeT2] = lambda a, b: a.label == b.label,
 ) -> SegmentMatchingResult[_ShapeT1, _ShapeT2]:
+    if not a_segms or not b_segms:
+        return [], [], list(a_segms), list(b_segms)
+
     max_anns = max(len(a_segms), len(b_segms))
     distances = np.array(
         [
@@ -155,6 +158,74 @@ def match_segments(
     return matches + extra_matches, mismatches, a_unmatched, b_unmatched
 
 
+def _interval_matching_components(
+    a_intervals: Sequence[cdm.Interval],
+    b_intervals: Sequence[cdm.Interval],
+) -> Iterator[tuple[list[cdm.Interval], list[cdm.Interval]]]:
+    intervals = (*a_intervals, *b_intervals)
+    a_count = len(a_intervals)
+    components: list[tuple[list[int], list[int]]] = []
+    component: tuple[list[int], list[int]] = ([], [])
+    component_stop: int | None = None
+    for index in sorted(range(len(intervals)), key=lambda index: intervals[index].start):
+        annotation = intervals[index]
+        stop = annotation.stop
+        if stop is None:
+            raise AssertionError("Interval ends must be resolved before matching")
+        if annotation.start == stop:
+            components.append(([index], []) if index < a_count else ([], [index]))
+            continue
+
+        if component_stop is None or annotation.start >= component_stop:
+            component = ([], [])
+            components.append(component)
+            component_stop = stop
+        else:
+            component_stop = max(component_stop, stop)
+        component[index >= a_count].append(index)
+
+    for a_indices, b_indices in components:
+        yield (
+            [intervals[index] for index in sorted(a_indices)],
+            [intervals[index] for index in sorted(b_indices)],
+        )
+
+
+def match_intervals(
+    a_intervals: Sequence[cdm.Interval],
+    b_intervals: Sequence[cdm.Interval],
+    *,
+    distance: ShapeSimilarityFunction[cdm.Interval, cdm.Interval],
+    dist_thresh: float = 1.0,
+) -> SegmentMatchingResult[cdm.Interval, cdm.Interval]:
+    """Match resolved intervals in independent components of positive temporal overlap.
+
+    The similarity function must not exceed temporal IoU. Each component keeps input
+    order, so equal-cost assignments are independent of unrelated intervals, but can
+    differ from the choices made by a recording-wide dense assignment.
+    """
+    if not a_intervals or not b_intervals:
+        return [], [], list(a_intervals), list(b_intervals)
+
+    matches, mismatches, a_unmatched, b_unmatched = [], [], [], []
+    for a_group, b_group in _interval_matching_components(a_intervals, b_intervals):
+        group_matches, group_mismatches, group_a_unmatched, group_b_unmatched = match_segments(
+            a_group, b_group, distance=distance, dist_thresh=dist_thresh
+        )
+        matches.extend(group_matches)
+        mismatches.extend(group_mismatches)
+        a_unmatched.extend(group_a_unmatched)
+        b_unmatched.extend(group_b_unmatched)
+
+    a_order = {id(annotation): index for index, annotation in enumerate(a_intervals)}
+    b_order = {id(annotation): index for index, annotation in enumerate(b_intervals)}
+    matches.sort(key=lambda pair: a_order[id(pair[0])])
+    mismatches.sort(key=lambda pair: a_order[id(pair[0])])
+    a_unmatched.sort(key=lambda annotation: a_order[id(annotation)])
+    b_unmatched.sort(key=lambda annotation: b_order[id(annotation)])
+    return matches, mismatches, a_unmatched, b_unmatched
+
+
 @define(frozen=True)
 class GroupComparison:
     """Group sizes and matching result for a pair of annotations."""
@@ -180,3 +251,9 @@ class MatchingResults:
     all_shape_ann_types: AnnotationMatches
     covered_annotations: list[cdm.Annotation]
     group_comparisons: list[GroupComparison]
+
+
+def temporal_iou(a_start: int, a_stop: int, b_start: int, b_stop: int) -> float:
+    intersection = max(0, min(a_stop, b_stop) - max(a_start, b_start))
+    union = a_stop - a_start + b_stop - b_start - intersection
+    return intersection / union if union > 0 else 0.0

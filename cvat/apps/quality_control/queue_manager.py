@@ -11,6 +11,8 @@ from rest_framework import serializers
 
 from cvat.apps.engine.models import (
     DimensionType,
+    Job,
+    JobType,
     Project,
     RequestTarget,
     Task,
@@ -21,6 +23,7 @@ from cvat.apps.quality_control.quality_calculators import (
     TaskQualityCalculator,
 )
 from cvat.apps.quality_control.rq import QualityRequestId
+from cvat.apps.quality_control.validation import validate_task_quality_settings
 from cvat.apps.redis_handler.background import AbstractRequestManager
 
 
@@ -52,15 +55,26 @@ class QualityReportQueueManager(AbstractRequestManager):
         super().validate_request()
 
         if isinstance(self.db_instance, Project):
-            return  # nothing prevents project reports
+            for task in self.db_instance.tasks.filter(
+                id__in=Job.objects.filter(type=JobType.GROUND_TRUTH).values("segment__task_id")
+            ):
+                validate_task_quality_settings(task)
         elif isinstance(self.db_instance, Task):
-            if self.db_instance.dimension != DimensionType.DIM_2D:
-                raise serializers.ValidationError("Quality reports are only supported in 2d tasks")
+            from cvat.apps.quality_control.interval_data_provider import (
+                validate_audio_quality_scope,
+            )
+
+            validate_audio_quality_scope(self.db_instance)
+            if self.db_instance.dimension not in (DimensionType.DIM_2D, DimensionType.DIM_1D):
+                raise serializers.ValidationError(
+                    "Quality reports are only supported in 1d and 2d tasks"
+                )
 
             if self.db_instance.gt_job is None:
                 raise serializers.ValidationError(
                     "Quality reports require a Ground Truth job in the task"
                 )
+            validate_task_quality_settings(self.db_instance)
         else:
             assert False
 
