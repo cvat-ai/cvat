@@ -14,6 +14,15 @@ context('Quality requirements UI', () => {
     const grandchildRequirementName = 'E2E precise rectangle accuracy';
     const copiedRequirementName = `Copy of ${childRequirementName}`;
     const defaultRectangleRequirementName = 'Base rectangle';
+    const thresholdEditor = '.cvat-threshold-policy-editor';
+    const thresholdRows = `${thresholdEditor} .cvat-threshold-policy-row`;
+    const linearIouPolicy = {
+        type: 'iou',
+        mode: 'linear',
+        input: 'gt.shape_area',
+        extrapolation: 'clamp',
+        points: [{ x: 100, y: 0.4 }, { x: 1000, y: 0.9 }],
+    };
     const validationParams = {
         frameCount: 2,
         mode: 'gt',
@@ -63,6 +72,29 @@ context('Quality requirements UI', () => {
 
     function submitForm() {
         cy.get('.cvat-quality-requirement-form-actions').contains('button', 'Save').click();
+    }
+
+    function selectThresholdMode(mode) {
+        cy.get(`${thresholdEditor} .ant-select-selector`).click();
+        cy.get('.ant-select-dropdown:not(.ant-select-dropdown-hidden)')
+            .contains('.ant-select-item-option-content', mode).click();
+    }
+
+    function expectLinearThreshold(points = linearIouPolicy.points) {
+        cy.get(`${thresholdEditor} .ant-select-selection-item`).should('have.text', 'Linear interpolation');
+        cy.get(thresholdRows).should('have.length', points.length);
+        points.forEach((point, index) => {
+            cy.get(thresholdRows).eq(index).find('input[id*="area"]').should('have.value', `${point.x}`);
+            cy.get(thresholdRows).eq(index).find('input[id*="iou"]').should('have.value', `${point.y * 100}`);
+        });
+    }
+
+    function expectPolicyRequest(alias, policy, status = 200) {
+        cy.wait(alias).then(({ request, response }) => {
+            expect(response.statusCode).to.equal(status);
+            expect(request.body.similarity_threshold_policy).to.deep.equal(policy);
+            expect(request.body).not.to.have.property('iou_threshold');
+        });
     }
 
     function saveSettings() {
@@ -350,5 +382,184 @@ context('Quality requirements UI', () => {
         expectNotification('Requirement has been updated');
         cy.get('.cvat-quality-requirements-configuration-table').should('be.visible');
         requirementRow('Base rectangle renamed').should('be.visible');
+    });
+
+    it('Edits and persists interpolated IoU', () => {
+        openSettingsTab();
+        clickRowAction('Base rectangle renamed', 'edit');
+        const editor = '.cvat-threshold-policy-editor';
+        const rows = `${editor} .cvat-threshold-policy-row`;
+        const canvas = `${editor} .cvat-threshold-policy-chart canvas`;
+        const pointer = (type, x, y, buttons = 0) => {
+            cy.get(canvas).then(($canvas) => {
+                const rect = $canvas[0].getBoundingClientRect();
+                cy.wrap($canvas).trigger(type, {
+                    eventConstructor: 'PointerEvent',
+                    pointerId: 1,
+                    button: 0,
+                    buttons,
+                    clientX: rect.left + rect.width * x,
+                    clientY: rect.top + rect.height * y,
+                });
+            });
+        };
+        cy.get(`${editor} input.ant-input-number-input`).should('have.length', 1).and('have.value', '40');
+        cy.get(`${editor} .cvat-threshold-policy-chart`).should('not.exist');
+        selectThresholdMode('Linear interpolation');
+        cy.get(rows).should('have.length', 2);
+        cy.get(rows).last().find('input[id*="iou"]').clear();
+        cy.get(rows).last().find('input[id*="iou"]').type('90');
+        cy.get(rows).last().find('input[id*="iou"]').blur();
+        cy.get(rows).last().find('input[id*="area"]').clear();
+        cy.get(`${rows}.selected`).find('input[id*="area"]').type('100');
+        cy.get(`${rows}.selected`).find('input[id*="area"]').blur();
+        submitForm();
+        cy.contains('.ant-form-item-explain-error', 'Correct the IoU threshold fields before saving.')
+            .should('be.visible');
+        cy.get(`${rows}.selected`).find('input[id*="area"]').clear();
+        cy.get(`${rows}.selected`).find('input[id*="area"]').type('1000');
+        cy.get(`${rows}.selected`).find('input[id*="area"]').blur();
+        cy.get(canvas).scrollIntoView();
+        cy.get(canvas).should('be.visible');
+        pointer('pointermove', 0.5, 0.5);
+        cy.get(`${editor} .cvat-threshold-policy-tooltip`).should('contain', 'GT area:')
+            .and('contain', 'px²').and('contain', 'IoU threshold:').and('contain', '%');
+        cy.contains(`${editor} button`, 'Add point').click();
+        cy.get(rows).should('have.length', 3);
+        cy.get(rows).eq(1).find('button').click();
+        cy.get(rows).should('have.length', 2);
+        if (Cypress.isBrowser({ family: 'chromium' })) {
+            // Native pointer events are needed for canvas pointer capture during a drag.
+            cy.get(canvas).scrollIntoView();
+            cy.get(canvas).realClick({ position: 'center', scrollBehavior: false });
+            cy.get(rows).should('have.length', 3);
+            cy.get(`${rows}.selected`).find('input[id*="area"]').invoke('val').then((area) => {
+                cy.get(canvas).then(($canvas) => {
+                    const { width, height } = $canvas[0].getBoundingClientRect();
+                    cy.wrap($canvas).realMouseDown({ x: width / 2, y: height / 2, scrollBehavior: false });
+                    cy.wrap($canvas).realMouseMove(width * 0.6, height * 0.4, { scrollBehavior: false });
+                    cy.wrap($canvas).realMouseUp({ x: width * 0.6, y: height * 0.4, scrollBehavior: false });
+                });
+                cy.get(`${rows}.selected`).find('input[id*="area"]').should(($input) => {
+                    expect(Number($input.val())).to.be.greaterThan(Number(area));
+                });
+            });
+            cy.contains(`${editor} button`, 'Undo').click({ scrollBehavior: 'center' });
+            cy.get(canvas).scrollIntoView();
+            cy.get(canvas).realClick({ button: 'right', position: 'center', scrollBehavior: false });
+            cy.get(rows).should('have.length', 2);
+        }
+        cy.get(rows).first().find('button').should('be.disabled');
+
+        cy.intercept('PATCH', '**/api/quality/settings/requirements/*').as('saveIouPolicy');
+        submitForm();
+        expectPolicyRequest('@saveIouPolicy', linearIouPolicy);
+        expectNotification('Requirement has been updated');
+        cy.reload();
+        cy.get('.cvat-quality-requirements-configuration-table').should('be.visible');
+        clickRowAction('Base rectangle renamed', 'edit');
+        expectLinearThreshold();
+        cy.get('.cvat-quality-requirement-form-actions').contains('button', 'Cancel').click();
+    });
+
+    it('Preserves inherited IoU when another field changes, overrides it and resets the whole policy', () => {
+        openSettingsTab();
+        ensureRowExpanded('Base rectangle renamed');
+        clickRowAction(childRequirementName, 'edit');
+        expectLinearThreshold();
+        setFormThreshold(91);
+        cy.intercept('PATCH', '**/api/quality/settings/requirements/*').as('saveInheritedIou');
+        submitForm();
+        cy.wait('@saveInheritedIou').then(({ request, response }) => {
+            expect(response.statusCode).to.equal(200);
+            expect(request.body).not.to.have.property('similarity_threshold_policy');
+            expect(request.body).not.to.have.property('iou_threshold');
+            expect(response.body.similarity_threshold_policy).to.equal(null);
+            expect(response.body.effective.similarity_threshold_policy).to.deep.equal(linearIouPolicy);
+        });
+        expectNotification('Requirement has been updated');
+
+        clickRowAction(childRequirementName, 'edit');
+        expectLinearThreshold();
+        selectThresholdMode('Constant');
+        cy.get(`${thresholdEditor} input.ant-input-number-input`).clear();
+        cy.get(`${thresholdEditor} input.ant-input-number-input`).type('65');
+        cy.get(`${thresholdEditor} input.ant-input-number-input`).blur();
+        submitForm();
+        expectPolicyRequest('@saveInheritedIou', { type: 'iou', mode: 'constant', value: 0.65 });
+        expectNotification('Requirement has been updated');
+
+        clickRowAction(childRequirementName, 'edit');
+        cy.get(`${thresholdEditor} input.ant-input-number-input`).should('have.value', '65');
+        cy.contains('.ant-form-item', 'IoU threshold')
+            .find('.ant-form-item-label .cvat-quality-requirement-revert-button').click();
+        expectLinearThreshold();
+        submitForm();
+        expectPolicyRequest('@saveInheritedIou', null);
+        expectNotification('Requirement has been updated');
+        cy.reload();
+        cy.get('.cvat-quality-requirements-configuration-table').should('be.visible');
+        clickRowAction(childRequirementName, 'edit');
+        expectLinearThreshold();
+        cy.get('.cvat-quality-requirement-form-actions').contains('button', 'Cancel').click();
+    });
+
+    it('Copies a local IoU curve without changing the source requirement', () => {
+        openSettingsTab();
+        ensureRowExpanded('Base rectangle renamed');
+        clickRowAction(childRequirementName, 'edit');
+        expectLinearThreshold();
+        cy.get(thresholdRows).last().find('input[id*="iou"]').clear();
+        cy.get(thresholdRows).last().find('input[id*="iou"]').type('85');
+        cy.get(thresholdRows).last().find('input[id*="iou"]').blur();
+        const sourcePolicy = { ...linearIouPolicy, points: [{ x: 100, y: 0.4 }, { x: 1000, y: 0.85 }] };
+        cy.intercept('PATCH', '**/api/quality/settings/requirements/*').as('saveLocalIou');
+        submitForm();
+        expectPolicyRequest('@saveLocalIou', sourcePolicy);
+        expectNotification('Requirement has been updated');
+
+        clickRowAction(childRequirementName, 'copy');
+        expectLinearThreshold(sourcePolicy.points);
+        cy.get(thresholdRows).last().find('input[id*="iou"]').clear();
+        cy.get(thresholdRows).last().find('input[id*="iou"]').type('75');
+        cy.get(thresholdRows).last().find('input[id*="iou"]').blur();
+        const copiedPolicy = { ...linearIouPolicy, points: [{ x: 100, y: 0.4 }, { x: 1000, y: 0.75 }] };
+        cy.intercept('POST', '**/api/quality/settings/requirements*').as('copyIouPolicy');
+        submitForm();
+        expectPolicyRequest('@copyIouPolicy', copiedPolicy, 201);
+        expectNotification('Requirement has been created');
+
+        cy.reload();
+        cy.get('.cvat-quality-requirements-configuration-table').should('be.visible');
+        clickRowAction(copiedRequirementName, 'edit');
+        expectLinearThreshold(copiedPolicy.points);
+        cy.get('.cvat-quality-requirement-form-actions').contains('button', 'Cancel').click();
+        clickRowAction(childRequirementName, 'edit');
+        expectLinearThreshold(sourcePolicy.points);
+        cy.get('.cvat-quality-requirement-form-actions').contains('button', 'Cancel').click();
+    });
+
+    it('Keeps the curve draft when switching modes and saves a constant IoU', () => {
+        openSettingsTab();
+        clickRowAction('Base rectangle renamed', 'edit');
+        expectLinearThreshold();
+        selectThresholdMode('Constant');
+        cy.get(`${thresholdEditor} .cvat-threshold-policy-chart`).should('not.exist');
+        cy.get(`${thresholdEditor} input.ant-input-number-input`).should('have.length', 1).clear();
+        cy.get(`${thresholdEditor} input.ant-input-number-input`).type('70');
+        cy.get(`${thresholdEditor} input.ant-input-number-input`).blur();
+        selectThresholdMode('Linear interpolation');
+        expectLinearThreshold();
+        selectThresholdMode('Constant');
+        cy.get(`${thresholdEditor} input.ant-input-number-input`).should('have.value', '70');
+        cy.intercept('PATCH', '**/api/quality/settings/requirements/*').as('saveConstantIou');
+        submitForm();
+        expectPolicyRequest('@saveConstantIou', { type: 'iou', mode: 'constant', value: 0.7 });
+        expectNotification('Requirement has been updated');
+        cy.reload();
+        cy.get('.cvat-quality-requirements-configuration-table').should('be.visible');
+        clickRowAction('Base rectangle renamed', 'edit');
+        cy.get(`${thresholdEditor} .cvat-threshold-policy-chart`).should('not.exist');
+        cy.get(`${thresholdEditor} input.ant-input-number-input`).should('have.length', 1).and('have.value', '70');
     });
 });

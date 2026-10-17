@@ -59,6 +59,13 @@ from cvat.apps.quality_control.comparison_report import (
 from cvat.apps.quality_control.filters import RequirementJsonLogicFilter
 from cvat.apps.quality_control.matching import AttributeMatchingResult, MatchingResults
 from cvat.apps.quality_control.models import AnnotationConflictSeverity, AnnotationConflictType
+from cvat.apps.quality_control.threshold_policy import (
+    ConstantThresholdPolicy,
+    InvalidGroundTruthArea,
+    LinearThresholdPolicy,
+    ThresholdPolicy,
+    parse_threshold_policy,
+)
 
 if TYPE_CHECKING:
     from cvat.apps.quality_control.data_providers import JobDataProvider
@@ -83,6 +90,7 @@ class EffectiveQualityRequirement:
     parent_requirement: int | None = None
     sort_order: int = 0
     iou_threshold: float | None = None
+    similarity_threshold_policy: ConstantThresholdPolicy | LinearThresholdPolicy | None = None
     oks_sigma: float | None = None
     line_thickness: float | None = None
     point_size_base: str | None = None
@@ -118,6 +126,7 @@ _INHERITED_REQUIREMENT_FIELDS = (
     "target_metric",
     "target_metric_threshold",
     "iou_threshold",
+    "similarity_threshold_policy",
     "oks_sigma",
     "line_thickness",
     "point_size_base",
@@ -134,7 +143,7 @@ _INHERITED_REQUIREMENT_FIELDS = (
 _REQUIRED_ROOT_REQUIREMENT_FIELDS = tuple(
     field_name
     for field_name in _INHERITED_REQUIREMENT_FIELDS
-    if field_name != "attribute_comparison"
+    if field_name not in {"attribute_comparison", "similarity_threshold_policy"}
 )
 
 
@@ -178,6 +187,7 @@ def _make_effective_requirement(
             field_name
             for field_name in _REQUIRED_ROOT_REQUIREMENT_FIELDS
             if values[field_name] is None
+            and not (field_name == "iou_threshold" and values["similarity_threshold_policy"])
         ]
         if missing_fields:
             raise ValueError(
@@ -199,6 +209,19 @@ def _make_effective_requirement(
                 values[field_name] = merge_attribute_comparison(values.get(field_name), local_value)
             else:
                 values[field_name] = local_value
+
+    local_policy = getattr(requirement, "similarity_threshold_policy", None)
+    if local_policy is not None:
+        values["similarity_threshold_policy"] = parse_threshold_policy(local_policy)
+    elif requirement.iou_threshold is not None:
+        values["similarity_threshold_policy"] = ConstantThresholdPolicy(
+            value=requirement.iou_threshold
+        )
+    policy = values["similarity_threshold_policy"]
+    if policy is not None:
+        values["iou_threshold"] = (
+            policy.value if isinstance(policy, ConstantThresholdPolicy) else None
+        )
 
     values["attribute_comparison"] = normalize_attribute_comparison(
         values.get("attribute_comparison"),
@@ -359,6 +382,16 @@ def serialize_requirement_parameters(requirement: Any) -> dict[str, Any]:
     ):
         params.pop(field, None)
 
+    policy = params.get("similarity_threshold_policy")
+    if policy is not None:
+        if not isinstance(policy, ThresholdPolicy):
+            policy = parse_threshold_policy(policy)
+        params["similarity_threshold_policy"] = policy.to_dict()
+        if isinstance(policy, LinearThresholdPolicy):
+            params["similarity_threshold_input"] = {
+                "name": "gt.shape_area",
+                "units": "px²",
+            }
     return params
 
 
@@ -423,6 +456,7 @@ def select_requirement_calculation(
         return candidate
 
     priority = {
+        RequirementCalculationReason.INVALID_GT_AREA: 4,
         RequirementCalculationReason.NO_ANNOTATIONS: 0,
         RequirementCalculationReason.FILTER_NO_MATCHES: 1,
         RequirementCalculationReason.REQUIRED_ATTRIBUTES_MISSING: 2,
@@ -551,7 +585,8 @@ def build_requirements_summary(
         if calculation.status == RequirementCalculationStatus.NOT_COMPUTED:
             # An empty selection on both sides is a vacuous success, but it has no metric value.
             not_computed_count += 1
-            completed_count += 1
+            if calculation.reason != RequirementCalculationReason.INVALID_GT_AREA:
+                completed_count += 1
         elif actual_score is not None and required_score <= actual_score:
             completed_count += 1
 
@@ -961,9 +996,25 @@ class ShapeRequirementHandler(RequirementHandler):
         sample, calculation = self._filter_sample(sample)
 
         # Call comparator to match annotations
-        matching_results: MatchingResults = self._backend.compare(
-            sample, requirement=self.requirement, attribute_matcher=self._match_attrs
-        )
+        try:
+            matching_results: MatchingResults = self._backend.compare(
+                sample, requirement=self.requirement, attribute_matcher=self._match_attrs
+            )
+        except InvalidGroundTruthArea as error:
+            calculation = attrs.evolve(
+                calculation,
+                status=RequirementCalculationStatus.NOT_COMPUTED,
+                reason=RequirementCalculationReason.INVALID_GT_AREA,
+                invalid_gt_count=error.count,
+            )
+            return RequirementFrameResult(
+                summary=self._make_frame_summary(
+                    annotation_summary=ComparisonReportAnnotationsSummary.create_empty(),
+                    conflicts=[],
+                    calculation=calculation,
+                ),
+                calculation=calculation,
+            )
 
         # Unpack results for all annotation types
         all_ann_types_result = matching_results.all_ann_types

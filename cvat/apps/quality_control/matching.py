@@ -65,10 +65,12 @@ def _match_segments_once(
     b_segms: Sequence[_ShapeT2],
     *,
     distance: ShapeSimilarityFunction[_ShapeT1, _ShapeT2],
-    dist_thresh: float = 1.0,
+    dist_thresh: float | Callable[[_ShapeT1], float] = 1.0,
     label_matcher: LabelEqualityFunction[_ShapeT1, _ShapeT2] = lambda a, b: a.label == b.label,
 ) -> SegmentMatchingResult[_ShapeT1, _ShapeT2]:
     max_anns = max(len(a_segms), len(b_segms))
+    if not max_anns:
+        return [], [], [], []
     distances = np.array(
         [
             [
@@ -79,7 +81,13 @@ def _match_segments_once(
         ]
     )
     distances[~np.isfinite(distances)] = 1
-    distances[distances > 1 - dist_thresh] = 1
+    thresholds = (
+        np.asarray([dist_thresh(a) for a in a_segms] + [1.0] * (max_anns - len(a_segms)))
+        if callable(dist_thresh)
+        else dist_thresh
+    )
+    cutoffs = 1 - thresholds[:, np.newaxis] if callable(dist_thresh) else 1 - thresholds
+    distances[distances > cutoffs] = 1
 
     if a_segms and b_segms:
         a_matches, b_matches = linear_sum_assignment(distances)
@@ -97,7 +105,8 @@ def _match_segments_once(
 
     for a_idx, b_idx in zip(a_matches, b_matches):
         dist = distances[a_idx, b_idx]
-        if dist > 1 - dist_thresh or dist == 1:
+        threshold = thresholds[a_idx] if callable(dist_thresh) else thresholds
+        if dist > 1 - threshold or dist == 1:
             if a_idx < len(a_segms):
                 a_unmatched.append(a_segms[a_idx])
             if b_idx < len(b_segms):
@@ -122,7 +131,7 @@ def match_segments(
     b_segms: Sequence[_ShapeT2],
     *,
     distance: ShapeSimilarityFunction[_ShapeT1, _ShapeT2],
-    dist_thresh: float = 1.0,
+    dist_thresh: float | Callable[[_ShapeT1], float] = 1.0,
     label_matcher: LabelEqualityFunction[_ShapeT1, _ShapeT2] = lambda a, b: a.label == b.label,
 ) -> SegmentMatchingResult[_ShapeT1, _ShapeT2]:
     assert callable(distance), distance

@@ -301,6 +301,7 @@ _INHERITED_REQUIREMENT_FIELDS = (
     "target_metric",
     "target_metric_threshold",
     "iou_threshold",
+    "similarity_threshold_policy",
     "oks_sigma",
     "line_thickness",
     "point_size_base",
@@ -314,6 +315,51 @@ _INHERITED_REQUIREMENT_FIELDS = (
     "compare_attributes",
     "attribute_comparison",
 )
+
+
+class ThresholdPolicyPointSerializer(serializers.Serializer):
+    x = serializers.FloatField(
+        min_value=0, help_text="Finite GT shape area in px², strictly greater than zero."
+    )
+    y = serializers.FloatField(min_value=0, max_value=1)
+
+
+class SimilarityThresholdPolicySerializer(serializers.Serializer):
+    type = serializers.ChoiceField(
+        choices=["iou"],
+        required=False,
+        help_text="Threshold type. Omitted type is accepted as IoU for compatibility; responses always include it.",
+    )
+    mode = serializers.ChoiceField(choices=["constant", "linear"])
+    value = serializers.FloatField(required=False, min_value=0, max_value=1)
+    input = serializers.ChoiceField(choices=["gt.shape_area"], required=False)
+    extrapolation = serializers.ChoiceField(choices=["clamp"], required=False)
+    points = ThresholdPolicyPointSerializer(
+        many=True,
+        required=False,
+        min_length=2,
+        max_length=200,
+        help_text="Required in linear mode: 2–200 points sorted by unique positive GT area.",
+    )
+
+    def to_internal_value(self, data):
+        from cvat.apps.quality_control.threshold_policy import parse_threshold_policy
+
+        try:
+            return parse_threshold_policy(data)
+        except ValueError as error:
+            raise serializers.ValidationError(str(error)) from error
+
+    def to_representation(self, instance):
+        from cvat.apps.quality_control.threshold_policy import (
+            ThresholdPolicy,
+            parse_threshold_policy,
+        )
+
+        policy = (
+            instance if isinstance(instance, ThresholdPolicy) else parse_threshold_policy(instance)
+        )
+        return super().to_representation(policy)
 
 
 @extend_schema_serializer(component_name="AttributeComparisonDefaultRule")
@@ -398,6 +444,11 @@ class QualityRequirementListSerializer(serializers.ListSerializer):
 
 # TODO: try to split into different types per annotation type?
 class QualityRequirementSerializer(serializers.ModelSerializer):
+    similarity_threshold_policy = SimilarityThresholdPolicySerializer(
+        required=False,
+        allow_null=True,
+        help_text="Constant IoU or piecewise linear IoU by GT shape area (rectangle, polygon, mask).",
+    )
     settings_id = serializers.PrimaryKeyRelatedField(
         source="settings",
         queryset=models.QualitySettings.objects.all(),
@@ -644,6 +695,7 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
             "parent_requirement",
             "effective",
             "iou_threshold",
+            "similarity_threshold_policy",
             "point_size",
             "point_size_base",
             "line_thickness",
@@ -825,9 +877,17 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
                 visited_parent_ids.add(current_parent.id)
                 current_parent = current_parent.parent
 
+        self._validate_threshold_policy(attrs, parent_requirement, annotation_type)
+
         if parent_requirement is None:
             for field_name in _INHERITED_REQUIREMENT_FIELDS:
-                if field_name == "attribute_comparison":
+                if field_name in {"attribute_comparison", "similarity_threshold_policy"}:
+                    continue
+
+                if field_name == "iou_threshold" and attrs.get(
+                    "similarity_threshold_policy",
+                    getattr(self.instance, "similarity_threshold_policy", None),
+                ):
                     continue
 
                 if field_name in attrs and attrs[field_name] is None:
@@ -856,6 +916,56 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
                 )
 
         return attrs
+
+    def _validate_threshold_policy(self, attrs, parent, annotation_type):
+        from cvat.apps.quality_control.quality_handlers import resolve_effective_requirement
+        from cvat.apps.quality_control.threshold_policy import (
+            ADAPTIVE_IOU_TYPES,
+            ConstantThresholdPolicy,
+        )
+
+        key = "similarity_threshold_policy"
+        # Root requirements may use the legacy scalar without a JSON policy.
+        if parent is None and attrs.get(key) is None:
+            attrs.pop(key, None)
+
+        if key in attrs:
+            policy = attrs[key]
+            effective_type = annotation_type or self._get_effective_annotation_type(parent)
+            if policy is not None and effective_type not in ADAPTIVE_IOU_TYPES:
+                raise serializers.ValidationError(
+                    {key: "Threshold policies support rectangle, polygon and mask requirements."}
+                )
+            if policy is None:
+                attrs["iou_threshold"] = None
+            else:
+                scalar = attrs.get("iou_threshold")
+                if scalar is not None and (
+                    not isinstance(policy, ConstantThresholdPolicy) or scalar != policy.value
+                ):
+                    raise serializers.ValidationError(
+                        {key: "Conflicting IoU threshold and policy."}
+                    )
+                attrs["iou_threshold"] = (
+                    policy.value if isinstance(policy, ConstantThresholdPolicy) else None
+                )
+                attrs[key] = policy.to_dict()
+        elif "iou_threshold" in attrs:
+            source = self.instance or parent
+            effective = resolve_effective_requirement(source) if source is not None else None
+            current_policy = effective.similarity_threshold_policy if effective else None
+            if (
+                current_policy
+                and current_policy.mode == "linear"
+                and attrs["iou_threshold"] is not None
+            ):
+                raise serializers.ValidationError(
+                    {
+                        "iou_threshold": "Explicitly switch similarity_threshold_policy to constant before changing a linear threshold."
+                    }
+                )
+            if not current_policy or current_policy.mode != "linear":
+                attrs[key] = None
 
     @staticmethod
     def _touch_settings(settings: models.QualitySettings) -> None:

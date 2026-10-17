@@ -4,6 +4,107 @@
 
 @import 'base';
 
+.cvat-threshold-policy-editor {
+    .cvat-threshold-policy-controls,
+    .cvat-threshold-policy-toolbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: $grid-unit-size * 2;
+        margin-bottom: $grid-unit-size * 2;
+    }
+
+    .cvat-threshold-policy-controls {
+        align-items: flex-end;
+        justify-content: flex-start;
+        flex-wrap: wrap;
+
+        .ant-select { width: $grid-unit-size * 28; }
+        .ant-input-number { width: $grid-unit-size * 14; }
+
+        .cvat-threshold-policy-undo {
+            margin-inline-start: auto;
+        }
+    }
+
+    label {
+        display: flex;
+        flex-direction: column;
+        gap: $grid-unit-size;
+        color: $text-color-secondary;
+        font-size: 12px;
+    }
+
+    .cvat-threshold-policy-chart {
+        --threshold-line: #{$validation-progress-color};
+        --threshold-fill: #{$hover-menu-color};
+        --threshold-background: #{$background-color-1};
+        --threshold-grid: #{$border-color-1};
+        --threshold-text: #{$text-color-secondary};
+
+        position: relative;
+        height: clamp(240px, 40vw, 340px);
+
+        canvas {
+            display: block;
+            width: 100%;
+            touch-action: none;
+            user-select: none;
+        }
+    }
+
+    .cvat-threshold-policy-tooltip {
+        position: absolute;
+        padding: $grid-unit-size;
+        background: $background-color-1;
+        border: 1px solid $border-color-1;
+        border-radius: $grid-unit-size;
+        box-shadow: $box-shadow-base;
+        pointer-events: none;
+        font-size: 12px;
+
+        strong { color: $validation-progress-color; }
+    }
+
+    .cvat-threshold-policy-hint {
+        color: $text-color-secondary;
+        font-size: 12px;
+    }
+
+    .cvat-threshold-policy-points {
+        display: flex;
+        flex-direction: column;
+        gap: $grid-unit-size;
+        max-height: $grid-unit-size * 48;
+        overflow: auto;
+        padding: $grid-unit-size / 2;
+    }
+
+    .cvat-threshold-policy-row {
+        display: grid;
+        grid-template-columns: 80px minmax(0, 1fr) minmax(0, 1fr) 32px;
+        align-items: center;
+        gap: $grid-unit-size * 2;
+        padding: $grid-unit-size * 2;
+        border: 1px solid $border-color-1;
+        border-radius: $grid-unit-size;
+
+        .ant-input-number { width: 100%; }
+
+        &.selected {
+            border-color: $validation-progress-color;
+            background: $hover-menu-color;
+        }
+
+        @media (width <= 600px) {
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 32px;
+            gap: $grid-unit-size;
+
+            > strong { grid-column: 1 / -1; }
+        }
+    }
+}
+
 .cvat-quality-target-metric-dropdown {
     .ant-select-item-group {
         color: $validation-progress-color;

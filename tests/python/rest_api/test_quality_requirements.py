@@ -4,13 +4,18 @@
 
 import csv
 import json
+import math
+from copy import deepcopy
 from http import HTTPStatus
 from io import BytesIO, StringIO
+from pathlib import Path
 from typing import Any
 from zipfile import ZipFile
 
+import numpy as np
 import pytest
 from cvat_sdk.core.helpers import get_paginated_collection
+from cvat_sdk.masks import encode_mask
 from deepdiff import DeepDiff
 
 from rest_api.utils import create_gt_job, create_quality_report, create_task
@@ -24,6 +29,19 @@ from shared.utils.config import (
 from shared.utils.helpers import generate_image_files
 
 from .test_quality_control import _PermissionTestBase
+
+_IOU_LINEAR_POLICY = {
+    "type": "iou",
+    "mode": "linear",
+    "input": "gt.shape_area",
+    "extrapolation": "clamp",
+    "points": [{"x": 100, "y": 0.4}, {"x": 1000, "y": 0.9}],
+}
+_IOU_POLICY_FIXTURES = json.loads(
+    (
+        Path(__file__).parents[1] / "shared/assets/quality_control/iou_threshold_policies.json"
+    ).read_text()
+)
 
 
 class _QualityRequirementsTestBase(_PermissionTestBase):
@@ -1720,6 +1738,521 @@ class TestQualityRequirementsApi(_QualityRequirementsTestBase):
         )
 
         assert response.status_code == (HTTPStatus.CREATED if allow else HTTPStatus.FORBIDDEN)
+
+
+@pytest.mark.usefixtures("restore_db_per_function")
+class TestIoUThresholdPolicies(_QualityRequirementsTestBase):
+    @pytest.fixture
+    def root_requirement(self, admin_user, find_sandbox_task_without_gt):
+        task, _ = find_sandbox_task_without_gt(True)
+        settings = self._get_task_settings(admin_user, task_id=task["id"])
+        return next(
+            requirement
+            for requirement in settings["requirements"]
+            if requirement["is_base"] and requirement["annotation_type"] == "rectangle"
+        )
+
+    @pytest.mark.parametrize(
+        "policy",
+        [_IOU_LINEAR_POLICY, {"type": "iou", "mode": "constant", "value": 0.7}],
+        ids=["linear", "constant"],
+    )
+    @pytest.mark.parametrize("legacy", [False, True], ids=["typed", "without-type"])
+    def test_iou_policy_round_trip_and_inheritance(
+        self, admin_user, root_requirement, policy, legacy
+    ):
+        request_policy = {
+            key: value for key, value in policy.items() if not legacy or key != "type"
+        }
+        parent, response = self._patch_requirement(
+            admin_user,
+            root_requirement["id"],
+            {"similarity_threshold_policy": request_policy},
+        )
+        assert response.status_code == HTTPStatus.OK
+        expected_scalar = policy.get("value")
+        retrieved, response = self._retrieve_requirement(admin_user, parent["id"])
+        assert response.status_code == HTTPStatus.OK
+        for requirement in [parent, retrieved]:
+            assert requirement["similarity_threshold_policy"] == policy
+            assert requirement["effective"]["similarity_threshold_policy"] == policy
+            assert requirement["iou_threshold"] == expected_scalar
+
+        local, response = self._create_requirement(
+            admin_user,
+            {
+                **self._build_requirement_payload(
+                    "local-iou-policy",
+                    settings_id=parent["settings_id"],
+                    parent_requirement=parent["id"],
+                    annotation_type=None,
+                ),
+                "similarity_threshold_policy": request_policy,
+            },
+        )
+        assert response.status_code == HTTPStatus.CREATED
+        assert local["similarity_threshold_policy"] == policy
+        assert local["effective"]["similarity_threshold_policy"] == policy
+
+        child, response = self._create_requirement(
+            admin_user,
+            self._build_requirement_payload(
+                "inherited-iou-policy",
+                settings_id=parent["settings_id"],
+                parent_requirement=parent["id"],
+                annotation_type=None,
+            ),
+        )
+        assert response.status_code == HTTPStatus.CREATED
+        assert child["similarity_threshold_policy"] is None
+        assert child["effective"]["similarity_threshold_policy"] == policy
+
+        override = {"type": "iou", "mode": "constant", "value": 0.6}
+        child, response = self._patch_requirement(
+            admin_user, child["id"], {"similarity_threshold_policy": override}
+        )
+        assert response.status_code == HTTPStatus.OK
+        assert child["iou_threshold"] == 0.6
+        assert child["effective"]["similarity_threshold_policy"] == override
+        child, response = self._patch_requirement(
+            admin_user, child["id"], {"similarity_threshold_policy": None}
+        )
+        assert response.status_code == HTTPStatus.OK
+        assert child["iou_threshold"] is None
+        assert child["effective"]["similarity_threshold_policy"] == policy
+
+    def test_iou_policy_constant_and_legacy_scalar_updates(self, admin_user, root_requirement):
+        constant = {"type": "iou", "mode": "constant", "value": 0.6}
+        requirement, response = self._patch_requirement(
+            admin_user, root_requirement["id"], {"similarity_threshold_policy": constant}
+        )
+        assert response.status_code == HTTPStatus.OK
+        assert requirement["iou_threshold"] == 0.6
+        requirement, response = self._patch_requirement(
+            admin_user, requirement["id"], {"iou_threshold": 0.3}
+        )
+        assert response.status_code == HTTPStatus.OK
+        assert requirement["similarity_threshold_policy"] is None
+        assert requirement["effective"]["similarity_threshold_policy"] == {
+            "type": "iou",
+            "mode": "constant",
+            "value": 0.3,
+        }
+
+    @pytest.mark.parametrize("include_null_policy", [False, True])
+    def test_iou_policy_legacy_scalar_cannot_replace_curve(
+        self, admin_user, root_requirement, include_null_policy
+    ):
+        requirement, response = self._patch_requirement(
+            admin_user, root_requirement["id"], {"similarity_threshold_policy": _IOU_LINEAR_POLICY}
+        )
+        assert response.status_code == HTTPStatus.OK
+        payload = {"iou_threshold": 0.5}
+        if include_null_policy:
+            payload["similarity_threshold_policy"] = None
+        error, response = self._patch_requirement(admin_user, requirement["id"], payload)
+        assert response.status_code == HTTPStatus.BAD_REQUEST
+        assert "iou_threshold" in error
+        requirement, response = self._patch_requirement(
+            admin_user, requirement["id"], {"enabled": True}
+        )
+        assert response.status_code == HTTPStatus.OK
+        assert requirement["similarity_threshold_policy"] == _IOU_LINEAR_POLICY
+
+    @pytest.mark.parametrize(
+        "policy",
+        [None, {"type": "iou", "mode": "constant", "value": 0.7}, _IOU_LINEAR_POLICY],
+        ids=["legacy-scalar", "constant", "linear"],
+    )
+    def test_iou_policy_root_ignores_null_policy(self, admin_user, root_requirement, policy):
+        if policy is not None:
+            root_requirement, response = self._patch_requirement(
+                admin_user, root_requirement["id"], {"similarity_threshold_policy": policy}
+            )
+            assert response.status_code == HTTPStatus.OK
+
+        requirement, response = self._patch_requirement(
+            admin_user, root_requirement["id"], {"similarity_threshold_policy": None}
+        )
+        assert response.status_code == HTTPStatus.OK
+        assert requirement["similarity_threshold_policy"] == policy
+        assert requirement["iou_threshold"] == root_requirement["iou_threshold"]
+        assert requirement["effective"]["similarity_threshold_policy"] == (
+            policy
+            or {"type": "iou", "mode": "constant", "value": root_requirement["iou_threshold"]}
+        )
+
+    @pytest.mark.parametrize(
+        "policy",
+        [None, {"type": "iou", "mode": "constant", "value": 0.7}, _IOU_LINEAR_POLICY],
+        ids=["legacy-scalar", "constant", "linear"],
+    )
+    @pytest.mark.parametrize("bulk", [False, True], ids=["requirement", "settings"])
+    def test_iou_policy_get_patch_round_trip(self, admin_user, root_requirement, policy, bulk):
+        if policy is not None:
+            _, response = self._patch_requirement(
+                admin_user, root_requirement["id"], {"similarity_threshold_policy": policy}
+            )
+            assert response.status_code == HTTPStatus.OK
+
+        if bulk:
+            response = get_method(
+                admin_user, f"{self._settings_endpoint}/{root_requirement['settings_id']}"
+            )
+            assert response.status_code == HTTPStatus.OK
+            settings, response = self._patch_settings(
+                admin_user,
+                root_requirement["settings_id"],
+                {"requirements": response.json()["requirements"]},
+            )
+            assert response.status_code == HTTPStatus.OK
+            requirement = next(
+                item for item in settings["requirements"] if item["id"] == root_requirement["id"]
+            )
+        else:
+            requirement, response = self._retrieve_requirement(admin_user, root_requirement["id"])
+            assert response.status_code == HTTPStatus.OK
+            requirement, response = self._patch_requirement(
+                admin_user, requirement["id"], requirement
+            )
+            assert response.status_code == HTTPStatus.OK
+
+        expected_scalar = (
+            policy.get("value") if policy is not None else root_requirement["iou_threshold"]
+        )
+        assert requirement["similarity_threshold_policy"] == policy
+        assert requirement["iou_threshold"] == expected_scalar
+        retrieved, response = self._retrieve_requirement(admin_user, root_requirement["id"])
+        assert response.status_code == HTTPStatus.OK
+        assert retrieved["similarity_threshold_policy"] == policy
+        assert retrieved["iou_threshold"] == expected_scalar
+        assert retrieved["effective"]["similarity_threshold_policy"] == (
+            policy or {"type": "iou", "mode": "constant", "value": expected_scalar}
+        )
+
+    @pytest.mark.parametrize(
+        "policy",
+        [
+            {},
+            {"type": "iou", "mode": "step"},
+            {"type": "iou", "mode": "constant", "value": True},
+            {"type": "iou", "mode": "constant", "value": -0.1},
+            {"type": "iou", "mode": "constant", "value": 1.1},
+            {"type": "iou", "mode": "constant", "value": 10**500},
+            {"type": "iou", "mode": "constant", "value": 0.7, "points": []},
+            *[
+                {**policy, "type": value}
+                for policy in [_IOU_LINEAR_POLICY, {"mode": "constant", "value": 0.7}]
+                for value in ["oks", "unknown", None, "", 1]
+            ],
+            {**_IOU_LINEAR_POLICY, "input": "ds.area"},
+            {**_IOU_LINEAR_POLICY, "extrapolation": "continue"},
+            {**_IOU_LINEAR_POLICY, "unexpected": 1},
+            {**_IOU_LINEAR_POLICY, "points": []},
+            {**_IOU_LINEAR_POLICY, "points": [{"x": 100, "y": 0.4}]},
+            {**_IOU_LINEAR_POLICY, "points": [{"x": 100, "y": 0.4}, {"x": 100, "y": 0.9}]},
+            {**_IOU_LINEAR_POLICY, "points": [{"x": 0, "y": 0.4}, {"x": 1000, "y": 0.9}]},
+            {**_IOU_LINEAR_POLICY, "points": [{"x": 100, "y": -0.1}, {"x": 1000, "y": 1.1}]},
+            {**_IOU_LINEAR_POLICY, "points": list(reversed(_IOU_LINEAR_POLICY["points"]))},
+            {**_IOU_LINEAR_POLICY, "points": [{"x": i + 1, "y": 0.5} for i in range(201)]},
+        ],
+    )
+    def test_iou_policy_rejects_invalid_json(self, admin_user, root_requirement, policy):
+        error, response = self._patch_requirement(
+            admin_user, root_requirement["id"], {"similarity_threshold_policy": policy}
+        )
+        assert response.status_code == HTTPStatus.BAD_REQUEST
+        assert "similarity_threshold_policy" in error
+
+    @pytest.mark.parametrize(
+        "payload, error_field",
+        [
+            (
+                {"similarity_threshold_policy": _IOU_LINEAR_POLICY, "iou_threshold": 0.7},
+                "similarity_threshold_policy",
+            ),
+            ({"similarity_threshold_policy": None, "iou_threshold": None}, "iou_threshold"),
+        ],
+    )
+    def test_iou_policy_rejects_conflicting_or_missing_threshold(
+        self, admin_user, root_requirement, payload, error_field
+    ):
+        error, response = self._patch_requirement(admin_user, root_requirement["id"], payload)
+        assert response.status_code == HTTPStatus.BAD_REQUEST
+        assert error_field in error
+
+    def test_iou_policy_rejects_unsupported_annotation_type(self, admin_user, root_requirement):
+        requirements, response = self._list_requirements(
+            admin_user, settings_id=root_requirement["settings_id"]
+        )
+        assert response.status_code == HTTPStatus.OK
+        points = next(
+            requirement
+            for requirement in requirements
+            if requirement["annotation_type"] == "points"
+        )
+        error, response = self._patch_requirement(
+            admin_user, points["id"], {"similarity_threshold_policy": _IOU_LINEAR_POLICY}
+        )
+        assert response.status_code == HTTPStatus.BAD_REQUEST
+        assert "similarity_threshold_policy" in error
+
+    def test_iou_policy_settings_replacement_preserves_curve(self, admin_user, root_requirement):
+        settings, response = self._patch_settings(
+            admin_user,
+            root_requirement["settings_id"],
+            {
+                "requirements": [
+                    {
+                        "id": requirement["id"],
+                        **(
+                            {"similarity_threshold_policy": _IOU_LINEAR_POLICY}
+                            if requirement["id"] == root_requirement["id"]
+                            else {}
+                        ),
+                    }
+                    for requirement in self._list_requirements(
+                        admin_user, settings_id=root_requirement["settings_id"]
+                    )[0]
+                ]
+            },
+        )
+        assert response.status_code == HTTPStatus.OK
+        root = next(
+            requirement
+            for requirement in settings["requirements"]
+            if requirement["id"] == root_requirement["id"]
+        )
+        assert root["similarity_threshold_policy"] == _IOU_LINEAR_POLICY
+
+    @staticmethod
+    def _shape(points, *, annotation_type="rectangle", label=0, frame=0, group=0, z_order=0):
+        return {
+            "frame": frame,
+            "label_id": label,
+            "type": annotation_type,
+            "points": points,
+            "rotation": 0,
+            "occluded": False,
+            "outside": False,
+            "attributes": [],
+            "group": group,
+            "z_order": z_order,
+        }
+
+    def _report(self, user, gt, ds, *, annotation_type="rectangle", policy=None, panoptic=False):
+        frame_count = max(shape["frame"] for shape in gt) + 1
+        task_id, _ = create_task(
+            user,
+            spec={
+                "name": "iou-interpolation-report",
+                "labels": [
+                    {"name": "object", "type": annotation_type},
+                    {"name": "occluder", "type": annotation_type},
+                ],
+            },
+            data={
+                "image_quality": 70,
+                "client_files": generate_image_files(frame_count, sizes=[(512, 512)] * frame_count),
+            },
+        )
+        settings = self._get_task_settings(user, task_id=task_id)
+        _, response = self._patch_settings(user, settings["id"], {"inherit": False})
+        assert response.status_code == HTTPStatus.OK
+        root = next(
+            requirement
+            for requirement in settings["requirements"]
+            if requirement["annotation_type"] == annotation_type
+        )
+        root, response = self._patch_requirement(
+            user,
+            root["id"],
+            {
+                "enabled": True,
+                "similarity_threshold_policy": policy or _IOU_LINEAR_POLICY,
+                "panoptic_comparison": panoptic,
+                "check_covered_annotations": False,
+            },
+        )
+        assert response.status_code == HTTPStatus.OK
+        labels = self._get_task_labels_by_name(user, task_id=task_id)
+        label_ids = [labels["object"].id, labels["occluder"].id]
+        with make_api_client(user) as client:
+            if frame_count == 1:
+                gt_job = create_gt_job(user, task_id, complete=False)
+            else:
+                gt_job, response = client.jobs_api.create(
+                    {
+                        "type": "ground_truth",
+                        "task_id": task_id,
+                        "frame_selection_method": "manual",
+                        "frames": list(range(frame_count)),
+                    }
+                )
+                assert response.status == HTTPStatus.CREATED
+            for api, object_id, shapes in [
+                (client.jobs_api, gt_job.id, gt),
+                (client.tasks_api, task_id, ds),
+            ]:
+                _, response = api.update_annotations(
+                    object_id,
+                    labeled_data_request={
+                        "shapes": [
+                            {**shape, "label_id": label_ids[shape["label_id"]]} for shape in shapes
+                        ],
+                    },
+                )
+                assert response.status == HTTPStatus.OK
+        self._complete_job(user, gt_job.id)
+        report = create_quality_report(user=user, task_id=task_id)
+        data = self._get_report_data(user, report["id"])
+        return report, data["groups"][root["name"]]
+
+    @pytest.mark.parametrize(
+        "fixture", _IOU_POLICY_FIXTURES, ids=["constant", "linear", "decreasing", "zero-one"]
+    )
+    def test_iou_policy_report_interpolates_each_segment_and_clamps(self, admin_user, fixture):
+        gt, ds = [], []
+        for area, threshold in fixture["cases"]:
+            side = math.sqrt(area if area is not None else 100)
+            for accepted in [False, True]:
+                index = len(gt)
+                x, y = 5 + (index % 4) * 120, 5 + (index // 4) * 120
+                gt.append(self._shape([x, y, x + side, y + side]))
+                similarity = min(1, threshold + 0.02) if accepted else max(0, threshold - 0.02)
+                ds.append(
+                    self._shape(
+                        [x, y, x + side * similarity, y + side]
+                        if similarity
+                        else [x + side + 5, y, x + side + 10, y + side]
+                    )
+                )
+        report, group = self._report(admin_user, gt, ds, policy=fixture["policy"])
+        count = len(fixture["cases"])
+        assert group["comparison_summary"]["score_components"] == {
+            "valid_count": count,
+            "missing_count": count,
+            "extra_count": count,
+        }
+        parameters = group["parameters"]
+        assert parameters["similarity_threshold_policy"] == fixture["policy"]
+        if fixture["policy"]["mode"] == "linear":
+            assert parameters["similarity_threshold_input"] == {
+                "name": "gt.shape_area",
+                "units": "px²",
+            }
+        _, response = self._patch_requirement(
+            admin_user,
+            parameters["requirement_id"],
+            {
+                "similarity_threshold_policy": {"type": "iou", "mode": "constant", "value": 0.5},
+            },
+        )
+        assert response.status_code == HTTPStatus.OK
+        saved_group = self._get_report_data(admin_user, report["id"])["groups"][parameters["name"]]
+        assert saved_group["parameters"]["similarity_threshold_policy"] == fixture["policy"]
+
+    def test_iou_policy_report_matches_99_101_pair_and_counts_duplicate(self, admin_user):
+        ds = self._shape([7.4, 5, 17.5, 15])
+        _, group = self._report(admin_user, [self._shape([5, 5, 14.9, 15])], [ds, deepcopy(ds)])
+        assert group["comparison_summary"]["score_components"] == {
+            "valid_count": 1,
+            "missing_count": 0,
+            "extra_count": 1,
+        }
+
+    def test_iou_policy_report_accepts_small_gt_and_rejects_large_gt(self, admin_user):
+        _, group = self._report(
+            admin_user,
+            [self._shape([0, 0, 10, 10]), self._shape([0, 25, 50, 45])],
+            [self._shape([1, 0, 11, 10]), self._shape([5, 25, 45, 45])],
+        )
+        assert group["comparison_summary"]["score_components"] == {
+            "valid_count": 1,
+            "missing_count": 1,
+            "extra_count": 1,
+        }
+
+    @pytest.mark.parametrize("annotation_type", ["polygon", "mask"])
+    def test_iou_policy_report_uses_shape_area_instead_of_bbox(self, admin_user, annotation_type):
+        if annotation_type == "polygon":
+            gt, ds = [5, 5, 25, 5, 5, 25], [5, 5, 15.5, 5, 5, 25]
+        else:
+            gt_image = np.zeros((50, 50), dtype=bool)
+            gt_image[5:10, 5:15] = gt_image[15:20, 5:15] = True
+            ds_image = np.zeros_like(gt_image)
+            ds_image[5:9, 5:15] = ds_image[9, 5] = True
+            gt, ds = encode_mask(gt_image), encode_mask(ds_image)
+        _, group = self._report(
+            admin_user,
+            [self._shape(gt, annotation_type=annotation_type)],
+            [self._shape(ds, annotation_type=annotation_type)],
+            annotation_type=annotation_type,
+        )
+        assert group["comparison_summary"]["score_components"] == {
+            "valid_count": 1,
+            "missing_count": 0,
+            "extra_count": 0,
+        }
+
+    def test_iou_policy_report_uses_union_area_for_grouped_polygons(self, admin_user):
+        _, group = self._report(
+            admin_user,
+            [
+                self._shape(points, annotation_type="polygon", group=1)
+                for points in [
+                    [0, 0, 20, 0, 20, 10, 0, 10],
+                    [10, 0, 30, 0, 30, 10, 10, 10],
+                ]
+            ],
+            [self._shape([0, 0, 16, 0, 16, 10, 0, 10], annotation_type="polygon", group=1)],
+            annotation_type="polygon",
+            panoptic=True,
+        )
+        # Union area 300 requires 0.511; summing the two areas would require 0.567.
+        assert group["comparison_summary"]["score"] == 1
+
+    @pytest.mark.parametrize("annotation_type", ["polygon", "mask"])
+    def test_iou_policy_report_uses_original_area_before_panoptic_occlusion(
+        self, admin_user, annotation_type
+    ):
+        def shape(left, label, z_order):
+            if annotation_type == "polygon":
+                points = [left, 0, 20, 0, 20, 20, left, 20]
+            else:
+                image = np.zeros((50, 50), dtype=bool)
+                image[:20, left:20] = True
+                points = encode_mask(image)
+            return self._shape(
+                points, annotation_type=annotation_type, label=label, z_order=z_order
+            )
+
+        occluder = shape(2, 1, 1)
+        _, group = self._report(
+            admin_user,
+            [shape(0, 0, 0), occluder],
+            [shape(1, 0, 0), deepcopy(occluder)],
+            annotation_type=annotation_type,
+            panoptic=True,
+        )
+        assert group["comparison_summary"]["score_components"] == {
+            "valid_count": 1,
+            "missing_count": 1,
+            "extra_count": 1,
+        }
+
+    def test_iou_policy_report_invalid_gt_area_prevents_completion(self, admin_user):
+        valid = self._shape([5, 5, 15, 15], frame=1)
+        report, group = self._report(
+            admin_user, [self._shape([0, 0, 0, 10]), valid], [deepcopy(valid)]
+        )
+        assert group["frame_results"]["0"]["calculation"]["invalid_gt_count"] == 1
+        assert group["frame_results"]["1"]["calculation"]["status"] == "computed"
+        assert group["comparison_summary"]["calculation"]["reason"] == "invalid_gt_area"
+        assert group["comparison_summary"]["score"] is None
+        summary = report["summary"]["requirements"]
+        assert summary["completed"] == 0
+        assert summary["not_computed"] == 1
 
 
 @pytest.mark.usefixtures("restore_db_per_function")

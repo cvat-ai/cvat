@@ -1,0 +1,143 @@
+[
+  {
+    "policy": {
+      "type": "iou",
+      "mode": "constant",
+      "value": 0.7
+    },
+    "cases": [
+      [
+        null,
+        0.7
+      ],
+      [
+        99,
+        0.7
+      ],
+      [
+        550,
+        0.7
+      ]
+    ]
+  },
+  {
+    "policy": {
+      "type": "iou",
+      "mode": "linear",
+      "input": "gt.shape_area",
+      "extrapolation": "clamp",
+      "points": [
+        {
+          "x": 100,
+          "y": 0.4
+        },
+        {
+          "x": 1000,
+          "y": 0.9
+        }
+      ]
+    },
+    "cases": [
+      [
+        1,
+        0.4
+      ],
+      [
+        99,
+        0.4
+      ],
+      [
+        100,
+        0.4
+      ],
+      [
+        550,
+        0.65
+      ],
+      [
+        1000,
+        0.9
+      ],
+      [
+        10000,
+        0.9
+      ]
+    ]
+  },
+  {
+    "policy": {
+      "type": "iou",
+      "mode": "linear",
+      "input": "gt.shape_area",
+      "extrapolation": "clamp",
+      "points": [
+        {
+          "x": 100,
+          "y": 0.4
+        },
+        {
+          "x": 550,
+          "y": 0.8
+        },
+        {
+          "x": 1000,
+          "y": 0.5
+        }
+      ]
+    },
+    "cases": [
+      [
+        325,
+        0.6
+      ],
+      [
+        550,
+        0.8
+      ],
+      [
+        775,
+        0.65
+      ],
+      [
+        1000,
+        0.5
+      ]
+    ]
+  },
+  {
+    "policy": {
+      "type": "iou",
+      "mode": "linear",
+      "input": "gt.shape_area",
+      "extrapolation": "clamp",
+      "points": [
+        {
+          "x": 100,
+          "y": 0
+        },
+        {
+          "x": 1000,
+          "y": 1
+        }
+      ]
+    },
+    "cases": [
+      [
+        99,
+        0
+      ],
+      [
+        550,
+        0.5
+      ],
+      [
+        1000,
+        1
+      ],
+      [
+        1001,
+        1
+      ]
+    ]
+  }
+]

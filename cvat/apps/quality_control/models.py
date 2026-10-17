@@ -467,6 +467,7 @@ class QualityRequirement(TimestampedModel):
     )
 
     iou_threshold = models.FloatField(null=True, blank=True)
+    similarity_threshold_policy = models.JSONField(null=True, blank=True)
     oks_sigma = models.FloatField(null=True, blank=True)
     line_thickness = models.FloatField(null=True, blank=True)
 

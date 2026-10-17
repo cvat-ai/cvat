@@ -496,6 +496,40 @@ Save the settings after editing them. Changes apply when the next quality report
 calculated; they do not alter existing reports. Open the **Requirements** tab to see the results.
 A requirement passes when its score meets or exceeds its threshold.
 
+##### Interpolated IoU thresholds
+
+Rectangle, polygon, and mask requirements offer two IoU threshold modes:
+
+- **Constant** uses one threshold for every object and is the default.
+- **Linear interpolation** uses the area of the original ground-truth shape in px² to
+  choose a threshold. The graph connects neighboring key points with straight lines.
+  Below the first point or above the last point, the nearest endpoint's threshold applies.
+
+For example, points at **100 px² / 40%** and **1000 px² / 90%** give a threshold of **65%**
+for a GT shape of **550 px²**. The annotator's shape area does not select the threshold.
+Polygon and mask areas are measured before panoptic comparison; when parts are compared
+as one object, their union determines its area.
+
+Hover over the graph to see the area and its calculated threshold. Left-click an empty
+position to add a point, hold the left mouse button on a point to drag it, or right-click
+a point to delete it. The vertical list below the graph also provides numerical editing
+and add/delete controls. **Undo** restores the preceding edit; **Fit** shows the whole curve.
+Switching modes preserves both drafts while the form remains open and saves the active mode.
+
+Interpolation requires 2–200 points with unique positive areas and thresholds from 0 to 100%.
+Child requirements inherit the whole policy and can override it or revert to their parent.
+A nonpositive or invalid GT area prevents the requirement from being calculated and completed.
+
+The API stores both modes in `similarity_threshold_policy` with an explicit `type: "iou"`.
+For example, a constant policy is `{"type":"iou","mode":"constant","value":0.7}`.
+Policies without `type` are accepted as IoU for compatibility; responses include the type.
+Other threshold types are not supported.
+
+To evaluate small and large objects together, use one requirement and remove area filters
+that were used only to select different thresholds. Filters still apply to both annotation
+sets and can exclude candidates before matching. Ellipses, polylines, and OKS keep their
+existing constant thresholds.
+
 ### Quality target metrics
 
 The target metric determines what a requirement measures. CVAT matches annotations against

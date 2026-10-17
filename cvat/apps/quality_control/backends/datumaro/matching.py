@@ -289,12 +289,14 @@ class DistanceComparator(datumaro.components.comparator.DistanceComparator):
         panoptic_comparison: bool = False,
         allow_groups: bool = True,
         attribute_matcher: AttributeMatchingFunction | None = None,
+        gt_threshold: Callable[[Sequence[dm.Annotation]], float] | None = None,
     ):
         super().__init__(iou_threshold=iou_threshold)
         if return_distances and return_comparisons:
             raise ValueError("Pairwise distances and comparisons cannot be returned together")
 
         self.categories = categories
+        self.gt_threshold = gt_threshold
         self._skeleton_info = {}
         self.included_ann_types = included_ann_types
         self.return_distances = return_distances
@@ -467,11 +469,19 @@ class DistanceComparator(datumaro.components.comparator.DistanceComparator):
             if label_matcher:
                 extra_args["label_matcher"] = label_matcher
 
+            threshold = dist_thresh if dist_thresh is not None else self.iou_threshold
+            if (
+                self.gt_threshold
+                and dist_thresh is None
+                and t in {dm.AnnotationType.bbox, dm.AnnotationType.polygon, dm.AnnotationType.mask}
+            ):
+                threshold = lambda a: self.gt_threshold(a_annotations_getter(a))
+
             returned_values = match_segments(
                 a_objs,
                 b_objs,
                 distance=lambda a, b: compare(a, b).similarity,
-                dist_thresh=dist_thresh if dist_thresh is not None else self.iou_threshold,
+                dist_thresh=threshold,
                 **extra_args,
             )
 
@@ -1015,6 +1025,7 @@ class Comparator:
         *,
         settings: ComparisonParameters,
         attribute_matcher: AttributeMatchingFunction | None = None,
+        gt_threshold: Callable[[Sequence[dm.Annotation]], float] | None = None,
     ):
         self.ignored_attrs = set(settings.ignored_attributes) | self.IGNORED_ATTRIBUTES
         self.included_ann_types = settings.included_annotation_types
@@ -1031,6 +1042,7 @@ class Comparator:
             compare_line_orientation=settings.compare_line_orientation,
             line_orientation_threshold=settings.line_orientation_threshold,
             attribute_matcher=attribute_matcher if settings.compare_attributes else None,
+            gt_threshold=gt_threshold,
         )
         self.coverage_threshold = settings.object_visibility_threshold
         self.group_match_threshold = settings.group_match_threshold
