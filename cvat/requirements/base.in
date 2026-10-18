@@ -1,13 +1,13 @@
 -r ../../utils/dataset_manifest/requirements.in
 
-attrs>=22.1.0
+attrs>=26.1.0
 
 av==16.0.1
 
 azure-storage-blob==12.30.0
 boto3~=1.43
 clickhouse-connect~=1.3
-datumaro @ https://github.com/cvat-ai/datumaro/archive/6ade96fa82043fc5bccd59a27218892899fe10ce.zip
+datumaro @ https://github.com/cvat-ai/datumaro/archive/335fc3e55fe699b9401091f6af11f10c3b0e08cb.zip
 dj-pagination==2.5.0
 # Despite direct indication allauth in requirements we should keep 'with_social' for dj-rest-auth
 # to avoid possible further versions conflicts (we use registration functionality)

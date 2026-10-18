@@ -154,11 +154,13 @@ finish the process.
 
 ![Create a video annotation task](/images/create_video_task.png)
 
-Open the task and use {{< ilink "/docs/annotation/auto-annotation/ai-tools" "AI tools" >}} to start tracking
+Open the task and use {{< ilink "/docs/annotation/auto-annotation/ai-tools" "AI assistance" >}} to start tracking
 an object. Draw a bounding box around an object, and sequentially switch
 through the frame and correct the restrictive box if necessary.
 
-![Start tracking an object](/images/trackers_tab.jpg)
+<img src="/images/ai-assistance-tracking.webp"
+     alt="Tracking tab with TransT model and annotation label selected"
+     style="display: block; margin: 0 auto; width: 100%; max-width: 650px; height: auto; border: 1px solid #d9d9d9; border-radius: 8px;">
 
 Finally you will get bounding boxes.
 
