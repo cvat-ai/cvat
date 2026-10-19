@@ -72,6 +72,7 @@ context('Object transforms while holding Ctrl', { scrollBehavior: false }, () =>
             },
         });
         cy.get('.cvat_canvas_shape').should('have.length', 3);
+        cy.get('.cvat-spinner').should('not.exist');
         cy.get('#cvat-objects-sidebar-state-item-1').trigger('mouseover');
         cy.get(shapeSelector).should('have.class', 'cvat_canvas_shape_activated');
         holdCtrl();
