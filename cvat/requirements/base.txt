@@ -8,7 +8,7 @@ asgiref==3.8.1
     # via
     #   django
     #   django-allauth
-attrs==25.3.0
+attrs==26.1.0
     # via
     #   -r cvat/requirements/base.in
     #   datumaro
