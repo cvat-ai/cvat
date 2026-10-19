@@ -566,7 +566,10 @@ context('Quality requirements UI', () => {
         cy.get('.cvat-quality-requirements-configuration-table').should('be.visible');
     });
 
-    it('Fits an inherited large curve on reset and preserves point identity and manual zoom', () => {
+    it('Fits an inherited large curve on reset and preserves point identity and manual zoom', {
+        // Keep editor controls below the sticky Save/Cancel bar when Cypress scrolls to them.
+        scrollBehavior: 'center',
+    }, () => {
         const largePolicy = {
             ...linearIouPolicy, points: [{ x: 100000, y: 0.4 }, { x: 1000000, y: 0.9 }],
         };
