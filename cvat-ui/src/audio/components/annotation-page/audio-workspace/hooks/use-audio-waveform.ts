@@ -15,13 +15,15 @@ import HoverPlugin from 'wavesurfer.js/dist/plugins/hover';
 
 import { audioActions, releaseAudioDataAsync } from 'actions/audio-actions';
 import { formatSeconds } from 'audio/utils/format-audio-time';
-import { MINIMAP_TIMELINE_HEIGHT } from 'audio/utils/waveform-geometry';
+import { MINIMAP_HEIGHT, MINIMAP_TIMELINE_HEIGHT } from 'audio/utils/waveform-geometry';
 import { ThunkDispatch } from 'utils/redux';
 
 import { injectScrollbarStyle } from '../utils/inject-scrollbar-style';
+import OptimizedTimelinePlugin from '../plugins/optimized-timeline-plugin';
 import { useWaveformViewport, WaveformViewport } from './use-waveform-viewport';
 import { useWaveformPlayback, WaveformPlayback } from './use-waveform-playback';
 import { useAdaptiveTimeline } from './use-adaptive-timeline';
+import { useMinimapScrollbar } from './use-minimap-scrollbar';
 
 export interface WaveformRegionRuntime {
     /** Stable ref */
@@ -72,6 +74,7 @@ interface Params {
     peaks: Float32Array[];
     duration: number;
     containerRef: React.RefObject<HTMLDivElement>;
+    waveformHeight: number;
 }
 
 interface WaveSurferWebAudioPlayer {
@@ -79,7 +82,19 @@ interface WaveSurferWebAudioPlayer {
     // It is intentionally typed locally because this is private-API binding,
     // not a public WaveSurfer API contract.
     buffer: AudioBuffer | null;
-    emit(eventName: 'loadedmetadata' | 'canplay'): void;
+
+    // Internal player part only needed for the fix of https://github.com/katspaugh/wavesurfer.js/issues/4365
+    // remove after upgrading to fixed version of wavesurfer.js
+    audioContext: AudioContext;
+    bufferNode: AudioBufferSourceNode | null;
+    playbackPosition: number;
+    paused: boolean;
+    currentTime: number;
+    duration: number;
+    _playbackRate: number;
+    pause(): void;
+    stopAt(timeSeconds: number): void;
+    emit(eventName: 'loadedmetadata' | 'canplay' | 'timeupdate'): void;
 }
 
 interface MinimapPluginInternals {
@@ -88,11 +103,38 @@ interface MinimapPluginInternals {
 }
 
 /**
+ * In WaveSurfer 7.12.12 WebAudio player clamps a manually paused range to its end when the
+ * stopped buffer emits "ended".
+ * https://github.com/katspaugh/wavesurfer.js/issues/4365
+ * remove after upgrading to fixed version of wavesurfer.js
+ */
+function patchWebAudioStopAt(player: WaveSurferWebAudioPlayer): void {
+    const patchedPlayer = player;
+    patchedPlayer.stopAt = function stopAt(this: WaveSurferWebAudioPlayer, timeSeconds: number): void {
+        const delay = (timeSeconds - this.currentTime) / this._playbackRate;
+        const { bufferNode } = this;
+        bufferNode?.stop(this.audioContext.currentTime + delay);
+        bufferNode?.addEventListener('ended', () => {
+            if (bufferNode !== this.bufferNode) return;
+
+            const stoppedAtRangeEnd = !this.paused;
+            this.bufferNode = null;
+            this.pause();
+
+            if (!stoppedAtRangeEnd) return;
+
+            this.playbackPosition = Math.min(timeSeconds, this.duration);
+            this.emit('timeupdate');
+        }, { once: true });
+    };
+}
+
+/**
  * Responsible for creating and managing the WaveSurfer instance and its plugins.
  * Exposes a stable API for the rest of the waveform hooks to use.
  */
 function useWaveSurferRuntime({
-    sourceToken, minimapContainerID, audioBuffer, peaks, duration, containerRef,
+    sourceToken, minimapContainerID, audioBuffer, peaks, duration, containerRef, waveformHeight,
 }: Params): WaveSurferRuntime {
     interface WaveSurferPluginScope {
         minimap: MinimapPlugin;
@@ -118,10 +160,10 @@ function useWaveSurferRuntime({
             progressColor: '#3e3a3a',
             cursorColor: '#ff0000',
             cursorWidth: 2,
-            height: 50,
+            height: MINIMAP_HEIGHT,
             overlayColor: 'rgba(0, 85, 255, 0.3)',
         });
-        const timeline = TimelinePlugin.create();
+        const timeline = OptimizedTimelinePlugin.create();
         timelineRef.current = timeline;
         const unsubscribeMinimapInit = minimap.on('init', () => {
             const { miniWavesurfer } = minimap as unknown as MinimapPluginInternals;
@@ -175,7 +217,7 @@ function useWaveSurferRuntime({
             autoCenter: false,
             peaks,
             duration,
-            height: 140,
+            height: waveformHeight,
             waveColor: '#4F46E5',
             progressColor: '#818CF8',
             cursorColor: '#C084FC',
@@ -185,13 +227,15 @@ function useWaveSurferRuntime({
             plugins: pluginsScope.plugins,
         });
 
+        const player = wsInstance.getMediaElement() as unknown as WaveSurferWebAudioPlayer;
+        patchWebAudioStopAt(player);
+
         // WaveSurfer has no public API for passing an already-decoded AudioBuffer.
         // Initialize its WebAudioPlayer before WaveSurfer starts loading the supplied
         // peaks and duration. This mirrors the player.src initialization path: it
         // installs the buffer and emits the metadata/readiness events that update
         // WaveSurfer's internal player state.
         const unsubscribeInit = wsInstance.on('init', () => {
-            const player = wsInstance.getMediaElement() as unknown as WaveSurferWebAudioPlayer;
             player.buffer = audioBuffer;
             player.emit('loadedmetadata');
             player.emit('canplay');
@@ -218,6 +262,10 @@ function useWaveSurferRuntime({
         };
     }, []);
 
+    useEffect(() => {
+        instanceRef.current?.setOptions({ height: waveformHeight });
+    }, [waveformHeight]);
+
     return {
         instanceRef,
         durationRef,
@@ -240,7 +288,8 @@ export function useAudioWaveform(params: Params): AudioWaveform {
     const runtime = useWaveSurferRuntime(params);
     const viewport = useWaveformViewport(runtime, params.containerRef);
     useAdaptiveTimeline(runtime, viewport.pixelsPerSecond, viewport.overviewPixelsPerSecond);
-    const playback = useWaveformPlayback(runtime);
+    const playback = useWaveformPlayback(runtime, viewport.getVisibleDuration);
+    useMinimapScrollbar(runtime, viewport, playback.seek);
 
     return {
         regionRuntime: runtime.regionRuntime,

@@ -21,7 +21,7 @@ import CloudStorage from './cloud-storage';
 import Organization from './organization';
 import Webhook from './webhook';
 import AnnotationGuide from './guide';
-import { BaseAction } from './annotations-actions/base-action';
+import { BaseAction, setActionMetadata } from './annotations-actions/base-action';
 import { BaseCollectionAction } from './annotations-actions/base-collection-action';
 import { BaseShapesAction } from './annotations-actions/base-shapes-action';
 import {
@@ -38,7 +38,9 @@ import {
     Exception, ArgumentError, DataError, ScriptingError, ServerError,
 } from './exceptions';
 
-import { getVisibleSkeletonElements, propagateShapes, validateAttributeValue } from './object-utils';
+import {
+    cropMask, getVisibleSkeletonElements, propagateShapes, validateAttributeValue,
+} from './object-utils';
 import { mask2Rle, rle2Mask } from './rle-utils';
 import User from './user';
 import config from './config';
@@ -187,6 +189,12 @@ function build(): CVATCore {
                 return result;
             },
         },
+        capabilities: {
+            async observe(name, callback) {
+                const result = await PluginRegistry.apiWrapper(cvat.capabilities.observe, name, callback);
+                return result;
+            },
+        },
         plugins: {
             async list() {
                 const result = await PluginRegistry.apiWrapper(cvat.plugins.list);
@@ -198,6 +206,9 @@ function build(): CVATCore {
             },
         },
         actions: {
+            metadata: {
+                set: setActionMetadata,
+            },
             async list() {
                 const result = await PluginRegistry.apiWrapper(cvat.actions.list);
                 return result;
@@ -503,6 +514,7 @@ function build(): CVATCore {
         utils: {
             mask2Rle,
             rle2Mask,
+            cropMask,
             propagateShapes,
             validateAttributeValue,
             getVisibleSkeletonElements,
@@ -521,6 +533,7 @@ function build(): CVATCore {
     cvat.users = Object.freeze(cvat.users);
     cvat.growth = Object.freeze(cvat.growth);
     cvat.plugins = Object.freeze(cvat.plugins);
+    cvat.capabilities = Object.freeze(cvat.capabilities);
     cvat.lambda = Object.freeze(cvat.lambda);
     // logger: todo: logger storage implemented other way
     cvat.config = Object.freeze(cvat.config);

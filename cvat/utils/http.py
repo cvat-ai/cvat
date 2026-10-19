@@ -30,7 +30,7 @@ class ResourceIsBusyApiException(APIException):
     default_detail = (
         "This resource is currently busy with another operation. " "Please try again in a moment."
     )
-    default_code = "database_resource_busy"
+    default_code = "resource_busy"
 
 
 def make_requests_session() -> requests.Session:

@@ -26,7 +26,7 @@ context('Incorrect cloud storage filename used in subsequent import.', () => {
         displayName: 'Demo bucket',
         resource: 'public',
         manifest: 'images_with_manifest/manifest.jsonl',
-        endpointUrl: Cypress.config('minioUrl'),
+        endpointUrl: Cypress.config('motoUrl'),
     };
 
     function uploadToTask({

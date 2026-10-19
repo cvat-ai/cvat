@@ -2,10 +2,15 @@
 #
 # SPDX-License-Identifier: MIT
 
+from django.contrib.auth import get_user_model
+from django.core import mail
 from django.test import override_settings
+from django.urls import reverse
+from rest_framework import status
 
 from cvat.apps.engine.tests.test_rest_api import create_db_users
 from cvat.apps.engine.tests.utils import ApiTestBase, ForceLogin
+from cvat.apps.iam.models import User, UserCreationMethod
 
 
 class OrganizationCreateAPITestCase(ApiTestBase):
@@ -27,3 +32,100 @@ class OrganizationCreateAPITestCase(ApiTestBase):
         for user, expected_status in [(self.admin, 201), (self.owner, 403), (self.annotator, 403)]:
             response = self._run_api(user, {"slug": user.username + "org"})
             self.assertEqual(response.status_code, expected_status, response.content)
+
+
+class InvitationCreateAPITestCase(ApiTestBase):
+    org_slug = "testorg"
+
+    @classmethod
+    def setUpTestData(cls):
+        create_db_users(cls)
+
+    def setUp(self):
+        super().setUp()
+        response = self._post_request(
+            "/api/organizations",
+            self.admin,
+            data={"slug": self.org_slug, "name": "Test organization"},
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED, response.content)
+
+    def _invite(self, email):
+        return self._post_request(
+            "/api/invitations",
+            self.admin,
+            data={"role": "worker", "email": email},
+            query_params={"org": self.org_slug},
+        )
+
+    def test_can_invite_unregistered_user(self):
+        response = self._invite("invited@test.com")
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED, response.content)
+
+        user = User.objects.get(email="invited@test.com")
+        self.assertEqual(user.created_via, UserCreationMethod.INVITATION)
+        self.assertFalse(user.has_usable_password())
+        self.assertFalse(user.memberships.get(organization__slug=self.org_slug).is_active)
+
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertIn("invited@test.com", mail.outbox[0].to)
+
+    def test_can_register_over_invited_user(self):
+        self._invite("invited@test.com")
+        invited_user_id = User.objects.get(email="invited@test.com").id
+
+        response = self.client.post(
+            reverse("rest_register"),
+            data={
+                "username": "inviteduser",
+                "email": "invited@test.com",
+                "password1": "$Test357Test%",
+                "password2": "$Test357Test%",
+            },
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED, response.content)
+
+        user = User.objects.get(id=invited_user_id)
+        self.assertEqual(user.email, "invited@test.com")
+        self.assertEqual(user.created_via, UserCreationMethod.REGISTRATION)
+
+
+class InvitationEmailValidationAPITestCase(ApiTestBase):
+    org_slug = "testorg"
+    invited_email = "invited_user@somedomain.com"
+
+    @classmethod
+    def setUpTestData(cls):
+        create_db_users(cls)
+
+    def setUp(self):
+        super().setUp()
+        response = self._post_request(
+            "/api/organizations", self.admin, data={"slug": self.org_slug}
+        )
+        assert response.status_code == status.HTTP_201_CREATED, response.content
+
+    def _run_api(self):
+        return self._post_request(
+            "/api/invitations",
+            self.admin,
+            data={"role": "worker", "email": self.invited_email},
+            query_params={"org": self.org_slug},
+        )
+
+    @override_settings(
+        EMAIL_VALIDATORS=[{"NAME": "cvat.apps.iam.tests.test_rest_api.RejectingEmailValidator"}],
+    )
+    def test_cannot_invite_user_rejected_by_email_validator(self):
+        response = self._run_api()
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST, response.content)
+        self.assertFalse(get_user_model().objects.filter(email=self.invited_email).exists())
+
+    @override_settings(
+        EMAIL_VALIDATORS=[{"NAME": "cvat.apps.iam.tests.test_rest_api.AcceptingEmailValidator"}],
+    )
+    def test_can_invite_user_accepted_by_email_validator(self):
+        response = self._run_api()
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED, response.content)
+        self.assertTrue(get_user_model().objects.filter(email=self.invited_email).exists())

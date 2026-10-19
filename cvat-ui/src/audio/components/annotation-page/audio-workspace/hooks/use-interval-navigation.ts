@@ -12,7 +12,9 @@ import { Handlers, KeyMap } from 'utils/mousetrap-react';
 import { subKeyMap } from 'utils/component-subkeymap';
 import { shallowEqual, ThunkDispatch } from 'utils/redux';
 
-import { intervalEndSeconds, intervalStartSeconds } from '../utils/audio-interval';
+import {
+    intervalEndSeconds, intervalStartSeconds, sortAudioIntervals,
+} from '../utils/audio-interval';
 import { WaveformViewport } from './use-waveform-viewport';
 
 const componentShortcuts = {
@@ -52,21 +54,25 @@ export function useIntervalNavigation({ viewport }: Params): IntervalNavigation 
     const dispatch = useDispatch<ThunkDispatch>();
     const { centerTimeRange } = viewport;
     const {
-        intervals, activeIntervalID, activeControl, keyMap,
+        intervals, intervalsOrdering, activeIntervalID, activeControl, keyMap,
     } = useSelector((state: CombinedState) => ({
         intervals: state.audio.player.intervals,
+        intervalsOrdering: state.audio.player.intervalsOrdering,
         activeIntervalID: state.audio.player.activeIntervalID,
         activeControl: state.annotation.canvas.activeControl,
         keyMap: state.shortcuts.keyMap,
     }), shallowEqual);
-    const navigate = (step: -1 | 1): void => {
-        const visibleIntervals = intervals.filter((interval) => !interval.hidden);
+    const navigate = (step: -1 | 1): boolean => {
+        const visibleIntervals = sortAudioIntervals(
+            intervals.filter((interval) => !interval.hidden),
+            intervalsOrdering,
+        );
         if (
             activeControl === ActiveControl.AUDIO_REGION_CREATE ||
             activeControl === ActiveControl.AUDIO_REGION_RECORD ||
             visibleIntervals.length === 0
         ) {
-            return;
+            return false;
         }
 
         const currentIndex = visibleIntervals.findIndex((interval) => interval.clientID === activeIntervalID);
@@ -75,22 +81,35 @@ export function useIntervalNavigation({ viewport }: Params): IntervalNavigation 
             nextIndex = step > 0 ? 0 : visibleIntervals.length - 1;
         }
         const interval = visibleIntervals[nextIndex];
-        if (interval.clientID === activeIntervalID) return;
+        if (interval.clientID === activeIntervalID) return false;
 
         dispatch(audioActions.setAudioActiveInterval(interval.clientID));
         centerTimeRange({
             start: intervalStartSeconds(interval),
             end: intervalEndSeconds(interval),
         });
+        return true;
+    };
+    const blurFocusedElement = (): void => {
+        const focusedElement = document.activeElement;
+        if (!(focusedElement instanceof HTMLElement)) {
+            return;
+        }
+
+        focusedElement.blur();
     };
     const handlers: Handlers = {
         NEXT_OBJECT: (event?: KeyboardEvent) => {
             event?.preventDefault();
-            navigate(1);
+            if (navigate(1)) {
+                blurFocusedElement();
+            }
         },
         PREVIOUS_OBJECT: (event?: KeyboardEvent) => {
             event?.preventDefault();
-            navigate(-1);
+            if (navigate(-1)) {
+                blurFocusedElement();
+            }
         },
     };
 

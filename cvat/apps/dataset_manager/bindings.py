@@ -9,7 +9,7 @@ import os.path as osp
 import re
 import sys
 from collections import defaultdict
-from collections.abc import Callable, Generator, Iterable, Iterator, Mapping, Sequence
+from collections.abc import Callable, Collection, Generator, Iterable, Iterator, Mapping, Sequence
 from datetime import timedelta
 from functools import partial, reduce
 from operator import add
@@ -31,9 +31,9 @@ from django.conf import settings
 from django.db.models import Prefetch, QuerySet
 from django.utils import timezone
 
-from cvat.apps.dataset_manager.formats.utils import get_label_color
 from cvat.apps.engine import models
 from cvat.apps.engine.cache import MediaCache
+from cvat.apps.engine.label_colors import get_label_color
 from cvat.apps.engine.lazy_list import LazyList
 from cvat.apps.engine.media_io.frame_provider import FrameOutputType, TaskFrameProvider
 from cvat.apps.engine.models import (
@@ -913,6 +913,10 @@ class CommonData(InstanceLabelData):
 
         return None
 
+    @property
+    def subset(self) -> str:
+        return self._db_subset
+
 
 class JobData(CommonData):
     META_FIELD = "job"
@@ -1199,9 +1203,21 @@ class ProjectData(InstanceLabelData):
         task_id: int = attrib(default=None)
         subset: str = attrib(default=None)
 
+    class LabeledInterval(NamedTuple):
+        start: timedelta
+        stop: timedelta | None
+        label: int
+        attributes: Sequence[CommonData.Attribute]
+        group: int = 0
+        source: str | None = None
+        id: int | None = None
+        score: float = 1.0
+        task_id: int = None
+        subset: str = None
+
     def __init__(
         self,
-        annotation_irs: Mapping[str, AnnotationIR],
+        annotation_irs: Mapping[int, AnnotationIR],
         db_project: Project,
         host: str = "",
         task_annotations: Mapping[int, Any] = None,
@@ -1235,6 +1251,15 @@ class ProjectData(InstanceLabelData):
             + task.data.start_frame
             + self._task_frame_offsets[task_id]
         )
+
+    def abs_interval_frame(self, task_id: int, rel_frame: int) -> int:
+        task = self._db_tasks[task_id]
+
+        task_rel_range = range(0, task.data.size)
+        if rel_frame not in task_rel_range and rel_frame != task_rel_range.stop:
+            raise ValueError(f"Unknown internal frame id {rel_frame}")
+
+        return rel_frame * task.data.get_frame_step() + task.data.start_frame
 
     def rel_frame_id(self, task_id: int, absolute_id: int) -> int:
         task = self._db_tasks[task_id]
@@ -1474,6 +1499,29 @@ class ProjectData(InstanceLabelData):
             ],
         )
 
+    def _export_labeled_interval(
+        self, interval: dict[str, Any], task_id: int, subset: str
+    ) -> LabeledInterval:
+        def frame_to_timestamp(frame: int) -> timedelta:
+            return timedelta(milliseconds=frame)
+
+        return ProjectData.LabeledInterval(
+            id=interval["id"],
+            start=frame_to_timestamp(self.abs_interval_frame(task_id, interval["start"])),
+            stop=(
+                frame_to_timestamp(self.abs_interval_frame(task_id, interval["stop"]))
+                if interval["stop"] is not None
+                else None
+            ),
+            label=self._get_label_name(interval["label_id"]),
+            group=interval.get("group", 0),
+            source=interval["source"],
+            score=interval["score"],
+            attributes=self._export_attributes(interval["attributes"]),
+            task_id=task_id,
+            subset=subset,
+        )
+
     def group_by_frame(
         self, include_empty: bool = False
     ) -> Generator[CommonData.Frame, None, None]:
@@ -1531,6 +1579,14 @@ class ProjectData(InstanceLabelData):
             for tag in self._annotation_irs[task.id].tags:
                 if (task.id, tag["frame"]) not in self._deleted_frames:
                     yield self._export_tag(tag, task.id)
+
+    def iterate_intervals(self) -> Generator[LabeledInterval, None, None]:
+        subsets = {}
+        for task in self._db_tasks.values():
+            subset = subsets.setdefault(task.id, get_defaulted_subset(task.subset, self._subsets))
+
+            for interval in self._annotation_irs[task.id].intervals:
+                yield self._export_labeled_interval(interval, task_id=task.id, subset=subset)
 
     @property
     def meta(self):
@@ -2131,7 +2187,7 @@ def mangle_image_name(name: str, subset: str, names: defaultdict[tuple[str, str]
     raise Exception("Cannot mangle image name")
 
 
-def get_defaulted_subset(subset: str, subsets: list[str]) -> str:
+def get_defaulted_subset(subset: str, subsets: Collection[str]) -> str:
     if subset:
         return subset
     else:
@@ -2775,31 +2831,41 @@ def load_dataset_data(
 
         subset_dataset = subset.as_dataset()
 
-        dataset_files = {
-            "media": [],
-            "data_root": dataset.data_path + osp.sep,
-        }
-
+        dataset_root = dataset.data_path + osp.sep
         root_paths = set()
+
+        media_paths = []
+
+        def add_media_path(media_path: str, item_id: str | None = None) -> None:
+            media_path = osp.abspath(media_path)
+            if not media_path.startswith(dataset_root):
+                raise CvatImportError(f"Media file {media_path!r} is outside of the dataset root")
+
+            media_paths.append(media_path)
+
+            if item_id is not None:
+                match media_path.rsplit(item_id, 1):
+                    case [root, _] if root.startswith(dataset_root):
+                        root_paths.add(root)
+
         for dataset_item in subset_dataset:
             if isinstance(dataset_item.media, dm.Image) and dataset_item.media.has_data:
-                dataset_files["media"].append(dataset_item.media.path)
-                data_root = dataset_item.media.path.rsplit(dataset_item.id, 1)
-                if len(data_root) == 2:
-                    root_paths.add(data_root[0])
+                add_media_path(dataset_item.media.path, dataset_item.id)
             elif isinstance(dataset_item.media, dm.PointCloud):
-                dataset_files["media"].append(dataset_item.media.path)
-                data_root = dataset_item.media.path.rsplit(dataset_item.id, 1)
-                if len(data_root) == 2:
-                    root_paths.add(data_root[0])
+                add_media_path(dataset_item.media.path, dataset_item.id)
 
                 if isinstance(dataset_item.media.extra_images, list):
-                    dataset_files["media"] += [ri.path for ri in dataset_item.media.extra_images]
+                    for ri in dataset_item.media.extra_images:
+                        add_media_path(ri.path)
 
         if len(root_paths):
-            dataset_files["data_root"] = osp.commonpath(root_paths) + osp.sep
+            dataset_root = osp.commonpath(root_paths) + osp.sep
 
-        project_annotation.add_task(task_fields, dataset_files, project_data)
+        project_annotation.add_task(
+            task_fields,
+            {"media": media_paths, "data_root": dataset_root},
+            project_data,
+        )
 
 
 class NoMediaInAnnotationFileError(CvatImportError):

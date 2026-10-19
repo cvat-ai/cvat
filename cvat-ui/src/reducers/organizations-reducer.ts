@@ -10,6 +10,7 @@ import { AnyAction } from 'redux';
 import { OrganizationState, SelectedResourceType } from '.';
 
 const defaultState: OrganizationState = {
+    currentRole: null,
     initialized: false,
     fetching: false,
     updating: false,
@@ -49,6 +50,7 @@ export default function (
         case OrganizationActionsTypes.ACTIVATE_ORGANIZATION: {
             return {
                 ...state,
+                currentRole: null,
                 fetching: true,
             };
         }
@@ -58,11 +60,13 @@ export default function (
                 initialized: true,
                 fetching: false,
                 current: action.payload.organization,
+                currentRole: action.payload.currentRole,
             };
         }
         case OrganizationActionsTypes.ACTIVATE_ORGANIZATION_FAILED: {
             return {
                 ...state,
+                currentRole: null,
                 fetching: false,
                 initialized: true,
             };
@@ -99,6 +103,7 @@ export default function (
                 ...state,
                 fetching: false,
                 current: state.current && state.current.slug === slug ? null : state.current,
+                currentRole: state.current?.slug === slug ? null : state.currentRole,
                 currentArray: state.currentArray.filter((org) => org.slug !== slug),
                 count: state.count ? state.count - 1 : 0,
             };
@@ -134,6 +139,7 @@ export default function (
                 ...state,
                 leaving: false,
                 current: state.current && state.current.slug === slug ? null : state.current,
+                currentRole: state.current?.slug === slug ? null : state.currentRole,
                 currentArray: state.currentArray.filter((org) => org.slug !== slug),
                 count: state.count ? state.count - 1 : 0,
             };

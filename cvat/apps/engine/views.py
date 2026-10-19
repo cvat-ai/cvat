@@ -9,7 +9,6 @@ import os.path as osp
 import re
 import shutil
 import textwrap
-import traceback
 import zlib
 from abc import ABCMeta, abstractmethod
 from contextlib import suppress
@@ -42,6 +41,7 @@ from rest_framework.permissions import SAFE_METHODS
 from rest_framework.response import Response
 from rest_framework.settings import api_settings
 from rq.job import Job as RQJob
+from rq.job import JobStatus as RQJobStatus
 
 import cvat.apps.dataset_manager as dm
 from cvat.apps.dataset_manager.serializers import DatasetFormatsSerializer
@@ -103,7 +103,12 @@ from cvat.apps.engine.permissions import (
     UserPermission,
     get_iam_context,
 )
-from cvat.apps.engine.rq import ImportRequestId, ImportRQMeta, RQMetaWithFailureInfo
+from cvat.apps.engine.rq import (
+    ImportRequestId,
+    ImportRQMeta,
+    RQMetaWithFailureInfo,
+    save_job_failure_metadata,
+)
 from cvat.apps.engine.serializers import (
     AboutSerializer,
     AnnotationFileSerializer,
@@ -167,6 +172,7 @@ slogger = ServerLogManager(__name__)
 _UPLOAD_PARSER_CLASSES = api_settings.DEFAULT_PARSER_CLASSES + [MultiPartParser]
 
 _DATA_CHECKSUM_HEADER_NAME = "X-Checksum"
+_DATA_CHUNK_SIZE_HEADER_NAME = "X-Chunk-Size"
 _DATA_UPDATED_DATE_HEADER_NAME = "X-Updated-Date"
 _RETRY_AFTER_TIMEOUT = 10
 
@@ -880,11 +886,12 @@ class _DataGetter(metaclass=ABCMeta):
 
     def _make_chunk_response_headers(
         self,
-        checksum: str,
+        chunk_data: DataWithMeta,
         updated_date: datetime,
     ) -> dict[str, str]:
         return {
-            _DATA_CHECKSUM_HEADER_NAME: str(checksum or ""),
+            _DATA_CHECKSUM_HEADER_NAME: self._get_chunk_checksum(chunk_data),
+            _DATA_CHUNK_SIZE_HEADER_NAME: str(len(chunk_data.data.getbuffer())),
             _DATA_UPDATED_DATE_HEADER_NAME: serializers.DateTimeField().to_representation(
                 updated_date
             ),
@@ -924,7 +931,7 @@ class _TaskDataGetter(_DataGetter):
 
     def _get_chunk_response_headers(self, chunk_data: DataWithMeta) -> dict[str, str]:
         return self._make_chunk_response_headers(
-            self._get_chunk_checksum(chunk_data),
+            chunk_data,
             self._db_task.get_chunks_updated_date(),
         )
 
@@ -999,7 +1006,7 @@ class _JobDataGetter(_DataGetter):
 
     def _get_chunk_response_headers(self, chunk_data: DataWithMeta) -> dict[str, str]:
         return self._make_chunk_response_headers(
-            self._get_chunk_checksum(chunk_data), self._db_job.segment.chunks_updated_date
+            chunk_data, self._db_job.segment.chunks_updated_date
         )
 
 
@@ -1154,7 +1161,7 @@ class TaskViewSet(
         "dimension",
         "validation_mode",
     )
-    filter_fields = (*simple_filters, "id", "updated_date")
+    filter_fields = (*simple_filters, "id", "updated_date", "created_date")
     filter_description = textwrap.dedent("""
 
         There are few examples for complex filtering tasks:\n
@@ -1598,6 +1605,14 @@ class TaskViewSet(
                 required=False,
                 response=[200, 206],
                 description="Data checksum, applicable for chunks only",
+            ),
+            OpenApiParameter(
+                _DATA_CHUNK_SIZE_HEADER_NAME,
+                location=OpenApiParameter.HEADER,
+                type=OpenApiTypes.INT,
+                required=False,
+                response=[200, 206, 416],
+                description="Decoded chunk size in bytes, applicable for chunks only",
             ),
             OpenApiParameter(
                 _DATA_UPDATED_DATE_HEADER_NAME,
@@ -2591,6 +2606,30 @@ class JobViewSet(
                 type=OpenApiTypes.INT,
                 description="A unique number value identifying chunk, starts from 0 for each job",
             ),
+            OpenApiParameter(
+                _DATA_CHECKSUM_HEADER_NAME,
+                location=OpenApiParameter.HEADER,
+                type=OpenApiTypes.STR,
+                required=False,
+                response=[200, 206],
+                description="Data checksum, applicable for chunks only",
+            ),
+            OpenApiParameter(
+                _DATA_CHUNK_SIZE_HEADER_NAME,
+                location=OpenApiParameter.HEADER,
+                type=OpenApiTypes.INT,
+                required=False,
+                response=[200, 206, 416],
+                description="Decoded chunk size in bytes, applicable for chunks only",
+            ),
+            OpenApiParameter(
+                _DATA_UPDATED_DATE_HEADER_NAME,
+                location=OpenApiParameter.HEADER,
+                type=OpenApiTypes.DATETIME,
+                required=False,
+                response=[200, 206],
+                description="Data update date, applicable for chunks only",
+            ),
         ],
         responses={
             "200": OpenApiResponse(OpenApiTypes.BINARY, description="Data of a specific type"),
@@ -3272,7 +3311,9 @@ class UserViewSet(
     PartialUpdateModelMixin,
     mixins.DestroyModelMixin,
 ):
-    queryset = User.objects.prefetch_related("groups").all()
+    queryset = (
+        User.objects.select_related("profile").prefetch_related("groups", "emailaddress_set").all()
+    )
     iam_supports_organization_params = True
     iam_permission_class = UserPermission
 
@@ -3869,11 +3910,16 @@ class AnnotationGuidesViewSet(
 
 
 def rq_exception_handler(rq_job: RQJob, exc_type: type[Exception], exc_value: Exception, tb):
-    rq_job_meta = RQMetaWithFailureInfo.for_job(rq_job)
-    rq_job_meta.formatted_exception = "".join(traceback.format_exception_only(exc_type, exc_value))
-    if rq_job.origin == settings.CVAT_QUEUES.CHUNKS.value:
-        rq_job_meta.exc_type = exc_type
-        rq_job_meta.exc_args = exc_value.args
-    rq_job_meta.save()
+    # NOTE @sosov: The worker has already re-queued/re-scheduled the job for another attempt
+    # that is why we can`t use redis_handler.utils.rq_job_will_be_retried there
+    if rq_job.get_status(refresh=False) in (RQJobStatus.QUEUED, RQJobStatus.SCHEDULED):
+        return True
+
+    # The global exception handlers, like this function, are called by RQ AFTER the job status is
+    # set to FAILED. In some queues (e.g. chunk and request), jobs already save failure metadata in
+    # on_failure(), which is called before RQ publishes status, so API readers can reconstruct the
+    # exception. Avoid writing it again here, only do this for jobs that have no such callback.
+    if RQMetaWithFailureInfo.for_job(rq_job).formatted_exception is None:
+        save_job_failure_metadata(rq_job, exc_type, exc_value)
 
     return True

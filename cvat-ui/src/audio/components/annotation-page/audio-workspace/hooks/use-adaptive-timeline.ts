@@ -8,6 +8,7 @@ import TimelinePlugin, { type TimelinePluginOptions } from 'wavesurfer.js/dist/p
 import { formatSecondsWithPrecision } from 'audio/utils/format-audio-time';
 import { MINIMAP_TIMELINE_HEIGHT } from 'audio/utils/waveform-geometry';
 
+import OptimizedTimelinePlugin from '../plugins/optimized-timeline-plugin';
 import type { WaveSurferRuntime } from './use-audio-waveform';
 
 interface TimelineDensityBand {
@@ -166,7 +167,7 @@ export function useAdaptiveTimeline(
         if (previousBandRef.current === band) return;
 
         timeline.destroy();
-        const nextTimeline = TimelinePlugin.create(band.options);
+        const nextTimeline = OptimizedTimelinePlugin.create(band.options);
         timelineRef.current = nextTimeline;
         previousBandRef.current = band;
         instance.registerPlugin(nextTimeline);

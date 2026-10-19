@@ -7,6 +7,7 @@
     display: flex;
     flex-direction: column;
     min-height: 0;
+    background-color: $background-color-2;
 }
 
 .cvat-audio-regions-list-header {
@@ -89,6 +90,4 @@
         border-color: rgba(0, 0, 0, 66%);
         box-shadow: 0 3px 10px rgba(0, 0, 0, 14%);
     }
-
-    .cvat-audio-interval-header-time { padding-left: $grid-unit-size * 3.25; }
 }

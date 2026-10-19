@@ -87,7 +87,7 @@ context('Rotated bounding boxes.', () => {
                 }
             });
 
-            cy.shapeRotate('#cvat_canvas_shape_2', '32.2');
+            cy.shapeRotate('#cvat_canvas_shape_2', '32.3');
 
             // Comparison of the values of the shape attribute of the current frame with the previous frame
             testCompareRotate('cvat_canvas_shape_2', 0);
@@ -144,9 +144,9 @@ context('Rotated bounding boxes.', () => {
             cy.get('.cvat-canvas-container').click(500, 385);
             cy.get('#cvat_canvas_shape_5').trigger('mousemove');
             cy.get('#cvat_canvas_shape_5').should('have.class', 'cvat_canvas_shape_activated');
-            cy.get('body').type('{ctrl}c');
+            cy.pressWithPlatformModifier('c');
             cy.get('.cvat-canvas-container').trigger('mousemove', 500, 385);
-            cy.get('body').type('{ctrl}v');
+            cy.pressWithPlatformModifier('v');
             cy.get('.cvat-canvas-container').click(500, 385);
             cy.get('#cvat_canvas_shape_7').should('be.visible');
 

@@ -12,7 +12,7 @@ context('Requests page', () => {
         displayName: 'Demo bucket',
         resource: 'public',
         manifest: 'images_with_manifest/manifest.jsonl',
-        endpointUrl: Cypress.config('minioUrl'),
+        endpointUrl: Cypress.config('motoUrl'),
     };
 
     const rectanglePayload = {

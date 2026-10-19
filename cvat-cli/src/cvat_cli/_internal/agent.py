@@ -652,6 +652,11 @@ def run_agent(
         ) as executor,
         tempfile.TemporaryDirectory() as cache_dir,
     ):
+        dh = client.api_client.default_headers
+        assert dh["User-Agent"].startswith("cvat_cli/")
+        assert " " in dh["User-Agent"]
+        dh["User-Agent"] = dh["User-Agent"].replace(" ", " (agent) ", 1)
+
         client.config.cache_dir = Path(cache_dir, "cache")
         client.logger.info("Will store cache at %s", client.config.cache_dir)
 

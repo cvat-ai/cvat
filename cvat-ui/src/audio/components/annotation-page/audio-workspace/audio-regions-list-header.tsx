@@ -13,11 +13,7 @@ import {
 
 import CVATTooltip from 'components/common/cvat-tooltip';
 
-export enum AudioRegionsOrdering {
-    INSERTION = 'Insertion order',
-    START_TIME = 'Start time',
-    LABEL_NAME = 'Label name',
-}
+import { AudioRegionsOrdering } from './utils/audio-interval';
 
 interface Props {
     count: number;

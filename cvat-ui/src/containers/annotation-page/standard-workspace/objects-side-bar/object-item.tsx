@@ -18,14 +18,14 @@ import {
     switchSimplifyVisibility as switchSimplifyVisibilityAction,
     removeObject as removeObjectAction,
     collapseObjectItems,
+    selectObjectsAsync,
 } from 'actions/annotation-actions';
 import {
-    ActiveControl, CombinedState, ColorBy,
+    ActiveControl, CombinedState, ColorBy, isMultiSelectionSupported,
 } from 'reducers';
 import { openAnnotationsActionModal } from 'components/annotation-page/annotations-actions/annotations-actions-modal';
 import ObjectStateItemComponent from 'components/annotation-page/standard-workspace/objects-side-bar/object-item';
 import { getObjectStateColor } from 'components/annotation-page/standard-workspace/objects-side-bar/shared';
-import PolySimplifyControl from 'components/annotation-page/standard-workspace/controls-side-bar/poly-simplify-control';
 import openCVWrapper from 'utils/opencv-wrapper/opencv-wrapper';
 import { shift } from 'utils/math';
 import {
@@ -36,14 +36,17 @@ import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import { filterApplicableLabels } from 'utils/filter-applicable-labels';
 import { toClipboard } from 'utils/to-clipboard';
 import changeObjectOrientation, { type OrientationAngle } from 'utils/change-object-orientation';
+import { getObjectStateByClientID } from 'utils/objects-sidebar';
 
 interface OwnProps {
     clientID: number;
     objectStates: ObjectState[];
+    visibleObjectIDs?: number[];
     visibleSkeletonElements?: Record<number, number[]>;
-    allowSimplifyLifecycle?: boolean;
     zLayerDragProps?: React.HTMLAttributes<HTMLElement>;
     zLayerDragging?: boolean;
+    partsExpanded?: boolean;
+    onPartsExpandedChange?(clientID: number, expanded: boolean): void;
 }
 
 interface StateToProps {
@@ -53,20 +56,17 @@ interface StateToProps {
     jobInstance: Job;
     frameNumber: number;
     activated: boolean;
+    multiSelected: boolean;
+    multiSelectionSupported: boolean;
+    selectedStatesID: number[];
     colorBy: ColorBy;
     ready: boolean;
     activeControl: ActiveControl;
     minZLayer: number;
     maxZLayer: number;
     normalizedKeyMap: Record<string, string>;
-    keyMap: Record<string, { sequences: string[] }>;
     canvasInstance: Canvas | Canvas3d;
     focusedObjectPadding: number;
-    defaultApproxPolyAccuracy: number;
-    simplifyState: {
-        objectState: ObjectState | null;
-        originalPoints: number[] | null;
-    };
 }
 
 interface DispatchToProps {
@@ -80,6 +80,7 @@ interface DispatchToProps {
     changeGroupColor(group: number, color: string): void;
     updateActiveControl(activeControl: ActiveControl): void;
     expandObject(objectState: ObjectState): void;
+    selectObjects(selectedStatesID: number[]): void;
 }
 
 function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
@@ -87,6 +88,7 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
         annotation: {
             annotations: {
                 activatedStateID,
+                selectedStatesID,
                 zLayer: { min: minZLayer, max: maxZLayer },
             },
             job: { attributes: jobAttributes, instance: jobInstance, labels },
@@ -94,22 +96,21 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
                 frame: { number: frameNumber },
             },
             canvas: { instance: canvasInstance, ready, activeControl },
-            simplify: simplifyState,
+            workspace,
         },
         settings: {
             shapes: { colorBy },
-            workspace: { focusedObjectPadding, defaultApproxPolyAccuracy },
+            workspace: { focusedObjectPadding },
         },
-        shortcuts: { normalizedKeyMap, keyMap },
+        shortcuts: { normalizedKeyMap },
     } = state;
 
     const { objectStates: states, clientID } = own;
-    const stateIDs = states.map((_state: any): number => _state.clientID);
-    const index = stateIDs.indexOf(clientID);
+    const objectState = getObjectStateByClientID(states, clientID)!;
 
     return {
-        objectState: states[index],
-        attributes: jobAttributes[states[index].label.id as number],
+        objectState,
+        attributes: jobAttributes[objectState.label.id as number],
         labels,
         ready,
         activeControl,
@@ -117,14 +118,14 @@ function mapStateToProps(state: CombinedState, own: OwnProps): StateToProps {
         jobInstance,
         frameNumber,
         activated: activatedStateID === clientID,
+        multiSelected: isMultiSelectionSupported(workspace) && selectedStatesID.includes(clientID),
+        multiSelectionSupported: isMultiSelectionSupported(workspace),
+        selectedStatesID,
         minZLayer,
         maxZLayer,
         normalizedKeyMap,
-        keyMap,
         canvasInstance: canvasInstance as Canvas | Canvas3d,
         focusedObjectPadding,
-        defaultApproxPolyAccuracy,
-        simplifyState,
     };
 }
 
@@ -161,16 +162,15 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         expandObject(objectState: ObjectState): void {
             dispatch(collapseObjectItems([objectState], false));
         },
+        selectObjects(selectedStatesID: number[]): void {
+            dispatch(selectObjectsAsync(selectedStatesID));
+        },
     };
 }
 
 type Props = StateToProps & DispatchToProps & OwnProps;
 interface State {
     labels: Label[];
-    simplifyMode: boolean;
-    approxPolyAccuracy: number;
-    originalPoints: number[] | null;
-    previewPoints: number[] | null;
 }
 
 class ObjectItemContainer extends React.PureComponent<Props, State> {
@@ -178,10 +178,6 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
         super(props);
         this.state = {
             labels: props.labels,
-            simplifyMode: false,
-            approxPolyAccuracy: props.defaultApproxPolyAccuracy,
-            originalPoints: null,
-            previewPoints: null,
         };
     }
 
@@ -197,47 +193,6 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
         }
 
         return null;
-    }
-
-    public componentDidUpdate(prevProps: Readonly<Props>): void {
-        const {
-            objectState, simplifyState, defaultApproxPolyAccuracy, allowSimplifyLifecycle = true,
-        } = this.props;
-        const { simplifyMode } = this.state;
-
-        if (
-            allowSimplifyLifecycle &&
-            !simplifyMode &&
-            simplifyState.objectState &&
-            simplifyState.objectState.clientID === objectState.clientID &&
-            (!prevProps.simplifyState.objectState ||
-                prevProps.simplifyState.objectState.clientID !== objectState.clientID)
-        ) {
-            this.simplify();
-        }
-
-        // Update approxPolyAccuracy when default setting changes (but not during active simplification)
-        if (!simplifyMode && prevProps.defaultApproxPolyAccuracy !== defaultApproxPolyAccuracy) {
-            this.setState({
-                approxPolyAccuracy: defaultApproxPolyAccuracy,
-            });
-        }
-    }
-
-    public componentWillUnmount(): void {
-        const {
-            objectState, jobInstance, switchSimplifyVisibility, updateState, allowSimplifyLifecycle = true,
-        } = this.props;
-        const { simplifyMode, originalPoints } = this.state;
-
-        if (allowSimplifyLifecycle && simplifyMode) {
-            if (originalPoints) {
-                objectState.points = originalPoints;
-                updateState(objectState);
-            }
-            jobInstance.actions.freeze(false);
-            switchSimplifyVisibility(null);
-        }
     }
 
     private copy = (): void => {
@@ -288,94 +243,9 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
         }
     };
 
-    private simplify = async (): Promise<void> => {
-        const {
-            objectState, canvasInstance, activateObject, jobInstance,
-        } = this.props;
-        if ([ShapeType.POLYGON, ShapeType.POLYLINE].includes(objectState.shapeType)) {
-            const originalPoints = objectState.points ? [...objectState.points] : [];
-
-            activateObject(objectState.clientID as number, null);
-
-            if (canvasInstance instanceof Canvas && canvasInstance.mode() !== CanvasMode.IDLE) {
-                canvasInstance.cancel();
-            }
-
-            await jobInstance.actions.freeze(true);
-
-            this.setState({
-                simplifyMode: true,
-                originalPoints,
-            });
-        }
-    };
-
     private requestSimplification = (): void => {
         const { objectState, switchSimplifyVisibility } = this.props;
         switchSimplifyVisibility(objectState.clientID as number);
-    };
-
-    private applySimplification = async (simplifiedPoints: number[]): Promise<void> => {
-        const {
-            objectState, updateState, switchSimplifyVisibility, jobInstance,
-        } = this.props;
-        const { originalPoints } = this.state;
-
-        try {
-            // Initialize OpenCV if needed
-            if (!openCVWrapper.isInitialized) {
-                await openCVWrapper.initialize(() => {});
-            }
-
-            if (originalPoints) {
-                objectState.points = [...originalPoints];
-                await updateState(objectState);
-            }
-
-            jobInstance.actions.freeze(false);
-
-            objectState.points = [...simplifiedPoints];
-            await updateState(objectState);
-            switchSimplifyVisibility(null);
-
-            this.setState({ simplifyMode: false, previewPoints: null });
-        } catch (error) {
-            jobInstance.actions.freeze(false);
-            switchSimplifyVisibility(null);
-            this.setState({ simplifyMode: false, previewPoints: null });
-            throw error;
-        }
-    };
-
-    private cancelSimplification = async (): Promise<void> => {
-        const {
-            objectState, updateState, switchSimplifyVisibility, jobInstance,
-        } = this.props;
-        const { originalPoints } = this.state;
-
-        if (originalPoints) {
-            objectState.points = originalPoints;
-            await updateState(objectState);
-        }
-
-        jobInstance.actions.freeze(false);
-        switchSimplifyVisibility(null);
-        this.setState({
-            simplifyMode: false,
-            originalPoints: null,
-            previewPoints: null,
-        });
-    };
-
-    private updateSimplificationPreview = async (points: number[]): Promise<void> => {
-        const { objectState, updateState } = this.props;
-        this.setState({ previewPoints: points });
-        objectState.points = points;
-        await updateState(objectState);
-    };
-
-    private onChangeAccuracy = (value: number): void => {
-        this.setState({ approxPolyAccuracy: value });
     };
 
     private remove = (): void => {
@@ -481,6 +351,67 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
         }
     };
 
+    private activateSingle = (): void => {
+        const {
+            objectState, ready, activeControl, activateObject, selectObjects,
+            updateActiveControl, canvasInstance,
+        } = this.props;
+        if (!ready) return;
+
+        if (canvasInstance instanceof Canvas && activeControl === ActiveControl.SELECT) {
+            canvasInstance.selectObjects({ enabled: false });
+            updateActiveControl(ActiveControl.CURSOR);
+        }
+        selectObjects([]);
+        activateObject(objectState.clientID, null);
+    };
+
+    private toggleSelection = (): void => {
+        const {
+            objectState, selectedStatesID, selectObjects,
+        } = this.props;
+        if (objectState.objectType === ObjectType.TAG) return;
+        const clientID = objectState.clientID as number;
+        const nextSelection = selectedStatesID.includes(clientID) ?
+            selectedStatesID.filter((selectedClientID: number): boolean => selectedClientID !== clientID) :
+            [...selectedStatesID, clientID];
+
+        selectObjects(nextSelection);
+    };
+
+    private selectRange = (): void => {
+        const {
+            objectState, objectStates, selectedStatesID, visibleObjectIDs: orderedObjectIDs, selectObjects,
+        } = this.props;
+        if (objectState.objectType === ObjectType.TAG) return;
+        const visibleObjectIDs = orderedObjectIDs || objectStates.map(
+            (state: ObjectState): number => state.clientID as number,
+        );
+        const clientID = objectState.clientID as number;
+        const anchorID = [...selectedStatesID].reverse().find(
+            (id: number): boolean => visibleObjectIDs.includes(id),
+        );
+
+        if (typeof anchorID !== 'number') {
+            selectObjects([...selectedStatesID, clientID]);
+            return;
+        }
+
+        const from = visibleObjectIDs.indexOf(anchorID);
+        const to = visibleObjectIDs.indexOf(clientID);
+        if (from === -1 || to === -1) {
+            selectObjects([...selectedStatesID, clientID]);
+            return;
+        }
+        const range = visibleObjectIDs.slice(Math.min(from, to), Math.max(from, to) + 1);
+        const nextSelection = [...new Set([
+            ...selectedStatesID.filter((id: number): boolean => id !== clientID),
+            ...range.filter((id: number): boolean => id !== clientID),
+            clientID,
+        ])];
+        selectObjects(nextSelection);
+    };
+
     private focusAndExpand = (): void => {
         const {
             objectState, canvasInstance, focusedObjectPadding, expandObject,
@@ -574,78 +505,75 @@ class ObjectItemContainer extends React.PureComponent<Props, State> {
     }
 
     public render(): JSX.Element {
-        const {
-            labels, simplifyMode, approxPolyAccuracy,
-        } = this.state;
+        const { labels } = this.state;
         const {
             objectState,
             attributes,
             activated,
+            multiSelected,
+            multiSelectionSupported,
+            selectedStatesID,
             colorBy,
             normalizedKeyMap,
-            keyMap,
             jobInstance,
             zLayerDragProps,
             zLayerDragging,
             visibleSkeletonElements = {},
+            partsExpanded,
+            onPartsExpandedChange,
         } = this.props;
         const elements = visibleSkeletonElements[objectState.clientID as number] ??
             objectState.elements.map((el: ObjectState) => el.clientID as number);
 
         return (
-            <>
-                <ObjectStateItemComponent
-                    jobInstance={jobInstance}
-                    zLayerDragProps={zLayerDragProps}
-                    zLayerDragging={zLayerDragging}
-                    activated={activated}
-                    objectType={objectState.objectType}
-                    shapeType={objectState.shapeType}
-                    clientID={objectState.clientID as number}
-                    serverID={objectState.serverID}
-                    locked={objectState.lock}
-                    labelID={objectState.label.id as number}
-                    isGroundTruth={objectState.isGroundTruth}
-                    color={getObjectStateColor(objectState, colorBy).rgbComponents()}
-                    attributes={attributes}
-                    elements={elements}
-                    normalizedKeyMap={normalizedKeyMap}
-                    labels={labels}
-                    colorBy={colorBy}
-                    activate={this.activate}
-                    focusAndExpand={this.focusAndExpand}
-                    remove={this.remove}
-                    copy={this.copy}
-                    createURL={this.createURL}
-                    propagate={this.propagate}
-                    switchOrientation={this.switchOrientation}
-                    changeOrientation={this.changeOrientation}
-                    toBackground={this.toBackground}
-                    toForeground={this.toForeground}
-                    toOneLayerBackward={this.toOneLayerBackward}
-                    toOneLayerForward={this.toOneLayerForward}
-                    toSpecificLayer={this.toSpecificLayer}
-                    zOrder={objectState.zOrder}
-                    changeColor={this.changeColor}
-                    changeLabel={this.changeLabel}
-                    edit={this.edit}
-                    slice={this.slice}
-                    simplify={this.requestSimplification}
-                    resetCuboidPerspective={this.resetCuboidPerspective}
-                    runAnnotationAction={this.runAnnotationAction}
-                />
-                {simplifyMode && (
-                    <PolySimplifyControl
-                        objectState={objectState}
-                        approxPolyAccuracy={approxPolyAccuracy}
-                        repeatDrawShapeShortcut={keyMap.SWITCH_DRAW_MODE_STANDARD_CONTROLS}
-                        onChangeAccuracy={this.onChangeAccuracy}
-                        onApply={this.applySimplification}
-                        onCancel={this.cancelSimplification}
-                        onUpdatePreview={this.updateSimplificationPreview}
-                    />
-                )}
-            </>
+            <ObjectStateItemComponent
+                jobInstance={jobInstance}
+                zLayerDragProps={zLayerDragProps}
+                zLayerDragging={zLayerDragging}
+                activated={activated}
+                multiSelected={multiSelected}
+                selectionActive={multiSelectionSupported && selectedStatesID.length > 0}
+                multiSelectionSupported={multiSelectionSupported}
+                objectType={objectState.objectType}
+                shapeType={objectState.shapeType}
+                clientID={objectState.clientID as number}
+                serverID={objectState.serverID}
+                locked={objectState.lock}
+                labelID={objectState.label.id as number}
+                isGroundTruth={objectState.isGroundTruth}
+                color={getObjectStateColor(objectState, colorBy).rgbComponents()}
+                attributes={attributes}
+                elements={elements}
+                partsExpanded={partsExpanded}
+                onPartsExpandedChange={onPartsExpandedChange}
+                normalizedKeyMap={normalizedKeyMap}
+                labels={labels}
+                colorBy={colorBy}
+                activate={this.activate}
+                activateSingle={this.activateSingle}
+                toggleSelection={this.toggleSelection}
+                selectRange={this.selectRange}
+                focusAndExpand={this.focusAndExpand}
+                remove={this.remove}
+                copy={this.copy}
+                createURL={this.createURL}
+                propagate={this.propagate}
+                switchOrientation={this.switchOrientation}
+                changeOrientation={this.changeOrientation}
+                toBackground={this.toBackground}
+                toForeground={this.toForeground}
+                toOneLayerBackward={this.toOneLayerBackward}
+                toOneLayerForward={this.toOneLayerForward}
+                toSpecificLayer={this.toSpecificLayer}
+                zOrder={objectState.zOrder}
+                changeColor={this.changeColor}
+                changeLabel={this.changeLabel}
+                edit={this.edit}
+                slice={this.slice}
+                simplify={this.requestSimplification}
+                resetCuboidPerspective={this.resetCuboidPerspective}
+                runAnnotationAction={this.runAnnotationAction}
+            />
         );
     }
 }

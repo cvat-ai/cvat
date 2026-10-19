@@ -9,8 +9,10 @@ import { taskName, firstLabelName } from '../../support/const_audio';
 context('Audio annotation. Interval playback behavior.', () => {
     const caseId = 'audio_31';
     const CURSOR_TOLERANCE_PX = 6;
+    const AUDIO_DURATION_SECONDS = 123.504;
 
     beforeEach(() => {
+        cy.viewport(1050, 861);
         cy.prepareUserSession();
         cy.openAudioJob(taskName);
     });
@@ -19,7 +21,7 @@ context('Audio annotation. Interval playback behavior.', () => {
         cy.audioClearAnnotations();
     });
 
-    const createShortInterval = (start = 100, end = 112) => {
+    const createShortInterval = (start = 100, end = 140) => {
         cy.audioCreateRegionViaButton(firstLabelName, start, end);
         cy.get('.cvat-audio-region-item').should('have.length', 1);
     };
@@ -82,33 +84,6 @@ context('Audio annotation. Interval playback behavior.', () => {
         });
     };
 
-    const seekWithinInterval = (source) => {
-        getIntervalBounds().then(({ left, right }) => {
-            if (source === 'waveform') {
-                seekWaveformAt(left + (right - left) / 2);
-                return;
-            }
-
-            cy.getAudioWaveformViewport().then(($viewport) => {
-                const viewport = $viewport[0].getBoundingClientRect();
-                const position = (left + (right - left) / 2 - viewport.left) / viewport.width;
-                seekMinimapAt(position);
-            });
-        });
-    };
-
-    const seekOutsideInterval = (source) => {
-        if (source === 'waveform') {
-            cy.getAudioWaveformViewport().then(($viewport) => {
-                const viewport = $viewport[0].getBoundingClientRect();
-                seekWaveformAt(viewport.left + viewport.width * 0.9);
-            });
-            return;
-        }
-
-        seekMinimapAt(0.9);
-    };
-
     const expectCursorWithinInterval = () => {
         cy.getAudioWaveformCursor().then(($cursor) => {
             cy.getAudioRegion().should('have.length', 1).then(($region) => {
@@ -142,11 +117,54 @@ context('Audio annotation. Interval playback behavior.', () => {
             expectCursorAtIntervalEnd();
         });
 
+        it('Preserves the paused position during interval playback at 0.5x speed', () => {
+            const intervalDurationSeconds = 3;
+            const playbackRate = 0.5;
+            const playbackTimeSeconds = 4;
+
+            cy.audioSliderSetValue('cvat-audio-zoom-control', '{downarrow}', 10);
+            cy.audioSliderSetValue('cvat-audio-speed-control', '{uparrow}', 5);
+            cy.get('.cvat-audio-speed-control .cvat-audio-slider-value-badge').should('have.text', '0.5x');
+
+            cy.getAudioWaveformWrapper().then(($wrapper) => {
+                const intervalWidth = (intervalDurationSeconds / AUDIO_DURATION_SECONDS) * $wrapper[0].clientWidth;
+                cy.audioCreateRegionViaButton(firstLabelName, 100, 100 + intervalWidth);
+            });
+
+            cy.get('.cvat-audio-region-item').first()
+                .find('.cvat-audio-interval-header-index').dblclick();
+            cy.get('.cvat-player-pause-button').should('exist');
+
+            cy.wait(playbackTimeSeconds * 1000);
+            cy.get('.cvat-player-pause-button').click();
+            cy.wait(250);
+            cy.get('.cvat-player-play-button').should('exist');
+
+            cy.getAudioRegion().should('have.length', 1).then(($region) => {
+                const region = $region[0].getBoundingClientRect();
+                cy.getAudioWaveformWrapper().then(($wrapper) => {
+                    const intervalDuration = (region.width / $wrapper[0].clientWidth) * AUDIO_DURATION_SECONDS;
+                    const expectedProgress = (playbackTimeSeconds * playbackRate) / intervalDuration;
+                    const expectedPosition = region.left + region.width * expectedProgress;
+
+                    cy.getAudioWaveformCursor().should(($cursor) => {
+                        const cursor = $cursor[0].getBoundingClientRect();
+
+                        expect(cursor.left).to.be.closeTo(expectedPosition, CURSOR_TOLERANCE_PX);
+                    });
+                });
+            });
+        });
+
         it('Preserves play-once bounds across pause and resume', () => {
             createShortInterval();
             cy.get('.cvat-audio-region-item').first()
                 .find('.cvat-audio-interval-header-index').dblclick();
             cy.get('.cvat-player-pause-button').should('exist').click();
+            cy.get('.cvat-player-play-button').should('exist');
+            getIntervalBounds().then(({ right }) => {
+                getCursorPosition().should('be.lessThan', right - CURSOR_TOLERANCE_PX);
+            });
             cy.get('.cvat-player-play-button').should('exist').click();
 
             cy.get('.cvat-player-pause-button').should('exist');
@@ -231,26 +249,56 @@ context('Audio annotation. Interval playback behavior.', () => {
             cy.get('.cvat-player-play-button', { timeout: 8000 }).should('exist');
         });
 
-        ['waveform', 'minimap'].forEach((source) => {
-            it(`Preserves an interval range when seeking within it by ${source}`, () => {
-                cy.audioCreateRegionViaButton(firstLabelName, 100, 180);
-                cy.get('.cvat-audio-region-item').first().dblclick();
-                cy.get('.cvat-player-pause-button').should('exist');
+        it('Preserves an interval range when seeking within it by waveform', () => {
+            cy.audioCreateRegionViaButton(firstLabelName, 100, 180);
+            cy.get('.cvat-audio-region-item').first().dblclick();
+            cy.get('.cvat-player-pause-button').should('exist');
 
-                seekWithinInterval(source);
-                cy.get('.cvat-player-pause-button').should('exist');
-                cy.get('.cvat-player-play-button', { timeout: 12000 }).should('exist');
-                expectCursorAtIntervalEnd();
+            getIntervalBounds().then(({ left, right }) => {
+                seekWaveformAt(left + (right - left) / 2);
             });
+            cy.get('.cvat-player-pause-button').should('exist');
+            cy.get('.cvat-player-play-button', { timeout: 12000 }).should('exist');
+            expectCursorAtIntervalEnd();
+        });
 
-            it(`Cancels an interval range when seeking outside it by ${source}`, () => {
-                cy.audioCreateRegionViaButton(firstLabelName, 100, 130);
-                cy.get('.cvat-audio-region-item').first().dblclick();
-                cy.get('.cvat-player-pause-button').should('exist');
+        it('Preserves an interval range when seeking within it by minimap', () => {
+            cy.audioCreateRegionViaButton(firstLabelName, 100, 180);
+            cy.get('.cvat-audio-region-item').first().dblclick();
+            cy.get('.cvat-player-pause-button').should('exist');
 
-                seekOutsideInterval(source);
-                cy.get('.cvat-player-play-button', { timeout: 8000 }).should('exist');
+            cy.getAudioRegion().should('have.length', 1).then(($region) => {
+                const region = $region[0];
+                const track = region.parentElement;
+                expect(track).to.not.be.null;
+
+                const position = (region.offsetLeft + region.offsetWidth / 2) / track.clientWidth;
+                seekMinimapAt(position);
             });
+            cy.get('.cvat-player-pause-button').should('exist');
+            cy.get('.cvat-player-play-button', { timeout: 12000 }).should('exist');
+            expectCursorAtIntervalEnd();
+        });
+
+        it('Cancels an interval range when seeking outside it by waveform', () => {
+            cy.audioCreateRegionViaButton(firstLabelName, 100, 130);
+            cy.get('.cvat-audio-region-item').first().dblclick();
+            cy.get('.cvat-player-pause-button').should('exist');
+
+            cy.getAudioWaveformViewport().then(($viewport) => {
+                const viewport = $viewport[0].getBoundingClientRect();
+                seekWaveformAt(viewport.left + viewport.width * 0.9);
+            });
+            cy.get('.cvat-player-play-button', { timeout: 8000 }).should('exist');
+        });
+
+        it('Cancels an interval range when seeking outside it by minimap', () => {
+            cy.audioCreateRegionViaButton(firstLabelName, 100, 130);
+            cy.get('.cvat-audio-region-item').first().dblclick();
+            cy.get('.cvat-player-pause-button').should('exist');
+
+            seekMinimapAt(0.9);
+            cy.get('.cvat-player-play-button', { timeout: 8000 }).should('exist');
         });
     });
 });

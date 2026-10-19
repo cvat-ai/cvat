@@ -28,8 +28,8 @@
       }
     ]
   },
-  "assigneed_to_user": {
-    "name": "assignee to user task",
+  "assigned_to_user": {
+    "name": "assigned to user task",
     "overlap": 0,
     "segment_size": 100,
     "labels": [

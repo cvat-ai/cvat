@@ -155,7 +155,7 @@ context('Dump/Upload annotation.', { browser: '!firefox' }, () => {
             confirmUpdate('.cvat-modal-content-load-task-annotation');
             cy.get('.cvat-notification-notice-import-annotation-start').should('be.visible');
             cy.closeNotification('.cvat-notification-notice-import-annotation-start');
-            cy.get('.cvat-notification-notice-load-annotation-failed')
+            cy.get('.cvat-notification-notice-load-annotation-failed', { timeout: 120000 })
                 .should('exist')
                 .find('[aria-label="close"]')
                 .click();

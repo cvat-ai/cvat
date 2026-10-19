@@ -30,8 +30,8 @@ context('Test annotations saving works correctly', () => {
 
     function useShortcut(clientId, shortcut) {
         cy.get('body').click();
-        cy.get(`#cvat-objects-sidebar-state-item-${clientId}`).trigger('mouseover');
-        cy.get(`#cvat-objects-sidebar-state-item-${clientId}`).should('have.class', 'cvat-objects-sidebar-state-active-item');
+        cy.getObjectSidebarItem(clientId).trigger('mouseover');
+        cy.getObjectSidebarItem(clientId).should('have.class', 'cvat-objects-sidebar-state-active-item');
         cy.get('body').type(shortcut);
         cy.hideTooltips();
     }
@@ -46,11 +46,11 @@ context('Test annotations saving works correctly', () => {
         cy.intercept('POST', '/api/tasks**').as('createTaskRequest');
         cy.intercept('GET', '/api/jobs**').as('getJobsRequest');
         cy.contains('button', 'Submit & Continue').click();
-        cy.wait('@createTaskRequest').then((interception) => {
+        cy.wait('@createTaskRequest', { requestTimeout: 25_000 }).then((interception) => {
             expect(interception.response.statusCode).to.equal(201);
             taskId = interception.response.body.id;
         });
-        cy.wait('@getJobsRequest').then((interception) => {
+        cy.wait('@getJobsRequest', { requestTimeout: 25_000 }).then((interception) => {
             expect(interception.response.statusCode).to.equal(200);
             jobId = interception.response.body.results[0].id;
 

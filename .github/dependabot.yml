@@ -34,6 +34,11 @@ updates:
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 10
+    groups:
+      xml-libraries:
+        patterns:
+          - "lxml"
+          - "xmlsec"
     exclude-paths:
       - "*.txt"
       - "all.in"

@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 import traceback
+from contextlib import suppress
 from typing import Any
 
 import rq
@@ -18,6 +19,7 @@ from rest_framework.views import exception_handler as drf_exception_handler
 from cvat.apps.access_tokens.models import AccessToken
 from cvat.apps.access_tokens.serializers import AccessTokenReadSerializer
 from cvat.apps.dataset_manager.tracks_counter import TracksCounter
+from cvat.apps.dataset_manager.util import LockNotAvailableError
 from cvat.apps.engine.models import (
     CloudStorage,
     Comment,
@@ -689,6 +691,8 @@ def exception_handler(exc: Exception, context) -> Response | None:
     if isinstance(exc, DatabaseError):
         if db_utils.is_lock_timeout_error(exc):
             exc = ResourceIsBusyApiException()
+    elif isinstance(exc, LockNotAvailableError):
+        exc = ResourceIsBusyApiException()
 
     return drf_exception_handler(exc=exc, context=context)
 
@@ -707,6 +711,10 @@ def handle_viewset_exception(exc: Exception, context):
         status_code = response.status_code
     request = context["request"]
     view = context["view"]
+
+    org = None
+    with suppress(Exception):
+        org = request.iam_context["organization"]
 
     tb_strings = traceback.format_exception(type(exc), exc, exc.__traceback__)
 
@@ -731,6 +739,8 @@ def handle_viewset_exception(exc: Exception, context):
         user_id=getattr(request.user, "id", None),
         user_name=getattr(request.user, "username", None),
         user_email=getattr(request.user, "email", None),
+        org_id=getattr(org, "id", None),
+        org_slug=getattr(org, "slug", None),
         payload=payload,
     )
 

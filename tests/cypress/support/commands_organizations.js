@@ -56,7 +56,7 @@ Cypress.Commands.add('createOrganization', (organizationParams) => {
 
 Cypress.Commands.add('deleteOrganizations', (authHeaders, otrganizationsToDelete) => {
     cy.request({
-        url: '/api/organizations?page_size=all',
+        url: '/api/organizations?page_size=500',
         headers: authHeaders,
     }).then((_response) => {
         const responseResult = _response.body.results;

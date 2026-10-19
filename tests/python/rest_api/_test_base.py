@@ -7,7 +7,6 @@ from typing import IO
 
 import numpy as np
 import pytest
-from attrs.converters import to_bool
 from cvat_sdk.api_client import models
 from PIL import Image
 from pytest_cases import fixture, fixture_ref, parametrize
@@ -15,6 +14,7 @@ from pytest_cases import fixture, fixture_ref, parametrize
 import shared.utils.s3 as s3
 from rest_api.utils import calc_end_frame, create_task, iter_exclude, unique
 from shared.fixtures.init import container_exec_cvat
+from shared.fixtures.params import CACHE, STORAGE_METHODS
 from shared.tasks.enums import SourceDataType
 from shared.tasks.interface import ITaskSpec
 from shared.tasks.types import ImagesTaskSpec, VideoTaskSpec
@@ -122,11 +122,14 @@ class TestTasksBase:
             task_id,
         )
 
-    @pytest.fixture(scope="class")
-    def fxt_uploaded_images_task(self, request: pytest.FixtureRequest) -> tuple[ITaskSpec, int]:
-        return self._image_task_fxt_base(request=request)
+    @fixture(scope="class")
+    @parametrize("use_cache", STORAGE_METHODS)
+    def fxt_uploaded_images_task(
+        self, request: pytest.FixtureRequest, use_cache: bool
+    ) -> tuple[ITaskSpec, int]:
+        return self._image_task_fxt_base(request, use_cache=use_cache)
 
-    @pytest.fixture(scope="class")
+    @fixture(scope="class")
     def fxt_uploaded_images_task_with_segments(
         self, request: pytest.FixtureRequest
     ) -> tuple[ITaskSpec, int]:
@@ -148,7 +151,7 @@ class TestTasksBase:
             step=step,
         )
 
-    @pytest.fixture(scope="class")
+    @fixture(scope="class")
     def fxt_uploaded_images_task_with_segments_and_consensus(
         self, request: pytest.FixtureRequest
     ) -> tuple[ITaskSpec, int]:
@@ -389,7 +392,7 @@ class TestTasksBase:
             job_replication=job_replication,
         )
 
-    @pytest.fixture(scope="class")
+    @fixture(scope="class")
     def fxt_uploaded_images_task_with_gt_and_segments_and_consensus(
         self, request: pytest.FixtureRequest
     ) -> tuple[ITaskSpec, int]:
@@ -399,6 +402,20 @@ class TestTasksBase:
 
     @fixture(scope="class")
     @parametrize(
+        "use_cache",
+        [
+            *CACHE,
+            pytest.param(
+                False,
+                id="file_system",
+                marks=pytest.mark.xfail(
+                    reason="Creating a task from a cloud .bin file with static cache "
+                    "doesn't work at the moment"
+                ),
+            ),
+        ],
+    )
+    @parametrize(
         "cloud_storage_id",
         [
             pytest.param(
@@ -406,16 +423,16 @@ class TestTasksBase:
                 marks=[
                     pytest.mark.with_external_services,
                     pytest.mark.timeout(60),
-                    pytest.mark.xfail(
-                        to_bool(os.getenv("CVAT_ALLOW_STATIC_CACHE", False)),
-                        reason="Creating a task from a cloud .bin file with static cache doesn't work at the moment",
-                    ),
                 ],
             )
         ],
     )
     def fxt_cloud_bin_pointcloud_task(
-        self, request: pytest.FixtureRequest, cloud_storages, cloud_storage_id: int
+        self,
+        request: pytest.FixtureRequest,
+        cloud_storages,
+        cloud_storage_id: int,
+        use_cache: bool,
     ) -> tuple[ITaskSpec, int]:
         cloud_storage = cloud_storages[cloud_storage_id]
         s3_client = s3.make_client(bucket=cloud_storage["resource"])
@@ -433,6 +450,7 @@ class TestTasksBase:
             image_files=bin_files,
             server_files=server_files,
             cloud_storage_id=cloud_storage_id,
+            use_cache=use_cache,
         )
 
     @fixture(scope="class")
@@ -593,13 +611,17 @@ class TestTasksBase:
         "cloud_storage_id",
         [pytest.param(5, marks=[pytest.mark.with_external_services])],
     )
+    @parametrize("use_cache", CACHE)
     def fxt_backing_cs_images_task_with_related_images(
-        self, request: pytest.FixtureRequest, cloud_storage_id: int
+        self,
+        request: pytest.FixtureRequest,
+        cloud_storage_id: int,
+        use_cache: bool,
     ) -> tuple[ITaskSpec, int]:
         # The simplest way to get a task with local storage and subdirectories is to use the share
         # with copy_data.
         task_spec, task_id = self._share_images_task_with_related_images(
-            request, copy_data=True, use_cache=True
+            request, copy_data=True, use_cache=use_cache
         )
         container_exec_cvat(
             request, ["./manage.py", "movetasktobackingcs", str(task_id), str(cloud_storage_id)]
@@ -740,14 +762,16 @@ class TestTasksBase:
             task_id,
         )
 
-    @pytest.fixture(scope="class")
+    @fixture(scope="class")
+    @parametrize("use_cache", STORAGE_METHODS)
     def fxt_uploaded_video_task(
         self,
         request: pytest.FixtureRequest,
+        use_cache: bool,
     ) -> tuple[ITaskSpec, int]:
-        return self._uploaded_video_task_fxt_base(request=request)
+        return self._uploaded_video_task_fxt_base(request=request, use_cache=use_cache)
 
-    @pytest.fixture(scope="class")
+    @fixture(scope="class")
     def fxt_uploaded_video_task_without_manifest(
         self,
         request: pytest.FixtureRequest,
@@ -757,7 +781,7 @@ class TestTasksBase:
             request=request, video_file=video_file, chapters=[]
         )
 
-    @pytest.fixture(scope="class")
+    @fixture(scope="class")
     def fxt_uploaded_video_task_with_segments(
         self, request: pytest.FixtureRequest
     ) -> tuple[ITaskSpec, int]:
@@ -784,12 +808,14 @@ class TestTasksBase:
         "cloud_storage_id",
         [pytest.param(5, marks=[pytest.mark.with_external_services])],
     )
+    @parametrize("use_cache", CACHE)
     def fxt_backing_cs_video_task(
         self,
         request: pytest.FixtureRequest,
         cloud_storage_id: int,
+        use_cache: bool,
     ) -> tuple[ITaskSpec, int]:
-        spec, task_id = self._uploaded_video_task_fxt_base(request=request, use_cache=True)
+        spec, task_id = self._uploaded_video_task_fxt_base(request=request, use_cache=use_cache)
 
         container_exec_cvat(
             request, ["./manage.py", "movetasktobackingcs", str(task_id), str(cloud_storage_id)]

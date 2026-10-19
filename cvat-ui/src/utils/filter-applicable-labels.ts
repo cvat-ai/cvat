@@ -12,6 +12,14 @@ export function filterApplicableForType(type: LabelType, labels: Label[]): Label
     return applicableLabels;
 }
 
+export function filterApplicableForTypes(types: LabelType[], labels: Label[]): Label[] {
+    const applicableLabels = labels.filter((label: Label) => (
+        [...types, 'any'].includes(label.type)
+    ));
+
+    return applicableLabels;
+}
+
 export function filterApplicableLabels(objectState: ObjectState, labels: Label[]): Label[] {
     const applicableLabels = filterApplicableForType((objectState.shapeType || 'tag') as unknown as LabelType, labels);
 

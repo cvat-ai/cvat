@@ -3,7 +3,9 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useCallback, useRef, useState } from 'react';
+import React, {
+    useCallback, useEffect, useRef, useState,
+} from 'react';
 import { Row, Col } from 'antd/lib/grid';
 import { CloseOutlined, MoreOutlined } from '@ant-design/icons';
 import Button from 'antd/lib/button';
@@ -28,7 +30,7 @@ interface LayerPickerProps {
     onVisibleChange(visible: boolean): void;
 }
 
-function LayerPicker(props: LayerPickerProps): JSX.Element {
+export function LayerPicker(props: LayerPickerProps): JSX.Element {
     const {
         children, value, visible, onChange, onVisibleChange,
     } = props;
@@ -194,6 +196,12 @@ function ItemTopComponent(props: Props): JSX.Element {
     const [layerPopoverVisible, setLayerPopoverVisible] = useState(false);
     const [objectMenuVisible, setObjectMenuVisible] = useState(false);
 
+    useEffect(() => {
+        const closeObjectMenu = (): void => setObjectMenuVisible(false);
+        window.document.addEventListener('canvas.selectionmenu', closeObjectMenu);
+        return () => window.document.removeEventListener('canvas.selectionmenu', closeObjectMenu);
+    }, []);
+
     let objectActions: JSX.Element | null = null;
 
     if (!isGroundTruth) {
@@ -299,16 +307,17 @@ function ItemTopComponent(props: Props): JSX.Element {
                 </Text>
             </Col>
             <Col span={12}>
-                <CVATTooltip title='Change current label'>
-                    <LabelSelector
-                        disabled={locked || shapeType === ShapeType.SKELETON}
-                        size='small'
-                        labels={labels}
-                        value={labelID}
-                        onChange={changeLabel}
-                        className='cvat-objects-sidebar-state-item-label-selector'
-                    />
-                </CVATTooltip>
+                <LabelSelector
+                    disabled={locked || shapeType === ShapeType.SKELETON}
+                    size='small'
+                    labels={labels}
+                    value={labelID}
+                    onChange={changeLabel}
+                    tooltip='Change current label'
+                    className='cvat-objects-sidebar-state-item-label-selector'
+                    popupClassName='cvat-objects-sidebar-state-item-label-dropdown'
+                    popupMatchSelectWidth={false}
+                />
             </Col>
             {objectActions}
         </Row>
