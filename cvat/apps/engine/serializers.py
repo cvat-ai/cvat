@@ -50,7 +50,7 @@ from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.media_io.frame_provider import TaskFrameProvider
 from cvat.apps.engine.permissions import ProjectPermission, TaskPermission
 from cvat.apps.engine.rq import RunningBackgroundProcessesError, update_org_related_data_in_rq_jobs
-from cvat.apps.engine.task import ensure_task_is_initialized
+from cvat.apps.engine.task import create_replica_jobs, ensure_task_is_initialized
 from cvat.apps.engine.task_validation import HoneypotFrameSelector
 from cvat.apps.engine.types import ExtendedRequest
 from cvat.apps.engine.utils import (
@@ -1339,17 +1339,85 @@ class JobReadSerializer(serializers.ModelSerializer):
         return data
 
 
-class JobWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
+class JobWriteSerializer(serializers.ModelSerializer):
     assignee = serializers.IntegerField(allow_null=True, required=False)
 
-    # NOTE: Field sets can be expressed using serializer inheritance, but it is
-    # harder to use then: we need to make a manual switch in get_serializer_class()
-    # and create an extra serializer type in the API schema.
-    # Need to investigate how it can be simplified. It can also be done just internally,
-    # (e.g. just on the validation side), but it will complicate the implementation.
-    type = serializers.ChoiceField(choices=models.JobType.choices())
+    class Meta:
+        model = models.Job
+        fields = ("assignee", "stage", "state")
 
+    def to_representation(self, instance):
+        serializer = JobReadSerializer(instance, context=self.context)
+        return serializer.data
+
+    def update(self, instance: models.Job, validated_data: dict[str, Any]):
+        stage = validated_data.get("stage", instance.stage)
+        state = validated_data.get(
+            "state", models.StateChoice.NEW if stage != instance.stage else instance.state
+        )
+
+        if "stage" in validated_data or "state" in validated_data:
+            if stage == models.StageChoice.ANNOTATION:
+                validated_data["status"] = models.StatusChoice.ANNOTATION
+            elif stage == models.StageChoice.ACCEPTANCE and state == models.StateChoice.COMPLETED:
+                validated_data["status"] = models.StatusChoice.COMPLETED
+            else:
+                validated_data["status"] = models.StatusChoice.VALIDATION
+
+        if state != instance.state:
+            validated_data["state"] = state
+
+        if "assignee" in validated_data and (
+            (assignee_id := validated_data.pop("assignee")) != instance.assignee_id
+        ):
+            instance.update_assignee(assignee_id)
+
+        instance = super().update(instance, validated_data)
+        return instance
+
+
+class BaseJobCreateSerializer(serializers.ModelSerializer):
+    assignee = serializers.IntegerField(allow_null=True, required=False)
     task_id = serializers.IntegerField()
+
+    class Meta:
+        model = models.Job
+        fields = ("assignee", "task_id")
+
+    def to_representation(self, instance: models.Job) -> dict[str, Any]:
+        serializer = JobReadSerializer(instance, context=self.context)
+        return serializer.data
+
+    def _create(self, task: models.Task, validated_data: dict[str, Any]) -> models.Job:
+        raise NotImplementedError
+
+    @transaction.atomic
+    def create(self, validated_data: dict[str, Any]) -> models.Job:
+        task = models.Task.objects.get(pk=validated_data["task_id"])
+
+        if task.data_id is None:
+            raise serializers.ValidationError(
+                "This task has no data attached yet. Please set up task data and try again"
+            )
+
+        ensure_task_is_initialized(task=task)
+
+        task = models.Task.objects.select_for_update().get(pk=task.pk)
+
+        assignee_id = validated_data.pop("assignee", None)
+        job = self._create(task=task, validated_data=validated_data)
+
+        if assignee_id:
+            job.update_assignee(assignee_id, updated_date=job.updated_date)
+            job.save(update_fields=["assignee", "assignee_updated_date"])
+
+        return job
+
+
+class GroundTruthJobCreateSerializer(BaseJobCreateSerializer):
+    type = serializers.ChoiceField(
+        choices=[(models.JobType.GROUND_TRUTH.value, models.JobType.GROUND_TRUTH.name)]
+    )
     frame_selection_method = serializers.ChoiceField(
         choices=models.JobFrameSelectionMethod.choices(), required=False
     )
@@ -1404,36 +1472,21 @@ class JobWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
         """),
     )
 
-    class Meta:
-        model = models.Job
-        random_selection_params = (
+    class Meta(BaseJobCreateSerializer.Meta):
+        fields = (
+            "assignee",
+            "type",
+            "task_id",
+            "frame_selection_method",
+            "frames",
             "frame_count",
             "frame_share",
             "frames_per_job_count",
             "frames_per_job_share",
             "random_seed",
         )
-        manual_selection_params = ("frames",)
-        write_once_fields = (
-            (
-                "type",
-                "task_id",
-                "frame_selection_method",
-            )
-            + random_selection_params
-            + manual_selection_params
-        )
-        fields = (
-            "assignee",
-            "stage",
-            "state",
-        ) + write_once_fields
 
-    def to_representation(self, instance):
-        serializer = JobReadSerializer(instance, context=self.context)
-        return serializer.data
-
-    def validate(self, attrs):
+    def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
         frame_selection_method = attrs.get("frame_selection_method")
         if frame_selection_method == models.JobFrameSelectionMethod.RANDOM_UNIFORM:
             field_validation.require_one_of_fields(attrs, ["frame_count", "frame_share"])
@@ -1453,28 +1506,14 @@ class JobWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
 
         return super().validate(attrs)
 
-    @transaction.atomic
-    def create(self, validated_data):
-        if validated_data["type"] != models.JobType.GROUND_TRUTH:
-            raise serializers.ValidationError(f"Unexpected job type '{validated_data['type']}'")
-
-        task_id = validated_data.pop("task_id")
-        task = models.Task.objects.get(pk=task_id)
-
-        if task.data_id is None:
-            raise serializers.ValidationError(
-                "This task has no data attached yet. Please set up task data and try again"
-            )
-
-        ensure_task_is_initialized(task=task)
+    def _create(self, task: models.Task, validated_data: dict[str, Any]) -> models.Job:
+        validated_data.pop("task_id")
 
         if task.data.validation_mode in (models.ValidationMode.GT_POOL, models.ValidationMode.GT):
             raise serializers.ValidationError(
                 f'Task with validation mode "{task.data.validation_mode}" '
                 "cannot have more than 1 GT job"
             )
-
-        task = models.Task.objects.select_for_update().get(pk=task_id)
 
         if task.media_type == models.MediaType.AUDIO:
             frames = []
@@ -1589,7 +1628,6 @@ class JobWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
         job_params = {
             "type": validated_data.pop("type"),
             "segment": segment,
-            "assignee_id": validated_data.pop("assignee", None),
         }
 
         if validated_data:
@@ -1600,13 +1638,9 @@ class JobWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
             )
 
         try:
-            job = super().create(job_params)
+            job = models.Job.objects.create(**job_params)
         except models.TaskGroundTruthJobsLimitError as ex:
             raise serializers.ValidationError(ex.message) from ex
-
-        if job_params.get("assignee_id"):
-            job.assignee_updated_date = job.updated_date
-            job.save(update_fields=["assignee_updated_date"])
 
         job.make_dirs()
 
@@ -1616,30 +1650,43 @@ class JobWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
 
         return job
 
-    def update(self, instance: models.Job, validated_data: dict[str, Any]):
-        stage = validated_data.get("stage", instance.stage)
-        state = validated_data.get(
-            "state", models.StateChoice.NEW if stage != instance.stage else instance.state
-        )
 
-        if "stage" in validated_data or "state" in validated_data:
-            if stage == models.StageChoice.ANNOTATION:
-                validated_data["status"] = models.StatusChoice.ANNOTATION
-            elif stage == models.StageChoice.ACCEPTANCE and state == models.StateChoice.COMPLETED:
-                validated_data["status"] = models.StatusChoice.COMPLETED
-            else:
-                validated_data["status"] = models.StatusChoice.VALIDATION
+class ReplicaJobCreateSerializer(BaseJobCreateSerializer):
+    type = serializers.ChoiceField(
+        choices=[(models.JobType.REPLICA.value, models.JobType.REPLICA.name)]
+    )
+    parent_job_id = serializers.IntegerField()
 
-        if state != instance.state:
-            validated_data["state"] = state
+    class Meta(BaseJobCreateSerializer.Meta):
+        fields = ("assignee", "type", "task_id", "parent_job_id")
 
-        if "assignee" in validated_data and (
-            (assignee_id := validated_data.pop("assignee")) != instance.assignee_id
-        ):
-            instance.update_assignee(assignee_id)
+    def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
+        parent_job = models.Job.objects.filter(
+            pk=attrs["parent_job_id"], segment__task_id=attrs["task_id"]
+        ).first()
+        if parent_job is None:
+            raise serializers.ValidationError(
+                {
+                    "parent_job_id": f"Job #{attrs['parent_job_id']} "
+                    f"does not exist in the task #{attrs['task_id']}"
+                }
+            )
 
-        instance = super().update(instance, validated_data)
-        return instance
+        if parent_job.type != models.JobType.ANNOTATION:
+            raise serializers.ValidationError(
+                {
+                    "parent_job_id": "Replicas can only be added to jobs "
+                    f"of the '{models.JobType.ANNOTATION}' type"
+                }
+            )
+
+        return super().validate(attrs)
+
+    def _create(self, task: models.Task, validated_data: dict[str, Any]) -> models.Job:
+        parent_job = models.Job.objects.get(pk=validated_data["parent_job_id"])
+        (job,) = create_replica_jobs(parent_job=parent_job, count=1)
+
+        return job
 
 
 class SimpleJobSerializer(serializers.ModelSerializer):

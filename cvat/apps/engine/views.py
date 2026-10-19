@@ -126,6 +126,7 @@ from cvat.apps.engine.serializers import (
     DataSerializer,
     DatasetFileSerializer,
     FileInfoSerializer,
+    GroundTruthJobCreateSerializer,
     IssueReadSerializer,
     IssueWriteSerializer,
     JobDataMetaWriteSerializer,
@@ -139,6 +140,7 @@ from cvat.apps.engine.serializers import (
     ProjectFileSerializer,
     ProjectReadSerializer,
     ProjectWriteSerializer,
+    ReplicaJobCreateSerializer,
     RqStatusSerializer,
     TaskFileSerializer,
     TaskReadSerializer,
@@ -2134,13 +2136,23 @@ class TaskViewSet(
         return Response(response_serializer.data, status=status.HTTP_200_OK)
 
 
+_JOB_CREATE_SERIALIZERS = {
+    models.JobType.GROUND_TRUTH.value: GroundTruthJobCreateSerializer,
+    models.JobType.REPLICA.value: ReplicaJobCreateSerializer,
+}
+
+
 @extend_schema(tags=["jobs"])
 @extend_schema_view(
     create=extend_schema(
         summary="Create a job",
-        request=JobWriteSerializer,
+        request=PolymorphicProxySerializer(
+            component_name="JobWrite",
+            serializers=_JOB_CREATE_SERIALIZERS,
+            resource_type_field_name="type",
+        ),
         responses={
-            "201": JobReadSerializer,  # check JobWriteSerializer.to_representation
+            "201": JobReadSerializer,
         },
         examples=[
             OpenApiExample(
@@ -2190,6 +2202,14 @@ class TaskViewSet(
                     "task_id": 42,
                     "frame_selection_method": models.JobFrameSelectionMethod.MANUAL,
                     "frames": [1, 5, 10, 18],
+                },
+            ),
+            OpenApiExample(
+                "create a replica job",
+                {
+                    "type": models.JobType.REPLICA,
+                    "task_id": 17,
+                    "parent_job_id": 42,
                 },
             ),
         ],
@@ -2314,6 +2334,15 @@ class JobViewSet(
     def get_serializer_class(self):
         if self.request.method in SAFE_METHODS:
             return JobReadSerializer
+        elif self.action == "create":
+            job_type = self.request.data.get("type")
+            if job_type is None:
+                raise ValidationError({"type": ["This field is required."]})
+
+            try:
+                return _JOB_CREATE_SERIALIZERS[job_type]
+            except (KeyError, TypeError) as ex:  # TypeError - an unhashable value, e.g. a list
+                raise ValidationError({"type": [f'"{job_type}" is not a valid choice.']}) from ex
         else:
             return JobWriteSerializer
 

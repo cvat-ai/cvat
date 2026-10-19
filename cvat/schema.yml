@@ -2592,6 +2592,12 @@ paths:
                   - 10
                   - 18
                 summary: create gt job with manual frame selection
+              CreateAReplicaJob:
+                value:
+                  type: replica
+                  task_id: 17
+                  parent_job_id: 42
+                summary: create a replica job
         required: true
       security:
       - tokenAuth: []
@@ -9320,6 +9326,65 @@ components:
       required:
       - function
       - task
+    GroundTruthJobCreateRequest:
+      type: object
+      properties:
+        assignee:
+          type: integer
+          nullable: true
+        type:
+          $ref: '#/components/schemas/GroundTruthJobCreateTypeEnum'
+        task_id:
+          type: integer
+        frame_selection_method:
+          $ref: '#/components/schemas/FrameSelectionMethod'
+        frames:
+          type: array
+          items:
+            type: integer
+            minimum: 0
+          description: |
+            The list of frame ids. Applicable only to the "manual" frame selection method
+        frame_count:
+          type: integer
+          minimum: 1
+          description: |
+            The number of frames included in the GT job.
+            Applicable only to the "random_uniform" frame selection method
+        frame_share:
+          type: number
+          format: double
+          description: |
+            The share of frames included in the GT job.
+            Applicable only to the "random_uniform" frame selection method
+        frames_per_job_count:
+          type: integer
+          minimum: 1
+          description: |
+            The number of frames included in the GT job from each annotation job.
+            Applicable only to the "random_per_job" frame selection method
+        frames_per_job_share:
+          type: number
+          format: double
+          description: |
+            The share of frames included in the GT job from each annotation job.
+            Applicable only to the "random_per_job" frame selection method
+        random_seed:
+          type: integer
+          minimum: 0
+          description: |
+            The seed value for the random number generator.
+            The same value will produce the same frame sets.
+            Applicable only to random frame selection methods.
+            By default, a random value is used.
+      required:
+      - task_id
+      - type
+    GroundTruthJobCreateTypeEnum:
+      enum:
+      - ground_truth
+      type: string
+      description: '* `ground_truth` - GROUND_TRUTH'
     InputTypeEnum:
       enum:
       - checkbox
@@ -9642,63 +9707,14 @@ components:
           description: |
             The list of real (validation) frame ids for honeypots in the job
     JobWriteRequest:
-      type: object
-      properties:
-        assignee:
-          type: integer
-          nullable: true
-        stage:
-          $ref: '#/components/schemas/JobStage'
-        state:
-          $ref: '#/components/schemas/OperationStatus'
-        type:
-          $ref: '#/components/schemas/JobType'
-        task_id:
-          type: integer
-        frame_selection_method:
-          $ref: '#/components/schemas/FrameSelectionMethod'
-        frame_count:
-          type: integer
-          minimum: 1
-          description: |
-            The number of frames included in the GT job.
-            Applicable only to the "random_uniform" frame selection method
-        frame_share:
-          type: number
-          format: double
-          description: |
-            The share of frames included in the GT job.
-            Applicable only to the "random_uniform" frame selection method
-        frames_per_job_count:
-          type: integer
-          minimum: 1
-          description: |
-            The number of frames included in the GT job from each annotation job.
-            Applicable only to the "random_per_job" frame selection method
-        frames_per_job_share:
-          type: number
-          format: double
-          description: |
-            The share of frames included in the GT job from each annotation job.
-            Applicable only to the "random_per_job" frame selection method
-        random_seed:
-          type: integer
-          minimum: 0
-          description: |
-            The seed value for the random number generator.
-            The same value will produce the same frame sets.
-            Applicable only to random frame selection methods.
-            By default, a random value is used.
-        frames:
-          type: array
-          items:
-            type: integer
-            minimum: 0
-          description: |
-            The list of frame ids. Applicable only to the "manual" frame selection method
-      required:
-      - task_id
-      - type
+      oneOf:
+      - $ref: '#/components/schemas/GroundTruthJobCreateRequest'
+      - $ref: '#/components/schemas/ReplicaJobCreateRequest'
+      discriminator:
+        propertyName: type
+        mapping:
+          ground_truth: '#/components/schemas/GroundTruthJobCreateRequest'
+          replica: '#/components/schemas/ReplicaJobCreateRequest'
     JobsSummary:
       type: object
       properties:
@@ -13129,6 +13145,27 @@ components:
       - password1
       - password2
       - username
+    ReplicaJobCreateRequest:
+      type: object
+      properties:
+        assignee:
+          type: integer
+          nullable: true
+        type:
+          $ref: '#/components/schemas/ReplicaJobCreateTypeEnum'
+        task_id:
+          type: integer
+        parent_job_id:
+          type: integer
+      required:
+      - parent_job_id
+      - task_id
+      - type
+    ReplicaJobCreateTypeEnum:
+      enum:
+      - replica
+      type: string
+      description: '* `replica` - REPLICA'
     Request:
       type: object
       properties:
