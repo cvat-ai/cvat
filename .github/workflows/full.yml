@@ -107,19 +107,19 @@ jobs:
           python-version: '3.11'
 
       - name: Download CVAT server image
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: cvat_server
           path: /tmp/cvat_server/
 
       - name: Download CVAT UI images
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: cvat_ui
           path: /tmp/cvat_ui/
 
       - name: Download CVAT SDK package
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: cvat_sdk
           path: /tmp/cvat_sdk/
@@ -194,7 +194,7 @@ jobs:
           ref: ${{ inputs.ref }}
 
       - name: Download CVAT server image
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: cvat_server
           path: /tmp/cvat_server/
@@ -260,13 +260,13 @@ jobs:
             node-version: '22.x'
 
       - name: Download CVAT server image
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: cvat_server
           path: /tmp/cvat_server/
 
       - name: Download CVAT UI image
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: cvat_ui
           path: /tmp/cvat_ui/
