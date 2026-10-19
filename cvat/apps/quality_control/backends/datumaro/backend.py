@@ -35,7 +35,7 @@ from cvat.apps.quality_control.matching import (
 from cvat.apps.quality_control.models import QualityRequirementAnnotationType
 
 if TYPE_CHECKING:
-    from cvat.apps.quality_control.datumaro_data_provider import DatumaroJobDataProvider
+    from cvat.apps.quality_control.backends.datumaro.data_provider import DatumaroJobDataProvider
     from cvat.apps.quality_control.quality_handlers import EffectiveQualityRequirement
 
 

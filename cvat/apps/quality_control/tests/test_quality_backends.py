@@ -28,13 +28,13 @@ from cvat.apps.quality_control.backends import (
     make_quality_backend,
 )
 from cvat.apps.quality_control.backends.datumaro import Datumaro2DBackend
-from cvat.apps.quality_control.backends.datumaro.matching import Comparator
-from cvat.apps.quality_control.comparison_report import ComparisonReport, ComparisonReportParameters
-from cvat.apps.quality_control.data_providers import JobDataProvider
-from cvat.apps.quality_control.datumaro_data_provider import (
+from cvat.apps.quality_control.backends.datumaro.data_provider import (
     DatumaroJobDataProvider,
     _MemoizingAnnotationConverterFactory,
 )
+from cvat.apps.quality_control.backends.datumaro.matching import Comparator
+from cvat.apps.quality_control.comparison_report import ComparisonReport, ComparisonReportParameters
+from cvat.apps.quality_control.data_providers import JobDataProvider
 from cvat.apps.quality_control.matching import (
     AnnotationMatches,
     GroupComparison,
@@ -311,7 +311,7 @@ class TestDatumaroQualityBackend(unittest.TestCase):
         provider = DatumaroJobDataProvider.__new__(DatumaroJobDataProvider)
         provider._annotation_memo = _MemoizingAnnotationConverterFactory()
         with mock.patch(
-            "cvat.apps.quality_control.datumaro_data_provider.GetCVATDataExtractor",
+            "cvat.apps.quality_control.backends.datumaro.data_provider.GetCVATDataExtractor",
             side_effect=AssertionError,
         ):
             provider.close()
