@@ -9,6 +9,7 @@ import textwrap
 from drf_spectacular.authentication import BasicScheme, SessionScheme, TokenScheme
 from drf_spectacular.extensions import OpenApiAuthenticationExtension, OpenApiFilterExtension
 from drf_spectacular.openapi import AutoSchema
+from drf_spectacular.utils import PolymorphicProxySerializer
 from rest_framework import serializers
 
 
@@ -137,5 +138,7 @@ class CustomAutoSchema(AutoSchema):
         if isinstance(serializer, serializers.Serializer):
             if not serializer.required:
                 required = False
+            elif isinstance(serializer, PolymorphicProxySerializer):
+                required = True
 
         return schema, required
