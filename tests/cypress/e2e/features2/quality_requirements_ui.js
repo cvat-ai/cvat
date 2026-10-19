@@ -561,6 +561,9 @@ context('Quality requirements UI', () => {
         clickRowAction('Base rectangle renamed', 'edit');
         cy.get(`${thresholdEditor} .cvat-threshold-policy-chart`).should('not.exist');
         cy.get(`${thresholdEditor} input.ant-input-number-input`).should('have.length', 1).and('have.value', '70');
+        // Tests share the page; visiting the same #settings URL does not close this form.
+        cy.get('.cvat-quality-requirement-form-actions').contains('button', 'Cancel').click();
+        cy.get('.cvat-quality-requirements-configuration-table').should('be.visible');
     });
 
     it('Fits an inherited large curve on reset and preserves point identity and manual zoom', () => {
@@ -601,7 +604,9 @@ context('Quality requirements UI', () => {
                     { method: 'PATCH', data: { similarity_threshold_policy: policy } },
                 )));
             }));
-        openSettingsTab();
+        // Reload to fetch API changes; visiting the same #settings URL preserves the current page.
+        cy.reload();
+        cy.get('.cvat-quality-requirements-configuration-table').should('be.visible');
         ensureRowExpanded('Base rectangle renamed');
         clickRowAction(childRequirementName, 'edit');
         expectLinearThreshold();
