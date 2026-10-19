@@ -633,9 +633,17 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
                     models.MediaType.IMAGE | models.MediaType.POINT_CLOUD,
                     models.TaskMode.ANNOTATION,
                 ):
+                    # Include related/contextual images from the share as well.
+                    # Previously only primary images were copied, so share-task
+                    # backups lost related images on restore (#9978).
                     media_files = (
                         os.path.join(data_dir, im.path) for im in self._db_data.images.all()
                     )
+                    related_files = (
+                        os.path.join(data_dir, str(rf.path))
+                        for rf in self._db_data.related_files.all()
+                    )
+                    media_files = itertools.chain(media_files, related_files)
                 case (media_type, mode):
                     assert False, f"Unknown media type '{media_type}' with '{mode}' mode"
 
