@@ -12,6 +12,7 @@ import { decomposeMatrix, convertClasses, toSnakeCase } from './utils';
 import {
     checkAutoborderPointsCount,
     drawPolyshape,
+    getBulkActionsMenu,
     toggleAutoSimplify,
 } from './utils.cy';
 
@@ -1772,6 +1773,68 @@ Cypress.Commands.add('deleteJob', (jobId) => {
     cy.get('.cvat-job-item').contains('a', `Job #${jobId}`)
         .parents('.cvat-job-item')
         .should('have.css', 'opacity', '0.5');
+});
+
+Cypress.Commands.add('addReplicas', (count, jobIds) => {
+    // with several job ids, the caller must have selected exactly these jobs
+    const isBulk = jobIds.length > 1;
+    const requestsCount = count * jobIds.length;
+
+    // The delay keeps the bulk progress on the screen long enough to check it
+    cy.intercept('POST', '/api/jobs**', (request) => {
+        request.continue((response) => {
+            response.setDelay(500);
+        });
+    }).as('createReplica');
+
+    if (isBulk) {
+        getBulkActionsMenu().within(() => {
+            cy.contains('[role="menuitem"]', `Add replicas (${jobIds.length})`).click();
+        });
+    } else {
+        cy.get(`.cvat-job-item[data-row-id="${jobIds[0]}"] .cvat-job-item-more-button`).click();
+        cy.get('.ant-dropdown')
+            .not('.ant-dropdown-hidden')
+            .within(() => {
+                cy.contains('[role="menuitem"]', 'Add replicas').click();
+            });
+    }
+
+    cy.get('.cvat-modal-add-replicas').within(() => {
+        cy.get('.ant-modal-title').should('have.text', isBulk ?
+            `Add replicas to ${jobIds.length} selected jobs` : `Add replicas to job #${jobIds[0]}`);
+        cy.get('.cvat-add-replicas-count-input input')
+            .should('have.value', '1')
+            .and('have.attr', 'aria-valuemin', '1')
+            .and('have.attr', 'aria-valuemax', '100');
+        cy.get('.cvat-add-replicas-count-input input').clear();
+        cy.contains('button', 'Add').should('be.disabled');
+        cy.get('.cvat-add-replicas-count-input input').type(`${count}`);
+        cy.contains('button', 'Add').click();
+    });
+
+    // A single request is made without the progress
+    if (requestsCount > 1) {
+        cy.get('.cvat-bulk-progress-wrapper').should('be.visible')
+            .and('contain', `/${requestsCount})`);
+    }
+
+    const parentJobIds = [];
+    for (let i = 0; i < requestsCount; i++) {
+        cy.wait('@createReplica').then(({ response }) => {
+            expect(response.statusCode).to.equal(201);
+            expect(response.body.type).to.equal('replica');
+            parentJobIds.push(response.body.parent_job_id);
+        });
+    }
+    cy.then(() => {
+        const byValue = (a, b) => a - b;
+        const expectedParentJobIds = jobIds.flatMap((id) => Array(count).fill(+id));
+        expect(parentJobIds.sort(byValue)).to.deep.equal(expectedParentJobIds.sort(byValue));
+    });
+    if (requestsCount > 1) {
+        cy.get('.cvat-bulk-progress-wrapper').should('not.exist');
+    }
 });
 
 Cypress.Commands.add('drawMask', (instructions) => {
