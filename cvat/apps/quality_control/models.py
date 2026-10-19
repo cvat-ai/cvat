@@ -368,8 +368,14 @@ class DefaultComparisonSettings:
     iou_threshold: float = 0.4
     "Used for distinction between matched / unmatched shapes with IoU and OKS metrics"
 
+    # This specific value is from the original implementation:
+    # https://cocodataset.org/#keypoints-eval
+    # https://github.com/cocodataset/cocoapi/blob/8c9bcc3cf640524c4c20a9c40e89cb6a2f2fa0e9/PythonAPI/pycocotools/cocoeval.py#L523
     oks_sigma: float = 0.09
-    "Like IoU threshold, but for points, % of the bbox area to match a pair of points"
+    """
+    The point size, as a fraction of the object size, defined by the point size base.
+    Corresponds to the standard deviation of the keypoint position.
+    """
 
     point_size_base: PointSizeBase = PointSizeBase.GROUP_BBOX_SIZE
     "Determines how to obtain the object size for point comparisons"
