@@ -24,8 +24,8 @@ from cvat.apps.engine.models import (
 )
 from cvat.apps.iam.models import User
 from cvat.apps.profiler import silk_profile
+from cvat.apps.quality_control.backends.datumaro.data_provider import DatumaroJobDataProvider
 from cvat.apps.quality_control.comparison_report import ComparisonParameters
-from cvat.apps.quality_control.datumaro_data_provider import DatumaroJobDataProvider
 from cvat.apps.redis_handler.background import AbstractRequestManager
 
 
