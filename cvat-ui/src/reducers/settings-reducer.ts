@@ -64,6 +64,9 @@ const defaultState: SettingsState = {
         brightnessLevel: 100,
         contrastLevel: 100,
         saturationLevel: 100,
+        relatedOverlayEnabled: false,
+        relatedOverlayOpacity: 50,
+        relatedOverlayIndex: 0,
     },
     imageFilters: [],
     showDialog: false,
@@ -289,6 +292,33 @@ export default (state = defaultState, action: AnyAction): SettingsState => {
                 player: {
                     ...state.player,
                     saturationLevel: action.payload.level,
+                },
+            };
+        }
+        case SettingsActionTypes.CHANGE_RELATED_OVERLAY_ENABLED: {
+            return {
+                ...state,
+                player: {
+                    ...state.player,
+                    relatedOverlayEnabled: action.payload.enabled,
+                },
+            };
+        }
+        case SettingsActionTypes.CHANGE_RELATED_OVERLAY_OPACITY: {
+            return {
+                ...state,
+                player: {
+                    ...state.player,
+                    relatedOverlayOpacity: action.payload.opacity,
+                },
+            };
+        }
+        case SettingsActionTypes.CHANGE_RELATED_OVERLAY_INDEX: {
+            return {
+                ...state,
+                player: {
+                    ...state.player,
+                    relatedOverlayIndex: action.payload.index,
                 },
             };
         }
