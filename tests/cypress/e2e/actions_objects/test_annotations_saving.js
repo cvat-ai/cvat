@@ -30,8 +30,8 @@ context('Test annotations saving works correctly', () => {
 
     function useShortcut(clientId, shortcut) {
         cy.get('body').click();
-        cy.get(`#cvat-objects-sidebar-state-item-${clientId}`).trigger('mouseover');
-        cy.get(`#cvat-objects-sidebar-state-item-${clientId}`).should('have.class', 'cvat-objects-sidebar-state-active-item');
+        cy.getObjectSidebarItem(clientId).trigger('mouseover');
+        cy.getObjectSidebarItem(clientId).should('have.class', 'cvat-objects-sidebar-state-active-item');
         cy.get('body').type(shortcut);
         cy.hideTooltips();
     }

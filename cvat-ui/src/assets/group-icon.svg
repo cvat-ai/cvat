@@ -1,1 +1,11 @@
-<svg width="1em" height="1em" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><g fill-rule="nonzero" fill="none"><path stroke="#4A4A4A" stroke-width="1.473" d="M4.236 9.191h31.527v21.8H4.236z"/><path fill="#4A4A4A" d="M2 7h4.5v4.364H2zM33.5 7H38v4.364h-4.5zM33.5 28.818H38v4.364h-4.5zM2 28.818h4.5v4.364H2z"/><g stroke="#4A4A4A" stroke-width="1.591"><path fill="#4A4A4A" d="M10.295 13.613h13.409v8.591H10.295z"/><path d="M17.795 17.977h13.409v8.591H17.795z"/></g></g></svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 40 40"
+    fill="none" stroke="#303030" stroke-width="1.4" stroke-linejoin="round">
+    <path d="M4.236 9.191h31.527v21.8H4.236Z"/>
+    <path d="M10.295 13.613h13.409v8.591H10.295ZM17.795 17.977h13.409v8.591H17.795Z"/>
+    <g fill="#303030" stroke="none">
+        <rect x="2.736" y="7.691" width="3" height="3"/>
+        <rect x="34.263" y="7.691" width="3" height="3"/>
+        <rect x="2.736" y="29.491" width="3" height="3"/>
+        <rect x="34.263" y="29.491" width="3" height="3"/>
+    </g>
+</svg>

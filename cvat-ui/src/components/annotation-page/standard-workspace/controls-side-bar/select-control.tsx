@@ -3,7 +3,8 @@
 // SPDX-License-Identifier: MIT
 
 import React from 'react';
-import { SelectOutlined } from '@ant-design/icons';
+import Icon from '@ant-design/icons';
+import { SelectIcon } from 'icons';
 
 import { Canvas } from 'cvat-canvas-wrapper';
 import CVATTooltip from 'components/common/cvat-tooltip';
@@ -34,10 +35,11 @@ function SelectControl(props: Props): JSX.Element {
     };
 
     return disabled ? (
-        <SelectOutlined className='cvat-select-control cvat-disabled-canvas-control' />
+        <Icon component={SelectIcon} className='cvat-select-control cvat-disabled-canvas-control' />
     ) : (
         <CVATTooltip title='Select objects' placement='right'>
-            <SelectOutlined
+            <Icon
+                component={SelectIcon}
                 className={selecting ?
                     'cvat-select-control cvat-active-canvas-control' :
                     'cvat-select-control'}

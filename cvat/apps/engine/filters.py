@@ -306,7 +306,7 @@ class SimpleFilter(DjangoFilterBackend):
                 model = queryset.model
                 fields = list(lookup_fields.values())
                 filter_overrides = {
-                    # By default, ForeignKey fields correspond to ModelChoiceFilter.
+                    # By default, ForeignKey and OneToOneField correspond to ModelChoiceFilter.
                     # The problem with that is that when DRF renders the browsable API,
                     # it generates a filter form with a widget for every filter,
                     # which for a ModelChoiceFilter is a dropdown with all possible values.
@@ -317,6 +317,7 @@ class SimpleFilter(DjangoFilterBackend):
                     # To prevent that, we override the filter class,
                     # so that a simple numeric input widget is used instead.
                     models.ForeignKey: {"filter_class": djf.NumberFilter},
+                    models.OneToOneField: {"filter_class": djf.NumberFilter},
                     # ManyToManyField corresponds to ModelMultipleChoiceFilter,
                     # which exhibits the same problem.
                     # There's no "NumberMultipleChoiceFilter" we could use,
