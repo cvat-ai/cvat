@@ -359,6 +359,53 @@ class PointSizeBase(str, Enum):
         return tuple((x.value, x.name) for x in cls)
 
 
+class DefaultComparisonSettings:
+    "The default object comparison settings, shared by quality control and consensus"
+
+    compare_attributes: bool = True
+    "Enables or disables attribute checks"
+
+    iou_threshold: float = 0.4
+    "Used for distinction between matched / unmatched shapes with IoU and OKS metrics"
+
+    oks_sigma: float = 0.09
+    "Like IoU threshold, but for points, % of the bbox area to match a pair of points"
+
+    point_size_base: PointSizeBase = PointSizeBase.GROUP_BBOX_SIZE
+    "Determines how to obtain the object size for point comparisons"
+
+    line_thickness: float = 0.01
+    "Thickness of polylines, relatively to the (image area) ^ 0.5"
+
+    compare_line_orientation: bool = True
+    "Indicates that polylines have direction"
+
+    line_orientation_threshold: float = 0.1
+    """
+    The minimal gain in the IoU between the given and reversed line directions
+    to count the line inverted
+    """
+
+    compare_groups: bool = True
+    "Enables or disables group checks"
+
+    group_match_threshold: float = 0.5
+    "Minimal IoU for groups to be considered matching"
+
+    check_covered_annotations: bool = True
+    "Check for fully-covered annotations"
+
+    object_visibility_threshold: float = 0.05
+    "Minimal visible area % of the spatial annotations"
+
+    panoptic_comparison: bool = True
+    "Use only the visible part of the masks and polygons in comparisons"
+
+    @classmethod
+    def as_dict(cls) -> dict[str, Any]:
+        return {name: getattr(cls, name) for name in cls.__annotations__}
+
+
 class QualitySettings(TimestampedModel):
     class Meta:
         constraints = [
@@ -501,9 +548,7 @@ class QualityRequirement(TimestampedModel):
 
     @classmethod
     def get_base_defaults(cls) -> dict[str, Any]:
-        from cvat.apps.quality_control.backends.datumaro.matching import ComparisonParameters
-
-        default_settings = ComparisonParameters.defaults()
+        default_settings = DefaultComparisonSettings.as_dict()
         default_settings.update(
             target_metric=str(QualityTargetMetricType(metric=QualityMetric.ACCURACY)),
             target_metric_threshold=0.7,

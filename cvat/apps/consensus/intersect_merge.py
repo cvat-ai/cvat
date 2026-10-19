@@ -17,6 +17,7 @@ from datumaro.util.attrs_util import ensure_cls
 
 from cvat.apps.dataset_manager.bindings import CVAT_INTERNAL_ATTRIBUTES
 from cvat.apps.quality_control.backends.datumaro.matching import DistanceComparator, segment_iou
+from cvat.apps.quality_control.models import DefaultComparisonSettings
 
 
 @attrs.define(kw_only=True, slots=False)
@@ -25,13 +26,13 @@ class IntersectMerge(datumaro.components.merge.intersect_merge.IntersectMerge):
 
     @attrs.define(kw_only=True, slots=False)
     class Conf:
-        pairwise_dist: float = 0.5
-        sigma: float = 0.09
+        pairwise_dist: float = DefaultComparisonSettings.iou_threshold
+        sigma: float = DefaultComparisonSettings.oks_sigma
 
         output_conf_thresh: float = 0
         quorum: int = 0
         ignored_attributes: Collection[str] = attrs.field(factory=tuple)
-        torso_r: float = 0.01
+        torso_r: float = DefaultComparisonSettings.line_thickness
 
         groups: Collection[Collection[str]] = attrs.field(factory=tuple)
         close_distance: float = 0  # disabled

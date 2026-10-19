@@ -16,7 +16,7 @@ import datumaro.components.comparator
 import datumaro.util.annotation_util
 import datumaro.util.mask_tools
 import numpy as np
-from attrs import NOTHING, Factory, define, field, fields
+from attrs import define, field
 
 from cvat.apps.quality_control.attribute_comparison import CVAT_ATTRIBUTE_SPEC_IDS_ATTR
 from cvat.apps.quality_control.matching import (
@@ -28,7 +28,10 @@ from cvat.apps.quality_control.matching import (
     ShapeSimilarityFunction,
     match_segments,
 )
-from cvat.apps.quality_control.models import PointSizeBase
+from cvat.apps.quality_control.models import (
+    DefaultComparisonSettings,
+    PointSizeBase,
+)
 
 _ShapeT1 = TypeVar("_ShapeT1")
 _ShapeT2 = TypeVar("_ShapeT2")
@@ -39,61 +42,31 @@ AttributeMatchingFunction: TypeAlias = Callable[
 
 @define(kw_only=True)
 class ComparisonParameters:
+    # Each field should either have a description, or use the default value
+    # from DefaultComparisonSettings, which describes it.
+
     annotation_type: dm.AnnotationType
     "The compared annotation type"
 
     non_groupable_ann_type: dm.AnnotationType = dm.AnnotationType.label
     "Annotation type that can't be grouped"
 
-    compare_attributes: bool = True
-    "Enables or disables attribute checks"
+    compare_attributes: bool = DefaultComparisonSettings.compare_attributes
 
     ignored_attributes: list[str] = field(factory=list)
+    "Annotation attributes excluded from comparison, in addition to the internal ones"
 
-    iou_threshold: float = 0.4
-    "Used for distinction between matched / unmatched shapes"
-
-    oks_sigma: float = 0.09
-    "Like IoU threshold, but for points, % of the bbox area to match a pair of points"
-
-    point_size_base: PointSizeBase = PointSizeBase.GROUP_BBOX_SIZE
-    "Determines how to obtain the object size for point comparisons"
-
-    line_thickness: float = 0.01
-    "Thickness of polylines, relatively to the (image area) ^ 0.5"
-
-    compare_line_orientation: bool = True
-    "Indicates that polylines have direction"
-
-    line_orientation_threshold: float = 0.1
-    """
-    The minimal gain in the IoU between the given and reversed line directions
-    to count the line inverted
-    """
-
-    compare_groups: bool = True
-    "Enables or disables group checks"
-
-    group_match_threshold: float = 0.5
-    "Minimal IoU for groups to be considered matching"
-
-    check_covered_annotations: bool = True
-    "Check for fully-covered annotations"
-
-    object_visibility_threshold: float = 0.05
-    "Minimal visible area % of the spatial annotations"
-
-    panoptic_comparison: bool = True
-    "Use only the visible part of the masks and polygons in comparisons"
-
-    @classmethod
-    def defaults(cls) -> dict[str, Any]:
-        "The default values of the parameters that have them"
-        return {
-            f.name: f.default.factory() if isinstance(f.default, Factory) else f.default
-            for f in fields(cls)
-            if f.default is not NOTHING
-        }
+    iou_threshold: float = DefaultComparisonSettings.iou_threshold
+    oks_sigma: float = DefaultComparisonSettings.oks_sigma
+    point_size_base: PointSizeBase = DefaultComparisonSettings.point_size_base
+    line_thickness: float = DefaultComparisonSettings.line_thickness
+    compare_line_orientation: bool = DefaultComparisonSettings.compare_line_orientation
+    line_orientation_threshold: float = DefaultComparisonSettings.line_orientation_threshold
+    compare_groups: bool = DefaultComparisonSettings.compare_groups
+    group_match_threshold: float = DefaultComparisonSettings.group_match_threshold
+    check_covered_annotations: bool = DefaultComparisonSettings.check_covered_annotations
+    object_visibility_threshold: float = DefaultComparisonSettings.object_visibility_threshold
+    panoptic_comparison: bool = DefaultComparisonSettings.panoptic_comparison
 
 
 def oks(a, b, sigma=0.1, bbox=None, scale=None, visibility_a=None, visibility_b=None):
