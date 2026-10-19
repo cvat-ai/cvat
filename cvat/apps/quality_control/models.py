@@ -501,9 +501,9 @@ class QualityRequirement(TimestampedModel):
 
     @classmethod
     def get_base_defaults(cls) -> dict[str, Any]:
-        from cvat.apps.quality_control.comparison_report import ComparisonParameters
+        from cvat.apps.quality_control.backends.datumaro.matching import ComparisonParameters
 
-        default_settings = ComparisonParameters().to_dict()
+        default_settings = ComparisonParameters.defaults()
         default_settings.update(
             target_metric=str(QualityTargetMetricType(metric=QualityMetric.ACCURACY)),
             target_metric_threshold=0.7,
