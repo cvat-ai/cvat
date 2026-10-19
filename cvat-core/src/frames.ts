@@ -294,6 +294,10 @@ export class FramesMetaData {
         return updatedFields;
     }
 
+    hasUnsavedChanges(): boolean {
+        return Object.keys(this.getUpdated()).length > 0;
+    }
+
     resetUpdated(): void {
         this.#updateTrigger.reset();
     }

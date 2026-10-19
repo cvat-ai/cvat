@@ -43,6 +43,7 @@ import { switchToolsBlockerState } from 'actions/settings-actions';
 import { writeLatestFrame } from 'utils/remember-latest-frame';
 import { finishDraw } from 'utils/drawing';
 import { toClipboard } from 'utils/to-clipboard';
+import { jobHasUnsavedChanges } from 'utils/job-unsaved-changes';
 import { Chapter } from 'cvat-core/src/frames';
 
 interface StateToProps {
@@ -307,7 +308,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
             writeLatestFrame(jobInstance.id, frameNumber);
 
             if (
-                jobInstance.annotations.hasUnsavedChanges() &&
+                jobHasUnsavedChanges(jobInstance) &&
                 location.pathname !== `/tasks/${taskID}/jobs/${jobID}` &&
                 !forceExit
             ) {
@@ -701,7 +702,7 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
         const { frameNumber } = this.props;
 
         writeLatestFrame(jobInstance.id, frameNumber);
-        if (jobInstance.annotations.hasUnsavedChanges() && !forceExit) {
+        if (jobHasUnsavedChanges(jobInstance) && !forceExit) {
             const confirmationMessage = 'You have unsaved changes, please confirm leaving this page.';
 
             // eslint-disable-next-line no-param-reassign
