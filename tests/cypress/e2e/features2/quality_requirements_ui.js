@@ -562,4 +562,83 @@ context('Quality requirements UI', () => {
         cy.get(`${thresholdEditor} .cvat-threshold-policy-chart`).should('not.exist');
         cy.get(`${thresholdEditor} input.ant-input-number-input`).should('have.length', 1).and('have.value', '70');
     });
+
+    it('Fits an inherited large curve on reset and preserves point identity and manual zoom', () => {
+        const largePolicy = {
+            ...linearIouPolicy, points: [{ x: 100000, y: 0.4 }, { x: 1000000, y: 0.9 }],
+        };
+        const canvas = `${thresholdEditor} canvas`;
+        const hoverArea = () => {
+            cy.get(canvas).scrollIntoView();
+            cy.get(canvas).then(($canvas) => {
+                const rect = $canvas[0].getBoundingClientRect();
+                cy.wrap($canvas).trigger('pointermove', {
+                    eventConstructor: 'PointerEvent',
+                    pointerId: 1,
+                    clientX: rect.left + rect.width * 0.9,
+                    clientY: rect.top + rect.height * 0.5,
+                });
+            });
+            return cy.get(`${thresholdEditor} .cvat-threshold-policy-tooltip div`).invoke('text')
+                .then((text) => cy.window().then((win) => {
+                    const parts = new win.Intl.NumberFormat().formatToParts(12345.6);
+                    const group = parts.find((part) => part.type === 'group').value;
+                    const decimal = parts.find((part) => part.type === 'decimal').value;
+                    return Number(text.replace('GT area:', '').replace('px²', '')
+                        .split(group).join('').replace(decimal, '.').trim());
+                }));
+        };
+        openSettingsTab();
+        cy.window().then((win) => win.cvat.server.request(`/api/quality/settings?task_id=${taskId}`)
+            .then(({ data }) => {
+                const settings = data.results.find((item) => item.task_id === taskId);
+                const parent = settings.requirements.find((item) => item.is_base && item.annotation_type === 'rectangle');
+                const child = settings.requirements.find((item) => item.name === childRequirementName);
+                return Promise.all([
+                    [parent, largePolicy], [child, linearIouPolicy],
+                ].map(([requirement, policy]) => win.cvat.server.request(
+                    `/api/quality/settings/requirements/${requirement.id}`,
+                    { method: 'PATCH', data: { similarity_threshold_policy: policy } },
+                )));
+            }));
+        openSettingsTab();
+        ensureRowExpanded('Base rectangle renamed');
+        clickRowAction(childRequirementName, 'edit');
+        expectLinearThreshold();
+        cy.get(thresholdRows).first().find('input[id*="area"]').then(($input) => {
+            const input = $input[0];
+            cy.wrap($input).clear();
+            cy.wrap($input).type('1500');
+            cy.get(thresholdRows).last().find('input[id*="area"]').should(($last) => {
+                expect($last[0]).to.equal(input);
+                expect($last.val()).to.equal('1500');
+                expect(input.ownerDocument.activeElement).to.equal(input);
+            });
+            cy.contains(`${thresholdEditor} button`, 'Undo').click();
+            cy.get(thresholdRows).first().find('input[id*="area"]').should(($first) => {
+                expect($first[0]).to.equal(input);
+                expect($first.val()).to.equal('150');
+            });
+        });
+        cy.contains(`${thresholdEditor} button`, '−').click();
+        cy.contains('.ant-form-item', 'IoU threshold')
+            .find('.ant-form-item-label .cvat-quality-requirement-revert-button').click();
+        expectLinearThreshold(largePolicy.points);
+        hoverArea().should('be.greaterThan', 1000000).and('be.lessThan', 1150000);
+        cy.contains(`${thresholdEditor} button`, '−').click();
+        hoverArea().then((zoomedArea) => {
+            cy.get(thresholdRows).first().find('input[id*="iou"]').clear();
+            cy.get(thresholdRows).first().find('input[id*="iou"]').type('50');
+            cy.get(thresholdRows).first().find('input[id*="iou"]').blur();
+            hoverArea().should('be.closeTo', zoomedArea, 0.1);
+        });
+        cy.contains(`${thresholdEditor} button`, 'Fit').click();
+        hoverArea().should('be.greaterThan', 1000000).and('be.lessThan', 1150000);
+        cy.intercept('PATCH', '**/api/quality/settings/requirements/*').as('saveLargeIou');
+        submitForm();
+        expectPolicyRequest('@saveLargeIou', {
+            ...largePolicy, points: [{ x: 100000, y: 0.5 }, { x: 1000000, y: 0.9 }],
+        });
+        expectNotification('Requirement has been updated');
+    });
 });

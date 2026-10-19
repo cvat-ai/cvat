@@ -60,6 +60,7 @@ from cvat.apps.quality_control.filters import RequirementJsonLogicFilter
 from cvat.apps.quality_control.matching import AttributeMatchingResult, MatchingResults
 from cvat.apps.quality_control.models import AnnotationConflictSeverity, AnnotationConflictType
 from cvat.apps.quality_control.threshold_policy import (
+    ADAPTIVE_IOU_TYPES,
     ConstantThresholdPolicy,
     InvalidGroundTruthArea,
     LinearThresholdPolicy,
@@ -213,7 +214,7 @@ def _make_effective_requirement(
     local_policy = getattr(requirement, "similarity_threshold_policy", None)
     if local_policy is not None:
         values["similarity_threshold_policy"] = parse_threshold_policy(local_policy)
-    elif requirement.iou_threshold is not None:
+    elif requirement.iou_threshold is not None and values["annotation_type"] in ADAPTIVE_IOU_TYPES:
         values["similarity_threshold_policy"] = ConstantThresholdPolicy(
             value=requirement.iou_threshold
         )

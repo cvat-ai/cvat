@@ -1753,6 +1753,41 @@ class TestIoUThresholdPolicies(_QualityRequirementsTestBase):
         )
 
     @pytest.mark.parametrize(
+        "annotation_type", sorted(_QualityRequirementsTestBase._base_standalone_annotation_types)
+    )
+    def test_legacy_scalar_policy_uses_effective_annotation_type(
+        self, admin_user, root_requirement, annotation_type
+    ):
+        requirements, response = self._list_requirements(
+            admin_user, settings_id=root_requirement["settings_id"]
+        )
+        assert response.status_code == HTTPStatus.OK
+        parent = next(item for item in requirements if item["annotation_type"] == annotation_type)
+        parent, response = self._patch_requirement(admin_user, parent["id"], {"iou_threshold": 0.6})
+        assert response.status_code == HTTPStatus.OK
+        child, response = self._create_requirement(
+            admin_user,
+            {
+                "settings_id": parent["settings_id"],
+                "parent_requirement": parent["id"],
+                "name": f"legacy-{annotation_type}",
+            },
+        )
+        assert response.status_code == HTTPStatus.CREATED
+        override, response = self._patch_requirement(
+            admin_user, child["id"], {"iou_threshold": 0.3}
+        )
+        assert response.status_code == HTTPStatus.OK
+        assert child["annotation_type"] is None
+        for requirement, scalar in [(parent, 0.6), (child, 0.6), (override, 0.3)]:
+            assert requirement["effective"]["iou_threshold"] == scalar
+            assert requirement["effective"]["similarity_threshold_policy"] == (
+                {"type": "iou", "mode": "constant", "value": scalar}
+                if annotation_type in {"rectangle", "polygon", "mask"}
+                else None
+            )
+
+    @pytest.mark.parametrize(
         "policy",
         [_IOU_LINEAR_POLICY, {"type": "iou", "mode": "constant", "value": 0.7}],
         ids=["linear", "constant"],
@@ -2649,6 +2684,10 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
 
         report = create_quality_report(user=admin_user, task_id=task_id)
         report_data = self._get_report_data(admin_user, report["id"])
+        for name in [image_size_requirement_name, group_bbox_requirement_name]:
+            parameters = report_data["groups"][name]["parameters"]
+            assert parameters["iou_threshold"] == 0.4
+            assert parameters["similarity_threshold_policy"] is None
         image_size_summary = report_data["groups"][image_size_requirement_name][
             "comparison_summary"
         ]
