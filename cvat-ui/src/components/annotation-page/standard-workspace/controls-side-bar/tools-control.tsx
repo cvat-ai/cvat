@@ -34,6 +34,7 @@ import {
 } from 'reducers';
 import {
     interactWithCanvas,
+    updateActiveControl,
     switchNavigationBlocked as switchNavigationBlockedAction,
     fetchAnnotationsAsync,
     updateAnnotationsAsync,
@@ -78,6 +79,7 @@ interface DispatchToProps {
     createAnnotations: (states: ObjectState[]) => void;
     fetchAnnotations: () => void;
     onInteractionStart: typeof interactWithCanvas;
+    updateActiveControl: typeof updateActiveControl;
     onSwitchToolsBlockerState: typeof switchToolsBlockerState;
     switchNavigationBlocked: typeof switchNavigationBlockedAction;
 }
@@ -138,6 +140,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
 }
 
 const mapDispatchToProps = {
+    updateActiveControl,
     onInteractionStart: interactWithCanvas,
     updateAnnotations: updateAnnotationsAsync,
     createAnnotations: createAnnotationsAsync,
@@ -594,36 +597,72 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         }
     };
 
-    private onInteraction = (e: Event): void => {
-        const { frame, isActivated } = this.props;
+    private validateInteractionIsReady = (): void => {
+        const { labels } = this.props;
+        const { activeInteractor, activeLabelID } = this.state;
+
+        if (!activeInteractor) {
+            throw new Error('Interaction is not ready: no active interactor selected');
+        }
+
+        if (!activeLabelID) {
+            throw new Error('Interaction is not ready: no active label selected');
+        }
+
+        if (!labels.length) {
+            throw new Error('Interaction is not ready: no labels available');
+        }
+    };
+
+    public activateInteraction = (
+        parameters?: CombinedState['annotation']['drawing']['activeInteractorParameters'],
+    ): void => {
+        const { canvasInstance, onInteractionStart, updateActiveControl: setActiveControl } = this.props;
+        const { activeInteractor, activeLabelID } = this.state;
+
+        this.validateInteractionIsReady();
+        this.setState({ mode: 'interaction' });
+        canvasInstance.cancel();
+        if (parameters) {
+            onInteractionStart(activeInteractor!, activeLabelID!, parameters);
+        } else {
+            setActiveControl(ActiveControl.AI_TOOLS);
+        }
+    };
+
+    private submitInteraction = (prompts: {
+        pos_points: number[][];
+        neg_points: number[][];
+        obj_bbox: number[][];
+    }): void => {
+        const { frame } = this.props;
         const { activeInteractor, interactorRegionOfInterest } = this.state;
 
-        if (!isActivated) {
-            return;
-        }
+        this.validateInteractionIsReady();
 
         if (!this.interaction.id) {
             this.interaction.id = lodash.uniqueId('interaction_');
         }
 
-        const { shapes } = (e as CustomEvent).detail;
-        const interactor = activeInteractor as MLModel;
-        const boxes = convertShapesForInteractor(shapes, 'rectangle', 'positive');
-        const posPoints = convertShapesForInteractor(shapes, 'points', 'positive');
-        const negPoints = convertShapesForInteractor(shapes, 'points', 'negative');
-
         this.interaction.latestRequest = {
-            interactor,
+            interactor: activeInteractor!,
             data: {
                 frame,
-                obj_bbox: boxes,
-                pos_points: posPoints,
-                neg_points: negPoints,
+                ...prompts,
                 ...(interactorRegionOfInterest ? { roi: interactorRegionOfInterest } : {}),
             },
         };
 
         this.runInteractionRequest(this.interaction.id);
+    };
+
+    private onInteraction = (e: Event): void => {
+        const { shapes } = (e as CustomEvent).detail;
+        this.submitInteraction({
+            obj_bbox: convertShapesForInteractor(shapes, 'rectangle', 'positive'),
+            pos_points: convertShapesForInteractor(shapes, 'points', 'positive'),
+            neg_points: convertShapesForInteractor(shapes, 'points', 'negative'),
+        });
     };
 
     private onTracking = async (e: Event): Promise<void> => {
@@ -1069,9 +1108,9 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
     }
 
     private async constructFromLatestResponse(): Promise<void> {
-        const { convertMasksToPolygons, thresholdValue } = this.state;
+        const { convertMasksToPolygons, thresholdValue, activeLabelID } = this.state;
         const {
-            frame, labels, currentZOrder, activeLabelID, createAnnotations,
+            frame, labels, currentZOrder, createAnnotations,
         } = this.props;
 
         if (!this.interaction.latestResponse.length) {
@@ -1258,7 +1297,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
     private renderInteractorBlock(): JSX.Element {
         const {
-            interactors, canvasInstance, labels, onInteractionStart, interactorExtras,
+            interactors, canvasInstance, labels, interactorExtras,
         } = this.props;
         const {
             activeInteractor, activeLabelID, fetching, allowROI,
@@ -1272,7 +1311,13 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             .sort((a, b) => a.data.weight - b.data.weight)
             .filter((plugin) => plugin.data.shouldBeRendered(this.props, this.state))
             .map(({ component: Component }, index) => (
-                <Component targetProps={this.props} targetState={this.state} key={index} />
+                <Component
+                    targetProps={this.props}
+                    targetState={this.state}
+                    activateInteraction={this.activateInteraction}
+                    submitInteraction={this.submitInteraction}
+                    key={index}
+                />
             ));
 
         return (
@@ -1360,12 +1405,9 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                                 activeInteractor.version < MIN_SUPPORTED_INTERACTOR_VERSION}
                             onClick={() => {
                                 if (activeInteractor && activeLabelID && labels.length) {
-                                    this.setState({ mode: 'interaction' });
-                                    canvasInstance.cancel();
                                     const startWithBox = activeInteractor.params.canvas.startWithBoxOptional ? (
                                         startInteractingWithBox
                                     ) : activeInteractor.params.canvas.startWithBox ?? false;
-
                                     const parameters = {
                                         command: startWithBox ? 'draw_box' as const : 'draw_points' as const,
                                         settings: {
@@ -1378,8 +1420,9 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                                             } : {}),
                                         },
                                     };
+
+                                    this.activateInteraction(parameters);
                                     canvasInstance.interact({ enabled: true, ...parameters });
-                                    onInteractionStart(activeInteractor, activeLabelID, parameters);
                                 }
                             }}
                         >
