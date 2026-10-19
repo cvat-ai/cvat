@@ -13,9 +13,9 @@ import numpy as np
 from cvat.apps.quality_control.backends.datumaro.matching import (
     AttributeMatchingResult,
     Comparator,
+    ComparisonParameters,
     DistanceComparator,
 )
-from cvat.apps.quality_control.comparison_report import ComparisonParameters
 from cvat.apps.quality_control.matching import match_segments
 from cvat.apps.quality_control.models import PointSizeBase
 
@@ -110,8 +110,7 @@ class TestComparator(unittest.TestCase):
     def test_mask_only_comparator_matches_masks(self) -> None:
         mask = np.zeros((8, 8), dtype=bool)
         mask[2:6, 2:6] = True
-        settings = ComparisonParameters()
-        settings.included_annotation_types = [dm.AnnotationType.mask]
+        settings = ComparisonParameters(annotation_type=dm.AnnotationType.mask)
 
         comparator = Comparator(
             {dm.AnnotationType.label: dm.LabelCategories.from_iterable(["car"])},
@@ -131,21 +130,19 @@ class TestComparator(unittest.TestCase):
     def test_mask_and_polygon_comparator_processes_segmentations_once(self) -> None:
         mask = np.zeros((8, 8), dtype=bool)
         mask[2:6, 2:6] = True
-        settings = ComparisonParameters()
-        settings.included_annotation_types = [
-            dm.AnnotationType.mask,
-            dm.AnnotationType.polygon,
-        ]
 
-        comparator = Comparator(
+        comparator = DistanceComparator(
             {dm.AnnotationType.label: dm.LabelCategories.from_iterable(["car"])},
-            settings=settings,
+            included_ann_types=[dm.AnnotationType.mask, dm.AnnotationType.polygon],
+            return_comparisons=True,
         )
 
-        matches, mismatches, gt_unmatched, ds_unmatched, _ = comparator.match_annotations(
+        results = comparator.match_annotations(
             _make_mask_item(mask),
             _make_mask_item(mask.copy()),
-        )["all_ann_types"]
+        )
+        self.assertEqual(list(results), [dm.AnnotationType.polygon])
+        matches, mismatches, gt_unmatched, ds_unmatched, _ = results[dm.AnnotationType.polygon]
 
         self.assertEqual(len(matches), 1)
         self.assertFalse(mismatches)
@@ -204,8 +201,7 @@ class TestComparator(unittest.TestCase):
         self.assertEqual(len(group_bbox_results[3]), 2)
 
     def test_attributes_affect_matching_and_pairwise_diagnostics(self) -> None:
-        settings = ComparisonParameters()
-        settings.included_annotation_types = [dm.AnnotationType.bbox]
+        settings = ComparisonParameters(annotation_type=dm.AnnotationType.bbox)
         gt_ann = dm.Bbox(
             10,
             10,
@@ -248,8 +244,7 @@ class TestComparator(unittest.TestCase):
         self.assertEqual(comparison.similarity, 0)
 
     def test_disabled_attribute_comparison_preserves_geometry_matching(self) -> None:
-        settings = ComparisonParameters()
-        settings.included_annotation_types = [dm.AnnotationType.bbox]
+        settings = ComparisonParameters(annotation_type=dm.AnnotationType.bbox)
         settings.compare_attributes = False
         gt_ann = dm.Bbox(10, 10, 20, 20, label=0, attributes={"color": "red"})
         ds_ann = dm.Bbox(10, 10, 20, 20, label=0, attributes={"color": "blue"})
@@ -270,8 +265,7 @@ class TestComparator(unittest.TestCase):
         self.assertFalse(ds_unmatched)
 
     def test_attributes_can_change_assignment(self) -> None:
-        settings = ComparisonParameters()
-        settings.included_annotation_types = [dm.AnnotationType.bbox]
+        settings = ComparisonParameters(annotation_type=dm.AnnotationType.bbox)
         gt_red = dm.Bbox(0, 0, 10, 10, label=0, attributes={"color": "red"})
         gt_blue = dm.Bbox(2, 0, 10, 10, label=0, attributes={"color": "blue"})
         ds_blue = dm.Bbox(0, 0, 10, 10, label=0, attributes={"color": "blue"})
@@ -293,8 +287,7 @@ class TestComparator(unittest.TestCase):
         self.assertFalse(ds_unmatched)
 
     def test_label_remains_a_separate_second_matching_stage(self) -> None:
-        settings = ComparisonParameters()
-        settings.included_annotation_types = [dm.AnnotationType.bbox]
+        settings = ComparisonParameters(annotation_type=dm.AnnotationType.bbox)
         gt_ann = dm.Bbox(10, 10, 20, 20, label=0, attributes={"color": "red"})
         ds_ann = dm.Bbox(10, 10, 20, 20, label=1, attributes={"color": "red"})
         comparator = Comparator(
@@ -317,8 +310,7 @@ class TestComparator(unittest.TestCase):
         gt_ann = dm.PolyLine([10, 50, 90, 50], label=0)
         ds_ann = dm.PolyLine([90, 50, 10, 50], label=0)
 
-        oriented_settings = ComparisonParameters()
-        oriented_settings.included_annotation_types = [dm.AnnotationType.polyline]
+        oriented_settings = ComparisonParameters(annotation_type=dm.AnnotationType.polyline)
         oriented_settings.compare_line_orientation = True
         oriented_comparator = Comparator(
             {dm.AnnotationType.label: dm.LabelCategories.from_iterable(["car"])},
@@ -339,8 +331,7 @@ class TestComparator(unittest.TestCase):
         self.assertTrue(comparison.direction_mismatch)
         self.assertEqual(comparison.similarity, 0)
 
-        non_oriented_settings = ComparisonParameters()
-        non_oriented_settings.included_annotation_types = [dm.AnnotationType.polyline]
+        non_oriented_settings = ComparisonParameters(annotation_type=dm.AnnotationType.polyline)
         non_oriented_settings.compare_line_orientation = False
         non_oriented_comparator = Comparator(
             {dm.AnnotationType.label: dm.LabelCategories.from_iterable(["car"])},

@@ -29,8 +29,11 @@ from cvat.apps.quality_control.backends.base import (
     FrameComparisonSample,
     QualityBackend,
 )
-from cvat.apps.quality_control.backends.datumaro.matching import Comparator, DistanceComparator
-from cvat.apps.quality_control.comparison_report import ComparisonParameters
+from cvat.apps.quality_control.backends.datumaro.matching import (
+    Comparator,
+    ComparisonParameters,
+    DistanceComparator,
+)
 from cvat.apps.quality_control.filters import RequirementJsonLogicFilter
 from cvat.apps.quality_control.matching import (
     AnnotationMatches,
@@ -161,7 +164,9 @@ class Datumaro2DBackend(QualityBackend):
 
     @staticmethod
     def _comparison_parameters(requirement: EffectiveQualityRequirement) -> ComparisonParameters:
-        settings = ComparisonParameters()
+        settings = ComparisonParameters(
+            annotation_type=to_datumaro_annotation_type(requirement.comparison_annotation_type)
+        )
         for name in (
             "iou_threshold",
             "oks_sigma",
@@ -184,9 +189,6 @@ class Datumaro2DBackend(QualityBackend):
         settings.compare_attributes = attribute_comparison_may_compare(
             requirement.attribute_comparison
         )
-        settings.included_annotation_types = [
-            to_datumaro_annotation_type(requirement.comparison_annotation_type)
-        ]
         return settings
 
     def shape_area(self, annotations: Sequence[cdm.Annotation2D]) -> float:

@@ -16,10 +16,9 @@ import datumaro.components.comparator
 import datumaro.util.annotation_util
 import datumaro.util.mask_tools
 import numpy as np
-from attrs import define
+from attrs import NOTHING, Factory, define, field, fields
 
 from cvat.apps.quality_control.attribute_comparison import CVAT_ATTRIBUTE_SPEC_IDS_ATTR
-from cvat.apps.quality_control.comparison_report import ComparisonParameters
 from cvat.apps.quality_control.matching import (
     AttributeMatchingResult,
     LabelEqualityFunction,
@@ -36,6 +35,65 @@ _ShapeT2 = TypeVar("_ShapeT2")
 AttributeMatchingFunction: TypeAlias = Callable[
     [dm.Annotation, dm.Annotation], AttributeMatchingResult
 ]
+
+
+@define(kw_only=True)
+class ComparisonParameters:
+    annotation_type: dm.AnnotationType
+    "The compared annotation type"
+
+    non_groupable_ann_type: dm.AnnotationType = dm.AnnotationType.label
+    "Annotation type that can't be grouped"
+
+    compare_attributes: bool = True
+    "Enables or disables attribute checks"
+
+    ignored_attributes: list[str] = field(factory=list)
+
+    iou_threshold: float = 0.4
+    "Used for distinction between matched / unmatched shapes"
+
+    oks_sigma: float = 0.09
+    "Like IoU threshold, but for points, % of the bbox area to match a pair of points"
+
+    point_size_base: PointSizeBase = PointSizeBase.GROUP_BBOX_SIZE
+    "Determines how to obtain the object size for point comparisons"
+
+    line_thickness: float = 0.01
+    "Thickness of polylines, relatively to the (image area) ^ 0.5"
+
+    compare_line_orientation: bool = True
+    "Indicates that polylines have direction"
+
+    line_orientation_threshold: float = 0.1
+    """
+    The minimal gain in the IoU between the given and reversed line directions
+    to count the line inverted
+    """
+
+    compare_groups: bool = True
+    "Enables or disables group checks"
+
+    group_match_threshold: float = 0.5
+    "Minimal IoU for groups to be considered matching"
+
+    check_covered_annotations: bool = True
+    "Check for fully-covered annotations"
+
+    object_visibility_threshold: float = 0.05
+    "Minimal visible area % of the spatial annotations"
+
+    panoptic_comparison: bool = True
+    "Use only the visible part of the masks and polygons in comparisons"
+
+    @classmethod
+    def defaults(cls) -> dict[str, Any]:
+        "The default values of the parameters that have them"
+        return {
+            f.name: f.default.factory() if isinstance(f.default, Factory) else f.default
+            for f in fields(cls)
+            if f.default is not NOTHING
+        }
 
 
 def oks(a, b, sigma=0.1, bbox=None, scale=None, visibility_a=None, visibility_b=None):
@@ -1034,7 +1092,7 @@ class Comparator:
         gt_threshold: Callable[[Sequence[dm.Annotation]], float] | None = None,
     ):
         self.ignored_attrs = set(settings.ignored_attributes) | self.IGNORED_ATTRIBUTES
-        self.included_ann_types = settings.included_annotation_types
+        self.included_ann_types = [settings.annotation_type]
         self.non_groupable_ann_type = settings.non_groupable_ann_type
         self._annotation_comparator = DistanceComparator(
             categories,

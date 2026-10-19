@@ -17,7 +17,6 @@ from datumaro.util.attrs_util import ensure_cls
 
 from cvat.apps.dataset_manager.bindings import CVAT_INTERNAL_ATTRIBUTES
 from cvat.apps.quality_control.backends.datumaro.matching import DistanceComparator, segment_iou
-from cvat.apps.quality_control.comparison_report import ComparisonParameters
 
 
 @attrs.define(kw_only=True, slots=False)
@@ -27,7 +26,7 @@ class IntersectMerge(datumaro.components.merge.intersect_merge.IntersectMerge):
     @attrs.define(kw_only=True, slots=False)
     class Conf:
         pairwise_dist: float = 0.5
-        sigma: float = 0.1
+        sigma: float = 0.09
 
         output_conf_thresh: float = 0
         quorum: int = 0
@@ -41,7 +40,16 @@ class IntersectMerge(datumaro.components.merge.intersect_merge.IntersectMerge):
 
         def __attrs_post_init__(self):
             if self.included_annotation_types is None:
-                self.included_annotation_types = ComparisonParameters.included_annotation_types
+                self.included_annotation_types = [
+                    dm.AnnotationType.bbox,
+                    dm.AnnotationType.points,
+                    dm.AnnotationType.mask,
+                    dm.AnnotationType.polygon,
+                    dm.AnnotationType.polyline,
+                    dm.AnnotationType.skeleton,
+                    dm.AnnotationType.label,
+                    dm.AnnotationType.ellipse,
+                ]
 
     conf: Conf = attrs.field(converter=ensure_cls(Conf), factory=Conf)
 
