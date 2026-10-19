@@ -327,10 +327,10 @@ def _get_requirement_field(requirement: Any, *names: str, default=None):
     return default
 
 
-def serialize_requirement_parameters(requirement: Any) -> dict[str, Any]:
-    if hasattr(requirement, "to_dict") and callable(requirement.to_dict):
-        params = dict(requirement.to_dict())
-    elif isinstance(requirement, dict):
+def serialize_requirement_parameters(
+    requirement: EffectiveQualityRequirement | dict[str, Any],
+) -> dict[str, Any]:
+    if isinstance(requirement, dict):
         params = dict(requirement)
     else:
         params = {

@@ -34,6 +34,7 @@ from cvat.apps.quality_control.comparison_report import (
 )
 from cvat.apps.quality_control.export import prepare_requirement_confusion_matrix_json
 from cvat.apps.quality_control.quality_handlers import (
+    EffectiveQualityRequirement,
     build_requirement_comparison_summary,
     build_requirement_report,
     build_requirements_summary,
@@ -509,12 +510,14 @@ class TestRequirementCompletion(unittest.TestCase):
         )
 
     def test_aggregate_metric_is_computed_after_frame_matrices_are_merged(self) -> None:
-        requirement = models.QualityRequirement(
-            id=1,
+        requirement = EffectiveQualityRequirement(
             name="jaccard",
             enabled=True,
-            target_metric="jaccard_index",
+            filter="",
+            annotation_type=models.QualityRequirementAnnotationType.RECTANGLE,
+            target_metric=models.QualityTargetMetricType.parse("jaccard_index"),
             target_metric_threshold=0.7,
+            source_requirement_id=1,
         )
         frame_results = {
             0: ComparisonReportFrameComparisonSummary.from_annotation_summary(
@@ -585,12 +588,14 @@ class TestRequirementCompletion(unittest.TestCase):
         )
 
     def test_disabled_requirement_without_annotations_keeps_zero_score(self) -> None:
-        requirement = models.QualityRequirement(
-            id=1,
+        requirement = EffectiveQualityRequirement(
             name="disabled",
             enabled=False,
-            target_metric="accuracy",
+            filter="",
+            annotation_type=models.QualityRequirementAnnotationType.RECTANGLE,
+            target_metric=models.QualityTargetMetricType.parse("accuracy"),
             target_metric_threshold=1.0,
+            source_requirement_id=1,
         )
 
         group_report = build_requirement_report(requirement=requirement, frame_results={})
@@ -602,12 +607,14 @@ class TestRequirementCompletion(unittest.TestCase):
         )
 
     def test_enabled_requirement_without_annotations_is_completed_without_score(self) -> None:
-        requirement = models.QualityRequirement(
-            id=1,
+        requirement = EffectiveQualityRequirement(
             name="empty-filter-result",
             enabled=True,
-            target_metric="accuracy",
+            filter="",
+            annotation_type=models.QualityRequirementAnnotationType.RECTANGLE,
+            target_metric=models.QualityTargetMetricType.parse("accuracy"),
             target_metric_threshold=1.0,
+            source_requirement_id=1,
         )
         group_report = build_requirement_report(requirement=requirement, frame_results={})
 
@@ -647,12 +654,14 @@ class TestRequirementCompletion(unittest.TestCase):
         )
 
     def test_requirement_with_annotations_on_only_one_side_is_computed(self) -> None:
-        requirement = models.QualityRequirement(
-            id=1,
+        requirement = EffectiveQualityRequirement(
             name="mismatched-labels",
             enabled=True,
-            target_metric="accuracy",
+            filter="",
+            annotation_type=models.QualityRequirementAnnotationType.RECTANGLE,
+            target_metric=models.QualityTargetMetricType.parse("accuracy"),
             target_metric_threshold=1.0,
+            source_requirement_id=1,
         )
         annotations = ComparisonReportAnnotationsSummary(
             valid_count=0,
