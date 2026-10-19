@@ -6,6 +6,7 @@
 
 import { translatePoints } from '../../support/utils';
 import { defaultTaskSpec } from '../../support/default-specs';
+import { getBulkActionsMenu, selectAll } from '../../support/utils.cy';
 
 context('Basic manipulations with consensus job replicas', () => {
     const labelName = 'Consensus';
@@ -79,6 +80,77 @@ context('Basic manipulations with consensus job replicas', () => {
         });
         after(() => {
             cy.headlessDeleteTask(consensusTaskId);
+        });
+    });
+
+    describe('Replica job addition', () => {
+        let singleJobTaskId = null;
+        let bulkTaskId = null;
+        let bulkJobIds = [];
+        const replicasToAdd = 2;
+        const bulkJobsCount = 2;
+
+        before(() => {
+            cy.headlessCreateTask(taskSpec, dataSpec, extras).then(({ taskId }) => {
+                singleJobTaskId = taskId;
+            });
+
+            const bulkSpec = defaultTaskSpec({
+                serverFiles: ['smallArchive.zip'], labelName, taskName, segmentSize: 1,
+            });
+            cy.headlessCreateTask(bulkSpec.taskSpec, bulkSpec.dataSpec, bulkSpec.extras)
+                .then(({ taskId, jobIds }) => {
+                    bulkTaskId = taskId;
+                    bulkJobIds = jobIds;
+                });
+        });
+
+        it('Add replicas to a single job', () => {
+            cy.openTaskById(singleJobTaskId);
+            cy.get('.cvat-task-details-wrapper').should('be.visible');
+            cy.get('.cvat-clear-filters-button').click();
+            cy.get('.cvat-job-item:has(.cvat-tag-replica)').should('have.length', initialReplicas);
+
+            cy.get('.cvat-job-item:has(.cvat-tag-parent)')
+                .invoke('attr', 'data-row-id').then((parentId) => {
+                    cy.addReplicas(replicasToAdd, { jobId: parentId }).then((parentJobIds) => {
+                        expect(parentJobIds).to.deep.equal(Array(replicasToAdd).fill(+parentId));
+                    });
+                });
+
+            cy.get('.cvat-job-item:has(.cvat-tag-replica)')
+                .should('have.length', initialReplicas + replicasToAdd);
+            cy.get('.cvat-job-item:has(.cvat-tag-parent)').should('have.length', 1);
+            cy.get('.ant-notification-notice-error').should('not.exist');
+        });
+
+        it('Add replicas to the selected jobs', () => {
+            cy.openTaskById(bulkTaskId);
+            cy.get('.cvat-task-details-wrapper').should('be.visible');
+            cy.get('.cvat-job-item').should('have.length', bulkJobsCount);
+
+            selectAll();
+            getBulkActionsMenu().within(() => {
+                cy.contains('[role="menuitem"]', `Add replicas (${bulkJobsCount})`).click();
+            });
+            // one request for each replica of each job
+            cy.addReplicas(replicasToAdd, { jobsCount: bulkJobsCount }).then((parentJobIds) => {
+                const byValue = (a, b) => a - b;
+                const expectedParentJobIds = bulkJobIds.flatMap((id) => Array(replicasToAdd).fill(id));
+                expect([...parentJobIds].sort(byValue)).to.deep.equal(expectedParentJobIds.sort(byValue));
+            });
+            cy.get('.cvat-bulk-progress-wrapper').should('not.exist');
+
+            cy.get('.cvat-clear-filters-button').click();
+            cy.get('.cvat-job-item:has(.cvat-tag-replica)')
+                .should('have.length', bulkJobsCount * replicasToAdd);
+            cy.get('.cvat-job-item:has(.cvat-tag-parent)').should('have.length', bulkJobsCount);
+            cy.get('.ant-notification-notice-error').should('not.exist');
+        });
+
+        after(() => {
+            cy.headlessDeleteTask(singleJobTaskId);
+            cy.headlessDeleteTask(bulkTaskId);
         });
     });
 
