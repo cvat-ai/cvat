@@ -1710,6 +1710,60 @@ class TestTaskBackups:
 
         self._test_can_restore_task_from_backup(task["id"])
 
+    @pytest.mark.parametrize("validation_mode", ["gt", "gt_pool"])
+    def test_can_import_backup_preserving_deleted_gt_frames(self, tasks, jobs, validation_mode):
+        # https://github.com/cvat-ai/cvat/issues/10250
+        gt_job = next(
+            j
+            for j in jobs
+            if j["dimension"] == "2d"
+            if j["type"] == "ground_truth"
+            if tasks[j["task_id"]]["validation_mode"] == validation_mode
+            if tasks[j["task_id"]]["size"] > 1
+        )
+        task_id = gt_job["task_id"]
+
+        with make_api_client(self.user) as api_client:
+            gt_job_meta, _ = api_client.jobs_api.retrieve_data_meta(gt_job["id"])
+            task_meta, _ = api_client.tasks_api.retrieve_data_meta(task_id)
+            frame_step = parse_frame_step(task_meta.frame_filter)
+            gt_frames = to_rel_frames(
+                gt_job_meta.included_frames or list(
+                    range(gt_job_meta.start_frame, gt_job_meta.stop_frame + 1)
+                ),
+                frame_step=frame_step,
+                task_start_frame=task_meta.start_frame,
+            )
+            assert gt_frames, "expected GT frames in the fixture task"
+            deleted_gt_frames = [gt_frames[0]]
+
+            api_client.jobs_api.partial_update_data_meta(
+                gt_job["id"],
+                patched_job_data_meta_write_request=models.PatchedJobDataMetaWriteRequest(
+                    deleted_frames=deleted_gt_frames
+                ),
+            )
+            old_validation_layout, _ = api_client.tasks_api.retrieve_validation_layout(task_id)
+            assert old_validation_layout.disabled_frames == deleted_gt_frames
+
+            task = self.client.tasks.retrieve(task_id)
+            backup_file = self.tmp_dir / f"task_{task.id}_backup_deleted_gt.zip"
+            task.download_backup(backup_file)
+
+            new_task = self.client.tasks.create_from_backup(backup_file)
+
+            new_validation_layout, _ = api_client.tasks_api.retrieve_validation_layout(new_task.id)
+            assert new_validation_layout.disabled_frames == deleted_gt_frames
+
+            new_gt_jobs = get_paginated_collection(
+                api_client.jobs_api.list_endpoint,
+                task_id=new_task.id,
+                type="ground_truth",
+            )
+            assert len(new_gt_jobs) == 1
+            new_gt_job_meta, _ = api_client.jobs_api.retrieve_data_meta(new_gt_jobs[0]["id"])
+            assert set(deleted_gt_frames).issubset(set(new_gt_job_meta.deleted_frames))
+
     def test_can_import_backup_for_audio_task(self, tasks):
         task_id = next(t for t in tasks if t["media_type"] == "audio")["id"]
         self._test_can_export_backup(task_id)

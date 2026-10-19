@@ -48,6 +48,7 @@ from cvat.apps.engine import models
 from cvat.apps.engine.cache import MediaCache
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.models import DataChoice, StorageChoice, TaskMode
+from cvat.apps.engine.media_io.frame_provider import TaskFrameProvider
 from cvat.apps.engine.serializers import (
     AnnotationGuideWriteSerializer,
     AssetWriteSerializer,
@@ -716,6 +717,17 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
             db_segments = list(self._db_task.segment_set.all())
             db_segments.sort(key=lambda i: i.job_set.first().id)
 
+            # Deleted GT / validation frames live in ValidationLayout.disabled_frames
+            # (relative frame numbers), not in Data.deleted_frames for simple GT.
+            # Persist them on the GT job entry so restore can re-apply them
+            # (see https://github.com/cvat-ai/cvat/issues/10250).
+            validation_layout = getattr(self._db_data, "validation_layout", None)
+            disabled_gt_frames = (
+                list(validation_layout.disabled_frames)
+                if validation_layout and validation_layout.disabled_frames
+                else None
+            )
+
             serialized_jobs = []
             for db_segment in db_segments:
                 serialized_segment = serialize_segment(db_segment)
@@ -729,6 +741,11 @@ class TaskExporter(_ExporterBase, _TaskBackupBase):
 
                     serialized_job = self._prepare_job_meta(job_serializer.data)
                     serialized_job.update(deepcopy(serialized_segment))
+                    if (
+                        disabled_gt_frames is not None
+                        and db_job.type == models.JobType.GROUND_TRUTH
+                    ):
+                        serialized_job["disabled_frames"] = disabled_gt_frames
                     serialized_jobs.append(serialized_job)
 
             return serialized_jobs
@@ -1200,9 +1217,51 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
             # Recreate Ground Truth jobs
             self._import_gt_jobs(jobs)
 
+        self._restore_gt_disabled_frames(jobs)
+
         for db_job, job in zip(self._get_db_jobs(), jobs):
             db_job.status = job["status"]
             db_job.save()
+
+    def _restore_gt_disabled_frames(self, jobs: list[dict]) -> None:
+        """Re-apply deleted validation frames from the GT job entry in the backup.
+
+        Data.deleted_frames is restored separately from the backup. For simple GT,
+        disabled validation frames are only stored on ValidationLayout; for GT pools,
+        Data.deleted_frames already includes related honeypot exclusions.
+        """
+        gt_jobs = [job for job in jobs if self._get_job_type(job) == models.JobType.GROUND_TRUTH]
+        if not gt_jobs:
+            return
+
+        disabled_frames = gt_jobs[0].get("disabled_frames")
+        if not disabled_frames:
+            return
+
+        db_gt_job = self._db_task.gt_job
+        if db_gt_job is None:
+            raise ValidationError("Can't restore disabled GT frames: no Ground Truth job found")
+
+        db_data = self._db_task.require_data()
+        validation_layout = getattr(db_data, "validation_layout", None)
+        if validation_layout is None:
+            raise ValidationError(
+                "Can't restore disabled GT frames: task has no validation layout"
+            )
+
+        task_frame_provider = TaskFrameProvider(self._db_task)
+        gt_rel_frame_set = set(
+            map(task_frame_provider.get_rel_frame_number, db_gt_job.segment.frame_set)
+        )
+        unknown_disabled_frames = set(disabled_frames) - gt_rel_frame_set
+        if unknown_disabled_frames:
+            raise ValidationError(
+                "Backup contains disabled GT frames that do not belong to the Ground Truth job: "
+                + ", ".join(map(str, sorted(unknown_disabled_frames)))
+            )
+
+        validation_layout.disabled_frames = sorted(set(disabled_frames))
+        validation_layout.save(update_fields=["disabled_frames"])
 
     @staticmethod
     def _get_job_type(job: dict) -> models.JobType:
