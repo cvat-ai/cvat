@@ -16,7 +16,7 @@ def check_scalar_thresholds(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-    dependencies = [("quality_control", "0013_alter_qualityrequirement_target_metric")]
+    dependencies = [("quality_control", "0014_rename_consensus_replica_in_job_filter")]
     operations = [
         # PostgreSQL cannot cast double precision directly to jsonb.
         migrations.AlterField(

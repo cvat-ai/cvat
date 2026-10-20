@@ -669,6 +669,238 @@
     }
   },
   {
+    "model": "consensus.consensussettings",
+    "pk": 3,
+    "fields": {
+      "iou_threshold": 0.4,
+      "task": 2
+    }
+  },
+  {
+    "model": "consensus.consensussettings",
+    "pk": 4,
+    "fields": {
+      "iou_threshold": 0.4,
+      "task": 5
+    }
+  },
+  {
+    "model": "consensus.consensussettings",
+    "pk": 5,
+    "fields": {
+      "iou_threshold": 0.4,
+      "task": 6
+    }
+  },
+  {
+    "model": "consensus.consensussettings",
+    "pk": 6,
+    "fields": {
+      "iou_threshold": 0.4,
+      "task": 7
+    }
+  },
+  {
+    "model": "consensus.consensussettings",
+    "pk": 7,
+    "fields": {
+      "iou_threshold": 0.4,
+      "task": 8
+    }
+  },
+  {
+    "model": "consensus.consensussettings",
+    "pk": 8,
+    "fields": {
+      "iou_threshold": 0.4,
+      "task": 9
+    }
+  },
+  {
+    "model": "consensus.consensussettings",
+    "pk": 9,
+    "fields": {
+      "iou_threshold": 0.4,
+      "task": 11
+    }
+  },
+  {
+    "model": "consensus.consensussettings",
+    "pk": 10,
+    "fields": {
+      "iou_threshold": 0.4,
+      "task": 12
+    }
+  },
+  {
+    "model": "consensus.consensussettings",
+    "pk": 11,
+    "fields": {
+      "iou_threshold": 0.4,
+      "task": 13
+    }
+  },
+  {
+    "model": "consensus.consensussettings",
+    "pk": 12,
+    "fields": {
+      "iou_threshold": 0.4,
+      "task": 14
+    }
+  },
+  {
+    "model": "consensus.consensussettings",
+    "pk": 13,
+    "fields": {
+      "iou_threshold": 0.4,
+      "task": 15
+    }
+  },
+  {
+    "model": "consensus.consensussettings",
+    "pk": 14,
+    "fields": {
+      "iou_threshold": 0.4,
+      "task": 17
+    }
+  },
+  {
+    "model": "consensus.consensussettings",
+    "pk": 15,
+    "fields": {
+      "iou_threshold": 0.4,
+      "task": 18
+    }
+  },
+  {
+    "model": "consensus.consensussettings",
+    "pk": 16,
+    "fields": {
+      "iou_threshold": 0.4,
+      "task": 19
+    }
+  },
+  {
+    "model": "consensus.consensussettings",
+    "pk": 17,
+    "fields": {
+      "iou_threshold": 0.4,
+      "task": 20
+    }
+  },
+  {
+    "model": "consensus.consensussettings",
+    "pk": 18,
+    "fields": {
+      "iou_threshold": 0.4,
+      "task": 21
+    }
+  },
+  {
+    "model": "consensus.consensussettings",
+    "pk": 19,
+    "fields": {
+      "iou_threshold": 0.4,
+      "task": 22
+    }
+  },
+  {
+    "model": "consensus.consensussettings",
+    "pk": 20,
+    "fields": {
+      "iou_threshold": 0.4,
+      "task": 23
+    }
+  },
+  {
+    "model": "consensus.consensussettings",
+    "pk": 21,
+    "fields": {
+      "iou_threshold": 0.4,
+      "task": 24
+    }
+  },
+  {
+    "model": "consensus.consensussettings",
+    "pk": 22,
+    "fields": {
+      "iou_threshold": 0.4,
+      "task": 25
+    }
+  },
+  {
+    "model": "consensus.consensussettings",
+    "pk": 23,
+    "fields": {
+      "iou_threshold": 0.4,
+      "task": 26
+    }
+  },
+  {
+    "model": "consensus.consensussettings",
+    "pk": 24,
+    "fields": {
+      "iou_threshold": 0.4,
+      "task": 27
+    }
+  },
+  {
+    "model": "consensus.consensussettings",
+    "pk": 25,
+    "fields": {
+      "iou_threshold": 0.4,
+      "task": 28
+    }
+  },
+  {
+    "model": "consensus.consensussettings",
+    "pk": 26,
+    "fields": {
+      "iou_threshold": 0.4,
+      "task": 29
+    }
+  },
+  {
+    "model": "consensus.consensussettings",
+    "pk": 27,
+    "fields": {
+      "iou_threshold": 0.4,
+      "task": 32
+    }
+  },
+  {
+    "model": "consensus.consensussettings",
+    "pk": 28,
+    "fields": {
+      "iou_threshold": 0.4,
+      "task": 33
+    }
+  },
+  {
+    "model": "consensus.consensussettings",
+    "pk": 29,
+    "fields": {
+      "iou_threshold": 0.4,
+      "task": 34
+    }
+  },
+  {
+    "model": "consensus.consensussettings",
+    "pk": 30,
+    "fields": {
+      "iou_threshold": 0.4,
+      "task": 35
+    }
+  },
+  {
+    "model": "consensus.consensussettings",
+    "pk": 31,
+    "fields": {
+      "iou_threshold": 0.4,
+      "task": 36
+    }
+  },
+  {
     "model": "engine.attributespec",
     "pk": 1,
     "fields": {
@@ -5973,7 +6205,7 @@
       "stage": "annotation",
       "state": "in progress",
       "status": "annotation",
-      "type": "consensus_replica",
+      "type": "replica",
       "updated_date": "2025-02-03T15:25:32.413Z"
     }
   },
@@ -5989,7 +6221,7 @@
       "stage": "annotation",
       "state": "new",
       "status": "annotation",
-      "type": "consensus_replica",
+      "type": "replica",
       "updated_date": "2025-01-14T17:19:51.388Z"
     }
   },
@@ -6005,7 +6237,7 @@
       "stage": "annotation",
       "state": "in progress",
       "status": "annotation",
-      "type": "consensus_replica",
+      "type": "replica",
       "updated_date": "2025-02-03T15:22:52.241Z"
     }
   },
@@ -6037,7 +6269,7 @@
       "stage": "annotation",
       "state": "in progress",
       "status": "annotation",
-      "type": "consensus_replica",
+      "type": "replica",
       "updated_date": "2025-01-14T17:23:55.551Z"
     }
   },
@@ -6053,7 +6285,7 @@
       "stage": "annotation",
       "state": "new",
       "status": "annotation",
-      "type": "consensus_replica",
+      "type": "replica",
       "updated_date": "2025-01-14T17:19:51.388Z"
     }
   },
@@ -6069,7 +6301,7 @@
       "stage": "annotation",
       "state": "in progress",
       "status": "annotation",
-      "type": "consensus_replica",
+      "type": "replica",
       "updated_date": "2025-01-14T17:24:51.333Z"
     }
   },
@@ -6117,7 +6349,7 @@
       "stage": "annotation",
       "state": "in progress",
       "status": "annotation",
-      "type": "consensus_replica",
+      "type": "replica",
       "updated_date": "2025-01-27T16:43:07.696Z"
     }
   },
@@ -6133,7 +6365,7 @@
       "stage": "annotation",
       "state": "completed",
       "status": "annotation",
-      "type": "consensus_replica",
+      "type": "replica",
       "updated_date": "2025-01-27T16:43:47.462Z"
     }
   },
@@ -16208,7 +16440,7 @@
       ],
       "assignee_updated_date": null,
       "bug_tracker": "",
-      "consensus_replicas": 0,
+      "initial_replicas": 0,
       "created_date": "2021-12-14T18:50:29.458Z",
       "data": 2,
       "dimension": "2d",
@@ -16238,7 +16470,7 @@
       ],
       "assignee_updated_date": null,
       "bug_tracker": "",
-      "consensus_replicas": 0,
+      "initial_replicas": 0,
       "created_date": "2022-02-16T06:25:48.168Z",
       "data": 5,
       "dimension": "2d",
@@ -16266,7 +16498,7 @@
       "assignee": null,
       "assignee_updated_date": null,
       "bug_tracker": "",
-      "consensus_replicas": 0,
+      "initial_replicas": 0,
       "created_date": "2022-02-16T06:26:54.631Z",
       "data": 6,
       "dimension": "3d",
@@ -16296,7 +16528,7 @@
       ],
       "assignee_updated_date": null,
       "bug_tracker": "",
-      "consensus_replicas": 0,
+      "initial_replicas": 0,
       "created_date": "2022-02-21T10:31:52.429Z",
       "data": 7,
       "dimension": "2d",
@@ -16326,7 +16558,7 @@
       ],
       "assignee_updated_date": null,
       "bug_tracker": "",
-      "consensus_replicas": 0,
+      "initial_replicas": 0,
       "created_date": "2022-03-05T08:30:48.612Z",
       "data": 8,
       "dimension": "2d",
@@ -16356,7 +16588,7 @@
       ],
       "assignee_updated_date": null,
       "bug_tracker": "",
-      "consensus_replicas": 0,
+      "initial_replicas": 0,
       "created_date": "2022-03-05T09:33:10.420Z",
       "data": 9,
       "dimension": "2d",
@@ -16386,7 +16618,7 @@
       ],
       "assignee_updated_date": null,
       "bug_tracker": "",
-      "consensus_replicas": 0,
+      "initial_replicas": 0,
       "created_date": "2022-03-05T10:32:19.149Z",
       "data": 11,
       "dimension": "2d",
@@ -16414,7 +16646,7 @@
       "assignee": null,
       "assignee_updated_date": null,
       "bug_tracker": "",
-      "consensus_replicas": 0,
+      "initial_replicas": 0,
       "created_date": "2022-03-14T13:24:05.852Z",
       "data": null,
       "dimension": "",
@@ -16444,7 +16676,7 @@
       ],
       "assignee_updated_date": null,
       "bug_tracker": "",
-      "consensus_replicas": 0,
+      "initial_replicas": 0,
       "created_date": "2022-06-08T08:33:06.505Z",
       "data": 12,
       "dimension": "2d",
@@ -16472,7 +16704,7 @@
       "assignee": null,
       "assignee_updated_date": null,
       "bug_tracker": "https://bugtracker.localhost/task/12345",
-      "consensus_replicas": 0,
+      "initial_replicas": 0,
       "created_date": "2022-09-22T14:22:25.820Z",
       "data": 13,
       "dimension": "2d",
@@ -16500,7 +16732,7 @@
       "assignee": null,
       "assignee_updated_date": null,
       "bug_tracker": "",
-      "consensus_replicas": 0,
+      "initial_replicas": 0,
       "created_date": "2022-12-01T12:53:10.425Z",
       "data": 14,
       "dimension": "2d",
@@ -16530,7 +16762,7 @@
       ],
       "assignee_updated_date": null,
       "bug_tracker": "",
-      "consensus_replicas": 0,
+      "initial_replicas": 0,
       "created_date": "2023-02-10T14:05:25.947Z",
       "data": 16,
       "dimension": "2d",
@@ -16558,7 +16790,7 @@
       "assignee": null,
       "assignee_updated_date": null,
       "bug_tracker": "",
-      "consensus_replicas": 0,
+      "initial_replicas": 0,
       "created_date": "2023-03-01T15:36:26.668Z",
       "data": 17,
       "dimension": "2d",
@@ -16586,7 +16818,7 @@
       "assignee": null,
       "assignee_updated_date": null,
       "bug_tracker": "",
-      "consensus_replicas": 0,
+      "initial_replicas": 0,
       "created_date": "2023-03-10T11:56:33.757Z",
       "data": 18,
       "dimension": "2d",
@@ -16614,7 +16846,7 @@
       "assignee": null,
       "assignee_updated_date": null,
       "bug_tracker": "",
-      "consensus_replicas": 0,
+      "initial_replicas": 0,
       "created_date": "2023-03-10T11:57:31.614Z",
       "data": 19,
       "dimension": "2d",
@@ -16642,7 +16874,7 @@
       "assignee": null,
       "assignee_updated_date": null,
       "bug_tracker": "",
-      "consensus_replicas": 0,
+      "initial_replicas": 0,
       "created_date": "2023-03-27T19:08:07.649Z",
       "data": 20,
       "dimension": "2d",
@@ -16670,7 +16902,7 @@
       "assignee": null,
       "assignee_updated_date": null,
       "bug_tracker": "",
-      "consensus_replicas": 0,
+      "initial_replicas": 0,
       "created_date": "2023-05-26T16:11:23.540Z",
       "data": 21,
       "dimension": "2d",
@@ -16698,7 +16930,7 @@
       "assignee": null,
       "assignee_updated_date": null,
       "bug_tracker": "",
-      "consensus_replicas": 0,
+      "initial_replicas": 0,
       "created_date": "2024-03-21T20:50:05.694Z",
       "data": 22,
       "dimension": "2d",
@@ -16726,7 +16958,7 @@
       "assignee": null,
       "assignee_updated_date": null,
       "bug_tracker": "",
-      "consensus_replicas": 0,
+      "initial_replicas": 0,
       "created_date": "2024-07-15T15:33:10.135Z",
       "data": 23,
       "dimension": "2d",
@@ -16754,7 +16986,7 @@
       "assignee": null,
       "assignee_updated_date": null,
       "bug_tracker": "",
-      "consensus_replicas": 0,
+      "initial_replicas": 0,
       "created_date": "2024-07-15T15:34:53.156Z",
       "data": 24,
       "dimension": "2d",
@@ -16784,7 +17016,7 @@
       ],
       "assignee_updated_date": "2024-09-23T10:51:45.525Z",
       "bug_tracker": "",
-      "consensus_replicas": 0,
+      "initial_replicas": 0,
       "created_date": "2024-09-23T10:51:32.778Z",
       "data": 25,
       "dimension": "2d",
@@ -16814,7 +17046,7 @@
       ],
       "assignee_updated_date": "2024-09-23T10:52:48.769Z",
       "bug_tracker": "",
-      "consensus_replicas": 0,
+      "initial_replicas": 0,
       "created_date": "2024-09-23T10:52:04.357Z",
       "data": 26,
       "dimension": "2d",
@@ -16842,7 +17074,7 @@
       "assignee": null,
       "assignee_updated_date": null,
       "bug_tracker": "",
-      "consensus_replicas": 0,
+      "initial_replicas": 0,
       "created_date": "2024-09-23T21:42:22.676Z",
       "data": 27,
       "dimension": "2d",
@@ -16870,7 +17102,7 @@
       "assignee": null,
       "assignee_updated_date": null,
       "bug_tracker": "",
-      "consensus_replicas": 0,
+      "initial_replicas": 0,
       "created_date": "2024-10-01T12:36:21.364Z",
       "data": 28,
       "dimension": "2d",
@@ -16898,7 +17130,7 @@
       "assignee": null,
       "assignee_updated_date": null,
       "bug_tracker": "",
-      "consensus_replicas": 3,
+      "initial_replicas": 3,
       "created_date": "2025-01-14T17:19:03.665Z",
       "data": 29,
       "dimension": "2d",
@@ -16926,7 +17158,7 @@
       "assignee": null,
       "assignee_updated_date": null,
       "bug_tracker": "",
-      "consensus_replicas": 2,
+      "initial_replicas": 2,
       "created_date": "2025-01-27T16:42:31.302Z",
       "data": 30,
       "dimension": "2d",
@@ -16954,7 +17186,7 @@
       "assignee": null,
       "assignee_updated_date": null,
       "bug_tracker": "",
-      "consensus_replicas": 0,
+      "initial_replicas": 0,
       "created_date": "2025-05-05T15:35:00.112Z",
       "data": 31,
       "dimension": "2d",
@@ -16982,7 +17214,7 @@
       "assignee": null,
       "assignee_updated_date": null,
       "bug_tracker": "",
-      "consensus_replicas": 0,
+      "initial_replicas": 0,
       "created_date": "2025-05-05T15:35:00.337Z",
       "data": 32,
       "dimension": "2d",
@@ -17010,7 +17242,7 @@
       "assignee": null,
       "assignee_updated_date": null,
       "bug_tracker": "",
-      "consensus_replicas": 0,
+      "initial_replicas": 0,
       "created_date": "2025-08-01T11:44:46.343Z",
       "data": 33,
       "dimension": "2d",
@@ -17038,7 +17270,7 @@
       "assignee": null,
       "assignee_updated_date": null,
       "bug_tracker": "",
-      "consensus_replicas": 0,
+      "initial_replicas": 0,
       "created_date": "2025-11-13T11:32:48.132Z",
       "data": 34,
       "dimension": "2d",
@@ -17066,7 +17298,7 @@
       "assignee": null,
       "assignee_updated_date": null,
       "bug_tracker": "",
-      "consensus_replicas": 0,
+      "initial_replicas": 0,
       "created_date": "2026-05-11T17:25:43.375Z",
       "data": 35,
       "dimension": "1d",

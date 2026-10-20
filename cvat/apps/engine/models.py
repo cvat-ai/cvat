@@ -188,7 +188,7 @@ class SortingMethod(str, Enum):
 class JobType(str, Enum):
     ANNOTATION = "annotation"
     GROUND_TRUTH = "ground_truth"
-    CONSENSUS_REPLICA = "consensus_replica"
+    REPLICA = "replica"
 
     @classmethod
     def choices(cls):
@@ -1004,8 +1004,8 @@ class Task(DirtyFieldsMixin, TimestampedModel, AssignableModel, FileSystemRelate
     target_storage = models.ForeignKey(
         Storage, null=True, default=None, blank=True, on_delete=models.SET_NULL, related_name="+"
     )
-    consensus_replicas = models.IntegerField(default=0)
-    "Per job consensus replica count"
+    initial_replicas = models.PositiveIntegerField(default=0)
+    "The number of replica jobs created for each annotation job at task creation"
 
     segment_set: models.manager.RelatedManager[Segment]
 

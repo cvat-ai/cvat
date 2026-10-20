@@ -1240,8 +1240,8 @@ class TestQualityReportCompletedRequestEvent:
 @pytest.mark.usefixtures("restore_db_per_function")
 @pytest.mark.usefixtures("restore_redis_inmem_per_function")
 class TestConsensusMergeCompletedRequestEvent:
-    def test_webhook_create_consensus_merge_for_task(self, tasks: Container) -> None:
-        task = next(t for t in tasks if t["consensus_enabled"] and t["organization"] is not None)
+    def test_webhook_create_consensus_merge_for_task(self, tasks_with_replicas: Container) -> None:
+        task = next(t for t in tasks_with_replicas if t["organization"] is not None)
         webhook_id = create_webhook(
             events=["completed:request[merge:task]"],
             webhook_type="organization",

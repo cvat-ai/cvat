@@ -86,21 +86,19 @@ function JobActionsComponent(
     }, [jobInstance]);
 
     const onMergeConsensusJob = useCallback(() => {
-        if (jobInstance.replicasCount > 0) {
-            Modal.confirm({
-                title: 'The consensus job will be merged',
-                content: 'Existing annotations in the parent job will be updated. Continue?',
-                className: 'cvat-modal-confirm-consensus-merge-job',
-                onOk: () => {
-                    dispatch(mergeConsensusJobsAsync(jobInstance));
-                },
-                okButtonProps: {
-                    type: 'primary',
-                    danger: true,
-                },
-                okText: 'Merge',
-            });
-        }
+        Modal.confirm({
+            title: 'The replica jobs will be merged',
+            content: 'Existing annotations in the parent job will be updated. Continue?',
+            className: 'cvat-modal-confirm-consensus-merge-job',
+            onOk: () => {
+                dispatch(mergeConsensusJobsAsync(jobInstance));
+            },
+            okButtonProps: {
+                type: 'primary',
+                danger: true,
+            },
+            okText: 'Merge',
+        });
     }, [jobInstance]);
 
     const onDeleteJob = useCallback(() => {
