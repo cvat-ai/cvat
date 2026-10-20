@@ -92,8 +92,8 @@ context('Quality requirements UI', () => {
     function expectPolicyRequest(alias, policy, status = 200) {
         cy.wait(alias).then(({ request, response }) => {
             expect(response.statusCode).to.equal(status);
-            expect(request.body.similarity_threshold_policy).to.deep.equal(policy);
-            expect(request.body).not.to.have.property('iou_threshold');
+            expect(request.body.iou_threshold).to.deep.equal(policy?.mode === 'constant' ? policy.value : policy);
+            expect(request.body).not.to.have.property('similarity_threshold_policy');
         });
     }
 
@@ -460,6 +460,24 @@ context('Quality requirements UI', () => {
         cy.get('.cvat-quality-requirement-form-actions').contains('button', 'Cancel').click();
     });
 
+    it('Edits and persists an ellipse IoU curve through the threshold field', () => {
+        openSettingsTab();
+        clickRowAction('Base ellipse', 'edit');
+        selectThresholdMode('Linear interpolation');
+        cy.get(thresholdRows).last().find('input[id*="iou"]').clear();
+        cy.get(thresholdRows).last().find('input[id*="iou"]').type('90');
+        cy.get(thresholdRows).last().find('input[id*="iou"]').blur();
+        cy.intercept('PATCH', '**/api/quality/settings/requirements/*').as('saveEllipseIou');
+        submitForm();
+        expectPolicyRequest('@saveEllipseIou', linearIouPolicy);
+        expectNotification('Requirement has been updated');
+        cy.reload();
+        cy.get('.cvat-quality-requirements-configuration-table').should('be.visible');
+        clickRowAction('Base ellipse', 'edit');
+        expectLinearThreshold();
+        cy.get('.cvat-quality-requirement-form-actions').contains('button', 'Cancel').click();
+    });
+
     it('Preserves inherited IoU when another field changes, overrides it and resets the whole policy', () => {
         openSettingsTab();
         ensureRowExpanded('Base rectangle renamed');
@@ -470,10 +488,9 @@ context('Quality requirements UI', () => {
         submitForm();
         cy.wait('@saveInheritedIou').then(({ request, response }) => {
             expect(response.statusCode).to.equal(200);
-            expect(request.body).not.to.have.property('similarity_threshold_policy');
             expect(request.body).not.to.have.property('iou_threshold');
-            expect(response.body.similarity_threshold_policy).to.equal(null);
-            expect(response.body.effective.similarity_threshold_policy).to.deep.equal(linearIouPolicy);
+            expect(response.body.iou_threshold).to.equal(null);
+            expect(response.body.effective.iou_threshold).to.deep.equal(linearIouPolicy);
         });
         expectNotification('Requirement has been updated');
 
@@ -601,7 +618,7 @@ context('Quality requirements UI', () => {
                     [parent, largePolicy], [child, linearIouPolicy],
                 ].map(([requirement, policy]) => win.cvat.server.request(
                     `/api/quality/settings/requirements/${requirement.id}`,
-                    { method: 'PATCH', data: { similarity_threshold_policy: policy } },
+                    { method: 'PATCH', data: { iou_threshold: policy } },
                 )));
             }));
         // Reload to fetch API changes; visiting the same #settings URL preserves the current page.

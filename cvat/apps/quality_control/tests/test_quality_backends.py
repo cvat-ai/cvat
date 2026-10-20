@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import ast
 import json
+import math
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
@@ -14,6 +15,7 @@ from unittest import mock
 import datumaro as dm
 import numpy as np
 from attrs import evolve
+from pycocotools import mask as mask_utils
 
 from cvat.apps.dataset_manager import data_model as cdm
 from cvat.apps.dataset_manager.bindings import CommonData
@@ -28,7 +30,7 @@ from cvat.apps.quality_control.backends import (
     make_quality_backend,
 )
 from cvat.apps.quality_control.backends.datumaro import Datumaro2DBackend
-from cvat.apps.quality_control.backends.datumaro.matching import Comparator
+from cvat.apps.quality_control.backends.datumaro.matching import Comparator, DistanceComparator
 from cvat.apps.quality_control.comparison_report import ComparisonReport, ComparisonReportParameters
 from cvat.apps.quality_control.data_providers import JobDataProvider
 from cvat.apps.quality_control.datumaro_data_provider import (
@@ -45,6 +47,15 @@ from cvat.apps.quality_control.quality_handlers import (
     EffectiveQualityRequirement,
     RequirementHandler,
 )
+from cvat.apps.quality_control.threshold_policy import parse_threshold_policy
+
+LINEAR_POLICY = {
+    "type": "iou",
+    "mode": "linear",
+    "input": "gt.shape_area",
+    "extrapolation": "clamp",
+    "points": [{"x": 100, "y": 0.4}, {"x": 1000, "y": 0.9}],
+}
 
 
 def make_requirement(annotation_type="rectangle", **kwargs):
@@ -482,6 +493,51 @@ class TestDatumaroQualityBackend(unittest.TestCase):
         provider.dimension = DimensionType.DIM_1D
         with self.assertRaisesRegex(ValueError, "only supported for 2D"):
             make_quality_backend(provider, provider)
+
+
+class TestAdaptiveShapeAreas(unittest.TestCase):
+    def _report(self, gt, ds, *, annotation_type="rectangle", policy=None):
+        requirement = make_requirement(
+            annotation_type,
+            iou_threshold=parse_threshold_policy(policy if policy is not None else LINEAR_POLICY),
+        )
+        return DatasetQualityEstimator(
+            make_provider(2, *ds),
+            make_provider(1, *gt),
+            requirements=[requirement],
+            report_parameters=ComparisonReportParameters(),
+        ).generate_report()
+
+    def test_nonfinite_area_still_marks_requirement_incomplete(self):
+        report = self._report([make_item(dm.Bbox(0, 0, math.nan, 10, label=0))], [make_item()])
+        summary = report.groups["rectangle"].comparison_summary
+        self.assertEqual(str(summary.calculation.reason), "invalid_gt_area")
+        self.assertIsNone(summary.score)
+
+    def test_ellipses_use_individual_thresholds(self):
+        report = self._report(
+            [make_item(dm.Ellipse(0, 0, 10, 10, label=0), dm.Ellipse(20, 20, 40, 40, label=0))],
+            [make_item(dm.Ellipse(0, 0, 8, 10, label=0), dm.Ellipse(20, 20, 36, 40, label=0))],
+            annotation_type="ellipse",
+            policy={**LINEAR_POLICY, "points": [{"x": 100, "y": 0.4}, {"x": 300, "y": 0.95}]},
+        )
+        self.assertAlmostEqual(report.groups["ellipse"].comparison_summary.score, 1 / 3)
+
+    def test_ellipse_area_matches_its_mask(self):
+        ellipse = dm.Ellipse(5, 5, 25, 15, label=0, attributes={"rotation": 35})
+        polygon = DistanceComparator.to_polygon(ellipse)
+        rle = mask_utils.merge(mask_utils.frPyObjects([polygon.points], 50, 50))
+        provider = make_provider(1, make_item(ellipse, dm.RleMask(rle, label=0)))
+        backend = Datumaro2DBackend(provider, provider)
+        samples = backend.iter_samples()
+        sample = next(samples)
+        try:
+            self.assertEqual(
+                backend.shape_area([sample.gt_annotations[0]]),
+                backend.shape_area([sample.gt_annotations[1]]),
+            )
+        finally:
+            samples.close()
 
 
 class TestQualityBackendBoundary(unittest.TestCase):

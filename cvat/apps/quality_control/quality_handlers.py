@@ -60,8 +60,6 @@ from cvat.apps.quality_control.filters import RequirementJsonLogicFilter
 from cvat.apps.quality_control.matching import AttributeMatchingResult, MatchingResults
 from cvat.apps.quality_control.models import AnnotationConflictSeverity, AnnotationConflictType
 from cvat.apps.quality_control.threshold_policy import (
-    ADAPTIVE_IOU_TYPES,
-    ConstantThresholdPolicy,
     InvalidGroundTruthArea,
     LinearThresholdPolicy,
     ThresholdPolicy,
@@ -90,8 +88,7 @@ class EffectiveQualityRequirement:
     source_requirement_id: int | None = None
     parent_requirement: int | None = None
     sort_order: int = 0
-    iou_threshold: float | None = None
-    similarity_threshold_policy: ConstantThresholdPolicy | LinearThresholdPolicy | None = None
+    iou_threshold: float | ThresholdPolicy | None = None
     oks_sigma: float | None = None
     line_thickness: float | None = None
     point_size_base: str | None = None
@@ -127,7 +124,6 @@ _INHERITED_REQUIREMENT_FIELDS = (
     "target_metric",
     "target_metric_threshold",
     "iou_threshold",
-    "similarity_threshold_policy",
     "oks_sigma",
     "line_thickness",
     "point_size_base",
@@ -144,7 +140,7 @@ _INHERITED_REQUIREMENT_FIELDS = (
 _REQUIRED_ROOT_REQUIREMENT_FIELDS = tuple(
     field_name
     for field_name in _INHERITED_REQUIREMENT_FIELDS
-    if field_name not in {"attribute_comparison", "similarity_threshold_policy"}
+    if field_name != "attribute_comparison"
 )
 
 
@@ -188,7 +184,6 @@ def _make_effective_requirement(
             field_name
             for field_name in _REQUIRED_ROOT_REQUIREMENT_FIELDS
             if values[field_name] is None
-            and not (field_name == "iou_threshold" and values["similarity_threshold_policy"])
         ]
         if missing_fields:
             raise ValueError(
@@ -211,18 +206,8 @@ def _make_effective_requirement(
             else:
                 values[field_name] = local_value
 
-    local_policy = getattr(requirement, "similarity_threshold_policy", None)
-    if local_policy is not None:
-        values["similarity_threshold_policy"] = parse_threshold_policy(local_policy)
-    elif requirement.iou_threshold is not None and values["annotation_type"] in ADAPTIVE_IOU_TYPES:
-        values["similarity_threshold_policy"] = ConstantThresholdPolicy(
-            value=requirement.iou_threshold
-        )
-    policy = values["similarity_threshold_policy"]
-    if policy is not None:
-        values["iou_threshold"] = (
-            policy.value if isinstance(policy, ConstantThresholdPolicy) else None
-        )
+    if isinstance(values["iou_threshold"], dict):
+        values["iou_threshold"] = parse_threshold_policy(values["iou_threshold"])
 
     values["attribute_comparison"] = normalize_attribute_comparison(
         values.get("attribute_comparison"),
@@ -383,11 +368,11 @@ def serialize_requirement_parameters(requirement: Any) -> dict[str, Any]:
     ):
         params.pop(field, None)
 
-    policy = params.get("similarity_threshold_policy")
-    if policy is not None:
-        if not isinstance(policy, ThresholdPolicy):
+    policy = params.get("iou_threshold")
+    if isinstance(policy, (dict, ThresholdPolicy)):
+        if isinstance(policy, dict):
             policy = parse_threshold_policy(policy)
-        params["similarity_threshold_policy"] = policy.to_dict()
+        params["iou_threshold"] = policy.to_dict()
         if isinstance(policy, LinearThresholdPolicy):
             params["similarity_threshold_input"] = {
                 "name": "gt.shape_area",

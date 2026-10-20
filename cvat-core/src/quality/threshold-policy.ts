@@ -49,7 +49,7 @@ export function normalizeThresholdPolicy(value: unknown): SimilarityThresholdPol
 export function evaluateThresholdPolicy(policy: SimilarityThresholdPolicy, area: number): number {
     if ('type' in policy && policy.type !== 'iou') throw new Error('Only IoU threshold policies are supported.');
     if (policy.mode === 'constant') return policy.value;
-    if (!Number.isFinite(area) || area <= 0) throw new Error('GT area must be finite and positive.');
+    if (!Number.isFinite(area) || area < 0) throw new Error('GT area must be finite and nonnegative.');
     const { points } = policy;
     if (area <= points[0].x) return points[0].y;
     if (area >= points[points.length - 1].x) return points[points.length - 1].y;

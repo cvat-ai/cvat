@@ -444,8 +444,8 @@ export default function QualityRequirementForm(props: Readonly<QualityRequiremen
                     {ADAPTIVE_IOU_ANNOTATION_TYPES.has(annotationType) && (
                         <Col span={24}>
                             <Form.Item
-                                name='similarityThresholdPolicy'
-                                label={renderOverrideControl('similarityThresholdPolicy', 'IoU threshold')}
+                                name='iouThreshold'
+                                label={renderOverrideControl('iouThreshold', 'IoU threshold')}
                                 tooltip={getTooltipDescription(requirementDescriptions.iouThreshold)}
                                 rules={[{
                                     validator: async (_, value) => {

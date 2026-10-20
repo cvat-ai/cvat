@@ -20,12 +20,12 @@ import {
 } from './server-response-types';
 
 export type QualityRequirementSaveFields = CamelizedV2<
-    Omit<SerializedQualityRequirementSaveData, 'similarity_threshold_policy'>
-> & { similarityThresholdPolicy?: SimilarityThresholdPolicy | null };
+    Omit<SerializedQualityRequirementSaveData, 'iou_threshold'>
+> & { iouThreshold?: number | SimilarityThresholdPolicy | null };
 
 export type QualityRequirementEffectiveData = CamelizedV2<
-    Omit<SerializedEffectiveQualityRequirementData, 'similarity_threshold_policy'>
-> & { similarityThresholdPolicy?: SimilarityThresholdPolicy | null };
+    Omit<SerializedEffectiveQualityRequirementData, 'iou_threshold'>
+> & { iouThreshold?: number | SimilarityThresholdPolicy | null };
 
 export default class QualityRequirement {
     #id: number;
@@ -42,8 +42,7 @@ export default class QualityRequirement {
     #requiredScore: number | null;
     #parentRequirementId: number | null;
     #effective: QualityRequirementEffectiveData | null;
-    #iouThreshold: number | null;
-    #similarityThresholdPolicy: SimilarityThresholdPolicy | null;
+    #iouThreshold: number | SimilarityThresholdPolicy | null;
     #pointSize: number | null;
     #pointSizeBase: QualityRequirementPointSizeBase | null;
     #lineThickness: number | null;
@@ -73,14 +72,13 @@ export default class QualityRequirement {
         this.#requiredScore = initialData.required_score;
         this.#parentRequirementId = initialData.parent_requirement;
         this.#effective = initialData.effective ? fieldsToCamelCase(initialData.effective) : null;
-        if (this.#effective?.similarityThresholdPolicy) {
-            this.#effective.similarityThresholdPolicy = normalizeThresholdPolicy(
-                this.#effective.similarityThresholdPolicy,
+        if (this.#effective?.iouThreshold && typeof this.#effective.iouThreshold === 'object') {
+            this.#effective.iouThreshold = normalizeThresholdPolicy(
+                this.#effective.iouThreshold,
             );
         }
-        this.#iouThreshold = initialData.iou_threshold;
-        this.#similarityThresholdPolicy = initialData.similarity_threshold_policy ?
-            normalizeThresholdPolicy(initialData.similarity_threshold_policy) : null;
+        this.#iouThreshold = initialData.iou_threshold && typeof initialData.iou_threshold === 'object' ?
+            normalizeThresholdPolicy(initialData.iou_threshold) : initialData.iou_threshold;
         this.#pointSize = initialData.point_size;
         this.#pointSizeBase = initialData.point_size_base;
         this.#lineThickness = initialData.line_thickness;
@@ -152,12 +150,8 @@ export default class QualityRequirement {
         return this.#effective;
     }
 
-    get iouThreshold(): number | null {
+    get iouThreshold(): number | SimilarityThresholdPolicy | null {
         return this.#iouThreshold;
-    }
-
-    get similarityThresholdPolicy(): SimilarityThresholdPolicy | null {
-        return this.#similarityThresholdPolicy;
     }
 
     get pointSize(): number | null {
@@ -236,8 +230,8 @@ Object.defineProperties(QualityRequirement.create, {
             fields: QualityRequirementSaveFields,
         ): Promise<QualityRequirement> {
             const data = fieldsToSnakeCase(fields);
-            if (data.similarity_threshold_policy) {
-                data.similarity_threshold_policy = normalizeThresholdPolicy(data.similarity_threshold_policy);
+            if (data.iou_threshold && typeof data.iou_threshold === 'object') {
+                data.iou_threshold = normalizeThresholdPolicy(data.iou_threshold);
             }
             const result = await serverProxy.analytics.quality.requirements.create(data);
             return new QualityRequirement(result);
@@ -253,8 +247,8 @@ Object.defineProperties(QualityRequirement.prototype.save, {
             fields: Parameters<typeof QualityRequirement.prototype.save>[0],
         ): Promise<QualityRequirement> {
             const data = fieldsToSnakeCase(fields);
-            if (data.similarity_threshold_policy) {
-                data.similarity_threshold_policy = normalizeThresholdPolicy(data.similarity_threshold_policy);
+            if (data.iou_threshold && typeof data.iou_threshold === 'object') {
+                data.iou_threshold = normalizeThresholdPolicy(data.iou_threshold);
             }
             const result = await serverProxy.analytics.quality.requirements.update(this.id, data);
 

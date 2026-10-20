@@ -473,7 +473,13 @@ class DistanceComparator(datumaro.components.comparator.DistanceComparator):
             if (
                 self.gt_threshold
                 and dist_thresh is None
-                and t in {dm.AnnotationType.bbox, dm.AnnotationType.polygon, dm.AnnotationType.mask}
+                and t
+                in {
+                    dm.AnnotationType.bbox,
+                    dm.AnnotationType.polygon,
+                    dm.AnnotationType.mask,
+                    dm.AnnotationType.ellipse,
+                }
             ):
                 threshold = lambda a: self.gt_threshold(a_annotations_getter(a))
 

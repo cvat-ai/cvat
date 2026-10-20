@@ -11,8 +11,17 @@ from typing import Literal
 
 from attr import asdict, field, frozen
 
+from cvat.apps.quality_control.models import QualityRequirementAnnotationType
+
 MAX_THRESHOLD_POINTS = 200
-ADAPTIVE_IOU_TYPES = frozenset({"rectangle", "polygon", "mask"})
+ADAPTIVE_IOU_TYPES = frozenset(
+    {
+        QualityRequirementAnnotationType.RECTANGLE,
+        QualityRequirementAnnotationType.POLYGON,
+        QualityRequirementAnnotationType.MASK,
+        QualityRequirementAnnotationType.ELLIPSE,
+    }
+)
 
 
 @frozen
@@ -45,7 +54,7 @@ class LinearThresholdPolicy(ThresholdPolicy):
 
 class InvalidGroundTruthArea(ValueError):
     def __init__(self, count: int = 1):
-        super().__init__("Linear IoU thresholds require a finite, positive GT shape area.")
+        super().__init__("Linear IoU thresholds require a finite, nonnegative GT shape area.")
         self.count = count
 
 
@@ -128,7 +137,7 @@ class ThresholdPolicyEvaluator:
     def __call__(self, area: float | None = None) -> float:
         if isinstance(self.policy, ConstantThresholdPolicy):
             return self.policy.value
-        if area is None or not math.isfinite(area) or area <= 0:
+        if area is None or not math.isfinite(area) or area < 0:
             raise InvalidGroundTruthArea()
         points = self.policy.points
         index = bisect_right(self._xs, area)

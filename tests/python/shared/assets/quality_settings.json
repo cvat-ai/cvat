@@ -36,7 +36,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 1,
-          "similarity_threshold_policy": null,
           "sort_order": 0,
           "task_id": 2,
           "updated_date": "2026-06-03T17:00:52.200000Z"
@@ -66,7 +65,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 1,
-          "similarity_threshold_policy": null,
           "sort_order": 1,
           "task_id": 2,
           "updated_date": "2026-06-03T17:00:52.200000Z"
@@ -96,7 +94,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 1,
-          "similarity_threshold_policy": null,
           "sort_order": 2,
           "task_id": 2,
           "updated_date": "2026-06-03T17:00:52.200000Z"
@@ -126,7 +123,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 1,
-          "similarity_threshold_policy": null,
           "sort_order": 3,
           "task_id": 2,
           "updated_date": "2026-06-03T17:00:52.200000Z"
@@ -156,7 +152,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 1,
-          "similarity_threshold_policy": null,
           "sort_order": 4,
           "task_id": 2,
           "updated_date": "2026-06-03T17:00:52.200000Z"
@@ -186,7 +181,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 1,
-          "similarity_threshold_policy": null,
           "sort_order": 5,
           "task_id": 2,
           "updated_date": "2026-06-03T17:00:52.200000Z"
@@ -216,7 +210,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 1,
-          "similarity_threshold_policy": null,
           "sort_order": 6,
           "task_id": 2,
           "updated_date": "2026-06-03T17:00:52.200000Z"
@@ -246,7 +239,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 1,
-          "similarity_threshold_policy": null,
           "sort_order": 7,
           "task_id": 2,
           "updated_date": "2026-06-03T17:00:52.200000Z"
@@ -276,7 +268,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 1,
-          "similarity_threshold_policy": null,
           "sort_order": 8,
           "task_id": 2,
           "updated_date": "2026-06-03T17:00:52.200000Z"
@@ -318,7 +309,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 2,
-          "similarity_threshold_policy": null,
           "sort_order": 0,
           "task_id": 5,
           "updated_date": "2026-06-03T17:00:52.206000Z"
@@ -348,7 +338,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 2,
-          "similarity_threshold_policy": null,
           "sort_order": 1,
           "task_id": 5,
           "updated_date": "2026-06-03T17:00:52.206000Z"
@@ -378,7 +367,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 2,
-          "similarity_threshold_policy": null,
           "sort_order": 2,
           "task_id": 5,
           "updated_date": "2026-06-03T17:00:52.206000Z"
@@ -408,7 +396,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 2,
-          "similarity_threshold_policy": null,
           "sort_order": 3,
           "task_id": 5,
           "updated_date": "2026-06-03T17:00:52.206000Z"
@@ -438,7 +425,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 2,
-          "similarity_threshold_policy": null,
           "sort_order": 4,
           "task_id": 5,
           "updated_date": "2026-06-03T17:00:52.206000Z"
@@ -468,7 +454,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 2,
-          "similarity_threshold_policy": null,
           "sort_order": 5,
           "task_id": 5,
           "updated_date": "2026-06-03T17:00:52.206000Z"
@@ -498,7 +483,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 2,
-          "similarity_threshold_policy": null,
           "sort_order": 6,
           "task_id": 5,
           "updated_date": "2026-06-03T17:00:52.206000Z"
@@ -528,7 +512,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 2,
-          "similarity_threshold_policy": null,
           "sort_order": 7,
           "task_id": 5,
           "updated_date": "2026-06-03T17:00:52.207000Z"
@@ -558,7 +541,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 2,
-          "similarity_threshold_policy": null,
           "sort_order": 8,
           "task_id": 5,
           "updated_date": "2026-06-03T17:00:52.207000Z"
@@ -600,7 +582,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 3,
-          "similarity_threshold_policy": null,
           "sort_order": 0,
           "task_id": 6,
           "updated_date": "2026-06-03T17:00:52.211000Z"
@@ -630,7 +611,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 3,
-          "similarity_threshold_policy": null,
           "sort_order": 1,
           "task_id": 6,
           "updated_date": "2026-06-03T17:00:52.211000Z"
@@ -660,7 +640,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 3,
-          "similarity_threshold_policy": null,
           "sort_order": 2,
           "task_id": 6,
           "updated_date": "2026-06-03T17:00:52.211000Z"
@@ -690,7 +669,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 3,
-          "similarity_threshold_policy": null,
           "sort_order": 3,
           "task_id": 6,
           "updated_date": "2026-06-03T17:00:52.211000Z"
@@ -720,7 +698,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 3,
-          "similarity_threshold_policy": null,
           "sort_order": 4,
           "task_id": 6,
           "updated_date": "2026-06-03T17:00:52.211000Z"
@@ -750,7 +727,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 3,
-          "similarity_threshold_policy": null,
           "sort_order": 5,
           "task_id": 6,
           "updated_date": "2026-06-03T17:00:52.211000Z"
@@ -780,7 +756,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 3,
-          "similarity_threshold_policy": null,
           "sort_order": 6,
           "task_id": 6,
           "updated_date": "2026-06-03T17:00:52.211000Z"
@@ -810,7 +785,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 3,
-          "similarity_threshold_policy": null,
           "sort_order": 7,
           "task_id": 6,
           "updated_date": "2026-06-03T17:00:52.211000Z"
@@ -840,7 +814,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 3,
-          "similarity_threshold_policy": null,
           "sort_order": 8,
           "task_id": 6,
           "updated_date": "2026-06-03T17:00:52.211000Z"
@@ -882,7 +855,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 4,
-          "similarity_threshold_policy": null,
           "sort_order": 0,
           "task_id": 7,
           "updated_date": "2026-06-03T17:00:52.215000Z"
@@ -912,7 +884,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 4,
-          "similarity_threshold_policy": null,
           "sort_order": 1,
           "task_id": 7,
           "updated_date": "2026-06-03T17:00:52.215000Z"
@@ -942,7 +913,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 4,
-          "similarity_threshold_policy": null,
           "sort_order": 2,
           "task_id": 7,
           "updated_date": "2026-06-03T17:00:52.215000Z"
@@ -972,7 +942,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 4,
-          "similarity_threshold_policy": null,
           "sort_order": 3,
           "task_id": 7,
           "updated_date": "2026-06-03T17:00:52.215000Z"
@@ -1002,7 +971,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 4,
-          "similarity_threshold_policy": null,
           "sort_order": 4,
           "task_id": 7,
           "updated_date": "2026-06-03T17:00:52.215000Z"
@@ -1032,7 +1000,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 4,
-          "similarity_threshold_policy": null,
           "sort_order": 5,
           "task_id": 7,
           "updated_date": "2026-06-03T17:00:52.215000Z"
@@ -1062,7 +1029,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 4,
-          "similarity_threshold_policy": null,
           "sort_order": 6,
           "task_id": 7,
           "updated_date": "2026-06-03T17:00:52.215000Z"
@@ -1092,7 +1058,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 4,
-          "similarity_threshold_policy": null,
           "sort_order": 7,
           "task_id": 7,
           "updated_date": "2026-06-03T17:00:52.215000Z"
@@ -1122,7 +1087,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 4,
-          "similarity_threshold_policy": null,
           "sort_order": 8,
           "task_id": 7,
           "updated_date": "2026-06-03T17:00:52.215000Z"
@@ -1164,7 +1128,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 5,
-          "similarity_threshold_policy": null,
           "sort_order": 0,
           "task_id": 8,
           "updated_date": "2026-06-03T17:00:52.219000Z"
@@ -1194,7 +1157,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 5,
-          "similarity_threshold_policy": null,
           "sort_order": 1,
           "task_id": 8,
           "updated_date": "2026-06-03T17:00:52.219000Z"
@@ -1224,7 +1186,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 5,
-          "similarity_threshold_policy": null,
           "sort_order": 2,
           "task_id": 8,
           "updated_date": "2026-06-03T17:00:52.219000Z"
@@ -1254,7 +1215,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 5,
-          "similarity_threshold_policy": null,
           "sort_order": 3,
           "task_id": 8,
           "updated_date": "2026-06-03T17:00:52.219000Z"
@@ -1284,7 +1244,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 5,
-          "similarity_threshold_policy": null,
           "sort_order": 4,
           "task_id": 8,
           "updated_date": "2026-06-03T17:00:52.219000Z"
@@ -1314,7 +1273,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 5,
-          "similarity_threshold_policy": null,
           "sort_order": 5,
           "task_id": 8,
           "updated_date": "2026-06-03T17:00:52.219000Z"
@@ -1344,7 +1302,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 5,
-          "similarity_threshold_policy": null,
           "sort_order": 6,
           "task_id": 8,
           "updated_date": "2026-06-03T17:00:52.219000Z"
@@ -1374,7 +1331,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 5,
-          "similarity_threshold_policy": null,
           "sort_order": 7,
           "task_id": 8,
           "updated_date": "2026-06-03T17:00:52.219000Z"
@@ -1404,7 +1360,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 5,
-          "similarity_threshold_policy": null,
           "sort_order": 8,
           "task_id": 8,
           "updated_date": "2026-06-03T17:00:52.219000Z"
@@ -1446,7 +1401,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 6,
-          "similarity_threshold_policy": null,
           "sort_order": 0,
           "task_id": 9,
           "updated_date": "2026-06-03T17:00:52.223000Z"
@@ -1476,7 +1430,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 6,
-          "similarity_threshold_policy": null,
           "sort_order": 1,
           "task_id": 9,
           "updated_date": "2026-06-03T17:00:52.223000Z"
@@ -1506,7 +1459,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 6,
-          "similarity_threshold_policy": null,
           "sort_order": 2,
           "task_id": 9,
           "updated_date": "2026-06-03T17:00:52.223000Z"
@@ -1536,7 +1488,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 6,
-          "similarity_threshold_policy": null,
           "sort_order": 3,
           "task_id": 9,
           "updated_date": "2026-06-03T17:00:52.223000Z"
@@ -1566,7 +1517,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 6,
-          "similarity_threshold_policy": null,
           "sort_order": 4,
           "task_id": 9,
           "updated_date": "2026-06-03T17:00:52.223000Z"
@@ -1596,7 +1546,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 6,
-          "similarity_threshold_policy": null,
           "sort_order": 5,
           "task_id": 9,
           "updated_date": "2026-06-03T17:00:52.223000Z"
@@ -1626,7 +1575,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 6,
-          "similarity_threshold_policy": null,
           "sort_order": 6,
           "task_id": 9,
           "updated_date": "2026-06-03T17:00:52.223000Z"
@@ -1656,7 +1604,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 6,
-          "similarity_threshold_policy": null,
           "sort_order": 7,
           "task_id": 9,
           "updated_date": "2026-06-03T17:00:52.223000Z"
@@ -1686,7 +1633,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 6,
-          "similarity_threshold_policy": null,
           "sort_order": 8,
           "task_id": 9,
           "updated_date": "2026-06-03T17:00:52.223000Z"
@@ -1728,7 +1674,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 7,
-          "similarity_threshold_policy": null,
           "sort_order": 0,
           "task_id": 11,
           "updated_date": "2026-06-03T17:00:52.226000Z"
@@ -1758,7 +1703,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 7,
-          "similarity_threshold_policy": null,
           "sort_order": 1,
           "task_id": 11,
           "updated_date": "2026-06-03T17:00:52.226000Z"
@@ -1788,7 +1732,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 7,
-          "similarity_threshold_policy": null,
           "sort_order": 2,
           "task_id": 11,
           "updated_date": "2026-06-03T17:00:52.226000Z"
@@ -1818,7 +1761,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 7,
-          "similarity_threshold_policy": null,
           "sort_order": 3,
           "task_id": 11,
           "updated_date": "2026-06-03T17:00:52.226000Z"
@@ -1848,7 +1790,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 7,
-          "similarity_threshold_policy": null,
           "sort_order": 4,
           "task_id": 11,
           "updated_date": "2026-06-03T17:00:52.226000Z"
@@ -1878,7 +1819,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 7,
-          "similarity_threshold_policy": null,
           "sort_order": 5,
           "task_id": 11,
           "updated_date": "2026-06-03T17:00:52.226000Z"
@@ -1908,7 +1848,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 7,
-          "similarity_threshold_policy": null,
           "sort_order": 6,
           "task_id": 11,
           "updated_date": "2026-06-03T17:00:52.226000Z"
@@ -1938,7 +1877,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 7,
-          "similarity_threshold_policy": null,
           "sort_order": 7,
           "task_id": 11,
           "updated_date": "2026-06-03T17:00:52.226000Z"
@@ -1968,7 +1906,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 7,
-          "similarity_threshold_policy": null,
           "sort_order": 8,
           "task_id": 11,
           "updated_date": "2026-06-03T17:00:52.226000Z"
@@ -2010,7 +1947,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 8,
-          "similarity_threshold_policy": null,
           "sort_order": 0,
           "task_id": 12,
           "updated_date": "2026-06-03T17:00:52.231000Z"
@@ -2040,7 +1976,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 8,
-          "similarity_threshold_policy": null,
           "sort_order": 1,
           "task_id": 12,
           "updated_date": "2026-06-03T17:00:52.231000Z"
@@ -2070,7 +2005,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 8,
-          "similarity_threshold_policy": null,
           "sort_order": 2,
           "task_id": 12,
           "updated_date": "2026-06-03T17:00:52.231000Z"
@@ -2100,7 +2034,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 8,
-          "similarity_threshold_policy": null,
           "sort_order": 3,
           "task_id": 12,
           "updated_date": "2026-06-03T17:00:52.231000Z"
@@ -2130,7 +2063,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 8,
-          "similarity_threshold_policy": null,
           "sort_order": 4,
           "task_id": 12,
           "updated_date": "2026-06-03T17:00:52.231000Z"
@@ -2160,7 +2092,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 8,
-          "similarity_threshold_policy": null,
           "sort_order": 5,
           "task_id": 12,
           "updated_date": "2026-06-03T17:00:52.231000Z"
@@ -2190,7 +2121,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 8,
-          "similarity_threshold_policy": null,
           "sort_order": 6,
           "task_id": 12,
           "updated_date": "2026-06-03T17:00:52.231000Z"
@@ -2220,7 +2150,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 8,
-          "similarity_threshold_policy": null,
           "sort_order": 7,
           "task_id": 12,
           "updated_date": "2026-06-03T17:00:52.231000Z"
@@ -2250,7 +2179,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 8,
-          "similarity_threshold_policy": null,
           "sort_order": 8,
           "task_id": 12,
           "updated_date": "2026-06-03T17:00:52.231000Z"
@@ -2292,7 +2220,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 9,
-          "similarity_threshold_policy": null,
           "sort_order": 0,
           "task_id": 13,
           "updated_date": "2026-06-03T17:00:52.235000Z"
@@ -2322,7 +2249,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 9,
-          "similarity_threshold_policy": null,
           "sort_order": 1,
           "task_id": 13,
           "updated_date": "2026-06-03T17:00:52.235000Z"
@@ -2352,7 +2278,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 9,
-          "similarity_threshold_policy": null,
           "sort_order": 2,
           "task_id": 13,
           "updated_date": "2026-06-03T17:00:52.235000Z"
@@ -2382,7 +2307,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 9,
-          "similarity_threshold_policy": null,
           "sort_order": 3,
           "task_id": 13,
           "updated_date": "2026-06-03T17:00:52.235000Z"
@@ -2412,7 +2336,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 9,
-          "similarity_threshold_policy": null,
           "sort_order": 4,
           "task_id": 13,
           "updated_date": "2026-06-03T17:00:52.235000Z"
@@ -2442,7 +2365,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 9,
-          "similarity_threshold_policy": null,
           "sort_order": 5,
           "task_id": 13,
           "updated_date": "2026-06-03T17:00:52.235000Z"
@@ -2472,7 +2394,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 9,
-          "similarity_threshold_policy": null,
           "sort_order": 6,
           "task_id": 13,
           "updated_date": "2026-06-03T17:00:52.235000Z"
@@ -2502,7 +2423,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 9,
-          "similarity_threshold_policy": null,
           "sort_order": 7,
           "task_id": 13,
           "updated_date": "2026-06-03T17:00:52.235000Z"
@@ -2532,7 +2452,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 9,
-          "similarity_threshold_policy": null,
           "sort_order": 8,
           "task_id": 13,
           "updated_date": "2026-06-03T17:00:52.235000Z"
@@ -2574,7 +2493,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 10,
-          "similarity_threshold_policy": null,
           "sort_order": 0,
           "task_id": 14,
           "updated_date": "2026-06-03T17:00:52.239000Z"
@@ -2604,7 +2522,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 10,
-          "similarity_threshold_policy": null,
           "sort_order": 1,
           "task_id": 14,
           "updated_date": "2026-06-03T17:00:52.239000Z"
@@ -2634,7 +2551,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 10,
-          "similarity_threshold_policy": null,
           "sort_order": 2,
           "task_id": 14,
           "updated_date": "2026-06-03T17:00:52.239000Z"
@@ -2664,7 +2580,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 10,
-          "similarity_threshold_policy": null,
           "sort_order": 3,
           "task_id": 14,
           "updated_date": "2026-06-03T17:00:52.239000Z"
@@ -2694,7 +2609,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 10,
-          "similarity_threshold_policy": null,
           "sort_order": 4,
           "task_id": 14,
           "updated_date": "2026-06-03T17:00:52.239000Z"
@@ -2724,7 +2638,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 10,
-          "similarity_threshold_policy": null,
           "sort_order": 5,
           "task_id": 14,
           "updated_date": "2026-06-03T17:00:52.239000Z"
@@ -2754,7 +2667,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 10,
-          "similarity_threshold_policy": null,
           "sort_order": 6,
           "task_id": 14,
           "updated_date": "2026-06-03T17:00:52.239000Z"
@@ -2784,7 +2696,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 10,
-          "similarity_threshold_policy": null,
           "sort_order": 7,
           "task_id": 14,
           "updated_date": "2026-06-03T17:00:52.239000Z"
@@ -2814,7 +2725,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 10,
-          "similarity_threshold_policy": null,
           "sort_order": 8,
           "task_id": 14,
           "updated_date": "2026-06-03T17:00:52.239000Z"
@@ -2856,7 +2766,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 11,
-          "similarity_threshold_policy": null,
           "sort_order": 0,
           "task_id": 15,
           "updated_date": "2026-06-03T17:00:52.243000Z"
@@ -2886,7 +2795,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 11,
-          "similarity_threshold_policy": null,
           "sort_order": 1,
           "task_id": 15,
           "updated_date": "2026-06-03T17:00:52.243000Z"
@@ -2916,7 +2824,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 11,
-          "similarity_threshold_policy": null,
           "sort_order": 2,
           "task_id": 15,
           "updated_date": "2026-06-03T17:00:52.243000Z"
@@ -2946,7 +2853,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 11,
-          "similarity_threshold_policy": null,
           "sort_order": 3,
           "task_id": 15,
           "updated_date": "2026-06-03T17:00:52.243000Z"
@@ -2976,7 +2882,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 11,
-          "similarity_threshold_policy": null,
           "sort_order": 4,
           "task_id": 15,
           "updated_date": "2026-06-03T17:00:52.243000Z"
@@ -3006,7 +2911,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 11,
-          "similarity_threshold_policy": null,
           "sort_order": 5,
           "task_id": 15,
           "updated_date": "2026-06-03T17:00:52.243000Z"
@@ -3036,7 +2940,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 11,
-          "similarity_threshold_policy": null,
           "sort_order": 6,
           "task_id": 15,
           "updated_date": "2026-06-03T17:00:52.243000Z"
@@ -3066,7 +2969,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 11,
-          "similarity_threshold_policy": null,
           "sort_order": 7,
           "task_id": 15,
           "updated_date": "2026-06-03T17:00:52.243000Z"
@@ -3096,7 +2998,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 11,
-          "similarity_threshold_policy": null,
           "sort_order": 8,
           "task_id": 15,
           "updated_date": "2026-06-03T17:00:52.243000Z"
@@ -3138,7 +3039,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 12,
-          "similarity_threshold_policy": null,
           "sort_order": 0,
           "task_id": 17,
           "updated_date": "2026-06-03T17:00:52.247000Z"
@@ -3168,7 +3068,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 12,
-          "similarity_threshold_policy": null,
           "sort_order": 1,
           "task_id": 17,
           "updated_date": "2026-06-03T17:00:52.247000Z"
@@ -3198,7 +3097,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 12,
-          "similarity_threshold_policy": null,
           "sort_order": 2,
           "task_id": 17,
           "updated_date": "2026-06-03T17:00:52.247000Z"
@@ -3228,7 +3126,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 12,
-          "similarity_threshold_policy": null,
           "sort_order": 3,
           "task_id": 17,
           "updated_date": "2026-06-03T17:00:52.247000Z"
@@ -3258,7 +3155,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 12,
-          "similarity_threshold_policy": null,
           "sort_order": 4,
           "task_id": 17,
           "updated_date": "2026-06-03T17:00:52.247000Z"
@@ -3288,7 +3184,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 12,
-          "similarity_threshold_policy": null,
           "sort_order": 5,
           "task_id": 17,
           "updated_date": "2026-06-03T17:00:52.247000Z"
@@ -3318,7 +3213,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 12,
-          "similarity_threshold_policy": null,
           "sort_order": 6,
           "task_id": 17,
           "updated_date": "2026-06-03T17:00:52.247000Z"
@@ -3348,7 +3242,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 12,
-          "similarity_threshold_policy": null,
           "sort_order": 7,
           "task_id": 17,
           "updated_date": "2026-06-03T17:00:52.247000Z"
@@ -3378,7 +3271,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 12,
-          "similarity_threshold_policy": null,
           "sort_order": 8,
           "task_id": 17,
           "updated_date": "2026-06-03T17:00:52.247000Z"
@@ -3420,7 +3312,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 13,
-          "similarity_threshold_policy": null,
           "sort_order": 0,
           "task_id": 18,
           "updated_date": "2026-06-03T17:00:52.250000Z"
@@ -3450,7 +3341,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 13,
-          "similarity_threshold_policy": null,
           "sort_order": 1,
           "task_id": 18,
           "updated_date": "2026-06-03T17:00:52.250000Z"
@@ -3480,7 +3370,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 13,
-          "similarity_threshold_policy": null,
           "sort_order": 2,
           "task_id": 18,
           "updated_date": "2026-06-03T17:00:52.250000Z"
@@ -3510,7 +3399,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 13,
-          "similarity_threshold_policy": null,
           "sort_order": 3,
           "task_id": 18,
           "updated_date": "2026-06-03T17:00:52.250000Z"
@@ -3540,7 +3428,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 13,
-          "similarity_threshold_policy": null,
           "sort_order": 4,
           "task_id": 18,
           "updated_date": "2026-06-03T17:00:52.250000Z"
@@ -3570,7 +3457,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 13,
-          "similarity_threshold_policy": null,
           "sort_order": 5,
           "task_id": 18,
           "updated_date": "2026-06-03T17:00:52.250000Z"
@@ -3600,7 +3486,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 13,
-          "similarity_threshold_policy": null,
           "sort_order": 6,
           "task_id": 18,
           "updated_date": "2026-06-03T17:00:52.250000Z"
@@ -3630,7 +3515,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 13,
-          "similarity_threshold_policy": null,
           "sort_order": 7,
           "task_id": 18,
           "updated_date": "2026-06-03T17:00:52.250000Z"
@@ -3660,7 +3544,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 13,
-          "similarity_threshold_policy": null,
           "sort_order": 8,
           "task_id": 18,
           "updated_date": "2026-06-03T17:00:52.250000Z"
@@ -3702,7 +3585,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 14,
-          "similarity_threshold_policy": null,
           "sort_order": 0,
           "task_id": 19,
           "updated_date": "2026-06-03T17:00:52.254000Z"
@@ -3732,7 +3614,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 14,
-          "similarity_threshold_policy": null,
           "sort_order": 1,
           "task_id": 19,
           "updated_date": "2026-06-03T17:00:52.254000Z"
@@ -3762,7 +3643,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 14,
-          "similarity_threshold_policy": null,
           "sort_order": 2,
           "task_id": 19,
           "updated_date": "2026-06-03T17:00:52.254000Z"
@@ -3792,7 +3672,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 14,
-          "similarity_threshold_policy": null,
           "sort_order": 3,
           "task_id": 19,
           "updated_date": "2026-06-03T17:00:52.254000Z"
@@ -3822,7 +3701,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 14,
-          "similarity_threshold_policy": null,
           "sort_order": 4,
           "task_id": 19,
           "updated_date": "2026-06-03T17:00:52.254000Z"
@@ -3852,7 +3730,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 14,
-          "similarity_threshold_policy": null,
           "sort_order": 5,
           "task_id": 19,
           "updated_date": "2026-06-03T17:00:52.254000Z"
@@ -3882,7 +3759,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 14,
-          "similarity_threshold_policy": null,
           "sort_order": 6,
           "task_id": 19,
           "updated_date": "2026-06-03T17:00:52.254000Z"
@@ -3912,7 +3788,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 14,
-          "similarity_threshold_policy": null,
           "sort_order": 7,
           "task_id": 19,
           "updated_date": "2026-06-03T17:00:52.254000Z"
@@ -3942,7 +3817,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 14,
-          "similarity_threshold_policy": null,
           "sort_order": 8,
           "task_id": 19,
           "updated_date": "2026-06-03T17:00:52.254000Z"
@@ -3984,7 +3858,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 15,
-          "similarity_threshold_policy": null,
           "sort_order": 0,
           "task_id": 20,
           "updated_date": "2026-06-03T17:00:52.258000Z"
@@ -4014,7 +3887,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 15,
-          "similarity_threshold_policy": null,
           "sort_order": 1,
           "task_id": 20,
           "updated_date": "2026-06-03T17:00:52.258000Z"
@@ -4044,7 +3916,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 15,
-          "similarity_threshold_policy": null,
           "sort_order": 2,
           "task_id": 20,
           "updated_date": "2026-06-03T17:00:52.258000Z"
@@ -4074,7 +3945,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 15,
-          "similarity_threshold_policy": null,
           "sort_order": 3,
           "task_id": 20,
           "updated_date": "2026-06-03T17:00:52.258000Z"
@@ -4104,7 +3974,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 15,
-          "similarity_threshold_policy": null,
           "sort_order": 4,
           "task_id": 20,
           "updated_date": "2026-06-03T17:00:52.258000Z"
@@ -4134,7 +4003,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 15,
-          "similarity_threshold_policy": null,
           "sort_order": 5,
           "task_id": 20,
           "updated_date": "2026-06-03T17:00:52.258000Z"
@@ -4164,7 +4032,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 15,
-          "similarity_threshold_policy": null,
           "sort_order": 6,
           "task_id": 20,
           "updated_date": "2026-06-03T17:00:52.258000Z"
@@ -4194,7 +4061,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 15,
-          "similarity_threshold_policy": null,
           "sort_order": 7,
           "task_id": 20,
           "updated_date": "2026-06-03T17:00:52.258000Z"
@@ -4224,7 +4090,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 15,
-          "similarity_threshold_policy": null,
           "sort_order": 8,
           "task_id": 20,
           "updated_date": "2026-06-03T17:00:52.258000Z"
@@ -4266,7 +4131,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 16,
-          "similarity_threshold_policy": null,
           "sort_order": 0,
           "task_id": 21,
           "updated_date": "2026-06-03T17:00:52.262000Z"
@@ -4296,7 +4160,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 16,
-          "similarity_threshold_policy": null,
           "sort_order": 1,
           "task_id": 21,
           "updated_date": "2026-06-03T17:00:52.262000Z"
@@ -4326,7 +4189,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 16,
-          "similarity_threshold_policy": null,
           "sort_order": 2,
           "task_id": 21,
           "updated_date": "2026-06-03T17:00:52.262000Z"
@@ -4356,7 +4218,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 16,
-          "similarity_threshold_policy": null,
           "sort_order": 3,
           "task_id": 21,
           "updated_date": "2026-06-03T17:00:52.262000Z"
@@ -4386,7 +4247,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 16,
-          "similarity_threshold_policy": null,
           "sort_order": 4,
           "task_id": 21,
           "updated_date": "2026-06-03T17:00:52.262000Z"
@@ -4416,7 +4276,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 16,
-          "similarity_threshold_policy": null,
           "sort_order": 5,
           "task_id": 21,
           "updated_date": "2026-06-03T17:00:52.262000Z"
@@ -4446,7 +4305,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 16,
-          "similarity_threshold_policy": null,
           "sort_order": 6,
           "task_id": 21,
           "updated_date": "2026-06-03T17:00:52.262000Z"
@@ -4476,7 +4334,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 16,
-          "similarity_threshold_policy": null,
           "sort_order": 7,
           "task_id": 21,
           "updated_date": "2026-06-03T17:00:52.262000Z"
@@ -4506,7 +4363,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 16,
-          "similarity_threshold_policy": null,
           "sort_order": 8,
           "task_id": 21,
           "updated_date": "2026-06-03T17:00:52.262000Z"
@@ -4548,7 +4404,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 17,
-          "similarity_threshold_policy": null,
           "sort_order": 0,
           "task_id": 22,
           "updated_date": "2026-06-03T17:00:52.266000Z"
@@ -4578,7 +4433,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 17,
-          "similarity_threshold_policy": null,
           "sort_order": 1,
           "task_id": 22,
           "updated_date": "2026-06-03T17:00:52.266000Z"
@@ -4608,7 +4462,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 17,
-          "similarity_threshold_policy": null,
           "sort_order": 2,
           "task_id": 22,
           "updated_date": "2026-06-03T17:00:52.266000Z"
@@ -4638,7 +4491,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 17,
-          "similarity_threshold_policy": null,
           "sort_order": 3,
           "task_id": 22,
           "updated_date": "2026-06-03T17:00:52.266000Z"
@@ -4668,7 +4520,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 17,
-          "similarity_threshold_policy": null,
           "sort_order": 4,
           "task_id": 22,
           "updated_date": "2026-06-03T17:00:52.266000Z"
@@ -4698,7 +4549,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 17,
-          "similarity_threshold_policy": null,
           "sort_order": 5,
           "task_id": 22,
           "updated_date": "2026-06-03T17:00:52.266000Z"
@@ -4728,7 +4578,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 17,
-          "similarity_threshold_policy": null,
           "sort_order": 6,
           "task_id": 22,
           "updated_date": "2026-06-03T17:00:52.266000Z"
@@ -4758,7 +4607,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 17,
-          "similarity_threshold_policy": null,
           "sort_order": 7,
           "task_id": 22,
           "updated_date": "2026-06-03T17:00:52.266000Z"
@@ -4788,7 +4636,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 17,
-          "similarity_threshold_policy": null,
           "sort_order": 8,
           "task_id": 22,
           "updated_date": "2026-06-03T17:00:52.266000Z"
@@ -4830,7 +4677,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 18,
-          "similarity_threshold_policy": null,
           "sort_order": 0,
           "task_id": 23,
           "updated_date": "2026-06-03T17:00:52.270000Z"
@@ -4860,7 +4706,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 18,
-          "similarity_threshold_policy": null,
           "sort_order": 1,
           "task_id": 23,
           "updated_date": "2026-06-03T17:00:52.270000Z"
@@ -4890,7 +4735,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 18,
-          "similarity_threshold_policy": null,
           "sort_order": 2,
           "task_id": 23,
           "updated_date": "2026-06-03T17:00:52.270000Z"
@@ -4920,7 +4764,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 18,
-          "similarity_threshold_policy": null,
           "sort_order": 3,
           "task_id": 23,
           "updated_date": "2026-06-03T17:00:52.270000Z"
@@ -4950,7 +4793,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 18,
-          "similarity_threshold_policy": null,
           "sort_order": 4,
           "task_id": 23,
           "updated_date": "2026-06-03T17:00:52.270000Z"
@@ -4980,7 +4822,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 18,
-          "similarity_threshold_policy": null,
           "sort_order": 5,
           "task_id": 23,
           "updated_date": "2026-06-03T17:00:52.270000Z"
@@ -5010,7 +4851,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 18,
-          "similarity_threshold_policy": null,
           "sort_order": 6,
           "task_id": 23,
           "updated_date": "2026-06-03T17:00:52.270000Z"
@@ -5040,7 +4880,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 18,
-          "similarity_threshold_policy": null,
           "sort_order": 7,
           "task_id": 23,
           "updated_date": "2026-06-03T17:00:52.270000Z"
@@ -5070,7 +4909,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 18,
-          "similarity_threshold_policy": null,
           "sort_order": 8,
           "task_id": 23,
           "updated_date": "2026-06-03T17:00:52.270000Z"
@@ -5112,7 +4950,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 19,
-          "similarity_threshold_policy": null,
           "sort_order": 0,
           "task_id": 24,
           "updated_date": "2026-06-03T17:00:52.274000Z"
@@ -5142,7 +4979,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 19,
-          "similarity_threshold_policy": null,
           "sort_order": 1,
           "task_id": 24,
           "updated_date": "2026-06-03T17:00:52.274000Z"
@@ -5172,7 +5008,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 19,
-          "similarity_threshold_policy": null,
           "sort_order": 2,
           "task_id": 24,
           "updated_date": "2026-06-03T17:00:52.274000Z"
@@ -5202,7 +5037,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 19,
-          "similarity_threshold_policy": null,
           "sort_order": 3,
           "task_id": 24,
           "updated_date": "2026-06-03T17:00:52.274000Z"
@@ -5232,7 +5066,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 19,
-          "similarity_threshold_policy": null,
           "sort_order": 4,
           "task_id": 24,
           "updated_date": "2026-06-03T17:00:52.274000Z"
@@ -5262,7 +5095,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 19,
-          "similarity_threshold_policy": null,
           "sort_order": 5,
           "task_id": 24,
           "updated_date": "2026-06-03T17:00:52.274000Z"
@@ -5292,7 +5124,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 19,
-          "similarity_threshold_policy": null,
           "sort_order": 6,
           "task_id": 24,
           "updated_date": "2026-06-03T17:00:52.274000Z"
@@ -5322,7 +5153,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 19,
-          "similarity_threshold_policy": null,
           "sort_order": 7,
           "task_id": 24,
           "updated_date": "2026-06-03T17:00:52.274000Z"
@@ -5352,7 +5182,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 19,
-          "similarity_threshold_policy": null,
           "sort_order": 8,
           "task_id": 24,
           "updated_date": "2026-06-03T17:00:52.274000Z"
@@ -5394,7 +5223,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 20,
-          "similarity_threshold_policy": null,
           "sort_order": 0,
           "task_id": 25,
           "updated_date": "2026-06-03T17:00:52.278000Z"
@@ -5424,7 +5252,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 20,
-          "similarity_threshold_policy": null,
           "sort_order": 1,
           "task_id": 25,
           "updated_date": "2026-06-03T17:00:52.278000Z"
@@ -5454,7 +5281,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 20,
-          "similarity_threshold_policy": null,
           "sort_order": 2,
           "task_id": 25,
           "updated_date": "2026-06-03T17:00:52.278000Z"
@@ -5484,7 +5310,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 20,
-          "similarity_threshold_policy": null,
           "sort_order": 3,
           "task_id": 25,
           "updated_date": "2026-06-03T17:00:52.278000Z"
@@ -5514,7 +5339,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 20,
-          "similarity_threshold_policy": null,
           "sort_order": 4,
           "task_id": 25,
           "updated_date": "2026-06-03T17:00:52.278000Z"
@@ -5544,7 +5368,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 20,
-          "similarity_threshold_policy": null,
           "sort_order": 5,
           "task_id": 25,
           "updated_date": "2026-06-03T17:00:52.278000Z"
@@ -5574,7 +5397,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 20,
-          "similarity_threshold_policy": null,
           "sort_order": 6,
           "task_id": 25,
           "updated_date": "2026-06-03T17:00:52.278000Z"
@@ -5604,7 +5426,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 20,
-          "similarity_threshold_policy": null,
           "sort_order": 7,
           "task_id": 25,
           "updated_date": "2026-06-03T17:00:52.278000Z"
@@ -5634,7 +5455,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 20,
-          "similarity_threshold_policy": null,
           "sort_order": 8,
           "task_id": 25,
           "updated_date": "2026-06-03T17:00:52.278000Z"
@@ -5676,7 +5496,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 21,
-          "similarity_threshold_policy": null,
           "sort_order": 0,
           "task_id": 26,
           "updated_date": "2026-06-03T17:00:52.282000Z"
@@ -5706,7 +5525,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 21,
-          "similarity_threshold_policy": null,
           "sort_order": 1,
           "task_id": 26,
           "updated_date": "2026-06-03T17:00:52.282000Z"
@@ -5736,7 +5554,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 21,
-          "similarity_threshold_policy": null,
           "sort_order": 2,
           "task_id": 26,
           "updated_date": "2026-06-03T17:00:52.282000Z"
@@ -5766,7 +5583,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 21,
-          "similarity_threshold_policy": null,
           "sort_order": 3,
           "task_id": 26,
           "updated_date": "2026-06-03T17:00:52.282000Z"
@@ -5796,7 +5612,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 21,
-          "similarity_threshold_policy": null,
           "sort_order": 4,
           "task_id": 26,
           "updated_date": "2026-06-03T17:00:52.282000Z"
@@ -5826,7 +5641,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 21,
-          "similarity_threshold_policy": null,
           "sort_order": 5,
           "task_id": 26,
           "updated_date": "2026-06-03T17:00:52.282000Z"
@@ -5856,7 +5670,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 21,
-          "similarity_threshold_policy": null,
           "sort_order": 6,
           "task_id": 26,
           "updated_date": "2026-06-03T17:00:52.282000Z"
@@ -5886,7 +5699,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 21,
-          "similarity_threshold_policy": null,
           "sort_order": 7,
           "task_id": 26,
           "updated_date": "2026-06-03T17:00:52.282000Z"
@@ -5916,7 +5728,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 21,
-          "similarity_threshold_policy": null,
           "sort_order": 8,
           "task_id": 26,
           "updated_date": "2026-06-03T17:00:52.282000Z"
@@ -5958,7 +5769,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 22,
-          "similarity_threshold_policy": null,
           "sort_order": 0,
           "task_id": 27,
           "updated_date": "2026-06-03T17:00:52.286000Z"
@@ -5988,7 +5798,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 22,
-          "similarity_threshold_policy": null,
           "sort_order": 1,
           "task_id": 27,
           "updated_date": "2026-06-03T17:00:52.286000Z"
@@ -6018,7 +5827,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 22,
-          "similarity_threshold_policy": null,
           "sort_order": 2,
           "task_id": 27,
           "updated_date": "2026-06-03T17:00:52.286000Z"
@@ -6048,7 +5856,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 22,
-          "similarity_threshold_policy": null,
           "sort_order": 3,
           "task_id": 27,
           "updated_date": "2026-06-03T17:00:52.286000Z"
@@ -6078,7 +5885,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 22,
-          "similarity_threshold_policy": null,
           "sort_order": 4,
           "task_id": 27,
           "updated_date": "2026-06-03T17:00:52.286000Z"
@@ -6108,7 +5914,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 22,
-          "similarity_threshold_policy": null,
           "sort_order": 5,
           "task_id": 27,
           "updated_date": "2026-06-03T17:00:52.286000Z"
@@ -6138,7 +5943,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 22,
-          "similarity_threshold_policy": null,
           "sort_order": 6,
           "task_id": 27,
           "updated_date": "2026-06-03T17:00:52.286000Z"
@@ -6168,7 +5972,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 22,
-          "similarity_threshold_policy": null,
           "sort_order": 7,
           "task_id": 27,
           "updated_date": "2026-06-03T17:00:52.286000Z"
@@ -6198,7 +6001,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 22,
-          "similarity_threshold_policy": null,
           "sort_order": 8,
           "task_id": 27,
           "updated_date": "2026-06-03T17:00:52.286000Z"
@@ -6240,7 +6042,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 23,
-          "similarity_threshold_policy": null,
           "sort_order": 0,
           "task_id": 28,
           "updated_date": "2026-06-03T17:00:52.290000Z"
@@ -6270,7 +6071,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 23,
-          "similarity_threshold_policy": null,
           "sort_order": 1,
           "task_id": 28,
           "updated_date": "2026-06-03T17:00:52.290000Z"
@@ -6300,7 +6100,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 23,
-          "similarity_threshold_policy": null,
           "sort_order": 2,
           "task_id": 28,
           "updated_date": "2026-06-03T17:00:52.290000Z"
@@ -6330,7 +6129,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 23,
-          "similarity_threshold_policy": null,
           "sort_order": 3,
           "task_id": 28,
           "updated_date": "2026-06-03T17:00:52.290000Z"
@@ -6360,7 +6158,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 23,
-          "similarity_threshold_policy": null,
           "sort_order": 4,
           "task_id": 28,
           "updated_date": "2026-06-03T17:00:52.290000Z"
@@ -6390,7 +6187,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 23,
-          "similarity_threshold_policy": null,
           "sort_order": 5,
           "task_id": 28,
           "updated_date": "2026-06-03T17:00:52.290000Z"
@@ -6420,7 +6216,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 23,
-          "similarity_threshold_policy": null,
           "sort_order": 6,
           "task_id": 28,
           "updated_date": "2026-06-03T17:00:52.290000Z"
@@ -6450,7 +6245,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 23,
-          "similarity_threshold_policy": null,
           "sort_order": 7,
           "task_id": 28,
           "updated_date": "2026-06-03T17:00:52.290000Z"
@@ -6480,7 +6274,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 23,
-          "similarity_threshold_policy": null,
           "sort_order": 8,
           "task_id": 28,
           "updated_date": "2026-06-03T17:00:52.290000Z"
@@ -6522,7 +6315,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 24,
-          "similarity_threshold_policy": null,
           "sort_order": 0,
           "task_id": 29,
           "updated_date": "2026-06-03T17:00:52.294000Z"
@@ -6552,7 +6344,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 24,
-          "similarity_threshold_policy": null,
           "sort_order": 1,
           "task_id": 29,
           "updated_date": "2026-06-03T17:00:52.294000Z"
@@ -6582,7 +6373,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 24,
-          "similarity_threshold_policy": null,
           "sort_order": 2,
           "task_id": 29,
           "updated_date": "2026-06-03T17:00:52.294000Z"
@@ -6612,7 +6402,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 24,
-          "similarity_threshold_policy": null,
           "sort_order": 3,
           "task_id": 29,
           "updated_date": "2026-06-03T17:00:52.294000Z"
@@ -6642,7 +6431,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 24,
-          "similarity_threshold_policy": null,
           "sort_order": 4,
           "task_id": 29,
           "updated_date": "2026-06-03T17:00:52.294000Z"
@@ -6672,7 +6460,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 24,
-          "similarity_threshold_policy": null,
           "sort_order": 5,
           "task_id": 29,
           "updated_date": "2026-06-03T17:00:52.294000Z"
@@ -6702,7 +6489,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 24,
-          "similarity_threshold_policy": null,
           "sort_order": 6,
           "task_id": 29,
           "updated_date": "2026-06-03T17:00:52.294000Z"
@@ -6732,7 +6518,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 24,
-          "similarity_threshold_policy": null,
           "sort_order": 7,
           "task_id": 29,
           "updated_date": "2026-06-03T17:00:52.294000Z"
@@ -6762,7 +6547,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 24,
-          "similarity_threshold_policy": null,
           "sort_order": 8,
           "task_id": 29,
           "updated_date": "2026-06-03T17:00:52.294000Z"
@@ -6804,7 +6588,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 25,
-          "similarity_threshold_policy": null,
           "sort_order": 0,
           "task_id": 30,
           "updated_date": "2026-06-03T17:00:52.298000Z"
@@ -6834,7 +6617,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 25,
-          "similarity_threshold_policy": null,
           "sort_order": 1,
           "task_id": 30,
           "updated_date": "2026-06-03T17:00:52.298000Z"
@@ -6864,7 +6646,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 25,
-          "similarity_threshold_policy": null,
           "sort_order": 2,
           "task_id": 30,
           "updated_date": "2026-06-03T17:00:52.298000Z"
@@ -6894,7 +6675,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 25,
-          "similarity_threshold_policy": null,
           "sort_order": 3,
           "task_id": 30,
           "updated_date": "2026-06-03T17:00:52.298000Z"
@@ -6924,7 +6704,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 25,
-          "similarity_threshold_policy": null,
           "sort_order": 4,
           "task_id": 30,
           "updated_date": "2026-06-03T17:00:52.298000Z"
@@ -6954,7 +6733,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 25,
-          "similarity_threshold_policy": null,
           "sort_order": 5,
           "task_id": 30,
           "updated_date": "2026-06-03T17:00:52.298000Z"
@@ -6984,7 +6762,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 25,
-          "similarity_threshold_policy": null,
           "sort_order": 6,
           "task_id": 30,
           "updated_date": "2026-06-03T17:00:52.298000Z"
@@ -7014,7 +6791,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 25,
-          "similarity_threshold_policy": null,
           "sort_order": 7,
           "task_id": 30,
           "updated_date": "2026-06-03T17:00:52.298000Z"
@@ -7044,7 +6820,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 25,
-          "similarity_threshold_policy": null,
           "sort_order": 8,
           "task_id": 30,
           "updated_date": "2026-06-03T17:00:52.298000Z"
@@ -7086,7 +6861,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 26,
-          "similarity_threshold_policy": null,
           "sort_order": 0,
           "task_id": 31,
           "updated_date": "2026-06-03T17:00:52.302000Z"
@@ -7116,7 +6890,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 26,
-          "similarity_threshold_policy": null,
           "sort_order": 1,
           "task_id": 31,
           "updated_date": "2026-06-03T17:00:52.302000Z"
@@ -7146,7 +6919,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 26,
-          "similarity_threshold_policy": null,
           "sort_order": 2,
           "task_id": 31,
           "updated_date": "2026-06-03T17:00:52.302000Z"
@@ -7176,7 +6948,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 26,
-          "similarity_threshold_policy": null,
           "sort_order": 3,
           "task_id": 31,
           "updated_date": "2026-06-03T17:00:52.302000Z"
@@ -7206,7 +6977,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 26,
-          "similarity_threshold_policy": null,
           "sort_order": 4,
           "task_id": 31,
           "updated_date": "2026-06-03T17:00:52.302000Z"
@@ -7236,7 +7006,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 26,
-          "similarity_threshold_policy": null,
           "sort_order": 5,
           "task_id": 31,
           "updated_date": "2026-06-03T17:00:52.302000Z"
@@ -7266,7 +7035,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 26,
-          "similarity_threshold_policy": null,
           "sort_order": 6,
           "task_id": 31,
           "updated_date": "2026-06-03T17:00:52.302000Z"
@@ -7296,7 +7064,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 26,
-          "similarity_threshold_policy": null,
           "sort_order": 7,
           "task_id": 31,
           "updated_date": "2026-06-03T17:00:52.302000Z"
@@ -7326,7 +7093,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 26,
-          "similarity_threshold_policy": null,
           "sort_order": 8,
           "task_id": 31,
           "updated_date": "2026-06-03T17:00:52.302000Z"
@@ -7368,7 +7134,6 @@
           "project_id": 1,
           "required_score": 0.7,
           "settings_id": 27,
-          "similarity_threshold_policy": null,
           "sort_order": 0,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.306000Z"
@@ -7398,7 +7163,6 @@
           "project_id": 1,
           "required_score": 0.7,
           "settings_id": 27,
-          "similarity_threshold_policy": null,
           "sort_order": 1,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.306000Z"
@@ -7428,7 +7192,6 @@
           "project_id": 1,
           "required_score": 0.7,
           "settings_id": 27,
-          "similarity_threshold_policy": null,
           "sort_order": 2,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.306000Z"
@@ -7458,7 +7221,6 @@
           "project_id": 1,
           "required_score": 0.7,
           "settings_id": 27,
-          "similarity_threshold_policy": null,
           "sort_order": 3,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.306000Z"
@@ -7488,7 +7250,6 @@
           "project_id": 1,
           "required_score": 0.7,
           "settings_id": 27,
-          "similarity_threshold_policy": null,
           "sort_order": 4,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.306000Z"
@@ -7518,7 +7279,6 @@
           "project_id": 1,
           "required_score": 0.7,
           "settings_id": 27,
-          "similarity_threshold_policy": null,
           "sort_order": 5,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.306000Z"
@@ -7548,7 +7308,6 @@
           "project_id": 1,
           "required_score": 0.7,
           "settings_id": 27,
-          "similarity_threshold_policy": null,
           "sort_order": 6,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.306000Z"
@@ -7578,7 +7337,6 @@
           "project_id": 1,
           "required_score": 0.7,
           "settings_id": 27,
-          "similarity_threshold_policy": null,
           "sort_order": 7,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.306000Z"
@@ -7608,7 +7366,6 @@
           "project_id": 1,
           "required_score": 0.7,
           "settings_id": 27,
-          "similarity_threshold_policy": null,
           "sort_order": 8,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.306000Z"
@@ -7650,7 +7407,6 @@
           "project_id": 2,
           "required_score": 0.7,
           "settings_id": 28,
-          "similarity_threshold_policy": null,
           "sort_order": 0,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.310000Z"
@@ -7680,7 +7436,6 @@
           "project_id": 2,
           "required_score": 0.7,
           "settings_id": 28,
-          "similarity_threshold_policy": null,
           "sort_order": 1,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.310000Z"
@@ -7710,7 +7465,6 @@
           "project_id": 2,
           "required_score": 0.7,
           "settings_id": 28,
-          "similarity_threshold_policy": null,
           "sort_order": 2,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.310000Z"
@@ -7740,7 +7494,6 @@
           "project_id": 2,
           "required_score": 0.7,
           "settings_id": 28,
-          "similarity_threshold_policy": null,
           "sort_order": 3,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.310000Z"
@@ -7770,7 +7523,6 @@
           "project_id": 2,
           "required_score": 0.7,
           "settings_id": 28,
-          "similarity_threshold_policy": null,
           "sort_order": 4,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.310000Z"
@@ -7800,7 +7552,6 @@
           "project_id": 2,
           "required_score": 0.7,
           "settings_id": 28,
-          "similarity_threshold_policy": null,
           "sort_order": 5,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.310000Z"
@@ -7830,7 +7581,6 @@
           "project_id": 2,
           "required_score": 0.7,
           "settings_id": 28,
-          "similarity_threshold_policy": null,
           "sort_order": 6,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.310000Z"
@@ -7860,7 +7610,6 @@
           "project_id": 2,
           "required_score": 0.7,
           "settings_id": 28,
-          "similarity_threshold_policy": null,
           "sort_order": 7,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.310000Z"
@@ -7890,7 +7639,6 @@
           "project_id": 2,
           "required_score": 0.7,
           "settings_id": 28,
-          "similarity_threshold_policy": null,
           "sort_order": 8,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.310000Z"
@@ -7932,7 +7680,6 @@
           "project_id": 3,
           "required_score": 0.7,
           "settings_id": 29,
-          "similarity_threshold_policy": null,
           "sort_order": 0,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.314000Z"
@@ -7962,7 +7709,6 @@
           "project_id": 3,
           "required_score": 0.7,
           "settings_id": 29,
-          "similarity_threshold_policy": null,
           "sort_order": 1,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.314000Z"
@@ -7992,7 +7738,6 @@
           "project_id": 3,
           "required_score": 0.7,
           "settings_id": 29,
-          "similarity_threshold_policy": null,
           "sort_order": 2,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.314000Z"
@@ -8022,7 +7767,6 @@
           "project_id": 3,
           "required_score": 0.7,
           "settings_id": 29,
-          "similarity_threshold_policy": null,
           "sort_order": 3,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.314000Z"
@@ -8052,7 +7796,6 @@
           "project_id": 3,
           "required_score": 0.7,
           "settings_id": 29,
-          "similarity_threshold_policy": null,
           "sort_order": 4,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.314000Z"
@@ -8082,7 +7825,6 @@
           "project_id": 3,
           "required_score": 0.7,
           "settings_id": 29,
-          "similarity_threshold_policy": null,
           "sort_order": 5,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.314000Z"
@@ -8112,7 +7854,6 @@
           "project_id": 3,
           "required_score": 0.7,
           "settings_id": 29,
-          "similarity_threshold_policy": null,
           "sort_order": 6,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.314000Z"
@@ -8142,7 +7883,6 @@
           "project_id": 3,
           "required_score": 0.7,
           "settings_id": 29,
-          "similarity_threshold_policy": null,
           "sort_order": 7,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.314000Z"
@@ -8172,7 +7912,6 @@
           "project_id": 3,
           "required_score": 0.7,
           "settings_id": 29,
-          "similarity_threshold_policy": null,
           "sort_order": 8,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.314000Z"
@@ -8214,7 +7953,6 @@
           "project_id": 4,
           "required_score": 0.7,
           "settings_id": 30,
-          "similarity_threshold_policy": null,
           "sort_order": 0,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.318000Z"
@@ -8244,7 +7982,6 @@
           "project_id": 4,
           "required_score": 0.7,
           "settings_id": 30,
-          "similarity_threshold_policy": null,
           "sort_order": 1,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.318000Z"
@@ -8274,7 +8011,6 @@
           "project_id": 4,
           "required_score": 0.7,
           "settings_id": 30,
-          "similarity_threshold_policy": null,
           "sort_order": 2,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.318000Z"
@@ -8304,7 +8040,6 @@
           "project_id": 4,
           "required_score": 0.7,
           "settings_id": 30,
-          "similarity_threshold_policy": null,
           "sort_order": 3,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.318000Z"
@@ -8334,7 +8069,6 @@
           "project_id": 4,
           "required_score": 0.7,
           "settings_id": 30,
-          "similarity_threshold_policy": null,
           "sort_order": 4,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.318000Z"
@@ -8364,7 +8098,6 @@
           "project_id": 4,
           "required_score": 0.7,
           "settings_id": 30,
-          "similarity_threshold_policy": null,
           "sort_order": 5,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.318000Z"
@@ -8394,7 +8127,6 @@
           "project_id": 4,
           "required_score": 0.7,
           "settings_id": 30,
-          "similarity_threshold_policy": null,
           "sort_order": 6,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.318000Z"
@@ -8424,7 +8156,6 @@
           "project_id": 4,
           "required_score": 0.7,
           "settings_id": 30,
-          "similarity_threshold_policy": null,
           "sort_order": 7,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.318000Z"
@@ -8454,7 +8185,6 @@
           "project_id": 4,
           "required_score": 0.7,
           "settings_id": 30,
-          "similarity_threshold_policy": null,
           "sort_order": 8,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.318000Z"
@@ -8496,7 +8226,6 @@
           "project_id": 5,
           "required_score": 0.7,
           "settings_id": 31,
-          "similarity_threshold_policy": null,
           "sort_order": 0,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.322000Z"
@@ -8526,7 +8255,6 @@
           "project_id": 5,
           "required_score": 0.7,
           "settings_id": 31,
-          "similarity_threshold_policy": null,
           "sort_order": 1,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.322000Z"
@@ -8556,7 +8284,6 @@
           "project_id": 5,
           "required_score": 0.7,
           "settings_id": 31,
-          "similarity_threshold_policy": null,
           "sort_order": 2,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.322000Z"
@@ -8586,7 +8313,6 @@
           "project_id": 5,
           "required_score": 0.7,
           "settings_id": 31,
-          "similarity_threshold_policy": null,
           "sort_order": 3,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.322000Z"
@@ -8616,7 +8342,6 @@
           "project_id": 5,
           "required_score": 0.7,
           "settings_id": 31,
-          "similarity_threshold_policy": null,
           "sort_order": 4,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.322000Z"
@@ -8646,7 +8371,6 @@
           "project_id": 5,
           "required_score": 0.7,
           "settings_id": 31,
-          "similarity_threshold_policy": null,
           "sort_order": 5,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.322000Z"
@@ -8676,7 +8400,6 @@
           "project_id": 5,
           "required_score": 0.7,
           "settings_id": 31,
-          "similarity_threshold_policy": null,
           "sort_order": 6,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.322000Z"
@@ -8706,7 +8429,6 @@
           "project_id": 5,
           "required_score": 0.7,
           "settings_id": 31,
-          "similarity_threshold_policy": null,
           "sort_order": 7,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.322000Z"
@@ -8736,7 +8458,6 @@
           "project_id": 5,
           "required_score": 0.7,
           "settings_id": 31,
-          "similarity_threshold_policy": null,
           "sort_order": 8,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.322000Z"
@@ -8778,7 +8499,6 @@
           "project_id": 6,
           "required_score": 0.7,
           "settings_id": 32,
-          "similarity_threshold_policy": null,
           "sort_order": 0,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.326000Z"
@@ -8808,7 +8528,6 @@
           "project_id": 6,
           "required_score": 0.7,
           "settings_id": 32,
-          "similarity_threshold_policy": null,
           "sort_order": 1,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.326000Z"
@@ -8838,7 +8557,6 @@
           "project_id": 6,
           "required_score": 0.7,
           "settings_id": 32,
-          "similarity_threshold_policy": null,
           "sort_order": 2,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.326000Z"
@@ -8868,7 +8586,6 @@
           "project_id": 6,
           "required_score": 0.7,
           "settings_id": 32,
-          "similarity_threshold_policy": null,
           "sort_order": 3,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.326000Z"
@@ -8898,7 +8615,6 @@
           "project_id": 6,
           "required_score": 0.7,
           "settings_id": 32,
-          "similarity_threshold_policy": null,
           "sort_order": 4,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.326000Z"
@@ -8928,7 +8644,6 @@
           "project_id": 6,
           "required_score": 0.7,
           "settings_id": 32,
-          "similarity_threshold_policy": null,
           "sort_order": 5,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.326000Z"
@@ -8958,7 +8673,6 @@
           "project_id": 6,
           "required_score": 0.7,
           "settings_id": 32,
-          "similarity_threshold_policy": null,
           "sort_order": 6,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.326000Z"
@@ -8988,7 +8702,6 @@
           "project_id": 6,
           "required_score": 0.7,
           "settings_id": 32,
-          "similarity_threshold_policy": null,
           "sort_order": 7,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.326000Z"
@@ -9018,7 +8731,6 @@
           "project_id": 6,
           "required_score": 0.7,
           "settings_id": 32,
-          "similarity_threshold_policy": null,
           "sort_order": 8,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.326000Z"
@@ -9060,7 +8772,6 @@
           "project_id": 7,
           "required_score": 0.7,
           "settings_id": 33,
-          "similarity_threshold_policy": null,
           "sort_order": 0,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.330000Z"
@@ -9090,7 +8801,6 @@
           "project_id": 7,
           "required_score": 0.7,
           "settings_id": 33,
-          "similarity_threshold_policy": null,
           "sort_order": 1,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.330000Z"
@@ -9120,7 +8830,6 @@
           "project_id": 7,
           "required_score": 0.7,
           "settings_id": 33,
-          "similarity_threshold_policy": null,
           "sort_order": 2,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.330000Z"
@@ -9150,7 +8859,6 @@
           "project_id": 7,
           "required_score": 0.7,
           "settings_id": 33,
-          "similarity_threshold_policy": null,
           "sort_order": 3,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.330000Z"
@@ -9180,7 +8888,6 @@
           "project_id": 7,
           "required_score": 0.7,
           "settings_id": 33,
-          "similarity_threshold_policy": null,
           "sort_order": 4,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.330000Z"
@@ -9210,7 +8917,6 @@
           "project_id": 7,
           "required_score": 0.7,
           "settings_id": 33,
-          "similarity_threshold_policy": null,
           "sort_order": 5,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.330000Z"
@@ -9240,7 +8946,6 @@
           "project_id": 7,
           "required_score": 0.7,
           "settings_id": 33,
-          "similarity_threshold_policy": null,
           "sort_order": 6,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.330000Z"
@@ -9270,7 +8975,6 @@
           "project_id": 7,
           "required_score": 0.7,
           "settings_id": 33,
-          "similarity_threshold_policy": null,
           "sort_order": 7,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.330000Z"
@@ -9300,7 +9004,6 @@
           "project_id": 7,
           "required_score": 0.7,
           "settings_id": 33,
-          "similarity_threshold_policy": null,
           "sort_order": 8,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.330000Z"
@@ -9342,7 +9045,6 @@
           "project_id": 8,
           "required_score": 0.7,
           "settings_id": 34,
-          "similarity_threshold_policy": null,
           "sort_order": 0,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.334000Z"
@@ -9372,7 +9074,6 @@
           "project_id": 8,
           "required_score": 0.7,
           "settings_id": 34,
-          "similarity_threshold_policy": null,
           "sort_order": 1,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.334000Z"
@@ -9402,7 +9103,6 @@
           "project_id": 8,
           "required_score": 0.7,
           "settings_id": 34,
-          "similarity_threshold_policy": null,
           "sort_order": 2,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.334000Z"
@@ -9432,7 +9132,6 @@
           "project_id": 8,
           "required_score": 0.7,
           "settings_id": 34,
-          "similarity_threshold_policy": null,
           "sort_order": 3,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.334000Z"
@@ -9462,7 +9161,6 @@
           "project_id": 8,
           "required_score": 0.7,
           "settings_id": 34,
-          "similarity_threshold_policy": null,
           "sort_order": 4,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.334000Z"
@@ -9492,7 +9190,6 @@
           "project_id": 8,
           "required_score": 0.7,
           "settings_id": 34,
-          "similarity_threshold_policy": null,
           "sort_order": 5,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.334000Z"
@@ -9522,7 +9219,6 @@
           "project_id": 8,
           "required_score": 0.7,
           "settings_id": 34,
-          "similarity_threshold_policy": null,
           "sort_order": 6,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.334000Z"
@@ -9552,7 +9248,6 @@
           "project_id": 8,
           "required_score": 0.7,
           "settings_id": 34,
-          "similarity_threshold_policy": null,
           "sort_order": 7,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.334000Z"
@@ -9582,7 +9277,6 @@
           "project_id": 8,
           "required_score": 0.7,
           "settings_id": 34,
-          "similarity_threshold_policy": null,
           "sort_order": 8,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.334000Z"
@@ -9624,7 +9318,6 @@
           "project_id": 10,
           "required_score": 0.7,
           "settings_id": 35,
-          "similarity_threshold_policy": null,
           "sort_order": 0,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.338000Z"
@@ -9654,7 +9347,6 @@
           "project_id": 10,
           "required_score": 0.7,
           "settings_id": 35,
-          "similarity_threshold_policy": null,
           "sort_order": 1,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.338000Z"
@@ -9684,7 +9376,6 @@
           "project_id": 10,
           "required_score": 0.7,
           "settings_id": 35,
-          "similarity_threshold_policy": null,
           "sort_order": 2,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.338000Z"
@@ -9714,7 +9405,6 @@
           "project_id": 10,
           "required_score": 0.7,
           "settings_id": 35,
-          "similarity_threshold_policy": null,
           "sort_order": 3,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.338000Z"
@@ -9744,7 +9434,6 @@
           "project_id": 10,
           "required_score": 0.7,
           "settings_id": 35,
-          "similarity_threshold_policy": null,
           "sort_order": 4,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.338000Z"
@@ -9774,7 +9463,6 @@
           "project_id": 10,
           "required_score": 0.7,
           "settings_id": 35,
-          "similarity_threshold_policy": null,
           "sort_order": 5,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.338000Z"
@@ -9804,7 +9492,6 @@
           "project_id": 10,
           "required_score": 0.7,
           "settings_id": 35,
-          "similarity_threshold_policy": null,
           "sort_order": 6,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.338000Z"
@@ -9834,7 +9521,6 @@
           "project_id": 10,
           "required_score": 0.7,
           "settings_id": 35,
-          "similarity_threshold_policy": null,
           "sort_order": 7,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.338000Z"
@@ -9864,7 +9550,6 @@
           "project_id": 10,
           "required_score": 0.7,
           "settings_id": 35,
-          "similarity_threshold_policy": null,
           "sort_order": 8,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.338000Z"
@@ -9906,7 +9591,6 @@
           "project_id": 11,
           "required_score": 0.7,
           "settings_id": 36,
-          "similarity_threshold_policy": null,
           "sort_order": 0,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.342000Z"
@@ -9936,7 +9620,6 @@
           "project_id": 11,
           "required_score": 0.7,
           "settings_id": 36,
-          "similarity_threshold_policy": null,
           "sort_order": 1,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.342000Z"
@@ -9966,7 +9649,6 @@
           "project_id": 11,
           "required_score": 0.7,
           "settings_id": 36,
-          "similarity_threshold_policy": null,
           "sort_order": 2,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.342000Z"
@@ -9996,7 +9678,6 @@
           "project_id": 11,
           "required_score": 0.7,
           "settings_id": 36,
-          "similarity_threshold_policy": null,
           "sort_order": 3,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.342000Z"
@@ -10026,7 +9707,6 @@
           "project_id": 11,
           "required_score": 0.7,
           "settings_id": 36,
-          "similarity_threshold_policy": null,
           "sort_order": 4,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.342000Z"
@@ -10056,7 +9736,6 @@
           "project_id": 11,
           "required_score": 0.7,
           "settings_id": 36,
-          "similarity_threshold_policy": null,
           "sort_order": 5,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.342000Z"
@@ -10086,7 +9765,6 @@
           "project_id": 11,
           "required_score": 0.7,
           "settings_id": 36,
-          "similarity_threshold_policy": null,
           "sort_order": 6,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.342000Z"
@@ -10116,7 +9794,6 @@
           "project_id": 11,
           "required_score": 0.7,
           "settings_id": 36,
-          "similarity_threshold_policy": null,
           "sort_order": 7,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.342000Z"
@@ -10146,7 +9823,6 @@
           "project_id": 11,
           "required_score": 0.7,
           "settings_id": 36,
-          "similarity_threshold_policy": null,
           "sort_order": 8,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.342000Z"
@@ -10188,7 +9864,6 @@
           "project_id": 12,
           "required_score": 0.7,
           "settings_id": 37,
-          "similarity_threshold_policy": null,
           "sort_order": 0,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.346000Z"
@@ -10218,7 +9893,6 @@
           "project_id": 12,
           "required_score": 0.7,
           "settings_id": 37,
-          "similarity_threshold_policy": null,
           "sort_order": 1,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.346000Z"
@@ -10248,7 +9922,6 @@
           "project_id": 12,
           "required_score": 0.7,
           "settings_id": 37,
-          "similarity_threshold_policy": null,
           "sort_order": 2,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.346000Z"
@@ -10278,7 +9951,6 @@
           "project_id": 12,
           "required_score": 0.7,
           "settings_id": 37,
-          "similarity_threshold_policy": null,
           "sort_order": 3,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.346000Z"
@@ -10308,7 +9980,6 @@
           "project_id": 12,
           "required_score": 0.7,
           "settings_id": 37,
-          "similarity_threshold_policy": null,
           "sort_order": 4,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.346000Z"
@@ -10338,7 +10009,6 @@
           "project_id": 12,
           "required_score": 0.7,
           "settings_id": 37,
-          "similarity_threshold_policy": null,
           "sort_order": 5,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.346000Z"
@@ -10368,7 +10038,6 @@
           "project_id": 12,
           "required_score": 0.7,
           "settings_id": 37,
-          "similarity_threshold_policy": null,
           "sort_order": 6,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.346000Z"
@@ -10398,7 +10067,6 @@
           "project_id": 12,
           "required_score": 0.7,
           "settings_id": 37,
-          "similarity_threshold_policy": null,
           "sort_order": 7,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.346000Z"
@@ -10428,7 +10096,6 @@
           "project_id": 12,
           "required_score": 0.7,
           "settings_id": 37,
-          "similarity_threshold_policy": null,
           "sort_order": 8,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.346000Z"
@@ -10470,7 +10137,6 @@
           "project_id": 13,
           "required_score": 0.7,
           "settings_id": 38,
-          "similarity_threshold_policy": null,
           "sort_order": 0,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.350000Z"
@@ -10500,7 +10166,6 @@
           "project_id": 13,
           "required_score": 0.7,
           "settings_id": 38,
-          "similarity_threshold_policy": null,
           "sort_order": 1,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.350000Z"
@@ -10530,7 +10195,6 @@
           "project_id": 13,
           "required_score": 0.7,
           "settings_id": 38,
-          "similarity_threshold_policy": null,
           "sort_order": 2,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.350000Z"
@@ -10560,7 +10224,6 @@
           "project_id": 13,
           "required_score": 0.7,
           "settings_id": 38,
-          "similarity_threshold_policy": null,
           "sort_order": 3,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.350000Z"
@@ -10590,7 +10253,6 @@
           "project_id": 13,
           "required_score": 0.7,
           "settings_id": 38,
-          "similarity_threshold_policy": null,
           "sort_order": 4,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.350000Z"
@@ -10620,7 +10282,6 @@
           "project_id": 13,
           "required_score": 0.7,
           "settings_id": 38,
-          "similarity_threshold_policy": null,
           "sort_order": 5,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.350000Z"
@@ -10650,7 +10311,6 @@
           "project_id": 13,
           "required_score": 0.7,
           "settings_id": 38,
-          "similarity_threshold_policy": null,
           "sort_order": 6,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.350000Z"
@@ -10680,7 +10340,6 @@
           "project_id": 13,
           "required_score": 0.7,
           "settings_id": 38,
-          "similarity_threshold_policy": null,
           "sort_order": 7,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.350000Z"
@@ -10710,7 +10369,6 @@
           "project_id": 13,
           "required_score": 0.7,
           "settings_id": 38,
-          "similarity_threshold_policy": null,
           "sort_order": 8,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.350000Z"
@@ -10752,7 +10410,6 @@
           "project_id": 14,
           "required_score": 0.7,
           "settings_id": 39,
-          "similarity_threshold_policy": null,
           "sort_order": 0,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.354000Z"
@@ -10782,7 +10439,6 @@
           "project_id": 14,
           "required_score": 0.7,
           "settings_id": 39,
-          "similarity_threshold_policy": null,
           "sort_order": 1,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.354000Z"
@@ -10812,7 +10468,6 @@
           "project_id": 14,
           "required_score": 0.7,
           "settings_id": 39,
-          "similarity_threshold_policy": null,
           "sort_order": 2,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.354000Z"
@@ -10842,7 +10497,6 @@
           "project_id": 14,
           "required_score": 0.7,
           "settings_id": 39,
-          "similarity_threshold_policy": null,
           "sort_order": 3,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.354000Z"
@@ -10872,7 +10526,6 @@
           "project_id": 14,
           "required_score": 0.7,
           "settings_id": 39,
-          "similarity_threshold_policy": null,
           "sort_order": 4,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.354000Z"
@@ -10902,7 +10555,6 @@
           "project_id": 14,
           "required_score": 0.7,
           "settings_id": 39,
-          "similarity_threshold_policy": null,
           "sort_order": 5,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.354000Z"
@@ -10932,7 +10584,6 @@
           "project_id": 14,
           "required_score": 0.7,
           "settings_id": 39,
-          "similarity_threshold_policy": null,
           "sort_order": 6,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.354000Z"
@@ -10962,7 +10613,6 @@
           "project_id": 14,
           "required_score": 0.7,
           "settings_id": 39,
-          "similarity_threshold_policy": null,
           "sort_order": 7,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.354000Z"
@@ -10992,7 +10642,6 @@
           "project_id": 14,
           "required_score": 0.7,
           "settings_id": 39,
-          "similarity_threshold_policy": null,
           "sort_order": 8,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.354000Z"
@@ -11034,7 +10683,6 @@
           "project_id": 15,
           "required_score": 0.7,
           "settings_id": 40,
-          "similarity_threshold_policy": null,
           "sort_order": 0,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.358000Z"
@@ -11064,7 +10712,6 @@
           "project_id": 15,
           "required_score": 0.7,
           "settings_id": 40,
-          "similarity_threshold_policy": null,
           "sort_order": 1,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.358000Z"
@@ -11094,7 +10741,6 @@
           "project_id": 15,
           "required_score": 0.7,
           "settings_id": 40,
-          "similarity_threshold_policy": null,
           "sort_order": 2,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.358000Z"
@@ -11124,7 +10770,6 @@
           "project_id": 15,
           "required_score": 0.7,
           "settings_id": 40,
-          "similarity_threshold_policy": null,
           "sort_order": 3,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.358000Z"
@@ -11154,7 +10799,6 @@
           "project_id": 15,
           "required_score": 0.7,
           "settings_id": 40,
-          "similarity_threshold_policy": null,
           "sort_order": 4,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.358000Z"
@@ -11184,7 +10828,6 @@
           "project_id": 15,
           "required_score": 0.7,
           "settings_id": 40,
-          "similarity_threshold_policy": null,
           "sort_order": 5,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.358000Z"
@@ -11214,7 +10857,6 @@
           "project_id": 15,
           "required_score": 0.7,
           "settings_id": 40,
-          "similarity_threshold_policy": null,
           "sort_order": 6,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.358000Z"
@@ -11244,7 +10886,6 @@
           "project_id": 15,
           "required_score": 0.7,
           "settings_id": 40,
-          "similarity_threshold_policy": null,
           "sort_order": 7,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.358000Z"
@@ -11274,7 +10915,6 @@
           "project_id": 15,
           "required_score": 0.7,
           "settings_id": 40,
-          "similarity_threshold_policy": null,
           "sort_order": 8,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.358000Z"
@@ -11316,7 +10956,6 @@
           "project_id": 16,
           "required_score": 0.7,
           "settings_id": 41,
-          "similarity_threshold_policy": null,
           "sort_order": 0,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.362000Z"
@@ -11346,7 +10985,6 @@
           "project_id": 16,
           "required_score": 0.7,
           "settings_id": 41,
-          "similarity_threshold_policy": null,
           "sort_order": 1,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.362000Z"
@@ -11376,7 +11014,6 @@
           "project_id": 16,
           "required_score": 0.7,
           "settings_id": 41,
-          "similarity_threshold_policy": null,
           "sort_order": 2,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.362000Z"
@@ -11406,7 +11043,6 @@
           "project_id": 16,
           "required_score": 0.7,
           "settings_id": 41,
-          "similarity_threshold_policy": null,
           "sort_order": 3,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.362000Z"
@@ -11436,7 +11072,6 @@
           "project_id": 16,
           "required_score": 0.7,
           "settings_id": 41,
-          "similarity_threshold_policy": null,
           "sort_order": 4,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.362000Z"
@@ -11466,7 +11101,6 @@
           "project_id": 16,
           "required_score": 0.7,
           "settings_id": 41,
-          "similarity_threshold_policy": null,
           "sort_order": 5,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.362000Z"
@@ -11496,7 +11130,6 @@
           "project_id": 16,
           "required_score": 0.7,
           "settings_id": 41,
-          "similarity_threshold_policy": null,
           "sort_order": 6,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.362000Z"
@@ -11526,7 +11159,6 @@
           "project_id": 16,
           "required_score": 0.7,
           "settings_id": 41,
-          "similarity_threshold_policy": null,
           "sort_order": 7,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.362000Z"
@@ -11556,7 +11188,6 @@
           "project_id": 16,
           "required_score": 0.7,
           "settings_id": 41,
-          "similarity_threshold_policy": null,
           "sort_order": 8,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.362000Z"
@@ -11598,7 +11229,6 @@
           "project_id": 17,
           "required_score": 0.7,
           "settings_id": 42,
-          "similarity_threshold_policy": null,
           "sort_order": 0,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.366000Z"
@@ -11628,7 +11258,6 @@
           "project_id": 17,
           "required_score": 0.7,
           "settings_id": 42,
-          "similarity_threshold_policy": null,
           "sort_order": 1,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.366000Z"
@@ -11658,7 +11287,6 @@
           "project_id": 17,
           "required_score": 0.7,
           "settings_id": 42,
-          "similarity_threshold_policy": null,
           "sort_order": 2,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.366000Z"
@@ -11688,7 +11316,6 @@
           "project_id": 17,
           "required_score": 0.7,
           "settings_id": 42,
-          "similarity_threshold_policy": null,
           "sort_order": 3,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.366000Z"
@@ -11718,7 +11345,6 @@
           "project_id": 17,
           "required_score": 0.7,
           "settings_id": 42,
-          "similarity_threshold_policy": null,
           "sort_order": 4,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.366000Z"
@@ -11748,7 +11374,6 @@
           "project_id": 17,
           "required_score": 0.7,
           "settings_id": 42,
-          "similarity_threshold_policy": null,
           "sort_order": 5,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.366000Z"
@@ -11778,7 +11403,6 @@
           "project_id": 17,
           "required_score": 0.7,
           "settings_id": 42,
-          "similarity_threshold_policy": null,
           "sort_order": 6,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.366000Z"
@@ -11808,7 +11432,6 @@
           "project_id": 17,
           "required_score": 0.7,
           "settings_id": 42,
-          "similarity_threshold_policy": null,
           "sort_order": 7,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.366000Z"
@@ -11838,7 +11461,6 @@
           "project_id": 17,
           "required_score": 0.7,
           "settings_id": 42,
-          "similarity_threshold_policy": null,
           "sort_order": 8,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.366000Z"
@@ -11880,7 +11502,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 43,
-          "similarity_threshold_policy": null,
           "sort_order": 0,
           "task_id": 32,
           "updated_date": "2026-06-03T17:00:52.369000Z"
@@ -11910,7 +11531,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 43,
-          "similarity_threshold_policy": null,
           "sort_order": 1,
           "task_id": 32,
           "updated_date": "2026-06-03T17:00:52.369000Z"
@@ -11940,7 +11560,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 43,
-          "similarity_threshold_policy": null,
           "sort_order": 2,
           "task_id": 32,
           "updated_date": "2026-06-03T17:00:52.369000Z"
@@ -11970,7 +11589,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 43,
-          "similarity_threshold_policy": null,
           "sort_order": 3,
           "task_id": 32,
           "updated_date": "2026-06-03T17:00:52.369000Z"
@@ -12000,7 +11618,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 43,
-          "similarity_threshold_policy": null,
           "sort_order": 4,
           "task_id": 32,
           "updated_date": "2026-06-03T17:00:52.369000Z"
@@ -12030,7 +11647,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 43,
-          "similarity_threshold_policy": null,
           "sort_order": 5,
           "task_id": 32,
           "updated_date": "2026-06-03T17:00:52.369000Z"
@@ -12060,7 +11676,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 43,
-          "similarity_threshold_policy": null,
           "sort_order": 6,
           "task_id": 32,
           "updated_date": "2026-06-03T17:00:52.369000Z"
@@ -12090,7 +11705,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 43,
-          "similarity_threshold_policy": null,
           "sort_order": 7,
           "task_id": 32,
           "updated_date": "2026-06-03T17:00:52.369000Z"
@@ -12120,7 +11734,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 43,
-          "similarity_threshold_policy": null,
           "sort_order": 8,
           "task_id": 32,
           "updated_date": "2026-06-03T17:00:52.369000Z"
@@ -12162,7 +11775,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 44,
-          "similarity_threshold_policy": null,
           "sort_order": 0,
           "task_id": 33,
           "updated_date": "2026-06-03T17:00:52.373000Z"
@@ -12192,7 +11804,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 44,
-          "similarity_threshold_policy": null,
           "sort_order": 1,
           "task_id": 33,
           "updated_date": "2026-06-03T17:00:52.373000Z"
@@ -12222,7 +11833,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 44,
-          "similarity_threshold_policy": null,
           "sort_order": 2,
           "task_id": 33,
           "updated_date": "2026-06-03T17:00:52.373000Z"
@@ -12252,7 +11862,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 44,
-          "similarity_threshold_policy": null,
           "sort_order": 3,
           "task_id": 33,
           "updated_date": "2026-06-03T17:00:52.373000Z"
@@ -12282,7 +11891,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 44,
-          "similarity_threshold_policy": null,
           "sort_order": 4,
           "task_id": 33,
           "updated_date": "2026-06-03T17:00:52.373000Z"
@@ -12312,7 +11920,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 44,
-          "similarity_threshold_policy": null,
           "sort_order": 5,
           "task_id": 33,
           "updated_date": "2026-06-03T17:00:52.373000Z"
@@ -12342,7 +11949,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 44,
-          "similarity_threshold_policy": null,
           "sort_order": 6,
           "task_id": 33,
           "updated_date": "2026-06-03T17:00:52.373000Z"
@@ -12372,7 +11978,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 44,
-          "similarity_threshold_policy": null,
           "sort_order": 7,
           "task_id": 33,
           "updated_date": "2026-06-03T17:00:52.373000Z"
@@ -12402,7 +12007,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 44,
-          "similarity_threshold_policy": null,
           "sort_order": 8,
           "task_id": 33,
           "updated_date": "2026-06-03T17:00:52.373000Z"
@@ -12444,7 +12048,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 45,
-          "similarity_threshold_policy": null,
           "sort_order": 0,
           "task_id": 34,
           "updated_date": "2026-06-03T17:00:52.377000Z"
@@ -12474,7 +12077,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 45,
-          "similarity_threshold_policy": null,
           "sort_order": 1,
           "task_id": 34,
           "updated_date": "2026-06-03T17:00:52.377000Z"
@@ -12504,7 +12106,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 45,
-          "similarity_threshold_policy": null,
           "sort_order": 2,
           "task_id": 34,
           "updated_date": "2026-06-03T17:00:52.377000Z"
@@ -12534,7 +12135,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 45,
-          "similarity_threshold_policy": null,
           "sort_order": 3,
           "task_id": 34,
           "updated_date": "2026-06-03T17:00:52.377000Z"
@@ -12564,7 +12164,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 45,
-          "similarity_threshold_policy": null,
           "sort_order": 4,
           "task_id": 34,
           "updated_date": "2026-06-03T17:00:52.377000Z"
@@ -12594,7 +12193,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 45,
-          "similarity_threshold_policy": null,
           "sort_order": 5,
           "task_id": 34,
           "updated_date": "2026-06-03T17:00:52.377000Z"
@@ -12624,7 +12222,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 45,
-          "similarity_threshold_policy": null,
           "sort_order": 6,
           "task_id": 34,
           "updated_date": "2026-06-03T17:00:52.377000Z"
@@ -12654,7 +12251,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 45,
-          "similarity_threshold_policy": null,
           "sort_order": 7,
           "task_id": 34,
           "updated_date": "2026-06-03T17:00:52.377000Z"
@@ -12684,7 +12280,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 45,
-          "similarity_threshold_policy": null,
           "sort_order": 8,
           "task_id": 34,
           "updated_date": "2026-06-03T17:00:52.377000Z"
@@ -12726,7 +12321,6 @@
           "project_id": 18,
           "required_score": 0.7,
           "settings_id": 46,
-          "similarity_threshold_policy": null,
           "sort_order": 0,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.381000Z"
@@ -12756,7 +12350,6 @@
           "project_id": 18,
           "required_score": 0.7,
           "settings_id": 46,
-          "similarity_threshold_policy": null,
           "sort_order": 1,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.381000Z"
@@ -12786,7 +12379,6 @@
           "project_id": 18,
           "required_score": 0.7,
           "settings_id": 46,
-          "similarity_threshold_policy": null,
           "sort_order": 2,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.381000Z"
@@ -12816,7 +12408,6 @@
           "project_id": 18,
           "required_score": 0.7,
           "settings_id": 46,
-          "similarity_threshold_policy": null,
           "sort_order": 3,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.381000Z"
@@ -12846,7 +12437,6 @@
           "project_id": 18,
           "required_score": 0.7,
           "settings_id": 46,
-          "similarity_threshold_policy": null,
           "sort_order": 4,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.381000Z"
@@ -12876,7 +12466,6 @@
           "project_id": 18,
           "required_score": 0.7,
           "settings_id": 46,
-          "similarity_threshold_policy": null,
           "sort_order": 5,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.381000Z"
@@ -12906,7 +12495,6 @@
           "project_id": 18,
           "required_score": 0.7,
           "settings_id": 46,
-          "similarity_threshold_policy": null,
           "sort_order": 6,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.381000Z"
@@ -12936,7 +12524,6 @@
           "project_id": 18,
           "required_score": 0.7,
           "settings_id": 46,
-          "similarity_threshold_policy": null,
           "sort_order": 7,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.381000Z"
@@ -12966,7 +12553,6 @@
           "project_id": 18,
           "required_score": 0.7,
           "settings_id": 46,
-          "similarity_threshold_policy": null,
           "sort_order": 8,
           "task_id": null,
           "updated_date": "2026-06-03T17:00:52.381000Z"
@@ -13008,7 +12594,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 47,
-          "similarity_threshold_policy": null,
           "sort_order": 0,
           "task_id": 35,
           "updated_date": "2026-06-03T17:00:52.385000Z"
@@ -13038,7 +12623,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 47,
-          "similarity_threshold_policy": null,
           "sort_order": 1,
           "task_id": 35,
           "updated_date": "2026-06-03T17:00:52.385000Z"
@@ -13068,7 +12652,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 47,
-          "similarity_threshold_policy": null,
           "sort_order": 2,
           "task_id": 35,
           "updated_date": "2026-06-03T17:00:52.385000Z"
@@ -13098,7 +12681,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 47,
-          "similarity_threshold_policy": null,
           "sort_order": 3,
           "task_id": 35,
           "updated_date": "2026-06-03T17:00:52.385000Z"
@@ -13128,7 +12710,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 47,
-          "similarity_threshold_policy": null,
           "sort_order": 4,
           "task_id": 35,
           "updated_date": "2026-06-03T17:00:52.385000Z"
@@ -13158,7 +12739,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 47,
-          "similarity_threshold_policy": null,
           "sort_order": 5,
           "task_id": 35,
           "updated_date": "2026-06-03T17:00:52.385000Z"
@@ -13188,7 +12768,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 47,
-          "similarity_threshold_policy": null,
           "sort_order": 6,
           "task_id": 35,
           "updated_date": "2026-06-03T17:00:52.385000Z"
@@ -13218,7 +12797,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 47,
-          "similarity_threshold_policy": null,
           "sort_order": 7,
           "task_id": 35,
           "updated_date": "2026-06-03T17:00:52.385000Z"
@@ -13248,7 +12826,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 47,
-          "similarity_threshold_policy": null,
           "sort_order": 8,
           "task_id": 35,
           "updated_date": "2026-06-03T17:00:52.385000Z"
@@ -13290,7 +12867,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 48,
-          "similarity_threshold_policy": null,
           "sort_order": 0,
           "task_id": 36,
           "updated_date": "2026-06-03T17:00:52.389000Z"
@@ -13320,7 +12896,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 48,
-          "similarity_threshold_policy": null,
           "sort_order": 1,
           "task_id": 36,
           "updated_date": "2026-06-03T17:00:52.389000Z"
@@ -13350,7 +12925,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 48,
-          "similarity_threshold_policy": null,
           "sort_order": 2,
           "task_id": 36,
           "updated_date": "2026-06-03T17:00:52.389000Z"
@@ -13380,7 +12954,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 48,
-          "similarity_threshold_policy": null,
           "sort_order": 3,
           "task_id": 36,
           "updated_date": "2026-06-03T17:00:52.389000Z"
@@ -13410,7 +12983,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 48,
-          "similarity_threshold_policy": null,
           "sort_order": 4,
           "task_id": 36,
           "updated_date": "2026-06-03T17:00:52.389000Z"
@@ -13440,7 +13012,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 48,
-          "similarity_threshold_policy": null,
           "sort_order": 5,
           "task_id": 36,
           "updated_date": "2026-06-03T17:00:52.389000Z"
@@ -13470,7 +13041,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 48,
-          "similarity_threshold_policy": null,
           "sort_order": 6,
           "task_id": 36,
           "updated_date": "2026-06-03T17:00:52.389000Z"
@@ -13500,7 +13070,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 48,
-          "similarity_threshold_policy": null,
           "sort_order": 7,
           "task_id": 36,
           "updated_date": "2026-06-03T17:00:52.389000Z"
@@ -13530,7 +13099,6 @@
           "project_id": null,
           "required_score": 0.7,
           "settings_id": 48,
-          "similarity_threshold_policy": null,
           "sort_order": 8,
           "task_id": 36,
           "updated_date": "2026-06-03T17:00:52.389000Z"

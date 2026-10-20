@@ -183,9 +183,6 @@ export function requirementToSaveFields(requirement: QualityRequirement): Serial
         required_score: requirement.requiredScore,
         parent_requirement: requirement.parentRequirementId,
         iou_threshold: requirement.iouThreshold,
-        ...(requirement.similarityThresholdPolicy ? {
-            similarity_threshold_policy: requirement.similarityThresholdPolicy,
-        } : {}),
         point_size: requirement.pointSize,
         point_size_base: requirement.pointSizeBase,
         line_thickness: requirement.lineThickness,

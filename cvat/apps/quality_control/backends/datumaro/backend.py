@@ -5,7 +5,8 @@
 from __future__ import annotations
 
 import itertools
-from collections.abc import Iterator
+import math
+from collections.abc import Iterator, Sequence
 from typing import TYPE_CHECKING, cast
 
 import attrs
@@ -27,7 +28,7 @@ from cvat.apps.quality_control.backends.base import (
     FrameComparisonSample,
     QualityBackend,
 )
-from cvat.apps.quality_control.backends.datumaro.matching import Comparator
+from cvat.apps.quality_control.backends.datumaro.matching import Comparator, DistanceComparator
 from cvat.apps.quality_control.comparison_report import ComparisonParameters
 from cvat.apps.quality_control.filters import RequirementJsonLogicFilter
 from cvat.apps.quality_control.matching import (
@@ -38,7 +39,10 @@ from cvat.apps.quality_control.matching import (
 )
 from cvat.apps.quality_control.models import QualityRequirementAnnotationType
 from cvat.apps.quality_control.threshold_policy import (
+    ConstantThresholdPolicy,
     InvalidGroundTruthArea,
+    LinearThresholdPolicy,
+    ThresholdPolicy,
     ThresholdPolicyEvaluator,
 )
 
@@ -173,6 +177,8 @@ class Datumaro2DBackend(QualityBackend):
             "panoptic_comparison",
         ):
             value = getattr(requirement, name)
+            if name == "iou_threshold" and isinstance(value, ThresholdPolicy):
+                continue
             if value is not None:
                 setattr(settings, name, value)
         settings.compare_attributes = attribute_comparison_may_compare(
@@ -183,10 +189,27 @@ class Datumaro2DBackend(QualityBackend):
         ]
         return settings
 
-    def shape_area(self, annotations):
+    def shape_area(self, annotations: Sequence[cdm.Annotation2D]) -> float:
         native = [cast(DatumaroAnnotationAdapter, ann).native_annotation for ann in annotations]
         if not native:
             raise InvalidGroundTruthArea()
+        if len(native) == 1:
+            area = float(annotations[0].get_area())
+            if not math.isfinite(area) or area < 0:
+                raise InvalidGroundTruthArea()
+            if isinstance(native[0], dm.Ellipse):
+                # Use the same rotated, rasterized geometry as ellipse IoU.
+                from pycocotools import mask as mask_utils
+
+                gt_item, _ = self._native_items
+                height, width = gt_item.media_as(dm.Image).size
+                polygon = DistanceComparator.to_polygon(native[0])
+                return float(
+                    mask_utils.area(
+                        mask_utils.merge(mask_utils.frPyObjects([polygon.points], height, width))
+                    )
+                )
+            return area
         if all(ann.type == dm.AnnotationType.polygon for ann in native):
             return float(
                 unary_union([Polygon(np.asarray(ann.points).reshape(-1, 2)) for ann in native]).area
@@ -196,8 +219,6 @@ class Datumaro2DBackend(QualityBackend):
             for ann in native[1:]:
                 np.logical_or(mask, ann.image, out=mask)
             return float(np.count_nonzero(mask))
-        if len(native) == 1 and native[0].type == dm.AnnotationType.bbox:
-            return float(native[0].get_area())
         raise InvalidGroundTruthArea()
 
     def compare(
@@ -221,12 +242,14 @@ class Datumaro2DBackend(QualityBackend):
             ]
         )
         settings = self._comparison_parameters(requirement)
-        policy = requirement.similarity_threshold_policy
-        evaluator = ThresholdPolicyEvaluator(policy) if policy is not None else None
+        policy = requirement.iou_threshold
+        evaluator = (
+            ThresholdPolicyEvaluator(policy) if isinstance(policy, ThresholdPolicy) else None
+        )
         gt_threshold = None
-        if evaluator is not None and evaluator.policy.mode == "constant":
+        if isinstance(policy, ConstantThresholdPolicy):
             settings.iou_threshold = evaluator()
-        if evaluator is not None and evaluator.policy.mode == "linear":
+        if isinstance(policy, LinearThresholdPolicy):
             invalid_count = 0
             thresholds = {}
             for ann in sample.gt_annotations:

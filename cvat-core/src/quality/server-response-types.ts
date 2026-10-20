@@ -103,8 +103,7 @@ export interface SerializedEffectiveQualityRequirementData {
     annotation_type: QualityRequirementAnnotationType;
     metric: QualityRequirementMetric;
     required_score: number;
-    iou_threshold: number | null;
-    similarity_threshold_policy?: SimilarityThresholdPolicy | null;
+    iou_threshold: number | SimilarityThresholdPolicy | null;
     point_size: number | null;
     point_size_base: QualityRequirementPointSizeBase | null;
     line_thickness: number | null;
@@ -139,8 +138,7 @@ export interface SerializedQualityRequirementData {
     required_score: number | null;
     parent_requirement: number | null;
     effective?: SerializedEffectiveQualityRequirementData;
-    iou_threshold: number | null;
-    similarity_threshold_policy?: SimilarityThresholdPolicy | null;
+    iou_threshold: number | SimilarityThresholdPolicy | null;
     point_size: number | null;
     point_size_base: QualityRequirementPointSizeBase | null;
     line_thickness: number | null;

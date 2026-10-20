@@ -65,6 +65,16 @@ def _match_attributes(
 
 
 class TestComparator(unittest.TestCase):
+    def test_zero_iou_is_not_matched_at_a_zero_threshold(self):
+        matches, mismatches, missing, extra = match_segments(
+            [0],
+            [0],
+            distance=lambda a, b: 0,
+            dist_thresh=lambda a: 0,
+            label_matcher=lambda a, b: True,
+        )
+        self.assertEqual((matches, mismatches, missing, extra), ([], [], [0], [0]))
+
     def test_individual_thresholds_are_applied_before_assignment(self):
         similarities = [[0.89, 0.6], [0.91, 0.89]]
         matches, mismatches, missing, extra = match_segments(
