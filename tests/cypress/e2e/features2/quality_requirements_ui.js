@@ -392,14 +392,12 @@ context('Quality requirements UI', () => {
         const canvas = `${editor} .cvat-threshold-policy-chart canvas`;
         const pointer = (type, x, y, buttons = 0) => {
             cy.get(canvas).then(($canvas) => {
-                const rect = $canvas[0].getBoundingClientRect();
-                cy.wrap($canvas).trigger(type, {
+                const { width, height } = $canvas[0].getBoundingClientRect();
+                cy.wrap($canvas).trigger(type, width * x, height * y, {
                     eventConstructor: 'PointerEvent',
                     pointerId: 1,
                     button: 0,
                     buttons,
-                    clientX: rect.left + rect.width * x,
-                    clientY: rect.top + rect.height * y,
                 });
             });
         };
@@ -577,12 +575,11 @@ context('Quality requirements UI', () => {
         const hoverArea = () => {
             cy.get(canvas).scrollIntoView();
             cy.get(canvas).then(($canvas) => {
-                const rect = $canvas[0].getBoundingClientRect();
-                cy.wrap($canvas).trigger('pointermove', {
+                const { width, height } = $canvas[0].getBoundingClientRect();
+                // Cypress resolves canvas-relative coordinates after its actionability scrolling.
+                cy.wrap($canvas).trigger('pointermove', width * 0.9, height * 0.5, {
                     eventConstructor: 'PointerEvent',
                     pointerId: 1,
-                    clientX: rect.left + rect.width * 0.9,
-                    clientY: rect.top + rect.height * 0.5,
                 });
             });
             return cy.get(`${thresholdEditor} .cvat-threshold-policy-tooltip div`).invoke('text')
