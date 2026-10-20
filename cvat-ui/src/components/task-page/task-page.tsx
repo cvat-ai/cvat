@@ -22,6 +22,7 @@ import JobListComponent from 'components/task-page/job-list';
 import ModelRunnerModal from 'components/model-runner-modal/model-runner-dialog';
 import CVATLoadingSpinner from 'components/common/loading-spinner';
 import MoveTaskModal from 'components/move-task-modal/move-task-modal';
+import AddReplicasModal from 'components/jobs-page/add-replicas-modal';
 import { CombinedState } from 'reducers';
 import { updateTaskAsync, updateTaskMetadataAsync } from 'actions/tasks-actions';
 import TopBarComponent from './top-bar';
@@ -155,6 +156,7 @@ function TaskPageComponent(): JSX.Element {
             </Row>
             <ModelRunnerModal />
             <MoveTaskModal onUpdateTask={onUpdateTask} />
+            <AddReplicasModal fetchJobs={receiveTask} />
         </div>
     );
 }

@@ -16,7 +16,7 @@ import { CombinedState } from 'reducers';
 import { exportActions } from 'actions/export-actions';
 import { importActions } from 'actions/import-actions';
 import { mergeConsensusJobsAsync } from 'actions/consensus-actions';
-import { deleteJobAsync, updateJobAsync } from 'actions/jobs-actions';
+import { deleteJobAsync, jobsActions, updateJobAsync } from 'actions/jobs-actions';
 import { makeBulkOperationAsync } from 'actions/bulk-actions';
 import { selectionActions } from 'actions/selection-actions';
 
@@ -84,6 +84,10 @@ function JobActionsComponent(
     const onExportAnnotations = useCallback(() => {
         dispatch(exportActions.openExportDatasetModal(jobInstance));
     }, [jobInstance]);
+
+    const onAddReplicas = useCallback(() => {
+        dispatch(jobsActions.openAddReplicasModal(jobsToAct));
+    }, [jobsToAct]);
 
     const onMergeConsensusJob = useCallback(() => {
         Modal.confirm({
@@ -225,6 +229,8 @@ function JobActionsComponent(
             onImportAnnotations,
             onExportAnnotations,
             onMergeConsensusJob: jobInstance.replicasCount > 0 ? onMergeConsensusJob : null,
+            onAddReplicas: jobsToAct.every((job) => job.type === JobType.ANNOTATION) ?
+                onAddReplicas : null,
             onDeleteJob: (
                 jobInstance.type === JobType.GROUND_TRUTH || jobInstance.type === JobType.REPLICA
             ) ? onDeleteJob : null,
