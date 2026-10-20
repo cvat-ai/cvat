@@ -606,6 +606,11 @@ class SublabelSerializer(serializers.ModelSerializer):
     )
     has_parent = serializers.BooleanField(source="has_parent_label", required=False)
 
+    def to_representation(self, instance):
+        label = super().to_representation(instance)
+        label["attributes"].sort(key=lambda attribute: attribute["id"])
+        return label
+
     class Meta:
         model = models.Label
         fields = (
