@@ -885,7 +885,6 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
         }
 
         if (editData.enabled) {
-            const isEditing = this.data.editData.enabled || this.data.mode === Mode.EDIT;
             const isSameObject = this.data.editData.enabled &&
                 editData.state.clientID === this.data.editData.state.clientID;
             const hasUpdates = 'brushTool' in editData || 'onUpdateConfiguration' in editData || 'pointID' in editData;
@@ -894,8 +893,8 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
                 return;
             }
 
-            if (isEditing && !isSameObject) {
-                this.cancel();
+            if (this.data.editData.enabled && !isSameObject) {
+                throw Error('State cannot be updated during editing, need to finish current editing first');
             }
 
             this.data.editData = { ...editData };
