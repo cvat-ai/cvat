@@ -550,7 +550,9 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                 const latestResponse: ToolsControlComponent['interaction']['latestResponse'] = [];
                 let showConfidenceControl = false;
                 for (const item of response.shapes) {
-                    if (item.type !== ShapeType.MASK) continue;
+                    if (item.type !== ShapeType.MASK) {
+                        continue;
+                    }
 
                     const points = Int32Array.from(item.points);
                     const contours = this.receiveContoursFromMask(points);
@@ -597,21 +599,12 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         }
     };
 
-    private validateInteractionIsReady = (): void => {
-        const { labels } = this.props;
-        const { activeInteractor, activeLabelID } = this.state;
-
-        if (!activeInteractor) {
-            throw new Error('Interaction is not ready: no active interactor selected');
-        }
-
-        if (!activeLabelID) {
-            throw new Error('Interaction is not ready: no active label selected');
-        }
-
-        if (!labels.length) {
-            throw new Error('Interaction is not ready: no labels available');
-        }
+    private isInteractorReady = (): boolean => {
+        const { activeInteractor, activeLabelID, mode } = this.state;
+        const { frameData } = this.props;
+        return activeInteractor !== null &&
+            activeInteractor.version >= MIN_SUPPORTED_INTERACTOR_VERSION &&
+            activeLabelID !== null && mode === 'interaction' && !frameData.deleted;
     };
 
     public activateInteraction = (
@@ -638,7 +631,9 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         const { frame } = this.props;
         const { activeInteractor, interactorRegionOfInterest } = this.state;
 
-        this.validateInteractionIsReady();
+        if (!this.isInteractorReady()) {
+            return;
+        }
 
         if (!this.interaction.id) {
             this.interaction.id = lodash.uniqueId('interaction_');
