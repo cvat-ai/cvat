@@ -28,7 +28,9 @@ from PIL import Image
 from pytest_cases import parametrize
 
 from shared.tasks.utils import parse_frame_step
-from shared.utils.config import get_method, make_api_client, patch_method
+from shared.utils.config import get_method
+from shared.utils.config import get_paginated_collection as get_raw_collection
+from shared.utils.config import make_api_client, patch_method
 from shared.utils.helpers import generate_image_files
 
 from .utils import (
@@ -1095,6 +1097,52 @@ class TestJobsListFilters(CollectionSimpleFilterTestBase):
     )
     def test_can_use_simple_filter_for_object_list(self, field):
         return super()._test_can_use_simple_filter_for_object_list(field)
+
+    def test_can_use_legacy_consensus_replica_value_in_simple_filter(self):
+        expected = [j for j in self.samples if j["type"] == "replica"]
+        assert expected
+
+        received = get_raw_collection(username=self.user, endpoint="jobs", type="consensus_replica")
+
+        self._compare_results(gt_objects=expected, received_objects=received)
+
+    @pytest.mark.parametrize(
+        "rules, matches",
+        [
+            pytest.param(
+                {"==": [{"var": "type"}, "consensus_replica"]},
+                lambda j: j["type"] == "replica",
+                id="eq",
+            ),
+            pytest.param(
+                {"in": [{"var": "type"}, ["consensus_replica", "ground_truth"]]},
+                lambda j: j["type"] in ("replica", "ground_truth"),
+                id="in",
+            ),
+            pytest.param(
+                {"!": {"==": [{"var": "type"}, "consensus_replica"]}},
+                lambda j: j["type"] != "replica",
+                id="not",
+            ),
+            pytest.param(
+                {
+                    "and": [
+                        {"==": [{"var": "type"}, "consensus_replica"]},
+                        {"==": [{"var": "task_id"}, 30]},
+                    ]
+                },
+                lambda j: j["type"] == "replica" and j["task_id"] == 30,
+                id="and",
+            ),
+        ],
+    )
+    def test_can_use_legacy_consensus_replica_value_in_json_filter(self, rules, matches):
+        expected = [j for j in self.samples if matches(j)]
+        assert expected
+
+        received = get_raw_collection(username=self.user, endpoint="jobs", filter=json.dumps(rules))
+
+        self._compare_results(gt_objects=expected, received_objects=received)
 
 
 @pytest.mark.usefixtures("restore_db_per_class")

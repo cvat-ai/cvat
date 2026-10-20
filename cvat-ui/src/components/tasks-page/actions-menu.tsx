@@ -85,22 +85,20 @@ function TaskActionsComponent(props: Readonly<Props>): JSX.Element {
     }, [taskInstance.bugTracker]);
 
     const onMergeConsensusJobs = useCallback(() => {
-        if (taskInstance.consensusEnabled) {
-            Modal.confirm({
-                title: 'The consensus jobs will be merged',
-                content: 'Existing annotations in parent jobs will be updated. Continue?',
-                className: 'cvat-modal-confirm-consensus-merge-task',
-                onOk: () => {
-                    dispatch(mergeConsensusJobsAsync(taskInstance));
-                },
-                okButtonProps: {
-                    type: 'primary',
-                    danger: true,
-                },
-                okText: 'Merge',
-            });
-        }
-    }, [taskInstance.consensusEnabled, taskInstance]);
+        Modal.confirm({
+            title: 'The replica jobs will be merged',
+            content: 'Existing annotations in parent jobs will be updated. Continue?',
+            className: 'cvat-modal-confirm-consensus-merge-task',
+            onOk: () => {
+                dispatch(mergeConsensusJobsAsync(taskInstance));
+            },
+            okButtonProps: {
+                type: 'primary',
+                danger: true,
+            },
+            okText: 'Merge',
+        });
+    }, [taskInstance]);
 
     const onExportDataset = useCallback(() => {
         dispatch(exportActions.openExportDatasetModal(taskInstance));
@@ -262,10 +260,9 @@ function TaskActionsComponent(props: Readonly<Props>): JSX.Element {
                 activeInference &&
                 ![RQStatus.FAILED, RQStatus.FINISHED].includes(activeInference.status)
             ),
-            isConsensusEnabled: taskInstance.consensusEnabled,
             isMergingConsensusEnabled: mergingConsensus[`task_${taskInstance.id}`],
             pluginActions,
-            onMergeConsensusJobs: taskInstance.consensusEnabled ? onMergeConsensusJobs : null,
+            onMergeConsensusJobs,
             onOpenBugTracker: taskInstance.bugTracker ? onOpenBugTracker : null,
             onUploadAnnotations,
             onExportDataset,

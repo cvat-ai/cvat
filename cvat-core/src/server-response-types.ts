@@ -111,6 +111,7 @@ export interface SerializedTask {
     project_name: string | null;
     guide_id: number | null;
     segment_size: number;
+    initial_replicas: number;
     size: number;
     source_storage: SerializedStorage | null;
     target_storage: SerializedStorage | null;
@@ -118,7 +119,6 @@ export interface SerializedTask {
     subset: string;
     updated_date: string;
     url: string;
-    consensus_enabled: boolean;
 }
 
 export interface SerializedJob {
