@@ -32,33 +32,44 @@ from cvat.apps.redis_handler.background import AbstractRequestManager
 class _TaskMerger:
     _task: Task
     _jobs: dict[int, list[tuple[int, User]]]
-    _parent_jobs: list[Job]
+    _parent_jobs: dict[int, Job]
     _settings: ConsensusSettings
 
     def check_merging_available(self, *, parent_job_id: int | None = None):
-        if not self._task.consensus_replicas:
-            raise MergingNotAvailable("Consensus is not enabled in this task")
-
         if self._task.dimension != DimensionType.DIM_2D:
             raise MergingNotAvailable("Merging is only supported in 2d tasks")
 
-        if self._jobs is None:
-            self._init_jobs()
-
-        if not self._jobs:
-            raise MergingNotAvailable(
-                f"No {JobType.ANNOTATION} jobs in the {StageChoice.ANNOTATION} stage or "
-                f"no {JobType.CONSENSUS_REPLICA} jobs "
-                f"not in the {StageChoice.ANNOTATION} - {StateChoice.NEW} state found"
-            )
-
-        if parent_job_id:
-            parent_job_info = self._jobs.get(parent_job_id)
-            if not parent_job_info:
+        if parent_job_id is not None:
+            if parent_job_id not in self._parent_jobs:
                 raise MergingNotAvailable(
-                    f"No annotated consensus jobs found for parent job {parent_job_id}. "
-                    f"Make sure at least one consensus job is not "
+                    f"Job {parent_job_id} is not an {JobType.ANNOTATION} job "
+                    f"in the {StageChoice.ANNOTATION} stage"
+                )
+
+            if parent_job_id not in self._jobs:
+                raise MergingNotAvailable(
+                    f"No annotated {JobType.REPLICA} jobs found for parent job {parent_job_id}. "
+                    f"Make sure at least one {JobType.REPLICA} job is not "
                     f"in the {StageChoice.ANNOTATION} - {StateChoice.NEW} state"
+                )
+
+            parent_job_ids = [parent_job_id]
+        else:
+            if not self._jobs:
+                raise MergingNotAvailable(
+                    f"No {JobType.ANNOTATION} jobs in the {StageChoice.ANNOTATION} stage or "
+                    f"no {JobType.REPLICA} jobs "
+                    f"not in the {StageChoice.ANNOTATION} - {StateChoice.NEW} state found"
+                )
+
+            parent_job_ids = list(self._jobs)
+
+        for job_id in parent_job_ids:
+            replicas_count = len(self._jobs[job_id])
+            if replicas_count > settings.MAX_CONSENSUS_REPLICAS:
+                raise MergingNotAvailable(
+                    f"Job {job_id} has {replicas_count} replica jobs to merge, "
+                    f"the maximum supported is {settings.MAX_CONSENSUS_REPLICAS}"
                 )
 
     def __init__(self, task: int | Task) -> None:
@@ -71,23 +82,29 @@ class _TaskMerger:
         self._settings = ConsensusSettings.objects.get_or_create(task=task)[0]
 
     def _init_jobs(self) -> None:
-        job_map = {}  # parent_job_id -> [(consensus_job_id, assignee)]
-        parent_jobs: dict[int, Job] = {}
+        self._parent_jobs: dict[int, Job] = {
+            job.id: job
+            for job in Job.objects.filter(
+                segment__task=self._task,
+                type=JobType.ANNOTATION,
+                stage=StageChoice.ANNOTATION,
+            )
+        }
+
+        # parent_job_id -> [(replica_job_id, assignee)], only the parent jobs with replicas to merge
+        job_map: dict[int, list[tuple[int, User]]] = {}
         for job in (
-            Job.objects.prefetch_related("segment", "parent_job", "assignee")
+            Job.objects.select_related("assignee")
             .filter(
                 segment__task=self._task,
-                type=JobType.CONSENSUS_REPLICA,
-                parent_job__stage=StageChoice.ANNOTATION,
-                parent_job__isnull=False,
+                type=JobType.REPLICA,
+                parent_job_id__in=list(self._parent_jobs),
             )
             .exclude(stage=StageChoice.ANNOTATION, state=StateChoice.NEW)
         ):
             job_map.setdefault(job.parent_job_id, []).append((job.id, job.assignee))
-            parent_jobs.setdefault(job.parent_job_id, job.parent_job)
 
         self._jobs = job_map
-        self._parent_jobs = list(parent_jobs.values())
 
     @staticmethod
     def _get_annotations(job_id: int) -> dm.Dataset:
@@ -96,14 +113,12 @@ class _TaskMerger:
     def _merge_consensus_jobs(self, parent_job_id: int):
         self.check_merging_available(parent_job_id=parent_job_id)
 
-        consensus_job_info = self._jobs[parent_job_id]
+        replica_job_ids = [replica_job_id for replica_job_id, _ in self._jobs[parent_job_id]]
 
-        consensus_job_ids = [consensus_job_id for consensus_job_id, _ in consensus_job_info]
-
-        consensus_job_data_providers = list(map(DatumaroJobDataProvider, consensus_job_ids))
-        consensus_datasets = [
-            consensus_job_data_provider.dm_dataset
-            for consensus_job_data_provider in consensus_job_data_providers
+        replica_job_data_providers = list(map(DatumaroJobDataProvider, replica_job_ids))
+        replica_datasets = [
+            replica_job_data_provider.dm_dataset
+            for replica_job_data_provider in replica_job_data_providers
         ]
 
         comparison_parameters = ComparisonParameters()
@@ -115,7 +130,7 @@ class _TaskMerger:
                 included_annotation_types=comparison_parameters.included_annotation_types,
             )
         )
-        merged_dataset = merger(*consensus_datasets)
+        merged_dataset = merger(*replica_datasets)
 
         # Delete the existing annotations in the job.
         # If we don't delete existing annotations, the imported annotations
@@ -131,17 +146,18 @@ class _TaskMerger:
 
         # updates the annotations in the job
         patch_job_data(
-            parent_job_id, parent_job_data_provider.job_data.data.serialize(), PatchAction.UPDATE
+            parent_job_id,
+            parent_job_data_provider.job_data.data.serialize(),
+            PatchAction.UPDATE,
         )
 
-        for parent_job in self._parent_jobs:
-            if parent_job.id == parent_job_id and parent_job.type == JobType.ANNOTATION.value:
-                parent_job.state = StateChoice.COMPLETED.value
-                parent_job.save()
+        parent_job = self._parent_jobs[parent_job_id]
+        parent_job.state = StateChoice.COMPLETED.value
+        parent_job.save(update_fields=["state", "updated_date"])
 
     @transaction.atomic
     def merge_all_consensus_jobs(self) -> None:
-        for parent_job_id in self._jobs.keys():
+        for parent_job_id in self._jobs:
             self._merge_consensus_jobs(parent_job_id)
 
     @transaction.atomic
