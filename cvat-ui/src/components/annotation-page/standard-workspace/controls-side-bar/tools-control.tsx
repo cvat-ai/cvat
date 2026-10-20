@@ -621,6 +621,8 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         } else {
             setActiveControl(ActiveControl.AI_TOOLS);
         }
+
+        canvasInstance.interact({ enabled: true });
     };
 
     private submitInteraction = (prompts: {
