@@ -623,7 +623,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         this.setState({ mode: 'interaction' });
         canvasInstance.cancel();
         if (parameters) {
-            // remembers last action reproducable with repeat hotkey
+            // remembers last action reproducible with repeat hotkey
             onInteractionStart(activeInteractor!, activeLabelID!, parameters);
         } else {
             setActiveControl(ActiveControl.AI_TOOLS);
