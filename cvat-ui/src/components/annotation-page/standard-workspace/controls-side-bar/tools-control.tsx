@@ -84,7 +84,7 @@ interface DispatchToProps {
     switchNavigationBlocked: typeof switchNavigationBlockedAction;
 }
 
-const MIN_SUPPORTED_INTERACTOR_VERSION = 2;
+export const MIN_SUPPORTED_INTERACTOR_VERSION = 2;
 const core = getCore();
 const CustomPopover = withVisibilityHandling(Popover, 'tools-control');
 const startWithBoxStorageItem = 'startInteractingWithBox';
@@ -620,10 +620,10 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         const { canvasInstance, onInteractionStart, updateActiveControl: setActiveControl } = this.props;
         const { activeInteractor, activeLabelID } = this.state;
 
-        this.validateInteractionIsReady();
         this.setState({ mode: 'interaction' });
         canvasInstance.cancel();
         if (parameters) {
+            // remembers last action reproducable with repeat hotkey
             onInteractionStart(activeInteractor!, activeLabelID!, parameters);
         } else {
             setActiveControl(ActiveControl.AI_TOOLS);
@@ -1297,7 +1297,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
     private renderInteractorBlock(): JSX.Element {
         const {
-            interactors, canvasInstance, labels, interactorExtras,
+            interactors, canvasInstance, interactorExtras, frameData,
         } = this.props;
         const {
             activeInteractor, activeLabelID, fetching, allowROI,
@@ -1320,6 +1320,9 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                 />
             ));
 
+        const isDisabled = !activeInteractor || fetching || !activeLabelID ||
+            activeInteractor.version < MIN_SUPPORTED_INTERACTOR_VERSION || frameData.deleted;
+
         return (
             <>
                 <Row justify='start'>
@@ -1331,7 +1334,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                     <Col span={22}>
                         <Select
                             style={{ width: '100%' }}
-                            defaultValue={interactors[0]?.name}
+                            defaultValue={interactors.length ? `${interactors[0].id}` : undefined}
                             placeholder='Select a model'
                             onChange={this.setActiveInteractor}
                             dropdownRender={(menu) => (
@@ -1341,7 +1344,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                             {interactors.map(
                                 (interactor: MLModel): JSX.Element => (
                                     <Select.Option
-                                        value={interactor.id}
+                                        value={`${interactor.id}`}
                                         title={interactor.description}
                                         key={interactor.id}
                                     >
@@ -1400,14 +1403,13 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                             type='primary'
                             loading={fetching}
                             className='cvat-tools-interact-button'
-                            disabled={!activeInteractor ||
-                                fetching ||
-                                activeInteractor.version < MIN_SUPPORTED_INTERACTOR_VERSION}
+                            disabled={isDisabled}
                             onClick={() => {
-                                if (activeInteractor && activeLabelID && labels.length) {
+                                if (!isDisabled) {
                                     const startWithBox = activeInteractor.params.canvas.startWithBoxOptional ? (
                                         startInteractingWithBox
                                     ) : activeInteractor.params.canvas.startWithBox ?? false;
+
                                     const parameters = {
                                         command: startWithBox ? 'draw_box' as const : 'draw_points' as const,
                                         settings: {
