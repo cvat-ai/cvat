@@ -601,8 +601,8 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
     private isInteractorReady = (): boolean => {
         const { activeInteractor, activeLabelID, mode } = this.state;
-        const { frameData } = this.props;
-        return activeInteractor !== null &&
+        const { frameData, isActivated } = this.props;
+        return isActivated && activeInteractor !== null &&
             activeInteractor.version >= MIN_SUPPORTED_INTERACTOR_VERSION &&
             activeLabelID !== null && mode === 'interaction' && !frameData.deleted;
     };
@@ -622,7 +622,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             setActiveControl(ActiveControl.AI_TOOLS);
         }
 
-        canvasInstance.interact({ enabled: true });
+        canvasInstance.interact({ enabled: true, ...(parameters ?? {}) });
     };
 
     private submitInteraction = (prompts: {
@@ -1293,9 +1293,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
     }
 
     private renderInteractorBlock(): JSX.Element {
-        const {
-            interactors, canvasInstance, interactorExtras, frameData,
-        } = this.props;
+        const { interactors, interactorExtras, frameData } = this.props;
         const {
             activeInteractor, activeLabelID, fetching, allowROI,
             startInteractingWithBox, convertMasksToPolygons,
@@ -1421,7 +1419,6 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                                     };
 
                                     this.activateInteraction(parameters);
-                                    canvasInstance.interact({ enabled: true, ...parameters });
                                 }
                             }}
                         >
