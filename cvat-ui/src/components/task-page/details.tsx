@@ -19,7 +19,6 @@ import MdGuideControl from 'components/md-guide/md-guide-control';
 import Preview from 'components/common/preview';
 import { cancelInferenceAsync } from 'actions/models-actions';
 import { CombinedState, ActiveInference } from 'reducers';
-import CVATTag, { TagType } from 'components/common/cvat-tag';
 import { usePlugins } from 'utils/hooks';
 import UserSelector from './user-selector';
 import BugTrackerEditor from './bug-tracker-editor';
@@ -66,7 +65,6 @@ const core = getCore();
 interface State {
     name: string;
     subset: string;
-    consensusEnabled: boolean;
 }
 
 type Props = DispatchToProps & StateToProps & OwnProps;
@@ -101,7 +99,6 @@ class DetailsComponent extends React.PureComponent<Props, State> {
         this.state = {
             name: taskInstance.name,
             subset: taskInstance.subset,
-            consensusEnabled: taskInstance.consensusEnabled,
         };
     }
 
@@ -153,7 +150,6 @@ class DetailsComponent extends React.PureComponent<Props, State> {
             onUpdateTaskMeta,
         } = this.props;
 
-        const { consensusEnabled } = this.state;
         const owner = taskInstance.owner ? taskInstance.owner.username : null;
         const assignee = taskInstance.assignee ? taskInstance.assignee : null;
         const created = dayjs(taskInstance.createdDate).format('MMMM Do YYYY');
@@ -179,7 +175,6 @@ class DetailsComponent extends React.PureComponent<Props, State> {
                                 </Text>
                             </div>
                         )}
-                        {consensusEnabled && <CVATTag type={TagType.CONSENSUS} />}
                     </Col>
                     <Col>
                         <Text type='secondary'>Assigned to</Text>

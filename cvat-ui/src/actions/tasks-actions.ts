@@ -261,9 +261,6 @@ ThunkAction {
         if (data.cloudStorageId) {
             description.data_cloud_storage_id = data.cloudStorageId;
         }
-        if (data.advanced.consensusReplicas) {
-            description.consensus_replicas = +data.advanced.consensusReplicas;
-        }
         if (data.advanced.useZipChunks !== undefined) {
             description.use_zip_chunks = data.advanced.useZipChunks;
         }
@@ -294,8 +291,8 @@ ThunkAction {
             };
         }
 
-        if (data.advanced.consensusReplicas) {
-            extras.consensus_replicas = description.consensus_replicas;
+        if (data.advanced.initialReplicas) {
+            extras.initial_replicas = +data.advanced.initialReplicas;
         }
 
         const taskInstance = new cvat.classes.Task(description);
