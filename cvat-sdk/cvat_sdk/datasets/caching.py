@@ -19,6 +19,7 @@ from cvat_sdk.core.client import Client
 from cvat_sdk.core.proxies.projects import Project
 from cvat_sdk.core.proxies.tasks import Task
 from cvat_sdk.core.utils import atomic_writer
+from cvat_sdk.datasets.common import chunk_suffix_for_original_type
 
 
 class UpdatePolicy(Enum):
@@ -75,6 +76,10 @@ class CacheManager(metaclass=ABCMeta):
 
     def chunk_dir(self, task_id: int) -> Path:
         return self.task_dir(task_id) / "chunks"
+
+    def chunk_path(self, task: Task, chunk_index: int) -> Path:
+        suffix = chunk_suffix_for_original_type(task.data_original_chunk_type)
+        return self.chunk_dir(task.id) / f"{chunk_index}{suffix}"
 
     def project_dir(self, project_id: int) -> Path:
         return self._server_dir / f"projects/{project_id}"
@@ -191,7 +196,7 @@ class _CacheManagerOnline(CacheManager):
         return model
 
     def ensure_chunk(self, task: Task, chunk_index: int) -> None:
-        chunk_path = self.chunk_dir(task.id) / f"{chunk_index}.zip"
+        chunk_path = self.chunk_path(task, chunk_index)
         if chunk_path.exists():
             return  # already downloaded previously
 
@@ -234,7 +239,7 @@ class _CacheManagerOffline(CacheManager):
         return self.load_model(self.task_dir(task_id) / filename, model_type)
 
     def ensure_chunk(self, task: Task, chunk_index: int) -> None:
-        chunk_path = self.chunk_dir(task.id) / f"{chunk_index}.zip"
+        chunk_path = self.chunk_path(task, chunk_index)
 
         if not chunk_path.exists():
             raise FileNotFoundError(f"Chunk {chunk_index} of task {task.id} is not cached")
