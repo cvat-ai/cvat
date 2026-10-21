@@ -154,6 +154,40 @@ context('Basic manipulations with consensus job replicas', () => {
         });
     });
 
+    describe('Frame deletion in replica jobs', () => {
+        let consensusTaskId = null;
+        before(() => {
+            cy.headlessCreateTask(taskSpec, dataSpec, extras).then(({ taskId }) => {
+                consensusTaskId = taskId;
+            });
+        });
+
+        function openJobWithTag(tag) {
+            cy.openTaskById(consensusTaskId);
+            cy.get('.cvat-clear-filters-button').click();
+            cy.get(`.cvat-job-item:has(.cvat-tag-${tag})`).first()
+                .contains('a', 'Job #').click();
+            cy.get('.cvat-canvas-container').should('exist').and('be.visible');
+        }
+
+        it('Frames can be deleted in the parent job, but not in its replicas', () => {
+            openJobWithTag('parent');
+            cy.get('.cvat-player-delete-frame').should('exist');
+
+            openJobWithTag('replica');
+            cy.get('.cvat-player-delete-frame').should('not.exist');
+            cy.get('.cvat-player-restore-frame').should('not.exist');
+
+            cy.get('body').type('{alt}{del}');
+            cy.get('.ant-message-warning')
+                .should('be.visible')
+                .and('contain.text', 'Frames cannot be deleted in replica jobs');
+        });
+        after(() => {
+            cy.headlessDeleteTask(consensusTaskId);
+        });
+    });
+
     describe('Consensus jobs merging', () => {
         let consensusTaskId = null;
         const baseShape = {

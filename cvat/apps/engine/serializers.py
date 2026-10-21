@@ -4056,6 +4056,14 @@ class JobDataMetaWriteSerializer(serializers.ModelSerializer):
                 )
             )
 
+        if instance.type == models.JobType.REPLICA:
+            current_deleted_frames = set(db_data.deleted_frames).intersection(segment_rel_frame_set)
+            if set(deleted_frames) != current_deleted_frames:
+                raise serializers.ValidationError(
+                    "Frames cannot be deleted or restored in a replica job, "
+                    "use its parent annotation job instead"
+                )
+
         updated_deleted_validation_frames = None
         updated_deleted_task_frames = None
 
