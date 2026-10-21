@@ -1,0 +1,11 @@
+ARG CVAT_VERSION=dev
+FROM cvat/server:${CVAT_VERSION}
+
+USER root
+
+# The runtime image removes pip. Re-enable it only to install debugpy, then remove pip again.
+RUN /opt/venv/bin/python -m ensurepip --upgrade \
+    && /opt/venv/bin/python -m pip install --no-cache-dir debugpy \
+    && /opt/venv/bin/python -m pip uninstall -y pip
+
+USER 1000:1000
