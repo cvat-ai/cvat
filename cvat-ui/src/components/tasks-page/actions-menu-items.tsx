@@ -13,10 +13,9 @@ interface MenuItemsData {
     taskId: number;
     projectId: number | null;
     isAutomaticAnnotationEnabled: boolean;
-    isConsensusEnabled: boolean;
     isMergingConsensusEnabled: boolean;
     pluginActions: ReturnType<typeof usePlugins>;
-    onMergeConsensusJobs: (() => void) | null;
+    onMergeConsensusJobs: () => void;
     onOpenBugTracker: (() => void) | null;
     onUploadAnnotations: () => void;
     onExportDataset: () => void;
@@ -40,7 +39,6 @@ export default function TaskActionsItems(menuItemsData: MenuItemsData, taskMenuP
         projectId,
         pluginActions,
         isAutomaticAnnotationEnabled,
-        isConsensusEnabled,
         isMergingConsensusEnabled,
         onMergeConsensusJobs,
         onUploadAnnotations,
@@ -115,23 +113,19 @@ export default function TaskActionsItems(menuItemsData: MenuItemsData, taskMenuP
         disabled: isDisabled('quality_control') || isQualityControlDisabled,
     }, 70]);
 
-    if (isConsensusEnabled) {
-        menuItems.push([{
-            key: 'consensus_management',
-            label: withCount('Consensus management', 'consensus_management', `/tasks/${taskId}/consensus`),
-            disabled: isDisabled('consensus_management'),
-        }, 75]);
-    }
+    menuItems.push([{
+        key: 'consensus_management',
+        label: withCount('Consensus management', 'consensus_management', `/tasks/${taskId}/consensus`),
+        disabled: isDisabled('consensus_management'),
+    }, 75]);
 
-    if (onMergeConsensusJobs) {
-        menuItems.push([{
-            key: 'merge_consensus_jobs',
-            onClick: onMergeConsensusJobs,
-            label: withCount('Merge consensus jobs', 'merge_consensus_jobs'),
-            disabled: isMergingConsensusEnabled || isDisabled('merge_consensus_jobs'),
-            itemIcon: isMergingConsensusEnabled ? <LoadingOutlined /> : undefined,
-        }, 80]);
-    }
+    menuItems.push([{
+        key: 'merge_consensus_jobs',
+        onClick: onMergeConsensusJobs,
+        label: withCount('Merge consensus jobs', 'merge_consensus_jobs'),
+        disabled: isMergingConsensusEnabled || isDisabled('merge_consensus_jobs'),
+        itemIcon: isMergingConsensusEnabled ? <LoadingOutlined /> : undefined,
+    }, 80]);
 
     menuItems.push([{ type: 'divider' }, 89]);
 

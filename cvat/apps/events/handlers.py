@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 import traceback
+from contextlib import suppress
 from typing import Any
 
 import rq
@@ -308,7 +309,7 @@ def get_serializer(instance: Model) -> BaseSerializer | None:
 SERIALIZER_CLEAN_UP_FIELDS = [
     (ProjectReadSerializer, ["tasks", "labels"]),
     (TaskReadSerializer, ["jobs", "labels"]),
-    (JobReadSerializer, ["labels", "issues", "replicas_count", "consensus_replicas"]),
+    (JobReadSerializer, ["labels", "issues", "replicas_count"]),
     (IssueReadSerializer, ["comments"]),
 ]
 
@@ -711,6 +712,10 @@ def handle_viewset_exception(exc: Exception, context):
     request = context["request"]
     view = context["view"]
 
+    org = None
+    with suppress(Exception):
+        org = request.iam_context["organization"]
+
     tb_strings = traceback.format_exception(type(exc), exc, exc.__traceback__)
 
     payload = {
@@ -734,6 +739,8 @@ def handle_viewset_exception(exc: Exception, context):
         user_id=getattr(request.user, "id", None),
         user_name=getattr(request.user, "username", None),
         user_email=getattr(request.user, "email", None),
+        org_id=getattr(org, "id", None),
+        org_slug=getattr(org, "slug", None),
         payload=payload,
     )
 

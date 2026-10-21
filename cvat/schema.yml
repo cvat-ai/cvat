@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: CVAT REST API
-  version: 2.79.0
+  version: 2.80.0
   description: REST API for Computer Vision Annotation Tool (CVAT)
   termsOfService: https://www.google.com/policies/terms/
   contact:
@@ -2521,7 +2521,7 @@ paths:
           enum:
           - annotation
           - ground_truth
-          - consensus_replica
+          - replica
       tags:
       - jobs
       security:
@@ -7312,12 +7312,39 @@ paths:
       operationId: users_retrieve
       summary: Get user details
       parameters:
+      - in: header
+        name: X-Organization
+        schema:
+          type: string
+        description: |
+          Organization unique slug.
+          If omitted, results from all organizations available to the user are returned
+          (unfiltered). An empty value ("") selects the personal sandbox workspace only.
+          A non-empty value selects that organization.
       - in: path
         name: id
         schema:
           type: integer
         description: A unique integer value identifying this user.
         required: true
+      - in: query
+        name: org
+        schema:
+          type: string
+        description: |
+          Organization unique slug.
+          If omitted, results from all organizations available to the user are returned
+          (unfiltered). An empty value ("") selects the personal sandbox workspace only.
+          A non-empty value selects that organization.
+      - in: query
+        name: org_id
+        schema:
+          type: integer
+        description: |
+          Organization unique id.
+          If omitted, results from all organizations available to the user are returned
+          (unfiltered). An empty value ("") selects the personal sandbox workspace only.
+          A positive integer selects that organization.
       tags:
       - users
       security:
@@ -9585,10 +9612,6 @@ components:
           type: integer
           nullable: true
           readOnly: true
-        consensus_replicas:
-          type: integer
-          readOnly: true
-          deprecated: true
         replicas_count:
           type: integer
           readOnly: true
@@ -9619,12 +9642,12 @@ components:
       enum:
       - annotation
       - ground_truth
-      - consensus_replica
+      - replica
       type: string
       description: |-
         * `annotation` - ANNOTATION
         * `ground_truth` - GROUND_TRUTH
-        * `consensus_replica` - CONSENSUS_REPLICA
+        * `replica` - REPLICA
     JobValidationLayoutRead:
       type: object
       properties:
@@ -13682,6 +13705,9 @@ components:
         segment_size:
           type: integer
           readOnly: true
+        initial_replicas:
+          type: integer
+          readOnly: true
         status:
           allOf:
           - $ref: '#/components/schemas/JobStatus'
@@ -13764,9 +13790,6 @@ components:
           nullable: true
           description: Describes how the task validation is performed. Configured
             at task creation
-        consensus_enabled:
-          type: boolean
-          readOnly: true
       required:
       - jobs
       - labels
@@ -13855,13 +13878,20 @@ components:
           $ref: '#/components/schemas/StorageRequest'
         source_storage:
           $ref: '#/components/schemas/StorageRequest'
+        initial_replicas:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          description: The number of replica jobs for each annotation job. Configured
+            at task creation
         consensus_replicas:
           type: integer
           minimum: 0
-          default: 0
+          writeOnly: true
           description: |
-            The number of consensus replica jobs for each annotation job.
-            Configured at task creation
+            Deprecated. The number of replica jobs for each annotation job.
+            Use 'initial_replicas' instead
+          deprecated: true
       required:
       - name
     TasksSummary:

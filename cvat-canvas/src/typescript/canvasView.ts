@@ -2062,8 +2062,11 @@ export class CanvasViewImpl implements CanvasView, Listener {
             return;
         }
 
+        const targetShape = (event.target as Element)?.closest?.('.cvat_canvas_shape');
+        const targetControl = !targetShape?.hasAttribute('data-polyline-id') &&
+            (event.target as Element)?.closest?.('.svg_select_points, .svg_select_points_rot');
         if (event.button === 0 && this.isMultiSelectObjectModifierPressed(event) &&
-            [Mode.IDLE, Mode.SELECT].includes(this.mode)) {
+            [Mode.IDLE, Mode.SELECT].includes(this.mode) && !targetControl) {
             const { offset } = this.controller.geometry;
             const [x, y] = translateToSVG(this.content, [event.clientX, event.clientY]);
             this.canvas.dispatchEvent(new CustomEvent('canvas.selectionrequested', {
@@ -2090,7 +2093,6 @@ export class CanvasViewImpl implements CanvasView, Listener {
             return;
         }
 
-        const targetShape = (event.target as Element)?.closest?.('.cvat_canvas_shape');
         const onBackground = !targetShape;
         if (event.button === 0 && this.isMultiSelectModifierPressed(event) &&
             this.mode === Mode.IDLE && onBackground) {

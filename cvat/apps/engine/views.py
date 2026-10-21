@@ -2295,6 +2295,23 @@ class JobViewSet(
 
         return queryset
 
+    def filter_queryset(self, queryset):
+        # NOTE @sosov consensus_replica -> replica backward compatibility: old clients and saved
+        # filters send the legacy job type in the "type" and "filter" parameters
+        params = self.request.query_params
+        if params.get("type") == "consensus_replica" or '"consensus_replica"' in params.get(
+            "filter", ""
+        ):
+            params = params.copy()
+            if params.get("type") == "consensus_replica":
+                params["type"] = "replica"
+            if "filter" in params:
+                params["filter"] = params["filter"].replace('"consensus_replica"', '"replica"')
+            # NOTE @sosov: SimpleFilter and JsonLogicFilter read the parameters from request.query_params
+            self.request._request.GET = params
+
+        return super().filter_queryset(queryset)
+
     def get_serializer_class(self):
         if self.request.method in SAFE_METHODS:
             return JobReadSerializer
@@ -3273,6 +3290,7 @@ class LabelViewSet(
     ),
     retrieve=extend_schema(
         summary="Get user details",
+        parameters=ORGANIZATION_OPEN_API_PARAMETERS,
         responses={
             "200": PolymorphicProxySerializer(
                 component_name="MetaUser",
