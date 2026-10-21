@@ -1818,6 +1818,44 @@ Cypress.Commands.add('addReplicas', (count, { jobId = null, jobsCount = 1 } = {}
     return cy.wrap(parentJobIds);
 });
 
+Cypress.Commands.add('pasteText', { prevSubject: 'element' }, (subject, text) => {
+    cy.wrap(subject).trigger('paste', { clipboardData: { getData: () => text } });
+});
+
+Cypress.Commands.add('distributeJobs', (usernames, { paste = false, requestsCount } = {}) => {
+    const assignments = [];
+
+    cy.intercept('PATCH', '/api/jobs/**').as('assignJob');
+    if (paste) {
+        cy.get('.cvat-modal-distribute-jobs .cvat-distribute-jobs-users input').pasteText(usernames.join('\n'));
+    } else {
+        usernames.forEach((username) => {
+            cy.intercept('GET', `/api/users?**search=${username}**`).as('searchUsers');
+            cy.get('.cvat-modal-distribute-jobs .cvat-distribute-jobs-users input').type(username);
+            cy.wait('@searchUsers');
+            // the dropdown is rendered outside the modal
+            cy.get('.cvat-distribute-jobs-users-dropdown')
+                .not('.ant-select-dropdown-hidden')
+                .contains('.ant-select-item-option', new RegExp(`^${username}$`))
+                .click();
+        });
+    }
+    cy.get('.cvat-modal-distribute-jobs').within(() => {
+        cy.get('.cvat-distribute-jobs-users .ant-select-selection-item')
+            .should('have.length', usernames.length);
+        cy.contains('button', 'Distribute').click();
+    });
+
+    for (let i = 0; i < requestsCount; i++) {
+        cy.wait('@assignJob').then(({ response }) => {
+            expect(response.statusCode).to.equal(200);
+            assignments.push([response.body.id, response.body.assignee.username]);
+        });
+    }
+
+    return cy.wrap(assignments);
+});
+
 Cypress.Commands.add('drawMask', (instructions) => {
     for (const instruction of instructions) {
         const { method } = instruction;

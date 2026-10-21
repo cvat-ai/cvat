@@ -1340,7 +1340,9 @@ class JobReadSerializer(serializers.ModelSerializer):
 
 
 class JobWriteSerializer(serializers.ModelSerializer):
-    assignee = serializers.IntegerField(allow_null=True, required=False)
+    assignee = serializers.IntegerField(
+        allow_null=True, required=False, validators=[field_validation.assignee_validator]
+    )
 
     class Meta:
         model = models.Job
@@ -1377,7 +1379,9 @@ class JobWriteSerializer(serializers.ModelSerializer):
 
 
 class BaseJobCreateSerializer(serializers.ModelSerializer):
-    assignee = serializers.IntegerField(allow_null=True, required=False)
+    assignee = serializers.IntegerField(
+        allow_null=True, required=False, validators=[field_validation.assignee_validator]
+    )
     task_id = serializers.IntegerField()
 
     class Meta:

@@ -1728,6 +1728,21 @@ class TestPatchJob:
             else:
                 assert updated_job.assignee is None
 
+    def test_cannot_assign_nonexistent_user(self, admin_user, jobs, users):
+        job = next(iter(jobs))
+        nonexistent_user_id = max(u["id"] for u in users) + 1
+
+        with make_api_client(admin_user) as api_client:
+            _, response = api_client.jobs_api.partial_update(
+                job["id"],
+                patched_job_write_request={"assignee": nonexistent_user_id},
+                _parse_response=False,
+                _check_status=False,
+            )
+
+        assert response.status == HTTPStatus.BAD_REQUEST
+        assert "assignee" in json.loads(response.data)
+
     def test_malefactor_cannot_obtain_job_details_via_empty_partial_update_request(
         self, regular_lonely_user, jobs
     ):

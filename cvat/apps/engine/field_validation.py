@@ -7,6 +7,8 @@ from typing import Any
 
 from rest_framework import serializers
 
+from cvat.apps.iam.models import User
+
 
 def require_one_of_fields(data: dict[str, Any], keys: Sequence[str]) -> None:
     active_count = sum(key in data for key in keys)
@@ -43,5 +45,12 @@ def require_one_of_values(data: dict[str, Any], key: str, values: Sequence[Any])
 def validate_share(value: float) -> float:
     if not 0 <= value <= 1:
         raise serializers.ValidationError("Value must be in the range [0; 1]")
+
+    return value
+
+
+def assignee_validator(value: int) -> int:
+    if not User.objects.filter(id=value).exists():
+        raise serializers.ValidationError(f"The specified user #{value} does not exist.")
 
     return value
