@@ -16,7 +16,12 @@ from datumaro.util.annotation_util import mean_bbox
 from datumaro.util.attrs_util import ensure_cls
 
 from cvat.apps.dataset_manager.bindings import CVAT_INTERNAL_ATTRIBUTES
-from cvat.apps.quality_control.backends.datumaro.matching import DistanceComparator, segment_iou
+from cvat.apps.quality_control.backends.datumaro.matching import (
+    ComparisonParameters,
+    DistanceComparator,
+    segment_iou,
+)
+from cvat.apps.quality_control.matching import PairwiseComparison
 from cvat.apps.quality_control.models import DefaultComparisonSettings
 
 
@@ -245,6 +250,8 @@ class CachedSimilarityFunction:
 
 @attrs.define(kw_only=True, slots=False)
 class ShapeMatcher(AnnotationMatcher, metaclass=ABCMeta):
+    _annotation_type: ClassVar[dm.AnnotationType]
+
     pairwise_dist: float = 0.9
     cluster_dist: float | None = None
     categories: dm.CategoriesInfo
@@ -257,11 +264,15 @@ class ShapeMatcher(AnnotationMatcher, metaclass=ABCMeta):
 
         self._comparator = DistanceComparator(
             categories=self.categories,
-            return_distances=True,
-            iou_threshold=self.pairwise_dist,
-            oks_sigma=self._context.conf.sigma,
-            line_torso_radius=self._context.conf.torso_r,
-            panoptic_comparison=False,
+            settings=ComparisonParameters(
+                annotation_type=self._annotation_type,
+                iou_threshold=self.pairwise_dist,
+                oks_sigma=self._context.conf.sigma,
+                line_thickness=self._context.conf.torso_r,
+                compare_line_orientation=False,
+                panoptic_comparison=False,
+            ),
+            return_comparisons=True,
             # allow_groups=True is not supported. Requires significant logic changes in
             # the whole merging algorithm, as it's likely to produce clusters with annotations
             # from the same source or some new annotations (instances).
@@ -286,18 +297,18 @@ class ShapeMatcher(AnnotationMatcher, metaclass=ABCMeta):
     def _match_annotations_between_two_items(
         self, item_a: dm.DatasetItem, item_b: dm.DatasetItem
     ) -> list[tuple[dm.Annotation, dm.Annotation]]:
-        matches, distances = self.match_annotations_between_two_items(item_a, item_b)
+        matches, comparisons = self.match_annotations_between_two_items(item_a, item_b)
 
         # Remember distances
-        for (p_a_id, p_b_id), dist in distances.items():
-            self._distance.set((p_a_id, p_b_id), dist)
+        for (p_a_id, p_b_id), comparison in comparisons.items():
+            self._distance.set((p_a_id, p_b_id), comparison.similarity)
 
         return matches
 
     @abstractmethod
     def match_annotations_between_two_items(
         self, item_a: dm.DatasetItem, item_b: dm.DatasetItem
-    ) -> tuple[list[tuple[dm.Annotation, dm.Annotation]], dict[CacheKey, float]]: ...
+    ) -> tuple[list[tuple[dm.Annotation, dm.Annotation]], dict[CacheKey, PairwiseComparison]]: ...
 
     def match_annotations(self, sources):
         distance = self.distance
@@ -368,9 +379,11 @@ class ShapeMatcher(AnnotationMatcher, metaclass=ABCMeta):
 
 @attrs.define(kw_only=True, slots=False)
 class BboxMatcher(ShapeMatcher):
+    _annotation_type: ClassVar[dm.AnnotationType] = dm.AnnotationType.bbox
+
     def match_annotations_between_two_items(self, item_a, item_b):
-        matches, _, _, _, distances = self._comparator.match_boxes(item_a, item_b)
-        return matches, distances
+        matches, _, _, _, comparisons = self._comparator.match_boxes(item_a, item_b)
+        return matches, comparisons
 
 
 @attrs.define(kw_only=True, slots=False)
@@ -378,14 +391,8 @@ class PolygonMatcher(ShapeMatcher):
     _annotation_type: ClassVar[dm.AnnotationType] = dm.AnnotationType.polygon
 
     def match_annotations_between_two_items(self, item_a, item_b):
-        item_a = item_a.wrap(
-            annotations=[a for a in item_a.annotations if a.type == self._annotation_type]
-        )
-        item_b = item_b.wrap(
-            annotations=[a for a in item_b.annotations if a.type == self._annotation_type]
-        )
-        matches, _, _, _, distances = self._comparator.match_segmentations(item_a, item_b)
-        return matches, distances
+        matches, _, _, _, comparisons = self._comparator.match_segmentations(item_a, item_b)
+        return matches, comparisons
 
 
 @attrs.define(kw_only=True, slots=False)
@@ -395,30 +402,38 @@ class MaskMatcher(PolygonMatcher):
 
 @attrs.define(kw_only=True, slots=False)
 class PointsMatcher(ShapeMatcher):
+    _annotation_type: ClassVar[dm.AnnotationType] = dm.AnnotationType.points
+
     def match_annotations_between_two_items(self, item_a, item_b):
-        matches, _, _, _, distances = self._comparator.match_points(item_a, item_b)
-        return matches, distances
+        matches, _, _, _, comparisons = self._comparator.match_points(item_a, item_b)
+        return matches, comparisons
 
 
 @attrs.define(kw_only=True, slots=False)
 class SkeletonMatcher(ShapeMatcher):
+    _annotation_type: ClassVar[dm.AnnotationType] = dm.AnnotationType.skeleton
+
     def match_annotations_between_two_items(self, item_a, item_b):
-        matches, _, _, _, distances = self._comparator.match_skeletons(item_a, item_b)
-        return matches, distances
+        matches, _, _, _, comparisons = self._comparator.match_skeletons(item_a, item_b)
+        return matches, comparisons
 
 
 @attrs.define(kw_only=True, slots=False)
 class LineMatcher(ShapeMatcher):
+    _annotation_type: ClassVar[dm.AnnotationType] = dm.AnnotationType.polyline
+
     def match_annotations_between_two_items(self, item_a, item_b):
-        matches, _, _, _, distances = self._comparator.match_lines(item_a, item_b)
-        return matches, distances
+        matches, _, _, _, comparisons = self._comparator.match_lines(item_a, item_b)
+        return matches, comparisons
 
 
 @attrs.define(kw_only=True, slots=False)
 class EllipseMatcher(ShapeMatcher):
+    _annotation_type: ClassVar[dm.AnnotationType] = dm.AnnotationType.ellipse
+
     def match_annotations_between_two_items(self, item_a, item_b):
-        matches, _, _, _, distances = self._comparator.match_ellipses(item_a, item_b)
-        return matches, distances
+        matches, _, _, _, comparisons = self._comparator.match_ellipses(item_a, item_b)
+        return matches, comparisons
 
 
 @attrs.define(kw_only=True, slots=False)
