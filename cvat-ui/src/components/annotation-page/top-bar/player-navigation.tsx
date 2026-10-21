@@ -15,6 +15,7 @@ import Slider, { SliderMarks } from 'antd/lib/slider';
 import InputNumber from 'antd/lib/input-number';
 import Text from 'antd/lib/typography/Text';
 import Modal from 'antd/lib/modal';
+import message from 'antd/lib/message';
 import Tooltip from 'antd/lib/tooltip';
 
 import { Workspace, CombinedState } from 'reducers';
@@ -38,6 +39,7 @@ interface Props {
     hoveredChapter: number | null;
     frameFilename: string;
     frameDeleted: boolean;
+    frameDeletionAvailable: boolean;
     deleteFrameShortcut: string;
     focusFrameInputShortcut: string;
     searchFrameByNameShortcut: string;
@@ -89,6 +91,7 @@ function PlayerNavigation(props: Props): JSX.Element {
         frameNumber,
         frameFilename,
         frameDeleted,
+        frameDeletionAvailable,
         deleteFrameShortcut,
         focusFrameInputShortcut,
         searchFrameByNameShortcut,
@@ -143,7 +146,14 @@ function PlayerNavigation(props: Props): JSX.Element {
     const handlers: Record<keyof typeof componentShortcuts, (event?: KeyboardEvent) => void> = {
         DELETE_FRAME: (event: KeyboardEvent | undefined) => {
             event?.preventDefault();
-            onDeleteFrame();
+            if (frameDeletionAvailable) {
+                onDeleteFrame();
+            } else {
+                message.warning({
+                    content: 'Frames cannot be deleted in replica jobs, use the parent annotation job',
+                    className: 'cvat-replica-frame-deletion-warning',
+                });
+            }
         },
         FOCUS_INPUT_FRAME: (event: KeyboardEvent | undefined) => {
             event?.preventDefault();
@@ -250,7 +260,7 @@ function PlayerNavigation(props: Props): JSX.Element {
                         <CVATTooltip title='Create frame URL'>
                             <LinkOutlined className='cvat-player-frame-url-icon' onClick={onURLIconClick} />
                         </CVATTooltip>
-                        { deleteFrameIcon }
+                        { frameDeletionAvailable && deleteFrameIcon }
                     </Col>
                 </Row>
             </Col>
