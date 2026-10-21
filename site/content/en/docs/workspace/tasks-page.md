@@ -126,6 +126,12 @@ to annotate the first images. Other frames will be loaded in the background.
 
 ![Example of user interface with task frames](/images/task-details-2.png)
 
+### Search a frame by filename
+
+Use the search (magnifier) button next to the **Jobs** header to find an image by
+filename across the whole task. Type a part of the filename and select a result to
+open the job that contains that frame, at the exact frame.
+
 ## How to create and configure an annotation task
 
 To start annotating in CVAT, you must create an annotation task and specify its parameters.
