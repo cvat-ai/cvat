@@ -49,11 +49,19 @@ import {
 const SELECTED_OBJECTS_BOX_PADDING = 6;
 const SELECTED_OBJECTS_BOX_STROKE_WIDTH = 2;
 
+interface SelectionPreviewHandler {
+    el: SVG.Element;
+    nested?: SVG.Container;
+    observerInst?: MutationObserver;
+    handler(): void;
+    observe(): void;
+}
+
 interface SelectionPreviewShape {
     shape: SVG.Shape;
     rotation: number;
     transforms: { element: SVG.Element; matrix: SVG.Matrix; original: string | null }[];
-    selectionHandler: any;
+    selectionHandler?: SelectionPreviewHandler;
 }
 
 export interface CanvasView {
@@ -1652,7 +1660,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 groupIncludesMask = groupStates.some((member) => member.shapeType === 'mask');
                 groupOffset = { x: 0, y: 0 };
                 start = Date.now();
-                if (this.selectedObjects.includes(state.clientID)) {
+                if (this.selectedObjectsSet.has(state.clientID)) {
                     this.closeSelectedObjectsMenu();
                 }
                 if (groupDragging) {
@@ -2726,7 +2734,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             this.setupObjects(this.controller.objects);
             if (this.mode === Mode.SELECT) {
                 const states = this.controller.objects.filter((state: any): boolean => (
-                    this.selectedObjects.includes(state.clientID)
+                    this.selectedObjectsSet.has(state.clientID)
                 ));
                 this.selectHandler.setSelected(states, false);
             }
@@ -2939,7 +2947,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             this.selectedObjectsSet = new Set(this.selectedObjects);
             if (this.mode === Mode.SELECT) {
                 const states = this.controller.objects.filter((state: any): boolean => (
-                    this.selectedObjects.includes(state.clientID)
+                    this.selectedObjectsSet.has(state.clientID)
                 ));
                 this.selectHandler.setSelected(states, false);
             }
@@ -3728,7 +3736,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
         // A movable selected shape can drag the other movable members while
         // locked, pinned, ground-truth, and skeleton members remain in place.
         const partOfGroupSelection = this.selectedObjects.length > 1 &&
-            this.selectedObjects.includes(state.clientID);
+            this.selectedObjectsSet.has(state.clientID);
         const draggableBySelection = partOfGroupSelection && this.isStateMovableInSelection(state);
         if ((!partOfGroupSelection && !state.pinned) || draggableBySelection) {
             this.draggable(state, shape, () => {
@@ -3971,7 +3979,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
             const shape = this.svgShapes[state.clientID];
             const controlShape = state.shapeType === 'skeleton' ?
                 (shape as SVG.G).children().find((child: SVG.Element) => child.type === 'rect') : shape;
-            const selectionHandler = controlShape?.remember('_selectHandler');
+            const selectionHandler: SelectionPreviewHandler | undefined = controlShape?.remember('_selectHandler');
             const elements: SVG.Element[] = [shape];
             if (selectionHandler?.nested && !shape.node.contains(selectionHandler.nested.node)) {
                 elements.push(selectionHandler.nested);
