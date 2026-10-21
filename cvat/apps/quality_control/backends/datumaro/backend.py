@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import itertools
-from collections.abc import Iterator
+from collections.abc import Collection, Iterator
 from typing import TYPE_CHECKING, cast
 
 import attrs
@@ -47,6 +47,14 @@ class Datumaro2DBackend(QualityBackend):
         self._gt_provider = gt_provider
         self._views: dict[tuple[int, int], DatumaroAnnotationAdapter] = {}
         self._native_items: tuple[dm.DatasetItem, dm.DatasetItem] | None = None
+
+    @property
+    def supported_annotation_types(self) -> Collection[QualityRequirementAnnotationType]:
+        return tuple(
+            annotation_type
+            for annotation_type in QualityRequirementAnnotationType
+            if annotation_type != QualityRequirementAnnotationType.INTERVAL
+        )
 
     @property
     def catalog(self) -> cdm.LabelCatalog:
@@ -101,6 +109,8 @@ class Datumaro2DBackend(QualityBackend):
         *,
         requirement_type: QualityRequirementAnnotationType | str,
     ) -> ComparisonSample:
+        if requirement_type == QualityRequirementAnnotationType.INTERVAL:
+            raise AssertionError("The 2D backend cannot compare interval requirements")
         if requirement_type != QualityRequirementAnnotationType.SKELETON_KEYPOINT:
             return sample
 

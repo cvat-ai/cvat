@@ -5341,6 +5341,7 @@ paths:
           - mask
           - polygon
           - ellipse
+          - interval
       - name: enabled
         in: query
         description: A simple equality filter for the enabled field
@@ -8003,6 +8004,7 @@ components:
         frame:
           type: integer
           readOnly: true
+          nullable: true
         type:
           allOf:
           - $ref: '#/components/schemas/AnnotationConflictType'
@@ -8030,11 +8032,13 @@ components:
       - tag
       - shape
       - track
+      - interval
       type: string
       description: |-
         * `tag` - TAG
         * `shape` - SHAPE
         * `track` - TRACK
+        * `interval` - INTERVAL
     AnnotationConflictSeverity:
       enum:
       - error
@@ -8132,6 +8136,7 @@ components:
       - mask
       - polygon
       - ellipse
+      - interval
       type: string
       description: |-
         * `tag` - Tag
@@ -8143,6 +8148,7 @@ components:
         * `mask` - Mask
         * `polygon` - Polygon
         * `ellipse` - Ellipse
+        * `interval` - Interval
     AssetRead:
       type: object
       properties:
@@ -11732,6 +11738,12 @@ components:
         id:
           type: integer
           readOnly: true
+        version:
+          type: integer
+          readOnly: true
+          nullable: true
+          description: Report format version, determined on first access. 0 means
+            unrecognized data.
         job_id:
           type: integer
           nullable: true
@@ -11959,6 +11971,8 @@ components:
     QualityReportSummary:
       type: object
       properties:
+        has_comparison_scope:
+          type: boolean
         total_frames:
           type: integer
         validation_frames:
@@ -11988,6 +12002,7 @@ components:
       - conflict_count
       - conflicts_by_type
       - error_count
+      - has_comparison_scope
       - total_frames
       - validation_frame_share
       - validation_frames

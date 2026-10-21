@@ -26,7 +26,7 @@ from cvat.apps.quality_control.comparison_report import (
     compute_quality_metric_summary,
     compute_target_metric,
 )
-from cvat.apps.quality_control.utils import is_current_report_data
+from cvat.apps.quality_control.utils import CURRENT_REPORT_VERSION
 
 
 class QualityReportExportFormat(TextChoices):
@@ -79,6 +79,7 @@ def prepare_json_report_for_downloading(db_report: models.QualityReport, *, host
 
     serialized_data = dict(
         id=db_report.id,
+        version=db_report.resolve_version(),
         **dict(job_id=db_report.job.id) if job_id else {},
         **dict(task_id=task_id) if task_id else {},
         **dict(project_id=project_id) if project_id else {},
@@ -90,7 +91,7 @@ def prepare_json_report_for_downloading(db_report: models.QualityReport, *, host
     )
 
     stored_report_data = parse_json(db_report.get_report_data())
-    if is_current_report_data(stored_report_data):
+    if db_report.version == CURRENT_REPORT_VERSION:
         comparison_report = ComparisonReport.from_dict(stored_report_data)
         serialized_data.update(comparison_report.to_dict())
     else:
@@ -98,17 +99,20 @@ def prepare_json_report_for_downloading(db_report: models.QualityReport, *, host
         # original payload so they can still be downloaded after the UI switches formats.
         serialized_data.update(stored_report_data)
 
+    def _decorate_conflicts(conflicts: list[dict]) -> None:
+        for conflict in conflicts:
+            for ann_id in conflict["annotation_ids"]:
+                task_id = jobs_to_tasks[ann_id["job_id"]]
+                frame = conflict.get("frame_id")
+                frame_query = f"frame={frame}&" if frame is not None else ""
+                ann_id["url"] = (
+                    f"{host}tasks/{task_id}/jobs/{ann_id['job_id']}"
+                    f"?{frame_query}type={ann_id['type']}&serverID={ann_id['obj_id']}"
+                )
+
     def _decorate_frame_results(frame_results: dict) -> None:
         for frame_result in frame_results.values():
-            for conflict in frame_result["conflicts"]:
-                for ann_id in conflict["annotation_ids"]:
-                    task_id = jobs_to_tasks[ann_id["job_id"]]
-                    ann_id["url"] = (
-                        f"{host}tasks/{task_id}/jobs/{ann_id['job_id']}"
-                        f"?frame={conflict['frame_id']}"
-                        f"&type={ann_id['type']}"
-                        f"&serverID={ann_id['obj_id']}"
-                    )
+            _decorate_conflicts(frame_result["conflicts"])
 
     def _stringify_frame_results(frame_results: dict) -> dict[str, dict]:
         return {str(k): v for k, v in frame_results.items()}
@@ -122,6 +126,7 @@ def prepare_json_report_for_downloading(db_report: models.QualityReport, *, host
         serialized_data["frame_results"] = _stringify_frame_results(frame_results)
 
     for group in (serialized_data.get("groups") or {}).values():
+        _decorate_conflicts(group.get("conflicts", []))
         if group.get("frame_results") is None:
             continue
 

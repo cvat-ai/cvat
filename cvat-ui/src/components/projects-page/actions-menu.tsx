@@ -10,7 +10,7 @@ import Dropdown from 'antd/lib/dropdown';
 import Modal from 'antd/lib/modal';
 
 import {
-    DimensionType, Organization, Project, User,
+    Organization, Project, User,
 } from 'cvat-core-wrapper';
 import { useDropdownEditField, usePlugins } from 'utils/hooks';
 import { CombinedState } from 'reducers';
@@ -226,7 +226,7 @@ function ProjectActionsComponent(props: Readonly<Props>): JSX.Element {
             onDeleteProject,
             selectedIds,
             isExportDatasetDisabled,
-            isQualityControlDisabled: projectInstance.dimension === DimensionType.DIMENSION_1D,
+            isQualityControlDisabled: false,
         }, props);
     }
 
