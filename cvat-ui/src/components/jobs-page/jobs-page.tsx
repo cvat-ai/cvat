@@ -25,6 +25,7 @@ import TopBarComponent from './top-bar';
 import JobsContentComponent from './jobs-content';
 import EmptyListComponent from './empty-list';
 import AddReplicasModal from './add-replicas-modal';
+import DistributeJobsModal from './distribute-jobs-modal';
 
 function JobsPageComponent(): JSX.Element {
     const dispatch = useDispatch();
@@ -150,6 +151,7 @@ function JobsPageComponent(): JSX.Element {
             />
             {fetching && !bulkFetching ? <Spin size='large' className='cvat-spinner' /> : content}
             <AddReplicasModal fetchJobs={fetchJobs} />
+            <DistributeJobsModal />
         </div>
     );
 }
