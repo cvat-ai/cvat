@@ -84,7 +84,6 @@ interface DispatchToProps {
     switchNavigationBlocked: typeof switchNavigationBlockedAction;
 }
 
-export const MIN_SUPPORTED_INTERACTOR_VERSION = 2;
 const core = getCore();
 const CustomPopover = withVisibilityHandling(Popover, 'tools-control');
 const startWithBoxStorageItem = 'startInteractingWithBox';
@@ -603,7 +602,6 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         const { activeInteractor, activeLabelID, mode } = this.state;
         const { frameData, isActivated } = this.props;
         return isActivated && activeInteractor !== null &&
-            activeInteractor.version >= MIN_SUPPORTED_INTERACTOR_VERSION &&
             activeLabelID !== null && mode === 'interaction' && !frameData.deleted;
     };
 
@@ -800,14 +798,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
     private setActiveInteractor = (value: string): void => {
         const { interactors } = this.props;
-        const [interactor] = interactors.filter((_interactor: MLModel) => _interactor.id === value);
-
-        if (interactor.version < MIN_SUPPORTED_INTERACTOR_VERSION) {
-            notification.warning({
-                message: 'Interactor API is outdated',
-                description: 'Probably, you should consider updating the serverless function',
-            });
-        }
+        const [interactor] = interactors.filter((_interactor: MLModel) => `${_interactor.id}` === value);
 
         this.setState({
             activeInteractor: interactor,
@@ -1315,8 +1306,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                 />
             ));
 
-        const isDisabled = !activeInteractor || fetching || !activeLabelID ||
-            activeInteractor.version < MIN_SUPPORTED_INTERACTOR_VERSION || frameData.deleted;
+        const isDisabled = !activeInteractor || fetching || !activeLabelID || frameData.deleted;
 
         return (
             <>
