@@ -257,6 +257,60 @@ interface ResourceQueryDefaultParams {
     filter?: string | null;
 }
 
+// The parameters a list keeps in its URL.
+const LIST_QUERY_PARAMS = ['filter', 'search', 'sort', 'page', 'pageSize'];
+
+// A list keeps its query in its URL, but the app's own links (the header menu,
+// "Back to project", a project card) open a list by its bare path. The last
+// query of each list is therefore also kept in localStorage, per organization
+// and path, so that a bare path opens the list as the user left it.
+function listQueryKey(pathname: string): string {
+    let organization = '';
+    try {
+        organization = localStorage.getItem('currentOrganization') ?? '';
+    } catch {
+        // no storage: the key still names the list
+    }
+    return `cvat.listQuery:${organization}:${pathname.replace(/\/+$/, '') || '/'}`;
+}
+
+function isBareListSearch(search: string): boolean {
+    // The header links carry ?page=1 alone, for opening a list in a new tab.
+    // A URL written by a list itself always carries its page size too.
+    const params = new URLSearchParams(search);
+    return LIST_QUERY_PARAMS.every((key) => key === 'page' || !params.has(key)) &&
+        (params.get('page') ?? '1') === '1';
+}
+
+function readListQuery(pathname: string): string {
+    try {
+        return localStorage.getItem(listQueryKey(pathname)) ?? '';
+    } catch {
+        return '';
+    }
+}
+
+function saveListQuery(pathname: string, search: string): void {
+    if (isBareListSearch(search)) {
+        return;
+    }
+
+    const params = new URLSearchParams(search);
+    const kept = new URLSearchParams();
+    for (const key of LIST_QUERY_PARAMS) {
+        const value = params.get(key);
+        if (value !== null) {
+            kept.set(key, value);
+        }
+    }
+
+    try {
+        localStorage.setItem(listQueryKey(pathname), kept.toString());
+    } catch {
+        // storage full or unavailable: the list starts from its defaults next time
+    }
+}
+
 export function useResourceQuery<QueryType extends {
     page: number;
     pageSize: number;
@@ -269,8 +323,20 @@ export function useResourceQuery<QueryType extends {
     } = defaultParams;
 
     const history = useHistory();
+    const { pathname, search } = history.location;
 
-    const queryParams = new URLSearchParams(history.location.search);
+    useEffect(() => {
+        saveListQuery(pathname, history.location.search);
+        return history.listen((location) => {
+            if (location.pathname === pathname) {
+                saveListQuery(pathname, location.search);
+            }
+        });
+    }, [pathname]);
+
+    // A bare path restores the list's last query. A URL that carries one - the
+    // browser's Back, a bookmark, a shared link - is used as it is.
+    const queryParams = new URLSearchParams(isBareListSearch(search) ? readListQuery(pathname) : search);
     const updatedQuery = { ...query };
     for (const key of Object.keys(updatedQuery)) {
         (updatedQuery as Record<string, any>)[key] = queryParams.get(key) || null;
