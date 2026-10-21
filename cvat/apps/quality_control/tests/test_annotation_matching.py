@@ -16,7 +16,7 @@ from cvat.apps.quality_control.backends.datumaro.matching import (
     ComparisonParameters,
     DistanceComparator,
 )
-from cvat.apps.quality_control.matching import match_segments
+from cvat.apps.quality_control.matching import PairwiseComparison, match_segments
 from cvat.apps.quality_control.models import PointSizeBase
 
 
@@ -127,45 +127,59 @@ class TestComparator(unittest.TestCase):
         self.assertFalse(gt_unmatched)
         self.assertFalse(ds_unmatched)
 
-    def test_mask_and_polygon_comparator_processes_segmentations_once(self) -> None:
-        mask = np.zeros((8, 8), dtype=bool)
-        mask[2:6, 2:6] = True
+    def test_masks_and_polygons_are_compared_separately(self) -> None:
+        mask = np.zeros((100, 100), dtype=bool)
+        mask[20:60, 20:60] = True
+        gt_mask = dm.Mask(np.asfortranarray(mask), label=0)
+        gt_polygon = dm.Polygon([20, 20, 60, 20, 60, 60, 20, 60], label=0)
+        ds_mask = dm.Mask(np.asfortranarray(mask.copy()), label=0)
+        ds_polygon = dm.Polygon([20, 20, 60, 20, 60, 60, 20, 60], label=0)
 
-        comparator = DistanceComparator(
-            {dm.AnnotationType.label: dm.LabelCategories.from_iterable(["car"])},
-            included_ann_types=[dm.AnnotationType.mask, dm.AnnotationType.polygon],
-            return_comparisons=True,
-        )
+        for annotation_type, gt_ann, ds_ann in [
+            (dm.AnnotationType.mask, gt_mask, ds_mask),
+            (dm.AnnotationType.polygon, gt_polygon, ds_polygon),
+        ]:
+            with self.subTest(annotation_type=annotation_type.name):
+                comparator = DistanceComparator(
+                    {dm.AnnotationType.label: dm.LabelCategories.from_iterable(["car"])},
+                    settings=ComparisonParameters(
+                        annotation_type=annotation_type,
+                    ),
+                    return_comparisons=True,
+                )
 
-        results = comparator.match_annotations(
-            _make_mask_item(mask),
-            _make_mask_item(mask.copy()),
-        )
-        self.assertEqual(list(results), [dm.AnnotationType.polygon])
-        matches, mismatches, gt_unmatched, ds_unmatched, _ = results[dm.AnnotationType.polygon]
+                results = comparator.match_annotations(
+                    _make_image_item(gt_mask, gt_polygon),
+                    _make_image_item(ds_mask, ds_polygon),
+                )
+                self.assertEqual(list(results), [annotation_type])
+                matches, mismatches, gt_unmatched, ds_unmatched, _ = results[annotation_type]
 
-        self.assertEqual(len(matches), 1)
-        self.assertFalse(mismatches)
-        self.assertFalse(gt_unmatched)
-        self.assertFalse(ds_unmatched)
+                self.assertEqual(matches, [(gt_ann, ds_ann)])
+                self.assertFalse(mismatches)
+                self.assertFalse(gt_unmatched)
+                self.assertFalse(ds_unmatched)
 
-    def test_distance_comparator_returns_numeric_pairwise_distances(self) -> None:
+    def test_distance_comparator_returns_pairwise_comparisons(self) -> None:
         gt_ann = dm.Bbox(10, 10, 20, 20, label=0)
         ds_ann = dm.Bbox(10, 10, 20, 20, label=0)
         comparator = DistanceComparator(
             {dm.AnnotationType.label: dm.LabelCategories.from_iterable(["car"])},
-            return_distances=True,
+            settings=ComparisonParameters(
+                annotation_type=dm.AnnotationType.bbox,
+            ),
+            return_comparisons=True,
         )
 
         result = comparator.match_boxes(
             _make_image_item(gt_ann),
             _make_image_item(ds_ann),
         )
-        distances = cast(dict[tuple[int, int], float], result[4])
+        comparisons = cast(dict[tuple[int, int], PairwiseComparison], result[4])
 
-        distance = distances[(id(gt_ann), id(ds_ann))]
-        self.assertIsInstance(distance, float)
-        self.assertEqual(distance, 1)
+        comparison = comparisons[(id(gt_ann), id(ds_ann))]
+        self.assertIsInstance(comparison, PairwiseComparison)
+        self.assertEqual(comparison.similarity, 1)
 
     def test_point_size_base_changes_grouped_point_matching(self) -> None:
         categories = {
@@ -182,15 +196,21 @@ class TestComparator(unittest.TestCase):
 
         image_size_results = DistanceComparator(
             categories,
-            iou_threshold=0.4,
-            oks_sigma=0.09,
-            point_size_base=PointSizeBase.IMAGE_SIZE,
+            settings=ComparisonParameters(
+                annotation_type=dm.AnnotationType.points,
+                iou_threshold=0.4,
+                oks_sigma=0.09,
+                point_size_base=PointSizeBase.IMAGE_SIZE,
+            ),
         ).match_points(gt_item, ds_item)
         group_bbox_results = DistanceComparator(
             categories,
-            iou_threshold=0.4,
-            oks_sigma=0.09,
-            point_size_base=PointSizeBase.GROUP_BBOX_SIZE,
+            settings=ComparisonParameters(
+                annotation_type=dm.AnnotationType.points,
+                iou_threshold=0.4,
+                oks_sigma=0.09,
+                point_size_base=PointSizeBase.GROUP_BBOX_SIZE,
+            ),
         ).match_points(gt_item, ds_item)
 
         self.assertEqual(len(image_size_results[0]), 2)
@@ -310,7 +330,9 @@ class TestComparator(unittest.TestCase):
         gt_ann = dm.PolyLine([10, 50, 90, 50], label=0)
         ds_ann = dm.PolyLine([90, 50, 10, 50], label=0)
 
-        oriented_settings = ComparisonParameters(annotation_type=dm.AnnotationType.polyline)
+        oriented_settings = ComparisonParameters(
+            annotation_type=dm.AnnotationType.polyline,
+        )
         oriented_settings.compare_line_orientation = True
         oriented_comparator = Comparator(
             {dm.AnnotationType.label: dm.LabelCategories.from_iterable(["car"])},
@@ -331,7 +353,9 @@ class TestComparator(unittest.TestCase):
         self.assertTrue(comparison.direction_mismatch)
         self.assertEqual(comparison.similarity, 0)
 
-        non_oriented_settings = ComparisonParameters(annotation_type=dm.AnnotationType.polyline)
+        non_oriented_settings = ComparisonParameters(
+            annotation_type=dm.AnnotationType.polyline,
+        )
         non_oriented_settings.compare_line_orientation = False
         non_oriented_comparator = Comparator(
             {dm.AnnotationType.label: dm.LabelCategories.from_iterable(["car"])},
