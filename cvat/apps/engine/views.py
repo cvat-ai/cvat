@@ -3290,6 +3290,7 @@ class LabelViewSet(
     ),
     retrieve=extend_schema(
         summary="Get user details",
+        parameters=ORGANIZATION_OPEN_API_PARAMETERS,
         responses={
             "200": PolymorphicProxySerializer(
                 component_name="MetaUser",
