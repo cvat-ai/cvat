@@ -166,6 +166,10 @@ export interface JobsState {
             [tid: number]: boolean;
         };
     };
+    addReplicas: {
+        modalVisible: boolean;
+        jobs: Job[];
+    };
 }
 
 export interface TasksState {
@@ -632,6 +636,7 @@ export interface BulkOperationsErrorState extends ErrorState {
         items: any[];
         operation: (item: any, idx: number, total: number) => Promise<void>;
         statusMessage: (item: any, idx: number, total: number) => string;
+        onSuccess?: () => void;
     };
 }
 

@@ -20,6 +20,7 @@ interface MenuItemsData {
     onImportAnnotations: () => void;
     onExportAnnotations: () => void;
     onMergeConsensusJob: (() => void) | null;
+    onAddReplicas: (() => void) | null;
     onDeleteJob: (() => void) | null;
     onGoToParent: (() => void) | null;
     onGoToReplicas: (() => void) | null;
@@ -38,6 +39,7 @@ enum MenuKeys {
     GO_TO_REPLICAS = 'go_to_replicas',
     VIEW_ANALYTICS = 'view-analytics',
     MERGE_SPECIFIC_CONSENSUS_JOBS = 'merge_specific_consensus_jobs',
+    ADD_REPLICAS = 'add_replicas',
     IMPORT_JOB = 'import_job',
     BUG_TRACKER = 'bug_tracker',
     PROJECT = 'project',
@@ -59,6 +61,7 @@ export default function JobActionsItems(
         onImportAnnotations,
         onExportAnnotations,
         onMergeConsensusJob,
+        onAddReplicas,
         onDeleteJob,
         jobsToAct,
         onGoToParent,
@@ -69,7 +72,7 @@ export default function JobActionsItems(
     const isBulkMode = jobsToAct.length > 1;
     const bulkAllowedKeys = [
         MenuKeys.EDIT_ASSIGNEE, MenuKeys.EDIT_STATE, MenuKeys.EDIT_STAGE, MenuKeys.EXPORT_JOB,
-        MenuKeys.DELETE, MenuKeys.GO_TO_PARENT, MenuKeys.GO_TO_REPLICAS,
+        MenuKeys.DELETE, MenuKeys.GO_TO_PARENT, MenuKeys.GO_TO_REPLICAS, MenuKeys.ADD_REPLICAS,
     ];
     const isDisabled = (key: MenuKeys): boolean => isBulkMode && !bulkAllowedKeys.includes(key);
 
@@ -86,6 +89,7 @@ export default function JobActionsItems(
         )),
         [MenuKeys.GO_TO_PARENT]: jobsToActWithParents,
         [MenuKeys.GO_TO_REPLICAS]: jobsToActWithReplicas,
+        [MenuKeys.ADD_REPLICAS]: jobsToAct,
     };
 
     const idsToAct = jobsToAct.map((j) => j.id);
@@ -155,6 +159,15 @@ export default function JobActionsItems(
             disabled: isMergingConsensusEnabled || isDisabled(MenuKeys.MERGE_SPECIFIC_CONSENSUS_JOBS),
             itemIcon: isMergingConsensusEnabled ? <LoadingOutlined /> : undefined,
         }, 70]);
+    }
+
+    if (onAddReplicas) {
+        menuItems.push([{
+            key: MenuKeys.ADD_REPLICAS,
+            onClick: onAddReplicas,
+            label: withCount('Add replicas', MenuKeys.ADD_REPLICAS),
+            disabled: isDisabled(MenuKeys.ADD_REPLICAS),
+        }, 75]);
     }
 
     menuItems.push([{

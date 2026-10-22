@@ -53,7 +53,7 @@ from cvat.apps.engine.serializers import (
     AssetWriteSerializer,
     AttributeSerializer,
     DataSerializer,
-    JobWriteSerializer,
+    GroundTruthJobCreateSerializer,
     LabeledDataSerializer,
     LabeledShapeSerializer,
     LabelSerializer,
@@ -1271,7 +1271,7 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
             job_type = self._get_job_type(job)
 
             if job_type == models.JobType.GROUND_TRUTH:
-                job_serializer = JobWriteSerializer(
+                job_serializer = GroundTruthJobCreateSerializer(
                     data={
                         "task_id": self._db_task.id,
                         "type": job_type.value,

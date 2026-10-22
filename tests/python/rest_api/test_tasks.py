@@ -1743,6 +1743,70 @@ class TestTaskBackups:
         assert self._get_job_boxes(job_id=new_second_job_replicas[0].id) == [[40, 40, 41, 41]]
         assert self._get_job_boxes(job_id=new_second_job_replicas[1].id) == [[50, 50, 51, 51]]
 
+    def test_can_import_backup_with_replicas_added_after_task_creation(self):
+        task_id, _ = create_task(
+            username=self.user,
+            spec={
+                "name": "A task with added replicas",
+                "labels": [{"name": "car"}],
+                "segment_size": 1,
+            },
+            data={"image_quality": 70, "client_files": generate_image_files(count=2)},
+        )
+        task = self.client.tasks.retrieve(task_id)
+        label_id = task.get_labels()[0].id
+        first_job, second_job = sorted(task.get_jobs(), key=lambda j: j.id)
+
+        def add_replica(parent_job) -> int:
+            replica, _ = self.client.api_client.jobs_api.create(
+                models.JobWriteRequest(type="replica", task_id=task_id, parent_job_id=parent_job.id)
+            )
+            return replica.id
+
+        # The replicas of the first job get higher ids than the replicas of the second one,
+        # so the order of the job ids doesn't match the order of the parents
+        second_job_replica_1_id = add_replica(second_job)
+        second_job_replica_2_id = add_replica(second_job)
+        first_job_replica_id = add_replica(first_job)
+
+        self._annotate_job_with_box(
+            job_id=first_job.id, label_id=label_id, frame=0, points=[10, 10, 11, 11]
+        )
+        self._annotate_job_with_box(
+            job_id=first_job_replica_id, label_id=label_id, frame=0, points=[20, 20, 21, 21]
+        )
+        self._annotate_job_with_box(
+            job_id=second_job.id, label_id=label_id, frame=1, points=[30, 30, 31, 31]
+        )
+        self._annotate_job_with_box(
+            job_id=second_job_replica_1_id, label_id=label_id, frame=1, points=[40, 40, 41, 41]
+        )
+        self._annotate_job_with_box(
+            job_id=second_job_replica_2_id, label_id=label_id, frame=1, points=[50, 50, 51, 51]
+        )
+
+        new_task = self._test_can_restore_task_from_backup(task_id)
+
+        new_jobs = new_task.get_jobs()
+        new_first_job = next(j for j in new_jobs if j.type == "annotation" and j.start_frame == 0)
+        new_second_job = next(j for j in new_jobs if j.type == "annotation" and j.start_frame == 1)
+        new_first_job_replicas = sorted(
+            (j for j in new_jobs if j.parent_job_id == new_first_job.id), key=lambda j: j.id
+        )
+        new_second_job_replicas = sorted(
+            (j for j in new_jobs if j.parent_job_id == new_second_job.id), key=lambda j: j.id
+        )
+
+        assert len(new_jobs) == 5
+        assert len(new_first_job_replicas) == 1
+        assert len(new_second_job_replicas) == 2
+
+        assert self._get_job_boxes(job_id=new_first_job.id) == [[10, 10, 11, 11]]
+        assert self._get_job_boxes(job_id=new_first_job_replicas[0].id) == [[20, 20, 21, 21]]
+        assert self._get_job_boxes(job_id=new_second_job.id) == [[30, 30, 31, 31]]
+        assert self._get_job_boxes(job_id=new_second_job_replicas[0].id) == [[40, 40, 41, 41]]
+        assert self._get_job_boxes(job_id=new_second_job_replicas[1].id) == [[50, 50, 51, 51]]
+
     def test_can_import_backup_with_consensus_task_created_before_consensus_replica_removal(self):
         # The backup has "consensus_replica" jobs
         original_task_id = 30
