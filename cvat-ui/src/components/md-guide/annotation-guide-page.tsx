@@ -24,9 +24,10 @@ import dimensions from 'utils/dimensions';
 const core = getCore();
 const confirmationMessage = 'You have unsaved changes, please confirm leaving this page.';
 
+const ASSET_ACCEPT = 'image/jpeg,image/png,image/webp,image/gif,application/pdf';
+
 function AnnotationGuidePage(): JSX.Element {
     const mdEditorRef = useRef<typeof MDEditor & { commandOrchestrator: commands.TextAreaCommandOrchestrator }>(null);
-    const fileInputRef = useRef<HTMLInputElement>(null);
     const handleInsertFilesRef = useRef<((files: FileList) => Promise<void>) | null>(null);
     const history = useHistory();
     const location = useLocation();
@@ -198,7 +199,20 @@ function AnnotationGuidePage(): JSX.Element {
             buttonProps: { 'aria-label': 'Upload local file', title: 'Upload local file' },
             icon: <PaperClipOutlined />,
             execute: () => {
-                fileInputRef.current?.click();
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = ASSET_ACCEPT;
+                input.multiple = true;
+                input.style.display = 'none';
+                input.onchange = () => {
+                    const { files } = input;
+                    input.remove();
+                    if (files?.length && handleInsertFilesRef.current) {
+                        handleInsertFilesRef.current(files);
+                    }
+                };
+                document.body.appendChild(input);
+                input.click();
             },
         }),
         [],
@@ -215,22 +229,6 @@ function AnnotationGuidePage(): JSX.Element {
                 <div className='cvat-guide-page-top'>
                     <GoBackButton />
                 </div>
-                <input
-                    ref={fileInputRef}
-                    type='file'
-                    accept='image/*,video/*,audio/*,.pdf,.txt,.csv,.json,.xml'
-                    multiple
-                    style={{ display: 'none' }}
-                    onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
-                        const { files } = event.target;
-                        if (files?.length && handleInsertFilesRef.current) {
-                            handleInsertFilesRef.current(files);
-                        }
-                        // reset so the same file can be selected again
-                        // eslint-disable-next-line no-param-reassign
-                        event.target.value = '';
-                    }}
-                />
                 <div className='cvat-guide-page-editor-wrapper'>
                     <MDEditor
                         visibleDragbar={false}
