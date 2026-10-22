@@ -1389,7 +1389,7 @@ class BaseJobCreateSerializer(serializers.ModelSerializer):
         return serializer.data
 
     def _create(self, task: models.Task, validated_data: dict[str, Any]) -> models.Job:
-        raise NotImplementedError
+        raise NotImplementedError("Must be implemented in a subclass")
 
     @transaction.atomic
     def create(self, validated_data: dict[str, Any]) -> models.Job:

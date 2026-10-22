@@ -1780,12 +1780,10 @@ Cypress.Commands.add('addReplicas', (count, jobIds) => {
     const isBulk = jobIds.length > 1;
     const requestsCount = count * jobIds.length;
 
-    // The delay keeps the bulk progress on the screen long enough to check it
-    cy.intercept('POST', '/api/jobs**', (request) => {
-        request.continue((response) => {
-            response.setDelay(500);
-        });
-    }).as('createReplica');
+    // Hold the creation requests until the progress has been checked
+    let releaseRequests = null;
+    const requestsReleased = new Promise((resolve) => { releaseRequests = resolve; });
+    cy.intercept({ method: 'POST', pathname: '/api/jobs' }, () => requestsReleased).as('createReplica');
 
     if (isBulk) {
         getBulkActionsMenu().within(() => {
@@ -1816,8 +1814,9 @@ Cypress.Commands.add('addReplicas', (count, jobIds) => {
     // A single request is made without the progress
     if (requestsCount > 1) {
         cy.get('.cvat-bulk-progress-wrapper').should('be.visible')
-            .and('contain', `/${requestsCount})`);
+            .and('contain', `(1/${requestsCount})`);
     }
+    cy.then(() => releaseRequests()); // on every path, or the waits below time out
 
     const parentJobIds = [];
     for (let i = 0; i < requestsCount; i++) {
