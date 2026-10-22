@@ -1651,6 +1651,98 @@ class TestTaskBackups:
         task_id = next(t for t in tasks_with_replicas if t["dimension"] == "2d")["id"]
         self._test_can_restore_task_from_backup(task_id)
 
+    def _annotate_job_with_box(
+        self, job_id: int, label_id: int, frame: int, points: list[float]
+    ) -> None:
+        self.client.api_client.jobs_api.update_annotations(
+            id=job_id,
+            labeled_data_request=models.LabeledDataRequest(
+                shapes=[
+                    models.LabeledShapeRequest(
+                        type="rectangle",
+                        frame=frame,
+                        label_id=label_id,
+                        points=points,
+                        rotation=0,
+                        z_order=0,
+                        occluded=False,
+                        outside=False,
+                        group=0,
+                        attributes=[],
+                    )
+                ]
+            ),
+        )
+
+    def _get_job_boxes(self, job_id: int) -> list[list[float]]:
+        _, response = self.client.api_client.jobs_api.retrieve_annotations(id=job_id)
+        return [shape["points"] for shape in json.loads(response.data)["shapes"]]
+
+    def test_can_import_backup_with_different_replica_counts(self):
+        # 2 annotation jobs with 1 frame each, both are created with 2 replicas
+        task_id, _ = create_task(
+            username=self.user,
+            spec={
+                "name": "A task with different replica counts",
+                "labels": [{"name": "car"}],
+                "segment_size": 1,
+                "initial_replicas": 2,
+            },
+            data={"image_quality": 70, "client_files": generate_image_files(count=2)},
+        )
+        task = self.client.tasks.retrieve(task_id)
+        label_id = task.get_labels()[0].id
+        (
+            first_job,
+            first_job_deleted_replica,
+            first_job_replica,
+            second_job,
+            second_job_replica_1,
+            second_job_replica_2,
+        ) = sorted(task.get_jobs(), key=lambda j: j.id)
+
+        # The first annotation job is left with 1 replica, the second one has 2
+        self.client.api_client.jobs_api.destroy(id=first_job_deleted_replica.id)
+
+        # Every job gets its own box, so the annotations of any two jobs can't be mixed up
+        self._annotate_job_with_box(
+            job_id=first_job.id, label_id=label_id, frame=0, points=[10, 10, 11, 11]
+        )
+        self._annotate_job_with_box(
+            job_id=first_job_replica.id, label_id=label_id, frame=0, points=[20, 20, 21, 21]
+        )
+        self._annotate_job_with_box(
+            job_id=second_job.id, label_id=label_id, frame=1, points=[30, 30, 31, 31]
+        )
+        self._annotate_job_with_box(
+            job_id=second_job_replica_1.id, label_id=label_id, frame=1, points=[40, 40, 41, 41]
+        )
+        self._annotate_job_with_box(
+            job_id=second_job_replica_2.id, label_id=label_id, frame=1, points=[50, 50, 51, 51]
+        )
+
+        new_task = self._test_can_restore_task_from_backup(task_id)
+
+        new_jobs = new_task.get_jobs()
+        new_first_job = next(j for j in new_jobs if j.type == "annotation" and j.start_frame == 0)
+        new_second_job = next(j for j in new_jobs if j.type == "annotation" and j.start_frame == 1)
+        new_first_job_replicas = sorted(
+            (j for j in new_jobs if j.parent_job_id == new_first_job.id), key=lambda j: j.id
+        )
+        new_second_job_replicas = sorted(
+            (j for j in new_jobs if j.parent_job_id == new_second_job.id), key=lambda j: j.id
+        )
+
+        assert len(new_jobs) == 5
+        assert len(new_first_job_replicas) == 1
+        assert len(new_second_job_replicas) == 2
+
+        assert self._get_job_boxes(job_id=new_first_job.id) == [[10, 10, 11, 11]]
+        assert self._get_job_boxes(job_id=new_first_job_replicas[0].id) == [[20, 20, 21, 21]]
+        assert self._get_job_boxes(job_id=new_second_job.id) == [[30, 30, 31, 31]]
+        assert self._get_job_boxes(job_id=new_second_job_replicas[0].id) == [[40, 40, 41, 41]]
+        assert self._get_job_boxes(job_id=new_second_job_replicas[1].id) == [[50, 50, 51, 51]]
+
     def test_can_import_backup_with_consensus_task_created_before_consensus_replica_removal(self):
         # The backup has "consensus_replica" jobs
         original_task_id = 30
