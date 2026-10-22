@@ -917,7 +917,7 @@ class TestGetTaskDataset:
         )
 
     def test_org_worker_cannot_export_task_dataset_as_assignee_without_ownership(
-        self, find_users, tasks, projects, assignee_id
+        self, find_users, tasks, is_org_member, is_task_staff, is_project_staff
     ):
         """Regression test for https://github.com/cvat-ai/cvat/pull/10685.
 
@@ -929,12 +929,11 @@ class TestGetTaskDataset:
         user, task = next(
             (user, task)
             for user, task in product(users, tasks)
-            if task["organization"] == user["org"]
-            and assignee_id(task) == user["id"]
+            if is_task_staff(user["id"], task["id"])
             and task["owner"]["id"] != user["id"]
-            and not (
-                task["project_id"] and projects[task["project_id"]]["owner"]["id"] == user["id"]
-            )
+            and not is_project_staff(user["id"], task["project_id"])
+            and task["organization"]
+            and is_org_member(user["id"], task["organization"], role="worker")
             and task["target_storage"] is None
         )
 
