@@ -88,6 +88,8 @@ class EffectiveQualityRequirement:
     parent_requirement: int | None = None
     sort_order: int = 0
     similarity_metric: models.ShapeSimilarityMetricType | None = None
+    boundary_f_tolerance: float | None = None
+    boundary_f_threshold: float | None = None
     iou_threshold: float | ThresholdPolicy | None = None
     oks_threshold: float | None = None
     oks_sigma: float | None = None
@@ -125,6 +127,8 @@ _INHERITED_REQUIREMENT_FIELDS = (
     "target_metric",
     "target_metric_threshold",
     "similarity_metric",
+    "boundary_f_tolerance",
+    "boundary_f_threshold",
     "iou_threshold",
     "oks_threshold",
     "oks_sigma",

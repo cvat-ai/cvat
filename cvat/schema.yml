@@ -11280,6 +11280,30 @@ components:
           nullable: true
           description: The parent requirement. Child requirements inherit comparison
             settings from it.
+        similarity_metric:
+          nullable: true
+          description: |-
+            The similarity metric used to match the objects. The supported metrics
+            depend on the annotation type:
+            - ellipse: 'boundary_f', 'iou';
+            - mask: 'boundary_f', 'iou';
+            - points: 'oks';
+            - polygon: 'boundary_f', 'iou';
+            - polyline: 'boundary_f', 'iou';
+            - rectangle: 'boundary_f', 'iou';
+            - skeleton: 'oks';
+            - skeleton_keypoint: 'oks';
+            - tag: 'equality'
+
+
+            * `iou` - IoU
+            * `oks` - OKS
+            * `boundary_f` - Boundary F
+            * `equality` - Equality
+          oneOf:
+          - $ref: '#/components/schemas/SimilarityMetricEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
         iou_threshold:
           oneOf:
           - type: number
@@ -11289,6 +11313,33 @@ components:
           nullable: true
           description: A constant threshold or an IoU policy by GT shape area (rectangle,
             polygon, mask, ellipse). Null inherits the whole threshold from the parent.
+        oks_threshold:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          nullable: true
+          description: |
+            The minimal OKS for distinction between matched / unmatched objects.
+            Only used with the 'oks' similarity metric.
+        boundary_f_threshold:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          nullable: true
+          description: |
+            The minimal Boundary F score for distinction between matched / unmatched
+            objects. Only used with the 'boundary_f' similarity metric.
+        boundary_f_tolerance:
+          type: number
+          format: double
+          minimum: 0
+          nullable: true
+          description: |
+            The maximum allowed boundary deviation, in pixels. The boundary points
+            within this distance from the other object boundary are considered matching.
+            Only used with the 'boundary_f' similarity metric.
         point_size:
           type: number
           format: double
@@ -12179,6 +12230,30 @@ components:
         effective:
           type: object
           readOnly: true
+        similarity_metric:
+          nullable: true
+          description: |-
+            The similarity metric used to match the objects. The supported metrics
+            depend on the annotation type:
+            - ellipse: 'boundary_f', 'iou';
+            - mask: 'boundary_f', 'iou';
+            - points: 'oks';
+            - polygon: 'boundary_f', 'iou';
+            - polyline: 'boundary_f', 'iou';
+            - rectangle: 'boundary_f', 'iou';
+            - skeleton: 'oks';
+            - skeleton_keypoint: 'oks';
+            - tag: 'equality'
+
+
+            * `iou` - IoU
+            * `oks` - OKS
+            * `boundary_f` - Boundary F
+            * `equality` - Equality
+          oneOf:
+          - $ref: '#/components/schemas/SimilarityMetricEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
         iou_threshold:
           oneOf:
           - type: number
@@ -12188,6 +12263,33 @@ components:
           nullable: true
           description: A constant threshold or an IoU policy by GT shape area (rectangle,
             polygon, mask, ellipse). Null inherits the whole threshold from the parent.
+        oks_threshold:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          nullable: true
+          description: |
+            The minimal OKS for distinction between matched / unmatched objects.
+            Only used with the 'oks' similarity metric.
+        boundary_f_threshold:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          nullable: true
+          description: |
+            The minimal Boundary F score for distinction between matched / unmatched
+            objects. Only used with the 'boundary_f' similarity metric.
+        boundary_f_tolerance:
+          type: number
+          format: double
+          minimum: 0
+          nullable: true
+          description: |
+            The maximum allowed boundary deviation, in pixels. The boundary points
+            within this distance from the other object boundary are considered matching.
+            Only used with the 'boundary_f' similarity metric.
         point_size:
           type: number
           format: double
@@ -12351,6 +12453,30 @@ components:
           nullable: true
           description: Required for root requirements and forbidden for nested requirements.
             Must identify an existing requirement from the selected quality settings.
+        similarity_metric:
+          nullable: true
+          description: |-
+            The similarity metric used to match the objects. The supported metrics
+            depend on the annotation type:
+            - ellipse: 'boundary_f', 'iou';
+            - mask: 'boundary_f', 'iou';
+            - points: 'oks';
+            - polygon: 'boundary_f', 'iou';
+            - polyline: 'boundary_f', 'iou';
+            - rectangle: 'boundary_f', 'iou';
+            - skeleton: 'oks';
+            - skeleton_keypoint: 'oks';
+            - tag: 'equality'
+
+
+            * `iou` - IoU
+            * `oks` - OKS
+            * `boundary_f` - Boundary F
+            * `equality` - Equality
+          oneOf:
+          - $ref: '#/components/schemas/SimilarityMetricEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
         iou_threshold:
           oneOf:
           - type: number
@@ -12360,6 +12486,33 @@ components:
           nullable: true
           description: A constant threshold or an IoU policy by GT shape area (rectangle,
             polygon, mask, ellipse). Null inherits the whole threshold from the parent.
+        oks_threshold:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          nullable: true
+          description: |
+            The minimal OKS for distinction between matched / unmatched objects.
+            Only used with the 'oks' similarity metric.
+        boundary_f_threshold:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          nullable: true
+          description: |
+            The minimal Boundary F score for distinction between matched / unmatched
+            objects. Only used with the 'boundary_f' similarity metric.
+        boundary_f_tolerance:
+          type: number
+          format: double
+          minimum: 0
+          nullable: true
+          description: |
+            The maximum allowed boundary deviation, in pixels. The boundary points
+            within this distance from the other object boundary are considered matching.
+            Only used with the 'boundary_f' similarity metric.
         point_size:
           type: number
           format: double
@@ -12550,6 +12703,30 @@ components:
           nullable: true
           description: The parent requirement. Child requirements inherit comparison
             settings from it.
+        similarity_metric:
+          nullable: true
+          description: |-
+            The similarity metric used to match the objects. The supported metrics
+            depend on the annotation type:
+            - ellipse: 'boundary_f', 'iou';
+            - mask: 'boundary_f', 'iou';
+            - points: 'oks';
+            - polygon: 'boundary_f', 'iou';
+            - polyline: 'boundary_f', 'iou';
+            - rectangle: 'boundary_f', 'iou';
+            - skeleton: 'oks';
+            - skeleton_keypoint: 'oks';
+            - tag: 'equality'
+
+
+            * `iou` - IoU
+            * `oks` - OKS
+            * `boundary_f` - Boundary F
+            * `equality` - Equality
+          oneOf:
+          - $ref: '#/components/schemas/SimilarityMetricEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
         iou_threshold:
           oneOf:
           - type: number
@@ -12559,6 +12736,33 @@ components:
           nullable: true
           description: A constant threshold or an IoU policy by GT shape area (rectangle,
             polygon, mask, ellipse). Null inherits the whole threshold from the parent.
+        oks_threshold:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          nullable: true
+          description: |
+            The minimal OKS for distinction between matched / unmatched objects.
+            Only used with the 'oks' similarity metric.
+        boundary_f_threshold:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          nullable: true
+          description: |
+            The minimal Boundary F score for distinction between matched / unmatched
+            objects. Only used with the 'boundary_f' similarity metric.
+        boundary_f_tolerance:
+          type: number
+          format: double
+          minimum: 0
+          nullable: true
+          description: |
+            The maximum allowed boundary deviation, in pixels. The boundary points
+            within this distance from the other object boundary are considered matching.
+            Only used with the 'boundary_f' similarity metric.
         point_size:
           type: number
           format: double
@@ -12724,6 +12928,30 @@ components:
           nullable: true
           description: The parent requirement. Child requirements inherit comparison
             settings from it.
+        similarity_metric:
+          nullable: true
+          description: |-
+            The similarity metric used to match the objects. The supported metrics
+            depend on the annotation type:
+            - ellipse: 'boundary_f', 'iou';
+            - mask: 'boundary_f', 'iou';
+            - points: 'oks';
+            - polygon: 'boundary_f', 'iou';
+            - polyline: 'boundary_f', 'iou';
+            - rectangle: 'boundary_f', 'iou';
+            - skeleton: 'oks';
+            - skeleton_keypoint: 'oks';
+            - tag: 'equality'
+
+
+            * `iou` - IoU
+            * `oks` - OKS
+            * `boundary_f` - Boundary F
+            * `equality` - Equality
+          oneOf:
+          - $ref: '#/components/schemas/SimilarityMetricEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
         iou_threshold:
           oneOf:
           - type: number
@@ -12733,6 +12961,33 @@ components:
           nullable: true
           description: A constant threshold or an IoU policy by GT shape area (rectangle,
             polygon, mask, ellipse). Null inherits the whole threshold from the parent.
+        oks_threshold:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          nullable: true
+          description: |
+            The minimal OKS for distinction between matched / unmatched objects.
+            Only used with the 'oks' similarity metric.
+        boundary_f_threshold:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          nullable: true
+          description: |
+            The minimal Boundary F score for distinction between matched / unmatched
+            objects. Only used with the 'boundary_f' similarity metric.
+        boundary_f_tolerance:
+          type: number
+          format: double
+          minimum: 0
+          nullable: true
+          description: |
+            The maximum allowed boundary deviation, in pixels. The boundary points
+            within this distance from the other object boundary are considered matching.
+            Only used with the 'boundary_f' similarity metric.
         point_size:
           type: number
           format: double
@@ -12890,6 +13145,30 @@ components:
           nullable: true
           description: The parent requirement. Child requirements inherit comparison
             settings from it.
+        similarity_metric:
+          nullable: true
+          description: |-
+            The similarity metric used to match the objects. The supported metrics
+            depend on the annotation type:
+            - ellipse: 'boundary_f', 'iou';
+            - mask: 'boundary_f', 'iou';
+            - points: 'oks';
+            - polygon: 'boundary_f', 'iou';
+            - polyline: 'boundary_f', 'iou';
+            - rectangle: 'boundary_f', 'iou';
+            - skeleton: 'oks';
+            - skeleton_keypoint: 'oks';
+            - tag: 'equality'
+
+
+            * `iou` - IoU
+            * `oks` - OKS
+            * `boundary_f` - Boundary F
+            * `equality` - Equality
+          oneOf:
+          - $ref: '#/components/schemas/SimilarityMetricEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
         iou_threshold:
           oneOf:
           - type: number
@@ -12899,6 +13178,33 @@ components:
           nullable: true
           description: A constant threshold or an IoU policy by GT shape area (rectangle,
             polygon, mask, ellipse). Null inherits the whole threshold from the parent.
+        oks_threshold:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          nullable: true
+          description: |
+            The minimal OKS for distinction between matched / unmatched objects.
+            Only used with the 'oks' similarity metric.
+        boundary_f_threshold:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+          nullable: true
+          description: |
+            The minimal Boundary F score for distinction between matched / unmatched
+            objects. Only used with the 'boundary_f' similarity metric.
+        boundary_f_tolerance:
+          type: number
+          format: double
+          minimum: 0
+          nullable: true
+          description: |
+            The maximum allowed boundary deviation, in pixels. The boundary points
+            within this distance from the other object boundary are considered matching.
+            Only used with the 'boundary_f' similarity metric.
         point_size:
           type: number
           format: double
@@ -13358,6 +13664,18 @@ components:
         * `cuboid` - CUBOID
         * `mask` - MASK
         * `skeleton` - SKELETON
+    SimilarityMetricEnum:
+      enum:
+      - iou
+      - oks
+      - boundary_f
+      - equality
+      type: string
+      description: |-
+        * `iou` - IoU
+        * `oks` - OKS
+        * `boundary_f` - Boundary F
+        * `equality` - Equality
     SimilarityThresholdPolicy:
       type: object
       description: |-
