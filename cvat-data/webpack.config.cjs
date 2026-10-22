@@ -4,7 +4,6 @@
 // SPDX-License-Identifier: MIT
 
 const path = require('path');
-const CopyPlugin = require('copy-webpack-plugin');
 
 const cvatData = {
     target: 'web',
@@ -40,16 +39,6 @@ const cvatData = {
             },
         ],
     },
-    plugins: [
-        new CopyPlugin({
-            patterns: [
-                {
-                    from: '../cvat-data/src/ts/3rdparty/avc.wasm',
-                    to: 'assets/3rdparty/',
-                },
-            ],
-        }),
-    ],
 };
 
 module.exports = cvatData;

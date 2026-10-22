@@ -1,0 +1,96 @@
+# Supported modes: report, enforce. Any other value or missing value disables CSP.
+map $host $csp_mode {
+    default '${CVAT_CSP_MODE}';
+}
+
+map $csp_mode $csp_main_enforce_policy {
+    default '';
+    enforce "default-src 'none'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; script-src 'self' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self' data:; worker-src 'self'; report-to csp-endpoint";
+}
+
+map $csp_mode $csp_main_report_only_policy {
+    default '';
+    report "default-src 'none'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; script-src 'self' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self' data:; worker-src 'self'; report-to csp-endpoint";
+}
+
+map $csp_mode $csp_worker_enforce_policy {
+    default '';
+    enforce "default-src 'none'; script-src 'self' 'unsafe-eval'; connect-src 'self' data:; report-to csp-endpoint";
+}
+
+map $csp_mode $csp_worker_report_only_policy {
+    default '';
+    report "default-src 'none'; script-src 'self' 'unsafe-eval'; connect-src 'self' data:; report-to csp-endpoint";
+}
+
+server {
+    root /usr/share/nginx/html;
+
+    # Disable server signature to make it slightly harder for
+    # attackers to find known vulnerabilities. See
+    # https://datatracker.ietf.org/doc/html/rfc9110#name-server
+    server_tokens off;
+
+    gzip on;
+    gzip_comp_level 6;
+    gzip_http_version 1.1;
+    gzip_types
+        text/html
+        application/javascript
+        application/x-javascript
+        text/javascript
+        application/wasm
+        image/x-icon;
+
+    location / {
+        # Any route that doesn't exist on the server (e.g. /devices)
+        try_files $uri $uri/ /index.html;
+        add_header Cache-Control "no-cache, no-store, must-revalidate";
+        add_header Pragma "no-cache";
+        add_header Cross-Origin-Opener-Policy "same-origin";
+        add_header Cross-Origin-Embedder-Policy "credentialless";
+        add_header Expires 0;
+        add_header X-Frame-Options "deny";
+        add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+        add_header X-Content-Type-Options "nosniff" always;
+        add_header Content-Security-Policy $csp_main_enforce_policy always;
+        add_header Content-Security-Policy-Report-Only $csp_main_report_only_policy always;
+    }
+
+    location ~ \.map$ {
+        return 404;
+        access_log off;
+    }
+
+    location /assets/workers/ {
+        expires 1y;
+        add_header Cache-Control "public";
+        add_header Cross-Origin-Embedder-Policy "require-corp";
+        add_header Service-Worker-Allowed "/" always;
+        add_header Content-Security-Policy $csp_worker_enforce_policy always;
+        add_header Content-Security-Policy-Report-Only $csp_worker_report_only_policy always;
+
+        include /etc/nginx/mime.types;
+        types {
+            # mjs modules must have application/javascript, not default application/octet-stream
+            application/javascript mjs;
+        }
+
+        access_log off;
+    }
+
+    location /assets {
+        expires 1y;
+        add_header Cache-Control "public";
+        add_header Cross-Origin-Embedder-Policy "require-corp";
+        add_header Service-Worker-Allowed "/" always;
+
+        include /etc/nginx/mime.types;
+        types {
+            # mjs modules must have application/javascript, not default application/octet-stream
+            application/javascript mjs;
+        }
+
+        access_log off;
+    }
+}

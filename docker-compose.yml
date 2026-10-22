@@ -254,6 +254,8 @@ services:
     restart: always
     depends_on:
       - cvat_server
+    environment:
+      CVAT_CSP_MODE: '${CVAT_CSP_MODE:-off}'
     labels:
       traefik.enable: "true"
       traefik.http.services.cvat-ui.loadbalancer.server.port: "8000"

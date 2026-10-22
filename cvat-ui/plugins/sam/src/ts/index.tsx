@@ -335,7 +335,10 @@ const samPlugin: SAMPlugin = {
     data: {
         initialized: false,
         core: null,
-        worker: new Worker(new URL('./inference.worker', import.meta.url)),
+        worker: new Worker(
+            /* webpackChunkName: "workers/samInferenceWorker/inference.worker" */
+            new URL('./inference.worker', import.meta.url),
+        ),
         jobs: {},
         modelID: 'pth-facebookresearch-sam-vit-h',
         modelURL: '/assets/decoder.onnx',

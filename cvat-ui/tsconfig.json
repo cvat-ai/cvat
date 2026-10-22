@@ -14,5 +14,11 @@
     "jsx": "preserve",
     "baseUrl": "src"
   },
-  "include": ["./index.d.ts", "src/index.tsx", "src/assets/index.d.ts", "plugins/**/*"]
+  "include": [
+    "./index.d.ts",
+    "src/index.tsx",
+    "src/assets/index.d.ts",
+    "src/utils/csp/csp-violation-bootstrap.ts",
+    "plugins/**/*"
+  ]
 }

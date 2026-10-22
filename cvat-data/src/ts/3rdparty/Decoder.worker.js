@@ -1,3 +1,5 @@
+const avcWasmURL = new URL('./avc.wasm', import.meta.url).href;
+
 function factory() {
   var global;
 
@@ -310,10 +312,7 @@ function factory() {
       function isDataURI(filename) {
           return String.prototype.startsWith ? filename.startsWith(dataURIPrefix) : filename.indexOf(dataURIPrefix) === 0
       }
-      var wasmBinaryFile = "3rdparty/avc.wasm";
-      if (!isDataURI(wasmBinaryFile)) {
-          wasmBinaryFile = locateFile(wasmBinaryFile)
-      }
+      var wasmBinaryFile = avcWasmURL;
 
       function getBinary() {
           try {
