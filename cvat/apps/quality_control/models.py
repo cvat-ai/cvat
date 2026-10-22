@@ -566,6 +566,8 @@ class QualityRequirement(TimestampedModel):
         blank=True,
     )
 
+    boundary_f_tolerance = models.FloatField(null=True, blank=True)
+    boundary_f_threshold = models.FloatField(null=True, blank=True)
     iou_threshold = models.FloatField(null=True, blank=True)
     oks_threshold = models.FloatField(null=True, blank=True)
     oks_sigma = models.FloatField(null=True, blank=True)
@@ -615,6 +617,24 @@ class QualityRequirement(TimestampedModel):
 
         existing_fields = {f.name for f in cls._meta.fields}
         return {k: v for k, v in default_settings.items() if k in existing_fields}
+
+    @staticmethod
+    def get_supported_similarity_metrics() -> (
+        dict[QualityRequirementAnnotationType, tuple[ShapeSimilarityMetricType, ...]]
+    ):
+        region_metrics = (ShapeSimilarityMetricType.IOU, ShapeSimilarityMetricType.BOUNDARY_F)
+        point_metrics = (ShapeSimilarityMetricType.OKS,)
+        return {
+            QualityRequirementAnnotationType.TAG: (ShapeSimilarityMetricType.EQUALITY,),
+            QualityRequirementAnnotationType.RECTANGLE: region_metrics,
+            QualityRequirementAnnotationType.POLYGON: region_metrics,
+            QualityRequirementAnnotationType.MASK: region_metrics,
+            QualityRequirementAnnotationType.POLYLINE: region_metrics,
+            QualityRequirementAnnotationType.ELLIPSE: region_metrics,
+            QualityRequirementAnnotationType.POINTS: point_metrics,
+            QualityRequirementAnnotationType.SKELETON: point_metrics,
+            QualityRequirementAnnotationType.SKELETON_KEYPOINT: point_metrics,
+        }
 
     def to_dict(self):
         return model_to_dict(self)
