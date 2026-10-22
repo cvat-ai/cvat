@@ -423,10 +423,37 @@ class DistanceComparator:
         dist_thresh: float | None = None,
         a_annotations_getter: Callable[[_ShapeT1], Sequence[dm.Annotation]] | None = None,
         b_annotations_getter: Callable[[_ShapeT2], Sequence[dm.Annotation]] | None = None,
-        direction_similarity: ShapeSimilarityFunction[_ShapeT1, _ShapeT2] | None = None,
+        directed_similarity: ShapeSimilarityFunction[_ShapeT1, _ShapeT2] | None = None,
+        undirected_similarity: ShapeSimilarityFunction[_ShapeT1, _ShapeT2] | None = None,
         direction_threshold: float | None = None,
         compare_attributes: bool = True,
     ) -> MatchResult:
+        """
+        The optional direction check is enabled by passing all of the 'directed_similarity',
+        'undirected_similarity' and 'direction_threshold' parameters. The callbacks must
+        follow the conventions:
+        - 'undirected_similarity' ignores the object direction (a Hausdorff-like metric),
+          'directed_similarity' takes it into account (a Frechet-like metric)
+        - both callbacks belong to the same metric family, and the directed similarity
+          never exceeds the undirected one for the same pair of objects
+        - if the base 'similarity' is from the same metric family, the same function object
+          must be passed as 'undirected_similarity'. Then the directed similarity is used as
+          the matching cost. Otherwise, the base similarity is used as the matching cost,
+          and the directed and undirected similarities are only used for the direction check.
+
+        A direction mismatch is reported, if the undirected similarity exceeds the directed
+        one by more than 'direction_threshold'.
+        """
+
+        assert (
+            (directed_similarity is None)
+            == (undirected_similarity is None)
+            == (direction_threshold is None)
+        ), (
+            "'directed_similarity', 'undirected_similarity' and 'direction_threshold' "
+            "must be used together"
+        )
+
         if a_objs is None:
             a_objs = self._get_ann_type(t, item_a)
         if b_objs is None:
@@ -438,15 +465,23 @@ class DistanceComparator:
             b_annotations_getter = self._as_annotation_sequence
 
         def _compare(a: _ShapeT1, b: _ShapeT2) -> _PairwiseComparison:
-            base_geometry_similarity = similarity(a, b)
-            geometry_similarity = (
-                direction_similarity(a, b) if direction_similarity else base_geometry_similarity
-            )
-            direction_mismatch = bool(
-                direction_similarity
-                and direction_threshold is not None
-                and base_geometry_similarity - geometry_similarity > direction_threshold
-            )
+            geometry_similarity_score = similarity(a, b)
+
+            direction_mismatch = False
+            if directed_similarity:
+                directed_similarity_score = directed_similarity(a, b)
+
+                if undirected_similarity is similarity:
+                    # The same metric family: the directed score is the stricter matching cost
+                    undirected_similarity_score = geometry_similarity_score
+                    geometry_similarity_score = directed_similarity_score
+                else:
+                    # Different metric families: only check the direction
+                    undirected_similarity_score = undirected_similarity(a, b)
+
+                direction_mismatch = (
+                    undirected_similarity_score - directed_similarity_score > direction_threshold
+                )
 
             conflicting_attribute_names: set[str] = set()
             if compare_attributes and self.attribute_matcher:
@@ -458,8 +493,7 @@ class DistanceComparator:
                     conflicting_attribute_names.update(attribute_result.conflicting_names)
 
             return _PairwiseComparison(
-                geometry_similarity=geometry_similarity,
-                base_geometry_similarity=base_geometry_similarity,
+                geometry_similarity=geometry_similarity_score,
                 conflicting_attribute_names=tuple(sorted(conflicting_attribute_names)),
                 direction_mismatch=direction_mismatch,
             )
@@ -671,26 +705,32 @@ class DistanceComparator:
         return MatchResult(matched, mismatched, a_extra, b_extra, comparisons=distances)
 
     def match_lines(self, item_a: dm.DatasetItem, item_b: dm.DatasetItem) -> MatchResult:
-        base_matcher = LineMatcher(
-            oriented=False,
-            torso_r=self.settings.line_thickness,
-            scale=np.prod(item_a.media_as(dm.Image).size),
-        )
-        direction_matcher = None
-        if self.settings.compare_line_orientation:
-            direction_matcher = LineMatcher(
-                oriented=True,
+        img_h, img_w = item_a.media_as(dm.Image).size
+
+        def _make_line_iou_matcher(*, oriented: bool) -> LineMatcher:
+            return LineMatcher(
+                oriented=oriented,
                 torso_r=self.settings.line_thickness,
-                scale=np.prod(item_a.media_as(dm.Image).size),
+                scale=img_h * img_w,
+            )
+
+        undirected_line_iou = _make_line_iou_matcher(oriented=False).distance
+
+        direction_args = {}
+        if self.settings.compare_line_orientation:
+            # TODO: change the metrics to actually be Hausdorff- and Frechet-like
+            direction_args = dict(
+                directed_similarity=_make_line_iou_matcher(oriented=True).distance,
+                undirected_similarity=undirected_line_iou,
+                direction_threshold=self.settings.line_orientation_threshold,
             )
 
         return self.match_segments(
             dm.AnnotationType.polyline,
             item_a,
             item_b,
-            similarity=base_matcher.distance,
-            direction_similarity=direction_matcher.distance if direction_matcher else None,
-            direction_threshold=self.settings.line_orientation_threshold,
+            similarity=undirected_line_iou,
+            **direction_args,
         )
 
     def match_points(self, item_a: dm.DatasetItem, item_b: dm.DatasetItem) -> MatchResult:
