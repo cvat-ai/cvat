@@ -1493,6 +1493,14 @@ export class CanvasViewImpl implements CanvasView, Listener {
         };
 
         const contextMenuHandler = (e: MouseEvent): void => {
+            // Preserve vertex menus for polygons, polylines, and points (rendered as SVG polylines).
+            // Other shapes' resize and rotation handles should not open context menus.
+            if (!['polygon', 'polyline'].includes(shape.type)) {
+                e.preventDefault();
+                e.stopPropagation();
+                return;
+            }
+
             const pointID = Array.prototype.indexOf.call(
                 ((e.target as HTMLElement).parentElement as HTMLElement).children,
                 e.target,
