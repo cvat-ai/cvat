@@ -1,4 +1,4 @@
 -r development.in
 
-coverage~=7.15
+coverage~=7.16
 fakeredis[lua]~=2.39
