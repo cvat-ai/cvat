@@ -400,6 +400,146 @@ class TestComparator(unittest.TestCase):
         self.assertFalse(ds_unmatched)
 
 
+class TestBoundaryFComparison(unittest.TestCase):
+    CATEGORIES = {dm.AnnotationType.label: dm.LabelCategories.from_iterable(["car"])}
+
+    def _compare(self, annotation_type: dm.AnnotationType, gt_anns, ds_anns, **settings):
+        parameters = ComparisonParameters(
+            annotation_type=annotation_type,
+            similarity_metric=ShapeSimilarityMetricType.BOUNDARY_F,
+            **settings,
+        )
+        comparator = Comparator(self.CATEGORIES, settings=parameters)
+        return (
+            comparator,
+            comparator.match_annotations(_make_image_item(*gt_anns), _make_image_item(*ds_anns))[
+                "all_shape_ann_types"
+            ],
+        )
+
+    def _similarity(self, comparator: Comparator, comparisons, gt_ann, ds_ann) -> float:
+        return comparator.get_comparison(comparisons, gt_ann, ds_ann).similarity
+
+    def test_can_match_thin_objects_without_overlap(self) -> None:
+        # 2px wide poles, 1px apart: no overlap, IoU can't match them
+        gt_ann = dm.Bbox(20, 10, 2, 60, label=0)
+        ds_ann = dm.Bbox(23, 10, 2, 60, label=0)
+
+        iou_comparator = Comparator(
+            self.CATEGORIES,
+            settings=ComparisonParameters(
+                annotation_type=dm.AnnotationType.bbox,
+                similarity_metric=ShapeSimilarityMetricType.IOU,
+            ),
+        )
+        matches, *_ = iou_comparator.match_annotations(
+            _make_image_item(gt_ann), _make_image_item(ds_ann)
+        )["all_shape_ann_types"]
+        self.assertFalse(matches)
+
+        _, (matches, mismatches, gt_unmatched, ds_unmatched, _) = self._compare(
+            dm.AnnotationType.bbox, [gt_ann], [ds_ann]
+        )
+        self.assertEqual(matches, [(gt_ann, ds_ann)])
+        self.assertFalse(mismatches or gt_unmatched or ds_unmatched)
+
+    def test_ranks_the_candidates_within_tolerance(self) -> None:
+        # both candidates are within the tolerance everywhere, the closer one is matched
+        gt_ann = dm.Bbox(20, 20, 40, 40, label=0)
+        far_ann = dm.Bbox(24, 20, 40, 40, label=0)
+        near_ann = dm.Bbox(21, 20, 40, 40, label=0)
+
+        comparator, (matches, _, _, ds_unmatched, comparisons) = self._compare(
+            dm.AnnotationType.bbox, [gt_ann], [far_ann, near_ann]
+        )
+        self.assertEqual(matches, [(gt_ann, near_ann)])
+        self.assertEqual(ds_unmatched, [far_ann])
+        self.assertGreater(
+            self._similarity(comparator, comparisons, gt_ann, near_ann),
+            self._similarity(comparator, comparisons, gt_ann, far_ann),
+        )
+
+    def test_boundary_errors_beyond_tolerance_reduce_similarity(self) -> None:
+        gt_ann = dm.Polygon([20, 20, 60, 20, 60, 60, 20, 60], label=0)
+        ds_ann = dm.Polygon([30, 20, 70, 20, 70, 60, 30, 60], label=0)  # 10px shift
+
+        comparator, (matches, _, _, _, comparisons) = self._compare(
+            dm.AnnotationType.polygon, [gt_ann], [ds_ann]
+        )
+        self.assertFalse(matches)
+        self.assertLess(self._similarity(comparator, comparisons, gt_ann, ds_ann), 0.8)
+
+        comparator, (matches, _, _, _, comparisons) = self._compare(
+            dm.AnnotationType.polygon, [gt_ann], [ds_ann], boundary_f_tolerance=10
+        )
+        self.assertEqual(matches, [(gt_ann, ds_ann)])
+
+    def test_compares_masks_by_the_region_boundary(self) -> None:
+        gt_mask = np.zeros((100, 100), dtype=bool)
+        gt_mask[20:60, 20:60] = True
+        gt_mask[28:52, 28:52] = False  # a 24x24 hole, 8px from the outer boundary
+        ds_mask = np.zeros((100, 100), dtype=bool)
+        ds_mask[21:61, 20:60] = True
+        gt_ann = dm.Mask(np.asfortranarray(gt_mask), label=0)
+        ds_ann = dm.Mask(np.asfortranarray(ds_mask), label=0)
+
+        # the missed hole boundary is farther than the tolerance from the DS boundary
+        comparator, (matches, _, _, _, comparisons) = self._compare(
+            dm.AnnotationType.mask, [gt_ann], [ds_ann]
+        )
+        self.assertFalse(matches)
+        self.assertLess(self._similarity(comparator, comparisons, gt_ann, ds_ann), 0.8)
+
+        comparator, (matches, _, _, _, comparisons) = self._compare(
+            dm.AnnotationType.mask, [gt_ann], [ds_ann], boundary_f_tolerance=15
+        )
+        self.assertEqual(matches, [(gt_ann, ds_ann)])
+
+    def test_compares_lines_by_length(self) -> None:
+        gt_ann = dm.PolyLine([10, 50, 90, 50], label=0)
+        half_ann = dm.PolyLine([10, 50, 50, 50], label=0)
+
+        comparator, (matches, _, _, _, comparisons) = self._compare(
+            dm.AnnotationType.polyline, [gt_ann], [half_ann]
+        )
+        self.assertFalse(matches)
+        # P = 1, R ~ (40 + c) / 80
+        self.assertAlmostEqual(
+            self._similarity(comparator, comparisons, gt_ann, half_ann), 0.72, delta=0.03
+        )
+
+    def test_checks_line_orientation_separately(self) -> None:
+        gt_ann = dm.PolyLine([10, 50, 90, 50], label=0)
+        reversed_ann = dm.PolyLine([90, 52, 10, 52], label=0)
+
+        comparator, (matches, _, _, ds_unmatched, comparisons) = self._compare(
+            dm.AnnotationType.polyline, [gt_ann], [reversed_ann], compare_line_orientation=True
+        )
+        comparison = comparator.get_comparison(comparisons, gt_ann, reversed_ann)
+        self.assertFalse(matches)
+        self.assertEqual(ds_unmatched, [reversed_ann])
+        self.assertTrue(comparison.direction_mismatch)
+        self.assertAlmostEqual(comparison.geometry_similarity, 1, places=6)
+
+        comparator, (matches, _, _, _, comparisons) = self._compare(
+            dm.AnnotationType.polyline, [gt_ann], [reversed_ann], compare_line_orientation=False
+        )
+        self.assertEqual(matches, [(gt_ann, reversed_ann)])
+        self.assertAlmostEqual(
+            self._similarity(comparator, comparisons, gt_ann, reversed_ann), 1, places=6
+        )
+
+    def test_is_not_supported_for_points(self) -> None:
+        with self.assertRaises(AssertionError):
+            Comparator(
+                self.CATEGORIES,
+                settings=ComparisonParameters(
+                    annotation_type=dm.AnnotationType.points,
+                    similarity_metric=ShapeSimilarityMetricType.BOUNDARY_F,
+                ),
+            )
+
+
 class TestSimilarityMetricSelection(unittest.TestCase):
     CATEGORIES = {dm.AnnotationType.label: dm.LabelCategories.from_iterable(["car"])}
 

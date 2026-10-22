@@ -6,10 +6,12 @@ from __future__ import annotations
 
 import itertools
 import math
-from collections.abc import Callable, Sequence
+from collections import OrderedDict
+from collections.abc import Callable, Hashable, Sequence
 from functools import partial
 from typing import Any, NamedTuple, TypeAlias, TypedDict, TypeVar, cast
 
+import cv2
 import datumaro as dm
 import datumaro.components.annotations.matcher
 import datumaro.util.annotation_util
@@ -173,6 +175,202 @@ def segment_iou(a: dm.Annotation, b: dm.Annotation, *, img_h: int, img_w: int) -
 
     # Note that mask_utils.iou expects (dt, gt). Check this if the 3rd param is True
     return float(mask_utils.iou(b, a, [0]))
+
+
+BOUNDARY_F_TIE_BREAK_WEIGHT = 0.01
+"""
+The weight of the extra term in the Boundary F similarity: BF - w * (1 - IoU).
+Helps to resolve the ties for objects within the tolerance.
+"""
+
+
+@define(frozen=True)
+class MaterializedObjectBoundary:
+    origin: tuple[int, int]
+    "The window position in the image, (y, x)"
+
+    points: np.ndarray
+    "The boundary pixel coordinates in the image, (N, 2), (y, x)"
+
+    distances: np.ndarray
+    "The distance from each window pixel to the nearest boundary pixel"
+
+    def coverage(self, other: MaterializedObjectBoundary, *, tolerance: float) -> float:
+        "The share of the other boundary pixels within the tolerance from this boundary"
+        if not len(other.points):
+            return 0
+
+        ys = other.points[:, 0] - self.origin[0]
+        xs = other.points[:, 1] - self.origin[1]
+        h, w = self.distances.shape
+        inside = (0 <= ys) & (ys < h) & (0 <= xs) & (xs < w)
+        close = np.zeros(len(other.points), dtype=bool)
+        close[inside] = self.distances[ys[inside], xs[inside]] <= tolerance
+        return float(np.count_nonzero(close)) / len(other.points)
+
+
+@define(frozen=True)
+class CompressedObjectBoundary:
+    """
+    The object boundary in a window around the object, stored compactly as RLE.
+    The window covers the object bbox padded by the tolerance, the points outside the window
+    are farther than the tolerance from the boundary.
+    The pixel data is only available after materialization.
+    """
+
+    origin: tuple[int, int]
+    "The window position in the image, (y, x)"
+
+    rle: dict
+    "The window boundary mask in the COCO RLE format"
+
+    @staticmethod
+    def window_padding(tolerance: float) -> int:
+        "The window padding around the object bbox"
+        return math.ceil(tolerance) + 1
+
+    @classmethod
+    def _window(
+        cls, bbox: tuple[int, int, int, int], *, tolerance: float, img_h: int, img_w: int
+    ) -> tuple[int, int, int, int]:
+        # bbox: x0, y0, x1, y1 (exclusive)
+        pad = cls.window_padding(tolerance)
+        x0, y0, x1, y1 = bbox
+        return max(0, y0 - pad), max(0, x0 - pad), min(img_h, y1 + pad), min(img_w, x1 + pad)
+
+    @classmethod
+    def _from_window_boundary(cls, boundary: np.ndarray, origin: tuple[int, int]):
+        from pycocotools import mask as mask_utils
+
+        rle = mask_utils.encode(np.asfortranarray(boundary, dtype=np.uint8))
+        return cls(origin=origin, rle=rle)
+
+    @classmethod
+    def from_rle(
+        cls, full_coco_rle: datumaro.util.mask_tools.Rle, *, tolerance: float
+    ) -> CompressedObjectBoundary:
+        """
+        Region boundary is it's inner 1-px boundary.
+        """
+
+        from pycocotools import mask as mask_utils
+
+        img_h, img_w = full_coco_rle["size"]
+        x, y, w, h = mask_utils.toBbox(full_coco_rle)
+        wy0, wx0, wy1, wx1 = cls._window(
+            (int(x), int(y), math.ceil(x + w), math.ceil(y + h)),
+            tolerance=tolerance,
+            img_h=img_h,
+            img_w=img_w,
+        )
+
+        region = mask_utils.decode(full_coco_rle)[wy0:wy1, wx0:wx1].astype(bool)
+
+        eroded = cv2.erode(
+            region.astype(np.uint8),
+            cv2.getStructuringElement(cv2.MORPH_CROSS, (3, 3)),
+            borderType=cv2.BORDER_CONSTANT,
+            borderValue=0,
+        ).astype(bool)
+
+        # The inner boundary of the region
+        boundary = region & ~eroded
+
+        return cls._from_window_boundary(boundary, (wy0, wx0))
+
+    @classmethod
+    def from_polyline(
+        cls, points: Sequence[float], *, tolerance: float, img_h: int, img_w: int
+    ) -> CompressedObjectBoundary:
+        """
+        Line boundary is the rasterized line itself
+        """
+
+        coords = np.reshape(points, (-1, 2))
+        wy0, wx0, wy1, wx1 = cls._window(
+            (
+                int(np.floor(coords[:, 0].min())),
+                int(np.floor(coords[:, 1].min())),
+                int(np.ceil(coords[:, 0].max())) + 1,
+                int(np.ceil(coords[:, 1].max())) + 1,
+            ),
+            tolerance=tolerance,
+            img_h=img_h,
+            img_w=img_w,
+        )
+
+        # Rasterize the line
+        canvas = np.zeros((max(0, wy1 - wy0), max(0, wx1 - wx0)), dtype=np.uint8)
+        shift = 4  # fractional bits of the point coordinates
+        window_coords = np.round((coords - (wx0, wy0)) * (1 << shift)).astype(np.int32)
+        cv2.polylines(
+            canvas, [window_coords.reshape(-1, 1, 2)], isClosed=False, color=1, shift=shift
+        )
+
+        return cls._from_window_boundary(canvas.astype(bool), (wy0, wx0))
+
+    def materialize(self) -> MaterializedObjectBoundary:
+        from pycocotools import mask as mask_utils
+
+        boundary = mask_utils.decode(self.rle).astype(bool)
+        ys, xs = np.nonzero(boundary)
+        points = np.stack([ys + self.origin[0], xs + self.origin[1]], axis=1)
+        # the exact Euclidean distance to the nearest boundary (zero) pixel
+        distances = cv2.distanceTransform(
+            (~boundary).astype(np.uint8), cv2.DIST_L2, cv2.DIST_MASK_PRECISE
+        )
+        return MaterializedObjectBoundary(origin=self.origin, points=points, distances=distances)
+
+
+class MaterializedBoundaryCache:
+    """
+    An LRU cache for materialized boundaries.
+
+    Limits the number of the materialized boundaries, which can take a lot of memory.
+    The capacity of 2 is enough for a pair of boundaries. When the cost matrix is computed
+    line by line, the line object stays materialized, so it costs 1 materialization
+    per compared pair.
+
+    The cache keys are the boundary object ids, so the boundaries must stay alive
+    while the cache is used.
+    """
+
+    def __init__(self, capacity: int = 2) -> None:
+        self._capacity = capacity
+        self._items: OrderedDict[int, MaterializedObjectBoundary] = OrderedDict()
+
+    def get(self, boundary: CompressedObjectBoundary) -> MaterializedObjectBoundary:
+        key = id(boundary)
+        materialized = self._items.get(key)
+        if materialized is not None:
+            self._items.move_to_end(key)
+            return materialized
+
+        materialized = boundary.materialize()
+        self._items[key] = materialized
+        if len(self._items) > self._capacity:
+            self._items.popitem(last=False)
+
+        return materialized
+
+
+def boundary_f(
+    a: MaterializedObjectBoundary, b: MaterializedObjectBoundary, *, tolerance: float
+) -> float:
+    """
+    Compute the Boundary F1 score.
+
+    The score is defined as the F1 of the boundary precision and recall - the shares of
+    each boundary within the tolerance from the other one.
+    """
+
+    precision = a.coverage(b, tolerance=tolerance)
+    recall = b.coverage(a, tolerance=tolerance)
+
+    if not precision + recall:
+        return 0
+
+    return 2 * precision * recall / (precision + recall)
 
 
 @define(kw_only=True)
@@ -358,7 +556,9 @@ class DistanceComparator:
 
         self.attribute_matcher = attribute_matcher
 
-    _SHAPE_METRICS = frozenset({ShapeSimilarityMetricType.IOU})
+    _SHAPE_METRICS = frozenset(
+        {ShapeSimilarityMetricType.IOU, ShapeSimilarityMetricType.BOUNDARY_F}
+    )
     SIMILARITY_METRICS: dict[dm.AnnotationType, frozenset[ShapeSimilarityMetricType]] = {
         dm.AnnotationType.label: frozenset({ShapeSimilarityMetricType.EQUALITY}),
         dm.AnnotationType.bbox: _SHAPE_METRICS,
@@ -374,6 +574,8 @@ class DistanceComparator:
     @property
     def _annotation_match_threshold(self) -> float:
         match self.settings.similarity_metric:
+            case ShapeSimilarityMetricType.BOUNDARY_F:
+                return self.settings.boundary_f_threshold
             case ShapeSimilarityMetricType.OKS:
                 return self.settings.oks_threshold
             case ShapeSimilarityMetricType.IOU:
@@ -382,6 +584,69 @@ class DistanceComparator:
                 return 0.5
             case _:
                 assert False, f"Unknown similarity metric '{self.settings.similarity_metric}'"
+
+    def _make_boundary_f_similarity(
+        self,
+        *,
+        get_a_bbox: Callable[[_ShapeT1], tuple[float, float, float, float]],
+        get_b_bbox: Callable[[_ShapeT2], tuple[float, float, float, float]],
+        get_a_boundary: Callable[[_ShapeT1], CompressedObjectBoundary],
+        get_b_boundary: Callable[[_ShapeT2], CompressedObjectBoundary],
+        tie_break: ShapeSimilarityFunction[_ShapeT1, _ShapeT2] | None = None,
+        object_key: Callable[[_ShapeT1 | _ShapeT2], Hashable] = id,
+    ) -> ShapeSimilarityFunction[_ShapeT1, _ShapeT2]:
+        """
+        Boundary F similarity of the objects, with the optional tie-break similarity.
+        The bboxes (x, y, w, h) allow to skip the far objects without computing the boundaries.
+        The bboxes and the boundaries are computed once per object, identified by object_key.
+        """
+
+        def _memoize(fn: Callable[[Any], Any]) -> Callable[[Any], Any]:
+            cache = {}
+
+            def memoized(obj):
+                key = object_key(obj)
+                value = cache.get(key)
+                if value is None:
+                    value = fn(obj)
+                    cache[key] = value
+                return value
+
+            return memoized
+
+        get_a_bbox = _memoize(get_a_bbox)
+        get_b_bbox = _memoize(get_b_bbox)
+        get_a_boundary = _memoize(get_a_boundary)
+        get_b_boundary = _memoize(get_b_boundary)
+        materialized_boundaries = MaterializedBoundaryCache()
+
+        # The boundary windows are the bboxes padded by this margin,
+        # the boundaries can only be within the tolerance, if the windows intersect
+        margin = CompressedObjectBoundary.window_padding(self.settings.boundary_f_tolerance)
+
+        def _similarity(a: _ShapeT1, b: _ShapeT2) -> float:
+            ax, ay, aw, ah = get_a_bbox(a)
+            bx, by, bw, bh = get_b_bbox(b)
+            if (
+                ax + aw + 2 * margin <= bx
+                or bx + bw + 2 * margin <= ax
+                or ay + ah + 2 * margin <= by
+                or by + bh + 2 * margin <= ay
+            ):
+                return 0
+
+            similarity = boundary_f(
+                materialized_boundaries.get(get_a_boundary(a)),
+                materialized_boundaries.get(get_b_boundary(b)),
+                tolerance=self.settings.boundary_f_tolerance,
+            )
+
+            if tie_break is not None and similarity > 0:
+                similarity -= BOUNDARY_F_TIE_BREAK_WEIGHT * (1 - tie_break(a, b))
+
+            return similarity
+
+        return _similarity
 
     def instance_bbox(
         self, instance_anns: Sequence[dm.Annotation]
@@ -595,7 +860,11 @@ class DistanceComparator:
 
         img_h, img_w = item_a.media_as(dm.Image).size
         similarity = partial(_bbox_iou, img_h=img_h, img_w=img_w)
-        if self.settings.similarity_metric != ShapeSimilarityMetricType.IOU:
+        if self.settings.similarity_metric == ShapeSimilarityMetricType.BOUNDARY_F:
+            similarity = self._make_polygonal_boundary_f(
+                img_h=img_h, img_w=img_w, tie_break=similarity
+            )
+        elif self.settings.similarity_metric != ShapeSimilarityMetricType.IOU:
             raise AssertionError(
                 f"Similarity metric '{self.settings.similarity_metric}' is not available for boxes"
             )
@@ -608,13 +877,45 @@ class DistanceComparator:
 
         img_h, img_w = item_a.media_as(dm.Image).size
         similarity = partial(_ellipse_iou, img_h=img_h, img_w=img_w)
-        if self.settings.similarity_metric != ShapeSimilarityMetricType.IOU:
+        if self.settings.similarity_metric == ShapeSimilarityMetricType.BOUNDARY_F:
+            similarity = self._make_polygonal_boundary_f(
+                img_h=img_h, img_w=img_w, tie_break=similarity
+            )
+        elif self.settings.similarity_metric != ShapeSimilarityMetricType.IOU:
             raise AssertionError(
                 f"Similarity metric '{self.settings.similarity_metric}' "
                 "is not available for ellipses"
             )
 
         return self.match_segments(dm.AnnotationType.ellipse, item_a, item_b, similarity=similarity)
+
+    def _make_polygonal_boundary_f(
+        self,
+        *,
+        img_h: int,
+        img_w: int,
+        tie_break: ShapeSimilarityFunction[dm.Annotation, dm.Annotation] | None = None,
+    ) -> ShapeSimilarityFunction[dm.Annotation, dm.Annotation]:
+        def _get_boundary(ann: dm.Annotation) -> CompressedObjectBoundary:
+            from pycocotools import mask as mask_utils
+
+            polygon = self.to_polygon(ann)
+            rle = mask_utils.merge(to_rle(polygon, img_h=img_h, img_w=img_w))
+            return CompressedObjectBoundary.from_rle(
+                rle, tolerance=self.settings.boundary_f_tolerance
+            )
+
+        def _get_bbox(ann: dm.Annotation) -> tuple[float, float, float, float]:
+            # the rotation can extend the bbox
+            return self.to_polygon(ann).get_bbox()
+
+        return self._make_boundary_f_similarity(
+            get_a_bbox=_get_bbox,
+            get_b_bbox=_get_bbox,
+            get_a_boundary=_get_boundary,
+            get_b_boundary=_get_boundary,
+            tie_break=tie_break,
+        )
 
     def match_segmentations(self, item_a: dm.DatasetItem, item_b: dm.DatasetItem) -> MatchResult:
         def _get_segmentations(item):
@@ -727,13 +1028,39 @@ class DistanceComparator:
 
             return float(mask_utils.iou([b_segm], [a_segm], [0])[0])
 
-        if self.settings.similarity_metric != ShapeSimilarityMetricType.IOU:
+        if self.settings.similarity_metric == ShapeSimilarityMetricType.BOUNDARY_F:
+
+            def _get_boundary(
+                obj_id: int, *, compiled_mask: dm.CompiledMask | None, instances: list
+            ) -> CompressedObjectBoundary:
+                segment = _get_segment(obj_id, compiled_mask=compiled_mask, instances=instances)
+                return CompressedObjectBoundary.from_rle(
+                    segment, tolerance=self.settings.boundary_f_tolerance
+                )
+
+            def _get_bbox(obj_id: int, *, instances: list) -> tuple[float, float, float, float]:
+                # the visible parts can only be smaller than the whole instance
+                return datumaro.util.annotation_util.max_bbox(instances[obj_id])
+
+            _segment_comparator = self._make_boundary_f_similarity(
+                get_a_bbox=partial(_get_bbox, instances=a_instances),
+                get_b_bbox=partial(_get_bbox, instances=b_instances),
+                get_a_boundary=partial(
+                    _get_boundary, compiled_mask=a_compiled_mask, instances=a_instances
+                ),
+                get_b_boundary=partial(
+                    _get_boundary, compiled_mask=b_compiled_mask, instances=b_instances
+                ),
+                tie_break=_segment_iou,
+                object_key=lambda obj_id: obj_id,  # the instance indices
+            )
+        elif self.settings.similarity_metric == ShapeSimilarityMetricType.IOU:
+            _segment_comparator = _segment_iou
+        else:
             raise AssertionError(
                 f"Similarity metric '{self.settings.similarity_metric}' "
                 "is not available for polygons and masks"
             )
-
-        _segment_comparator = _segment_iou
 
         def _label_matcher(a_inst_id: int, b_inst_id: int) -> bool:
             # labels are the same in the instance annotations
@@ -782,11 +1109,6 @@ class DistanceComparator:
         return MatchResult(matched, mismatched, a_extra, b_extra, comparisons=distances)
 
     def match_lines(self, item_a: dm.DatasetItem, item_b: dm.DatasetItem) -> MatchResult:
-        if self.settings.similarity_metric != ShapeSimilarityMetricType.IOU:
-            raise AssertionError(
-                f"Similarity metric '{self.settings.similarity_metric}' is not available for lines"
-            )
-
         img_h, img_w = item_a.media_as(dm.Image).size
 
         def _make_line_iou_matcher(*, oriented: bool) -> LineMatcher:
@@ -798,8 +1120,33 @@ class DistanceComparator:
 
         undirected_line_iou = _make_line_iou_matcher(oriented=False).distance
 
+        if self.settings.similarity_metric == ShapeSimilarityMetricType.BOUNDARY_F:
+
+            def _get_boundary(ann: dm.PolyLine) -> CompressedObjectBoundary:
+                return CompressedObjectBoundary.from_polyline(
+                    ann.points,
+                    tolerance=self.settings.boundary_f_tolerance,
+                    img_h=img_h,
+                    img_w=img_w,
+                )
+
+            base_similarity = self._make_boundary_f_similarity(
+                get_a_bbox=dm.PolyLine.get_bbox,
+                get_b_bbox=dm.PolyLine.get_bbox,
+                get_a_boundary=_get_boundary,
+                get_b_boundary=_get_boundary,
+            )
+
+        elif self.settings.similarity_metric == ShapeSimilarityMetricType.IOU:
+            base_similarity = undirected_line_iou
+        else:
+            raise AssertionError(
+                f"Similarity metric '{self.settings.similarity_metric}' is not available for lines"
+            )
+
         direction_args = {}
         if self.settings.compare_line_orientation:
+            # Boundary F itself ignores the line orientation, so IoU is used always
             # TODO: change the metrics to actually be Hausdorff- and Frechet-like
             direction_args = dict(
                 directed_similarity=_make_line_iou_matcher(oriented=True).distance,
@@ -811,7 +1158,7 @@ class DistanceComparator:
             dm.AnnotationType.polyline,
             item_a,
             item_b,
-            similarity=undirected_line_iou,
+            similarity=base_similarity,
             **direction_args,
         )
 
