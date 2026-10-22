@@ -97,6 +97,19 @@ context('Quality requirements UI', () => {
         });
     }
 
+    function setRectangleThresholdPolicy(policy) {
+        cy.window().then((win) => win.cvat.server.request(`/api/quality/settings?task_id=${taskId}`)
+            .then(({ data }) => {
+                const settings = data.results.find((item) => item.task_id === taskId);
+                const parent = settings.requirements.find((item) => item.is_base && item.annotation_type === 'rectangle');
+                return win.cvat.server.request(`/api/quality/settings/requirements/${parent.id}`, {
+                    method: 'PATCH', data: { iou_threshold: policy },
+                });
+            }));
+        cy.reload();
+        cy.get('.cvat-quality-requirements-configuration-table').should('be.visible');
+    }
+
     function saveSettings() {
         cy.get('.cvat-quality-settings-save-btn').contains('button', 'Save').click();
     }
@@ -422,7 +435,7 @@ context('Quality requirements UI', () => {
         pointer('pointermove', 0.5, 0.5);
         cy.get(`${editor} .cvat-threshold-policy-tooltip`).should('contain', 'GT area:')
             .and('contain', 'px²').and('contain', 'IoU threshold:').and('contain', '%');
-        cy.contains(`${editor} button`, 'Add point').click();
+        cy.get(`${editor} button[aria-label="Add point"]`).click();
         cy.get(rows).should('have.length', 3);
         cy.get(rows).eq(1).find('button').click();
         cy.get(rows).should('have.length', 2);
@@ -431,18 +444,59 @@ context('Quality requirements UI', () => {
             cy.get(canvas).scrollIntoView();
             cy.get(canvas).realClick({ position: 'center', scrollBehavior: false });
             cy.get(rows).should('have.length', 3);
-            cy.get(`${rows}.selected`).find('input[id*="area"]').invoke('val').then((area) => {
+            cy.get(`${rows}.selected`).then(($row) => {
+                const coordinate = (value) => Number(String(value).replace(',', '.'));
+                const area = $row.find('input[id*="area"]').val();
+                const iou = $row.find('input[id*="iou"]').val();
+                let previousArea = coordinate(area);
                 cy.get(canvas).then(($canvas) => {
                     const { width, height } = $canvas[0].getBoundingClientRect();
                     cy.wrap($canvas).realMouseDown({ x: width / 2, y: height / 2, scrollBehavior: false });
-                    cy.wrap($canvas).realMouseMove(width * 0.6, height * 0.4, { scrollBehavior: false });
+                    Array.from({ length: 10 }, (_, index) => index + 1).forEach((step) => {
+                        cy.wrap($canvas).realMouseMove(
+                            width * (0.5 + step * 0.01), height * (0.5 - step * 0.01), { scrollBehavior: false },
+                        );
+                        cy.get(canvas).should(($current) => {
+                            expect($current[0]).to.equal($canvas[0]);
+                        });
+                        cy.get(`${rows}.selected`).find('input[id*="area"]').should(($input) => {
+                            expect(coordinate($input.val())).to.be.greaterThan(previousArea);
+                        }).then(($input) => { previousArea = coordinate($input.val()); });
+                    });
+                    cy.wrap($canvas).realMouseUp({ x: width * 0.6, y: height * 0.4, scrollBehavior: false });
+                });
+                cy.contains(`${editor} button`, 'Undo').should('be.enabled').click({ scrollBehavior: 'center' });
+                cy.get(rows).eq(1).find('input[id*="area"]').should('have.value', `${area}`);
+                cy.get(rows).eq(1).find('input[id*="iou"]').should('have.value', iou);
+                cy.get(canvas).scrollIntoView();
+                cy.get(canvas).then(($canvas) => {
+                    const { width, height } = $canvas[0].getBoundingClientRect();
+                    cy.wrap($canvas).realMouseDown({ x: width / 2, y: height / 2, scrollBehavior: false });
+                    cy.wrap($canvas).then(() => {
+                        const element = $canvas[0];
+                        const rect = element.getBoundingClientRect();
+                        const event = {
+                            bubbles: true,
+                            pointerId: 1,
+                            button: 0,
+                            clientX: rect.left + width * 0.6,
+                            clientY: rect.top + height * 0.4,
+                        };
+                        const { PointerEvent } = element.ownerDocument.defaultView;
+                        // Finish before React renders the last move, to catch stale coordinates in Undo.
+                        element.dispatchEvent(new PointerEvent('pointermove', { ...event, buttons: 1 }));
+                        element.dispatchEvent(new PointerEvent('pointerup', { ...event, buttons: 0 }));
+                    });
                     cy.wrap($canvas).realMouseUp({ x: width * 0.6, y: height * 0.4, scrollBehavior: false });
                 });
                 cy.get(`${rows}.selected`).find('input[id*="area"]').should(($input) => {
-                    expect(Number($input.val())).to.be.greaterThan(Number(area));
+                    expect(coordinate($input.val())).to.be.greaterThan(coordinate(area));
                 });
+                cy.contains(`${editor} button`, 'Undo').should('be.enabled').click({ scrollBehavior: 'center' });
+                cy.get(rows).should('have.length', 3);
+                cy.get(rows).eq(1).find('input[id*="area"]').should('have.value', `${area}`);
+                cy.get(rows).eq(1).find('input[id*="iou"]').should('have.value', iou);
             });
-            cy.contains(`${editor} button`, 'Undo').click({ scrollBehavior: 'center' });
             cy.get(canvas).scrollIntoView();
             cy.get(canvas).realClick({ button: 'right', position: 'center', scrollBehavior: false });
             cy.get(rows).should('have.length', 2);
@@ -458,6 +512,103 @@ context('Quality requirements UI', () => {
         clickRowAction('Base rectangle renamed', 'edit');
         expectLinearThreshold();
         cy.get('.cvat-quality-requirement-form-actions').contains('button', 'Cancel').click();
+    });
+
+    it('Shows cell errors and undoes whole numeric edits with a local action description', () => {
+        openSettingsTab();
+        clickRowAction('Base rectangle renamed', 'edit');
+        const undo = `${thresholdEditor} .cvat-threshold-policy-undo button`;
+        cy.get(undo).should('be.disabled');
+        cy.get(thresholdRows).last().find('input[id*="area"]').clear();
+        cy.get(thresholdRows).last().find('input[id*="area"]').type('100');
+        cy.get(thresholdRows).last().find('input[id*="area"]').blur();
+        cy.get(thresholdRows).last().find('.ant-form-item-explain-error')
+            .should('be.visible').and('contain', 'GT area must be unique.');
+        cy.get(thresholdRows).last().find('input[id*="iou"]').clear();
+        cy.get(thresholdRows).last().find('input[id*="iou"]').type('50');
+        cy.get(thresholdRows).last().find('input[id*="iou"]').blur();
+        submitForm();
+        cy.contains('.ant-form-item-explain-error', 'Correct the IoU threshold fields before saving.')
+            .should('be.visible');
+        cy.get(undo).trigger('mouseover');
+        cy.contains('.ant-tooltip-inner', 'Undo: change IoU of point 2.')
+            .should('contain', 'Only changes in this curve editor are undone.');
+        cy.get(undo).click();
+        cy.get(thresholdRows).last().find('input[id*="iou"]').should('have.value', '90');
+        cy.get(thresholdRows).last().find('.ant-form-item-explain-error')
+            .should('contain', 'GT area must be unique.');
+        cy.get(undo).click();
+        cy.get(undo).should('be.disabled');
+        expectLinearThreshold();
+        cy.get(`${thresholdRows} input[aria-invalid="true"]`).should('not.exist');
+        cy.contains('.ant-form-item-explain-error', 'Correct the IoU threshold fields before saving.')
+            .should('not.exist');
+        cy.get(thresholdRows).last().find('input[id*="iou"]').clear();
+        cy.get(thresholdRows).last().find('input[id*="iou"]').type('101');
+        cy.get(thresholdRows).last().find('input[id*="iou"]').blur();
+        cy.get(thresholdRows).last().find('input[id*="iou"]').should('have.value', '101');
+        cy.get(thresholdRows).last().find('.ant-form-item-explain-error')
+            .should('contain', 'IoU must be between 0 and 100%.');
+        cy.get(undo).click();
+        cy.get(undo).should('be.disabled');
+        cy.get('.cvat-quality-requirement-form-actions').contains('button', 'Cancel').click();
+    });
+
+    it('Displays rounded coordinates without changing the saved precision', () => {
+        const precisePolicy = {
+            ...linearIouPolicy,
+            points: [{ x: 0.000001, y: 0.269534050179211 }, { x: 206.53247034924306, y: 0.4 }],
+        };
+        openSettingsTab();
+        setRectangleThresholdPolicy(precisePolicy);
+        clickRowAction('Base rectangle renamed', 'edit');
+        cy.window().then((win) => {
+            const rounded = (number) => number.toLocaleString(win.navigator.language, {
+                maximumFractionDigits: 2, useGrouping: false,
+            });
+            cy.get(thresholdRows).first().find('input[id*="iou"]')
+                .should('have.value', rounded(precisePolicy.points[0].y * 100));
+            cy.get(thresholdRows).last().find('input[id*="area"]')
+                .should('have.value', rounded(precisePolicy.points[1].x));
+        });
+        cy.get(thresholdRows).first().find('input[id*="area"]').focus();
+        cy.get(thresholdRows).first().find('input[id*="area"]').should('have.value', '0.000001');
+        cy.get(thresholdRows).first().find('input[id*="area"]').blur();
+        cy.get(thresholdRows).last().find('input[id*="area"]').focus();
+        cy.get(thresholdRows).last().find('input[id*="area"]').should('have.value', `${precisePolicy.points[1].x}`);
+        cy.get(thresholdRows).last().find('input[id*="area"]').blur();
+        cy.get(`${thresholdEditor} .cvat-threshold-policy-undo button`).should('be.disabled');
+        cy.intercept('PATCH', '**/api/quality/settings/requirements/*').as('savePreciseIou');
+        submitForm();
+        cy.wait('@savePreciseIou').then(({ response }) => {
+            expect(response.statusCode).to.equal(200);
+            expect(response.body.iou_threshold).to.deep.equal(precisePolicy);
+        });
+        expectNotification('Requirement has been updated');
+        setRectangleThresholdPolicy(linearIouPolicy);
+    });
+
+    it('Searches and paginates 200 editable points and enforces the point limit', () => {
+        const largePolicy = {
+            ...linearIouPolicy,
+            points: Array.from({ length: 200 }, (_, index) => ({ x: (index + 1) * 100, y: 0.4 })),
+        };
+        openSettingsTab();
+        setRectangleThresholdPolicy(largePolicy);
+        clickRowAction('Base rectangle renamed', 'edit');
+        cy.get(thresholdRows).should('have.length', 10);
+        cy.get(`${thresholdEditor} button[aria-label="Add point"]`).should('be.disabled');
+        cy.get(`${thresholdEditor} input[aria-label="Search key points"]`).type('19900');
+        cy.get(thresholdRows).should('have.length', 1).find('input[id*="area"]')
+            .should('have.value', '19900');
+        cy.get(thresholdRows).find('button[aria-label^="Delete point"]').click();
+        cy.get(`${thresholdEditor} .cvat-threshold-policy-undo button`).click();
+        cy.get(`${thresholdEditor} button[aria-label="Add point"]`).should('be.disabled');
+        cy.get(`${thresholdEditor} input[aria-label="Search key points"]`).clear();
+        cy.get(`${thresholdEditor} .ant-pagination-item-20`).click();
+        cy.get(thresholdRows).last().find('input[id*="area"]').should('have.value', '20000');
+        cy.get('.cvat-quality-requirement-form-actions').contains('button', 'Cancel').click();
+        setRectangleThresholdPolicy(linearIouPolicy);
     });
 
     it('Edits and persists an ellipse IoU curve through the threshold field', () => {
@@ -631,15 +782,19 @@ context('Quality requirements UI', () => {
             const input = $input[0];
             cy.wrap($input).clear();
             cy.wrap($input).type('1500');
+            cy.get(thresholdRows).first().find('input[id*="area"]').should(($first) => {
+                expect($first[0]).to.equal(input);
+                expect($first.val()).to.equal('1500');
+                expect(input.ownerDocument.activeElement).to.equal(input);
+            });
+            cy.wrap($input).blur();
             cy.get(thresholdRows).last().find('input[id*="area"]').should(($last) => {
                 expect($last[0]).to.equal(input);
-                expect($last.val()).to.equal('1500');
-                expect(input.ownerDocument.activeElement).to.equal(input);
             });
             cy.contains(`${thresholdEditor} button`, 'Undo').click();
             cy.get(thresholdRows).first().find('input[id*="area"]').should(($first) => {
                 expect($first[0]).to.equal(input);
-                expect($first.val()).to.equal('150');
+                expect($first.val()).to.equal('100');
             });
         });
         cy.contains(`${thresholdEditor} button`, '−').click();

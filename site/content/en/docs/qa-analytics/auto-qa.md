@@ -512,11 +512,16 @@ for a GT shape of **550 px²**. The area is determined only by the GT annotation
 
 Hover over the graph to see the area and its calculated threshold. Left-click an empty
 position to add a point, hold the left mouse button on a point to drag it, or right-click
-a point to delete it. The vertical list below the graph also provides numerical editing
-and add/delete controls. **Undo** restores the preceding edit; **Fit** shows the whole curve.
+a point to delete it. The table below the graph provides numerical editing, search by
+area or IoU, and add/delete controls. Use the arrows inside a numerical field to increase
+or decrease its value. Selecting a point on the graph opens its table page.
+Values are displayed with up to two decimal places; focus a field to edit its full precision.
+Invalid values are explained below their fields and must be corrected before saving.
+**Undo** restores the preceding edit in this curve editor only; its tooltip describes the
+action and the button is disabled when there is nothing to undo. **Fit** shows the whole curve.
 Switching modes preserves both drafts while the form remains open and saves the active mode.
 
-![IoU curve editor with graph and numerical point inputs](/images/iou-threshold-editor.png)
+![IoU curve editor with graph and an editable table of key points](/images/iou-threshold-editor.png)
 
 Interpolation requires 2–200 points with unique positive areas and thresholds from 0 to 100%.
 Child requirements inherit the whole policy and can override it or revert to their parent.

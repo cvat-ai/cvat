@@ -15,7 +15,7 @@
     }
 
     .cvat-threshold-policy-controls {
-        align-items: flex-end;
+        align-items: flex-start;
         justify-content: flex-start;
         flex-wrap: wrap;
 
@@ -24,6 +24,7 @@
 
         .cvat-threshold-policy-undo {
             margin-inline-start: auto;
+            margin-top: $grid-unit-size * 3;
         }
     }
 
@@ -33,6 +34,7 @@
         gap: $grid-unit-size;
         color: $text-color-secondary;
         font-size: 12px;
+        margin-bottom: $grid-unit-size;
     }
 
     .cvat-threshold-policy-chart {
@@ -72,35 +74,40 @@
     }
 
     .cvat-threshold-policy-points {
-        display: flex;
-        flex-direction: column;
-        gap: $grid-unit-size;
-        max-height: $grid-unit-size * 48;
-        overflow: auto;
-        padding: $grid-unit-size / 2;
-    }
-
-    .cvat-threshold-policy-row {
-        display: grid;
-        grid-template-columns: 80px minmax(0, 1fr) minmax(0, 1fr) 32px;
-        align-items: center;
-        gap: $grid-unit-size * 2;
-        padding: $grid-unit-size * 2;
-        border: 1px solid $border-color-1;
-        border-radius: $grid-unit-size;
-
         .ant-input-number { width: 100%; }
 
-        &.selected {
-            border-color: $validation-progress-color;
+        .cvat-threshold-policy-row.selected > td {
             background: $hover-menu-color;
+        }
+    }
+
+    .cvat-threshold-policy-field {
+        margin-bottom: 0;
+    }
+
+    > .cvat-table-wrapper {
+        margin-top: $grid-unit-size * 2;
+
+        > .ant-row {
+            gap: $grid-unit-size;
+            margin-bottom: $grid-unit-size * 2;
+        }
+
+        .cvat-table-search-bar {
+            display: block;
+            margin-inline-start: auto;
+            max-width: $grid-unit-size * 32;
         }
 
         @media (width <= 600px) {
-            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 32px;
-            gap: $grid-unit-size;
+            > .ant-row > .ant-col:nth-child(2) {
+                order: 1;
+                flex-basis: 100%;
+            }
 
-            > strong { grid-column: 1 / -1; }
+            .cvat-table-search-bar {
+                max-width: none;
+            }
         }
     }
 }
@@ -202,7 +209,7 @@
     .cvat-quality-requirement-form {
         padding-top: $grid-unit-size;
 
-        .ant-form-item {
+        .ant-form-item:not(.cvat-threshold-policy-field) {
             margin-bottom: $grid-unit-size * 2;
         }
 

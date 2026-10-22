@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { QuestionCircleOutlined, UndoOutlined } from '@ant-design/icons';
 import Button from 'antd/lib/button';
 import Checkbox from 'antd/lib/checkbox';
@@ -85,6 +85,10 @@ export default function QualityRequirementForm(props: Readonly<QualityRequiremen
     const [form] = Form.useForm<RequirementFormValues>();
     const [submitting, setSubmitting] = useState(false);
     const [thresholdPolicyValid, setThresholdPolicyValid] = useState(true);
+    const onThresholdValidityChange = useCallback((valid: boolean): void => {
+        setThresholdPolicyValid(valid);
+        if (valid) form.setFields([{ name: 'iouThreshold', errors: [] }]);
+    }, [form]);
     const [touchedFields, setTouchedFields] = useState<Set<string>>(() => getCopiedTouchedFields(copiedRequirement));
     const [resetFields, setResetFields] = useState<Set<string>>(new Set());
     const initialValues = useMemo(() => {
@@ -457,7 +461,7 @@ export default function QualityRequirementForm(props: Readonly<QualityRequiremen
                                 }]}
                             >
                                 <ThresholdPolicyEditor
-                                    disabled={formDisabled} onValidityChange={setThresholdPolicyValid}
+                                    disabled={formDisabled} onValidityChange={onThresholdValidityChange}
                                 />
                             </Form.Item>
                         </Col>
