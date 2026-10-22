@@ -732,7 +732,7 @@ context('Multi-object selection', { scrollBehavior: false }, () => {
                     clientX: startX + 30,
                     clientY: startY + 20,
                 });
-                cy.get(shapeSelector).then(($movedShape) => {
+                cy.get(shapeSelector).should(($movedShape) => {
                     const movedBox = $movedShape[0].getBoundingClientRect();
                     expect(movedBox.left).to.be.closeTo(initialBox.left + 30, 1);
                     expect(movedBox.top).to.be.closeTo(initialBox.top + 20, 1);

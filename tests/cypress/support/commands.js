@@ -1098,8 +1098,8 @@ Cypress.Commands.add('advancedConfiguration', (advancedConfigurationParams) => {
     if (advancedConfigurationParams.chunkSize) {
         cy.get('#dataChunkSize').type(advancedConfigurationParams.chunkSize);
     }
-    if (advancedConfigurationParams.consensusReplicas) {
-        cy.get('#consensusReplicas').type(advancedConfigurationParams.consensusReplicas);
+    if (advancedConfigurationParams.initialReplicas) {
+        cy.get('#initialReplicas').type(advancedConfigurationParams.initialReplicas);
     }
     if (advancedConfigurationParams.overlapSize) {
         cy.get('#overlapSize').type(advancedConfigurationParams.overlapSize);
@@ -1933,11 +1933,12 @@ Cypress.Commands.add('interactAnnotationObjectMenu', (parentSelector, button) =>
     });
 
     // AntD renders the menu outside the row, even when the caller is inside .within().
-    // Keep this a query so Cypress can reacquire a menu replaced during row updates.
-    cy.get('.cvat-object-item-menu:visible button', { withinSubject: null })
-        .filter((index, element) => element.textContent.includes(button))
-        .should('have.length', 1)
-        .click();
+    const getMenuButton = () => cy.get('.cvat-object-item-menu:visible button', { withinSubject: null })
+        .filter((index, element) => element.textContent.includes(button));
+    getMenuButton().should('have.length', 1);
+    // A passed assertion locks in its subject. Start a fresh query so click can
+    // reacquire the action if the menu is replaced during a sidebar update.
+    getMenuButton().click();
 });
 
 Cypress.Commands.add('hideTooltips', () => {

@@ -1511,8 +1511,8 @@ class TestTaskBackups:
         )["id"]
         self._test_can_export_backup(task_id)
 
-    def test_can_export_backup_for_consensus_task(self, tasks):
-        task_id = next(t for t in tasks if t["dimension"] == "2d" if t["consensus_enabled"])["id"]
+    def test_can_export_backup_for_consensus_task(self, tasks_with_replicas):
+        task_id = next(t for t in tasks_with_replicas if t["dimension"] == "2d")["id"]
         self._test_can_export_backup(task_id)
 
     def test_can_export_backup_for_honeypot_task(self, tasks):
@@ -1647,14 +1647,25 @@ class TestTaskBackups:
         )["id"]
         self._test_can_restore_task_from_backup(task_id)
 
-    def test_can_import_backup_with_consensus_task(self, tasks):
-        task_id = next(t for t in tasks if t["dimension"] == "2d" if t["consensus_enabled"])["id"]
+    def test_can_import_backup_with_consensus_task(self, tasks_with_replicas):
+        task_id = next(t for t in tasks_with_replicas if t["dimension"] == "2d")["id"]
         self._test_can_restore_task_from_backup(task_id)
 
     def test_can_import_backup_with_consensus_task_created_before_consensus_replica_removal(self):
+        # The backup has "consensus_replica" jobs
         original_task_id = 30
         backup_file = ASSETS_DIR / "backups" / "task_30_backup_pre_consensus_replica_removal.zip"
-        self._test_can_restore_task_from_backup(original_task_id, backup_file=backup_file)
+
+        new_task = self._test_can_restore_task_from_backup(
+            task_id=original_task_id, backup_file=backup_file
+        )
+
+        # Task 30 has 2 annotation jobs with 3 replica jobs each
+        jobs = new_task.get_jobs()
+        annotation_job_ids = [j.id for j in jobs if j.type == "annotation"]
+        replica_parent_job_ids = [j.parent_job_id for j in jobs if j.type == "replica"]
+        assert len(annotation_job_ids) == 2
+        assert [replica_parent_job_ids.count(job_id) for job_id in annotation_job_ids] == [3, 3]
 
     def test_can_import_backup_with_annotation_scores(self, tasks, jobs, labels, annotations):
         task_id = next(
@@ -1904,6 +1915,8 @@ class TestTaskBackups:
             )
             == {}
         )
+
+        return new_task
 
 
 @pytest.mark.usefixtures("restore_db_per_function")
@@ -2741,7 +2754,7 @@ class TestWorkWithConsensusTasks:
         self, admin_user, jobs, annotations, task_id: int
     ):
         task_jobs = [j for j in jobs if j["task_id"] == task_id]
-        consensus_jobs = [j for j in task_jobs if j["type"] == "consensus_replica"]
+        consensus_jobs = [j for j in task_jobs if j["type"] == "replica"]
 
         # Ensure there are annotations in replicas
         assert any(
@@ -2753,7 +2766,7 @@ class TestWorkWithConsensusTasks:
 
         with make_api_client(admin_user) as api_client:
             for annotation_job in task_jobs:
-                if annotation_job["type"] != "consensus_replica":
+                if annotation_job["type"] != "replica":
                     api_client.jobs_api.destroy_annotations(annotation_job["id"])
 
             updated_task_annotations, _ = api_client.tasks_api.retrieve_annotations(task_id)
