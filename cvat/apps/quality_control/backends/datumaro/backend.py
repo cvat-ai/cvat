@@ -169,6 +169,8 @@ class Datumaro2DBackend(QualityBackend):
             similarity_metric=requirement.similarity_metric,
         )
         for name in (
+            "boundary_f_tolerance",
+            "boundary_f_threshold",
             "iou_threshold",
             "oks_threshold",
             "oks_sigma",
