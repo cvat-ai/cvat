@@ -52,7 +52,7 @@ export const config: Partial<Config> = {
             label: 'Assignee',
             type: 'select',
             valueSources: ['value'],
-            operators: ['select_equals'],
+            operators: ['select_equals', 'is_empty', 'is_not_empty'],
             fieldSettings: {
                 useAsyncSearch: true,
                 forceAsyncSearch: true,

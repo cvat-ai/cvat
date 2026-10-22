@@ -6,6 +6,7 @@
 
 import { translatePoints } from '../../support/utils';
 import { defaultTaskSpec } from '../../support/default-specs';
+import { getBulkActionsMenu, selectAll } from '../../support/utils.cy';
 
 context('Basic manipulations with consensus job replicas', () => {
     const labelName = 'Consensus';
@@ -48,6 +49,139 @@ context('Basic manipulations with consensus job replicas', () => {
                     cy.wrap($el).should('have.text', 'Replica');
                 });
             });
+        });
+        after(() => {
+            cy.headlessDeleteTask(consensusTaskId);
+        });
+    });
+
+    describe('Replica job deletion', () => {
+        let consensusTaskId = null;
+        before(() => {
+            cy.headlessCreateTask(taskSpec, dataSpec, extras).then(({ taskId }) => {
+                consensusTaskId = taskId;
+            });
+        });
+        it('Delete a replica job, the parent job stays untouched', () => {
+            cy.openTaskById(consensusTaskId);
+            cy.get('.cvat-task-details-wrapper').should('be.visible');
+            cy.get('.cvat-clear-filters-button').click();
+
+            cy.get('.cvat-job-item:has(.cvat-tag-replica)').first()
+                .invoke('attr', 'data-row-id').then((replicaId) => {
+                    cy.deleteJob(replicaId);
+                });
+            cy.get('.cvat-job-item:has(.cvat-tag-parent)')
+                .should('have.length', 1)
+                .and('have.css', 'opacity', '1');
+            cy.get('.cvat-job-item:has(.cvat-tag-replica)')
+                .filter((_, el) => el.style.opacity !== '0.5')
+                .should('have.length', initialReplicas - 1);
+        });
+        after(() => {
+            cy.headlessDeleteTask(consensusTaskId);
+        });
+    });
+
+    describe('Replica job addition', () => {
+        let singleJobTaskId = null;
+        let bulkTaskId = null;
+        let bulkJobIds = [];
+        const replicasToAdd = 2;
+        const bulkJobsCount = 2;
+
+        before(() => {
+            cy.headlessCreateTask(taskSpec, dataSpec, extras).then(({ taskId }) => {
+                singleJobTaskId = taskId;
+            });
+
+            const bulkSpec = defaultTaskSpec({
+                serverFiles: ['smallArchive.zip'], labelName, taskName, segmentSize: 1,
+            });
+            cy.headlessCreateTask(bulkSpec.taskSpec, bulkSpec.dataSpec, bulkSpec.extras)
+                .then(({ taskId, jobIds }) => {
+                    bulkTaskId = taskId;
+                    bulkJobIds = jobIds;
+                });
+        });
+
+        it('Add replicas to a single job', () => {
+            cy.openTaskById(singleJobTaskId);
+            cy.get('.cvat-task-details-wrapper').should('be.visible');
+            cy.get('.cvat-clear-filters-button').click();
+            cy.get('.cvat-job-item:has(.cvat-tag-replica)').should('have.length', initialReplicas);
+
+            cy.get('.cvat-job-item:has(.cvat-tag-parent)')
+                .invoke('attr', 'data-row-id').then((parentId) => {
+                    cy.addReplicas(replicasToAdd, { jobId: parentId }).then((parentJobIds) => {
+                        expect(parentJobIds).to.deep.equal(Array(replicasToAdd).fill(+parentId));
+                    });
+                });
+
+            cy.get('.cvat-job-item:has(.cvat-tag-replica)')
+                .should('have.length', initialReplicas + replicasToAdd);
+            cy.get('.cvat-job-item:has(.cvat-tag-parent)').should('have.length', 1);
+            cy.get('.ant-notification-notice-error').should('not.exist');
+        });
+
+        it('Add replicas to the selected jobs', () => {
+            cy.openTaskById(bulkTaskId);
+            cy.get('.cvat-task-details-wrapper').should('be.visible');
+            cy.get('.cvat-job-item').should('have.length', bulkJobsCount);
+
+            selectAll();
+            getBulkActionsMenu().within(() => {
+                cy.contains('[role="menuitem"]', `Add replicas (${bulkJobsCount})`).click();
+            });
+            // one request for each replica of each job
+            cy.addReplicas(replicasToAdd, { jobsCount: bulkJobsCount }).then((parentJobIds) => {
+                const byValue = (a, b) => a - b;
+                const expectedParentJobIds = bulkJobIds.flatMap((id) => Array(replicasToAdd).fill(id));
+                expect([...parentJobIds].sort(byValue)).to.deep.equal(expectedParentJobIds.sort(byValue));
+            });
+            cy.get('.cvat-bulk-progress-wrapper').should('not.exist');
+
+            cy.get('.cvat-clear-filters-button').click();
+            cy.get('.cvat-job-item:has(.cvat-tag-replica)')
+                .should('have.length', bulkJobsCount * replicasToAdd);
+            cy.get('.cvat-job-item:has(.cvat-tag-parent)').should('have.length', bulkJobsCount);
+            cy.get('.ant-notification-notice-error').should('not.exist');
+        });
+
+        after(() => {
+            cy.headlessDeleteTask(singleJobTaskId);
+            cy.headlessDeleteTask(bulkTaskId);
+        });
+    });
+
+    describe('Frame deletion in replica jobs', () => {
+        let consensusTaskId = null;
+        before(() => {
+            cy.headlessCreateTask(taskSpec, dataSpec, extras).then(({ taskId }) => {
+                consensusTaskId = taskId;
+            });
+        });
+
+        function openJobWithTag(tag) {
+            cy.openTaskById(consensusTaskId);
+            cy.get('.cvat-clear-filters-button').click();
+            cy.get(`.cvat-job-item:has(.cvat-tag-${tag})`).first()
+                .contains('a', 'Job #').click();
+            cy.get('.cvat-canvas-container').should('exist').and('be.visible');
+        }
+
+        it('Frames can be deleted in the parent job, but not in its replicas', () => {
+            openJobWithTag('parent');
+            cy.get('.cvat-player-delete-frame').should('exist');
+
+            openJobWithTag('replica');
+            cy.get('.cvat-player-delete-frame').should('not.exist');
+            cy.get('.cvat-player-restore-frame').should('not.exist');
+
+            cy.get('body').type('{alt}{del}');
+            cy.get('.ant-message-warning')
+                .should('be.visible')
+                .and('contain.text', 'Frames cannot be deleted in replica jobs');
         });
         after(() => {
             cy.headlessDeleteTask(consensusTaskId);
