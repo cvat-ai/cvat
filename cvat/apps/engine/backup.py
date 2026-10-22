@@ -11,7 +11,7 @@ import re
 import shutil
 import stat
 from abc import ABCMeta, abstractmethod
-from collections import defaultdict, deque
+from collections import deque
 from collections.abc import Collection, Iterable
 from contextlib import closing
 from copy import deepcopy
@@ -53,7 +53,7 @@ from cvat.apps.engine.serializers import (
     AssetWriteSerializer,
     AttributeSerializer,
     DataSerializer,
-    JobWriteSerializer,
+    GroundTruthJobCreateSerializer,
     LabeledDataSerializer,
     LabeledShapeSerializer,
     LabelSerializer,
@@ -63,7 +63,7 @@ from cvat.apps.engine.serializers import (
     TaskReadSerializer,
     ValidationParamsSerializer,
 )
-from cvat.apps.engine.task import JobFileMapping, initialize_task
+from cvat.apps.engine.task import JobFileMapping, create_replica_jobs, initialize_task
 from cvat.apps.engine.utils import av_scan_paths
 from cvat.utils import django_database as db_utils
 from cvat.utils.paths import join_untrusted_path, problem_with_untrusted_path
@@ -227,6 +227,7 @@ class _TaskBackupBase(_BackupBase):
             "status",
             "subset",
             "labels",
+            "initial_replicas",
         }
 
         return self._prepare_meta(allowed_fields, task)
@@ -1130,7 +1131,10 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
             # DataSerializer checks for this, but we don't need it for tasks with a GT pool
             data["job_file_mapping"] = job_file_mapping
 
-        self._manifest["consensus_replicas"] = self._determine_replica_counts(jobs)
+        if "initial_replicas" not in self._manifest:
+            # NOTE @sosov consensus_replica -> replica backward compatibility: backups created
+            # before initial_replicas was stored, derive it from the job list
+            self._manifest["initial_replicas"] = min(self._collect_replica_counts(jobs))
 
         self._db_task = models.Task.objects.create(**self._manifest, organization_id=self._org_id)
 
@@ -1188,7 +1192,20 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
 
         db_data.save(update_fields=["storage"])
 
+        # NOTE @sosov: replicas can be added and removed after the task creation, so their count can
+        # differ between the annotation jobs of a backed up task. initialize_task() creates the
+        # same number of replicas for each annotation job, so it must not create any,
+        # the replicas are created from the backup job list instead
+        initial_replicas = self._db_task.initial_replicas
+        self._db_task.initial_replicas = 0
+        self._db_task.save(update_fields=["initial_replicas"])
+
         initialize_task(db_task=self._db_task.pk, data=data.copy(), is_backup_restore=True)
+        self._import_replica_jobs(jobs)
+
+        self._db_task.initial_replicas = initial_replicas
+        self._db_task.save(update_fields=["initial_replicas"])
+
         self._db_task.refresh_from_db()
         db_data.refresh_from_db()
 
@@ -1209,43 +1226,52 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
         try:
             # The type field will be missing in backups created before the GT jobs were introduced
             raw_job_type = job.get("type", models.JobType.ANNOTATION.value)
+            # NOTE @sosov consensus_replica -> replica backward compatibility: backups created
+            # before the rename have the legacy job type
+            if raw_job_type == "consensus_replica":
+                raw_job_type = models.JobType.REPLICA.value
             job_type = models.JobType(raw_job_type)
         except ValueError:
             raise ValidationError(f"Unexpected job type {raw_job_type}")
         return job_type
 
-    def _collect_replica_counts(self, jobs: dict) -> dict[models.JobType, list[int]]:
+    def _collect_replica_counts(self, jobs: list[dict]) -> list[int]:
+        "Returns the replica count of each annotation job, in the order of the annotation jobs"
+
         replica_counts = []
+        last_primary_type: models.JobType | None = None
         for job in jobs:
             job_type = self._get_job_type(job)
 
-            if job_type != models.JobType.CONSENSUS_REPLICA:
-                replica_counts.append([job_type, 0])
+            if job_type != models.JobType.REPLICA:
+                last_primary_type = job_type
+                if job_type == models.JobType.ANNOTATION:
+                    replica_counts.append(0)
+            elif last_primary_type == models.JobType.ANNOTATION:
+                replica_counts[-1] += 1
             else:
-                if not replica_counts:
-                    raise ValidationError(
-                        f"Invalid job order, jobs of type '{job_type}' "
-                        "must follow their parent jobs."
-                    )
+                raise ValidationError(
+                    f"Invalid job order, jobs of type '{job_type}' "
+                    "must follow their parent annotation jobs."
+                )
 
-                replica_counts[-1][1] += 1
+        return replica_counts
 
-        replica_counts_map = defaultdict(list)
-        for primary_type, count in replica_counts:
-            replica_counts_map[primary_type].append(count)
-
-        return replica_counts_map
-
-    def _determine_replica_counts(self, jobs: dict) -> int:
-        replica_counts = self._collect_replica_counts(jobs)
-        return min(replica_counts.get(models.JobType.ANNOTATION, [0]))
+    def _import_replica_jobs(self, jobs: list[dict]) -> None:
+        db_annotation_jobs = [
+            db_job for db_job in self._get_db_jobs() if db_job.type == models.JobType.ANNOTATION
+        ]
+        for db_job, replica_count in zip(
+            db_annotation_jobs, self._collect_replica_counts(jobs), strict=True
+        ):
+            create_replica_jobs(parent_job=db_job, count=replica_count)
 
     def _import_gt_jobs(self, jobs):
         for job in jobs:
             job_type = self._get_job_type(job)
 
             if job_type == models.JobType.GROUND_TRUTH:
-                job_serializer = JobWriteSerializer(
+                job_serializer = GroundTruthJobCreateSerializer(
                     data={
                         "task_id": self._db_task.id,
                         "type": job_type.value,
@@ -1263,7 +1289,7 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
                 )
                 job_serializer.is_valid(raise_exception=True)
                 job_serializer.save()
-            elif job_type in [models.JobType.ANNOTATION, models.JobType.CONSENSUS_REPLICA]:
+            elif job_type in [models.JobType.ANNOTATION, models.JobType.REPLICA]:
                 continue
             else:
                 assert False

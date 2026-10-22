@@ -28,7 +28,9 @@ from PIL import Image
 from pytest_cases import parametrize
 
 from shared.tasks.utils import parse_frame_step
-from shared.utils.config import get_method, make_api_client, patch_method
+from shared.utils.config import get_method
+from shared.utils.config import get_paginated_collection as get_raw_collection
+from shared.utils.config import make_api_client, patch_method, post_method
 from shared.utils.helpers import generate_image_files
 
 from .utils import (
@@ -417,6 +419,169 @@ class TestPostJobs:
                 assert job.assignee is None
                 assert job.assignee_updated_date is None
 
+    @pytest.mark.parametrize(
+        "data, expected_errors",
+        [
+            ({"task_id": 2}, {"type": ["This field is required."]}),
+            ({"type": "bogus", "task_id": 2}, {"type": ['"bogus" is not a valid choice.']}),
+            (
+                {"type": "annotation", "task_id": 2},
+                {"type": ['"annotation" is not a valid choice.']},
+            ),
+            (
+                {"type": ["replica"], "task_id": 2},
+                {"type": ["\"['replica']\" is not a valid choice."]},
+            ),
+            (
+                {"type": "replica", "task_id": 2, "parent_job_id": None},
+                {"parent_job_id": ["This field may not be null."]},
+            ),
+            (
+                {"type": "replica", "task_id": 2, "parent_job_id": "abc"},
+                {"parent_job_id": ["A valid integer is required."]},
+            ),
+            (
+                {"type": "replica", "task_id": 2, "parent_job_id": 2**31 - 1},
+                {"parent_job_id": [f"Job #{2**31 - 1} does not exist in the task #2"]},
+            ),
+            (
+                # job #64 is an annotation job of the task #36
+                {"type": "replica", "task_id": 2, "parent_job_id": 64},
+                {"parent_job_id": ["Job #64 does not exist in the task #2"]},
+            ),
+            (
+                # job #65 is a ground truth job of the task #36
+                {"type": "replica", "task_id": 36, "parent_job_id": 65},
+                {"parent_job_id": ["Replicas can only be added to jobs of the 'annotation' type"]},
+            ),
+            (
+                # job #53 is a replica job of the task #31
+                {"type": "replica", "task_id": 31, "parent_job_id": 53},
+                {"parent_job_id": ["Replicas can only be added to jobs of the 'annotation' type"]},
+            ),
+        ],
+    )
+    def test_cannot_create_job_with_invalid_payload(self, admin_user, data, expected_errors):
+        response = post_method(admin_user, "jobs", data)
+
+        assert response.status_code == HTTPStatus.BAD_REQUEST
+        assert response.json() == expected_errors
+
+    @staticmethod
+    def _make_replica_spec(parent_job: dict[str, Any], **extra: Any) -> dict[str, Any]:
+        return {
+            "type": "replica",
+            "task_id": parent_job["task_id"],
+            "parent_job_id": parent_job["id"],
+            **extra,
+        }
+
+    @pytest.mark.parametrize("assignee", [None, "admin1"])
+    def test_can_create_replica_job(self, admin_user, jobs, users_by_name, assignee):
+        parent_job = next(j for j in jobs if j["type"] == "annotation")
+
+        with make_api_client(admin_user) as api_client:
+            parent_before, _ = api_client.jobs_api.retrieve(parent_job["id"])
+
+        response = self._test_create_job_ok(
+            admin_user,
+            self._make_replica_spec(
+                parent_job=parent_job,
+                assignee=users_by_name[assignee]["id"] if assignee else None,
+            ),
+        )
+        replica = json.loads(response.data)
+
+        assert replica["type"] == "replica"
+        assert replica["parent_job_id"] == parent_job["id"]
+        assert replica["task_id"] == parent_job["task_id"]
+        assert replica["start_frame"] == parent_job["start_frame"]
+        assert replica["stop_frame"] == parent_job["stop_frame"]
+
+        if assignee:
+            assert replica["assignee"]["username"] == assignee
+            assert replica["assignee_updated_date"]
+        else:
+            assert replica["assignee"] is None
+            assert replica["assignee_updated_date"] is None
+
+        with make_api_client(admin_user) as api_client:
+            _, response = api_client.jobs_api.retrieve(replica["id"])
+            assert DeepDiff(replica, json.loads(response.data), ignore_order=True) == {}
+
+            parent_after, _ = api_client.jobs_api.retrieve(parent_job["id"])
+            assert parent_after.replicas_count == parent_before.replicas_count + 1
+
+    def test_cannot_create_replica_in_a_task_without_data(self, admin_user, jobs, tasks):
+        task = next(t for t in tasks if t["data"] is None)
+        parent_job = next(j for j in jobs if j["type"] == "annotation")
+
+        response = post_method(
+            admin_user,
+            "jobs",
+            self._make_replica_spec(parent_job=parent_job) | {"task_id": task["id"]},
+        )
+
+        assert response.status_code == HTTPStatus.BAD_REQUEST
+        assert "parent_job_id" in response.json()
+
+    @pytest.mark.parametrize(
+        "org_role, is_staff, allow",
+        [
+            ("owner", True, True),
+            ("owner", False, True),
+            ("maintainer", True, True),
+            ("maintainer", False, True),
+            ("supervisor", True, True),
+            ("supervisor", False, False),
+            ("worker", True, False),
+            ("worker", False, False),
+        ],
+    )
+    def test_create_replica_job_in_org_task(
+        self, tasks, jobs, users, is_org_member, is_task_staff, org_role, is_staff, allow
+    ):
+        for user in users:
+            if user["is_superuser"]:
+                continue
+
+            parent_job = next(
+                (
+                    j
+                    for j in jobs
+                    if j["type"] == "annotation"
+                    if (t := tasks[j["task_id"]])["organization"] is not None
+                    if is_task_staff(user["id"], t["id"]) == is_staff
+                    if is_org_member(user["id"], t["organization"], role=org_role)
+                ),
+                None,
+            )
+            if parent_job is not None:
+                break
+
+        assert parent_job
+
+        spec = self._make_replica_spec(parent_job=parent_job)
+
+        if allow:
+            self._test_create_job_ok(user["username"], spec)
+        else:
+            self._test_create_job_fails(
+                user["username"], spec, expected_status=HTTPStatus.FORBIDDEN
+            )
+
+    def test_can_create_replica_job_in_sandbox_task(self, tasks, jobs, users):
+        parent_job = next(
+            j
+            for j in jobs
+            if j["type"] == "annotation"
+            if (t := tasks[j["task_id"]])["organization"] is None
+            if not users[t["owner"]["id"]]["is_superuser"]
+        )
+        user = tasks[parent_job["task_id"]]["owner"]["username"]
+
+        self._test_create_job_ok(user, self._make_replica_spec(parent_job=parent_job))
+
 
 @pytest.mark.usefixtures("restore_db_per_function")
 class TestDeleteJobs:
@@ -442,6 +607,7 @@ class TestDeleteJobs:
             ("gt", "annotation", False),
             ("gt_pool", "ground_truth", False),
             ("gt_pool", "annotation", False),
+            (None, "replica", True),
         ),
     )
     def test_destroy_job(self, admin_user, tasks, jobs, validation_mode, job_type, allow):
@@ -1095,6 +1261,52 @@ class TestJobsListFilters(CollectionSimpleFilterTestBase):
     )
     def test_can_use_simple_filter_for_object_list(self, field):
         return super()._test_can_use_simple_filter_for_object_list(field)
+
+    def test_can_use_legacy_consensus_replica_value_in_simple_filter(self):
+        expected = [j for j in self.samples if j["type"] == "replica"]
+        assert expected
+
+        received = get_raw_collection(username=self.user, endpoint="jobs", type="consensus_replica")
+
+        self._compare_results(gt_objects=expected, received_objects=received)
+
+    @pytest.mark.parametrize(
+        "rules, matches",
+        [
+            pytest.param(
+                {"==": [{"var": "type"}, "consensus_replica"]},
+                lambda j: j["type"] == "replica",
+                id="eq",
+            ),
+            pytest.param(
+                {"in": [{"var": "type"}, ["consensus_replica", "ground_truth"]]},
+                lambda j: j["type"] in ("replica", "ground_truth"),
+                id="in",
+            ),
+            pytest.param(
+                {"!": {"==": [{"var": "type"}, "consensus_replica"]}},
+                lambda j: j["type"] != "replica",
+                id="not",
+            ),
+            pytest.param(
+                {
+                    "and": [
+                        {"==": [{"var": "type"}, "consensus_replica"]},
+                        {"==": [{"var": "task_id"}, 30]},
+                    ]
+                },
+                lambda j: j["type"] == "replica" and j["task_id"] == 30,
+                id="and",
+            ),
+        ],
+    )
+    def test_can_use_legacy_consensus_replica_value_in_json_filter(self, rules, matches):
+        expected = [j for j in self.samples if matches(j)]
+        assert expected
+
+        received = get_raw_collection(username=self.user, endpoint="jobs", filter=json.dumps(rules))
+
+        self._compare_results(gt_objects=expected, received_objects=received)
 
 
 @pytest.mark.usefixtures("restore_db_per_class")

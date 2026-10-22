@@ -5,7 +5,6 @@
 
 from __future__ import annotations
 
-from collections import namedtuple
 from collections.abc import Sequence
 from enum import StrEnum
 from typing import TYPE_CHECKING, Any, cast
@@ -17,6 +16,7 @@ from rest_framework.exceptions import PermissionDenied, ValidationError
 from cvat.apps.engine.rq import ExportRequestId
 from cvat.apps.engine.types import ExtendedRequest
 from cvat.apps.engine.utils import is_dataset_export
+from cvat.apps.iam.models import User
 from cvat.apps.iam.permissions import (
     OpenPolicyAgentPermission,
     build_iam_context,
@@ -41,7 +41,6 @@ from .models import (
 if TYPE_CHECKING:
     from rest_framework.viewsets import ViewSet
 
-    from cvat.apps.iam.models import User
     from cvat.apps.iam.permissions import IamContext
 
 
@@ -214,18 +213,25 @@ class UserPermission(OpenPolicyAgentPermission):
 
     @classmethod
     def create_scope_view(cls, iam_context: dict[str, Any], user_id: int | str):
-        obj = namedtuple("User", ["id"])(id=int(user_id))
+        try:
+            obj = User.objects.get(id=user_id)
+        except User.DoesNotExist as ex:
+            raise ValidationError(str(ex))
+
         return cls(**iam_context, scope=cls.Scopes.VIEW, obj=obj)
 
     def get_resource(self):
         data = None
         if self.obj:
-            data = {"id": self.obj.id}
+            if self.org_id is None:
+                role = None
+            else:
+                membership = self.obj.memberships.filter(organization_id=self.org_id).first()
+                role = membership.role if membership else None
+
+            data = {"id": self.obj.id, "membership": {"role": role}}
         elif self.scope == self.Scopes.VIEW:  # self
             data = {"id": self.user_id}
-
-        if data:
-            data["membership"] = {"role": self.org_role if self.org_id else None}
 
         return data
 

@@ -140,7 +140,7 @@ class MembershipPermission(OpenPolicyAgentPermission):
         permissions = []
         for scope in cls.get_scopes(request, view, obj):
             params = {}
-            if scope == "change:role":
+            if scope == cls.Scopes.UPDATE_ROLE:
                 params["role"] = request.data.get("role")
 
             self = cls.create_base_perm(request, view, scope, iam_context, obj, **params)
@@ -182,6 +182,7 @@ class MembershipPermission(OpenPolicyAgentPermission):
         if self.obj:
             return {
                 "role": self.obj.role,
+                "new_role": getattr(self, "role", None),
                 "is_active": self.obj.is_active,
                 "user": {"id": self.obj.user_id},
                 "organization": {"id": self.obj.organization_id},

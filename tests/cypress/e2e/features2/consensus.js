@@ -6,14 +6,15 @@
 
 import { translatePoints } from '../../support/utils';
 import { defaultTaskSpec } from '../../support/default-specs';
+import { selectAll } from '../../support/utils.cy';
 
 context('Basic manipulations with consensus job replicas', () => {
     const labelName = 'Consensus';
     const taskName = 'Test consensus';
     const serverFiles = ['archive.zip'];
-    const consensusReplicas = 4;
+    const initialReplicas = 4;
     const { taskSpec, dataSpec, extras } = defaultTaskSpec({
-        serverFiles, labelName, taskName, consensusReplicas,
+        serverFiles, labelName, taskName, initialReplicas,
     });
 
     before(() => {
@@ -22,50 +23,16 @@ context('Basic manipulations with consensus job replicas', () => {
     });
 
     describe('Consensus job creation', () => {
-        const maxReplicas = 10;
         let consensusTaskId = null;
         before(() => {
             cy.headlessCreateTask(taskSpec, dataSpec, extras).then(({ taskId }) => {
                 consensusTaskId = taskId;
             });
-            cy.get('.cvat-create-task-dropdown').click();
-            cy.get('.cvat-create-task-button').should('be.visible').click();
         });
-        it('Check allowed number of replicas', () => {
-            cy.contains('Advanced configuration').click();
-            // 'Consensus Replicas' field cannot equal to 1
-            cy.get('#consensusReplicas').type(`{backspace}${1}`);
-            cy.get('.ant-form-item-has-error')
-                .should('be.visible')
-                .should('include.text', 'Value can not be equal to 1');
-            cy.contains('button', 'Submit & Continue').click();
-            cy.get('.ant-notification-notice-error').should('exist').and('be.visible');
-            cy.closeNotification('.ant-notification-notice-error');
-
-            // 'Consensus Replicas' field cannot be > 10
-            cy.get('#consensusReplicas').clear();
-            cy.get('.ant-form-item-has-error').should('not.exist');
-            cy.get('#consensusReplicas').type(`{backspace}${maxReplicas + 1}`);
-            cy.get('.ant-form-item-has-error')
-                .should('be.visible')
-                .should('include.text', `Value must be less than ${maxReplicas}`);
-            cy.contains('button', 'Submit & Continue').click();
-            cy.get('.ant-notification-notice-error').should('exist').and('be.visible');
-            cy.closeNotification('.ant-notification-notice-error');
-            cy.get('#consensusReplicas').clear();
-        });
-
         it('Check new consensus task has correct tags and replicas', () => {
-            cy.goToTaskList();
-            cy.openTask(taskName);
+            cy.openTaskById(consensusTaskId);
             cy.get('.cvat-task-details-wrapper').should('be.visible');
             cy.get('.ant-notification-notice-error').should('not.exist');
-            cy.get('.cvat-tag-consensus').then((tags) => {
-                expect(tags.length).to.equal(1);
-                cy.wrap(tags).each(($el) => {
-                    cy.wrap($el).should('have.text', 'Consensus');
-                });
-            });
             cy.get('.cvat-tag-parent').then((tags) => {
                 expect(tags.length).to.equal(1);
                 cy.wrap(tags).each(($el) => {
@@ -88,6 +55,105 @@ context('Basic manipulations with consensus job replicas', () => {
         });
     });
 
+    describe('Replica job deletion', () => {
+        let consensusTaskId = null;
+        before(() => {
+            cy.headlessCreateTask(taskSpec, dataSpec, extras).then(({ taskId }) => {
+                consensusTaskId = taskId;
+            });
+        });
+        it('Delete a replica job, the parent job stays untouched', () => {
+            cy.openTaskById(consensusTaskId);
+            cy.get('.cvat-clear-filters-button').click();
+
+            cy.get('.cvat-job-item:has(.cvat-tag-replica)').first()
+                .invoke('attr', 'data-row-id').then((replicaId) => {
+                    cy.deleteJob(replicaId);
+
+                    // the job list is not refetched after a delete: reload to see what the server kept
+                    cy.openTaskById(consensusTaskId);
+                    cy.get('.cvat-clear-filters-button').click();
+                    cy.get('.cvat-job-item:has(.cvat-tag-replica)').should('have.length', initialReplicas - 1);
+                    cy.get('.cvat-job-item:has(.cvat-tag-parent)').should('have.length', 1);
+                    cy.get(`.cvat-job-item[data-row-id="${replicaId}"]`).should('not.exist');
+                });
+
+            // the parent job can't be deleted
+            cy.get('.cvat-job-item:has(.cvat-tag-parent) .cvat-job-item-more-button').click();
+            cy.get('.ant-dropdown').not('.ant-dropdown-hidden').within(() => {
+                cy.contains('[role="menuitem"]', 'Export annotations').should('be.visible'); // menu is rendered
+                cy.contains('[role="menuitem"]', 'Delete').should('not.exist');
+            });
+            cy.get('body').type('{esc}');
+            cy.get('.cvat-job-item-menu').should('not.exist');
+        });
+        after(() => {
+            if (consensusTaskId !== null) cy.headlessDeleteTask(consensusTaskId);
+        });
+    });
+
+    describe('Replica job addition', () => {
+        let singleJobTaskId = null;
+        let bulkTaskId = null;
+        let bulkJobIds = [];
+        const bulkReplicasToAdd = 2;
+        const bulkJobsCount = 2;
+
+        before(() => {
+            cy.headlessCreateTask(taskSpec, dataSpec, extras).then(({ taskId }) => {
+                singleJobTaskId = taskId;
+            });
+
+            const bulkSpec = defaultTaskSpec({
+                serverFiles: ['smallArchive.zip'], labelName, taskName, segmentSize: 1,
+            });
+            cy.headlessCreateTask(bulkSpec.taskSpec, bulkSpec.dataSpec, bulkSpec.extras)
+                .then(({ taskId, jobIds }) => {
+                    bulkTaskId = taskId;
+                    bulkJobIds = jobIds;
+                });
+        });
+
+        it('Add a replica to a single job', () => {
+            cy.openTaskById(singleJobTaskId);
+            cy.get('.cvat-clear-filters-button').click();
+            cy.get('.cvat-job-item:has(.cvat-tag-replica)').should('have.length', initialReplicas);
+
+            cy.get('.cvat-job-item:has(.cvat-tag-parent)')
+                .invoke('attr', 'data-row-id').then((parentId) => {
+                    cy.addReplicas(1, [parentId]);
+                });
+            cy.get('.cvat-job-item:has(.cvat-tag-replica)').should('have.length', initialReplicas + 1);
+
+            // a replica can't get replicas
+            cy.get('.cvat-job-item:has(.cvat-tag-replica) .cvat-job-item-more-button').first().click();
+            cy.get('.ant-dropdown').not('.ant-dropdown-hidden').within(() => {
+                cy.contains('[role="menuitem"]', 'Export annotations').should('be.visible'); // menu is rendered
+                cy.contains('[role="menuitem"]', 'Add replicas').should('not.exist');
+            });
+            cy.get('body').type('{esc}');
+            cy.get('.cvat-job-item-menu').should('not.exist');
+        });
+
+        it('Add replicas to the selected jobs', () => {
+            cy.openTaskById(bulkTaskId);
+            cy.get('.cvat-job-item').should('have.length', bulkJobsCount);
+
+            selectAll();
+            cy.addReplicas(bulkReplicasToAdd, bulkJobIds);
+
+            cy.get('.cvat-clear-filters-button').click();
+            cy.get('.cvat-job-item:has(.cvat-tag-replica)')
+                .should('have.length', bulkJobsCount * bulkReplicasToAdd);
+            cy.get('.cvat-job-item:has(.cvat-tag-parent)').should('have.length', bulkJobsCount);
+        });
+
+        after(() => {
+            if (singleJobTaskId !== null) cy.headlessDeleteTask(singleJobTaskId);
+            if (bulkTaskId !== null) cy.headlessDeleteTask(bulkTaskId);
+        });
+    });
+
     describe('Consensus jobs merging', () => {
         let consensusTaskId = null;
         const baseShape = {
@@ -103,9 +169,8 @@ context('Basic manipulations with consensus job replicas', () => {
         before(() => {
             cy.headlessCreateTask(taskSpec, dataSpec, extras).then(({ taskId }) => {
                 consensusTaskId = taskId;
+                cy.openTaskById(consensusTaskId);
             });
-            cy.goToTaskList();
-            cy.openTask(taskName);
             cy.get('.cvat-clear-filters-button').click();
         });
 
@@ -182,7 +247,7 @@ context('Basic manipulations with consensus job replicas', () => {
             // Create annotations for job replicas
             const delta = 50;
             const [consensusJobID, ...replicaJobIds] = jobIds;
-            for (let i = 0, shape = baseShape; i < consensusReplicas; i++) {
+            for (let i = 0, shape = baseShape; i < initialReplicas; i++) {
                 cy.headlessCreateObjects([shape], jobIds[i]); // only 'in progress' jobs can be merged
                 cy.headlessUpdateJob(replicaJobIds[i], { state: 'in progress' });
                 const points = translatePoints(shape.points, delta, 'x');
