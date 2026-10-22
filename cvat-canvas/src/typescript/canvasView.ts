@@ -2889,8 +2889,12 @@ export class CanvasViewImpl implements CanvasView, Listener {
         } else if (reason === UpdateReasons.INTERACT) {
             const data: InteractionData = this.controller.interactionData;
             if (data.enabled && this.mode === Mode.IDLE) {
-                this.canvas.style.cursor = 'crosshair';
+                this.canvas.style.cursor = '';
                 this.mode = Mode.INTERACT;
+            }
+
+            if (data.enabled && ['draw_box', 'draw_points'].includes(data.command)) {
+                this.canvas.style.cursor = 'crosshair';
             }
 
             if (!data.enabled && this.mode === Mode.INTERACT) {

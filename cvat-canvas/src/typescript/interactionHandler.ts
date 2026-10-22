@@ -600,17 +600,6 @@ export class InteractionHandlerImpl implements InteractionHandler {
         }
 
         if (this.enabled) {
-            if (this.settings.crosshair) {
-                this.crosshair.show(
-                    this.container,
-                    this.lastMousePosition.x,
-                    this.lastMousePosition.y,
-                    this.geometry.scale,
-                );
-            } else {
-                this.crosshair.hide();
-            }
-
             if (this.settings.removalStrategy === 'last') {
                 this.deletionButtons.forEach((deleteBtn) => deleteBtn.hide());
                 const lastShape = this.allPrompts?.[this.allPrompts.length - 1];
@@ -635,6 +624,17 @@ export class InteractionHandlerImpl implements InteractionHandler {
                 this.putShapes(interactData.payload.shapes);
             } else if (command === 'refine') {
                 this.refine();
+            }
+
+            if (this.settings.crosshair && ['draw_box', 'draw_points'].includes(this.command)) {
+                this.crosshair.show(
+                    this.container,
+                    this.lastMousePosition.x,
+                    this.lastMousePosition.y,
+                    this.geometry.scale,
+                );
+            } else {
+                this.crosshair.hide();
             }
         }
     }
