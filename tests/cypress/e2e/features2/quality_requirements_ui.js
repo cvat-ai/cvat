@@ -6,7 +6,10 @@
 
 import { defaultTaskSpec } from '../../support/default-specs';
 
-context('Quality requirements UI', () => {
+context('Quality requirements UI', {
+    // Keep form controls clear of the sticky Save/Cancel buttons during actionability scrolling.
+    scrollBehavior: 'center',
+}, () => {
     const taskName = 'Quality requirements UI task';
     const labelName = 'quality_requirement_label';
     const serverFiles = ['images/image_1.jpg', 'images/image_2.jpg', 'images/image_3.jpg'];
@@ -33,6 +36,12 @@ context('Quality requirements UI', () => {
     function openSettingsTab() {
         cy.visit(`/tasks/${taskId}/quality-control#settings`);
         cy.get('.cvat-quality-control-settings-tab').should('be.visible');
+        // Visiting the current #settings URL can preserve an editor left open by a previous test.
+        cy.get('body').then(($body) => {
+            if ($body.find('.cvat-quality-requirement-form').length) {
+                cy.get('.cvat-quality-requirement-form-actions').contains('button', 'Cancel').click();
+            }
+        });
         cy.get('.cvat-quality-requirements-configuration-table').should('be.visible');
     }
 
@@ -426,6 +435,8 @@ context('Quality requirements UI', () => {
         cy.get(`${rows}.selected`).find('input[id*="area"]').blur();
         submitForm();
         cy.contains('.ant-form-item-explain-error', 'Correct the IoU threshold fields before saving.')
+            .scrollIntoView();
+        cy.contains('.ant-form-item-explain-error', 'Correct the IoU threshold fields before saving.')
             .should('be.visible');
         cy.get(`${rows}.selected`).find('input[id*="area"]').clear();
         cy.get(`${rows}.selected`).find('input[id*="area"]').type('1000');
@@ -529,6 +540,8 @@ context('Quality requirements UI', () => {
         cy.get(thresholdRows).last().find('input[id*="iou"]').blur();
         submitForm();
         cy.contains('.ant-form-item-explain-error', 'Correct the IoU threshold fields before saving.')
+            .scrollIntoView();
+        cy.contains('.ant-form-item-explain-error', 'Correct the IoU threshold fields before saving.')
             .should('be.visible');
         cy.get(undo).trigger('mouseover');
         cy.contains('.ant-tooltip-inner', 'Undo: change IoU of point 2.')
@@ -551,7 +564,7 @@ context('Quality requirements UI', () => {
             .should('contain', 'IoU must be between 0 and 100%.');
         cy.get(undo).click();
         cy.get(undo).should('be.disabled');
-        cy.get('.cvat-quality-requirement-form-actions').contains('button', 'Cancel').click();
+        openSettingsTab();
     });
 
     it('Displays rounded coordinates without changing the saved precision', () => {
@@ -732,10 +745,7 @@ context('Quality requirements UI', () => {
         cy.get('.cvat-quality-requirements-configuration-table').should('be.visible');
     });
 
-    it('Fits an inherited large curve on reset and preserves point identity and manual zoom', {
-        // Keep editor controls below the sticky Save/Cancel bar when Cypress scrolls to them.
-        scrollBehavior: 'center',
-    }, () => {
+    it('Fits an inherited large curve on reset and preserves point identity and manual zoom', () => {
         const largePolicy = {
             ...linearIouPolicy, points: [{ x: 100000, y: 0.4 }, { x: 1000000, y: 0.9 }],
         };
