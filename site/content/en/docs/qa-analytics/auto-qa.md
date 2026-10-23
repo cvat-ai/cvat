@@ -463,11 +463,12 @@ be inherited and overridden by child requirements.
 
 When editing a requirement, set its **Target metric** and **Target metric threshold**
 to define its completion condition. The remaining form sections configure comparison
-behavior for shapes, groups, object visibility, points and skeletons, polylines, and
-attributes. Inherited controls can be overridden or reverted to the parent value. Hover
+behavior for annotation types, metrics, and attributes.
+Inherited controls can be overridden or reverted to the parent value. Hover
 the **?** icon next to a control for a detailed description.
 
-The available controls depend on the requirement target:
+The available controls depend on the requirement target. The shape comparison
+controls also depend on the selected [similarity metric](#similarity-metrics):
 
 | Group | Parameter | Description |
 | - | - | - |
@@ -475,18 +476,21 @@ The available controls depend on the requirement target:
 | General | Target | The annotation type that the requirement evaluates. Child requirements inherit this from their parent. |
 | General | Filter | Limits the annotations evaluated by the requirement. Child filters are applied in addition to their parent filters. |
 | General | Target metric | The metric used to evaluate the requirement. |
-| General | Target metric threshold | The minimum target-metric score required to complete the requirement. |
+| General | Target metric threshold | The minimum target metric score required to complete the requirement. |
 | General | Enabled | Includes or excludes the requirement from reports and immediate feedback. |
-| Shape comparison | IoU threshold | The minimum overlap used to distinguish matching and unmatched spatial annotations. Applies to rectangles, ellipses, polygons, masks, and polylines. |
-| Shape comparison | OKS threshold | The minimum [OKS](#point-matching) value used to distinguish matching and unmatched points, skeletons, and skeleton keypoints. |
-| Shape comparison | Point size | The point "size", relative to the object size. Determines the size of the area used to match points, skeletons, and skeleton keypoints. Read more in [Point matching](#point-matching). |
-| Shape comparison | Point size base | Uses either the image size or the group bounding-box size as the reference for point size. |
-| Shape comparison | Line thickness | The relative thickness of the area used to match polylines. |
-| Shape comparison | Panoptic comparison | Uses only the visible parts of masks and polygons for comparison. |
-| Polyline comparison | Match orientation | Checks whether matching polylines have the same direction. |
-| Polyline comparison | Line orientation threshold | The minimum IoU gain between the original and reversed line directions required to report an orientation mismatch. |
-| Visibility comparison | Check covered annotations | Checks for partially covered polygon and mask annotations. |
-| Visibility comparison | Object visibility threshold | The minimum visible area for polygon and mask annotations. |
+| Shape comparison | Similarity metric | The metric used to compare the shapes. The available metrics depend on the target annotation type. Read more in [Shape types](#shape-types). |
+| Shape comparison (IoU metric) | IoU threshold | The minimum IoU value used to distinguish matched and unmatched shapes. |
+| Shape comparison (Boundary F metric) | Boundary F threshold | The minimum Boundary F value used to distinguish matched and unmatched shapes. |
+| Shape comparison (Boundary F metric) | Boundary tolerance | The maximum allowed distance between the shape boundaries, in pixels. Boundary deviations within this distance are not counted as errors. |
+| Shape comparison (OKS metric) | OKS threshold | The minimum OKS value used to distinguish matched and unmatched shapes. |
+| Shape comparison (OKS metric) | Point size | The point "size", relative to the object size. Determines the size of the area used to match points. Read more in [OKS](#oks). |
+| Shape comparison (OKS metric) | Point size base | Allows to choose either the image size or the group bounding-box size as the reference for point size. |
+| Shape comparison (polylines, IoU metric) | Line thickness | The relative "thickness" of the lines, used to match polylines. |
+| Shape comparison (polylines) | Match orientation | Checks whether matching polylines have the same direction. Can be used with any similarity metric. |
+| Shape comparison (polylines) | Line orientation threshold | The minimum gain in the line similarity between the original and reversed line directions required to report an orientation mismatch. |
+| Shape comparison (polygons, masks) | Check covered annotations | Checks for partially covered polygon and mask annotations. |
+| Shape comparison (polygons, masks) | Object visibility threshold | The minimum visible area for polygon and mask annotations. |
+| Shape comparison (polygons, masks) | Panoptic comparison | Allows to use only the visible parts of masks and polygons for comparison. |
 | Group comparison | Match groups | Enables annotation-group matching. |
 | Group comparison | Min group match threshold | The minimum IoU required for groups to be considered matching. |
 | Attribute comparison | Match unspecified attributes exactly | Matches every attribute without an explicit rule using the Exact comparator. |
@@ -665,50 +669,73 @@ The equality is used for matching.
 
 A pair of shapes is considered matching, if both their shapes and labels match.
 For each shape, spatial parameters are matched first, then labels are matched.
+The spatial similarity of the shapes is computed using the similarity metric,
+selected in the requirement settings. The shapes are matched, if the similarity is
+not less than the threshold of the selected metric.
 
-Each shape type can have their own spatial matching details. Specifically:
-- bounding box - [IoU](https://en.wikipedia.org/wiki/Jaccard_index) (including rotation).
-  For example, for a pair of bounding boxes it can be visualized this way:
+#### Similarity metrics
 
-  ![Bbox IoU](/images/quality_comparison_bbox1.svg)
+##### IoU
 
-  </br>`IoU = intersection area / union area`.</br>
-  The green part is the intersection, and green, yellow and red ones together are the union.
+[IoU](https://en.wikipedia.org/wiki/Jaccard_index) (Intersection over Union)
+measures the overlap of the shape areas:
 
-- polygons, masks - IoU. Polygons and masks are considered interchangeable,
-  which means a mask can be matched with a polygon and vice versa. Polygons and masks in groups
-  are merged into a single object first.
-  If [_Panoptic comparison_](#annotation-quality-settings) is enabled,
-  objects will be cut to only the visible (non-covered) parts only, which is determined by the
-  shape z order.
-- skeletons - The OKS metric [from the COCO](https://cocodataset.org/#keypoints-eval)
-  dataset is used. Each skeleton point gets a circular area around,
-  determined by the _object size_ (bounding box side) and _Point size_ values,
-  where this point can be matched. If a bounding box is grouped
-  with the skeleton, it is used for object size computation, otherwise a bounding box of
-  visible points of the skeleton is used.
-  The exact formulas are described in [Point matching](#point-matching).
-- points - The OKS metric is used for each point group annotation. Same as for skeletons,
-  _Point size_ determines relative point sizes. The _Point size base_ setting allows
-  configuring whether points in point groups should use the group bounding box or the image space.
-  Using image space for object size can be useful if you want to treat each point
-  as a separate annotation. Read more in [Point matching](#point-matching).
-- polylines - A pair of lines is considered matching if all the points of one line lie within
-  a "hull" of the other one. The "hull" is determined as the area around the polyline, such as
-  if the line had some "thickness". For example, the black polyline can have a hull shown in
-  the green color:
+```
+IoU = intersection area / union area
+```
 
-  ![Polyline thickness and hull](/images/quality_comparison_polylines1.png)
+For example, for a pair of bounding boxes it can be visualized this way:
 
-  The line thickness can be configured via the _Line thickness_ setting.
-  The value is relative to the image side and determines a half of the hull width.
-- ellipses - IoU, described in more detail above.
+![Bbox IoU](/images/quality_comparison_bbox1.svg)
 
-{{% alert title="Note" color="primary" %}}
-2D cuboids are not supported.
-{{% /alert %}}
+The green part is the intersection, and green, yellow and red ones together are the union.
 
-#### Point matching
+IoU evaluates the whole object area, so it's a good default choice for most of the
+shape types. However, it can be too strict for small and thin objects, where a shift of
+a few pixels makes a big part of the area, and too permissive for large objects, where
+significant errors at the object boundaries change the area only a little.
+
+For polylines, a modified version of the metric is used. A pair of lines is considered
+matching if all the points of one line lie within a "hull" of the other one.
+The "hull" is determined as the area around the polyline, such as
+if the line had some "thickness". For example, the black polyline can have a hull shown in
+the green color:
+
+![Polyline thickness and hull](/images/quality_comparison_polylines1.png)
+
+The line thickness can be configured via the _Line thickness_ setting.
+The value is relative to the image side and determines a half of the hull width.
+
+##### Boundary F
+
+Boundary F measures how well the shape boundaries match. The boundary of a shape
+is its contour (for rectangles, ellipses, polygons, and masks) or the line itself
+(for polylines). The boundaries are compared using the _Boundary tolerance_ `c`,
+the maximum allowed distance between the boundaries, in pixels:
+- precision `P` - the share of the checked shape boundary that is within the distance `c`
+  from the GT shape boundary
+- recall `R` - the share of the GT shape boundary that is within the distance `c`
+  from the checked shape boundary
+
+The metric value is the F1 score of these values:
+
+```
+Boundary F = 2 * P * R / (P + R)
+```
+
+Boundary deviations within the tolerance are not counted as errors, so the metric
+works well for small and thin objects, where IoU is too strict. Boundary errors
+beyond the tolerance are counted proportionally to their length, regardless of
+the object area. For example, a missed hole or a cut-in slit reduces Boundary F,
+even if they barely change the object area. It makes the metric a good choice,
+when the object boundaries are important. Note that Boundary F doesn't distinguish
+the errors within the tolerance: a shape shifted by 1 pixel and a shape shifted by `c` pixels
+get the same similarity.
+
+For polylines, Boundary F compares the line shapes and doesn't take the line direction
+into account. The line direction can be checked separately with the _Match orientation_ setting.
+
+##### OKS
 
 Points, skeletons, and skeleton keypoints are matched using the
 [OKS](https://cocodataset.org/#keypoints-eval) (Object Keypoint Similarity) metric,
@@ -744,7 +771,7 @@ At the distances of 1, 2, and 3 `sigma * s` from the GT point, the OKS is `0.88`
 and `0.32` respectively. CVAT uses the same constant, so the _Point size_ has the same meaning
 as in COCO, and COCO sigma values can be used as a reference.
 
-After the OKS is computed for a pair of annotations, the _Overlap threshold_ `t`
+After the OKS is computed for a pair of annotations, the _OKS threshold_ `t`
 is used to determine if they match:
 - single points and skeleton keypoints are matched, if their `OKS >= t`
 - skeletons and point annotations with multiple points are matched, if the mean OKS of
@@ -760,7 +787,7 @@ r = 2 * sigma * s * sqrt(-2 * ln(t))
 ```
 
 For example, with the _Point size_ of `5%`, the _Point size base_ set to _Group bbox size_,
-the _Overlap threshold_ of `80%` and a skeleton bounding box of `200x200` pixels,
+the _OKS threshold_ of `80%` and a skeleton bounding box of `200x200` pixels,
 the radius is `2 * 0.05 * 200 * sqrt(-2 * ln(0.8)) = ~13.4` pixels.
 Larger point sizes and smaller thresholds give larger matching areas.
 With the threshold of `~88%`, the radius is exactly `sigma * s`.
@@ -779,6 +806,69 @@ Following the normal distribution, ~68% of human annotations are expected to be 
 such circles around the GT points, and ~95% are expected to be within the circles of
 the doubled radius, where the OKS is `~0.61` (in practice, the values are typically higher).
 The OKS values of the skeleton points are then averaged to get the skeleton similarity.
+
+#### Shape types
+
+The available similarity metrics and the comparison details depend on the shape type:
+
+| Shape type | Similarity metrics |
+| - | - |
+| Rectangles | IoU (default), Boundary F |
+| Ellipses | IoU (default), Boundary F |
+| Polygons | IoU (default), Boundary F |
+| Masks | IoU (default), Boundary F |
+| Polylines | IoU (default), Boundary F |
+| Points | OKS |
+| Skeletons | OKS |
+| Skeleton keypoints | OKS |
+
+##### Rectangles and ellipses
+
+Rectangles are compared including their rotation.
+
+##### Polygons and masks
+
+Polygons and masks are compared with annotations of the same type. Polygons and masks
+in groups are merged into a single object first.
+If [_Panoptic comparison_](#comparison-options) is enabled,
+objects will be cut to only the visible (non-covered) parts only, which is determined by the
+shape z order. It applies to both IoU and Boundary F.
+
+##### Polylines
+
+If _Match orientation_ is enabled, the line directions are also checked. A pair of lines
+is reported as having mismatching directions, if the lines match better when one of them is
+reversed: the line similarity gain must be more than the _Line orientation threshold_.
+The direction check uses the line similarity, described in the [IoU](#iou) section.
+With the Boundary F metric, the _Boundary tolerance_ is used as the line thickness in this check.
+
+##### Points and skeletons
+
+Each skeleton or point group annotation is compared as a single object, using the
+[OKS](#oks) metric. Each point gets a circular area around, determined by the
+_object size_ and _Point size_ values, where this point can be matched:
+- skeletons - if a bounding box is grouped with the skeleton, it is used for
+  object size computation, otherwise a bounding box of visible points of the skeleton is used.
+- points - the _Point size base_ setting allows configuring whether points in point groups
+  should use the group bounding box or the image space. Using image space for object size
+  can be useful if you want to treat each point as a separate annotation.
+
+Skeletons can be evaluated with two requirement targets:
+- _Skeleton_ - each skeleton is compared as a whole object, using the mean OKS of
+  its points. A skeleton is either matched or not, and the scores are computed per skeleton.
+  Use this target, when the whole skeleton annotation is important, for example,
+  the pose of a person.
+- _Skeleton keypoint_ - each skeleton point is compared as a separate point annotation,
+  independently of the other points of its skeleton. The skeleton is only used to compute
+  the object size, if the _Point size base_ is _Group bbox size_. The scores are computed
+  per keypoint, and the keypoint labels are used as the annotation labels.
+  Use this target, when the individual points are important, for example, to find
+  the points with the worst annotation quality, or to configure different requirements
+  for different points using [filters](#annotation-filters).
+
+{{% alert title="Note" color="primary" %}}
+2D cuboids are not supported.
+{{% /alert %}}
 
 ### Tracks
 
