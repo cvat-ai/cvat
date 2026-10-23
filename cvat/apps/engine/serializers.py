@@ -3873,11 +3873,34 @@ class AboutSerializer(serializers.Serializer):
     subtitle = serializers.CharField(max_length=1024)
 
 
+class RelatedImageCalibrationSerializer(serializers.Serializer):
+    name = serializers.CharField(max_length=MAX_FILENAME_LENGTH)
+    intrinsic_matrix = serializers.ListField(
+        child=serializers.ListField(
+            child=serializers.FloatField(),
+            min_length=3,
+            max_length=3,
+        ),
+        min_length=3,
+        max_length=3,
+    )
+    extrinsic_matrix = serializers.ListField(
+        child=serializers.ListField(
+            child=serializers.FloatField(),
+            min_length=4,
+            max_length=4,
+        ),
+        min_length=3,
+        max_length=3,
+    )
+
+
 class FrameMetaSerializer(serializers.Serializer):
     width = serializers.IntegerField(required=False)
     height = serializers.IntegerField(required=False)
     name = serializers.CharField(max_length=MAX_FILENAME_LENGTH)
     related_files = serializers.IntegerField()
+    related_images = RelatedImageCalibrationSerializer(many=True, required=False)
 
     # for compatibility with version 2.3.0
     has_related_context = serializers.SerializerMethodField()

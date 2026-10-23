@@ -68,6 +68,7 @@ from cvat.apps.engine.models import (
     Label,
     MediaType,
     Project,
+    RelatedFile,
     Segment,
     SortingMethod,
     StageChoice,
@@ -541,6 +542,51 @@ class JobDataMetaPartialUpdateAPITestCase(ApiTestBase):
             self.client.patch(f"/api/jobs/{self.job.id}/data/meta", data=data, format="json")
             res2 = self.client.get(f"/api/tasks/{self.task.id}")
             self.assertLess(res.data["updated_date"], res2.data["updated_date"])
+
+    def test_api_v1_jobs_data_meta_contains_calibrated_related_images(self):
+        task = create_dummy_db_tasks(self)[2]
+        job = Job.objects.get(segment__task=task)
+        frame = task.data.images.create(
+            frame=0,
+            path="frame_0001.pcd",
+            width=0,
+            height=0,
+        )
+        calibrated_related_file = RelatedFile.objects.create(
+            data=task.data,
+            path="related_images/frame_0001_pcd/front.jpg",
+            intrinsic_matrix=[721.5, 0, 609.6, 0, 721.5, 172.9, 0, 0, 1],
+            extrinsic_matrix=[1, 0, 0, 0.2, 0, 1, 0, 0, 0, 0, 1, 1.7],
+        )
+        uncalibrated_related_file = RelatedFile.objects.create(
+            data=task.data,
+            path="related_images/frame_0001_pcd/rear.jpg",
+        )
+        frame.related_files.add(calibrated_related_file, uncalibrated_related_file)
+
+        with ForceLogin(self.admin, self.client):
+            response = self.client.get(f"/api/jobs/{job.id}/data/meta")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["frames"][0]["related_files"], 2)
+        self.assertEqual(
+            response.data["frames"][0]["related_images"],
+            [
+                {
+                    "name": "related_images/frame_0001_pcd/front.jpg",
+                    "intrinsic_matrix": [
+                        [721.5, 0.0, 609.6],
+                        [0.0, 721.5, 172.9],
+                        [0.0, 0.0, 1.0],
+                    ],
+                    "extrinsic_matrix": [
+                        [1.0, 0.0, 0.0, 0.2],
+                        [0.0, 1.0, 0.0, 0.0],
+                        [0.0, 0.0, 1.0, 1.7],
+                    ],
+                }
+            ],
+        )
 
 
 class AssetCreateAPITestCase(ApiTestBase):
