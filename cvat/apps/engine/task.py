@@ -63,7 +63,12 @@ from utils.dataset_manifest.core import (
     is_dataset_manifest,
     is_video_manifest,
 )
-from utils.dataset_manifest.utils import find_related_images
+from utils.dataset_manifest.errors import InvalidRelatedImageMetadataError
+from utils.dataset_manifest.utils import (
+    RelatedImageMetadata,
+    RelatedImageMetadataLoader,
+    find_related_images,
+)
 
 from .cloud_provider import HeaderFirstMediaDownloader
 
@@ -626,7 +631,7 @@ def _create_task_manifest_from_cloud_data(
 ) -> None:
     dimension = ValidateDimension().detect_dimension_for_paths(sorted_media)
 
-    regular_images, related_images = find_related_images(
+    regular_images, related_images, _ = find_related_images(
         sorted_media,
         # backward compatibility, deprecated in https://github.com/cvat-ai/cvat/pull/9757
         is_scene_path=(lambda p: not "related_images" in p.parts),
@@ -655,9 +660,11 @@ def _create_task_manifest_from_cloud_data(
 
 
 def _find_and_filter_related_images(
-    extractor: ImageListReader, *, upload_dir: str
-) -> dict[str, list[str]]:
-    regular_images, related_images = find_related_images(
+    extractor: ImageListReader,
+    *,
+    upload_dir: Path,
+) -> tuple[dict[str, list[str]], dict[str, RelatedImageMetadataLoader]]:
+    regular_images, related_images, related_image_metadata_loaders = find_related_images(
         extractor.absolute_source_paths,
         # backward compatibility
         is_scene_path=(lambda p: "related_images" not in p.parts),
@@ -667,10 +674,16 @@ def _find_and_filter_related_images(
     extractor.filter(lambda p: p in regular_images)
 
     # manifest requires relative files as they would be in the task data, so update the paths
-    return {
-        os.path.relpath(k, upload_dir): [os.path.relpath(ri, upload_dir) for ri in k_ris]
-        for k, k_ris in related_images.items()
-    }
+    return (
+        {
+            os.path.relpath(k, upload_dir): [os.path.relpath(ri, upload_dir) for ri in k_ris]
+            for k, k_ris in related_images.items()
+        },
+        {
+            os.path.relpath(image_path, upload_dir): metadata_loader
+            for image_path, metadata_loader in related_image_metadata_loaders.items()
+        },
+    )
 
 
 def _allocate_honeypots(
@@ -1474,9 +1487,20 @@ def _create_image_task_media_descriptors(
     is_data_in_cloud: bool,
     extractor: IMediaReader,
     related_images: dict[str, Sequence[dict[str, Any]]],
+    related_image_metadata_loaders: dict[str, RelatedImageMetadataLoader],
     job_file_mapping: JobFileMapping | None,
 ) -> tuple[list[models.Image], ImageManifestManager, JobFileMapping | None]:
     db_data = db_task.require_data()
+
+    related_image_metadata: dict[str, RelatedImageMetadata] = {}
+    for related_image_path, metadata_loader in related_image_metadata_loaders.items():
+        try:
+            metadata = metadata_loader()
+        except InvalidRelatedImageMetadataError as exc:
+            raise ValidationError(str(exc)) from exc
+
+        if metadata is not None:
+            related_image_metadata[related_image_path] = metadata
 
     images, manifest = _collect_image_dataset_descriptors(
         extractor=extractor,
@@ -1498,13 +1522,19 @@ def _create_image_task_media_descriptors(
 
     images = db_utils.bulk_create(models.Image, images)
 
-    db_related_files = [
-        models.RelatedFile(
-            data=db_data,
-            path=related_file_path,
-        )
-        for related_file_path in set(itertools.chain.from_iterable(related_images.values()))
-    ]
+    db_related_files = []
+    for related_file_path in set(itertools.chain.from_iterable(related_images.values())):
+        related_file_kwargs = {
+            "data": db_data,
+            "path": related_file_path,
+        }
+        if metadata := related_image_metadata.get(related_file_path):
+            related_file_kwargs.update(
+                intrinsic_matrix=metadata.intrinsic_matrix,
+                extrinsic_matrix=metadata.extrinsic_matrix,
+            )
+
+        db_related_files.append(models.RelatedFile(**related_file_kwargs))
 
     db_related_files = db_utils.bulk_create(models.RelatedFile, db_related_files)
     db_related_files_by_path = {rf.path: rf for rf in db_related_files}
@@ -1895,8 +1925,12 @@ def initialize_task(
         )
 
     related_images = {}
+    related_image_metadata_loaders = {}
     if isinstance(extractor, MEDIA_TYPES["image"]["extractor"]):
-        related_images = _find_and_filter_related_images(extractor, upload_dir=upload_dir)
+        related_images, related_image_metadata_loaders = _find_and_filter_related_images(
+            extractor,
+            upload_dir=upload_dir,
+        )
 
     if job_file_mapping or (
         (
@@ -2023,6 +2057,7 @@ def initialize_task(
                 db_task,
                 extractor=extractor,
                 related_images=related_images,
+                related_image_metadata_loaders=related_image_metadata_loaders,
                 validation_params=validation_params,
                 job_file_mapping=job_file_mapping,
                 upload_dir=upload_dir,
