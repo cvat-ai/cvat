@@ -250,7 +250,9 @@ class TestEffectiveQualityRequirements(unittest.TestCase):
     @staticmethod
     def _make_root(**overrides) -> models.QualityRequirement:
         values = {
-            **models.QualityRequirement.get_base_defaults(),
+            **models.QualityRequirement.get_base_defaults(
+                models.QualityRequirementAnnotationType.RECTANGLE
+            ),
             "id": 1,
             "name": "root",
             "annotation_type": models.QualityRequirementAnnotationType.RECTANGLE,

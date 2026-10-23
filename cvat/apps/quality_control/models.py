@@ -359,14 +359,24 @@ class PointSizeBase(str, Enum):
         return tuple((x.value, x.name) for x in cls)
 
 
+class ShapeSimilarityMetricType(models.TextChoices):
+    IOU = "iou", "IoU"
+    OKS = "oks", "OKS"
+    BOUNDARY_F = "boundary_f", "Boundary F"
+    EQUALITY = "equality", "Equality"
+
+
 class DefaultComparisonSettings:
-    "The default object comparison settings, shared by quality control and consensus"
+    # Shared between the quality checks and consensus
 
     compare_attributes: bool = True
     "Enables or disables attribute checks"
 
     iou_threshold: float = 0.4
-    "Used for distinction between matched / unmatched shapes with IoU and OKS metrics"
+    "Used for distinction between matched / unmatched shapes with the IoU metric"
+
+    oks_threshold: float = 0.4
+    "Used for distinction between matched / unmatched shapes with the OKS metric"
 
     # This specific value is from the original implementation:
     # https://cocodataset.org/#keypoints-eval
@@ -406,6 +416,30 @@ class DefaultComparisonSettings:
 
     panoptic_comparison: bool = True
     "Use only the visible part of the masks and polygons in comparisons"
+
+    @staticmethod
+    def get_default_similarity_metric(
+        annotation_type: QualityRequirementAnnotationType,
+    ) -> ShapeSimilarityMetricType:
+        match annotation_type:
+            case QualityRequirementAnnotationType.TAG:
+                return ShapeSimilarityMetricType.EQUALITY
+            case (
+                QualityRequirementAnnotationType.POINTS
+                | QualityRequirementAnnotationType.SKELETON
+                | QualityRequirementAnnotationType.SKELETON_KEYPOINT
+            ):
+                return ShapeSimilarityMetricType.OKS
+            case (
+                QualityRequirementAnnotationType.RECTANGLE
+                | QualityRequirementAnnotationType.POLYGON
+                | QualityRequirementAnnotationType.MASK
+                | QualityRequirementAnnotationType.POLYLINE
+                | QualityRequirementAnnotationType.ELLIPSE
+            ):
+                return ShapeSimilarityMetricType.IOU
+            case _:
+                assert False, f"Unknown quality requirement annotation type '{annotation_type}'"
 
     @classmethod
     def as_dict(cls) -> dict[str, Any]:
@@ -519,8 +553,18 @@ class QualityRequirement(TimestampedModel):
         "self", on_delete=models.DO_NOTHING, null=True, blank=True, related_name="children"
     )
 
+    similarity_metric = models.CharField(
+        max_length=32,
+        choices=ShapeSimilarityMetricType.choices,
+        null=True,
+        blank=True,
+    )
+
     iou_threshold = models.JSONField(null=True, blank=True)
+
+    oks_threshold = models.FloatField(null=True, blank=True)
     oks_sigma = models.FloatField(null=True, blank=True)
+
     line_thickness = models.FloatField(null=True, blank=True)
 
     point_size_base = models.CharField(
@@ -553,9 +597,12 @@ class QualityRequirement(TimestampedModel):
         return self.parent_id is None
 
     @classmethod
-    def get_base_defaults(cls) -> dict[str, Any]:
+    def get_base_defaults(cls, annotation_type: QualityRequirementAnnotationType) -> dict[str, Any]:
         default_settings = DefaultComparisonSettings.as_dict()
         default_settings.update(
+            similarity_metric=DefaultComparisonSettings.get_default_similarity_metric(
+                annotation_type
+            ),
             target_metric=str(QualityTargetMetricType(metric=QualityMetric.ACCURACY)),
             target_metric_threshold=0.7,
             compare_attributes=False,
@@ -594,11 +641,12 @@ def ensure_base_quality_requirements(quality_settings: QualitySettings) -> bool:
         ).values_list("annotation_type", flat=True)
     )
 
-    base_defaults = QualityRequirement.get_base_defaults()
     requirements_to_create = []
     for sort_order, annotation_type in enumerate(_BASE_REQUIREMENT_ANNOTATION_TYPES):
         if annotation_type in existing_base_annotation_types:
             continue
+
+        base_defaults = QualityRequirement.get_base_defaults(annotation_type)
 
         requirements_to_create.append(
             QualityRequirement(

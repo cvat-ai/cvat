@@ -30,6 +30,7 @@ from cvat.apps.quality_control.matching import (
 from cvat.apps.quality_control.models import (
     DefaultComparisonSettings,
     PointSizeBase,
+    ShapeSimilarityMetricType,
 )
 
 _ShapeT1 = TypeVar("_ShapeT1")
@@ -71,7 +72,11 @@ class ComparisonParameters:
     ignored_attributes: list[str] = field(factory=list)
     "Annotation attributes excluded from comparison, in addition to the internal ones"
 
+    similarity_metric: ShapeSimilarityMetricType
+    "Similarity metric to use for annotation comparisons"
+
     iou_threshold: float = DefaultComparisonSettings.iou_threshold
+    oks_threshold: float = DefaultComparisonSettings.oks_threshold
     oks_sigma: float = DefaultComparisonSettings.oks_sigma
     point_size_base: PointSizeBase = DefaultComparisonSettings.point_size_base
     line_thickness: float = DefaultComparisonSettings.line_thickness
@@ -327,6 +332,15 @@ class DistanceComparator:
         attribute_matcher: AttributeMatchingFunction | None = None,
         gt_threshold: Callable[[Sequence[dm.Annotation]], float] | None = None,
     ):
+        supported_metrics = self.SIMILARITY_METRICS.get(settings.annotation_type)
+        if supported_metrics is None:
+            raise AssertionError(f"Unsupported annotation type: {settings.annotation_type.name}")
+        if settings.similarity_metric not in supported_metrics:
+            raise AssertionError(
+                f"The {settings.similarity_metric} similarity metric "
+                f"is not supported for {settings.annotation_type.name} annotations"
+            )
+
         self.categories = categories
         self.gt_threshold = gt_threshold
         self._skeleton_info = {}
@@ -341,6 +355,31 @@ class DistanceComparator:
         """
 
         self.attribute_matcher = attribute_matcher
+
+    _SHAPE_METRICS = frozenset({ShapeSimilarityMetricType.IOU})
+    SIMILARITY_METRICS: dict[dm.AnnotationType, frozenset[ShapeSimilarityMetricType]] = {
+        dm.AnnotationType.label: frozenset({ShapeSimilarityMetricType.EQUALITY}),
+        dm.AnnotationType.bbox: _SHAPE_METRICS,
+        dm.AnnotationType.ellipse: _SHAPE_METRICS,
+        dm.AnnotationType.polygon: _SHAPE_METRICS,
+        dm.AnnotationType.mask: _SHAPE_METRICS,
+        dm.AnnotationType.polyline: _SHAPE_METRICS,
+        dm.AnnotationType.points: frozenset({ShapeSimilarityMetricType.OKS}),
+        dm.AnnotationType.skeleton: frozenset({ShapeSimilarityMetricType.OKS}),
+    }
+    "The similarity metrics supported for each annotation type"
+
+    @property
+    def _annotation_match_threshold(self) -> float:
+        match self.settings.similarity_metric:
+            case ShapeSimilarityMetricType.OKS:
+                return self.settings.oks_threshold
+            case ShapeSimilarityMetricType.IOU:
+                return self.settings.iou_threshold
+            case ShapeSimilarityMetricType.EQUALITY:
+                return 0.5
+            case _:
+                assert False, f"Unknown similarity metric '{self.settings.similarity_metric}'"
 
     def instance_bbox(
         self, instance_anns: Sequence[dm.Annotation]
@@ -397,6 +436,11 @@ class DistanceComparator:
                 assert False, f"Matching is not supported for annotations of type '{t}'"
 
     def match_labels(self, item_a: dm.DatasetItem, item_b: dm.DatasetItem) -> MatchResult:
+        if self.settings.similarity_metric != ShapeSimilarityMetricType.EQUALITY:
+            raise AssertionError(
+                f"Similarity metric '{self.settings.similarity_metric}' is not available for tags"
+            )
+
         def label_similarity(a: dm.Label, b: dm.Label) -> float:
             if a is None or b is None:
                 return 0
@@ -408,7 +452,7 @@ class DistanceComparator:
             item_b,
             similarity=label_similarity,
             label_matcher=lambda a, b: a.label == b.label,
-            dist_thresh=self.settings.iou_threshold,
+            dist_thresh=self._annotation_match_threshold,
             compare_attributes=False,
         )
 
@@ -510,7 +554,7 @@ class DistanceComparator:
             if label_matcher:
                 extra_args["label_matcher"] = label_matcher
 
-            threshold = dist_thresh if dist_thresh is not None else self.iou_threshold
+            threshold = dist_thresh if dist_thresh is not None else self._annotation_match_threshold
             if (
                 self.gt_threshold
                 and dist_thresh is None
@@ -549,6 +593,11 @@ class DistanceComparator:
 
         img_h, img_w = item_a.media_as(dm.Image).size
         similarity = partial(_bbox_iou, img_h=img_h, img_w=img_w)
+        if self.settings.similarity_metric != ShapeSimilarityMetricType.IOU:
+            raise AssertionError(
+                f"Similarity metric '{self.settings.similarity_metric}' is not available for boxes"
+            )
+
         return self.match_segments(dm.AnnotationType.bbox, item_a, item_b, similarity=similarity)
 
     def match_ellipses(self, item_a: dm.DatasetItem, item_b: dm.DatasetItem) -> MatchResult:
@@ -557,6 +606,12 @@ class DistanceComparator:
 
         img_h, img_w = item_a.media_as(dm.Image).size
         similarity = partial(_ellipse_iou, img_h=img_h, img_w=img_w)
+        if self.settings.similarity_metric != ShapeSimilarityMetricType.IOU:
+            raise AssertionError(
+                f"Similarity metric '{self.settings.similarity_metric}' "
+                "is not available for ellipses"
+            )
+
         return self.match_segments(dm.AnnotationType.ellipse, item_a, item_b, similarity=similarity)
 
     def match_segmentations(self, item_a: dm.DatasetItem, item_b: dm.DatasetItem) -> MatchResult:
@@ -670,6 +725,12 @@ class DistanceComparator:
 
             return float(mask_utils.iou([b_segm], [a_segm], [0])[0])
 
+        if self.settings.similarity_metric != ShapeSimilarityMetricType.IOU:
+            raise AssertionError(
+                f"Similarity metric '{self.settings.similarity_metric}' "
+                "is not available for polygons and masks"
+            )
+
         _segment_comparator = _segment_iou
 
         def _label_matcher(a_inst_id: int, b_inst_id: int) -> bool:
@@ -719,6 +780,11 @@ class DistanceComparator:
         return MatchResult(matched, mismatched, a_extra, b_extra, comparisons=distances)
 
     def match_lines(self, item_a: dm.DatasetItem, item_b: dm.DatasetItem) -> MatchResult:
+        if self.settings.similarity_metric != ShapeSimilarityMetricType.IOU:
+            raise AssertionError(
+                f"Similarity metric '{self.settings.similarity_metric}' is not available for lines"
+            )
+
         img_h, img_w = item_a.media_as(dm.Image).size
 
         def _make_line_iou_matcher(*, oriented: bool) -> LineMatcher:
@@ -748,6 +814,11 @@ class DistanceComparator:
         )
 
     def match_points(self, item_a: dm.DatasetItem, item_b: dm.DatasetItem) -> MatchResult:
+        if self.settings.similarity_metric != ShapeSimilarityMetricType.OKS:
+            raise AssertionError(
+                f"Similarity metric '{self.settings.similarity_metric}' is not available for points"
+            )
+
         a_points = self._get_ann_type(dm.AnnotationType.points, item_a)
         b_points = self._get_ann_type(dm.AnnotationType.points, item_b)
 
@@ -814,7 +885,7 @@ class DistanceComparator:
                         sigma=self.settings.oks_sigma,
                         scale=scale,
                     ),
-                    dist_thresh=self.settings.iou_threshold,
+                    dist_thresh=self.settings.oks_threshold,
                     label_matcher=lambda ai, bi: True,
                 )
 
@@ -860,6 +931,12 @@ class DistanceComparator:
         return skeleton_info
 
     def match_skeletons(self, item_a, item_b) -> MatchResult:
+        if self.settings.similarity_metric != ShapeSimilarityMetricType.OKS:
+            raise AssertionError(
+                f"Similarity metric '{self.settings.similarity_metric}' "
+                "is not available for skeletons"
+            )
+
         a_skeletons = self._get_ann_type(dm.AnnotationType.skeleton, item_a)
         b_skeletons = self._get_ann_type(dm.AnnotationType.skeleton, item_b)
         if not a_skeletons and not b_skeletons:
