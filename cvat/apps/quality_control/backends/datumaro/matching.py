@@ -740,13 +740,14 @@ class DistanceComparator:
         compare_attributes: bool = True,
     ) -> MatchResult:
         """
-        The optional direction check is enabled by passing all of the 'directed_similarity',
+        If the similarity metric used can respect object direction, the optional direction check
+        can be performed. To enabled, pass all of the 'directed_similarity',
         'undirected_similarity' and 'direction_threshold' parameters. The callbacks must
         follow the conventions:
-        - 'undirected_similarity' ignores the object direction (a Hausdorff-like metric),
-          'directed_similarity' takes it into account (a Frechet-like metric)
+        - 'undirected_similarity' ignores the object direction,
+          'directed_similarity' takes it into account
         - both callbacks belong to the same metric family, and the directed similarity
-          never exceeds the undirected one for the same pair of objects
+          if always <= the undirected one for the same pair of objects
         - if the base 'similarity' is from the same metric family, the same function object
           must be passed as 'undirected_similarity'. Then the directed similarity is used as
           the matching cost. Otherwise, the base similarity is used as the matching cost,
@@ -783,7 +784,7 @@ class DistanceComparator:
                 directed_similarity_score = directed_similarity(a, b)
 
                 if undirected_similarity is similarity:
-                    # The same metric family: the directed score is the stricter matching cost
+                    # The same metric family: the directed score is the matching cost
                     undirected_similarity_score = geometry_similarity_score
                     geometry_similarity_score = directed_similarity_score
                 else:
@@ -1133,7 +1134,6 @@ class DistanceComparator:
         direction_args = {}
         if self.settings.compare_line_orientation:
             # Boundary F itself ignores the line orientation, so IoU is used always
-            # TODO: change the metrics to actually be Hausdorff- and Frechet-like
             direction_args = dict(
                 directed_similarity=_make_line_iou_matcher(oriented=True).distance,
                 undirected_similarity=undirected_line_iou,
