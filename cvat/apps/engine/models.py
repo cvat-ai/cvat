@@ -1187,6 +1187,8 @@ class RelatedFile(models.Model):
         null=True,
     )
     path = models.CharField(max_length=1024)
+    intrinsic_matrix = FloatArrayField(null=True, blank=True)
+    extrinsic_matrix = FloatArrayField(null=True, blank=True)
     images = models.ManyToManyField(
         Image, related_name="related_files", related_query_name="related_file"
     )
