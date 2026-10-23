@@ -5,13 +5,14 @@
 import './styles.scss';
 
 import React, {
-    useState, useEffect, useRef, useCallback,
+    useState, useEffect, useRef, useCallback, useMemo,
 } from 'react';
 import { useHistory, useLocation, useParams } from 'react-router';
 import { Row, Col } from 'antd/lib/grid';
 import notification from 'antd/lib/notification';
 import Button from 'antd/lib/button';
 import Space from 'antd/lib/space';
+import { PaperClipOutlined } from '@ant-design/icons';
 import MDEditor, { commands } from '@uiw/react-md-editor';
 import rehypeSanitize from 'rehype-sanitize';
 
@@ -23,8 +24,11 @@ import dimensions from 'utils/dimensions';
 const core = getCore();
 const confirmationMessage = 'You have unsaved changes, please confirm leaving this page.';
 
+const ASSET_ACCEPT = 'image/jpeg,image/png,image/webp,image/gif,application/pdf';
+
 function AnnotationGuidePage(): JSX.Element {
     const mdEditorRef = useRef<typeof MDEditor & { commandOrchestrator: commands.TextAreaCommandOrchestrator }>(null);
+    const handleInsertFilesRef = useRef<((files: FileList) => Promise<void>) | null>(null);
     const history = useHistory();
     const location = useLocation();
     const [value, setValue] = useState('');
@@ -186,6 +190,34 @@ function AnnotationGuidePage(): JSX.Element {
         }
     }, [guide, submit, updateValue]);
 
+    handleInsertFilesRef.current = handleInsertFiles;
+
+    const uploadFileCommand = useMemo<commands.ICommand>(
+        () => ({
+            name: 'upload-image',
+            keyCommand: 'upload-image',
+            buttonProps: { 'aria-label': 'Upload local file', title: 'Upload local file' },
+            icon: <PaperClipOutlined />,
+            execute: () => {
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = ASSET_ACCEPT;
+                input.multiple = true;
+                input.style.display = 'none';
+                input.onchange = () => {
+                    const { files } = input;
+                    input.remove();
+                    if (files?.length && handleInsertFilesRef.current) {
+                        handleInsertFilesRef.current(files);
+                    }
+                };
+                document.body.appendChild(input);
+                input.click();
+            },
+        }),
+        [],
+    );
+
     return (
         <Row
             justify='center'
@@ -224,6 +256,7 @@ function AnnotationGuidePage(): JSX.Element {
                             }
                         }}
                         style={{ whiteSpace: 'pre-wrap' }}
+                        extraCommands={[uploadFileCommand]}
                         previewOptions={{ rehypePlugins: [[rehypeSanitize]] }}
                     />
                 </div>
