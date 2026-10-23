@@ -3930,7 +3930,7 @@ def generate_manifest_file(
     else:
         assert root_dir
 
-        scenes, related_images = find_related_images(sources, root_path=root_dir)
+        scenes, related_images, _ = find_related_images(sources, root_path=root_dir)
 
         manifest = ImageManifestManager(manifest_path, create_index=False)
         manifest.link(
