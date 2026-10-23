@@ -48,8 +48,17 @@ allow if {
 }
 
 allow if {
+    input.scope in {
+        utils.CREATE_IN_PROJECT, utils.CREATE_IN_ORGANIZATION, utils.DELETE, utils.UPDATE,
+        utils.VIEW
+    }
+    organizations.user_and_resource_in_org_with_role(organizations.MAINTAINER)
+    utils.has_perm(utils.WORKER)
+}
+
+allow if {
     input.scope == utils.CREATE_IN_PROJECT
-    utils.is_sandbox
+    organizations.matching_context
     utils.has_perm(utils.USER)
     is_project_owner
 }
@@ -96,20 +105,20 @@ filter := utils.add_organization_filter(base_filter, ["organization"])
 
 allow if {
     input.scope == utils.VIEW
-    utils.is_sandbox
+    organizations.matching_context
     input.resource.type != SERVER
     utils.is_resource_owner
 }
 
 allow if {
     input.scope == utils.VIEW
-    utils.is_sandbox
+    organizations.matching_context
     is_project_owner
 }
 
 allow if {
     input.scope in {utils.UPDATE, utils.DELETE}
-    utils.is_sandbox
+    organizations.matching_context
     utils.has_perm(utils.WORKER)
     input.resource.type != SERVER
     utils.is_resource_owner
@@ -117,60 +126,7 @@ allow if {
 
 allow if {
     input.scope in {utils.UPDATE, utils.DELETE}
-    utils.is_sandbox
+    organizations.matching_context
     utils.has_perm(utils.WORKER)
-    is_project_owner
-}
-
-allow if {
-    input.scope == utils.VIEW
-    input.auth.organization.id == input.resource.organization.id
-    organizations.has_perm(organizations.WORKER)
-    utils.is_resource_owner
-}
-
-allow if {
-    input.scope == utils.VIEW
-    input.auth.organization.id == input.resource.organization.id
-    organizations.has_perm(organizations.WORKER)
-    is_project_owner
-}
-
-allow if {
-    input.scope in {utils.UPDATE, utils.DELETE}
-    input.auth.organization.id == input.resource.organization.id
-    utils.has_perm(utils.WORKER)
-    organizations.has_perm(organizations.WORKER)
-    utils.is_resource_owner
-}
-
-
-allow if {
-    input.scope in {utils.UPDATE, utils.DELETE, utils.VIEW}
-    input.auth.organization.id == input.resource.organization.id
-    utils.has_perm(utils.WORKER)
-    organizations.has_perm(organizations.MAINTAINER)
-}
-
-allow if {
-    input.scope in {utils.CREATE_IN_PROJECT, utils.CREATE_IN_ORGANIZATION}
-    input.auth.organization.id == input.resource.organization.id
-    utils.has_perm(utils.WORKER)
-    organizations.has_perm(organizations.MAINTAINER)
-}
-
-allow if {
-    input.scope in {utils.UPDATE, utils.DELETE}
-    input.auth.organization.id == input.resource.organization.id
-    utils.has_perm(utils.WORKER)
-    organizations.has_perm(organizations.WORKER)
-    is_project_owner
-}
-
-allow if {
-    input.scope in {utils.CREATE_IN_PROJECT}
-    input.auth.organization.id == input.resource.organization.id
-    utils.has_perm(utils.WORKER)
-    organizations.has_perm(organizations.WORKER)
     is_project_owner
 }

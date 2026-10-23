@@ -57,50 +57,27 @@ allow if {
 
 allow if {
     input.scope == utils.VIEW
-    utils.is_sandbox
+    organizations.matching_context
     utils.has_perm(utils.WORKER)
     input.resource.target.is_job_staff
 }
 
 allow if {
     input.scope == utils.VIEW
-    utils.is_sandbox
+    organizations.matching_context
     utils.has_perm(utils.WORKER)
     is_target_staff
 }
 
 allow if {
     input.scope in {utils.CREATE, utils.DELETE, utils.UPDATE}
-    utils.is_sandbox
+    organizations.matching_context
     utils.has_perm(utils.USER)
     is_target_staff
 }
 
 allow if {
     input.scope in {utils.CREATE, utils.DELETE, utils.UPDATE, utils.VIEW}
-    input.auth.organization.id == input.resource.organization.id
+    organizations.user_and_resource_in_org_with_role(organizations.MAINTAINER)
     utils.has_perm(utils.USER)
-    organizations.has_perm(organizations.MAINTAINER)
-}
-
-allow if {
-    input.scope in {utils.CREATE, utils.DELETE, utils.UPDATE}
-    input.auth.organization.id == input.resource.organization.id
-    organizations.is_member
-    utils.has_perm(utils.USER)
-    is_target_staff
-}
-
-allow if {
-    input.scope == utils.VIEW
-    input.auth.organization.id == input.resource.organization.id
-    organizations.is_member
-    is_target_staff
-}
-
-allow if {
-    input.scope == utils.VIEW
-    input.auth.organization.id == input.resource.organization.id
-    organizations.is_member
-    input.resource.target.is_job_staff
 }

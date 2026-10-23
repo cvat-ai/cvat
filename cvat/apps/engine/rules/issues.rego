@@ -124,26 +124,15 @@ allow if {
 }
 
 allow if {
-    input.scope == utils.CREATE_IN_JOB
-    utils.is_sandbox
-    utils.has_perm(utils.WORKER)
-    is_job_staff
-}
-
-allow if {
-    input.scope == utils.CREATE_IN_JOB
-    input.auth.organization.id == input.resource.organization.id
-    utils.is_organization
+    input.scope in {utils.CREATE_IN_JOB, utils.DELETE, utils.UPDATE, utils.VIEW}
+    organizations.user_and_resource_in_org_with_role(organizations.MAINTAINER)
     utils.has_perm(utils.USER)
-    organizations.has_perm(organizations.MAINTAINER)
 }
 
 allow if {
     input.scope == utils.CREATE_IN_JOB
-    input.auth.organization.id == input.resource.organization.id
-    utils.is_organization
+    organizations.matching_context
     utils.has_perm(utils.WORKER)
-    organizations.is_member
     is_job_staff
 }
 
@@ -193,57 +182,20 @@ filter := utils.add_organization_filter(base_filter, ["job__segment__task__organ
 
 allow if {
     input.scope == utils.VIEW
-    utils.is_sandbox
-    is_issue_staff
-}
-
-allow if {
-    input.scope == utils.VIEW
-    input.auth.organization.id == input.resource.organization.id
-    utils.has_perm(utils.USER)
-    organizations.has_perm(organizations.MAINTAINER)
-}
-
-allow if {
-    input.scope == utils.VIEW
-    input.auth.organization.id == input.resource.organization.id
-    organizations.is_member
+    organizations.matching_context
     is_issue_staff
 }
 
 allow if {
     input.scope == utils.UPDATE
-    utils.is_sandbox
+    organizations.matching_context
     utils.has_perm(utils.WORKER)
     is_issue_staff
 }
 
 allow if {
-    input.scope == utils.UPDATE
-    input.auth.organization.id == input.resource.organization.id
-    utils.has_perm(utils.WORKER)
-    organizations.is_member
-    is_issue_staff
-}
-
-allow if {
     input.scope == utils.DELETE
-    utils.is_sandbox
+    organizations.matching_context
     utils.has_perm(utils.WORKER)
     is_issue_admin
-}
-
-allow if {
-    input.scope == utils.DELETE
-    input.auth.organization.id == input.resource.organization.id
-    utils.has_perm(utils.WORKER)
-    organizations.is_member
-    is_issue_admin
-}
-
-allow if {
-    input.scope in {utils.UPDATE, utils.DELETE}
-    input.auth.organization.id == input.resource.organization.id
-    utils.has_perm(utils.USER)
-    organizations.has_perm(organizations.MAINTAINER)
 }
