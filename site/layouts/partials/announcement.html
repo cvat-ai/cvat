@@ -32,20 +32,21 @@
     });
   };
   document.head.appendChild(script);
-  document.documentElement.classList.add('cvat-announcement-visible');
-  function setOffset() {
-    document.documentElement.style.setProperty('--cvat-announcement-height', banner.offsetHeight + 'px');
+  function setHeaderHeight() {
+    document.documentElement.style.setProperty(
+      '--td-header-height',
+      'calc(var(--td-navbar-min-height) + ' + banner.offsetHeight + 'px)',
+    );
   }
-  setOffset();
+  setHeaderHeight();
   if (window.ResizeObserver) {
-    new ResizeObserver(setOffset).observe(banner);
+    new ResizeObserver(setHeaderHeight).observe(banner);
   } else {
-    window.addEventListener('resize', setOffset);
+    window.addEventListener('resize', setHeaderHeight);
   }
   banner.querySelector('.cvat-announcement-close').addEventListener('click', function () {
     banner.hidden = true;
-    document.documentElement.classList.remove('cvat-announcement-visible');
-    document.documentElement.style.removeProperty('--cvat-announcement-height');
+    document.documentElement.style.removeProperty('--td-header-height');
     try {
       sessionStorage.setItem(storageKey, '1');
     } catch (error) {
