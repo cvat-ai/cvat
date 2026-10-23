@@ -2931,7 +2931,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 this.onMessage([
                     '### Join shapes',
                     '',
-                    'Select masks or polygons of the same type to join them.',
+                    'Select masks or polygons of the same label to join them.',
                     '',
                     '**Actions**',
                     '- Click a shape to select it.',
