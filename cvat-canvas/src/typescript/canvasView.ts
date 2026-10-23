@@ -42,7 +42,7 @@ import {
     CanvasModel, Geometry, UpdateReasons, FrameZoom, ActiveElement,
     DrawData, MergeData, SplitData, Mode, Size, Configuration,
     InteractionResult, InteractionData, ColorBy, HighlightedElements,
-    HighlightSeverity, GroupData, SelectData, JoinData, CanvasHint,
+    HighlightSeverity, GroupData, SelectData, JoinData,
     MultiSelectModifier, CanvasHistorySource,
 } from './canvasModel';
 
@@ -145,14 +145,14 @@ export class CanvasViewImpl implements CanvasView, Listener {
         return this.controller.mode;
     }
 
-    private onMessage = (messages: CanvasHint[] | null, topic: string): void => {
+    private onMessage = (message: string | null, topic?: string): void => {
         this.canvas.dispatchEvent(
             new CustomEvent('canvas.message', {
                 bubbles: false,
                 cancelable: true,
                 detail: {
                     topic,
-                    messages,
+                    message,
                 },
             }),
         );
@@ -361,6 +361,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
     private onInteraction = (
         shapes: InteractionResult[] | null,
         finished = false,
+        ctrlKey = false,
     ): void => {
         // whenever prompts are updated, interactor sends corresponding event with prompts
         // when finished, it also sends finish flag equals to "true"
@@ -371,6 +372,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 cancelable: true,
                 detail: {
                     finished,
+                    ctrlKey,
                     shapes,
                 },
             });
@@ -553,7 +555,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
 
     private onSelectDone = (objects?: any[], duration?: number): void => {
         if (this.mode === Mode.JOIN) {
-            this.onMessage(null, 'join');
+            this.onMessage(null);
         }
 
         if (objects && typeof duration !== 'undefined' && objects.length > 1) {
@@ -2926,11 +2928,15 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 data = this.controller.joinData;
                 this.mode = Mode.JOIN;
 
-                this.onMessage([{
-                    type: 'text',
-                    icon: 'info',
-                    content: 'Click polygons or masks you would like to join together. To unselect click selected shape one more time',
-                }], 'join');
+                this.onMessage([
+                    '### Join shapes',
+                    '',
+                    'Select masks or polygons of the same type to join them.',
+                    '',
+                    '**Actions**',
+                    '- Click a shape to select it.',
+                    '- Click a selected shape again to remove it from the selection.',
+                ].join('\n'), 'join');
 
                 this.groupHandler.group(data, {
                     shapeType: ['mask', 'polygon'],

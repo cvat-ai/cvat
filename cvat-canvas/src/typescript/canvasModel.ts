@@ -22,13 +22,6 @@ export interface Position {
     y: number;
 }
 
-export interface CanvasHint {
-    type: 'text' | 'list';
-    content: string | string[];
-    className?: string;
-    icon?: 'info' | 'loading';
-}
-
 export enum CanvasHistorySource {
     MASK = 'mask',
 }
@@ -170,7 +163,10 @@ export interface InteractionData {
         points_type?: 'any' | 'positive' | 'negative'; // default is any
         removalStrategy?: 'any' | 'last'; // default is any
         appendCursorPositionAsPoint?: boolean; // default is false
-        hint?: string;
+        hint?: {
+            markdown: string;
+            topic: string;
+        };
         regionOfInterest?: [number, number, number, number];
     };
 }

@@ -14,7 +14,7 @@ import {
 } from './shared';
 import {
     InteractionData, InteractionResult, Geometry,
-    Configuration, CanvasHint,
+    Configuration,
 } from './canvasModel';
 
 export interface InteractionHandler {
@@ -55,6 +55,7 @@ function deleteButtonPath(r: number): string {
 export class InteractionHandlerImpl implements InteractionHandler {
     private settings: Omit<Required<InteractionData['settings']>, 'hint' | 'regionOfInterest'>;
     private enabled: boolean;
+    private ctrlKey: boolean;
     private command: 'draw_box' | 'draw_points' | 'put_shapes' | 'refine' | 'idle';
     private currentRectangle: SVG.Rect | null;
     private rectanglePrompts: SVG.Rect[];
@@ -63,8 +64,8 @@ export class InteractionHandlerImpl implements InteractionHandler {
     private deletionButtons: Map<SupportedShapes, SVG.G>;
     private intermediateShapes: (SVG.Image | SVG.Polygon)[];
     private intermediateMaskOutlines: SVG.Polygon[];
-    private onInteraction: (interactionResult: InteractionResult[], finished?: boolean) => void;
-    private onMessage: (messages: CanvasHint[] | null, topic: string) => void;
+    private onInteraction: (interactionResult: InteractionResult[], finished?: boolean, ctrlKey?: boolean) => void;
+    private onMessage: (message: string | null, topic?: string) => void;
     private geometry: Geometry;
     private container: SVG.Container;
     private configuration: Configuration;
@@ -85,6 +86,7 @@ export class InteractionHandlerImpl implements InteractionHandler {
         this.onInteraction = onInteraction;
         this.onMessage = onMessage;
         this.enabled = false;
+        this.ctrlKey = false;
         this.command = 'idle';
         this.crosshair = new Crosshair();
         this.regionOfInterest = null;
@@ -159,9 +161,10 @@ export class InteractionHandlerImpl implements InteractionHandler {
 
     private release(): void {
         this.enabled = false;
+        this.ctrlKey = false;
         this.command = 'idle';
         this.regionOfInterest = null;
-        this.onMessage(null, 'interaction');
+        this.onMessage(null);
         this.clearCurrentRectangle();
         this.clearPromptsAndButtons();
         this.clearIntermediateShapes();
@@ -185,7 +188,7 @@ export class InteractionHandlerImpl implements InteractionHandler {
         return imageX >= 0 && imageX < image.width && imageY >= 0 && imageY < image.height;
     }
 
-    private drawBox(hint?: string): void {
+    private drawBox(hint?: InteractionData['settings']['hint']): void {
         if (this.command === 'draw_box') {
             return;
         }
@@ -237,45 +240,22 @@ export class InteractionHandlerImpl implements InteractionHandler {
             });
         };
 
-        this.onMessage([{
-            type: 'text',
-            icon: 'info',
-            content: hint ?? 'Draw rectangle prompts',
-        }, {
-            type: 'list',
-            content: [
-                'Hold <Mouse Wheel> to drag the image',
-            ],
-            className: 'cvat-canvas-notification-list-shortcuts',
-        }], 'interaction');
+        if (hint) {
+            this.onMessage(hint.markdown, hint.topic);
+        } else {
+            this.onMessage(null);
+        }
 
         initNewDrawingBox();
     }
 
-    private drawPoints(hint?: string): void {
-        const { points_type: pointsType } = this.settings;
-
+    private drawPoints(hint?: InteractionData['settings']['hint']): void {
         this.command = 'draw_points';
-        const textPrompts = [];
-        if (pointsType === 'any') {
-            textPrompts.push(
-                'Click <Left Button> to add a positive point',
-                'Click <Right Button> to add a negative point',
-            );
+        if (hint) {
+            this.onMessage(hint.markdown, hint.topic);
+        } else {
+            this.onMessage(null);
         }
-
-        this.onMessage([{
-            type: 'text',
-            icon: 'info',
-            content: hint ?? 'Draw point prompts',
-        }, {
-            type: 'list',
-            content: [
-                ...textPrompts,
-                'Hold <Mouse Wheel> to drag the image',
-            ],
-            className: 'cvat-canvas-notification-list-shortcuts',
-        }], 'interaction');
     }
 
     private putShapes(shapes: InteractionData['payload']['shapes']): void {
@@ -379,7 +359,7 @@ export class InteractionHandlerImpl implements InteractionHandler {
             throw new Error('Unknown shape type');
         });
 
-        this.onInteraction(transformed.concat(extras), finished);
+        this.onInteraction(transformed.concat(extras), finished, this.ctrlKey);
     }
 
     private deleteShape(shape: SupportedShapes): void {
@@ -437,6 +417,7 @@ export class InteractionHandlerImpl implements InteractionHandler {
 
         deleteButtonGroup.on('mousedown.interaction', (e: any) => {
             e.stopPropagation();
+            this.ctrlKey = e.ctrlKey;
             this.deleteShape(shape);
         });
 
@@ -444,6 +425,7 @@ export class InteractionHandlerImpl implements InteractionHandler {
     }
 
     private onMouseMove = (e: MouseEvent): void => {
+        this.ctrlKey = e.ctrlKey;
         const [x, y] = translateToSVG(
             this.container.node as unknown as SVGSVGElement,
             [e.clientX, e.clientY],
@@ -471,6 +453,7 @@ export class InteractionHandlerImpl implements InteractionHandler {
     };
 
     private onMouseDown = (e: MouseEvent): void => {
+        this.ctrlKey = e.ctrlKey;
         if (!(this.enabled && [0, 2].includes(e.button))) {
             return;
         }
@@ -524,6 +507,7 @@ export class InteractionHandlerImpl implements InteractionHandler {
                 _e.preventDefault();
                 _e.stopPropagation();
                 if (pointCanBeRemoved()) {
+                    this.ctrlKey = _e.ctrlKey;
                     this.deleteShape(point);
                 }
             });

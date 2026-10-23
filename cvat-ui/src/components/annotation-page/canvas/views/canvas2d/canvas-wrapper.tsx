@@ -19,7 +19,7 @@ import {
 } from 'reducers';
 import { EventScope } from 'cvat-logger';
 import {
-    Canvas, HighlightSeverity, CanvasHint, RenderData, CanvasHistorySource,
+    Canvas, HighlightSeverity, RenderData, CanvasHistorySource,
 } from 'cvat-canvas-wrapper';
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import {
@@ -732,9 +732,9 @@ class CanvasWrapperComponent extends React.PureComponent<Props> {
         });
     };
 
-    private onCanvasMessage = (event: CustomEvent<{ messages: CanvasHint[] | null, topic: string }>): void => {
-        const { messages, topic } = event.detail;
-        this.canvasTipsRef.current?.update(messages, topic);
+    private onCanvasMessage = (event: CustomEvent<{ message: string | null, topic?: string }>): void => {
+        const { message, topic } = event.detail;
+        this.canvasTipsRef.current?.update(message, topic);
     };
 
     private onCanvasHistoryChanged = (event: CustomEvent<{

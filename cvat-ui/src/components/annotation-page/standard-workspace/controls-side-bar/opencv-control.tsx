@@ -218,12 +218,12 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
             return;
         }
 
-        const { finished, shapes } = (e as CustomEvent).detail;
+        const { finished, shapes, ctrlKey } = (e as CustomEvent).detail;
         const pressedPoints = convertShapesForInteractor(shapes, 'points', 'positive').flat();
         try {
             if (finished) {
                 // need to recalculate without the latest sliding point
-                const finalPoints = await this.runCVAlgorithm(pressedPoints);
+                const finalPoints = await this.runCVAlgorithm(pressedPoints, ctrlKey);
                 if (finalPoints.length >= 3) {
                     const finalObject = new core.classes.ObjectState({
                         frame,
@@ -243,7 +243,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                     createAnnotations([finalObject]);
                 }
             } else {
-                this.latestPoints = await this.runCVAlgorithm(pressedPoints);
+                this.latestPoints = await this.runCVAlgorithm(pressedPoints, ctrlKey);
                 const points = openCVWrapper.contours.approxPoly(
                     this.latestPoints,
                     openCVWrapper.utils.thresholdFromAccuracy(approxPolyAccuracy),
@@ -277,11 +277,11 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
         });
     };
 
-    private async runCVAlgorithm(pressedPoints: number[]): Promise<[number, number][]> {
+    private async runCVAlgorithm(pressedPoints: number[], straight = false): Promise<[number, number][]> {
         if (!this.activeTool || pressedPoints.length === 0) {
             return [];
         }
-        const points = await this.activeTool.run(pressedPoints);
+        const points = await this.activeTool.run(pressedPoints, straight);
         return points.reduce((acc: [number, number][], val: number, idx: number) => {
             if (idx % 2 === 0) {
                 acc.push([val, val]);
@@ -348,6 +348,19 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                                             appendCursorPositionAsPoint: true,
                                             removalStrategy: 'last' as const,
                                             points_type: 'positive' as const,
+                                            hint: {
+                                                markdown: [
+                                                    '### Intelligent scissors',
+                                                    '',
+                                                    'Follow object edges to outline the object.',
+                                                    '',
+                                                    '**Actions**',
+                                                    '- Click to add a point.',
+                                                    '- Hold `Ctrl` to draw straight segments.',
+                                                    '- Hold the `Mouse wheel` and drag to pan.',
+                                                ].join('\n'),
+                                                topic: 'intelligent-scissors-v1',
+                                            },
                                         },
                                     };
 

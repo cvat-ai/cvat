@@ -55,6 +55,33 @@ import ConfidenceThreshold from 'components/annotation-page/standard-workspace/c
 import withVisibilityHandling from './handle-popover-visibility';
 import ToolsTooltips from './interactor-tooltips';
 
+const rectangleHint = {
+    markdown: [
+        '### Rectangle prompts',
+        '',
+        'Draw a box around the area you want to select.',
+        '',
+        '**Actions**',
+        '- Click opposite corners to draw a box.',
+        '- Hold the `Mouse wheel` and drag to pan.',
+    ].join('\n'),
+    topic: 'rectangle-prompts-v1',
+};
+
+const getPointsHint = (withNegativePoints: boolean): typeof rectangleHint => ({
+    markdown: [
+        '### Point prompts',
+        '',
+        'Use points to guide the selection.',
+        '',
+        '**Actions**',
+        '- `Left click` to add a positive point.',
+        ...(withNegativePoints ? ['- `Right click` to add a negative point.'] : []),
+        '- Hold the `Mouse wheel` and drag to pan.',
+    ].join('\n'),
+    topic: 'point-prompts-v1',
+});
+
 interface StateToProps {
     canvasInstance: Canvas;
     labels: Label[];
@@ -744,6 +771,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                         command: 'draw_box',
                         settings: {
                             crosshair: true,
+                            hint: rectangleHint,
                             ...(interactorRegionOfInterest ? { regionOfInterest: interactorRegionOfInterest } : {}),
                         },
                     });
@@ -756,6 +784,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                     command: 'draw_points',
                     settings: {
                         crosshair: false,
+                        hint: getPointsHint((activeInteractor.params.canvas.minNegVertices ?? -1) >= 0),
                         ...(interactorRegionOfInterest ? { regionOfInterest: interactorRegionOfInterest } : {}),
                     },
                 });
@@ -1244,7 +1273,10 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                             onClick={() => {
                                 if (activeTracker && activeLabelID) {
                                     this.setState({ mode: 'tracking' });
-                                    const parameters = { command: 'draw_box' as const, settings: { crosshair: true } };
+                                    const parameters = {
+                                        command: 'draw_box' as const,
+                                        settings: { crosshair: true, hint: rectangleHint },
+                                    };
                                     canvasInstance.cancel();
                                     canvasInstance.interact({ enabled: true, ...parameters });
                                     onInteractionStart(activeTracker, activeLabelID, parameters);
@@ -1378,6 +1410,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                                             removalStrategy: 'any' as const,
                                             points_type: 'any' as const,
                                             crosshair: startWithBox,
+                                            hint: startWithBox ? rectangleHint : getPointsHint(minNegVertices >= 0),
                                             ...(this.state.interactorRegionOfInterest ? {
                                                 regionOfInterest: this.state.interactorRegionOfInterest,
                                             } : {}),

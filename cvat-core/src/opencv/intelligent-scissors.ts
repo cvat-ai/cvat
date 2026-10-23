@@ -20,7 +20,7 @@ export interface IntelligentScissorsParams {
 export interface IntelligentScissorsInterface {
     params: IntelligentScissorsParams;
     kind: string;
-    run(points: number[]): number[];
+    run(points: number[], straight?: boolean): number[];
     reset(): void;
     setImage(image: ImageData): void;
 }
@@ -97,7 +97,7 @@ export default class IntelligentScissorsImplementation implements IntelligentSci
         }
     }
 
-    public run(coordinates: number[]): number[] {
+    public run(coordinates: number[], straight = false): number[] {
         if (!Array.isArray(coordinates)) {
             throw new Error('Coordinates is expected to be an array');
         }
@@ -146,16 +146,19 @@ export default class IntelligentScissorsImplementation implements IntelligentSci
 
         const lastOffset = state.contourOffsets[state.contourOffsets.length - 1];
         const curPoint = points[points.length - 1];
-        const contour = new cv.Mat();
-
         const curSegment = [];
-        try {
-            tool.getContour(new cv.Point(curPoint.x, curPoint.y), contour);
-            for (let row = 0; row < contour.rows; row++) {
-                curSegment.push(contour.intAt(row, 0) / xScale, contour.intAt(row, 1) / yScale);
+        if (straight) {
+            curSegment.push(curPoint.x / xScale, curPoint.y / yScale);
+        } else {
+            const contour = new cv.Mat();
+            try {
+                tool.getContour(new cv.Point(curPoint.x, curPoint.y), contour);
+                for (let row = 0; row < contour.rows; row++) {
+                    curSegment.push(contour.intAt(row, 0) / xScale, contour.intAt(row, 1) / yScale);
+                }
+            } finally {
+                contour.delete();
             }
-        } finally {
-            contour.delete();
         }
 
         state.prevPoints = [...points];
