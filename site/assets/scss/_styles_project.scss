@@ -301,7 +301,12 @@ html.cvat-announcement-visible .td-main {
 
 /* The right TOC is positioned by its sidebar wrapper, not by .td-toc. */
 html.cvat-announcement-visible .td-sidebar-toc {
-  padding-top: var(--cvat-announcement-height, 0);
+  padding-top: calc(var(--cvat-announcement-height, 0px) + 1.5rem);
+}
+
+/* Preserve the normal breathing room above the left navigation heading. */
+html.cvat-announcement-visible .td-sidebar-nav {
+  padding-top: 2.75rem;
 }
 
 /* Keep Docsy's existing body offset; padding the body again creates a blank gap. */
