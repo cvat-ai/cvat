@@ -894,8 +894,11 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
             "line_thickness": """
                 Thickness of polylines, relatively to the (image area) ^ 0.5.
                 The distance to the boundary around the GT line,
-                inside of which the checked line points should be
-            """,
+                inside of which the checked line points should be.
+                With the '{boundary_f}' similarity metric, the boundary tolerance is used instead
+            """.format(
+                boundary_f=models.ShapeSimilarityMetricType.BOUNDARY_F
+            ),
             "line_orientation_threshold": """
                 The minimal gain in the GT IoU between the given and reversed line directions
                 to consider the line inverted.

@@ -1112,10 +1112,17 @@ class DistanceComparator:
     def match_lines(self, item_a: dm.DatasetItem, item_b: dm.DatasetItem) -> MatchResult:
         img_h, img_w = item_a.media_as(dm.Image).size
 
+        if self.settings.similarity_metric == ShapeSimilarityMetricType.BOUNDARY_F:
+            # The line IoU is only used for the orientation check here,
+            # the line thickness is defined by the boundary tolerance
+            line_thickness = self.settings.boundary_f_tolerance / math.sqrt(img_h * img_w)
+        else:
+            line_thickness = self.settings.line_thickness
+
         def _make_line_iou_matcher(*, oriented: bool) -> LineMatcher:
             return LineMatcher(
                 oriented=oriented,
-                torso_r=self.settings.line_thickness,
+                torso_r=line_thickness,
                 scale=img_h * img_w,
             )
 
