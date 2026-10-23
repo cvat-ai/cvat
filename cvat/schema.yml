@@ -9234,6 +9234,10 @@ components:
           maxLength: 1024
         related_files:
           type: integer
+        related_images:
+          type: array
+          items:
+            $ref: '#/components/schemas/RelatedImageCalibration'
         has_related_context:
           type: boolean
           readOnly: true
@@ -13172,6 +13176,38 @@ components:
       - password1
       - password2
       - username
+    RelatedImageCalibration:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 1024
+        intrinsic_matrix:
+          type: array
+          items:
+            type: array
+            items:
+              type: number
+              format: double
+            maxItems: 3
+            minItems: 3
+          maxItems: 3
+          minItems: 3
+        extrinsic_matrix:
+          type: array
+          items:
+            type: array
+            items:
+              type: number
+              format: double
+            maxItems: 4
+            minItems: 4
+          maxItems: 3
+          minItems: 3
+      required:
+      - extrinsic_matrix
+      - intrinsic_matrix
+      - name
     ReplicaJobCreateRequest:
       type: object
       properties:

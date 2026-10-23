@@ -212,7 +212,9 @@ def _load_standard_related_image_metadata(
 
     camera = sidecar.get("camera")
     if not isinstance(camera, dict):
-        raise InvalidRelatedImageMetadataError(sidecar_path, "Unexpected structure; 'camera' must be an object")
+        raise InvalidRelatedImageMetadataError(
+            sidecar_path, "Unexpected structure; 'camera' must be an object"
+        )
 
     intrinsic_matrix = _parse_calibration_matrix(
         camera.get("intrinsic_matrix"),
@@ -244,7 +246,7 @@ def _load_standard_related_image_metadata(
         np.identity(3),
         atol=_CAMERA_ROTATION_TOLERANCE,
         rtol=0,
-    ) or not np.isclose( # exclude mirror/reflection matrices
+    ) or not np.isclose(  # exclude mirror/reflection matrices
         np.linalg.det(rotation),
         1,
         atol=_CAMERA_ROTATION_TOLERANCE,
