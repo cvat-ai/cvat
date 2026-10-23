@@ -170,6 +170,10 @@ export interface JobsState {
         modalVisible: boolean;
         jobs: Job[];
     };
+    distributeJobs: {
+        modalVisible: boolean;
+        jobs: Job[];
+    };
 }
 
 export interface TasksState {

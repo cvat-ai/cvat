@@ -170,7 +170,9 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
             is_active: isBoolean,
             self: isBoolean,
             search: isString,
+            filter: isString,
             limit: isInteger,
+            pageSize: isInteger,
         });
 
         let users = null;
@@ -184,7 +186,7 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
                     searchParams[key] = filter[key];
                 }
             }
-            users = await serverProxy.users.get(searchParams);
+            users = await serverProxy.users.get(fieldsToSnakeCase(searchParams));
         }
 
         users = users.map((user) => new User(user));

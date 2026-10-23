@@ -1836,6 +1836,10 @@ Cypress.Commands.add('addReplicas', (count, jobIds) => {
     }
 });
 
+Cypress.Commands.add('pasteText', { prevSubject: 'element' }, (subject, text) => {
+    cy.wrap(subject).trigger('paste', { clipboardData: { getData: () => text } });
+});
+
 Cypress.Commands.add('drawMask', (instructions) => {
     for (const instruction of instructions) {
         const { method } = instruction;
