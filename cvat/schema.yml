@@ -11383,7 +11383,8 @@ components:
           description: |
             Thickness of polylines, relatively to the (image area) ^ 0.5.
             The distance to the boundary around the GT line,
-            inside of which the checked line points should be
+            inside of which the checked line points should be.
+            With the 'boundary_f' similarity metric, the boundary tolerance is used instead
         match_orientation:
           type: boolean
           nullable: true
@@ -12334,7 +12335,8 @@ components:
           description: |
             Thickness of polylines, relatively to the (image area) ^ 0.5.
             The distance to the boundary around the GT line,
-            inside of which the checked line points should be
+            inside of which the checked line points should be.
+            With the 'boundary_f' similarity metric, the boundary tolerance is used instead
         match_orientation:
           type: boolean
           nullable: true
@@ -12558,7 +12560,8 @@ components:
           description: |
             Thickness of polylines, relatively to the (image area) ^ 0.5.
             The distance to the boundary around the GT line,
-            inside of which the checked line points should be
+            inside of which the checked line points should be.
+            With the 'boundary_f' similarity metric, the boundary tolerance is used instead
         match_orientation:
           type: boolean
           nullable: true
@@ -12809,7 +12812,8 @@ components:
           description: |
             Thickness of polylines, relatively to the (image area) ^ 0.5.
             The distance to the boundary around the GT line,
-            inside of which the checked line points should be
+            inside of which the checked line points should be.
+            With the 'boundary_f' similarity metric, the boundary tolerance is used instead
         match_orientation:
           type: boolean
           nullable: true
@@ -13035,7 +13039,8 @@ components:
           description: |
             Thickness of polylines, relatively to the (image area) ^ 0.5.
             The distance to the boundary around the GT line,
-            inside of which the checked line points should be
+            inside of which the checked line points should be.
+            With the 'boundary_f' similarity metric, the boundary tolerance is used instead
         match_orientation:
           type: boolean
           nullable: true
@@ -13253,7 +13258,8 @@ components:
           description: |
             Thickness of polylines, relatively to the (image area) ^ 0.5.
             The distance to the boundary around the GT line,
-            inside of which the checked line points should be
+            inside of which the checked line points should be.
+            With the 'boundary_f' similarity metric, the boundary tolerance is used instead
         match_orientation:
           type: boolean
           nullable: true
