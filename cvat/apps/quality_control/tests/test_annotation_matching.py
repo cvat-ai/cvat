@@ -10,6 +10,7 @@ from typing import cast
 import datumaro as dm
 import numpy as np
 
+from cvat.apps.quality_control.backends.datumaro import Datumaro2DBackend
 from cvat.apps.quality_control.backends.datumaro.matching import (
     AttributeMatchingResult,
     Comparator,
@@ -17,7 +18,16 @@ from cvat.apps.quality_control.backends.datumaro.matching import (
     DistanceComparator,
 )
 from cvat.apps.quality_control.matching import PairwiseComparison
-from cvat.apps.quality_control.models import PointSizeBase
+from cvat.apps.quality_control.models import (
+    PointSizeBase,
+    QualityRequirement,
+    QualityRequirementAnnotationType,
+    ShapeSimilarityMetricType,
+)
+from cvat.apps.quality_control.quality_handlers import (
+    EffectiveQualityRequirement,
+    resolve_effective_requirement,
+)
 
 
 def _make_mask_item(mask: np.ndarray) -> dm.DatasetItem:
@@ -68,7 +78,9 @@ class TestComparator(unittest.TestCase):
     def test_mask_only_comparator_matches_masks(self) -> None:
         mask = np.zeros((8, 8), dtype=bool)
         mask[2:6, 2:6] = True
-        settings = ComparisonParameters(annotation_type=dm.AnnotationType.mask)
+        settings = ComparisonParameters(
+            annotation_type=dm.AnnotationType.mask, similarity_metric=ShapeSimilarityMetricType.IOU
+        )
 
         comparator = Comparator(
             {dm.AnnotationType.label: dm.LabelCategories.from_iterable(["car"])},
@@ -102,6 +114,7 @@ class TestComparator(unittest.TestCase):
                     {dm.AnnotationType.label: dm.LabelCategories.from_iterable(["car"])},
                     settings=ComparisonParameters(
                         annotation_type=annotation_type,
+                        similarity_metric=ShapeSimilarityMetricType.IOU,
                     ),
                     return_comparisons=True,
                 )
@@ -125,6 +138,7 @@ class TestComparator(unittest.TestCase):
             {dm.AnnotationType.label: dm.LabelCategories.from_iterable(["car"])},
             settings=ComparisonParameters(
                 annotation_type=dm.AnnotationType.bbox,
+                similarity_metric=ShapeSimilarityMetricType.IOU,
             ),
             return_comparisons=True,
         )
@@ -156,7 +170,8 @@ class TestComparator(unittest.TestCase):
             categories,
             settings=ComparisonParameters(
                 annotation_type=dm.AnnotationType.points,
-                iou_threshold=0.4,
+                similarity_metric=ShapeSimilarityMetricType.OKS,
+                oks_threshold=0.4,
                 oks_sigma=0.09,
                 point_size_base=PointSizeBase.IMAGE_SIZE,
             ),
@@ -165,7 +180,8 @@ class TestComparator(unittest.TestCase):
             categories,
             settings=ComparisonParameters(
                 annotation_type=dm.AnnotationType.points,
-                iou_threshold=0.4,
+                similarity_metric=ShapeSimilarityMetricType.OKS,
+                oks_threshold=0.4,
                 oks_sigma=0.09,
                 point_size_base=PointSizeBase.GROUP_BBOX_SIZE,
             ),
@@ -179,7 +195,9 @@ class TestComparator(unittest.TestCase):
         self.assertEqual(len(group_bbox_results[3]), 2)
 
     def test_attributes_affect_matching_and_pairwise_diagnostics(self) -> None:
-        settings = ComparisonParameters(annotation_type=dm.AnnotationType.bbox)
+        settings = ComparisonParameters(
+            annotation_type=dm.AnnotationType.bbox, similarity_metric=ShapeSimilarityMetricType.IOU
+        )
         gt_ann = dm.Bbox(
             10,
             10,
@@ -222,7 +240,9 @@ class TestComparator(unittest.TestCase):
         self.assertEqual(comparison.similarity, 0)
 
     def test_disabled_attribute_comparison_preserves_geometry_matching(self) -> None:
-        settings = ComparisonParameters(annotation_type=dm.AnnotationType.bbox)
+        settings = ComparisonParameters(
+            annotation_type=dm.AnnotationType.bbox, similarity_metric=ShapeSimilarityMetricType.IOU
+        )
         settings.compare_attributes = False
         gt_ann = dm.Bbox(10, 10, 20, 20, label=0, attributes={"color": "red"})
         ds_ann = dm.Bbox(10, 10, 20, 20, label=0, attributes={"color": "blue"})
@@ -243,7 +263,9 @@ class TestComparator(unittest.TestCase):
         self.assertFalse(ds_unmatched)
 
     def test_attributes_can_change_assignment(self) -> None:
-        settings = ComparisonParameters(annotation_type=dm.AnnotationType.bbox)
+        settings = ComparisonParameters(
+            annotation_type=dm.AnnotationType.bbox, similarity_metric=ShapeSimilarityMetricType.IOU
+        )
         gt_red = dm.Bbox(0, 0, 10, 10, label=0, attributes={"color": "red"})
         gt_blue = dm.Bbox(2, 0, 10, 10, label=0, attributes={"color": "blue"})
         ds_blue = dm.Bbox(0, 0, 10, 10, label=0, attributes={"color": "blue"})
@@ -265,7 +287,9 @@ class TestComparator(unittest.TestCase):
         self.assertFalse(ds_unmatched)
 
     def test_label_remains_a_separate_second_matching_stage(self) -> None:
-        settings = ComparisonParameters(annotation_type=dm.AnnotationType.bbox)
+        settings = ComparisonParameters(
+            annotation_type=dm.AnnotationType.bbox, similarity_metric=ShapeSimilarityMetricType.IOU
+        )
         gt_ann = dm.Bbox(10, 10, 20, 20, label=0, attributes={"color": "red"})
         ds_ann = dm.Bbox(10, 10, 20, 20, label=1, attributes={"color": "red"})
         comparator = Comparator(
@@ -290,6 +314,7 @@ class TestComparator(unittest.TestCase):
 
         oriented_settings = ComparisonParameters(
             annotation_type=dm.AnnotationType.polyline,
+            similarity_metric=ShapeSimilarityMetricType.IOU,
         )
         oriented_settings.compare_line_orientation = True
         oriented_comparator = Comparator(
@@ -313,6 +338,7 @@ class TestComparator(unittest.TestCase):
 
         non_oriented_settings = ComparisonParameters(
             annotation_type=dm.AnnotationType.polyline,
+            similarity_metric=ShapeSimilarityMetricType.IOU,
         )
         non_oriented_settings.compare_line_orientation = False
         non_oriented_comparator = Comparator(
@@ -330,3 +356,125 @@ class TestComparator(unittest.TestCase):
         self.assertFalse(mismatches)
         self.assertFalse(gt_unmatched)
         self.assertFalse(ds_unmatched)
+
+
+class TestSimilarityMetricSelection(unittest.TestCase):
+    CATEGORIES = {dm.AnnotationType.label: dm.LabelCategories.from_iterable(["car"])}
+
+    def test_rejects_unsupported_metrics(self) -> None:
+        for annotation_type, metric in [
+            (dm.AnnotationType.points, ShapeSimilarityMetricType.IOU),
+            (dm.AnnotationType.skeleton, ShapeSimilarityMetricType.BOUNDARY_F),
+            (dm.AnnotationType.bbox, ShapeSimilarityMetricType.OKS),
+            (dm.AnnotationType.bbox, ShapeSimilarityMetricType.EQUALITY),
+            (dm.AnnotationType.label, ShapeSimilarityMetricType.IOU),
+        ]:
+            with self.subTest(annotation_type=annotation_type.name, metric=metric):
+                with self.assertRaises(AssertionError):
+                    DistanceComparator(
+                        self.CATEGORIES,
+                        settings=ComparisonParameters(
+                            annotation_type=annotation_type, similarity_metric=metric
+                        ),
+                    )
+
+    def test_points_use_the_oks_threshold(self) -> None:
+        gt_ann = dm.Points([20, 20, 60, 60], label=0)
+        ds_ann = dm.Points([22, 21, 61, 62], label=0)
+
+        def match(**settings):
+            comparator = DistanceComparator(
+                self.CATEGORIES,
+                settings=ComparisonParameters(
+                    annotation_type=dm.AnnotationType.points,
+                    similarity_metric=ShapeSimilarityMetricType.OKS,
+                    **settings,
+                ),
+                return_comparisons=True,
+            )
+            matches, _, _, _, comparisons = comparator.match_points(
+                _make_image_item(gt_ann), _make_image_item(ds_ann)
+            )
+            return matches, comparisons[(id(gt_ann), id(ds_ann))].similarity
+
+        matches, similarity = match(oks_threshold=0.1, iou_threshold=0.99)
+        self.assertEqual(matches, [(gt_ann, ds_ann)])
+
+        matches, _ = match(oks_threshold=min(1, similarity + 0.01), iou_threshold=0.01)
+        self.assertFalse(matches)
+
+    @staticmethod
+    def _effective_requirement(annotation_type, **overrides) -> EffectiveQualityRequirement:
+        "A base requirement with the default settings for the annotation type"
+        return resolve_effective_requirement(
+            QualityRequirement(
+                **{
+                    **QualityRequirement.get_base_defaults(annotation_type),
+                    "name": "base",
+                    "annotation_type": annotation_type,
+                    "enabled": True,
+                    **overrides,
+                }
+            )
+        )
+
+    def test_default_similarity_metric_depends_on_the_requirement_type(self) -> None:
+        for annotation_type, expected_metric in [
+            (QualityRequirementAnnotationType.TAG, ShapeSimilarityMetricType.EQUALITY),
+            (QualityRequirementAnnotationType.POINTS, ShapeSimilarityMetricType.OKS),
+            (QualityRequirementAnnotationType.SKELETON, ShapeSimilarityMetricType.OKS),
+            (QualityRequirementAnnotationType.SKELETON_KEYPOINT, ShapeSimilarityMetricType.OKS),
+            (QualityRequirementAnnotationType.RECTANGLE, ShapeSimilarityMetricType.IOU),
+            (QualityRequirementAnnotationType.POLYGON, ShapeSimilarityMetricType.IOU),
+            (QualityRequirementAnnotationType.MASK, ShapeSimilarityMetricType.IOU),
+            (QualityRequirementAnnotationType.POLYLINE, ShapeSimilarityMetricType.IOU),
+            (QualityRequirementAnnotationType.ELLIPSE, ShapeSimilarityMetricType.IOU),
+        ]:
+            with self.subTest(annotation_type=annotation_type):
+                self.assertEqual(
+                    QualityRequirement.get_base_defaults(annotation_type)["similarity_metric"],
+                    expected_metric,
+                )
+
+                requirement = self._effective_requirement(annotation_type)
+                self.assertEqual(requirement.similarity_metric, expected_metric)
+
+    def test_root_requirement_must_define_the_similarity_metric(self) -> None:
+        with self.assertRaisesRegex(ValueError, "similarity_metric"):
+            self._effective_requirement(
+                QualityRequirementAnnotationType.RECTANGLE, similarity_metric=None
+            )
+
+    def test_backend_compares_tags_by_equality(self) -> None:
+        requirement = self._effective_requirement(QualityRequirementAnnotationType.TAG)
+        settings = Datumaro2DBackend._comparison_parameters(requirement)
+        self.assertEqual(settings.annotation_type, dm.AnnotationType.label)
+        self.assertEqual(settings.similarity_metric, ShapeSimilarityMetricType.EQUALITY)
+
+        comparator = Comparator(self.CATEGORIES, settings=settings)
+        matches, *_ = comparator.match_annotations(
+            _make_image_item(dm.Label(0)), _make_image_item(dm.Label(0))
+        )["all_ann_types"]
+        self.assertEqual(len(matches), 1)
+
+    def test_backend_compares_points_by_oks(self) -> None:
+        for annotation_type, expected_type in [
+            (QualityRequirementAnnotationType.POINTS, dm.AnnotationType.points),
+            (QualityRequirementAnnotationType.SKELETON, dm.AnnotationType.skeleton),
+        ]:
+            with self.subTest(annotation_type=annotation_type):
+                requirement = self._effective_requirement(
+                    annotation_type, oks_threshold=0.6, iou_threshold=0.3
+                )
+                settings = Datumaro2DBackend._comparison_parameters(requirement)
+                self.assertEqual(settings.annotation_type, expected_type)
+                self.assertEqual(settings.similarity_metric, ShapeSimilarityMetricType.OKS)
+                self.assertEqual(settings.oks_threshold, 0.6)
+
+    def test_backend_uses_the_requirement_metric(self) -> None:
+        requirement = self._effective_requirement(
+            QualityRequirementAnnotationType.RECTANGLE,
+            similarity_metric=ShapeSimilarityMetricType.BOUNDARY_F,
+        )
+        settings = Datumaro2DBackend._comparison_parameters(requirement)
+        self.assertEqual(settings.similarity_metric, ShapeSimilarityMetricType.BOUNDARY_F)

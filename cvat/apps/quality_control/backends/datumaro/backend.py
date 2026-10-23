@@ -149,10 +149,12 @@ class Datumaro2DBackend(QualityBackend):
     @staticmethod
     def _comparison_parameters(requirement: EffectiveQualityRequirement) -> ComparisonParameters:
         settings = ComparisonParameters(
-            annotation_type=to_datumaro_annotation_type(requirement.comparison_annotation_type)
+            annotation_type=to_datumaro_annotation_type(requirement.comparison_annotation_type),
+            similarity_metric=requirement.similarity_metric,
         )
         for name in (
             "iou_threshold",
+            "oks_threshold",
             "oks_sigma",
             "line_thickness",
             "point_size_base",
