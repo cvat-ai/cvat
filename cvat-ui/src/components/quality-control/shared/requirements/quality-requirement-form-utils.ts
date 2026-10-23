@@ -8,6 +8,7 @@ import {
 import {
     QualityRequirementAnnotationType, QualityRequirementAttributeComparator,
     QualityMetricAggregation, QualityRequirementMetric, QualityRequirementPointSizeBase,
+    QualityRequirementSimilarityMetric,
     SerializedQualityRequirementAttributeComparison,
     SerializedQualityRequirementAttributeRule,
 } from 'cvat-core/src/quality/server-response-types';
@@ -23,6 +24,9 @@ export const ROOT_DEFAULTS = {
     metric: QualityRequirementMetric.ACCURACY,
     requiredScore: 70,
     iouThreshold: 40,
+    oksThreshold: 40,
+    boundaryFThreshold: 80,
+    boundaryFTolerance: 5,
     pointSize: 9,
     pointSizeBase: QualityRequirementPointSizeBase.GROUP_BBOX_SIZE,
     lineThickness: 1,
@@ -58,21 +62,40 @@ export const METRIC_OPTION_GROUPS: Array<{
         })),
     },
 ];
+// Mirrors the server-side QualityRequirement.get_supported_similarity_metrics(),
+// the first metric is the default one
+export const SUPPORTED_SIMILARITY_METRICS: Record<
+    QualityRequirementAnnotationType, QualityRequirementSimilarityMetric[]
+> = {
+    [QualityRequirementAnnotationType.TAG]: [QualityRequirementSimilarityMetric.EQUALITY],
+    [QualityRequirementAnnotationType.RECTANGLE]: [
+        QualityRequirementSimilarityMetric.IOU, QualityRequirementSimilarityMetric.BOUNDARY_F,
+    ],
+    [QualityRequirementAnnotationType.ELLIPSE]: [
+        QualityRequirementSimilarityMetric.IOU, QualityRequirementSimilarityMetric.BOUNDARY_F,
+    ],
+    [QualityRequirementAnnotationType.POLYGON]: [
+        QualityRequirementSimilarityMetric.IOU, QualityRequirementSimilarityMetric.BOUNDARY_F,
+    ],
+    [QualityRequirementAnnotationType.MASK]: [
+        QualityRequirementSimilarityMetric.IOU, QualityRequirementSimilarityMetric.BOUNDARY_F,
+    ],
+    [QualityRequirementAnnotationType.POLYLINE]: [
+        QualityRequirementSimilarityMetric.IOU, QualityRequirementSimilarityMetric.BOUNDARY_F,
+    ],
+    [QualityRequirementAnnotationType.POINTS]: [QualityRequirementSimilarityMetric.OKS],
+    [QualityRequirementAnnotationType.SKELETON]: [QualityRequirementSimilarityMetric.OKS],
+    [QualityRequirementAnnotationType.SKELETON_KEYPOINT]: [QualityRequirementSimilarityMetric.OKS],
+};
+export const SIMILARITY_METRIC_LABELS: Record<QualityRequirementSimilarityMetric, string> = {
+    [QualityRequirementSimilarityMetric.IOU]: 'IoU',
+    [QualityRequirementSimilarityMetric.OKS]: 'OKS',
+    [QualityRequirementSimilarityMetric.BOUNDARY_F]: 'Boundary F',
+    [QualityRequirementSimilarityMetric.EQUALITY]: 'Equality',
+};
 export const POINT_SIZE_BASE_OPTIONS: QualityRequirementPointSizeBase[] = Object.values(
     QualityRequirementPointSizeBase,
 );
-export const IOU_ANNOTATION_TYPES = new Set<QualityRequirementAnnotationType>([
-    QualityRequirementAnnotationType.RECTANGLE,
-    QualityRequirementAnnotationType.ELLIPSE,
-    QualityRequirementAnnotationType.POLYGON,
-    QualityRequirementAnnotationType.MASK,
-    QualityRequirementAnnotationType.POLYLINE,
-]);
-export const POINT_ANNOTATION_TYPES = new Set<QualityRequirementAnnotationType>([
-    QualityRequirementAnnotationType.POINTS,
-    QualityRequirementAnnotationType.SKELETON,
-    QualityRequirementAnnotationType.SKELETON_KEYPOINT,
-]);
 export const SEGMENTATION_ANNOTATION_TYPES = new Set<QualityRequirementAnnotationType>([
     QualityRequirementAnnotationType.POLYGON,
     QualityRequirementAnnotationType.MASK,
@@ -82,7 +105,11 @@ export type InheritedFormFieldName =
     'annotationType' |
     'metric' |
     'requiredScore' |
+    'similarityMetric' |
     'iouThreshold' |
+    'oksThreshold' |
+    'boundaryFThreshold' |
+    'boundaryFTolerance' |
     'pointSize' |
     'pointSizeBase' |
     'lineThickness' |
@@ -101,7 +128,11 @@ export const INHERITED_FORM_FIELDS = new Set<InheritedFormFieldName>([
     'annotationType',
     'metric',
     'requiredScore',
+    'similarityMetric',
     'iouThreshold',
+    'oksThreshold',
+    'boundaryFThreshold',
+    'boundaryFTolerance',
     'pointSize',
     'pointSizeBase',
     'lineThickness',
@@ -118,7 +149,11 @@ export const INHERITED_FORM_FIELDS = new Set<InheritedFormFieldName>([
 export const OVERRIDABLE_FORM_FIELDS: OverridableFormFieldName[] = [
     'metric',
     'requiredScore',
+    'similarityMetric',
     'iouThreshold',
+    'oksThreshold',
+    'boundaryFThreshold',
+    'boundaryFTolerance',
     'pointSize',
     'pointSizeBase',
     'lineThickness',
@@ -138,7 +173,11 @@ const LOCAL_INHERITED_FIELD_GETTERS: Record<
     annotationType: (requirement: QualityRequirement) => requirement.annotationType,
     metric: (requirement: QualityRequirement) => requirement.metric,
     requiredScore: (requirement: QualityRequirement) => requirement.requiredScore,
+    similarityMetric: (requirement: QualityRequirement) => requirement.similarityMetric,
     iouThreshold: (requirement: QualityRequirement) => requirement.iouThreshold,
+    oksThreshold: (requirement: QualityRequirement) => requirement.oksThreshold,
+    boundaryFThreshold: (requirement: QualityRequirement) => requirement.boundaryFThreshold,
+    boundaryFTolerance: (requirement: QualityRequirement) => requirement.boundaryFTolerance,
     pointSize: (requirement: QualityRequirement) => requirement.pointSize,
     pointSizeBase: (requirement: QualityRequirement) => requirement.pointSizeBase,
     lineThickness: (requirement: QualityRequirement) => requirement.lineThickness,
@@ -168,7 +207,11 @@ export interface RequirementFormValues {
     requiredScore: number;
     filter?: string;
     enabled: boolean;
+    similarityMetric?: QualityRequirementSimilarityMetric | null;
     iouThreshold?: number | null;
+    oksThreshold?: number | null;
+    boundaryFThreshold?: number | null;
+    boundaryFTolerance?: number | null;
     pointSize?: number | null;
     pointSizeBase?: QualityRequirementPointSizeBase | null;
     lineThickness?: number | null;
@@ -270,7 +313,8 @@ export function formatDescription(description = ''): string {
     return description.replaceAll(/\s+/g, ' ').trim();
 }
 
-export function getPointSizeBaseDescription(description = ''): string {
+export function getChoiceFieldDescription(description = ''): string {
+    // Drops the list of the choices, appended to the choice field descriptions by default
     const endIndex = description.indexOf('\n\n\n');
     const trimmedDescription = endIndex === -1 ? description : description.substring(0, endIndex);
     return formatDescription(trimmedDescription);
@@ -409,10 +453,12 @@ export function getInitialValues(
         ownDefaultEnabled :
         inheritedComparison.defaultEnabled;
 
+    const annotationType = getAnnotationType(sourceRequirement, requirementsById);
+
     return {
         name: requirement?.name ?? '',
         parentRequirement: requirement?.parentRequirementId ?? parentRequirement?.id ?? null,
-        annotationType: getAnnotationType(sourceRequirement, requirementsById),
+        annotationType,
         metric: getMetric(sourceRequirement, requirementsById),
         requiredScore: getNumberPercentValue(
             sourceRequirement,
@@ -423,12 +469,40 @@ export function getInitialValues(
         ),
         filter: requirement?.filter ?? '',
         enabled: requirement?.enabled ?? true,
+        similarityMetric: getRequirementResolvedValue(
+            sourceRequirement,
+            requirementsById,
+            (item: QualityRequirement) => item.similarityMetric,
+            (item: QualityRequirement) => getRequirementEffectiveField(item, 'similarityMetric'),
+            SUPPORTED_SIMILARITY_METRICS[annotationType][0],
+        ),
         iouThreshold: getNumberPercentValue(
             sourceRequirement,
             requirementsById,
             (item: QualityRequirement) => item.iouThreshold,
             (item: QualityRequirement) => getRequirementEffectiveField(item, 'iouThreshold'),
             ROOT_DEFAULTS.iouThreshold,
+        ),
+        oksThreshold: getNumberPercentValue(
+            sourceRequirement,
+            requirementsById,
+            (item: QualityRequirement) => item.oksThreshold,
+            (item: QualityRequirement) => getRequirementEffectiveField(item, 'oksThreshold'),
+            ROOT_DEFAULTS.oksThreshold,
+        ),
+        boundaryFThreshold: getNumberPercentValue(
+            sourceRequirement,
+            requirementsById,
+            (item: QualityRequirement) => item.boundaryFThreshold,
+            (item: QualityRequirement) => getRequirementEffectiveField(item, 'boundaryFThreshold'),
+            ROOT_DEFAULTS.boundaryFThreshold,
+        ),
+        boundaryFTolerance: getRequirementResolvedValue(
+            sourceRequirement,
+            requirementsById,
+            (item: QualityRequirement) => item.boundaryFTolerance,
+            (item: QualityRequirement) => getRequirementEffectiveField(item, 'boundaryFTolerance'),
+            ROOT_DEFAULTS.boundaryFTolerance,
         ),
         pointSize: getNumberPercentValue(
             sourceRequirement,
@@ -663,8 +737,20 @@ const SERIALIZED_INHERITED_FIELD_DESCRIPTORS: SerializedInheritedFieldDescriptor
     fieldName: 'requiredScore',
     getValue: (values: RequirementFormValues) => fromPercent(values.requiredScore),
 }, {
+    fieldName: 'similarityMetric',
+    getValue: (values: RequirementFormValues) => values.similarityMetric ?? null,
+}, {
     fieldName: 'iouThreshold',
     getValue: (values: RequirementFormValues) => fromPercent(values.iouThreshold),
+}, {
+    fieldName: 'oksThreshold',
+    getValue: (values: RequirementFormValues) => fromPercent(values.oksThreshold),
+}, {
+    fieldName: 'boundaryFThreshold',
+    getValue: (values: RequirementFormValues) => fromPercent(values.boundaryFThreshold),
+}, {
+    fieldName: 'boundaryFTolerance',
+    getValue: (values: RequirementFormValues) => values.boundaryFTolerance ?? null,
 }, {
     fieldName: 'pointSize',
     getValue: (values: RequirementFormValues) => fromPercent(values.pointSize),
