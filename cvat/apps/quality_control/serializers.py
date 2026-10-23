@@ -593,6 +593,16 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
 
         return set(AttributeSpec.objects.filter(label_filter).values_list("id", flat=True))
 
+    @staticmethod
+    def _get_attribute_comparison_spec_ids(
+        attribute_comparison: Mapping[str, Any] | None,
+    ) -> set[int]:
+        return {
+            int(rule["spec_id"])
+            for rule in (attribute_comparison or {}).get("rules", [])
+            if rule.get("spec_id") is not None
+        }
+
     def _validate_attribute_comparison_spec_ids(
         self,
         attribute_comparison: Mapping[str, Any] | None,
@@ -601,11 +611,15 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
         if not attribute_comparison:
             return
 
-        requested_spec_ids = {
-            int(rule["spec_id"])
-            for rule in attribute_comparison.get("rules", [])
-            if rule.get("spec_id") is not None
-        }
+        requested_spec_ids = self._get_attribute_comparison_spec_ids(attribute_comparison)
+
+        # The rules for the attributes deleted after the rules were created are kept.
+        # They are ignored, if disabled, or make the requirement not computed, if enabled.
+        if self.instance is not None:
+            requested_spec_ids -= self._get_attribute_comparison_spec_ids(
+                self.instance.attribute_comparison
+            )
+
         if not requested_spec_ids:
             return
 

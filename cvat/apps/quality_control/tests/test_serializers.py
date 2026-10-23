@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import unittest
 from types import SimpleNamespace
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 from rest_framework import serializers
 
@@ -21,6 +21,7 @@ from cvat.apps.quality_control.comparison_report import ComparisonReportRequirem
 from cvat.apps.quality_control.serializers import (
     AttributeComparisonSerializer,
     QualityReportRequirementCalculationSerializer,
+    QualityRequirementSerializer,
     QualitySettingsRequirementsSerializer,
     QualitySettingsSerializer,
 )
@@ -177,3 +178,37 @@ class TestQualitySettingsRequirementsSerializer(unittest.TestCase):
             str(capture.exception.detail["requirements"]),
             "Base quality requirements cannot be deleted.",
         )
+
+
+class TestQualityRequirementAttributeSpecIdValidation(unittest.TestCase):
+    def _validate(self, instance, attribute_comparison) -> None:
+        with patch.object(
+            QualityRequirementSerializer, "_get_allowed_attribute_spec_ids", return_value={1, 2}
+        ):
+            QualityRequirementSerializer(instance)._validate_attribute_comparison_spec_ids(
+                attribute_comparison, quality_settings=Mock()
+            )
+
+    def test_keeps_stored_rules_for_deleted_attributes(self) -> None:
+        instance = SimpleNamespace(
+            attribute_comparison={"rules": [{"spec_id": 4, "enabled": True}]},
+        )
+
+        self._validate(
+            instance, {"rules": [{"spec_id": 4, "enabled": False}, {"spec_id": 1, "enabled": True}]}
+        )
+
+    def test_rejects_new_rules_for_unknown_attributes(self) -> None:
+        instance = SimpleNamespace(
+            attribute_comparison={"rules": [{"spec_id": 4, "enabled": True}]},
+        )
+
+        for owner in [None, instance]:
+            with self.subTest(owner=owner):
+                with self.assertRaises(serializers.ValidationError) as capture:
+                    self._validate(owner, {"rules": [{"spec_id": 5, "enabled": True}]})
+
+                self.assertEqual(
+                    str(capture.exception.detail["attribute_comparison"]["rules"]),
+                    "Unknown attribute spec id(s): 5.",
+                )
