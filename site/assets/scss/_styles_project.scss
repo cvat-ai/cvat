@@ -309,6 +309,11 @@ html.cvat-announcement-visible .td-sidebar-nav {
   padding-top: 2.75rem;
 }
 
+/* Account for the fixed navbar and announcement when navigating to headings. */
+html.cvat-announcement-visible .td-content [id] {
+  scroll-margin-top: calc(5rem + var(--cvat-announcement-height, 0px));
+}
+
 /* Keep Docsy's existing body offset; padding the body again creates a blank gap. */
 @media (max-width: 1199.98px) {
   .cvat-announcement {
