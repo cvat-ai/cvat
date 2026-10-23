@@ -10,6 +10,7 @@ from unittest.mock import Mock
 
 from rest_framework import serializers
 
+from cvat.apps.quality_control import models
 from cvat.apps.quality_control.attribute_comparators import (
     AttributeComparisonRule,
     format_attribute_comparator_names,
@@ -21,6 +22,7 @@ from cvat.apps.quality_control.comparison_report import ComparisonReportRequirem
 from cvat.apps.quality_control.serializers import (
     AttributeComparisonSerializer,
     QualityReportRequirementCalculationSerializer,
+    QualityRequirementSerializer,
     QualitySettingsRequirementsSerializer,
     QualitySettingsSerializer,
 )
@@ -177,3 +179,50 @@ class TestQualitySettingsRequirementsSerializer(unittest.TestCase):
             str(capture.exception.detail["requirements"]),
             "Base quality requirements cannot be deleted.",
         )
+
+
+class TestQualityRequirementSimilarityMetricValidation(unittest.TestCase):
+    def test_accepts_the_supported_metrics(self) -> None:
+        for (
+            annotation_type,
+            metrics,
+        ) in models.QualityRequirement.get_supported_similarity_metrics().items():
+            for metric in metrics:
+                with self.subTest(annotation_type=annotation_type, metric=metric):
+                    QualityRequirementSerializer._validate_similarity_metric(
+                        metric, annotation_type
+                    )
+
+    def test_accepts_inherited_metric(self) -> None:
+        QualityRequirementSerializer._validate_similarity_metric(
+            None, models.QualityRequirementAnnotationType.TAG
+        )
+
+    def test_field_rejects_unknown_metric(self) -> None:
+        with self.assertRaises(serializers.ValidationError) as error:
+            QualityRequirementSerializer().fields["similarity_metric"].run_validation("unknown")
+
+        self.assertEqual(
+            [str(message) for message in error.exception.detail],
+            ['"unknown" is not a valid choice.'],
+        )
+
+    def test_supported_metrics_cover_all_annotation_types(self) -> None:
+        self.assertEqual(
+            set(models.QualityRequirement.get_supported_similarity_metrics()),
+            set(models.QualityRequirementAnnotationType),
+        )
+
+    def test_rejects_the_unsupported_metrics(self) -> None:
+        for (
+            annotation_type,
+            metrics,
+        ) in models.QualityRequirement.get_supported_similarity_metrics().items():
+            for metric in set(models.ShapeSimilarityMetricType).difference(metrics):
+                with self.subTest(annotation_type=annotation_type, metric=metric):
+                    with self.assertRaises(serializers.ValidationError) as error:
+                        QualityRequirementSerializer._validate_similarity_metric(
+                            metric, annotation_type
+                        )
+
+                    self.assertIn("similarity_metric", error.exception.detail)

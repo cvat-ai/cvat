@@ -15,6 +15,7 @@ import {
     QualityRequirementJsonLogicFilter,
     QualityRequirementMetric,
     QualityRequirementPointSizeBase,
+    QualityRequirementSimilarityMetric,
 } from './server-response-types';
 
 export type QualityRequirementSaveFields = CamelizedV2<SerializedQualityRequirementSaveData>;
@@ -36,7 +37,11 @@ export default class QualityRequirement {
     #requiredScore: number | null;
     #parentRequirementId: number | null;
     #effective: QualityRequirementEffectiveData | null;
+    #similarityMetric: QualityRequirementSimilarityMetric | null;
     #iouThreshold: number | null;
+    #oksThreshold: number | null;
+    #boundaryFThreshold: number | null;
+    #boundaryFTolerance: number | null;
     #pointSize: number | null;
     #pointSizeBase: QualityRequirementPointSizeBase | null;
     #lineThickness: number | null;
@@ -66,7 +71,11 @@ export default class QualityRequirement {
         this.#requiredScore = initialData.required_score;
         this.#parentRequirementId = initialData.parent_requirement;
         this.#effective = initialData.effective ? fieldsToCamelCase(initialData.effective) : null;
+        this.#similarityMetric = initialData.similarity_metric;
         this.#iouThreshold = initialData.iou_threshold;
+        this.#oksThreshold = initialData.oks_threshold;
+        this.#boundaryFThreshold = initialData.boundary_f_threshold;
+        this.#boundaryFTolerance = initialData.boundary_f_tolerance;
         this.#pointSize = initialData.point_size;
         this.#pointSizeBase = initialData.point_size_base;
         this.#lineThickness = initialData.line_thickness;
@@ -138,8 +147,24 @@ export default class QualityRequirement {
         return this.#effective;
     }
 
+    get similarityMetric(): QualityRequirementSimilarityMetric | null {
+        return this.#similarityMetric;
+    }
+
     get iouThreshold(): number | null {
         return this.#iouThreshold;
+    }
+
+    get oksThreshold(): number | null {
+        return this.#oksThreshold;
+    }
+
+    get boundaryFThreshold(): number | null {
+        return this.#boundaryFThreshold;
+    }
+
+    get boundaryFTolerance(): number | null {
+        return this.#boundaryFTolerance;
     }
 
     get pointSize(): number | null {

@@ -6,20 +6,20 @@ from __future__ import annotations
 
 import itertools
 import math
-from collections.abc import Callable, Sequence
+from collections import OrderedDict
+from collections.abc import Callable, Hashable, Sequence
 from functools import partial
 from typing import Any, NamedTuple, TypeAlias, TypedDict, TypeVar, cast
 
+import cv2
 import datumaro as dm
 import datumaro.components.annotations.matcher
-import datumaro.components.comparator
 import datumaro.util.annotation_util
 import datumaro.util.mask_tools
 import numpy as np
-from attrs import define
+from attrs import define, field
 
 from cvat.apps.quality_control.attribute_comparison import CVAT_ATTRIBUTE_SPEC_IDS_ATTR
-from cvat.apps.quality_control.comparison_report import ComparisonParameters
 from cvat.apps.quality_control.matching import (
     AttributeMatchingResult,
     LabelEqualityFunction,
@@ -29,13 +29,68 @@ from cvat.apps.quality_control.matching import (
     ShapeSimilarityFunction,
     match_segments,
 )
-from cvat.apps.quality_control.models import PointSizeBase
+from cvat.apps.quality_control.models import (
+    DefaultComparisonSettings,
+    PointSizeBase,
+    ShapeSimilarityMetricType,
+)
 
 _ShapeT1 = TypeVar("_ShapeT1")
 _ShapeT2 = TypeVar("_ShapeT2")
 AttributeMatchingFunction: TypeAlias = Callable[
     [dm.Annotation, dm.Annotation], AttributeMatchingResult
 ]
+
+
+class MatchResult(NamedTuple):
+    "The result of matching 2 sets of objects"
+
+    matches: list[tuple[dm.Annotation, dm.Annotation]]
+    "The matched pairs with the same labels"
+
+    mismatches: list[tuple[dm.Annotation, dm.Annotation]]
+    "The matched pairs with different labels"
+
+    a_unmatched: list[dm.Annotation]
+    b_unmatched: list[dm.Annotation]
+
+    comparisons: dict[tuple[int, int], _PairwiseComparison] | None = None
+    "The pairwise comparisons by the object ids, if requested"
+
+
+@define(kw_only=True)
+class ComparisonParameters:
+    # Each field should either have a description, or use the default value
+    # from DefaultComparisonSettings, which describes it.
+
+    annotation_type: dm.AnnotationType
+    "The compared annotation type"
+
+    non_groupable_ann_type: dm.AnnotationType = dm.AnnotationType.label
+    "Annotation type that can't be grouped"
+
+    compare_attributes: bool = DefaultComparisonSettings.compare_attributes
+
+    ignored_attributes: list[str] = field(factory=list)
+    "Annotation attributes excluded from comparison, in addition to the internal ones"
+
+    similarity_metric: ShapeSimilarityMetricType
+    "Similarity metric to use for annotation comparisons"
+
+    boundary_f_tolerance: float = DefaultComparisonSettings.boundary_f_tolerance
+    boundary_f_threshold: float = DefaultComparisonSettings.boundary_f_threshold
+    iou_threshold: float = DefaultComparisonSettings.iou_threshold
+    oks_threshold: float = DefaultComparisonSettings.oks_threshold
+    oks_sigma: float = DefaultComparisonSettings.oks_sigma
+    point_size_base: PointSizeBase = DefaultComparisonSettings.point_size_base
+    line_thickness: float = DefaultComparisonSettings.line_thickness
+    compare_line_orientation: bool = DefaultComparisonSettings.compare_line_orientation
+    line_orientation_threshold: float = DefaultComparisonSettings.line_orientation_threshold
+    compare_groups: bool = DefaultComparisonSettings.compare_groups
+    group_match_threshold: float = DefaultComparisonSettings.group_match_threshold
+    check_covered_annotations: bool = DefaultComparisonSettings.check_covered_annotations
+    object_visibility_threshold: float = DefaultComparisonSettings.object_visibility_threshold
+    panoptic_comparison: bool = DefaultComparisonSettings.panoptic_comparison
 
 
 def oks(a, b, sigma=0.1, bbox=None, scale=None, visibility_a=None, visibility_b=None):
@@ -120,6 +175,202 @@ def segment_iou(a: dm.Annotation, b: dm.Annotation, *, img_h: int, img_w: int) -
 
     # Note that mask_utils.iou expects (dt, gt). Check this if the 3rd param is True
     return float(mask_utils.iou(b, a, [0]))
+
+
+BOUNDARY_F_TIE_BREAK_WEIGHT = 0.01
+"""
+The weight of the extra term in the Boundary F similarity: BF - w * (1 - IoU).
+Helps to resolve the ties for objects within the tolerance.
+"""
+
+
+@define(frozen=True)
+class MaterializedObjectBoundary:
+    origin: tuple[int, int]
+    "The window position in the image, (y, x)"
+
+    points: np.ndarray
+    "The boundary pixel coordinates in the image, (N, 2), (y, x)"
+
+    distances: np.ndarray
+    "The distance from each window pixel to the nearest boundary pixel"
+
+    def coverage(self, other: MaterializedObjectBoundary, *, tolerance: float) -> float:
+        "The share of the other boundary pixels within the tolerance from this boundary"
+        if not len(other.points):
+            return 0
+
+        ys = other.points[:, 0] - self.origin[0]
+        xs = other.points[:, 1] - self.origin[1]
+        h, w = self.distances.shape
+        inside = (0 <= ys) & (ys < h) & (0 <= xs) & (xs < w)
+        close = np.zeros(len(other.points), dtype=bool)
+        close[inside] = self.distances[ys[inside], xs[inside]] <= tolerance
+        return float(np.count_nonzero(close)) / len(other.points)
+
+
+@define(frozen=True)
+class CompressedObjectBoundary:
+    """
+    The object boundary in a window around the object, stored compactly as RLE.
+    The window covers the object bbox padded by the tolerance, the points outside the window
+    are farther than the tolerance from the boundary.
+    The pixel data is only available after materialization.
+    """
+
+    origin: tuple[int, int]
+    "The window position in the image, (y, x)"
+
+    rle: dict
+    "The window boundary mask in the COCO RLE format"
+
+    @staticmethod
+    def window_padding(tolerance: float) -> int:
+        "The window padding around the object bbox"
+        return math.ceil(tolerance) + 1
+
+    @classmethod
+    def _window(
+        cls, bbox: tuple[int, int, int, int], *, tolerance: float, img_h: int, img_w: int
+    ) -> tuple[int, int, int, int]:
+        # bbox: x0, y0, x1, y1 (exclusive)
+        pad = cls.window_padding(tolerance)
+        x0, y0, x1, y1 = bbox
+        return max(0, y0 - pad), max(0, x0 - pad), min(img_h, y1 + pad), min(img_w, x1 + pad)
+
+    @classmethod
+    def _from_window_boundary(cls, boundary: np.ndarray, origin: tuple[int, int]):
+        from pycocotools import mask as mask_utils
+
+        rle = mask_utils.encode(np.asfortranarray(boundary, dtype=np.uint8))
+        return cls(origin=origin, rle=rle)
+
+    @classmethod
+    def from_rle(
+        cls, full_coco_rle: datumaro.util.mask_tools.Rle, *, tolerance: float
+    ) -> CompressedObjectBoundary:
+        """
+        Region boundary is it's inner 1-px boundary.
+        """
+
+        from pycocotools import mask as mask_utils
+
+        img_h, img_w = full_coco_rle["size"]
+        x, y, w, h = mask_utils.toBbox(full_coco_rle)
+        wy0, wx0, wy1, wx1 = cls._window(
+            (int(x), int(y), math.ceil(x + w), math.ceil(y + h)),
+            tolerance=tolerance,
+            img_h=img_h,
+            img_w=img_w,
+        )
+
+        region = mask_utils.decode(full_coco_rle)[wy0:wy1, wx0:wx1].astype(bool)
+
+        eroded = cv2.erode(
+            region.astype(np.uint8),
+            cv2.getStructuringElement(cv2.MORPH_CROSS, (3, 3)),
+            borderType=cv2.BORDER_CONSTANT,
+            borderValue=0,
+        ).astype(bool)
+
+        # The inner boundary of the region
+        boundary = region & ~eroded
+
+        return cls._from_window_boundary(boundary, (wy0, wx0))
+
+    @classmethod
+    def from_polyline(
+        cls, points: Sequence[float], *, tolerance: float, img_h: int, img_w: int
+    ) -> CompressedObjectBoundary:
+        """
+        Line boundary is the rasterized line itself
+        """
+
+        coords = np.reshape(points, (-1, 2))
+        wy0, wx0, wy1, wx1 = cls._window(
+            (
+                int(np.floor(coords[:, 0].min())),
+                int(np.floor(coords[:, 1].min())),
+                int(np.ceil(coords[:, 0].max())) + 1,
+                int(np.ceil(coords[:, 1].max())) + 1,
+            ),
+            tolerance=tolerance,
+            img_h=img_h,
+            img_w=img_w,
+        )
+
+        # Rasterize the line
+        canvas = np.zeros((max(0, wy1 - wy0), max(0, wx1 - wx0)), dtype=np.uint8)
+        shift = 4  # fractional bits of the point coordinates
+        window_coords = np.round((coords - (wx0, wy0)) * (1 << shift)).astype(np.int32)
+        cv2.polylines(
+            canvas, [window_coords.reshape(-1, 1, 2)], isClosed=False, color=1, shift=shift
+        )
+
+        return cls._from_window_boundary(canvas.astype(bool), (wy0, wx0))
+
+    def materialize(self) -> MaterializedObjectBoundary:
+        from pycocotools import mask as mask_utils
+
+        boundary = mask_utils.decode(self.rle).astype(bool)
+        ys, xs = np.nonzero(boundary)
+        points = np.stack([ys + self.origin[0], xs + self.origin[1]], axis=1)
+        # the exact Euclidean distance to the nearest boundary (zero) pixel
+        distances = cv2.distanceTransform(
+            (~boundary).astype(np.uint8), cv2.DIST_L2, cv2.DIST_MASK_PRECISE
+        )
+        return MaterializedObjectBoundary(origin=self.origin, points=points, distances=distances)
+
+
+class MaterializedBoundaryCache:
+    """
+    An LRU cache for materialized boundaries.
+
+    Limits the number of the materialized boundaries, which can take a lot of memory.
+    The capacity of 2 is enough for a pair of boundaries. When the cost matrix is computed
+    line by line, the line object stays materialized, so it costs 1 materialization
+    per compared pair.
+
+    The cache keys are the boundary object ids, so the boundaries must stay alive
+    while the cache is used.
+    """
+
+    def __init__(self, capacity: int = 2) -> None:
+        self._capacity = capacity
+        self._items: OrderedDict[int, MaterializedObjectBoundary] = OrderedDict()
+
+    def get(self, boundary: CompressedObjectBoundary) -> MaterializedObjectBoundary:
+        key = id(boundary)
+        materialized = self._items.get(key)
+        if materialized is not None:
+            self._items.move_to_end(key)
+            return materialized
+
+        materialized = boundary.materialize()
+        self._items[key] = materialized
+        if len(self._items) > self._capacity:
+            self._items.popitem(last=False)
+
+        return materialized
+
+
+def boundary_f(
+    a: MaterializedObjectBoundary, b: MaterializedObjectBoundary, *, tolerance: float
+) -> float:
+    """
+    Compute the Boundary F1 score.
+
+    The score is defined as the F1 of the boundary precision and recall - the shares of
+    each boundary within the tolerance from the other one.
+    """
+
+    precision = a.coverage(b, tolerance=tolerance)
+    recall = b.coverage(a, tolerance=tolerance)
+
+    if not precision + recall:
+        return 0
+
+    return 2 * precision * recall / (precision + recall)
 
 
 @define(kw_only=True)
@@ -270,54 +521,30 @@ class LineMatcher(datumaro.components.annotations.matcher.LineMatcher):
         return a_new_points, b_new_points
 
 
-class DistanceComparator(datumaro.components.comparator.DistanceComparator):
+class DistanceComparator:
     def __init__(
         self,
         categories: dm.CategoriesInfo,
         *,
-        included_ann_types: list[dm.AnnotationType] | None = None,
-        return_distances: bool = False,
+        settings: ComparisonParameters,
         return_comparisons: bool = False,
-        iou_threshold: float = 0.5,
-        # https://cocodataset.org/#keypoints-eval
-        # https://github.com/cocodataset/cocoapi/blob/8c9bcc3cf640524c4c20a9c40e89cb6a2f2fa0e9/PythonAPI/pycocotools/cocoeval.py#L523
-        oks_sigma: float = 0.09,
-        point_size_base: PointSizeBase = PointSizeBase.GROUP_BBOX_SIZE,
-        compare_line_orientation: bool = False,
-        line_orientation_threshold: float = 0.1,
-        line_torso_radius: float = 0.01,
-        panoptic_comparison: bool = False,
         allow_groups: bool = True,
         attribute_matcher: AttributeMatchingFunction | None = None,
     ):
-        super().__init__(iou_threshold=iou_threshold)
-        if return_distances and return_comparisons:
-            raise ValueError("Pairwise distances and comparisons cannot be returned together")
+        supported_metrics = self.SIMILARITY_METRICS.get(settings.annotation_type)
+        if supported_metrics is None:
+            raise AssertionError(f"Unsupported annotation type: {settings.annotation_type.name}")
+        if settings.similarity_metric not in supported_metrics:
+            raise AssertionError(
+                f"The {settings.similarity_metric} similarity metric "
+                f"is not supported for {settings.annotation_type.name} annotations"
+            )
 
         self.categories = categories
         self._skeleton_info = {}
-        self.included_ann_types = included_ann_types
-        self.return_distances = return_distances
+        self.settings = settings
         self.return_comparisons = return_comparisons
-
-        self.oks_sigma = oks_sigma
-        "% of the shape area"
-
-        self.point_size_base = point_size_base
-        "Compare point groups using the group bbox size or the image size"
-
-        self.compare_line_orientation = compare_line_orientation
-        "Whether lines are oriented or not"
-
-        self.line_orientation_threshold = line_orientation_threshold
-        "Minimal direct / reversed line similarity difference to consider directions mismatching"
-
-        # Here we use a % of image size in pixels, using the image size as the scale
-        self.line_torso_radius = line_torso_radius
-        "% of the line length at the specified scale"
-
-        self.panoptic_comparison = panoptic_comparison
-        "Compare only the visible parts of polygons and masks"
+        "Return the pairwise comparisons of the matched objects as the last result element"
 
         self.allow_groups = allow_groups
         """
@@ -327,9 +554,97 @@ class DistanceComparator(datumaro.components.comparator.DistanceComparator):
 
         self.attribute_matcher = attribute_matcher
 
+    _SHAPE_METRICS = frozenset(
+        {ShapeSimilarityMetricType.IOU, ShapeSimilarityMetricType.BOUNDARY_F}
+    )
+    SIMILARITY_METRICS: dict[dm.AnnotationType, frozenset[ShapeSimilarityMetricType]] = {
+        dm.AnnotationType.label: frozenset({ShapeSimilarityMetricType.EQUALITY}),
+        dm.AnnotationType.bbox: _SHAPE_METRICS,
+        dm.AnnotationType.ellipse: _SHAPE_METRICS,
+        dm.AnnotationType.polygon: _SHAPE_METRICS,
+        dm.AnnotationType.mask: _SHAPE_METRICS,
+        dm.AnnotationType.polyline: _SHAPE_METRICS,
+        dm.AnnotationType.points: frozenset({ShapeSimilarityMetricType.OKS}),
+        dm.AnnotationType.skeleton: frozenset({ShapeSimilarityMetricType.OKS}),
+    }
+    "The similarity metrics supported for each annotation type"
+
     @property
-    def _returns_pairwise_data(self) -> bool:
-        return self.return_distances or self.return_comparisons
+    def _annotation_match_threshold(self) -> float:
+        match self.settings.similarity_metric:
+            case ShapeSimilarityMetricType.BOUNDARY_F:
+                return self.settings.boundary_f_threshold
+            case ShapeSimilarityMetricType.OKS:
+                return self.settings.oks_threshold
+            case ShapeSimilarityMetricType.IOU:
+                return self.settings.iou_threshold
+            case ShapeSimilarityMetricType.EQUALITY:
+                return 0.5
+            case _:
+                assert False, f"Unknown similarity metric '{self.settings.similarity_metric}'"
+
+    def _make_boundary_f_similarity(
+        self,
+        *,
+        get_a_bbox: Callable[[_ShapeT1], tuple[float, float, float, float]],
+        get_b_bbox: Callable[[_ShapeT2], tuple[float, float, float, float]],
+        get_a_boundary: Callable[[_ShapeT1], CompressedObjectBoundary],
+        get_b_boundary: Callable[[_ShapeT2], CompressedObjectBoundary],
+        tie_break: ShapeSimilarityFunction[_ShapeT1, _ShapeT2] | None = None,
+        object_key: Callable[[_ShapeT1 | _ShapeT2], Hashable] = id,
+    ) -> ShapeSimilarityFunction[_ShapeT1, _ShapeT2]:
+        """
+        Boundary F similarity of the objects, with the optional tie-break similarity.
+        The bboxes (x, y, w, h) allow to skip the far objects without computing the boundaries.
+        The bboxes and the boundaries are computed once per object, identified by object_key.
+        """
+
+        def _memoize(fn: Callable[[Any], Any]) -> Callable[[Any], Any]:
+            cache = {}
+
+            def memoized(obj):
+                key = object_key(obj)
+                value = cache.get(key)
+                if value is None:
+                    value = fn(obj)
+                    cache[key] = value
+                return value
+
+            return memoized
+
+        get_a_bbox = _memoize(get_a_bbox)
+        get_b_bbox = _memoize(get_b_bbox)
+        get_a_boundary = _memoize(get_a_boundary)
+        get_b_boundary = _memoize(get_b_boundary)
+        materialized_boundaries = MaterializedBoundaryCache()
+
+        # The boundary windows are the bboxes padded by this margin,
+        # the boundaries can only be within the tolerance, if the windows intersect
+        margin = CompressedObjectBoundary.window_padding(self.settings.boundary_f_tolerance)
+
+        def _similarity(a: _ShapeT1, b: _ShapeT2) -> float:
+            ax, ay, aw, ah = get_a_bbox(a)
+            bx, by, bw, bh = get_b_bbox(b)
+            if (
+                ax + aw + 2 * margin <= bx
+                or bx + bw + 2 * margin <= ax
+                or ay + ah + 2 * margin <= by
+                or by + bh + 2 * margin <= ay
+            ):
+                return 0
+
+            similarity = boundary_f(
+                materialized_boundaries.get(get_a_boundary(a)),
+                materialized_boundaries.get(get_b_boundary(b)),
+                tolerance=self.settings.boundary_f_tolerance,
+            )
+
+            if tie_break is not None and similarity > 0:
+                similarity -= BOUNDARY_F_TIE_BREAK_WEIGHT * (1 - tie_break(a, b))
+
+            return similarity
+
+        return _similarity
 
     def instance_bbox(
         self, instance_anns: Sequence[dm.Annotation]
@@ -341,7 +656,7 @@ class DistanceComparator(datumaro.components.comparator.DistanceComparator):
         )
 
     @staticmethod
-    def to_polygon(bbox_ann: dm.Bbox | dm.Ellipse):
+    def to_polygon(bbox_ann: dm.Bbox | dm.Ellipse) -> dm.Polygon:
         points = bbox_ann.as_polygon()
         angle = bbox_ann.attributes.get("rotation", 0) / 180 * math.pi
 
@@ -366,29 +681,32 @@ class DistanceComparator(datumaro.components.comparator.DistanceComparator):
             a for a in item.annotations if a.type == t and not a.attributes.get("outside", False)
         ]
 
-    def _match_ann_type(self, t: dm.AnnotationType, *args):
-        if t not in self.included_ann_types:
-            return None
+    def _match_ann_type(self, t: dm.AnnotationType, *args) -> MatchResult:
+        match t:
+            case dm.AnnotationType.label:
+                return self.match_labels(*args)
+            case dm.AnnotationType.bbox:
+                return self.match_boxes(*args)
+            case dm.AnnotationType.polygon | dm.AnnotationType.mask:
+                return self.match_segmentations(*args)
+            case dm.AnnotationType.points:
+                return self.match_points(*args)
+            case dm.AnnotationType.skeleton:
+                return self.match_skeletons(*args)
+            case dm.AnnotationType.polyline:
+                return self.match_lines(*args)
+            case dm.AnnotationType.ellipse:
+                return self.match_ellipses(*args)
+            case _:
+                assert False, f"Matching is not supported for annotations of type '{t}'"
 
-        if t == dm.AnnotationType.label:
-            return self.match_labels(*args)
-        elif t == dm.AnnotationType.bbox:
-            return self.match_boxes(*args)
-        elif t == dm.AnnotationType.polygon:
-            return self.match_segmentations(*args)
-        elif t == dm.AnnotationType.points:
-            return self.match_points(*args)
-        elif t == dm.AnnotationType.skeleton:
-            return self.match_skeletons(*args)
-        elif t == dm.AnnotationType.polyline:
-            return self.match_lines(*args)
-        elif t == dm.AnnotationType.ellipse:
-            return self.match_ellipses(*args)
-        else:
-            return None
+    def match_labels(self, item_a: dm.DatasetItem, item_b: dm.DatasetItem) -> MatchResult:
+        if self.settings.similarity_metric != ShapeSimilarityMetricType.EQUALITY:
+            raise AssertionError(
+                f"Similarity metric '{self.settings.similarity_metric}' is not available for tags"
+            )
 
-    def match_labels(self, item_a: dm.DatasetItem, item_b: dm.DatasetItem):
-        def label_distance(a: dm.Label, b: dm.Label) -> float:
+        def label_similarity(a: dm.Label, b: dm.Label) -> float:
             if a is None or b is None:
                 return 0
             return 0.5 + (a.label == b.label) / 2
@@ -397,9 +715,9 @@ class DistanceComparator(datumaro.components.comparator.DistanceComparator):
             dm.AnnotationType.label,
             item_a,
             item_b,
-            distance=label_distance,
+            similarity=label_similarity,
             label_matcher=lambda a, b: a.label == b.label,
-            dist_thresh=0.5,
+            dist_thresh=self._annotation_match_threshold,
             compare_attributes=False,
         )
 
@@ -409,17 +727,45 @@ class DistanceComparator(datumaro.components.comparator.DistanceComparator):
         item_a: dm.DatasetItem,
         item_b: dm.DatasetItem,
         *,
-        distance: ShapeSimilarityFunction[_ShapeT1, _ShapeT2],
+        similarity: ShapeSimilarityFunction[_ShapeT1, _ShapeT2],
         label_matcher: LabelEqualityFunction[_ShapeT1, _ShapeT2] | None = None,
         a_objs: Sequence[_ShapeT1] | None = None,
         b_objs: Sequence[_ShapeT2] | None = None,
         dist_thresh: float | None = None,
         a_annotations_getter: Callable[[_ShapeT1], Sequence[dm.Annotation]] | None = None,
         b_annotations_getter: Callable[[_ShapeT2], Sequence[dm.Annotation]] | None = None,
-        direction_distance: ShapeSimilarityFunction[_ShapeT1, _ShapeT2] | None = None,
+        directed_similarity: ShapeSimilarityFunction[_ShapeT1, _ShapeT2] | None = None,
+        undirected_similarity: ShapeSimilarityFunction[_ShapeT1, _ShapeT2] | None = None,
         direction_threshold: float | None = None,
         compare_attributes: bool = True,
-    ):
+    ) -> MatchResult:
+        """
+        If the similarity metric used can respect object direction, the optional direction check
+        can be performed. To enabled, pass all of the 'directed_similarity',
+        'undirected_similarity' and 'direction_threshold' parameters. The callbacks must
+        follow the conventions:
+        - 'undirected_similarity' ignores the object direction,
+          'directed_similarity' takes it into account
+        - both callbacks belong to the same metric family, and the directed similarity
+          if always <= the undirected one for the same pair of objects
+        - if the base 'similarity' is from the same metric family, the same function object
+          must be passed as 'undirected_similarity'. Then the directed similarity is used as
+          the matching cost. Otherwise, the base similarity is used as the matching cost,
+          and the directed and undirected similarities are only used for the direction check.
+
+        A direction mismatch is reported, if the undirected similarity exceeds the directed
+        one by more than 'direction_threshold'.
+        """
+
+        assert (
+            (directed_similarity is None)
+            == (undirected_similarity is None)
+            == (direction_threshold is None)
+        ), (
+            "'directed_similarity', 'undirected_similarity' and 'direction_threshold' "
+            "must be used together"
+        )
+
         if a_objs is None:
             a_objs = self._get_ann_type(t, item_a)
         if b_objs is None:
@@ -431,15 +777,23 @@ class DistanceComparator(datumaro.components.comparator.DistanceComparator):
             b_annotations_getter = self._as_annotation_sequence
 
         def _compare(a: _ShapeT1, b: _ShapeT2) -> _PairwiseComparison:
-            base_geometry_similarity = distance(a, b)
-            geometry_similarity = (
-                direction_distance(a, b) if direction_distance else base_geometry_similarity
-            )
-            direction_mismatch = bool(
-                direction_distance
-                and direction_threshold is not None
-                and base_geometry_similarity - geometry_similarity > direction_threshold
-            )
+            geometry_similarity_score = similarity(a, b)
+
+            direction_mismatch = False
+            if directed_similarity:
+                directed_similarity_score = directed_similarity(a, b)
+
+                if undirected_similarity is similarity:
+                    # The same metric family: the directed score is the matching cost
+                    undirected_similarity_score = geometry_similarity_score
+                    geometry_similarity_score = directed_similarity_score
+                else:
+                    # Different metric families: only check the direction
+                    undirected_similarity_score = undirected_similarity(a, b)
+
+                direction_mismatch = (
+                    undirected_similarity_score - directed_similarity_score > direction_threshold
+                )
 
             conflicting_attribute_names: set[str] = set()
             if compare_attributes and self.attribute_matcher:
@@ -451,8 +805,7 @@ class DistanceComparator(datumaro.components.comparator.DistanceComparator):
                     conflicting_attribute_names.update(attribute_result.conflicting_names)
 
             return _PairwiseComparison(
-                geometry_similarity=geometry_similarity,
-                base_geometry_similarity=base_geometry_similarity,
+                geometry_similarity=geometry_similarity_score,
                 conflicting_attribute_names=tuple(sorted(conflicting_attribute_names)),
                 direction_mismatch=direction_mismatch,
             )
@@ -461,30 +814,31 @@ class DistanceComparator(datumaro.components.comparator.DistanceComparator):
 
         if not a_objs and not b_objs:
             comparisons = {}
-            returned_values = [], [], [], []
+            matches, mismatches, a_unmatched, b_unmatched = [], [], [], []
         else:
             extra_args = {}
             if label_matcher:
                 extra_args["label_matcher"] = label_matcher
 
-            returned_values = match_segments(
+            matches, mismatches, a_unmatched, b_unmatched = match_segments(
                 a_objs,
                 b_objs,
                 distance=lambda a, b: compare(a, b).similarity,
-                dist_thresh=dist_thresh if dist_thresh is not None else self.iou_threshold,
+                dist_thresh=(
+                    dist_thresh if dist_thresh is not None else self._annotation_match_threshold
+                ),
                 **extra_args,
             )
 
-        if self.return_distances:
-            returned_values = returned_values + (
-                {key: comparison.similarity for key, comparison in comparisons.items()},
-            )
-        elif self.return_comparisons:
-            returned_values = returned_values + (comparisons,)
+        return MatchResult(
+            matches,
+            mismatches,
+            a_unmatched,
+            b_unmatched,
+            comparisons=comparisons if self.return_comparisons else None,
+        )
 
-        return returned_values
-
-    def match_boxes(self, item_a: dm.DatasetItem, item_b: dm.DatasetItem):
+    def match_boxes(self, item_a: dm.DatasetItem, item_b: dm.DatasetItem) -> MatchResult:
         def _bbox_iou(a: dm.Bbox, b: dm.Bbox, *, img_w: int, img_h: int) -> float:
             if a.attributes.get("rotation", 0) == b.attributes.get("rotation", 0):
                 return datumaro.util.annotation_util.bbox_iou(a, b)
@@ -492,30 +846,67 @@ class DistanceComparator(datumaro.components.comparator.DistanceComparator):
                 return segment_iou(self.to_polygon(a), self.to_polygon(b), img_h=img_h, img_w=img_w)
 
         img_h, img_w = item_a.media_as(dm.Image).size
-        return self.match_segments(
-            dm.AnnotationType.bbox,
-            item_a,
-            item_b,
-            distance=partial(_bbox_iou, img_h=img_h, img_w=img_w),
-        )
+        similarity = partial(_bbox_iou, img_h=img_h, img_w=img_w)
+        if self.settings.similarity_metric == ShapeSimilarityMetricType.BOUNDARY_F:
+            similarity = self._make_polygonal_boundary_f(
+                img_h=img_h, img_w=img_w, tie_break=similarity
+            )
+        elif self.settings.similarity_metric != ShapeSimilarityMetricType.IOU:
+            raise AssertionError(
+                f"Similarity metric '{self.settings.similarity_metric}' is not available for boxes"
+            )
 
-    def match_ellipses(self, item_a: dm.DatasetItem, item_b: dm.DatasetItem):
+        return self.match_segments(dm.AnnotationType.bbox, item_a, item_b, similarity=similarity)
+
+    def match_ellipses(self, item_a: dm.DatasetItem, item_b: dm.DatasetItem) -> MatchResult:
         def _ellipse_iou(a: dm.Ellipse, b: dm.Ellipse, *, img_w: int, img_h: int) -> float:
             return segment_iou(self.to_polygon(a), self.to_polygon(b), img_h=img_h, img_w=img_w)
 
         img_h, img_w = item_a.media_as(dm.Image).size
-        return self.match_segments(
-            dm.AnnotationType.ellipse,
-            item_a,
-            item_b,
-            distance=partial(_ellipse_iou, img_h=img_h, img_w=img_w),
+        similarity = partial(_ellipse_iou, img_h=img_h, img_w=img_w)
+        if self.settings.similarity_metric == ShapeSimilarityMetricType.BOUNDARY_F:
+            similarity = self._make_polygonal_boundary_f(
+                img_h=img_h, img_w=img_w, tie_break=similarity
+            )
+        elif self.settings.similarity_metric != ShapeSimilarityMetricType.IOU:
+            raise AssertionError(
+                f"Similarity metric '{self.settings.similarity_metric}' "
+                "is not available for ellipses"
+            )
+
+        return self.match_segments(dm.AnnotationType.ellipse, item_a, item_b, similarity=similarity)
+
+    def _make_polygonal_boundary_f(
+        self,
+        *,
+        img_h: int,
+        img_w: int,
+        tie_break: ShapeSimilarityFunction[dm.Annotation, dm.Annotation] | None = None,
+    ) -> ShapeSimilarityFunction[dm.Annotation, dm.Annotation]:
+        def _get_boundary(ann: dm.Annotation) -> CompressedObjectBoundary:
+            from pycocotools import mask as mask_utils
+
+            polygon = self.to_polygon(ann)
+            rle = mask_utils.merge(to_rle(polygon, img_h=img_h, img_w=img_w))
+            return CompressedObjectBoundary.from_rle(
+                rle, tolerance=self.settings.boundary_f_tolerance
+            )
+
+        def _get_bbox(ann: dm.Annotation) -> tuple[float, float, float, float]:
+            # the rotation can extend the bbox
+            return self.to_polygon(ann).get_bbox()
+
+        return self._make_boundary_f_similarity(
+            get_a_bbox=_get_bbox,
+            get_b_bbox=_get_bbox,
+            get_a_boundary=_get_boundary,
+            get_b_boundary=_get_boundary,
+            tie_break=tie_break,
         )
 
-    def match_segmentations(self, item_a: dm.DatasetItem, item_b: dm.DatasetItem):
+    def match_segmentations(self, item_a: dm.DatasetItem, item_b: dm.DatasetItem) -> MatchResult:
         def _get_segmentations(item):
-            return self._get_ann_type(dm.AnnotationType.polygon, item) + self._get_ann_type(
-                dm.AnnotationType.mask, item
-            )
+            return self._get_ann_type(self.settings.annotation_type, item)
 
         img_h, img_w = item_a.media_as(dm.Image).size
 
@@ -574,7 +965,7 @@ class DistanceComparator(datumaro.components.comparator.DistanceComparator):
         a_instances, a_instance_map = _find_instances(_get_segmentations(item_a))
         b_instances, b_instance_map = _find_instances(_get_segmentations(item_b))
 
-        if self.panoptic_comparison:
+        if self.settings.panoptic_comparison:
             a_compiled_mask = _get_compiled_mask(
                 list(itertools.chain.from_iterable(a_instances)),
                 instance_ids=[
@@ -616,13 +1007,47 @@ class DistanceComparator(datumaro.components.comparator.DistanceComparator):
 
             return rle
 
-        def _segment_comparator(a_inst_id: int, b_inst_id: int) -> float:
+        def _segment_iou(a_inst_id: int, b_inst_id: int) -> float:
             a_segm = _get_segment(a_inst_id, compiled_mask=a_compiled_mask, instances=a_instances)
             b_segm = _get_segment(b_inst_id, compiled_mask=b_compiled_mask, instances=b_instances)
 
             from pycocotools import mask as mask_utils
 
             return float(mask_utils.iou([b_segm], [a_segm], [0])[0])
+
+        if self.settings.similarity_metric == ShapeSimilarityMetricType.BOUNDARY_F:
+
+            def _get_boundary(
+                obj_id: int, *, compiled_mask: dm.CompiledMask | None, instances: list
+            ) -> CompressedObjectBoundary:
+                segment = _get_segment(obj_id, compiled_mask=compiled_mask, instances=instances)
+                return CompressedObjectBoundary.from_rle(
+                    segment, tolerance=self.settings.boundary_f_tolerance
+                )
+
+            def _get_bbox(obj_id: int, *, instances: list) -> tuple[float, float, float, float]:
+                # the visible parts can only be smaller than the whole instance
+                return datumaro.util.annotation_util.max_bbox(instances[obj_id])
+
+            _segment_comparator = self._make_boundary_f_similarity(
+                get_a_bbox=partial(_get_bbox, instances=a_instances),
+                get_b_bbox=partial(_get_bbox, instances=b_instances),
+                get_a_boundary=partial(
+                    _get_boundary, compiled_mask=a_compiled_mask, instances=a_instances
+                ),
+                get_b_boundary=partial(
+                    _get_boundary, compiled_mask=b_compiled_mask, instances=b_instances
+                ),
+                tie_break=_segment_iou,
+                object_key=lambda obj_id: obj_id,  # the instance indices
+            )
+        elif self.settings.similarity_metric == ShapeSimilarityMetricType.IOU:
+            _segment_comparator = _segment_iou
+        else:
+            raise AssertionError(
+                f"Similarity metric '{self.settings.similarity_metric}' "
+                "is not available for polygons and masks"
+            )
 
         def _label_matcher(a_inst_id: int, b_inst_id: int) -> bool:
             # labels are the same in the instance annotations
@@ -637,16 +1062,14 @@ class DistanceComparator(datumaro.components.comparator.DistanceComparator):
             item_b,
             a_objs=range(len(a_instances)),
             b_objs=range(len(b_instances)),
-            distance=_segment_comparator,
+            similarity=_segment_comparator,
             label_matcher=_label_matcher,
             a_annotations_getter=lambda instance_id: a_instances[instance_id],
             b_annotations_getter=lambda instance_id: b_instances[instance_id],
         )
 
         # restore results for original annotations
-        matched, mismatched, a_extra, b_extra = results[:4]
-        if self._returns_pairwise_data:
-            distances = results[4]
+        matched, mismatched, a_extra, b_extra, distances = results
 
         # i_x ~ instance idx in _x
         # ia_x ~ instance annotation in _x
@@ -663,54 +1086,86 @@ class DistanceComparator(datumaro.components.comparator.DistanceComparator):
         a_extra = [ia_a for i_a in a_extra for ia_a in a_instances[i_a]]
         b_extra = [ia_b for i_b in b_extra for ia_b in b_instances[i_b]]
 
-        if self._returns_pairwise_data:
-            for i_a, i_b in list(distances.keys()):
-                dist = distances.pop((i_a, i_b))
+        if self.return_comparisons:
+            distances = {
+                (id(ia_a), id(ia_b)): dist
+                for (i_a, i_b), dist in distances.items()
+                for ia_a, ia_b in itertools.product(a_instances[i_a], b_instances[i_b])
+            }
 
-                for ia_a, ia_b in itertools.product(a_instances[i_a], b_instances[i_b]):
-                    distances[(id(ia_a), id(ia_b))] = dist
+        return MatchResult(matched, mismatched, a_extra, b_extra, comparisons=distances)
 
-        returned_values = (matched, mismatched, a_extra, b_extra)
+    def match_lines(self, item_a: dm.DatasetItem, item_b: dm.DatasetItem) -> MatchResult:
+        img_h, img_w = item_a.media_as(dm.Image).size
 
-        if self._returns_pairwise_data:
-            returned_values = returned_values + (distances,)
+        if self.settings.similarity_metric == ShapeSimilarityMetricType.BOUNDARY_F:
+            # The line IoU is only used for the orientation check here,
+            # the line thickness is defined by the boundary tolerance
+            line_thickness = self.settings.boundary_f_tolerance / math.sqrt(img_h * img_w)
+        else:
+            line_thickness = self.settings.line_thickness
 
-        return returned_values
+        def _make_line_iou_matcher(*, oriented: bool) -> LineMatcher:
+            return LineMatcher(
+                oriented=oriented,
+                torso_r=line_thickness,
+                scale=img_h * img_w,
+            )
 
-    def match_lines(self, item_a: dm.DatasetItem, item_b: dm.DatasetItem):
-        base_matcher = LineMatcher(
-            oriented=False,
-            torso_r=self.line_torso_radius,
-            scale=np.prod(item_a.media_as(dm.Image).size),
-        )
-        direction_matcher = None
-        if self.compare_line_orientation:
-            direction_matcher = LineMatcher(
-                oriented=True,
-                torso_r=self.line_torso_radius,
-                scale=np.prod(item_a.media_as(dm.Image).size),
+        undirected_line_iou = _make_line_iou_matcher(oriented=False).distance
+
+        if self.settings.similarity_metric == ShapeSimilarityMetricType.BOUNDARY_F:
+
+            def _get_boundary(ann: dm.PolyLine) -> CompressedObjectBoundary:
+                return CompressedObjectBoundary.from_polyline(
+                    ann.points,
+                    tolerance=self.settings.boundary_f_tolerance,
+                    img_h=img_h,
+                    img_w=img_w,
+                )
+
+            base_similarity = self._make_boundary_f_similarity(
+                get_a_bbox=dm.PolyLine.get_bbox,
+                get_b_bbox=dm.PolyLine.get_bbox,
+                get_a_boundary=_get_boundary,
+                get_b_boundary=_get_boundary,
+            )
+
+        elif self.settings.similarity_metric == ShapeSimilarityMetricType.IOU:
+            base_similarity = undirected_line_iou
+        else:
+            raise AssertionError(
+                f"Similarity metric '{self.settings.similarity_metric}' is not available for lines"
+            )
+
+        direction_args = {}
+        if self.settings.compare_line_orientation:
+            # Boundary F itself ignores the line orientation, so IoU is used always
+            direction_args = dict(
+                directed_similarity=_make_line_iou_matcher(oriented=True).distance,
+                undirected_similarity=undirected_line_iou,
+                direction_threshold=self.settings.line_orientation_threshold,
             )
 
         return self.match_segments(
             dm.AnnotationType.polyline,
             item_a,
             item_b,
-            distance=base_matcher.distance,
-            direction_distance=direction_matcher.distance if direction_matcher else None,
-            direction_threshold=self.line_orientation_threshold,
+            similarity=base_similarity,
+            **direction_args,
         )
 
-    def match_points(self, item_a: dm.DatasetItem, item_b: dm.DatasetItem):
+    def match_points(self, item_a: dm.DatasetItem, item_b: dm.DatasetItem) -> MatchResult:
+        if self.settings.similarity_metric != ShapeSimilarityMetricType.OKS:
+            raise AssertionError(
+                f"Similarity metric '{self.settings.similarity_metric}' is not available for points"
+            )
+
         a_points = self._get_ann_type(dm.AnnotationType.points, item_a)
         b_points = self._get_ann_type(dm.AnnotationType.points, item_b)
 
         if not a_points and not b_points:
-            results = [[], [], [], []]
-
-            if self._returns_pairwise_data:
-                results.append({})
-
-            return tuple(results)
+            return MatchResult([], [], [], [], comparisons={} if self.return_comparisons else None)
 
         instance_map = {}  # points id -> (instance group, instance bbox)
         for source_anns in [item_a.annotations, item_b.annotations]:
@@ -740,15 +1195,15 @@ class DistanceComparator(datumaro.components.comparator.DistanceComparator):
             if a_area == 0 and b_area == 0:
                 # Simple case: singular points without bbox
                 # match them in the image space
-                return oks(a, b, sigma=self.oks_sigma, scale=img_h * img_w)
+                return oks(a, b, sigma=self.settings.oks_sigma, scale=img_h * img_w)
 
             else:
                 # Complex case: multiple points, grouped points, points with a bbox
                 # Try to align points and then return the metric
 
-                if self.point_size_base == PointSizeBase.IMAGE_SIZE:
+                if self.settings.point_size_base == PointSizeBase.IMAGE_SIZE:
                     scale = img_h * img_w
-                elif self.point_size_base == PointSizeBase.GROUP_BBOX_SIZE:
+                elif self.settings.point_size_base == PointSizeBase.GROUP_BBOX_SIZE:
                     # match points in their bbox space
 
                     if datumaro.util.annotation_util.bbox_iou(a_bbox, b_bbox) <= 0:
@@ -758,7 +1213,7 @@ class DistanceComparator(datumaro.components.comparator.DistanceComparator):
                     bbox = datumaro.util.annotation_util.mean_bbox([a_bbox, b_bbox])
                     scale = bbox[2] * bbox[3]
                 else:
-                    assert False, f"Unknown point size base {self.point_size_base}"
+                    assert False, f"Unknown point size base {self.settings.point_size_base}"
 
                 a_points = np.reshape(a.points, (-1, 2))
                 b_points = np.reshape(b.points, (-1, 2))
@@ -769,10 +1224,10 @@ class DistanceComparator(datumaro.components.comparator.DistanceComparator):
                     distance=lambda ai, bi: oks(
                         dm.Points(a_points[ai]),
                         dm.Points(b_points[bi]),
-                        sigma=self.oks_sigma,
+                        sigma=self.settings.oks_sigma,
                         scale=scale,
                     ),
-                    dist_thresh=self.iou_threshold,
+                    dist_thresh=self.settings.oks_threshold,
                     label_matcher=lambda ai, bi: True,
                 )
 
@@ -789,9 +1244,9 @@ class DistanceComparator(datumaro.components.comparator.DistanceComparator):
 
                 # Compute OKS for 2 groups of points, matching points aligned
                 dists = np.linalg.norm(a_points - b_points, axis=1)
-                return np.sum(np.exp(-(dists**2) / (2 * scale * (2 * self.oks_sigma) ** 2))) / (
-                    len(matched_points) + len(a_extra) + len(b_extra)
-                )
+                return np.sum(
+                    np.exp(-(dists**2) / (2 * scale * (2 * self.settings.oks_sigma) ** 2))
+                ) / (len(matched_points) + len(a_extra) + len(b_extra))
 
         return self.match_segments(
             dm.AnnotationType.points,
@@ -799,7 +1254,7 @@ class DistanceComparator(datumaro.components.comparator.DistanceComparator):
             item_b,
             a_objs=a_points,
             b_objs=b_points,
-            distance=_distance,
+            similarity=_distance,
         )
 
     def _get_skeleton_info(self, skeleton_label_id: int):
@@ -817,16 +1272,17 @@ class DistanceComparator(datumaro.components.comparator.DistanceComparator):
 
         return skeleton_info
 
-    def match_skeletons(self, item_a, item_b):
+    def match_skeletons(self, item_a, item_b) -> MatchResult:
+        if self.settings.similarity_metric != ShapeSimilarityMetricType.OKS:
+            raise AssertionError(
+                f"Similarity metric '{self.settings.similarity_metric}' "
+                "is not available for skeletons"
+            )
+
         a_skeletons = self._get_ann_type(dm.AnnotationType.skeleton, item_a)
         b_skeletons = self._get_ann_type(dm.AnnotationType.skeleton, item_b)
         if not a_skeletons and not b_skeletons:
-            results = [[], [], [], []]
-
-            if self._returns_pairwise_data:
-                results.append({})
-
-            return tuple(results)
+            return MatchResult([], [], [], [], comparisons={} if self.return_comparisons else None)
 
         # Convert skeletons to point lists for comparison
         # This is required to compute correct per-instance distance
@@ -882,7 +1338,7 @@ class DistanceComparator(datumaro.components.comparator.DistanceComparator):
                 for ann in instance_group:
                     instance_map[id(ann)] = [instance_group, instance_bbox]
 
-        matcher = KeypointsMatcher(instance_map=instance_map, sigma=self.oks_sigma)
+        matcher = KeypointsMatcher(instance_map=instance_map, sigma=self.settings.oks_sigma)
 
         results = self.match_segments(
             dm.AnnotationType.points,
@@ -890,14 +1346,12 @@ class DistanceComparator(datumaro.components.comparator.DistanceComparator):
             item_b,
             a_objs=a_points,
             b_objs=b_points,
-            distance=matcher.distance,
+            similarity=matcher.distance,
             a_annotations_getter=lambda points: [points_map[id(points)]],
             b_annotations_getter=lambda points: [points_map[id(points)]],
         )
 
-        matched, mismatched, a_extra, b_extra = results[:4]
-        if self._returns_pairwise_data:
-            distances = results[4]
+        matched, mismatched, a_extra, b_extra, distances = results
 
         matched = [(points_map[id(p_a)], points_map[id(p_b)]) for (p_a, p_b) in matched]
         mismatched = [(points_map[id(p_a)], points_map[id(p_b)]) for (p_a, p_b) in mismatched]
@@ -905,17 +1359,13 @@ class DistanceComparator(datumaro.components.comparator.DistanceComparator):
         b_extra = [points_map[id(p_b)] for p_b in b_extra]
 
         # Map points back to skeletons
-        if self._returns_pairwise_data:
-            for p_a_id, p_b_id in list(distances.keys()):
-                dist = distances.pop((p_a_id, p_b_id))
-                distances[(id(points_map[p_a_id]), id(points_map[p_b_id]))] = dist
+        if self.return_comparisons:
+            distances = {
+                (id(points_map[p_a_id]), id(points_map[p_b_id])): dist
+                for (p_a_id, p_b_id), dist in distances.items()
+            }
 
-        returned_values = (matched, mismatched, a_extra, b_extra)
-
-        if self._returns_pairwise_data:
-            returned_values = returned_values + (distances,)
-
-        return returned_values
+        return MatchResult(matched, mismatched, a_extra, b_extra, comparisons=distances)
 
     @staticmethod
     def _as_annotation_sequence(obj: Any) -> Sequence[dm.Annotation]:
@@ -951,19 +1401,14 @@ class DistanceComparator(datumaro.components.comparator.DistanceComparator):
 
         return memoizing_comparison, comparisons
 
-    def match_annotations(self, item_a, item_b):
-        segmentation_types = {dm.AnnotationType.mask, dm.AnnotationType.polygon}
-        included_ann_types = set(self.included_ann_types)
-        results = {
-            t: self._match_ann_type(t, item_a, item_b)
-            for t in self.included_ann_types
-            if t not in segmentation_types
+    def match_annotations(
+        self, item_a: dm.DatasetItem, item_b: dm.DatasetItem
+    ) -> dict[dm.AnnotationType, MatchResult]:
+        return {
+            self.settings.annotation_type: self._match_ann_type(
+                self.settings.annotation_type, item_a, item_b
+            )
         }
-
-        if included_ann_types & segmentation_types:
-            results[dm.AnnotationType.polygon] = self.match_segmentations(item_a, item_b)
-
-        return results
 
 
 def _find_covered_segments(
@@ -1017,19 +1462,12 @@ class Comparator:
         attribute_matcher: AttributeMatchingFunction | None = None,
     ):
         self.ignored_attrs = set(settings.ignored_attributes) | self.IGNORED_ATTRIBUTES
-        self.included_ann_types = settings.included_annotation_types
+        self.included_ann_types = [settings.annotation_type]
         self.non_groupable_ann_type = settings.non_groupable_ann_type
         self._annotation_comparator = DistanceComparator(
             categories,
-            included_ann_types=self.included_ann_types,
+            settings=settings,
             return_comparisons=True,
-            panoptic_comparison=settings.panoptic_comparison,
-            iou_threshold=settings.iou_threshold,
-            oks_sigma=settings.oks_sigma,
-            point_size_base=settings.point_size_base,
-            line_torso_radius=settings.line_thickness,
-            compare_line_orientation=settings.compare_line_orientation,
-            line_orientation_threshold=settings.line_orientation_threshold,
             attribute_matcher=attribute_matcher if settings.compare_attributes else None,
         )
         self.coverage_threshold = settings.object_visibility_threshold
@@ -1118,18 +1556,19 @@ class Comparator:
     def match_annotations(self, item_a: dm.DatasetItem, item_b: dm.DatasetItem) -> MatchingResults:
         per_type_results = self._annotation_comparator.match_annotations(item_a, item_b)
 
-        merged_results = [[], [], [], [], {}]
-        shape_merged_results = [[], [], [], [], {}]
-        for shape_type, shape_type_results in per_type_results.items():
-            for merged_field, field in zip(merged_results, shape_type_results[:-1]):
-                merged_field.extend(field)
+        merged_results = MatchResult([], [], [], [], comparisons={})
+        shape_merged_results = MatchResult([], [], [], [], comparisons={})
+        for annotation_type, results in per_type_results.items():
+            targets = [merged_results]
+            if annotation_type != dm.AnnotationType.label:
+                targets.append(shape_merged_results)
 
-            if shape_type != dm.AnnotationType.label:
-                for merged_field, field in zip(shape_merged_results, shape_type_results[:-1]):
-                    merged_field.extend(field)
-                shape_merged_results[-1].update(shape_type_results[-1])
-
-            merged_results[-1].update(shape_type_results[-1])
+            for target in targets:
+                target.matches.extend(results.matches)
+                target.mismatches.extend(results.mismatches)
+                target.a_unmatched.extend(results.a_unmatched)
+                target.b_unmatched.extend(results.b_unmatched)
+                target.comparisons.update(results.comparisons)
 
         return {"all_ann_types": merged_results, "all_shape_ann_types": shape_merged_results}
 
@@ -1142,24 +1581,6 @@ class Comparator:
         return pairwise_comparisons.get((id(gt_ann), id(ds_ann)))
 
 
-class TagMatchingResult(NamedTuple):
-    matched: list
-    a_extra: list
-    b_extra: list
-    distances: dict
-
-
-class ShapeMatchingResult(NamedTuple):
-    matched: list
-    mispred: list
-    a_extra: list
-    b_extra: list
-    distances: dict
-
-
-MatchingResult: TypeAlias = TagMatchingResult | ShapeMatchingResult
-
-
 class MatchingResults(TypedDict):
-    all_ann_types: list[MatchingResult]
-    all_shape_ann_types: list[ShapeMatchingResult]
+    all_ann_types: MatchResult
+    all_shape_ann_types: MatchResult

@@ -57,6 +57,13 @@ export enum QualityRequirementPointSizeBase {
     GROUP_BBOX_SIZE = 'group_bbox_size',
 }
 
+export enum QualityRequirementSimilarityMetric {
+    IOU = 'iou',
+    OKS = 'oks',
+    BOUNDARY_F = 'boundary_f',
+    EQUALITY = 'equality',
+}
+
 export enum QualityRequirementAttributeComparator {
     EXACT = 'exact',
     LEVENSHTEIN = 'levenshtein',
@@ -90,7 +97,11 @@ export interface SerializedEffectiveQualityRequirementData {
     annotation_type: QualityRequirementAnnotationType;
     metric: QualityRequirementMetric;
     required_score: number;
+    similarity_metric: QualityRequirementSimilarityMetric | null;
     iou_threshold: number | null;
+    oks_threshold: number | null;
+    boundary_f_threshold: number | null;
+    boundary_f_tolerance: number | null;
     point_size: number | null;
     point_size_base: QualityRequirementPointSizeBase | null;
     line_thickness: number | null;
@@ -125,7 +136,11 @@ export interface SerializedQualityRequirementData {
     required_score: number | null;
     parent_requirement: number | null;
     effective?: SerializedEffectiveQualityRequirementData;
+    similarity_metric: QualityRequirementSimilarityMetric | null;
     iou_threshold: number | null;
+    oks_threshold: number | null;
+    boundary_f_threshold: number | null;
+    boundary_f_tolerance: number | null;
     point_size: number | null;
     point_size_base: QualityRequirementPointSizeBase | null;
     line_thickness: number | null;

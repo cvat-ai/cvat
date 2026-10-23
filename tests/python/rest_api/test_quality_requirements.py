@@ -1770,11 +1770,28 @@ class TestBaseQualityRequirementsApi(_QualityRequirementsTestBase):
             "object_visibility_threshold": 0.05,
             "panoptic_comparison": True,
             "attribute_comparison": None,
+            "oks_threshold": 0.4,
+            "boundary_f_tolerance": 5,
+            "boundary_f_threshold": 0.8,
         }
         assert all(
             all(requirement[field_name] == value for field_name, value in expected_defaults.items())
             for requirement in requirements
         )
+        assert {
+            requirement["annotation_type"]: requirement["similarity_metric"]
+            for requirement in requirements
+        } == {
+            "tag": "equality",
+            "rectangle": "iou",
+            "skeleton": "oks",
+            "skeleton_keypoint": "oks",
+            "points": "oks",
+            "polyline": "iou",
+            "mask": "iou",
+            "polygon": "iou",
+            "ellipse": "iou",
+        }
 
     def test_new_project_gets_disabled_base_requirements_for_all_supported_types(self, admin_user):
         with make_api_client(admin_user) as api_client:
