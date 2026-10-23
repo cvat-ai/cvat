@@ -487,6 +487,22 @@ class TestBoundaryFComparison(unittest.TestCase):
             self._similarity(comparator, comparisons, gt_ann, reversed_ann), 1, places=6
         )
 
+    def test_uses_boundary_tolerance_as_line_thickness_in_orientation_check(self) -> None:
+        gt_ann = dm.PolyLine([10, 50, 90, 50], label=0)
+        reversed_ann = dm.PolyLine([90, 52, 10, 52], label=0)
+
+        # with this line thickness, the line IoU would be ~0 in both directions
+        comparator, (_, _, _, _, comparisons) = self._compare(
+            dm.AnnotationType.polyline,
+            [gt_ann],
+            [reversed_ann],
+            compare_line_orientation=True,
+            line_thickness=1e-6,
+        )
+        self.assertTrue(
+            comparator.get_comparison(comparisons, gt_ann, reversed_ann).direction_mismatch
+        )
+
     def test_is_not_supported_for_points(self) -> None:
         with self.assertRaises(AssertionError):
             Comparator(
