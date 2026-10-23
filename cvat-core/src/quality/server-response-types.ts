@@ -50,6 +50,7 @@ export enum QualityReportRequirementCalculationReason {
     NO_ANNOTATIONS = 'no_annotations',
     FILTER_NO_MATCHES = 'filter_no_matches',
     REQUIRED_ATTRIBUTES_MISSING = 'required_attributes_missing',
+    INVALID_GT_AREA = 'invalid_gt_area',
 }
 
 export enum QualityRequirementPointSizeBase {
@@ -63,6 +64,18 @@ export enum QualityRequirementAttributeComparator {
 }
 
 export type QualityRequirementJsonLogicFilter = string;
+
+export type SimilarityThresholdPolicy = {
+    type: 'iou';
+    mode: 'constant';
+    value: number;
+} | {
+    type: 'iou';
+    mode: 'linear';
+    input: 'gt.shape_area';
+    extrapolation: 'clamp';
+    points: { x: number; y: number }[];
+};
 
 export interface SerializedQualityRequirementAttributeRule {
     spec_id: number;
@@ -90,7 +103,7 @@ export interface SerializedEffectiveQualityRequirementData {
     annotation_type: QualityRequirementAnnotationType;
     metric: QualityRequirementMetric;
     required_score: number;
-    iou_threshold: number | null;
+    iou_threshold: number | SimilarityThresholdPolicy | null;
     point_size: number | null;
     point_size_base: QualityRequirementPointSizeBase | null;
     line_thickness: number | null;
@@ -125,7 +138,7 @@ export interface SerializedQualityRequirementData {
     required_score: number | null;
     parent_requirement: number | null;
     effective?: SerializedEffectiveQualityRequirementData;
-    iou_threshold: number | null;
+    iou_threshold: number | SimilarityThresholdPolicy | null;
     point_size: number | null;
     point_size_base: QualityRequirementPointSizeBase | null;
     line_thickness: number | null;

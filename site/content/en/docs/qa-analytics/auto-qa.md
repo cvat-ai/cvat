@@ -496,6 +496,69 @@ Save the settings after editing them. Changes apply when the next quality report
 calculated; they do not alter existing reports. Open the **Requirements** tab to see the results.
 A requirement passes when its score meets or exceeds its threshold.
 
+##### Interpolated IoU thresholds
+
+Rectangle, polygon, mask, and ellipse requirements offer two IoU threshold modes:
+
+- **Constant** uses one threshold for every object and is the default.
+- **Linear interpolation** uses the area of the original ground-truth shape in px² to
+  choose a threshold. The graph connects neighboring key points with straight lines.
+  Below the first point or above the last point, the nearest endpoint's threshold applies.
+
+For example, points at **100 px² / 40%** and **1000 px² / 90%** give a threshold of **65%**
+for a GT shape of **550 px²**. The area is determined only by the GT annotations.
+
+![IoU threshold interpolation from 40% at 100 px² to 90% at 1000 px²](/images/iou-threshold-interpolation.png)
+
+Hover over the graph to see the area and its calculated threshold. Left-click an empty
+position to add a point, hold the left mouse button on a point to drag it, or right-click
+a point to delete it. The table below the graph provides numerical editing, search by
+area or IoU, and add/delete controls. Use the arrows inside a numerical field to increase
+or decrease its value. Selecting a point on the graph opens its table page.
+Values are displayed with up to two decimal places; focus a field to edit its full precision.
+Invalid values are explained below their fields and must be corrected before saving.
+**Undo** restores the preceding edit in this curve editor only; its tooltip describes the
+action and the button is disabled when there is nothing to undo. **Fit** shows the whole curve.
+Switching modes preserves both drafts while the form remains open and saves the active mode.
+
+![IoU curve editor with graph and an editable table of key points](/images/iou-threshold-editor.png)
+
+Interpolation requires 2–200 points with unique positive areas and thresholds from 0 to 100%.
+Child requirements inherit the whole policy and can override it or revert to their parent.
+A zero-area GT shape uses the first endpoint's threshold and remains unmatched by IoU;
+it does not prevent the other shapes or frames from being evaluated. A missing, negative,
+or nonfinite GT area prevents the requirement from being calculated and completed.
+
+Areas are measured before panoptic comparison. When polygon or mask parts are compared
+as one object, their union determines its area. Ellipse areas use the same rotated,
+rasterized geometry as their mask-based IoU comparison.
+
+The API uses one `iou_threshold` field: a number such as `0.7` for a constant threshold,
+or an object for a curve:
+
+```json
+{
+  "iou_threshold": {
+    "type": "iou",
+    "mode": "linear",
+    "input": "gt.shape_area",
+    "extrapolation": "clamp",
+    "points": [{"x": 100, "y": 0.4}, {"x": 1000, "y": 0.9}]
+  }
+}
+```
+
+Constant policy objects such as `{"type":"iou","mode":"constant","value":0.7}` are also accepted.
+Setting a child's `iou_threshold` to `null` restores inheritance of the whole threshold.
+Root requirements must specify a threshold. Existing numeric thresholds remain numeric.
+Policies without `type` are accepted as IoU for compatibility; responses include the type.
+Other threshold types are not supported.
+
+To evaluate small and large objects together, use one requirement and remove area filters
+that were used only to select different thresholds. Filters still apply to both annotation
+sets and can exclude candidates before matching. Polylines and OKS keep their
+existing constant thresholds.
+
 ### Quality target metrics
 
 The target metric determines what a requirement measures. CVAT matches annotations against
