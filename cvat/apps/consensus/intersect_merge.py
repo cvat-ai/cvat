@@ -22,7 +22,7 @@ from cvat.apps.quality_control.backends.datumaro.matching import (
     segment_iou,
 )
 from cvat.apps.quality_control.matching import PairwiseComparison
-from cvat.apps.quality_control.models import DefaultComparisonSettings
+from cvat.apps.quality_control.models import DefaultComparisonSettings, ShapeSimilarityMetricType
 
 
 @attrs.define(kw_only=True, slots=False)
@@ -251,6 +251,7 @@ class CachedSimilarityFunction:
 @attrs.define(kw_only=True, slots=False)
 class ShapeMatcher(AnnotationMatcher, metaclass=ABCMeta):
     _annotation_type: ClassVar[dm.AnnotationType]
+    _similarity_metric: ClassVar[ShapeSimilarityMetricType] = ShapeSimilarityMetricType.IOU
 
     pairwise_dist: float = 0.9
     cluster_dist: float | None = None
@@ -266,7 +267,9 @@ class ShapeMatcher(AnnotationMatcher, metaclass=ABCMeta):
             categories=self.categories,
             settings=ComparisonParameters(
                 annotation_type=self._annotation_type,
+                similarity_metric=self._similarity_metric,
                 iou_threshold=self.pairwise_dist,
+                oks_threshold=self.pairwise_dist,
                 oks_sigma=self._context.conf.sigma,
                 line_thickness=self._context.conf.torso_r,
                 compare_line_orientation=False,
@@ -403,6 +406,7 @@ class MaskMatcher(PolygonMatcher):
 @attrs.define(kw_only=True, slots=False)
 class PointsMatcher(ShapeMatcher):
     _annotation_type: ClassVar[dm.AnnotationType] = dm.AnnotationType.points
+    _similarity_metric: ClassVar[ShapeSimilarityMetricType] = ShapeSimilarityMetricType.OKS
 
     def match_annotations_between_two_items(self, item_a, item_b):
         matches, _, _, _, comparisons = self._comparator.match_points(item_a, item_b)
@@ -412,6 +416,7 @@ class PointsMatcher(ShapeMatcher):
 @attrs.define(kw_only=True, slots=False)
 class SkeletonMatcher(ShapeMatcher):
     _annotation_type: ClassVar[dm.AnnotationType] = dm.AnnotationType.skeleton
+    _similarity_metric: ClassVar[ShapeSimilarityMetricType] = ShapeSimilarityMetricType.OKS
 
     def match_annotations_between_two_items(self, item_a, item_b):
         matches, _, _, _, comparisons = self._comparator.match_skeletons(item_a, item_b)
