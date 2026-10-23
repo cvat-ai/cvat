@@ -181,34 +181,32 @@ class TestQualitySettingsRequirementsSerializer(unittest.TestCase):
 
 
 class TestQualityRequirementAttributeSpecIdValidation(unittest.TestCase):
-    def _validate(self, instance, attribute_comparison) -> None:
+    def _validate(self, attribute_comparison, *, stored_rules=()) -> None:
+        quality_settings = Mock()
+        quality_settings.requirements.values_list.return_value = [
+            {"rules": [{"spec_id": spec_id, "enabled": True} for spec_id in stored_rules]},
+            None,
+        ]
+
         with patch.object(
             QualityRequirementSerializer, "_get_allowed_attribute_spec_ids", return_value={1, 2}
         ):
-            QualityRequirementSerializer(instance)._validate_attribute_comparison_spec_ids(
-                attribute_comparison, quality_settings=Mock()
+            QualityRequirementSerializer()._validate_attribute_comparison_spec_ids(
+                attribute_comparison, quality_settings=quality_settings
             )
 
     def test_keeps_stored_rules_for_deleted_attributes(self) -> None:
-        instance = SimpleNamespace(
-            attribute_comparison={"rules": [{"spec_id": 4, "enabled": True}]},
-        )
-
+        # also applies to the new requirements, e.g. the copies of the existing ones
         self._validate(
-            instance, {"rules": [{"spec_id": 4, "enabled": False}, {"spec_id": 1, "enabled": True}]}
+            {"rules": [{"spec_id": 4, "enabled": False}, {"spec_id": 1, "enabled": True}]},
+            stored_rules=[4],
         )
 
     def test_rejects_new_rules_for_unknown_attributes(self) -> None:
-        instance = SimpleNamespace(
-            attribute_comparison={"rules": [{"spec_id": 4, "enabled": True}]},
+        with self.assertRaises(serializers.ValidationError) as capture:
+            self._validate({"rules": [{"spec_id": 5, "enabled": True}]}, stored_rules=[4])
+
+        self.assertEqual(
+            str(capture.exception.detail["attribute_comparison"]["rules"]),
+            "Unknown attribute spec id(s): 5.",
         )
-
-        for owner in [None, instance]:
-            with self.subTest(owner=owner):
-                with self.assertRaises(serializers.ValidationError) as capture:
-                    self._validate(owner, {"rules": [{"spec_id": 5, "enabled": True}]})
-
-                self.assertEqual(
-                    str(capture.exception.detail["attribute_comparison"]["rules"]),
-                    "Unknown attribute spec id(s): 5.",
-                )
