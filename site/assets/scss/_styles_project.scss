@@ -299,14 +299,10 @@ html.cvat-announcement-visible .td-main {
   margin-top: var(--cvat-announcement-height, 0);
 }
 
-/* The right TOC is positioned by its sidebar wrapper, not by .td-toc. */
+/* Keep both sticky sidebars below the announcement and navbar. */
+html.cvat-announcement-visible .td-sidebar,
 html.cvat-announcement-visible .td-sidebar-toc {
-  padding-top: calc(var(--cvat-announcement-height, 0px) + 1.5rem);
-}
-
-/* Preserve the normal breathing room above the left navigation heading. */
-html.cvat-announcement-visible .td-sidebar-nav {
-  padding-top: 2.75rem;
+  top: calc(4rem + var(--cvat-announcement-height, 0px));
 }
 
 /* Account for the fixed navbar and announcement when navigating to headings. */
