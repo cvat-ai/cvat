@@ -58,6 +58,24 @@ has_perm(role) if {
     get_priority(input.auth.organization.user.role) <= get_priority(role)
 }
 
+user_and_resource_in_org if {
+    input.auth.organization.id == input.resource.organization.id
+    is_member
+}
+
+user_and_resource_in_org_with_role(role) if {
+    input.auth.organization.id == input.resource.organization.id
+    has_perm(role)
+}
+
+matching_context if utils.is_sandbox
+
+matching_context if user_and_resource_in_org
+
+matching_context_with_org_role(role) if utils.is_sandbox
+
+matching_context_with_org_role(role) if user_and_resource_in_org_with_role(role)
+
 default allow := false
 
 allow if {

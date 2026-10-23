@@ -116,38 +116,35 @@ allow if {
 }
 
 allow if {
-    input.scope in {utils.CREATE, utils.IMPORT_BACKUP}
-    utils.is_sandbox
+    input.scope in {
+        utils.DELETE, utils.DELETE_ANNOTATIONS, utils.EXPORT_ANNOTATIONS, utils.EXPORT_BACKUP,
+        utils.EXPORT_DATASET, utils.IMPORT_ANNOTATIONS, utils.UPDATE_ANNOTATIONS,
+        utils.UPDATE_ASSIGNEE, utils.UPDATE_ASSOCIATED_STORAGE, utils.UPDATE_DESC,
+        utils.UPDATE_METADATA, utils.UPDATE_OWNER, utils.UPDATE_PROJECT,
+        utils.UPDATE_VALIDATION_LAYOUT, utils.UPLOAD_DATA, utils.VIEW, utils.VIEW_ANNOTATIONS,
+        utils.VIEW_DATA, utils.VIEW_METADATA, utils.VIEW_VALIDATION_LAYOUT
+    }
+    organizations.user_and_resource_in_org_with_role(organizations.MAINTAINER)
     utils.has_perm(utils.USER)
 }
 
 allow if {
     input.scope in {utils.CREATE, utils.IMPORT_BACKUP}
-    input.auth.organization.id == input.resource.organization.id
+    organizations.matching_context_with_org_role(organizations.SUPERVISOR)
     utils.has_perm(utils.USER)
-    organizations.has_perm(organizations.SUPERVISOR)
 }
 
 allow if {
     input.scope == utils.CREATE_IN_PROJECT
-    utils.is_sandbox
+    organizations.matching_context
     utils.has_perm(utils.USER)
     is_project_staff
 }
 
 allow if {
     input.scope == utils.CREATE_IN_PROJECT
-    input.auth.organization.id == input.resource.organization.id
+    organizations.user_and_resource_in_org_with_role(organizations.SUPERVISOR)
     utils.has_perm(utils.USER)
-    organizations.has_perm(organizations.SUPERVISOR)
-}
-
-allow if {
-    input.scope == utils.CREATE_IN_PROJECT
-    input.auth.organization.id == input.resource.organization.id
-    utils.has_perm(utils.USER)
-    organizations.has_perm(organizations.WORKER)
-    is_project_staff
 }
 
 allow if {
@@ -189,46 +186,22 @@ filter := utils.add_organization_filter(base_filter, ["organization", "project__
 
 allow if {
     input.scope in {
-        utils.VIEW, utils.VIEW_ANNOTATIONS, utils.EXPORT_DATASET, utils.VIEW_METADATA,
-        utils.VIEW_DATA, utils.EXPORT_ANNOTATIONS, utils.EXPORT_BACKUP,
-        utils.VIEW_VALIDATION_LAYOUT
-    }
-    utils.is_sandbox
-    is_task_staff
-}
-
-allow if {
-    input.scope in {
-        utils.VIEW, utils.VIEW_ANNOTATIONS, utils.EXPORT_DATASET, utils.VIEW_METADATA,
-        utils.VIEW_DATA, utils.EXPORT_ANNOTATIONS, utils.EXPORT_BACKUP,
-        utils.VIEW_VALIDATION_LAYOUT
-    }
-    input.auth.organization.id == input.resource.organization.id
-    utils.has_perm(utils.USER)
-    organizations.has_perm(organizations.MAINTAINER)
-}
-
-allow if {
-    input.scope in {
         utils.VIEW, utils.VIEW_ANNOTATIONS, utils.VIEW_METADATA, utils.VIEW_DATA,
         utils.VIEW_VALIDATION_LAYOUT
     }
-    input.auth.organization.id == input.resource.organization.id
-    organizations.has_perm(organizations.WORKER)
+    organizations.matching_context
     is_task_staff
 }
 
 allow if {
     input.scope in {utils.EXPORT_DATASET, utils.EXPORT_ANNOTATIONS, utils.EXPORT_BACKUP}
-    input.auth.organization.id == input.resource.organization.id
-    organizations.has_perm(organizations.SUPERVISOR)
+    organizations.matching_context_with_org_role(organizations.SUPERVISOR)
     is_task_staff
 }
 
 allow if {
     input.scope in {utils.EXPORT_DATASET, utils.EXPORT_ANNOTATIONS, utils.EXPORT_BACKUP}
-    input.auth.organization.id == input.resource.organization.id
-    organizations.has_perm(organizations.WORKER)
+    organizations.matching_context
     is_task_or_project_owner
 }
 
@@ -238,32 +211,9 @@ allow if {
         utils.UPLOAD_DATA, utils.UPDATE_METADATA, utils.IMPORT_ANNOTATIONS,
         utils.UPDATE_VALIDATION_LAYOUT
     }
-    utils.is_sandbox
+    organizations.matching_context
     is_task_staff
     utils.has_perm(utils.WORKER)
-}
-
-allow if {
-    input.scope in {
-        utils.UPDATE_DESC, utils.UPDATE_ANNOTATIONS, utils.DELETE_ANNOTATIONS,
-        utils.UPLOAD_DATA, utils.UPDATE_METADATA, utils.IMPORT_ANNOTATIONS,
-        utils.UPDATE_VALIDATION_LAYOUT
-    }
-    input.auth.organization.id == input.resource.organization.id
-    utils.has_perm(utils.USER)
-    organizations.has_perm(organizations.MAINTAINER)
-}
-
-allow if {
-    input.scope in {
-        utils.UPDATE_DESC, utils.UPDATE_ANNOTATIONS, utils.DELETE_ANNOTATIONS,
-        utils.UPLOAD_DATA, utils.UPDATE_METADATA, utils.IMPORT_ANNOTATIONS,
-        utils.UPDATE_VALIDATION_LAYOUT
-    }
-    is_task_staff
-    input.auth.organization.id == input.resource.organization.id
-    utils.has_perm(utils.WORKER)
-    organizations.has_perm(organizations.WORKER)
 }
 
 allow if {
@@ -271,14 +221,14 @@ allow if {
         utils.UPDATE_OWNER, utils.UPDATE_ASSIGNEE, utils.UPDATE_PROJECT,
         utils.DELETE
     }
-    utils.is_sandbox
+    organizations.matching_context
     is_project_staff
     utils.has_perm(utils.WORKER)
 }
 
 allow if {
     input.scope == utils.UPDATE_ASSOCIATED_STORAGE
-    utils.is_sandbox
+    organizations.matching_context
     is_project_owner
     utils.has_perm(utils.WORKER)
 }
@@ -288,48 +238,9 @@ allow if {
         utils.UPDATE_OWNER, utils.UPDATE_ASSIGNEE, utils.UPDATE_PROJECT,
         utils.DELETE, utils.UPDATE_ASSOCIATED_STORAGE
     }
-    utils.is_sandbox
+    organizations.matching_context
     is_task_owner
     utils.has_perm(utils.WORKER)
-}
-
-allow if {
-    input.scope in {
-        utils.UPDATE_OWNER, utils.UPDATE_ASSIGNEE, utils.UPDATE_PROJECT,
-        utils.DELETE, utils.UPDATE_ASSOCIATED_STORAGE
-    }
-    input.auth.organization.id == input.resource.organization.id
-    utils.has_perm(utils.USER)
-    organizations.has_perm(organizations.MAINTAINER)
-}
-
-allow if {
-    input.scope in {
-        utils.UPDATE_OWNER, utils.UPDATE_ASSIGNEE, utils.UPDATE_PROJECT,
-        utils.DELETE, utils.UPDATE_ASSOCIATED_STORAGE
-    }
-    input.auth.organization.id == input.resource.organization.id
-    utils.has_perm(utils.WORKER)
-    organizations.has_perm(organizations.WORKER)
-    is_task_owner
-}
-allow if {
-    input.scope == utils.UPDATE_ASSOCIATED_STORAGE
-    input.auth.organization.id == input.resource.organization.id
-    utils.has_perm(utils.WORKER)
-    organizations.has_perm(organizations.WORKER)
-    is_project_owner
-}
-
-allow if {
-    input.scope in {
-        utils.UPDATE_OWNER, utils.UPDATE_ASSIGNEE, utils.UPDATE_PROJECT,
-        utils.DELETE
-    }
-    input.auth.organization.id == input.resource.organization.id
-    utils.has_perm(utils.WORKER)
-    organizations.has_perm(organizations.WORKER)
-    is_project_staff
 }
 
 allow if {
