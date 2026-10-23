@@ -299,10 +299,9 @@ html.cvat-announcement-visible .td-main {
   margin-top: var(--cvat-announcement-height, 0);
 }
 
-/* Docsy's right-hand table of contents is sticky relative to the viewport. */
-html.cvat-announcement-visible .td-toc {
-  top: calc(4rem + var(--cvat-announcement-height, 0));
-  max-height: calc(100vh - 4rem - var(--cvat-announcement-height, 0));
+/* The right TOC is positioned by its sidebar wrapper, not by .td-toc. */
+html.cvat-announcement-visible .td-sidebar-toc {
+  padding-top: var(--cvat-announcement-height, 0);
 }
 
 /* Keep Docsy's existing body offset; padding the body again creates a blank gap. */
