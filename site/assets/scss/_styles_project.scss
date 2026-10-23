@@ -294,6 +294,11 @@ html.cvat-announcement-visible .td-navbar {
   top: var(--cvat-announcement-height, 0) !important;
 }
 
+/* Offset the entire docs layout, including the main content and sidebars. */
+html.cvat-announcement-visible .td-main {
+  margin-top: var(--cvat-announcement-height, 0);
+}
+
 /* Keep Docsy's existing body offset; padding the body again creates a blank gap. */
 @media (max-width: 1199.98px) {
   .cvat-announcement {
