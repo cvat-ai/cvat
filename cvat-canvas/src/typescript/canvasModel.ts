@@ -278,6 +278,7 @@ export enum Mode {
 }
 
 export interface CanvasModel {
+    readonly imageID: number | null;
     readonly imageBitmap: boolean;
     readonly imageIsDeleted: boolean;
     readonly image: Image | null;
@@ -1180,6 +1181,10 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
 
     public get imageIsDeleted(): boolean {
         return this.data.imageIsDeleted;
+    }
+
+    public get imageID(): number | null {
+        return this.data.imageID;
     }
 
     public get image(): Image | null {

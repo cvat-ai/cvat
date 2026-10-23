@@ -2675,6 +2675,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                 this.bitmap.style.display = 'none';
             }
         } else if (reason === UpdateReasons.IMAGE_CHANGED) {
+            this.canvas.removeAttribute('data-frame-number');
             const { image } = model;
             if (image) {
                 this.isImageLoading = false;
@@ -2757,6 +2758,9 @@ export class CanvasViewImpl implements CanvasView, Listener {
             }
             if (this.mode === Mode.MERGE) {
                 this.mergeHandler.repeatSelection();
+            }
+            if (model.imageID !== null) {
+                this.canvas.setAttribute('data-frame-number', String(model.imageID));
             }
             const event: CustomEvent = new CustomEvent('canvas.setup');
             this.canvas.dispatchEvent(event);

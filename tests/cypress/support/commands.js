@@ -1406,14 +1406,15 @@ Cypress.Commands.add('goCheckFrameNumber', (frameNum) => {
     cy.get('.cvat-player-frame-selector').within(() => {
         cy.get('input[role="spinbutton"]').clear({ force: true });
         cy.get('input[role="spinbutton"]').type(`${frameNum}{Enter}`, { force: true });
-        cy.get('input[role="spinbutton"]').should('have.value', frameNum);
     });
+    cy.checkFrameNum(frameNum);
 });
 
 Cypress.Commands.add('checkFrameNum', (frameNum) => {
     cy.get('.cvat-player-frame-selector').within(() => {
         cy.get('input[role="spinbutton"]').should('have.value', frameNum);
     });
+    cy.get('.cvat-canvas-container > [data-frame-number]').should('have.attr', 'data-frame-number', String(frameNum));
 });
 
 Cypress.Commands.add('goToNextFrame', (expectedFrameNum) => {
@@ -2050,6 +2051,7 @@ Cypress.Commands.add('clickDeleteFrameAnnotationView', () => {
     cy.get('.cvat-modal-delete-frame').within(() => {
         cy.contains('button', 'Delete').click();
     });
+    cy.get('.cvat-modal-delete-frame').should('not.exist');
 });
 
 Cypress.Commands.add('clickSaveAnnotationView', () => {
