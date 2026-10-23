@@ -337,3 +337,14 @@ jobs:
     uses: ./.github/workflows/generate-allure-report.yml
     secrets:
       AWS_ALLURE_REPORTS_ROLE: ${{ secrets.AWS_ALLURE_REPORTS_ROLE }}
+
+  upload_testops_results:
+    needs: [unit_testing, e2e_testing]
+    if: ${{ !cancelled() }}
+    permissions:
+      actions: read
+    uses: ./.github/workflows/upload-testops-results.yml
+    with:
+      ref: ${{ github.ref_name }}
+    secrets:
+      ALLURE_TOKEN: ${{ secrets.ALLURE_TOKEN }}
