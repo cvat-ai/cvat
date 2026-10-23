@@ -372,6 +372,12 @@ class DefaultComparisonSettings:
     compare_attributes: bool = True
     "Enables or disables attribute checks"
 
+    boundary_f_tolerance: float = 5
+    "The maximum allowed boundary deviation, px"
+
+    boundary_f_threshold: float = 0.8
+    "Used for distinction between matched / unmatched shapes with the Boundary F metric"
+
     iou_threshold: float = 0.4
     "Used for distinction between matched / unmatched shapes with the IoU metric"
 
