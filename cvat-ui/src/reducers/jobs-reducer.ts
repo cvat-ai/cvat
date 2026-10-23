@@ -25,6 +25,10 @@ const defaultState: JobsState = {
     activities: {
         deletes: {},
     },
+    addReplicas: {
+        modalVisible: false,
+        jobs: [],
+    },
 };
 
 export default (state: JobsState = defaultState, action: AnyAction): JobsState => {
@@ -187,6 +191,24 @@ export default (state: JobsState = defaultState, action: AnyAction): JobsState =
         }
         case SelectionActionsTypes.CLEAR_SELECTED_RESOURCES: {
             return { ...state, selected: [] };
+        }
+        case JobsActionTypes.OPEN_ADD_REPLICAS_MODAL: {
+            return {
+                ...state,
+                addReplicas: {
+                    modalVisible: true,
+                    jobs: action.payload.jobs,
+                },
+            };
+        }
+        case JobsActionTypes.CLOSE_ADD_REPLICAS_MODAL: {
+            return {
+                ...state,
+                addReplicas: {
+                    ...state.addReplicas,
+                    modalVisible: false,
+                },
+            };
         }
         default: {
             return state;

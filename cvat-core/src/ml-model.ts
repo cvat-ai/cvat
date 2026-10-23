@@ -34,10 +34,6 @@ export default class MLModel {
         return this.serialized.supported_shape_types;
     }
 
-    public get version(): number {
-        return this.serialized.version;
-    }
-
     public get description(): string {
         return this.serialized.description;
     }

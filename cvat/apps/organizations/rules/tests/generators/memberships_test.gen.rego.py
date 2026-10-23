@@ -55,11 +55,13 @@ def RESOURCES(scope):
                 "user": {"id": random.randrange(300, 400)},
                 "is_active": active,
                 "role": role,
+                "new_role": new_role,
                 "organization": {"id": random.randrange(500, 600)},
             }
             for role in ORG_ROLES
             if role is not None
             for active in [False, True]
+            for new_role in (filter(None, ORG_ROLES) if scope == "change:role" else [None])
         ]
 
 
@@ -107,8 +109,8 @@ def eval_rule(scope, context, ownership, privilege, membership, data):
                     return False
                 if resource["user"]["id"] == data["auth"]["user"]["id"]:
                     return False
-            return True
-        return False
+        else:
+            return False
 
     return bool(rules)
 

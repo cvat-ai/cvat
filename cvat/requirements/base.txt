@@ -25,7 +25,7 @@ botocore==1.43.75
     #   s3transfer
 cachetools==5.5.2
     # via google-auth
-certifi==2025.6.15
+certifi==2026.10.19
     # via
     #   clickhouse-connect
     #   kubernetes

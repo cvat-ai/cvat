@@ -10,8 +10,6 @@ import re
 import tempfile
 import uuid
 
-from dateutil.parser import parse
-
 from {{packageName}}.exceptions import (
     ApiKeyError,
     ApiAttributeError,
@@ -948,7 +946,7 @@ def deserialize_primitive(data, klass, path_to_item):
                 if len(data) < 8:
                     raise ValueError("This is not a datetime")
                 # The string should be in iso8601 datetime format.
-                parsed_datetime = parse(data)
+                parsed_datetime = datetime.fromisoformat(data)
                 date_only = (
                     parsed_datetime.hour == 0 and
                     parsed_datetime.minute == 0 and
@@ -962,7 +960,7 @@ def deserialize_primitive(data, klass, path_to_item):
             elif klass == date:
                 if len(data) < 8:
                     raise ValueError("This is not a date")
-                return parse(data).date()
+                return datetime.fromisoformat(data).date()
         else:
             converted_value = klass(data)
             if isinstance(data, str) and klass == float:
