@@ -17,6 +17,7 @@ import {
     QualityRequirementMetric,
     QualityRequirementPointSizeBase,
     SimilarityThresholdPolicy,
+    QualityRequirementSimilarityMetric,
 } from './server-response-types';
 
 export type QualityRequirementSaveFields = CamelizedV2<
@@ -42,7 +43,11 @@ export default class QualityRequirement {
     #requiredScore: number | null;
     #parentRequirementId: number | null;
     #effective: QualityRequirementEffectiveData | null;
+    #similarityMetric: QualityRequirementSimilarityMetric | null;
     #iouThreshold: number | SimilarityThresholdPolicy | null;
+    #oksThreshold: number | null;
+    #boundaryFThreshold: number | null;
+    #boundaryFTolerance: number | null;
     #pointSize: number | null;
     #pointSizeBase: QualityRequirementPointSizeBase | null;
     #lineThickness: number | null;
@@ -73,12 +78,14 @@ export default class QualityRequirement {
         this.#parentRequirementId = initialData.parent_requirement;
         this.#effective = initialData.effective ? fieldsToCamelCase(initialData.effective) : null;
         if (this.#effective?.iouThreshold && typeof this.#effective.iouThreshold === 'object') {
-            this.#effective.iouThreshold = normalizeThresholdPolicy(
-                this.#effective.iouThreshold,
-            );
+            this.#effective.iouThreshold = normalizeThresholdPolicy(this.#effective.iouThreshold);
         }
         this.#iouThreshold = initialData.iou_threshold && typeof initialData.iou_threshold === 'object' ?
             normalizeThresholdPolicy(initialData.iou_threshold) : initialData.iou_threshold;
+        this.#similarityMetric = initialData.similarity_metric;
+        this.#oksThreshold = initialData.oks_threshold;
+        this.#boundaryFThreshold = initialData.boundary_f_threshold;
+        this.#boundaryFTolerance = initialData.boundary_f_tolerance;
         this.#pointSize = initialData.point_size;
         this.#pointSizeBase = initialData.point_size_base;
         this.#lineThickness = initialData.line_thickness;
@@ -150,8 +157,24 @@ export default class QualityRequirement {
         return this.#effective;
     }
 
+    get similarityMetric(): QualityRequirementSimilarityMetric | null {
+        return this.#similarityMetric;
+    }
+
     get iouThreshold(): number | SimilarityThresholdPolicy | null {
         return this.#iouThreshold;
+    }
+
+    get oksThreshold(): number | null {
+        return this.#oksThreshold;
+    }
+
+    get boundaryFThreshold(): number | null {
+        return this.#boundaryFThreshold;
+    }
+
+    get boundaryFTolerance(): number | null {
+        return this.#boundaryFTolerance;
     }
 
     get pointSize(): number | null {
