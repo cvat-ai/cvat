@@ -23,7 +23,6 @@ export interface IntelligentScissorsInterface {
     run(points: number[]): number[];
     reset(): void;
     setImage(image: ImageData): void;
-    switchBlockMode(mode?: boolean): void;
 }
 
 export default class IntelligentScissorsImplementation implements IntelligentScissorsInterface {
@@ -41,7 +40,6 @@ export default class IntelligentScissorsImplementation implements IntelligentSci
             prevPoints: Point[];
             contourOffsets: number[];
             image: any | null;
-            blocked: boolean;
         };
     };
 
@@ -54,10 +52,6 @@ export default class IntelligentScissorsImplementation implements IntelligentSci
         };
 
         this.reset();
-    }
-
-    public switchBlockMode(mode: boolean): void {
-        this.scissors.state.blocked = mode;
     }
 
     public reset(): void {
@@ -73,7 +67,6 @@ export default class IntelligentScissorsImplementation implements IntelligentSci
                 prevPoints: [],
                 contourOffsets: [],
                 image: null,
-                blocked: false,
             },
         };
 
@@ -156,17 +149,13 @@ export default class IntelligentScissorsImplementation implements IntelligentSci
         const contour = new cv.Mat();
 
         const curSegment = [];
-        if (!state.blocked) {
-            try {
-                tool.getContour(new cv.Point(curPoint.x, curPoint.y), contour);
-                for (let row = 0; row < contour.rows; row++) {
-                    curSegment.push(contour.intAt(row, 0) / xScale, contour.intAt(row, 1) / yScale);
-                }
-            } finally {
-                contour.delete();
+        try {
+            tool.getContour(new cv.Point(curPoint.x, curPoint.y), contour);
+            for (let row = 0; row < contour.rows; row++) {
+                curSegment.push(contour.intAt(row, 0) / xScale, contour.intAt(row, 1) / yScale);
             }
-        } else {
-            curSegment.push(curPoint.x / xScale, curPoint.y / yScale);
+        } finally {
+            contour.delete();
         }
 
         state.prevPoints = [...points];

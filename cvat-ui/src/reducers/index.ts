@@ -578,11 +578,6 @@ export interface ModelsQuery {
 
 export type OpenCVTool = IntelligentScissors | OpenCVTracker;
 
-export interface ToolsBlockerState {
-    algorithmsLocked?: boolean;
-    buttonVisible?: boolean;
-}
-
 export interface ActiveInference {
     status: RQStatus;
     progress: number;
@@ -1103,7 +1098,6 @@ export interface WorkspaceSettingsState {
     showAllInterpolationTracks: boolean;
     intelligentPolygonCrop: boolean;
     defaultApproxPolyAccuracy: number;
-    toolsBlockerState: ToolsBlockerState;
     textFontSize: number;
     controlPointsSize: number;
     textPosition: 'auto' | 'center';

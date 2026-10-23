@@ -30,7 +30,7 @@ import {
 } from 'cvat-core-wrapper';
 import openCVWrapper from 'utils/opencv-wrapper/opencv-wrapper';
 import {
-    CombinedState, ActiveControl, ToolsBlockerState, PluginComponent,
+    CombinedState, ActiveControl, PluginComponent,
 } from 'reducers';
 import {
     interactWithCanvas,
@@ -52,7 +52,6 @@ import { TrackerControlsUpdateContext } from 'components/annotation-page/standar
 
 import ApproximationAccuracy from 'components/annotation-page/standard-workspace/controls-side-bar/approximation-accuracy';
 import ConfidenceThreshold from 'components/annotation-page/standard-workspace/controls-side-bar/confidence-threshold';
-import { switchToolsBlockerState } from 'actions/settings-actions';
 import withVisibilityHandling from './handle-popover-visibility';
 import ToolsTooltips from './interactor-tooltips';
 
@@ -69,7 +68,6 @@ interface StateToProps {
     trackers: MLModel[];
     currentZOrder: number;
     defaultApproxPolyAccuracy: number;
-    toolsBlockerState: ToolsBlockerState;
     frameData: { width: number; height: number; deleted?: boolean };
     interactorExtras: PluginComponent[];
 }
@@ -80,7 +78,6 @@ interface DispatchToProps {
     fetchAnnotations: () => void;
     onInteractionStart: typeof interactWithCanvas;
     updateActiveControl: typeof updateActiveControl;
-    onSwitchToolsBlockerState: typeof switchToolsBlockerState;
     switchNavigationBlocked: typeof switchNavigationBlockedAction;
 }
 
@@ -106,7 +103,7 @@ function mapStateToProps(state: CombinedState): StateToProps {
             interactors, detectors, trackers,
         },
         settings: {
-            workspace: { toolsBlockerState, defaultApproxPolyAccuracy },
+            workspace: { defaultApproxPolyAccuracy },
         },
         plugins: {
             components: {
@@ -132,7 +129,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
         frame,
         currentZOrder,
         defaultApproxPolyAccuracy,
-        toolsBlockerState,
         frameData,
         interactorExtras,
     };
@@ -144,7 +140,6 @@ const mapDispatchToProps = {
     updateAnnotations: updateAnnotationsAsync,
     createAnnotations: createAnnotationsAsync,
     fetchAnnotations: fetchAnnotationsAsync,
-    onSwitchToolsBlockerState: switchToolsBlockerState,
     switchNavigationBlocked: switchNavigationBlockedAction,
 };
 
@@ -246,7 +241,6 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
     private interaction: {
         id: string | null;
         isAborted: boolean;
-        latestPostponedEvent: Event | null;
         latestResponse: {
             rle: Int32Array;
             points: [number, number][];
@@ -295,7 +289,6 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
         this.interaction = {
             id: null,
             isAborted: false,
-            latestPostponedEvent: null,
             latestResponse: [],
             latestRequest: null,
             closeFetchingMessage: null,
@@ -318,7 +311,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
     public componentDidUpdate(prevProps: Props, prevState: State): void {
         const {
-            isActivated, defaultApproxPolyAccuracy, toolsBlockerState, jobInstance,
+            isActivated, defaultApproxPolyAccuracy, jobInstance,
         } = this.props;
         const {
             approxPolyAccuracy, mode, activeTracker, thresholdValue, trackedShapes,
@@ -354,7 +347,6 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
             this.interaction = {
                 id: null,
                 isAborted: false,
-                latestPostponedEvent: null,
                 latestResponse: [],
                 latestRequest: null,
                 closeFetchingMessage: null,
@@ -367,14 +359,6 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                 showConfidenceControl: false,
             });
             window.addEventListener('contextmenu', this.contextmenuDisabler);
-        }
-
-        if (
-            prevProps.toolsBlockerState.algorithmsLocked &&
-            !toolsBlockerState.algorithmsLocked &&
-            isActivated && mode === 'interaction' && this.interaction.latestPostponedEvent
-        ) {
-            this.onInteraction(this.interaction.latestPostponedEvent);
         }
 
         if (prevState.thresholdValue !== thresholdValue) {
@@ -723,7 +707,7 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
     };
 
     private interactionListener = async (e: Event): Promise<void> => {
-        const { toolsBlockerState, isActivated, canvasInstance } = this.props;
+        const { isActivated, canvasInstance } = this.props;
         const { activeInteractor, mode, interactorRegionOfInterest } = this.state;
 
         if (!isActivated) {
@@ -778,12 +762,6 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
 
                 if (posPoints.length < minPosPoints || negPoints.length < minNegPoints) {
                     // there should be enough points to proceed
-                    return;
-                }
-
-                // request data is enough, but it is postponed
-                if (toolsBlockerState.algorithmsLocked) {
-                    this.interaction.latestPostponedEvent = e;
                     return;
                 }
 
@@ -1265,13 +1243,11 @@ export class ToolsControlComponent extends React.PureComponent<Props, State> {
                             disabled={!activeTracker || fetching || frame === jobInstance.stopFrame}
                             onClick={() => {
                                 if (activeTracker && activeLabelID) {
-                                    const { onSwitchToolsBlockerState } = this.props;
                                     this.setState({ mode: 'tracking' });
                                     const parameters = { command: 'draw_box' as const, settings: { crosshair: true } };
                                     canvasInstance.cancel();
                                     canvasInstance.interact({ enabled: true, ...parameters });
                                     onInteractionStart(activeTracker, activeLabelID, parameters);
-                                    onSwitchToolsBlockerState({ buttonVisible: false });
                                 }
                             }}
                         >
