@@ -75,6 +75,8 @@ class ComparisonParameters:
     similarity_metric: ShapeSimilarityMetricType
     "Similarity metric to use for annotation comparisons"
 
+    boundary_f_tolerance: float = DefaultComparisonSettings.boundary_f_tolerance
+    boundary_f_threshold: float = DefaultComparisonSettings.boundary_f_threshold
     iou_threshold: float = DefaultComparisonSettings.iou_threshold
     oks_threshold: float = DefaultComparisonSettings.oks_threshold
     oks_sigma: float = DefaultComparisonSettings.oks_sigma
