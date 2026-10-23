@@ -305,6 +305,12 @@ html.cvat-announcement-visible .td-sidebar-toc {
   top: calc(4rem + var(--cvat-announcement-height, 0px));
 }
 
+@supports (position: sticky) {
+  html.cvat-announcement-visible .td-sidebar-toc {
+    max-height: calc(100vh - 4rem - var(--cvat-announcement-height, 0px));
+  }
+}
+
 /* Account for the fixed navbar and announcement when navigating to headings. */
 html.cvat-announcement-visible .td-content [id] {
   scroll-margin-top: calc(5rem + var(--cvat-announcement-height, 0px));
