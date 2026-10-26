@@ -536,7 +536,7 @@ jobs:
             LOGS_DIR: "${{ github.workspace }}/rest_api_testing"
         run: |
           mkdir ${LOGS_DIR}
-          kubectl describe pods 2>&1 | tee "${LOGS_DIR}/pods.describe.log"
+          kubectl describe pods --show-events=true 2>&1 | tee "${LOGS_DIR}/pods.describe.log"
           for backend_pod in $(kubectl get pods -l tier=backend -o 'jsonpath={.items[*].metadata.name}'); do
             kubectl logs ${backend_pod} >${LOGS_DIR}/${backend_pod}.log
           done
