@@ -9,7 +9,7 @@ import { Col, Row } from 'antd/lib/grid';
 import {
     ActiveControl, NavigationType, Workspace,
 } from 'reducers';
-import { Job } from 'cvat-core-wrapper';
+import { Job, JobType } from 'cvat-core-wrapper';
 import { RectDrawingMethod } from 'cvat-canvas-wrapper';
 import { KeyMap } from 'utils/mousetrap-react';
 import { Chapter } from 'cvat-core/src/frames';
@@ -185,6 +185,7 @@ export default function AnnotationTopBarComponent(props: Props): JSX.Element {
             frameNumber={frameNumber}
             frameFilename={frameFilename}
             frameDeleted={frameDeleted}
+            frameDeletionAvailable={jobInstance.type !== JobType.REPLICA}
             deleteFrameShortcut={deleteFrameShortcut}
             focusFrameInputShortcut={focusFrameInputShortcut}
             searchFrameByNameShortcut={searchFrameByNameShortcut}
