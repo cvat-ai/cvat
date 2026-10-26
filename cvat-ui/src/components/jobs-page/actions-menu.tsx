@@ -48,10 +48,12 @@ function JobActionsComponent(
         mergingConsensus,
         selectedIds,
         allJobs,
+        currentOrganization,
     } = useSelector((state: CombinedState) => ({
         mergingConsensus: state.consensus.actions.merging,
         selectedIds: state.jobs.selected,
         allJobs: state.jobs.current,
+        currentOrganization: state.organizations.current,
     }), shallowEqual);
     const isBulkMode = selectedIds.length > 1;
 
@@ -87,6 +89,10 @@ function JobActionsComponent(
 
     const onAddReplicas = useCallback(() => {
         dispatch(jobsActions.openAddReplicasModal(jobsToAct));
+    }, [jobsToAct]);
+
+    const onDistributeJobs = useCallback(() => {
+        dispatch(jobsActions.openDistributeJobsModal(jobsToAct));
     }, [jobsToAct]);
 
     const onMergeConsensusJob = useCallback(() => {
@@ -231,6 +237,7 @@ function JobActionsComponent(
             onMergeConsensusJob: jobInstance.replicasCount > 0 ? onMergeConsensusJob : null,
             onAddReplicas: jobsToAct.every((job) => job.type === JobType.ANNOTATION) ?
                 onAddReplicas : null,
+            onDistributeJobs: jobsToAct.length > 1 && currentOrganization ? onDistributeJobs : null,
             onDeleteJob: (
                 jobInstance.type === JobType.GROUND_TRUTH || jobInstance.type === JobType.REPLICA
             ) ? onDeleteJob : null,
