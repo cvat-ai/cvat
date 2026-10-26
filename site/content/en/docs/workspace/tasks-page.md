@@ -511,8 +511,7 @@ Thus, it is possible to mark corrupted frames that are not subject to annotation
 
 {{% alert title="Note" color="primary" %}}
 Frames cannot be deleted or restored in
-{{< ilink "/docs/qa-analytics/consensus#replica-jobs" "replica jobs" >}}.
-Delete or restore the frame in the parent annotation job, and its replicas get the same change.
+{{< ilink "/docs/workspace/jobs-page#replica-jobs" "replica jobs" >}}.
 {{% /alert %}}
 
 1. Go to the Job annotation view and click on the **Delete frame** button (**Alt**+**Del**).

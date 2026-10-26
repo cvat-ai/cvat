@@ -78,88 +78,21 @@ annotation jobs - they can be assigned, annotated, imported and exported.
 When you decide to merge annotations from replicas, the results will be written to the
 parent annotation job.
 
-Key properties of replica jobs:
-- _Replicas_ are connected to annotation jobs (_parent jobs_). Each annotation job can have
-  several related _replicas_.
-- Only annotation jobs can have replicas. Ground Truth jobs cannot have replicas.
-- Replicas use the same frame range as their parent annotation jobs.
-- Annotations in replicas and parent jobs are independent from each other.
-  Modifying a replica doesn't affect the parent job or other replicas and vice versa.
-  Removing annotations in a parent job doesn't change annotations in its replicas.
-- Replicas are not included in _task_ annotation import or export.
-  _Per-job_ import and export still work for all job types, including replicas.
-
-In the job list, parent jobs have the **Parent** tag and replicas have the **Replica** tag.
-By default, the task job list hides replicas. To see them, click **Clear filters**
-or use **Go to replicas** in the parent job **Actions** menu.
-To return from a replica to its parent job, use **Go to parent**.
-
-  ![Parent and replica jobs in the task job list](/images/consensus-replicas-list-task.png)
-
-Read more about merging [here](#how-to-merge-all-replicas-in-a-task).
+Read more about replica jobs {{< ilink "/docs/workspace/jobs-page#replica-jobs" "here" >}}
+and about merging [here](#how-to-merge-all-replicas-in-a-task).
 
 ## Workflow
 
 When annotating with consensus, the typical workflow looks this way:
 
-1. [Create a task with replicas](#how-to-create-replicas-with-a-task) or
-  [add replicas](#how-to-add-replicas-to-existing-jobs) to the jobs of an existing task. Optionally,
+1. {{< ilink "/docs/workspace/jobs-page#how-to-create-replicas-with-a-task" "Create a task with replicas" >}} or
+  {{< ilink "/docs/workspace/jobs-page#how-to-add-replicas-to-existing-jobs" "add replicas" >}}
+  to the jobs of an existing task. Optionally,
   {{< ilink "/docs/workspace/tasks-page#create-annotation-task" "configure validation" >}}
 1. [Assign annotators](#how-to-assign-annotators-to-replicas) to the replicas,
   wait until all the jobs are completed
 1. Once all replicas in a parent job are completed, merge annotations
 1. Review and resolve problems in the parent jobs
-
-### How to create replicas with a task
-
-You can set the number of replicas when you create a task.
-Each annotation job of the task gets this number of replicas.
-
-1. Go to the {{< ilink "/docs/workspace/tasks-page#create-annotation-task" "task creation" >}} page
-1. Configure basic and advanced parameters according to your requirements,
-  and attach a dataset to be annotated.
-1. Open the **Advanced** section and set **Initial replicas** to the number of
-  replicas for each annotation job. The default value `0` creates no replicas.
-
-  ![Initial replicas parameter](/images/consensus-replicas-task-parameter.png)
-
-1. Create the task and open the task page
-
-**Initial replicas** is used only when the task is created.
-To change the replicas later, [add](#how-to-add-replicas-to-existing-jobs) or
-[delete](#how-to-delete-replica-jobs) them in the jobs.
-
-### How to add replicas to existing jobs
-
-You can add replicas to any annotation job, including jobs of a task created without replicas.
-This way you can start consensus annotation in an existing task,
-or collect more opinions only for the jobs with difficult data.
-
-1. Open the task page or the {{< ilink "/docs/workspace/jobs-page" "Jobs" >}} page
-1. Select one or {{< ilink "/docs/workspace/bulk-actions" "several" >}} annotation jobs
-  and open the job **Actions** menu
-1. Click **Add replicas**
-1. Enter the number of replicas to add to each selected job and click **Add**
-
-  ![Add replicas dialog](/images/consensus-add-replicas-dialog.png)
-
-The new replicas have no assignee, and they are in the **annotation** stage and the **new** state.
-
-### How to delete replica jobs
-
-If a job has more replicas than you need, you can delete the extra ones.
-
-1. Open the task page or the {{< ilink "/docs/workspace/jobs-page" "Jobs" >}} page
-1. Select one or {{< ilink "/docs/workspace/bulk-actions" "several" >}} replica jobs
-  and open the job **Actions** menu
-1. Click **Delete** and confirm the deletion
-
-Deleting a replica also deletes its annotations. This operation cannot be undone.
-The parent job and its other replicas are not changed.
-
-{{% alert title="Note" color="primary" %}}
-Only replica and Ground Truth jobs can be deleted.
-{{% /alert %}}
 
 ### How to assign annotators to replicas
 

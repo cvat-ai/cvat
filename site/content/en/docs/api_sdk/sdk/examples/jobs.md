@@ -123,7 +123,7 @@ _Other SDK options:_
 | `Job.get_frame(frame_id: int, *, quality="original" \| "compressed")` | Return a single frame as a file-like object (`io.RawIOBase`) of image bytes. `quality` is an optional keyword argument (`"original"` or `"compressed"`); if omitted, the server default is used. |
 | `Job.download_frames(frame_ids: Sequence[int], outdir=".", quality="original", image_extension=None, filename_pattern="frame_{frame_id:06d}{frame_ext}")` | Save the given frames to disk under `outdir`. `image_extension` (e.g. `"png"`) overrides the auto-detected extension; `quality` is `"original"` or `"compressed"`. |
 | `Job.get_meta()` / `Job.get_labels()`                            | Read a job's frame metadata and label schema.                                                            |
-| `client.api_client.jobs_api.create(models.ReplicaJobCreateRequest(type="replica", task_id=..., parent_job_id=..., assignee=...))` | Add one {{< ilink "/docs/qa-analytics/consensus#replica-jobs" "replica job" >}} to an annotation job of the task. `assignee` is an optional user id. |
+| `client.api_client.jobs_api.create(models.ReplicaJobCreateRequest(type="replica", task_id=..., parent_job_id=..., assignee=...))` | Add one {{< ilink "/docs/workspace/jobs-page#replica-jobs" "replica job" >}} to an annotation job of the task. `assignee` is an optional user id. |
 | `client.api_client.jobs_api.destroy(job_id)`                     | Delete a replica or ground truth job together with its annotations. Annotation jobs cannot be deleted.   |
 
 _Notes:_
