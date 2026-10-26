@@ -5,6 +5,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import Button from 'antd/lib/button';
 import Space from 'antd/lib/space';
+import CVATTooltip from 'components/common/cvat-tooltip';
 import { Chart } from 'chart.js/auto';
 import { getRelativePosition } from 'chart.js/helpers';
 import { evaluateThresholdPolicy } from 'cvat-core/src/quality/threshold-policy';
@@ -208,8 +209,14 @@ export default function ThresholdPolicyChart(props: Readonly<Props>): JSX.Elemen
             <div className='cvat-threshold-policy-toolbar'>
                 <span>Minimum IoU (%)</span>
                 <Space size={4}>
-                    <Button disabled={disabled} size='small' onClick={() => setXMax(Math.max(1, xMax / 1.5))}>+</Button>
-                    <Button disabled={disabled} size='small' onClick={() => setXMax(Math.min(1e12, xMax * 1.5))}>−</Button>
+                    <CVATTooltip title='Zoom in on GT area'>
+                        <Button disabled={disabled} size='small' aria-label='Zoom in on GT area'
+                            onClick={() => setXMax(Math.max(1, xMax / 1.5))}>+</Button>
+                    </CVATTooltip>
+                    <CVATTooltip title='Zoom out on GT area'>
+                        <Button disabled={disabled} size='small' aria-label='Zoom out on GT area'
+                            onClick={() => setXMax(Math.min(1e12, xMax * 1.5))}>−</Button>
+                    </CVATTooltip>
                     <Button disabled={disabled} size='small' onClick={() => setXMax(policy.points.at(-1).x * 1.15)}>
                         Fit
                     </Button>

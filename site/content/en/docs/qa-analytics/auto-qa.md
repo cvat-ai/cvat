@@ -515,7 +515,8 @@ position to add a point, hold the left mouse button on a point to drag it, or ri
 a point to delete it. The table below the graph provides numerical editing, search by
 area or IoU, and add/delete controls. Use the arrows inside a numerical field to increase
 or decrease its value. Selecting a point on the graph opens its table page.
-Values are displayed with up to two decimal places; focus a field to edit its full precision.
+Values are displayed with up to two decimal places, and numerical input accepts at most two
+decimal places. Opening or focusing a field preserves the precision of an existing policy.
 Invalid values are explained below their fields and must be corrected before saving.
 **Undo** restores the preceding edit in this curve editor only; its tooltip describes the
 action and the button is disabled when there is nothing to undo. **Fit** shows the whole curve.

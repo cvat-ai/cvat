@@ -9,6 +9,7 @@ import { DeleteOutlined, PlusOutlined } from '@ant-design/icons';
 import Button from 'antd/lib/button';
 import Input from 'antd/lib/input';
 import CVATTable from 'components/common/cvat-table';
+import CVATTooltip from 'components/common/cvat-tooltip';
 import { MAX_THRESHOLD_POINTS } from 'cvat-core/src/quality/threshold-policy';
 import { EditableThresholdPoint } from './threshold-policy-editor-types';
 import ThresholdPolicyInput, {
@@ -121,9 +122,13 @@ export default function ThresholdPolicyPoints(props: Readonly<Props>): JSX.Eleme
                 }, {
                     title: 'Actions',
                     width: 80,
+                    align: 'center',
                     render: (_, point: typeof data[number]) => (
-                        <Button icon={<DeleteOutlined />} aria-label={`Delete point ${point.index + 1}`}
-                            disabled={disabled || points.length <= 2} onClick={() => onDelete(point.id)} />
+                        <CVATTooltip title='Delete point'>
+                            <Button type='text' size='small' className='cvat-quality-requirements-action-button'
+                                icon={<DeleteOutlined />} aria-label={`Delete point ${point.index + 1}`}
+                                disabled={disabled || points.length <= 2} onClick={() => onDelete(point.id)} />
+                        </CVATTooltip>
                     ),
                 }]}
             />

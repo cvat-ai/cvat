@@ -85,10 +85,15 @@ export default function QualityRequirementForm(props: Readonly<QualityRequiremen
     const [form] = Form.useForm<RequirementFormValues>();
     const [submitting, setSubmitting] = useState(false);
     const [thresholdPolicyValid, setThresholdPolicyValid] = useState(true);
+    const [thresholdPolicyRevision, setThresholdPolicyRevision] = useState(0);
     const onThresholdValidityChange = useCallback((valid: boolean): void => {
         setThresholdPolicyValid(valid);
         if (valid) form.setFields([{ name: 'iouThreshold', errors: [] }]);
     }, [form]);
+    const resetThresholdPolicy = (): void => {
+        setThresholdPolicyRevision((revision) => revision + 1);
+        onThresholdValidityChange(true);
+    };
     const [touchedFields, setTouchedFields] = useState<Set<string>>(() => getCopiedTouchedFields(copiedRequirement));
     const [resetFields, setResetFields] = useState<Set<string>>(new Set());
     const initialValues = useMemo(() => {
@@ -203,6 +208,7 @@ export default function QualityRequirementForm(props: Readonly<QualityRequiremen
             });
             setTouchedFields(removeInheritedFields);
             setResetFields(removeInheritedFields);
+            resetThresholdPolicy();
         }
     };
 
@@ -242,6 +248,7 @@ export default function QualityRequirementForm(props: Readonly<QualityRequiremen
     const onRevertInheritedField = (fieldName: OverridableFormFieldName): void => {
         const inheritedValue = getInheritedFormValue(fieldName);
         form.setFieldValue(fieldName, inheritedValue);
+        if (fieldName === 'iouThreshold') resetThresholdPolicy();
         setTouchedFields((prev) => {
             const next = new Set(prev);
             next.delete(fieldName);
@@ -461,6 +468,7 @@ export default function QualityRequirementForm(props: Readonly<QualityRequiremen
                                 }]}
                             >
                                 <ThresholdPolicyEditor
+                                    key={thresholdPolicyRevision}
                                     disabled={formDisabled} onValidityChange={onThresholdValidityChange}
                                 />
                             </Form.Item>

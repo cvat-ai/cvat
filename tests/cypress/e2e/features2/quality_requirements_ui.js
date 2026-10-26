@@ -585,10 +585,15 @@ context('Quality requirements UI', {
                 .should('have.value', rounded(precisePolicy.points[1].x));
         });
         cy.get(thresholdRows).first().find('input[id*="area"]').focus();
-        cy.get(thresholdRows).first().find('input[id*="area"]').should('have.value', '0.000001');
+        cy.get(thresholdRows).first().find('input[id*="area"]').should('have.value', '0');
         cy.get(thresholdRows).first().find('input[id*="area"]').blur();
         cy.get(thresholdRows).last().find('input[id*="area"]').focus();
-        cy.get(thresholdRows).last().find('input[id*="area"]').should('have.value', `${precisePolicy.points[1].x}`);
+        cy.window().then((win) => {
+            cy.get(thresholdRows).last().find('input[id*="area"]').should('have.value',
+                precisePolicy.points[1].x.toLocaleString(win.navigator.language, {
+                    maximumFractionDigits: 2, useGrouping: false,
+                }));
+        });
         cy.get(thresholdRows).last().find('input[id*="area"]').blur();
         cy.get(`${thresholdEditor} .cvat-threshold-policy-undo button`).should('be.disabled');
         cy.intercept('PATCH', '**/api/quality/settings/requirements/*').as('savePreciseIou');
@@ -596,6 +601,38 @@ context('Quality requirements UI', {
         cy.wait('@savePreciseIou').then(({ response }) => {
             expect(response.statusCode).to.equal(200);
             expect(response.body.iou_threshold).to.deep.equal(precisePolicy);
+        });
+        expectNotification('Requirement has been updated');
+        setRectangleThresholdPolicy(linearIouPolicy);
+    });
+
+    it('Limits numeric input and paste to two decimal places', () => {
+        openSettingsTab();
+        clickRowAction('Base rectangle renamed', 'edit');
+        const area = `${thresholdRows}:first input[id*="area"]`;
+        const iou = `${thresholdRows}:first input[id*="iou"]`;
+        cy.get(area).clear();
+        cy.get(area).type('101.444444');
+        cy.get(area).should('have.value', '101.44');
+        cy.get(iou).clear();
+        cy.get(iou).type('40,125');
+        cy.get(iou).should('have.value', '40,12');
+        cy.get(area).then(($input) => {
+            const input = $input[0];
+            input.select();
+            const { ClipboardEvent, DataTransfer } = input.ownerDocument.defaultView;
+            const clipboardData = new DataTransfer();
+            clipboardData.setData('text', '206.5324');
+            const accepted = input.dispatchEvent(new ClipboardEvent('paste', {
+                bubbles: true, cancelable: true, clipboardData,
+            }));
+            expect(accepted).to.equal(false);
+        });
+        cy.get(area).should('have.value', '101.44');
+        cy.intercept('PATCH', '**/api/quality/settings/requirements/*').as('saveRoundedIou');
+        submitForm();
+        expectPolicyRequest('@saveRoundedIou', {
+            ...linearIouPolicy, points: [{ x: 101.44, y: 0.4012 }, linearIouPolicy.points[1]],
         });
         expectNotification('Requirement has been updated');
         setRectangleThresholdPolicy(linearIouPolicy);
@@ -681,6 +718,52 @@ context('Quality requirements UI', {
         clickRowAction(childRequirementName, 'edit');
         expectLinearThreshold();
         cy.get('.cvat-quality-requirement-form-actions').contains('button', 'Cancel').click();
+    });
+
+    it('Reverts all editor state when the inherited policy equals the published value', () => {
+        openSettingsTab();
+        ensureRowExpanded('Base rectangle renamed');
+        clickRowAction(childRequirementName, 'edit');
+        expectLinearThreshold();
+        selectThresholdMode('Constant');
+        cy.get(`${thresholdEditor} input.ant-input-number-input`).clear();
+        cy.get(`${thresholdEditor} input.ant-input-number-input`).type('65');
+        cy.get(`${thresholdEditor} input.ant-input-number-input`).blur();
+        selectThresholdMode('Linear interpolation');
+        cy.get(`${thresholdEditor} button[aria-label="Zoom out on GT area"]`).click();
+        cy.get(thresholdRows).last().find('input[id*="area"]').clear();
+        cy.get(thresholdRows).last().find('input[id*="area"]').type('100');
+        cy.get(thresholdRows).last().find('input[id*="area"]').blur();
+        cy.get(`${thresholdEditor} input[aria-label="Search key points"]`).type('no matching point');
+        submitForm();
+        cy.contains('.ant-form-item-explain-error', 'Correct the IoU threshold fields before saving.')
+            .scrollIntoView();
+        cy.contains('.ant-form-item-explain-error', 'Correct the IoU threshold fields before saving.')
+            .should('be.visible');
+        cy.contains('.ant-form-item', 'IoU threshold')
+            .find('.ant-form-item-label .cvat-quality-requirement-revert-button').click();
+        expectLinearThreshold();
+        cy.get(`${thresholdEditor} input[aria-label="Search key points"]`).should('have.value', '');
+        cy.get(`${thresholdRows}.selected`).should('not.exist');
+        cy.get(`${thresholdEditor} .cvat-threshold-policy-undo button`).should('be.disabled');
+        cy.get(`${thresholdEditor} [aria-invalid="true"]`).should('not.exist');
+        cy.contains('.ant-form-item-explain-error', 'Correct the IoU threshold fields before saving.')
+            .should('not.exist');
+        selectThresholdMode('Constant');
+        cy.get(`${thresholdEditor} input.ant-input-number-input`).should('have.value', '40');
+        selectThresholdMode('Linear interpolation');
+        expectLinearThreshold();
+        cy.contains('.ant-form-item', 'IoU threshold')
+            .find('.ant-form-item-label .cvat-quality-requirement-revert-button').click();
+        cy.intercept('PATCH', '**/api/quality/settings/requirements/*').as('saveRevertedIou');
+        submitForm();
+        cy.wait('@saveRevertedIou').then(({ request, response }) => {
+            expect(response.statusCode).to.equal(200);
+            expect(request.body).not.to.have.property('iou_threshold');
+            expect(response.body.iou_threshold).to.equal(null);
+            expect(response.body.effective.iou_threshold).to.deep.equal(linearIouPolicy);
+        });
+        expectNotification('Requirement has been updated');
     });
 
     it('Copies a local IoU curve without changing the source requirement', () => {

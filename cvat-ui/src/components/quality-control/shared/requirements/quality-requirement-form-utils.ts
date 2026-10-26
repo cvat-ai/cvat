@@ -384,9 +384,9 @@ function getThresholdPolicy(
     while (current && !visited.has(current.id)) {
         visited.add(current.id);
         const threshold = current.iouThreshold ?? current.effective?.iouThreshold;
-        const policy = typeof threshold === 'number' ?
-            { type: 'iou', mode: 'constant' as const, value: threshold } : threshold;
-        if (policy) return JSON.parse(JSON.stringify(policy)) as SimilarityThresholdPolicy;
+        const policy: SimilarityThresholdPolicy = typeof threshold === 'number' ?
+            { type: 'iou', mode: 'constant', value: threshold } : threshold;
+        if (policy) return structuredClone(policy);
         current = requirementsById.get(current.parentRequirementId) ?? null;
     }
     return { type: 'iou', mode: 'constant', value: ROOT_DEFAULTS.iouThreshold / 100 };
