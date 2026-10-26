@@ -620,7 +620,8 @@ jobs:
     needs: [rest_api_testing, e2e_testing]
     if: |
       !cancelled() &&
-      github.event_name == 'push'
+      github.event_name == 'push' &&
+      github.repository == 'cvat-ai/cvat'
     permissions:
       actions: read
     uses: ./.github/workflows/upload-testops-results.yml
