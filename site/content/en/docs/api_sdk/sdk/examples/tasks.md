@@ -207,6 +207,7 @@ _Other SDK options:_
 | `Task.export_dataset(..., location=Location.CLOUD_STORAGE, cloud_storage_id=<int>)` | Export straight to a registered cloud storage instead of downloading locally. |
 | `client.api_client.events_api.create_export(project_id=, job_id=, user_id=, _from=, to=)` | Scope or time-bound the event-log export beyond a single task. |
 | `data_params={"job_file_mapping": [[...], [...]]}` | Define each job's files explicitly instead of using `segment_size`. |
+| `TaskWriteRequest(..., initial_replicas=N)` | Create `N` {{< ilink "/docs/qa-analytics/consensus#replica-jobs" "replica jobs" >}} for each annotation job of the new task. |
 | `PatchedLabelRequest(name=..., type="polygon")` | Restrict a label to one shape type, as the per-label-group recipe does. |
 | `Job.get_frames_info()` | The frames a job really holds, names included. |
 

@@ -27,6 +27,10 @@ for a group of jobs, without needing to update each resource individually.
 ### Typical Bulk Actions
 
 - **Update Assignee:** Assign a new user to multiple jobs, tasks, or projects.
+- **Distribute among users:** Assign selected jobs to a list of users in turn, see
+  {{< ilink "/docs/workspace/jobs-page#distribute-jobs-among-users" "Distribute jobs among users" >}}.
+- **Add replicas:** Add replica jobs to selected annotation jobs for
+  {{< ilink "/docs/qa-analytics/consensus#how-to-add-replicas-to-existing-jobs" "consensus-based annotation" >}}.
 - **Update State/Stage:** Change the status or stage for a group of jobs.
 - **Delete:** Remove multiple resources in one operation.
 - **Other field updates:** Depending on resource type, other fields may be updated in bulk.

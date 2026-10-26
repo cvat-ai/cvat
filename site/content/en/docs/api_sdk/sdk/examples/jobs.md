@@ -123,16 +123,19 @@ _Other SDK options:_
 | `Job.get_frame(frame_id: int, *, quality="original" \| "compressed")` | Return a single frame as a file-like object (`io.RawIOBase`) of image bytes. `quality` is an optional keyword argument (`"original"` or `"compressed"`); if omitted, the server default is used. |
 | `Job.download_frames(frame_ids: Sequence[int], outdir=".", quality="original", image_extension=None, filename_pattern="frame_{frame_id:06d}{frame_ext}")` | Save the given frames to disk under `outdir`. `image_extension` (e.g. `"png"`) overrides the auto-detected extension; `quality` is `"original"` or `"compressed"`. |
 | `Job.get_meta()` / `Job.get_labels()`                            | Read a job's frame metadata and label schema.                                                            |
+| `client.api_client.jobs_api.create(models.ReplicaJobCreateRequest(type="replica", task_id=..., parent_job_id=..., assignee=...))` | Add one {{< ilink "/docs/qa-analytics/consensus#replica-jobs" "replica job" >}} to an annotation job of the task. `assignee` is an optional user id. |
+| `client.api_client.jobs_api.destroy(job_id)`                     | Delete a replica or ground truth job together with its annotations. Annotation jobs cannot be deleted.   |
 
 _Notes:_
 
 - `stage` is one of `annotation`, `validation`, `acceptance`; `state` is one of
   `new`, `in progress`, `rejected`, `completed`.
-- Jobs are created automatically with their task (controlled by `segment_size`
-  at task creation) — you can update and assign them, but not create a job on
-  its own.
-- CVAT has no built-in auto-assignment, so `job_assign.py` is the scripted
-  pattern.
+- Annotation jobs are created automatically with their task (controlled by `segment_size`
+  at task creation) — you can update and assign them, but not create an annotation job on
+  its own. Ground truth and replica jobs can be added to an existing task.
+- In the UI, jobs can be assigned to a list of users with
+  {{< ilink "/docs/workspace/jobs-page#distribute-jobs-among-users" "Distribute among users" >}};
+  `job_assign.py` is the scripted pattern.
 - Full recipes:
   [`job_list.py`](https://github.com/cvat-ai/cvat/tree/develop/cvat-sdk/examples/job_list.py),
   [`job_assign.py`](https://github.com/cvat-ai/cvat/tree/develop/cvat-sdk/examples/job_assign.py),

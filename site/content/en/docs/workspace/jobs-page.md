@@ -65,3 +65,36 @@ To clear all filters, select `Clear filters`.
 | `Project ID`   | number or range of project ID                |                                             |
 | `Task name`    | task name                                    | Set when creating a task, <br>can be changed on the ({{< ilink "/docs/workspace/tasks-page" "task page" >}}) |
 | `Project name` | project name                                 | Specified when creating a project, <br>can be changed on the ({{< ilink "/docs/workspace/projects" "project section" >}}) |
+| `Job Type`     | `Annotation`, `Ground truth`, or `Replica`   | The type of the job |
+| `Parent ID`    | number or range of job ID                    | The ID of the parent annotation job of a replica job |
+
+## Distribute jobs among users
+
+You can assign several jobs to a list of users at once.
+CVAT gives the jobs to the users in turn: the first job goes to the first user,
+the second job goes to the second user, and so on.
+When there are more jobs than users, it starts again from the first user.
+
+The action is available on the **Jobs** page and in the job list of the task page
+when two or more jobs are selected. It is not available in the
+{{< ilink "/docs/account_management/organization#personal-workspace" "personal workspace" >}}.
+
+1. Select the jobs. Read more about selecting several jobs in
+   {{< ilink "/docs/workspace/bulk-actions" "Bulk actions" >}}.
+1. Open the job **Actions** menu and click **Distribute among users**.
+1. Add the users in one of the following ways:
+   - Start typing a username in the **Usernames** field and select the user from the list.
+   - Paste several usernames into the **Usernames** field, for example, a column copied from a spreadsheet.
+     The usernames can be separated by spaces, line breaks, commas, or semicolons.
+   - Click the upload area or drag a CSV file to it. The file must have one column with usernames.
+
+   Usernames that are not found and repeated usernames are skipped.
+
+1. Check the **Preview**. It shows the user that each job will be assigned to.
+
+   ![Distribute jobs dialog](/images/distribute-jobs-dialog.png)
+
+1. Click **Distribute**.
+
+The jobs are assigned in the order they are listed on the page.
+If there are more users than jobs, the extra users get no job.
