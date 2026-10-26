@@ -1,9 +1,6 @@
 name: Full
 on:
   workflow_call:
-    secrets:
-      ALLURE_TOKEN:
-        required: false
     inputs:
       ref:
         type: string
@@ -371,14 +368,3 @@ jobs:
         with:
           name: allure-results-e2e-${{ matrix.specs }}
           path: tests/allure-results-e2e
-
-  upload_testops_results:
-    needs: [rest_api_testing, e2e_testing]
-    if: ${{ !cancelled() }}
-    permissions:
-      actions: read
-    uses: ./.github/workflows/upload-testops-results.yml
-    with:
-      ref: ${{ inputs.ref }}
-    secrets:
-      ALLURE_TOKEN: ${{ secrets.ALLURE_TOKEN }}
