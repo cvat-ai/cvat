@@ -638,7 +638,7 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
 
         unknown_spec_ids = requested_spec_ids - allowed_spec_ids
         if unknown_spec_ids:
-            # The rules for the attributes deleted after the rules were created are kept,
+            # The rules for the attributes deleted after the rules had been created are kept,
             # including the copies of such rules in the new requirements.
             # They are ignored, if disabled, or make the requirement not computed, if enabled.
             known_used_attribute_ids = self.context.get("known_used_attribute_ids")

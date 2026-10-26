@@ -69,7 +69,7 @@ interface AttributeRuleRow {
     comparator: QualityRequirementAttributeComparator;
     isLocal: boolean;
     hasInheritedCounterpart: boolean;
-    // the attribute was deleted after the rule was created
+    // the attribute could have been deleted after the rule was created
     isUnknownAttribute: boolean;
     searchValue: string;
 }
