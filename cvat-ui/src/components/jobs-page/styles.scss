@@ -199,8 +199,9 @@
         margin: $grid-unit-size 0 $grid-unit-size * 2;
 
         .ant-select-selector {
+            @extend .cvat-scrollbar;
+
             max-height: $grid-unit-size * 16;
-            overflow-y: auto;
             padding-inline-end: $grid-unit-size * 5;
         }
 

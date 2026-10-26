@@ -67,6 +67,7 @@ function DistributeJobsModal(props: Readonly<Props>): JSX.Element {
         jobs: state.jobs.distributeJobs.jobs,
     }), shallowEqual);
     const [users, setUsers] = useState<User[]>([]);
+    const [initialOptions, setInitialOptions] = useState<User[]>([]);
     const [options, setOptions] = useState<User[]>([]);
     const [fetchingUsers, setFetchingUsers] = useState(false);
     const [suggestionsOpen, setSuggestionsOpen] = useState(false);
@@ -82,7 +83,10 @@ function DistributeJobsModal(props: Readonly<Props>): JSX.Element {
     useEffect(() => {
         if (visible) {
             setUsers([]);
-            core.users.get({ is_active: true }).then(setOptions);
+            core.users.get({ is_active: true }).then((result: User[]) => {
+                setInitialOptions(result);
+                setOptions(result);
+            });
         }
     }, [visible]);
 
@@ -148,6 +152,12 @@ function DistributeJobsModal(props: Readonly<Props>): JSX.Element {
         return false;
     };
 
+    // the search is cleared on blur without calling onSearch
+    const resetOptions = (): void => {
+        searchUsers.cancel();
+        setOptions(initialOptions);
+    };
+
     const knownUsers = _.uniqBy([...users, ...options], 'id');
 
     return (
@@ -175,7 +185,8 @@ function DistributeJobsModal(props: Readonly<Props>): JSX.Element {
                     onDropdownVisibleChange={setSuggestionsOpen}
                     value={users.map((user) => user.id)}
                     options={knownUsers.map((user) => ({ value: user.id, label: user.username }))}
-                    onSearch={(search: string) => searchUsers(search, setOptions)}
+                    onSearch={(search: string) => (search ? searchUsers(search, setOptions) : resetOptions())}
+                    onBlur={resetOptions}
                     onChange={(ids: number[]) => {
                         setUsers(ids.map((id) => knownUsers.find((user) => user.id === id) as User));
                     }}
