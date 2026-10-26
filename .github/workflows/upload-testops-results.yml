@@ -71,7 +71,7 @@ jobs:
           ALLURE_ENDPOINT: ${{ vars.ALLURE_ENDPOINT }}
           ALLURE_PROJECT_ID: ${{ vars.ALLURE_PROJECT_ID }}
           ALLURE_TOKEN: ${{ secrets.ALLURE_TOKEN }}
-          ALLURE_LAUNCH_NAME: ${{ github.repository }} / ${{ github.workflow }} / ${{ inputs.ref }} / ${{ github.run_number }}.${{ github.run_attempt }}
+          ALLURE_LAUNCH_NAME: ${{ github.workflow }} / ${{ inputs.ref }} / ${{ github.run_number }}.${{ github.run_attempt }}
         run: allurectl upload allure-results
 
       - name: Summarize TestOps upload
