@@ -181,7 +181,7 @@ class TestQualitySettingsRequirementsSerializer(unittest.TestCase):
 
 
 class TestQualityRequirementAttributeSpecIdValidation(unittest.TestCase):
-    def _validate(self, attribute_comparison, *, stored_rules=()) -> None:
+    def _validate(self, attribute_comparison, *, stored_rules=(), context=None) -> None:
         quality_settings = Mock()
         quality_settings.requirements.values_list.return_value = [
             {"rules": [{"spec_id": spec_id, "enabled": True} for spec_id in stored_rules]},
@@ -191,7 +191,9 @@ class TestQualityRequirementAttributeSpecIdValidation(unittest.TestCase):
         with patch.object(
             QualityRequirementSerializer, "_get_allowed_attribute_spec_ids", return_value={1, 2}
         ):
-            QualityRequirementSerializer()._validate_attribute_comparison_spec_ids(
+            QualityRequirementSerializer(
+                context=context or {}
+            )._validate_attribute_comparison_spec_ids(
                 attribute_comparison, quality_settings=quality_settings
             )
 
@@ -209,4 +211,11 @@ class TestQualityRequirementAttributeSpecIdValidation(unittest.TestCase):
         self.assertEqual(
             str(capture.exception.detail["attribute_comparison"]["rules"]),
             "Unknown attribute spec id(s): 5.",
+        )
+
+    def test_falls_back_to_stored_rules_without_known_rules_in_context(self) -> None:
+        self._validate(
+            {"rules": [{"spec_id": 4, "enabled": True}]},
+            stored_rules=[4],
+            context={"known_used_attribute_ids": None},
         )
