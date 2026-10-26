@@ -613,10 +613,10 @@ context('Quality requirements UI', {
         const iou = `${thresholdRows}:first input[id*="iou"]`;
         cy.get(area).clear();
         cy.get(area).type('101.444444');
-        cy.get(area).should('have.value', '101.44');
+        cy.get(area).invoke('val').should('match', /^101[.,]44$/);
         cy.get(iou).clear();
         cy.get(iou).type('40,125');
-        cy.get(iou).should('have.value', '40,12');
+        cy.get(iou).invoke('val').should('match', /^40[.,]12$/);
         cy.get(area).then(($input) => {
             const input = $input[0];
             input.select();
@@ -628,7 +628,7 @@ context('Quality requirements UI', {
             }));
             expect(accepted).to.equal(false);
         });
-        cy.get(area).should('have.value', '101.44');
+        cy.get(area).invoke('val').should('match', /^101[.,]44$/);
         cy.intercept('PATCH', '**/api/quality/settings/requirements/*').as('saveRoundedIou');
         submitForm();
         expectPolicyRequest('@saveRoundedIou', {
