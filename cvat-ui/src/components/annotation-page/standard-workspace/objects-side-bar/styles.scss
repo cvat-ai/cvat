@@ -617,7 +617,8 @@
         margin-bottom: $grid-unit-size * 0.5;
     }
 
-    &:hover {
+    &:hover,
+    &.cvat-canvas-selected-objects-menu-content:has(.cvat-canvas-selected-objects-label-selector .ant-select-open) {
         border-color: rgba(0, 0, 0, 42%);
         box-shadow: 0 2px 8px rgba(0, 0, 0, 12%);
     }
