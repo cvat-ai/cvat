@@ -22,13 +22,6 @@ export interface Position {
     y: number;
 }
 
-export interface CanvasHint {
-    type: 'text' | 'list';
-    content: string | string[];
-    className?: string;
-    icon?: 'info' | 'loading';
-}
-
 export enum CanvasHistorySource {
     MASK = 'mask',
 }
@@ -170,7 +163,10 @@ export interface InteractionData {
         points_type?: 'any' | 'positive' | 'negative'; // default is any
         removalStrategy?: 'any' | 'last'; // default is any
         appendCursorPositionAsPoint?: boolean; // default is false
-        hint?: string;
+        hint?: {
+            markdown: string;
+            topic: string;
+        };
         regionOfInterest?: [number, number, number, number];
     };
 }
@@ -282,6 +278,7 @@ export enum Mode {
 }
 
 export interface CanvasModel {
+    readonly imageID: number | null;
     readonly imageBitmap: boolean;
     readonly imageIsDeleted: boolean;
     readonly image: Image | null;
@@ -1184,6 +1181,10 @@ export class CanvasModelImpl extends MasterImpl implements CanvasModel {
 
     public get imageIsDeleted(): boolean {
         return this.data.imageIsDeleted;
+    }
+
+    public get imageID(): number | null {
+        return this.data.imageID;
     }
 
     public get image(): Image | null {

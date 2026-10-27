@@ -5,13 +5,13 @@
 
 import React from 'react';
 import { Col } from 'antd/lib/grid';
-import Icon, { StopOutlined, CheckCircleOutlined, LoadingOutlined } from '@ant-design/icons';
+import Icon, { CheckCircleOutlined, LoadingOutlined } from '@ant-design/icons';
 import Modal from 'antd/lib/modal';
 import Button from 'antd/lib/button';
 import Text from 'antd/lib/typography/Text';
 
 import { UndoIcon, RedoIcon } from 'icons';
-import { ActiveControl, ToolsBlockerState } from 'reducers';
+import { ActiveControl } from 'reducers';
 import { RectDrawingMethod } from 'cvat-canvas-wrapper';
 import { registerComponentShortcuts } from 'actions/shortcuts-actions';
 import AnnotationMenuComponent from 'components/annotation-page/top-bar/annotation-menu';
@@ -29,15 +29,12 @@ interface Props {
     undoShortcut: string;
     redoShortcut: string;
     drawShortcut: string;
-    switchToolsBlockerShortcut: string;
-    toolsBlockerState: ToolsBlockerState;
     activeControl: ActiveControl;
     rectDrawingMethod?: RectDrawingMethod;
     keyMap: KeyMap;
     onUndoClick(): void;
     onRedoClick(): void;
     onFinishDraw(): void;
-    onSwitchToolsBlockerState(): void;
 }
 
 const componentShortcuts = {
@@ -53,12 +50,6 @@ const componentShortcuts = {
         sequences: ['ctrl+shift+z', 'command+shift+z', 'ctrl+y'],
         scope: ShortcutScope.ANNOTATION_PAGE,
     },
-    SWITCH_TOOLS_BLOCKER_STATE: {
-        name: 'Switch algorithm blocker',
-        description: 'Postpone running the algorithm for interaction tools',
-        sequences: ['tab'],
-        scope: ShortcutScope.STANDARD_WORKSPACE,
-    },
 };
 
 registerComponentShortcuts(componentShortcuts);
@@ -72,20 +63,14 @@ function LeftGroup(props: Props): JSX.Element {
         undoShortcut,
         redoShortcut,
         drawShortcut,
-        switchToolsBlockerShortcut,
         activeControl,
         rectDrawingMethod,
-        toolsBlockerState,
         onUndoClick,
         onRedoClick,
         onFinishDraw,
-        onSwitchToolsBlockerState,
     } = props;
 
     const includesDoneButton = finishDrawAvailable(activeControl, rectDrawingMethod);
-
-    const includesToolsBlockerButton =
-        [ActiveControl.OPENCV_TOOLS, ActiveControl.AI_TOOLS].includes(activeControl) && toolsBlockerState.buttonVisible;
 
     const handlers: Record<keyof typeof componentShortcuts, (event?: KeyboardEvent) => void> = {
         UNDO: (event: KeyboardEvent | undefined) => {
@@ -95,10 +80,6 @@ function LeftGroup(props: Props): JSX.Element {
         REDO: (event: KeyboardEvent | undefined) => {
             event?.preventDefault();
             onRedoClick();
-        },
-        SWITCH_TOOLS_BLOCKER_STATE: (event: KeyboardEvent | undefined) => {
-            event?.preventDefault();
-            onSwitchToolsBlockerState();
         },
     };
 
@@ -147,20 +128,6 @@ function LeftGroup(props: Props): JSX.Element {
                         <Button type='link' className='cvat-annotation-header-done-button cvat-annotation-header-button' onClick={onFinishDraw}>
                             <CheckCircleOutlined />
                             Done
-                        </Button>
-                    </CVATTooltip>
-                ) : null}
-                {includesToolsBlockerButton ? (
-                    <CVATTooltip overlay={`Press "${switchToolsBlockerShortcut}" to postpone running the algorithm `}>
-                        <Button
-                            type='link'
-                            className={`cvat-annotation-header-block-tool-button cvat-annotation-header-button ${
-                                toolsBlockerState.algorithmsLocked ? 'cvat-button-active' : ''
-                            }`}
-                            onClick={onSwitchToolsBlockerState}
-                        >
-                            <StopOutlined />
-                            Block
                         </Button>
                     </CVATTooltip>
                 ) : null}
