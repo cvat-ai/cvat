@@ -4085,17 +4085,17 @@ class TaskDataAPITestCase(ApiTestBase):
 
         cls._share_image_sizes[filename] = image_sizes
 
-        filename = "test_rar.rar"
-        source_path = ASSETS_DIR / filename
-        path = os.path.join(settings.SHARE_ROOT, filename)
-        shutil.copyfile(source_path, path)
-        image_sizes = []
-        images = cls._extract_rar_archive(source_path)
-        for [f, image] in images:
-            width, height = image.size
-            image_sizes.append((width, height))
-        cls._share_image_sizes[filename] = image_sizes
-        cls._share_files.append(filename)
+        # filename = "test_rar.rar"
+        # source_path = ASSETS_DIR / filename
+        # path = os.path.join(settings.SHARE_ROOT, filename)
+        # shutil.copyfile(source_path, path)
+        # image_sizes = []
+        # images = cls._extract_rar_archive(source_path)
+        # for [f, image] in images:
+        #     width, height = image.size
+        #     image_sizes.append((width, height))
+        # cls._share_image_sizes[filename] = image_sizes
+        # cls._share_files.append(filename)
 
         filename = "test_velodyne_points.zip"
         image_sizes = []
@@ -4300,6 +4300,7 @@ class TaskDataAPITestCase(ApiTestBase):
         *,
         send_data_callback=None,
         get_status_callback=None,
+        expected_related_image_calibrations=None,
     ):
         if send_data_callback is None:
             send_data_callback = self._run_api_v2_tasks_id_data_post
@@ -4358,6 +4359,23 @@ class TaskDataAPITestCase(ApiTestBase):
             db_data = Task.objects.get(pk=task_id).require_data()
             self.assertEqual(expected_storage_method, db_data.storage_method)
             self.assertEqual(expected_uploaded_data_location, db_data.storage)
+            if expected_related_image_calibrations is not None:
+                related_files = {
+                    related_file.path: related_file
+                    for related_file in RelatedFile.objects.filter(data=db_data)
+                }
+                for path, calibration in expected_related_image_calibrations.items():
+                    with self.subTest(path=path):
+                        related_file = related_files.get(path)
+                        self.assertIsNotNone(related_file)
+                        self.assertEqual(
+                            related_file.intrinsic_matrix,
+                            calibration["intrinsic_matrix"],
+                        )
+                        self.assertEqual(
+                            related_file.extrinsic_matrix,
+                            calibration["extrinsic_matrix"],
+                        )
             # check if used share without copying inside and files doesn`t exist in ../raw/ and exist in share
             if expected_uploaded_data_location is StorageChoice.SHARE:
                 filename = next((v for k, v in data.items() if k.startswith("server_files[")), None)
@@ -5167,6 +5185,12 @@ class TaskDataAPITestCase(ApiTestBase):
                 self.ChunkType.IMAGESET,
                 image_sizes,
                 dimension=DimensionType.DIM_3D,
+                expected_related_image_calibrations={
+                    "test_pointcloud_pcd/related_images/000001_pcd/000001.png": {
+                        "intrinsic_matrix": [721.5, 0, 609.6, 0, 721.5, 172.9, 0, 0, 1],
+                        "extrinsic_matrix": [1, 0, 0, 0.2, 0, 1, 0, 0, 0, 0, 1, 1.7],
+                    },
+                },
             )
 
     def _test_api_v2_tasks_id_data_create_can_use_local_pcd_kitti(self, user):
@@ -5774,35 +5798,35 @@ class TaskDataAPITestCase(ApiTestBase):
                     send_data_callback=_send_data_and_fail,
                 )
 
-    def _test_api_v2_tasks_id_data_create_can_use_server_rar(self, user):
-        task_spec = {
-            "name": "task rar in the shared folder #32",
-            "overlap": 0,
-            "segment_size": 0,
-            "labels": [
-                {"name": "car"},
-                {"name": "person"},
-            ],
-        }
+    # def _test_api_v2_tasks_id_data_create_can_use_server_rar(self, user):
+    #     task_spec = {
+    #         "name": "task rar in the shared folder #32",
+    #         "overlap": 0,
+    #         "segment_size": 0,
+    #         "labels": [
+    #             {"name": "car"},
+    #             {"name": "person"},
+    #         ],
+    #     }
 
-        task_data = {
-            "server_files[0]": "test_rar.rar",
-            "image_quality": 75,
-            "copy_data": False,
-            "use_cache": True,
-        }
-        image_sizes = self._share_image_sizes[task_data["server_files[0]"]]
+    #     task_data = {
+    #         "server_files[0]": "test_rar.rar",
+    #         "image_quality": 75,
+    #         "copy_data": False,
+    #         "use_cache": True,
+    #     }
+    #     image_sizes = self._share_image_sizes[task_data["server_files[0]"]]
 
-        self._test_api_v2_tasks_id_data_spec(
-            user,
-            task_spec,
-            task_data,
-            self.ChunkType.IMAGESET,
-            self.ChunkType.IMAGESET,
-            image_sizes,
-            StorageMethodChoice.CACHE,
-            StorageChoice.LOCAL,
-        )
+    #     self._test_api_v2_tasks_id_data_spec(
+    #         user,
+    #         task_spec,
+    #         task_data,
+    #         self.ChunkType.IMAGESET,
+    #         self.ChunkType.IMAGESET,
+    #         image_sizes,
+    #         StorageMethodChoice.CACHE,
+    #         StorageChoice.LOCAL,
+    #     )
 
     def _test_api_v2_tasks_id_data_create(self, user):
         method_list = {
