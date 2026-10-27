@@ -17,6 +17,7 @@ component_management:
         - cvat/**
         - cvat-cli/**
         - cvat-sdk/**
+        - cvat-mp4-h264/**
         - utils/**
 
 codecov:

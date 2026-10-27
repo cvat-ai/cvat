@@ -51,7 +51,7 @@ jobs:
 
       - name: Build packages
         run: |
-          for d in cvat-sdk cvat-cli; do
+          for d in cvat-sdk cvat-cli cvat-mp4-h264; do
             pipx run --spec=build pyproject-build --outdir=dist "$d"
           done
 
