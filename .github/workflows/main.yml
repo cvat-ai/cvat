@@ -188,7 +188,7 @@ jobs:
       - name: Install SDK
         run: |
           pip3 install -r ./tests/python/requirements.txt \
-            -e './cvat-sdk[masks,pytorch]' -e ./cvat-cli \
+            -e './cvat-sdk[masks,pytorch,video]' -e ./cvat-cli -e ./cvat-mp4-h264 \
             --extra-index-url https://download.pytorch.org/whl/cpu
 
       # Fail fast on failed test data integrity checks.
@@ -526,7 +526,7 @@ jobs:
 
       - name: Install test requirements
         run: |
-          pip3 install --user cvat-sdk/ cvat-cli/ -r tests/python/requirements.txt
+          pip3 install --user cvat-sdk/ cvat-cli/ cvat-mp4-h264/ -r tests/python/requirements.txt
 
       - name: Wait for CVAT to be ready
         run: |

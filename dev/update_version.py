@@ -168,6 +168,16 @@ REPLACEMENT_RULES = [
         lambda v, m: f'"cvat-sdk=={v.major}.{v.minor}.{v.patch}"',
     ),
     ReplacementRule(
+        "cvat-mp4-h264/src/cvat_mp4_h264/version.py",
+        re.compile(r'^VERSION = "[\d.]+"$', re.M),
+        lambda v, m: f'VERSION = "{v.major}.{v.minor}.{v.patch}"',
+    ),
+    ReplacementRule(
+        "cvat-sdk/pyproject.toml",
+        re.compile(r'"cvat-mp4-h264==[\d.]+"'),
+        lambda v, m: f'"cvat-mp4-h264=={v.major}.{v.minor}.{v.patch}"',
+    ),
+    ReplacementRule(
         "cvat-ui/package.json",
         re.compile(r'^  "version": "[\d.]+",$', re.M),
         lambda v, m: f'  "version": "{v.major}.{v.minor}.{v.patch}",',
