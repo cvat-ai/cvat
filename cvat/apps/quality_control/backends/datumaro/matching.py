@@ -308,10 +308,18 @@ class CompressedObjectBoundary:
         boundary = mask_utils.decode(self.rle).astype(bool)
         ys, xs = np.nonzero(boundary)
         points = np.stack([ys + self.origin[0], xs + self.origin[1]], axis=1)
-        # the exact Euclidean distance to the nearest boundary (zero) pixel
-        distances = cv2.distanceTransform(
-            (~boundary).astype(np.uint8), cv2.DIST_L2, cv2.DIST_MASK_PRECISE
-        )
+
+        if boundary.size:
+            # the exact Euclidean distance to the nearest boundary (zero) pixel
+            distances = cv2.distanceTransform(
+                (~boundary).astype(np.uint8), cv2.DIST_L2, cv2.DIST_MASK_PRECISE
+            )
+        else:
+            # The window can be empty, e.g. for objects outside the image.
+            # OpenCV crashes on the arrays with 0 width, but not on 0 height,
+            # so all the empty arrays are skipped.
+            distances = np.zeros(boundary.shape, dtype=np.float32)
+
         return MaterializedObjectBoundary(origin=self.origin, points=points, distances=distances)
 
 
