@@ -14,6 +14,8 @@ import { Issue } from 'cvat-core-wrapper';
 import CVATTooltip from 'components/common/cvat-tooltip';
 
 interface Props {
+    container?: HTMLElement;
+    idSuffix?: string;
     issue: Issue;
     top: number;
     left: number;
@@ -21,6 +23,7 @@ interface Props {
     scale: number;
     resolved: boolean;
     onClick: (event: React.MouseEvent) => void;
+    onPointerDown?: (event: React.PointerEvent<HTMLElement>) => void;
     highlight: () => void;
     blur: () => void;
 }
@@ -61,17 +64,26 @@ export default function HiddenIssueLabel(props: Props): ReactPortal {
         return () => {};
     }, [ref.current]);
 
-    const elementID = `cvat-hidden-issue-label-${id}`;
+    const elementID = `cvat-hidden-issue-label-${id}${props.idSuffix || ''}`;
     return ReactDOM.createPortal(
         <CVATTooltip title={comments[0]?.message || 'No comments found'}>
             <Tag
                 ref={ref}
                 id={elementID}
                 onClick={onClick}
+                onPointerDown={props.onPointerDown}
+                role='button'
+                tabIndex={0}
+                onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        ref.current?.click();
+                    }
+                }}
                 onMouseEnter={highlight}
                 onMouseLeave={blur}
                 style={{ top, left, transform: `scale(${scale}) rotate(${angle}deg)` }}
-                className='cvat-hidden-issue-label'
+                className={`cvat-hidden-issue-label ${props.onPointerDown ? 'cvat-issue-label-draggable' : ''}`}
             >
                 {resolved ? (
                     <CheckCircleOutlined className='cvat-hidden-issue-resolved-indicator' />
@@ -81,6 +93,6 @@ export default function HiddenIssueLabel(props: Props): ReactPortal {
                 {comments[0]?.message || null}
             </Tag>
         </CVATTooltip>,
-        window.document.getElementById('cvat_canvas_attachment_board') as HTMLElement,
+        props.container || window.document.getElementById('cvat_canvas_attachment_board') as HTMLElement,
     );
 }

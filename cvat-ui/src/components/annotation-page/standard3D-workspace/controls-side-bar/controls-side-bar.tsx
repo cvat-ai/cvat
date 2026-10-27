@@ -5,7 +5,8 @@
 
 import React from 'react';
 import Layout from 'antd/lib/layout';
-import { ActiveControl } from 'reducers';
+import { ActiveControl, CombinedState, Workspace } from 'reducers';
+import { useSelector } from 'react-redux';
 import { Label, LabelType } from 'cvat-core-wrapper';
 import { Canvas3d as Canvas } from 'cvat-canvas3d-wrapper';
 import MoveControl, {
@@ -32,6 +33,7 @@ import { filterApplicableForType } from 'utils/filter-applicable-labels';
 import { subKeyMap } from 'utils/component-subkeymap';
 import { ShortcutScope } from 'utils/enums';
 import { registerComponentShortcuts } from 'actions/shortcuts-actions';
+import IssueControl from 'components/annotation-page/review-workspace/controls-side-bar/issue-control';
 
 interface Props {
     keyMap: KeyMap;
@@ -117,6 +119,10 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
     } = props;
 
     const applicableLabels = filterApplicableForType(LabelType.CUBOID, labels);
+    const { isReview, frameIsDeleted } = useSelector((state: CombinedState) => ({
+        isReview: state.annotation.workspace === Workspace.REVIEW,
+        frameIsDeleted: state.annotation.player.frame.data?.deleted,
+    }));
     const preventDefault = (event: KeyboardEvent | undefined): void => {
         if (event) {
             event.preventDefault();
@@ -231,6 +237,26 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
     } : { ...handlers };
 
     const controlsDisabled = !applicableLabels.length;
+    if (isReview) {
+        return (
+            <Layout.Sider className='cvat-canvas-controls-sidebar' theme='light' width={44}>
+                <ObservedCursorControl
+                    cursorShortkey={normalizedKeyMap.CANCEL}
+                    canvasInstance={canvasInstance}
+                    activeControl={activeControl}
+                />
+                <ObservedMoveControl canvasInstance={canvasInstance} activeControl={activeControl} />
+                <hr />
+                <IssueControl
+                    canvasInstance={canvasInstance}
+                    activeControl={activeControl}
+                    updateActiveControl={updateActiveControl}
+                    disabled={!!frameIsDeleted}
+                />
+            </Layout.Sider>
+        );
+    }
+
     return (
         <Layout.Sider className='cvat-canvas-controls-sidebar' theme='light' width={44}>
             <GlobalHotKeys

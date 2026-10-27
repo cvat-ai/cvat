@@ -13,7 +13,9 @@ CVAT introduces a specialized **Review mode**, designed to streamline the
 validation of annotations by pinpointing errors or discrepancies in annotation.
 
 {{% alert title="Note" color="primary" %}}
-The **Review mode** is not applicable for 3D tasks.
+For 3D tasks, **Review mode** supports issue pins, optional object or track links,
+and frame ranges in the point cloud.
+See [Reviewing 3D tasks](#reviewing-3d-tasks).
 {{% /alert %}}
 
 See:
@@ -192,6 +194,44 @@ In the Objects toolbar, only the first and last comments will be displayed
 ![Issue comment example](/images/issue_comments.png)
 
 You can copy and paste comments text.
+
+## Reviewing 3D tasks
+
+1. Open a 3D job and select **Review** in the workspace selector.
+2. Click **Open an issue** (or press **N**), then click a cuboid or a point in the
+   perspective view. You can drag to rotate the scene while choosing a location;
+   dragging does not place an issue. Empty background cannot be used to place a pin.
+3. Enter a description in the popup beside the selected location. Leave **Applies
+   to** as **Point only**, or choose a cuboid shape or track. Set **From frame**
+   and **To frame** to include the frames affected by the issue, then click
+   **Submit**. Both endpoints are included. Issue labels appear at the same XYZ
+   location in the perspective, top, side, and front views on those frames,
+   showing the first comment just as in 2D. Unsaved linked annotations are saved
+   when the issue is submitted.
+4. Click an issue label to open its discussion on the perspective canvas or in
+   an expanded 3D view. You can
+   add comments, resolve the issue, or reopen it. Hover over an item in the
+   **Issues** tab to highlight its location; click it to focus the issue.
+   **Select** in the discussion selects and focuses the
+   linked annotation. The discussion and sidebar also show the issue's frame range.
+5. Use the **Issues** tab arrows to jump to previous or next frames containing
+   issues. The visibility buttons hide all pins or hide resolved issues.
+6. Drag an issue's point marker or label in **Top**, **Side**, or **Front** to
+   reposition it along the view plane, keeping its depth in that view. All views
+   update together. Release to save the position, or press **Escape** to cancel.
+   You can also adjust a new marker before submitting its description.
+
+An expanded pane shows only its own issue markers and discussion. Expanding a
+camera image hides the 3D issue overlays. Unfinished comments and issue descriptions
+are retained when expanding and restoring views.
+
+You can also right-click a selected cuboid to create an issue at its center,
+including quick issues. These issues link to the selected shape or track
+automatically. The pin remains independently draggable; moving it does not move
+the annotation or remove the link. Pins keep their XYZ location when annotations
+are edited. If a linked annotation is deleted or absent on a frame, its discussion
+and marker remain available. Switch to **Standard 3D** to edit annotations;
+existing issues and comments remain available there.
 
 ## Manual QA complete video tutorial
 

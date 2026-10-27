@@ -36,6 +36,11 @@ interface Canvas3d {
     fitCanvas(): void;
     fit(): void;
     focus(clientID: number): void;
+    selectRegion(enabled: boolean): void;
+    pickPosition(clientX: number, clientY: number): number[] | null;
+    projectPosition(position: number[], view: ViewType): [number, number] | null;
+    focusPosition(position: number[]): void;
+    movePosition(position: number[], view: ViewType, from: [number, number], to: [number, number]): number[] | null;
     group(groupData: GroupData): void;
     merge(mergeData: MergeData): void;
     split(splitData: SplitData): void;
@@ -111,6 +116,28 @@ class Canvas3dImpl implements Canvas3d {
 
     public focus(clientID: number): void {
         this.view.focusObjectByClientId(clientID, true);
+    }
+
+    public selectRegion(enabled: boolean): void {
+        this.model.mode = enabled ? Mode.SELECT_REGION : Mode.IDLE;
+    }
+
+    public pickPosition(clientX: number, clientY: number): number[] | null {
+        return this.view.pickPosition(clientX, clientY);
+    }
+
+    public projectPosition(position: number[], view: ViewType): [number, number] | null {
+        return this.view.projectPosition(position, view);
+    }
+
+    public focusPosition(position: number[]): void {
+        this.view.focusPosition(position);
+    }
+
+    public movePosition(
+        position: number[], view: ViewType, from: [number, number], to: [number, number],
+    ): number[] | null {
+        return this.view.movePosition(position, view, from, to);
     }
 
     public fit(): void {

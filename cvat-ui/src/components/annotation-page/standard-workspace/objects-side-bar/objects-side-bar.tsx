@@ -100,7 +100,7 @@ function ObjectsSideBar(props: StateToProps & DispatchToProps & OwnProps): JSX.E
         };
     }, [openSidebar]);
 
-    const is2D = jobInstance ? jobInstance.dimension === DimensionType.DIMENSION_2D : true;
+    const supportsIssues = jobInstance?.dimension !== DimensionType.DIMENSION_1D;
     return (
         <Layout.Sider
             className='cvat-objects-sidebar'
@@ -134,7 +134,7 @@ function ObjectsSideBar(props: StateToProps & DispatchToProps & OwnProps): JSX.E
                     label: 'Labels',
                     forceRender: true,
                     children: <LabelsList />,
-                }, ...(is2D ? [{ key: 'issues', label: 'Issues', children: <IssuesListComponent /> }] : [])]}
+                }, ...(supportsIssues ? [{ key: 'issues', label: 'Issues', children: <IssuesListComponent /> }] : [])]}
             />
             {!sidebarCollapsed && <AppearanceBlock />}
         </Layout.Sider>

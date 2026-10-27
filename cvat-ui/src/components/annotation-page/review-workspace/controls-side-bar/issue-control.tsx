@@ -8,6 +8,7 @@ import Icon from '@ant-design/icons';
 
 import { ActiveControl, CombinedState } from 'reducers';
 import { Canvas } from 'cvat-canvas-wrapper';
+import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import { IssueIcon } from 'icons';
 import CVATTooltip from 'components/common/cvat-tooltip';
 import GlobalHotKeys from 'utils/mousetrap-react';
@@ -17,7 +18,7 @@ import { subKeyMap } from 'utils/component-subkeymap';
 import { useSelector } from 'react-redux';
 
 interface Props {
-    canvasInstance: Canvas;
+    canvasInstance: Canvas | Canvas3d;
     activeControl: ActiveControl;
     disabled: boolean;
     updateActiveControl(activeControl: ActiveControl): void;

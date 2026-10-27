@@ -11,6 +11,8 @@ import { QualityConflict, DimensionType } from 'cvat-core-wrapper';
 import { ReviewState } from '.';
 
 const defaultState: ReviewState = {
+    activeIssueId: null,
+    highlightedIssueId: null,
     issues: [],
     latestComments: [],
     frameIssues: [],
@@ -19,6 +21,7 @@ const defaultState: ReviewState = {
     newIssue: {
         position: null,
         source: null,
+        objectClientID: null,
     },
     issuesHidden: false,
     issuesResolvedHidden: false,
@@ -30,6 +33,12 @@ const defaultState: ReviewState = {
 
 export default function (state: ReviewState = defaultState, action: any): ReviewState {
     switch (action.type) {
+        case ReviewActionTypes.SELECT_ISSUE:
+            return { ...state, activeIssueId: action.payload.issueId };
+        case ReviewActionTypes.HIGHLIGHT_ISSUE:
+            return { ...state, highlightedIssueId: action.payload.issueId };
+        case ReviewActionTypes.MOVE_DRAFT_ISSUE:
+            return { ...state, newIssue: { ...state.newIssue, position: action.payload.position } };
         case AnnotationActionTypes.GET_JOB_SUCCESS: {
             const { job } = action.payload;
             if (job.dimension === DimensionType.DIMENSION_1D) {
@@ -43,7 +52,7 @@ export default function (state: ReviewState = defaultState, action: any): Review
                 frameData: { number: frame },
             } = action.payload;
 
-            const frameIssues = issues.filter((issue: any): boolean => issue.frame === frame);
+            const frameIssues = issues.filter((issue: any): boolean => issue.frame <= frame && issue.endFrame >= frame);
             const frameConflicts = conflicts.filter((conflict: QualityConflict): boolean => conflict.frame === frame);
 
             return {
@@ -59,9 +68,12 @@ export default function (state: ReviewState = defaultState, action: any): Review
         case AnnotationActionTypes.DELETE_FRAME_SUCCESS: {
             return {
                 ...state,
+                activeIssueId: null,
+                highlightedIssueId: null,
                 newIssue: {
                     position: null,
                     source: null,
+                    objectClientID: null,
                 },
             };
         }
@@ -94,24 +106,31 @@ export default function (state: ReviewState = defaultState, action: any): Review
 
             return {
                 ...state,
-                frameIssues: state.issues.filter((issue: any): boolean => issue.frame === frame),
+                frameIssues: state.issues.filter((issue: any): boolean => (
+                    issue.frame <= frame && issue.endFrame >= frame
+                )),
                 frameConflicts,
             };
         }
         case ReviewActionTypes.START_ISSUE: {
-            const { position, source } = action.payload;
+            const { position, source, objectClientID } = action.payload;
             return {
                 ...state,
+                activeIssueId: null,
+                highlightedIssueId: null,
                 newIssue: {
                     position,
                     source,
+                    objectClientID,
                 },
             };
         }
         case ReviewActionTypes.FINISH_ISSUE_SUCCESS: {
             const { frame, issue } = action.payload;
             const issues = [...state.issues, issue];
-            const frameIssues = issues.filter((_issue: any): boolean => _issue.frame === frame);
+            const frameIssues = issues.filter((_issue: any): boolean => (
+                _issue.frame <= frame && _issue.endFrame >= frame
+            ));
 
             return {
                 ...state,
@@ -132,10 +151,12 @@ export default function (state: ReviewState = defaultState, action: any): Review
                 newIssue: {
                     position: null,
                     source: null,
+                    objectClientID: null,
                 },
             };
         }
         case ReviewActionTypes.COMMENT_ISSUE:
+        case ReviewActionTypes.MOVE_ISSUE:
         case ReviewActionTypes.RESOLVE_ISSUE:
         case ReviewActionTypes.REOPEN_ISSUE: {
             const { issueId } = action.payload;
@@ -148,6 +169,7 @@ export default function (state: ReviewState = defaultState, action: any): Review
             };
         }
         case ReviewActionTypes.COMMENT_ISSUE_FAILED:
+        case ReviewActionTypes.MOVE_ISSUE_FAILED:
         case ReviewActionTypes.RESOLVE_ISSUE_FAILED:
         case ReviewActionTypes.REOPEN_ISSUE_FAILED: {
             return {
@@ -159,6 +181,7 @@ export default function (state: ReviewState = defaultState, action: any): Review
             };
         }
         case ReviewActionTypes.RESOLVE_ISSUE_SUCCESS:
+        case ReviewActionTypes.MOVE_ISSUE_SUCCESS:
         case ReviewActionTypes.REOPEN_ISSUE_SUCCESS:
         case ReviewActionTypes.COMMENT_ISSUE_SUCCESS: {
             const { issues, frameIssues } = state;
@@ -190,9 +213,10 @@ export default function (state: ReviewState = defaultState, action: any): Review
         case ReviewActionTypes.REMOVE_ISSUE_SUCCESS: {
             const { issueId, frame } = action.payload;
             const issues = state.issues.filter((issue: any) => issue.id !== issueId);
-            const frameIssues = issues.filter((issue: any): boolean => issue.frame === frame);
+            const frameIssues = issues.filter((issue: any): boolean => issue.frame <= frame && issue.endFrame >= frame);
             return {
                 ...state,
+                activeIssueId: state.activeIssueId === issueId ? null : state.activeIssueId,
                 issues,
                 frameIssues,
             };

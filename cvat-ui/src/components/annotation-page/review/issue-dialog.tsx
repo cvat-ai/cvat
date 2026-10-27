@@ -20,8 +20,10 @@ import CVATTooltip from 'components/common/cvat-tooltip';
 import { Issue, Comment as CommentModel } from 'cvat-core-wrapper';
 import { deleteIssueAsync } from 'actions/review-actions';
 import { useDialogPositioning } from './use-dialog-positioning';
+import IssueContext from './issue-context';
 
 interface Props {
+    container?: HTMLElement;
     issue: Issue;
     left: number;
     top: number;
@@ -160,6 +162,7 @@ export default function IssueDialog(props: Props): JSX.Element {
                     </CVATTooltip>
                 </Col>
             </Row>
+            <IssueContext issue={issue} interactive />
             <Row className='cvat-issue-dialog-chat' justify='start'>
                 {
                     lines.length > 0 ? <Col style={{ display: 'block' }}>{lines}</Col> : (
@@ -210,6 +213,6 @@ export default function IssueDialog(props: Props): JSX.Element {
                 </Col>
             </Row>
         </div>,
-        window.document.getElementById('cvat_canvas_attachment_board') as HTMLElement,
+        props.container || window.document.getElementById('cvat_canvas_attachment_board') as HTMLElement,
     );
 }

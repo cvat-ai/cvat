@@ -25,6 +25,10 @@ export interface Canvas3dView {
     render(): void;
     keyControls(keys: KeyboardEvent): void;
     focusObjectByClientId(clientID: number, animate?: boolean): void;
+    pickPosition(clientX: number, clientY: number): number[] | null;
+    projectPosition(position: number[], view: ViewType): [number, number] | null;
+    focusPosition(position: number[]): void;
+    movePosition(position: number[], view: ViewType, from: [number, number], to: [number, number]): number[] | null;
 }
 
 export enum CameraAction {
@@ -130,6 +134,88 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         cuboid: CuboidModel;
     }>;
     private hoverNeedsUpdate: boolean;
+
+    public pickPosition(clientX: number, clientY: number): number[] | null {
+        const { camera, renderer, scene } = this.views.perspective;
+        const rect = renderer.domElement.getBoundingClientRect();
+        if (!camera || !rect.width || !rect.height) return null;
+
+        const raycaster = new THREE.Raycaster();
+        raycaster.setFromCamera(new THREE.Vector2(
+            ((clientX - rect.left) / rect.width) * 2 - 1,
+            -((clientY - rect.top) / rect.height) * 2 + 1,
+        ), camera);
+        const cuboidHit = raycaster.intersectObjects(this.getAllVisibleCuboids(), false)[0];
+        if (cuboidHit) return cuboidHit.point.toArray();
+
+        // Pick real cloud points, rather than inventing a depth for empty background.
+        raycaster.params.Points.threshold = Math.max(
+            this.sceneBBox.getSize(new THREE.Vector3()).length() * 0.002, 0.01,
+        );
+        const clouds = scene.children.filter((child) => child instanceof THREE.Points && child.visible);
+        const pointHit = raycaster.intersectObjects(clouds, false)[0];
+        return pointHit ? pointHit.point.toArray() : null;
+    }
+
+    public projectPosition(position: number[], view: ViewType): [number, number] | null {
+        const { camera, renderer } = this.views[view];
+        if (!camera || position.length !== 3 || !position.every(Number.isFinite)) return null;
+        const projected = new THREE.Vector3(...position).project(camera);
+        // Orthographic cloud views may be clipped to the selected cuboid's depth.
+        // Review pins remain visible outside that slab so they can still be moved.
+        if (Math.abs(projected.x) > 1 || Math.abs(projected.y) > 1 ||
+            (view === ViewType.PERSPECTIVE && Math.abs(projected.z) > 1)) return null;
+        return [
+            ((projected.x + 1) / 2) * renderer.domElement.clientWidth,
+            ((1 - projected.y) / 2) * renderer.domElement.clientHeight,
+        ];
+    }
+
+    public focusPosition(position: number[]): void {
+        if (position.length !== 3 || !position.every(Number.isFinite)) return;
+        this.views.perspective.controls?.moveTo(position[0], position[1], position[2], true);
+        BOTTOM_VIEWS.forEach((view) => {
+            const { camera } = this.views[view];
+            if (!camera) return;
+            // Orthographic controls are disabled. Pan the camera in its own plane
+            // without changing its orientation, zoom, or distance along that plane's normal.
+            const anchor = new THREE.Vector3(...position);
+            const projected = anchor.clone().project(camera);
+            const center = new THREE.Vector3(0, 0, projected.z).unproject(camera);
+            camera.position.add(anchor.sub(center));
+            camera.updateMatrixWorld();
+        });
+    }
+
+    public movePosition(
+        position: number[], view: ViewType, from: [number, number], to: [number, number],
+    ): number[] | null {
+        const { camera, renderer } = this.views[view];
+        const rect = renderer.domElement.getBoundingClientRect();
+        if (view === ViewType.PERSPECTIVE || !camera || !rect.width || !rect.height ||
+            position.length !== 3 || !position.every(Number.isFinite)) return null;
+
+        // Intersect both pointer locations with the screen-parallel plane through the anchor.
+        // Taking their difference preserves depth and the original grab offset, even in rotated views.
+        const anchor = new THREE.Vector3(...position);
+        const normal = camera.getWorldDirection(new THREE.Vector3());
+        // lookAt slightly perturbs cameras whose up vector is parallel to the viewing axis.
+        // Keep their hidden coordinate exact so repeated drags cannot accumulate depth drift.
+        const axis = normal.toArray().findIndex((value) => Math.abs(value) > 1 - 1e-6);
+        if (axis !== -1) normal.set(0, 0, 0).setComponent(axis, 1);
+        const plane = new THREE.Plane().setFromNormalAndCoplanarPoint(normal, anchor);
+        const raycaster = new THREE.Raycaster();
+        const intersect = ([clientX, clientY]: [number, number]): THREE.Vector3 | null => {
+            raycaster.setFromCamera(new THREE.Vector2(
+                ((clientX - rect.left) / rect.width) * 2 - 1,
+                -((clientY - rect.top) / rect.height) * 2 + 1,
+            ), camera);
+            return raycaster.ray.intersectPlane(plane, new THREE.Vector3());
+        };
+        const start = intersect(from);
+        const end = intersect(to);
+        return start && end ? anchor.add(end.sub(start)).toArray() : null;
+    }
 
     public focusObjectByClientId(clientID: number, animate: boolean = true): void {
         const cuboidModel = this.drawnObjects[clientID];
@@ -480,6 +566,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
 
         canvasPerspectiveView.addEventListener('dblclick', (e: MouseEvent): void => {
             e.preventDefault();
+            if (this.mode === Mode.SELECT_REGION) return;
             if (this.mode !== Mode.DRAW) {
                 const { perspective: viewType } = this.views;
                 viewType.rayCaster.renderer.setFromCamera(viewType.rayCaster.mouseVector, viewType.camera);
@@ -927,7 +1014,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
     }
 
     private onPerspectiveDrag = (): void => {
-        if (![Mode.DRAG_CANVAS, Mode.IDLE].includes(this.mode)) return;
+        if (![Mode.DRAG_CANVAS, Mode.IDLE, Mode.SELECT_REGION].includes(this.mode)) return;
         this.isPerspectiveBeingDragged = true;
         this.enablePerspectiveDragging();
     };

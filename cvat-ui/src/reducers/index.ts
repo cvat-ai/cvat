@@ -739,6 +739,7 @@ export interface NotificationsState {
         };
         review: {
             finishingIssue: null | ErrorState;
+            movingIssue: null | ErrorState;
             resolvingIssue: null | ErrorState;
             reopeningIssue: null | ErrorState;
             commentingIssue: null | ErrorState;
@@ -1148,12 +1149,15 @@ export enum NewIssueSource {
 }
 
 export interface ReviewState {
+    activeIssueId: number | null;
+    highlightedIssueId: number | null;
     issues: any[];
     frameIssues: any[];
     latestComments: string[];
     newIssue: {
         position: number[] | null;
         source: NewIssueSource | null;
+        objectClientID: number | null;
     }
     issuesHidden: boolean;
     issuesResolvedHidden: boolean;

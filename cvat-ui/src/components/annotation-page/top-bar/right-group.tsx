@@ -167,7 +167,11 @@ function RightGroup(props: Props): JSX.Element {
                                 return null;
                             }
                             return (
-                                <Select.Option disabled={ws !== Workspace.STANDARD3D} key={ws} value={ws}>
+                                <Select.Option
+                                    disabled={![Workspace.STANDARD3D, Workspace.REVIEW].includes(ws)}
+                                    key={ws}
+                                    value={ws}
+                                >
                                     {ws}
                                 </Select.Option>
                             );

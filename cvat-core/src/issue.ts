@@ -10,11 +10,21 @@ import Comment, { RawCommentData } from './comment';
 import User from './user';
 import { ArgumentError } from './exceptions';
 import serverProxy from './server-proxy';
+import { ObjectType } from './enums';
+
+function validatePosition(position: number[]): void {
+    if (!Array.isArray(position) || !position.length || !position.every(Number.isFinite)) {
+        throw new ArgumentError('Issue position must be a non-empty array of finite numbers');
+    }
+}
 
 interface RawIssueData {
     job: number;
     position: number[];
     frame: number;
+    end_frame?: number | null;
+    object_id?: number | null;
+    object_type?: ObjectType.SHAPE | ObjectType.TRACK | null;
     id?: number;
     comments?: RawCommentData[];
     owner?: any;
@@ -26,6 +36,9 @@ export default class Issue {
     public readonly id?: number;
     public readonly job: number;
     public readonly frame: number;
+    public readonly endFrame: number;
+    public readonly objectID: number | null;
+    public readonly objectType: ObjectType.SHAPE | ObjectType.TRACK | null;
     public readonly owner?: User;
     public readonly comments: Comment[];
     public readonly resolved?: boolean;
@@ -39,6 +52,9 @@ export default class Issue {
             job: undefined,
             position: undefined,
             frame: undefined,
+            end_frame: null,
+            object_id: null,
+            object_type: null,
             created_date: undefined,
             owner: undefined,
             resolved: undefined,
@@ -72,10 +88,8 @@ export default class Issue {
                 position: {
                     get: () => data.position,
                     set: (value) => {
-                        if (Array.isArray(value) || value.some((coord) => typeof coord !== 'number')) {
-                            throw new ArgumentError(`Array of numbers is expected. Got ${value}`);
-                        }
-                        data.position = value;
+                        validatePosition(value);
+                        data.position = [...value];
                     },
                 },
                 job: {
@@ -86,6 +100,15 @@ export default class Issue {
                 },
                 frame: {
                     get: () => data.frame,
+                },
+                endFrame: {
+                    get: () => data.end_frame ?? data.frame,
+                },
+                objectID: {
+                    get: () => data.object_id,
+                },
+                objectType: {
+                    get: () => data.object_type,
                 },
                 createdDate: {
                     get: () => data.created_date,
@@ -139,6 +162,11 @@ export default class Issue {
         return result;
     }
 
+    // Save a new anchor only after the server accepts the move.
+    public async move(position: number[]): Promise<void> {
+        await PluginRegistry.apiWrapper.call(this, Issue.prototype.move, position);
+    }
+
     // The method deletes the issue
     // Deletes local or server-saved issues
     public async delete(): Promise<void> {
@@ -150,6 +178,9 @@ export default class Issue {
             job: this.job,
             position: this.position,
             frame: this.frame,
+            end_frame: this.endFrame === this.frame ? null : this.endFrame,
+            object_id: this.objectID,
+            object_type: this.objectType,
         };
 
         if (typeof this.id === 'number') {
@@ -239,6 +270,23 @@ Object.defineProperties(Issue.prototype.delete, {
             const { id } = this;
             if (id >= 0) {
                 await serverProxy.issues.delete(id);
+            }
+        },
+    },
+});
+
+Object.defineProperties(Issue.prototype.move, {
+    implementation: {
+        writable: false,
+        enumerable: false,
+        value: async function implementation(this: Issue, position: number[]) {
+            validatePosition(position);
+            const nextPosition = [...position];
+            if (typeof this.id === 'number') {
+                const response = await serverProxy.issues.update(this.id, { position: nextPosition });
+                this.position = response.position;
+            } else {
+                this.position = nextPosition;
             }
         },
     },

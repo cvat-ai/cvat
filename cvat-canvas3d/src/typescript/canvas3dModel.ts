@@ -107,6 +107,7 @@ export enum Mode {
     GROUP = 'group',
     MERGE = 'merge',
     SPLIT = 'split',
+    SELECT_REGION = 'select_region',
 }
 
 export interface Canvas3dDataModel {

@@ -1751,6 +1751,13 @@ class Profile(models.Model):
 
 class Issue(TimestampedModel, AssignableModel):
     frame = models.PositiveIntegerField()
+    end_frame = models.PositiveIntegerField(null=True, blank=True)
+    # Annotation updates replace database rows while preserving their IDs. Keep a
+    # logical reference so a correction does not detach the issue from its object.
+    object_id = models.PositiveBigIntegerField(null=True, blank=True)
+    object_type = models.CharField(
+        max_length=5, choices=(("shape", "Shape"), ("track", "Track")), null=True, blank=True
+    )
     position = FloatArrayField()
     job = models.ForeignKey(
         Job, related_name="issues", related_query_name="issue", on_delete=models.CASCADE

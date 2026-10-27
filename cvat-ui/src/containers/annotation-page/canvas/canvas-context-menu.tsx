@@ -15,7 +15,9 @@ import { copyShape, pasteShapeAsync, updateCanvasContextMenu } from 'actions/ann
 import { reviewActions, finishIssueAsync } from 'actions/review-actions';
 import { ThunkDispatch } from 'utils/redux';
 import { Canvas } from 'cvat-canvas-wrapper';
-import { ObjectState, ShapeType, QualityConflict } from 'cvat-core-wrapper';
+import {
+    ObjectState, ShapeType, QualityConflict, DimensionType,
+} from 'cvat-core-wrapper';
 
 interface StateToProps {
     contextMenuParentID: number | null;
@@ -97,13 +99,29 @@ function mapDispatchToProps(dispatch: ThunkDispatch): DispatchToProps {
             dispatch(updateCanvasContextMenu(visible, left, top, pointID, type));
         },
         onStartIssue(position: number[]): void {
-            dispatch(reviewActions.startIssue(position));
-            dispatch(updateCanvasContextMenu(false, 0, 0));
+            dispatch((innerDispatch, getState) => {
+                const { annotation } = getState();
+                const is3D = annotation.job.instance.dimension === DimensionType.DIMENSION_3D;
+                const issuePosition = is3D ? position.slice(0, 3) : position;
+                const objectClientID = is3D ? annotation.canvas.contextMenu.clientID : null;
+                innerDispatch(reviewActions.startIssue(
+                    issuePosition, NewIssueSource.ISSUE_TOOL, objectClientID,
+                ));
+                innerDispatch(updateCanvasContextMenu(false, 0, 0));
+            });
         },
         openIssue(position: number[], message: string): void {
-            dispatch(reviewActions.startIssue(position, NewIssueSource.QUICK_ISSUE));
-            dispatch(finishIssueAsync(message));
-            dispatch(updateCanvasContextMenu(false, 0, 0));
+            dispatch((innerDispatch, getState) => {
+                const { annotation } = getState();
+                const is3D = annotation.job.instance.dimension === DimensionType.DIMENSION_3D;
+                const issuePosition = is3D ? position.slice(0, 3) : position;
+                const objectClientID = is3D ? annotation.canvas.contextMenu.clientID : null;
+                innerDispatch(reviewActions.startIssue(
+                    issuePosition, NewIssueSource.QUICK_ISSUE, objectClientID,
+                ));
+                innerDispatch(finishIssueAsync(message));
+                innerDispatch(updateCanvasContextMenu(false, 0, 0));
+            });
         },
         onCopyObject(objectState: ObjectState): void {
             dispatch(copyShape(objectState));

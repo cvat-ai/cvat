@@ -40,7 +40,7 @@ class TestPostIssues:
 
             assert (
                 DeepDiff(
-                    data,
+                    {"end_frame": None, "object_id": None, "object_type": None, **data},
                     response_json,
                     exclude_regex_paths=r"root\['created_date|updated_date|comments|id|owner|message'\]",
                 )
@@ -158,6 +158,7 @@ class TestPatchIssues:
             request_data["resolved"] = not request_data["resolved"]
 
             response_data = deepcopy(request_data)
+            response_data.update(end_frame=None, object_id=None, object_type=None)
 
             request_data.pop("comments")
             request_data.pop("updated_date")

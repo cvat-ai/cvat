@@ -38,6 +38,27 @@
     }
 }
 
+.cvat-create-issue-dialog-3d {
+    width: $grid-unit-size * 40;
+
+    .ant-input-number {
+        width: 100%;
+    }
+}
+
+.cvat-issue-context {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: $grid-unit-size;
+
+    .cvat-issue-select-object {
+        padding: 0;
+        text-align: left;
+        height: auto;
+        white-space: normal;
+    }
+}
+
 .cvat-conflict-label {
     position: absolute;
     min-width: 2 * $grid-unit-size;
@@ -121,6 +142,67 @@
 
 .cvat-hidden-issue-indicator {
     margin-right: $grid-unit-size;
+}
+
+.cvat-canvas3d-issues {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 100;
+}
+
+.cvat-canvas3d-issue-region {
+    position: absolute;
+    width: $grid-unit-size * 4;
+    height: $grid-unit-size * 4;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    border: 0;
+    background: transparent;
+    outline: none;
+
+    // Keep the larger drag target while displaying only the anchor point.
+    &::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: $grid-unit-size;
+        height: $grid-unit-size;
+        border-radius: 50%;
+        transform: translate(-50%, -50%);
+        background: #d9b300;
+        box-shadow: 0 0 0 1px rgba(0, 0, 0, 70%);
+        pointer-events: none;
+    }
+
+    &.cvat-canvas3d-issue-highlighted::after {
+        background: $border-color-hover;
+    }
+
+    &:focus-visible::after {
+        outline: 2px solid $border-color-hover;
+        outline-offset: 2px;
+    }
+}
+
+button.cvat-canvas3d-issue-region,
+.cvat-issue-label-draggable {
+    pointer-events: auto;
+    cursor: grab;
+    touch-action: none;
+    user-select: none;
+}
+
+button.cvat-canvas3d-issue-region {
+    padding: 0;
+}
+
+.cvat-canvas3d-issues-dragging {
+    button.cvat-canvas3d-issue-region,
+    .cvat-issue-label-draggable {
+        cursor: grabbing;
+    }
 }
 
 .cvat-hidden-issue-resolved-indicator {

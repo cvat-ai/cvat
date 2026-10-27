@@ -4519,6 +4519,9 @@ class IssueReadSerializer(serializers.ModelSerializer):
         fields = (
             "id",
             "frame",
+            "end_frame",
+            "object_id",
+            "object_type",
             "position",
             "job",
             "owner",
@@ -4542,6 +4545,33 @@ class IssueWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
     )
     message = serializers.CharField(style={"base_template": "textarea.html"})
 
+    def validate(self, attrs):
+        attrs = super().validate(attrs)
+        instance = self.instance
+        job = attrs.get("job", instance.job if instance else None)
+        frame = attrs.get("frame", instance.frame if instance else None)
+        end_frame = attrs.get("end_frame", instance.end_frame if instance else None)
+        if end_frame is not None and (not instance or "end_frame" in attrs):
+            if not job.segment.start_frame <= frame <= end_frame <= job.segment.stop_frame:
+                raise serializers.ValidationError(
+                    {"end_frame": "The frame range must be ordered and within the job."}
+                )
+
+        if not instance or "object_id" in attrs or "object_type" in attrs:
+            object_id = attrs.get("object_id", instance.object_id if instance else None)
+            object_type = attrs.get("object_type", instance.object_type if instance else None)
+            if (object_id is None) != (object_type is None):
+                raise serializers.ValidationError(
+                    {"object_id": "Provide both object_id and object_type, or neither."}
+                )
+            if object_id is not None:
+                model = models.LabeledTrack if object_type == "track" else models.LabeledShape
+                if not model.objects.filter(id=object_id, job=job).exists():
+                    raise serializers.ValidationError(
+                        {"object_id": "The annotation must belong to this job."}
+                    )
+        return attrs
+
     def to_representation(self, instance):
         serializer = IssueReadSerializer(instance, context=self.context)
         return serializer.data
@@ -4554,7 +4584,17 @@ class IssueWriteSerializer(WriteOnceMixin, serializers.ModelSerializer):
 
     class Meta:
         model = models.Issue
-        fields = ("frame", "position", "job", "assignee", "message", "resolved")
+        fields = (
+            "frame",
+            "end_frame",
+            "object_id",
+            "object_type",
+            "position",
+            "job",
+            "assignee",
+            "message",
+            "resolved",
+        )
         write_once_fields = ("frame", "job", "message")
 
 
