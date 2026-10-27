@@ -13385,7 +13385,7 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ThresholdPolicyPoint'
-          description: 'Required in linear mode: 2–200 points sorted by unique positive
+          description: 'Required in linear mode: 2-200 points sorted by unique positive
             GT area.'
       required:
       - mode
@@ -13422,7 +13422,7 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ThresholdPolicyPointRequest'
-          description: 'Required in linear mode: 2–200 points sorted by unique positive
+          description: 'Required in linear mode: 2-200 points sorted by unique positive
             GT area.'
       required:
       - mode

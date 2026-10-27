@@ -11,7 +11,6 @@ from typing import Any
 from django.conf import settings as django_settings
 from django.db import models as django_models
 from django.db import transaction
-from drf_spectacular.extensions import OpenApiSerializerFieldExtension
 from drf_spectacular.utils import extend_schema_field, extend_schema_serializer
 from rest_framework import serializers
 
@@ -31,6 +30,7 @@ from cvat.apps.quality_control.comparison_report import (
     RequirementCalculationStatus,
 )
 from cvat.apps.quality_control.filters import RequirementJsonLogicFilter
+from cvat.apps.quality_control.threshold_policy import MAX_THRESHOLD_POINTS, ThresholdPolicyMode
 from cvat.utils import django_database as db_utils
 
 
@@ -329,9 +329,12 @@ class SimilarityThresholdPolicySerializer(serializers.Serializer):
     type = serializers.ChoiceField(
         choices=["iou"],
         required=False,
-        help_text="Threshold type. Omitted type is accepted as IoU for compatibility; responses always include it.",
+        help_text=(
+            "Threshold type. Omitted type is accepted as IoU for compatibility; "
+            "responses always include it."
+        ),
     )
-    mode = serializers.ChoiceField(choices=["constant", "linear"])
+    mode = serializers.ChoiceField(choices=ThresholdPolicyMode)
     value = serializers.FloatField(required=False, min_value=0, max_value=1)
     input = serializers.ChoiceField(choices=["gt.shape_area"], required=False)
     extrapolation = serializers.ChoiceField(choices=["clamp"], required=False)
@@ -339,8 +342,11 @@ class SimilarityThresholdPolicySerializer(serializers.Serializer):
         many=True,
         required=False,
         min_length=2,
-        max_length=200,
-        help_text="Required in linear mode: 2–200 points sorted by unique positive GT area.",
+        max_length=MAX_THRESHOLD_POINTS,
+        help_text=(
+            f"Required in linear mode: 2-{MAX_THRESHOLD_POINTS} points sorted by "
+            "unique positive GT area."
+        ),
     )
 
     def to_internal_value(self, data):
@@ -387,20 +393,6 @@ class IoUThresholdField(serializers.Field):
         if isinstance(value, (Mapping, ThresholdPolicy)):
             return SimilarityThresholdPolicySerializer(value).data
         return value
-
-
-class IoUThresholdFieldExtension(OpenApiSerializerFieldExtension):
-    target_class = "cvat.apps.quality_control.serializers.IoUThresholdField"
-
-    def map_serializer_field(self, auto_schema, direction):
-        return {
-            "oneOf": [
-                {"type": "number", "minimum": 0, "maximum": 1},
-                auto_schema.resolve_serializer(
-                    SimilarityThresholdPolicySerializer(), direction
-                ).ref,
-            ]
-        }
 
 
 @extend_schema_serializer(component_name="AttributeComparisonDefaultRule")
@@ -488,7 +480,11 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
     iou_threshold = IoUThresholdField(
         required=False,
         allow_null=True,
-        help_text="A constant threshold or an IoU policy by GT shape area (rectangle, polygon, mask, ellipse). Null inherits the whole threshold from the parent.",
+        help_text=(
+            "A constant threshold or an IoU policy by GT shape area "
+            "(rectangle, polygon, mask, ellipse). "
+            "Null inherits the whole threshold from the parent."
+        ),
     )
     settings_id = serializers.PrimaryKeyRelatedField(
         source="settings",
@@ -959,7 +955,10 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
             if effective_type not in ADAPTIVE_IOU_TYPES:
                 raise serializers.ValidationError(
                     {
-                        "iou_threshold": "IoU policies support rectangle, polygon, mask and ellipse requirements."
+                        "iou_threshold": (
+                            "IoU policies support rectangle, polygon, mask "
+                            "and ellipse requirements."
+                        )
                     }
                 )
 

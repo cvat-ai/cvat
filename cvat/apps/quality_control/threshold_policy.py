@@ -7,6 +7,7 @@ from __future__ import annotations
 import math
 from bisect import bisect_right
 from collections.abc import Mapping
+from enum import StrEnum
 from typing import Literal
 
 from attr import asdict, field, frozen
@@ -22,6 +23,11 @@ ADAPTIVE_IOU_TYPES = frozenset(
         QualityRequirementAnnotationType.ELLIPSE,
     }
 )
+
+
+class ThresholdPolicyMode(StrEnum):
+    CONSTANT = "constant"
+    LINEAR = "linear"
 
 
 @frozen
@@ -41,13 +47,17 @@ class ThresholdPolicy:
 @frozen
 class ConstantThresholdPolicy(ThresholdPolicy):
     value: float
-    mode: Literal["constant"] = field(default="constant", init=False)
+    mode: Literal[ThresholdPolicyMode.CONSTANT] = field(
+        default=ThresholdPolicyMode.CONSTANT, init=False
+    )
 
 
 @frozen
 class LinearThresholdPolicy(ThresholdPolicy):
     points: tuple[ThresholdPolicyPoint, ...]
-    mode: Literal["linear"] = field(default="linear", init=False)
+    mode: Literal[ThresholdPolicyMode.LINEAR] = field(
+        default=ThresholdPolicyMode.LINEAR, init=False
+    )
     input: Literal["gt.shape_area"] = field(default="gt.shape_area", init=False)
     extrapolation: Literal["clamp"] = field(default="clamp", init=False)
 
@@ -98,13 +108,13 @@ def parse_threshold_policy(data: object) -> ConstantThresholdPolicy | LinearThre
             raise ValueError("Policy coordinates must be finite numbers.") from error
 
     keys = set(data) - {"type"}
-    if data.get("mode") == "constant":
+    if data.get("mode") == ThresholdPolicyMode.CONSTANT:
         if keys != {"mode", "value"}:
             raise ValueError("A constant policy requires only type, mode and value.")
         policy = ConstantThresholdPolicy(value=number(data["value"]))
         validate_threshold_policy(policy)
         return policy
-    if data.get("mode") != "linear":
+    if data.get("mode") != ThresholdPolicyMode.LINEAR:
         raise ValueError("Threshold mode must be constant or linear.")
     if keys != {"mode", "input", "extrapolation", "points"}:
         raise ValueError("A linear policy requires type, mode, input, extrapolation and points.")
