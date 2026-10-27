@@ -10,7 +10,7 @@ import { Canvas3dController } from './canvas3dController';
 import { Listener, Master } from './master';
 import consts from './consts';
 import {
-    Canvas3dModel, DrawData, Mode, Planes, UpdateReasons, ViewType,
+    CameraRay, Canvas3dModel, DrawData, Mode, Planes, UpdateReasons, ViewType,
 } from './canvas3dModel';
 import {
     createRotationHelper, removeRotationHelper,
@@ -18,7 +18,7 @@ import {
     createCuboidEdges, removeCuboidEdges, CuboidModel, makeCornerPointsMatrix,
 } from './cuboid';
 import { ObjectState, ObjectType } from '.';
-import { disposeScene } from './utils';
+import { disposeObject3D, disposeScene } from './utils';
 
 export interface Canvas3dView {
     html(): ViewsDOM;
@@ -130,6 +130,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
         cuboid: CuboidModel;
     }>;
     private hoverNeedsUpdate: boolean;
+    private cameraRayHelper: THREE.ArrowHelper | null;
 
     public focusObjectByClientId(clientID: number, animate: boolean = true): void {
         const cuboidModel = this.drawnObjects[clientID];
@@ -215,6 +216,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
 
         this.isCtrlDown = false;
         this.hoverNeedsUpdate = false;
+        this.cameraRayHelper = null;
         this.action = {
             scan: null,
             detected: false,
@@ -1360,6 +1362,7 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
             const onPCDLoadSuccess = (points: any): void => {
                 try {
                     this.onSceneImageLoaded(points);
+                    this.updateCameraRayHelper(model.data.cameraRay);
                     model.updateCanvasObjects();
                 } finally {
                     model.unlockFrameUpdating();
@@ -1518,6 +1521,8 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
                 // in case of changing control points size, need to update all helper points size
                 this.updateHelperPointsSize(view);
             });
+        } else if (reason === UpdateReasons.CAMERA_RAY_CHANGED) {
+            this.updateCameraRayHelper(model.data.cameraRay);
         } else if (reason === UpdateReasons.SHAPE_ACTIVATED) {
             this.deactivateObject();
             this.activateObject();
@@ -1649,11 +1654,38 @@ export class Canvas3dViewImpl implements Canvas3dView, Listener {
 
         this.drawnObjects = {};
         this.activatedElementID = null;
+        this.cameraRayHelper = null;
 
         Object.keys(this.views).forEach((view: string): void => {
             const viewData = this.views[view as keyof Views];
             disposeScene(viewData.scene);
         });
+    }
+
+    private updateCameraRayHelper(cameraRay: CameraRay | null): void {
+        if (this.cameraRayHelper) {
+            this.views.perspective.scene.remove(this.cameraRayHelper);
+            disposeObject3D(this.cameraRayHelper);
+            this.cameraRayHelper = null;
+        }
+
+        if (!cameraRay) {
+            return;
+        }
+
+        const rayLength = Math.max(this.sceneBBox.getSize(new THREE.Vector3()).length(), 20);
+        const headLength = Math.min(rayLength * 0.1, 2);
+        const headWidth = Math.min(rayLength * 0.05, 1);
+
+        this.cameraRayHelper = new THREE.ArrowHelper(
+            cameraRay.direction,
+            cameraRay.origin,
+            rayLength,
+            0x00e5ff,
+            headLength,
+            headWidth,
+        );
+        this.views.perspective.scene.add(this.cameraRayHelper);
     }
 
     private updateRotationHelperPos(): void {

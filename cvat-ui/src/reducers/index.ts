@@ -10,7 +10,7 @@ import {
 import { OrientationVisibility } from 'cvat-canvas3d-wrapper';
 import {
     Webhook, MLModel, Organization, Job, Task, Project, Label, User,
-    QualityConflict, FramesMetaData, RQStatus, Event, Invitation, SerializedAPISchema,
+    QualityConflict, FramesMetaData, FrameData, RQStatus, Event, Invitation, SerializedAPISchema,
     Request, JobValidationLayout, QualitySettings, TaskValidationLayout, ObjectState,
     ConsensusSettings, AboutData, ShapeType, ObjectType, ApiToken, AudioIntervalState,
     Membership, AnnotationFormats, CloudStorage, UserGrowthData,
@@ -863,6 +863,7 @@ export enum ActiveControl {
     OPENCV_TOOLS = 'opencv_tools',
     AUDIO_REGION_CREATE = 'audio_region_create',
     AUDIO_REGION_RECORD = 'audio_region_record',
+    PICK_CAMERA_RAY = 'pick_camera_ray',
 }
 
 export enum StatesOrdering {
@@ -903,6 +904,8 @@ export interface AnnotationState {
         };
     };
     canvas: {
+        // Currently, contains individual 2D/3D state,
+        // need refactor later with cleaner separation
         contextMenu: {
             visible: boolean;
             top: number;
@@ -926,6 +929,8 @@ export interface AnnotationState {
         ready: boolean;
         activeControl: ActiveControl;
         activeObjectHidden: boolean;
+        // 3D only
+        hasCameraRay: boolean;
     };
     job: {
         openTime: null | number;
@@ -954,7 +959,7 @@ export interface AnnotationState {
             number: number;
             filename: string;
             relatedFiles: number;
-            data: any | null;
+            data: FrameData | null;
             fetching: boolean;
             delay: number;
             changeTime: number | null;

@@ -89,6 +89,7 @@ const defaultState: AnnotationState = {
         instance: null,
         ready: false,
         activeControl: ActiveControl.CURSOR,
+        hasCameraRay: false,
         activeObjectHidden: false,
     },
     job: {
@@ -324,6 +325,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 canvas: {
                     ...state.canvas,
                     instance: canvas,
+                    hasCameraRay: false,
                 },
                 colors,
                 workspace: isReview && job.dimension === DimensionType.DIMENSION_2D ?
@@ -645,6 +647,15 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                     contextMenu: {
                         ...defaultState.canvas.contextMenu,
                     },
+                },
+            };
+        }
+        case AnnotationActionTypes.UPDATE_CAMERA_RAY: {
+            return {
+                ...state,
+                canvas: {
+                    ...state.canvas,
+                    hasCameraRay: action.payload.hasCameraRay,
                 },
             };
         }
