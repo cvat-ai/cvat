@@ -335,7 +335,5 @@ jobs:
     permissions:
       actions: read
     uses: ./.github/workflows/upload-testops-results.yml
-    with:
-      ref: ${{ github.ref_name }}
     secrets:
       ALLURE_TOKEN: ${{ secrets.ALLURE_TOKEN }}

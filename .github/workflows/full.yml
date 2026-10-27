@@ -164,7 +164,7 @@ jobs:
       - name: Running REST API and SDK tests
         id: run_tests
         run: |
-          pytest tests/python/ --alluredir=tests/python/allure-results
+          pytest tests/python/
 
       - name: Creating a log file from cvat containers
         if: failure() && steps.run_tests.conclusion == 'failure'
@@ -183,14 +183,6 @@ jobs:
         with:
           name: rest_api_container_logs
           path: "${{ github.workspace }}/rest_api_testing"
-
-      - name: Upload Allure results as an artifact
-        if: always()
-        continue-on-error: true
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: allure-results-rest-api
-          path: tests/python/allure-results
 
   unit_testing:
     needs: build
@@ -360,11 +352,3 @@ jobs:
         with:
           name: cypress_screenshots_${{ matrix.specs }}
           path: ${{ github.workspace }}/tests/cypress/screenshots
-
-      - name: Upload Allure results as an artifact
-        if: always()
-        continue-on-error: true
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: allure-results-e2e-${{ matrix.specs }}
-          path: tests/allure-results-e2e

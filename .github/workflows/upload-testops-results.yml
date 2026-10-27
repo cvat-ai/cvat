@@ -2,11 +2,6 @@ name: Upload Allure results to TestOps
 
 on:
   workflow_call:
-    inputs:
-      ref:
-        description: Branch or commit tested by the calling workflow
-        type: string
-        required: true
     secrets:
       ALLURE_TOKEN:
         required: true
@@ -22,7 +17,7 @@ jobs:
       ALLURE_ENDPOINT: ${{ vars.ALLURE_ENDPOINT }}
       ALLURE_PROJECT_ID: ${{ vars.ALLURE_PROJECT_ID }}
       ALLURE_TOKEN: ${{ secrets.ALLURE_TOKEN }}
-      ALLURE_LAUNCH_NAME: ${{ github.workflow }} / ${{ inputs.ref }} / ${{ github.run_number }}.${{ github.run_attempt }}
+      ALLURE_LAUNCH_NAME: ${{ github.workflow }} / ${{ github.ref_name }} / ${{ github.sha }} / ${{ github.run_number }}.${{ github.run_attempt }}
     steps:
       - name: Check TestOps configuration
         run: |
@@ -38,22 +33,17 @@ jobs:
           path: allure-results
           merge-multiple: false
 
-      - name: Check for test results
-        id: results
-        run: |
-          if [[ -d allure-results ]] && [[ -n "$(find allure-results -type f -name '*-result.json' -print -quit)" ]]; then
-            echo "available=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "::notice::Skipping TestOps upload: no Allure test results were produced."
-            echo "TestOps upload skipped: no Allure test results were produced." >> "$GITHUB_STEP_SUMMARY"
-          fi
-
       - name: Install allurectl
-        if: steps.results.outputs.available == 'true'
-        uses: allure-framework/setup-allurectl@5995d206dd0898e2eef096969cccc3b4fb207ad3
+        uses: allure-framework/setup-allurectl@2d89ee0b7ba2f59dbe9849b6df5763cab78e14db # v1.0.3
         with:
           allurectl-version: 2.23.1
 
       - name: Upload results to TestOps
-        if: steps.results.outputs.available == 'true'
-        run: allurectl upload allure-results
+        run: |
+          if [[ ! -d allure-results ]] || [[ -z "$(find allure-results -type f -name '*-result.json' -print -quit)" ]]; then
+            echo "::notice::Skipping TestOps upload: no Allure test results were produced."
+            echo "TestOps upload skipped: no Allure test results were produced." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          allurectl upload allure-results
