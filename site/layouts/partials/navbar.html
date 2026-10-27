@@ -33,6 +33,10 @@
       {{ else -}}
         {{ $href = .URL | relLangURL -}}
       {{ end -}}
+      {{ if eq .Identifier "release-notes" -}}
+        {{ $href = "/release-notes/" -}}
+        {{ $active = eq $p.Section "release-notes" -}}
+      {{ end -}}
       {{ $isExternal := ne $baseURL.Host (urls.Parse .URL).Host -}}
       {{ $hasChildren := .HasChildren -}}
       {{ $id := or .Identifier (urlize .Name) -}}

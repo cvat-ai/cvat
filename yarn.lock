@@ -6685,6 +6685,7 @@ __metadata:
     redux-devtools-extension: "npm:^2.13.9"
     redux-logger: "npm:^4.0.0"
     redux-thunk: "npm:^2.3.0"
+    rehype-raw: "npm:^6.1.1"
     rehype-sanitize: "npm:^6.0.0"
     wavesurfer.js: "npm:^7.12.12"
   languageName: unknown

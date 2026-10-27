@@ -551,7 +551,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                     <GlobalErrorBoundary>
                         <ShortcutsContextProvider>
                             <Layout>
-                                <Header />
+                                <Header extensionsBlocked={this.state.githubStarPromptVisible} />
                                 <Layout.Content style={{ height: '100%', position: 'relative' }}>
                                     <ShortcutsDialog />
                                     <Switch>

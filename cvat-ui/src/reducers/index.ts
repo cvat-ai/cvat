@@ -452,6 +452,7 @@ export interface PluginsState {
             };
         };
         header: {
+            items: PluginComponent[];
             userMenu: {
                 items: PluginComponent[];
             };

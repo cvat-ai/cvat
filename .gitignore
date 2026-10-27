@@ -50,6 +50,9 @@ yarn-error.log*
 /site/.hugo_build.lock
 /site/assets/sdk-examples/
 
+# Prepared by the Enterprise/SaaS UI plugin helper.
+/cvat-ui/plugins/release_notes
+
 # Ignore all the installed packages
 node_modules
 /*env*/

@@ -12,7 +12,14 @@
     "isolatedModules": true,
     "noEmit": true,
     "jsx": "preserve",
-    "baseUrl": "src"
+    "baseUrl": "src",
+    "paths": {
+      "@root/*": ["*"],
+      "@modules/react": ["../../node_modules/@types/react"],
+      "@modules/react-dom": ["../../node_modules/@types/react-dom"],
+      "@modules/react-dom/*": ["../../node_modules/@types/react-dom/*"],
+      "@modules/*": ["../../node_modules/*"]
+    }
   },
   "include": ["./index.d.ts", "src/index.tsx", "src/assets/index.d.ts", "plugins/**/*"]
 }

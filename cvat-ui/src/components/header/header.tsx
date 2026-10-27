@@ -150,7 +150,7 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
     };
 }
 
-type Props = StateToProps & DispatchToProps;
+type Props = StateToProps & DispatchToProps & { extensionsBlocked?: boolean };
 
 function HeaderComponent(props: Props): JSX.Element {
     const {
@@ -289,6 +289,7 @@ function HeaderComponent(props: Props): JSX.Element {
     };
 
     const plugins = usePlugins((state: CombinedState) => state.plugins.components.header.userMenu.items, props);
+    const headerPlugins = usePlugins((state: CombinedState) => state.plugins.components.header.items, props);
 
     const menuItems: [NonNullable<MenuProps['items']>[0], number][] = [];
     if (user.isStaff) {
@@ -491,6 +492,10 @@ function HeaderComponent(props: Props): JSX.Element {
                 ) : null}
             </div>
             <div className='cvat-right-header'>
+                {[...headerPlugins].sort((left, right) => left.weight - right.weight)
+                    .map(({ component: Component }, index: number) => (
+                        <Component key={index} targetProps={props} />
+                    ))}
                 <CVATTooltip overlay='Click to open repository'>
                     <Button
                         icon={<GithubOutlined />}

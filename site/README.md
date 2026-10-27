@@ -1,5 +1,36 @@
 ## Basic manual
 
+### Publishing release notes
+
+Release notes live in `content/en/release-notes/<version>/index.md`. Put any images
+or videos next to the Markdown file, using relative paths. Copy the structure of
+the `2.79.0` example. Each released version must have exactly one note.
+
+Required front matter: `title`, `description`, `date`, `version` (`X.Y.Z`),
+`draft`, and `announce`. Set `announce: true` to enable automatic display in CVAT.
+The same notes serve Online and Enterprise; describe any edition-specific
+availability in the content itself. Notes may be published before or after a
+CVAT release: the app excludes versions newer than the installed CVAT version.
+Use `draft: true` to keep an unfinished note out of the site and feed.
+
+The build produces the history at `/release-notes/`, its metadata index at
+`/release-notes/index.json`, and a Markdown body at
+`/release-notes/<version>/index.md`. The index is generated; do not edit it by hand.
+The Markdown export omits front matter because the metadata is already in the
+index. Keep the release `version` stable when fixing wording: edits do not cause
+the app to notify users again. The app compares versions, not publication dates.
+
+Use ordinary Markdown and optional `<video controls preload="none" poster="...">`
+with `<source src="..." type="video/mp4">` for short screen recordings. Include
+image alt text and an explanatory description for recordings. Do not use Hugo
+shortcodes or scripts: the same Markdown is rendered by the application. Media
+and Markdown remain public. Publication uses the existing docs workflow after
+merging into `develop` and does not require or block a CVAT deployment.
+
+The in-app viewer is an Enterprise plugin also included in SaaS builds. Community
+does not include the plugin. See `plugins/release_notes/README.md` in the Enterprise
+repository for configuration and the browser-local last-shown-version marker.
+
 ### How to edit or add documentation pages online
 
 To edit and/or add documentation, you need to have a [GitHub](https://github.com/login) account.

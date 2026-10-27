@@ -1,0 +1,22 @@
+{{- $entries := slice -}}
+{{- $versions := slice -}}
+{{- range .RegularPages.ByDate.Reverse -}}
+  {{- $version := .Params.version -}}
+  {{- if or (not $version) (ne (len (findRE `^[0-9]+\.[0-9]+\.[0-9]+$` $version)) 1) -}}
+    {{- errorf "Release note %s must specify a stable version in X.Y.Z format" .File.Path -}}
+  {{- end -}}
+  {{- if in $versions $version -}}{{- errorf "Duplicate release note version: %s" $version -}}{{- end -}}
+  {{- $versions = $versions | append $version -}}
+  {{- if .Date.IsZero -}}{{- errorf "Release note %s must specify a publication date" .File.Path -}}{{- end -}}
+  {{- $markdown := .OutputFormats.Get "ReleaseMarkdown" -}}
+  {{- $entries = $entries | append (dict
+    "version" $version
+    "title" .Title
+    "description" .Description
+    "publishedAt" (.Date.Format "2006-01-02T15:04:05Z07:00")
+    "announce" (.Params.announce | default false)
+    "url" .Permalink
+    "markdownURL" $markdown.Permalink
+  ) -}}
+{{- end -}}
+{{- dict "schemaVersion" 1 "entries" $entries | jsonify -}}

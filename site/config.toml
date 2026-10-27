@@ -58,6 +58,12 @@ anchor = "smart"
     weight = 40
     url = "/docs/guides/"
 [[menu.main]]
+    identifier = "release-notes"
+    name = "Release Notes"
+    weight = 45
+    # Archived docs use older navbar templates: keep their link on the current history.
+    url = "https://docs.cvat.ai/release-notes/"
+[[menu.main]]
     name = "Sign in"
     weight = 50
     url = "https://app.cvat.ai/auth/login"
@@ -121,6 +127,23 @@ weight = 1
 # Comment out if you don't want the "print entire section" link enabled.
 [outputs]
 section = ["HTML", "print"]
+
+[mediaTypes."text/markdown"]
+suffixes = ["md"]
+
+[outputFormats.ReleaseMarkdown]
+mediaType = "text/markdown"
+baseName = "index"
+isPlainText = true
+notAlternative = true
+
+# Public release notes are also fetched by a local CVAT UI on another port.
+# These headers apply to `hugo server`; production hosting configures its own CORS.
+[[server.headers]]
+for = "/release-notes/**"
+[server.headers.values]
+Access-Control-Allow-Origin = "*"
+Cross-Origin-Resource-Policy = "cross-origin"
 
 [params]
 cvat_ai_terms_of_use = "https://www.cvat.ai/terms-of-use"
