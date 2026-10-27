@@ -1,0 +1,38 @@
+# Copyright (C) CVAT.ai Corporation
+#
+# SPDX-License-Identifier: MIT
+
+[project]
+dynamic = ["version"]
+
+name = "cvat-mp4-h264"
+description = "Decode the H.264 video track of MP4 files with OpenH264"
+readme = "README.md"
+authors = [{name = "CVAT.ai Corporation", email = "support@cvat.ai"}]
+keywords = ["CVAT", "H.264", "OpenH264", "video"]
+license = "MIT"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+requires-python = ">=3.11"
+dependencies = [
+    "Pillow >= 10.3.0",
+]
+
+[project.urls]
+homepage = "https://github.com/cvat-ai/cvat"
+
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.dynamic]
+version = {attr = "cvat_mp4_h264.version.VERSION"}
+
+[tool.isort]
+profile = "black"
+forced_separate = ["tests"]
+line_length = 100
+skip_gitignore = true # align tool behavior with Black
+known_first_party = ["cvat_mp4_h264"]

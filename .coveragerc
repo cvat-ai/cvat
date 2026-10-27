@@ -6,6 +6,7 @@ source =
     utils.dataset_manifest
     cvat-sdk/
     cvat-cli/
+    cvat-mp4-h264/
 
 omit =
     cvat/settings/*
