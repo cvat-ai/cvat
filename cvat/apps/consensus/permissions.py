@@ -104,7 +104,7 @@ class ConsensusMergePermission(OpenPolicyAgentPermission):
                 organization_id = task.organization_id
 
             data = {
-                "organization": {"id": organization_id},
+                "organization": self.make_id_dict(organization_id),
                 "task": (
                     {
                         "owner": {"id": task.owner_id},
@@ -204,7 +204,7 @@ class ConsensusSettingPermission(OpenPolicyAgentPermission):
 
             data = {
                 "id": self.obj.id,
-                "organization": {"id": organization_id},
+                "organization": self.make_id_dict(organization_id),
                 "task": (
                     {
                         "owner": {"id": task.owner_id},
