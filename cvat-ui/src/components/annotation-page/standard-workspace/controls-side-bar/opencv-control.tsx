@@ -25,7 +25,7 @@ import {
 } from 'cvat-core-wrapper';
 import openCVWrapper from 'utils/opencv-wrapper/opencv-wrapper';
 import {
-    CombinedState, ActiveControl, ToolsBlockerState,
+    CombinedState, ActiveControl,
 } from 'reducers';
 import {
     interactWithCanvas,
@@ -49,7 +49,6 @@ interface Props {
     currentZOrder: number;
     defaultApproxPolyAccuracy: number;
     frameData: any;
-    toolsBlockerState: ToolsBlockerState;
     activeControl: ActiveControl;
     filters: ImageFilter[];
 }
@@ -90,7 +89,7 @@ function mapStateToProps(state: CombinedState): Props {
             },
         },
         settings: {
-            workspace: { defaultApproxPolyAccuracy, toolsBlockerState },
+            workspace: { defaultApproxPolyAccuracy },
             imageFilters: filters,
         },
     } = state;
@@ -106,7 +105,6 @@ function mapStateToProps(state: CombinedState): Props {
         labels,
         frame,
         frameData,
-        toolsBlockerState,
         filters,
     };
 }
@@ -148,7 +146,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
         const { approxPolyAccuracy } = this.state;
         const {
             isActivated, defaultApproxPolyAccuracy,
-            canvasInstance, toolsBlockerState,
+            canvasInstance,
         } = this.props;
 
         if (!prevProps.isActivated && isActivated) {
@@ -159,7 +157,6 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
             });
 
             if (this.activeTool) {
-                this.activeTool.switchBlockMode(toolsBlockerState.algorithmsLocked);
                 this.activeTool.reset();
 
                 // Getting image data
@@ -197,10 +194,6 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                 });
             }
         }
-        if (prevProps.toolsBlockerState.algorithmsLocked !== toolsBlockerState.algorithmsLocked &&
-            !!this.activeTool?.switchBlockMode) {
-            this.activeTool.switchBlockMode(toolsBlockerState.algorithmsLocked);
-        }
     }
 
     public componentWillUnmount(): void {
@@ -217,7 +210,7 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
         const { approxPolyAccuracy } = this.state;
         const {
             createAnnotations, isActivated, frame,
-            labels, currentZOrder, canvasInstance, toolsBlockerState,
+            labels, currentZOrder, canvasInstance,
         } = this.props;
 
         const { activeLabelID } = this.state;
@@ -225,12 +218,12 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
             return;
         }
 
-        const { finished, shapes } = (e as CustomEvent).detail;
+        const { finished, shapes, ctrlKey } = (e as CustomEvent).detail;
         const pressedPoints = convertShapesForInteractor(shapes, 'points', 'positive').flat();
         try {
             if (finished) {
                 // need to recalculate without the latest sliding point
-                const finalPoints = await this.runCVAlgorithm(pressedPoints);
+                const finalPoints = await this.runCVAlgorithm(pressedPoints, ctrlKey);
                 if (finalPoints.length >= 3) {
                     const finalObject = new core.classes.ObjectState({
                         frame,
@@ -250,24 +243,12 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                     createAnnotations([finalObject]);
                 }
             } else {
-                this.latestPoints = await this.runCVAlgorithm(pressedPoints);
-                let points = [];
-                if (toolsBlockerState.algorithmsLocked && this.latestPoints.length) {
-                    // disable approximation for the last point
-                    const [x, y] = this.latestPoints.pop()!;
-                    points = openCVWrapper.contours.approxPoly(
-                        this.latestPoints,
-                        openCVWrapper.utils.thresholdFromAccuracy(approxPolyAccuracy),
-                        false,
-                    );
-                    points.push([x, y]);
-                } else {
-                    points = openCVWrapper.contours.approxPoly(
-                        this.latestPoints,
-                        openCVWrapper.utils.thresholdFromAccuracy(approxPolyAccuracy),
-                        false,
-                    );
-                }
+                this.latestPoints = await this.runCVAlgorithm(pressedPoints, ctrlKey);
+                const points = openCVWrapper.contours.approxPoly(
+                    this.latestPoints,
+                    openCVWrapper.utils.thresholdFromAccuracy(approxPolyAccuracy),
+                    false,
+                );
 
                 canvasInstance.interact({
                     enabled: true,
@@ -296,11 +277,11 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
         });
     };
 
-    private async runCVAlgorithm(pressedPoints: number[]): Promise<[number, number][]> {
+    private async runCVAlgorithm(pressedPoints: number[], straight = false): Promise<[number, number][]> {
         if (!this.activeTool || pressedPoints.length === 0) {
             return [];
         }
-        const points = await this.activeTool.run(pressedPoints);
+        const points = await this.activeTool.run(pressedPoints, straight);
         return points.reduce((acc: [number, number][], val: number, idx: number) => {
             if (idx % 2 === 0) {
                 acc.push([val, val]);
@@ -367,6 +348,19 @@ class OpenCVControlComponent extends React.PureComponent<Props & DispatchToProps
                                             appendCursorPositionAsPoint: true,
                                             removalStrategy: 'last' as const,
                                             points_type: 'positive' as const,
+                                            hint: {
+                                                markdown: [
+                                                    '### Intelligent scissors',
+                                                    '',
+                                                    'Follow object edges to outline the object.',
+                                                    '',
+                                                    '**Actions**',
+                                                    '- Click to add a point.',
+                                                    '- Hold `Ctrl` to draw straight segments.',
+                                                    '- Hold the `Mouse wheel` and drag to pan.',
+                                                ].join('\n'),
+                                                topic: 'intelligent-scissors-v1',
+                                            },
                                         },
                                     };
 

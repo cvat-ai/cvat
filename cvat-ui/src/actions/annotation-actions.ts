@@ -33,7 +33,6 @@ import {
     Workspace,
     isMultiSelectionSupported,
 } from 'reducers';
-import { switchToolsBlockerState } from './settings-actions';
 import { updateJobAsync } from './jobs-actions';
 import { loadAudioDataAsync } from './audio-actions';
 
@@ -2110,14 +2109,8 @@ export function repeatDrawShapeAsync(): ThunkAction {
 
         let activeControl = ActiveControl.CURSOR;
         if (activeInteractor && activeInteractorParameters && activeLabelID && canvasInstance instanceof Canvas) {
-            if (activeInteractor.kind.includes('tracker')) {
-                canvasInstance.interact({ enabled: true, ...activeInteractorParameters });
-                dispatch(interactWithCanvas(activeInteractor, activeLabelID, activeInteractorParameters));
-                dispatch(switchToolsBlockerState({ buttonVisible: false }));
-            } else {
-                canvasInstance.interact({ enabled: true, ...activeInteractorParameters });
-                dispatch(interactWithCanvas(activeInteractor, activeLabelID, activeInteractorParameters));
-            }
+            canvasInstance.interact({ enabled: true, ...activeInteractorParameters });
+            dispatch(interactWithCanvas(activeInteractor, activeLabelID, activeInteractorParameters));
 
             return;
         }

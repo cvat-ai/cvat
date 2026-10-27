@@ -21,8 +21,8 @@ Projects are not supported.
 {{% /alert %}}
 
 CVAT has the following features related to consensus-based annotation:
-- Creation of **consensus replica** jobs for regular annotation jobs in a task
-- Automatic merging for annotations inside **consensus replica** jobs
+- **Replica** jobs: extra copies of regular annotation jobs, each annotated independently
+- Automatic merging of the annotations from **replica** jobs into their parent annotation jobs
 
 ## Basics
 
@@ -70,58 +70,40 @@ Once there is such a reliable GT dataset, it can be used for
 {{< ilink "/docs/qa-analytics/auto-qa" "annotator validation" >}},
 on the remaining dataset ensuring the quality metrics are representative and objective.
 
-## Consensus replica jobs
+## Replica jobs
 
-A **Consensus Replica job** (_replica_) is the way to represent one of
-the annotator "opinions" in CVAT. _Consensus replicas_ work similarly to regular
+A **replica job** (_replica_) is the way to represent one of
+the annotator "opinions" in CVAT. _Replicas_ work similarly to regular
 annotation jobs - they can be assigned, annotated, imported and exported.
 When you decide to merge annotations from replicas, the results will be written to the
 parent annotation job.
 
-
-Key properties of consensus replica jobs:
-- _Replicas_ are connected to annotation jobs. Each annotation job can have
-  several related _replicas_.
-- Only annotation jobs can have replicas. Ground Truth jobs cannot have replicas.
-- Replicas use the same frame range as their parent annotation jobs.
-- Annotations in replicas and parent jobs are independent from each other.
-  Modifying a replica doesn't affect the parent job or other replicas and vice versa.
-  Removing annotations in a parent job doesn't change annotations in its replicas.
-- Replicas are not included in _task_ annotation import or export.
-  _Per-job_ import and export still work for all job types, including replicas.
-
-Read more about merging [here](#how-to-merge-all-replicas-in-a-task).
+Read more about replica jobs {{< ilink "/docs/workspace/jobs-page#replica-jobs" "here" >}}
+and about merging [here](#how-to-merge-all-replicas-in-a-task).
 
 ## Workflow
 
 When annotating with consensus, the typical workflow looks this way:
 
-1. Create a task with consensus enabled. Optionally,
+1. {{< ilink "/docs/workspace/jobs-page#how-to-create-replicas-with-a-task" "Create a task with replicas" >}} or
+  {{< ilink "/docs/workspace/jobs-page#how-to-add-replicas-to-existing-jobs" "add replicas" >}}
+  to the jobs of an existing task. Optionally,
   {{< ilink "/docs/workspace/tasks-page#create-annotation-task" "configure validation" >}}
-1. Assign annotators to consensus replicas, wait until all the jobs are completed
+1. [Assign annotators](#how-to-assign-annotators-to-replicas) to the replicas,
+  wait until all the jobs are completed
 1. Once all replicas in a parent job are completed, merge annotations
 1. Review and resolve problems in the parent jobs
 
-### How to enable consensus in a task
+### How to assign annotators to replicas
 
-Consensus annotation is configured at the Task level. It can only be specified at task creation.
-If you want to enable consensus for one of your existing tasks, you'll need to recreate the task.
+Each replica is meant to be annotated by a different person.
+You can set the **Assignee** of each replica one by one, or select several jobs and
+assign them to a list of users at once with
+{{< ilink "/docs/workspace/jobs-page#distribute-jobs-among-users" "Distribute among users" >}}.
 
-1. Go to the {{< ilink "/docs/workspace/tasks-page#create-annotation-task" "task creation" >}} page
-1. Configure basic and advanced parameters according to your requirements,
-  and attach a dataset to be annotated.
-1. To enable consensus for the task, open the **Advanced** section and
-  set **Consensus Replicas** to a value greater than 1.
-
-  ![Consensus replicas parameter image](/images/consensus-replicas-task-parameter.png)
-
-1. Create the task and open the task page
-
-If a task has consensus enabled, you'll see the **Consensus** tag in the task summary.
-Existing **Consensus replica** jobs will be displayed in the job list under their parent
-annotation jobs.
-
-  ![Consensus replica jobs in the task job list](/images/consensus-replicas-list-task.png)
+To give the replicas of a parent job to different annotators,
+use **Go to replicas** in the parent job **Actions** menu, select all the listed replicas,
+and distribute them among at least as many users as there are replicas.
 
 ### Merging
 
@@ -141,6 +123,12 @@ There are 2 merging options available:
 Merging is only available for a parent job if it is in the **annotation** stage and
 it has at least 1 replica not in the **annotation** - **new** stage and state.
 For simplicity, this can be read as "if there are any annotated replicas in the parent job".
+A parent job can be merged with up to 11 such replicas.
+
+{{% alert title="Note" color="primary" %}}
+In self-hosted CVAT, an administrator can change the maximum number of replicas
+to merge with the `CVAT_MAX_CONSENSUS_REPLICAS` environment variable.
+{{% /alert %}}
 
 After merging, parent jobs are switched to the **completed** state automatically.
 If you prefer merging at the task level, it is recommended to switch merged
@@ -163,7 +151,7 @@ the next merging and avoid losing the reviewed annotations.
 
 ### How to merge replicas in a specific parent job
 
-1. Open the job **Actions** menu
+1. Open the **Actions** menu of the parent job
 1. Click **Merge consensus job**
 
   ![Job actions menu](/images/consensus-merge-job-actions.png)
