@@ -433,6 +433,66 @@ context('3D spatial review', { browser: '!firefox' }, () => {
             .should('contain.text', 'car · Shape');
     });
 
+    it('keeps labels and marker hit areas within their panes near edges and after resizing', () => {
+        let issueId;
+        const viewport = [Cypress.config('viewportWidth'), Cypress.config('viewportHeight')];
+        const checkLabels = () => cy.get('.cvat-canvas3d-issues .cvat-hidden-issue-label').should(($labels) => {
+            $labels.each((_, label) => {
+                const view = label.id.split('-').pop();
+                const selector = view === 'perspective' ? view : `${view}view`;
+                const canvas = label.ownerDocument.querySelector(`.cvat-canvas3d-${selector} canvas`);
+                const pane = canvas.getBoundingClientRect();
+                const rect = label.getBoundingClientRect();
+                expect(rect.left, `${view} label left`).to.be.at.least(pane.left);
+                expect(rect.right, `${view} label right`).to.be.at.most(pane.right);
+                expect(rect.top, `${view} label top`).to.be.at.least(pane.top);
+                expect(rect.bottom, `${view} label bottom`).to.be.at.most(pane.bottom);
+            });
+        });
+        cy.getCookie('csrftoken').then((cookie) => cy.request({
+            method: 'POST',
+            url: '/api/issues',
+            headers: { 'X-CSRFToken': cookie.value },
+            body: {
+                job: jobId,
+                frame: 0,
+                position: [0, 0, 1],
+                message: 'Keep this long review label inside its own point cloud view',
+            },
+        }).then(({ body }) => { issueId = body.id; }));
+        cy.visit(`/tasks/${taskId}/jobs/${jobId}?defaultWorkspace=review`);
+        cy.contains('[role="tab"]', 'Issues').click();
+        ['top', 'side', 'front'].forEach((view) => {
+            cy.then(() => {
+                cy.get(`#cvat-objects-sidebar-issue-item-${issueId}`).click();
+                cy.get('.cvat-issue-dialog-header [aria-label="close"]').click();
+                const selector = `.cvat-canvas3d-issue-region[data-issue-id="${issueId}"][data-view="${view}"]`;
+                cy.get(selector).then(($marker) => {
+                    const marker = $marker[0];
+                    const rect = marker.getBoundingClientRect();
+                    const pane = marker.ownerDocument.querySelector(`.cvat-canvas3d-${view}view canvas`)
+                        .getBoundingClientRect();
+                    cy.intercept('PATCH', `/api/issues/${issueId}`).as('moveToPaneEdge');
+                    dragMarker(issueId, view, pane.right - 2 - (rect.left + rect.width / 2),
+                        pane.bottom - 2 - (rect.top + rect.height / 2));
+                    cy.wait('@moveToPaneEdge').its('response.statusCode').should('equal', 200);
+                });
+                checkLabels();
+                cy.get(selector).should(($marker) => {
+                    const marker = $marker[0];
+                    const pane = marker.ownerDocument.querySelector(`.cvat-canvas3d-${view}view canvas`)
+                        .getBoundingClientRect();
+                    const outside = marker.ownerDocument.elementFromPoint(pane.right + 2, pane.bottom - 2);
+                    expect(outside === marker, 'marker cannot intercept input in the next pane').to.equal(false);
+                });
+            });
+        });
+        cy.viewport(900, 650);
+        checkLabels();
+        cy.viewport(...viewport);
+        checkLabels();
+    });
+
     it('limits issue overlays to expanded panes and preserves drafts when switching views', () => {
         let issueId;
         cy.request(`/api/labels?job_id=${jobId}`).then(({ body }) => cy.getCookie('csrftoken').then((cookie) => {

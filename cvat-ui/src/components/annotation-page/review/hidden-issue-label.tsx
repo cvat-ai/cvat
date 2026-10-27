@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: MIT
 
 import React, {
-    ReactPortal, useEffect, useRef,
+    ReactPortal, useEffect, useLayoutEffect, useRef, useState,
 } from 'react';
 import ReactDOM from 'react-dom';
 import Tag from 'antd/lib/tag';
@@ -16,6 +16,7 @@ import CVATTooltip from 'components/common/cvat-tooltip';
 interface Props {
     container?: HTMLElement;
     idSuffix?: string;
+    bounds?: { width: number; height: number };
     issue: Issue;
     top: number;
     left: number;
@@ -30,11 +31,21 @@ interface Props {
 
 export default function HiddenIssueLabel(props: Props): ReactPortal {
     const {
-        issue, top, left, angle, scale, resolved, onClick, highlight, blur,
+        issue, top, left, angle, scale, resolved, onClick, highlight, blur, bounds,
     } = props;
 
     const { id, comments } = issue;
     const ref = useRef<HTMLElement>(null);
+    const [position, setPosition] = useState({ top, left });
+    useLayoutEffect(() => {
+        if (!bounds || !ref.current) return;
+        const { width, height } = ref.current.getBoundingClientRect();
+        const margin = 8;
+        setPosition({
+            top: Math.max(margin, Math.min(top, bounds.height - height - margin)),
+            left: Math.max(margin, Math.min(left, bounds.width - width - margin)),
+        });
+    }, [top, left, bounds?.width, bounds?.height, comments[0]?.message]);
     useEffect(() => {
         if (!resolved) {
             setTimeout(highlight);
@@ -82,7 +93,7 @@ export default function HiddenIssueLabel(props: Props): ReactPortal {
                 }}
                 onMouseEnter={highlight}
                 onMouseLeave={blur}
-                style={{ top, left, transform: `scale(${scale}) rotate(${angle}deg)` }}
+                style={{ ...(bounds ? position : { top, left }), transform: `scale(${scale}) rotate(${angle}deg)` }}
                 className={`cvat-hidden-issue-label ${props.onPointerDown ? 'cvat-issue-label-draggable' : ''}`}
             >
                 {resolved ? (

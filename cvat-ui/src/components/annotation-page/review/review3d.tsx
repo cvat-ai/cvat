@@ -3,8 +3,9 @@
 // SPDX-License-Identifier: MIT
 
 import './styles.scss';
-import React, { useEffect, useRef, useState } from 'react';
-import ReactDOM from 'react-dom';
+import React, {
+    ReactNode, useEffect, useRef, useState,
+} from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { CombinedState, ActiveControl, NewIssueSource } from 'reducers';
 import { Canvas3d, ViewType } from 'cvat-canvas3d-wrapper';
@@ -39,6 +40,27 @@ interface MarkerDrag {
     moved: boolean;
 }
 
+function ViewOverlay({ canvasRect, children }: {
+    canvasRect: DOMRect;
+    children: (container: HTMLDivElement) => ReactNode;
+}): JSX.Element {
+    const [container, setContainer] = useState<HTMLDivElement | null>(null);
+    return (
+        <div
+            ref={setContainer}
+            className='cvat-canvas3d-issues-view'
+            style={{
+                left: canvasRect.left,
+                top: canvasRect.top,
+                width: canvasRect.width,
+                height: canvasRect.height,
+            }}
+        >
+            {container && children(container)}
+        </div>
+    );
+}
+
 export default function Review3D(): JSX.Element {
     const dispatch = useDispatch<ThunkDispatch>();
     const {
@@ -61,7 +83,6 @@ export default function Review3D(): JSX.Element {
         job: state.annotation.job.instance,
         navigationBlocked: state.annotation.player.navigationBlocked,
     }), shallowEqual);
-    const [container, setContainer] = useState<HTMLDivElement | null>(null);
     const [dialogContainer, setDialogContainer] = useState<HTMLDivElement | null>(null);
     const [placements, setPlacements] = useState<Placement[]>([]);
     const lastDialogPlacement = useRef<Placement | null>(null);
@@ -289,68 +310,74 @@ export default function Review3D(): JSX.Element {
 
     return (
         <>
-            <div
-                ref={setContainer}
-                className={`cvat-canvas3d-issues ${preview ? 'cvat-canvas3d-issues-dragging' : ''}`}
-            >
+            <div className={`cvat-canvas3d-issues ${preview ? 'cvat-canvas3d-issues-dragging' : ''}`}>
                 <div ref={setDialogContainer} hidden={!activePlacement} />
-            </div>
-            {ready && container && placements.map(({
-                id, view, x, y, canvasRect, expanded,
-            }) => {
-                const issue = visibleIssues.find((item) => item.id === id);
-                if (!issue && !(id === 0 && newPosition)) return null;
-                const draggable = view !== ViewType.PERSPECTIVE && !creating && !fetching &&
-                    activeControl === ActiveControl.CURSOR &&
-                    (id !== 0 || newSource === NewIssueSource.ISSUE_TOOL);
-                const regionProps = {
-                    className: `cvat-canvas3d-issue-region ${highlightedIssueId === id || preview?.drag.id === id ? 'cvat-canvas3d-issue-highlighted' : ''}`,
-                    'data-issue-id': id,
-                    'data-view': view,
-                    style: {
-                        left: x,
-                        top: y,
-                        visibility: issue?.resolved && highlightedIssueId !== id && preview?.drag.id !== id ?
-                            'hidden' as const : 'visible' as const,
-                    },
-                };
-                const position = {
-                    container,
-                    top: y + 15,
-                    left: x + 15,
-                    angle: 0,
-                    scale: 1,
-                    clientCoordinates: [x + 15, y + 15] as [number, number],
-                    canvasRect,
-                };
+                {ready && Object.values(ViewType).map((view) => {
+                    const viewPlacements = placements.filter((placement) => placement.view === view);
+                    const canvasRect = viewPlacements[0]?.canvasRect;
+                    if (!canvasRect) return null;
+                    return (
+                        <ViewOverlay key={view} canvasRect={canvasRect}>
+                            {(container) => viewPlacements.map(({
+                                id, x, y, expanded,
+                            }) => {
+                                const issue = visibleIssues.find((item) => item.id === id);
+                                if (!issue && !(id === 0 && newPosition)) return null;
+                                const draggable = view !== ViewType.PERSPECTIVE && !creating && !fetching &&
+                                    activeControl === ActiveControl.CURSOR &&
+                                    (id !== 0 || newSource === NewIssueSource.ISSUE_TOOL);
+                                const highlighted = highlightedIssueId === id || preview?.drag.id === id;
+                                const hasDialog = activeIssueId === id && (view === ViewType.PERSPECTIVE || expanded);
+                                const regionProps = {
+                                    className: `cvat-canvas3d-issue-region ${highlighted ?
+                                        'cvat-canvas3d-issue-highlighted' : ''}`,
+                                    'data-issue-id': id,
+                                    'data-view': view,
+                                    style: {
+                                        left: x - canvasRect.left,
+                                        top: y - canvasRect.top,
+                                        visibility: issue?.resolved && !highlighted ?
+                                            'hidden' as const : 'visible' as const,
+                                    },
+                                };
 
-                return (
-                    <React.Fragment key={`${view}-${id}`}>
-                        {ReactDOM.createPortal(draggable ? (
-                            <button
-                                {...regionProps}
-                                type='button'
-                                aria-label={`Move ${id ? `issue #${id}` : 'new issue'} in ${view} view`}
-                                title='Drag to reposition the issue. Press Escape to cancel.'
-                                onPointerDown={(event) => beginDrag(event, id, view)}
-                                onClick={() => { if (issue) openIssue(issue); }}
-                            />
-                        ) : <div {...regionProps} aria-hidden />, container)}
-                        {issue && !(activeIssueId === id && (view === ViewType.PERSPECTIVE || expanded)) && (
-                            <HiddenIssueLabel
-                                {...position}
-                                idSuffix={`-${view}`}
-                                issue={issue}
-                                resolved={issue.resolved}
-                                highlight={() => showRegion(issue, true)}
-                                blur={() => showRegion(issue, false)}
-                                onPointerDown={draggable ? (event) => beginDrag(event, id, view) : undefined}
-                                onClick={() => openIssue(issue)}
-                            />
-                        )}
-                    </React.Fragment>
-                );
-            })}
+                                return (
+                                    <React.Fragment key={id}>
+                                        {draggable ? (
+                                            <button
+                                                {...regionProps}
+                                                type='button'
+                                                aria-label={`Move ${id ? `issue #${id}` : 'new issue'} in ${view} view`}
+                                                title='Drag to reposition the issue. Press Escape to cancel.'
+                                                onPointerDown={(event) => beginDrag(event, id, view)}
+                                                onClick={() => { if (issue) openIssue(issue); }}
+                                            />
+                                        ) : <div {...regionProps} aria-hidden />}
+                                        {issue && !hasDialog && (
+                                            <HiddenIssueLabel
+                                                container={container}
+                                                bounds={canvasRect}
+                                                top={y - canvasRect.top + 15}
+                                                left={x - canvasRect.left + 15}
+                                                angle={0}
+                                                scale={1}
+                                                idSuffix={`-${view}`}
+                                                issue={issue}
+                                                resolved={issue.resolved}
+                                                highlight={() => showRegion(issue, true)}
+                                                blur={() => showRegion(issue, false)}
+                                                onPointerDown={draggable ?
+                                                    (event) => beginDrag(event, id, view) : undefined}
+                                                onClick={() => openIssue(issue)}
+                                            />
+                                        )}
+                                    </React.Fragment>
+                                );
+                            })}
+                        </ViewOverlay>
+                    );
+                })}
+            </div>
             {ready && dialogContainer && dialogPosition && (
                 newPosition && newSource === NewIssueSource.ISSUE_TOOL ? (
                     <CreateIssueDialog

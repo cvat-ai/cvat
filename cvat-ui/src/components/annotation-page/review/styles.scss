@@ -151,6 +151,18 @@
     z-index: 100;
 }
 
+.cvat-canvas3d-issues-view {
+    position: absolute;
+    overflow: hidden;
+    pointer-events: none;
+
+    .cvat-hidden-issue-label {
+        min-width: min($grid-unit-size * 8, calc(100% - 16px));
+        max-width: min($grid-unit-size * 16, calc(100% - 16px));
+        margin: 0;
+    }
+}
+
 .cvat-canvas3d-issue-region {
     position: absolute;
     width: $grid-unit-size * 4;
