@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+import logging
 import traceback
 from contextlib import suppress
 from typing import Any
@@ -10,8 +11,10 @@ import rq
 from crum import get_current_request, get_current_user
 from django.db import DatabaseError
 from django.db.models import Model
+from django.http import HttpRequest
 from rest_framework import status
 from rest_framework.exceptions import NotAuthenticated
+from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.serializers import BaseSerializer
 from rest_framework.views import exception_handler as drf_exception_handler
@@ -144,6 +147,9 @@ def get_user(instance=None) -> User | dict | None:
 
 
 def get_request(instance=None):
+    if isinstance(instance, (HttpRequest, Request)):
+        return instance
+
     def _get_request_from_rq_job(rq_job: rq.job.Job) -> dict | None:
         if request := BaseRQMeta.for_job(rq_job).request:
             return request.to_dict()
@@ -709,42 +715,75 @@ def handle_viewset_exception(exc: Exception, context):
     status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
     if response is not None:
         status_code = response.status_code
-    request = context["request"]
-    view = context["view"]
 
-    org = None
-    with suppress(Exception):
-        org = request.iam_context["organization"]
-
-    tb_strings = traceback.format_exception(type(exc), exc, exc.__traceback__)
-
-    payload = {
-        "basename": getattr(view, "basename", None),
-        "action": getattr(view, "action", None),
-        "request": {
-            "url": request.get_full_path(),
-            "query_params": request.query_params,
-            "content_type": request.content_type,
-            "method": request.method,
-        },
-        "message": tb_strings[-1].rstrip("\n"),
-        "stack": "".join(tb_strings),
-        "status_code": status_code,
-    }
-
-    record_server_event(
-        scope="send:exception",
-        request_info=request_info(),
-        count=1,
-        user_id=getattr(request.user, "id", None),
-        user_name=getattr(request.user, "username", None),
-        user_email=getattr(request.user, "email", None),
-        org_id=getattr(org, "id", None),
-        org_slug=getattr(org, "slug", None),
-        payload=payload,
+    record_request_exception(
+        exc,
+        request=context["request"],
+        view=context["view"],
+        status_code=status_code,
     )
-
     return response
+
+
+def record_request_exception(
+    exc: BaseException,
+    *,
+    request: HttpRequest | Request,
+    view=None,
+    status_code: int = status.HTTP_500_INTERNAL_SERVER_ERROR,
+) -> None:
+    django_request = request._request if isinstance(request, Request) else request
+    # DRF records an unhandled exception before re-raising it to Django.
+    if getattr(django_request, "_recorded_exception", None) is exc:
+        return
+
+    try:
+        org = None
+        with suppress(Exception):
+            org = request.iam_context["organization"]
+
+        user_info = {"user_id": None, "user_name": None, "user_email": None}
+        with suppress(Exception):
+            user = getattr(request, "user", None)
+            user_info = {
+                "user_id": getattr(user, "id", None),
+                "user_name": getattr(user, "username", None),
+                "user_email": getattr(user, "email", None),
+            }
+
+        query_params = None
+        with suppress(Exception):
+            # Django's GET contains URL query parameters for every HTTP method.
+            query_params = django_request.GET
+
+        tb_strings = traceback.format_exception(type(exc), exc, exc.__traceback__)
+
+        payload = {
+            "basename": getattr(view, "basename", None),
+            "action": getattr(view, "action", None),
+            "request": {
+                "url": request.get_full_path(),
+                "query_params": query_params,
+                "content_type": request.content_type,
+                "method": request.method,
+            },
+            "message": tb_strings[-1].rstrip("\n"),
+            "stack": "".join(tb_strings),
+            "status_code": status_code,
+        }
+
+        record_server_event(
+            scope="send:exception",
+            request_info=request_info(django_request),
+            count=1,
+            org_id=getattr(org, "id", None),
+            org_slug=getattr(org, "slug", None),
+            payload=payload,
+            **user_info,
+        )
+        django_request._recorded_exception = exc
+    except Exception:
+        logging.getLogger(__name__).exception("Could not record request exception event")
 
 
 def handle_client_events_push(request, data: dict):
