@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING, cast
 import attrs
 import datumaro as dm
 import numpy as np
+from shapely import make_valid
 from shapely.errors import ShapelyError
 from shapely.geometry import Polygon
 from shapely.ops import unary_union
@@ -192,10 +193,11 @@ class Datumaro2DBackend(QualityBackend):
     def shape_area(self, annotations: Sequence[cdm.Annotation2D]) -> float:
         native = [cast(DatumaroAnnotationAdapter, ann).native_annotation for ann in annotations]
         if not native:
-            raise InvalidGroundTruthArea()
+            raise AssertionError("GT shape area requires at least one annotation")
         if len(native) == 1:
             area = float(annotations[0].get_area())
             if not math.isfinite(area) or area < 0:
+                # Invalid coordinates are input data errors, not backend invariants.
                 raise InvalidGroundTruthArea()
             if isinstance(native[0], dm.Ellipse):
                 # Use the same rotated, rasterized geometry as ellipse IoU.
@@ -211,9 +213,11 @@ class Datumaro2DBackend(QualityBackend):
                 )
             return area
         if all(ann.type == dm.AnnotationType.polygon for ann in native):
-            return float(
-                unary_union([Polygon(np.asarray(ann.points).reshape(-1, 2)) for ann in native]).area
-            )
+            # Repair self-crossings and zero-width cuts used to represent polygon holes.
+            polygons = [
+                make_valid(Polygon(np.asarray(ann.points).reshape(-1, 2))) for ann in native
+            ]
+            return float(unary_union(polygons).area)
         if all(ann.type == dm.AnnotationType.mask for ann in native):
             mask = np.array(native[0].image, dtype=bool, copy=True)
             for ann in native[1:]:
@@ -249,7 +253,7 @@ class Datumaro2DBackend(QualityBackend):
         gt_threshold = None
         if isinstance(policy, ConstantThresholdPolicy):
             settings.iou_threshold = evaluator()
-        if isinstance(policy, LinearThresholdPolicy):
+        elif isinstance(policy, LinearThresholdPolicy):
             invalid_count = 0
             thresholds = {}
             for ann in sample.gt_annotations:
@@ -277,6 +281,8 @@ class Datumaro2DBackend(QualityBackend):
                 return thresholds[key]
 
             gt_threshold = evaluate_gt_threshold
+        elif policy is not None and not isinstance(policy, float | int):
+            raise AssertionError(f"Unsupported IoU threshold policy: {policy!r}")
 
         comparator = Comparator(
             self._gt_provider.dataset.native_dataset.categories(),

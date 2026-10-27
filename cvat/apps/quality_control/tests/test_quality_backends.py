@@ -496,6 +496,13 @@ class TestDatumaroQualityBackend(unittest.TestCase):
 
 
 class TestAdaptiveShapeAreas(unittest.TestCase):
+    def _polygon_group_area(self, polygons):
+        backend = Datumaro2DBackend(mock.Mock(), mock.Mock())
+        annotations = [
+            adapt_annotation(polygon, reference_getter=mock.Mock()) for polygon in polygons
+        ]
+        return backend.shape_area(annotations)
+
     def _report(self, gt, ds, *, annotation_type="rectangle", policy=None):
         requirement = make_requirement(
             annotation_type,
@@ -513,6 +520,37 @@ class TestAdaptiveShapeAreas(unittest.TestCase):
         summary = report.groups["rectangle"].comparison_summary
         self.assertEqual(str(summary.calculation.reason), "invalid_gt_area")
         self.assertIsNone(summary.score)
+
+    def test_self_intersecting_polygon_group_uses_repaired_union_area(self):
+        polygons = [
+            dm.Polygon([0, 0, 4, 4, 0, 4, 4, 0], label=0, group=1),
+            dm.Polygon([2, 0, 6, 0, 6, 4, 2, 4], label=0, group=1),
+        ]
+        # The bowtie has area 8; the rectangle has area 16 and overlaps it by 4.
+        self.assertEqual(self._polygon_group_area(polygons), 20)
+        report = self._report(
+            [make_item(*polygons)],
+            [make_item(*(polygon.wrap() for polygon in polygons))],
+            annotation_type="polygon",
+        )
+        self.assertEqual(report.groups["polygon"].comparison_summary.score, 1)
+
+    def test_polygon_group_hole_area_does_not_depend_on_ring_direction(self):
+        exterior = [(0, 0), (10, 0), (10, 10), (0, 10), (0, 0)]
+        interior = [(2, 2), (8, 2), (8, 8), (2, 8), (2, 2)]
+        for reverse_interior in (False, True):
+            with self.subTest(reverse_interior=reverse_interior):
+                ring = interior[::-1] if reverse_interior else interior
+                # Connect the hole to the exterior with a zero-width cut.
+                points = [
+                    coordinate for point in exterior + ring + [exterior[0]] for coordinate in point
+                ]
+                polygons = [
+                    dm.Polygon(points),
+                    dm.Polygon([3, 3, 7, 3, 7, 7, 3, 7]),
+                ]
+                # The outer square (100) minus the hole (36), partially filled by 16.
+                self.assertEqual(self._polygon_group_area(polygons), 80)
 
     def test_ellipses_use_individual_thresholds(self):
         report = self._report(

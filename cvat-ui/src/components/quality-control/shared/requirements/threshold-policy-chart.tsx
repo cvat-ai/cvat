@@ -124,7 +124,7 @@ export default function ThresholdPolicyChart(props: Readonly<Props>): JSX.Elemen
             pointBorderColor: color('line'),
             pointBackgroundColor: policy.points.map((point) => color(point.id === selected ? 'line' : 'background')),
         }];
-        setHover(null);
+        if (!drag.current) setHover(null);
         chart.update('none');
     }, [policy, xMax, selected]);
 
@@ -151,15 +151,26 @@ export default function ThresholdPolicyChart(props: Readonly<Props>): JSX.Elemen
         ).find((candidate) => candidate.datasetIndex === 1);
         return element ? policy.points[element.index].id : null;
     };
+    const showTooltip = (event: React.PointerEvent<HTMLCanvasElement>, point: ThresholdCoordinates): void => {
+        const rect = event.currentTarget.getBoundingClientRect();
+        setHover({
+            area: point.x,
+            threshold: point.y,
+            left: Math.max(0, Math.min(rect.width - 190, event.clientX - rect.left + 10)),
+            top: Math.max(0, Math.min(rect.height - 70, event.clientY - rect.top - 70)),
+        });
+    };
     const pointerDown = (event: React.PointerEvent<HTMLCanvasElement>): void => {
         if (disabled || event.button !== 0 || !chartRef.current) return;
         const start = coordinates(event);
         const id = pointAt(event);
         if (id === null && !inside(start)) return;
         drag.current = { id, start, moved: false };
-        if (id !== null) onDragStart();
+        if (id !== null) {
+            onDragStart();
+            showTooltip(event, policy.points.find((point) => point.id === id));
+        } else setHover(null);
         onSelect(id);
-        setHover(null);
         event.currentTarget.style.setProperty('cursor', id === null ? 'crosshair' : 'grabbing');
         event.currentTarget.setPointerCapture(event.pointerId);
         event.preventDefault();
@@ -172,13 +183,9 @@ export default function ThresholdPolicyChart(props: Readonly<Props>): JSX.Elemen
         if (!active) {
             const cursor = pointAt(event) === null ? 'crosshair' : 'grab';
             event.currentTarget.style.setProperty('cursor', disabled ? 'default' : cursor);
-            const rect = event.currentTarget.getBoundingClientRect();
-            setHover(inside(point) ? {
-                area: numbers.x,
-                threshold: evaluateThresholdPolicy(policy, numbers.x),
-                left: Math.max(0, Math.min(rect.width - 190, event.clientX - rect.left + 10)),
-                top: Math.max(0, event.clientY - rect.top - 70),
-            } : null);
+            if (inside(point)) {
+                showTooltip(event, { x: numbers.x, y: evaluateThresholdPolicy(policy, numbers.x) });
+            } else setHover(null);
             return;
         }
         if (Math.hypot(point.x - active.start.x, point.y - active.start.y) > 3) active.moved = true;
@@ -187,10 +194,12 @@ export default function ThresholdPolicyChart(props: Readonly<Props>): JSX.Elemen
         const minimum = index ? policy.points[index - 1].x : 0;
         const maximum = index + 1 < policy.points.length ? policy.points[index + 1].x : xMax;
         const margin = Math.min(0.01, (maximum - minimum) / 3);
-        onMove(active.id, {
+        const moved = {
             x: Math.max(minimum + margin, Math.min(maximum - margin, numbers.x)),
             y: numbers.y,
-        });
+        };
+        onMove(active.id, moved);
+        showTooltip(event, moved);
     };
     const pointerUp = (event: React.PointerEvent<HTMLCanvasElement>): void => {
         const active = drag.current;

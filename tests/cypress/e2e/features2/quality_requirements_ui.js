@@ -473,6 +473,13 @@ context('Quality requirements UI', {
                         cy.get(`${rows}.selected`).find('input[id*="area"]').should(($input) => {
                             expect(coordinate($input.val())).to.be.greaterThan(previousArea);
                         }).then(($input) => { previousArea = coordinate($input.val()); });
+                        cy.get(`${rows}.selected`).then(($currentRow) => {
+                            const format = (field) => coordinate($currentRow.find(`input[id*="${field}"]`).val())
+                                .toLocaleString(undefined, { maximumFractionDigits: 2 });
+                            cy.get(`${editor} .cvat-threshold-policy-tooltip`).should('be.visible')
+                                .and('contain', `GT area: ${format('area')} px²`)
+                                .and('contain', `IoU threshold: ${format('iou')}%`);
+                        });
                     });
                     cy.wrap($canvas).realMouseUp({ x: width * 0.6, y: height * 0.4, scrollBehavior: false });
                 });

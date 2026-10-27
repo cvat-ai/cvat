@@ -164,7 +164,7 @@ export default function ThresholdPolicyEditor(props: Readonly<Props>): JSX.Eleme
     const changeMode = (mode: 'constant' | 'linear'): void => {
         numericEdit.current = null;
         setSelected(null);
-        const action = `switch to ${mode === 'constant' ? 'constant' : 'linear interpolation'} mode`;
+        const action = `return to ${policy.mode === 'constant' ? 'constant' : 'linear interpolation'} mode`;
         if (mode === 'constant') emit(drafts.current.constant, action);
         else {
             const threshold = policy.mode === 'constant' && valid ? policy.value : DEFAULT_POLICY.value;
