@@ -146,6 +146,75 @@ class KeypointsMatcher(datumaro.components.annotations.matcher.PointsMatcher):
         )
 
 
+OUTSIDE_IMAGE_LIMIT_RELATIVE = 0.1
+"The relative limit for the distance outside the image, relative to the image diagonal"
+
+OUTSIDE_IMAGE_LIMIT_ABSOLUTE = 20
+"The absolute limit for the distance outside the image, in pixels"
+
+
+def get_outside_image_limit(*, img_h: int, img_w: int) -> int:
+    """
+    The maximum distance, which annotations can extend outside the image, in pixels.
+    The annotation parts, extending farther, are ignored in the Boundary F comparisons.
+    This also limits the computational costs for such annotations.
+
+    The limit is the maximum of the absolute and relative limits.
+    """
+
+    return max(
+        OUTSIDE_IMAGE_LIMIT_ABSOLUTE,
+        math.ceil(OUTSIDE_IMAGE_LIMIT_RELATIVE * math.hypot(img_h, img_w)),
+    )
+
+
+class LtrbBox(NamedTuple):
+    "A box of pixels (left, top, right, bottom). The right and bottom are exclusive"
+
+    left: int
+    top: int
+    right: int
+    bottom: int
+
+    @classmethod
+    def from_points_bbox(cls, bbox: Sequence[float]) -> LtrbBox:
+        """
+        The pixels of the rasterized points, from the points bbox (x, y, w, h).
+        The points are rasterized into the nearest pixels, so the points on the right and bottom
+        bbox borders are in the next pixels after the bbox.
+        """
+
+        x, y, w, h = bbox
+        return cls(math.floor(x), math.floor(y), math.ceil(x + w) + 1, math.ceil(y + h) + 1)
+
+    @property
+    def shape(self) -> tuple[int, int]:
+        "The array shape (height, width) of the box"
+        return (self.bottom - self.top, self.right - self.left)
+
+    def pad(self, padding: int) -> LtrbBox:
+        return LtrbBox(
+            self.left - padding, self.top - padding, self.right + padding, self.bottom + padding
+        )
+
+    def clip(self, limits: LtrbBox) -> LtrbBox:
+        "The box can become empty, if it's outside the limits"
+        left, top, right, bottom = limits
+        return LtrbBox(
+            *(int(v) for v in np.clip(self, (left, top, left, top), (right, bottom, right, bottom)))
+        )
+
+
+def get_image_roi(*, img_h: int, img_w: int) -> LtrbBox:
+    """
+    The region of interest (RoI), where the annotations can be located.
+    It's the image, extended by the allowed distance outside the image on each side.
+    """
+
+    limit = get_outside_image_limit(img_h=img_h, img_w=img_w)
+    return LtrbBox.from_points_bbox((-limit, -limit, img_w + 2 * limit, img_h + 2 * limit))
+
+
 def to_rle(ann: dm.Annotation, *, img_h: int, img_w: int):
     from pycocotools import mask as mask_utils
 
@@ -223,13 +292,29 @@ class CompressedObjectBoundary:
         return math.ceil(tolerance) + 1
 
     @classmethod
-    def _window(
-        cls, bbox: tuple[int, int, int, int], *, tolerance: float, img_h: int, img_w: int
-    ) -> tuple[int, int, int, int]:
-        # bbox: x0, y0, x1, y1 (exclusive)
-        pad = cls.window_padding(tolerance)
-        x0, y0, x1, y1 = bbox
-        return max(0, y0 - pad), max(0, x0 - pad), min(img_h, y1 + pad), min(img_w, x1 + pad)
+    def _window(cls, bbox: LtrbBox, *, tolerance: float, roi: LtrbBox) -> LtrbBox:
+        "The window around the bbox, limited by the RoI. It can be empty, if the bbox is outside"
+        return bbox.pad(cls.window_padding(tolerance)).clip(roi)
+
+    @classmethod
+    def _from_window_region(
+        cls, region: np.ndarray, origin: tuple[int, int]
+    ) -> CompressedObjectBoundary:
+        "Region boundary is it's inner 1-px boundary"
+
+        if region.size:  # OpenCV fails on empty arrays
+            eroded = cv2.erode(
+                region.astype(np.uint8),
+                cv2.getStructuringElement(cv2.MORPH_CROSS, (3, 3)),
+                borderType=cv2.BORDER_CONSTANT,
+                borderValue=0,
+            ).astype(bool)
+
+            boundary = region & ~eroded
+        else:
+            boundary = region
+
+        return cls._from_window_boundary(boundary, origin)
 
     @classmethod
     def _from_window_boundary(cls, boundary: np.ndarray, origin: tuple[int, int]):
@@ -240,67 +325,97 @@ class CompressedObjectBoundary:
 
     @classmethod
     def from_rle(
-        cls, full_coco_rle: datumaro.util.mask_tools.Rle, *, tolerance: float
+        cls,
+        full_coco_rle: datumaro.util.mask_tools.Rle,
+        *,
+        tolerance: float,
+        roi: LtrbBox,
     ) -> CompressedObjectBoundary:
         """
         Region boundary is it's inner 1-px boundary.
+        The RLE covers the image, only the image part of the window is filled.
         """
 
         from pycocotools import mask as mask_utils
 
         img_h, img_w = full_coco_rle["size"]
         x, y, w, h = mask_utils.toBbox(full_coco_rle)
-        wy0, wx0, wy1, wx1 = cls._window(
-            (int(x), int(y), math.ceil(x + w), math.ceil(y + h)),
+        window = cls._window(
+            LtrbBox(int(x), int(y), math.ceil(x + w), math.ceil(y + h)),
             tolerance=tolerance,
-            img_h=img_h,
-            img_w=img_w,
+            roi=roi,
         )
+        region = np.zeros(window.shape, dtype=bool)
 
-        region = mask_utils.decode(full_coco_rle)[wy0:wy1, wx0:wx1].astype(bool)
+        # Paste the image part of the window
+        image_part = window.clip(LtrbBox(0, 0, img_w, img_h))
+        if all(image_part.shape):
+            offset_x = image_part.left - window.left
+            offset_y = image_part.top - window.top
+            part_h, part_w = image_part.shape
+            region[offset_y : offset_y + part_h, offset_x : offset_x + part_w] = mask_utils.decode(
+                full_coco_rle
+            )[image_part.top : image_part.bottom, image_part.left : image_part.right]
 
-        eroded = cv2.erode(
-            region.astype(np.uint8),
-            cv2.getStructuringElement(cv2.MORPH_CROSS, (3, 3)),
-            borderType=cv2.BORDER_CONSTANT,
-            borderValue=0,
-        ).astype(bool)
+        return cls._from_window_region(region, (window.top, window.left))
 
-        # The inner boundary of the region
-        boundary = region & ~eroded
+    @classmethod
+    def from_polygons(
+        cls,
+        polygons: Sequence[dm.Polygon],
+        *,
+        tolerance: float,
+        roi: LtrbBox,
+    ) -> CompressedObjectBoundary:
+        """
+        Region boundary is it's inner 1-px boundary.
+        The polygons are rasterized in the window, the parts outside the window are clipped.
+        """
 
-        return cls._from_window_boundary(boundary, (wy0, wx0))
+        from pycocotools import mask as mask_utils
+
+        window = cls._window(
+            LtrbBox.from_points_bbox(datumaro.util.annotation_util.max_bbox(polygons)),
+            tolerance=tolerance,
+            roi=roi,
+        )
+        region = np.zeros(window.shape, dtype=bool)
+
+        if region.size:
+            # The same rasterization as in the IoU computations, but in the window coordinates.
+            # The pixels can rarely differ by 1 at the rounding ties, because of the shift.
+            window_polygons = [
+                (np.reshape(polygon.points, (-1, 2)) - (window.left, window.top)).ravel().tolist()
+                for polygon in polygons
+            ]
+            rles = mask_utils.frPyObjects(window_polygons, *region.shape)
+            region = mask_utils.decode(mask_utils.merge(rles)).astype(bool)
+
+        return cls._from_window_region(region, (window.top, window.left))
 
     @classmethod
     def from_polyline(
-        cls, points: Sequence[float], *, tolerance: float, img_h: int, img_w: int
+        cls, line: dm.PolyLine, *, tolerance: float, roi: LtrbBox
     ) -> CompressedObjectBoundary:
         """
-        Line boundary is the rasterized line itself
+        Line boundary is the rasterized line itself.
+        The parts of the line outside the window are clipped.
         """
 
-        coords = np.reshape(points, (-1, 2))
-        wy0, wx0, wy1, wx1 = cls._window(
-            (
-                int(np.floor(coords[:, 0].min())),
-                int(np.floor(coords[:, 1].min())),
-                int(np.ceil(coords[:, 0].max())) + 1,
-                int(np.ceil(coords[:, 1].max())) + 1,
-            ),
-            tolerance=tolerance,
-            img_h=img_h,
-            img_w=img_w,
+        window = cls._window(
+            LtrbBox.from_points_bbox(line.get_bbox()), tolerance=tolerance, roi=roi
         )
+        canvas = np.zeros(window.shape, dtype=np.uint8)
 
-        # Rasterize the line
-        canvas = np.zeros((max(0, wy1 - wy0), max(0, wx1 - wx0)), dtype=np.uint8)
-        shift = 4  # fractional bits of the point coordinates
-        window_coords = np.round((coords - (wx0, wy0)) * (1 << shift)).astype(np.int32)
-        cv2.polylines(
-            canvas, [window_coords.reshape(-1, 1, 2)], isClosed=False, color=1, shift=shift
-        )
+        if canvas.size:  # OpenCV fails on empty arrays
+            shift = 4  # fractional bits of the point coordinates
+            coords = np.reshape(line.points, (-1, 2)) - (window.left, window.top)
+            window_coords = np.round(coords * (1 << shift)).astype(np.int32)
+            cv2.polylines(
+                canvas, [window_coords.reshape(-1, 1, 2)], isClosed=False, color=1, shift=shift
+            )
 
-        return cls._from_window_boundary(canvas.astype(bool), (wy0, wx0))
+        return cls._from_window_boundary(canvas.astype(bool), (window.top, window.left))
 
     def materialize(self) -> MaterializedObjectBoundary:
         from pycocotools import mask as mask_utils
@@ -889,13 +1004,13 @@ class DistanceComparator:
         img_h: int,
         img_w: int,
     ) -> ShapeSimilarityFunction[dm.Annotation, dm.Annotation]:
-        def _get_boundary(ann: dm.Annotation) -> CompressedObjectBoundary:
-            from pycocotools import mask as mask_utils
+        roi = get_image_roi(img_h=img_h, img_w=img_w)
 
-            polygon = self.to_polygon(ann)
-            rle = mask_utils.merge(to_rle(polygon, img_h=img_h, img_w=img_w))
-            return CompressedObjectBoundary.from_rle(
-                rle, tolerance=self.settings.boundary_f_tolerance
+        def _get_boundary(ann: dm.Annotation) -> CompressedObjectBoundary:
+            return CompressedObjectBoundary.from_polygons(
+                [self.to_polygon(ann)],
+                tolerance=self.settings.boundary_f_tolerance,
+                roi=roi,
             )
 
         def _get_bbox(ann: dm.Annotation) -> tuple[float, float, float, float]:
@@ -1027,7 +1142,9 @@ class DistanceComparator:
             ) -> CompressedObjectBoundary:
                 segment = _get_segment(obj_id, compiled_mask=compiled_mask, instances=instances)
                 return CompressedObjectBoundary.from_rle(
-                    segment, tolerance=self.settings.boundary_f_tolerance
+                    segment,
+                    tolerance=self.settings.boundary_f_tolerance,
+                    roi=get_image_roi(img_h=img_h, img_w=img_w),
                 )
 
             def _get_bbox(obj_id: int, *, instances: list) -> tuple[float, float, float, float]:
@@ -1122,10 +1239,9 @@ class DistanceComparator:
 
             def _get_boundary(ann: dm.PolyLine) -> CompressedObjectBoundary:
                 return CompressedObjectBoundary.from_polyline(
-                    ann.points,
+                    ann,
                     tolerance=self.settings.boundary_f_tolerance,
-                    img_h=img_h,
-                    img_w=img_w,
+                    roi=get_image_roi(img_h=img_h, img_w=img_w),
                 )
 
             base_similarity = self._make_boundary_f_similarity(

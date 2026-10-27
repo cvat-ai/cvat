@@ -15,7 +15,10 @@ from cvat.apps.quality_control.backends.datumaro.matching import (
     AttributeMatchingResult,
     Comparator,
     ComparisonParameters,
+    CompressedObjectBoundary,
     DistanceComparator,
+    LtrbBox,
+    boundary_f,
 )
 from cvat.apps.quality_control.matching import PairwiseComparison, match_segments
 from cvat.apps.quality_control.models import (
@@ -454,6 +457,88 @@ class TestBoundaryFComparison(unittest.TestCase):
         self.assertEqual(matches, [(gt_ann, ds_ann)])
         self.assertEqual(self._similarity(comparator, comparisons, gt_ann, ds_ann), 1)
 
+    def test_can_match_shapes_outside_the_image_within_limits(self) -> None:
+        # the image is 100x100, the shapes are within the limit from the image
+        for annotation_type, gt_ann, ds_ann in [
+            (
+                dm.AnnotationType.polyline,
+                dm.PolyLine([108, 50, 113, 50], label=0),
+                dm.PolyLine([108, 51, 113, 51], label=0),
+            ),
+            (
+                dm.AnnotationType.polyline,
+                dm.PolyLine([50, 108, 50, 113], label=0),
+                dm.PolyLine([51, 108, 51, 113], label=0),
+            ),
+            (
+                dm.AnnotationType.polyline,
+                dm.PolyLine([-13, 50, -8, 50], label=0),
+                dm.PolyLine([-13, 51, -8, 51], label=0),
+            ),
+            (
+                dm.AnnotationType.bbox,
+                dm.Bbox(101, 10, 10, 40, label=0),
+                dm.Bbox(102, 10, 10, 40, label=0),
+            ),
+        ]:
+            with self.subTest(annotation_type=annotation_type.name, points=gt_ann.points):
+                comparator, (matches, _, _, _, comparisons) = self._compare(
+                    annotation_type, [gt_ann], [ds_ann], compare_line_orientation=False
+                )
+                self.assertEqual(matches, [(gt_ann, ds_ann)])
+                self.assertEqual(self._similarity(comparator, comparisons, gt_ann, ds_ann), 1)
+
+    def test_empty_boundary_windows_give_zero_similarity(self) -> None:
+        # the shapes outside the RoI, the native functions can't handle empty inputs
+        from pycocotools import mask as mask_utils
+
+        roi = LtrbBox(0, 0, 100, 100)
+        for name, boundary in [
+            (
+                "region",
+                CompressedObjectBoundary.from_rle(
+                    mask_utils.encode(np.zeros((0, 10), dtype=np.uint8, order="F")),
+                    tolerance=5,
+                    roi=LtrbBox(0, 0, 10, 0),
+                ),
+            ),
+            (
+                "polygon",
+                CompressedObjectBoundary.from_polygons(
+                    [dm.Polygon([110, 10, 130, 10, 130, 50, 110, 50])], tolerance=5, roi=roi
+                ),
+            ),
+            (
+                "line",
+                CompressedObjectBoundary.from_polyline(
+                    dm.PolyLine([110, 50, 130, 50]), tolerance=5, roi=roi
+                ),
+            ),
+        ]:
+            with self.subTest(name):
+                materialized = boundary.materialize()
+                self.assertEqual(boundary_f(materialized, materialized, tolerance=5), 0)
+
+    def test_can_compare_lines_on_the_image_borders(self) -> None:
+        # the image is 100x100, the border points can come from the UI
+        for name, gt_points, ds_points in [
+            ("left", [0, 10, 0, 90], [0, 12, 0, 92]),
+            ("top", [10, 0, 90, 0], [12, 0, 92, 0]),
+            ("right", [100, 10, 100, 90], [100, 12, 100, 92]),
+            ("bottom", [10, 100, 90, 100], [12, 100, 92, 100]),
+        ]:
+            with self.subTest(name):
+                gt_ann = dm.PolyLine(gt_points, label=0)
+                ds_ann = dm.PolyLine(ds_points, label=0)
+
+                comparator, (matches, _, _, _, comparisons) = self._compare(
+                    dm.AnnotationType.polyline,
+                    [gt_ann],
+                    [ds_ann],
+                    compare_line_orientation=False,
+                )
+                self.assertEqual(matches, [(gt_ann, ds_ann)])
+                self.assertEqual(self._similarity(comparator, comparisons, gt_ann, ds_ann), 1)
 
     def test_boundary_errors_beyond_tolerance_reduce_similarity(self) -> None:
         gt_ann = dm.Polygon([20, 20, 60, 20, 60, 60, 20, 60], label=0)
