@@ -69,11 +69,6 @@
 
 .cvat-canvas-selection-context-menu {
     overflow-x: hidden;
-
-    &:focus-within,
-    &:has(.cvat-canvas-selected-objects-label-selector .ant-select-open) {
-        opacity: 1;
-    }
 }
 
 .cvat-canvas-selected-objects-label-selector {

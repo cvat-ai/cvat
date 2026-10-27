@@ -1,6 +1,6 @@
 ### Fixed
 
-- Kept the selection context menu's hovered appearance while its label dropdown is open.
+- Kept single-object and selection context menus fully opaque and highlighted while dropdowns are open.
   (<https://github.com/cvat-ai/cvat/pull/11376>)
 - Made the selection box visible in bitmap mode.
   (<https://github.com/cvat-ai/cvat/pull/11376>)
@@ -9,4 +9,6 @@
 - Entered Select objects mode when selecting objects with Ctrl/Cmd-click.
   (<https://github.com/cvat-ai/cvat/pull/11376>)
 - Made plain canvas clicks clear selection and dragging draw a new selection box in Select objects mode.
+  (<https://github.com/cvat-ai/cvat/pull/11376>)
+- Kept context menu details accessible when expanded near the bottom of the viewport.
   (<https://github.com/cvat-ai/cvat/pull/11376>)

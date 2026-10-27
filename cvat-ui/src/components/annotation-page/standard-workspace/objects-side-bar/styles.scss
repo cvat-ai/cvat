@@ -618,7 +618,7 @@
     }
 
     &:hover,
-    &.cvat-canvas-selected-objects-menu-content:has(.cvat-canvas-selected-objects-label-selector .ant-select-open) {
+    .cvat-canvas-context-menu &:has(.ant-select-open) {
         border-color: rgba(0, 0, 0, 42%);
         box-shadow: 0 2px 8px rgba(0, 0, 0, 12%);
     }
