@@ -10,11 +10,13 @@ import {
     CameraAction,
     ViewsDOM,
     CanvasMode,
+    cameraRayFromImagePoint,
 } from 'cvat-canvas3d/src/typescript/canvas3d';
+import type { CameraRay } from 'cvat-canvas3d/src/typescript/canvas3d';
 import { OrientationVisibility } from 'cvat-canvas3d/src/typescript/canvas3dModel';
 
 export {
-    Canvas3d, MouseInteraction, ViewType, CameraAction, CanvasMode,
+    cameraRayFromImagePoint, Canvas3d, MouseInteraction, ViewType, CameraAction, CanvasMode,
 };
 
-export type { ViewsDOM, OrientationVisibility };
+export type { ViewsDOM, OrientationVisibility, CameraRay };

@@ -6,6 +6,10 @@
 import { ObjectState } from '.';
 import { MasterImpl } from './master';
 import consts from './consts';
+import { areCameraRaysEqual } from './geometry/camera-projection';
+import type { CameraRay } from './geometry/types';
+
+export type { CameraRay } from './geometry/types';
 
 export interface Size {
     width: number;
@@ -95,6 +99,7 @@ export enum UpdateReasons {
     MERGE = 'merge',
     SPLIT = 'split',
     FITTED_CANVAS = 'fitted_canvas',
+    CAMERA_RAY_CHANGED = 'camera_ray_changed',
     CONFIG_UPDATED = 'config_updated',
     DATA_FAILED = 'data_failed',
 }
@@ -124,6 +129,7 @@ export interface Canvas3dDataModel {
     groupData: GroupData;
     mergeData: MergeData;
     splitData: SplitData;
+    cameraRay: CameraRay | null;
     isFrameUpdating: boolean;
     nextSetupRequest: {
         frameData: any;
@@ -151,6 +157,7 @@ export interface Canvas3dModel {
     group(groupData: GroupData): void;
     split(splitData: SplitData): void;
     merge(mergeData: MergeData): void;
+    setCameraRay(cameraRay: CameraRay | null): void;
     destroy(): void;
     updateCanvasObjects(): void;
     unlockFrameUpdating(): void;
@@ -193,6 +200,7 @@ export class Canvas3dModelImpl extends MasterImpl implements Canvas3dModel {
             splitData: {
                 enabled: false,
             },
+            cameraRay: null,
             configuration: {
                 colorBy: 'Label',
                 shapeOpacity: 40,
@@ -250,6 +258,7 @@ export class Canvas3dModelImpl extends MasterImpl implements Canvas3dModel {
 
         this.data.isFrameUpdating = true;
         this.data.imageID = frameData.number;
+        this.setCameraRay(null);
         frameData
             .data((): void => {
                 this.data.image = null;
@@ -289,6 +298,18 @@ export class Canvas3dModelImpl extends MasterImpl implements Canvas3dModel {
 
     public get objects(): ObjectState[] {
         return [...this.data.objects];
+    }
+
+    public setCameraRay(cameraRay: CameraRay | null): void {
+        if (areCameraRaysEqual(this.data.cameraRay, cameraRay)) {
+            return;
+        }
+
+        const nextCameraRay = cameraRay ? cameraRay.clone() : null;
+        nextCameraRay?.direction.normalize();
+
+        this.data.cameraRay = nextCameraRay;
+        this.notify(UpdateReasons.CAMERA_RAY_CHANGED);
     }
 
     public isAbleToChangeFrame(): boolean {

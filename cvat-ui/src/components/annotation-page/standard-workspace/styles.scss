@@ -103,7 +103,8 @@
 .cvat-snap-tools-control,
 .cvat-audio-interval-region-control,
 .cvat-audio-split-control,
-.cvat-audio-loop-control {
+.cvat-audio-loop-control,
+.cvat-camera-ray-control {
     border-radius: $border-radius-base;
     transition: $annotation-view-control-transition;
     transform: scale(0.75);
@@ -138,6 +139,27 @@
 
 .cvat-disabled-canvas-control > svg {
     filter: opacity(0.45);
+}
+
+.cvat-camera-ray-control {
+    position: relative;
+    display: inline-flex;
+
+    > .anticon:first-child svg {
+        width: $grid-unit-size * 4;
+        height: $grid-unit-size * 4;
+    }
+
+    .cvat-camera-ray-clear-indicator {
+        position: absolute;
+        top: -$grid-unit-size * 0.25;
+        right: -$grid-unit-size * 0.25;
+        font-size: $grid-unit-size * 1.5;
+    }
+
+    &.cvat-disabled-canvas-control > .anticon:first-child {
+        filter: opacity(0.45);
+    }
 }
 
 .cvat-rotate-canvas-controls-left,

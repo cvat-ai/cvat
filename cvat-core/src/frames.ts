@@ -10,7 +10,9 @@ import {
 import PluginRegistry from './plugins';
 import { MediaType } from './enums';
 import serverProxy, { PREVIEW_DEFAULT, PreviewResponse } from './server-proxy';
-import { SerializedChapterMetaData, SerializedFramesMetaData } from './server-response-types';
+import {
+    SerializedChapterMetaData, SerializedFramesMetaData, SerializedRelatedImageCalibration,
+} from './server-response-types';
 import { ArgumentError } from './exceptions';
 import { FieldUpdateTrigger } from './common';
 import config from './config';
@@ -115,6 +117,7 @@ export class FramesMetaData {
         height: number;
         name: string;
         related_files: number;
+        related_images?: SerializedRelatedImageCalibration[];
     }[];
     public imageQuality: number;
     public size: number;
@@ -338,12 +341,19 @@ export class FramesMetaData {
     }
 }
 
+export interface RelatedImageCalibration {
+    name: string;
+    intrinsicMatrix: number[][];
+    extrinsicMatrix: number[][];
+}
+
 export class FrameData {
     public readonly filename: string;
     public readonly width: number;
     public readonly height: number;
     public readonly number: number;
     public readonly relatedFiles: number;
+    public readonly relatedImages: RelatedImageCalibration[];
     public readonly deleted: boolean;
     public readonly jobID: number;
 
@@ -355,7 +365,14 @@ export class FrameData {
         frameNumber,
         deleted,
         related_files: relatedFiles,
+        related_images: relatedImages = [],
     }) {
+        const calibratedRelatedImages = relatedImages.map((relatedImage) => ({
+            name: relatedImage.name,
+            intrinsicMatrix: relatedImage.intrinsic_matrix,
+            extrinsicMatrix: relatedImage.extrinsic_matrix,
+        }));
+
         Object.defineProperties(
             this,
             Object.freeze({
@@ -381,6 +398,10 @@ export class FrameData {
                 },
                 relatedFiles: {
                     value: relatedFiles,
+                    writable: false,
+                },
+                relatedImages: {
+                    value: calibratedRelatedImages,
                     writable: false,
                 },
                 deleted: {
@@ -994,6 +1015,7 @@ export async function getFrame(
         height: frameMeta.height,
         name: frameMeta.name,
         related_files: frameMeta.related_files,
+        related_images: frameMeta.related_images,
         frameNumber: frame,
         deleted: frame in meta.deletedFrames,
         jobID,

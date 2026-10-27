@@ -32,6 +32,9 @@ import { filterApplicableForType } from 'utils/filter-applicable-labels';
 import { subKeyMap } from 'utils/component-subkeymap';
 import { ShortcutScope } from 'utils/enums';
 import { registerComponentShortcuts } from 'actions/shortcuts-actions';
+import CameraRayControl, {
+    Props as CameraRayControlProps,
+} from './camera-ray-control';
 
 interface Props {
     keyMap: KeyMap;
@@ -101,6 +104,7 @@ const ObservedDrawCuboidControl = ControlVisibilityObserver<DrawCuboidControlPro
 const ObservedGroupControl = ControlVisibilityObserver<GroupControlProps>(GroupControl, 'GroupControl');
 const ObservedMergeControl = ControlVisibilityObserver<MergeControlProps>(MergeControl, 'MergeControl');
 const ObservedSplitControl = ControlVisibilityObserver<SplitControlProps>(SplitControl, 'SplitControl');
+const ObservedCameraRayControl = ControlVisibilityObserver<CameraRayControlProps>(CameraRayControl, 'CameraRayControl');
 
 export default function ControlsSideBarComponent(props: Props): JSX.Element {
     const {
@@ -248,6 +252,7 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
                 isDrawing={activeControl === ActiveControl.DRAW_CUBOID}
                 disabled={controlsDisabled}
             />
+            <ObservedCameraRayControl canvasInstance={canvasInstance} activeControl={activeControl} />
 
             <hr />
 

@@ -69,6 +69,10 @@
         transform: translateY(-50%);
         width: 100%;
         height: calc(100% - $grid-unit-size * 4);
+
+        &.cvat-context-image-camera-ray-picking {
+            cursor: crosshair;
+        }
     }
 
     &:hover {

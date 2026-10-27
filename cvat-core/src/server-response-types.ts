@@ -373,6 +373,12 @@ export interface SerializedChapter {
     metadata: SerializedChapterMetaData;
 }
 
+export interface SerializedRelatedImageCalibration {
+    name: string;
+    intrinsic_matrix: number[][]; // 3x3 matrix: camera coordinates to pixel coordinates
+    extrinsic_matrix: number[][]; // 3x4 matrix: LiDAR coordinates to camera coordinates
+}
+
 export interface SerializedFramesMetaData {
     chunk_size: number;
     chapters: SerializedChapter[] | null
@@ -385,6 +391,7 @@ export interface SerializedFramesMetaData {
         height?: number;
         name: string;
         related_files: number;
+        related_images?: SerializedRelatedImageCalibration[];
     }[];
     image_quality: number;
     size: number;
