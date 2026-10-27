@@ -177,13 +177,6 @@ def segment_iou(a: dm.Annotation, b: dm.Annotation, *, img_h: int, img_w: int) -
     return float(mask_utils.iou(b, a, [0]))
 
 
-BOUNDARY_F_TIE_BREAK_WEIGHT = 0.01
-"""
-The weight of the extra term in the Boundary F similarity: BF - w * (1 - IoU).
-Helps to resolve the ties for objects within the tolerance.
-"""
-
-
 @define(frozen=True)
 class MaterializedObjectBoundary:
     origin: tuple[int, int]
@@ -592,11 +585,10 @@ class DistanceComparator:
         get_b_bbox: Callable[[_ShapeT2], tuple[float, float, float, float]],
         get_a_boundary: Callable[[_ShapeT1], CompressedObjectBoundary],
         get_b_boundary: Callable[[_ShapeT2], CompressedObjectBoundary],
-        tie_break: ShapeSimilarityFunction[_ShapeT1, _ShapeT2] | None = None,
         object_key: Callable[[_ShapeT1 | _ShapeT2], Hashable] = id,
     ) -> ShapeSimilarityFunction[_ShapeT1, _ShapeT2]:
         """
-        Boundary F similarity of the objects, with the optional tie-break similarity.
+        Boundary F similarity of the objects.
         The bboxes (x, y, w, h) allow to skip the far objects without computing the boundaries.
         The bboxes and the boundaries are computed once per object, identified by object_key.
         """
@@ -640,9 +632,6 @@ class DistanceComparator:
                 materialized_boundaries.get(get_b_boundary(b)),
                 tolerance=self.settings.boundary_f_tolerance,
             )
-
-            if tie_break is not None and similarity > 0:
-                similarity -= BOUNDARY_F_TIE_BREAK_WEIGHT * (1 - tie_break(a, b))
 
             return similarity
 
@@ -862,9 +851,7 @@ class DistanceComparator:
         img_h, img_w = item_a.media_as(dm.Image).size
         similarity = partial(_bbox_iou, img_h=img_h, img_w=img_w)
         if self.settings.similarity_metric == ShapeSimilarityMetricType.BOUNDARY_F:
-            similarity = self._make_polygonal_boundary_f(
-                img_h=img_h, img_w=img_w, tie_break=similarity
-            )
+            similarity = self._make_polygonal_boundary_f(img_h=img_h, img_w=img_w)
         elif self.settings.similarity_metric != ShapeSimilarityMetricType.IOU:
             raise AssertionError(
                 f"Similarity metric '{self.settings.similarity_metric}' is not available for boxes"
@@ -879,9 +866,7 @@ class DistanceComparator:
         img_h, img_w = item_a.media_as(dm.Image).size
         similarity = partial(_ellipse_iou, img_h=img_h, img_w=img_w)
         if self.settings.similarity_metric == ShapeSimilarityMetricType.BOUNDARY_F:
-            similarity = self._make_polygonal_boundary_f(
-                img_h=img_h, img_w=img_w, tie_break=similarity
-            )
+            similarity = self._make_polygonal_boundary_f(img_h=img_h, img_w=img_w)
         elif self.settings.similarity_metric != ShapeSimilarityMetricType.IOU:
             raise AssertionError(
                 f"Similarity metric '{self.settings.similarity_metric}' "
@@ -895,7 +880,6 @@ class DistanceComparator:
         *,
         img_h: int,
         img_w: int,
-        tie_break: ShapeSimilarityFunction[dm.Annotation, dm.Annotation] | None = None,
     ) -> ShapeSimilarityFunction[dm.Annotation, dm.Annotation]:
         def _get_boundary(ann: dm.Annotation) -> CompressedObjectBoundary:
             from pycocotools import mask as mask_utils
@@ -915,7 +899,6 @@ class DistanceComparator:
             get_b_bbox=_get_bbox,
             get_a_boundary=_get_boundary,
             get_b_boundary=_get_boundary,
-            tie_break=tie_break,
         )
 
     def match_segmentations(self, item_a: dm.DatasetItem, item_b: dm.DatasetItem) -> MatchResult:
@@ -1052,7 +1035,6 @@ class DistanceComparator:
                 get_b_boundary=partial(
                     _get_boundary, compiled_mask=b_compiled_mask, instances=b_instances
                 ),
-                tie_break=_segment_iou,
                 object_key=lambda obj_id: obj_id,  # the instance indices
             )
         elif self.settings.similarity_metric == ShapeSimilarityMetricType.IOU:

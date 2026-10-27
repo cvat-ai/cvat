@@ -443,21 +443,17 @@ class TestBoundaryFComparison(unittest.TestCase):
         self.assertEqual(matches, [(gt_ann, ds_ann)])
         self.assertFalse(mismatches or gt_unmatched or ds_unmatched)
 
-    def test_ranks_the_candidates_within_tolerance(self) -> None:
-        # both candidates are within the tolerance everywhere, the closer one is matched
-        gt_ann = dm.Bbox(20, 20, 40, 40, label=0)
-        far_ann = dm.Bbox(24, 20, 40, 40, label=0)
-        near_ann = dm.Bbox(21, 20, 40, 40, label=0)
+    def test_can_match_objects_within_tolerance_with_strict_threshold(self) -> None:
+        # no overlap, but the boundaries are within the tolerance: Boundary F is 1
+        gt_ann = dm.Bbox(20, 10, 2, 60, label=0)
+        ds_ann = dm.Bbox(23, 10, 2, 60, label=0)
 
-        comparator, (matches, _, _, ds_unmatched, comparisons) = self._compare(
-            dm.AnnotationType.bbox, [gt_ann], [far_ann, near_ann]
+        comparator, (matches, _, _, _, comparisons) = self._compare(
+            dm.AnnotationType.bbox, [gt_ann], [ds_ann], boundary_f_threshold=0.99
         )
-        self.assertEqual(matches, [(gt_ann, near_ann)])
-        self.assertEqual(ds_unmatched, [far_ann])
-        self.assertGreater(
-            self._similarity(comparator, comparisons, gt_ann, near_ann),
-            self._similarity(comparator, comparisons, gt_ann, far_ann),
-        )
+        self.assertEqual(matches, [(gt_ann, ds_ann)])
+        self.assertEqual(self._similarity(comparator, comparisons, gt_ann, ds_ann), 1)
+
 
     def test_boundary_errors_beyond_tolerance_reduce_similarity(self) -> None:
         gt_ann = dm.Polygon([20, 20, 60, 20, 60, 60, 20, 60], label=0)
