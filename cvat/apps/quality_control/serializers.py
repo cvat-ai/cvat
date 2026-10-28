@@ -878,14 +878,7 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
     def _should_touch_settings(self) -> bool:
         return self.context.get("touch_settings", True)
 
-    @staticmethod
-    def _clear_child_inherited_defaults(validated_data: dict[str, Any]) -> None:
-        for field_name in _INHERITED_REQUIREMENT_FIELDS:
-            validated_data.setdefault(field_name, None)
-
     def create(self, validated_data):
-        self._clear_child_inherited_defaults(validated_data)
-
         instance = super().create(validated_data)
         if self._should_touch_settings():
             self._touch_settings(instance.settings)
