@@ -41,9 +41,18 @@ All in [access.txt](bench/results/access.txt), raw `curl -i` against the running
   usable count is not its raw count. Rejected: a per-job filter (more useful to a manager, but every COCO job looks
   alike) and grouping by `source` (all 41,866 are "file" after import, so it would show nothing). Cost: +10 ms query
   time, MO-1 still met (115.5 ms).
-- [ ] Drawing/deleting a box in a job updates the open stats page without reload.
-- [ ] Killing the connection (server restart) → page shows "reconnecting", then recovers and refreshes counts.
-- [ ] Decision record in `docs/PLAN.md`.
+- [x] Drawing/deleting a box in a job updates the open stats page without reload. A box added through CVAT's
+  annotations API (another client) reaches the open page in **755 ms**, 300 ms of which is the deliberate debounce
+  ([live_browser.txt](bench/results/live_browser.txt), [live-update.png](evidence/live-update.png)). Socket alone:
+  "changed" arrives **94–109 ms** after the save; forged ticket and another task's ticket refused with 403
+  ([live_check.py](bench/live_check.py)). Tested with API writes, not by drawing in the annotation UI.
+- [x] Killing the connection (server restart) → page shows "reconnecting", then recovers and refreshes counts.
+  `docker restart cvat_server`: page shows "Reconnecting…" while keeping the last counts
+  ([live-reconnecting.png](evidence/live-reconnecting.png)). Server unreachable for ~130 s; page back to "Live"
+  **164 ms after the server answered again** (worst case is the 15 s backoff cap). Next box after the reconnect
+  appears in 596 ms ([live-recovered.png](evidence/live-recovered.png)).
+- [x] Decision record in [PLAN.md](PLAN.md#decision-record--how-the-page-learns-that-counts-changed-items-89):
+  raw ASGI + Redis pub/sub + REST re-fetch, rejected Django Channels, four costs listed.
 
 ## Hygiene
 

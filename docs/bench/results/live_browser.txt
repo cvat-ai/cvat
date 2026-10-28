@@ -1,0 +1,7 @@
+13:32:28.311 page live: "3 annotations across 2 labels"
+13:32:29.067 box added via API -> page shows "4 annotations across 2 labels" after 755 ms (no reload)
+13:32:30.920 docker restart cvat_server returned after 1781 ms
+13:32:30.931 page shows "Reconnecting…"
+13:34:41.299 server answers /api/server/about 200 again
+13:34:41.463 page back to "Live" 132324 ms after the restart began, 164 ms after the server was reachable
+13:34:42.068 box added after reconnect -> "5 annotations across 2 labels" after 596 ms
