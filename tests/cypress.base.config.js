@@ -26,7 +26,7 @@ module.exports = {
         setupNodeEvents(on, config) {
             allureCypress(on, config, {
                 resultsDir: 'allure-results-e2e',
-                globalLabels: [{ name: 'layer', value: 'ui' }],
+                globalLabels: [{ name: 'layer', value: 'e2e' }],
             });
             return plugins(on, config);
         },
