@@ -17,17 +17,20 @@ Started 2026-10-28 16:47 (UTC+5). Machine: Intel i5-12450H, 15.7 GB RAM, Windows
 
 ## Order of work (budget out of 8 h)
 
-| # | Step | Budget |
-|---|---|---|
-| 0 | Docs: this Plan, Objectives draft, Definition of Done — committed before code | 0:30 |
-| 1 | Django app `cvat.apps.test`: `GET /api/annotation-stats?task_id=` — one aggregate query, `GROUP BY label` | 1:00 |
-| 5 | Same endpoint: CVAT session/token auth + task view permission. Demonstrate 401 and 403 with curl | 0:30 |
-| 2–4 | UI page `/tasks/:id/annotation-stats`, link in task Actions menu, bar chart, empty state and error state with retry | 1:30 |
-| 6 | MO-1 latency objective: script, 5 runs, raw output in `docs/OBJECTIVES.md` | 1:00 |
-| 7 | Grouping: counts split by shape type (rectangle / polygon / mask …) per class, stacked bars | 0:45 |
-| 8 | Live updates: `Task` post_save → Redis pub/sub → raw ASGI WebSocket → page re-fetches | 1:30 |
-| 9 | Reconnect with backoff, connection status shown on page | (in 8) |
-| 10 | Decision record (below), DoD evidence, PR into my fork | 0:45 |
+| # | Step | Budget | Actual (commit times, filled in at the end) |
+|---|---|---|---|
+| 0 | Docs: this Plan, Objectives draft, Definition of Done — committed before code | 0:30 | 16:47–16:48, written after ~25 min reading the code |
+| 1 | Django app `cvat.apps.test`: `GET /api/annotation-stats?task_id=` — one aggregate query, `GROUP BY label` | 1:00 | written by 16:51, working 17:25 (Docker install in between). URL became `/api/annotation-stats/<task_id>` to use DRF's detail-route permission check |
+| 5 | Same endpoint: CVAT session/token auth + task view permission. Demonstrate 401 and 403 with curl | 0:30 | in the same commit; evidence 17:49 |
+| 2–4 | UI page `/tasks/:id/annotation-stats`, link in task Actions menu, bar chart, empty state and error state with retry | 1:30 | 17:09, chart fix 17:48 |
+| 6 | MO-1 latency objective: script, 5 runs, raw output in `docs/OBJECTIVES.md` | 1:00 | 17:52 |
+| 7 | Grouping: counts split by shape type (rectangle / polygon / mask …) per class, stacked bars | 0:45 | 17:59 |
+| 8 | Live updates: `Task` post_save → Redis pub/sub → raw ASGI WebSocket → page re-fetches | 1:30 | backend 18:04, page 18:35 |
+| 9 | Reconnect with backoff, connection status shown on page | (in 8) | 18:35, after one failed test run (below) |
+| 10 | Decision record (below), DoD evidence, PR into my fork | 0:45 | 18:35–18:45 |
+
+Total about 2 h of the 8 h. I built with an AI coding assistant, which the brief allows; that is most of the
+difference from the budget. The budgets above are what I expected to need without one.
 
 Gate: items 1–4 must work end to end before I touch 6+. Item 8 is not started with item 4 unfinished.
 
