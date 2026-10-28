@@ -592,17 +592,6 @@ jobs:
           docker tag "cvat/ui:${CVAT_VERSION}" "${UI_IMAGE_REPO}:dev"
           docker push "${UI_IMAGE_REPO}:dev"
 
-  generate_report:
-    name: Generate Allure Report and Upload to S3
-    needs: [rest_api_testing, e2e_testing]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/develop' && github.repository == 'cvat.ai/cvat'
-    permissions:
-      id-token: write
-      contents: read
-    uses: ./.github/workflows/generate-allure-report.yml
-    secrets:
-      AWS_ALLURE_REPORTS_ROLE: ${{ secrets.AWS_ALLURE_REPORTS_ROLE }}
-
   codecov:
     runs-on: ubuntu-latest
     needs: [unit_testing, e2e_testing, rest_api_testing]
@@ -627,3 +616,16 @@ jobs:
         uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
+
+  upload_testops_results:
+    needs: [rest_api_testing, e2e_testing]
+    if: |
+      !cancelled() &&
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/develop' &&
+      github.repository == 'cvat-ai/cvat'
+    permissions:
+      actions: read
+    uses: ./.github/workflows/upload-testops-results.yml
+    secrets:
+      ALLURE_TOKEN: ${{ secrets.ALLURE_TOKEN }}

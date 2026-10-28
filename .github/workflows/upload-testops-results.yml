@@ -1,0 +1,49 @@
+name: Upload Allure results to TestOps
+
+on:
+  workflow_call:
+    secrets:
+      ALLURE_TOKEN:
+        required: true
+
+permissions:
+  actions: read
+
+jobs:
+  upload:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      ALLURE_ENDPOINT: ${{ vars.ALLURE_ENDPOINT }}
+      ALLURE_PROJECT_ID: ${{ vars.ALLURE_PROJECT_ID }}
+      ALLURE_TOKEN: ${{ secrets.ALLURE_TOKEN }}
+      ALLURE_LAUNCH_NAME: ${{ github.workflow }} / ${{ github.ref_name }} / ${{ github.sha }} / ${{ github.run_number }}.${{ github.run_attempt }}
+    steps:
+      - name: Check TestOps configuration
+        run: |
+          if [[ -z "$ALLURE_ENDPOINT" || -z "$ALLURE_PROJECT_ID" || -z "$ALLURE_TOKEN" ]]; then
+            echo "::error::Configure ALLURE_ENDPOINT, ALLURE_PROJECT_ID, and ALLURE_TOKEN before uploading to TestOps."
+            exit 1
+          fi
+
+      - name: Download Allure results
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: allure-results*
+          path: allure-results
+          merge-multiple: false
+
+      - name: Install allurectl
+        uses: allure-framework/setup-allurectl@2d89ee0b7ba2f59dbe9849b6df5763cab78e14db # v1.0.3
+        with:
+          allurectl-version: 2.23.1
+
+      - name: Upload results to TestOps
+        run: |
+          if [[ ! -d allure-results ]] || [[ -z "$(find allure-results -type f -name '*-result.json' -print -quit)" ]]; then
+            echo "::notice::Skipping TestOps upload: no Allure test results were produced."
+            echo "TestOps upload skipped: no Allure test results were produced." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          allurectl upload allure-results

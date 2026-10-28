@@ -1859,6 +1859,31 @@ class TestJobDataset:
 
         self._test_export_annotations(username, job["id"])
 
+    def test_org_worker_cannot_export_job_dataset_as_assignee_without_ownership(
+        self, find_users, jobs, is_org_member, is_job_staff, is_task_staff
+    ):
+        """Regression test for https://github.com/cvat-ai/cvat/pull/10685.
+
+        An organization worker who is assigned to a job, but owns neither the job's task
+        nor its project, is not allowed to export the job dataset.
+        """
+        users = find_users(role="worker", exclude_privilege="admin")
+
+        user, job = next(
+            (user, job)
+            for user, job in product(users, jobs)
+            if is_job_staff(user["id"], job["id"])
+            and not is_task_staff(user["id"], job["task_id"])
+            and self.tasks[job["task_id"]]["organization"]
+            and is_org_member(user["id"], self.tasks[job["task_id"]]["organization"], role="worker")
+            and self.tasks[job["task_id"]]["target_storage"] is None
+        )
+
+        with pytest.raises(ForbiddenException):
+            export_job_dataset(
+                user["username"], save_images=True, id=job["id"], expect_forbidden=True
+            )
+
     @pytest.mark.parametrize("username, jid", [("admin1", 14)])
     @pytest.mark.parametrize(
         "anno_format, anno_file_name, check_func",
