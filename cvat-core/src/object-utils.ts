@@ -8,6 +8,7 @@ import { ShapeType, AttributeType, ObjectType } from './enums';
 import { SerializedShape } from './server-response-types';
 import ObjectState, { SerializedData } from './object-state';
 import AnnotationsFilter from './annotations-filter';
+import { mask2Rle, rle2Mask } from './rle-utils';
 
 export function checkNumberOfPoints(shapeType: ShapeType, points: ArrayLike<number>): void {
     if (shapeType === ShapeType.RECTANGLE) {
@@ -324,6 +325,56 @@ export function cropMask(rle: ArrayLike<number>, width: number, height: number):
     }
 
     return croppedRLE;
+}
+
+/**
+ * Removes from the mask all the pixels that belong to any of the other masks.
+ * Masks are described by RLE points followed by their bounding box [left, top, right, bottom].
+ * Returns cropped RLE points of the result, or an empty mask RLE if no pixels remain.
+ */
+export function subtractMasks(
+    points: ArrayLike<number>,
+    others: ArrayLike<number>[],
+    frameWidth: number,
+    frameHeight: number,
+): number[] {
+    const [left, top, right, bottom] = Array.from(points).slice(-4);
+    const width = right - left + 1;
+    const height = bottom - top + 1;
+
+    let mask: number[] | null = null;
+    for (const other of others) {
+        const otherPoints = Array.from(other);
+        const [otherLeft, otherTop, otherRight, otherBottom] = otherPoints.splice(-4, 4);
+        // only the intersection of the two bounding boxes can contain shared pixels
+        const [iLeft, iTop] = [Math.max(left, otherLeft), Math.max(top, otherTop)];
+        const [iRight, iBottom] = [Math.min(right, otherRight), Math.min(bottom, otherBottom)];
+        if (iLeft > iRight || iTop > iBottom) {
+            continue;
+        }
+
+        const otherWidth = otherRight - otherLeft + 1;
+        const otherMask = rle2Mask(otherPoints, otherWidth, otherBottom - otherTop + 1);
+        mask = mask ?? rle2Mask(Array.from(points).slice(0, -4), width, height);
+        for (let y = iTop; y <= iBottom; y++) {
+            for (let x = iLeft; x <= iRight; x++) {
+                if (otherMask[(y - otherTop) * otherWidth + (x - otherLeft)]) {
+                    mask[(y - top) * width + (x - left)] = 0;
+                }
+            }
+        }
+    }
+
+    if (mask === null) {
+        return Array.from(points);
+    }
+
+    const rle = mask2Rle(mask);
+    if (rle.length < 2) {
+        return [0, 0, 0, 0, 0];
+    }
+
+    return cropMask([...rle, left, top, right, bottom], frameWidth, frameHeight);
 }
 
 export function propagateShapes<T extends SerializedShape | ObjectState>(
