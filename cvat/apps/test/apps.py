@@ -7,3 +7,6 @@ from django.apps import AppConfig
 
 class TestConfig(AppConfig):
     name = "cvat.apps.test"
+
+    def ready(self) -> None:
+        from . import signals  # pylint: disable=unused-import

@@ -17,3 +17,6 @@ class AnnotationStatsSerializer(serializers.Serializer):
     task_id = serializers.IntegerField()
     total = serializers.IntegerField()
     labels = LabelCountSerializer(many=True)
+    ws_ticket = serializers.CharField(
+        help_text="Signed, short-lived ticket for /api/annotation-stats/<task_id>/ws"
+    )

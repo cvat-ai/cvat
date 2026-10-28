@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/3.2/howto/deployment/asgi/
 
 import os
 
+from django.apps import apps
 from django.core.asgi import get_asgi_application
 from django.core.handlers.asgi import ASGIHandler
 
@@ -39,3 +40,8 @@ if debug.is_debugging_enabled():
             return await super().handle(*args, **kwargs)
 
     application = DebuggerApp()
+
+if apps.is_installed("cvat.apps.test"):
+    from cvat.apps.test.live import with_annotation_stats_websocket
+
+    application = with_annotation_stats_websocket(application)

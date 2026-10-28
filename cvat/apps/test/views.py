@@ -8,6 +8,7 @@ from rest_framework.response import Response
 
 from cvat.apps.engine.models import Task
 
+from .live import make_ticket
 from .permissions import AnnotationStatsPermission
 from .serializers import AnnotationStatsSerializer
 from .stats import count_annotations_by_label
@@ -23,7 +24,7 @@ class AnnotationStatsViewSet(viewsets.GenericViewSet):
     lookup_value_regex = r"\d+"
 
     @extend_schema(
-        summary="Get the number of annotated objects per label of a task",
+        summary="Get the number of annotations per label of a task",
         responses=AnnotationStatsSerializer,
     )
     def retrieve(self, request, task_id):
@@ -33,5 +34,6 @@ class AnnotationStatsViewSet(viewsets.GenericViewSet):
             "task_id": task.id,
             "total": sum(label["count"] for label in labels),
             "labels": labels,
+            "ws_ticket": make_ticket(task.id, request.user.id),
         }
         return Response(AnnotationStatsSerializer(stats).data)
