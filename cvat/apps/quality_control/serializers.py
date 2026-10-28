@@ -29,7 +29,7 @@ from cvat.apps.quality_control.comparison_report import (
     RequirementCalculationStatus,
 )
 from cvat.apps.quality_control.filters import RequirementJsonLogicFilter
-from cvat.apps.quality_control.quality_handlers import _INHERITED_REQUIREMENT_FIELDS
+from cvat.apps.quality_control.quality_handlers import INHERITED_REQUIREMENT_FIELDS
 from cvat.utils import django_database as db_utils
 
 
@@ -840,7 +840,7 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
                 current_parent = current_parent.parent
 
         if parent_requirement is None:
-            for field_name in _INHERITED_REQUIREMENT_FIELDS:
+            for field_name in INHERITED_REQUIREMENT_FIELDS:
                 if field_name == "attribute_comparison":
                     continue
 
