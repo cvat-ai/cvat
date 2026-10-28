@@ -47,12 +47,12 @@ type FetchState =
 function AnnotationStatsChart({ labels }: { labels: LabelCount[] }): JSX.Element {
     const sorted = [...labels].sort((a, b) => b.count - a.count);
     return (
-        <div style={{ height: sorted.length * BAR_HEIGHT_PX + 40 }}>
+        <div className='cvat-annotation-stats-chart' style={{ height: sorted.length * BAR_HEIGHT_PX + 40 }}>
             <Bar
                 data={{
                     labels: sorted.map((label) => label.name),
                     datasets: [{
-                        label: 'Objects',
+                        label: 'Annotations',
                         data: sorted.map((label) => label.count),
                         backgroundColor: sorted.map((label) => label.color || '#1890ff'),
                     }],
@@ -61,7 +61,10 @@ function AnnotationStatsChart({ labels }: { labels: LabelCount[] }): JSX.Element
                     indexAxis: 'y',
                     maintainAspectRatio: false,
                     animation: false,
-                    scales: { x: { beginAtZero: true, ticks: { precision: 0 } } },
+                    scales: {
+                        x: { beginAtZero: true, ticks: { precision: 0 } },
+                        y: { ticks: { autoSkip: false } },
+                    },
                 }}
             />
         </div>
@@ -105,7 +108,7 @@ function AnnotationStatsPage(): JSX.Element {
     } else {
         content = (
             <>
-                <Text strong>{`${state.stats.total} objects across ${state.stats.labels.length} labels`}</Text>
+                <Text strong>{`${state.stats.total} annotations across ${state.stats.labels.length} labels`}</Text>
                 <AnnotationStatsChart labels={state.stats.labels} />
             </>
         );

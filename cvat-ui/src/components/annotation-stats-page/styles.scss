@@ -17,6 +17,11 @@
     gap: $grid-unit-size * 2;
 }
 
+.cvat-annotation-stats-chart {
+    // the chart height grows with the number of labels; the page scrolls instead of squeezing bars
+    flex-shrink: 0;
+}
+
 .cvat-annotation-stats-inner-wrapper {
     @include cvat-management-page-inner-wrapper;
 }
