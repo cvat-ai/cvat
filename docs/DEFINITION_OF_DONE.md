@@ -28,8 +28,9 @@ All in [access.txt](bench/results/access.txt), raw `curl -i` against the running
 
 ## Objective (item 6)
 
-- [ ] MO-1 measured: 5 runs, raw output in `docs/OBJECTIVES.md`.
-- [ ] Target met, or missed with the reason written down.
+- [x] MO-1 measured: 5 runs × 20 requests, raw output in [mo1_baseline.txt](bench/results/mo1_baseline.txt).
+- [x] Target met: **median p95 105.5 ms (spread 91.6–113.8) vs 150 ms**. Met without tuning; the server-side
+  split (SQL 23 ms, OPA 2 ms, naive loop 1,088 ms) is in [OBJECTIVES.md](OBJECTIVES.md).
 
 ## Beyond the floor (items 7–10)
 

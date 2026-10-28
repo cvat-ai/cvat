@@ -1,0 +1,4 @@
+
+sql aggregation (endpoint)   median    23.4 ms   runs [31.0, 25.8, 22.3, 23.4, 20.8]
+opa permission check         median     1.8 ms   runs [2.5, 1.8, 1.8, 1.6, 1.6]
+naive python loop            median  1087.8 ms   runs [1205.4, 1087.8, 1075.4, 1052.1, 1226.9]

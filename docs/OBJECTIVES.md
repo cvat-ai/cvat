@@ -19,8 +19,41 @@ summary is slower than opening the task list, nobody will keep the page open. 15
 query on ~36k shapes, which a naive ORM loop (load every shape into Python) would not meet — so the target
 forces the aggregation to be done in SQL.
 
-**Data.** COCO 2017 val: <N> images, <M> shapes imported (filled in after import).
+**Data.** COCO 2017 val: all **5,000 images** in one task (10 jobs of 500), `instances_val2017.json` imported as
+COCO 1.0 → **41,866 shapes** (41,420 polygons, 446 masks) over 80 labels.
 
-### Results
+### Result — target met (median p95 105.5 ms ≤ 150 ms)
 
-(Raw output pasted here after measuring.)
+Run on 2026-10-28 ~17:52, `bash docs/bench/mo1.sh 2 admin <password>`. Raw output:
+[results/mo1_baseline.txt](bench/results/mo1_baseline.txt)
+
+```
+run 1 p95_ms: 101.5
+run 2 p95_ms: 105.5
+run 3 p95_ms: 113.8
+run 4 p95_ms: 91.6
+run 5 p95_ms: 105.8
+median of run p95s: 105.5 ms   spread: 91.6 .. 113.8 ms
+```
+
+**Met on the first measurement, with no optimisation work.** The target was committed before any code
+(`f683d7c37`), and I have not moved it after seeing the number. So the result says the design choice was right,
+not that I tuned anything. To check the reasoning behind the 150 ms rather than just the number, I timed the parts
+of the request inside the server ([mo1_breakdown.py](bench/mo1_breakdown.py), raw:
+[results/mo1_breakdown.txt](bench/results/mo1_breakdown.txt)):
+
+| Part | Median | Share of the 105 ms |
+|---|---|---|
+| SQL `GROUP BY label_id` over 41,866 shapes (`stats.py`) | 23.4 ms | ~22% |
+| OPA permission check (HTTP call to `cvat_opa`) | 1.8 ms | ~2% |
+| Everything else: Traefik → nginx → uvicorn, Django middleware, token auth, Docker Desktop networking on Windows | ~80 ms | ~76% |
+| *Rejected alternative:* load every shape and count in Python | *1,088 ms* | *would miss the target ~7×* |
+
+What this tells me:
+- The justification held: the aggregation has to happen in SQL. Counting in Python is 46× slower than the query.
+- The OPA call I worried about is negligible (1.8 ms). Caching the permission result would gain nothing.
+- Most of the remaining time is not in my code. Caching the counts would save at most the ~23 ms query, and the page
+  would then have to deal with stale data. Not worth it at this size.
+- **Where it would break:** the query scales with the shape count of one task. At ~40k shapes it takes 23 ms, so a
+  task around 10× larger (~400k shapes) would put the query near the whole budget. That is the point where a
+  precomputed count (updated on the same `touch()` signal as item 8) would pay for itself.
