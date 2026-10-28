@@ -29,6 +29,10 @@ const defaultState: JobsState = {
         modalVisible: false,
         jobs: [],
     },
+    distributeJobs: {
+        modalVisible: false,
+        jobs: [],
+    },
 };
 
 export default (state: JobsState = defaultState, action: AnyAction): JobsState => {
@@ -206,6 +210,24 @@ export default (state: JobsState = defaultState, action: AnyAction): JobsState =
                 ...state,
                 addReplicas: {
                     ...state.addReplicas,
+                    modalVisible: false,
+                },
+            };
+        }
+        case JobsActionTypes.OPEN_DISTRIBUTE_JOBS_MODAL: {
+            return {
+                ...state,
+                distributeJobs: {
+                    modalVisible: true,
+                    jobs: action.payload.jobs,
+                },
+            };
+        }
+        case JobsActionTypes.CLOSE_DISTRIBUTE_JOBS_MODAL: {
+            return {
+                ...state,
+                distributeJobs: {
+                    ...state.distributeJobs,
                     modalVisible: false,
                 },
             };

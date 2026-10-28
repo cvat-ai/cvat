@@ -154,6 +154,50 @@ context('Basic manipulations with consensus job replicas', () => {
         });
     });
 
+    describe('Frame deletion in replica jobs', () => {
+        let consensusTaskId = null;
+        let parentJobId = null;
+        let replicaJobId = null;
+
+        function openJob(jobId, query = '') {
+            cy.visit(`/tasks/${consensusTaskId}/jobs/${jobId}${query}`);
+            cy.get('.cvat-canvas-container').should('be.visible');
+        }
+
+        before(() => {
+            cy.headlessCreateTask(taskSpec, dataSpec, extras).then(({ taskId }) => {
+                consensusTaskId = taskId;
+            });
+            cy.window().then(async ($win) => {
+                const getJob = async (type) => (await $win.cvat.jobs.get({ taskID: consensusTaskId, type }))[0];
+                parentJobId = (await getJob('annotation')).id;
+                replicaJobId = (await getJob('replica')).id;
+            });
+        });
+
+        it('Frames can be deleted in the parent job, but not deleted or restored in its replicas', () => {
+            openJob(parentJobId);
+            cy.deleteFrame(); // deletes frame 0, saves, asserts PATCH data/meta 200
+            cy.checkFrameNum(1);
+
+            // deleted frames belong to the task, so frame 0 is deleted in the replica too
+            openJob(replicaJobId, '?frame=0');
+            cy.get('#cvat_canvas_background').should('have.class', 'cvat_canvas_removed_image');
+            cy.get('.cvat-player-restore-frame').should('not.exist');
+
+            cy.goToNextFrame(1);
+            cy.get('.cvat-player-delete-frame').should('not.exist');
+            cy.get('body').type('{alt}{del}');
+            cy.get('.cvat-replica-frame-deletion-warning')
+                .should('be.visible')
+                .and('contain.text', 'Frames cannot be deleted in replica jobs');
+        });
+
+        after(() => {
+            if (consensusTaskId !== null) cy.headlessDeleteTask(consensusTaskId);
+        });
+    });
+
     describe('Consensus jobs merging', () => {
         let consensusTaskId = null;
         const baseShape = {

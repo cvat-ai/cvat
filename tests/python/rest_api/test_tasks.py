@@ -916,6 +916,32 @@ class TestGetTaskDataset:
             format=format_name,
         )
 
+    def test_org_worker_cannot_export_task_dataset_as_assignee_without_ownership(
+        self, find_users, tasks, is_org_member, is_task_staff, is_project_staff
+    ):
+        """Regression test for https://github.com/cvat-ai/cvat/pull/10685.
+
+        An organization worker who is assigned to a task, but owns neither the task
+        nor its project, is not allowed to export the task dataset.
+        """
+        users = find_users(role="worker", exclude_privilege="admin")
+
+        user, task = next(
+            (user, task)
+            for user, task in product(users, tasks)
+            if is_task_staff(user["id"], task["id"])
+            and task["owner"]["id"] != user["id"]
+            and not is_project_staff(user["id"], task["project_id"])
+            and task["organization"]
+            and is_org_member(user["id"], task["organization"], role="worker")
+            and task["target_storage"] is None
+        )
+
+        with pytest.raises(ForbiddenException):
+            export_task_dataset(
+                user["username"], save_images=True, id=task["id"], expect_forbidden=True
+            )
+
     @pytest.mark.parametrize("tid", [8])
     def test_can_export_task_to_coco_format(
         self,

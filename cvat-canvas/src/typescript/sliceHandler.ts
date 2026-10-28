@@ -9,7 +9,7 @@ import {
     toReversed,
 } from './shared';
 import {
-    Geometry, SliceData, Configuration, CanvasHint,
+    Geometry, SliceData, Configuration,
 } from './canvasModel';
 import consts from './consts';
 import { ObjectSelector } from './objectSelector';
@@ -99,7 +99,7 @@ export class SliceHandlerImpl implements SliceHandler {
     private hideObject: (clientID: number) => void;
     private showObject: (clientID: number) => void;
     private onSliceDone: (state?: any, results?: number[][], duration?: number) => void;
-    private onMessage: (messages: CanvasHint[] | null, topic: string) => void;
+    private onMessage: (message: string | null, topic?: string) => void;
     private onError: (exception: unknown) => void;
     private getObjects: () => any[];
     private geometry: Geometry;
@@ -137,18 +137,14 @@ export class SliceHandlerImpl implements SliceHandler {
     }
 
     private showInitialMessage(): void {
-        this.onMessage([{
-            type: 'text',
-            icon: 'info',
-            content: 'Set initial point on the shape contour',
-        }, {
-            type: 'list',
-            content: [
-                'Slicing line must not intersect itself',
-                'Slicing line must not intersect contour more than twice',
-            ],
-            className: 'cvat-canvas-notification-list-warning',
-        }], 'slice');
+        this.onMessage([
+            '### Slice a shape',
+            '',
+            'Keep the cutting line from crossing itself or crossing the outline more than twice.',
+            '',
+            '**Actions**',
+            '- Click the shape outline to start cutting.',
+        ].join('\n'), 'slice-start-cut-v1');
     }
 
     private initialize(sliceData: EnhancedSliceData): void {
@@ -219,18 +215,16 @@ export class SliceHandlerImpl implements SliceHandler {
                 circle.attr('stroke-width', consts.BASE_STROKE_WIDTH / this.geometry.scale);
                 this.slicingPoints.push(circle);
 
-                this.onMessage([{
-                    type: 'text',
-                    icon: 'info',
-                    content: 'Set more points within the shape contour, if necessary. Intersect contour at another point to slice',
-                }, {
-                    type: 'list',
-                    content: [
-                        'Hold <Shift> to enable slip mode',
-                        'Do <Right Click> to cancel the latest point',
-                    ],
-                    className: 'cvat-canvas-notification-list-shortcuts',
-                }], 'slice');
+                this.onMessage([
+                    '### Draw the cut',
+                    '',
+                    'Finish at another point on the outline to split the shape.',
+                    '',
+                    '**Actions**',
+                    '- Click inside the shape to add a cutting point.',
+                    '- Hold `Shift` to enable slip mode.',
+                    '- `Right click` to remove the last point.',
+                ].join('\n'), 'slice-draw-cut-v1');
             }
         };
 
@@ -512,7 +506,7 @@ export class SliceHandlerImpl implements SliceHandler {
         this.canvas.off('mousemove.slice');
         this.enabled = false;
         this.onSliceDone();
-        this.onMessage(null, 'slice');
+        this.onMessage(null);
     }
 
     public slice(sliceData: SliceData): void {
@@ -530,11 +524,11 @@ export class SliceHandlerImpl implements SliceHandler {
                 this.startTimestamp = Date.now();
                 const { startTimestamp } = this;
 
-                this.onMessage([{
-                    type: 'text',
-                    content: 'Getting shape contour',
-                    icon: 'loading',
-                }], 'force');
+                this.onMessage([
+                    '### Preparing to slice',
+                    '',
+                    'Getting the shape outline…',
+                ].join('\n'), 'force');
 
                 sliceData.getContour(state).then((contour) => {
                     if (this.startTimestamp === startTimestamp && this.enabled) {
@@ -564,11 +558,14 @@ export class SliceHandlerImpl implements SliceHandler {
                 }
             }
 
-            this.onMessage([{
-                type: 'text',
-                content: 'Click a mask or polygon shape you would like to slice',
-                icon: 'info',
-            }], 'slice');
+            this.onMessage([
+                '### Slice a shape',
+                '',
+                'Split a mask or polygon into separate shapes.',
+                '',
+                '**Actions**',
+                '- Click the shape you want to slice.',
+            ].join('\n'), 'slice-select-shape-v1');
 
             this.objectSelector.enable(([state]) => {
                 if (state) {

@@ -97,14 +97,6 @@ Once the required number of points is reached, the request
 is automatically sent to the server.
 The server processes the request and adds a polygon to the frame.
 
-For a more accurate outline, postpone request
-to finish adding extra points first:
-
-1. Hold down the **Ctrl** key.
-   <br>On the top panel, the **Block** button will turn blue.
-2. Add points to the image.
-3. Release the **Ctrl** key, when ready.
-
 In case you used **Mask to polygon** when the object is finished,
 you can edit it like a polygon.
 
