@@ -57,10 +57,28 @@ All in [access.txt](bench/results/access.txt), raw `curl -i` against the running
 
 ## Hygiene
 
-- [ ] No dead code, commented-out blocks or stray files in the diff (`git diff --stat main...dev-test01` reviewed).
-- [ ] Commits are small and each message says what and why.
-- [ ] Everything not finished is listed below.
+- [x] No dead code, commented-out blocks or stray files in the diff. `git diff --stat e3ae81e36..HEAD`: 18 code
+  files (new app `cvat/apps/test`, new `cvat-ui/.../annotation-stats-page/`, and 6 small edits to existing files:
+  settings, urls, asgi, app routes, task menu, webpack proxy) plus `docs/`. The review removed one thing: an unused
+  user id in the WebSocket ticket (`f8fdecf1d`). black, isort, eslint, stylelint and `tsc --noEmit` pass.
+  Local-only helpers (compose mount override, browser scripts) are kept out of the repo.
+- [x] Commits are small and each message says what and why: plan first (`f683d7c37`), then one commit per step,
+  fixes in their own commits (`8f22efd04` 500 on every request, `ea0a09416` unreadable chart).
+- [x] Everything not finished is listed below.
 
 ## Not finished
 
-(Filled in at the end.)
+- **Drawing in the annotation UI by hand** was not part of the automated runs. Live updates were tested with
+  writes through CVAT's annotations API (the same endpoint the annotation UI saves to) while the page was open.
+- **No tests in CVAT's own suite.** Verification is the scripts in `docs/bench/` against a running stack, not
+  `manage.py test` / REST API tests. Writing them needs CVAT's test fixtures and a test DB, and I judged the time
+  better spent on items 8–9.
+- **Production UI build not run.** The page ran from the webpack dev server (`ws: true` proxy). The WebSocket itself
+  was tested through the real Traefik → nginx → uvicorn path on :8080, but a `Dockerfile.ui` build was not.
+- **`cvat/schema.yml` not regenerated**, so the new endpoint is missing from the published OpenAPI schema and the
+  generated SDK.
+- **Consensus replica jobs** are excluded by the same filter as ground truth but were not exercised.
+- **Chart accessibility:** values are in the hover tooltip and the bars, with no table view.
+- **Task level only.** No project- or job-level stats.
+- **Revoked access does not cut an open socket** (see the decision record). It only receives "changed" pings, and the
+  re-fetch is refused.
