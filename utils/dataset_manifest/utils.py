@@ -176,9 +176,73 @@ def _parse_calibration_matrix(
     return flattened_matrix
 
 
-def _load_standard_related_image_metadata(
+def _parse_flattened_calibration_matrix(
+    matrix: object,
+    *,
+    name: str,
+    rows: int,
+    columns: int,
+    sidecar_path: Path,
+) -> list[float]:
+    if not isinstance(matrix, list) or len(matrix) != rows * columns:
+        raise InvalidRelatedImageMetadataError(
+            sidecar_path,
+            f"'{name}' must be a flattened {rows}x{columns} matrix",
+        )
+
+    return _parse_calibration_matrix(
+        [matrix[row * columns : (row + 1) * columns] for row in range(rows)],
+        name=name,
+        rows=rows,
+        columns=columns,
+        sidecar_path=sidecar_path,
+    )
+
+
+def _validate_related_image_metadata(
+    intrinsic_matrix: list[float],
+    extrinsic_matrix: list[float],
+    *,
+    intrinsic_matrix_name: str,
+    extrinsic_matrix_name: str,
+    sidecar_path: Path,
+) -> RelatedImageMetadata:
+    try:
+        np.linalg.inv(np.asarray(intrinsic_matrix).reshape(3, 3))
+    except np.linalg.LinAlgError:
+        raise InvalidRelatedImageMetadataError(
+            sidecar_path,
+            f"'{intrinsic_matrix_name}' must be invertible",
+        )
+
+    rotation = np.asarray(extrinsic_matrix).reshape(3, 4)[:, :3]
+    # check orthogonality
+    if not np.allclose(
+        rotation.T @ rotation,
+        np.identity(3),
+        atol=_CAMERA_ROTATION_TOLERANCE,
+        rtol=0,
+    ) or not np.isclose(  # exclude mirror/reflection matrices
+        np.linalg.det(rotation),
+        1,
+        atol=_CAMERA_ROTATION_TOLERANCE,
+        rtol=0,
+    ):
+        raise InvalidRelatedImageMetadataError(
+            sidecar_path,
+            f"'{extrinsic_matrix_name}' must contain a rigid rotation and translation",
+        )
+    # any finite translation is valid and we already checked it
+
+    return RelatedImageMetadata(
+        intrinsic_matrix=intrinsic_matrix,
+        extrinsic_matrix=extrinsic_matrix,
+    )
+
+
+def _load_related_image_sidecar(
     sidecar_path: PurePath,
-) -> RelatedImageMetadata | None:
+) -> tuple[Path, dict[str, object]] | None:
     sidecar_path = Path(sidecar_path)
     if not sidecar_path.is_file():
         return None
@@ -191,6 +255,18 @@ def _load_standard_related_image_metadata(
 
     if not isinstance(sidecar, dict):
         raise InvalidRelatedImageMetadataError(sidecar_path, "the root value must be an object")
+
+    return sidecar_path, sidecar
+
+
+def _load_standard_related_image_metadata(
+    sidecar_path: PurePath,
+) -> RelatedImageMetadata | None:
+    sidecar_data = _load_related_image_sidecar(sidecar_path)
+    if sidecar_data is None:
+        return None
+
+    sidecar_path, sidecar = sidecar_data
 
     # replace with jsonschema validation if the schema grows more complex
     if sidecar.get("format") != _IMAGE_METADATA_FORMAT:
@@ -231,36 +307,57 @@ def _load_standard_related_image_metadata(
         sidecar_path=sidecar_path,
     )
 
-    try:
-        np.linalg.inv(np.asarray(intrinsic_matrix).reshape(3, 3))
-    except np.linalg.LinAlgError:
-        raise InvalidRelatedImageMetadataError(
-            sidecar_path,
-            "'camera.intrinsic_matrix' must be invertible",
-        )
+    return _validate_related_image_metadata(
+        intrinsic_matrix,
+        extrinsic_matrix,
+        intrinsic_matrix_name="camera.intrinsic_matrix",
+        extrinsic_matrix_name="extrinsic_matrix",
+        sidecar_path=sidecar_path,
+    )
 
-    rotation = np.asarray(extrinsic_matrix).reshape(3, 4)[:, :3]
-    # check orthogonality
-    if not np.allclose(
-        rotation.T @ rotation,
-        np.identity(3),
-        atol=_CAMERA_ROTATION_TOLERANCE,
-        rtol=0,
-    ) or not np.isclose(  # exclude mirror/reflection matrices
-        np.linalg.det(rotation),
-        1,
-        atol=_CAMERA_ROTATION_TOLERANCE,
-        rtol=0,
-    ):
-        raise InvalidRelatedImageMetadataError(
-            sidecar_path,
-            "'extrinsic_matrix' must contain a rigid rotation and translation",
-        )
-    # any finite translation is valid and we already checked it
 
-    return RelatedImageMetadata(
-        intrinsic_matrix=intrinsic_matrix,
-        extrinsic_matrix=extrinsic_matrix,
+def _load_sly_related_image_metadata(
+    sidecar_path: PurePath,
+) -> RelatedImageMetadata | None:
+    sidecar_data = _load_related_image_sidecar(sidecar_path)
+    if sidecar_data is None:
+        return None
+
+    sidecar_path, sidecar = sidecar_data
+    meta = sidecar.get("meta")
+    if meta is None:
+        return None
+    if not isinstance(meta, dict):
+        raise InvalidRelatedImageMetadataError(sidecar_path, "Unexpected structure; 'meta' must be an object")
+
+    sensors_data = meta.get("sensorsData")
+    if sensors_data is None:
+        return None
+    if not isinstance(sensors_data, dict):
+        raise InvalidRelatedImageMetadataError(sidecar_path, "Unexpected structure; 'meta.sensorsData' must be an object")
+
+    intrinsic_matrix = _parse_flattened_calibration_matrix(
+        sensors_data.get("intrinsicMatrix"),
+        name="meta.sensorsData.intrinsicMatrix",
+        rows=3,
+        columns=3,
+        sidecar_path=sidecar_path,
+    )
+    extrinsic_matrix = _parse_flattened_calibration_matrix(
+        sensors_data.get("extrinsicMatrix"),
+        name="meta.sensorsData.extrinsicMatrix",
+        rows=3,
+        columns=4,
+        sidecar_path=sidecar_path,
+    )
+
+    # Supervisely uses W->C. Its point cloud is expressed in W, which is CVAT's L space.
+    return _validate_related_image_metadata(
+        intrinsic_matrix,
+        extrinsic_matrix,
+        intrinsic_matrix_name="meta.sensorsData.intrinsicMatrix",
+        extrinsic_matrix_name="meta.sensorsData.extrinsicMatrix",
+        sidecar_path=sidecar_path,
     )
 
 
@@ -332,7 +429,7 @@ def _find_related_images_3D(
                 <scene name>.<image ext>
 
     2. Supervisely Point Cloud
-    Homepage: https://docs.supervisely.com/customization-and-integration/00_ann_format_navi
+    Homepage: https://docs.sly.com/customization-and-integration/00_ann_format_navi
     Example: https://github.com/cvat-ai/datumaro/tree/v0.3/tests/assets/sly_pointcloud_dataset/ds0
 
     Layout:
@@ -402,8 +499,11 @@ def _find_related_images_3D(
             and scene_name in scenes
         ):
             # Supervisely Point Cloud
-            # TODO: add metadata loading
             related_images.setdefault(scenes[scene_name], []).append(image_path)
+            related_image_metadata[image_path] = partial(
+                _load_sly_related_image_metadata,
+                image_path.parent / f"{image_path.name}.json",
+            )
             continue
 
         if (
