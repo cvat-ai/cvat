@@ -95,8 +95,7 @@ class LabelItemContainer extends React.PureComponent<Props, State> {
         let statesLocked = true;
 
         ownObjectStates.forEach((objectState: any) => {
-            const { lock, objectType } = objectState;
-            if (!lock && objectType !== ObjectType.TAG) {
+            if (objectState.objectType !== ObjectType.TAG) {
                 statesHidden = statesHidden && objectState.hidden;
                 statesLocked = statesLocked && objectState.lock;
             }
