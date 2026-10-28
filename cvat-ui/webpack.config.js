@@ -89,6 +89,7 @@ module.exports = (env, argv = {}) => {
                         /\/api\/.*|analytics\/.*|static\/.*|admin(?:\/(.*))?.*|profiler(?:\/(.*))?.*|documentation\/.*|django-rq(?:\/(.*))?/gm,
                     ),
                 target: env && env.API_URL,
+                ws: true,
                 secure: false,
                 changeOrigin: true,
                 onProxyReq: (proxyReq) => {
