@@ -71,10 +71,12 @@ context('Object transforms while holding Ctrl', { scrollBehavior: false }, () =>
                 });
             },
         });
+        cy.checkFrameNum(0);
         cy.get('.cvat_canvas_shape').should('have.length', 3);
         cy.get('.cvat-spinner').should('not.exist');
-        cy.get('#cvat-objects-sidebar-state-item-1').trigger('mouseover');
+        cy.get(shapeSelector).trigger('mousemove', 20, 20, { eventConstructor: 'MouseEvent' });
         cy.get(shapeSelector).should('have.class', 'cvat_canvas_shape_activated');
+        cy.get('.svg_select_points_rot').should('be.visible');
         holdCtrl();
         cy.get(shapeSelector).should('have.class', 'cvat_canvas_shape_activated');
     });
@@ -115,7 +117,7 @@ context('Object transforms while holding Ctrl', { scrollBehavior: false }, () =>
     it('Still toggles multiselection when Ctrl-clicking an object body', () => {
         cy.get(shapeSelector).click(20, 20, { ctrlKey: true });
         cy.get('.cvat_canvas_selected_objects_label_title').should('have.text', 'SELECTION (1)');
-        cy.get('.cvat_canvas_selected_objects_box').click(25, 25, { ctrlKey: true });
+        cy.get(shapeSelector).click(20, 20, { ctrlKey: true });
         cy.get('.cvat_canvas_selected_objects_box').should('not.exist');
         cy.get('#cvat_canvas_shape_3').find('circle').first().click({ ctrlKey: true });
         cy.get('#cvat-objects-sidebar-state-item-3')

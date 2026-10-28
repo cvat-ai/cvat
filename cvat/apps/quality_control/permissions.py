@@ -30,7 +30,7 @@ def _build_quality_resource(
 
     return {
         "id": resource_id if resource_id is not None else obj.id,
-        "organization": {"id": organization_id},
+        "organization": OpenPolicyAgentPermission.make_id_dict(organization_id),
         "task": (
             {
                 "owner": {"id": task.owner_id},
@@ -223,7 +223,7 @@ class QualityReportPermission(OpenPolicyAgentPermission):
 
             data = {
                 "id": obj_id,
-                "organization": {"id": organization_id},
+                "organization": self.make_id_dict(organization_id),
                 "task": (
                     {
                         "owner": {"id": task.owner_id},

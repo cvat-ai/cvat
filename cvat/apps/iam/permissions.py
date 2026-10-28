@@ -209,6 +209,10 @@ class OpenPolicyAgentPermission(metaclass=ABCMeta):
     def get_resource(self):
         return None
 
+    @staticmethod
+    def make_id_dict(id_: int | None, /) -> dict | None:
+        return None if id_ is None else {"id": id_}
+
     def __init__(self, **kwargs):
         self.obj = None
         for name, val in kwargs.items():

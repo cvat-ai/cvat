@@ -30,7 +30,8 @@ const rect = [
 ];
 
 context('Create any track, check if track works correctly after deleting some frames', () => {
-    function readShapeCoords() {
+    function readShapeCoords(frameNumber) {
+        cy.checkFrameNum(frameNumber);
         return cy.get('.cvat_canvas_shape').then(($shape) => ({
             x: +$shape.attr('x'),
             y: +$shape.attr('y'),
@@ -39,7 +40,7 @@ context('Create any track, check if track works correctly after deleting some fr
 
     function validateShapeCoords({ x, y }) {
         const precision = 0.01; // db server precision is 2 digits
-        cy.get('.cvat_canvas_shape').then(($shape) => {
+        cy.get('.cvat_canvas_shape').should(($shape) => {
             const [xVal, yVal] = [
                 +$shape.attr('x'),
                 +$shape.attr('y'),
@@ -134,12 +135,13 @@ context('Create any track, check if track works correctly after deleting some fr
             cy.clickSaveAnnotationView();
 
             let pos3 = null;
-            readShapeCoords().then((posOnFrame3) => {
+            readShapeCoords(3).then((posOnFrame3) => {
                 pos3 = posOnFrame3;
-                cy.goToPreviousFrame(1);
             });
+
+            cy.goToPreviousFrame(1);
             let pos1 = null;
-            readShapeCoords().then((posOnFrame1) => {
+            readShapeCoords(1).then((posOnFrame1) => {
                 pos1 = posOnFrame1;
             });
             cy.reload().then(() => {
