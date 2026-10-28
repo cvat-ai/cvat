@@ -1,0 +1,30 @@
+# 2026-10-28T17:48:50+05:00  CVAT at http://localhost:8080, branch dev-test01 ea0a09416
+# admin = superuser, owner of tasks 1 and 2; alice = ordinary user, no org, not owner/assignee
+
+$ curl -i /api/annotation-stats/2            # no credentials
+HTTP/1.1 401 Unauthorized
+{"detail":"Authentication credentials were not provided."}
+
+$ curl -i -H "Authorization: Token <alice>" /api/annotation-stats/2
+HTTP/1.1 403 Forbidden
+{"detail":"You do not have permission to perform this action."}
+
+$ curl -i -H "Authorization: Token <alice>" /api/tasks/2/annotations   # CVAT core refuses her the same way
+HTTP/1.1 403 Forbidden
+{"detail":"You do not have permission to perform this action."}
+
+$ curl -i -H "Authorization: Token <admin>" /api/annotation-stats/1   # empty task
+HTTP/1.1 200 OK
+{"task_id":1,"total":0,"labels":[{"id":1,"name":"person","color":"#c06060","count":0},{"id":2,"name":"car","color":"#2080c0","count":0}]}
+
+$ curl -i -H "Authorization: Token <admin>" /api/annotation-stats/999
+HTTP/1.1 404 Not Found
+{"detail":"No Task matches the given query."}
+
+# admin assigns task 1 to alice (PATCH /api/tasks/1 assignee_id=2); task 2 unchanged
+$ curl -i -H "Authorization: Token <alice>" /api/annotation-stats/1
+HTTP/1.1 200 OK
+{"task_id":1,"total":0,"labels":[{"id":1,"name":"person","color":"#c06060","count":0},{"id":2,"name":"car","color":"#2080c0","count":0}]}
+$ curl -i -H "Authorization: Token <alice>" /api/annotation-stats/2
+HTTP/1.1 403 Forbidden
+{"detail":"You do not have permission to perform this action."}

@@ -1,0 +1,81 @@
+images=5000 annotations=36781 parts=41866
+          person  11004  12451
+             car   1932   2315
+           chair   1791   2141
+            book   1161   1184
+          bottle   1025   1085
+             cup    899    932
+    dining table    697    960
+   traffic light    637    653
+            bowl    626    657
+         handbag    540    598
+            bird    440    467
+            boat    430    477
+           truck    415    465
+        umbrella    413    449
+           bench    413    557
+             cow    380    432
+          banana    379    398
+      motorcycle    371    462
+          carrot    371    391
+        backpack    371    430
+           sheep    361    415
+    potted plant    343    398
+      wine glass    343    407
+           donut    338    339
+            kite    336    340
+           knife    326    366
+         bicycle    316    412
+        broccoli    316    321
+            cake    316    329
+        suitcase    303    325
+              tv    288    288
+          orange    287    296
+             bus    285    338
+           pizza    285    314
+          remote    283    353
+            vase    277    287
+           horse    273    359
+       surfboard    269    350
+           zebra    268    323
+           clock    267    267
+     sports ball    263    280
+      cell phone    262    296
+           couch    261    378
+        elephant    255    322
+             tie    254    285
+           spoon    253    288
+            skis    241    522
+           apple    239    243
+         giraffe    232    271
+          laptop    231    248
+            sink    225    238
+   tennis racket    225    296
+             dog    218    237
+            fork    215    255
+             cat    202    211
+      teddy bear    191    219
+           train    190    224
+      skateboard    179    218
+          toilet    179    196
+        sandwich    177    180
+             bed    163    227
+        keyboard    153    158
+  baseball glove    148    149
+    baseball bat    146    185
+        airplane    143    160
+            oven    143    161
+         hot dog    127    128
+    refrigerator    126    134
+         frisbee    115    129
+           mouse    106    108
+    fire hydrant    101    103
+       stop sign     75     80
+            bear     71     73
+       snowboard     69     84
+   parking meter     60     60
+      toothbrush     57     68
+       microwave     55     56
+        scissors     36     41
+      hair drier     11     14
+         toaster      9     10
