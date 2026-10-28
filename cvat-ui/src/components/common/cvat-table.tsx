@@ -2,7 +2,9 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, {
+    useCallback, useEffect, useRef, useState,
+} from 'react';
 import { Row, Col } from 'antd/lib/grid';
 import Table, { TableProps } from 'antd/lib/table';
 import Input from 'antd/lib/input';
@@ -18,8 +20,10 @@ import jsonLogic from 'json-logic-js';
 import { ResourceFilterHOC, defaultVisibility } from 'components/resource-sorting-filtering';
 import { generateCSV, downloadCSV as triggerCSVDownload } from 'utils/csv-writer';
 import CVATTooltip from './cvat-tooltip';
+import { useTableState } from './table-state';
 
 type Props = TableProps & {
+    stateKey?: string;
     onFilterDataSource?(data: TableProps['dataSource']): void;
     onChangeColumnVisibility?(id: number, isHidden: boolean): void;
     renderExtraActions?(): JSX.Element;
@@ -45,6 +49,10 @@ type Props = TableProps & {
 };
 
 type CVATColumn = NonNullable<TableProps['columns']>[0] & { visibilityGroup?: string };
+
+function columnKey(column: CVATColumn): string {
+    return String(column.key ?? ('dataIndex' in column ? column.dataIndex : undefined));
+}
 
 function stringifyDataIndex(dataIndex: string | string[]): string {
     return [dataIndex].flat(Number.MAX_SAFE_INTEGER).join('.');
@@ -73,6 +81,7 @@ function getValueFromDataItem<T>(
 */
 function CVATTable(props: Props): JSX.Element {
     const {
+        stateKey,
         onChangeColumnVisibility,
         onFilterDataSource,
         renderExtraActions,
@@ -88,8 +97,16 @@ function CVATTable(props: Props): JSX.Element {
     } = props;
 
     const [FilteringComponent, setFilteringComponent] = useState<ReturnType<typeof ResourceFilterHOC> | null>(null);
-    const [filterValue, setFilterValue] = useState<string | null>(null);
-    const [searchPhrase, setSearchPhrase] = useState<string | null>(null);
+    const stateField = (field: string): string | undefined => (stateKey ? `${stateKey}:${field}` : undefined);
+    const [filterValue, setFilterValue] = useTableState<string | null>(stateField('filter'), queryBuilder?.value ?? null);
+    const [searchPhrase, setSearchPhrase] = useTableState<string | null>(stateField('search'), null);
+    const [searchInput, setSearchInput] = useTableState(stateField('searchInput'), '');
+    const [hiddenColumns, setHiddenColumns] = useTableState<Record<string, boolean>>(stateField('columns'), {});
+    const [tableChange, setTableChange] = useTableState<{
+        pagination?: Exclude<TableProps['pagination'], false>;
+        filters?: Parameters<NonNullable<TableProps['onChange']>>[1];
+        sorter?: { columnKey?: React.Key; order?: 'ascend' | 'descend' | null }[];
+    }>(stateField('table'), {});
     const [visibility, setVisibility] = useState(defaultVisibility);
     const [columnSearchPhrase, setColumnSearchPhrase] = useState('');
     const [filteredDataSource, setFilteredDataSource] = useState<typeof dataSource>(dataSource);
@@ -113,9 +130,20 @@ function CVATTable(props: Props): JSX.Element {
 
     useEffect(() => {
         if (columns) {
-            setModifiedColumns(columns);
+            setModifiedColumns(columns.map((column) => {
+                const key = columnKey(column);
+                const sorter = tableChange.sorter?.find((item) => String(item.columnKey) === key);
+                return {
+                    ...column,
+                    ...(stateKey ? {
+                        hidden: onChangeColumnVisibility ? column.hidden : hiddenColumns[key] ?? column.hidden,
+                        sortOrder: tableChange.sorter ? sorter?.order ?? null : column.sortOrder,
+                        filteredValue: tableChange.filters ? tableChange.filters[key] ?? null : column.filteredValue,
+                    } : {}),
+                };
+            }));
         }
-    }, [columns]);
+    }, [columns, hiddenColumns, tableChange, stateKey, onChangeColumnVisibility]);
 
     useEffect(() => {
         if (dataSource) {
@@ -157,7 +185,34 @@ function CVATTable(props: Props): JSX.Element {
                 ),
             );
         }
-    }, [queryBuilder]);
+    }, [queryBuilder?.config, queryBuilder?.memoryKey, queryBuilder?.memoryCapacity, queryBuilder?.predefinedQueries]);
+
+    const previousQueryValue = useRef(queryBuilder?.value);
+    useEffect(() => {
+        if (previousQueryValue.current !== queryBuilder?.value) {
+            setFilterValue(queryBuilder?.value ?? null);
+            previousQueryValue.current = queryBuilder?.value;
+        }
+    }, [queryBuilder?.value, setFilterValue]);
+
+    const pagination = rest.pagination === false ? false : {
+        ...rest.pagination,
+        ...(stateKey ? tableChange.pagination : {}),
+    };
+    if (pagination && stateKey && pagination.current) {
+        const count = (filteredDataSource ?? []).filter((row) => columns?.every((column) => {
+            const values = tableChange.filters?.[columnKey(column)];
+            return !values?.length || !column.onFilter || values.some((value) => column.onFilter(value, row));
+        }) ?? true).length;
+        pagination.current = Math.min(pagination.current, Math.max(1, Math.ceil(count / (pagination.pageSize ?? 10))));
+    }
+
+    const currentPage = pagination ? pagination.current : undefined;
+    useEffect(() => {
+        if (stateKey && tableChange.pagination?.current && currentPage !== tableChange.pagination.current) {
+            setTableChange({ ...tableChange, pagination: { ...tableChange.pagination, current: currentPage } });
+        }
+    }, [stateKey, currentPage, tableChange, setTableChange]);
 
     return (
         <div className='cvat-table-wrapper'>
@@ -196,6 +251,8 @@ function CVATTable(props: Props): JSX.Element {
                                 <Input.Search
                                     className='cvat-table-search-bar'
                                     placeholder='Search ..'
+                                    value={searchInput}
+                                    onChange={(event) => setSearchInput(event.target.value)}
                                     onSearch={setSearchPhrase}
                                     enterButton
                                 />
@@ -204,7 +261,8 @@ function CVATTable(props: Props): JSX.Element {
                         <div>
                             { FilteringComponent !== null && (
                                 <FilteringComponent
-                                    value={queryBuilder.value ?? null}
+                                    stateKey={stateKey ? `${stateKey}:builder` : undefined}
+                                    value={filterValue}
                                     predefinedVisible={visibility.predefined}
                                     builderVisible={visibility.builder}
                                     recentVisible={visibility.recent}
@@ -270,6 +328,12 @@ function CVATTable(props: Props): JSX.Element {
                                             disabled={disabled}
                                             onChange={(e: CheckboxChangeEvent) => {
                                                 const newIsHidden = !e.target.checked;
+                                                if (stateKey && !onChangeColumnVisibility) {
+                                                    setHiddenColumns({
+                                                        ...hiddenColumns,
+                                                        [columnKey(column)]: newIsHidden,
+                                                    });
+                                                }
                                                 setModifiedColumns([
                                                     ...modifiedColumns.slice(0, idx),
                                                     {
@@ -315,6 +379,17 @@ function CVATTable(props: Props): JSX.Element {
                 {...rest}
                 columns={modifiedColumns}
                 dataSource={filteredDataSource}
+                pagination={pagination}
+                onChange={(nextPagination, filters, sorter, extra) => {
+                    if (stateKey) {
+                        setTableChange({
+                            pagination: { current: nextPagination.current, pageSize: nextPagination.pageSize },
+                            filters,
+                            sorter: [sorter].flat().map((item) => ({ columnKey: item.columnKey, order: item.order })),
+                        });
+                    }
+                    rest.onChange?.(nextPagination, filters, sorter, extra);
+                }}
             />
         </div>
     );
