@@ -18,12 +18,13 @@ ALLOWED_SERVER_SCHEMAS = ("https", "http")
 def normalize_server_url(url: str) -> str:
     """Add the default scheme and remove a trailing slash from a server URL."""
     match url.split("://", maxsplit=1):
-        case [schema, _]:
-            if schema not in ALLOWED_SERVER_SCHEMAS:
+        case [schema, rest]:
+            if schema.lower() not in ALLOWED_SERVER_SCHEMAS:
                 raise InvalidHostException(
                     f"Invalid url schema '{schema}', expected "
                     f"one of <none>, {', '.join(ALLOWED_SERVER_SCHEMAS)}"
                 )
+            url = f"{schema.lower()}://{rest}"
         case _:
             url = "https://" + url
 
