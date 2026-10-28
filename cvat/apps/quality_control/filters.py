@@ -15,9 +15,12 @@ from rest_framework.exceptions import ValidationError
 from cvat.apps.dataset_manager import data_model as cdm
 from cvat.apps.engine.filters import JsonLogicFilter
 from cvat.apps.quality_control import models
+from cvat.apps.quality_control.attribute_comparison import CVAT_ATTRIBUTE_SPEC_IDS_ATTR
 
 _PARENT_SKELETON_CONTEXT_KEY = "__parent_skeleton_context__"
-_FILTER_INTERNAL_ATTRIBUTE_FIELDS = frozenset({_PARENT_SKELETON_CONTEXT_KEY})
+_FILTER_INTERNAL_ATTRIBUTE_FIELDS = frozenset(
+    {_PARENT_SKELETON_CONTEXT_KEY, CVAT_ATTRIBUTE_SPEC_IDS_ATTR}
+)
 
 
 def _with_replaced_prefix(
@@ -102,7 +105,7 @@ class _ShapeFilterContext:
 
     @property
     def source(self) -> Any:
-        return self._attributes.get("source")
+        return self._ann.source
 
     @property
     def occluded(self) -> Any:
@@ -172,6 +175,17 @@ class RequirementJsonLogicFilter(JsonLogicFilter):
 
     _INTERNAL_ATTRIBUTE_FIELDS = _FILTER_INTERNAL_ATTRIBUTE_FIELDS
 
+    _INTERVAL_LOOKUP_FIELDS = {
+        "shape.type": "shape.type",
+        "shape.label": "shape.label",
+        "shape.source": "shape.source",
+        "shape.attribute": "shape.attribute",
+        **{
+            f"shape.attribute.{name}": f"shape.attribute.{name}"
+            for name in _ATTRIBUTE_FILTER_FIELDS
+        },
+    }
+
     _SHAPE_LOOKUP_FIELDS = {
         **{f"shape.{name}": f"shape.{name}" for name in _SHAPE_FILTER_FIELDS},
         "shape.attribute": "shape.attribute",
@@ -202,6 +216,11 @@ class RequirementJsonLogicFilter(JsonLogicFilter):
         **_SKELETON_LOOKUP_FIELDS,
     }
 
+    _LOOKUP_FIELDS_BY_ANNOTATION_TYPE = {
+        models.QualityRequirementAnnotationType.INTERVAL: _INTERVAL_LOOKUP_FIELDS,
+        models.QualityRequirementAnnotationType.SKELETON_KEYPOINT: _LOOKUP_FIELDS,
+    }
+
     _ATTRIBUTE_ITERATOR_FIELDS = tuple(
         sorted(
             {term.rsplit(".", 1)[0] for term in _LOOKUP_FIELDS if ".attribute." in term},
@@ -220,6 +239,10 @@ class RequirementJsonLogicFilter(JsonLogicFilter):
         self._catalog = catalog
         self._included_annotation_types = tuple(included_annotation_types)
 
+        self.validate_expression(
+            expression,
+            annotation_type="interval" if cdm.Interval in self._included_annotation_types else None,
+        )
         filter_expression = expression.strip()
         self._rules = (
             self._parse_and_validate_query(
@@ -239,16 +262,9 @@ class RequirementJsonLogicFilter(JsonLogicFilter):
         if annotation_type is None:
             return sorted(cls._LOOKUP_FIELDS)
 
-        supported_terms = dict(cls._LOOKUP_FIELDS)
-
-        supports_skeleton_lookup = (
-            annotation_type == models.QualityRequirementAnnotationType.SKELETON_KEYPOINT
+        return sorted(
+            cls._LOOKUP_FIELDS_BY_ANNOTATION_TYPE.get(annotation_type, cls._SHAPE_LOOKUP_FIELDS)
         )
-        if not supports_skeleton_lookup:
-            for term in cls._SKELETON_LOOKUP_FIELDS:
-                supported_terms.pop(term, None)
-
-        return sorted(supported_terms)
 
     @classmethod
     def validate_expression(

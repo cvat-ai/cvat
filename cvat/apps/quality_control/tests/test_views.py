@@ -54,6 +54,18 @@ class TestQualityReportViewSet(unittest.TestCase):
 
         return cls._get_list_queryset(parent_report=parent_report, **query_params)
 
+    def _assert_parent_filter(self, queryset, *, lookup: str, join_count: int) -> None:
+        expected = QualityReport.objects.filter(**{lookup: 456}).query.where
+        where = queryset.query.where
+
+        # The parent restriction must be mandatory; unrelated filters may contain OR.
+        self.assertEqual(where.connector, "AND")
+        self.assertFalse(where.negated)
+        self.assertIn(expected.children[0], where.children)
+
+        sql, _ = queryset.query.sql_with_params()
+        self.assertEqual(sql.count('JOIN "quality_control_qualityreport_parents"'), join_count)
+
     def test_task_target_uses_direct_task_filter(self) -> None:
         queryset = self._get_list_queryset(
             task_id=123,
@@ -88,10 +100,7 @@ class TestQualityReportViewSet(unittest.TestCase):
             target=QualityReportTarget.JOB.value,
         )
 
-        sql, _ = queryset.query.sql_with_params()
-
-        self.assertNotIn(" OR ", sql)
-        self.assertEqual(sql.count('JOIN "quality_control_qualityreport_parents"'), 1)
+        self._assert_parent_filter(queryset, lookup="parents", join_count=1)
 
     def test_project_parent_task_target_uses_direct_parent_filter(self) -> None:
         queryset = self._get_parent_list_queryset(
@@ -99,10 +108,7 @@ class TestQualityReportViewSet(unittest.TestCase):
             target=QualityReportTarget.TASK.value,
         )
 
-        sql, _ = queryset.query.sql_with_params()
-
-        self.assertNotIn(" OR ", sql)
-        self.assertEqual(sql.count('JOIN "quality_control_qualityreport_parents"'), 1)
+        self._assert_parent_filter(queryset, lookup="parents", join_count=1)
 
     def test_project_parent_job_target_uses_nested_parent_filter(self) -> None:
         queryset = self._get_parent_list_queryset(
@@ -110,10 +116,7 @@ class TestQualityReportViewSet(unittest.TestCase):
             target=QualityReportTarget.JOB.value,
         )
 
-        sql, _ = queryset.query.sql_with_params()
-
-        self.assertNotIn(" OR ", sql)
-        self.assertEqual(sql.count('JOIN "quality_control_qualityreport_parents"'), 2)
+        self._assert_parent_filter(queryset, lookup="parents__parents", join_count=2)
 
     def test_invalid_parent_target_combinations_are_rejected(self) -> None:
         invalid_combinations = {

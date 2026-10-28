@@ -40,6 +40,7 @@ class _QualityRequirementsTestBase(_PermissionTestBase):
         "mask",
         "polygon",
         "ellipse",
+        "interval",
     }
 
     @staticmethod
@@ -444,6 +445,126 @@ class _QualityRequirementsTestBase(_PermissionTestBase):
 
 @pytest.mark.usefixtures("restore_db_per_function")
 class TestQualityRequirementsApi(_QualityRequirementsTestBase):
+    def test_reserved_names_cannot_be_used_for_custom_requirements(
+        self, admin_user, find_sandbox_task_without_gt
+    ):
+        task, _ = find_sandbox_task_without_gt(True)
+        settings = self._get_task_settings(admin_user, task_id=task["id"])
+        interval = next(
+            item for item in settings["requirements"] if item["annotation_type"] == "interval"
+        )
+        _, response = self._patch_requirement(admin_user, interval["id"], {"name": "Audio checks"})
+        assert response.status_code == HTTPStatus.OK
+        custom, response = self._create_requirement(
+            admin_user,
+            self._build_requirement_payload(
+                "Custom requirement", settings_id=settings["id"], enabled=False
+            ),
+        )
+        assert response.status_code == HTTPStatus.CREATED
+
+        for annotation_type in sorted(self._base_standalone_annotation_types):
+            name = f" {self._base_requirement_name(annotation_type)} "
+            _, response = self._create_requirement(
+                admin_user,
+                self._build_requirement_payload(name, settings_id=settings["id"], enabled=False),
+            )
+            assert response.status_code == HTTPStatus.BAD_REQUEST
+            assert "reserved" in json.dumps(response.json()["name"])
+            _, response = self._patch_requirement(admin_user, custom["id"], {"name": name})
+            assert response.status_code == HTTPStatus.BAD_REQUEST
+            assert "reserved" in json.dumps(response.json()["name"])
+
+        stored, response = self._retrieve_requirement(admin_user, custom["id"])
+        assert response.status_code == HTTPStatus.OK
+        assert stored["name"] == custom["name"]
+        stored_settings = self._get_task_settings(admin_user, task_id=task["id"])
+        assert len(stored_settings["requirements"]) == len(settings["requirements"]) + 1
+
+    def test_base_requirement_can_restore_only_its_own_reserved_name(
+        self, admin_user, find_sandbox_task_without_gt
+    ):
+        task, _ = find_sandbox_task_without_gt(True)
+        settings = self._get_task_settings(admin_user, task_id=task["id"])
+        base = next(
+            item for item in settings["requirements"] if item["annotation_type"] == "rectangle"
+        )
+        for name in ("Rectangle checks", self._base_requirement_name("rectangle")):
+            stored, response = self._patch_requirement(admin_user, base["id"], {"name": name})
+            assert response.status_code == HTTPStatus.OK
+            assert stored["name"] == name
+
+        _, response = self._patch_requirement(
+            admin_user, base["id"], {"name": self._base_requirement_name("interval")}
+        )
+        assert response.status_code == HTTPStatus.BAD_REQUEST
+        assert "reserved" in json.dumps(response.json()["name"])
+        stored, response = self._retrieve_requirement(admin_user, base["id"])
+        assert response.status_code == HTTPStatus.OK
+        assert stored["name"] == self._base_requirement_name("rectangle")
+
+    def test_settings_patch_rejects_reserved_names_atomically(
+        self, admin_user, find_sandbox_task_without_gt
+    ):
+        task, _ = find_sandbox_task_without_gt(True)
+        settings = self._get_task_settings(admin_user, task_id=task["id"])
+        base = next(
+            item for item in settings["requirements"] if item["annotation_type"] == "rectangle"
+        )
+        interval = next(
+            item for item in settings["requirements"] if item["annotation_type"] == "interval"
+        )
+        _, response = self._patch_requirement(admin_user, interval["id"], {"name": "Audio checks"})
+        assert response.status_code == HTTPStatus.OK
+        custom, response = self._create_requirement(
+            admin_user,
+            self._build_requirement_payload(
+                "Custom requirement", settings_id=settings["id"], enabled=False
+            ),
+        )
+        assert response.status_code == HTTPStatus.CREATED
+        original = self._get_task_settings(admin_user, task_id=task["id"])["requirements"]
+
+        for creating in (True, False):
+            requirements = [{"id": item["id"]} for item in original]
+            next(item for item in requirements if item["id"] == base["id"])[
+                "name"
+            ] = "Changed before rejection"
+            if creating:
+                requirements.append(
+                    {
+                        "name": self._base_requirement_name("interval"),
+                        "parent_requirement": base["id"],
+                        "enabled": False,
+                    }
+                )
+            else:
+                next(item for item in requirements if item["id"] == custom["id"])["name"] = (
+                    self._base_requirement_name("interval")
+                )
+            _, response = self._patch_settings(
+                admin_user, settings["id"], {"requirements": requirements}
+            )
+            assert response.status_code == HTTPStatus.BAD_REQUEST
+            assert "reserved" in json.dumps(response.json())
+            stored = self._get_task_settings(admin_user, task_id=task["id"])["requirements"]
+            assert DeepDiff(original, stored, ignore_order=True) == {}
+
+    def test_interval_requirement_cannot_be_enabled_for_images(
+        self, admin_user, find_sandbox_task_without_gt
+    ):
+        task, _ = find_sandbox_task_without_gt(True)
+        settings = self._get_task_settings(admin_user, task_id=task["id"])
+        interval = next(
+            item for item in settings["requirements"] if item["annotation_type"] == "interval"
+        )
+        _, response = self._patch_requirement(admin_user, interval["id"], {"enabled": True})
+        assert response.status_code == HTTPStatus.BAD_REQUEST
+        assert "only 2d" in json.dumps(response.json())
+        stored, response = self._retrieve_requirement(admin_user, interval["id"])
+        assert response.status_code == HTTPStatus.OK
+        assert stored["enabled"] is False
+
     def test_all_target_metrics_can_be_created_updated_and_inherited(
         self, admin_user, find_sandbox_task_without_gt
     ):
@@ -694,7 +815,17 @@ class TestQualityRequirementsApi(_QualityRequirementsTestBase):
                         "parent_requirement": base_requirement["id"],
                     }
                 ],
-                "already exists",
+                "reserved for a base quality requirement",
+            ),
+            (
+                [
+                    {
+                        "name": f"bulk-reserved-child-{task['id']}",
+                        "parent_requirement": base_requirement["id"],
+                        "children": [{"name": base_requirement["name"]}],
+                    },
+                ],
+                "reserved for a base quality requirement",
             ),
         ]
 
@@ -709,6 +840,11 @@ class TestQualityRequirementsApi(_QualityRequirementsTestBase):
 
             assert response.status_code == HTTPStatus.BAD_REQUEST
             assert error_text in json.dumps(response.json()).lower()
+
+        updated_settings = self._get_task_settings(admin_user, task_id=task["id"])
+        assert {item["id"] for item in updated_settings["requirements"]} == {
+            item["id"] for item in settings["requirements"]
+        }
 
     def test_bulk_create_rejects_payload_above_requirement_limit(
         self, admin_user, find_sandbox_task_without_gt
@@ -1439,6 +1575,28 @@ class TestQualityRequirementsApi(_QualityRequirementsTestBase):
         )
         assert response.status_code == HTTPStatus.OK
         assert len(patched_settings["requirements"]) == self._max_requirements_per_settings
+
+        replaced = next(item for item in patched_settings["requirements"] if not item["is_base"])
+        replacement_name = f"limit-replacement-{task['id']}"
+        patched_settings, response = self._patch_settings(
+            admin_user,
+            settings["id"],
+            {
+                "requirements": [
+                    *(
+                        {"id": item["id"]}
+                        for item in patched_settings["requirements"]
+                        if item["id"] != replaced["id"]
+                    ),
+                    self._build_requirement_payload(replacement_name),
+                ]
+            },
+        )
+        assert response.status_code == HTTPStatus.OK
+        stored = self._get_task_settings(admin_user, task_id=task["id"])["requirements"]
+        assert len(stored) == self._max_requirements_per_settings
+        assert replaced["id"] not in {item["id"] for item in stored}
+        assert replacement_name in {item["name"] for item in stored}
 
         _, response = self._create_requirement(
             admin_user,

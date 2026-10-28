@@ -28,6 +28,7 @@ const createDefaultTree = (): ImmutableTree => QbUtils.loadTree({ type: 'group',
 
 interface Props {
     labels: Label[];
+    annotationType?: string;
     value?: string;
     parentFilters?: string[];
     disabled?: boolean;
@@ -40,6 +41,7 @@ interface StoredFilter {
 }
 
 const ANNOTATION_TYPE_VALUES = [
+    { value: 'interval', title: 'Interval' },
     { value: 'tag', title: 'Tag' },
     { value: 'rectangle', title: 'Rectangle' },
     { value: 'points', title: 'Points' },
@@ -433,6 +435,7 @@ const loadTreeFromValue = (value: string | undefined, config: Config): Immutable
 export default function QualityRequirementFilter(props: Readonly<Props>): JSX.Element {
     const {
         labels,
+        annotationType,
         value,
         parentFilters = [],
         disabled,
@@ -452,7 +455,7 @@ export default function QualityRequirementFilter(props: Readonly<Props>): JSX.El
     const config = useMemo<Config>(() => {
         const attributeSubfields = getAttributesSubfields(labels);
         const shapeSubfields = getShapeSubfields(labels);
-        return {
+        const result = {
             ...AntdConfig,
             fields: {
                 'shape.label': {
@@ -485,7 +488,7 @@ export default function QualityRequirementFilter(props: Readonly<Props>): JSX.El
                 'shape.skeleton': {
                     label: 'Skeleton',
                     type: '!struct',
-                    subfields: shapeSubfields,
+                    subfields: shapeSubfields as Config['fields'],
                     fieldSettings: {
                         treeSelectOnlyLeafs: true,
                         treeDefaultExpandAll: false,
@@ -495,7 +498,7 @@ export default function QualityRequirementFilter(props: Readonly<Props>): JSX.El
                 'shape.track': {
                     label: 'Track',
                     type: '!struct',
-                    subfields: shapeSubfields,
+                    subfields: shapeSubfields as Config['fields'],
                     fieldSettings: {
                         treeSelectOnlyLeafs: true,
                         treeDefaultExpandAll: false,
@@ -505,7 +508,7 @@ export default function QualityRequirementFilter(props: Readonly<Props>): JSX.El
                 'shape.attribute': {
                     label: 'Attributes',
                     type: '!struct',
-                    subfields: attributeSubfields,
+                    subfields: attributeSubfields as Config['fields'],
                     fieldSettings: {
                         treeSelectOnlyLeafs: true,
                         treeDefaultExpandAll: false,
@@ -564,8 +567,16 @@ export default function QualityRequirementFilter(props: Readonly<Props>): JSX.El
                 ...AntdConfig.settings,
                 renderField: (_props: any) => <FieldDropdown {..._props} />,
             },
-        };
-    }, [labels]);
+        } as Config;
+        if (annotationType === 'interval') {
+            const supported = new Set([
+                'shape.type', 'shape.label', 'shape.source', 'shape.attribute',
+                'shape.attribute.name', 'shape.attribute.value',
+            ]);
+            result.fields = Object.fromEntries(Object.entries(result.fields).filter(([key]) => supported.has(key)));
+        }
+        return result;
+    }, [labels, annotationType]);
     const readonlyConfig = useMemo<Config>(() => ({
         ...config,
         settings: {

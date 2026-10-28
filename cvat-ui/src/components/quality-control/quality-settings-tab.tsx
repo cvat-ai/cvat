@@ -169,6 +169,7 @@ function QualitySettingsTab(props: Readonly<Props>): JSX.Element | null {
                     form={form}
                     settings={effectiveSettings}
                     labels={labels}
+                    mediaType={instance instanceof Task ? instance.mediaType : undefined}
                     onSave={onSave}
                     onReload={refreshQualitySettings}
                     onRequirementFormVisibilityChange={setRequirementFormVisible}
