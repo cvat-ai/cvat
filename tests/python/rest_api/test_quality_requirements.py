@@ -444,6 +444,22 @@ class _QualityRequirementsTestBase(_PermissionTestBase):
 
 @pytest.mark.usefixtures("restore_db_per_function")
 class TestQualityRequirementsApi(_QualityRequirementsTestBase):
+    _inheritable_field_overrides = [
+        ("metric", "precision"),
+        ("required_score", 0.5),
+        ("iou_threshold", 0.6),
+        ("point_size", 0.2),
+        ("line_thickness", 0.05),
+        ("point_size_base", "image_size"),
+        ("match_orientation", False),
+        ("line_orientation_threshold", 0.3),
+        ("match_groups", False),
+        ("group_match_threshold", 0.7),
+        ("check_covered_annotations", False),
+        ("object_visibility_threshold", 0.2),
+        ("panoptic_comparison", False),
+    ]
+
     def test_all_target_metrics_can_be_created_updated_and_inherited(
         self, admin_user, find_sandbox_task_without_gt
     ):
@@ -501,6 +517,70 @@ class TestQualityRequirementsApi(_QualityRequirementsTestBase):
         assert response.status_code == HTTPStatus.CREATED
         assert child_requirement["metric"] is None
         assert child_requirement["effective"]["metric"] == "jaccard_index"
+
+    @pytest.mark.parametrize(
+        "field_name", [field_name for field_name, _ in _inheritable_field_overrides]
+    )
+    def test_cannot_unset_inheritable_values_in_root_requirement(
+        self, admin_user, quality_settings, field_name: str
+    ):
+        root_requirement = next(
+            requirement
+            for settings in quality_settings
+            for requirement in settings["requirements"]
+            if requirement["parent_requirement"] is None
+        )
+
+        _, response = self._patch_requirement(
+            admin_user, root_requirement["id"], {field_name: None}
+        )
+        assert response.status_code == HTTPStatus.BAD_REQUEST
+        assert response.json() == {field_name: ["Root requirements cannot inherit."]}
+
+        retrieved_requirement, response = self._retrieve_requirement(
+            admin_user, root_requirement["id"]
+        )
+        assert response.status_code == HTTPStatus.OK
+        assert retrieved_requirement[field_name] == root_requirement[field_name]
+
+    @pytest.mark.parametrize("field_name, override_value", _inheritable_field_overrides)
+    def test_can_unset_inheritable_values_in_child_requirement(
+        self, admin_user, quality_settings, field_name: str, override_value: Any
+    ):
+        root_requirement = next(
+            requirement
+            for settings in quality_settings
+            for requirement in settings["requirements"]
+            if requirement["parent_requirement"] is None
+            if requirement[field_name] != override_value
+        )
+
+        child_requirement, response = self._create_requirement(
+            admin_user,
+            {
+                "name": f"child-unset-{field_name}",
+                "settings_id": root_requirement["settings_id"],
+                "parent_requirement": root_requirement["id"],
+                field_name: override_value,
+            },
+        )
+        assert response.status_code == HTTPStatus.CREATED
+        assert child_requirement[field_name] == override_value
+        assert child_requirement["effective"][field_name] == override_value
+
+        updated_requirement, response = self._patch_requirement(
+            admin_user, child_requirement["id"], {field_name: None}
+        )
+        assert response.status_code == HTTPStatus.OK
+        assert updated_requirement[field_name] is None
+        assert updated_requirement["effective"][field_name] == root_requirement[field_name]
+
+        retrieved_requirement, response = self._retrieve_requirement(
+            admin_user, child_requirement["id"]
+        )
+        assert response.status_code == HTTPStatus.OK
+        assert retrieved_requirement[field_name] is None
+        assert retrieved_requirement["effective"][field_name] == root_requirement[field_name]
 
     def test_can_bulk_create_requirement_hierarchy(self, admin_user, find_sandbox_task_without_gt):
         task, _ = find_sandbox_task_without_gt(True)
