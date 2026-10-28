@@ -64,6 +64,7 @@ allow if {
 
 allow if {
     input.scope == utils.VIEW
+    organizations.is_member
     input.resource.membership.role != null
 }
 

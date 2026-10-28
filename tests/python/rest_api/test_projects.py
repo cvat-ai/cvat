@@ -258,6 +258,7 @@ class TestGetPostProjectBackup:
     def test_org_worker_cannot_get_project_backup_without_ownership(
         self,
         find_users,
+        is_project_staff,
         is_org_member,
     ):
         users = find_users(role="worker", exclude_privilege="admin")
@@ -266,8 +267,9 @@ class TestGetPostProjectBackup:
             (user, project)
             for user, project in product(users, self.projects)
             if project["owner"]["id"] != user["id"]
+            and is_project_staff(user["id"], project["id"])
             and project["organization"]
-            and is_org_member(user["id"], project["organization"])
+            and is_org_member(user["id"], project["organization"], role="worker")
         )
 
         self._test_cannot_get_project_backup(user["username"], project["id"])

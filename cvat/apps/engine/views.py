@@ -79,7 +79,6 @@ from cvat.apps.engine.models import (
     FrameQuality,
     Issue,
     Job,
-    JobType,
     Label,
     Location,
     Project,
@@ -127,6 +126,7 @@ from cvat.apps.engine.serializers import (
     DataSerializer,
     DatasetFileSerializer,
     FileInfoSerializer,
+    GroundTruthJobCreateSerializer,
     IssueReadSerializer,
     IssueWriteSerializer,
     JobDataMetaWriteSerializer,
@@ -140,6 +140,7 @@ from cvat.apps.engine.serializers import (
     ProjectFileSerializer,
     ProjectReadSerializer,
     ProjectWriteSerializer,
+    ReplicaJobCreateSerializer,
     RqStatusSerializer,
     TaskFileSerializer,
     TaskReadSerializer,
@@ -2135,13 +2136,23 @@ class TaskViewSet(
         return Response(response_serializer.data, status=status.HTTP_200_OK)
 
 
+_JOB_CREATE_SERIALIZERS = {
+    models.JobType.GROUND_TRUTH.value: GroundTruthJobCreateSerializer,
+    models.JobType.REPLICA.value: ReplicaJobCreateSerializer,
+}
+
+
 @extend_schema(tags=["jobs"])
 @extend_schema_view(
     create=extend_schema(
         summary="Create a job",
-        request=JobWriteSerializer,
+        request=PolymorphicProxySerializer(
+            component_name="JobWrite",
+            serializers=_JOB_CREATE_SERIALIZERS,
+            resource_type_field_name="type",
+        ),
         responses={
-            "201": JobReadSerializer,  # check JobWriteSerializer.to_representation
+            "201": JobReadSerializer,
         },
         examples=[
             OpenApiExample(
@@ -2193,6 +2204,14 @@ class TaskViewSet(
                     "frames": [1, 5, 10, 18],
                 },
             ),
+            OpenApiExample(
+                "create a replica job",
+                {
+                    "type": models.JobType.REPLICA,
+                    "task_id": 17,
+                    "parent_job_id": 42,
+                },
+            ),
         ],
     ),
     retrieve=extend_schema(
@@ -2220,7 +2239,7 @@ class TaskViewSet(
             Related annotations will be deleted as well.
 
             Please note, that not every job can be removed. Currently,
-            it is only available for Ground Truth jobs.
+            it is only available for Ground Truth and replica jobs.
             """),
         responses={
             "204": OpenApiResponse(description="The job has been deleted"),
@@ -2315,6 +2334,15 @@ class JobViewSet(
     def get_serializer_class(self):
         if self.request.method in SAFE_METHODS:
             return JobReadSerializer
+        elif self.action == "create":
+            job_type = self.request.data.get("type")
+            if job_type is None:
+                raise ValidationError({"type": ["This field is required."]})
+
+            try:
+                return _JOB_CREATE_SERIALIZERS[job_type]
+            except (KeyError, TypeError) as ex:  # TypeError - an unhashable value, e.g. a list
+                raise ValidationError({"type": [f'"{job_type}" is not a valid choice.']}) from ex
         else:
             return JobWriteSerializer
 
@@ -2324,26 +2352,6 @@ class JobViewSet(
 
         # Required for the extra summary information added in the queryset
         serializer.instance = self.get_queryset().get(pk=serializer.instance.pk)
-
-    @transaction.atomic
-    def perform_destroy(self, instance):
-        if instance.type != JobType.GROUND_TRUTH:
-            raise ValidationError("Only ground truth jobs can be removed")
-
-        validation_layout: models.ValidationLayout | None = getattr(
-            instance.segment.task.data, "validation_layout", None
-        )
-        if validation_layout and validation_layout.mode == models.ValidationMode.GT_POOL:
-            raise ValidationError(
-                'GT jobs cannot be removed when task validation mode is "{}"'.format(
-                    models.ValidationMode.GT_POOL
-                )
-            )
-
-        super().perform_destroy(instance)
-
-        if validation_layout:
-            validation_layout.delete()
 
     # UploadMixin method
     def get_upload_dir(self):
@@ -3290,6 +3298,7 @@ class LabelViewSet(
     ),
     retrieve=extend_schema(
         summary="Get user details",
+        parameters=ORGANIZATION_OPEN_API_PARAMETERS,
         responses={
             "200": PolymorphicProxySerializer(
                 component_name="MetaUser",

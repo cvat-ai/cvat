@@ -4,6 +4,8 @@
 -}}
 {{ $baseURL := urls.Parse $.Site.Params.Baseurl -}}
 
+{{ partial "announcement.html" . }}
+
 <nav class="td-navbar navbar-dark js-navbar-scroll
           {{- if $cover }} td-navbar-cover {{- end }}">
 <div class="container-fluid flex-column flex-md-row">

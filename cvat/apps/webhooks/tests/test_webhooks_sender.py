@@ -9,7 +9,6 @@ from allauth.account.models import EmailAddress
 from django.core import mail
 from django.test import override_settings
 from django.urls import re_path, reverse
-from django.views.generic import RedirectView
 from rest_framework import serializers, status
 
 from cvat.apps.engine.tests.utils import ApiTestBase
@@ -21,12 +20,13 @@ from cvat.urls import urlpatterns as original_urlpatterns
 from .utils import make_webhook
 
 urlpatterns = original_urlpatterns + [
+    # override_settings() does not rebuild the URLConf, which is loaded
+    # with email verification disabled by default.
     re_path(
         r"^account-confirm-email/(?P<key>[-:\w]+)/$",
         ConfirmEmailViewEx.as_view(),
         name="account_confirm_email",
     ),
-    re_path(r"^unused-account-login/$", RedirectView.as_view(url="/"), name="account_login"),
 ]
 
 CONFIRMATION_LINK_RE = re.compile(r"/account-confirm-email/(?P<key>[-:\w]+)/")

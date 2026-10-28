@@ -47,7 +47,7 @@ Standard JS events are used.
     - canvas.moved => {states: ObjectState[], x: number, y: number}
     - canvas.find => {states: ObjectState[], x: number, y: number}
     - canvas.drawn => {state: DrawnData}
-    - canvas.interacted => {shapes: InteractionResult[]}
+    - canvas.interacted => {shapes: InteractionResult[], finished: boolean, ctrlKey: boolean}
     - canvas.editstart
     - canvas.edited => {state: ObjectState, points: number[], rotation?: number}
     - canvas.splitted => {state: ObjectState, frame: number, duration: number}
@@ -68,7 +68,7 @@ Standard JS events are used.
     - canvas.roiselected => {points: number[]}
     - canvas.resizeshape => {duration: number, state: ObjectState}
     - canvas.contextmenu => { mouseEvent: MouseEvent, objectState: ObjectState,  pointID: number }
-    - canvas.message => { messages: { type: 'text' | 'list'; content: string | string[]; className?: string; icon?: 'info' | 'loading' }[] | null, topic: string }
+    - canvas.message => { message: string | null, topic?: string }
     - canvas.error => { exception: Error, domain?: string }
     - canvas.destroy
 ```
