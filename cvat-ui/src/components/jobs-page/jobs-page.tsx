@@ -24,6 +24,8 @@ import { selectionActions } from 'actions/selection-actions';
 import TopBarComponent from './top-bar';
 import JobsContentComponent from './jobs-content';
 import EmptyListComponent from './empty-list';
+import AddReplicasModal from './add-replicas-modal';
+import DistributeJobsModal from './distribute-jobs-modal';
 
 function JobsPageComponent(): JSX.Element {
     const dispatch = useDispatch();
@@ -91,6 +93,10 @@ function JobsPageComponent(): JSX.Element {
         });
     };
 
+    const fetchJobs = useCallback(() => {
+        dispatch(getJobsAsync({ ...updatedQuery }));
+    }, [updatedQuery]);
+
     const isAnySearch = anySearch<JobsQuery>(query);
 
     const content = count ? (
@@ -144,6 +150,8 @@ function JobsPageComponent(): JSX.Element {
                 }}
             />
             {fetching && !bulkFetching ? <Spin size='large' className='cvat-spinner' /> : content}
+            <AddReplicasModal fetchJobs={fetchJobs} />
+            <DistributeJobsModal />
         </div>
     );
 }

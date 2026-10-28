@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: CVAT REST API
-  version: 2.78.1
+  version: 2.80.1
   description: REST API for Computer Vision Annotation Tool (CVAT)
   termsOfService: https://www.google.com/policies/terms/
   contact:
@@ -2521,7 +2521,7 @@ paths:
           enum:
           - annotation
           - ground_truth
-          - consensus_replica
+          - replica
       tags:
       - jobs
       security:
@@ -2592,6 +2592,12 @@ paths:
                   - 10
                   - 18
                 summary: create gt job with manual frame selection
+              CreateAReplicaJob:
+                value:
+                  type: replica
+                  task_id: 17
+                  parent_job_id: 42
+                summary: create a replica job
         required: true
       security:
       - tokenAuth: []
@@ -2671,7 +2677,7 @@ paths:
         Related annotations will be deleted as well.
 
         Please note, that not every job can be removed. Currently,
-        it is only available for Ground Truth jobs.
+        it is only available for Ground Truth and replica jobs.
       summary: Delete a job
       parameters:
       - in: path
@@ -7312,12 +7318,39 @@ paths:
       operationId: users_retrieve
       summary: Get user details
       parameters:
+      - in: header
+        name: X-Organization
+        schema:
+          type: string
+        description: |
+          Organization unique slug.
+          If omitted, results from all organizations available to the user are returned
+          (unfiltered). An empty value ("") selects the personal sandbox workspace only.
+          A non-empty value selects that organization.
       - in: path
         name: id
         schema:
           type: integer
         description: A unique integer value identifying this user.
         required: true
+      - in: query
+        name: org
+        schema:
+          type: string
+        description: |
+          Organization unique slug.
+          If omitted, results from all organizations available to the user are returned
+          (unfiltered). An empty value ("") selects the personal sandbox workspace only.
+          A non-empty value selects that organization.
+      - in: query
+        name: org_id
+        schema:
+          type: integer
+        description: |
+          Organization unique id.
+          If omitted, results from all organizations available to the user are returned
+          (unfiltered). An empty value ("") selects the personal sandbox workspace only.
+          A positive integer selects that organization.
       tags:
       - users
       security:
@@ -9320,6 +9353,65 @@ components:
       required:
       - function
       - task
+    GroundTruthJobCreateRequest:
+      type: object
+      properties:
+        assignee:
+          type: integer
+          nullable: true
+        type:
+          $ref: '#/components/schemas/GroundTruthJobCreateTypeEnum'
+        task_id:
+          type: integer
+        frame_selection_method:
+          $ref: '#/components/schemas/FrameSelectionMethod'
+        frames:
+          type: array
+          items:
+            type: integer
+            minimum: 0
+          description: |
+            The list of frame ids. Applicable only to the "manual" frame selection method
+        frame_count:
+          type: integer
+          minimum: 1
+          description: |
+            The number of frames included in the GT job.
+            Applicable only to the "random_uniform" frame selection method
+        frame_share:
+          type: number
+          format: double
+          description: |
+            The share of frames included in the GT job.
+            Applicable only to the "random_uniform" frame selection method
+        frames_per_job_count:
+          type: integer
+          minimum: 1
+          description: |
+            The number of frames included in the GT job from each annotation job.
+            Applicable only to the "random_per_job" frame selection method
+        frames_per_job_share:
+          type: number
+          format: double
+          description: |
+            The share of frames included in the GT job from each annotation job.
+            Applicable only to the "random_per_job" frame selection method
+        random_seed:
+          type: integer
+          minimum: 0
+          description: |
+            The seed value for the random number generator.
+            The same value will produce the same frame sets.
+            Applicable only to random frame selection methods.
+            By default, a random value is used.
+      required:
+      - task_id
+      - type
+    GroundTruthJobCreateTypeEnum:
+      enum:
+      - ground_truth
+      type: string
+      description: '* `ground_truth` - GROUND_TRUTH'
     InputTypeEnum:
       enum:
       - checkbox
@@ -9585,10 +9677,6 @@ components:
           type: integer
           nullable: true
           readOnly: true
-        consensus_replicas:
-          type: integer
-          readOnly: true
-          deprecated: true
         replicas_count:
           type: integer
           readOnly: true
@@ -9619,12 +9707,12 @@ components:
       enum:
       - annotation
       - ground_truth
-      - consensus_replica
+      - replica
       type: string
       description: |-
         * `annotation` - ANNOTATION
         * `ground_truth` - GROUND_TRUTH
-        * `consensus_replica` - CONSENSUS_REPLICA
+        * `replica` - REPLICA
     JobValidationLayoutRead:
       type: object
       properties:
@@ -9646,63 +9734,14 @@ components:
           description: |
             The list of real (validation) frame ids for honeypots in the job
     JobWriteRequest:
-      type: object
-      properties:
-        assignee:
-          type: integer
-          nullable: true
-        stage:
-          $ref: '#/components/schemas/JobStage'
-        state:
-          $ref: '#/components/schemas/OperationStatus'
-        type:
-          $ref: '#/components/schemas/JobType'
-        task_id:
-          type: integer
-        frame_selection_method:
-          $ref: '#/components/schemas/FrameSelectionMethod'
-        frame_count:
-          type: integer
-          minimum: 1
-          description: |
-            The number of frames included in the GT job.
-            Applicable only to the "random_uniform" frame selection method
-        frame_share:
-          type: number
-          format: double
-          description: |
-            The share of frames included in the GT job.
-            Applicable only to the "random_uniform" frame selection method
-        frames_per_job_count:
-          type: integer
-          minimum: 1
-          description: |
-            The number of frames included in the GT job from each annotation job.
-            Applicable only to the "random_per_job" frame selection method
-        frames_per_job_share:
-          type: number
-          format: double
-          description: |
-            The share of frames included in the GT job from each annotation job.
-            Applicable only to the "random_per_job" frame selection method
-        random_seed:
-          type: integer
-          minimum: 0
-          description: |
-            The seed value for the random number generator.
-            The same value will produce the same frame sets.
-            Applicable only to random frame selection methods.
-            By default, a random value is used.
-        frames:
-          type: array
-          items:
-            type: integer
-            minimum: 0
-          description: |
-            The list of frame ids. Applicable only to the "manual" frame selection method
-      required:
-      - task_id
-      - type
+      oneOf:
+      - $ref: '#/components/schemas/GroundTruthJobCreateRequest'
+      - $ref: '#/components/schemas/ReplicaJobCreateRequest'
+      discriminator:
+        propertyName: type
+        mapping:
+          ground_truth: '#/components/schemas/GroundTruthJobCreateRequest'
+          replica: '#/components/schemas/ReplicaJobCreateRequest'
     JobsSummary:
       type: object
       properties:
@@ -13133,6 +13172,27 @@ components:
       - password1
       - password2
       - username
+    ReplicaJobCreateRequest:
+      type: object
+      properties:
+        assignee:
+          type: integer
+          nullable: true
+        type:
+          $ref: '#/components/schemas/ReplicaJobCreateTypeEnum'
+        task_id:
+          type: integer
+        parent_job_id:
+          type: integer
+      required:
+      - parent_job_id
+      - task_id
+      - type
+    ReplicaJobCreateTypeEnum:
+      enum:
+      - replica
+      type: string
+      description: '* `replica` - REPLICA'
     Request:
       type: object
       properties:
@@ -13682,6 +13742,9 @@ components:
         segment_size:
           type: integer
           readOnly: true
+        initial_replicas:
+          type: integer
+          readOnly: true
         status:
           allOf:
           - $ref: '#/components/schemas/JobStatus'
@@ -13764,9 +13827,6 @@ components:
           nullable: true
           description: Describes how the task validation is performed. Configured
             at task creation
-        consensus_enabled:
-          type: boolean
-          readOnly: true
       required:
       - jobs
       - labels
@@ -13855,13 +13915,20 @@ components:
           $ref: '#/components/schemas/StorageRequest'
         source_storage:
           $ref: '#/components/schemas/StorageRequest'
+        initial_replicas:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          description: The number of replica jobs for each annotation job. Configured
+            at task creation
         consensus_replicas:
           type: integer
           minimum: 0
-          default: 0
+          writeOnly: true
           description: |
-            The number of consensus replica jobs for each annotation job.
-            Configured at task creation
+            Deprecated. The number of replica jobs for each annotation job.
+            Use 'initial_replicas' instead
+          deprecated: true
       required:
       - name
     TasksSummary:

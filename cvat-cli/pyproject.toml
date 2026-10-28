@@ -14,9 +14,9 @@ classifiers = [
     "Programming Language :: Python :: 3",
     "Operating System :: OS Independent",
 ]
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 dependencies = [
-    "cvat-sdk==2.78.1",
+    "cvat-sdk==2.80.1",
 
     "attrs>=24.2.0",
     "json-with-comments==1.2.10",

@@ -75,6 +75,14 @@ li > details {
     max-width: 80%;
 }
 
+// Override Docsy's 80% panel limit so tab content aligns with its navigation
+// and leaves more room for commands and examples throughout the documentation.
+.td-content .tab-content,
+.td-content .tab-content > .tab-pane {
+    width: 100%;
+    max-width: 100%;
+}
+
 .highlight > .code-toolbar,
 details > summary > .code-toolbar,
 details > .code-toolbar {

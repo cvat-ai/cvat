@@ -5,6 +5,7 @@
 import itertools
 import json
 from copy import deepcopy
+from datetime import datetime
 from http import HTTPStatus
 from types import SimpleNamespace
 from typing import Any
@@ -13,7 +14,6 @@ import pytest
 from cvat_sdk import exceptions, models
 from cvat_sdk.api_client.api_client import ApiClient, Endpoint
 from cvat_sdk.core.helpers import get_paginated_collection
-from dateutil.parser import isoparse as parse_datetime
 from deepdiff import DeepDiff
 from pytest_cases import fixture, fixture_ref, parametrize
 
@@ -1319,7 +1319,7 @@ class TestLabelUpdates:
                 if j["task_id"] in nested_task_ids
             ]
 
-        assert parse_datetime(project["updated_date"]) < parse_datetime(
+        assert datetime.fromisoformat(project["updated_date"]) < datetime.fromisoformat(
             updated_project["updated_date"]
         )
         assert len(updated_tasks) == len(nested_tasks)
@@ -1366,7 +1366,9 @@ class TestLabelUpdates:
                 api_client.jobs_api.list_endpoint, task_id=task["id"], return_json=True
             )
 
-        assert parse_datetime(task["updated_date"]) < parse_datetime(updated_task["updated_date"])
+        assert datetime.fromisoformat(task["updated_date"]) < datetime.fromisoformat(
+            updated_task["updated_date"]
+        )
         assert len(updated_jobs) == len(nested_jobs)
         for job in updated_jobs:
             assert updated_task["updated_date"] == job["updated_date"]

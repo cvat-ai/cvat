@@ -17,19 +17,22 @@ import IssueAggregatorComponent from 'components/annotation-page/review/issues-a
 import RemoveConfirmComponent from 'components/annotation-page/standard-workspace/remove-confirm';
 import PropagateConfirmComponent from 'components/annotation-page/standard-workspace/propagate-confirm';
 import BrushTools from 'components/annotation-page/canvas/views/canvas2d/brush-tools';
+import { TrackerControlsProvider } from './tracker-controls';
 
 export default function StandardWorkspaceComponent(): JSX.Element {
     return (
-        <Layout hasSider className='cvat-standard-workspace'>
-            <ControlsSideBarContainer />
-            <CanvasLayout />
-            <BrushTools />
-            <ObjectSideBarComponent objectsList={<ObjectsListContainer />} />
-            <PropagateConfirmComponent />
-            <CanvasContextMenuContainer />
-            <CanvasPointContextMenuComponent />
-            <IssueAggregatorComponent />
-            <RemoveConfirmComponent />
-        </Layout>
+        <TrackerControlsProvider>
+            <Layout hasSider className='cvat-standard-workspace'>
+                <ControlsSideBarContainer />
+                <CanvasLayout />
+                <BrushTools />
+                <ObjectSideBarComponent objectsList={<ObjectsListContainer />} />
+                <PropagateConfirmComponent />
+                <CanvasContextMenuContainer />
+                <CanvasPointContextMenuComponent />
+                <IssueAggregatorComponent />
+                <RemoveConfirmComponent />
+            </Layout>
+        </TrackerControlsProvider>
     );
 }

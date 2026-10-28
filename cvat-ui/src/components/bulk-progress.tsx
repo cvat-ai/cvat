@@ -27,9 +27,11 @@ export default function BulkProgress(): JSX.Element | null {
 
     const handleRetry = (): void => {
         if (bulkError?.retryPayload) {
-            const { items, operation, statusMessage } = bulkError.retryPayload;
+            const {
+                items, operation, statusMessage, onSuccess,
+            } = bulkError.retryPayload;
             dispatch(resetErrors());
-            dispatch(makeBulkOperationAsync(items, operation, statusMessage));
+            dispatch(makeBulkOperationAsync(items, operation, statusMessage, onSuccess));
         }
     };
 

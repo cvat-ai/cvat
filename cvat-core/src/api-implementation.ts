@@ -7,6 +7,7 @@ import { omit } from 'lodash';
 import config from './config';
 
 import PluginRegistry from './plugins';
+import { observe } from './capabilities';
 import serverProxy from './server-proxy';
 import lambdaManager from './lambda-manager';
 import requestsManager from './requests-manager';
@@ -58,6 +59,7 @@ function implementationMixin(func: Function, implementation: Function): void {
 }
 
 export default function implementAPI(cvat: CVATCore): CVATCore {
+    implementationMixin(cvat.capabilities.observe, observe);
     implementationMixin(cvat.plugins.list, PluginRegistry.list);
     implementationMixin(cvat.plugins.register, PluginRegistry.register.bind(cvat));
     implementationMixin(cvat.actions.list, listActions);
@@ -168,7 +170,9 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
             is_active: isBoolean,
             self: isBoolean,
             search: isString,
+            filter: isString,
             limit: isInteger,
+            pageSize: isInteger,
         });
 
         let users = null;
@@ -182,7 +186,7 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
                     searchParams[key] = filter[key];
                 }
             }
-            users = await serverProxy.users.get(searchParams);
+            users = await serverProxy.users.get(fieldsToSnakeCase(searchParams));
         }
 
         users = users.map((user) => new User(user));

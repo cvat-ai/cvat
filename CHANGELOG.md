@@ -16,6 +16,134 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.80.0'></a>
+## \[2.80.0\] - 2026-10-21
+
+### Added
+
+- \[Server API\] The `initial_replicas` parameter of the task creation request
+  (`POST /api/tasks`) sets the number of replica jobs created for each
+  annotation job. The value is returned in the task responses (`GET /api/tasks`)
+  (<https://github.com/cvat-ai/cvat/pull/11305>)
+
+- Add a link to AI agent setup documentation in model selectors, including when no models are available
+  (<https://github.com/cvat-ai/cvat/pull/11304>)
+
+### Changed
+
+- \[Server API\] The `consensus_replica` job type is renamed to `replica`
+  (<https://github.com/cvat-ai/cvat/pull/11305>)
+- The "Consensus Replicas" field of the task creation form is renamed to
+  "Initial replicas"
+  (<https://github.com/cvat-ai/cvat/pull/11305>)
+- \[Server API\] An annotation job in the annotation stage of a 2D task can be
+  merged (`POST /api/consensus/merges`) when it has one or several started
+  replica jobs
+  (<https://github.com/cvat-ai/cvat/pull/11305>)
+- \[Server API\] The number of replica jobs per annotation job is no longer
+  limited at task creation, and 1 is accepted. Instead, merging rejects an
+  annotation job with more started replica jobs than the
+  `CVAT_MAX_CONSENSUS_REPLICAS` server setting allows (11 by default)
+  (<https://github.com/cvat-ai/cvat/pull/11305>)
+- The "Consensus management" and "Merge consensus jobs" actions are available
+  for every task, the "Merge consensus job" action is available for every
+  annotation job that has replica jobs
+  (<https://github.com/cvat-ai/cvat/pull/11305>)
+
+- \[SDK\] The `typing_extensions` package is no longer a dependency
+  (<https://github.com/cvat-ai/cvat/pull/11327>)
+
+### Deprecated
+
+- \[Server API\] The `consensus_replicas` parameter of the task creation request
+  (`POST /api/tasks`) is deprecated, use `initial_replicas` instead
+  (<https://github.com/cvat-ai/cvat/pull/11305>)
+- \[Server API\] The `consensus_replica` job type is still accepted as an alias of
+  `replica` in the `type` and `filter` parameters of `GET /api/jobs`
+  (<https://github.com/cvat-ai/cvat/pull/11305>)
+
+### Removed
+
+- \[SDK, CLI\] Removed Python 3.10 support
+  (<https://github.com/cvat-ai/cvat/pull/11290>)
+
+- \[Server API\] The `consensus_enabled` field of tasks and the deprecated
+  `consensus_replicas` field of jobs are removed from the REST API responses
+  (<https://github.com/cvat-ai/cvat/pull/11305>)
+
+### Fixed
+
+- Missing shell line continuations in the CLI README's task creation example (<https://github.com/cvat-ai/cvat/pull/11320>)
+
+- Added a workaround for the API documentation page failing to render
+  (<https://github.com/cvat-ai/cvat/pull/11324>)
+
+- Restored resizing and rotating annotation objects while holding Ctrl, without triggering multi-object selection.
+  (<https://github.com/cvat-ai/cvat/pull/11331>)
+
+- HTTP 500 when confirming an email address in the same browser session used to register
+  with mandatory email verification.
+  (<https://github.com/cvat-ai/cvat/pull/11342>)
+
+### Security
+
+- Updated root CA certificates to mitigate the eMudhra CA security incident
+  (<https://github.com/cvat-ai/cvat/pull/11345>)
+
+- Fixed a user information disclosure vulnerability
+  (<https://github.com/cvat-ai/cvat/security/advisories/GHSA-7w7g-2854-hxx5>)
+
+- Fixed a bug allowing organization maintainers to grant other members
+  owner/maintainer roles
+  (<https://github.com/cvat-ai/cvat/security/advisories/GHSA-92cv-2cwp-4gxh>)
+
+<a id='changelog-2.79.0'></a>
+## \[2.79.0\] - 2026-10-15
+
+### Added
+
+- Added registration survey fields to user profiles and made the primary role
+  editable on the profile page
+  (<https://github.com/cvat-ai/cvat/pull/11216>)
+
+### Changed
+
+- Multi-selection now uses fixed Shift-drag and Ctrl/Cmd-click modifiers instead of configurable shortcuts,
+  eliminating false conflict warnings involving these modifiers
+  (<https://github.com/cvat-ai/cvat/pull/11281>)
+
+- Improved annotation workspace performance for jobs with many objects
+  (<https://github.com/cvat-ai/cvat/pull/11220>)
+
+### Fixed
+
+- Improve performance while using the brush tool for larger segments
+  (<https://github.com/cvat-ai/cvat/pull/11119>)
+
+- Model loading now waits for organization initialization, preventing functions from switching organization context
+  between pages.
+  (<https://github.com/cvat-ai/cvat/pull/11266>)
+
+- Copying and pasting skeleton tracks with attributes could fail or lose keypoint attribute values
+  (<https://github.com/cvat-ai/cvat/pull/11279>)
+
+- Keyboard shortcuts preventing selected text from being copied and interfering with text editing.
+  (<https://github.com/cvat-ai/cvat/pull/11280>)
+
+- Fixed intermittent generic errors when retrieving chunks so the API reliably reports the underlying failure
+  (<https://github.com/cvat-ai/cvat/pull/11282>)
+
+- Links in quality control card tooltips could be difficult to click because the tooltip closed too quickly
+  (<https://github.com/cvat-ai/cvat/pull/11284>)
+
+### Security
+
+- Fixed disclosure of user/task names and IDs via the browsable API
+  (<https://github.com/cvat-ai/cvat/security/advisories/GHSA-pv9q-68mq-qwpm>)
+
+- Fixed multiple path traversal vulnerabilities
+  (<https://github.com/cvat-ai/cvat/security/advisories/GHSA-qpmj-jxq7-67fg>)
+
 <a id='changelog-2.78.0'></a>
 ## \[2.78.0\] - 2026-10-06
 

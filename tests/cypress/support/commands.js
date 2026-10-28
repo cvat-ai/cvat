@@ -12,6 +12,7 @@ import { decomposeMatrix, convertClasses, toSnakeCase } from './utils';
 import {
     checkAutoborderPointsCount,
     drawPolyshape,
+    getBulkActionsMenu,
     toggleAutoSimplify,
 } from './utils.cy';
 
@@ -656,6 +657,67 @@ Cypress.Commands.add('checkPopoverHidden', (objectType) => {
     cy.get(`.cvat-${objectType}-popover`).should('be.hidden');
 });
 
+Cypress.Commands.add('getObjectSidebarItem', (id) => {
+    const selector = `#cvat-objects-sidebar-state-item-${id}`;
+    const holderSelector = '.cvat-objects-sidebar-virtual-list [data-virtual-list-viewport]';
+
+    const findItem = (attempt) => cy.get(holderSelector).then(($holder) => {
+        const holder = $holder[0];
+        if (attempt >= 200) {
+            throw new Error(`Could not find object ${id} in the virtualized sidebar`);
+        }
+
+        const item = holder.querySelector(selector);
+        if (item) {
+            const holderBounds = holder.getBoundingClientRect();
+            const itemBounds = item.getBoundingClientRect();
+            const viewportTop = holderBounds.top + holder.clientTop;
+            const viewportBottom = viewportTop + holder.clientHeight;
+            const visibleHeight = Math.min(itemBounds.height, holder.clientHeight);
+
+            // Overscan rows exist in the DOM even when they are clipped behind Appearance.
+            // Align the row before returning it so its controls can be clicked normally.
+            if (itemBounds.top < viewportTop - 1 || itemBounds.top + visibleHeight > viewportBottom + 1) {
+                const nextScroll = Math.max(0, Math.min(
+                    holder.scrollHeight - holder.clientHeight,
+                    holder.scrollTop + itemBounds.top - viewportTop,
+                ));
+                cy.wrap($holder).scrollTo(0, nextScroll, { duration: 0, ensureScrollable: false });
+                return cy.wait(50).then(() => findItem(attempt + 1));
+            }
+
+            return cy.wrap(item);
+        }
+
+        // Scan in rendered order: layer, label, and update-time sorting are not monotonic by ID.
+        // Keep successive viewports overlapping so variable-height rows are not skipped.
+        const step = Math.max(1, Math.floor(holder.clientHeight * 0.75));
+        const maxScroll = holder.scrollHeight - holder.clientHeight;
+        const ordering = holder.ownerDocument.querySelector(
+            '.cvat-objects-sidebar-ordering-selector .ant-select-selection-item',
+        )?.textContent;
+        let nextScroll = attempt === 0 && holder.scrollTop > 0 ? 0 :
+            Math.max(0, Math.min(maxScroll, holder.scrollTop + step));
+        if (ordering === 'ID - ascent' || ordering === 'ID - descent') {
+            const visibleIds = Array.from(holder.querySelectorAll('.cvat-objects-sidebar-state-item'))
+                .map((element) => Number(element.id.replace('cvat-objects-sidebar-state-item-', '')));
+            const firstId = visibleIds[0];
+            const before = ordering === 'ID - ascent' ? id < firstId : id > firstId;
+            nextScroll = Math.max(0, Math.min(maxScroll, holder.scrollTop + (before ? -step : step)));
+        } else if (nextScroll === holder.scrollTop) {
+            nextScroll = 0;
+        }
+
+        cy.wrap($holder).scrollTo(0, nextScroll, { duration: 0, ensureScrollable: false });
+        // Let the virtual list mount rows at the new scroll position.
+        return cy.wait(50).then(() => findItem(attempt + 1));
+    });
+
+    return cy.get('.cvat-objects-sidebar-states-list').then(($list) => (
+        $list.find(holderSelector).length ? findItem(0) : cy.get(selector)
+    ));
+});
+
 Cypress.Commands.add('checkObjectParameters', (objectParameters, objectType) => {
     const listCanvasShapeId = [];
     cy.document().then((doc) => {
@@ -684,7 +746,7 @@ Cypress.Commands.add('checkObjectParameters', (objectParameters, objectType) => 
 
             cy.wrap($shape).should('be.visible');
         });
-        cy.get(`#cvat-objects-sidebar-state-item-${maxId}`)
+        cy.getObjectSidebarItem(maxId)
             .should('contain', maxId)
             .and('contain', `${objectType} ${objectParameters.type.toUpperCase()}`)
             .within(() => {
@@ -1037,8 +1099,8 @@ Cypress.Commands.add('advancedConfiguration', (advancedConfigurationParams) => {
     if (advancedConfigurationParams.chunkSize) {
         cy.get('#dataChunkSize').type(advancedConfigurationParams.chunkSize);
     }
-    if (advancedConfigurationParams.consensusReplicas) {
-        cy.get('#consensusReplicas').type(advancedConfigurationParams.consensusReplicas);
+    if (advancedConfigurationParams.initialReplicas) {
+        cy.get('#initialReplicas').type(advancedConfigurationParams.initialReplicas);
     }
     if (advancedConfigurationParams.overlapSize) {
         cy.get('#overlapSize').type(advancedConfigurationParams.overlapSize);
@@ -1344,14 +1406,15 @@ Cypress.Commands.add('goCheckFrameNumber', (frameNum) => {
     cy.get('.cvat-player-frame-selector').within(() => {
         cy.get('input[role="spinbutton"]').clear({ force: true });
         cy.get('input[role="spinbutton"]').type(`${frameNum}{Enter}`, { force: true });
-        cy.get('input[role="spinbutton"]').should('have.value', frameNum);
     });
+    cy.checkFrameNum(frameNum);
 });
 
 Cypress.Commands.add('checkFrameNum', (frameNum) => {
     cy.get('.cvat-player-frame-selector').within(() => {
         cy.get('input[role="spinbutton"]').should('have.value', frameNum);
     });
+    cy.get('.cvat-canvas-container > [data-frame-number]').should('have.attr', 'data-frame-number', String(frameNum));
 });
 
 Cypress.Commands.add('goToNextFrame', (expectedFrameNum) => {
@@ -1713,6 +1776,71 @@ Cypress.Commands.add('deleteJob', (jobId) => {
         .should('have.css', 'opacity', '0.5');
 });
 
+Cypress.Commands.add('addReplicas', (count, jobIds) => {
+    // with several job ids, the caller must have selected exactly these jobs
+    const isBulk = jobIds.length > 1;
+    const requestsCount = count * jobIds.length;
+
+    // Hold the creation requests until the progress has been checked
+    let releaseRequests = null;
+    const requestsReleased = new Promise((resolve) => { releaseRequests = resolve; });
+    cy.intercept({ method: 'POST', pathname: '/api/jobs' }, () => requestsReleased).as('createReplica');
+
+    if (isBulk) {
+        getBulkActionsMenu().within(() => {
+            cy.contains('[role="menuitem"]', `Add replicas (${jobIds.length})`).click();
+        });
+    } else {
+        cy.get(`.cvat-job-item[data-row-id="${jobIds[0]}"] .cvat-job-item-more-button`).click();
+        cy.get('.ant-dropdown')
+            .not('.ant-dropdown-hidden')
+            .within(() => {
+                cy.contains('[role="menuitem"]', 'Add replicas').click();
+            });
+    }
+
+    cy.get('.cvat-modal-add-replicas').within(() => {
+        cy.get('.ant-modal-title').should('have.text', isBulk ?
+            `Add replicas to ${jobIds.length} selected jobs` : `Add replicas to job #${jobIds[0]}`);
+        cy.get('.cvat-add-replicas-count-input input')
+            .should('have.value', '1')
+            .and('have.attr', 'aria-valuemin', '1')
+            .and('have.attr', 'aria-valuemax', '100');
+        cy.get('.cvat-add-replicas-count-input input').clear();
+        cy.contains('button', 'Add').should('be.disabled');
+        cy.get('.cvat-add-replicas-count-input input').type(`${count}`);
+        cy.contains('button', 'Add').click();
+    });
+
+    // A single request is made without the progress
+    if (requestsCount > 1) {
+        cy.get('.cvat-bulk-progress-wrapper').should('be.visible')
+            .and('contain', `(1/${requestsCount})`);
+    }
+    cy.then(() => releaseRequests()); // on every path, or the waits below time out
+
+    const parentJobIds = [];
+    for (let i = 0; i < requestsCount; i++) {
+        cy.wait('@createReplica').then(({ response }) => {
+            expect(response.statusCode).to.equal(201);
+            expect(response.body.type).to.equal('replica');
+            parentJobIds.push(response.body.parent_job_id);
+        });
+    }
+    cy.then(() => {
+        const byValue = (a, b) => a - b;
+        const expectedParentJobIds = jobIds.flatMap((id) => Array(count).fill(+id));
+        expect(parentJobIds.sort(byValue)).to.deep.equal(expectedParentJobIds.sort(byValue));
+    });
+    if (requestsCount > 1) {
+        cy.get('.cvat-bulk-progress-wrapper').should('not.exist');
+    }
+});
+
+Cypress.Commands.add('pasteText', { prevSubject: 'element' }, (subject, text) => {
+    cy.wrap(subject).trigger('paste', { clipboardData: { getData: () => text } });
+});
+
 Cypress.Commands.add('drawMask', (instructions) => {
     for (const instruction of instructions) {
         const { method } = instruction;
@@ -1808,13 +1936,13 @@ Cypress.Commands.add('sliceShape', (
     }
 
     cy.get('.cvat-canvas-hints-container').within(() => {
-        cy.contains('Click a mask or polygon shape you would like to slice').should('exist');
+        cy.contains('Click the shape you want to slice.').should('exist');
     });
 
     const [initialX, initialY] = coordinates.shift();
     cy.get(object).click(initialX, initialY);
     cy.get('.cvat-canvas-hints-container').within(() => {
-        cy.contains('Set initial point on the shape contour').should('exist');
+        cy.contains('Click the shape outline to start cutting.').should('exist');
     });
 
     cy.get('.cvat-canvas-container').then(($canvas) => {
@@ -1855,7 +1983,7 @@ Cypress.Commands.add('joinShapes', (
     interactWithTool();
 
     cy.get('.cvat-canvas-hints-container').within(() => {
-        cy.contains(/Click .* you would like to join/).should('exist');
+        cy.contains('h3', 'Join shapes').should('exist');
     });
 
     for (const [index, object] of objects.entries()) {
@@ -1865,13 +1993,19 @@ Cypress.Commands.add('joinShapes', (
 });
 
 Cypress.Commands.add('interactAnnotationObjectMenu', (parentSelector, button) => {
-    cy.get(parentSelector).within(() => {
+    const sidebarItemId = parentSelector.match(/^#cvat-objects-sidebar-state-item-(\d+)$/)?.[1];
+    const parent = sidebarItemId ? cy.getObjectSidebarItem(Number(sidebarItemId)) : cy.get(parentSelector);
+    parent.within(() => {
         cy.get('[aria-label="more"]').click();
     });
 
-    cy.document().find('.cvat-object-item-menu').within(() => {
-        cy.contains('button', button).click();
-    });
+    // AntD renders the menu outside the row, even when the caller is inside .within().
+    const getMenuButton = () => cy.get('.cvat-object-item-menu:visible button', { withinSubject: null })
+        .filter((index, element) => element.textContent.includes(button));
+    getMenuButton().should('have.length', 1);
+    // A passed assertion locks in its subject. Start a fresh query so click can
+    // reacquire the action if the menu is replaced during a sidebar update.
+    getMenuButton().click();
 });
 
 Cypress.Commands.add('hideTooltips', () => {
@@ -1921,6 +2055,7 @@ Cypress.Commands.add('clickDeleteFrameAnnotationView', () => {
     cy.get('.cvat-modal-delete-frame').within(() => {
         cy.contains('button', 'Delete').click();
     });
+    cy.get('.cvat-modal-delete-frame').should('not.exist');
 });
 
 Cypress.Commands.add('clickSaveAnnotationView', () => {
