@@ -29,6 +29,7 @@ from cvat.apps.quality_control.comparison_report import (
     RequirementCalculationStatus,
 )
 from cvat.apps.quality_control.filters import RequirementJsonLogicFilter
+from cvat.apps.quality_control.quality_handlers import _INHERITED_REQUIREMENT_FIELDS
 from cvat.utils import django_database as db_utils
 
 
@@ -294,26 +295,6 @@ class QualitySettingsParentType(str, Enum):
     @classmethod
     def choices(cls):
         return tuple((x.value, x.name) for x in cls)
-
-
-_INHERITED_REQUIREMENT_FIELDS = (
-    "annotation_type",
-    "target_metric",
-    "target_metric_threshold",
-    "iou_threshold",
-    "oks_sigma",
-    "line_thickness",
-    "point_size_base",
-    "compare_line_orientation",
-    "line_orientation_threshold",
-    "compare_groups",
-    "group_match_threshold",
-    "check_covered_annotations",
-    "object_visibility_threshold",
-    "panoptic_comparison",
-    "compare_attributes",
-    "attribute_comparison",
-)
 
 
 @extend_schema_serializer(component_name="AttributeComparisonDefaultRule")
