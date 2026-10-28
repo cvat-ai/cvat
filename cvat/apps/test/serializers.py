@@ -10,6 +10,7 @@ class LabelCountSerializer(serializers.Serializer):
     name = serializers.CharField()
     color = serializers.CharField()
     count = serializers.IntegerField()
+    by_type = serializers.DictField(child=serializers.IntegerField())
 
 
 class AnnotationStatsSerializer(serializers.Serializer):

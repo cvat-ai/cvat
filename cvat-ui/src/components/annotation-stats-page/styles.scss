@@ -17,6 +17,12 @@
     gap: $grid-unit-size * 2;
 }
 
+.cvat-annotation-stats-summary {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
 .cvat-annotation-stats-chart {
     // the chart height grows with the number of labels; the page scrolls instead of squeezing bars
     flex-shrink: 0;

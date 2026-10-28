@@ -10,9 +10,10 @@ import { Row, Col } from 'antd/lib/grid';
 import Button from 'antd/lib/button';
 import Empty from 'antd/lib/empty';
 import Result from 'antd/lib/result';
+import Switch from 'antd/lib/switch';
 import Text from 'antd/lib/typography/Text';
 import {
-    Chart as ChartJS, BarElement, CategoryScale, LinearScale, Tooltip,
+    Chart as ChartJS, BarElement, CategoryScale, Legend, LinearScale, Tooltip,
 } from 'chart.js';
 import { Bar } from 'react-chartjs-2';
 
@@ -20,17 +21,31 @@ import { getCore } from 'cvat-core-wrapper';
 import GoBackButton from 'components/common/go-back-button';
 import CVATLoadingSpinner from 'components/common/loading-spinner';
 
-ChartJS.register(BarElement, CategoryScale, LinearScale, Tooltip);
+ChartJS.register(BarElement, CategoryScale, Legend, LinearScale, Tooltip);
 
 const core = getCore();
 
 const BAR_HEIGHT_PX = 22;
+
+// Each type keeps its colour whichever types a task has, so a colour always means the same type
+const TYPE_COLORS: Record<string, string> = {
+    polygon: '#2a78d6',
+    mask: '#eb6834',
+    rectangle: '#1baf7a',
+    ellipse: '#eda100',
+    points: '#e87ba4',
+    polyline: '#008300',
+    cuboid: '#6250d6',
+    skeleton: '#e34948',
+    track: '#8c8c8c',
+};
 
 interface LabelCount {
     id: number;
     name: string;
     color: string;
     count: number;
+    by_type: Record<string, number>;
 }
 
 interface AnnotationStats {
@@ -44,26 +59,34 @@ type FetchState =
     { status: 'error'; message: string } |
     { status: 'ready'; stats: AnnotationStats };
 
-function AnnotationStatsChart({ labels }: { labels: LabelCount[] }): JSX.Element {
+function AnnotationStatsChart(
+    { labels, splitByType }: { labels: LabelCount[]; splitByType: boolean },
+): JSX.Element {
     const sorted = [...labels].sort((a, b) => b.count - a.count);
+    const presentTypes = Object.keys(TYPE_COLORS)
+        .filter((type) => sorted.some((label) => label.by_type[type]));
+    const datasets = splitByType ? presentTypes.map((type) => ({
+        label: type,
+        data: sorted.map((label) => label.by_type[type] ?? 0),
+        backgroundColor: TYPE_COLORS[type],
+    })) : [{
+        label: 'Annotations',
+        data: sorted.map((label) => label.count),
+        backgroundColor: sorted.map((label) => label.color || TYPE_COLORS.polygon),
+    }];
+
     return (
-        <div className='cvat-annotation-stats-chart' style={{ height: sorted.length * BAR_HEIGHT_PX + 40 }}>
+        <div className='cvat-annotation-stats-chart' style={{ height: sorted.length * BAR_HEIGHT_PX + 60 }}>
             <Bar
-                data={{
-                    labels: sorted.map((label) => label.name),
-                    datasets: [{
-                        label: 'Annotations',
-                        data: sorted.map((label) => label.count),
-                        backgroundColor: sorted.map((label) => label.color || '#1890ff'),
-                    }],
-                }}
+                data={{ labels: sorted.map((label) => label.name), datasets }}
                 options={{
                     indexAxis: 'y',
                     maintainAspectRatio: false,
                     animation: false,
+                    plugins: { legend: { display: splitByType, position: 'top' } },
                     scales: {
-                        x: { beginAtZero: true, ticks: { precision: 0 } },
-                        y: { ticks: { autoSkip: false } },
+                        x: { stacked: true, beginAtZero: true, ticks: { precision: 0 } },
+                        y: { stacked: true, ticks: { autoSkip: false } },
                     },
                 }}
             />
@@ -74,6 +97,7 @@ function AnnotationStatsChart({ labels }: { labels: LabelCount[] }): JSX.Element
 function AnnotationStatsPage(): JSX.Element {
     const { tid } = useParams<{ tid: string }>();
     const [state, setState] = useState<FetchState>({ status: 'loading' });
+    const [splitByType, setSplitByType] = useState(false);
 
     const fetchStats = useCallback(async () => {
         setState({ status: 'loading' });
@@ -108,8 +132,14 @@ function AnnotationStatsPage(): JSX.Element {
     } else {
         content = (
             <>
-                <Text strong>{`${state.stats.total} annotations across ${state.stats.labels.length} labels`}</Text>
-                <AnnotationStatsChart labels={state.stats.labels} />
+                <div className='cvat-annotation-stats-summary'>
+                    <Text strong>{`${state.stats.total} annotations across ${state.stats.labels.length} labels`}</Text>
+                    <span>
+                        <Switch size='small' checked={splitByType} onChange={setSplitByType} />
+                        <Text> Split by shape type</Text>
+                    </span>
+                </div>
+                <AnnotationStatsChart labels={state.stats.labels} splitByType={splitByType} />
             </>
         );
     }
