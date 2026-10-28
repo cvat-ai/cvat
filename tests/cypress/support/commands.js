@@ -1406,14 +1406,15 @@ Cypress.Commands.add('goCheckFrameNumber', (frameNum) => {
     cy.get('.cvat-player-frame-selector').within(() => {
         cy.get('input[role="spinbutton"]').clear({ force: true });
         cy.get('input[role="spinbutton"]').type(`${frameNum}{Enter}`, { force: true });
-        cy.get('input[role="spinbutton"]').should('have.value', frameNum);
     });
+    cy.checkFrameNum(frameNum);
 });
 
 Cypress.Commands.add('checkFrameNum', (frameNum) => {
     cy.get('.cvat-player-frame-selector').within(() => {
         cy.get('input[role="spinbutton"]').should('have.value', frameNum);
     });
+    cy.get('.cvat-canvas-container > [data-frame-number]').should('have.attr', 'data-frame-number', String(frameNum));
 });
 
 Cypress.Commands.add('goToNextFrame', (expectedFrameNum) => {
@@ -1836,6 +1837,10 @@ Cypress.Commands.add('addReplicas', (count, jobIds) => {
     }
 });
 
+Cypress.Commands.add('pasteText', { prevSubject: 'element' }, (subject, text) => {
+    cy.wrap(subject).trigger('paste', { clipboardData: { getData: () => text } });
+});
+
 Cypress.Commands.add('drawMask', (instructions) => {
     for (const instruction of instructions) {
         const { method } = instruction;
@@ -1931,13 +1936,13 @@ Cypress.Commands.add('sliceShape', (
     }
 
     cy.get('.cvat-canvas-hints-container').within(() => {
-        cy.contains('Click a mask or polygon shape you would like to slice').should('exist');
+        cy.contains('Click the shape you want to slice.').should('exist');
     });
 
     const [initialX, initialY] = coordinates.shift();
     cy.get(object).click(initialX, initialY);
     cy.get('.cvat-canvas-hints-container').within(() => {
-        cy.contains('Set initial point on the shape contour').should('exist');
+        cy.contains('Click the shape outline to start cutting.').should('exist');
     });
 
     cy.get('.cvat-canvas-container').then(($canvas) => {
@@ -1978,7 +1983,7 @@ Cypress.Commands.add('joinShapes', (
     interactWithTool();
 
     cy.get('.cvat-canvas-hints-container').within(() => {
-        cy.contains(/Click .* you would like to join/).should('exist');
+        cy.contains('h3', 'Join shapes').should('exist');
     });
 
     for (const [index, object] of objects.entries()) {
@@ -2050,6 +2055,7 @@ Cypress.Commands.add('clickDeleteFrameAnnotationView', () => {
     cy.get('.cvat-modal-delete-frame').within(() => {
         cy.contains('button', 'Delete').click();
     });
+    cy.get('.cvat-modal-delete-frame').should('not.exist');
 });
 
 Cypress.Commands.add('clickSaveAnnotationView', () => {

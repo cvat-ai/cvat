@@ -26,7 +26,7 @@ import data.organizations
 #         "owner": { "id": <num> },
 #         "invitee": { "id": <num> },
 #         "role": <"owner"|"maintainer"|"supervisor"|"worker">,
-#         "organization": { "id": <num> }
+#         "organization": { "id": <num> } or null
 #     } or null,
 # }
 

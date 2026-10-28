@@ -381,7 +381,7 @@ and open the **Settings** tab.
 The **Settings** tab has the following sections:
 
 - **General** contains the **Job selection filter**. Only matching annotation and
-  consensus-replica jobs are included in the next quality report.
+  replica jobs are included in the next quality report.
 - **Job validation** contains **Max validations per job**. A value above zero enables
   {{< ilink "/docs/qa-analytics/immediate-feedback" "Immediate feedback" >}} for the task.
 - **Requirements configuration** defines the criteria used to evaluate annotations.
