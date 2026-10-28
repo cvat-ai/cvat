@@ -17,7 +17,8 @@ from .stats import count_annotations_by_label
 class AnnotationStatsViewSet(viewsets.GenericViewSet):
     queryset = Task.objects.select_related("project", "organization")
     iam_permission_class = AnnotationStatsPermission
-    iam_supports_organization_params = False
+    # The view only ever returns one task, so the list search/filter/ordering backends do not apply
+    filter_backends = []
     lookup_url_kwarg = "task_id"
     lookup_value_regex = r"\d+"
 
