@@ -57,3 +57,18 @@ What this tells me:
 - **Where it would break:** the query scales with the shape count of one task. At ~40k shapes it takes 23 ms, so a
   task around 10× larger (~400k shapes) would put the query near the whole budget. That is the point where a
   precomputed count (updated on the same `touch()` signal as item 8) would pay for itself.
+
+### Re-measured after item 7 (split by shape type) — still met
+
+Grouping by `(label_id, type)` instead of `label_id` is the only change to the query.
+
+| | Before item 7 | After item 7 |
+|---|---|---|
+| MO-1 median p95 (spread) | 105.5 ms (91.6–113.8) | **115.5 ms (106.8–120.4)** |
+| SQL aggregation alone | 23.4 ms | 33.5 ms |
+
+Raw: [mo1_after_by_type_rerun.txt](bench/results/mo1_after_by_type_rerun.txt),
+[mo1_breakdown_after_by_type.txt](bench/results/mo1_breakdown_after_by_type.txt).
+The grouping costs ~10 ms of query time. A first run straight after a browser test gave 117.8 ms with one run at
+161 ms ([mo1_after_by_type.txt](bench/results/mo1_after_by_type.txt)); the server-side split showed the query had only
+moved 10 ms, so I re-ran on a quiet machine. Both runs are kept.

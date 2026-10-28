@@ -34,7 +34,13 @@ All in [access.txt](bench/results/access.txt), raw `curl -i` against the running
 
 ## Beyond the floor (items 7–10)
 
-- [ ] Grouping by shape type works and the reason for choosing it is written.
+- [x] Grouping by shape type works and the reason for choosing it is written.
+  Totals per type equal the DB (41,420 polygon + 446 mask), per-label types sum to the label count;
+  [page-split.png](evidence/page-split.png). **Why this one:** in COCO the type separates segmentation polygons from
+  `iscrowd` regions (446 masks, 227 of them "person"), which are usually excluded when training, so a class's
+  usable count is not its raw count. Rejected: a per-job filter (more useful to a manager, but every COCO job looks
+  alike) and grouping by `source` (all 41,866 are "file" after import, so it would show nothing). Cost: +10 ms query
+  time, MO-1 still met (115.5 ms).
 - [ ] Drawing/deleting a box in a job updates the open stats page without reload.
 - [ ] Killing the connection (server restart) → page shows "reconnecting", then recovers and refreshes counts.
 - [ ] Decision record in `docs/PLAN.md`.
