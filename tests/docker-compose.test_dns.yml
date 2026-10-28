@@ -1,0 +1,33 @@
+# Disables the DNS search domains in the test containers.
+#
+# By default, Docker copies the DNS search domains of the host into the containers.
+# If a service name can't be resolved inside the Docker network (for instance,
+# the container is not running), the name is looked up again with each host search
+# domain appended. This sends the internal service names to the external DNS servers
+# and can make each lookup wait for a slow server.
+#
+# This file is used by several test stacks, so it only lists the services
+# from docker-compose.yml. The test-only services (moto, s3-init, webhook_receiver)
+# should set dns_search in their own compose files.
+x-no-dns-search: &no-dns-search
+  dns_search: .
+
+services:
+  cvat_clickhouse: *no-dns-search
+  cvat_db: *no-dns-search
+  cvat_grafana: *no-dns-search
+  cvat_opa: *no-dns-search
+  cvat_redis_inmem: *no-dns-search
+  cvat_redis_ondisk: *no-dns-search
+  cvat_server: *no-dns-search
+  cvat_ui: *no-dns-search
+  cvat_vector: *no-dns-search
+  cvat_worker_annotation: *no-dns-search
+  cvat_worker_chunks: *no-dns-search
+  cvat_worker_consensus: *no-dns-search
+  cvat_worker_export: *no-dns-search
+  cvat_worker_import: *no-dns-search
+  cvat_worker_quality_reports: *no-dns-search
+  cvat_worker_utils: *no-dns-search
+  cvat_worker_webhooks: *no-dns-search
+  traefik: *no-dns-search

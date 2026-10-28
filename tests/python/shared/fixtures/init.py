@@ -33,6 +33,7 @@ DC_FILES = CONTAINER_NAME_FILES + [
     "tests/docker-compose.moto.yml",
     "tests/docker-compose.pat_settings.yml",
     "tests/docker-compose.test_servers.yml",
+    "tests/docker-compose.test_dns.yml",
 ]
 
 

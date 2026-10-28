@@ -14,6 +14,7 @@ services:
   moto:
     image: &moto-image ghcr.io/getmoto/motoserver:5.2.3
     hostname: moto
+    dns_search: .
     restart: always
     expose:
       - "9000"
@@ -42,6 +43,7 @@ services:
   s3-init:
     # Seed the test S3 buckets through boto3.
     image: *moto-image
+    dns_search: .
     depends_on:
       moto:
         condition: service_healthy
