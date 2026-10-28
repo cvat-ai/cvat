@@ -93,6 +93,10 @@ class ComparisonParameters:
     panoptic_comparison: bool = DefaultComparisonSettings.panoptic_comparison
 
 
+def safe_divide(numerator: Any, denominator: Any, *, eps: float = 1e-7) -> Any:
+    return numerator / max(denominator, eps)
+
+
 def oks(a, b, sigma=0.1, bbox=None, scale=None, visibility_a=None, visibility_b=None):
     """
     Object Keypoint Similarity metric.
@@ -123,7 +127,9 @@ def oks(a, b, sigma=0.1, bbox=None, scale=None, visibility_a=None, visibility_b=
     return np.sum(
         visibility_a
         * visibility_b
-        * np.exp((visibility_a == visibility_b) * (-(dists**2) / (2 * scale * (2 * sigma) ** 2)))
+        * np.exp(
+            (visibility_a == visibility_b) * -safe_divide(dists**2, 2 * scale * (2 * sigma) ** 2)
+        )
     ) / np.sum(visibility_a | visibility_b, dtype=float)
 
 
@@ -541,7 +547,7 @@ class LineMatcher(datumaro.components.annotations.matcher.LineMatcher):
             scale = np.sum(segment_dists) ** 2
 
         # Compute Gaussian for approximated lines similarly to OKS
-        return sum(np.exp(-(dists**2) / (2 * scale * (2 * self.torso_r) ** 2))) / len(a)
+        return sum(np.exp(-safe_divide(dists**2, 2 * scale * (2 * self.torso_r) ** 2))) / len(a)
 
     @classmethod
     def approximate_points(cls, a: np.ndarray, b: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
@@ -1365,7 +1371,7 @@ class DistanceComparator:
                 # Compute OKS for 2 groups of points, matching points aligned
                 dists = np.linalg.norm(a_points - b_points, axis=1)
                 return np.sum(
-                    np.exp(-(dists**2) / (2 * scale * (2 * self.settings.oks_sigma) ** 2))
+                    np.exp(-safe_divide(dists**2, 2 * scale * (2 * self.settings.oks_sigma) ** 2))
                 ) / (len(matched_points) + len(a_extra) + len(b_extra))
 
         return self.match_segments(

@@ -353,6 +353,62 @@ class TestComparator(unittest.TestCase):
         self.assertFalse(gt_unmatched)
         self.assertFalse(ds_unmatched)
 
+    def test_can_compare_polylines_with_zero_thickness(self) -> None:
+        gt_ann = dm.PolyLine([10, 50, 90, 50], label=0)
+
+        for name, ds_ann, expected_match in [
+            ("same", dm.PolyLine([10, 50, 90, 50], label=0), True),
+            ("reversed", dm.PolyLine([90, 50, 10, 50], label=0), False),
+        ]:
+            with self.subTest(name):
+                settings = ComparisonParameters(
+                    annotation_type=dm.AnnotationType.polyline,
+                    similarity_metric=ShapeSimilarityMetricType.IOU,
+                    line_thickness=0,
+                    compare_line_orientation=True,
+                )
+                comparator = Comparator(
+                    {dm.AnnotationType.label: dm.LabelCategories.from_iterable(["car"])},
+                    settings=settings,
+                )
+
+                matches, _, _, _, comparisons = comparator.match_annotations(
+                    _make_image_item(gt_ann), _make_image_item(ds_ann)
+                )["all_shape_ann_types"]
+                comparison = comparator.get_comparison(comparisons, gt_ann, ds_ann)
+                self.assertEqual(bool(matches), expected_match)
+                self.assertEqual(comparison.direction_mismatch, not expected_match)
+
+    def test_can_compare_points_with_zero_point_size(self) -> None:
+        for name, gt_ann, ds_ann, expected_match in [
+            ("single point", dm.Points([50, 50], label=0), dm.Points([50, 50], label=0), True),
+            ("shifted point", dm.Points([50, 50], label=0), dm.Points([51, 50], label=0), False),
+            (
+                "point group",
+                dm.Points([10, 10, 50, 40, 90, 20], label=0),
+                dm.Points([10, 10, 50, 40, 90, 20], label=0),
+                True,
+            ),
+        ]:
+            with self.subTest(name):
+                comparator = Comparator(
+                    {dm.AnnotationType.label: dm.LabelCategories.from_iterable(["car"])},
+                    settings=ComparisonParameters(
+                        annotation_type=dm.AnnotationType.points,
+                        similarity_metric=ShapeSimilarityMetricType.OKS,
+                        oks_sigma=0,
+                    ),
+                )
+
+                matches, _, _, _, comparisons = comparator.match_annotations(
+                    _make_image_item(gt_ann), _make_image_item(ds_ann)
+                )["all_shape_ann_types"]
+                self.assertEqual(bool(matches), expected_match)
+                self.assertEqual(
+                    comparator.get_comparison(comparisons, gt_ann, ds_ann).similarity,
+                    1 if expected_match else 0,
+                )
+
     def test_direction_affects_polyline_matching(self) -> None:
         gt_ann = dm.PolyLine([10, 50, 90, 50], label=0)
         ds_ann = dm.PolyLine([90, 50, 10, 50], label=0)
@@ -622,6 +678,23 @@ class TestBoundaryFComparison(unittest.TestCase):
             compare_line_orientation=True,
             line_thickness=1e-6,
         )
+        self.assertTrue(
+            comparator.get_comparison(comparisons, gt_ann, reversed_ann).direction_mismatch
+        )
+
+    def test_checks_line_orientation_with_zero_tolerance(self) -> None:
+        # the line thickness in the orientation check is 0, it must not break the check
+        gt_ann = dm.PolyLine([10, 50, 90, 50], label=0)
+        reversed_ann = dm.PolyLine([90, 50, 10, 50], label=0)
+
+        comparator, (matches, _, _, _, comparisons) = self._compare(
+            dm.AnnotationType.polyline,
+            [gt_ann],
+            [reversed_ann],
+            boundary_f_tolerance=0,
+            compare_line_orientation=True,
+        )
+        self.assertFalse(matches)
         self.assertTrue(
             comparator.get_comparison(comparisons, gt_ann, reversed_ann).direction_mismatch
         )
