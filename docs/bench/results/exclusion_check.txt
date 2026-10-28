@@ -1,0 +1,6 @@
+start: (0, {'box': {}, 'pose': {}})
+1 box in the annotation job: (1, {'box': {'rectangle': 1}, 'pose': {}})
++1 box in a ground truth job: (1, {'box': {'rectangle': 1}, 'pose': {}})
+  (the ground truth job does hold it: 1 shape)
++1 skeleton with 2 points: (2, {'box': {'rectangle': 1}, 'pose': {'skeleton': 1}})
+  (the skeleton is stored with 2 child point shapes)

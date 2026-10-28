@@ -9,9 +9,10 @@ Written before code. Each line gets ticked only with evidence (a number, a comma
   [coco_expected.txt](bench/results/coco_expected.txt) from [coco_expected_counts.py](bench/coco_expected_counts.py).
   It matches the "parts" column, not COCO's 36,781 annotations: CVAT's COCO import stores each polygon of a
   multi-part annotation as its own `LabeledShape` (DB check: 41,420 polygons + 446 masks = 41,866 rows).
-- [~] Ground-truth / replica jobs and skeleton child points are not double counted. Reasoned in
-  [stats.py](../cvat/apps/test/stats.py) (`job__type=ANNOTATION`, `parent__isnull=True`); **not exercised** —
-  the COCO task has neither GT jobs nor skeletons.
+- [x] Ground-truth jobs and skeleton child points are not double counted. Throwaway task on the live stack,
+  [exclusion_check.py](bench/exclusion_check.py) → [exclusion_check.txt](bench/results/exclusion_check.txt): a box
+  in a ground-truth job leaves the count at 1 (the GT job does hold the shape), and a skeleton stored with 2 child
+  points counts as 1. Consensus replica jobs use the same `job__type` filter but were not exercised.
 - [x] Task page Actions menu links to the stats page — [actions-menu.png](evidence/actions-menu.png).
 - [x] Page shows a bar chart of counts per class — [page-chart.png](evidence/page-chart.png) (all 80 labels).
 - [x] Task with zero annotations shows an empty state, not an empty chart — task 1, [page-empty.png](evidence/page-empty.png).
