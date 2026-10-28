@@ -11,7 +11,7 @@ the event to the process that holds the browser's WebSocket. The socket only say
 the page re-fetches the counts over REST, which re-checks access every time.
 
 The WebSocket cannot run DRF/OPA permission checks itself, so the REST response hands out a
-short-lived signed ticket for (task, user) and the socket accepts only a valid ticket.
+short-lived signed ticket for the task, and the socket accepts only a valid ticket.
 """
 
 import asyncio
@@ -38,8 +38,8 @@ def channel_name(task_id: int) -> str:
     return f"annotation-stats:task:{task_id}"
 
 
-def make_ticket(task_id: int, user_id: int) -> str:
-    return signing.dumps({"task_id": task_id, "user_id": user_id}, salt=TICKET_SALT)
+def make_ticket(task_id: int) -> str:
+    return signing.dumps({"task_id": task_id}, salt=TICKET_SALT)
 
 
 def is_valid_ticket(ticket: str, task_id: int) -> bool:

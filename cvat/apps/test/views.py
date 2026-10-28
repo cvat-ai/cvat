@@ -34,6 +34,6 @@ class AnnotationStatsViewSet(viewsets.GenericViewSet):
             "task_id": task.id,
             "total": sum(label["count"] for label in labels),
             "labels": labels,
-            "ws_ticket": make_ticket(task.id, request.user.id),
+            "ws_ticket": make_ticket(task.id),
         }
         return Response(AnnotationStatsSerializer(stats).data)
