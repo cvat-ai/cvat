@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import React, {
-    useCallback, useEffect, useRef, useState,
+    useCallback, useEffect, useMemo, useState,
 } from 'react';
 import { Row, Col } from 'antd/lib/grid';
 import Table, { TableProps } from 'antd/lib/table';
@@ -50,8 +50,9 @@ type Props = TableProps & {
 
 type CVATColumn = NonNullable<TableProps['columns']>[0] & { visibilityGroup?: string };
 
-function columnKey(column: CVATColumn): string {
-    return String(column.key ?? ('dataIndex' in column ? column.dataIndex : undefined));
+function columnKey(column: CVATColumn, position: string): string {
+    const dataIndex = 'dataIndex' in column ? column.dataIndex : undefined;
+    return String(column.key ?? (Array.isArray(dataIndex) ? dataIndex.join('.') : dataIndex) ?? position);
 }
 
 function stringifyDataIndex(dataIndex: string | string[]): string {
@@ -98,7 +99,19 @@ function CVATTable(props: Props): JSX.Element {
 
     const [FilteringComponent, setFilteringComponent] = useState<ReturnType<typeof ResourceFilterHOC> | null>(null);
     const stateField = (field: string): string | undefined => (stateKey ? `${stateKey}:${field}` : undefined);
-    const [filterValue, setFilterValue] = useTableState<string | null>(stateField('filter'), queryBuilder?.value ?? null);
+    const suppliedFilter = queryBuilder?.value;
+    const [filterState, setFilterState] = useTableState(stateField('filter'), {
+        value: suppliedFilter ?? null,
+        suppliedValue: suppliedFilter,
+    });
+    const suppliedFilterChanged = filterState.suppliedValue !== suppliedFilter;
+    const filterValue = suppliedFilterChanged ? suppliedFilter ?? null : filterState.value;
+    const setFilterValue = useCallback((value: string | null): void => {
+        setFilterState({ value, suppliedValue: suppliedFilter });
+    }, [setFilterState, suppliedFilter]);
+    useEffect(() => {
+        if (suppliedFilterChanged) setFilterValue(suppliedFilter ?? null);
+    }, [suppliedFilterChanged, suppliedFilter, setFilterValue]);
     const [searchPhrase, setSearchPhrase] = useTableState<string | null>(stateField('search'), null);
     const [searchInput, setSearchInput] = useTableState(stateField('searchInput'), '');
     const [hiddenColumns, setHiddenColumns] = useTableState<Record<string, boolean>>(stateField('columns'), {});
@@ -109,8 +122,55 @@ function CVATTable(props: Props): JSX.Element {
     }>(stateField('table'), {});
     const [visibility, setVisibility] = useState(defaultVisibility);
     const [columnSearchPhrase, setColumnSearchPhrase] = useState('');
-    const [filteredDataSource, setFilteredDataSource] = useState<typeof dataSource>(dataSource);
-    const [modifiedColumns, setModifiedColumns] = useState<NonNullable<typeof columns>>([]);
+    const [localVisibility, setLocalVisibility] = useState<{
+        columns: typeof columns;
+        values: Record<string, boolean>;
+    }>({ columns, values: {} });
+
+    const modifiedColumns = useMemo(() => {
+        const updateColumns = (items: NonNullable<typeof columns>, parent = ''): NonNullable<typeof columns> => (
+            items.map((column, index) => {
+                const position = parent ? `${parent}-${index}` : String(index);
+                const key = columnKey(column, position);
+                const sorter = tableChange.sorter?.find((item) => String(item.columnKey) === key);
+                return {
+                    ...column,
+                    ...('children' in column ? { children: updateColumns(column.children, position) } : {}),
+                    hidden: !stateKey || onChangeColumnVisibility ?
+                        ((localVisibility.columns === columns ? localVisibility.values[key] : undefined) ??
+                            column.hidden) : hiddenColumns[key] ?? column.hidden,
+                    ...(stateKey ? {
+                        key: column.key ?? key,
+                        sortOrder: tableChange.sorter ? sorter?.order ?? null : column.sortOrder,
+                        filteredValue: tableChange.filters ? tableChange.filters[key] ?? null : column.filteredValue,
+                    } : {}),
+                };
+            })
+        );
+        return updateColumns(columns ?? []);
+    }, [columns, hiddenColumns, tableChange, stateKey, onChangeColumnVisibility, localVisibility]);
+
+    const filteredDataSource = useMemo(() => {
+        if (!dataSource) return dataSource;
+        let filtered = dataSource;
+        if (filterValue) {
+            const parsed = JSON.parse(filterValue);
+            filtered = filtered.filter((dataItem: object) => jsonLogic.apply(parsed, dataItem));
+        }
+
+        if (searchPhrase && searchDataIndex) {
+            const lowerCaseQuery = searchPhrase.toLowerCase();
+            filtered = filtered.filter((dataItem) => searchDataIndex.some((dataIndex) => {
+                const value = getValueFromDataItem<string>(dataItem, dataIndex);
+                return typeof value === 'string' && value.toLowerCase().includes(lowerCaseQuery);
+            }));
+        }
+        return filtered;
+    }, [dataSource, searchDataIndex, filterValue, searchPhrase]);
+
+    useEffect(() => {
+        if (filteredDataSource) onFilterDataSource?.(filteredDataSource);
+    }, [filteredDataSource, onFilterDataSource]);
 
     const handleDownloadCSV = useCallback(() => {
         if (csvExport && columns) {
@@ -129,51 +189,6 @@ function CVATTable(props: Props): JSX.Element {
     }, [csvExport, filteredDataSource, columns]);
 
     useEffect(() => {
-        if (columns) {
-            setModifiedColumns(columns.map((column) => {
-                const key = columnKey(column);
-                const sorter = tableChange.sorter?.find((item) => String(item.columnKey) === key);
-                return {
-                    ...column,
-                    ...(stateKey ? {
-                        hidden: onChangeColumnVisibility ? column.hidden : hiddenColumns[key] ?? column.hidden,
-                        sortOrder: tableChange.sorter ? sorter?.order ?? null : column.sortOrder,
-                        filteredValue: tableChange.filters ? tableChange.filters[key] ?? null : column.filteredValue,
-                    } : {}),
-                };
-            }));
-        }
-    }, [columns, hiddenColumns, tableChange, stateKey, onChangeColumnVisibility]);
-
-    useEffect(() => {
-        if (dataSource) {
-            let filtered = dataSource;
-            if (filterValue) {
-                const parsed = JSON.parse(filterValue);
-                filtered = filtered.filter((dataItem: object) => jsonLogic.apply(parsed, dataItem));
-            }
-
-            if (searchPhrase && searchDataIndex) {
-                const lowerCaseQuery = searchPhrase.toLowerCase();
-                filtered = filtered.filter((dataItem) => {
-                    for (const dataIndex of searchDataIndex) {
-                        const value = getValueFromDataItem<string>(dataItem, dataIndex);
-                        if (typeof value === 'string' && value.toLowerCase().includes(lowerCaseQuery)) {
-                            return true;
-                        }
-                    }
-                    return false;
-                });
-            }
-
-            setFilteredDataSource(filtered);
-            if (onFilterDataSource) {
-                onFilterDataSource(filtered);
-            }
-        }
-    }, [dataSource, searchDataIndex, filterValue, searchPhrase]);
-
-    useEffect(() => {
         if (queryBuilder?.config && queryBuilder?.memoryKey) {
             const capacity = queryBuilder?.memoryCapacity ?? 0;
             setFilteringComponent(
@@ -187,32 +202,33 @@ function CVATTable(props: Props): JSX.Element {
         }
     }, [queryBuilder?.config, queryBuilder?.memoryKey, queryBuilder?.memoryCapacity, queryBuilder?.predefinedQueries]);
 
-    const previousQueryValue = useRef(queryBuilder?.value);
-    useEffect(() => {
-        if (previousQueryValue.current !== queryBuilder?.value) {
-            setFilterValue(queryBuilder?.value ?? null);
-            previousQueryValue.current = queryBuilder?.value;
-        }
-    }, [queryBuilder?.value, setFilterValue]);
-
     const pagination = rest.pagination === false ? false : {
         ...rest.pagination,
         ...(stateKey ? tableChange.pagination : {}),
     };
-    if (pagination && stateKey && pagination.current) {
-        const count = (filteredDataSource ?? []).filter((row) => columns?.every((column) => {
-            const values = tableChange.filters?.[columnKey(column)];
-            return !values?.length || !column.onFilter || values.some((value) => column.onFilter(value, row));
-        }) ?? true).length;
+    const loading = typeof rest.loading === 'object' ? rest.loading.spinning !== false : !!rest.loading;
+    const dataAvailable = dataSource != null && !loading;
+    if (pagination && stateKey && pagination.current && dataAvailable) {
+        const leafColumns = (items: NonNullable<typeof columns>): NonNullable<typeof columns> => (
+            items.flatMap((column) => ('children' in column ? leafColumns(column.children) : [column]))
+        );
+        const filterColumns = leafColumns(modifiedColumns);
+        const count = pagination.total ?? (filteredDataSource ?? []).filter((row) => (
+            filterColumns.every((column) => (
+                !column.filteredValue?.length || !column.onFilter ||
+                column.filteredValue.some((value) => column.onFilter(value, row))
+            ))
+        )).length;
         pagination.current = Math.min(pagination.current, Math.max(1, Math.ceil(count / (pagination.pageSize ?? 10))));
     }
 
     const currentPage = pagination ? pagination.current : undefined;
     useEffect(() => {
-        if (stateKey && tableChange.pagination?.current && currentPage !== tableChange.pagination.current) {
+        if (dataAvailable && stateKey && tableChange.pagination?.current &&
+            currentPage !== tableChange.pagination.current) {
             setTableChange({ ...tableChange, pagination: { ...tableChange.pagination, current: currentPage } });
         }
-    }, [stateKey, currentPage, tableChange, setTableChange]);
+    }, [dataAvailable, stateKey, currentPage, tableChange, setTableChange]);
 
     return (
         <div className='cvat-table-wrapper'>
@@ -331,18 +347,19 @@ function CVATTable(props: Props): JSX.Element {
                                                 if (stateKey && !onChangeColumnVisibility) {
                                                     setHiddenColumns({
                                                         ...hiddenColumns,
-                                                        [columnKey(column)]: newIsHidden,
+                                                        [columnKey(column, String(idx))]: newIsHidden,
                                                     });
                                                 }
-                                                setModifiedColumns([
-                                                    ...modifiedColumns.slice(0, idx),
-                                                    {
-                                                        ...column,
-                                                        hidden: newIsHidden,
-                                                    },
-                                                    ...modifiedColumns.slice(idx + 1),
-                                                ]);
-
+                                                if (!stateKey || onChangeColumnVisibility) {
+                                                    setLocalVisibility({
+                                                        columns,
+                                                        values: {
+                                                            ...(localVisibility.columns === columns ?
+                                                                localVisibility.values : {}),
+                                                            [columnKey(column, String(idx))]: newIsHidden,
+                                                        },
+                                                    });
+                                                }
                                                 if (onChangeColumnVisibility) {
                                                     onChangeColumnVisibility(idx, newIsHidden);
                                                 }

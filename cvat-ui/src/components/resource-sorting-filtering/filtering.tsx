@@ -181,14 +181,16 @@ export default function ResourceFilterHOC(
         );
         const [state, setState] = useTableState<ImmutableTree>(stateKey ? `${stateKey}:tree` : undefined, defaultTree);
         const initialized = useRef(false);
+        const [lastValue, setLastValue] = useTableState(stateKey ? `${stateKey}:value` : undefined, value);
 
         const predefinedFilters = getPredefinedFilters(user, predefinedFilterValues);
 
         useEffect(() => {
             setRecentFilters(receiveRecentFilters(localStorageRecentKeyword));
             setIsMounted(true);
-            const restoreDraft = !initialized.current && stateKey && state !== defaultTree;
+            const restoreDraft = !initialized.current && stateKey && state !== defaultTree && lastValue === value;
             initialized.current = true;
+            setLastValue(value);
             if (restoreDraft) return;
 
             try {
@@ -196,7 +198,8 @@ export default function ResourceFilterHOC(
                     const tree = QbUtils.loadFromJsonLogic(JSON.parse(value), config);
                     if (tree && isValidTree(tree, config)) {
                         setAppliedFilter({
-                            ...appliedFilter,
+                            ...defaultAppliedFilter,
+                            recent: appliedFilter.recent === value ? value : null,
                             predefined: splitFilterIntoPredefined(Object.values(predefinedFilters ?? {}), value),
                             built: JSON.stringify(QbUtils.jsonLogicFormat(tree, config).logic),
                         });
@@ -204,11 +207,7 @@ export default function ResourceFilterHOC(
                     }
                 } else {
                     setState(defaultTree);
-                    setAppliedFilter({
-                        ...appliedFilter,
-                        predefined: null,
-                        built: null,
-                    });
+                    setAppliedFilter(defaultAppliedFilter);
                 }
             } catch (_: any) {
                 // nothing to do
