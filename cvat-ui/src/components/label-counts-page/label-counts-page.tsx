@@ -19,6 +19,7 @@ import GoBackButton from 'components/common/go-back-button';
 import CVATLoadingSpinner from 'components/common/loading-spinner';
 import ResourceLink from 'components/common/resource-link';
 import LabelCountsChart from './label-counts-chart';
+import JobFilter from './job-filter';
 
 const core = getCore();
 
@@ -32,6 +33,7 @@ function LabelCountsPage(): JSX.Element {
     const [labelCounts, setLabelCounts] = useState<LabelCounts | null>(null);
     const [fetching, setFetching] = useState(true);
     const [error, setError] = useState<Error | null>(null);
+    const [jobId, setJobId] = useState<number | undefined>(undefined);
 
     const fetchData = async (): Promise<void> => {
         setFetching(true);
@@ -40,7 +42,7 @@ function LabelCountsPage(): JSX.Element {
         try {
             const [[fetchedTask], fetchedCounts] = await Promise.all([
                 core.tasks.get({ id: taskId }),
-                core.analytics.labelCounts.get({ taskID: taskId }),
+                core.analytics.labelCounts.get({ taskID: taskId, ...(jobId !== undefined && { jobID: jobId }) }),
             ]);
             setTask(fetchedTask);
             setLabelCounts(fetchedCounts);
@@ -55,7 +57,7 @@ function LabelCountsPage(): JSX.Element {
         if (Number.isInteger(taskId)) {
             fetchData();
         }
-    }, []);
+    }, [jobId]);
 
     return (
         <div className='cvat-label-counts-page'>
@@ -73,6 +75,19 @@ function LabelCountsPage(): JSX.Element {
                                 <ResourceLink resource={task} />
                             </Title>
                         )}
+                        { task && (
+                            <div className='cvat-label-counts-toolbar'>
+                                <JobFilter
+                                    jobs={task.jobs}
+                                    value={jobId}
+                                    disabled={fetching}
+                                    onChange={setJobId}
+                                />
+                                { !fetching && labelCounts && labelCounts.total > 0 && (
+                                    <Text strong>{`Total: ${labelCounts.total} annotations`}</Text>
+                                )}
+                            </div>
+                        )}
                         { fetching && <CVATLoadingSpinner /> }
                         { !fetching && error && (
                             <Result
@@ -89,12 +104,9 @@ function LabelCountsPage(): JSX.Element {
                             />
                         )}
                         { !fetching && labelCounts && labelCounts.total > 0 && (
-                            <>
-                                <Text strong>{`Total: ${labelCounts.total} annotations`}</Text>
-                                <div className='cvat-label-counts-chart-scroll'>
-                                    <LabelCountsChart labels={labelCounts.labels} />
-                                </div>
-                            </>
+                            <div className='cvat-label-counts-chart-scroll'>
+                                <LabelCountsChart labels={labelCounts.labels} />
+                            </div>
                         )}
                     </Col>
                 </Row>
