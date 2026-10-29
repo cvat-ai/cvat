@@ -77,10 +77,21 @@ direction goes under "Changes to this plan" with the time and the reason. The or
 | Time (PKT) | Step | Status | Note |
 |------------|------|--------|------|
 | 15:04 | - | started | Clock started |
+| 15:37 | 1 | done | Plan, objectives and empty Definition of Done committed before any code |
+| 15:38 | 0 | done | Server image built from this commit |
+| 16:05 | 2 | code done | Endpoint answers 401 (no login), 400 (missing or non-integer `task_id`), 404 (unknown task). 200 and 403 wait for the COCO task |
+| 16:19 | 3 | code done | cvat-core client, page, route, menu entry, bar chart, empty and error states. Lint and type check pass; not yet seen in a browser with data |
+| 16:23 | 2 | tested | 14 backend tests for the counting rule pass |
+| 16:25 | 0 | late | COCO task not created yet; steps 4-5 wait for it |
 
 ## 7. Changes to this plan (added, never rewritten)
 
-- None yet.
+- 15:38: Backend and frontend are built on two branches, `label-counts-backend` and `label-counts-frontend`,
+  each merged into `dev-test01` after the gate in step 5. Why: steps 2 and 3 run in parallel, and separate
+  branches keep each side's commits in order without the two touching the same files.
+- 16:23: Backend tests run with `cvat.settings.production` and Django's throwaway test database, not with
+  `cvat.settings.testing`. Why: the testing settings import development-only packages (`django_extensions`)
+  that the server image does not include, and installing them would change the image.
 
 ## 8. Decision record
 

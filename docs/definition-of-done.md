@@ -12,7 +12,9 @@ evidence.
 
 ## Setup
 
-- [ ] Stack runs from the locally built server image, CVAT commit `b36a49bd5`. Evidence:
+- [x] Stack runs from the locally built server image, CVAT commit `b36a49bd5`. Evidence: image
+      `cvat/server:dev` created 2026-10-29 10:38:49 UTC; `GET /api/server/about` returns `"version":"2.81.1"`,
+      the version in this commit's `cvat/__init__.py`.
 - [ ] COCO task created and annotations imported; image, annotation and job counts written in `objectives.md`.
       Evidence:
 
@@ -48,7 +50,8 @@ evidence.
 
 ## Presentation
 
-- [ ] The plan was the first commit, and that commit holds no code. Evidence:
+- [x] The plan was the first commit, and that commit holds no code. Evidence: `535ac8847` adds only
+      `docs/plan.md`, `docs/objectives.md` and `docs/definition-of-done.md` (`git show --stat 535ac8847`).
 - [ ] Commits are small and each one says what changed and why. Evidence:
 - [ ] Lint and type checks pass for the changed code. Evidence:
 - [ ] Backend tests for the counting rule and for refusal pass. Evidence:
