@@ -22,7 +22,7 @@
       "labels": {
         "url": "http://localhost:8080/api/labels?job_id=65"
       },
-      "media_type": "image",
+      "media_type": "audio",
       "mode": "interpolation",
       "organization": 2,
       "parent_job_id": null,

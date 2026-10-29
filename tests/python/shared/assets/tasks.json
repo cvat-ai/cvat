@@ -16,7 +16,7 @@
       "dimension": "1d",
       "guide_id": null,
       "id": 36,
-      "initial_replicas": 1,
+      "initial_replicas": 0,
       "jobs": {
         "completed": 0,
         "count": 2,
