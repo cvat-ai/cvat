@@ -27,7 +27,9 @@ from cvat_sdk.datasets.common import (
     MediaElement,
     Sample,
     UnsupportedDatasetError,
+    chunk_suffix_for_original_type,
 )
+from cvat_video_openh264 import iter_frames as iter_video_frames
 
 _NUM_DOWNLOAD_THREADS = 4
 
@@ -44,7 +46,7 @@ class TaskDataset:
 
     Limitations:
 
-    * Only tasks whose media can be accessed as images are supported at the moment.
+    * Video chunks require a separately provisioned OpenH264 shared library.
     * Track annotations are currently not accessible.
     """
 
@@ -66,6 +68,21 @@ class TaskDataset:
             return self._dataset._load_frame_image_from_chunk_dir(
                 self._frame_index, self._chunk_dir
             )
+
+    class _DecodedFrameMediaElement(MediaElement):
+        def __init__(self, image: PIL.Image.Image) -> None:
+            self._image: PIL.Image.Image | None = image
+
+        def load_image(self) -> PIL.Image.Image:
+            if self._image is None:
+                raise RuntimeError(
+                    "This decoded video frame was released after the sample iterator advanced"
+                )
+
+            return self._image
+
+        def release(self) -> None:
+            self._image = None
 
     def __init__(
         self,
@@ -150,12 +167,7 @@ class TaskDataset:
         ]
 
     def _init_chunk_dir(self) -> None:
-        if self._task.data_original_chunk_type != "imageset":
-            raise UnsupportedDatasetError(
-                "Chunk-based media access is only supported for tasks whose original chunks "
-                f"are image sets; current original chunk type is "
-                f"{self._task.data_original_chunk_type!r}"
-            )
+        chunk_suffix_for_original_type(self._task.data_original_chunk_type)
 
         self._chunk_dir = self._cache_manager.chunk_dir(self._task.id)
         self._chunk_dir.mkdir(exist_ok=True, parents=True)
@@ -254,11 +266,13 @@ class TaskDataset:
 
         if self._media_download_policy == MediaDownloadPolicy.PRELOAD_ALL:
             assert not temporary_chunks
-            yield self._iter_samples_from_chunks(
+            sample_iterator = self._iter_samples_from_chunks(
                 sample_chunks,
                 chunk_dir=self._chunk_dir,
                 temporary_chunks=False,
             )
+            with contextlib.closing(sample_iterator):
+                yield sample_iterator
             return
 
         assert self._media_download_policy == MediaDownloadPolicy.FETCH_CHUNKS_ON_DEMAND
@@ -270,21 +284,25 @@ class TaskDataset:
                 ) as temp_dir,
                 ThreadPoolExecutor(max_workers=1) as pool,
             ):
-                yield self._iter_samples_from_chunks(
+                sample_iterator = self._iter_samples_from_chunks(
                     sample_chunks,
                     chunk_dir=Path(temp_dir),
                     temporary_chunks=True,
                     download_pool=pool,
                 )
+                with contextlib.closing(sample_iterator):
+                    yield sample_iterator
             return
 
         with ThreadPoolExecutor(max_workers=1) as pool:
-            yield self._iter_samples_from_chunks(
+            sample_iterator = self._iter_samples_from_chunks(
                 sample_chunks,
                 chunk_dir=self._chunk_dir,
                 temporary_chunks=False,
                 download_pool=pool,
             )
+            with contextlib.closing(sample_iterator):
+                yield sample_iterator
 
     def _group_samples_by_chunk(self) -> list[tuple[int, list[Sample]]]:
         return [
@@ -296,7 +314,8 @@ class TaskDataset:
         ]
 
     def _chunk_path(self, chunk_dir: Path, chunk_index: int) -> Path:
-        return chunk_dir / f"{chunk_index}.zip"
+        suffix = chunk_suffix_for_original_type(self._task.data_original_chunk_type)
+        return chunk_dir / f"{chunk_index}{suffix}"
 
     def _iter_samples_from_chunks(
         self,
@@ -328,17 +347,56 @@ class TaskDataset:
             else:
                 next_chunk_future = None
 
-            for sample in chunk_samples:
-                if chunk_dir == self._chunk_dir:
-                    yield sample
-                else:
-                    yield attrs.evolve(
-                        sample,
-                        media=self._TaskChunkDirMediaElement(self, sample.frame_index, chunk_dir),
+            try:
+                if self._task.data_original_chunk_type == "video":
+                    yield from self._iter_samples_from_video_chunk(
+                        chunk_index, chunk_samples, chunk_dir
                     )
+                else:
+                    for sample in chunk_samples:
+                        if chunk_dir == self._chunk_dir:
+                            yield sample
+                        else:
+                            yield attrs.evolve(
+                                sample,
+                                media=self._TaskChunkDirMediaElement(
+                                    self, sample.frame_index, chunk_dir
+                                ),
+                            )
+            finally:
+                if temporary_chunks:
+                    self._chunk_path(chunk_dir, chunk_index).unlink(missing_ok=True)
 
-            if temporary_chunks:
-                self._chunk_path(chunk_dir, chunk_index).unlink(missing_ok=True)
+    def _iter_samples_from_video_chunk(
+        self,
+        chunk_index: int,
+        chunk_samples: Sequence[Sample],
+        chunk_dir: Path,
+    ) -> Iterator[Sample]:
+        samples = iter(chunk_samples)
+        sample = next(samples, None)
+        assert sample is not None
+
+        frames = iter_video_frames(self._chunk_path(chunk_dir, chunk_index))
+        with contextlib.closing(frames):
+            for member_index, image in enumerate(frames):
+                if member_index != sample.frame_index % self._task.data_chunk_size:
+                    continue
+
+                media = self._DecodedFrameMediaElement(image)
+                try:
+                    yield attrs.evolve(sample, media=media)
+                finally:
+                    media.release()
+
+                sample = next(samples, None)
+                if sample is None:
+                    return
+
+        raise UnsupportedDatasetError(
+            f"Video chunk #{chunk_index} of task {self._task.id} ended before frame "
+            f"{sample.frame_index}"
+        )
 
     def _load_frame_image_from_cache(self, frame_index: int) -> PIL.Image:
         assert frame_index in self._frame_annotations
@@ -352,6 +410,18 @@ class TaskDataset:
 
         chunk_index = frame_index // self._task.data_chunk_size
         member_index = frame_index % self._task.data_chunk_size
+
+        if self._task.data_original_chunk_type == "video":
+            frames = iter_video_frames(self._chunk_path(chunk_dir, chunk_index))
+            with contextlib.closing(frames):
+                for current_member_index, image in enumerate(frames):
+                    if current_member_index == member_index:
+                        return image
+
+            raise UnsupportedDatasetError(
+                f"Video chunk #{chunk_index} of task {self._task.id} has no frame "
+                f"at position {member_index}"
+            )
 
         with zipfile.ZipFile(self._chunk_path(chunk_dir, chunk_index), "r") as chunk_zip:
             with chunk_zip.open(chunk_zip.infolist()[member_index]) as chunk_member:
