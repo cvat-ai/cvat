@@ -1780,6 +1780,10 @@ class MediaProvider2D(MediaProvider):
 
 
 class MediaProvider3D(MediaProvider):
+    class RelatedImage(NamedTuple):
+        path: str
+        camera_calibration: datumaro.components.media.CameraCalibration | None
+
     class PointCloudFromLazyChunk(datumaro.components.media.PointCloudFromBytes):
         def __init__(
             self,
@@ -1816,8 +1820,8 @@ class MediaProvider3D(MediaProvider):
 
         ThroughModel = models.RelatedFile.images.through
 
-        self._ri_per_source: dict[int, dict[int, list[str]]] = {}
-        "{source_id -> {frame_id -> [ri, ...]}}"
+        self._ri_per_source: dict[int, dict[int, list[MediaProvider3D.RelatedImage]]] = {}
+        "{source_id -> {frame_id -> [related image, ...]}}"
 
         for source_id, source in sources.items():
             source_ris = self._ri_per_source.setdefault(source_id, {})
@@ -1825,10 +1829,27 @@ class MediaProvider3D(MediaProvider):
             db_related_files = (
                 ThroughModel.objects.filter(relatedfile__data=source.db_task.data)
                 .order_by("image__frame", "relatedfile__path")
-                .values_list("image__frame", "relatedfile__path")
+                .values_list(
+                    "image__frame",
+                    "relatedfile__path",
+                    "relatedfile__intrinsic_matrix",
+                    "relatedfile__extrinsic_matrix",
+                )
             )
-            for frame_idx, ri_path in db_related_files:
-                source_ris.setdefault(frame_idx, []).append(ri_path)
+            for frame_idx, ri_path, intrinsic_matrix, extrinsic_matrix in db_related_files:
+                camera_calibration = None
+                if intrinsic_matrix is not None and extrinsic_matrix is not None:
+                    camera_calibration = datumaro.components.media.CameraCalibration(
+                        intrinsic_matrix=tuple(intrinsic_matrix),
+                        extrinsic_matrix=tuple(extrinsic_matrix),
+                    )
+
+                source_ris.setdefault(frame_idx, []).append(
+                    self.RelatedImage(
+                        path=ri_path,
+                        camera_calibration=camera_calibration,
+                    )
+                )
 
     def unload(self) -> None:
         self._unload_source()
@@ -1838,7 +1859,7 @@ class MediaProvider3D(MediaProvider):
 
         point_cloud_path = image_kwargs["path"]
 
-        related_image_paths = self._ri_per_source[source_id].get(frame_id, [])
+        related_images = self._ri_per_source[source_id].get(frame_id, [])
 
         def get_pcd_bytes():
             self._load_source(source_id, source)
@@ -1853,8 +1874,12 @@ class MediaProvider3D(MediaProvider):
             return self._get_ri_chunk(frame_id)[path]
 
         dm_related_images = [
-            self.ImageFromLazyChunk(ri_path, data_getter=partial(get_ri_frame, ri_path))
-            for ri_path in related_image_paths
+            self.ImageFromLazyChunk(
+                related_image.path,
+                data_getter=partial(get_ri_frame, related_image.path),
+                camera_calibration=related_image.camera_calibration,
+            )
+            for related_image in related_images
         ]
 
         return self.PointCloudFromLazyChunk(
@@ -2856,14 +2881,20 @@ def load_dataset_data(
 
                 if isinstance(dataset_item.media.extra_images, list):
                     for ri in dataset_item.media.extra_images:
-                        add_media_path(ri.path)
+                        if isinstance(ri, dm.Image):
+                            add_media_path(ri.path, osp.basename(ri.path))
+                            for af in ri.auxiliary_files:
+                                add_media_path(af, osp.basename(af))
 
         if len(root_paths):
             dataset_root = osp.commonpath(root_paths) + osp.sep
 
         project_annotation.add_task(
             task_fields,
-            {"media": media_paths, "data_root": dataset_root},
+            {
+                "media": media_paths,
+                "data_root": dataset_root,
+            },
             project_data,
         )
 

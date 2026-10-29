@@ -290,7 +290,8 @@ def _count_files(data: dict[str, Any]) -> dict[str, list[str]]:
             mime = get_mime(full_path)
             if mime in counter:
                 counter[mime].append(rel_path)
-            elif rel_path.endswith(".jsonl"):
+            # Skip manifest files and calibration sidecars. They are not primary media.
+            elif rel_path.endswith((".json", ".jsonl")):
                 continue
             else:
                 slogger.glob.warn(

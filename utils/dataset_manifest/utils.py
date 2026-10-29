@@ -328,13 +328,17 @@ def _load_sly_related_image_metadata(
     if meta is None:
         return None
     if not isinstance(meta, dict):
-        raise InvalidRelatedImageMetadataError(sidecar_path, "Unexpected structure; 'meta' must be an object")
+        raise InvalidRelatedImageMetadataError(
+            sidecar_path, "Unexpected structure; 'meta' must be an object"
+        )
 
     sensors_data = meta.get("sensorsData")
     if sensors_data is None:
         return None
     if not isinstance(sensors_data, dict):
-        raise InvalidRelatedImageMetadataError(sidecar_path, "Unexpected structure; 'meta.sensorsData' must be an object")
+        raise InvalidRelatedImageMetadataError(
+            sidecar_path, "Unexpected structure; 'meta.sensorsData' must be an object"
+        )
 
     intrinsic_matrix = _parse_flattened_calibration_matrix(
         sensors_data.get("intrinsicMatrix"),
