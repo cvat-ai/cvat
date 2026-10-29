@@ -12,6 +12,10 @@ from deepdiff import DeepDiff
 from shared.utils import config
 
 
+@pytest.mark.usefixtures(
+    # RQ jobs running concurrently after other tests can create data races with these test cases
+    "restore_redis_inmem_per_class"
+)
 @pytest.mark.usefixtures("restore_db_per_class")
 class TestGetResources:
     @pytest.mark.parametrize("path", config.ASSETS_DIR.glob("*.json"))
