@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MIT
 
 import React, {
-    useCallback, useEffect, useMemo, useState,
+    useCallback, useEffect, useMemo, useRef, useState,
 } from 'react';
 import { Row, Col } from 'antd/lib/grid';
 import Table, { TableProps } from 'antd/lib/table';
@@ -29,6 +29,8 @@ type Props = TableProps & {
     renderExtraActions?(): JSX.Element;
     renderHeaderActions?(): JSX.Element;
     columnVisibility?: {
+        // Opt in when the parent owns columns[].hidden; change callbacks alone are notifications.
+        controlled?: boolean;
         groups?: Record<string, {
             maxVisible?: number;
             hint?: string;
@@ -128,27 +130,39 @@ function CVATTable(props: Props): JSX.Element {
     }>({ columns, values: {} });
 
     const modifiedColumns = useMemo(() => {
+        const hasControlledSort = (items: NonNullable<typeof columns>): boolean => items.some((column) => (
+            'sortOrder' in column || ('children' in column && hasControlledSort(column.children))
+        ));
+        // Ant Design switches the entire table to controlled sorting when any column supplies sortOrder.
+        const controlledSorting = hasControlledSort(columns ?? []);
         const updateColumns = (items: NonNullable<typeof columns>, parent = ''): NonNullable<typeof columns> => (
             items.map((column, index) => {
                 const position = parent ? `${parent}-${index}` : String(index);
                 const key = columnKey(column, position);
                 const sorter = tableChange.sorter?.find((item) => String(item.columnKey) === key);
+                let { hidden } = column;
+                if (!columnVisibility?.controlled) {
+                    if (stateKey) hidden = hiddenColumns[key] ?? hidden;
+                    else if (localVisibility.columns === columns) hidden = localVisibility.values[key] ?? hidden;
+                }
                 return {
                     ...column,
                     ...('children' in column ? { children: updateColumns(column.children, position) } : {}),
-                    hidden: !stateKey || onChangeColumnVisibility ?
-                        ((localVisibility.columns === columns ? localVisibility.values[key] : undefined) ??
-                            column.hidden) : hiddenColumns[key] ?? column.hidden,
+                    hidden,
                     ...(stateKey ? {
                         key: column.key ?? key,
-                        sortOrder: tableChange.sorter ? sorter?.order ?? null : column.sortOrder,
-                        filteredValue: tableChange.filters ? tableChange.filters[key] ?? null : column.filteredValue,
+                        ...(!controlledSorting && tableChange.sorter ? {
+                            sortOrder: sorter?.order ?? null,
+                        } : {}),
+                        ...(!('filteredValue' in column) && tableChange.filters ? {
+                            filteredValue: tableChange.filters[key] ?? null,
+                        } : {}),
                     } : {}),
                 };
             })
         );
         return updateColumns(columns ?? []);
-    }, [columns, hiddenColumns, tableChange, stateKey, onChangeColumnVisibility, localVisibility]);
+    }, [columns, hiddenColumns, tableChange, stateKey, columnVisibility?.controlled, localVisibility]);
 
     const filteredDataSource = useMemo(() => {
         if (!dataSource) return dataSource;
@@ -168,9 +182,13 @@ function CVATTable(props: Props): JSX.Element {
         return filtered;
     }, [dataSource, searchDataIndex, filterValue, searchPhrase]);
 
+    const onFilterDataSourceRef = useRef(onFilterDataSource);
     useEffect(() => {
-        if (filteredDataSource) onFilterDataSource?.(filteredDataSource);
-    }, [filteredDataSource, onFilterDataSource]);
+        onFilterDataSourceRef.current = onFilterDataSource;
+    }, [onFilterDataSource]);
+    useEffect(() => {
+        if (filteredDataSource) onFilterDataSourceRef.current?.(filteredDataSource);
+    }, [filteredDataSource]);
 
     const handleDownloadCSV = useCallback(() => {
         if (csvExport && columns) {
@@ -204,11 +222,15 @@ function CVATTable(props: Props): JSX.Element {
 
     const pagination = rest.pagination === false ? false : {
         ...rest.pagination,
-        ...(stateKey ? tableChange.pagination : {}),
+        ...(stateKey ? {
+            current: rest.pagination?.current ?? tableChange.pagination?.current,
+            pageSize: rest.pagination?.pageSize ?? tableChange.pagination?.pageSize,
+        } : {}),
     };
     const loading = typeof rest.loading === 'object' ? rest.loading.spinning !== false : !!rest.loading;
     const dataAvailable = dataSource != null && !loading;
-    if (pagination && stateKey && pagination.current && dataAvailable) {
+    const controlledPage = rest.pagination !== false && rest.pagination?.current !== undefined;
+    if (pagination && stateKey && pagination.current && dataAvailable && !controlledPage) {
         const leafColumns = (items: NonNullable<typeof columns>): NonNullable<typeof columns> => (
             items.flatMap((column) => ('children' in column ? leafColumns(column.children) : [column]))
         );
@@ -344,13 +366,13 @@ function CVATTable(props: Props): JSX.Element {
                                             disabled={disabled}
                                             onChange={(e: CheckboxChangeEvent) => {
                                                 const newIsHidden = !e.target.checked;
-                                                if (stateKey && !onChangeColumnVisibility) {
+                                                if (stateKey && !columnVisibility?.controlled) {
                                                     setHiddenColumns({
                                                         ...hiddenColumns,
                                                         [columnKey(column, String(idx))]: newIsHidden,
                                                     });
                                                 }
-                                                if (!stateKey || onChangeColumnVisibility) {
+                                                if (!stateKey && !columnVisibility?.controlled) {
                                                     setLocalVisibility({
                                                         columns,
                                                         values: {
