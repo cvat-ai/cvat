@@ -77,7 +77,7 @@ next to later ones.
 
 | ID | Target | Result | Met? | Evidence |
 |----|--------|--------|------|----------|
-| MO-1 | median ≤ 100 ms | | | |
+| MO-1 | median ≤ 100 ms | run 1: median 108.7 ms (101.1-335.0 ms) | Missed by 8.7 ms (run 1) | Measurement log, MO-1 run 1 |
 | MO-2 | 0 differing labels | 0 of 80 against the shapes CVAT stores; 77 of 80 against raw COCO instances | Met for stored shapes (see run 1) | Measurement log, MO-2 run 1 |
 | MO-3 | median ≤ 2 s | | | |
 
@@ -198,4 +198,31 @@ toaster | 10 | 10 | 9
   CVAT stores them, one row per drawn object, which is also what a user sees and edits in a job. So the target
   is met against the stored shapes (0 of 80 differ). Against the raw instance count it would not be met, and
   that is a property of the import, not of the endpoint.
+
+### MO-1, run 1, 2026-10-29 17:54 PKT, code at `228c452c4`
+
+Raw output:
+
+```
+$ curl -s -o /dev/null -w "%{http_code} %{time_total}\n" -H "Authorization: Token $TOKEN" "http://localhost:8080/api/label-counts?task_id=1"   # 1 warm-up, then 5 runs
+warm-up: 200 1.614544
+200 0.334993
+200 0.101101
+200 0.103006
+200 0.108726
+200 0.142357
+```
+
+- **Result:** median 108.7 ms, spread 101.1 to 335.0 ms over 5 runs, all HTTP 200. **Missed** the 100 ms target
+  by 8.7 ms.
+- **Where the time goes**, measured once inside `cvat_server` with Django's query capture:
+  `count_annotations_by_label` takes 41-57 ms over 5 calls, and 42 ms of that is the single GROUP BY on
+  `engine_labeledshape`. The rest of the request, about 55 ms, is authentication, the OPA policy call, loading
+  the task twice (once in the permission, once in the view) and DRF rendering.
+- **Why the shapes query costs 42 ms:** `EXPLAIN ANALYZE` shows a bitmap scan through the `job_id` index that
+  then reads about 2,300 table blocks per query, once per job. An experimental partial index on
+  `(job_id, label_id) WHERE parent_id IS NULL` did not give an index-only scan, because the query counts `id`.
+  The index was dropped again, and the measurement was not repeated while other work was running.
+- **Next:** measure again on a quiet machine. The likely cheap wins are counting rows rather than ids, so a
+  covering index can be used, and loading the task once.
 
