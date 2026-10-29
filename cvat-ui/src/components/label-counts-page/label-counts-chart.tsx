@@ -2,7 +2,9 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React from 'react';
+import React, {
+    useLayoutEffect, useMemo, useRef, useState,
+} from 'react';
 import {
     Chart as ChartJS, BarElement, CategoryScale, LinearScale, Tooltip, ChartOptions,
 } from 'chart.js';
@@ -23,22 +25,44 @@ interface Props {
     }[];
 }
 
-const options: ChartOptions<'bar'> = {
-    indexAxis: 'y',
-    maintainAspectRatio: false,
-    plugins: {
-        legend: { display: false },
-    },
-    scales: {
-        x: {
-            beginAtZero: true,
-            ticks: { precision: 0 },
-        },
-    },
-};
+interface TextStyle {
+    color: string;
+    family: string;
+}
 
 function LabelCountsChart(props: Props): JSX.Element {
     const { labels } = props;
+
+    const containerRef = useRef<HTMLDivElement>(null);
+    const [textStyle, setTextStyle] = useState<TextStyle | null>(null);
+
+    useLayoutEffect(() => {
+        if (containerRef.current) {
+            const { color, fontFamily } = getComputedStyle(containerRef.current);
+            setTextStyle({ color, family: fontFamily });
+        }
+    }, []);
+
+    const options = useMemo((): ChartOptions<'bar'> => {
+        const font = textStyle ? { family: textStyle.family } : undefined;
+        return {
+            indexAxis: 'y',
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: { titleFont: font, bodyFont: font },
+            },
+            scales: {
+                x: {
+                    beginAtZero: true,
+                    ticks: { precision: 0, color: textStyle?.color, font },
+                },
+                y: {
+                    ticks: { color: textStyle?.color, font },
+                },
+            },
+        };
+    }, [textStyle]);
 
     const data = {
         labels: labels.map((label) => label.name),
@@ -50,7 +74,8 @@ function LabelCountsChart(props: Props): JSX.Element {
 
     return (
         <div
-            className='cvat-label-counts-chart'
+            className='cvat-label-counts-chart cvat-text-color'
+            ref={containerRef}
             style={{ height: labels.length * BAR_HEIGHT + CHART_PADDING }}
         >
             <Bar options={options} data={data} />
