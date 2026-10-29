@@ -187,21 +187,19 @@ jobs:
             -e './cvat-sdk[masks,pytorch]' -e ./cvat-cli \
             --extra-index-url https://download.pytorch.org/whl/cpu
 
+      # Fail fast on failed test data integrity checks.
       # Other tests rely on the test data, so their results are meaningless if it is broken.
-      # This run also starts the containers and restores the test data, which the next run reuses.
-      # Coverage collection stops the covered processes, so it's done once, after the next run.
-      # The containers keep collecting coverage data in this run, so it's included in the results.
       - name: Check test data integrity
         id: check_test_data
         run: |
-          pytest tests/python/ -m integrity_check --alluredir=tests/python/allure-results
+          pytest tests/python/ -m integrity_check
 
       - name: Run REST API and SDK tests
         id: run_tests
         env:
           COVERAGE_PROCESS_START: ".coveragerc"
         run: |
-          pytest tests/python/ -k "${{ matrix.pattern }}" -m "not integrity_check" --keep-data --cov --cov-report=json --alluredir=tests/python/allure-results
+          pytest tests/python/ -k "${{ matrix.pattern }}" --keep-data --cov --cov-report=json --alluredir=tests/python/allure-results
           for COVERAGE_FILE in `find -name "coverage*.json" -type f -printf "%f\n"`; do mv ${COVERAGE_FILE} "${COVERAGE_FILE%%.*}_0.json"; done
 
 
@@ -538,7 +536,7 @@ jobs:
           kubectl cp tests/mounted_file_share $(kubectl get pods -l component=server -o jsonpath='{.items[0].metadata.name}'):/home/django/share/
           kubectl exec $(kubectl get pods -l component=server -o jsonpath='{.items[0].metadata.name}') -- bash -c "mv /home/django/share/mounted_file_share/* /home/django/share/ && rm -r /home/django/share/mounted_file_share"
           pytest --timeout 30 --platform=kube -m "integrity_check" tests/python --log-level INFO
-          pytest --timeout 30 --platform=kube -m "not with_external_services and not integrity_check" --keep-data tests/python --log-level INFO
+          pytest --timeout 30 --platform=kube -m "not with_external_services" --keep-data tests/python --log-level INFO
 
       - name: Creating a log file from "cvat" container logs
         if: failure()

@@ -529,6 +529,9 @@ def local_start(
         docker_exec(
             Container.DB, "psql -U root -d postgres -v from=cvat -v to=test_db -f /tmp/restore.sql"
         )
+    else:
+        # The containers might still require recreation if the environment changed
+        wait_for_services(waiting_time)
 
     if start:
         pytest.exit("All necessary containers have been created and started.", returncode=0)
