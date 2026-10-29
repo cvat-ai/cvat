@@ -70,16 +70,16 @@ class MediaDownloadPolicy(Enum):
     """
     Download and cache all media data when the dataset object is created.
 
-    This requires the task's original chunks to be image sets, meaning that each chunk
-    contains individual images. Tasks created from video may still satisfy this requirement.
+    Tasks whose original chunks are videos require the `video` extra and the OpenH264
+    library (see the CVAT_OPENH264_LIBRARY environment variable).
     """
 
     FETCH_CHUNKS_ON_DEMAND = auto()
     """
-    Download image-set chunks lazily as they are needed and cache them locally.
+    Download chunks lazily as they are needed and cache them locally.
 
-    This requires the task's original chunks to be image sets, meaning that each chunk
-    contains individual images. Tasks created from video may still satisfy this requirement.
+    Tasks whose original chunks are videos require the `video` extra and the OpenH264
+    library (see the CVAT_OPENH264_LIBRARY environment variable).
     """
 
     FETCH_FRAMES_ON_DEMAND = auto()

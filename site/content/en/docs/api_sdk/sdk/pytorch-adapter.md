@@ -84,8 +84,9 @@ dataset = ProjectVisionDataset(client, 123)
 dataset = TaskVisionDataset(client, 456)
 ```
 
-The referenced project or task must contain image data.
-Video data is currently not supported.
+To use a project or task with video data, install the `video` extra
+and the OpenH264 library, as described in
+{{< ilink "/docs/api_sdk/sdk#installation" "Installation" >}}.
 
 The constructors of these classes also support several keyword-only parameters:
 

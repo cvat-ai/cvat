@@ -33,7 +33,6 @@ class TaskVisionDataset(torchvision.datasets.VisionDataset):
 
     Limitations:
 
-    * Only tasks with image (not video) data are supported at the moment.
     * Track annotations are currently not accessible.
     """
 

@@ -5,20 +5,23 @@
 from __future__ import annotations
 
 import contextlib
+import io
 import itertools
 import tempfile
-import zipfile
+import threading
 from collections.abc import Generator, Iterable, Iterator, Sequence
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import attrs
 import PIL.Image
 
 import cvat_sdk.core
-import cvat_sdk.core.exceptions
 import cvat_sdk.models as models
+from cvat_sdk.core.media_extractors import VideoMp4ChunkReader, ZipChunkReader
+from cvat_sdk.core.media_io.media_chunks import ChunkLoader, ChunkReaderFactory, FileChunkLoader
+from cvat_sdk.core.proxies.tasks import Task
 from cvat_sdk.datasets.caching import CacheManager, UpdatePolicy, make_cache_manager
 from cvat_sdk.datasets.common import (
     FrameAnnotations,
@@ -27,6 +30,9 @@ from cvat_sdk.datasets.common import (
     Sample,
     UnsupportedDatasetError,
 )
+
+if TYPE_CHECKING:
+    import cvat_mp4_h264
 
 _NUM_DOWNLOAD_THREADS = 4
 
@@ -47,16 +53,45 @@ class TaskDataset:
     * Track annotations are currently not accessible.
     """
 
-    class _TaskMediaElement(MediaElement):
+    _READER_FACTORIES: dict[str, ChunkReaderFactory] = {
+        "imageset": ZipChunkReader,
+        "video": VideoMp4ChunkReader,
+    }
+
+    class _TaskChunkMediaElement(MediaElement):
         def __init__(
-            self, dataset: TaskDataset, frame_index: int, cache_manager: CacheManager
+            self,
+            task: Task,
+            frame_index: int,
+            chunk_loader: ChunkLoader,
+            chunk_loader_lock: threading.Lock,
         ) -> None:
-            self._dataset = dataset
+            self._task = task
             self._frame_index = frame_index
-            self._cache_manager = cache_manager
+            self._chunk_loader = chunk_loader
+            self._chunk_loader_lock = chunk_loader_lock
 
         def load_image(self) -> PIL.Image.Image:
-            return self._dataset._load_frame_image(self._frame_index, self._cache_manager)
+            chunk_index, member_index = divmod(self._frame_index, self._task.data_chunk_size)
+
+            frame: io.BytesIO | cvat_mp4_h264.VideoFrame
+            with self._chunk_loader_lock:
+                frame, _ = self._chunk_loader.load(chunk_id=chunk_index)[member_index]
+
+            if isinstance(frame, io.BytesIO):
+                image = PIL.Image.open(frame)
+                image.load()
+                return image
+
+            return frame.to_image()
+
+    class _TaskServerMediaElement(MediaElement):
+        def __init__(self, task: Task, frame_index: int) -> None:
+            self._task = task
+            self._frame_index = frame_index
+
+        def load_image(self) -> PIL.Image.Image:
+            return PIL.Image.open(self._task.get_frame(self._frame_index, quality="original"))
 
     def __init__(
         self,
@@ -111,13 +146,14 @@ class TaskDataset:
             self._init_chunk_dir()
             needed_chunks = {index // self._task.data_chunk_size for index in active_frame_indexes}
             self._ensure_chunks(needed_chunks)
-            self._load_frame_image = self._load_frame_image_from_cache_manager
+            self._chunk_loader = self._make_chunk_loader(cache_manager=self._cache_manager)
+            self._chunk_loader_lock = threading.Lock()
         elif media_download_policy == MediaDownloadPolicy.FETCH_CHUNKS_ON_DEMAND:
             self._init_chunk_dir()
-            self._load_frame_image = self._load_frame_image_from_cache_manager
+            self._chunk_loader = self._make_chunk_loader(cache_manager=self._cache_manager)
+            self._chunk_loader_lock = threading.Lock()
         elif media_download_policy == MediaDownloadPolicy.FETCH_FRAMES_ON_DEMAND:
             assert update_policy != UpdatePolicy.NEVER
-            self._load_frame_image = self._load_frame_image_from_server
         else:
             assert False, "Unknown media download policy"
 
@@ -137,20 +173,38 @@ class TaskDataset:
                 frame_index=k,
                 frame_name=data_meta.frames[k if is_imageset else 0].name,
                 annotations=v,
-                media=self._TaskMediaElement(self, k, self._cache_manager),
+                media=(
+                    self._TaskServerMediaElement(task=self._task, frame_index=k)
+                    if media_download_policy == MediaDownloadPolicy.FETCH_FRAMES_ON_DEMAND
+                    else self._TaskChunkMediaElement(
+                        task=self._task,
+                        frame_index=k,
+                        chunk_loader=self._chunk_loader,
+                        chunk_loader_lock=self._chunk_loader_lock,
+                    )
+                ),
             )
             for k, v in self._frame_annotations.items()
         ]
 
     def _init_chunk_dir(self) -> None:
-        if self._task.data_original_chunk_type != "imageset":
+        if self._task.data_original_chunk_type not in self._READER_FACTORIES:
             raise UnsupportedDatasetError(
-                "Chunk-based media access is only supported for tasks whose original chunks "
-                f"are image sets; current original chunk type is "
-                f"{self._task.data_original_chunk_type!r}"
+                "Chunk-based media access is not supported for tasks whose original chunk type "
+                f"is {self._task.data_original_chunk_type!r}"
             )
 
-        self._cache_manager.chunk_dir(self._task.id).mkdir(exist_ok=True, parents=True)
+        self._cache_manager.chunk_dir(task_id=self._task.id).mkdir(exist_ok=True, parents=True)
+
+    def _make_chunk_loader(self, cache_manager: CacheManager) -> ChunkLoader:
+        def get_chunk_path(chunk_index: int) -> Path:
+            cache_manager.ensure_chunk(task=self._task, chunk_index=chunk_index)
+            return cache_manager.chunk_path(task=self._task, chunk_index=chunk_index)
+
+        return FileChunkLoader(
+            reader_factory=self._READER_FACTORIES[self._task.data_original_chunk_type],
+            get_chunk_path_callback=get_chunk_path,
+        )
 
     def _ensure_chunks(self, chunk_indexes: Iterable[int]) -> None:
         self._logger.info("Downloading chunks...")
@@ -158,7 +212,7 @@ class TaskDataset:
         with ThreadPoolExecutor(_NUM_DOWNLOAD_THREADS) as pool:
 
             def ensure_chunk(chunk_index):
-                self._cache_manager.ensure_chunk(self._task, chunk_index)
+                self._cache_manager.ensure_chunk(task=self._task, chunk_index=chunk_index)
 
             for _ in pool.map(ensure_chunk, sorted(chunk_indexes)):
                 # just need to loop through all results so that any exceptions are propagated
@@ -224,36 +278,62 @@ class TaskDataset:
         Keeping references to previous samples after requesting the next sample is unsupported.
         """
 
-        if self._media_download_policy == MediaDownloadPolicy.FETCH_FRAMES_ON_DEMAND:
+        if self._media_download_policy in (
+            MediaDownloadPolicy.PRELOAD_ALL,
+            MediaDownloadPolicy.FETCH_FRAMES_ON_DEMAND,
+        ):
+            assert not temporary_chunks
             yield iter(self._samples)
             return
 
-        sample_chunks = self._group_samples_by_chunk()
+        if self._media_download_policy == MediaDownloadPolicy.FETCH_CHUNKS_ON_DEMAND:
+            sample_chunks = self._group_samples_by_chunk()
 
-        if temporary_chunks:
-            assert self._media_download_policy == MediaDownloadPolicy.FETCH_CHUNKS_ON_DEMAND
-            assert self._update_policy == UpdatePolicy.IF_MISSING_OR_STALE
+            if temporary_chunks:
+                assert self._update_policy == UpdatePolicy.IF_MISSING_OR_STALE
 
-            with tempfile.TemporaryDirectory(
-                prefix=f"cvat-task-{self._task.id}-chunks-"
-            ) as temp_dir:
-                temp_cache_manager = make_cache_manager(
-                    self._client, self._update_policy, cache_dir=Path(temp_dir)
-                )
-                temp_cache_manager.chunk_dir(self._task.id).mkdir(parents=True)
+                with tempfile.TemporaryDirectory(
+                    prefix=f"cvat-task-{self._task.id}-chunks-"
+                ) as temp_dir:
+                    temp_cache_manager = make_cache_manager(
+                        client=self._client,
+                        update_policy=self._update_policy,
+                        cache_dir=Path(temp_dir),
+                    )
+                    temp_cache_manager.chunk_dir(task_id=self._task.id).mkdir(parents=True)
+                    temp_chunk_loader = self._make_chunk_loader(cache_manager=temp_cache_manager)
+                    temp_chunk_loader_lock = threading.Lock()
 
-                yield self._iter_samples_from_chunks(
-                    sample_chunks,
-                    cache_manager=temp_cache_manager,
-                    temporary_chunks=True,
-                )
+                    samples_iterator = self._iter_samples_fetching_chunks_on_demand(
+                        sample_chunks,
+                        cache_manager=temp_cache_manager,
+                        chunk_loader=temp_chunk_loader,
+                        chunk_loader_lock=temp_chunk_loader_lock,
+                        temporary_chunks=True,
+                    )
+                    try:
+                        yield samples_iterator
+                    finally:
+                        samples_iterator.close()
+
+                        with temp_chunk_loader_lock:
+                            temp_chunk_loader.unload()
+                return
+
+            samples_iterator = self._iter_samples_fetching_chunks_on_demand(
+                sample_chunks,
+                cache_manager=self._cache_manager,
+                chunk_loader=self._chunk_loader,
+                chunk_loader_lock=self._chunk_loader_lock,
+                temporary_chunks=False,
+            )
+            try:
+                yield samples_iterator
+            finally:
+                samples_iterator.close()
             return
 
-        yield self._iter_samples_from_chunks(
-            sample_chunks,
-            cache_manager=self._cache_manager,
-            temporary_chunks=False,
-        )
+        raise ValueError(f"Unknown media download policy: {self._media_download_policy}")
 
     def _group_samples_by_chunk(self) -> list[tuple[int, list[Sample]]]:
         return [
@@ -264,45 +344,32 @@ class TaskDataset:
             )
         ]
 
-    def _iter_samples_from_chunks(
+    def _iter_samples_fetching_chunks_on_demand(
         self,
         sample_chunks: Sequence[tuple[int, Sequence[Sample]]],
         *,
         cache_manager: CacheManager,
+        chunk_loader: ChunkLoader,
+        chunk_loader_lock: threading.Lock,
         temporary_chunks: bool,
-    ) -> Iterator[Sample]:
+    ) -> Generator[Sample, None, None]:
         for chunk_index, chunk_samples in sample_chunks:
-            cache_manager.ensure_chunk(self._task, chunk_index)
+            cache_manager.ensure_chunk(task=self._task, chunk_index=chunk_index)
 
             for sample in chunk_samples:
                 yield attrs.evolve(
                     sample,
-                    media=self._TaskMediaElement(self, sample.frame_index, cache_manager),
+                    media=self._TaskChunkMediaElement(
+                        task=self._task,
+                        frame_index=sample.frame_index,
+                        chunk_loader=chunk_loader,
+                        chunk_loader_lock=chunk_loader_lock,
+                    ),
                 )
 
             if temporary_chunks:
-                cache_manager.chunk_path(self._task, chunk_index).unlink(missing_ok=True)
-
-    def _load_frame_image_from_cache_manager(
-        self, frame_index: int, cache_manager: CacheManager
-    ) -> PIL.Image:
-        assert frame_index in self._frame_annotations
-
-        chunk_index = frame_index // self._task.data_chunk_size
-        member_index = frame_index % self._task.data_chunk_size
-
-        cache_manager.ensure_chunk(self._task, chunk_index)
-
-        with zipfile.ZipFile(cache_manager.chunk_path(self._task, chunk_index), "r") as chunk_zip:
-            with chunk_zip.open(chunk_zip.infolist()[member_index]) as chunk_member:
-                image = PIL.Image.open(chunk_member)
-                image.load()
-
-        return image
-
-    def _load_frame_image_from_server(
-        self, frame_index: int, cache_manager: CacheManager
-    ) -> PIL.Image:
-        assert frame_index in self._frame_annotations
-
-        return PIL.Image.open(self._task.get_frame(frame_index, quality="original"))
+                with chunk_loader_lock:
+                    chunk_loader.unload()
+                    cache_manager.chunk_path(task=self._task, chunk_index=chunk_index).unlink(
+                        missing_ok=True
+                    )
