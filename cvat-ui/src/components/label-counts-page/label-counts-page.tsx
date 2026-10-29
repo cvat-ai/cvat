@@ -16,6 +16,7 @@ import { InstanceType } from 'reducers';
 import GoBackButton from 'components/common/go-back-button';
 import CVATLoadingSpinner from 'components/common/loading-spinner';
 import ResourceLink from 'components/common/resource-link';
+import LabelCountsChart from './label-counts-chart';
 
 const core = getCore();
 
@@ -70,19 +71,10 @@ function LabelCountsPage(): JSX.Element {
                         )}
                         { fetching && <CVATLoadingSpinner /> }
                         { labelCounts && (
-                            <div className='cvat-label-counts-list'>
-                                <Text strong>{`Total: ${labelCounts.total}`}</Text>
-                                { labelCounts.labels.map((label) => (
-                                    <div key={label.id} className='cvat-label-counts-item'>
-                                        <span
-                                            className='cvat-label-counts-color'
-                                            style={{ backgroundColor: label.color }}
-                                        />
-                                        <Text className='cvat-label-counts-name'>{label.name}</Text>
-                                        <Text>{label.count}</Text>
-                                    </div>
-                                ))}
-                            </div>
+                            <>
+                                <Text strong>{`Total: ${labelCounts.total} annotations`}</Text>
+                                <LabelCountsChart labels={labelCounts.labels} />
+                            </>
                         )}
                     </Col>
                 </Row>

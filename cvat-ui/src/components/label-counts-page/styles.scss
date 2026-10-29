@@ -24,19 +24,7 @@
     @include cvat-management-page-header;
 }
 
-.cvat-label-counts-item {
-    display: flex;
-    align-items: center;
-    margin-top: $grid-unit-size;
-}
-
-.cvat-label-counts-color {
-    width: $grid-unit-size * 2;
-    height: $grid-unit-size * 2;
-    margin-right: $grid-unit-size;
-    border-radius: 50%;
-}
-
-.cvat-label-counts-name {
-    flex-grow: 1;
+.cvat-label-counts-chart {
+    position: relative;
+    margin-top: $grid-unit-size * 2;
 }
