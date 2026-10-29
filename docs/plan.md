@@ -83,6 +83,11 @@ direction goes under "Changes to this plan" with the time and the reason. The or
 | 16:19 | 3 | code done | cvat-core client, page, route, menu entry, bar chart, empty and error states. Lint and type check pass; not yet seen in a browser with data |
 | 16:23 | 2 | tested | 14 backend tests for the counting rule pass |
 | 16:25 | 0 | late | COCO task not created yet; steps 4-5 wait for it |
+| 17:14 | 0 | done | COCO task 1 imported: 5000 images, 10 jobs, 41,866 shapes |
+| 17:15 | 4 | done | MO-2: endpoint, SQL and COCO file agree on all 80 labels (multi-part polygons counted as CVAT stores them) |
+| 17:52 | 5 | done | Gate passed in Chrome: chart, empty state, refused user, server stopped and Retry recovery |
+| 17:47 | 6 | done | 401 and 403 shown live and in 6 HTTP tests against the real OPA policy |
+| 17:54 | - | done | Backend and frontend branches merged into `dev-test01` |
 
 ## 7. Changes to this plan (added, never rewritten)
 
@@ -95,6 +100,11 @@ direction goes under "Changes to this plan" with the time and the reason. The or
 - 17:13: The stop rule for the gate moves from 18:00 to 19:00. Why: the floor code was finished by 16:23,
   but the COCO task could only be created and imported after that, so the gate waits on data, not on code.
   The stretch cutoff stays at 20:30, which still leaves 2.5 h for documents, the PR and the recording.
+- 17:45: Item 5's tests were written while the last floor check (the empty state) was still waiting on its
+  test task. Why: every other floor check had passed, and the tests touch only the backend branch.
+- 17:55: Code and documents freeze at 20:00 instead of 21:20, and live updates (items 8-9) only start if the
+  job filter (item 7) is done by 18:45. Why: I need about 3 h at the end to go through the code I am
+  submitting, set up a microphone and record. Explaining the work is assessed before the code is.
 
 ## 8. Decision record
 
