@@ -39,3 +39,13 @@
 .cvat-label-counts-empty {
     margin-top: $grid-unit-size * 8;
 }
+
+.cvat-label-counts-toolbar {
+    display: flex;
+    align-items: center;
+    gap: $grid-unit-size * 2;
+}
+
+.cvat-label-counts-job-filter {
+    min-width: $grid-unit-size * 30;
+}
