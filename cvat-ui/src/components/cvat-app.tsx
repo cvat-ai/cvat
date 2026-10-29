@@ -89,6 +89,7 @@ import BulkProgress from './bulk-progress';
 import ProfilePageComponent from './profile-page/profile-page';
 import ServerUnavailableComponent from './server-unavailable/server-unavailable';
 import GitHubStarModal from './github-star-prompt/github-star-modal';
+import AnnotationCountsPage from './annotation-counts-page/annotation-counts-page';
 
 interface CVATAppProps {
     loadFormats: () => void;
@@ -597,7 +598,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                                         <Route exact path='/organization' component={OrganizationPage} />
                                         <Route exact path='/requests' component={RequestsPage} />
                                         <Route exact path='/profile' component={ProfilePageComponent} />
-                                        { routesToRender }
+                                        {routesToRender}
                                         <Route
                                             path='/models'
                                         >
@@ -605,6 +606,11 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                                                 <Route exact path='/models' component={ModelsPageComponent} />
                                             </Switch>
                                         </Route>
+                                        <Route
+                                            exact
+                                            path='/tasks/:tid/annotation-counts'
+                                            component={AnnotationCountsPage}
+                                        />
                                         <Redirect
                                             push
                                             to={{
@@ -624,13 +630,13 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                                     <BulkProgress />
                                     {this.state.githubStarPromptVisible &&
                                         growth.data ? (
-                                            <GitHubStarModal
-                                                open
-                                                onShown={this.markGitHubStarPromptShown}
-                                                onSupport={this.supportCVAT}
-                                                onClose={() => this.setState({ githubStarPromptVisible: false })}
-                                            />
-                                        ) : null}
+                                        <GitHubStarModal
+                                            open
+                                            onShown={this.markGitHubStarPromptShown}
+                                            onSupport={this.supportCVAT}
+                                            onClose={() => this.setState({ githubStarPromptVisible: false })}
+                                        />
+                                    ) : null}
                                     {/* eslint-disable-next-line */}
                                     <a id='downloadAnchor' target='_blank' style={{ display: 'none' }} download />
                                 </Layout.Content>
@@ -662,7 +668,7 @@ class CVATApplication extends React.PureComponent<CVATAppProps & RouteComponentP
                             )}
 
                             <Route exact path='/auth/email-confirmation' component={EmailConfirmationPage} />
-                            { routesToRender }
+                            {routesToRender}
                             <Redirect
                                 to={location.pathname.length > 1 ? `/auth/login?next=${location.pathname}` : '/auth/login'}
                             />
