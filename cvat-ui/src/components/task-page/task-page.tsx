@@ -4,7 +4,12 @@
 // SPDX-License-Identifier: MIT
 
 import './styles.scss';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, {
+    useCallback,
+    useEffect,
+    useMemo,
+    useState,
+} from 'react';
 import { useHistory, useParams } from 'react-router';
 import { useDispatch, useSelector } from 'react-redux';
 import { shallowEqual } from 'utils/redux';
@@ -148,12 +153,12 @@ function TaskPageComponent(): JSX.Element {
     }, [taskInstance, annotationCountGroup]);
 
     useEffect(() => {
-        void fetchAnnotationCounts();
+        fetchAnnotationCounts();
     }, [fetchAnnotationCounts]);
 
     useEffect(() => {
         if (!taskInstance) {
-            return;
+            return undefined;
         }
 
         let isActive = true;
@@ -174,7 +179,7 @@ function TaskPageComponent(): JSX.Element {
             const currentSocket = socket;
 
             currentSocket.onopen = () => {
-                void fetchAnnotationCounts();
+                fetchAnnotationCounts();
                 stableConnectionTimer = window.setTimeout(() => {
                     retryCount = 0;
                 }, 30000);
@@ -183,11 +188,10 @@ function TaskPageComponent(): JSX.Element {
                 try {
                     const message = JSON.parse(event.data) as { type?: string };
                     if (message.type === 'annotations_changed') {
-                        void fetchAnnotationCounts();
+                        fetchAnnotationCounts();
                     }
                 } catch (error: any) {
                     // Invalid server messages should be visible rather than silently ignored.
-                    // eslint-disable-next-line no-console
                     console.error('Could not process annotation-count WebSocket event', error);
                 }
             };
