@@ -1,4 +1,4 @@
 -r development.in
 
 coverage~=7.15
-fakeredis[lua]~=2.39
+fakeredis[lua]~=2.40
