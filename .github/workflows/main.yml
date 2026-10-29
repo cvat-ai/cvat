@@ -187,12 +187,21 @@ jobs:
             -e './cvat-sdk[masks,pytorch]' -e ./cvat-cli \
             --extra-index-url https://download.pytorch.org/whl/cpu
 
+      # Other tests rely on the test data, so their results are meaningless if it is broken.
+      # This run also starts the containers and restores the test data, which the next run reuses.
+      # Coverage collection stops the covered processes, so it's done once, after the next run.
+      # The containers keep collecting coverage data in this run, so it's included in the results.
+      - name: Check test data integrity
+        id: check_test_data
+        run: |
+          pytest tests/python/ -m integrity_check --alluredir=tests/python/allure-results
+
       - name: Run REST API and SDK tests
         id: run_tests
         env:
           COVERAGE_PROCESS_START: ".coveragerc"
         run: |
-          pytest tests/python/ -k "${{ matrix.pattern }}" --stop-on-integrity-failure --cov --cov-report=json --alluredir=tests/python/allure-results
+          pytest tests/python/ -k "${{ matrix.pattern }}" -m "not integrity_check" --keep-data --cov --cov-report=json --alluredir=tests/python/allure-results
           for COVERAGE_FILE in `find -name "coverage*.json" -type f -printf "%f\n"`; do mv ${COVERAGE_FILE} "${COVERAGE_FILE%%.*}_0.json"; done
 
 
@@ -204,7 +213,7 @@ jobs:
             coverage*.json
 
       - name: Creating a log file from cvat containers
-        if: failure() && steps.run_tests.conclusion == 'failure'
+        if: failure() && (steps.check_test_data.conclusion == 'failure' || steps.run_tests.conclusion == 'failure')
         env:
           LOGS_DIR: "${{ github.workspace }}/rest_api_testing"
         run: |
@@ -228,7 +237,7 @@ jobs:
 
 
       - name: Creating a log file from cvat containers
-        if: failure() && steps.run_tests.conclusion == 'failure'
+        if: failure() && (steps.check_test_data.conclusion == 'failure' || steps.run_tests.conclusion == 'failure')
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: "rest_api_container_logs-${{ matrix.pattern }}"
@@ -528,7 +537,8 @@ jobs:
         run: |
           kubectl cp tests/mounted_file_share $(kubectl get pods -l component=server -o jsonpath='{.items[0].metadata.name}'):/home/django/share/
           kubectl exec $(kubectl get pods -l component=server -o jsonpath='{.items[0].metadata.name}') -- bash -c "mv /home/django/share/mounted_file_share/* /home/django/share/ && rm -r /home/django/share/mounted_file_share"
-          pytest --stop-on-integrity-failure --timeout 30 --platform=kube -m "not with_external_services" tests/python --log-level INFO
+          pytest --timeout 30 --platform=kube -m "integrity_check" tests/python --log-level INFO
+          pytest --timeout 30 --platform=kube -m "not with_external_services and not integrity_check" --keep-data tests/python --log-level INFO
 
       - name: Creating a log file from "cvat" container logs
         if: failure()
