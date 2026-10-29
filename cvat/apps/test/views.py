@@ -4,9 +4,10 @@
 
 from drf_spectacular.utils import extend_schema
 from rest_framework import viewsets
+from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 
-from cvat.apps.engine.models import Task
+from cvat.apps.engine.models import Job, Task
 from cvat.apps.engine.types import ExtendedRequest
 from cvat.utils import django_database as db_utils
 
@@ -34,11 +35,19 @@ class LabelCountsViewSet(viewsets.ViewSet):
             Task.objects.select_related("data"), query.validated_data["task_id"]
         )
 
-        labels = count_annotations_by_label(task)
+        job = None
+        if (job_id := query.validated_data.get("job_id")) is not None:
+            job = Job.objects.filter(segment__task_id=task.id, id=job_id).first()
+            if job is None:
+                raise ValidationError(
+                    {"job_id": [f"Job {job_id} does not belong to task {task.id}"]}
+                )
+
+        labels = count_annotations_by_label(task, job=job)
         response = LabelCountsSerializer(
             {
                 "task_id": task.id,
-                "job_id": None,
+                "job_id": job.id if job else None,
                 "total": sum(label["count"] for label in labels),
                 "labels": labels,
             }

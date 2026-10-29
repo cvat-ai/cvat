@@ -7,6 +7,9 @@ from rest_framework import serializers
 
 class LabelCountsQuerySerializer(serializers.Serializer):
     task_id = serializers.IntegerField(help_text="A task to count annotations in")
+    job_id = serializers.IntegerField(
+        required=False, help_text="A job of the task to count annotations in"
+    )
 
 
 class LabelCountSerializer(serializers.Serializer):
