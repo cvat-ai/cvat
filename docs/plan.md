@@ -88,6 +88,9 @@ direction goes under "Changes to this plan" with the time and the reason. The or
 | 17:52 | 5 | done | Gate passed in Chrome: chart, empty state, refused user, server stopped and Retry recovery |
 | 17:47 | 6 | done | 401 and 403 shown live and in 6 HTTP tests against the real OPA policy |
 | 17:54 | - | done | Backend and frontend branches merged into `dev-test01` |
+| 17:54 | 7 | done | MO-1 run 1: median 108.7 ms, target 100 ms missed by 8.7 ms |
+| 18:14 | 8 | done | Job filter: the 10 job totals add up to the task total (41,866); the page has a job Select |
+| 18:14 | 9 | skipped | Live updates and reconnect not started, see the 18:12 change |
 
 ## 7. Changes to this plan (added, never rewritten)
 
@@ -105,7 +108,32 @@ direction goes under "Changes to this plan" with the time and the reason. The or
 - 17:55: Code and documents freeze at 20:00 instead of 21:20, and live updates (items 8-9) only start if the
   job filter (item 7) is done by 18:45. Why: I need about 3 h at the end to go through the code I am
   submitting, set up a microphone and record. Explaining the work is assessed before the code is.
+- 18:00: The filter for item 7 is **by job**. Why: CVAT splits a task into jobs and assigns each job to an
+  annotator, so per-job counts answer "how far is each person, and on which classes". It reuses the same
+  query with one extra filter on `job_id`, which already has an index. Filtering by shape type was rejected,
+  because the COCO import produces almost only polygons, and filtering by source was rejected, because every
+  imported row has the source `file`.
+- 18:12: Live updates (items 8 and 9) are not built. Why: the job filter was done at 18:14, after the 18:00
+  start the stretch needed, and the remaining work (a WebSocket route, change notifications from the annotation
+  save path, reconnect logic in the page) is about 1.5 h, which would run past the 20:00 freeze.
 
 ## 8. Decision record
 
-To be added if item 10 is reached: the approach taken, the approach rejected, and what rejecting it cost.
+- **Approach taken:** count in the database. `cvat/apps/test/counts.py` runs one `GROUP BY label_id` per
+  annotation table (top-level shapes, top-level tracks, tags) over the task's jobs, and merges the result onto
+  `task.get_labels()`. Access is delegated to CVAT's existing task VIEW policy (`TaskPermission`), so there are
+  no new rules.
+- **Approach rejected:** reuse CVAT's own annotation loader (`dataset_manager`'s `TaskAnnotation`, the code
+  behind `GET /api/tasks/<id>/annotations`) and count the loaded objects per label in Python.
+- **What rejecting it cost:**
+  - CVAT's loader already knows which jobs and which rows make up "the task's annotations". By not using it,
+    the counting rule had to be re-stated by hand:
+    - the job types, mirrored from `dataset_manager/task.py:1033`,
+    - skipping skeleton elements and track keyframes,
+    - project-level labels.
+  - That needed its own 14 tests.
+  - If CVAT changes that rule, `counts.py` must be updated to match.
+  - It also meant learning how the import stores COCO, which is how the 36,781 instances turned into 41,866
+    stored shapes (MO-2).
+  - In return, nothing is loaded into Python. The loader would build all 41,866 shapes as objects for every
+    request, which could not meet MO-1.
