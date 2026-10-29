@@ -1,0 +1,41 @@
+// Copyright (C) CVAT.ai Corporation
+//
+// SPDX-License-Identifier: MIT
+
+@import 'base';
+
+.cvat-label-counts-page {
+    overflow: auto;
+}
+
+.cvat-label-counts-page, .cvat-label-counts-wrapper {
+    height: 100%;
+}
+
+.cvat-label-counts-inner {
+    @include cvat-management-page-inner;
+}
+
+.cvat-label-counts-inner-wrapper {
+    @include cvat-management-page-inner-wrapper;
+}
+
+.cvat-label-counts-header {
+    @include cvat-management-page-header;
+}
+
+.cvat-label-counts-chart-scroll {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden auto;
+    margin-top: $grid-unit-size * 2;
+    padding-bottom: $grid-unit-size * 2;
+}
+
+.cvat-label-counts-chart {
+    position: relative;
+}
+
+.cvat-label-counts-empty {
+    margin-top: $grid-unit-size * 8;
+}

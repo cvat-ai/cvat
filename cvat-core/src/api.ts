@@ -430,6 +430,12 @@ function build(): CVATCore {
                     return result;
                 },
             },
+            labelCounts: {
+                async get(filter) {
+                    const result = await PluginRegistry.apiWrapper(cvat.analytics.labelCounts.get, filter);
+                    return result;
+                },
+            },
             quality: {
                 async reports(filter = {}, aggregate = false) {
                     const result = await PluginRegistry.apiWrapper(cvat.analytics.quality.reports, filter, aggregate);
