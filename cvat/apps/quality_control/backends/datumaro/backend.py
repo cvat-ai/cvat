@@ -5,11 +5,17 @@
 from __future__ import annotations
 
 import itertools
-from collections.abc import Iterator
+import math
+from collections.abc import Iterator, Sequence
 from typing import TYPE_CHECKING, cast
 
 import attrs
 import datumaro as dm
+import numpy as np
+from shapely import make_valid
+from shapely.errors import ShapelyError
+from shapely.geometry import Polygon
+from shapely.ops import unary_union
 
 from cvat.apps.dataset_manager import data_model as cdm
 from cvat.apps.dataset_manager.data_model.adapters.datumaro import (
@@ -23,7 +29,7 @@ from cvat.apps.quality_control.backends.base import (
     FrameComparisonSample,
     QualityBackend,
 )
-from cvat.apps.quality_control.backends.datumaro.matching import Comparator
+from cvat.apps.quality_control.backends.datumaro.matching import Comparator, DistanceComparator
 from cvat.apps.quality_control.comparison_report import ComparisonParameters
 from cvat.apps.quality_control.filters import RequirementJsonLogicFilter
 from cvat.apps.quality_control.matching import (
@@ -33,6 +39,12 @@ from cvat.apps.quality_control.matching import (
     MatchingResults,
 )
 from cvat.apps.quality_control.models import QualityRequirementAnnotationType
+from cvat.apps.quality_control.threshold_policy import (
+    ConstantThresholdPolicy,
+    LinearThresholdPolicy,
+    ThresholdPolicy,
+    ThresholdPolicyEvaluator,
+)
 
 if TYPE_CHECKING:
     from cvat.apps.quality_control.datumaro_data_provider import DatumaroJobDataProvider
@@ -165,6 +177,8 @@ class Datumaro2DBackend(QualityBackend):
             "panoptic_comparison",
         ):
             value = getattr(requirement, name)
+            if name == "iou_threshold" and isinstance(value, ThresholdPolicy):
+                continue
             if value is not None:
                 setattr(settings, name, value)
         settings.compare_attributes = attribute_comparison_may_compare(
@@ -174,6 +188,41 @@ class Datumaro2DBackend(QualityBackend):
             to_datumaro_annotation_type(requirement.comparison_annotation_type)
         ]
         return settings
+
+    def shape_area(self, annotations: Sequence[cdm.Annotation2D]) -> float:
+        native = [cast(DatumaroAnnotationAdapter, ann).native_annotation for ann in annotations]
+        if not native:
+            raise AssertionError("GT shape area requires at least one annotation")
+        if len(native) == 1:
+            area = float(annotations[0].get_area())
+            if not math.isfinite(area) or area < 0:
+                # Invalid coordinates are input data errors, not backend invariants.
+                raise ValueError("GT shape area must be finite and nonnegative.")
+            if isinstance(native[0], dm.Ellipse):
+                # Use the same rotated, rasterized geometry as ellipse IoU.
+                from pycocotools import mask as mask_utils
+
+                gt_item, _ = self._native_items
+                height, width = gt_item.media_as(dm.Image).size
+                polygon = DistanceComparator.to_polygon(native[0])
+                return float(
+                    mask_utils.area(
+                        mask_utils.merge(mask_utils.frPyObjects([polygon.points], height, width))
+                    )
+                )
+            return area
+        if all(ann.type == dm.AnnotationType.polygon for ann in native):
+            # Repair self-crossings and zero-width cuts used to represent polygon holes.
+            polygons = [
+                make_valid(Polygon(np.asarray(ann.points).reshape(-1, 2))) for ann in native
+            ]
+            return float(unary_union(polygons).area)
+        if all(ann.type == dm.AnnotationType.mask for ann in native):
+            mask = np.array(native[0].image, dtype=bool, copy=True)
+            for ann in native[1:]:
+                np.logical_or(mask, ann.image, out=mask)
+            return float(np.count_nonzero(mask))
+        raise ValueError("Cannot compute a GT union area for these annotation types.")
 
     def compare(
         self,
@@ -196,9 +245,44 @@ class Datumaro2DBackend(QualityBackend):
             ]
         )
         settings = self._comparison_parameters(requirement)
+        policy = requirement.iou_threshold
+        evaluator = (
+            ThresholdPolicyEvaluator(policy) if isinstance(policy, ThresholdPolicy) else None
+        )
+        gt_threshold = None
+        if isinstance(policy, ConstantThresholdPolicy):
+            settings.iou_threshold = evaluator()
+        elif isinstance(policy, LinearThresholdPolicy):
+            thresholds = {}
+
+            def evaluate_gt_threshold(annotations):
+                key = tuple(id(ann) for ann in annotations)
+                if key not in thresholds:
+                    try:
+                        area = self.shape_area(
+                            [self._view(ann, self._gt_provider) for ann in annotations]
+                        )
+                        thresholds[key] = evaluator(area)
+                    except (ValueError, TypeError, ArithmeticError, ShapelyError) as error:
+                        raise ValueError(
+                            "Cannot compute linear IoU threshold for requirement "
+                            f"{requirement.name!r} on frame {gt_item.id!r}: "
+                            "invalid ground-truth shape area or geometry."
+                        ) from error
+                return thresholds[key]
+
+            # Validate every GT shape, including those without any matching candidates.
+            for ann in sample.gt_annotations:
+                evaluate_gt_threshold([cast(DatumaroAnnotationAdapter, ann).native_annotation])
+
+            gt_threshold = evaluate_gt_threshold
+        elif policy is not None and not isinstance(policy, float | int):
+            raise AssertionError(f"Unsupported IoU threshold policy: {policy!r}")
+
         comparator = Comparator(
             self._gt_provider.dataset.native_dataset.categories(),
             settings=settings,
+            gt_threshold=gt_threshold,
             attribute_matcher=lambda a, b: attribute_matcher(
                 self._view(a, self._gt_provider), self._view(b, self._ds_provider)
             ),

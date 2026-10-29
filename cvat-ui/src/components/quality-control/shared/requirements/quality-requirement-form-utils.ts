@@ -10,6 +10,7 @@ import {
     QualityMetricAggregation, QualityRequirementMetric, QualityRequirementPointSizeBase,
     SerializedQualityRequirementAttributeComparison,
     SerializedQualityRequirementAttributeRule,
+    SimilarityThresholdPolicy,
 } from 'cvat-core/src/quality/server-response-types';
 import { serializeQualityTargetMetric } from 'cvat-core/src/quality/quality-requirement-utils';
 import {
@@ -67,6 +68,12 @@ export const IOU_ANNOTATION_TYPES = new Set<QualityRequirementAnnotationType>([
     QualityRequirementAnnotationType.POLYGON,
     QualityRequirementAnnotationType.MASK,
     QualityRequirementAnnotationType.POLYLINE,
+]);
+export const ADAPTIVE_IOU_ANNOTATION_TYPES = new Set<QualityRequirementAnnotationType>([
+    QualityRequirementAnnotationType.ELLIPSE,
+    QualityRequirementAnnotationType.RECTANGLE,
+    QualityRequirementAnnotationType.POLYGON,
+    QualityRequirementAnnotationType.MASK,
 ]);
 export const POINT_ANNOTATION_TYPES = new Set<QualityRequirementAnnotationType>([
     QualityRequirementAnnotationType.POINTS,
@@ -168,7 +175,7 @@ export interface RequirementFormValues {
     requiredScore: number;
     filter?: string;
     enabled: boolean;
-    iouThreshold?: number | null;
+    iouThreshold?: number | SimilarityThresholdPolicy | null;
     pointSize?: number | null;
     pointSizeBase?: QualityRequirementPointSizeBase | null;
     lineThickness?: number | null;
@@ -368,6 +375,23 @@ export function buildAttributeOptions(labels: Label[]): AttributeOption[] {
     return options.sort((first, second) => first.label.localeCompare(second.label));
 }
 
+function getThresholdPolicy(
+    requirement: QualityRequirement | null,
+    requirementsById: Map<number, QualityRequirement>,
+): SimilarityThresholdPolicy {
+    let current = requirement;
+    const visited = new Set<number>();
+    while (current && !visited.has(current.id)) {
+        visited.add(current.id);
+        const threshold = current.iouThreshold ?? current.effective?.iouThreshold;
+        const policy: SimilarityThresholdPolicy = typeof threshold === 'number' ?
+            { type: 'iou', mode: 'constant', value: threshold } : threshold;
+        if (policy) return structuredClone(policy);
+        current = requirementsById.get(current.parentRequirementId) ?? null;
+    }
+    return { type: 'iou', mode: 'constant', value: ROOT_DEFAULTS.iouThreshold / 100 };
+}
+
 export function getInitialValues(
     requirement: QualityRequirement | null,
     parentRequirement: QualityRequirement | null,
@@ -423,13 +447,17 @@ export function getInitialValues(
         ),
         filter: requirement?.filter ?? '',
         enabled: requirement?.enabled ?? true,
-        iouThreshold: getNumberPercentValue(
-            sourceRequirement,
-            requirementsById,
-            (item: QualityRequirement) => item.iouThreshold,
-            (item: QualityRequirement) => getRequirementEffectiveField(item, 'iouThreshold'),
-            ROOT_DEFAULTS.iouThreshold,
-        ),
+        iouThreshold: ADAPTIVE_IOU_ANNOTATION_TYPES.has(getAnnotationType(sourceRequirement, requirementsById)) ?
+            getThresholdPolicy(sourceRequirement, requirementsById) : getNumberPercentValue(
+                sourceRequirement,
+                requirementsById,
+                (item: QualityRequirement) => (typeof item.iouThreshold === 'number' ? item.iouThreshold : null),
+                (item: QualityRequirement) => {
+                    const threshold = getRequirementEffectiveField(item, 'iouThreshold');
+                    return typeof threshold === 'number' ? threshold : null;
+                },
+                ROOT_DEFAULTS.iouThreshold,
+            ),
         pointSize: getNumberPercentValue(
             sourceRequirement,
             requirementsById,
@@ -664,7 +692,13 @@ const SERIALIZED_INHERITED_FIELD_DESCRIPTORS: SerializedInheritedFieldDescriptor
     getValue: (values: RequirementFormValues) => fromPercent(values.requiredScore),
 }, {
     fieldName: 'iouThreshold',
-    getValue: (values: RequirementFormValues) => fromPercent(values.iouThreshold),
+    getValue: (values: RequirementFormValues) => {
+        const threshold = values.iouThreshold;
+        if (threshold && typeof threshold === 'object') {
+            return threshold.mode === 'constant' ? threshold.value : threshold;
+        }
+        return fromPercent(typeof threshold === 'number' ? threshold : null);
+    },
 }, {
     fieldName: 'pointSize',
     getValue: (values: RequirementFormValues) => fromPercent(values.pointSize),
