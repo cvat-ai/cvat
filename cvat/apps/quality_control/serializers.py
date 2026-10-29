@@ -4,7 +4,7 @@
 
 import math
 import textwrap
-from collections.abc import Iterator, Mapping
+from collections.abc import Iterable, Iterator, Mapping
 from enum import Enum
 from typing import Any
 
@@ -12,7 +12,7 @@ from django.conf import settings as django_settings
 from django.db import models as django_models
 from django.db import transaction
 from drf_spectacular.utils import extend_schema_field, extend_schema_serializer
-from rest_framework import serializers
+from rest_framework import fields, serializers
 
 from cvat.apps.engine import field_validation
 from cvat.apps.engine import serializers as engine_serializers
@@ -594,6 +594,12 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
     is_base = serializers.BooleanField(read_only=True)
     effective = serializers.SerializerMethodField(read_only=True)
 
+    def __init__(self, instance=None, data=fields.empty, **kwargs):
+        super().__init__(instance, data, **kwargs)
+
+        if self.context:
+            assert isinstance(self.context.get("known_used_attribute_ids"), Iterable | None)
+
     @staticmethod
     def _get_requirement_limit() -> int:
         return django_settings.MAX_QUALITY_REQUIREMENTS_PER_SETTINGS
@@ -713,6 +719,27 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
 
         return set(AttributeSpec.objects.filter(label_filter).values_list("id", flat=True))
 
+    @staticmethod
+    def get_attribute_comparison_spec_ids(
+        attribute_comparison: Mapping[str, Any] | None,
+    ) -> set[int]:
+        return {
+            int(rule["spec_id"])
+            for rule in (attribute_comparison or {}).get("rules", [])
+            if rule.get("spec_id") is not None
+        }
+
+    @classmethod
+    def _collect_used_attribute_spec_ids(cls, quality_settings: models.QualitySettings) -> set[int]:
+        return set().union(
+            *(
+                cls.get_attribute_comparison_spec_ids(attribute_comparison)
+                for attribute_comparison in quality_settings.requirements.values_list(
+                    "attribute_comparison", flat=True
+                )
+            )
+        )
+
     def _validate_attribute_comparison_spec_ids(
         self,
         attribute_comparison: Mapping[str, Any] | None,
@@ -721,11 +748,7 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
         if not attribute_comparison:
             return
 
-        requested_spec_ids = {
-            int(rule["spec_id"])
-            for rule in attribute_comparison.get("rules", [])
-            if rule.get("spec_id") is not None
-        }
+        requested_spec_ids = self.get_attribute_comparison_spec_ids(attribute_comparison)
         if not requested_spec_ids:
             return
 
@@ -734,6 +757,16 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
             return
 
         unknown_spec_ids = requested_spec_ids - allowed_spec_ids
+        if unknown_spec_ids:
+            # The rules for the attributes deleted after the rules had been created are kept,
+            # including the copies of such rules in the new requirements.
+            # They are ignored, if disabled, or make the requirement not computed, if enabled.
+            known_used_attribute_ids = self.context.get("known_used_attribute_ids")
+            if known_used_attribute_ids is None:
+                known_used_attribute_ids = self._collect_used_attribute_spec_ids(quality_settings)
+
+            unknown_spec_ids.difference_update(known_used_attribute_ids)
+
         if unknown_spec_ids:
             raise serializers.ValidationError(
                 {
@@ -1351,6 +1384,7 @@ class QualitySettingsSerializer(WriteOnceMixin, serializers.ModelSerializer):
         settings: models.QualitySettings,
         data: dict,
         retained_requirement_ids: set[int],
+        known_used_attribute_ids: set[int] | None = None,
         instance: models.QualityRequirement | None = None,
     ) -> QualityRequirementSerializer:
         serializer_context = {
@@ -1358,6 +1392,7 @@ class QualitySettingsSerializer(WriteOnceMixin, serializers.ModelSerializer):
             "touch_settings": False,
             "retained_requirement_ids": retained_requirement_ids,
             "skip_requirement_limit_validation": True,
+            "known_used_attribute_ids": known_used_attribute_ids,
         }
         serializer_data = {
             **data,
@@ -1443,7 +1478,7 @@ class QualitySettingsSerializer(WriteOnceMixin, serializers.ModelSerializer):
         requirements_data: list[dict],
     ) -> None:
         # The requirements payload replaces the whole current requirement set.
-        existing_requirements = {
+        existing_requirements: dict[int, models.QualityRequirement] = {
             requirement.id: requirement
             for requirement in instance.requirements.select_related("parent").all()
         }
@@ -1492,6 +1527,16 @@ class QualitySettingsSerializer(WriteOnceMixin, serializers.ModelSerializer):
                 {"requirements": "Base quality requirements cannot be deleted."}
             )
 
+        # Collected before any changes are applied, as the requirements
+        # with these rules can be updated or deleted in the same request
+        known_used_attribute_ids = {
+            attribute_id
+            for requirement in existing_requirements.values()
+            for attribute_id in QualityRequirementSerializer.get_attribute_comparison_spec_ids(
+                requirement.attribute_comparison
+            )
+        }
+
         child_serializers: list[QualityRequirementSerializer] = []
         for index, requirement_data in enumerate(requirements_data):
             requirement_id = requirement_data.get("id")
@@ -1503,6 +1548,7 @@ class QualitySettingsSerializer(WriteOnceMixin, serializers.ModelSerializer):
                 settings=instance,
                 data=requirement_data,
                 retained_requirement_ids=retained_requirement_ids,
+                known_used_attribute_ids=known_used_attribute_ids,
                 instance=requirement_instance,
             )
             child_serializers.append(child_serializer)

@@ -329,11 +329,11 @@ jobs:
           name: allure-results-e2e-${{ matrix.specs }}
           path: tests/allure-results-e2e
 
-  generate_report:
-    name: Generate Allure Report and Upload to S3
+  upload_testops_results:
     needs: [unit_testing, e2e_testing]
-    if: always()
-
-    uses: ./.github/workflows/generate-allure-report.yml
+    if: ${{ !cancelled() }}
+    permissions:
+      actions: read
+    uses: ./.github/workflows/upload-testops-results.yml
     secrets:
-      AWS_ALLURE_REPORTS_ROLE: ${{ secrets.AWS_ALLURE_REPORTS_ROLE }}
+      ALLURE_TOKEN: ${{ secrets.ALLURE_TOKEN }}
