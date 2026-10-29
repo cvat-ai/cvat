@@ -534,8 +534,6 @@ def annotate_task(
     Downloads data for the task with the given ID, applies the given function to it
     and uploads the resulting annotations back to the task.
 
-    Only tasks with 2D image (not video) data are supported at the moment.
-
     client is used to make all requests to the CVAT server.
 
     Currently, the only type of auto-annotation function supported is the detection function.

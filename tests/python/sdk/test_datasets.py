@@ -14,7 +14,7 @@ from cvat_sdk import Client, models
 from cvat_sdk.core.proxies.annotations import AnnotationUpdateAction
 from cvat_sdk.core.proxies.tasks import ResourceType
 
-from shared.utils.helpers import generate_image_files, generate_video_file
+from shared.utils.helpers import generate_image_files
 
 from .util import restrict_api_requests
 
@@ -344,33 +344,6 @@ class TestTaskDataset:
         with pytest.raises(AssertionError):
             with dataset.iter_samples(temporary_chunks=True):
                 pass
-
-    def test_non_imageset_video_task_is_unsupported_for_chunk_based_media_access(self):
-        video_file = generate_video_file(4)
-        video_path = self.tmp_path / video_file.name
-        video_path.write_bytes(video_file.getbuffer())
-
-        video_task = self.client.tasks.create_from_data(
-            models.TaskWriteRequest(
-                "Dataset layer video task",
-                labels=[models.PatchedLabelRequest(name="video-object")],
-            ),
-            resource_type=ResourceType.LOCAL,
-            resources=[video_path],
-        )
-
-        assert video_task.data_original_chunk_type != "imageset"
-
-        with pytest.raises(
-            cvatds.UnsupportedDatasetError,
-            match="tasks whose original chunks are image sets",
-        ):
-            cvatds.TaskDataset(
-                self.client,
-                video_task.id,
-                load_annotations=False,
-                media_download_policy=cvatds.MediaDownloadPolicy.FETCH_CHUNKS_ON_DEMAND,
-            )
 
     @pytest.mark.parametrize(
         "media_download_policy",

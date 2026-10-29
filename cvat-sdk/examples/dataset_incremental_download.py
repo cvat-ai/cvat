@@ -120,7 +120,7 @@ def main() -> None:
             try:
                 dataset = TaskDataset(client, task_id, update_policy=policy)
             except UnsupportedDatasetError as error:
-                # A video task, or a task with no data. One such task must not
+                # E.g. a task with no data. One such task must not
                 # stop the rest of the selection from being downloaded.
                 print(f"Skipped task {task_id}: {error}")
                 continue

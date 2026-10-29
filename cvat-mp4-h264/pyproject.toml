@@ -17,6 +17,7 @@ classifiers = [
 ]
 requires-python = ">=3.11"
 dependencies = [
+    "attrs >= 21.4.0",
     "Pillow >= 10.3.0",
 ]
 

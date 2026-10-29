@@ -17,17 +17,18 @@ cd cvat-mp4-h264 && uv pip install --editable .
 ```python
 from pathlib import Path
 
-from cvat_mp4_h264 import VideoReader
+from cvat_mp4_h264 import VideoMp4ChunkReader
 
 for path in sorted(Path("videos").glob("*.mp4")):
-    reader = VideoReader(path, library_path="/opt/codecs/libopenh264.so")
+    reader = VideoMp4ChunkReader(path, library_path="/opt/codecs/libopenh264.so")
     print(f"{path}: {len(reader)} frames")
 
     for frame in reader:
         process(frame.to_image())
 ```
 
-`library_path` points at the OpenH264 shared library; no other locations are searched.
+`library_path` points at the OpenH264 shared library. If it is omitted, the path is taken from the
+`CVAT_OPENH264_LIBRARY` environment variable; no other locations are searched.
 
 `len(reader)` reads the frame count from the MP4 sample tables, without decoding.
 
