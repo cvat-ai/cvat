@@ -22,6 +22,7 @@ from attr.converters import to_bool
 from django.conf import settings
 from django.core.files.storage import storages
 from django.db import IntegrityError, transaction
+from django.db.models import Count
 from django.db.models.query import Prefetch, prefetch_related_objects
 from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseNotFound
 from drf_spectacular.types import OpenApiTypes
@@ -1875,7 +1876,7 @@ class TaskViewSet(
         ):
             queryset = annotation_model.objects.filter(job__segment__task_id=task.id).values(
                 "label_id"
-            ).annotate(total=models.Count("id"))
+            ).annotate(total=Count("id"))
             for row in queryset:
                 label_id = row["label_id"]
                 if label_id in counts_by_label:
