@@ -10,7 +10,18 @@ import { useDispatch, useSelector } from 'react-redux';
 import { shallowEqual } from 'utils/redux';
 import { Row, Col } from 'antd/lib/grid';
 import Spin from 'antd/lib/spin';
+import Alert from 'antd/lib/alert';
+import Empty from 'antd/lib/empty';
 import notification from 'antd/lib/notification';
+import { Bar } from 'react-chartjs-2';
+import {
+    Chart as ChartJS,
+    BarElement,
+    CategoryScale,
+    Legend,
+    LinearScale,
+    Tooltip,
+} from 'chart.js';
 
 import { getInferenceStatusAsync } from 'actions/models-actions';
 import { updateJobAsync, jobsActions } from 'actions/jobs-actions';
@@ -31,6 +42,20 @@ import { getCloudStorageById } from './cloud-storage-editor';
 
 const core = getCore();
 
+ChartJS.register(
+    BarElement,
+    CategoryScale,
+    LinearScale,
+    Legend,
+    Tooltip,
+);
+
+interface AnnotationCount {
+    label_id: number;
+    label_name: string;
+    count: number;
+}
+
 function TaskPageComponent(): JSX.Element {
     const history = useHistory();
     const id = +useParams<{ id: string }>().id;
@@ -41,6 +66,9 @@ function TaskPageComponent(): JSX.Element {
         cloudStorageInstance, setCloudStorageInstance,
     ] = useState<CombinedState['cloudStorages']['current'][number] | null>(null);
     const [fetchingTask, setFetchingTask] = useState(true);
+    const [annotationCounts, setAnnotationCounts] = useState<AnnotationCount[]>([]);
+    const [fetchingAnnotationCounts, setFetchingAnnotationCounts] = useState(false);
+    const [annotationCountsError, setAnnotationCountsError] = useState<string | null>(null);
 
     const {
         deletes,
@@ -89,6 +117,35 @@ function TaskPageComponent(): JSX.Element {
     }, []);
 
     useEffect(() => {
+        if (!taskInstance) {
+            return;
+        }
+
+        const fetchCounts = async (): Promise<void> => {
+            setFetchingAnnotationCounts(true);
+            setAnnotationCountsError(null);
+
+            try {
+                const response = await fetch(`/api/tasks/${taskInstance.id}/annotation_counts`);
+                if (!response.ok) {
+                    throw new Error(`Request failed with status ${response.status}`);
+                }
+
+                const data = await response.json() as { counts?: AnnotationCount[] };
+                setAnnotationCounts(data.counts ?? []);
+            } catch (error: any) {
+                const message = error instanceof Error ? error.message : 'Unknown error';
+                setAnnotationCountsError(message);
+                setAnnotationCounts([]);
+            } finally {
+                setFetchingAnnotationCounts(false);
+            }
+        };
+
+        fetchCounts();
+    }, [taskInstance]);
+
+    useEffect(() => {
         if (taskInstance && id in deletes && deletes[id]) {
             history.push('/tasks');
         }
@@ -133,6 +190,79 @@ function TaskPageComponent(): JSX.Element {
         dispatch(updateJobAsync(job, data));
     };
 
+    const hasAnnotationCounts = annotationCounts.some(({ count }) => count > 0);
+
+    const chartData = useMemo(() => {
+        const labels = annotationCounts.map(({ label_name: labelName }) => labelName);
+        const counts = annotationCounts.map(({ count }) => count);
+
+        return {
+            labels,
+            datasets: [{
+                label: 'Annotations',
+                data: counts,
+                backgroundColor: 'rgba(24, 144, 255, 0.7)',
+                borderColor: 'rgba(24, 144, 255, 1)',
+                borderWidth: 1,
+            }],
+        };
+    }, [annotationCounts]);
+
+    const chartOptions = useMemo(() => ({
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                display: false,
+            },
+            tooltip: {
+                callbacks: {
+                    label: (context: any): string => `${context.parsed.y} annotations`,
+                },
+            },
+        },
+        scales: {
+            x: {
+                ticks: {
+                    autoSkip: false,
+                },
+            },
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    precision: 0,
+                },
+            },
+        },
+    }), []);
+
+    const renderAnnotationCounts = (): JSX.Element => {
+        if (fetchingAnnotationCounts) {
+            return <Spin size='small' />;
+        }
+
+        if (annotationCountsError) {
+            return (
+                <Alert
+                    message='Could not load annotation counts'
+                    description={annotationCountsError}
+                    type='error'
+                    showIcon
+                />
+            );
+        }
+
+        if (!hasAnnotationCounts) {
+            return <Empty description='No annotations have been created for this task yet.' />;
+        }
+
+        return (
+            <div className='cvat-task-annotation-chart-body'>
+                <Bar data={chartData} options={chartOptions} />
+            </div>
+        );
+    };
+
     return (
         <div className='cvat-task-page'>
             { isTaskUpdating ? <CVATLoadingSpinner size='large' /> : null }
@@ -151,6 +281,10 @@ function TaskPageComponent(): JSX.Element {
                         onUpdateTaskMeta={onUpdateTaskMeta}
                         labelsEditorProps={labelsEditorProps}
                     />
+                    <div className='cvat-task-annotation-chart'>
+                        <h3 className='cvat-task-annotation-chart-title'>Annotation counts</h3>
+                        {renderAnnotationCounts()}
+                    </div>
                     <JobListComponent task={taskInstance} onJobUpdate={onJobUpdate} />
                 </Col>
             </Row>

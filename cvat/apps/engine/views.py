@@ -1850,6 +1850,49 @@ class TaskViewSet(
                     return Response(data=str(e), status=status.HTTP_400_BAD_REQUEST)
                 return Response(data)
 
+    @extend_schema(
+        methods=["GET"],
+        summary="Get annotation counts by label for a task",
+        responses={
+            "200": OpenApiResponse(
+                description="A list of label counts aggregated across all task jobs"
+            )
+        },
+    )
+    @action(detail=True, methods=["GET"], url_path="annotation_counts")
+    def annotation_counts(self, request: ExtendedRequest, pk: int):
+        task = self.get_object()  # force call of check_object_permissions()
+
+        label_queryset = task.project.label_set.all() if task.project else task.label_set.all()
+        label_ids = {label.id: label for label in label_queryset}
+        counts_by_label: dict[int, int] = {label_id: 0 for label_id in label_ids}
+
+        for annotation_model in (
+            models.LabeledImage,
+            models.LabeledShape,
+            models.LabeledTrack,
+            models.LabeledInterval,
+        ):
+            queryset = annotation_model.objects.filter(job__segment__task_id=task.id).values(
+                "label_id"
+            ).annotate(total=models.Count("id"))
+            for row in queryset:
+                label_id = row["label_id"]
+                if label_id in counts_by_label:
+                    counts_by_label[label_id] += int(row["total"])
+
+        counts = [
+            {
+                "label_id": label_id,
+                "label_name": label.name,
+                "count": counts_by_label.get(label_id, 0),
+            }
+            for label_id, label in label_ids.items()
+        ]
+        counts.sort(key=lambda item: (-item["count"], item["label_name"]))
+
+        return Response({"counts": counts})
+
     @tus_chunk_action(detail=True, suffix_base="annotations")
     def append_annotations_chunk(self, request: ExtendedRequest, pk: int, file_id: str):
         self._object = self.get_object()
