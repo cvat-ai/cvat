@@ -189,10 +189,14 @@ jobs:
 
       # Fail fast on failed test data integrity checks.
       # Other tests rely on the test data, so their results are meaningless if it is broken.
+      # The containers are started with coverage enabled, so that they aren't recreated
+      # in the next step, but the coverage is collected only once, after the next step.
       - name: Check test data integrity
         id: check_test_data
+        env:
+          COVERAGE_PROCESS_START: ".coveragerc"
         run: |
-          pytest tests/python/ -m integrity_check
+          pytest tests/python/ -m integrity_check --no-coverage-collection
 
       - name: Run REST API and SDK tests
         id: run_tests

@@ -106,6 +106,13 @@ def pytest_addoption(parser):
         help="Platform identifier - 'kube' or 'local'. (default: %(default)s)",
     )
 
+    group._addoption(
+        "--no-coverage-collection",
+        action="store_true",
+        help=("""Don't collect the code coverage from the containers at the end of the session,
+            e.g. to collect it in a later session with --keep-data. (default: %(default)s)"""),
+    )
+
 
 def _run(command, capture_output=True):
     _command = command.split() if isinstance(command, str) else command
@@ -578,7 +585,9 @@ def session_finish(session):
     platform = session.config.getoption("--platform")
 
     if platform == "local":
-        if os.environ.get("COVERAGE_PROCESS_START"):
+        if os.environ.get("COVERAGE_PROCESS_START") and not session.config.getoption(
+            "--no-coverage-collection"
+        ):
             collect_code_coverage_from_containers()
 
 
