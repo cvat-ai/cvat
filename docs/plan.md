@@ -116,6 +116,11 @@ direction goes under "Changes to this plan" with the time and the reason. The or
 - 18:12: Live updates (items 8 and 9) are not built. Why: the job filter was done at 18:14, after the 18:00
   start the stretch needed, and the remaining work (a WebSocket route, change notifications from the annotation
   save path, reconnect logic in the page) is about 1.5 h, which would run past the 20:00 freeze.
+- 18:30: Live updates (items 8 and 9) are started after all, on the `label-counts-backend` and
+  `label-counts-frontend` branches only. Why: items 1-7, the documents and the PR text were finished at 18:29,
+  1.5 h before the freeze, which leaves room for them. They are merged into `dev-test01` only if they work
+  end to end by 20:00. Otherwise the 18:12 decision stands and nothing of them is merged. The recording is
+  done by 21:30 either way, because a power cut is possible this evening.
 
 ## 8. Decision record
 
