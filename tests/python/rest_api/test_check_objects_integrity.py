@@ -13,6 +13,7 @@ from shared.utils import config
 
 
 @pytest.mark.usefixtures("restore_db_per_class")
+@pytest.mark.integrity_check
 class TestGetResources:
     @pytest.mark.parametrize("path", config.ASSETS_DIR.glob("*.json"))
     def test_check_objects_integrity(self, path: Path):

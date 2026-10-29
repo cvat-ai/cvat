@@ -88,3 +88,60 @@ def pytest_collection_modifyitems(items):
         for argname, value in callspec.params.items():
             if value is NOT_USED:
                 callspec.indices[argname] = _NOT_USED_PARAM_INDEX
+
+
+class IntegrityChecksPlugin:
+    """
+    Moves the test data integrity checks to the beginning of the run and, optionally,
+    stops the run, if they fail.
+
+    These tests check that the initial DB state and the test fixtures, used across the test suite,
+    match. Other tests rely on this test data, so their results are meaningless if the checks fail.
+    """
+
+    def __init__(self, *, stop_on_failure: bool):
+        self._stop_on_failure = stop_on_failure
+        self._failed = False
+
+    def _is_integrity_check(self, item: pytest.Item) -> bool:
+        return item.get_closest_marker("integrity_check") is not None
+
+    # Must run after pytest's own fixture-based reordering, hence `trylast`.
+    # The moved tests keep their relative order, so their fixture grouping is preserved.
+    @pytest.hookimpl(trylast=True)
+    def pytest_collection_modifyitems(self, items):
+        first, rest = [], []
+        for item in items:
+            (first if self._is_integrity_check(item) else rest).append(item)
+        items[:] = first + rest
+
+    def pytest_exception_interact(self, node, call, report):
+        if isinstance(node, pytest.Item) and self._is_integrity_check(node):
+            self._failed = True
+
+    @pytest.hookimpl(wrapper=True)
+    def pytest_runtest_protocol(self, item, nextitem):
+        result = yield
+
+        # Let all the checks run to report every failure, then stop before other tests
+        if (
+            self._stop_on_failure
+            and self._failed
+            and self._is_integrity_check(item)
+            and (nextitem is None or not self._is_integrity_check(nextitem))
+        ):
+            pytest.exit(
+                "test data integrity checks failed", returncode=pytest.ExitCode.TESTS_FAILED
+            )
+
+        return result
+
+
+def pytest_configure(config):
+    # A separate plugin is needed because the hooks it implements
+    # are already defined in this conftest.
+    config.pluginmanager.register(
+        IntegrityChecksPlugin(
+            stop_on_failure=config.getoption("--stop-on-integrity-failure"),
+        )
+    )

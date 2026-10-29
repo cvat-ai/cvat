@@ -106,6 +106,14 @@ def pytest_addoption(parser):
         help="Platform identifier - 'kube' or 'local'. (default: %(default)s)",
     )
 
+    group._addoption(
+        "--stop-on-integrity-failure",
+        action="store_true",
+        help=("""Stop the run if the test data integrity checks fail.
+            These checks run before other tests, which are meaningless with broken test data.
+            (default: %(default)s)"""),
+    )
+
 
 def _run(command, capture_output=True):
     _command = command.split() if isinstance(command, str) else command
