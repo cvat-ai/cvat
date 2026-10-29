@@ -4,6 +4,7 @@
 
 import io
 import tempfile
+import threading
 from logging import Logger
 from pathlib import Path
 
@@ -258,7 +259,9 @@ class TestTaskDataset:
 
             assert sample.annotations is None
 
-    def test_iter_samples_deletes_finished_chunks(self, monkeypatch: pytest.MonkeyPatch):
+    def test_iter_samples_prefetches_and_deletes_finished_chunks(
+        self, monkeypatch: pytest.MonkeyPatch
+    ):
         # Seed the shared cache first. The iterator below uses a temporary chunk directory,
         # so these files let the test verify that temporary cleanup does not touch cached chunks.
         cvatds.TaskDataset(
@@ -285,11 +288,29 @@ class TestTaskDataset:
 
         monkeypatch.setattr(tempfile, "TemporaryDirectory", recording_temporary_directory)
 
+        second_chunk_download_started = threading.Event()
+        allow_second_chunk_download = threading.Event()
+        cache_manager_class = type(dataset._cache_manager)
+        original_ensure_chunk = cache_manager_class.ensure_chunk
+
+        def paused_ensure_chunk(cache_manager, *, task, chunk_index):
+            # Pause the background prefetch of chunk #1 into the temporary directory.
+            # This keeps chunk #0 readable while proving that chunk #1 is being fetched
+            # before callers request it.
+            if cache_manager is not dataset._cache_manager and chunk_index == 1:
+                second_chunk_download_started.set()
+                allow_second_chunk_download.wait()
+
+            return original_ensure_chunk(cache_manager, task=task, chunk_index=chunk_index)
+
+        monkeypatch.setattr(cache_manager_class, "ensure_chunk", paused_ensure_chunk)
+
         chunk_dir = dataset._cache_manager.chunk_dir(self.task.id)
         assert (chunk_dir / "0.zip").exists()
         assert (chunk_dir / "1.zip").exists()
 
         with dataset.iter_samples(temporary_chunks=True) as samples:
+            # Reading the first chunk should start downloading the next chunk in the background.
             for expected_frame_index in range(3):
                 sample = next(samples)
                 assert sample.frame_index == expected_frame_index
@@ -297,6 +318,7 @@ class TestTaskDataset:
                     self.images[expected_frame_index]
                 )
 
+            second_chunk_download_started.wait()
             assert len(observed_temp_dirs) == 1
             temp_dir = observed_temp_dirs[0]
             temp_chunk_dir = next(temp_dir.glob(f"servers/*/tasks/{self.task.id}/chunks"))
@@ -305,8 +327,10 @@ class TestTaskDataset:
             assert (chunk_dir / "0.zip").exists()
             assert (chunk_dir / "1.zip").exists()
 
-            # Advancing into chunk #1 should delete the temporary copy of chunk #0,
-            # while leaving the shared cache untouched.
+            # Let the background download finish. Advancing into chunk #1 should then delete
+            # the temporary copy of chunk #0, while leaving the shared cache untouched.
+            allow_second_chunk_download.set()
+
             fourth_sample = next(samples)
 
             assert fourth_sample.frame_index == 3
