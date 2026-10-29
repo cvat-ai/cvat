@@ -56,11 +56,14 @@ _ModelType = TypeVar("_ModelType", bound=OpenApiModel | _CacheObjectModel)
 
 
 class CacheManager(metaclass=ABCMeta):
-    def __init__(self, client: Client) -> None:
+    def __init__(self, client: Client, cache_dir: Path | None = None) -> None:
         self._client = client
         self._logger = client.logger
 
-        self._server_dir = client.config.cache_dir / f"servers/{self.server_dir_name}"
+        if cache_dir is None:
+            cache_dir = client.config.cache_dir
+
+        self._server_dir = cache_dir / f"servers/{self.server_dir_name}"
 
     @property
     def server_dir_name(self) -> str:
@@ -75,6 +78,9 @@ class CacheManager(metaclass=ABCMeta):
 
     def chunk_dir(self, task_id: int) -> Path:
         return self.task_dir(task_id) / "chunks"
+
+    def chunk_path(self, task: Task, chunk_index: int) -> Path:
+        return self.chunk_dir(task.id) / f"{chunk_index}.zip"
 
     def project_dir(self, project_id: int) -> Path:
         return self._server_dir / f"projects/{project_id}"
@@ -191,7 +197,7 @@ class _CacheManagerOnline(CacheManager):
         return model
 
     def ensure_chunk(self, task: Task, chunk_index: int) -> None:
-        chunk_path = self.chunk_dir(task.id) / f"{chunk_index}.zip"
+        chunk_path = self.chunk_path(task, chunk_index)
         if chunk_path.exists():
             return  # already downloaded previously
 
@@ -234,7 +240,7 @@ class _CacheManagerOffline(CacheManager):
         return self.load_model(self.task_dir(task_id) / filename, model_type)
 
     def ensure_chunk(self, task: Task, chunk_index: int) -> None:
-        chunk_path = self.chunk_dir(task.id) / f"{chunk_index}.zip"
+        chunk_path = self.chunk_path(task, chunk_index)
 
         if not chunk_path.exists():
             raise FileNotFoundError(f"Chunk {chunk_index} of task {task.id} is not cached")
@@ -334,5 +340,7 @@ _CACHE_MANAGER_CLASSES: Mapping[UpdatePolicy, type[CacheManager]] = {
 }
 
 
-def make_cache_manager(client: Client, update_policy: UpdatePolicy) -> CacheManager:
-    return _CACHE_MANAGER_CLASSES[update_policy](client)
+def make_cache_manager(
+    client: Client, update_policy: UpdatePolicy, cache_dir: Path | None = None
+) -> CacheManager:
+    return _CACHE_MANAGER_CLASSES[update_policy](client, cache_dir=cache_dir)

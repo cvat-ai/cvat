@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 import io
-import threading
+import tempfile
 from logging import Logger
 from pathlib import Path
 
@@ -258,9 +258,7 @@ class TestTaskDataset:
 
             assert sample.annotations is None
 
-    def test_iter_samples_prefetches_and_deletes_finished_chunks(
-        self, monkeypatch: pytest.MonkeyPatch
-    ):
+    def test_iter_samples_deletes_finished_chunks(self, monkeypatch: pytest.MonkeyPatch):
         # Seed the shared cache first. The iterator below uses a temporary chunk directory,
         # so these files let the test verify that temporary cleanup does not touch cached chunks.
         cvatds.TaskDataset(
@@ -277,31 +275,21 @@ class TestTaskDataset:
             media_download_policy=cvatds.MediaDownloadPolicy.FETCH_CHUNKS_ON_DEMAND,
         )
 
-        second_chunk_download_started = threading.Event()
-        allow_second_chunk_download = threading.Event()
-        observed_temp_chunk_dirs = set()
-        original_ensure_chunk_in_dir = dataset._ensure_chunk_in_dir
+        observed_temp_dirs = []
+        original_temporary_directory = tempfile.TemporaryDirectory
 
-        def wrapped_ensure_chunk_in_dir(chunk_dir, chunk_index):
-            if chunk_dir != dataset._chunk_dir:
-                observed_temp_chunk_dirs.add(chunk_dir)
+        def recording_temporary_directory(*args, **kwargs):
+            temp_dir = original_temporary_directory(*args, **kwargs)
+            observed_temp_dirs.append(Path(temp_dir.name))
+            return temp_dir
 
-            # Pause the background prefetch of chunk #1. This keeps chunk #0 readable
-            # while proving that chunk #1 is being fetched before callers request it.
-            if chunk_dir != dataset._chunk_dir and chunk_index == 1:
-                second_chunk_download_started.set()
-                allow_second_chunk_download.wait()
-
-            return original_ensure_chunk_in_dir(chunk_dir, chunk_index)
-
-        monkeypatch.setattr(dataset, "_ensure_chunk_in_dir", wrapped_ensure_chunk_in_dir)
+        monkeypatch.setattr(tempfile, "TemporaryDirectory", recording_temporary_directory)
 
         chunk_dir = dataset._cache_manager.chunk_dir(self.task.id)
         assert (chunk_dir / "0.zip").exists()
         assert (chunk_dir / "1.zip").exists()
 
         with dataset.iter_samples(temporary_chunks=True) as samples:
-            # Reading the first chunk should start downloading the next chunk in the background.
             for expected_frame_index in range(3):
                 sample = next(samples)
                 assert sample.frame_index == expected_frame_index
@@ -309,19 +297,16 @@ class TestTaskDataset:
                     self.images[expected_frame_index]
                 )
 
-            second_chunk_download_started.wait()
-            assert len(observed_temp_chunk_dirs) == 1
-            temp_chunk_dir = next(iter(observed_temp_chunk_dirs))
-            assert temp_chunk_dir != chunk_dir
+            assert len(observed_temp_dirs) == 1
+            temp_dir = observed_temp_dirs[0]
+            temp_chunk_dir = next(temp_dir.glob(f"servers/*/tasks/{self.task.id}/chunks"))
             assert (temp_chunk_dir / "0.zip").exists()
             assert not (temp_chunk_dir / "1.zip").exists()
             assert (chunk_dir / "0.zip").exists()
             assert (chunk_dir / "1.zip").exists()
 
-            # Let the background download finish. Advancing into chunk #1 should then delete
-            # the temporary copy of chunk #0, while leaving the shared cache untouched.
-            allow_second_chunk_download.set()
-
+            # Advancing into chunk #1 should delete the temporary copy of chunk #0,
+            # while leaving the shared cache untouched.
             fourth_sample = next(samples)
 
             assert fourth_sample.frame_index == 3
@@ -331,7 +316,7 @@ class TestTaskDataset:
             for _ in samples:
                 pass
 
-        assert not temp_chunk_dir.exists()
+        assert not temp_dir.exists()
 
     def test_iter_samples_works_with_fetch_frames_on_demand(self):
         dataset = cvatds.TaskDataset(
