@@ -20,17 +20,23 @@ class LabelCountsViewTest(APITestCase):
         data = models.Data.objects.create(size=1, stop_frame=0)
         self.task = models.Task.objects.create(name="task", owner=self.owner, data=data)
         segment = models.Segment.objects.create(task=self.task, start_frame=0, stop_frame=0)
-        job = models.Job.objects.create(segment=segment)
+        self.job = models.Job.objects.create(segment=segment)
+        self.second_job = models.Job.objects.create(segment=segment)
         cat = models.Label.objects.create(task=self.task, name="cat", color="#000000")
         models.Label.objects.create(task=self.task, name="dog", color="#ffffff")
-        for _ in range(2):
-            models.LabeledShape.objects.create(
-                job=job,
-                label=cat,
-                frame=0,
-                type=models.ShapeType.RECTANGLE,
-                points=[0, 0, 1, 1],
-            )
+        for job, count in [(self.job, 2), (self.second_job, 1)]:
+            for _ in range(count):
+                models.LabeledShape.objects.create(
+                    job=job,
+                    label=cat,
+                    frame=0,
+                    type=models.ShapeType.RECTANGLE,
+                    points=[0, 0, 1, 1],
+                )
+
+        other_task = models.Task.objects.create(name="other task", owner=self.owner, data=data)
+        other_segment = models.Segment.objects.create(task=other_task, start_frame=0, stop_frame=0)
+        self.other_task_job = models.Job.objects.create(segment=other_segment)
 
     def _get(self, user, **params):
         with ForceLogin(user, self.client):
@@ -67,8 +73,35 @@ class LabelCountsViewTest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK, response.content)
         self.assertEqual(response.json()["task_id"], self.task.id)
         self.assertIsNone(response.json()["job_id"])
-        self.assertEqual(response.json()["total"], 2)
+        self.assertEqual(response.json()["total"], 3)
         self.assertEqual(
             [(label["name"], label["count"]) for label in response.json()["labels"]],
-            [("cat", 2), ("dog", 0)],
+            [("cat", 3), ("dog", 0)],
         )
+
+    def test_job_filter_counts_only_that_job(self):
+        response = self._get(self.owner, task_id=self.task.id, job_id=self.second_job.id)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK, response.content)
+        self.assertEqual(response.json()["job_id"], self.second_job.id)
+        self.assertEqual(response.json()["total"], 1)
+
+    def test_job_totals_add_up_to_task_total(self):
+        totals = [
+            self._get(self.owner, task_id=self.task.id, job_id=job.id).json()["total"]
+            for job in (self.job, self.second_job)
+        ]
+
+        task_total = self._get(self.owner, task_id=self.task.id).json()["total"]
+        self.assertEqual(sum(totals), task_total)
+
+    def test_job_of_another_task_gets_400(self):
+        response = self._get(self.owner, task_id=self.task.id, job_id=self.other_task_job.id)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("job_id", response.json())
+
+    def test_non_integer_job_id_gets_400(self):
+        response = self._get(self.owner, task_id=self.task.id, job_id="abc")
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)

@@ -3288,6 +3288,40 @@ paths:
               schema:
                 $ref: '#/components/schemas/JobValidationLayoutRead'
           description: ''
+  /api/label-counts:
+    get:
+      operationId: label_counts_list
+      summary: Get the number of annotations per label in a task
+      parameters:
+      - in: query
+        name: job_id
+        schema:
+          type: integer
+        description: A job of the task to count annotations in
+      - in: query
+        name: task_id
+        schema:
+          type: integer
+        description: A task to count annotations in
+        required: true
+      tags:
+      - label-counts
+      security:
+      - tokenAuth: []
+      - accessTokenAuth: []
+      - sessionAuth: []
+        csrfAuth: []
+        csrfHeaderAuth: []
+      - basicAuth: []
+      responses:
+        '200':
+          content:
+            application/vnd.cvat+json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LabelCounts'
+          description: ''
   /api/labels:
     get:
       operationId: labels_list
@@ -9821,6 +9855,42 @@ components:
           readOnly: true
       required:
       - name
+    LabelCount:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        color:
+          type: string
+        count:
+          type: integer
+          description: The number of shapes, tracks and tags
+      required:
+      - color
+      - count
+      - id
+      - name
+    LabelCounts:
+      type: object
+      properties:
+        task_id:
+          type: integer
+        job_id:
+          type: integer
+          nullable: true
+        total:
+          type: integer
+        labels:
+          type: array
+          items:
+            $ref: '#/components/schemas/LabelCount'
+      required:
+      - job_id
+      - labels
+      - task_id
+      - total
     LabelMappingEntryRequest:
       type: object
       properties:
