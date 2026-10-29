@@ -599,6 +599,17 @@ export default function implementAPI(cvat: CVATCore): CVATCore {
             );
             return requirements;
         });
+    implementationMixin(cvat.analytics.labelCounts.get, async (
+        filter: Parameters<CVATCore['analytics']['labelCounts']['get']>[0],
+    ) => {
+        checkFilter(filter, {
+            taskID: isInteger,
+            jobID: isInteger,
+        });
+
+        const params = fieldsToSnakeCase(filter) as Parameters<typeof serverProxy.analytics.labelCounts.get>[0];
+        return serverProxy.analytics.labelCounts.get(params);
+    });
     implementationMixin(cvat.analytics.events.export, async (
         filter: AnalyticsEventsFilter,
     ): ReturnType<CVATCore['analytics']['events']['export']> => {
