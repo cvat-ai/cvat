@@ -267,8 +267,9 @@ class TaskDataset:
         """
         Returns a context manager yielding an iterator over the task samples.
 
-        When `media_download_policy` is `FETCH_CHUNKS_ON_DEMAND`, the iterator downloads each chunk
-        when it reaches the first sample of that chunk.
+        When `media_download_policy` is `FETCH_CHUNKS_ON_DEMAND`, the iterator downloads the first
+        chunk, then starts prefetching the next chunk while the caller processes samples
+        from the current chunk.
 
         If `temporary_chunks` is true and `media_download_policy` is `FETCH_CHUNKS_ON_DEMAND`,
         chunk files are materialized in a temporary directory separate from the shared cache
@@ -353,23 +354,38 @@ class TaskDataset:
         chunk_loader_lock: threading.Lock,
         temporary_chunks: bool,
     ) -> Generator[Sample, None, None]:
-        for chunk_index, chunk_samples in sample_chunks:
-            cache_manager.ensure_chunk(task=self._task, chunk_index=chunk_index)
+        if not sample_chunks:
+            return
 
-            for sample in chunk_samples:
-                yield attrs.evolve(
-                    sample,
-                    media=self._TaskChunkMediaElement(
+        with ThreadPoolExecutor(max_workers=1) as download_pool:
+            next_chunk_download = download_pool.submit(
+                cache_manager.ensure_chunk, task=self._task, chunk_index=sample_chunks[0][0]
+            )
+
+            for chunk_offset, (chunk_index, chunk_samples) in enumerate(sample_chunks):
+                next_chunk_download.result()
+
+                if chunk_offset + 1 < len(sample_chunks):
+                    next_chunk_download = download_pool.submit(
+                        cache_manager.ensure_chunk,
                         task=self._task,
-                        frame_index=sample.frame_index,
-                        chunk_loader=chunk_loader,
-                        chunk_loader_lock=chunk_loader_lock,
-                    ),
-                )
-
-            if temporary_chunks:
-                with chunk_loader_lock:
-                    chunk_loader.unload()
-                    cache_manager.chunk_path(task=self._task, chunk_index=chunk_index).unlink(
-                        missing_ok=True
+                        chunk_index=sample_chunks[chunk_offset + 1][0],
                     )
+
+                for sample in chunk_samples:
+                    yield attrs.evolve(
+                        sample,
+                        media=self._TaskChunkMediaElement(
+                            task=self._task,
+                            frame_index=sample.frame_index,
+                            chunk_loader=chunk_loader,
+                            chunk_loader_lock=chunk_loader_lock,
+                        ),
+                    )
+
+                if temporary_chunks:
+                    with chunk_loader_lock:
+                        chunk_loader.unload()
+                        cache_manager.chunk_path(task=self._task, chunk_index=chunk_index).unlink(
+                            missing_ok=True
+                        )
