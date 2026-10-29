@@ -25,7 +25,9 @@ evidence.
       41,866 over 80 labels (person 12,451, car 2,315, chair 2,141); `test_owner_gets_counts` passes.
 - [x] 1. The counts match the COCO file exactly (MO-2: 0 differing labels). Evidence: MO-2 run 1 in `objectives.md`: 0 of 80 labels differ from the COCO
       file counted as CVAT stores it, and a direct SQL count agrees; see the note there on multi-part polygons.
-- [ ] 2. The page opens from the task Actions menu, and directly at `/tasks/<id>/label-counts`. Evidence:
+- [x] 2. The page opens from the task Actions menu, and directly at `/tasks/<id>/label-counts`. Evidence: checked in Chrome at 18:25: task 1's Actions menu lists "Label counts"
+      and opens `/tasks/1/label-counts`. The job filter shows "All jobs" with total 41866, and Job #3 (frames
+      1000-1499) shows 4437, matching the API.
 - [x] 3. The page draws a bar chart of the counts. Evidence: 2026-10-29 17:33, `/tasks/1/label-counts` in Chrome shows 80 bars in label
       colours, sorted, scrolling inside the card (screenshot in the PR description).
 - [x] 4. A task with no annotations shows an empty state, not a blank or broken chart. Evidence: 17:52, task 2 (one image, no annotations) shows "No annotations in
