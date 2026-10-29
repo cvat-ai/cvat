@@ -24,9 +24,16 @@
     @include cvat-management-page-header;
 }
 
+.cvat-label-counts-chart-scroll {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden auto;
+    margin-top: $grid-unit-size * 2;
+    padding-bottom: $grid-unit-size * 2;
+}
+
 .cvat-label-counts-chart {
     position: relative;
-    margin-top: $grid-unit-size * 2;
 }
 
 .cvat-label-counts-empty {

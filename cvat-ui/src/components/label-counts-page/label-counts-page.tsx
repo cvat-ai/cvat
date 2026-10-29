@@ -89,7 +89,9 @@ function LabelCountsPage(): JSX.Element {
                         { !fetching && labelCounts && labelCounts.total > 0 && (
                             <>
                                 <Text strong>{`Total: ${labelCounts.total} annotations`}</Text>
-                                <LabelCountsChart labels={labelCounts.labels} />
+                                <div className='cvat-label-counts-chart-scroll'>
+                                    <LabelCountsChart labels={labelCounts.labels} />
+                                </div>
                             </>
                         )}
                     </Col>
