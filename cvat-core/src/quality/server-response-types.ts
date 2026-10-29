@@ -50,7 +50,6 @@ export enum QualityReportRequirementCalculationReason {
     NO_ANNOTATIONS = 'no_annotations',
     FILTER_NO_MATCHES = 'filter_no_matches',
     REQUIRED_ATTRIBUTES_MISSING = 'required_attributes_missing',
-    INVALID_GT_AREA = 'invalid_gt_area',
 }
 
 export enum QualityRequirementPointSizeBase {

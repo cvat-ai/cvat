@@ -15,12 +15,18 @@ from unittest import mock
 import datumaro as dm
 import numpy as np
 from attrs import evolve
+from django.conf import settings
+from fakeredis import FakeRedis
 from pycocotools import mask as mask_utils
+from rq import Queue, SimpleWorker
+from rq.job import Job
+from shapely.errors import ShapelyError
 
 from cvat.apps.dataset_manager import data_model as cdm
 from cvat.apps.dataset_manager.bindings import CommonData
 from cvat.apps.dataset_manager.data_model.adapters.datumaro import adapt_annotation
 from cvat.apps.engine.models import DimensionType
+from cvat.apps.engine.rq import BaseRQMeta
 from cvat.apps.quality_control import data_providers, filters, models, quality_handlers
 from cvat.apps.quality_control.attribute_comparison import CVAT_ATTRIBUTE_SPEC_IDS_ATTR
 from cvat.apps.quality_control.backends import (
@@ -48,6 +54,8 @@ from cvat.apps.quality_control.quality_handlers import (
     RequirementHandler,
 )
 from cvat.apps.quality_control.threshold_policy import parse_threshold_policy
+from cvat.apps.redis_handler.serializers import RequestSerializer
+from cvat.apps.redis_handler.utils import send_request_failed_signal
 
 LINEAR_POLICY = {
     "type": "iou",
@@ -495,6 +503,15 @@ class TestDatumaroQualityBackend(unittest.TestCase):
             make_quality_backend(provider, provider)
 
 
+def generate_report_with_nonfinite_gt():
+    return DatasetQualityEstimator(
+        make_provider(2, make_item(frame=7)),
+        make_provider(1, make_item(dm.Bbox(0, 0, math.nan, 10, label=0), frame=7)),
+        requirements=[make_requirement(iou_threshold=parse_threshold_policy(LINEAR_POLICY))],
+        report_parameters=ComparisonReportParameters(),
+    ).generate_report()
+
+
 class TestAdaptiveShapeAreas(unittest.TestCase):
     def _polygon_group_area(self, polygons):
         backend = Datumaro2DBackend(mock.Mock(), mock.Mock())
@@ -515,11 +532,72 @@ class TestAdaptiveShapeAreas(unittest.TestCase):
             report_parameters=ComparisonReportParameters(),
         ).generate_report()
 
-    def test_nonfinite_area_still_marks_requirement_incomplete(self):
-        report = self._report([make_item(dm.Bbox(0, 0, math.nan, 10, label=0))], [make_item()])
+    def test_invalid_area_fails_report_even_without_matching_candidates(self):
+        for width in [-1, math.nan, math.inf, -math.inf]:
+            with (
+                self.subTest(width=width),
+                self.assertRaisesRegex(
+                    ValueError, "requirement 'rectangle' on frame '7': invalid ground-truth"
+                ),
+            ):
+                self._report(
+                    [make_item(dm.Bbox(0, 0, width, 10, label=0), frame=7)],
+                    [make_item(frame=7)],
+                )
+
+    def test_zero_area_is_unmatched_and_report_is_computed(self):
+        valid = dm.Bbox(5, 5, 10, 10, label=0)
+        report = self._report(
+            [make_item(dm.Bbox(0, 0, 0, 10, label=0)), make_item(valid, frame=1)],
+            [make_item(valid.wrap()), make_item(valid.wrap(), frame=1)],
+        )
         summary = report.groups["rectangle"].comparison_summary
-        self.assertEqual(str(summary.calculation.reason), "invalid_gt_area")
-        self.assertIsNone(summary.score)
+        self.assertEqual(str(summary.calculation.status), "computed")
+        self.assertAlmostEqual(summary.score, 1 / 3)
+        self.assertEqual(report.comparison_summary.requirements.not_computed_count, 0)
+
+    def test_polygon_union_failure_has_context_and_preserves_cause(self):
+        polygons = [
+            dm.Polygon([0, 0, 4, 0, 4, 4, 0, 4], label=0, group=1),
+            dm.Polygon([2, 0, 6, 0, 6, 4, 2, 4], label=0, group=1),
+        ]
+        cause = ShapelyError("Internal geometry failure")
+        with (
+            mock.patch(
+                "cvat.apps.quality_control.backends.datumaro.backend.make_valid",
+                side_effect=cause,
+            ),
+            self.assertRaisesRegex(
+                ValueError, "requirement 'polygon' on frame '3': invalid ground-truth"
+            ) as caught,
+        ):
+            self._report(
+                [make_item(*polygons, frame=3)],
+                [make_item(*(polygon.wrap() for polygon in polygons), frame=3)],
+                annotation_type="polygon",
+            )
+        self.assertIs(caught.exception.__cause__, cause)
+
+    def test_invalid_area_fails_background_request_with_public_message(self):
+        connection = FakeRedis()
+        self.addCleanup(connection.close)
+        queue = Queue(settings.CVAT_QUEUES.QUALITY_REPORTS.value, connection=connection)
+        job = queue.enqueue(
+            generate_report_with_nonfinite_gt, on_failure=send_request_failed_signal
+        )
+        worker = SimpleWorker([queue], connection=connection, prepare_for_work=False)
+        with mock.patch.object(worker, "handle_exception"):
+            self.assertFalse(worker.perform_job(job, queue))
+
+        failed_job = Job.fetch(job.id, connection=connection)
+        self.assertTrue(failed_job.is_failed)
+        serializer = RequestSerializer()
+        serializer._base_rq_job_meta = BaseRQMeta.for_job(failed_job)
+        self.assertEqual(
+            serializer.get_message(failed_job),
+            "ValueError: Cannot compute linear IoU threshold for requirement 'rectangle' "
+            "on frame '7': invalid ground-truth shape area or geometry.\n",
+        )
 
     def test_self_intersecting_polygon_group_uses_repaired_union_area(self):
         polygons = [

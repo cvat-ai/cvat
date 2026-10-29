@@ -41,7 +41,6 @@ from cvat.apps.quality_control.matching import (
 from cvat.apps.quality_control.models import QualityRequirementAnnotationType
 from cvat.apps.quality_control.threshold_policy import (
     ConstantThresholdPolicy,
-    InvalidGroundTruthArea,
     LinearThresholdPolicy,
     ThresholdPolicy,
     ThresholdPolicyEvaluator,
@@ -198,7 +197,7 @@ class Datumaro2DBackend(QualityBackend):
             area = float(annotations[0].get_area())
             if not math.isfinite(area) or area < 0:
                 # Invalid coordinates are input data errors, not backend invariants.
-                raise InvalidGroundTruthArea()
+                raise ValueError("GT shape area must be finite and nonnegative.")
             if isinstance(native[0], dm.Ellipse):
                 # Use the same rotated, rasterized geometry as ellipse IoU.
                 from pycocotools import mask as mask_utils
@@ -223,7 +222,7 @@ class Datumaro2DBackend(QualityBackend):
             for ann in native[1:]:
                 np.logical_or(mask, ann.image, out=mask)
             return float(np.count_nonzero(mask))
-        raise InvalidGroundTruthArea()
+        raise ValueError("Cannot compute a GT union area for these annotation types.")
 
     def compare(
         self,
@@ -254,19 +253,7 @@ class Datumaro2DBackend(QualityBackend):
         if isinstance(policy, ConstantThresholdPolicy):
             settings.iou_threshold = evaluator()
         elif isinstance(policy, LinearThresholdPolicy):
-            invalid_count = 0
             thresholds = {}
-            for ann in sample.gt_annotations:
-                try:
-                    area = self.shape_area([ann])
-                    threshold = evaluator(area)
-                    thresholds[(id(cast(DatumaroAnnotationAdapter, ann).native_annotation),)] = (
-                        threshold
-                    )
-                except (ValueError, TypeError, ArithmeticError, ShapelyError):
-                    invalid_count += 1
-            if invalid_count:
-                raise InvalidGroundTruthArea(invalid_count)
 
             def evaluate_gt_threshold(annotations):
                 key = tuple(id(ann) for ann in annotations)
@@ -277,8 +264,16 @@ class Datumaro2DBackend(QualityBackend):
                         )
                         thresholds[key] = evaluator(area)
                     except (ValueError, TypeError, ArithmeticError, ShapelyError) as error:
-                        raise InvalidGroundTruthArea(len(annotations)) from error
+                        raise ValueError(
+                            "Cannot compute linear IoU threshold for requirement "
+                            f"{requirement.name!r} on frame {gt_item.id!r}: "
+                            "invalid ground-truth shape area or geometry."
+                        ) from error
                 return thresholds[key]
+
+            # Validate every GT shape, including those without any matching candidates.
+            for ann in sample.gt_annotations:
+                evaluate_gt_threshold([cast(DatumaroAnnotationAdapter, ann).native_annotation])
 
             gt_threshold = evaluate_gt_threshold
         elif policy is not None and not isinstance(policy, float | int):

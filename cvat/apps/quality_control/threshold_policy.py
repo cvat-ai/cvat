@@ -62,12 +62,6 @@ class LinearThresholdPolicy(ThresholdPolicy):
     extrapolation: Literal["clamp"] = field(default="clamp", init=False)
 
 
-class InvalidGroundTruthArea(ValueError):
-    def __init__(self, count: int = 1):
-        super().__init__("Linear IoU thresholds require a finite, nonnegative GT shape area.")
-        self.count = count
-
-
 def validate_threshold_policy(policy: ConstantThresholdPolicy | LinearThresholdPolicy) -> None:
     """Validate the values of a typed policy."""
 
@@ -148,7 +142,7 @@ class ThresholdPolicyEvaluator:
         if isinstance(self.policy, ConstantThresholdPolicy):
             return self.policy.value
         if area is None or not math.isfinite(area) or area < 0:
-            raise InvalidGroundTruthArea()
+            raise ValueError("Linear IoU thresholds require a finite, nonnegative GT shape area.")
         points = self.policy.points
         index = bisect_right(self._xs, area)
         if index == 0:

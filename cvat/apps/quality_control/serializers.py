@@ -326,6 +326,38 @@ class ThresholdPolicyPointSerializer(serializers.Serializer):
 
 
 class SimilarityThresholdPolicySerializer(serializers.Serializer):
+    """An IoU threshold policy for rectangle, polygon, mask, and ellipse requirements.
+
+    The `iou_threshold` field also accepts a finite number between 0 and 1, such as `0.7`.
+    Existing numeric thresholds are returned as numbers.
+
+    A constant policy uses one threshold for all shapes:
+
+    ```json
+    {"type": "iou", "mode": "constant", "value": 0.7}
+    ```
+
+    A linear policy chooses a threshold from the GT shape area in px²:
+
+    ```json
+    {
+      "type": "iou",
+      "mode": "linear",
+      "input": "gt.shape_area",
+      "extrapolation": "clamp",
+      "points": [{"x": 100, "y": 0.4}, {"x": 1000, "y": 0.9}]
+    }
+    ```
+
+    Linear policies require 2-200 points with unique positive areas sorted in ascending order
+    and thresholds between 0 and 1. Outside the curve, the nearest endpoint applies.
+    Policies without `type` are accepted as IoU for compatibility; responses include it.
+    Other threshold types are not supported.
+
+    Setting a child's threshold to `null` restores inheritance of the whole threshold.
+    Root requirements cannot inherit their threshold.
+    """
+
     type = serializers.ChoiceField(
         choices=["iou"],
         required=False,

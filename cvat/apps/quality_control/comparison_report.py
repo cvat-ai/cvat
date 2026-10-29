@@ -49,7 +49,6 @@ class RequirementCalculationReason(StrEnum):
     NO_ANNOTATIONS = "no_annotations"
     FILTER_NO_MATCHES = "filter_no_matches"
     REQUIRED_ATTRIBUTES_MISSING = "required_attributes_missing"
-    INVALID_GT_AREA = "invalid_gt_area"
 
 
 @define(slots=False)
@@ -845,7 +844,6 @@ class ComparisonReportRequirementCalculation(ReportNode):
     reason: RequirementCalculationReason | None = None
     annotations: ComparisonReportRequirementCalculationSide | None = None
     ground_truth: ComparisonReportRequirementCalculationSide | None = None
-    invalid_gt_count: int | None = None
 
     def _as_dict(self, *, include_fields: list[str] | None = None) -> dict:
         return {
@@ -863,7 +861,6 @@ class ComparisonReportRequirementCalculation(ReportNode):
             reason=(
                 RequirementCalculationReason(d["reason"]) if d.get("reason") is not None else None
             ),
-            invalid_gt_count=d.get("invalid_gt_count"),
             annotations=(
                 ComparisonReportRequirementCalculationSide.from_dict(d["annotations"])
                 if d.get("annotations")

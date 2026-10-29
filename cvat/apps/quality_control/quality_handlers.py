@@ -60,7 +60,6 @@ from cvat.apps.quality_control.filters import RequirementJsonLogicFilter
 from cvat.apps.quality_control.matching import AttributeMatchingResult, MatchingResults
 from cvat.apps.quality_control.models import AnnotationConflictSeverity, AnnotationConflictType
 from cvat.apps.quality_control.threshold_policy import (
-    InvalidGroundTruthArea,
     LinearThresholdPolicy,
     ThresholdPolicy,
     parse_threshold_policy,
@@ -442,7 +441,6 @@ def select_requirement_calculation(
         return candidate
 
     priority = {
-        RequirementCalculationReason.INVALID_GT_AREA: 4,
         RequirementCalculationReason.NO_ANNOTATIONS: 0,
         RequirementCalculationReason.FILTER_NO_MATCHES: 1,
         RequirementCalculationReason.REQUIRED_ATTRIBUTES_MISSING: 2,
@@ -571,8 +569,7 @@ def build_requirements_summary(
         if calculation.status == RequirementCalculationStatus.NOT_COMPUTED:
             # An empty selection on both sides is a vacuous success, but it has no metric value.
             not_computed_count += 1
-            if calculation.reason != RequirementCalculationReason.INVALID_GT_AREA:
-                completed_count += 1
+            completed_count += 1
         elif actual_score is not None and required_score <= actual_score:
             completed_count += 1
 
@@ -982,25 +979,9 @@ class ShapeRequirementHandler(RequirementHandler):
         sample, calculation = self._filter_sample(sample)
 
         # Call comparator to match annotations
-        try:
-            matching_results: MatchingResults = self._backend.compare(
-                sample, requirement=self.requirement, attribute_matcher=self._match_attrs
-            )
-        except InvalidGroundTruthArea as error:
-            calculation = attrs.evolve(
-                calculation,
-                status=RequirementCalculationStatus.NOT_COMPUTED,
-                reason=RequirementCalculationReason.INVALID_GT_AREA,
-                invalid_gt_count=error.count,
-            )
-            return RequirementFrameResult(
-                summary=self._make_frame_summary(
-                    annotation_summary=ComparisonReportAnnotationsSummary.create_empty(),
-                    conflicts=[],
-                    calculation=calculation,
-                ),
-                calculation=calculation,
-            )
+        matching_results: MatchingResults = self._backend.compare(
+            sample, requirement=self.requirement, attribute_matcher=self._match_attrs
+        )
 
         # Unpack results for all annotation types
         all_ann_types_result = matching_results.all_ann_types

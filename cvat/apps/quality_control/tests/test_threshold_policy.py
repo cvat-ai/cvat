@@ -7,7 +7,6 @@ import unittest
 
 from cvat.apps.quality_control.threshold_policy import (
     ConstantThresholdPolicy,
-    InvalidGroundTruthArea,
     LinearThresholdPolicy,
     ThresholdPolicyEvaluator,
     ThresholdPolicyPoint,
@@ -59,7 +58,10 @@ class TestThresholdPolicy(unittest.TestCase):
     def test_invalid_areas_are_distinct_from_zero(self):
         evaluator = ThresholdPolicyEvaluator(parse_threshold_policy(LINEAR_POLICY))
         for area in [None, -1, math.nan, math.inf, -math.inf]:
-            with self.subTest(area=area), self.assertRaises(InvalidGroundTruthArea):
+            with (
+                self.subTest(area=area),
+                self.assertRaisesRegex(ValueError, "finite, nonnegative GT shape area"),
+            ):
                 evaluator(area)
 
     def test_policy_rejects_nonfinite_numbers(self):
