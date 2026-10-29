@@ -12,7 +12,7 @@ import Title from 'antd/lib/typography/Title';
 import Text from 'antd/lib/typography/Text';
 import { Row, Col } from 'antd/lib/grid';
 
-import { Task, getCore } from 'cvat-core-wrapper';
+import { Task, ServerError, getCore } from 'cvat-core-wrapper';
 import { useInstanceId } from 'utils/hooks';
 import { InstanceType } from 'reducers';
 import GoBackButton from 'components/common/go-back-button';
@@ -21,6 +21,8 @@ import ResourceLink from 'components/common/resource-link';
 import LabelCountsChart from './label-counts-chart';
 
 const core = getCore();
+
+const UNREACHABLE_SERVER_MESSAGE = 'The server could not be reached. Check that CVAT is running and try again.';
 
 type LabelCounts = Awaited<ReturnType<typeof core.analytics.labelCounts.get>>;
 
@@ -76,7 +78,7 @@ function LabelCountsPage(): JSX.Element {
                             <Result
                                 status='error'
                                 title='Could not load label counts'
-                                subTitle={error.message}
+                                subTitle={error instanceof ServerError ? error.message : UNREACHABLE_SERVER_MESSAGE}
                                 extra={<Button type='primary' onClick={fetchData}>Retry</Button>}
                             />
                         )}
