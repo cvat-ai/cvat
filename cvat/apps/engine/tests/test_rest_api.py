@@ -2643,6 +2643,30 @@ class TaskAnnotationCountsAPITestCase(ApiTestBase):
         )
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
+    def test_api_v2_task_annotation_counts_grouped_by_type(self):
+        response = self._get_request(
+            f"/api/tasks/{self.task.id}/annotation_counts?group_by=type", self.owner
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            response.data,
+            {
+                "counts": [
+                    {"group_name": "Image", "count": 1},
+                    {"group_name": "Shape", "count": 0},
+                    {"group_name": "Track", "count": 0},
+                    {"group_name": "Interval", "count": 0},
+                ]
+            },
+        )
+
+    def test_api_v2_task_annotation_counts_invalid_grouping(self):
+        response = self._get_request(
+            f"/api/tasks/{self.task.id}/annotation_counts?group_by=invalid", self.owner
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
 
 class TaskDeleteAPITestCase(ApiTestBase):
     @classmethod

@@ -12,6 +12,7 @@ import { Row, Col } from 'antd/lib/grid';
 import Spin from 'antd/lib/spin';
 import Alert from 'antd/lib/alert';
 import Empty from 'antd/lib/empty';
+import Select from 'antd/lib/select';
 import notification from 'antd/lib/notification';
 import { Bar } from 'react-chartjs-2';
 import {
@@ -51,8 +52,9 @@ ChartJS.register(
 );
 
 interface AnnotationCount {
-    label_id: number;
-    label_name: string;
+    label_id?: number;
+    label_name?: string;
+    group_name?: string;
     count: number;
 }
 
@@ -69,6 +71,7 @@ function TaskPageComponent(): JSX.Element {
     const [annotationCounts, setAnnotationCounts] = useState<AnnotationCount[]>([]);
     const [fetchingAnnotationCounts, setFetchingAnnotationCounts] = useState(false);
     const [annotationCountsError, setAnnotationCountsError] = useState<string | null>(null);
+    const [annotationCountGroup, setAnnotationCountGroup] = useState<'label' | 'type'>('label');
 
     const {
         deletes,
@@ -127,7 +130,9 @@ function TaskPageComponent(): JSX.Element {
             setAnnotationCountsError(null);
 
             try {
-                const response = await fetch(`/api/tasks/${taskInstance.id}/annotation_counts`);
+                const response = await fetch(
+                    `/api/tasks/${taskInstance.id}/annotation_counts?group_by=${annotationCountGroup}`,
+                );
                 if (!response.ok) {
                     throw new Error(`Request failed with status ${response.status}`);
                 }
@@ -144,7 +149,7 @@ function TaskPageComponent(): JSX.Element {
         };
 
         fetchCounts();
-    }, [taskInstance]);
+    }, [taskInstance, annotationCountGroup]);
 
     useEffect(() => {
         if (taskInstance && id in deletes && deletes[id]) {
@@ -162,7 +167,9 @@ function TaskPageComponent(): JSX.Element {
     const hasAnnotationCounts = annotationCounts.some(({ count }) => count > 0);
 
     const chartData = useMemo(() => {
-        const labels = annotationCounts.map(({ label_name: labelName }) => labelName);
+        const labels = annotationCounts.map(({ label_name: labelName, group_name: groupName }) => (
+            groupName ?? labelName ?? ''
+        ));
         const counts = annotationCounts.map(({ count }) => count);
 
         return {
@@ -289,7 +296,18 @@ function TaskPageComponent(): JSX.Element {
                         </div>
                     )}
                     <div className='cvat-task-annotation-chart'>
-                        <h3 className='cvat-task-annotation-chart-title'>Annotation counts</h3>
+                        <div className='cvat-task-annotation-chart-header'>
+                            <h3 className='cvat-task-annotation-chart-title'>Annotation counts</h3>
+                            <Select
+                                aria-label='Group annotation counts by'
+                                value={annotationCountGroup}
+                                onChange={(value: 'label' | 'type') => setAnnotationCountGroup(value)}
+                                options={[
+                                    { value: 'label', label: 'By label' },
+                                    { value: 'type', label: 'By annotation type' },
+                                ]}
+                            />
+                        </div>
                         {renderAnnotationCounts()}
                     </div>
                     <JobListComponent task={taskInstance} onJobUpdate={onJobUpdate} />

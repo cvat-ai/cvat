@@ -1,24 +1,49 @@
 # Plan
 
-This assessment is built around CVAT, a large existing codebase. The goal is to add a task-level annotation-class count API and a lightweight UI graph without spiking unrelated behavior. I will follow the required order: set up the repo and documentation, validate the backend data model, implement the count endpoint and auth checks, then wire the frontend page and error/empty states, measure the endpoint against a target, and record the outcome in the definition of done.
+## Goal and order
 
-## Order of work
-1. Confirm the annotation and task models, plus access control and API routing patterns.
-2. Implement a backend endpoint returning per-class annotation counts for a task from the database.
-3. Add frontend page logic to call the endpoint and render a graph, including empty and failed states.
-4. Validate login restrictions and unauthorized task access.
-5. Measure the endpoint with 5 runs and record the result.
-6. Capture the decision record, remaining gaps, and final evidence.
+Add a task-level annotation-count API and chart to CVAT, then prove correct
+counts, access control, and performance without changing unrelated behavior.
+
+1. Record the starting CVAT commit and map task, label, and annotation models.
+2. Implement the count aggregation in the assessment Django app named `test`;
+   use CVAT's task API permission checks for task access.
+3. Add a task-page chart with a label/type grouping selector, plus empty and
+   request-error states.
+4. Test returned counts, login and task access, grouping, and browser behavior.
+5. Measure five warm API requests, report raw values, median, spread, machine,
+   operating system, and starting CVAT commit.
+6. Update this plan and the Definition of Done with the actual outcome and gaps.
 
 ## Timebox
-- Model/API discovery and auth check: 1 hour
-- Backend endpoint and validation: 2 hours
-- Page and graph wiring: 2 hours
-- Empty/error states and live updates: 1 hour
-- Measurements and documentation: 1 hour
-- Reserve: 1 hour for integration/debugging and documentation polishing
 
-## Explicitly skipped / deferred
-- Full WebSocket reconnect architecture beyond the page-level retry handling, unless the existing event plumbing already supports a minimal live refresh path.
-- Broad optimization work across the entire CVAT codebase.
-- Anything outside the task-level count feature and its display.
+- Repository/model investigation and first committed docs: 1 hour.
+- API, permissions, and backend tests: 2 hours.
+- UI, chart, and grouping selector: 2 hours.
+- Browser verification and performance measurements: 1 hour.
+- Documentation and recording preparation: 1 hour.
+- Integration and debugging reserve: 1 hour.
+
+## Decisions and changes from plan
+
+- Keep the task-specific API action on CVAT's `TaskViewSet`, rather than
+  creating a parallel route, so the existing task object permission check
+  protects the endpoint. Put the database aggregation in the new
+  `cvat.apps.test` Django app as requested.
+- Add grouping by annotation record type (image, shape, track, or interval) in
+  addition to the required per-label totals. This is useful for distinguishing
+  annotation storage types while keeping the default view simple.
+- Combine the four per-model label aggregates with SQL `UNION ALL` so one
+  database round trip serves all annotation types. The five-request median on
+  the COCO sample then met the 100 ms objective.
+- The initial implementation did not include WebSocket updates. Repository
+  inspection found no Django Channels/WebSocket server or existing browser
+  WebSocket event client in this CVAT setup. Adding a separately deployed
+  socket service would require infrastructure and reconnect testing beyond
+  the initial timebox. Rejecting that work means counts do not update until
+  the task page is refreshed or revisited, and a dropped socket cannot recover;
+  this remains a declared gap, not a claimed feature.
+- The assessment's COCO 2017 data is being prepared separately from the small
+  synthetic browser-validation task, to avoid hiding which dataset each result
+  came from. The imported sample consists of 130 annotated validation images
+  across three tasks; performance was measured on the 60-image task.

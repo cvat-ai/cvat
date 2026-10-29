@@ -103,6 +103,13 @@
     border-radius: $border-radius-base;
     padding: $grid-unit-size * 2;
 
+    .cvat-task-annotation-chart-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+    }
+
     .cvat-task-annotation-chart-title {
         margin: 0 0 $grid-unit-size;
         font-size: 16px;
