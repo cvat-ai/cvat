@@ -66,6 +66,7 @@ from cvat.apps.engine.models import (
     DimensionType,
     Job,
     Label,
+    LabeledImage,
     MediaType,
     Project,
     Segment,
@@ -2583,6 +2584,64 @@ class TaskGetAPITestCase(ApiTestBase):
 
     def test_api_v2_tasks_id_no_auth(self):
         self._check_api_v2_tasks_id(None)
+
+
+class TaskAnnotationCountsAPITestCase(ApiTestBase):
+    @classmethod
+    def setUpTestData(cls):
+        create_db_users(cls)
+        cls.task = create_db_task(
+            {
+                "name": "annotation counts task",
+                "owner": cls.owner,
+                "overlap": 0,
+                "segment_size": 1,
+                "image_quality": 75,
+                "size": 1,
+                "media_type": MediaType.IMAGE,
+                "mode": TaskMode.ANNOTATION,
+                "labels": [{"name": "person"}, {"name": "empty-label"}],
+            }
+        )
+        person_label = cls.task.label_set.get(name="person")
+        job = Job.objects.get(segment__task=cls.task)
+        LabeledImage.objects.create(job=job, label=person_label, frame=0, group=None)
+
+    def test_api_v2_task_annotation_counts(self):
+        response = self._get_request(
+            f"/api/tasks/{self.task.id}/annotation_counts", self.owner
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            response.data,
+            {
+                "counts": [
+                    {
+                        "label_id": self.task.label_set.get(name="person").id,
+                        "label_name": "person",
+                        "count": 1,
+                    },
+                    {
+                        "label_id": self.task.label_set.get(name="empty-label").id,
+                        "label_name": "empty-label",
+                        "count": 0,
+                    },
+                ]
+            },
+        )
+
+    def test_api_v2_task_annotation_counts_no_auth(self):
+        response = self._get_request(
+            f"/api/tasks/{self.task.id}/annotation_counts", None
+        )
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_api_v2_task_annotation_counts_without_task_access(self):
+        response = self._get_request(
+            f"/api/tasks/{self.task.id}/annotation_counts", self.somebody
+        )
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
 
 class TaskDeleteAPITestCase(ApiTestBase):

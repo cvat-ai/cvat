@@ -89,6 +89,7 @@ function TaskPageComponent(): JSX.Element {
 
             if (task) {
                 setTaskInstance(task);
+                setFetchingTask(false);
                 dispatch(jobsActions.getJobsSuccess(
                     Object.assign([...task.jobs], { count: task.jobs.length })),
                 );
@@ -157,38 +158,6 @@ function TaskPageComponent(): JSX.Element {
         enableFromModelCreator: false,
         showLabelType: false,
     } : undefined), [isAudioTask]);
-
-    if (fetchingTask) {
-        return <Spin size='large' className='cvat-spinner' />;
-    }
-
-    if (!taskInstance) {
-        return <TaskNotFoundComponent />;
-    }
-
-    const onUpdateTask = (task: Task, fields: Parameters<Task['save']>[0] = {}): Promise<Task> => {
-        const promise = dispatch(updateTaskAsync(task, fields));
-        promise.then((updatedTask: Task) => {
-            setTaskInstance(updatedTask);
-        });
-        return promise;
-    };
-
-    const onUpdateTaskMeta = (meta: FramesMetaData): Promise<void> => (
-        dispatch(updateTaskMetadataAsync(taskInstance, meta)).then((updatedMeta: FramesMetaData) => {
-            setTaskMeta(updatedMeta);
-            if (updatedMeta && updatedMeta.cloudStorageId) {
-                return getCloudStorageById(updatedMeta.cloudStorageId);
-            }
-            return null;
-        }).then((_cloudStorage) => {
-            setCloudStorageInstance(_cloudStorage);
-        })
-    );
-
-    const onJobUpdate = (job: Job, data: Parameters<Job['save']>[0]): void => {
-        dispatch(updateJobAsync(job, data));
-    };
 
     const hasAnnotationCounts = annotationCounts.some(({ count }) => count > 0);
 
@@ -263,6 +232,38 @@ function TaskPageComponent(): JSX.Element {
         );
     };
 
+    if (fetchingTask) {
+        return <Spin size='large' className='cvat-spinner' />;
+    }
+
+    if (!taskInstance) {
+        return <TaskNotFoundComponent />;
+    }
+
+    const onUpdateTask = (task: Task, fields: Parameters<Task['save']>[0] = {}): Promise<Task> => {
+        const promise = dispatch(updateTaskAsync(task, fields));
+        promise.then((updatedTask: Task) => {
+            setTaskInstance(updatedTask);
+        });
+        return promise;
+    };
+
+    const onUpdateTaskMeta = (meta: FramesMetaData): Promise<void> => (
+        dispatch(updateTaskMetadataAsync(taskInstance, meta)).then((updatedMeta: FramesMetaData) => {
+            setTaskMeta(updatedMeta);
+            if (updatedMeta && updatedMeta.cloudStorageId) {
+                return getCloudStorageById(updatedMeta.cloudStorageId);
+            }
+            return null;
+        }).then((_cloudStorage) => {
+            setCloudStorageInstance(_cloudStorage);
+        })
+    );
+
+    const onJobUpdate = (job: Job, data: Parameters<Job['save']>[0]): void => {
+        dispatch(updateJobAsync(job, data));
+    };
+
     return (
         <div className='cvat-task-page'>
             { isTaskUpdating ? <CVATLoadingSpinner size='large' /> : null }
@@ -273,14 +274,20 @@ function TaskPageComponent(): JSX.Element {
             >
                 <Col span={22} xl={18} xxl={14}>
                     <TopBarComponent taskInstance={taskInstance} onUpdateTask={onUpdateTask} />
-                    <DetailsComponent
-                        task={taskInstance}
-                        onUpdateTask={onUpdateTask}
-                        taskMeta={taskMeta}
-                        cloudStorageInstance={cloudStorageInstance}
-                        onUpdateTaskMeta={onUpdateTaskMeta}
-                        labelsEditorProps={labelsEditorProps}
-                    />
+                    {taskMeta ? (
+                        <DetailsComponent
+                            task={taskInstance}
+                            onUpdateTask={onUpdateTask}
+                            taskMeta={taskMeta}
+                            cloudStorageInstance={cloudStorageInstance}
+                            onUpdateTaskMeta={onUpdateTaskMeta}
+                            labelsEditorProps={labelsEditorProps}
+                        />
+                    ) : (
+                        <div className='cvat-task-details-loading'>
+                            <Spin size='small' />
+                        </div>
+                    )}
                     <div className='cvat-task-annotation-chart'>
                         <h3 className='cvat-task-annotation-chart-title'>Annotation counts</h3>
                         {renderAnnotationCounts()}
