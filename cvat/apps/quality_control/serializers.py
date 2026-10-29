@@ -29,6 +29,7 @@ from cvat.apps.quality_control.comparison_report import (
     RequirementCalculationStatus,
 )
 from cvat.apps.quality_control.filters import RequirementJsonLogicFilter
+from cvat.apps.quality_control.quality_handlers import INHERITED_REQUIREMENT_FIELDS
 from cvat.utils import django_database as db_utils
 
 
@@ -294,26 +295,6 @@ class QualitySettingsParentType(str, Enum):
     @classmethod
     def choices(cls):
         return tuple((x.value, x.name) for x in cls)
-
-
-_INHERITED_REQUIREMENT_FIELDS = (
-    "annotation_type",
-    "target_metric",
-    "target_metric_threshold",
-    "iou_threshold",
-    "oks_sigma",
-    "line_thickness",
-    "point_size_base",
-    "compare_line_orientation",
-    "line_orientation_threshold",
-    "compare_groups",
-    "group_match_threshold",
-    "check_covered_annotations",
-    "object_visibility_threshold",
-    "panoptic_comparison",
-    "compare_attributes",
-    "attribute_comparison",
-)
 
 
 @extend_schema_serializer(component_name="AttributeComparisonDefaultRule")
@@ -859,7 +840,7 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
                 current_parent = current_parent.parent
 
         if parent_requirement is None:
-            for field_name in _INHERITED_REQUIREMENT_FIELDS:
+            for field_name in INHERITED_REQUIREMENT_FIELDS:
                 if field_name == "attribute_comparison":
                     continue
 
@@ -897,14 +878,7 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
     def _should_touch_settings(self) -> bool:
         return self.context.get("touch_settings", True)
 
-    @staticmethod
-    def _clear_child_inherited_defaults(validated_data: dict[str, Any]) -> None:
-        for field_name in _INHERITED_REQUIREMENT_FIELDS:
-            validated_data.setdefault(field_name, None)
-
     def create(self, validated_data):
-        self._clear_child_inherited_defaults(validated_data)
-
         instance = super().create(validated_data)
         if self._should_touch_settings():
             self._touch_settings(instance.settings)
