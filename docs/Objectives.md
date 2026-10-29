@@ -21,18 +21,25 @@
 
 ## Results
 
-Performance measurements have not yet been collected.
 
-| Run | Response time (ms) |
-|---|---:|
-| 1 | Pending |
-| 2 | Pending |
-| 3 | Pending |
-| 4 | Pending |
-| 5 | Pending |
+## Performance Results
 
-- **Median:** Pending
-- **Spread (minimum-maximum):** Pending
-- **Target met?:** Pending
-- **Raw measurement output:** To be added from actual test results.
+Endpoint: `GET /api/tasks/1/annotation-counts`
+
+Method: Five sequential authenticated HTTP requests against the local Docker instance.
+
+Raw response times (milliseconds):
+- Run 1: 1938.53
+- Run 2: 1046.49
+- Run 3: 1149.18
+- Run 4: 1157.75
+- Run 5: 1039.39
+
+- Median: 1149.18 ms
+- Spread (maximum - minimum): 899.14 ms
+- Target: Median <= 500 ms
+- Result: **Not met**. The observed median was 1149.18 ms.
+
+Limitations: These are five local measurements and may be affected by Docker startup state, authentication, and machine load. No warm-up requests were excluded.
+
 '@ | Set-Content docs/Objectives.md
