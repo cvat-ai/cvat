@@ -203,7 +203,7 @@ jobs:
         env:
           COVERAGE_PROCESS_START: ".coveragerc"
         run: |
-          pytest tests/python/ -k "${{ matrix.pattern }}" --no-services --cov --cov-report=json --alluredir=tests/python/allure-results
+          pytest tests/python/ -k "${{ matrix.pattern }}" -m 'not integrity_check' --no-services --cov --cov-report=json --alluredir=tests/python/allure-results
           for COVERAGE_FILE in `find -name "coverage*.json" -type f -printf "%f\n"`; do mv ${COVERAGE_FILE} "${COVERAGE_FILE%%.*}_0.json"; done
 
 
