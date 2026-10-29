@@ -1,3 +1,5 @@
+
+@'
 # Implementation Plan
 
 ## Starting Point
@@ -5,24 +7,32 @@
 - **Branch:** `dev-test01`
 - **Starting commit SHA:** `4a09e27ff869b7aebbfdb07b29c4a34904a0221d`
 
-## Planned Work
+## Progress
 
-| Step | Task | Estimated Time |
-|---|---|---:|
-| 1 | Inspect CVAT backend, frontend, permissions, and existing patterns | 30 min |
-| 2 | Create the `test` Django app and per-class annotation-count API | 90 min |
-| 3 | Build the frontend page and graph | 75 min |
-| 4 | Handle empty data, failed requests, authentication, and task permissions | 45 min |
-| 5 | Add a measurable API performance target and run five measurements | 30 min |
-| 6 | Add one useful filter or grouping option | 30 min |
-| 7 | Implement WebSocket live updates and reconnection if time permits | 60 min |
-| 8 | Test, document results, and complete the definition-of-done checklist | 45 min |
-| 9 | Review changes, record remaining limitations, create the PR, and record the demo | 75 min |
+| Step | Task | Status |
+|---|---|---|
+| 1 | Inspect CVAT backend and existing patterns | Complete |
+| 2 | Create the `test` Django app and annotation-count API | Complete |
+| 3 | Build frontend page and graph | Pending |
+| 4 | Handle empty data, failed requests, authentication, and task permissions | Partially verified; further tests pending |
+| 5 | Measure API performance with five requests | Pending |
+| 6 | Add a useful filter or grouping option | Pending |
+| 7 | Implement WebSocket updates and reconnection | Pending |
+| 8 | Test, update documentation, and complete checklist | In progress |
+| 9 | Review changes, record limitations, create PR, and record demo | Pending |
 
-**Total estimated time:** 8 hours
+## Completed Work
+- Created branch `dev-test01`.
+- Committed the implementation plan before feature code.
+- Registered the `cvat.apps.test` Django app and API route.
+- Implemented `GET /api/tasks/{task_id}/annotation-counts`.
+- Verified the endpoint returns per-label counts for a task with annotations.
+- Verified an unauthenticated request is rejected with HTTP 401.
+- Created `docs/Objectives.md` and `docs/Definition-of-Done.md`.
 
 ## Priorities
-Complete the API, frontend graph, error handling, and access control before attempting WebSocket functionality.
+Complete the frontend page and graph, then verify empty/error states and task-level access permissions. Measure performance and add a filter before attempting WebSocket updates.
 
 ## Intentionally Deferred
-If time is limited, WebSocket updates and reconnection will be deferred until the core feature is complete and tested. Any unfinished work will be documented honestly.
+WebSocket updates and reconnection will be deferred if the core feature and required tests are not complete. Any unfinished work will be documented honestly.
+'@ | Set-Content docs/Plan.md
