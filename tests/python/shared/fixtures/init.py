@@ -109,8 +109,9 @@ def pytest_addoption(parser):
     group._addoption(
         "--no-coverage-collection",
         action="store_true",
-        help=("""Don't collect the code coverage from the containers at the end of the session,
-            e.g. to collect it in a later session with --keep-data. (default: %(default)s)"""),
+        help=("""Don't collect the code coverage results from the containers at the end of the
+            session. The coverage statistics collection inside the containers is managed
+            by the COVERAGE_PROCESS_START env. variable separately (default: %(default)s)"""),
     )
 
 
