@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: MIT
 
 import './styles.scss';
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useHistory, useParams } from 'react-router';
 import { useDispatch, useSelector } from 'react-redux';
 import { shallowEqual } from 'utils/redux';
@@ -120,36 +120,107 @@ function TaskPageComponent(): JSX.Element {
         dispatch(getInferenceStatusAsync());
     }, []);
 
+    const fetchAnnotationCounts = useCallback(async (): Promise<void> => {
+        if (!taskInstance) {
+            return;
+        }
+
+        setFetchingAnnotationCounts(true);
+        setAnnotationCountsError(null);
+
+        try {
+            const response = await fetch(
+                `/api/tasks/${taskInstance.id}/annotation_counts?group_by=${annotationCountGroup}`,
+            );
+            if (!response.ok) {
+                throw new Error(`Request failed with status ${response.status}`);
+            }
+
+            const data = await response.json() as { counts?: AnnotationCount[] };
+            setAnnotationCounts(data.counts ?? []);
+        } catch (error: any) {
+            const message = error instanceof Error ? error.message : 'Unknown error';
+            setAnnotationCountsError(message);
+            setAnnotationCounts([]);
+        } finally {
+            setFetchingAnnotationCounts(false);
+        }
+    }, [taskInstance, annotationCountGroup]);
+
+    useEffect(() => {
+        void fetchAnnotationCounts();
+    }, [fetchAnnotationCounts]);
+
     useEffect(() => {
         if (!taskInstance) {
             return;
         }
 
-        const fetchCounts = async (): Promise<void> => {
-            setFetchingAnnotationCounts(true);
-            setAnnotationCountsError(null);
+        let isActive = true;
+        let retryCount = 0;
+        let reconnectTimer: number | undefined;
+        let stableConnectionTimer: number | undefined;
+        let socket: WebSocket | null = null;
 
-            try {
-                const response = await fetch(
-                    `/api/tasks/${taskInstance.id}/annotation_counts?group_by=${annotationCountGroup}`,
-                );
-                if (!response.ok) {
-                    throw new Error(`Request failed with status ${response.status}`);
+        const connect = (): void => {
+            if (!isActive) {
+                return;
+            }
+
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            socket = new WebSocket(
+                `${protocol}//${window.location.host}/api/ws/tasks/${taskInstance.id}/annotation_counts`,
+            );
+            const currentSocket = socket;
+
+            currentSocket.onopen = () => {
+                void fetchAnnotationCounts();
+                stableConnectionTimer = window.setTimeout(() => {
+                    retryCount = 0;
+                }, 30000);
+            };
+            currentSocket.onmessage = (event: MessageEvent<string>) => {
+                try {
+                    const message = JSON.parse(event.data) as { type?: string };
+                    if (message.type === 'annotations_changed') {
+                        void fetchAnnotationCounts();
+                    }
+                } catch (error: any) {
+                    // Invalid server messages should be visible rather than silently ignored.
+                    // eslint-disable-next-line no-console
+                    console.error('Could not process annotation-count WebSocket event', error);
+                }
+            };
+            currentSocket.onclose = () => {
+                if (!isActive) {
+                    return;
+                }
+                if (stableConnectionTimer !== undefined) {
+                    window.clearTimeout(stableConnectionTimer);
                 }
 
-                const data = await response.json() as { counts?: AnnotationCount[] };
-                setAnnotationCounts(data.counts ?? []);
-            } catch (error: any) {
-                const message = error instanceof Error ? error.message : 'Unknown error';
-                setAnnotationCountsError(message);
-                setAnnotationCounts([]);
-            } finally {
-                setFetchingAnnotationCounts(false);
-            }
+                const delay = Math.min(1000 * (2 ** retryCount), 30000);
+                retryCount += 1;
+                reconnectTimer = window.setTimeout(connect, delay);
+            };
+            currentSocket.onerror = () => {
+                currentSocket.close();
+            };
         };
 
-        fetchCounts();
-    }, [taskInstance, annotationCountGroup]);
+        connect();
+
+        return () => {
+            isActive = false;
+            if (reconnectTimer !== undefined) {
+                window.clearTimeout(reconnectTimer);
+            }
+            if (stableConnectionTimer !== undefined) {
+                window.clearTimeout(stableConnectionTimer);
+            }
+            socket?.close(1000, 'Task page closed');
+        };
+    }, [taskInstance, fetchAnnotationCounts]);
 
     useEffect(() => {
         if (taskInstance && id in deletes && deletes[id]) {

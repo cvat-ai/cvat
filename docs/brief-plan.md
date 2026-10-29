@@ -36,14 +36,18 @@ counts, access control, and performance without changing unrelated behavior.
 - Combine the four per-model label aggregates with SQL `UNION ALL` so one
   database round trip serves all annotation types. The five-request median on
   the COCO sample then met the 100 ms objective.
-- The initial implementation did not include WebSocket updates. Repository
-  inspection found no Django Channels/WebSocket server or existing browser
-  WebSocket event client in this CVAT setup. Adding a separately deployed
-  socket service would require infrastructure and reconnect testing beyond
-  the initial timebox. Rejecting that work means counts do not update until
-  the task page is refreshed or revisited, and a dropped socket cannot recover;
-  this remains a declared gap, not a claimed feature.
+- Route WebSocket connections through CVAT's existing ASGI/Uvicorn and Nginx
+  stack. Validate the same-origin request, logged-in session, and existing
+  task-view permission before subscribing to a per-task Redis Pub/Sub channel.
+- Publish annotation-change invalidations from the dataset manager after
+  successful transaction commits, including task/job edits and annotation
+  imports. The UI refreshes counts on connect, on each invalidation, and after
+  reconnect; reconnect attempts use capped exponential backoff.
 - The assessment's COCO 2017 data is being prepared separately from the small
   synthetic browser-validation task, to avoid hiding which dataset each result
   came from. The imported sample consists of 130 annotated validation images
   across three tasks; performance was measured on the 60-image task.
+- Use the already-running Redis instance for Pub/Sub rather than adding a
+  separate Channels service, dependency, or container. WebSocket connections
+  carry no annotation data; their authorized task channel only sends an
+  invalidation message, and the task-count API remains the source of truth.

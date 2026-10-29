@@ -9,7 +9,7 @@
 | Existing login and per-task access are enforced. | Done | API tests verify 401 unauthenticated and 403 without access. |
 | One additional grouping/filter is present. | Done | Added `group_by=type` and a UI selector for labels versus image/shape/track/interval; focused backend tests verify the type-grouped response and reject invalid group names. |
 | Performance objective is measured on the required sample. | Done | Five warm API requests on COCO Task #9: median 82.88 ms, spread 36.99 ms; the 100 ms target is met. |
-| Graph updates over WebSocket and recovers after reconnect. | Not done | Current CVAT stack has no WebSocket event server/client integration; this needs a supported socket service and reconnect tests. |
+| Graph updates over WebSocket and recovers after reconnect. | Done | Authenticated ASGI WebSocket publishes per-task invalidations after annotation transactions commit; the UI refetches on connect, updates, and capped-backoff reconnect. |
 | Plan contains approach, rejected approach, and cost. | Done | Decision record in `brief-plan.md`; socket-service work and its integration cost are declared. |
 | Required public COCO 2017 validation data is loaded. | Done | 130 annotated validation images across Tasks #9-#11; official image and annotation archives passed ZIP CRC checks. |
 | Required Loom (5 minutes or less) is recorded and shared. | Pending user action | Record the live feature, one page-to-database request trace, and answer K1-K4. |
@@ -33,6 +33,14 @@
   `83.43, 82.01, 82.88, 82.09, 119.00`. Median: `82.88 ms`;
   spread: `36.99 ms`; 100 ms objective met. Type grouping also returned 1,589
   Shape annotations and zero Image, Track, and Interval records.
+- Direct browser integration verified the authenticated WebSocket opens and
+  receives `annotations_changed` after a successful job-annotation update;
+  the task API then returned the updated count. Test data was restored.
+- Browser verification observed the chart refetch after adding and restoring
+  an annotation, then recovered a deliberately closed socket and refetched
+  counts after reconnect.
+- Realtime unit tests cover same-origin rejection, unauthenticated access,
+  unknown paths, event delivery, and publication after database commit.
 - Browser rendered the chart, friendly empty state, and HTTP 500 error alert.
 - Five prior browser request-to-canvas timings (ms):
   `350.37, 243.59, 478.57, 326.18, 346.70`.

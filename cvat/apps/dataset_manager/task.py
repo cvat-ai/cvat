@@ -34,6 +34,7 @@ from cvat.apps.engine.log import DatasetLogManager
 from cvat.apps.engine.plugins import plugin_decorator
 from cvat.apps.engine.utils import av_scan_paths, take_by
 from cvat.apps.events.handlers import handle_annotations_change
+from cvat.apps.test.annotation_events import schedule_annotation_counts_update
 from cvat.apps.profiler import silk_profile
 from cvat.utils import django_database as db_utils
 
@@ -1283,6 +1284,7 @@ def get_job_data(pk, *, streaming: bool = False):
 def put_job_data(pk, data: AnnotationIR | dict, *, db_job: models.Job | None = None):
     annotation = JobAnnotation(pk, db_job=db_job)
     annotation.put(data)
+    schedule_annotation_counts_update(annotation.db_job.segment.task_id)
 
     return annotation.data
 
@@ -1299,8 +1301,9 @@ def patch_job_data(
     elif action == PatchAction.UPDATE:
         annotation.update(data)
     elif action == PatchAction.DELETE:
-        return annotation.delete(data)
+        annotation.delete(data)
 
+    schedule_annotation_counts_update(annotation.db_job.segment.task_id)
     return annotation.data
 
 
@@ -1309,6 +1312,7 @@ def patch_job_data(
 def delete_job_data(pk, *, db_job: models.Job | None = None):
     annotation = JobAnnotation(pk, db_job=db_job)
     annotation.delete()
+    schedule_annotation_counts_update(annotation.db_job.segment.task_id)
 
 
 @db_utils.transaction_with_repeatable_read()
@@ -1345,6 +1349,7 @@ def get_task_data(pk):
 def put_task_data(pk, data):
     annotation = TaskAnnotation(pk)
     annotation.put(data)
+    schedule_annotation_counts_update(annotation.db_task.id)
 
     return annotation.data
 
@@ -1360,6 +1365,7 @@ def patch_task_data(pk, data, action):
     elif action == PatchAction.DELETE:
         annotation.delete(data)
 
+    schedule_annotation_counts_update(annotation.db_task.id)
     return annotation.data
 
 
@@ -1368,6 +1374,7 @@ def patch_task_data(pk, data, action):
 def delete_task_data(pk):
     annotation = TaskAnnotation(pk)
     annotation.delete()
+    schedule_annotation_counts_update(annotation.db_task.id)
 
 
 @db_utils.transaction_with_repeatable_read()
@@ -1413,6 +1420,7 @@ def import_task_annotations(
                 conv_mask_to_poly=conv_mask_to_poly,
                 import_mode=import_mode,
             )
+            schedule_annotation_counts_update(task.db_task.id)
         except (DatasetError, DatasetImportError, DatasetNotFoundError) as ex:
             raise CvatImportError(format_import_exception(ex))
 
@@ -1440,5 +1448,6 @@ def import_job_annotations(
                 conv_mask_to_poly=conv_mask_to_poly,
                 import_mode=import_mode,
             )
+            schedule_annotation_counts_update(job.db_job.segment.task_id)
         except (DatasetError, DatasetImportError, DatasetNotFoundError) as ex:
             raise CvatImportError(format_import_exception(ex))
