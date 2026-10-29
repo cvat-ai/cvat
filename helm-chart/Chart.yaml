@@ -47,10 +47,22 @@ dependencies:
     repository: https://helm.vector.dev
     condition: analytics.enabled
 
+#  - name: clickhouse
+#    version: "4.1.*"
+#    repository: https://charts.bitnami.com/bitnami
+#    condition: clickhouse.enabled
+
+# Altinity clickhouse
   - name: clickhouse
-    version: "4.1.*"
-    repository: https://charts.bitnami.com/bitnami
+    version: "0.3.13"
+    repository: https://helm.altinity.com
     condition: clickhouse.enabled
+
+  - name: altinity-clickhouse-operator
+    alias: clickhouse-operator
+    version: "0.27.4"
+    repository: https://helm.altinity.com
+    condition: clickhouse-operator.enabled
 
   - name: grafana
     version: "6.60.*"

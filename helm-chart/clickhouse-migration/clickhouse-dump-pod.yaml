@@ -1,0 +1,153 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: clickhouse-migration-backup
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 20Gi
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: clickhouse-migration-dump
+spec:
+  restartPolicy: Never
+  automountServiceAccountToken: false
+  securityContext:
+    fsGroup: 101
+    fsGroupChangePolicy: OnRootMismatch
+  containers:
+    - name: clickhouse-client
+      image: docker.io/clickhouse/clickhouse-server:23.12.2.59
+      imagePullPolicy: IfNotPresent
+      env:
+        # These service names assume that the Helm release is named "cvat".
+        - name: CLICKHOUSE_SOURCE_HOST
+          value: cvat-clickhouse
+        - name: CLICKHOUSE_TARGET_HOST
+          value: cvat-clickhouse-service
+        - name: CLICKHOUSE_NATIVE_PORT
+          value: "9000"
+        - name: CLICKHOUSE_DB
+          valueFrom:
+            secretKeyRef:
+              name: cvat-analytics-secret
+              key: CLICKHOUSE_DB
+        - name: CLICKHOUSE_USER
+          valueFrom:
+            secretKeyRef:
+              name: cvat-analytics-secret
+              key: CLICKHOUSE_USER
+        - name: CLICKHOUSE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: cvat-analytics-secret
+              key: CLICKHOUSE_PASSWORD
+      command:
+        - /bin/bash
+        - -ec
+      args:
+        - |
+          set -o pipefail
+          umask 077
+
+          backup_dir=/backup/cvat
+          complete_marker="${backup_dir}/DUMP_COMPLETE"
+
+          if [[ -e "${complete_marker}" ]]; then
+              echo "A completed dump already exists in ${backup_dir}; keeping it unchanged."
+              sleep infinity
+          fi
+
+          if [[ -d "${backup_dir}" ]] && [[ -n "$(ls -A "${backup_dir}")" ]]; then
+              echo "ERROR: ${backup_dir} contains an incomplete dump." >&2
+              echo "Inspect or remove it before recreating this pod." >&2
+              exit 1
+          fi
+
+          mkdir -p "${backup_dir}"
+
+          source_client=(
+              clickhouse-client
+              --host "${CLICKHOUSE_SOURCE_HOST}"
+              --port "${CLICKHOUSE_NATIVE_PORT}"
+              --user "${CLICKHOUSE_USER}"
+              --password "${CLICKHOUSE_PASSWORD}"
+          )
+
+          echo "Waiting for source ClickHouse at ${CLICKHOUSE_SOURCE_HOST}:${CLICKHOUSE_NATIVE_PORT}..."
+          until "${source_client[@]}" --query "SELECT 1" >/dev/null 2>&1; do
+              sleep 2
+          done
+
+          "${source_client[@]}" \
+              --query "SELECT version()" \
+              > "${backup_dir}/source-version.txt"
+
+          "${source_client[@]}" \
+              --query "SHOW TABLES FROM ${CLICKHOUSE_DB} FORMAT TabSeparatedRaw" \
+              > "${backup_dir}/source-tables.txt"
+
+          if [[ "$(cat "${backup_dir}/source-tables.txt")" != "events" ]]; then
+              echo "ERROR: this manifest expects ${CLICKHOUSE_DB}.events to be the only table." >&2
+              echo "Found the following tables:" >&2
+              cat "${backup_dir}/source-tables.txt" >&2
+              echo "Extend the dump and restore procedure before continuing." >&2
+              exit 1
+          fi
+
+          "${source_client[@]}" \
+              --query "SELECT count() AS rows, min(timestamp) AS min_timestamp, max(timestamp) AS max_timestamp FROM ${CLICKHOUSE_DB}.events FORMAT TSVWithNames" \
+              > "${backup_dir}/source-statistics.tsv"
+
+          "${source_client[@]}" \
+              --query "SHOW CREATE DATABASE ${CLICKHOUSE_DB} FORMAT TabSeparatedRaw" \
+              > "${backup_dir}/database.sql"
+          printf ';\n' >> "${backup_dir}/database.sql"
+
+          "${source_client[@]}" \
+              --query "SHOW CREATE TABLE ${CLICKHOUSE_DB}.events FORMAT TabSeparatedRaw" \
+              > "${backup_dir}/events.sql"
+          printf ';\n' >> "${backup_dir}/events.sql"
+
+          "${source_client[@]}" \
+              --query "SELECT * FROM ${CLICKHOUSE_DB}.events FORMAT Native" \
+              > "${backup_dir}/events.native"
+
+          cd "${backup_dir}"
+          sha256sum database.sql events.sql events.native > SHA256SUMS
+          touch DUMP_COMPLETE
+
+          echo "Dump saved to ${backup_dir}"
+          cat source-version.txt
+          cat source-tables.txt
+          cat source-statistics.tsv
+          sleep infinity
+      readinessProbe:
+        exec:
+          command:
+            - /bin/bash
+            - -ec
+            - test -f /backup/cvat/DUMP_COMPLETE
+        periodSeconds: 2
+        timeoutSeconds: 1
+        failureThreshold: 150
+      resources:
+        requests:
+          cpu: 100m
+          memory: 128Mi
+      securityContext:
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop:
+            - ALL
+      volumeMounts:
+        - name: backup
+          mountPath: /backup
+  volumes:
+    - name: backup
+      persistentVolumeClaim:
+        claimName: clickhouse-migration-backup

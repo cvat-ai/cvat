@@ -474,7 +474,8 @@ analytics:
   clickhouseDb: cvat
   clickhouseUser: user
   clickhousePassword: user
-  clickhouseHost: "{{ .Release.Name }}-clickhouse"
+#  clickhouseHost: "{{ .Release.Name }}-clickhouse"
+  clickhouseHost: "clickhouse-{{ .Release.Name }}-clickhouse"
   clickhousePort: 8123
 
 vector:
@@ -502,23 +503,64 @@ vector:
     runAsUser: 1000
     runAsGroup: 1000
 
+#clickhouse:
+#  # Set to false in case of external db usage
+#  enabled: true
+#  image:
+#    registry: docker.io
+#    repository: cvat/clickhouse
+#    tag: 23.12.2-debian-11-r0
+#  shards: 1
+#  replicaCount: 1
+#  extraEnvVarsSecret: cvat-analytics-secret
+#  auth:
+#    username: user
+#    existingSecret: cvat-analytics-secret
+#    existingSecretKey: CLICKHOUSE_PASSWORD
+#  # Consider enabling zookeeper if a distributed configuration is used
+#  zookeeper:
+#    enabled: false
+
 clickhouse:
-  # Set to false in case of external db usage
   enabled: true
-  image:
-    registry: docker.io
-    repository: cvat/clickhouse
-    tag: 23.12.2-debian-11-r0
-  shards: 1
-  replicaCount: 1
-  extraEnvVarsSecret: cvat-analytics-secret
-  auth:
-    username: user
-    existingSecret: cvat-analytics-secret
-    existingSecretKey: CLICKHOUSE_PASSWORD
-  # Consider enabling zookeeper if a distributed configuration is used
-  zookeeper:
+
+  operator:
     enabled: false
+
+  clickhouse:
+    defaultUser:
+      password_secret_name: cvat-analytics-secret
+      allowExternalAccess: false
+      hostIP: 127.0.0.1/32
+
+    users:
+      - name: user
+        hostIP:
+          - 0.0.0.0/0
+        accessManagement: 1
+        password_secret_name: cvat-analytics-secret
+
+    shardsCount: 1
+    replicasCount: 1
+
+    image:
+      repository: clickhouse/clickhouse-server
+      tag: "23.12.2.59"
+      pullPolicy: IfNotPresent
+
+    persistence:
+      enabled: true
+      size: 1Gi
+      accessMode: ReadWriteOnce
+      storageClass: ""
+      logs:
+        enabled: false
+
+  keeper:
+    enabled: false
+
+clickhouse-operator:
+  enabled: true
 
 grafana:
   envFromSecret: cvat-analytics-secret

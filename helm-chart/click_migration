@@ -1,0 +1,153 @@
+0. Задеплоить CVAT, создать суперюзера
+
+Когда будешь деплоить, то поменяй в values clickhouse: с Altinity на Bitnami
+
+#  clickhouseHost: "{{ .Release.Name }}-clickhouse"  << это для Bitnami
+  clickhouseHost: "clickhouse-{{ .Release.Name }}-clickhouse"  << это для Altinity
+
+В Chart.yaml закомментируй Altinity dependency и раскомментируй Bitnami.
+
+1. Подготовить переменные
+export NS=cvat-click-test
+export RELEASE=cvat
+export CHART=.
+
+
+
+2. Остановить апку
+
+helm -n "$NS" upgrade cvat "$CHART" \
+  -f cvat.values.yaml \
+  -f "$CHART/values-maintenance.yaml"
+
+
+3. Стопаем вектор
+
+helm -n "$NS" upgrade "$RELEASE" "$CHART" \
+  -f cvat.values.yaml \
+  -f "$CHART/values-maintenance.yaml" \
+  -f "$CHART/values-maintenance-analytics.yaml"
+
+4. Запускаешь clickhouse-migration/clickhouse-dump-pod.yaml
+
+5. Можно у PV/PVC старого клика поставить Retain, чтобы случайно не удалить. Старый PVC/PV не переиспользуем — он нужен только для rollback.
+6. В Chart.yaml закомментировать Bitnami dependency и добавить Altinity:
+
+- name: clickhouse
+  version: "0.3.13"
+  repository: https://helm.altinity.com
+  condition: clickhouse.enabled
+
+- name: altinity-clickhouse-operator
+  alias: clickhouseOperator
+  version: "0.27.4"
+  repository: https://helm.altinity.com
+  condition: clickhouseOperator.enabled
+
+Обнови dependencies:
+
+helm dependency update
+
+7. Переключить values (в ветке DEV-1151 уже это сделано, то есть обратно поменяй как в ветке было)
+В values.yaml поменяй host:
+analytics:
+  clickhouseHost: "{{ .Release.Name }}-clickhouse-service"
+
+Закомментируй Bitnami values раскомментируй Altinity
+
+
+8. Добавить ключ в Secret (тебе этого делать не надо, тк у тебя уже правильная версия с ветки катнулась с ключом password).
+
+Удалить immutable Secret:
+kubectl -n "$NS" delete secret cvat-analytics-secret
+
+9. Установить Altinity ClickHouse
+
+Катни CRD иначе установка чарта не пройдёт:
+
+for crd in \
+  CustomResourceDefinition-clickhouseinstallations.clickhouse.altinity.com.yaml \
+  CustomResourceDefinition-clickhouseinstallationtemplates.clickhouse.altinity.com.yaml \
+  CustomResourceDefinition-clickhousekeeperinstallations.clickhouse-keeper.altinity.com.yaml \
+  CustomResourceDefinition-clickhouseoperatorconfigurations.clickhouse.altinity.com.yaml
+do
+  tar -xOzf ./charts/altinity-clickhouse-operator-0.27.4.tgz \
+    "altinity-clickhouse-operator/crds/${crd}" \
+    | kubectl apply --server-side -f -
+done
+
+Потом катишь Altinity clickhouse
+
+helm -n "$NS" upgrade "$RELEASE" "$CHART" \
+  -f cvat.values.yaml \
+  -f "$CHART/values-maintenance.yaml" \
+  -f "$CHART/values-maintenance-analytics.yaml"
+
+
+
+10. Ресторим данные
+
+В подике нужно будет поменять $CLICKHOUSE_TARGET_HOST, потому что путь к сервису поменялся, сейчас он clickhouse-cvat-clickhouse
+
+Потом начинаем ресторить данные:
+
+cd /backup/cvat
+sha256sum -c SHA256SUMS
+
+target_client=(
+    clickhouse-client
+    --host "$CLICKHOUSE_TARGET_HOST"
+    --port "$CLICKHOUSE_NATIVE_PORT"
+    --user "$CLICKHOUSE_USER"
+    --password "$CLICKHOUSE_PASSWORD"
+)
+
+Проверяем что нет базы:
+
+"${target_client[@]}" \
+    --query "EXISTS DATABASE ${CLICKHOUSE_DB}"
+
+Должен вернуть 0 если вернул 1 — не выполнять restore до выяснения причин. Restore рассчитан на пустой новый ClickHouse и выполняется один раз.
+
+"${target_client[@]}" --multiquery < database.sql
+"${target_client[@]}" --multiquery < events.sql
+
+"${target_client[@]}" \
+    --query "INSERT INTO ${CLICKHOUSE_DB}.events FORMAT Native" \
+    < events.native
+
+Сверяем статистику:
+
+"${target_client[@]}" \
+    --query "
+        SELECT
+            count() AS rows,
+            min(timestamp) AS min_timestamp,
+            max(timestamp) AS max_timestamp
+        FROM ${CLICKHOUSE_DB}.events
+        FORMAT TSVWithNames
+    " | tee target-statistics.tsv
+
+diff -u source-statistics.tsv target-statistics.tsv
+
+Проверяем нашу таблицу
+
+"${target_client[@]}" \
+    --query "CHECK TABLE ${CLICKHOUSE_DB}.events"
+
+
+11. Выйти из maintenance
+
+helm upgrade \
+  --namespace "$NS" \
+  "$RELEASE" \
+  "$CHART" \
+  -f "cvat.values.yaml"
+
+12. Проверяем что бакенд и графана смотрят на новый сервис клика
+
+env | grep -i CLICKHOUSE_HOST
+
+Должно быть clickhouse-cvat-clickhouse
+
+13. Потом заходим в CVAT и переходим в Analytics, там должны быть все данные
