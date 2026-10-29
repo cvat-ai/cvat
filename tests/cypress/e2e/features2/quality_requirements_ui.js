@@ -105,7 +105,7 @@ context('Quality requirements UI', () => {
 
     it('Retains frame table preferences through validation updates and quality tab switches', () => {
         cy.visit(`/tasks/${taskId}/quality-control#management`);
-        const table = '.cvat-frame-allocation-table';
+        const table = '.cvat-table-wrapper:has(.cvat-frame-allocation-table)';
         cy.get(`${table} .ant-table-row`).should('have.length', 2);
         cy.get(`${table} .cvat-table-search-bar input`).type('image{enter}');
         cy.contains(`${table} th`, 'Frame').click();
