@@ -92,6 +92,9 @@ direction goes under "Changes to this plan" with the time and the reason. The or
 - 16:23: Backend tests run with `cvat.settings.production` and Django's throwaway test database, not with
   `cvat.settings.testing`. Why: the testing settings import development-only packages (`django_extensions`)
   that the server image does not include, and installing them would change the image.
+- 17:13: The stop rule for the gate moves from 18:00 to 19:00. Why: the floor code was finished by 16:23,
+  but the COCO task could only be created and imported after that, so the gate waits on data, not on code.
+  The stretch cutoff stays at 20:30, which still leaves 2.5 h for documents, the PR and the recording.
 
 ## 8. Decision record
 

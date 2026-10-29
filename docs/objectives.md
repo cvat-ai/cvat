@@ -20,6 +20,7 @@ next to later ones.
 
 | Time (PKT) | Images in task | Annotations imported | Labels | Jobs (segment size 500) | Task id |
 |------------|----------------|----------------------|--------|-------------------------|---------|
+| 17:14 | 5000 | 36,781 COCO instances, stored by CVAT as 41,866 shapes (41,420 polygons, 446 masks) | 80 | 10 | 1 |
 
 ## Counting rule (what "one annotation" means)
 
@@ -77,10 +78,124 @@ next to later ones.
 | ID | Target | Result | Met? | Evidence |
 |----|--------|--------|------|----------|
 | MO-1 | median ≤ 100 ms | | | |
-| MO-2 | 0 differing labels | | | |
+| MO-2 | 0 differing labels | 0 of 80 against the shapes CVAT stores; 77 of 80 against raw COCO instances | Met for stored shapes (see run 1) | Measurement log, MO-2 run 1 |
 | MO-3 | median ≤ 2 s | | | |
 
 ## Measurement log (added, never rewritten)
 
 Each entry has this shape: `### <ID>, run <n>, <date time PKT>, code at <commit>`, then the raw output exactly
 as printed, then the median and spread (min to max), then met or missed and why.
+
+### MO-2, run 1, 2026-10-29 17:15 PKT, code at `fa40caea7`
+
+Raw output:
+
+```
+COCO instances: 36781 | COCO polygon parts + crowd masks: 41866 | endpoint total: 41866
+labels differing, endpoint vs COCO instances: 77 of 80
+labels differing, endpoint vs COCO polygon parts + crowd masks: 0 of 80
+label | endpoint | coco_parts | coco_instances
+person | 12451 | 12451 | 11004
+car | 2315 | 2315 | 1932
+chair | 2141 | 2141 | 1791
+book | 1184 | 1184 | 1161
+bottle | 1085 | 1085 | 1025
+dining table | 960 | 960 | 697
+cup | 932 | 932 | 899
+bowl | 657 | 657 | 626
+traffic light | 653 | 653 | 637
+handbag | 598 | 598 | 540
+bench | 557 | 557 | 413
+skis | 522 | 522 | 241
+boat | 477 | 477 | 430
+bird | 467 | 467 | 440
+truck | 465 | 465 | 415
+motorcycle | 462 | 462 | 371
+umbrella | 449 | 449 | 413
+cow | 432 | 432 | 380
+backpack | 430 | 430 | 371
+sheep | 415 | 415 | 361
+bicycle | 412 | 412 | 316
+wine glass | 407 | 407 | 343
+banana | 398 | 398 | 379
+potted plant | 398 | 398 | 343
+carrot | 391 | 391 | 371
+couch | 378 | 378 | 261
+knife | 366 | 366 | 326
+horse | 359 | 359 | 273
+remote | 353 | 353 | 283
+surfboard | 350 | 350 | 269
+kite | 340 | 340 | 336
+donut | 339 | 339 | 338
+bus | 338 | 338 | 285
+cake | 329 | 329 | 316
+suitcase | 325 | 325 | 303
+zebra | 323 | 323 | 268
+elephant | 322 | 322 | 255
+broccoli | 321 | 321 | 316
+pizza | 314 | 314 | 285
+tennis racket | 296 | 296 | 225
+orange | 296 | 296 | 287
+cell phone | 296 | 296 | 262
+spoon | 288 | 288 | 253
+tv | 288 | 288 | 288
+vase | 287 | 287 | 277
+tie | 285 | 285 | 254
+sports ball | 280 | 280 | 263
+giraffe | 271 | 271 | 232
+clock | 267 | 267 | 267
+fork | 255 | 255 | 215
+laptop | 248 | 248 | 231
+apple | 243 | 243 | 239
+sink | 238 | 238 | 225
+dog | 237 | 237 | 218
+bed | 227 | 227 | 163
+train | 224 | 224 | 190
+teddy bear | 219 | 219 | 191
+skateboard | 218 | 218 | 179
+cat | 211 | 211 | 202
+toilet | 196 | 196 | 179
+baseball bat | 185 | 185 | 146
+sandwich | 180 | 180 | 177
+oven | 161 | 161 | 143
+airplane | 160 | 160 | 143
+keyboard | 158 | 158 | 153
+baseball glove | 149 | 149 | 148
+refrigerator | 134 | 134 | 126
+frisbee | 129 | 129 | 115
+hot dog | 128 | 128 | 127
+mouse | 108 | 108 | 106
+fire hydrant | 103 | 103 | 101
+snowboard | 84 | 84 | 69
+stop sign | 80 | 80 | 75
+bear | 73 | 73 | 71
+toothbrush | 68 | 68 | 57
+parking meter | 60 | 60 | 60
+microwave | 56 | 56 | 55
+scissors | 41 | 41 | 36
+hair drier | 14 | 14 | 11
+toaster | 10 | 10 | 9
+## SQL cross-check (cvat_db)
+41866
+  name  | count 
+--------+-------
+ person | 12451
+ car    |  2315
+ chair  |  2141
+ book   |  1184
+ bottle |  1085
+(5 rows)
+
+```
+
+- **Result:** the endpoint, a direct SQL GROUP BY, and the COCO file all agree exactly, but only when the file
+  is counted the way CVAT stores it. Against raw COCO instances, 77 of the 80 labels are higher in CVAT.
+- **Why:** one COCO instance can have several polygon parts. CVAT's importer (Datumaro,
+  `datumaro/plugins/data_formats/coco/base.py:575-596`, "a single object can consist of multiple parts")
+  creates one `Polygon` per part, and each part is saved as its own `LabeledShape` row. Crowd regions become one
+  mask each.
+- **What this means for the target:** the counting rule stays as written. The endpoint counts annotations as
+  CVAT stores them, one row per drawn object, which is also what a user sees and edits in a job. So the target
+  is met against the stored shapes (0 of 80 differ). Against the raw instance count it would not be met, and
+  that is a property of the import, not of the endpoint.
+
