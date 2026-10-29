@@ -536,6 +536,7 @@ jobs:
             LOGS_DIR: "${{ github.workspace }}/rest_api_testing"
         run: |
           mkdir ${LOGS_DIR}
+          kubectl describe pods --show-events=true 2>&1 | tee "${LOGS_DIR}/pods.describe.log"
           for backend_pod in $(kubectl get pods -l tier=backend -o 'jsonpath={.items[*].metadata.name}'); do
             kubectl logs ${backend_pod} >${LOGS_DIR}/${backend_pod}.log
           done
@@ -591,17 +592,6 @@ jobs:
           docker tag "cvat/ui:${CVAT_VERSION}" "${UI_IMAGE_REPO}:dev"
           docker push "${UI_IMAGE_REPO}:dev"
 
-  generate_report:
-    name: Generate Allure Report and Upload to S3
-    needs: [rest_api_testing, e2e_testing]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/develop' && github.repository == 'cvat.ai/cvat'
-    permissions:
-      id-token: write
-      contents: read
-    uses: ./.github/workflows/generate-allure-report.yml
-    secrets:
-      AWS_ALLURE_REPORTS_ROLE: ${{ secrets.AWS_ALLURE_REPORTS_ROLE }}
-
   codecov:
     runs-on: ubuntu-latest
     needs: [unit_testing, e2e_testing, rest_api_testing]
@@ -626,3 +616,16 @@ jobs:
         uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
+
+  upload_testops_results:
+    needs: [rest_api_testing, e2e_testing]
+    if: |
+      !cancelled() &&
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/develop' &&
+      github.repository == 'cvat-ai/cvat'
+    permissions:
+      actions: read
+    uses: ./.github/workflows/upload-testops-results.yml
+    secrets:
+      ALLURE_TOKEN: ${{ secrets.ALLURE_TOKEN }}

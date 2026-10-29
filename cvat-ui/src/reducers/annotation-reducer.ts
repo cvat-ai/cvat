@@ -669,6 +669,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 nextStates,
                 state.annotations.selectedStatesID,
                 hiddenZLayers,
+                state.annotations.selectedStatesID,
             );
 
             return {
@@ -739,6 +740,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 state.annotations.states,
                 requestedStatesID,
                 hiddenZLayers,
+                state.annotations.selectedStatesID,
             );
             const closeSelectionContextMenu = !selectedStatesID.length &&
                 state.canvas.contextMenu.type === ContextMenuType.CANVAS_SELECTION &&
@@ -1076,6 +1078,7 @@ export default (state = defaultState, action: AnyAction): AnnotationState => {
                 states,
                 state.annotations.selectedStatesID,
                 hiddenZLayers,
+                state.annotations.selectedStatesID,
             );
 
             return {

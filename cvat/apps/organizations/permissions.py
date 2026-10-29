@@ -121,7 +121,7 @@ class InvitationPermission(OpenPolicyAgentPermission):
                 "owner": {"id": self.user_id},
                 "invitee": {"id": None},  # unknown yet
                 "role": self.role,
-                "organization": {"id": self.org_id} if self.org_id is not None else None,
+                "organization": self.make_id_dict(self.org_id),
             }
 
         return data

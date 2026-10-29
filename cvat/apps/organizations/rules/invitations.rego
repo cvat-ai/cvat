@@ -26,7 +26,7 @@ import data.organizations
 #         "owner": { "id": <num> },
 #         "invitee": { "id": <num> },
 #         "role": <"owner"|"maintainer"|"supervisor"|"worker">,
-#         "organization": { "id": <num> }
+#         "organization": { "id": <num> } or null
 #     } or null,
 # }
 
@@ -34,6 +34,13 @@ default allow := false
 
 allow if {
     utils.is_admin
+}
+
+allow if {
+    input.scope in {utils.DELETE, utils.RESEND, utils.VIEW}
+    input.auth.organization.id == input.resource.organization.id
+    utils.has_perm(utils.USER)
+    organizations.is_staff
 }
 
 allow if {
@@ -105,13 +112,6 @@ allow if {
 allow if {
     input.scope == utils.VIEW
     input.auth.organization.id == input.resource.organization.id
-    utils.has_perm(utils.USER)
-    organizations.is_staff
-}
-
-allow if {
-    input.scope == utils.VIEW
-    input.auth.organization.id == input.resource.organization.id
     utils.is_resource_owner
 }
 
@@ -131,13 +131,6 @@ allow if {
 allow if {
     input.scope == utils.RESEND
     input.auth.organization.id == input.resource.organization.id
-    utils.has_perm(utils.USER)
-    organizations.is_staff
-}
-
-allow if {
-    input.scope == utils.RESEND
-    input.auth.organization.id == input.resource.organization.id
     utils.has_perm(utils.WORKER)
     utils.is_resource_owner
 }
@@ -147,13 +140,6 @@ allow if {
     utils.is_sandbox
     utils.has_perm(utils.WORKER)
     utils.is_resource_owner
-}
-
-allow if {
-    input.scope == utils.DELETE
-    input.auth.organization.id == input.resource.organization.id
-    utils.has_perm(utils.USER)
-    organizations.is_staff
 }
 
 allow if {

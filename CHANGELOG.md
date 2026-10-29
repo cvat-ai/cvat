@@ -16,6 +16,79 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <!-- scriv-insert-here -->
 
+<a id='changelog-2.81.0'></a>
+## \[2.81.0\] - 2026-10-28
+
+### Added
+
+- \[Server API\] Replica jobs can be deleted (`DELETE /api/jobs/{id}`)
+  (<https://github.com/cvat-ai/cvat/pull/11321>)
+
+- \[Server API\] Replica jobs can be created (`POST /api/jobs`)
+  (<https://github.com/cvat-ai/cvat/pull/11328>)
+- The "Add replicas" job action, which adds the specified number of replica jobs
+  to each selected annotation job
+  (<https://github.com/cvat-ai/cvat/pull/11328>)
+
+- Hold Ctrl while using intelligent scissors to draw straight segments
+  (<https://github.com/cvat-ai/cvat/pull/11362>)
+
+### Changed
+
+- Made moving and pasting many selected objects smoother in the 2D annotation workspace
+  (<https://github.com/cvat-ai/cvat/pull/11295>)
+
+- \[SDK\] The `python-dateutil` package is no longer a dependency
+  (<https://github.com/cvat-ai/cvat/pull/11337>)
+
+- \[Server API\] Frames can no longer be deleted or restored in replica jobs
+  (`PATCH /api/jobs/{id}/data/meta`)
+  (<https://github.com/cvat-ai/cvat/pull/11344>)
+
+- Reformatted canvas hints with headings, tips, action lists, and highlighted controls
+  (<https://github.com/cvat-ai/cvat/pull/11362>)
+
+### Removed
+
+- Removed the Block button, its shortcut, and the option to postpone AI and OpenCV interaction algorithms
+  (<https://github.com/cvat-ai/cvat/pull/11362>)
+
+### Fixed
+
+- Fixed the brush cursor disappearing when restarting editing of the same mask
+  (<https://github.com/cvat-ai/cvat/pull/11298>)
+
+- Prevented context menus from opening when right-clicking resize or rotation handles
+  in the 2D annotation workspace, including when using Ctrl-click on macOS
+  (<https://github.com/cvat-ai/cvat/pull/11350>)
+
+- Internal links in Markdown notifications can now be opened in a new tab or copied using browser link actions
+  (<https://github.com/cvat-ai/cvat/pull/11363>)
+
+- Quality settings and requirement copies with attribute rules for deleted attributes
+  could not be saved, such rules are now highlighted in the requirement form
+  (<https://github.com/cvat-ai/cvat/pull/11369>)
+
+- Improved display in the UI for server validation errors (displayed as `[object Object]`)
+  (<https://github.com/cvat-ai/cvat/pull/11369>)
+
+- Kept single-object and selection context menus fully opaque and highlighted while dropdowns are open.
+  (<https://github.com/cvat-ai/cvat/pull/11376>)
+- Made the selection box visible in bitmap mode.
+  (<https://github.com/cvat-ai/cvat/pull/11376>)
+- Preserved selected objects in the sidebar when hiding them and restored the selection box when showing them again.
+  (<https://github.com/cvat-ai/cvat/pull/11376>)
+- Entered Select objects mode when selecting objects with Ctrl/Cmd-click.
+  (<https://github.com/cvat-ai/cvat/pull/11376>)
+- Made plain canvas clicks clear selection and dragging draw a new selection box in Select objects mode.
+  (<https://github.com/cvat-ai/cvat/pull/11376>)
+- Kept context menu details accessible when expanded near the bottom of the viewport.
+  (<https://github.com/cvat-ai/cvat/pull/11376>)
+
+- \[Helm\] Pull PostgreSQL, ClickHouse, and Redis images from Docker Hub to prevent
+  Helm CI failures caused by ECR Public anonymous download limits.
+  (<https://github.com/cvat-ai/cvat/pull/11378>)
+
 <a id='changelog-2.80.0'></a>
 ## \[2.80.0\] - 2026-10-21
 

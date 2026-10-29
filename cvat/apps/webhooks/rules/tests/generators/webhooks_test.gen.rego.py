@@ -84,7 +84,7 @@ def RESOURCES(scope):
             {
                 "id": random.randrange(100, 200),
                 "owner": {"id": random.randrange(200, 300)},
-                "organization": {"id": None},
+                "organization": None,
                 "project": {"owner": {"id": random.randrange(400, 500)}},
                 "type": "project",
             },
@@ -98,7 +98,7 @@ def RESOURCES(scope):
             {
                 "id": random.randrange(100, 200),
                 "owner": {"id": random.randrange(200, 300)},
-                "organization": {"id": None},
+                "organization": None,
                 "project": None,
                 "type": "server",
             },
