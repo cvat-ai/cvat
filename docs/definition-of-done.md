@@ -92,7 +92,8 @@ Each entry gives the item, why it was not reached, and what state it was left in
 - **Item 9 (recover after a dropped connection):** not started, for the same reason. The page does recover from
   a failed request through Retry (item 4), but there is no live connection to recover.
 - **MO-3 (live update delay):** not measured, because item 8 does not exist.
-- **MO-1 target:** missed by 8.7 ms, and not improved. The likely fixes are written in `objectives.md`, but
-  there was no time to build and measure them.
+- **MO-1 target:** missed. Run 1 was 108.7 ms. A trial index (runs 2 and 3) halved the time of the count
+  itself but did not move the request median, so it was rolled back. The OPA call and the second task load
+  were not measured or changed (`objectives.md`, MO-1 runs 2 and 3).
 - **Python formatting:** black and isort are not installed in this environment, so the Python files were
   formatted by hand to the repository's 100-character limit and not checked by the tools.

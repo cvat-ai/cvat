@@ -77,7 +77,7 @@ next to later ones.
 
 | ID | Target | Result | Met? | Evidence |
 |----|--------|--------|------|----------|
-| MO-1 | median ≤ 100 ms | run 1: median 108.7 ms (101.1-335.0 ms) | Missed by 8.7 ms (run 1) | Measurement log, MO-1 run 1 |
+| MO-1 | median ≤ 100 ms | run 1: 108.7 ms (101.1-335.0); runs 2 and 3, with a trial index: 127.3 ms and 111.7 ms | Missed | Measurement log, MO-1 runs 1-3 |
 | MO-2 | 0 differing labels | 0 of 80 against the shapes CVAT stores; 77 of 80 against raw COCO instances | Met for stored shapes (see run 1) | Measurement log, MO-2 run 1 |
 | MO-3 | median ≤ 2 s | | | |
 
@@ -225,4 +225,47 @@ warm-up: 200 1.614544
   The index was dropped again, and the measurement was not repeated while other work was running.
 - **Next:** measure again on a quiet machine. The likely cheap wins are counting rows rather than ids, so a
   covering index can be used, and loading the task once.
+
+### MO-1, runs 2 and 3, 2026-10-29 18:19 PKT, code at `b07600dcd` plus a trial index (not committed)
+
+The trial was a partial covering index on `engine_labeledshape (job_id, label_id) INCLUDE (id) WHERE parent_id IS
+NULL`, added by a migration in `cvat/apps/test`, followed by `VACUUM ANALYZE`. The query plan switched to an
+index-only scan.
+
+Run 2 started right after the 24 backend tests had finished:
+
+```
+$ curl -s -o /dev/null -w "%{http_code} %{time_total}\n" -H "Authorization: Token $TOKEN" "http://localhost:8080/api/label-counts?task_id=1"   # 1 warm-up, then 5 runs
+warm-up: 200 0.788679
+200 0.135732
+200 0.127305
+200 0.130655
+200 0.122171
+200 0.094856
+```
+
+Run 3 started after about a minute of idle, with load average 1.66 (5.54 over the last 5 minutes):
+
+```
+$ curl -s -o /dev/null -w "%{http_code} %{time_total}\n" -H "Authorization: Token $TOKEN" "http://localhost:8080/api/label-counts?task_id=1"   # 1 warm-up, then 5 runs
+warm-up: 200 0.092651
+200 0.140579
+200 0.148731
+200 0.102943
+200 0.111749
+200 0.107286
+## counts.py alone inside cvat_server, 5 calls (ms)
+[25.1, 34.0, 27.1, 25.3, 24.5]
+```
+
+- **Result:** the medians were 127.3 ms (94.9-135.7) and 111.7 ms (102.9-148.7). Still missed, and no better than
+  run 1.
+- **What the index did:** it made `count_annotations_by_label` itself about twice as fast, 24-34 ms against
+  41-57 ms in run 1. But the whole request did not get measurably faster, because about 85 ms of it is outside the
+  count: token authentication, the OPA policy call, loading the task twice, nginx and Traefik. On this machine
+  the run-to-run spread (about 50 ms) is larger than the 20 ms the index saves.
+- **Decision:** I rolled the index back (`migrate test zero`, migration deleted, nothing committed). It would add
+  a schema change and write-time cost to CVAT's core annotation table for a gain I could not show end to end.
+- **What would be measured next:** the OPA call and the second task load, which make up most of the remaining
+  time.
 
