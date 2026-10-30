@@ -87,7 +87,11 @@ class EffectiveQualityRequirement:
     source_requirement_id: int | None = None
     parent_requirement: int | None = None
     sort_order: int = 0
+    similarity_metric: models.ShapeSimilarityMetricType | None = None
+    boundary_f_tolerance: float | None = None
+    boundary_f_threshold: float | None = None
     iou_threshold: float | ThresholdPolicy | None = None
+    oks_threshold: float | None = None
     oks_sigma: float | None = None
     line_thickness: float | None = None
     point_size_base: str | None = None
@@ -122,7 +126,11 @@ _INHERITED_REQUIREMENT_FIELDS = (
     "annotation_type",
     "target_metric",
     "target_metric_threshold",
+    "similarity_metric",
+    "boundary_f_tolerance",
+    "boundary_f_threshold",
     "iou_threshold",
+    "oks_threshold",
     "oks_sigma",
     "line_thickness",
     "point_size_base",
@@ -214,6 +222,7 @@ def _make_effective_requirement(
     )
     values["compare_attributes"] = attribute_comparison_may_compare(values["attribute_comparison"])
     values["target_metric"] = models.QualityTargetMetricType.parse(values["target_metric"])
+    values["similarity_metric"] = models.ShapeSimilarityMetricType(values["similarity_metric"])
 
     effective_filter = _combine_filters(
         inherited.filter if inherited else "",
@@ -327,10 +336,10 @@ def _get_requirement_field(requirement: Any, *names: str, default=None):
     return default
 
 
-def serialize_requirement_parameters(requirement: Any) -> dict[str, Any]:
-    if hasattr(requirement, "to_dict") and callable(requirement.to_dict):
-        params = dict(requirement.to_dict())
-    elif isinstance(requirement, dict):
+def serialize_requirement_parameters(
+    requirement: EffectiveQualityRequirement | dict[str, Any],
+) -> dict[str, Any]:
+    if isinstance(requirement, dict):
         params = dict(requirement)
     else:
         params = {

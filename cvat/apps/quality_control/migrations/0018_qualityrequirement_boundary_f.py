@@ -1,0 +1,39 @@
+from django.db import migrations, models
+
+# The default values at the time of the migration
+DEFAULT_BOUNDARY_F_TOLERANCE = 5
+DEFAULT_BOUNDARY_F_THRESHOLD = 0.8
+
+
+def init_boundary_f_settings(apps, schema_editor):
+    """
+    The root requirements must define all the inheritable fields,
+    the child requirements inherit them.
+    """
+
+    QualityRequirement = apps.get_model("quality_control", "QualityRequirement")
+    QualityRequirement.objects.filter(parent__isnull=True).update(
+        boundary_f_tolerance=DEFAULT_BOUNDARY_F_TOLERANCE,
+        boundary_f_threshold=DEFAULT_BOUNDARY_F_THRESHOLD,
+    )
+
+
+class Migration(migrations.Migration):
+
+    dependencies = [
+        ("quality_control", "0017_qualityrequirement_oks_threshold"),
+    ]
+
+    operations = [
+        migrations.AddField(
+            model_name="qualityrequirement",
+            name="boundary_f_threshold",
+            field=models.FloatField(blank=True, null=True),
+        ),
+        migrations.AddField(
+            model_name="qualityrequirement",
+            name="boundary_f_tolerance",
+            field=models.FloatField(blank=True, null=True),
+        ),
+        migrations.RunPython(init_boundary_f_settings, migrations.RunPython.noop),
+    ]

@@ -17,7 +17,7 @@ def make_quality_backend(
 ) -> QualityBackend:
     from cvat.apps.engine.models import DimensionType
     from cvat.apps.quality_control.backends.datumaro import Datumaro2DBackend
-    from cvat.apps.quality_control.datumaro_data_provider import DatumaroJobDataProvider
+    from cvat.apps.quality_control.backends.datumaro.data_provider import DatumaroJobDataProvider
 
     if any(
         provider.dimension != DimensionType.DIM_2D

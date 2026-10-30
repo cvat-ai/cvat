@@ -2229,11 +2229,28 @@ class TestBaseQualityRequirementsApi(_QualityRequirementsTestBase):
             "object_visibility_threshold": 0.05,
             "panoptic_comparison": True,
             "attribute_comparison": None,
+            "oks_threshold": 0.4,
+            "boundary_f_tolerance": 5,
+            "boundary_f_threshold": 0.8,
         }
         assert all(
             all(requirement[field_name] == value for field_name, value in expected_defaults.items())
             for requirement in requirements
         )
+        assert {
+            requirement["annotation_type"]: requirement["similarity_metric"]
+            for requirement in requirements
+        } == {
+            "tag": "equality",
+            "rectangle": "iou",
+            "skeleton": "oks",
+            "skeleton_keypoint": "oks",
+            "points": "oks",
+            "polyline": "iou",
+            "mask": "iou",
+            "polygon": "iou",
+            "ellipse": "iou",
+        }
 
     def test_new_project_gets_disabled_base_requirements_for_all_supported_types(self, admin_user):
         with make_api_client(admin_user) as api_client:
@@ -2597,6 +2614,162 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
             "missing_count": 2,
             "extra_count": 2,
         }
+
+    def test_can_use_boundary_f_similarity(self, admin_user):
+        task_id, _ = create_task(
+            admin_user,
+            spec={
+                "name": "test-boundary-f",
+                "labels": [
+                    {"name": "pole", "type": "rectangle"},
+                    {"name": "arch", "type": "polyline"},
+                    {"name": "frame", "type": "polygon"},
+                    {"name": "knot", "type": "polygon"},
+                ],
+            },
+            data={
+                "image_quality": 70,
+                "client_files": generate_image_files(1, sizes=[(200, 200)]),
+            },
+        )
+        settings = self._get_task_settings(admin_user, task_id=task_id)
+
+        def build_requirement(name: str, annotation_type: str) -> dict[str, Any]:
+            requirement = self._build_requirement_payload(
+                f"{name}-boundary-f-{task_id}", annotation_type=annotation_type, match_groups=False
+            )
+            requirement["similarity_metric"] = "boundary_f"
+            requirement["boundary_f_tolerance"] = 5
+            requirement["boundary_f_threshold"] = 0.8
+            return requirement
+
+        requirements = {
+            "poles": build_requirement("poles", "rectangle"),
+            "arches": build_requirement("arches", "polyline"),
+            "polygons": build_requirement("polygons", "polygon"),
+        }
+
+        _, response = self._patch_settings(
+            admin_user,
+            settings["id"],
+            {
+                "inherit": False,
+                "requirements": [
+                    *self._retained_base_requirement_payloads(settings),
+                    *requirements.values(),
+                ],
+            },
+        )
+        assert response.status_code == HTTPStatus.OK
+
+        labels = self._get_task_labels_by_name(admin_user, task_id=task_id)
+
+        def build_shape(
+            label: str,
+            shape_type: str,
+            points: list[tuple[int, int]],
+            *,
+            origin: tuple[int, int],
+            shift: int = 0,
+        ) -> dict[str, Any]:
+            # the points are relative to the origin, each shape is in its own image corner
+            return {
+                "type": shape_type,
+                "frame": 0,
+                "label_id": labels[label].id,
+                "points": [
+                    coord + origin_coord + shift
+                    for point in points
+                    for coord, origin_coord in zip(point, origin)
+                ],
+                "occluded": False,
+                "outside": False,
+            }
+
+        # 2 px wide poles, 1 px apart: no overlap, but the boundaries are within the tolerance
+        gt_pole = [(20, 10), (22, 70)]
+        ds_pole = [(23, 10), (25, 70)]
+
+        # an "п" shape, 3 parts
+        gt_arch = [
+            (30, 80),  # the left leg bottom
+            (30, 30),  # the top left corner
+            (70, 30),  # the top right corner
+            (70, 80),  # the right leg bottom
+        ]
+        ds_arch = [
+            (32, 67),  # shifted by 2 px, the left leg is 10 px shorter
+            (32, 32),
+            (72, 32),
+            (72, 92),  # shifted by 2 px, the right leg is 10 px longer
+        ]
+
+        # the outer contour of the "п" shape, 5 px wide
+        frame = [
+            (25, 85),  # the outer side
+            (25, 25),
+            (75, 25),
+            (75, 85),
+            (70, 85),  # the inner side
+            (70, 30),
+            (30, 30),
+            (30, 85),
+        ]
+
+        # a square with a square hole, 5 px thick: the hole is connected via a 0-width cut
+        knot = [
+            (50, 20),  # the outer side
+            (80, 20),
+            (80, 80),
+            (20, 80),
+            (20, 20),
+            (50, 20),
+            (50, 25),  # the hole
+            (25, 25),
+            (25, 75),
+            (75, 75),
+            (75, 25),
+            (50, 25),
+        ]
+
+        top_left, top_right, bottom_left, bottom_right = (0, 0), (100, 0), (0, 100), (100, 100)
+        gt_shapes = [
+            build_shape("pole", "rectangle", gt_pole, origin=top_left),
+            build_shape("arch", "polyline", gt_arch, origin=top_right),
+            build_shape("frame", "polygon", frame, origin=bottom_left),
+            build_shape("knot", "polygon", knot, origin=bottom_right),
+        ]
+        ds_shapes = [
+            build_shape("pole", "rectangle", ds_pole, origin=top_left),
+            build_shape("arch", "polyline", ds_arch, origin=top_right),
+            build_shape("frame", "polygon", frame, origin=bottom_left, shift=2),
+            build_shape("knot", "polygon", knot, origin=bottom_right, shift=2),
+        ]
+
+        gt_job = create_gt_job(admin_user, task_id, complete=False)
+        with make_api_client(admin_user) as api_client:
+            api_client.jobs_api.update_annotations(
+                gt_job.id, labeled_data_request={"shapes": gt_shapes}
+            )
+            api_client.tasks_api.update_annotations(
+                task_id, labeled_data_request={"shapes": ds_shapes}
+            )
+        self._complete_job(admin_user, gt_job.id)
+
+        report = create_quality_report(user=admin_user, task_id=task_id)
+        report_data = self._get_report_data(admin_user, report["id"])
+
+        expected_counts = {"poles": 1, "arches": 1, "polygons": 2}
+        for name, requirement in requirements.items():
+            group = report_data["groups"][requirement["name"]]
+            assert group["parameters"]["similarity_metric"] == "boundary_f", name
+
+            summary = group["comparison_summary"]
+            assert summary["score_components"] == {
+                "valid_count": expected_counts[name],
+                "missing_count": 0,
+                "extra_count": 0,
+            }, name
 
     def test_confusion_matrix_only_contains_labels_compatible_with_requirement_type(
         self, admin_user

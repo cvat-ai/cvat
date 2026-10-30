@@ -14,10 +14,9 @@ from functools import cached_property, lru_cache
 from io import StringIO
 from typing import Any, ClassVar
 
-import datumaro as dm
 import json_stream
 import numpy as np
-from attrs import asdict, define, field, fields_dict
+from attrs import asdict, define, field
 from datumaro.util import dump_json, parse_json
 
 from cvat.apps.engine.models import ShapeType
@@ -279,75 +278,6 @@ def deduplicate_annotation_conflicts(
             deduplicated_conflicts[key] = conflict
 
     return list(deduplicated_conflicts.values())
-
-
-@define(kw_only=True, init=False, slots=False)
-class ComparisonParameters(ReportNode):
-    included_annotation_types: list[dm.AnnotationType] = [
-        dm.AnnotationType.bbox,
-        dm.AnnotationType.points,
-        dm.AnnotationType.mask,
-        dm.AnnotationType.polygon,
-        dm.AnnotationType.polyline,
-        dm.AnnotationType.skeleton,
-        dm.AnnotationType.label,
-        dm.AnnotationType.ellipse,
-    ]
-
-    non_groupable_ann_type = dm.AnnotationType.label
-    "Annotation type that can't be grouped"
-
-    compare_attributes: bool = True
-    "Enables or disables attribute checks"
-
-    ignored_attributes: list[str] = []
-
-    iou_threshold: float = 0.4
-    "Used for distinction between matched / unmatched shapes"
-
-    oks_sigma: float = 0.09
-    "Like IoU threshold, but for points, % of the bbox area to match a pair of points"
-
-    point_size_base: models.PointSizeBase = models.PointSizeBase.GROUP_BBOX_SIZE
-    "Determines how to obtain the object size for point comparisons"
-
-    line_thickness: float = 0.01
-    "Thickness of polylines, relatively to the (image area) ^ 0.5"
-
-    compare_line_orientation: bool = True
-    "Indicates that polylines have direction"
-
-    line_orientation_threshold: float = 0.1
-    """
-    The minimal gain in the IoU between the given and reversed line directions
-    to count the line inverted
-    """
-
-    compare_groups: bool = True
-    "Enables or disables group checks"
-
-    group_match_threshold: float = 0.5
-    "Minimal IoU for groups to be considered matching"
-
-    check_covered_annotations: bool = True
-    "Check for fully-covered annotations"
-
-    object_visibility_threshold: float = 0.05
-    "Minimal visible area % of the spatial annotations"
-
-    panoptic_comparison: bool = True
-    "Use only the visible part of the masks and polygons in comparisons"
-
-    def _value_serializer(self, v):
-        if isinstance(v, dm.AnnotationType):
-            return str(v.name)
-        else:
-            return super()._value_serializer(v)
-
-    @classmethod
-    def from_dict(cls, d: dict) -> ComparisonParameters:
-        fields = fields_dict(cls)
-        return cls(**{field_name: d[field_name] for field_name in fields if field_name in d})
 
 
 @define(kw_only=True, init=False, slots=False)
