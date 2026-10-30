@@ -30,7 +30,11 @@ from cvat.apps.quality_control.comparison_report import (
     RequirementCalculationStatus,
 )
 from cvat.apps.quality_control.filters import RequirementJsonLogicFilter
-from cvat.apps.quality_control.threshold_policy import MAX_THRESHOLD_POINTS, ThresholdPolicyMode
+from cvat.apps.quality_control.threshold_policy import (
+    ADAPTIVE_IOU_TYPES,
+    MAX_THRESHOLD_POINTS,
+    ThresholdPolicyMode,
+)
 from cvat.utils import django_database as db_utils
 
 
@@ -931,8 +935,8 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
 
         extra_kwargs.setdefault("boundary_f_tolerance", {}).setdefault("min_value", 0)
 
-    @staticmethod
-    def _validate_similarity_metric(similarity_metric: str | None, annotation_type: str) -> None:
+    def _validate_similarity_metric(self, attrs: dict[str, Any], annotation_type: str) -> None:
+        similarity_metric = attrs.get("similarity_metric")
         if similarity_metric is None:
             return
 
@@ -950,6 +954,19 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
                     )
                 }
             )
+
+    def _validate_similarity_threshold(self, attrs: dict[str, Any], annotation_type: str) -> None:
+        if isinstance(attrs.get("iou_threshold"), dict):
+            if annotation_type not in ADAPTIVE_IOU_TYPES:
+                raise serializers.ValidationError(
+                    {
+                        "iou_threshold": (
+                            "IoU policies only support {} requirements.".format(
+                                ", ".join(t.value for t in ADAPTIVE_IOU_TYPES)
+                            )
+                        )
+                    }
+                )
 
     def validate(self, attrs):
         attrs = super().validate(attrs)
@@ -1029,8 +1046,8 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
                 {"annotation_type": "This field is required for root requirements."}
             )
 
-        if "similarity_metric" in attrs:
-            self._validate_similarity_metric(attrs["similarity_metric"], effective_annotation_type)
+        self._validate_similarity_metric(attrs, effective_annotation_type)
+        self._validate_similarity_threshold(attrs, effective_annotation_type)
 
         if self.instance and parent_requirement is not None:
             current_parent = parent_requirement
@@ -1048,8 +1065,6 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
 
                 visited_parent_ids.add(current_parent.id)
                 current_parent = current_parent.parent
-
-        self._validate_threshold_policy(attrs, effective_annotation_type)
 
         if parent_requirement is None:
             for field_name in _INHERITED_REQUIREMENT_FIELDS:
@@ -1082,21 +1097,6 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
                 )
 
         return attrs
-
-    def _validate_threshold_policy(self, attrs: dict[str, Any], effective_annotation_type: str):
-        from cvat.apps.quality_control.threshold_policy import ADAPTIVE_IOU_TYPES
-
-        if isinstance(attrs.get("iou_threshold"), dict):
-            if effective_annotation_type not in ADAPTIVE_IOU_TYPES:
-                raise serializers.ValidationError(
-                    {
-                        "iou_threshold": (
-                            "IoU policies only support {} requirements.".format(
-                                ", ".join(t.value for t in ADAPTIVE_IOU_TYPES)
-                            )
-                        )
-                    }
-                )
 
     @staticmethod
     def _touch_settings(settings: models.QualitySettings) -> None:
