@@ -20,7 +20,7 @@ import {
     getCachedChunks,
     getJobFrameNumbers,
     getFramesMeta,
-    getJobFramesMetaSync,
+    hasUnsavedFrameChanges,
     clear as clearFrames,
     findFrame,
     getContextImage,
@@ -259,12 +259,7 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
         value: function hasUnsavedFrameChangesImplementation(
             this: JobClass,
         ): ReturnType<typeof JobClass.prototype.frames.hasUnsavedChanges> {
-            // Meta may not be loaded yet (e.g. before the job is opened).
-            try {
-                return getJobFramesMetaSync(this.id).hasUnsavedChanges();
-            } catch {
-                return false;
-            }
+            return hasUnsavedFrameChanges(this.id);
         },
     });
 
@@ -1119,13 +1114,7 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
         value: function hasUnsavedFrameChangesImplementation(
             this: TaskClass,
         ): ReturnType<typeof TaskClass.prototype.frames.hasUnsavedChanges> {
-            return this.jobs.some((job) => {
-                try {
-                    return getJobFramesMetaSync(job.id).hasUnsavedChanges();
-                } catch {
-                    return false;
-                }
-            });
+            return this.jobs.some((job) => job.frames.hasUnsavedChanges());
         },
     });
 

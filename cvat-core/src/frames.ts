@@ -691,6 +691,10 @@ function mergeMetaData(
     return Promise.resolve(framesMetaData);
 }
 
+export function hasUnsavedFrameChanges(jobID: number): boolean {
+    return frameMetaCacheSync[jobID]?.hasUnsavedChanges() ?? false;
+}
+
 export function getJobFramesMetaSync(jobID: number): FramesMetaData {
     const cached = frameMetaCacheSync[jobID];
     if (!cached) {
