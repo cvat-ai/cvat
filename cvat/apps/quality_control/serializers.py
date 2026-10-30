@@ -513,6 +513,8 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
         required=False,
         allow_null=True,
         help_text=(
+            "The minimal IoU for distinction between matched / unmatched objects. "
+            f"Only used with the '{models.ShapeSimilarityMetricType.IOU}' similarity metric. "
             "A constant threshold or an IoU policy by GT shape area "
             "(rectangle, polygon, mask, ellipse). "
             "Null inherits the whole threshold from the parent."
@@ -851,12 +853,6 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
                     )
                 )
             ),
-            "iou_threshold": """
-                The minimal IoU for distinction between matched / unmatched objects.
-                Only used with the '{iou}' similarity metric.
-            """.format(
-                iou=models.ShapeSimilarityMetricType.IOU
-            ),
             "oks_threshold": """
                 The minimal OKS for distinction between matched / unmatched objects.
                 Only used with the '{oks}' similarity metric.
@@ -1096,7 +1092,7 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
                     {
                         "iou_threshold": (
                             "IoU policies only support {} requirements.".format(
-                                ', '.join(t.value for t in ADAPTIVE_IOU_TYPES)
+                                ", ".join(t.value for t in ADAPTIVE_IOU_TYPES)
                             )
                         )
                     }

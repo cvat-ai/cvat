@@ -190,6 +190,7 @@ class TestIoUThresholdSerializer(unittest.TestCase):
             with self.subTest(value=value), self.assertRaises(serializers.ValidationError):
                 field.run_validation(value)
 
+
 class TestQualityRequirementSimilarityMetricValidation(unittest.TestCase):
     def test_accepts_the_supported_metrics(self) -> None:
         for (

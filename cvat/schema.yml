@@ -11311,8 +11311,10 @@ components:
             maximum: 1
           - $ref: '#/components/schemas/SimilarityThresholdPolicyRequest'
           nullable: true
-          description: A constant threshold or an IoU policy by GT shape area (rectangle,
-            polygon, mask, ellipse). Null inherits the whole threshold from the parent.
+          description: The minimal IoU for distinction between matched / unmatched
+            objects. Only used with the 'iou' similarity metric. A constant threshold
+            or an IoU policy by GT shape area (rectangle, polygon, mask, ellipse).
+            Null inherits the whole threshold from the parent.
         oks_threshold:
           type: number
           format: double
@@ -12262,8 +12264,10 @@ components:
             maximum: 1
           - $ref: '#/components/schemas/SimilarityThresholdPolicy'
           nullable: true
-          description: A constant threshold or an IoU policy by GT shape area (rectangle,
-            polygon, mask, ellipse). Null inherits the whole threshold from the parent.
+          description: The minimal IoU for distinction between matched / unmatched
+            objects. Only used with the 'iou' similarity metric. A constant threshold
+            or an IoU policy by GT shape area (rectangle, polygon, mask, ellipse).
+            Null inherits the whole threshold from the parent.
         oks_threshold:
           type: number
           format: double
@@ -12486,8 +12490,10 @@ components:
             maximum: 1
           - $ref: '#/components/schemas/SimilarityThresholdPolicyRequest'
           nullable: true
-          description: A constant threshold or an IoU policy by GT shape area (rectangle,
-            polygon, mask, ellipse). Null inherits the whole threshold from the parent.
+          description: The minimal IoU for distinction between matched / unmatched
+            objects. Only used with the 'iou' similarity metric. A constant threshold
+            or an IoU policy by GT shape area (rectangle, polygon, mask, ellipse).
+            Null inherits the whole threshold from the parent.
         oks_threshold:
           type: number
           format: double
@@ -12737,8 +12743,10 @@ components:
             maximum: 1
           - $ref: '#/components/schemas/SimilarityThresholdPolicy'
           nullable: true
-          description: A constant threshold or an IoU policy by GT shape area (rectangle,
-            polygon, mask, ellipse). Null inherits the whole threshold from the parent.
+          description: The minimal IoU for distinction between matched / unmatched
+            objects. Only used with the 'iou' similarity metric. A constant threshold
+            or an IoU policy by GT shape area (rectangle, polygon, mask, ellipse).
+            Null inherits the whole threshold from the parent.
         oks_threshold:
           type: number
           format: double
@@ -12963,8 +12971,10 @@ components:
             maximum: 1
           - $ref: '#/components/schemas/SimilarityThresholdPolicyRequest'
           nullable: true
-          description: A constant threshold or an IoU policy by GT shape area (rectangle,
-            polygon, mask, ellipse). Null inherits the whole threshold from the parent.
+          description: The minimal IoU for distinction between matched / unmatched
+            objects. Only used with the 'iou' similarity metric. A constant threshold
+            or an IoU policy by GT shape area (rectangle, polygon, mask, ellipse).
+            Null inherits the whole threshold from the parent.
         oks_threshold:
           type: number
           format: double
@@ -13181,8 +13191,10 @@ components:
             maximum: 1
           - $ref: '#/components/schemas/SimilarityThresholdPolicyRequest'
           nullable: true
-          description: A constant threshold or an IoU policy by GT shape area (rectangle,
-            polygon, mask, ellipse). Null inherits the whole threshold from the parent.
+          description: The minimal IoU for distinction between matched / unmatched
+            objects. Only used with the 'iou' similarity metric. A constant threshold
+            or an IoU policy by GT shape area (rectangle, polygon, mask, ellipse).
+            Null inherits the whole threshold from the parent.
         oks_threshold:
           type: number
           format: double

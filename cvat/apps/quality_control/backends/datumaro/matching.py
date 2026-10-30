@@ -58,6 +58,10 @@ class MatchResult(NamedTuple):
     "The pairwise comparisons by the object ids, if requested"
 
 
+GtThresholdFunction: TypeAlias = Callable[[Sequence[dm.Annotation]], float]
+"Computes the matching threshold of a GT object from its annotations"
+
+
 @define(kw_only=True)
 class ComparisonParameters:
     # Each field should either have a description, or use the default value
@@ -79,7 +83,9 @@ class ComparisonParameters:
 
     boundary_f_tolerance: float = DefaultComparisonSettings.boundary_f_tolerance
     boundary_f_threshold: float = DefaultComparisonSettings.boundary_f_threshold
-    iou_threshold: float = DefaultComparisonSettings.iou_threshold
+    iou_threshold: float | GtThresholdFunction = DefaultComparisonSettings.iou_threshold
+    "A constant IoU threshold or a function computing it for each GT object"
+
     oks_threshold: float = DefaultComparisonSettings.oks_threshold
     oks_sigma: float = DefaultComparisonSettings.oks_sigma
     point_size_base: PointSizeBase = DefaultComparisonSettings.point_size_base
@@ -652,7 +658,6 @@ class DistanceComparator:
         return_comparisons: bool = False,
         allow_groups: bool = True,
         attribute_matcher: AttributeMatchingFunction | None = None,
-        gt_threshold: Callable[[Sequence[dm.Annotation]], float] | None = None,
     ):
         supported_metrics = self.SIMILARITY_METRICS.get(settings.annotation_type)
         if supported_metrics is None:
@@ -664,7 +669,6 @@ class DistanceComparator:
             )
 
         self.categories = categories
-        self.gt_threshold = gt_threshold
         self._skeleton_info = {}
         self.settings = settings
         self.return_comparisons = return_comparisons
@@ -694,7 +698,7 @@ class DistanceComparator:
     "The similarity metrics supported for each annotation type"
 
     @property
-    def _annotation_match_threshold(self) -> float:
+    def _annotation_match_threshold(self) -> float | GtThresholdFunction:
         match self.settings.similarity_metric:
             case ShapeSimilarityMetricType.BOUNDARY_F:
                 return self.settings.boundary_f_threshold
@@ -851,7 +855,7 @@ class DistanceComparator:
         label_matcher: LabelEqualityFunction[_ShapeT1, _ShapeT2] | None = None,
         a_objs: Sequence[_ShapeT1] | None = None,
         b_objs: Sequence[_ShapeT2] | None = None,
-        dist_thresh: float | None = None,
+        dist_thresh: float | GtThresholdFunction | None = None,
         a_annotations_getter: Callable[[_ShapeT1], Sequence[dm.Annotation]] | None = None,
         b_annotations_getter: Callable[[_ShapeT2], Sequence[dm.Annotation]] | None = None,
         directed_similarity: ShapeSimilarityFunction[_ShapeT1, _ShapeT2] | None = None,
@@ -941,18 +945,9 @@ class DistanceComparator:
                 extra_args["label_matcher"] = label_matcher
 
             threshold = dist_thresh if dist_thresh is not None else self._annotation_match_threshold
-            if (
-                self.gt_threshold
-                and dist_thresh is None
-                and t
-                in {
-                    dm.AnnotationType.bbox,
-                    dm.AnnotationType.polygon,
-                    dm.AnnotationType.mask,
-                    dm.AnnotationType.ellipse,
-                }
-            ):
-                threshold = lambda a: self.gt_threshold(a_annotations_getter(a))
+            if callable(threshold):
+                gt_threshold = threshold
+                threshold = lambda a: gt_threshold(a_annotations_getter(a))
 
             matches, mismatches, a_unmatched, b_unmatched = match_segments(
                 a_objs,
@@ -1586,7 +1581,6 @@ class Comparator:
         *,
         settings: ComparisonParameters,
         attribute_matcher: AttributeMatchingFunction | None = None,
-        gt_threshold: Callable[[Sequence[dm.Annotation]], float] | None = None,
     ):
         self.ignored_attrs = set(settings.ignored_attributes) | self.IGNORED_ATTRIBUTES
         self.included_ann_types = [settings.annotation_type]
@@ -1596,7 +1590,6 @@ class Comparator:
             settings=settings,
             return_comparisons=True,
             attribute_matcher=attribute_matcher if settings.compare_attributes else None,
-            gt_threshold=gt_threshold,
         )
         self.coverage_threshold = settings.object_visibility_threshold
         self.group_match_threshold = settings.group_match_threshold
