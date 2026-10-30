@@ -566,7 +566,6 @@ class QualityRequirement(TimestampedModel):
         blank=True,
     )
 
-
     boundary_f_tolerance = models.FloatField(null=True, blank=True)
     boundary_f_threshold = models.FloatField(null=True, blank=True)
 

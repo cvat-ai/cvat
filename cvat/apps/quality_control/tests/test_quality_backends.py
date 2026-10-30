@@ -644,6 +644,26 @@ class TestAdaptiveShapeAreas(unittest.TestCase):
         )
         self.assertAlmostEqual(report.groups["ellipse"].comparison_summary.score, 1 / 3)
 
+    def test_linear_iou_policy_is_not_applied_to_boundary_f(self):
+        # the shapes are matched by Boundary F, but would not pass the IoU threshold
+        requirement = make_requirement(
+            "rectangle",
+            similarity_metric=models.ShapeSimilarityMetricType.BOUNDARY_F,
+            boundary_f_tolerance=2,
+            boundary_f_threshold=0.3,
+            iou_threshold=parse_threshold_policy(
+                {**LINEAR_POLICY, "points": [{"x": 100, "y": 1.0}, {"x": 1000, "y": 1.0}]}
+            ),
+        )
+        report = DatasetQualityEstimator(
+            make_provider(2, make_item(dm.Bbox(9, 5, 20, 20, label=0))),
+            make_provider(1, make_item(dm.Bbox(5, 5, 20, 20, label=0))),
+            requirements=[requirement],
+            report_parameters=ComparisonReportParameters(),
+        ).generate_report()
+
+        self.assertEqual(report.groups["rectangle"].comparison_summary.score, 1)
+
     def test_ellipse_area_matches_its_mask(self):
         ellipse = dm.Ellipse(5, 5, 25, 15, label=0, attributes={"rotation": 35})
         polygon = DistanceComparator.to_polygon(ellipse)
