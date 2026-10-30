@@ -12,7 +12,12 @@ from deepdiff import DeepDiff
 from shared.utils import config
 
 
+@pytest.mark.usefixtures(
+    # RQ jobs running concurrently after other tests can create data races with these test cases
+    "restore_redis_inmem_per_class"
+)
 @pytest.mark.usefixtures("restore_db_per_class")
+@pytest.mark.integrity_check
 class TestGetResources:
     @pytest.mark.parametrize("path", config.ASSETS_DIR.glob("*.json"))
     def test_check_objects_integrity(self, path: Path):
@@ -70,6 +75,12 @@ class TestGetResources:
                             for requirement in settings.get("requirements", []):
                                 requirement.pop("created_date", None)
                                 requirement.pop("updated_date", None)
+                elif endpoint == "webhooks":
+                    # Queued deliveries can finish after the database has been restored.
+                    for collection in (json_objs["results"], resp_results):
+                        for webhook in collection:
+                            webhook.pop("last_status", None)
+                            webhook.pop("last_delivery_date", None)
 
                 assert (
                     DeepDiff(

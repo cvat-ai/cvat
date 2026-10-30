@@ -35,11 +35,10 @@ import {
 import { Canvas3d } from 'cvat-canvas3d-wrapper';
 import { FramesMetaData, Job } from 'cvat-core-wrapper';
 import {
-    ActiveControl, CombinedState, FrameSpeed, NavigationType, ToolsBlockerState, Workspace,
+    ActiveControl, CombinedState, FrameSpeed, NavigationType, Workspace,
 } from 'reducers';
 import isAbleToChangeFrame from 'utils/is-able-to-change-frame';
 import { KeyMap } from 'utils/mousetrap-react';
-import { switchToolsBlockerState } from 'actions/settings-actions';
 import { writeLatestFrame } from 'utils/remember-latest-frame';
 import { finishDraw } from 'utils/drawing';
 import { toClipboard } from 'utils/to-clipboard';
@@ -67,7 +66,6 @@ interface StateToProps {
     canvasHistorySource?: CanvasHistorySource;
     autoSave: boolean;
     autoSaveInterval: number;
-    toolsBlockerState: ToolsBlockerState;
     showDeletedFrames: boolean;
     workspace: Workspace;
     keyMap: KeyMap;
@@ -108,7 +106,6 @@ interface DispatchToProps {
     setForceExitAnnotationFlag(forceExit: boolean): void;
     changeWorkspace(workspace: Workspace): void;
     setHoveredChapter(id: number | null): void;
-    onSwitchToolsBlockerState(toolsBlockerState: ToolsBlockerState): void;
     deleteFrame(frame: number): void;
     restoreFrame(frame: number): void;
     switchNavigationBlocked(blocked: boolean): void;
@@ -155,7 +152,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
             workspace: {
                 autoSave,
                 autoSaveInterval,
-                toolsBlockerState,
             },
         },
         shortcuts: { keyMap, normalizedKeyMap },
@@ -192,7 +188,6 @@ function mapStateToProps(state: CombinedState): StateToProps {
         canvasHistorySource,
         autoSave,
         autoSaveInterval,
-        toolsBlockerState,
         showDeletedFrames,
         workspace,
         keyMap,
@@ -261,9 +256,6 @@ function mapDispatchToProps(dispatch: any): DispatchToProps {
         },
         setForceExitAnnotationFlag(forceExit: boolean): void {
             dispatch(setForceExitAnnotationFlagAction(forceExit));
-        },
-        onSwitchToolsBlockerState(toolsBlockerState: ToolsBlockerState): void {
-            dispatch(switchToolsBlockerState(toolsBlockerState));
         },
         deleteFrame(frame: number): void {
             dispatch(deleteFrameAsync(frame));
@@ -655,11 +647,6 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
         finishDraw(canvasInstance, activeControl);
     };
 
-    private onSwitchToolsBlockerState = (): void => {
-        const { toolsBlockerState, onSwitchToolsBlockerState } = this.props;
-        onSwitchToolsBlockerState({ algorithmsLocked: !toolsBlockerState.algorithmsLocked });
-    };
-
     private onURLIconClick = (): void => {
         const { frameNumber } = this.props;
         const { origin, pathname } = window.location;
@@ -755,7 +742,6 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
             rectDrawingMethod,
             annotationFilters,
             initialOpenGuide,
-            toolsBlockerState,
             navigationType,
             switchNavigationBlocked,
             setNavigationType,
@@ -815,7 +801,6 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
                 undoShortcut={normalizedKeyMap.UNDO}
                 redoShortcut={normalizedKeyMap.REDO}
                 drawShortcut={normalizedKeyMap.SWITCH_DRAW_MODE_STANDARD_CONTROLS}
-                switchToolsBlockerShortcut={normalizedKeyMap.SWITCH_TOOLS_BLOCKER_STATE}
                 playPauseShortcut={normalizedKeyMap.PLAY_PAUSE}
                 deleteFrameShortcut={normalizedKeyMap.DELETE_FRAME}
                 nextFrameShortcut={normalizedKeyMap.NEXT_FRAME}
@@ -830,8 +815,6 @@ class AnnotationTopBarContainer extends React.PureComponent<Props> {
                 onUndoClick={this.undo}
                 onRedoClick={this.redo}
                 onFinishDraw={this.onFinishDraw}
-                onSwitchToolsBlockerState={this.onSwitchToolsBlockerState}
-                toolsBlockerState={toolsBlockerState}
                 jobInstance={jobInstance}
                 activeControl={activeControl}
                 rectDrawingMethod={rectDrawingMethod}

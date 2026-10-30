@@ -186,473 +186,6 @@
     }
   },
   {
-    "model": "iam.user",
-    "pk": 1,
-    "fields": {
-      "created_via": null,
-      "date_joined": "2021-12-14T18:04:57Z",
-      "email": "admin1@cvat.org",
-      "first_name": "Admin",
-      "groups": [
-        [
-          "admin"
-        ]
-      ],
-      "is_active": true,
-      "is_staff": true,
-      "is_superuser": true,
-      "last_login": "2026-01-15T08:22:10.292Z",
-      "last_name": "First",
-      "password": "md5$Ba6a4O5ImOYiZ04wBFMtMQ$d1b00970c835fcf12c17240f05f8257e",
-      "user_permissions": [],
-      "username": "admin1"
-    }
-  },
-  {
-    "model": "iam.user",
-    "pk": 2,
-    "fields": {
-      "created_via": null,
-      "date_joined": "2021-12-14T18:21:09Z",
-      "email": "user1@cvat.org",
-      "first_name": "User",
-      "groups": [
-        [
-          "user"
-        ]
-      ],
-      "is_active": true,
-      "is_staff": false,
-      "is_superuser": false,
-      "last_login": "2023-09-15T07:52:46.964Z",
-      "last_name": "First",
-      "password": "md5$phwgPiWB3zBxteEIebm3Yh$27f3556aa8061e5622adfbc8bc305c5c",
-      "user_permissions": [],
-      "username": "user1"
-    }
-  },
-  {
-    "model": "iam.user",
-    "pk": 3,
-    "fields": {
-      "created_via": null,
-      "date_joined": "2021-12-14T18:24:12Z",
-      "email": "user2@cvat.org",
-      "first_name": "User",
-      "groups": [
-        [
-          "user"
-        ]
-      ],
-      "is_active": true,
-      "is_staff": false,
-      "is_superuser": false,
-      "last_login": "2022-09-28T12:19:33.698Z",
-      "last_name": "Second",
-      "password": "md5$Fd9cxQdLQ3f0prkd9TSlnN$1a5fb3c2561137ce199c1dfe5625c7a2",
-      "user_permissions": [],
-      "username": "user2"
-    }
-  },
-  {
-    "model": "iam.user",
-    "pk": 4,
-    "fields": {
-      "created_via": null,
-      "date_joined": "2021-12-14T18:24:39Z",
-      "email": "user3@cvat.org",
-      "first_name": "User",
-      "groups": [
-        [
-          "user"
-        ]
-      ],
-      "is_active": true,
-      "is_staff": false,
-      "is_superuser": false,
-      "last_login": null,
-      "last_name": "Third",
-      "password": "md5$Ijexsnap6Uj1P8RcKUf5Q5$7fb70bf35ebab0f2c2e96509a5ce44bc",
-      "user_permissions": [],
-      "username": "user3"
-    }
-  },
-  {
-    "model": "iam.user",
-    "pk": 5,
-    "fields": {
-      "created_via": null,
-      "date_joined": "2021-12-14T18:25:10Z",
-      "email": "user4@cvat.org",
-      "first_name": "User",
-      "groups": [
-        [
-          "user"
-        ]
-      ],
-      "is_active": true,
-      "is_staff": false,
-      "is_superuser": false,
-      "last_login": null,
-      "last_name": "Fourth",
-      "password": "md5$NIHgzYn7rUqnnAdqA9NRuM$2086d4ab6134a938f7111b689a53e568",
-      "user_permissions": [],
-      "username": "user4"
-    }
-  },
-  {
-    "model": "iam.user",
-    "pk": 6,
-    "fields": {
-      "created_via": null,
-      "date_joined": "2021-12-14T18:30:00Z",
-      "email": "worker1@cvat.org",
-      "first_name": "Worker",
-      "groups": [
-        [
-          "worker"
-        ]
-      ],
-      "is_active": true,
-      "is_staff": false,
-      "is_superuser": false,
-      "last_login": "2022-09-06T07:57:19.879Z",
-      "last_name": "First",
-      "password": "md5$z1W241c7REV3qhDbHgHaxQ$b22a16cb20f2f5c36cb9266dbea2f408",
-      "user_permissions": [],
-      "username": "worker1"
-    }
-  },
-  {
-    "model": "iam.user",
-    "pk": 7,
-    "fields": {
-      "created_via": null,
-      "date_joined": "2021-12-14T18:30:43Z",
-      "email": "worker2@cvat.org",
-      "first_name": "Worker",
-      "groups": [
-        [
-          "worker"
-        ]
-      ],
-      "is_active": true,
-      "is_staff": false,
-      "is_superuser": false,
-      "last_login": null,
-      "last_name": "Second",
-      "password": "md5$bztPzMvTmidF9gZ0KBnZMP$69112e5cff6ee9f413afff579d37bd9f",
-      "user_permissions": [],
-      "username": "worker2"
-    }
-  },
-  {
-    "model": "iam.user",
-    "pk": 8,
-    "fields": {
-      "created_via": null,
-      "date_joined": "2021-12-14T18:31:25Z",
-      "email": "worker3@cvat.org",
-      "first_name": "Worker",
-      "groups": [
-        [
-          "worker"
-        ]
-      ],
-      "is_active": true,
-      "is_staff": false,
-      "is_superuser": false,
-      "last_login": null,
-      "last_name": "Third",
-      "password": "md5$GdmAUO4kpBTZ1CxtBN1VEL$e8726bf27639e80c392db8f2d5143233",
-      "user_permissions": [],
-      "username": "worker3"
-    }
-  },
-  {
-    "model": "iam.user",
-    "pk": 9,
-    "fields": {
-      "created_via": null,
-      "date_joined": "2021-12-14T18:32:01Z",
-      "email": "worker4@cvat.org",
-      "first_name": "Worker",
-      "groups": [
-        [
-          "worker"
-        ]
-      ],
-      "is_active": true,
-      "is_staff": false,
-      "is_superuser": false,
-      "last_login": null,
-      "last_name": "Fourth",
-      "password": "md5$zdbncWPAOiS3ZlwaOYAdOi$996e02d03fcd41c04d536090be706d2b",
-      "user_permissions": [],
-      "username": "worker4"
-    }
-  },
-  {
-    "model": "iam.user",
-    "pk": 10,
-    "fields": {
-      "created_via": null,
-      "date_joined": "2021-12-14T18:33:06Z",
-      "email": "user7@cvat.org",
-      "first_name": "User",
-      "groups": [
-        [
-          "user"
-        ]
-      ],
-      "is_active": true,
-      "is_staff": false,
-      "is_superuser": false,
-      "last_login": "2022-09-28T12:17:51.373Z",
-      "last_name": "Seventh",
-      "password": "md5$6TyZJsUJ2hAbICwZHKp4p0$961841748b31d28bcaf3094e549d2bd5",
-      "user_permissions": [],
-      "username": "user7"
-    }
-  },
-  {
-    "model": "iam.user",
-    "pk": 11,
-    "fields": {
-      "created_via": null,
-      "date_joined": "2021-12-14T18:34:01Z",
-      "email": "user8@cvat.org",
-      "first_name": "User",
-      "groups": [
-        [
-          "user"
-        ]
-      ],
-      "is_active": true,
-      "is_staff": false,
-      "is_superuser": false,
-      "last_login": "2022-03-17T07:22:55.930Z",
-      "last_name": "Eighth",
-      "password": "md5$oLNLFFMdjViRqnAw1th3Zl$d816d16307053866451da43fb4443b66",
-      "user_permissions": [],
-      "username": "user8"
-    }
-  },
-  {
-    "model": "iam.user",
-    "pk": 12,
-    "fields": {
-      "created_via": null,
-      "date_joined": "2021-12-14T18:34:34Z",
-      "email": "user9@cvat.org",
-      "first_name": "User",
-      "groups": [
-        [
-          "user"
-        ]
-      ],
-      "is_active": true,
-      "is_staff": false,
-      "is_superuser": false,
-      "last_login": null,
-      "last_name": "Ninth",
-      "password": "md5$7ETBhORLrHl45WPL9CkxnN$af77496152b60ffc73ef877c99807385",
-      "user_permissions": [],
-      "username": "user9"
-    }
-  },
-  {
-    "model": "iam.user",
-    "pk": 13,
-    "fields": {
-      "created_via": null,
-      "date_joined": "2021-12-14T18:35:15Z",
-      "email": "user10@cvat.org",
-      "first_name": "User",
-      "groups": [
-        [
-          "user"
-        ]
-      ],
-      "is_active": true,
-      "is_staff": false,
-      "is_superuser": false,
-      "last_login": null,
-      "last_name": "Tenth",
-      "password": "md5$9huaZ72ncQGfmxUqU3Hwnz$6b010216eea87409f0aca7126bd80bbd",
-      "user_permissions": [],
-      "username": "user10"
-    }
-  },
-  {
-    "model": "iam.user",
-    "pk": 14,
-    "fields": {
-      "created_via": null,
-      "date_joined": "2021-12-14T18:36:00Z",
-      "email": "dummy1@cvat.org",
-      "first_name": "Dummy",
-      "groups": [],
-      "is_active": true,
-      "is_staff": false,
-      "is_superuser": false,
-      "last_login": null,
-      "last_name": "First",
-      "password": "md5$8vfgStovWFWiOQ3LvlWoTU$788f7808c3f5bb1b8f14fd6797eac26e",
-      "user_permissions": [],
-      "username": "dummy1"
-    }
-  },
-  {
-    "model": "iam.user",
-    "pk": 15,
-    "fields": {
-      "created_via": null,
-      "date_joined": "2021-12-14T18:36:31Z",
-      "email": "dummy2@cvat.org",
-      "first_name": "Dummy",
-      "groups": [],
-      "is_active": true,
-      "is_staff": false,
-      "is_superuser": false,
-      "last_login": null,
-      "last_name": "Second",
-      "password": "md5$P8BxmQDegOYosxMKlJGmMW$99de8e31588e0fab33a18ac804593415",
-      "user_permissions": [],
-      "username": "dummy2"
-    }
-  },
-  {
-    "model": "iam.user",
-    "pk": 16,
-    "fields": {
-      "created_via": null,
-      "date_joined": "2021-12-14T18:37:09Z",
-      "email": "dummy3@cvat.org",
-      "first_name": "Dummy",
-      "groups": [],
-      "is_active": true,
-      "is_staff": false,
-      "is_superuser": false,
-      "last_login": null,
-      "last_name": "Third",
-      "password": "md5$rp1gqZI3urfPDm64dulPLR$ef34e810ad556baac98b4a602bf23a59",
-      "user_permissions": [],
-      "username": "dummy3"
-    }
-  },
-  {
-    "model": "iam.user",
-    "pk": 17,
-    "fields": {
-      "created_via": null,
-      "date_joined": "2021-12-14T18:37:41Z",
-      "email": "dummy4@cvat.org",
-      "first_name": "Dummy",
-      "groups": [],
-      "is_active": true,
-      "is_staff": false,
-      "is_superuser": false,
-      "last_login": null,
-      "last_name": "Fourth",
-      "password": "md5$JqhutieFdFU2Tp7qJlXDAb$f2045686d224badf21278749f4692f33",
-      "user_permissions": [],
-      "username": "dummy4"
-    }
-  },
-  {
-    "model": "iam.user",
-    "pk": 18,
-    "fields": {
-      "created_via": null,
-      "date_joined": "2021-12-14T18:38:46Z",
-      "email": "admin2@cvat.org",
-      "first_name": "Admin",
-      "groups": [
-        [
-          "admin"
-        ]
-      ],
-      "is_active": true,
-      "is_staff": true,
-      "is_superuser": true,
-      "last_login": "2022-03-05T09:37:01.636Z",
-      "last_name": "Second",
-      "password": "md5$rKclttm53lRHC0rITF48uu$7ac59be88ed2a5de4b513edbef629258",
-      "user_permissions": [],
-      "username": "admin2"
-    }
-  },
-  {
-    "model": "iam.user",
-    "pk": 19,
-    "fields": {
-      "created_via": null,
-      "date_joined": "2022-02-24T20:45:07Z",
-      "email": "user5@cvat.org",
-      "first_name": "User",
-      "groups": [
-        [
-          "user"
-        ]
-      ],
-      "is_active": true,
-      "is_staff": false,
-      "is_superuser": false,
-      "last_login": null,
-      "last_name": "Fifth",
-      "password": "md5$8oxrk7tpKgilu8o3QgWajX$9382a7ac03f3e4d51eaa499543933433",
-      "user_permissions": [],
-      "username": "user5"
-    }
-  },
-  {
-    "model": "iam.user",
-    "pk": 20,
-    "fields": {
-      "created_via": null,
-      "date_joined": "2022-02-24T20:45:19Z",
-      "email": "user6@cvat.org",
-      "first_name": "User",
-      "groups": [
-        [
-          "user"
-        ]
-      ],
-      "is_active": true,
-      "is_staff": false,
-      "is_superuser": false,
-      "last_login": null,
-      "last_name": "Sixth",
-      "password": "md5$KC8w8e0XYvd4nwN0Sr5dyn$1eba1ae6fdcc87bba0d910a27439ca65",
-      "user_permissions": [],
-      "username": "user6"
-    }
-  },
-  {
-    "model": "iam.user",
-    "pk": 21,
-    "fields": {
-      "created_via": null,
-      "date_joined": "2023-03-30T09:37:31.615Z",
-      "email": "lonely_user@cvat.org",
-      "first_name": "Lonely",
-      "groups": [
-        [
-          "user"
-        ]
-      ],
-      "is_active": true,
-      "is_staff": false,
-      "is_superuser": false,
-      "last_login": "2023-03-30T09:37:31.708Z",
-      "last_name": "User",
-      "password": "md5$EOuzfC2uKZNEO5Chm6Lsc7$1b9c0bfc7238256d294aec08188d8775",
-      "user_permissions": [],
-      "username": "lonely_user"
-    }
-  },
-  {
     "model": "consensus.consensussettings",
     "pk": 1,
     "fields": {
@@ -666,6 +199,238 @@
     "fields": {
       "iou_threshold": 0.4,
       "task": 31
+    }
+  },
+  {
+    "model": "consensus.consensussettings",
+    "pk": 3,
+    "fields": {
+      "iou_threshold": 0.4,
+      "task": 2
+    }
+  },
+  {
+    "model": "consensus.consensussettings",
+    "pk": 4,
+    "fields": {
+      "iou_threshold": 0.4,
+      "task": 5
+    }
+  },
+  {
+    "model": "consensus.consensussettings",
+    "pk": 5,
+    "fields": {
+      "iou_threshold": 0.4,
+      "task": 6
+    }
+  },
+  {
+    "model": "consensus.consensussettings",
+    "pk": 6,
+    "fields": {
+      "iou_threshold": 0.4,
+      "task": 7
+    }
+  },
+  {
+    "model": "consensus.consensussettings",
+    "pk": 7,
+    "fields": {
+      "iou_threshold": 0.4,
+      "task": 8
+    }
+  },
+  {
+    "model": "consensus.consensussettings",
+    "pk": 8,
+    "fields": {
+      "iou_threshold": 0.4,
+      "task": 9
+    }
+  },
+  {
+    "model": "consensus.consensussettings",
+    "pk": 9,
+    "fields": {
+      "iou_threshold": 0.4,
+      "task": 11
+    }
+  },
+  {
+    "model": "consensus.consensussettings",
+    "pk": 10,
+    "fields": {
+      "iou_threshold": 0.4,
+      "task": 12
+    }
+  },
+  {
+    "model": "consensus.consensussettings",
+    "pk": 11,
+    "fields": {
+      "iou_threshold": 0.4,
+      "task": 13
+    }
+  },
+  {
+    "model": "consensus.consensussettings",
+    "pk": 12,
+    "fields": {
+      "iou_threshold": 0.4,
+      "task": 14
+    }
+  },
+  {
+    "model": "consensus.consensussettings",
+    "pk": 13,
+    "fields": {
+      "iou_threshold": 0.4,
+      "task": 15
+    }
+  },
+  {
+    "model": "consensus.consensussettings",
+    "pk": 14,
+    "fields": {
+      "iou_threshold": 0.4,
+      "task": 17
+    }
+  },
+  {
+    "model": "consensus.consensussettings",
+    "pk": 15,
+    "fields": {
+      "iou_threshold": 0.4,
+      "task": 18
+    }
+  },
+  {
+    "model": "consensus.consensussettings",
+    "pk": 16,
+    "fields": {
+      "iou_threshold": 0.4,
+      "task": 19
+    }
+  },
+  {
+    "model": "consensus.consensussettings",
+    "pk": 17,
+    "fields": {
+      "iou_threshold": 0.4,
+      "task": 20
+    }
+  },
+  {
+    "model": "consensus.consensussettings",
+    "pk": 18,
+    "fields": {
+      "iou_threshold": 0.4,
+      "task": 21
+    }
+  },
+  {
+    "model": "consensus.consensussettings",
+    "pk": 19,
+    "fields": {
+      "iou_threshold": 0.4,
+      "task": 22
+    }
+  },
+  {
+    "model": "consensus.consensussettings",
+    "pk": 20,
+    "fields": {
+      "iou_threshold": 0.4,
+      "task": 23
+    }
+  },
+  {
+    "model": "consensus.consensussettings",
+    "pk": 21,
+    "fields": {
+      "iou_threshold": 0.4,
+      "task": 24
+    }
+  },
+  {
+    "model": "consensus.consensussettings",
+    "pk": 22,
+    "fields": {
+      "iou_threshold": 0.4,
+      "task": 25
+    }
+  },
+  {
+    "model": "consensus.consensussettings",
+    "pk": 23,
+    "fields": {
+      "iou_threshold": 0.4,
+      "task": 26
+    }
+  },
+  {
+    "model": "consensus.consensussettings",
+    "pk": 24,
+    "fields": {
+      "iou_threshold": 0.4,
+      "task": 27
+    }
+  },
+  {
+    "model": "consensus.consensussettings",
+    "pk": 25,
+    "fields": {
+      "iou_threshold": 0.4,
+      "task": 28
+    }
+  },
+  {
+    "model": "consensus.consensussettings",
+    "pk": 26,
+    "fields": {
+      "iou_threshold": 0.4,
+      "task": 29
+    }
+  },
+  {
+    "model": "consensus.consensussettings",
+    "pk": 27,
+    "fields": {
+      "iou_threshold": 0.4,
+      "task": 32
+    }
+  },
+  {
+    "model": "consensus.consensussettings",
+    "pk": 28,
+    "fields": {
+      "iou_threshold": 0.4,
+      "task": 33
+    }
+  },
+  {
+    "model": "consensus.consensussettings",
+    "pk": 29,
+    "fields": {
+      "iou_threshold": 0.4,
+      "task": 34
+    }
+  },
+  {
+    "model": "consensus.consensussettings",
+    "pk": 30,
+    "fields": {
+      "iou_threshold": 0.4,
+      "task": 35
+    }
+  },
+  {
+    "model": "consensus.consensussettings",
+    "pk": 31,
+    "fields": {
+      "iou_threshold": 0.4,
+      "task": 36
     }
   },
   {
@@ -5973,7 +5738,7 @@
       "stage": "annotation",
       "state": "in progress",
       "status": "annotation",
-      "type": "consensus_replica",
+      "type": "replica",
       "updated_date": "2025-02-03T15:25:32.413Z"
     }
   },
@@ -5989,7 +5754,7 @@
       "stage": "annotation",
       "state": "new",
       "status": "annotation",
-      "type": "consensus_replica",
+      "type": "replica",
       "updated_date": "2025-01-14T17:19:51.388Z"
     }
   },
@@ -6005,7 +5770,7 @@
       "stage": "annotation",
       "state": "in progress",
       "status": "annotation",
-      "type": "consensus_replica",
+      "type": "replica",
       "updated_date": "2025-02-03T15:22:52.241Z"
     }
   },
@@ -6037,7 +5802,7 @@
       "stage": "annotation",
       "state": "in progress",
       "status": "annotation",
-      "type": "consensus_replica",
+      "type": "replica",
       "updated_date": "2025-01-14T17:23:55.551Z"
     }
   },
@@ -6053,7 +5818,7 @@
       "stage": "annotation",
       "state": "new",
       "status": "annotation",
-      "type": "consensus_replica",
+      "type": "replica",
       "updated_date": "2025-01-14T17:19:51.388Z"
     }
   },
@@ -6069,7 +5834,7 @@
       "stage": "annotation",
       "state": "in progress",
       "status": "annotation",
-      "type": "consensus_replica",
+      "type": "replica",
       "updated_date": "2025-01-14T17:24:51.333Z"
     }
   },
@@ -6117,7 +5882,7 @@
       "stage": "annotation",
       "state": "in progress",
       "status": "annotation",
-      "type": "consensus_replica",
+      "type": "replica",
       "updated_date": "2025-01-27T16:43:07.696Z"
     }
   },
@@ -6133,7 +5898,7 @@
       "stage": "annotation",
       "state": "completed",
       "status": "annotation",
-      "type": "consensus_replica",
+      "type": "replica",
       "updated_date": "2025-01-27T16:43:47.462Z"
     }
   },
@@ -16208,10 +15973,10 @@
       ],
       "assignee_updated_date": null,
       "bug_tracker": "",
-      "consensus_replicas": 0,
       "created_date": "2021-12-14T18:50:29.458Z",
       "data": 2,
       "dimension": "2d",
+      "initial_replicas": 0,
       "media_type": "image",
       "mode": "annotation",
       "name": "task2",
@@ -16238,10 +16003,10 @@
       ],
       "assignee_updated_date": null,
       "bug_tracker": "",
-      "consensus_replicas": 0,
       "created_date": "2022-02-16T06:25:48.168Z",
       "data": 5,
       "dimension": "2d",
+      "initial_replicas": 0,
       "media_type": "image",
       "mode": "interpolation",
       "name": "task2",
@@ -16266,10 +16031,10 @@
       "assignee": null,
       "assignee_updated_date": null,
       "bug_tracker": "",
-      "consensus_replicas": 0,
       "created_date": "2022-02-16T06:26:54.631Z",
       "data": 6,
       "dimension": "3d",
+      "initial_replicas": 0,
       "media_type": "point_cloud",
       "mode": "annotation",
       "name": "task3",
@@ -16296,10 +16061,10 @@
       ],
       "assignee_updated_date": null,
       "bug_tracker": "",
-      "consensus_replicas": 0,
       "created_date": "2022-02-21T10:31:52.429Z",
       "data": 7,
       "dimension": "2d",
+      "initial_replicas": 0,
       "media_type": "image",
       "mode": "annotation",
       "name": "task_2_org2",
@@ -16326,10 +16091,10 @@
       ],
       "assignee_updated_date": null,
       "bug_tracker": "",
-      "consensus_replicas": 0,
       "created_date": "2022-03-05T08:30:48.612Z",
       "data": 8,
       "dimension": "2d",
+      "initial_replicas": 0,
       "media_type": "image",
       "mode": "annotation",
       "name": "task1",
@@ -16356,10 +16121,10 @@
       ],
       "assignee_updated_date": null,
       "bug_tracker": "",
-      "consensus_replicas": 0,
       "created_date": "2022-03-05T09:33:10.420Z",
       "data": 9,
       "dimension": "2d",
+      "initial_replicas": 0,
       "media_type": "image",
       "mode": "annotation",
       "name": "task1_in_project1",
@@ -16386,10 +16151,10 @@
       ],
       "assignee_updated_date": null,
       "bug_tracker": "",
-      "consensus_replicas": 0,
       "created_date": "2022-03-05T10:32:19.149Z",
       "data": 11,
       "dimension": "2d",
+      "initial_replicas": 0,
       "media_type": "image",
       "mode": "annotation",
       "name": "task1_in_project2",
@@ -16414,10 +16179,10 @@
       "assignee": null,
       "assignee_updated_date": null,
       "bug_tracker": "",
-      "consensus_replicas": 0,
       "created_date": "2022-03-14T13:24:05.852Z",
       "data": null,
       "dimension": "",
+      "initial_replicas": 0,
       "media_type": "",
       "mode": "",
       "name": "task_without_data",
@@ -16444,10 +16209,10 @@
       ],
       "assignee_updated_date": null,
       "bug_tracker": "",
-      "consensus_replicas": 0,
       "created_date": "2022-06-08T08:33:06.505Z",
       "data": 12,
       "dimension": "2d",
+      "initial_replicas": 0,
       "media_type": "image",
       "mode": "annotation",
       "name": "task1_in_project4",
@@ -16472,10 +16237,10 @@
       "assignee": null,
       "assignee_updated_date": null,
       "bug_tracker": "https://bugtracker.localhost/task/12345",
-      "consensus_replicas": 0,
       "created_date": "2022-09-22T14:22:25.820Z",
       "data": 13,
       "dimension": "2d",
+      "initial_replicas": 0,
       "media_type": "image",
       "mode": "annotation",
       "name": "task1 in project5",
@@ -16500,10 +16265,10 @@
       "assignee": null,
       "assignee_updated_date": null,
       "bug_tracker": "",
-      "consensus_replicas": 0,
       "created_date": "2022-12-01T12:53:10.425Z",
       "data": 14,
       "dimension": "2d",
+      "initial_replicas": 0,
       "media_type": "image",
       "mode": "interpolation",
       "name": "task with video data",
@@ -16530,10 +16295,10 @@
       ],
       "assignee_updated_date": null,
       "bug_tracker": "",
-      "consensus_replicas": 0,
       "created_date": "2023-02-10T14:05:25.947Z",
       "data": 16,
       "dimension": "2d",
+      "initial_replicas": 0,
       "media_type": "image",
       "mode": "annotation",
       "name": "task_3_org2",
@@ -16558,10 +16323,10 @@
       "assignee": null,
       "assignee_updated_date": null,
       "bug_tracker": "",
-      "consensus_replicas": 0,
       "created_date": "2023-03-01T15:36:26.668Z",
       "data": 17,
       "dimension": "2d",
+      "initial_replicas": 0,
       "media_type": "image",
       "mode": "annotation",
       "name": "task in project7",
@@ -16586,10 +16351,10 @@
       "assignee": null,
       "assignee_updated_date": null,
       "bug_tracker": "",
-      "consensus_replicas": 0,
       "created_date": "2023-03-10T11:56:33.757Z",
       "data": 18,
       "dimension": "2d",
+      "initial_replicas": 0,
       "media_type": "image",
       "mode": "annotation",
       "name": "task with attributes",
@@ -16614,10 +16379,10 @@
       "assignee": null,
       "assignee_updated_date": null,
       "bug_tracker": "",
-      "consensus_replicas": 0,
       "created_date": "2023-03-10T11:57:31.614Z",
       "data": 19,
       "dimension": "2d",
+      "initial_replicas": 0,
       "media_type": "image",
       "mode": "annotation",
       "name": "task in project with attributes",
@@ -16642,10 +16407,10 @@
       "assignee": null,
       "assignee_updated_date": null,
       "bug_tracker": "",
-      "consensus_replicas": 0,
       "created_date": "2023-03-27T19:08:07.649Z",
       "data": 20,
       "dimension": "2d",
+      "initial_replicas": 0,
       "media_type": "image",
       "mode": "annotation",
       "name": "task with several jobs",
@@ -16670,10 +16435,10 @@
       "assignee": null,
       "assignee_updated_date": null,
       "bug_tracker": "",
-      "consensus_replicas": 0,
       "created_date": "2023-05-26T16:11:23.540Z",
       "data": 21,
       "dimension": "2d",
+      "initial_replicas": 0,
       "media_type": "image",
       "mode": "annotation",
       "name": "task3_with_gt_job",
@@ -16698,10 +16463,10 @@
       "assignee": null,
       "assignee_updated_date": null,
       "bug_tracker": "",
-      "consensus_replicas": 0,
       "created_date": "2024-03-21T20:50:05.694Z",
       "data": 22,
       "dimension": "2d",
+      "initial_replicas": 0,
       "media_type": "image",
       "mode": "annotation",
       "name": "task with several jobs and ground truth job",
@@ -16726,10 +16491,10 @@
       "assignee": null,
       "assignee_updated_date": null,
       "bug_tracker": "",
-      "consensus_replicas": 0,
       "created_date": "2024-07-15T15:33:10.135Z",
       "data": 23,
       "dimension": "2d",
+      "initial_replicas": 0,
       "media_type": "image",
       "mode": "annotation",
       "name": "task_train",
@@ -16754,10 +16519,10 @@
       "assignee": null,
       "assignee_updated_date": null,
       "bug_tracker": "",
-      "consensus_replicas": 0,
       "created_date": "2024-07-15T15:34:53.156Z",
       "data": 24,
       "dimension": "2d",
+      "initial_replicas": 0,
       "media_type": "image",
       "mode": "annotation",
       "name": "task-validation",
@@ -16784,10 +16549,10 @@
       ],
       "assignee_updated_date": "2024-09-23T10:51:45.525Z",
       "bug_tracker": "",
-      "consensus_replicas": 0,
       "created_date": "2024-09-23T10:51:32.778Z",
       "data": 25,
       "dimension": "2d",
+      "initial_replicas": 0,
       "media_type": "image",
       "mode": "annotation",
       "name": "task assigned to owner",
@@ -16814,10 +16579,10 @@
       ],
       "assignee_updated_date": "2024-09-23T10:52:48.769Z",
       "bug_tracker": "",
-      "consensus_replicas": 0,
       "created_date": "2024-09-23T10:52:04.357Z",
       "data": 26,
       "dimension": "2d",
+      "initial_replicas": 0,
       "media_type": "image",
       "mode": "annotation",
       "name": "task assigned to maintainer",
@@ -16842,10 +16607,10 @@
       "assignee": null,
       "assignee_updated_date": null,
       "bug_tracker": "",
-      "consensus_replicas": 0,
       "created_date": "2024-09-23T21:42:22.676Z",
       "data": 27,
       "dimension": "2d",
+      "initial_replicas": 0,
       "media_type": "image",
       "mode": "annotation",
       "name": "task 1",
@@ -16870,10 +16635,10 @@
       "assignee": null,
       "assignee_updated_date": null,
       "bug_tracker": "",
-      "consensus_replicas": 0,
       "created_date": "2024-10-01T12:36:21.364Z",
       "data": 28,
       "dimension": "2d",
+      "initial_replicas": 0,
       "media_type": "image",
       "mode": "annotation",
       "name": "task with honeypots",
@@ -16898,10 +16663,10 @@
       "assignee": null,
       "assignee_updated_date": null,
       "bug_tracker": "",
-      "consensus_replicas": 3,
       "created_date": "2025-01-14T17:19:03.665Z",
       "data": 29,
       "dimension": "2d",
+      "initial_replicas": 3,
       "media_type": "image",
       "mode": "annotation",
       "name": "task with consensus and honeypots",
@@ -16926,10 +16691,10 @@
       "assignee": null,
       "assignee_updated_date": null,
       "bug_tracker": "",
-      "consensus_replicas": 2,
       "created_date": "2025-01-27T16:42:31.302Z",
       "data": 30,
       "dimension": "2d",
+      "initial_replicas": 2,
       "media_type": "image",
       "mode": "annotation",
       "name": "sandbox task with consensus",
@@ -16954,10 +16719,10 @@
       "assignee": null,
       "assignee_updated_date": null,
       "bug_tracker": "",
-      "consensus_replicas": 0,
       "created_date": "2025-05-05T15:35:00.112Z",
       "data": 31,
       "dimension": "2d",
+      "initial_replicas": 0,
       "media_type": "image",
       "mode": "annotation",
       "name": "task with gt job",
@@ -16982,10 +16747,10 @@
       "assignee": null,
       "assignee_updated_date": null,
       "bug_tracker": "",
-      "consensus_replicas": 0,
       "created_date": "2025-05-05T15:35:00.337Z",
       "data": 32,
       "dimension": "2d",
+      "initial_replicas": 0,
       "media_type": "image",
       "mode": "annotation",
       "name": "task with honeypots",
@@ -17010,10 +16775,10 @@
       "assignee": null,
       "assignee_updated_date": null,
       "bug_tracker": "",
-      "consensus_replicas": 0,
       "created_date": "2025-08-01T11:44:46.343Z",
       "data": 33,
       "dimension": "2d",
+      "initial_replicas": 0,
       "media_type": "image",
       "mode": "interpolation",
       "name": "task with frame step and gt job",
@@ -17038,10 +16803,10 @@
       "assignee": null,
       "assignee_updated_date": null,
       "bug_tracker": "",
-      "consensus_replicas": 0,
       "created_date": "2025-11-13T11:32:48.132Z",
       "data": 34,
       "dimension": "2d",
+      "initial_replicas": 0,
       "media_type": "image",
       "mode": "annotation",
       "name": "task with tags",
@@ -17066,10 +16831,10 @@
       "assignee": null,
       "assignee_updated_date": null,
       "bug_tracker": "",
-      "consensus_replicas": 0,
       "created_date": "2026-05-11T17:25:43.375Z",
       "data": 35,
       "dimension": "1d",
+      "initial_replicas": 0,
       "media_type": "audio",
       "mode": "interpolation",
       "name": "task with audio and gt",
@@ -17573,9 +17338,9 @@
     "model": "growth.usergrowthdata",
     "pk": 1,
     "fields": {
-      "promotion_notifications_allowed": true,
       "github_prompt_shown_at": "2022-02-24T20:45:19Z",
       "github_prompt_support_clicked": false,
+      "promotion_notifications_allowed": true,
       "user": [
         "user6"
       ]
@@ -17585,9 +17350,9 @@
     "model": "growth.usergrowthdata",
     "pk": 2,
     "fields": {
-      "promotion_notifications_allowed": true,
       "github_prompt_shown_at": "2021-12-14T18:38:46Z",
       "github_prompt_support_clicked": false,
+      "promotion_notifications_allowed": true,
       "user": [
         "admin2"
       ]
@@ -17597,9 +17362,9 @@
     "model": "growth.usergrowthdata",
     "pk": 3,
     "fields": {
-      "promotion_notifications_allowed": true,
       "github_prompt_shown_at": "2023-03-30T09:37:31.615Z",
       "github_prompt_support_clicked": false,
+      "promotion_notifications_allowed": true,
       "user": [
         "lonely_user"
       ]
@@ -17609,9 +17374,9 @@
     "model": "growth.usergrowthdata",
     "pk": 4,
     "fields": {
-      "promotion_notifications_allowed": true,
       "github_prompt_shown_at": "2021-12-14T18:04:57Z",
       "github_prompt_support_clicked": false,
+      "promotion_notifications_allowed": true,
       "user": [
         "admin1"
       ]
@@ -17621,9 +17386,9 @@
     "model": "growth.usergrowthdata",
     "pk": 5,
     "fields": {
-      "promotion_notifications_allowed": true,
       "github_prompt_shown_at": "2021-12-14T18:21:09Z",
       "github_prompt_support_clicked": false,
+      "promotion_notifications_allowed": true,
       "user": [
         "user1"
       ]
@@ -17633,9 +17398,9 @@
     "model": "growth.usergrowthdata",
     "pk": 6,
     "fields": {
-      "promotion_notifications_allowed": true,
       "github_prompt_shown_at": "2021-12-14T18:24:12Z",
       "github_prompt_support_clicked": false,
+      "promotion_notifications_allowed": true,
       "user": [
         "user2"
       ]
@@ -17645,9 +17410,9 @@
     "model": "growth.usergrowthdata",
     "pk": 7,
     "fields": {
-      "promotion_notifications_allowed": true,
       "github_prompt_shown_at": "2021-12-14T18:24:39Z",
       "github_prompt_support_clicked": false,
+      "promotion_notifications_allowed": true,
       "user": [
         "user3"
       ]
@@ -17657,9 +17422,9 @@
     "model": "growth.usergrowthdata",
     "pk": 8,
     "fields": {
-      "promotion_notifications_allowed": true,
       "github_prompt_shown_at": "2021-12-14T18:25:10Z",
       "github_prompt_support_clicked": false,
+      "promotion_notifications_allowed": true,
       "user": [
         "user4"
       ]
@@ -17669,9 +17434,9 @@
     "model": "growth.usergrowthdata",
     "pk": 9,
     "fields": {
-      "promotion_notifications_allowed": true,
       "github_prompt_shown_at": "2021-12-14T18:30:00Z",
       "github_prompt_support_clicked": false,
+      "promotion_notifications_allowed": true,
       "user": [
         "worker1"
       ]
@@ -17681,9 +17446,9 @@
     "model": "growth.usergrowthdata",
     "pk": 10,
     "fields": {
-      "promotion_notifications_allowed": true,
       "github_prompt_shown_at": "2021-12-14T18:30:43Z",
       "github_prompt_support_clicked": false,
+      "promotion_notifications_allowed": true,
       "user": [
         "worker2"
       ]
@@ -17693,9 +17458,9 @@
     "model": "growth.usergrowthdata",
     "pk": 11,
     "fields": {
-      "promotion_notifications_allowed": true,
       "github_prompt_shown_at": "2021-12-14T18:31:25Z",
       "github_prompt_support_clicked": false,
+      "promotion_notifications_allowed": true,
       "user": [
         "worker3"
       ]
@@ -17705,9 +17470,9 @@
     "model": "growth.usergrowthdata",
     "pk": 12,
     "fields": {
-      "promotion_notifications_allowed": true,
       "github_prompt_shown_at": "2021-12-14T18:32:01Z",
       "github_prompt_support_clicked": false,
+      "promotion_notifications_allowed": true,
       "user": [
         "worker4"
       ]
@@ -17717,9 +17482,9 @@
     "model": "growth.usergrowthdata",
     "pk": 13,
     "fields": {
-      "promotion_notifications_allowed": true,
       "github_prompt_shown_at": "2021-12-14T18:33:06Z",
       "github_prompt_support_clicked": false,
+      "promotion_notifications_allowed": true,
       "user": [
         "user7"
       ]
@@ -17729,9 +17494,9 @@
     "model": "growth.usergrowthdata",
     "pk": 14,
     "fields": {
-      "promotion_notifications_allowed": true,
       "github_prompt_shown_at": "2021-12-14T18:34:01Z",
       "github_prompt_support_clicked": false,
+      "promotion_notifications_allowed": true,
       "user": [
         "user8"
       ]
@@ -17741,9 +17506,9 @@
     "model": "growth.usergrowthdata",
     "pk": 15,
     "fields": {
-      "promotion_notifications_allowed": true,
       "github_prompt_shown_at": "2021-12-14T18:34:34Z",
       "github_prompt_support_clicked": false,
+      "promotion_notifications_allowed": true,
       "user": [
         "user9"
       ]
@@ -17753,9 +17518,9 @@
     "model": "growth.usergrowthdata",
     "pk": 16,
     "fields": {
-      "promotion_notifications_allowed": true,
       "github_prompt_shown_at": "2021-12-14T18:35:15Z",
       "github_prompt_support_clicked": false,
+      "promotion_notifications_allowed": true,
       "user": [
         "user10"
       ]
@@ -17765,9 +17530,9 @@
     "model": "growth.usergrowthdata",
     "pk": 17,
     "fields": {
-      "promotion_notifications_allowed": true,
       "github_prompt_shown_at": "2021-12-14T18:36:00Z",
       "github_prompt_support_clicked": false,
+      "promotion_notifications_allowed": true,
       "user": [
         "dummy1"
       ]
@@ -17777,9 +17542,9 @@
     "model": "growth.usergrowthdata",
     "pk": 18,
     "fields": {
-      "promotion_notifications_allowed": true,
       "github_prompt_shown_at": "2021-12-14T18:36:31Z",
       "github_prompt_support_clicked": false,
+      "promotion_notifications_allowed": true,
       "user": [
         "dummy2"
       ]
@@ -17789,9 +17554,9 @@
     "model": "growth.usergrowthdata",
     "pk": 19,
     "fields": {
-      "promotion_notifications_allowed": true,
       "github_prompt_shown_at": "2021-12-14T18:37:09Z",
       "github_prompt_support_clicked": false,
+      "promotion_notifications_allowed": true,
       "user": [
         "dummy3"
       ]
@@ -17801,9 +17566,9 @@
     "model": "growth.usergrowthdata",
     "pk": 20,
     "fields": {
-      "promotion_notifications_allowed": true,
       "github_prompt_shown_at": "2021-12-14T18:37:41Z",
       "github_prompt_support_clicked": false,
+      "promotion_notifications_allowed": true,
       "user": [
         "dummy4"
       ]
@@ -17813,12 +17578,479 @@
     "model": "growth.usergrowthdata",
     "pk": 21,
     "fields": {
-      "promotion_notifications_allowed": true,
       "github_prompt_shown_at": "2022-02-24T20:45:07Z",
       "github_prompt_support_clicked": false,
+      "promotion_notifications_allowed": true,
       "user": [
         "user5"
       ]
+    }
+  },
+  {
+    "model": "iam.user",
+    "pk": 1,
+    "fields": {
+      "created_via": null,
+      "date_joined": "2021-12-14T18:04:57Z",
+      "email": "admin1@cvat.org",
+      "first_name": "Admin",
+      "groups": [
+        [
+          "admin"
+        ]
+      ],
+      "is_active": true,
+      "is_staff": true,
+      "is_superuser": true,
+      "last_login": "2026-01-15T08:22:10.292Z",
+      "last_name": "First",
+      "password": "md5$Ba6a4O5ImOYiZ04wBFMtMQ$d1b00970c835fcf12c17240f05f8257e",
+      "user_permissions": [],
+      "username": "admin1"
+    }
+  },
+  {
+    "model": "iam.user",
+    "pk": 2,
+    "fields": {
+      "created_via": null,
+      "date_joined": "2021-12-14T18:21:09Z",
+      "email": "user1@cvat.org",
+      "first_name": "User",
+      "groups": [
+        [
+          "user"
+        ]
+      ],
+      "is_active": true,
+      "is_staff": false,
+      "is_superuser": false,
+      "last_login": "2023-09-15T07:52:46.964Z",
+      "last_name": "First",
+      "password": "md5$phwgPiWB3zBxteEIebm3Yh$27f3556aa8061e5622adfbc8bc305c5c",
+      "user_permissions": [],
+      "username": "user1"
+    }
+  },
+  {
+    "model": "iam.user",
+    "pk": 3,
+    "fields": {
+      "created_via": null,
+      "date_joined": "2021-12-14T18:24:12Z",
+      "email": "user2@cvat.org",
+      "first_name": "User",
+      "groups": [
+        [
+          "user"
+        ]
+      ],
+      "is_active": true,
+      "is_staff": false,
+      "is_superuser": false,
+      "last_login": "2022-09-28T12:19:33.698Z",
+      "last_name": "Second",
+      "password": "md5$Fd9cxQdLQ3f0prkd9TSlnN$1a5fb3c2561137ce199c1dfe5625c7a2",
+      "user_permissions": [],
+      "username": "user2"
+    }
+  },
+  {
+    "model": "iam.user",
+    "pk": 4,
+    "fields": {
+      "created_via": null,
+      "date_joined": "2021-12-14T18:24:39Z",
+      "email": "user3@cvat.org",
+      "first_name": "User",
+      "groups": [
+        [
+          "user"
+        ]
+      ],
+      "is_active": true,
+      "is_staff": false,
+      "is_superuser": false,
+      "last_login": null,
+      "last_name": "Third",
+      "password": "md5$Ijexsnap6Uj1P8RcKUf5Q5$7fb70bf35ebab0f2c2e96509a5ce44bc",
+      "user_permissions": [],
+      "username": "user3"
+    }
+  },
+  {
+    "model": "iam.user",
+    "pk": 5,
+    "fields": {
+      "created_via": null,
+      "date_joined": "2021-12-14T18:25:10Z",
+      "email": "user4@cvat.org",
+      "first_name": "User",
+      "groups": [
+        [
+          "user"
+        ]
+      ],
+      "is_active": true,
+      "is_staff": false,
+      "is_superuser": false,
+      "last_login": null,
+      "last_name": "Fourth",
+      "password": "md5$NIHgzYn7rUqnnAdqA9NRuM$2086d4ab6134a938f7111b689a53e568",
+      "user_permissions": [],
+      "username": "user4"
+    }
+  },
+  {
+    "model": "iam.user",
+    "pk": 6,
+    "fields": {
+      "created_via": null,
+      "date_joined": "2021-12-14T18:30:00Z",
+      "email": "worker1@cvat.org",
+      "first_name": "Worker",
+      "groups": [
+        [
+          "worker"
+        ]
+      ],
+      "is_active": true,
+      "is_staff": false,
+      "is_superuser": false,
+      "last_login": "2022-09-06T07:57:19.879Z",
+      "last_name": "First",
+      "password": "md5$z1W241c7REV3qhDbHgHaxQ$b22a16cb20f2f5c36cb9266dbea2f408",
+      "user_permissions": [],
+      "username": "worker1"
+    }
+  },
+  {
+    "model": "iam.user",
+    "pk": 7,
+    "fields": {
+      "created_via": null,
+      "date_joined": "2021-12-14T18:30:43Z",
+      "email": "worker2@cvat.org",
+      "first_name": "Worker",
+      "groups": [
+        [
+          "worker"
+        ]
+      ],
+      "is_active": true,
+      "is_staff": false,
+      "is_superuser": false,
+      "last_login": null,
+      "last_name": "Second",
+      "password": "md5$bztPzMvTmidF9gZ0KBnZMP$69112e5cff6ee9f413afff579d37bd9f",
+      "user_permissions": [],
+      "username": "worker2"
+    }
+  },
+  {
+    "model": "iam.user",
+    "pk": 8,
+    "fields": {
+      "created_via": null,
+      "date_joined": "2021-12-14T18:31:25Z",
+      "email": "worker3@cvat.org",
+      "first_name": "Worker",
+      "groups": [
+        [
+          "worker"
+        ]
+      ],
+      "is_active": true,
+      "is_staff": false,
+      "is_superuser": false,
+      "last_login": null,
+      "last_name": "Third",
+      "password": "md5$GdmAUO4kpBTZ1CxtBN1VEL$e8726bf27639e80c392db8f2d5143233",
+      "user_permissions": [],
+      "username": "worker3"
+    }
+  },
+  {
+    "model": "iam.user",
+    "pk": 9,
+    "fields": {
+      "created_via": null,
+      "date_joined": "2021-12-14T18:32:01Z",
+      "email": "worker4@cvat.org",
+      "first_name": "Worker",
+      "groups": [
+        [
+          "worker"
+        ]
+      ],
+      "is_active": true,
+      "is_staff": false,
+      "is_superuser": false,
+      "last_login": null,
+      "last_name": "Fourth",
+      "password": "md5$zdbncWPAOiS3ZlwaOYAdOi$996e02d03fcd41c04d536090be706d2b",
+      "user_permissions": [],
+      "username": "worker4"
+    }
+  },
+  {
+    "model": "iam.user",
+    "pk": 10,
+    "fields": {
+      "created_via": null,
+      "date_joined": "2021-12-14T18:33:06Z",
+      "email": "user7@cvat.org",
+      "first_name": "User",
+      "groups": [
+        [
+          "user"
+        ]
+      ],
+      "is_active": true,
+      "is_staff": false,
+      "is_superuser": false,
+      "last_login": "2022-09-28T12:17:51.373Z",
+      "last_name": "Seventh",
+      "password": "md5$6TyZJsUJ2hAbICwZHKp4p0$961841748b31d28bcaf3094e549d2bd5",
+      "user_permissions": [],
+      "username": "user7"
+    }
+  },
+  {
+    "model": "iam.user",
+    "pk": 11,
+    "fields": {
+      "created_via": null,
+      "date_joined": "2021-12-14T18:34:01Z",
+      "email": "user8@cvat.org",
+      "first_name": "User",
+      "groups": [
+        [
+          "user"
+        ]
+      ],
+      "is_active": true,
+      "is_staff": false,
+      "is_superuser": false,
+      "last_login": "2022-03-17T07:22:55.930Z",
+      "last_name": "Eighth",
+      "password": "md5$oLNLFFMdjViRqnAw1th3Zl$d816d16307053866451da43fb4443b66",
+      "user_permissions": [],
+      "username": "user8"
+    }
+  },
+  {
+    "model": "iam.user",
+    "pk": 12,
+    "fields": {
+      "created_via": null,
+      "date_joined": "2021-12-14T18:34:34Z",
+      "email": "user9@cvat.org",
+      "first_name": "User",
+      "groups": [
+        [
+          "user"
+        ]
+      ],
+      "is_active": true,
+      "is_staff": false,
+      "is_superuser": false,
+      "last_login": null,
+      "last_name": "Ninth",
+      "password": "md5$7ETBhORLrHl45WPL9CkxnN$af77496152b60ffc73ef877c99807385",
+      "user_permissions": [],
+      "username": "user9"
+    }
+  },
+  {
+    "model": "iam.user",
+    "pk": 13,
+    "fields": {
+      "created_via": null,
+      "date_joined": "2021-12-14T18:35:15Z",
+      "email": "user10@cvat.org",
+      "first_name": "User",
+      "groups": [
+        [
+          "user"
+        ]
+      ],
+      "is_active": true,
+      "is_staff": false,
+      "is_superuser": false,
+      "last_login": null,
+      "last_name": "Tenth",
+      "password": "md5$9huaZ72ncQGfmxUqU3Hwnz$6b010216eea87409f0aca7126bd80bbd",
+      "user_permissions": [],
+      "username": "user10"
+    }
+  },
+  {
+    "model": "iam.user",
+    "pk": 14,
+    "fields": {
+      "created_via": null,
+      "date_joined": "2021-12-14T18:36:00Z",
+      "email": "dummy1@cvat.org",
+      "first_name": "Dummy",
+      "groups": [],
+      "is_active": true,
+      "is_staff": false,
+      "is_superuser": false,
+      "last_login": null,
+      "last_name": "First",
+      "password": "md5$8vfgStovWFWiOQ3LvlWoTU$788f7808c3f5bb1b8f14fd6797eac26e",
+      "user_permissions": [],
+      "username": "dummy1"
+    }
+  },
+  {
+    "model": "iam.user",
+    "pk": 15,
+    "fields": {
+      "created_via": null,
+      "date_joined": "2021-12-14T18:36:31Z",
+      "email": "dummy2@cvat.org",
+      "first_name": "Dummy",
+      "groups": [],
+      "is_active": true,
+      "is_staff": false,
+      "is_superuser": false,
+      "last_login": null,
+      "last_name": "Second",
+      "password": "md5$P8BxmQDegOYosxMKlJGmMW$99de8e31588e0fab33a18ac804593415",
+      "user_permissions": [],
+      "username": "dummy2"
+    }
+  },
+  {
+    "model": "iam.user",
+    "pk": 16,
+    "fields": {
+      "created_via": null,
+      "date_joined": "2021-12-14T18:37:09Z",
+      "email": "dummy3@cvat.org",
+      "first_name": "Dummy",
+      "groups": [],
+      "is_active": true,
+      "is_staff": false,
+      "is_superuser": false,
+      "last_login": null,
+      "last_name": "Third",
+      "password": "md5$rp1gqZI3urfPDm64dulPLR$ef34e810ad556baac98b4a602bf23a59",
+      "user_permissions": [],
+      "username": "dummy3"
+    }
+  },
+  {
+    "model": "iam.user",
+    "pk": 17,
+    "fields": {
+      "created_via": null,
+      "date_joined": "2021-12-14T18:37:41Z",
+      "email": "dummy4@cvat.org",
+      "first_name": "Dummy",
+      "groups": [],
+      "is_active": true,
+      "is_staff": false,
+      "is_superuser": false,
+      "last_login": null,
+      "last_name": "Fourth",
+      "password": "md5$JqhutieFdFU2Tp7qJlXDAb$f2045686d224badf21278749f4692f33",
+      "user_permissions": [],
+      "username": "dummy4"
+    }
+  },
+  {
+    "model": "iam.user",
+    "pk": 18,
+    "fields": {
+      "created_via": null,
+      "date_joined": "2021-12-14T18:38:46Z",
+      "email": "admin2@cvat.org",
+      "first_name": "Admin",
+      "groups": [
+        [
+          "admin"
+        ]
+      ],
+      "is_active": true,
+      "is_staff": true,
+      "is_superuser": true,
+      "last_login": "2022-03-05T09:37:01.636Z",
+      "last_name": "Second",
+      "password": "md5$rKclttm53lRHC0rITF48uu$7ac59be88ed2a5de4b513edbef629258",
+      "user_permissions": [],
+      "username": "admin2"
+    }
+  },
+  {
+    "model": "iam.user",
+    "pk": 19,
+    "fields": {
+      "created_via": null,
+      "date_joined": "2022-02-24T20:45:07Z",
+      "email": "user5@cvat.org",
+      "first_name": "User",
+      "groups": [
+        [
+          "user"
+        ]
+      ],
+      "is_active": true,
+      "is_staff": false,
+      "is_superuser": false,
+      "last_login": null,
+      "last_name": "Fifth",
+      "password": "md5$8oxrk7tpKgilu8o3QgWajX$9382a7ac03f3e4d51eaa499543933433",
+      "user_permissions": [],
+      "username": "user5"
+    }
+  },
+  {
+    "model": "iam.user",
+    "pk": 20,
+    "fields": {
+      "created_via": null,
+      "date_joined": "2022-02-24T20:45:19Z",
+      "email": "user6@cvat.org",
+      "first_name": "User",
+      "groups": [
+        [
+          "user"
+        ]
+      ],
+      "is_active": true,
+      "is_staff": false,
+      "is_superuser": false,
+      "last_login": null,
+      "last_name": "Sixth",
+      "password": "md5$KC8w8e0XYvd4nwN0Sr5dyn$1eba1ae6fdcc87bba0d910a27439ca65",
+      "user_permissions": [],
+      "username": "user6"
+    }
+  },
+  {
+    "model": "iam.user",
+    "pk": 21,
+    "fields": {
+      "created_via": null,
+      "date_joined": "2023-03-30T09:37:31.615Z",
+      "email": "lonely_user@cvat.org",
+      "first_name": "Lonely",
+      "groups": [
+        [
+          "user"
+        ]
+      ],
+      "is_active": true,
+      "is_staff": false,
+      "is_superuser": false,
+      "last_login": "2023-03-30T09:37:31.708Z",
+      "last_name": "User",
+      "password": "md5$EOuzfC2uKZNEO5Chm6Lsc7$1b9c0bfc7238256d294aec08188d8775",
+      "user_permissions": [],
+      "username": "lonely_user"
     }
   },
   {

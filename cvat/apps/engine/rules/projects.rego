@@ -64,16 +64,19 @@ allow if {
 }
 
 allow if {
-    input.scope in {utils.CREATE, utils.IMPORT_BACKUP}
-    utils.is_sandbox
+    input.scope in {
+        utils.DELETE, utils.EXPORT_ANNOTATIONS, utils.EXPORT_BACKUP, utils.EXPORT_DATASET,
+        utils.IMPORT_DATASET, utils.UPDATE_ASSIGNEE, utils.UPDATE_ASSOCIATED_STORAGE,
+        utils.UPDATE_DESC, utils.UPDATE_OWNER, utils.VIEW
+    }
+    organizations.is_same_org_as_resource_with_perm(organizations.MAINTAINER)
     utils.has_perm(utils.USER)
 }
 
 allow if {
     input.scope in {utils.CREATE, utils.IMPORT_BACKUP}
-    input.auth.organization.id == input.resource.organization.id
+    organizations.is_same_context_as_resource_with_perm(organizations.SUPERVISOR)
     utils.has_perm(utils.USER)
-    organizations.has_perm(organizations.SUPERVISOR)
 }
 
 allow if {
@@ -106,131 +109,48 @@ filter := utils.add_organization_filter(base_filter, ["organization"])
 
 allow if {
     input.scope == utils.VIEW
-    utils.is_sandbox
+    organizations.is_same_context_as_resource
     is_project_staff
 }
-
-allow if {
-    input.scope == utils.VIEW
-    input.auth.organization.id == input.resource.organization.id
-    utils.has_perm(utils.USER)
-    organizations.has_perm(organizations.MAINTAINER)
-}
-
-allow if {
-    input.scope == utils.VIEW
-    input.auth.organization.id == input.resource.organization.id
-    organizations.has_perm(organizations.WORKER)
-    is_project_staff
-}
-
 
 allow if {
     input.scope in {utils.DELETE, utils.UPDATE_ASSOCIATED_STORAGE}
-    utils.is_sandbox
+    organizations.is_same_context_as_resource
     utils.has_perm(utils.WORKER)
     utils.is_resource_owner
 }
 
 allow if {
-    input.scope in {utils.DELETE, utils.UPDATE_ASSOCIATED_STORAGE}
-    input.auth.organization.id == input.resource.organization.id
-    utils.has_perm(utils.WORKER)
-    organizations.is_member
-    utils.is_resource_owner
-}
-
-allow if {
-    input.scope in {utils.DELETE, utils.UPDATE_ASSOCIATED_STORAGE}
-    input.auth.organization.id == input.resource.organization.id
-    utils.has_perm(utils.USER)
-    organizations.is_staff
-}
-
-allow if {
     input.scope in {utils.UPDATE_DESC, utils.IMPORT_DATASET}
-    utils.is_sandbox
+    organizations.is_same_context_as_resource
     is_project_staff
-    utils.has_perm(utils.WORKER)
-}
-
-allow if {
-    input.scope in {utils.UPDATE_DESC, utils.IMPORT_DATASET}
-    input.auth.organization.id == input.resource.organization.id
-    utils.has_perm(utils.USER)
-    organizations.is_staff
-}
-
-allow if {
-    input.scope in {utils.UPDATE_DESC, utils.IMPORT_DATASET}
-    is_project_staff
-    input.auth.organization.id == input.resource.organization.id
-    utils.has_perm(utils.WORKER)
-    organizations.is_member
-}
-
-allow if {
-    input.scope == utils.UPDATE_ASSIGNEE
-    utils.is_sandbox
-    utils.is_resource_owner
     utils.has_perm(utils.WORKER)
 }
 
 allow if {
     input.scope == utils.UPDATE_ASSIGNEE
-    input.auth.organization.id == input.resource.organization.id
+    organizations.is_same_context_as_resource
     utils.is_resource_owner
     utils.has_perm(utils.WORKER)
-    organizations.is_member
-}
-
-allow if {
-    input.scope == utils.UPDATE_ASSIGNEE
-    input.auth.organization.id == input.resource.organization.id
-    utils.has_perm(utils.USER)
-    organizations.is_staff
 }
 
 allow if {
     input.scope == utils.UPDATE_OWNER
-    input.auth.organization.id == input.resource.organization.id
+    organizations.is_same_org_as_resource_with_perm(organizations.MAINTAINER)
     utils.is_resource_owner
     utils.has_perm(utils.WORKER)
-    organizations.is_staff
-}
-
-allow if {
-    input.scope == utils.UPDATE_OWNER
-    input.auth.organization.id == input.resource.organization.id
-    utils.has_perm(utils.USER)
-    organizations.is_staff
 }
 
 allow if {
     input.scope in {utils.EXPORT_ANNOTATIONS, utils.EXPORT_DATASET, utils.EXPORT_BACKUP}
-    utils.is_sandbox
+    organizations.is_same_context_as_resource_with_perm(organizations.SUPERVISOR)
     is_project_staff
 }
 
 allow if {
     input.scope in {utils.EXPORT_ANNOTATIONS, utils.EXPORT_DATASET, utils.EXPORT_BACKUP}
-    input.auth.organization.id == input.resource.organization.id
-    organizations.has_perm(organizations.SUPERVISOR)
-    is_project_staff
-}
-
-allow if {
-    input.scope in {utils.EXPORT_ANNOTATIONS, utils.EXPORT_DATASET, utils.EXPORT_BACKUP}
-    input.auth.organization.id == input.resource.organization.id
-    organizations.is_member
+    organizations.is_same_context_as_resource
     utils.is_resource_owner
-}
-
-allow if {
-    input.scope in {utils.EXPORT_ANNOTATIONS, utils.EXPORT_DATASET, utils.EXPORT_BACKUP}
-    input.auth.organization.id == input.resource.organization.id
-    utils.has_perm(utils.USER)
-    organizations.has_perm(organizations.MAINTAINER)
 }
 
 allow if {

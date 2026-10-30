@@ -33,7 +33,6 @@ import {
     Workspace,
     isMultiSelectionSupported,
 } from 'reducers';
-import { switchToolsBlockerState } from './settings-actions';
 import { updateJobAsync } from './jobs-actions';
 import { loadAudioDataAsync } from './audio-actions';
 
@@ -673,6 +672,7 @@ export function selectObjectsAsync(requestedStatesID: number[]): ThunkAction {
             state.annotation.annotations.states,
             requestedStatesID,
             getHiddenZLayers(state),
+            previousSelection,
         );
 
         const selectionUnchanged = previousSelection.length === selectedStatesID.length &&
@@ -687,6 +687,16 @@ export function selectObjectsAsync(requestedStatesID: number[]): ThunkAction {
         if (jobInstance && !selectionUnchanged) {
             await jobInstance.actions.recordSelection(previousSelection, selectedStatesID, frame);
             history = await jobInstance.actions.get();
+        }
+
+        const { instance: canvasInstance, activeControl } = getState().annotation.canvas;
+        if (!selectionUnchanged && selectedStatesID.length && activeControl === ActiveControl.CURSOR &&
+            canvasInstance instanceof Canvas && canvasInstance.mode() === Canvas2DMode.IDLE) {
+            canvasInstance.selectObjects({ enabled: true });
+            dispatch({
+                type: AnnotationActionTypes.UPDATE_ACTIVE_CONTROL,
+                payload: { activeControl: ActiveControl.SELECT },
+            });
         }
 
         dispatch({
@@ -1404,7 +1414,7 @@ export function getJobAsync({
             getCore().config.globalObjectsCounter = 0;
             const [job] = await cvat.jobs.get({ jobID });
             let gtJob: Job | null = null;
-            if (job.type === JobType.ANNOTATION || job.type === JobType.CONSENSUS_REPLICA) {
+            if (job.type === JobType.ANNOTATION || job.type === JobType.REPLICA) {
                 try {
                     [gtJob] = await cvat.jobs.get({ taskID, type: JobType.GROUND_TRUTH });
                 } catch (_e) {
@@ -1628,9 +1638,6 @@ export function updateAnnotationsAsync(statesToUpdate: ObjectState[], batch = fa
     return async (dispatch: ThunkDispatch, getState): Promise<void> => {
         const { jobInstance, workspace } = receiveAnnotationsParameters();
         try {
-            const hiddenWasUpdated = (state: ObjectState): boolean => (
-                state.updateFlags.hidden || state.elements.some(hiddenWasUpdated)
-            );
             if (statesToUpdate.some((state): boolean => state.updateFlags.zOrder)) {
                 // deactivate object to visualize changes immediately (UX)
                 dispatch(activateObject(null, null, null));
@@ -1641,43 +1648,14 @@ export function updateAnnotationsAsync(statesToUpdate: ObjectState[], batch = fa
                 return;
             }
 
-            const { selectedStatesID } = getState().annotation.annotations;
             if (batch) {
-                const hidingCompleteSelection = statesToSave.length === selectedStatesID.length &&
-                    statesToSave.every((stateToSave) => (
-                        hiddenWasUpdated(stateToSave) && stateToSave.hidden &&
-                        selectedStatesID.includes(stateToSave.clientID as number)
-                    ));
                 await jobInstance.annotations.saveStates(statesToSave);
-                if (hidingCompleteSelection) {
-                    await jobInstance.actions.recordSelection(
-                        selectedStatesID,
-                        [],
-                        statesToSave[0].frame,
-                        true,
-                    );
-                }
                 dispatch(fetchAnnotationsAsync());
                 return;
             }
 
-            const hiddenSelectedState = statesToSave.length === 1 &&
-                hiddenWasUpdated(statesToSave[0]) && statesToSave[0].hidden &&
-                selectedStatesID.includes(statesToSave[0].clientID as number);
-            const previousSelection = hiddenSelectedState ? [...selectedStatesID] : [];
-            const nextSelection = hiddenSelectedState ? selectedStatesID.filter(
-                (clientID: number): boolean => clientID !== statesToSave[0].clientID,
-            ) : [];
             const promises = statesToSave.map((objectState) => objectState.save());
             let states = await Promise.all(promises);
-            if (hiddenSelectedState) {
-                await jobInstance.actions.recordSelection(
-                    previousSelection,
-                    nextSelection,
-                    statesToSave[0].frame,
-                    true,
-                );
-            }
 
             if (workspace === Workspace.REVIEW) {
                 states = lockStatesForReviewWorkspace(states);
@@ -2110,14 +2088,8 @@ export function repeatDrawShapeAsync(): ThunkAction {
 
         let activeControl = ActiveControl.CURSOR;
         if (activeInteractor && activeInteractorParameters && activeLabelID && canvasInstance instanceof Canvas) {
-            if (activeInteractor.kind.includes('tracker')) {
-                canvasInstance.interact({ enabled: true, ...activeInteractorParameters });
-                dispatch(interactWithCanvas(activeInteractor, activeLabelID, activeInteractorParameters));
-                dispatch(switchToolsBlockerState({ buttonVisible: false }));
-            } else {
-                canvasInstance.interact({ enabled: true, ...activeInteractorParameters });
-                dispatch(interactWithCanvas(activeInteractor, activeLabelID, activeInteractorParameters));
-            }
+            canvasInstance.interact({ enabled: true, ...activeInteractorParameters });
+            dispatch(interactWithCanvas(activeInteractor, activeLabelID, activeInteractorParameters));
 
             return;
         }

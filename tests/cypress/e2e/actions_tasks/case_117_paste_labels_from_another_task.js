@@ -92,9 +92,7 @@ context('Paste labels from one task to another.', { browser: '!firefox' }, () =>
             cy.wait('@patchTaskLabels').its('response.statusCode').should('equal', 200);
             cy.get('.cvat-modal-confirm-remove-existing-labels').should('not.exist');
             cy.get('.cvat-spinner').should('not.exist');
-            cy.get('.cvat-raw-labels-viewer').then((raw) => {
-                expect(raw.text()).contain('"id":');
-            });
+            cy.get('.cvat-raw-labels-viewer').invoke('val').should('contain', '"id":');
             cy.contains('[role="tab"]', 'Constructor').click();
             cy.get('.cvat-constructor-viewer-item').should('have.length', 1);
             cy.contains('.cvat-constructor-viewer-item', task.label).should('exist');

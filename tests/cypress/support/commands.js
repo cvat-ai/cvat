@@ -12,6 +12,7 @@ import { decomposeMatrix, convertClasses, toSnakeCase } from './utils';
 import {
     checkAutoborderPointsCount,
     drawPolyshape,
+    getBulkActionsMenu,
     toggleAutoSimplify,
 } from './utils.cy';
 
@@ -1098,8 +1099,8 @@ Cypress.Commands.add('advancedConfiguration', (advancedConfigurationParams) => {
     if (advancedConfigurationParams.chunkSize) {
         cy.get('#dataChunkSize').type(advancedConfigurationParams.chunkSize);
     }
-    if (advancedConfigurationParams.consensusReplicas) {
-        cy.get('#consensusReplicas').type(advancedConfigurationParams.consensusReplicas);
+    if (advancedConfigurationParams.initialReplicas) {
+        cy.get('#initialReplicas').type(advancedConfigurationParams.initialReplicas);
     }
     if (advancedConfigurationParams.overlapSize) {
         cy.get('#overlapSize').type(advancedConfigurationParams.overlapSize);
@@ -1405,14 +1406,15 @@ Cypress.Commands.add('goCheckFrameNumber', (frameNum) => {
     cy.get('.cvat-player-frame-selector').within(() => {
         cy.get('input[role="spinbutton"]').clear({ force: true });
         cy.get('input[role="spinbutton"]').type(`${frameNum}{Enter}`, { force: true });
-        cy.get('input[role="spinbutton"]').should('have.value', frameNum);
     });
+    cy.checkFrameNum(frameNum);
 });
 
 Cypress.Commands.add('checkFrameNum', (frameNum) => {
     cy.get('.cvat-player-frame-selector').within(() => {
         cy.get('input[role="spinbutton"]').should('have.value', frameNum);
     });
+    cy.get('.cvat-canvas-container > [data-frame-number]').should('have.attr', 'data-frame-number', String(frameNum));
 });
 
 Cypress.Commands.add('goToNextFrame', (expectedFrameNum) => {
@@ -1774,6 +1776,71 @@ Cypress.Commands.add('deleteJob', (jobId) => {
         .should('have.css', 'opacity', '0.5');
 });
 
+Cypress.Commands.add('addReplicas', (count, jobIds) => {
+    // with several job ids, the caller must have selected exactly these jobs
+    const isBulk = jobIds.length > 1;
+    const requestsCount = count * jobIds.length;
+
+    // Hold the creation requests until the progress has been checked
+    let releaseRequests = null;
+    const requestsReleased = new Promise((resolve) => { releaseRequests = resolve; });
+    cy.intercept({ method: 'POST', pathname: '/api/jobs' }, () => requestsReleased).as('createReplica');
+
+    if (isBulk) {
+        getBulkActionsMenu().within(() => {
+            cy.contains('[role="menuitem"]', `Add replicas (${jobIds.length})`).click();
+        });
+    } else {
+        cy.get(`.cvat-job-item[data-row-id="${jobIds[0]}"] .cvat-job-item-more-button`).click();
+        cy.get('.ant-dropdown')
+            .not('.ant-dropdown-hidden')
+            .within(() => {
+                cy.contains('[role="menuitem"]', 'Add replicas').click();
+            });
+    }
+
+    cy.get('.cvat-modal-add-replicas').within(() => {
+        cy.get('.ant-modal-title').should('have.text', isBulk ?
+            `Add replicas to ${jobIds.length} selected jobs` : `Add replicas to job #${jobIds[0]}`);
+        cy.get('.cvat-add-replicas-count-input input')
+            .should('have.value', '1')
+            .and('have.attr', 'aria-valuemin', '1')
+            .and('have.attr', 'aria-valuemax', '100');
+        cy.get('.cvat-add-replicas-count-input input').clear();
+        cy.contains('button', 'Add').should('be.disabled');
+        cy.get('.cvat-add-replicas-count-input input').type(`${count}`);
+        cy.contains('button', 'Add').click();
+    });
+
+    // A single request is made without the progress
+    if (requestsCount > 1) {
+        cy.get('.cvat-bulk-progress-wrapper').should('be.visible')
+            .and('contain', `(1/${requestsCount})`);
+    }
+    cy.then(() => releaseRequests()); // on every path, or the waits below time out
+
+    const parentJobIds = [];
+    for (let i = 0; i < requestsCount; i++) {
+        cy.wait('@createReplica').then(({ response }) => {
+            expect(response.statusCode).to.equal(201);
+            expect(response.body.type).to.equal('replica');
+            parentJobIds.push(response.body.parent_job_id);
+        });
+    }
+    cy.then(() => {
+        const byValue = (a, b) => a - b;
+        const expectedParentJobIds = jobIds.flatMap((id) => Array(count).fill(+id));
+        expect(parentJobIds.sort(byValue)).to.deep.equal(expectedParentJobIds.sort(byValue));
+    });
+    if (requestsCount > 1) {
+        cy.get('.cvat-bulk-progress-wrapper').should('not.exist');
+    }
+});
+
+Cypress.Commands.add('pasteText', { prevSubject: 'element' }, (subject, text) => {
+    cy.wrap(subject).trigger('paste', { clipboardData: { getData: () => text } });
+});
+
 Cypress.Commands.add('drawMask', (instructions) => {
     for (const instruction of instructions) {
         const { method } = instruction;
@@ -1869,13 +1936,13 @@ Cypress.Commands.add('sliceShape', (
     }
 
     cy.get('.cvat-canvas-hints-container').within(() => {
-        cy.contains('Click a mask or polygon shape you would like to slice').should('exist');
+        cy.contains('Click the shape you want to slice.').should('exist');
     });
 
     const [initialX, initialY] = coordinates.shift();
     cy.get(object).click(initialX, initialY);
     cy.get('.cvat-canvas-hints-container').within(() => {
-        cy.contains('Set initial point on the shape contour').should('exist');
+        cy.contains('Click the shape outline to start cutting.').should('exist');
     });
 
     cy.get('.cvat-canvas-container').then(($canvas) => {
@@ -1916,7 +1983,7 @@ Cypress.Commands.add('joinShapes', (
     interactWithTool();
 
     cy.get('.cvat-canvas-hints-container').within(() => {
-        cy.contains(/Click .* you would like to join/).should('exist');
+        cy.contains('h3', 'Join shapes').should('exist');
     });
 
     for (const [index, object] of objects.entries()) {
@@ -1933,11 +2000,12 @@ Cypress.Commands.add('interactAnnotationObjectMenu', (parentSelector, button) =>
     });
 
     // AntD renders the menu outside the row, even when the caller is inside .within().
-    // Keep this a query so Cypress can reacquire a menu replaced during row updates.
-    cy.get('.cvat-object-item-menu:visible button', { withinSubject: null })
-        .filter((index, element) => element.textContent.includes(button))
-        .should('have.length', 1)
-        .click();
+    const getMenuButton = () => cy.get('.cvat-object-item-menu:visible button', { withinSubject: null })
+        .filter((index, element) => element.textContent.includes(button));
+    getMenuButton().should('have.length', 1);
+    // A passed assertion locks in its subject. Start a fresh query so click can
+    // reacquire the action if the menu is replaced during a sidebar update.
+    getMenuButton().click();
 });
 
 Cypress.Commands.add('hideTooltips', () => {
@@ -1987,6 +2055,7 @@ Cypress.Commands.add('clickDeleteFrameAnnotationView', () => {
     cy.get('.cvat-modal-delete-frame').within(() => {
         cy.contains('button', 'Delete').click();
     });
+    cy.get('.cvat-modal-delete-frame').should('not.exist');
 });
 
 Cypress.Commands.add('clickSaveAnnotationView', () => {

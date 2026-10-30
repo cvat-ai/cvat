@@ -115,8 +115,8 @@ export function implementJob(Job: typeof JobClass): typeof JobClass {
         value: async function deleteImplementation(
             this: JobClass,
         ): ReturnType<typeof JobClass.prototype.delete> {
-            if (this.type !== JobType.GROUND_TRUTH) {
-                throw new Error('Only ground truth job can be deleted');
+            if (this.type !== JobType.GROUND_TRUTH && this.type !== JobType.REPLICA) {
+                throw new Error('Only ground truth and replica jobs can be deleted');
             }
 
             return serverProxy.jobs.delete(this.id);
@@ -883,8 +883,8 @@ export function implementTask(Task: typeof TaskClass): typeof TaskClass {
                 taskSpec.source_storage = this.sourceStorage.toJSON();
             }
 
-            if (fields?.consensus_replicas) {
-                taskSpec.consensus_replicas = fields.consensus_replicas;
+            if (fields?.initial_replicas) {
+                taskSpec.initial_replicas = fields.initial_replicas;
             }
 
             const taskDataSpec = {

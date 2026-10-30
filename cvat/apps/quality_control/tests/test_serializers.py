@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import math
 import unittest
 from types import SimpleNamespace
 from unittest.mock import Mock
@@ -20,6 +21,7 @@ from cvat.apps.quality_control.attribute_comparison import make_default_attribut
 from cvat.apps.quality_control.comparison_report import ComparisonReportRequirementCalculation
 from cvat.apps.quality_control.serializers import (
     AttributeComparisonSerializer,
+    IoUThresholdField,
     QualityReportRequirementCalculationSerializer,
     QualitySettingsRequirementsSerializer,
     QualitySettingsSerializer,
@@ -177,3 +179,11 @@ class TestQualitySettingsRequirementsSerializer(unittest.TestCase):
             str(capture.exception.detail["requirements"]),
             "Base quality requirements cannot be deleted.",
         )
+
+
+class TestIoUThresholdSerializer(unittest.TestCase):
+    def test_field_rejects_invalid_scalar_values(self):
+        field = IoUThresholdField()
+        for value in [True, "0.4", -1, 2, math.nan, math.inf, 10**500]:
+            with self.subTest(value=value), self.assertRaises(serializers.ValidationError):
+                field.run_validation(value)
