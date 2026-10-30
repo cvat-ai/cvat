@@ -479,7 +479,7 @@ controls also depend on the selected [similarity metric](#similarity-metrics):
 | General | Target metric threshold | The minimum target metric score required to complete the requirement. |
 | General | Enabled | Includes or excludes the requirement from reports and immediate feedback. |
 | Shape comparison | Similarity metric | The metric used to compare the shapes. The available metrics depend on the target annotation type. Read more in [Shape types](#shape-types). |
-| Shape comparison (IoU metric) | IoU threshold | The minimum IoU value used to distinguish matched and unmatched shapes. |
+| Shape comparison (IoU metric) | IoU threshold | The minimum IoU value used to distinguish matched and unmatched shapes. For rectangles, polygons, masks, and ellipses, it can depend on the GT shape area. Read more in [Interpolated annotation similarity thresholds](#interpolated-annotation-similarity-thresholds). |
 | Shape comparison (Boundary F metric) | Boundary F threshold | The minimum Boundary F value used to distinguish matched and unmatched shapes. |
 | Shape comparison (Boundary F metric) | Boundary tolerance | The maximum allowed distance between the shape boundaries, in pixels. Boundary deviations within this distance are not counted as errors. |
 | Shape comparison (OKS metric) | OKS threshold | The minimum OKS value used to distinguish matched and unmatched shapes. |
@@ -492,7 +492,7 @@ controls also depend on the selected [similarity metric](#similarity-metrics):
 | Shape comparison (polygons, masks) | Object visibility threshold | The minimum visible area for polygon and mask annotations. |
 | Shape comparison (polygons, masks) | Panoptic comparison | Allows to use only the visible parts of masks and polygons for comparison. |
 | Group comparison | Match groups | Enables annotation-group matching. |
-| Group comparison | Min group match threshold | The minimum IoU required for groups to be considered matching. |
+| Group comparison | Min group match threshold | The minimum share of matched annotations, computed as the IoU of the group members, required for groups to be considered matching. |
 | Attribute comparison | Match unspecified attributes exactly | Matches every attribute without an explicit rule using the Exact comparator. |
 | Attribute comparison | Attribute rules | Configures a comparator for individual attributes. The Levenshtein comparator also has a similarity threshold. |
 
@@ -502,12 +502,15 @@ A requirement passes when its score meets or exceeds its threshold.
 
 ##### Interpolated annotation similarity thresholds
 
-Use interpolation when small and large objects need different matching thresholds.
-To evaluate them together, use one requirement and remove area filters that were used
-only to select different thresholds. Filters still apply to both annotation sets and
-can exclude candidates before matching.
+When the dataset contains both small and large objects, annotation matching functions that rely on
+object intersection, such as IoU, can require different configurations: small objects require more
+lenient overlap thresholds, while the large ones require stricter thresholds. With a fixed matching
+threshold, this can be configured as several quality requirements, targeting different object areas
+via the annotation filter. This generally works, but can quickly become tedious to manage and use.
+CVAT has an option to configure a variable object matching threshold instead.
 
-Rectangle, polygon, mask, and ellipse requirements offer two IoU threshold modes:
+This is only available for rectangle, polygon, mask, and ellipse requirements,
+and only for the IoU similarity metric. Available modes:
 
 - **Constant** uses one threshold for every object and is the default.
 - **Linear interpolation** uses the area of the original ground-truth shape in px² to
@@ -541,8 +544,6 @@ Child requirements inherit the whole policy and can override it or revert to the
 Areas are measured before panoptic comparison. When polygon or mask parts are compared
 as one object, their union determines its area. Ellipse areas use the same rotated,
 rasterized geometry as their mask-based IoU comparison.
-
-Polylines and OKS keep their existing constant thresholds.
 
 ### Quality target metrics
 
