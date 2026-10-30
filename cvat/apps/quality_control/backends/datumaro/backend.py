@@ -198,6 +198,47 @@ class Datumaro2DBackend(QualityBackend):
         )
         return settings
 
+    def _configure_matching_threshold(
+        self,
+        requirement: EffectiveQualityRequirement,
+        gt_item: dm.DatasetItem,
+        settings: ComparisonParameters,
+    ):
+        # TODO: remove this function from the backend
+        # variable thresholds are only used with the IoU similarity metric
+        if requirement.similarity_metric != ShapeSimilarityMetricType.IOU:
+            return
+
+        policy = requirement.iou_threshold
+        evaluator = (
+            ThresholdPolicyEvaluator(policy) if isinstance(policy, ThresholdPolicy) else None
+        )
+        if isinstance(policy, ConstantThresholdPolicy):
+            settings.iou_threshold = evaluator()
+        elif isinstance(policy, LinearThresholdPolicy):
+            thresholds = {}
+
+            def evaluate_gt_threshold(gt_annotation_parts: Sequence[dm.Annotation]) -> float:
+                key = tuple(id(ann) for ann in gt_annotation_parts)
+                if key not in thresholds:
+                    try:
+                        area = self.shape_area(
+                            [self._view(ann, self._gt_provider) for ann in gt_annotation_parts]
+                        )
+                        thresholds[key] = evaluator(area)
+                    except (ValueError, TypeError, ArithmeticError, ShapelyError) as error:
+                        raise ValueError(
+                            "Cannot compute linear IoU threshold for requirement "
+                            f"{requirement.name!r} on frame {gt_item.id!r}: "
+                            "invalid ground-truth shape area or geometry."
+                        ) from error
+
+                return thresholds[key]
+
+            settings.iou_threshold = evaluate_gt_threshold
+        elif policy is not None and not isinstance(policy, float | int):
+            raise AssertionError(f"Unsupported IoU threshold policy: {policy!r}")
+
     def shape_area(self, annotations: Sequence[cdm.Annotation2D]) -> float:
         # FIXME: the area computed here can be different from what's used by IoU during comparisons:
         # - with panoptic comparison, IoU uses only the visible (not covered) part of the GT object,
@@ -320,47 +361,6 @@ class Datumaro2DBackend(QualityBackend):
             covered_annotations=covered_annotations,
             group_comparisons=group_comparisons,
         )
-
-    def _configure_matching_threshold(
-        self,
-        requirement: EffectiveQualityRequirement,
-        gt_item: dm.DatasetItem,
-        settings: ComparisonParameters,
-    ):
-        # TODO: remove this function from the backend
-        # variable thresholds are only used with the IoU similarity metric
-        if requirement.similarity_metric != ShapeSimilarityMetricType.IOU:
-            return
-
-        policy = requirement.iou_threshold
-        evaluator = (
-            ThresholdPolicyEvaluator(policy) if isinstance(policy, ThresholdPolicy) else None
-        )
-        if isinstance(policy, ConstantThresholdPolicy):
-            settings.iou_threshold = evaluator()
-        elif isinstance(policy, LinearThresholdPolicy):
-            thresholds = {}
-
-            def evaluate_gt_threshold(gt_annotation_parts: Sequence[dm.Annotation]) -> float:
-                key = tuple(id(ann) for ann in gt_annotation_parts)
-                if key not in thresholds:
-                    try:
-                        area = self.shape_area(
-                            [self._view(ann, self._gt_provider) for ann in gt_annotation_parts]
-                        )
-                        thresholds[key] = evaluator(area)
-                    except (ValueError, TypeError, ArithmeticError, ShapelyError) as error:
-                        raise ValueError(
-                            "Cannot compute linear IoU threshold for requirement "
-                            f"{requirement.name!r} on frame {gt_item.id!r}: "
-                            "invalid ground-truth shape area or geometry."
-                        ) from error
-
-                return thresholds[key]
-
-            settings.iou_threshold = evaluate_gt_threshold
-        elif policy is not None and not isinstance(policy, float | int):
-            raise AssertionError(f"Unsupported IoU threshold policy: {policy!r}")
 
     def close(self) -> None:
         self._native_items = None
