@@ -30,6 +30,7 @@ from cvat.apps.engine import field_validation, models
 from cvat.apps.engine.log import ServerLogManager
 from cvat.apps.engine.media_extractors import (
     MEDIA_TYPES,
+    METADATA_TYPES,
     AudioReader,
     CachingMediaIterator,
     ImageListReader,
@@ -41,6 +42,7 @@ from cvat.apps.engine.media_extractors import (
     VideoReader,
     ZipChunkWriter,
     ZipCompressedChunkWriter,
+    get_metadata_type,
     get_mime,
     load_image,
     sort,
@@ -266,7 +268,7 @@ def _create_segments_and_jobs(
     db_task.save()
 
 
-def _count_files(data: dict[str, Any]) -> dict[str, list[str]]:
+def _count_files(data: dict[str, Any]) -> tuple[dict[str, list[str]], dict[str, list[str]]]:
     share_root = settings.SHARE_ROOT
     server_files = [f.rstrip("/") for f in data["server_files"]]
 
@@ -285,13 +287,14 @@ def _count_files(data: dict[str, Any]) -> dict[str, list[str]]:
     # we need to keep the original sequence of files
     data["server_files"] = [f for f in server_files if f in without_extra_dirs]
 
-    def count_files(file_mapping, counter):
+    def count_files(file_mapping, counter, metadata):
         for rel_path, full_path in file_mapping.items():
             mime = get_mime(full_path)
             if mime in counter:
                 counter[mime].append(rel_path)
-            # Skip manifest files and calibration sidecars. They are not primary media.
-            elif rel_path.endswith((".json", ".jsonl")):
+            elif (metadata_type := get_metadata_type(full_path)) in metadata:
+                metadata[metadata_type].append(rel_path)
+            elif rel_path.endswith(".jsonl"):
                 continue
             else:
                 slogger.glob.warn(
@@ -300,18 +303,21 @@ def _count_files(data: dict[str, Any]) -> dict[str, list[str]]:
                 )
 
     counter = {media_type: [] for media_type in MEDIA_TYPES.keys()}
+    metadata = {metadata_type: [] for metadata_type in METADATA_TYPES}
 
     count_files(
         file_mapping={f: f for f in data["remote_files"] or data["client_files"]},
         counter=counter,
+        metadata=metadata,
     )
 
     count_files(
         file_mapping={f: join_untrusted_path(share_root, f) for f in data["server_files"]},
         counter=counter,
+        metadata=metadata,
     )
 
-    return counter
+    return counter, metadata
 
 
 def _find_manifest_files(data):
@@ -1708,7 +1714,7 @@ def initialize_task(
         )
 
     # count and validate uploaded files
-    media = _count_files(data)
+    media, metadata = _count_files(data)
     media, detected_mode = _validate_data(media, manifest_files=manifest_files)
     is_media_sorted = False
 
@@ -1745,9 +1751,12 @@ def initialize_task(
         ):
             update_status("Downloading input media")
 
-            db_data.cloud_storage.get_client().bulk_download_to_dir(
-                list(map(PurePosixPath, itertools.chain.from_iterable(media.values()))), upload_dir
-            )
+            download_paths = [
+                PurePosixPath(path)
+                for path in itertools.chain.from_iterable((*media.values(), *metadata.values()))
+            ]
+
+            db_data.cloud_storage.get_client().bulk_download_to_dir(download_paths, upload_dir)
 
             is_data_in_cloud = False
             if is_packed_media:

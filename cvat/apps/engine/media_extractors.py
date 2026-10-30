@@ -67,12 +67,20 @@ class ORIENTATION(IntEnum):
     NORMAL_270_ROTATED = 8
 
 
-def get_mime(name):
-    for type_name, type_def in MEDIA_TYPES.items():
+def _get_file_type(name, type_definitions):
+    for type_name, type_def in type_definitions.items():
         if type_def["has_mime_type"](name):
             return type_name
 
     return "unknown"
+
+
+def get_mime(name):
+    return _get_file_type(name, MEDIA_TYPES)
+
+
+def get_metadata_type(name):
+    return _get_file_type(name, METADATA_TYPES)
 
 
 def create_tmp_dir():
@@ -1519,6 +1527,11 @@ def _is_zip(path):
     return mime_type in supportedArchives or encoding in supportedArchives
 
 
+def _is_json(path):
+    mime = mimetypes.guess_type(path)
+    return mime[0] == "application/json"
+
+
 # 'has_mime_type': function receives 1 argument - path to file.
 #                  Should return True if file has specified media type.
 # 'extractor': class that extracts images from specified media.
@@ -1569,6 +1582,13 @@ MEDIA_TYPES = {
         "extractor": ZipReader,
         "mode": TaskMode.ANNOTATION,
         "unique": True,
+    },
+}
+
+
+METADATA_TYPES = {
+    "json": {
+        "has_mime_type": _is_json,
     },
 }
 
