@@ -9,7 +9,7 @@ import { connect } from 'react-redux';
 import {
     ObjectState, Job, ObjectType, ShapeType,
 } from 'cvat-core-wrapper';
-import isAbleToChangeFrame from 'utils/is-able-to-change-frame';
+import { isAbleToChangeFrame } from 'utils/annotation';
 import { ThunkDispatch } from 'utils/redux';
 import {
     updateAnnotationsAsync,

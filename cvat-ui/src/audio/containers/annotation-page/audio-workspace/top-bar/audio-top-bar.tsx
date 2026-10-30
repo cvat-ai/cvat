@@ -24,7 +24,7 @@ import { Job } from 'cvat-core-wrapper';
 import { CombinedState, Workspace } from 'reducers';
 import { KeyMap } from 'utils/mousetrap-react';
 import { writeLatestFrame } from 'utils/remember-latest-frame';
-import { jobHasUnsavedChanges } from 'utils/job-unsaved-changes';
+import { jobHasUnsavedChanges } from 'utils/annotation';
 
 interface StateToProps {
     jobInstance: Job;

@@ -37,12 +37,11 @@ import { FramesMetaData, Job } from 'cvat-core-wrapper';
 import {
     ActiveControl, CombinedState, FrameSpeed, NavigationType, Workspace,
 } from 'reducers';
-import isAbleToChangeFrame from 'utils/is-able-to-change-frame';
+import { isAbleToChangeFrame, jobHasUnsavedChanges } from 'utils/annotation';
 import { KeyMap } from 'utils/mousetrap-react';
 import { writeLatestFrame } from 'utils/remember-latest-frame';
 import { finishDraw } from 'utils/drawing';
 import { toClipboard } from 'utils/to-clipboard';
-import { jobHasUnsavedChanges } from 'utils/job-unsaved-changes';
 import { Chapter } from 'cvat-core/src/frames';
 
 interface StateToProps {
