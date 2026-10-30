@@ -232,6 +232,7 @@ provides Python functions for supported models. You can use them directly withou
 | Example | What it does | Where to use it |
 | ------- | ------------ | --------------- |
 | YOLO | Detection, segmentation, or pose estimation | AI assistance → Auto-labeling |
+| RF-DETR | Detection, instance segmentation, or keypoint detection | AI assistance → Auto-labeling |
 | Hugging Face Transformers | Detection, segmentation, or classification | AI assistance → Auto-labeling |
 | SAM2 tracking | Tracks an existing mask or polygon | Run annotation action |
 | [SAM2 interactor](https://github.com/cvat-ai/cvat-models/tree/develop/interactor/sam2) | Segments objects from points and boxes | AI assistance → Prompting |
@@ -298,6 +299,60 @@ Pretrained weights are downloaded automatically. Pose models need a matching ske
 For custom pose keypoint names and supported models, see the
 [YOLO README](https://github.com/cvat-ai/cvat-models/tree/develop/detector/yolo),
 which also links to the Ultralytics licensing terms.
+
+{{% /tab %}}
+
+{{% tab header="RF-DETR" %}}
+
+This function runs RF-DETR locally using the `rfdetr` library. It is separate from the Hugging Face DETR example.
+Python 3.12 is recommended.
+
+1. Install dependencies:
+
+   ```bash
+   python -m pip install -r detector/detr/requirements.txt
+   ```
+
+2. Register the model:
+
+   ```bash
+   cvat-cli --server-host "$CVAT_SERVER_URL" --org "$CVAT_ORG" function create-native "RF-DETR" \
+     --function-file detector/detr/func.py \
+     -p architecture=str:RFDETRLarge -p device=str:cpu
+   ```
+
+3. Start the agent:
+
+   ```bash
+   cvat-cli --server-host "$CVAT_SERVER_URL" --org "$CVAT_ORG" function run-agent <function_id> \
+     --function-file detector/detr/func.py \
+     -p architecture=str:RFDETRLarge -p device=str:cpu
+   ```
+
+Select **AI assistance → Auto-labeling → Model → RF-DETR**, map the model labels to task labels, and run it.
+You can also use task automatic annotation. Keep the agent running while using the model.
+
+| Purpose | `architecture` value | Optional `model` value | Output |
+| ------- | -------------------- | ---------------------- | ------ |
+| Object detection | `str:RFDETRLarge` | Omit to use pretrained weights | Boxes |
+| Instance segmentation | `str:RFDETRSegLarge` | Omit to use pretrained weights | Masks, or polygons with mask conversion enabled |
+| Human pose estimation | `str:RFDETRKeypointPreview` | Omit to use pretrained weights | Skeletons |
+| Custom checkpoint | Matching architecture, e.g. `str:RFDETRSegSmall` | `str:/absolute/path/to/best.pth` | Depends on the architecture |
+
+The `architecture` parameter is required.
+The `model` parameter is optional: omit it to download and use the architecture's default pretrained
+weights, or supply an existing local checkpoint path.
+
+Pose models require matching skeleton labels. When `model` is omitted, `RFDETRKeypointPreview` uses
+the COCO person schema with 17 keypoint names.
+Custom keypoint checkpoints must contain their object class names and require
+`-p keypoint_names_path=str:/absolute/path/to/names.txt` in both commands.
+The file lists keypoint names in the model's keypoint order;
+For local weights, use `-p model=str:/absolute/path/to/best.pth` with the matching
+`-p architecture=str:RFDETRSegSmall` (or another supported architecture).
+
+See the [RF-DETR README](https://github.com/cvat-ai/cvat-models/tree/develop/detector/detr)
+for exact architecture names, checkpoint requirements, and custom keypoint schemas.
 
 {{% /tab %}}
 
