@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
+import math
 import textwrap
 from collections.abc import Iterable, Iterator, Mapping
 from enum import Enum
@@ -29,6 +30,7 @@ from cvat.apps.quality_control.comparison_report import (
     RequirementCalculationStatus,
 )
 from cvat.apps.quality_control.filters import RequirementJsonLogicFilter
+from cvat.apps.quality_control.threshold_policy import MAX_THRESHOLD_POINTS, ThresholdPolicyMode
 from cvat.utils import django_database as db_utils
 
 
@@ -316,6 +318,115 @@ _INHERITED_REQUIREMENT_FIELDS = (
 )
 
 
+class ThresholdPolicyPointSerializer(serializers.Serializer):
+    x = serializers.FloatField(
+        min_value=0, help_text="Finite GT shape area in px², strictly greater than zero."
+    )
+    y = serializers.FloatField(min_value=0, max_value=1)
+
+
+class SimilarityThresholdPolicySerializer(serializers.Serializer):
+    """An IoU threshold policy for rectangle, polygon, mask, and ellipse requirements.
+
+    The `iou_threshold` field also accepts a finite number between 0 and 1, such as `0.7`.
+    Existing numeric thresholds are returned as numbers.
+
+    A constant policy uses one threshold for all shapes:
+
+    ```json
+    {"type": "iou", "mode": "constant", "value": 0.7}
+    ```
+
+    A linear policy chooses a threshold from the GT shape area in px²:
+
+    ```json
+    {
+      "type": "iou",
+      "mode": "linear",
+      "input": "gt.shape_area",
+      "extrapolation": "clamp",
+      "points": [{"x": 100, "y": 0.4}, {"x": 1000, "y": 0.9}]
+    }
+    ```
+
+    Linear policies require 2-200 points with unique positive areas sorted in ascending order
+    and thresholds between 0 and 1. Outside the curve, the nearest endpoint applies.
+    Policies without `type` are accepted as IoU for compatibility; responses include it.
+    Other threshold types are not supported.
+
+    Setting a child's threshold to `null` restores inheritance of the whole threshold.
+    Root requirements cannot inherit their threshold.
+    """
+
+    type = serializers.ChoiceField(
+        choices=["iou"],
+        required=False,
+        help_text=(
+            "Threshold type. Omitted type is accepted as IoU for compatibility; "
+            "responses always include it."
+        ),
+    )
+    mode = serializers.ChoiceField(choices=ThresholdPolicyMode)
+    value = serializers.FloatField(required=False, min_value=0, max_value=1)
+    input = serializers.ChoiceField(choices=["gt.shape_area"], required=False)
+    extrapolation = serializers.ChoiceField(choices=["clamp"], required=False)
+    points = ThresholdPolicyPointSerializer(
+        many=True,
+        required=False,
+        min_length=2,
+        max_length=MAX_THRESHOLD_POINTS,
+        help_text=(
+            f"Required in linear mode: 2-{MAX_THRESHOLD_POINTS} points sorted by "
+            "unique positive GT area."
+        ),
+    )
+
+    def to_internal_value(self, data):
+        from cvat.apps.quality_control.threshold_policy import parse_threshold_policy
+
+        try:
+            return parse_threshold_policy(data)
+        except ValueError as error:
+            raise serializers.ValidationError(str(error)) from error
+
+    def to_representation(self, instance):
+        from cvat.apps.quality_control.threshold_policy import (
+            ThresholdPolicy,
+            parse_threshold_policy,
+        )
+
+        policy = (
+            instance if isinstance(instance, ThresholdPolicy) else parse_threshold_policy(instance)
+        )
+        return super().to_representation(policy)
+
+
+class IoUThresholdField(serializers.Field):
+    default_error_messages = {
+        "invalid": "Expected a finite threshold between 0 and 1 or an IoU policy."
+    }
+
+    def to_internal_value(self, data):
+        if isinstance(data, Mapping):
+            return SimilarityThresholdPolicySerializer().run_validation(data).to_dict()
+        if isinstance(data, bool) or not isinstance(data, (int, float)):
+            self.fail("invalid")
+        try:
+            value = float(data)
+        except OverflowError:
+            self.fail("invalid")
+        if not math.isfinite(value) or not 0 <= value <= 1:
+            self.fail("invalid")
+        return value
+
+    def to_representation(self, value):
+        from cvat.apps.quality_control.threshold_policy import ThresholdPolicy
+
+        if isinstance(value, (Mapping, ThresholdPolicy)):
+            return SimilarityThresholdPolicySerializer(value).data
+        return value
+
+
 @extend_schema_serializer(component_name="AttributeComparisonDefaultRule")
 class AttributeComparisonDefaultSerializer(serializers.Serializer):
     enabled = serializers.BooleanField(required=False, allow_null=True)
@@ -398,6 +509,15 @@ class QualityRequirementListSerializer(serializers.ListSerializer):
 
 # TODO: try to split into different types per annotation type?
 class QualityRequirementSerializer(serializers.ModelSerializer):
+    iou_threshold = IoUThresholdField(
+        required=False,
+        allow_null=True,
+        help_text=(
+            "A constant threshold or an IoU policy by GT shape area "
+            "(rectangle, polygon, mask, ellipse). "
+            "Null inherits the whole threshold from the parent."
+        ),
+    )
     settings_id = serializers.PrimaryKeyRelatedField(
         source="settings",
         queryset=models.QualitySettings.objects.all(),
@@ -858,6 +978,8 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
                 visited_parent_ids.add(current_parent.id)
                 current_parent = current_parent.parent
 
+        self._validate_threshold_policy(attrs, parent_requirement, annotation_type)
+
         if parent_requirement is None:
             for field_name in _INHERITED_REQUIREMENT_FIELDS:
                 if field_name == "attribute_comparison":
@@ -889,6 +1011,21 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
                 )
 
         return attrs
+
+    def _validate_threshold_policy(self, attrs, parent, annotation_type):
+        from cvat.apps.quality_control.threshold_policy import ADAPTIVE_IOU_TYPES
+
+        if isinstance(attrs.get("iou_threshold"), dict):
+            effective_type = annotation_type or self._get_effective_annotation_type(parent)
+            if effective_type not in ADAPTIVE_IOU_TYPES:
+                raise serializers.ValidationError(
+                    {
+                        "iou_threshold": (
+                            "IoU policies support rectangle, polygon, mask "
+                            "and ellipse requirements."
+                        )
+                    }
+                )
 
     @staticmethod
     def _touch_settings(settings: models.QualitySettings) -> None:

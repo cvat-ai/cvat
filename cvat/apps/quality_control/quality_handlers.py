@@ -59,6 +59,11 @@ from cvat.apps.quality_control.comparison_report import (
 from cvat.apps.quality_control.filters import RequirementJsonLogicFilter
 from cvat.apps.quality_control.matching import AttributeMatchingResult, MatchingResults
 from cvat.apps.quality_control.models import AnnotationConflictSeverity, AnnotationConflictType
+from cvat.apps.quality_control.threshold_policy import (
+    LinearThresholdPolicy,
+    ThresholdPolicy,
+    parse_threshold_policy,
+)
 
 if TYPE_CHECKING:
     from cvat.apps.quality_control.data_providers import JobDataProvider
@@ -82,7 +87,7 @@ class EffectiveQualityRequirement:
     source_requirement_id: int | None = None
     parent_requirement: int | None = None
     sort_order: int = 0
-    iou_threshold: float | None = None
+    iou_threshold: float | ThresholdPolicy | None = None
     oks_sigma: float | None = None
     line_thickness: float | None = None
     point_size_base: str | None = None
@@ -199,6 +204,9 @@ def _make_effective_requirement(
                 values[field_name] = merge_attribute_comparison(values.get(field_name), local_value)
             else:
                 values[field_name] = local_value
+
+    if isinstance(values["iou_threshold"], dict):
+        values["iou_threshold"] = parse_threshold_policy(values["iou_threshold"])
 
     values["attribute_comparison"] = normalize_attribute_comparison(
         values.get("attribute_comparison"),
@@ -359,6 +367,16 @@ def serialize_requirement_parameters(requirement: Any) -> dict[str, Any]:
     ):
         params.pop(field, None)
 
+    policy = params.get("iou_threshold")
+    if isinstance(policy, (dict, ThresholdPolicy)):
+        if isinstance(policy, dict):
+            policy = parse_threshold_policy(policy)
+        params["iou_threshold"] = policy.to_dict()
+        if isinstance(policy, LinearThresholdPolicy):
+            params["similarity_threshold_input"] = {
+                "name": "gt.shape_area",
+                "units": "px²",
+            }
     return params
 
 

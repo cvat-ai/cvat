@@ -16,6 +16,7 @@ from cvat.apps.quality_control.backends.datumaro.matching import (
     DistanceComparator,
 )
 from cvat.apps.quality_control.comparison_report import ComparisonParameters
+from cvat.apps.quality_control.matching import match_segments
 from cvat.apps.quality_control.models import PointSizeBase
 
 
@@ -64,6 +65,41 @@ def _match_attributes(
 
 
 class TestComparator(unittest.TestCase):
+    def test_zero_iou_is_not_matched_at_a_zero_threshold(self):
+        matches, mismatches, missing, extra = match_segments(
+            [0],
+            [0],
+            distance=lambda a, b: 0,
+            dist_thresh=lambda a: 0,
+            label_matcher=lambda a, b: True,
+        )
+        self.assertEqual((matches, mismatches, missing, extra), ([], [], [0], [0]))
+
+    def test_individual_thresholds_are_applied_before_assignment(self):
+        similarities = [[0.89, 0.6], [0.91, 0.89]]
+        matches, mismatches, missing, extra = match_segments(
+            [0, 1],
+            [0, 1],
+            distance=lambda a, b: similarities[a][b],
+            dist_thresh=lambda a: [0.4, 0.9][a],
+            label_matcher=lambda a, b: True,
+        )
+        self.assertEqual(matches, [(0, 1), (1, 0)])
+        self.assertFalse(mismatches or missing or extra)
+
+    def test_individual_thresholds_follow_gt_in_the_second_label_pass(self):
+        matches, mismatches, missing, extra = match_segments(
+            [0, 1],
+            [0, 1],
+            distance=lambda a, b: 0.6 if a == b else 0,
+            dist_thresh=lambda a: [0.4, 0.9][a],
+            label_matcher=lambda a, b: a == b == 1,
+        )
+        self.assertEqual(matches, [])
+        self.assertEqual(mismatches, [(0, 0)])
+        self.assertEqual(missing, [1])
+        self.assertEqual(extra, [1])
+
     @staticmethod
     def _make_comparator() -> Comparator:
         return Comparator(

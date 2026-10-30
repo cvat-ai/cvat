@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { QuestionCircleOutlined, UndoOutlined } from '@ant-design/icons';
 import Button from 'antd/lib/button';
 import Checkbox from 'antd/lib/checkbox';
@@ -21,6 +21,7 @@ import { QualityRequirement } from 'cvat-core-wrapper';
 import {
     QualityRequirementAnnotationType, QualityRequirementPointSizeBase,
 } from 'cvat-core/src/quality/server-response-types';
+import { validateThresholdPolicy } from 'cvat-core/src/quality/threshold-policy';
 import {
     ANNOTATION_TYPES,
     formatAnnotationType,
@@ -29,8 +30,10 @@ import {
 } from './quality-requirements-utils';
 import QualityRequirementFilter from './quality-requirement-filter';
 import QualityRequirementAttributeRules from './quality-requirement-attribute-rules';
+import ThresholdPolicyEditor from './threshold-policy-editor';
 import {
     AttributeRuleFormValue,
+    ADAPTIVE_IOU_ANNOTATION_TYPES,
     buildAttributeOptions,
     buildParentOptions,
     formatDescription,
@@ -81,6 +84,16 @@ export default function QualityRequirementForm(props: Readonly<QualityRequiremen
 
     const [form] = Form.useForm<RequirementFormValues>();
     const [submitting, setSubmitting] = useState(false);
+    const [thresholdPolicyValid, setThresholdPolicyValid] = useState(true);
+    const [thresholdPolicyRevision, setThresholdPolicyRevision] = useState(0);
+    const onThresholdValidityChange = useCallback((valid: boolean): void => {
+        setThresholdPolicyValid(valid);
+        if (valid) form.setFields([{ name: 'iouThreshold', errors: [] }]);
+    }, [form]);
+    const resetThresholdPolicy = (): void => {
+        setThresholdPolicyRevision((revision) => revision + 1);
+        onThresholdValidityChange(true);
+    };
     const [touchedFields, setTouchedFields] = useState<Set<string>>(() => getCopiedTouchedFields(copiedRequirement));
     const [resetFields, setResetFields] = useState<Set<string>>(new Set());
     const initialValues = useMemo(() => {
@@ -195,6 +208,7 @@ export default function QualityRequirementForm(props: Readonly<QualityRequiremen
             });
             setTouchedFields(removeInheritedFields);
             setResetFields(removeInheritedFields);
+            resetThresholdPolicy();
         }
     };
 
@@ -233,9 +247,8 @@ export default function QualityRequirementForm(props: Readonly<QualityRequiremen
 
     const onRevertInheritedField = (fieldName: OverridableFormFieldName): void => {
         const inheritedValue = getInheritedFormValue(fieldName);
-        form.setFieldsValue({
-            [fieldName]: inheritedValue,
-        });
+        form.setFieldValue(fieldName, inheritedValue);
+        if (fieldName === 'iouThreshold') resetThresholdPolicy();
         setTouchedFields((prev) => {
             const next = new Set(prev);
             next.delete(fieldName);
@@ -439,7 +452,29 @@ export default function QualityRequirementForm(props: Readonly<QualityRequiremen
                     <Text strong>Shape comparison</Text>
                 </Row>
                 <Row gutter={16}>
-                    {IOU_ANNOTATION_TYPES.has(annotationType) && (
+                    {ADAPTIVE_IOU_ANNOTATION_TYPES.has(annotationType) && (
+                        <Col span={24}>
+                            <Form.Item
+                                name='iouThreshold'
+                                label={renderOverrideControl('iouThreshold', 'IoU threshold')}
+                                tooltip={getTooltipDescription(requirementDescriptions.iouThreshold)}
+                                rules={[{
+                                    validator: async (_, value) => {
+                                        if (!thresholdPolicyValid) {
+                                            throw new Error('Correct the IoU threshold fields before saving.');
+                                        }
+                                        validateThresholdPolicy(value);
+                                    },
+                                }]}
+                            >
+                                <ThresholdPolicyEditor
+                                    key={thresholdPolicyRevision}
+                                    disabled={formDisabled} onValidityChange={onThresholdValidityChange}
+                                />
+                            </Form.Item>
+                        </Col>
+                    )}
+                    {IOU_ANNOTATION_TYPES.has(annotationType) && !ADAPTIVE_IOU_ANNOTATION_TYPES.has(annotationType) && (
                         <Col span={12}>
                             {renderPercentInput(
                                 'iouThreshold', 'IoU threshold (%)', requirementDescriptions.iouThreshold,

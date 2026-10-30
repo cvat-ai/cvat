@@ -187,12 +187,23 @@ jobs:
             -e './cvat-sdk[masks,pytorch]' -e ./cvat-cli \
             --extra-index-url https://download.pytorch.org/whl/cpu
 
+      # Fail fast on failed test data integrity checks.
+      # Other tests rely on the test data, so their results are meaningless if it is broken.
+      # The containers are started with coverage enabled, so that they aren't recreated
+      # in the next step, but the coverage is collected only once, after the next step.
+      - name: Check test data integrity
+        id: check_test_data
+        env:
+          COVERAGE_PROCESS_START: ".coveragerc"
+        run: |
+          pytest tests/python/ -m integrity_check --no-coverage-collection
+
       - name: Run REST API and SDK tests
         id: run_tests
         env:
           COVERAGE_PROCESS_START: ".coveragerc"
         run: |
-          pytest tests/python/ -k "${{ matrix.pattern }}" --cov --cov-report=json --alluredir=tests/python/allure-results
+          pytest tests/python/ -k "${{ matrix.pattern }}" -m 'not integrity_check' --no-services --cov --cov-report=json --alluredir=tests/python/allure-results
           for COVERAGE_FILE in `find -name "coverage*.json" -type f -printf "%f\n"`; do mv ${COVERAGE_FILE} "${COVERAGE_FILE%%.*}_0.json"; done
 
 
@@ -204,7 +215,7 @@ jobs:
             coverage*.json
 
       - name: Creating a log file from cvat containers
-        if: failure() && steps.run_tests.conclusion == 'failure'
+        if: failure() && (steps.check_test_data.conclusion == 'failure' || steps.run_tests.conclusion == 'failure')
         env:
           LOGS_DIR: "${{ github.workspace }}/rest_api_testing"
         run: |
@@ -228,7 +239,7 @@ jobs:
 
 
       - name: Creating a log file from cvat containers
-        if: failure() && steps.run_tests.conclusion == 'failure'
+        if: failure() && (steps.check_test_data.conclusion == 'failure' || steps.run_tests.conclusion == 'failure')
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: "rest_api_container_logs-${{ matrix.pattern }}"
