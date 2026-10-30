@@ -146,6 +146,13 @@ orientation of the cuboid.
 
   ![User interface with cuboid projections and orientation elements](/images/cuboid_orientation.gif)
 
+## Point size
+
+The **Point size** slider in the appearance block changes how large the points of the cloud are drawn
+in all views. Increase it for sparse scans where points are hard to see, or decrease it for dense,
+close-range scans where points merge into blobs. In the perspective view, the size is in scene units,
+so points still grow as the camera gets closer.
+
 
 ## Cuboid size input
 
