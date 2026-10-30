@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: MIT
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
     Builder, Config, AntdConfig, ImmutableTree, Query, Utils as QbUtils,
 } from '@react-awesome-query-builder/antd';
@@ -19,8 +19,10 @@ import Menu from 'antd/lib/menu';
 import { useSelector } from 'react-redux';
 import { CombinedState } from 'reducers';
 import { User } from 'cvat-core-wrapper';
+import { useTableState } from 'components/common/table-state';
 
 interface ResourceFilterProps {
+    stateKey?: string;
     predefinedVisible?: boolean;
     recentVisible: boolean;
     builderVisible: boolean;
@@ -168,27 +170,36 @@ export default function ResourceFilterHOC(
         const {
             predefinedVisible, builderVisible, recentVisible, value,
             onPredefinedVisibleChange, onBuilderVisibleChange, onRecentVisibleChange, onApplyFilter,
-            disabled,
+            disabled, stateKey,
         } = props;
 
         const user = useSelector((state: CombinedState) => state.auth.user);
         const [isMounted, setIsMounted] = useState<boolean>(false);
         const [recentFilters, setRecentFilters] = useState<Record<string, string>>({});
-        const [appliedFilter, setAppliedFilter] = useState(defaultAppliedFilter);
-        const [state, setState] = useState<ImmutableTree>(defaultTree);
+        const [appliedFilter, setAppliedFilter] = useTableState(
+            stateKey ? `${stateKey}:applied` : undefined, defaultAppliedFilter,
+        );
+        const [state, setState] = useTableState<ImmutableTree>(stateKey ? `${stateKey}:tree` : undefined, defaultTree);
+        const initialized = useRef(false);
+        const [lastValue, setLastValue] = useTableState(stateKey ? `${stateKey}:value` : undefined, value);
 
         const predefinedFilters = getPredefinedFilters(user, predefinedFilterValues);
 
         useEffect(() => {
             setRecentFilters(receiveRecentFilters(localStorageRecentKeyword));
             setIsMounted(true);
+            const restoreDraft = !initialized.current && stateKey && state !== defaultTree && lastValue === value;
+            initialized.current = true;
+            setLastValue(value);
+            if (restoreDraft) return;
 
             try {
                 if (value && value !== '{}') {
                     const tree = QbUtils.loadFromJsonLogic(JSON.parse(value), config);
                     if (tree && isValidTree(tree, config)) {
                         setAppliedFilter({
-                            ...appliedFilter,
+                            ...defaultAppliedFilter,
+                            recent: appliedFilter.recent === value ? value : null,
                             predefined: splitFilterIntoPredefined(Object.values(predefinedFilters ?? {}), value),
                             built: JSON.stringify(QbUtils.jsonLogicFormat(tree, config).logic),
                         });
@@ -196,11 +207,7 @@ export default function ResourceFilterHOC(
                     }
                 } else {
                     setState(defaultTree);
-                    setAppliedFilter({
-                        ...appliedFilter,
-                        predefined: null,
-                        built: null,
-                    });
+                    setAppliedFilter(defaultAppliedFilter);
                 }
             } catch (_: any) {
                 // nothing to do

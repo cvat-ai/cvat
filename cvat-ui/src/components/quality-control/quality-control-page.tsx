@@ -20,6 +20,7 @@ import {
     Project,
 } from 'cvat-core-wrapper';
 import CVATLoadingSpinner from 'components/common/loading-spinner';
+import { TableStateProvider } from 'components/common/table-state';
 import GoBackButton from 'components/common/go-back-button';
 import ResourceLink from 'components/common/resource-link';
 import { CombinedState, InstanceType } from 'reducers';
@@ -222,6 +223,7 @@ function QualityControlPage(): JSX.Element {
 
     const requestedInstanceType: InstanceType = useInstanceType();
     const requestedInstanceID = useInstanceId(requestedInstanceType);
+    const tableStateScope = `${requestedInstanceType}:${requestedInstanceID}`;
 
     const { instance } = state;
     const pluginTabs = usePlugins((combinedState: CombinedState) => (
@@ -461,26 +463,30 @@ function QualityControlPage(): JSX.Element {
 
     if (error) {
         return (
-            <div className='cvat-quality-control-page'>
-                <div className='cvat-quality-control-page-error'>
-                    <Result
-                        status='error'
-                        title='Could not open the page'
-                        subTitle={error.message}
-                        extra={backNavigation}
-                    />
+            <TableStateProvider scope={tableStateScope}>
+                <div className='cvat-quality-control-page'>
+                    <div className='cvat-quality-control-page-error'>
+                        <Result
+                            status='error'
+                            title='Could not open the page'
+                            subTitle={error.message}
+                            extra={backNavigation}
+                        />
+                    </div>
                 </div>
-            </div>
+            </TableStateProvider>
         );
     }
 
     if (fetching || qualitySettingsFetching) {
         return (
-            <div className='cvat-quality-control-page'>
-                <div className='cvat-quality-control-loading'>
-                    <CVATLoadingSpinner />
+            <TableStateProvider scope={tableStateScope}>
+                <div className='cvat-quality-control-page'>
+                    <div className='cvat-quality-control-loading'>
+                        <CVATLoadingSpinner />
+                    </div>
                 </div>
-            </div>
+            </TableStateProvider>
         );
     }
 
@@ -579,17 +585,19 @@ function QualityControlPage(): JSX.Element {
     }
 
     return (
-        <Row className='cvat-quality-control-page'>
-            <Col className='cvat-quality-control-wrapper' span={24}>
-                {backNavigation}
-                <Row justify='center' className='cvat-quality-control-inner-wrapper'>
-                    <Col span={22} xl={18} xxl={14} className='cvat-quality-control-inner'>
-                        {title}
-                        {tabs}
-                    </Col>
-                </Row>
-            </Col>
-        </Row>
+        <TableStateProvider scope={tableStateScope}>
+            <Row className='cvat-quality-control-page'>
+                <Col className='cvat-quality-control-wrapper' span={24}>
+                    {backNavigation}
+                    <Row justify='center' className='cvat-quality-control-inner-wrapper'>
+                        <Col span={22} xl={18} xxl={14} className='cvat-quality-control-inner'>
+                            {title}
+                            {tabs}
+                        </Col>
+                    </Row>
+                </Col>
+            </Row>
+        </TableStateProvider>
     );
 }
 
