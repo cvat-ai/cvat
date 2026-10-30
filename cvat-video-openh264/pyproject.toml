@@ -1,0 +1,49 @@
+# Copyright (C) CVAT.ai Corporation
+#
+# SPDX-License-Identifier: MIT
+
+[project]
+dynamic = ["version"]
+
+name = "cvat-video-openh264"
+description = "OpenH264 video-chunk adapter for the CVAT Python SDK"
+readme = "README.md"
+authors = [{name = "CVAT.ai Corporation", email = "support@cvat.ai"}]
+keywords = ["CVAT", "H.264", "OpenH264", "video"]
+license = "MIT"
+license-files = ["LICENSE"]
+classifiers = [
+    "Development Status :: 2 - Pre-Alpha",
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+requires-python = ">=3.10"
+dependencies = ["Pillow >= 10.3.0"]
+
+[dependency-groups]
+test = ["pytest>=9.0"]
+
+[project.urls]
+homepage = "https://github.com/cvat-ai/cvat"
+repository = "https://github.com/cvat-ai/cvat/tree/develop/cvat-video-openh264"
+
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.package-data]
+cvat_video_openh264 = ["py.typed"]
+
+[tool.setuptools.dynamic]
+version = {attr = "cvat_video_openh264.version.VERSION"}
+
+[tool.pytest.ini_options]
+addopts = ["--strict-config", "--strict-markers"]
+testpaths = ["tests"]
+
+[tool.isort]
+profile = "black"
+forced_separate = ["tests"]
+line_length = 100
+skip_gitignore = true
+known_first_party = ["cvat_video_openh264"]
