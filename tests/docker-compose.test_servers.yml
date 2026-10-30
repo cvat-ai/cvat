@@ -11,6 +11,7 @@ services:
 
   webhook_receiver:
     image: python:3.11-slim
+    dns_search: .
     restart: always
     command: python3 /tmp/server.py
     init: true
