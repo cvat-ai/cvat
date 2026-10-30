@@ -2761,7 +2761,10 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
 
         expected_counts = {"poles": 1, "arches": 1, "polygons": 2}
         for name, requirement in requirements.items():
-            summary = report_data["groups"][requirement["name"]]["comparison_summary"]
+            group = report_data["groups"][requirement["name"]]
+            assert group["parameters"]["similarity_metric"] == "boundary_f", name
+
+            summary = group["comparison_summary"]
             assert summary["score_components"] == {
                 "valid_count": expected_counts[name],
                 "missing_count": 0,
