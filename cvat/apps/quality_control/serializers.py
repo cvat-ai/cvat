@@ -1053,7 +1053,7 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
                 visited_parent_ids.add(current_parent.id)
                 current_parent = current_parent.parent
 
-        self._validate_threshold_policy(attrs, parent_requirement, annotation_type)
+        self._validate_threshold_policy(attrs, effective_annotation_type)
 
         if parent_requirement is None:
             for field_name in _INHERITED_REQUIREMENT_FIELDS:
@@ -1087,17 +1087,17 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
 
         return attrs
 
-    def _validate_threshold_policy(self, attrs, parent, annotation_type):
+    def _validate_threshold_policy(self, attrs: dict[str, Any], effective_annotation_type: str):
         from cvat.apps.quality_control.threshold_policy import ADAPTIVE_IOU_TYPES
 
         if isinstance(attrs.get("iou_threshold"), dict):
-            effective_type = annotation_type or self._get_effective_annotation_type(parent)
-            if effective_type not in ADAPTIVE_IOU_TYPES:
+            if effective_annotation_type not in ADAPTIVE_IOU_TYPES:
                 raise serializers.ValidationError(
                     {
                         "iou_threshold": (
-                            "IoU policies support rectangle, polygon, mask "
-                            "and ellipse requirements."
+                            "IoU policies only support {} requirements.".format(
+                                ', '.join(t.value for t in ADAPTIVE_IOU_TYPES)
+                            )
                         )
                     }
                 )
