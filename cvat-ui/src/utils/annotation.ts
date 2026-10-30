@@ -5,8 +5,13 @@
 
 import { getCVATStore } from 'cvat-store';
 import { CombinedState } from 'reducers';
+import { Job } from 'cvat-core-wrapper';
 
-export default function isAbleToChangeFrame(frame?: number): boolean {
+export function jobHasUnsavedChanges(jobInstance: Job): boolean {
+    return jobInstance.annotations.hasUnsavedChanges() || jobInstance.frames.hasUnsavedChanges();
+}
+
+export function isAbleToChangeFrame(frame?: number): boolean {
     const store = getCVATStore();
 
     const state: CombinedState = store.getState();

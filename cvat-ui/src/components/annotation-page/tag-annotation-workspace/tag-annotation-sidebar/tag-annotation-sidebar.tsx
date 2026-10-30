@@ -29,7 +29,7 @@ import {
 import { CombinedState } from 'reducers';
 import { filterApplicableForType } from 'utils/filter-applicable-labels';
 import LabelSelector from 'components/label-selector/label-selector';
-import isAbleToChangeFrame from 'utils/is-able-to-change-frame';
+import { isAbleToChangeFrame } from 'utils/annotation';
 import GlobalHotKeys, { KeyMap } from 'utils/mousetrap-react';
 import { ShortcutScope } from 'utils/enums';
 import { registerComponentShortcuts } from 'actions/shortcuts-actions';
