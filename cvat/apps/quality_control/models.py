@@ -449,7 +449,13 @@ class DefaultComparisonSettings:
 
     @classmethod
     def as_dict(cls) -> dict[str, Any]:
-        return {name: getattr(cls, name) for name in cls.__annotations__}
+        return {
+            k: v
+            for k, v in cls.__dict__.items()
+            if not k.startswith("_")
+            if not callable(v)
+            if not isinstance(v, classmethod | staticmethod)
+        }
 
 
 class QualitySettings(TimestampedModel):
