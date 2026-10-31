@@ -12,7 +12,7 @@ The following subcommands are supported:
   - `create-from-backup` - create a project from a backup file
   - `delete` - delete projects
   - `export-dataset` - export a project as a dataset
-  - `import-dataset` - import annotations into a project from a dataset
+  - `import-dataset` - create project tasks from a dataset
   - `ls` - list all projects
 
 - Tasks:
@@ -30,6 +30,15 @@ The following subcommands are supported:
   - `create-native` - create a function that can be powered by an agent
   - `delete` - delete a function
   - `run-agent` - process requests for a native function
+
+- Profiles:
+  - `create` - save an access token and its server as a local profile
+  - `default` - print, set, or unset the default profile
+  - `delete` - remove a saved profile
+  - `list` - list saved profiles
+
+- Configuration:
+  - `default-server` - print, set, or unset the default server
 
 ## Installation
 
