@@ -322,6 +322,8 @@ that can (_Code Complete_, "Defensive Programming").
 
 - The project is located on GitHub at <https://github.com/cvat-ai/cvat>.
 - Pull requests are merged by squashing by default.
+- Project members name branches `<a couple of letters from the name>/<feature-name>`,
+  e.g. `zm/fix-webhook-tests`.
 - Proprietary code does not belong in the OSS repository (this one).
 
 ### Licensing
