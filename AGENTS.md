@@ -44,6 +44,9 @@ Check the diff against the guidelines, in particular:
 
 Defaults, unless the user says otherwise:
 
+- Name new branches `<prefix>/<feature-name>` (e.g. `zm/fix-webhook-tests`), where the prefix
+  is the user's personal one. Take it from the user's existing branches, or ask.
+  Do not use tool-specific prefixes such as `claude/`, `codex/`, or `feature/`.
 - Do not push, amend, or force-push unless explicitly asked. Check `HEAD` before amending.
 - Do not commit the user's uncommitted work without asking.
 - Split commits by logical change: refactoring first, then the feature; generated files
