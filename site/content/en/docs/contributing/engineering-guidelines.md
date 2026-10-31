@@ -15,7 +15,7 @@ have a reason, and state the reason.
 
 Sources and references:
 
-- S. McConnell, *Code Complete*, 2nd ed.
+- S. McConnell, _Code Complete_, 2nd ed.
 - [PEP 8](https://peps.python.org/pep-0008/), [PEP 20](https://peps.python.org/pep-0020/),
   [PEP 257](https://peps.python.org/pep-0257/)
 - [C++ Core Guidelines](https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines)
@@ -30,13 +30,13 @@ Sources and references:
 > — Guido van Rossum, as quoted in [PEP 8](https://peps.python.org/pep-0008/)
 
 The typical reader is a colleague who lacks your current context — possibly you,
-a year later. The primary technical goal is managing complexity (*Code Complete*).
+a year later. The primary technical goal is managing complexity (_Code Complete_).
 
 - **Terse, but not terser.** Remove what repeats or what the reader does not need.
   Keep what they do need. Code that is short but must be decoded is not simple.
 - **Express intent in code first** (CG P.1, P.3): names, types, structure.
   Comment only what the code cannot say: why, constraints, non-obvious consequences
-  (*Code Complete*, ch. 32; CG NL.1, NL.2).
+  (_Code Complete_, ch. 32; CG NL.1, NL.2).
   Keep comments crisp (CG NL.3).
 - **Docstrings describe the contract**: what the function does, what it expects,
   and what it guarantees.
@@ -127,7 +127,7 @@ Do not multiply entities beyond necessity (Occam's razor).
 
 ## 4. Fit into the existing design
 
-A common issue is a change added *next to* the existing code instead of *into* it.
+A common issue is a change added _next to_ the existing code instead of _into_ it.
 
 - **Read the surroundings before changing code**: the neighboring lines, the class,
   the callers, the related docs. Update what your change makes outdated.
@@ -210,7 +210,7 @@ A common issue is a change added *next to* the existing code instead of *into* i
 ## 6. Errors and invariants
 
 Use assertions for conditions that must never occur, and error handling for conditions
-that can (*Code Complete*, "Defensive Programming").
+that can (_Code Complete_, "Defensive Programming").
 
 - **Fail fast, fail loudly**: an unreachable code path must fail immediately and visibly
   ([J. Shore, "Fail Fast", IEEE Software, 2004](https://martinfowler.com/ieeeSoftware/failFast.pdf)).
