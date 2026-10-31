@@ -24,6 +24,9 @@ const GROUPING_COLOR = '#8b008b';
 const MERGING_COLOR = '#0000ff';
 const SPLITTING_COLOR = '#1e90ff';
 const BASE_POINT_SIZE = 4;
+const POINT_CLOUD_SIZE = 0.05;
+// top, side and front views draw the cloud this many times larger than the perspective view
+const ORTHO_POINT_CLOUD_SIZE_FACTOR = 10;
 
 export default {
     BASE_GRID_WIDTH,
@@ -47,4 +50,6 @@ export default {
     MERGING_COLOR,
     SPLITTING_COLOR,
     BASE_POINT_SIZE,
+    POINT_CLOUD_SIZE,
+    ORTHO_POINT_CLOUD_SIZE_FACTOR,
 };
