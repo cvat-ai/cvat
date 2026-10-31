@@ -686,7 +686,9 @@ Each shape type can have their own spatial matching details. Specifically:
   determined by the _object size_ (bounding box side) and _Point size_ values,
   where this point can be matched. If a bounding box is grouped
   with the skeleton, it is used for object size computation, otherwise a bounding box of
-  visible points of the skeleton is used.
+  visible points of the skeleton is used. If the _Point size base_ setting is _Image size_,
+  the image size is used as the object size instead, which can be useful for skeletons
+  with few visible points.
   The exact formulas are described in [Point matching](#point-matching).
 - points - The OKS metric is used for each point group annotation. Same as for skeletons,
   _Point size_ determines relative point sizes. The _Point size base_ setting allows
@@ -723,12 +725,12 @@ where:
 - `s` is the object size, in pixels, computed as `sqrt(object area)`
 - `sigma` is the _Point size_ value, a fraction of the object size
 
-The object area depends on the annotation type:
-- for skeletons, it's the area of the mean bounding box of the compared GT and checked skeletons
-- for points and skeleton keypoints, it depends on the _Point size base_ setting:
-  _Image size_ - the image area, _Group bbox size_ - the area of the mean bounding box
+The object area depends on the _Point size base_ setting:
+- _Image size_ - the image area
+- _Group bbox size_ - the area of the mean bounding box
   of the compared GT and checked objects (point groups or skeletons).
-  Single points without a group are always compared in the image space.
+
+Single points without a group are always compared in the image space.
 
 The bounding box of an object is the bounding box of all its visible parts,
 including the grouped bounding boxes, if any. When the object bounding boxes are used,
