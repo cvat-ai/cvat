@@ -93,8 +93,14 @@ export function translateToSVG(svg: SVGSVGElement, points: ArrayLike<number>): n
     return output;
 }
 
-export function composeShapeDimensions(width: number, height: number, rotation: number | null): string {
-    const text = `${width.toFixed(1)}x${height.toFixed(1)}px`;
+export function composeShapeDimensions(
+    width: number,
+    height: number,
+    rotation: number | null,
+    shapeType: string,
+): string {
+    const area = width * height * (shapeType === 'ellipse' ? Math.PI / 4 : 1);
+    const text = `${width.toFixed(1)}x${height.toFixed(1)}px = ${area.toFixed(1)}px²`;
     let adjustableRotation = rotation;
     if (adjustableRotation) {
         // make sure, that rotation is in range [0; 360]
@@ -130,7 +136,7 @@ export function displayShapeSize(shapesContainer: SVG.Container, textContainer: 
         update(shape: SVG.Shape): void {
             const rotation = shape.type === 'rect' || shape.type === 'ellipse' ?
                 getRoundedRotation(shape) : null;
-            const text = composeShapeDimensions(shape.width(), shape.height(), rotation);
+            const text = composeShapeDimensions(shape.width(), shape.height(), rotation, shape.type);
             const [x, y, cx, cy]: number[] = translateToSVG(
                 (textContainer.node as any) as SVGSVGElement,
                 translateFromSVG((shapesContainer.node as any) as SVGSVGElement, [

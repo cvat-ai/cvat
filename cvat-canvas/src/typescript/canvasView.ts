@@ -4613,7 +4613,7 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     }
 
                     block
-                        .tspan(composeShapeDimensions(width, height, state.rotation))
+                        .tspan(composeShapeDimensions(width, height, state.rotation, state.shapeType))
                         .attr({
                             dy: '1.25em',
                             x: 0,
