@@ -2137,7 +2137,7 @@ class TestIoUThresholdPolicies(_QualityRequirementsTestBase):
         parameters = group["parameters"]
         assert parameters["iou_threshold"] == fixture["policy"]
         if fixture["policy"]["mode"] == "linear":
-            assert parameters["similarity_threshold_input"] == {
+            assert parameters["iou_threshold_input"] == {
                 "name": "gt.shape_area",
                 "units": "px²",
             }

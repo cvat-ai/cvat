@@ -382,7 +382,7 @@ def serialize_requirement_parameters(
             policy = parse_threshold_policy(policy)
         params["iou_threshold"] = policy.to_dict()
         if isinstance(policy, LinearThresholdPolicy):
-            params["similarity_threshold_input"] = {
+            params["iou_threshold_input"] = {
                 "name": "gt.shape_area",
                 "units": "px²",
             }
