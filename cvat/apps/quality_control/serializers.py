@@ -830,12 +830,20 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
                 supported_metrics=";\n".join(
                     "- {}: {}".format(
                         annotation_type,
-                        ", ".join(f"'{metric}'" for metric in sorted(metrics)),
+                        ", ".join(
+                            f"'{metric}' (default)" if metric == default_metric else f"'{metric}'"
+                            for metric in sorted(metrics)
+                        ),
                     )
                     for annotation_type, metrics in sorted(
                         models.QualityRequirement.get_supported_similarity_metrics().items(),
                         key=lambda item: item[0],
                     )
+                    for default_metric in [
+                        models.DefaultComparisonSettings.get_default_similarity_metric(
+                            annotation_type
+                        )
+                    ]
                 )
             ),
             "oks_threshold": """

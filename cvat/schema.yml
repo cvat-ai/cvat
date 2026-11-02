@@ -11285,15 +11285,15 @@ components:
           description: |-
             The similarity metric used to match the objects. The supported metrics
             depend on the annotation type:
-            - ellipse: 'boundary_f', 'iou';
-            - mask: 'boundary_f', 'iou';
-            - points: 'oks';
-            - polygon: 'boundary_f', 'iou';
-            - polyline: 'boundary_f', 'iou';
-            - rectangle: 'boundary_f', 'iou';
-            - skeleton: 'oks';
-            - skeleton_keypoint: 'oks';
-            - tag: 'equality'
+            - ellipse: 'boundary_f', 'iou' (default);
+            - mask: 'boundary_f', 'iou' (default);
+            - points: 'oks' (default);
+            - polygon: 'boundary_f', 'iou' (default);
+            - polyline: 'boundary_f', 'iou' (default);
+            - rectangle: 'boundary_f', 'iou' (default);
+            - skeleton: 'oks' (default);
+            - skeleton_keypoint: 'oks' (default);
+            - tag: 'equality' (default)
 
 
             * `iou` - IoU
@@ -12239,15 +12239,15 @@ components:
           description: |-
             The similarity metric used to match the objects. The supported metrics
             depend on the annotation type:
-            - ellipse: 'boundary_f', 'iou';
-            - mask: 'boundary_f', 'iou';
-            - points: 'oks';
-            - polygon: 'boundary_f', 'iou';
-            - polyline: 'boundary_f', 'iou';
-            - rectangle: 'boundary_f', 'iou';
-            - skeleton: 'oks';
-            - skeleton_keypoint: 'oks';
-            - tag: 'equality'
+            - ellipse: 'boundary_f', 'iou' (default);
+            - mask: 'boundary_f', 'iou' (default);
+            - points: 'oks' (default);
+            - polygon: 'boundary_f', 'iou' (default);
+            - polyline: 'boundary_f', 'iou' (default);
+            - rectangle: 'boundary_f', 'iou' (default);
+            - skeleton: 'oks' (default);
+            - skeleton_keypoint: 'oks' (default);
+            - tag: 'equality' (default)
 
 
             * `iou` - IoU
@@ -12466,15 +12466,15 @@ components:
           description: |-
             The similarity metric used to match the objects. The supported metrics
             depend on the annotation type:
-            - ellipse: 'boundary_f', 'iou';
-            - mask: 'boundary_f', 'iou';
-            - points: 'oks';
-            - polygon: 'boundary_f', 'iou';
-            - polyline: 'boundary_f', 'iou';
-            - rectangle: 'boundary_f', 'iou';
-            - skeleton: 'oks';
-            - skeleton_keypoint: 'oks';
-            - tag: 'equality'
+            - ellipse: 'boundary_f', 'iou' (default);
+            - mask: 'boundary_f', 'iou' (default);
+            - points: 'oks' (default);
+            - polygon: 'boundary_f', 'iou' (default);
+            - polyline: 'boundary_f', 'iou' (default);
+            - rectangle: 'boundary_f', 'iou' (default);
+            - skeleton: 'oks' (default);
+            - skeleton_keypoint: 'oks' (default);
+            - tag: 'equality' (default)
 
 
             * `iou` - IoU
@@ -12720,15 +12720,15 @@ components:
           description: |-
             The similarity metric used to match the objects. The supported metrics
             depend on the annotation type:
-            - ellipse: 'boundary_f', 'iou';
-            - mask: 'boundary_f', 'iou';
-            - points: 'oks';
-            - polygon: 'boundary_f', 'iou';
-            - polyline: 'boundary_f', 'iou';
-            - rectangle: 'boundary_f', 'iou';
-            - skeleton: 'oks';
-            - skeleton_keypoint: 'oks';
-            - tag: 'equality'
+            - ellipse: 'boundary_f', 'iou' (default);
+            - mask: 'boundary_f', 'iou' (default);
+            - points: 'oks' (default);
+            - polygon: 'boundary_f', 'iou' (default);
+            - polyline: 'boundary_f', 'iou' (default);
+            - rectangle: 'boundary_f', 'iou' (default);
+            - skeleton: 'oks' (default);
+            - skeleton_keypoint: 'oks' (default);
+            - tag: 'equality' (default)
 
 
             * `iou` - IoU
@@ -12949,15 +12949,15 @@ components:
           description: |-
             The similarity metric used to match the objects. The supported metrics
             depend on the annotation type:
-            - ellipse: 'boundary_f', 'iou';
-            - mask: 'boundary_f', 'iou';
-            - points: 'oks';
-            - polygon: 'boundary_f', 'iou';
-            - polyline: 'boundary_f', 'iou';
-            - rectangle: 'boundary_f', 'iou';
-            - skeleton: 'oks';
-            - skeleton_keypoint: 'oks';
-            - tag: 'equality'
+            - ellipse: 'boundary_f', 'iou' (default);
+            - mask: 'boundary_f', 'iou' (default);
+            - points: 'oks' (default);
+            - polygon: 'boundary_f', 'iou' (default);
+            - polyline: 'boundary_f', 'iou' (default);
+            - rectangle: 'boundary_f', 'iou' (default);
+            - skeleton: 'oks' (default);
+            - skeleton_keypoint: 'oks' (default);
+            - tag: 'equality' (default)
 
 
             * `iou` - IoU
@@ -13170,15 +13170,15 @@ components:
           description: |-
             The similarity metric used to match the objects. The supported metrics
             depend on the annotation type:
-            - ellipse: 'boundary_f', 'iou';
-            - mask: 'boundary_f', 'iou';
-            - points: 'oks';
-            - polygon: 'boundary_f', 'iou';
-            - polyline: 'boundary_f', 'iou';
-            - rectangle: 'boundary_f', 'iou';
-            - skeleton: 'oks';
-            - skeleton_keypoint: 'oks';
-            - tag: 'equality'
+            - ellipse: 'boundary_f', 'iou' (default);
+            - mask: 'boundary_f', 'iou' (default);
+            - points: 'oks' (default);
+            - polygon: 'boundary_f', 'iou' (default);
+            - polyline: 'boundary_f', 'iou' (default);
+            - rectangle: 'boundary_f', 'iou' (default);
+            - skeleton: 'oks' (default);
+            - skeleton_keypoint: 'oks' (default);
+            - tag: 'equality' (default)
 
 
             * `iou` - IoU
