@@ -319,7 +319,7 @@ class CompressedObjectBoundary:
     def _from_window_region(
         cls, region: np.ndarray, origin: tuple[int, int]
     ) -> CompressedObjectBoundary:
-        "Region boundary is it's inner 1-px boundary"
+        "Region boundary is its inner 1-px boundary"
 
         if region.size:  # OpenCV fails on empty arrays
             eroded = cv2.erode(
@@ -351,7 +351,7 @@ class CompressedObjectBoundary:
         roi: LtrbBox,
     ) -> CompressedObjectBoundary:
         """
-        Region boundary is it's inner 1-px boundary.
+        Region boundary is its inner 1-px boundary.
         The RLE covers the image, only the image part of the window is filled.
         """
 
@@ -387,7 +387,7 @@ class CompressedObjectBoundary:
         roi: LtrbBox,
     ) -> CompressedObjectBoundary:
         """
-        Region boundary is it's inner 1-px boundary.
+        Region boundary is its inner 1-px boundary.
         The polygons are rasterized in the window, the parts outside the window are clipped.
         """
 
@@ -872,13 +872,13 @@ class DistanceComparator:
     ) -> MatchResult:
         """
         If the similarity metric used can respect object direction, the optional direction check
-        can be performed. To enabled, pass all of the 'directed_similarity',
+        can be performed. To enable, pass all of the 'directed_similarity',
         'undirected_similarity' and 'direction_threshold' parameters. The callbacks must
         follow the conventions:
         - 'undirected_similarity' ignores the object direction,
           'directed_similarity' takes it into account
         - both callbacks belong to the same metric family, and the directed similarity
-          if always <= the undirected one for the same pair of objects
+          is always <= the undirected one for the same pair of objects
         - if the base 'similarity' is from the same metric family, the same function object
           must be passed as 'undirected_similarity'. Then the directed similarity is used as
           the matching cost. Otherwise, the base similarity is used as the matching cost,
