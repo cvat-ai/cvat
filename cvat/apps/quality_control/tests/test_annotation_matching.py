@@ -203,6 +203,42 @@ class TestComparator(unittest.TestCase):
         self.assertEqual(len(group_bbox_results[2]), 2)
         self.assertEqual(len(group_bbox_results[3]), 2)
 
+    def test_image_size_point_base_matches_skeletons_without_bbox_overlap(self) -> None:
+        label_cat = dm.LabelCategories()
+        label_cat.add("skeleton")
+        label_cat.add("p1", parent="skeleton")
+        label_cat.add("p2", parent="skeleton")
+        categories = {dm.AnnotationType.label: label_cat}
+
+        def _make_skeleton(*points: tuple[float, float]) -> dm.Skeleton:
+            return dm.Skeleton(
+                [
+                    dm.Points(list(p), label=label_id, visibility=[dm.Points.Visibility.visible])
+                    for label_id, p in enumerate(points, start=1)
+                ],
+                label=0,
+            )
+
+        for gt_skeleton, ds_skeleton in [
+            # single visible point
+            (_make_skeleton((10, 10)), _make_skeleton((11, 11))),
+            # parallel axis-aligned lines
+            (_make_skeleton((10, 10), (10, 50)), _make_skeleton((11, 10), (11, 50))),
+        ]:
+            with self.subTest(gt=gt_skeleton.elements):
+                comparator = DistanceComparator(
+                    categories,
+                    included_ann_types=[dm.AnnotationType.skeleton],
+                    point_size_base=PointSizeBase.IMAGE_SIZE,
+                )
+                matches, _, gt_unmatched, ds_unmatched = comparator.match_skeletons(
+                    _make_image_item(gt_skeleton), _make_image_item(ds_skeleton)
+                )
+
+                self.assertEqual(matches, [(gt_skeleton, ds_skeleton)])
+                self.assertFalse(gt_unmatched)
+                self.assertFalse(ds_unmatched)
+
     def test_attributes_affect_matching_and_pairwise_diagnostics(self) -> None:
         settings = ComparisonParameters()
         settings.included_annotation_types = [dm.AnnotationType.bbox]
