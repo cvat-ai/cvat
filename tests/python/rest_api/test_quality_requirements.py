@@ -2851,6 +2851,186 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
                 "extra_count": 0,
             }, name
 
+    def test_can_compare_tags(self, admin_user):
+        task_id, _ = create_task(
+            admin_user,
+            spec={
+                "name": "test-tag-similarity",
+                "labels": [
+                    {"name": "day", "type": "tag"},
+                    {"name": "rain", "type": "tag"},
+                    {"name": "snow", "type": "tag"},
+                ],
+            },
+            data={"image_quality": 70, "client_files": generate_image_files(1)},
+        )
+        settings = self._get_task_settings(admin_user, task_id=task_id)
+        requirement = self._build_requirement_payload(
+            f"tags-{task_id}", annotation_type="tag", match_groups=False
+        )
+        _, response = self._patch_settings(
+            admin_user,
+            settings["id"],
+            {
+                "inherit": False,
+                "requirements": [
+                    *self._retained_base_requirement_payloads(settings),
+                    requirement,
+                ],
+            },
+        )
+        assert response.status_code == HTTPStatus.OK
+
+        labels = self._get_task_labels_by_name(admin_user, task_id=task_id)
+
+        def build_tags(*label_names: str) -> list[dict[str, Any]]:
+            return [{"frame": 0, "label_id": labels[name].id} for name in label_names]
+
+        gt_job = create_gt_job(admin_user, task_id, complete=False)
+        with make_api_client(admin_user) as api_client:
+            api_client.jobs_api.update_annotations(
+                gt_job.id, labeled_data_request={"tags": build_tags("day", "rain")}
+            )
+            api_client.tasks_api.update_annotations(
+                task_id, labeled_data_request={"tags": build_tags("day", "snow")}
+            )
+        self._complete_job(admin_user, gt_job.id)
+
+        report = create_quality_report(user=admin_user, task_id=task_id)
+        group = self._get_report_data(admin_user, report["id"])["groups"][requirement["name"]]
+        assert group["parameters"]["similarity_metric"] == "equality"
+
+        # the tags of different labels are matched and reported as a label mismatch
+        summary = group["comparison_summary"]
+        assert summary["conflicts_by_type"] == {"mismatching_label": 1}
+        assert summary["score_components"] == {
+            "valid_count": 1,
+            "missing_count": 0,
+            "extra_count": 0,
+        }
+
+    def test_oks_threshold_affects_matching(self, admin_user):
+        task_id, _ = create_task(
+            admin_user,
+            spec={
+                "name": "test-oks-threshold",
+                "labels": [
+                    {"name": "landmarks", "type": "points"},
+                    {
+                        "name": "pose",
+                        "type": "skeleton",
+                        "sublabels": [
+                            {"name": "first", "type": "points"},
+                            {"name": "second", "type": "points"},
+                        ],
+                        "svg": (
+                            '<circle data-type="element node" data-element-id="1" '
+                            'data-node-id="1" data-label-name="first"></circle>'
+                            '<circle data-type="element node" data-element-id="2" '
+                            'data-node-id="2" data-label-name="second"></circle>'
+                        ),
+                    },
+                ],
+            },
+            data={
+                "image_quality": 70,
+                "client_files": generate_image_files(1, sizes=[(200, 200)]),
+            },
+        )
+        settings = self._get_task_settings(admin_user, task_id=task_id)
+
+        # the IoU threshold is not used by OKS, it is set to the opposite value to check this
+        thresholds = {"low": {"oks": 0.1, "iou": 0.99}, "high": {"oks": 0.99, "iou": 0.01}}
+        annotation_types = ["points", "skeleton", "skeleton_keypoint"]
+
+        def build_requirement(annotation_type: str, threshold: str) -> dict[str, Any]:
+            requirement = self._build_requirement_payload(
+                f"{annotation_type}-{threshold}-oks-{task_id}",
+                annotation_type=annotation_type,
+                point_size_base="image_size",
+                match_groups=False,
+            )
+            requirement["oks_threshold"] = thresholds[threshold]["oks"]
+            requirement["iou_threshold"] = thresholds[threshold]["iou"]
+            return requirement
+
+        requirements = {
+            (annotation_type, threshold): build_requirement(annotation_type, threshold)
+            for annotation_type in annotation_types
+            for threshold in thresholds
+        }
+        _, response = self._patch_settings(
+            admin_user,
+            settings["id"],
+            {
+                "inherit": False,
+                "requirements": [
+                    *self._retained_base_requirement_payloads(settings),
+                    *requirements.values(),
+                ],
+            },
+        )
+        assert response.status_code == HTTPStatus.OK
+
+        labels = self._get_task_labels_by_name(admin_user, task_id=task_id)
+        sublabels = {sublabel.name: sublabel for sublabel in labels["pose"].sublabels}
+
+        def build_points(label_id: int, points: list[int]) -> dict[str, Any]:
+            return {
+                "type": "points",
+                "frame": 0,
+                "label_id": label_id,
+                "points": points,
+                "occluded": False,
+                "outside": False,
+            }
+
+        def build_shapes(shift: int) -> list[dict[str, Any]]:
+            first_point = [50 + shift, 50 + shift]
+            second_point = [100 + shift, 100 + shift]
+            return [
+                build_points(labels["landmarks"].id, first_point + second_point),
+                {
+                    **build_points(labels["pose"].id, []),
+                    "type": "skeleton",
+                    "elements": [
+                        build_points(sublabels["first"].id, first_point),
+                        build_points(sublabels["second"].id, second_point),
+                    ],
+                },
+            ]
+
+        gt_job = create_gt_job(admin_user, task_id, complete=False)
+        with make_api_client(admin_user) as api_client:
+            api_client.jobs_api.update_annotations(
+                gt_job.id, labeled_data_request={"shapes": build_shapes(shift=0)}
+            )
+            api_client.tasks_api.update_annotations(
+                task_id, labeled_data_request={"shapes": build_shapes(shift=10)}
+            )
+        self._complete_job(admin_user, gt_job.id)
+
+        report = create_quality_report(user=admin_user, task_id=task_id)
+        report_data = self._get_report_data(admin_user, report["id"])
+
+        expected_counts = {"points": 1, "skeleton": 1, "skeleton_keypoint": 2}
+        for (annotation_type, threshold), requirement in requirements.items():
+            group = report_data["groups"][requirement["name"]]
+            assert group["parameters"]["similarity_metric"] == "oks", requirement["name"]
+
+            count = expected_counts[annotation_type]
+            if threshold == "low":
+                expected_components = {"valid_count": count, "missing_count": 0, "extra_count": 0}
+            else:
+                expected_components = {
+                    "valid_count": 0,
+                    "missing_count": count,
+                    "extra_count": count,
+                }
+            assert (
+                group["comparison_summary"]["score_components"] == expected_components
+            ), requirement["name"]
+
     def test_confusion_matrix_only_contains_labels_compatible_with_requirement_type(
         self, admin_user
     ):

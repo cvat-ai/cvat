@@ -302,6 +302,18 @@ class TestQualityRequirementSimilarityMetricApi(ApiTestBase):
                     )
                     self.assertIn("similarity_metric", response.json())
 
+    def test_base_requirement_cannot_inherit_metric(self):
+        response = self._patch_request(
+            "/api/quality/settings/requirements/"
+            f"{self.task_default_base_requirements['rectangle']['id']}",
+            self.admin,
+            data={"similarity_metric": None},
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST, response.content)
+        self.assertEqual(
+            response.json()["similarity_metric"], ["Root requirements cannot inherit."]
+        )
+
     def test_cannot_use_unknown_metric(self):
         response = self._create_child_requirement(
             "unknown metric", "rectangle", similarity_metric="unknown"
