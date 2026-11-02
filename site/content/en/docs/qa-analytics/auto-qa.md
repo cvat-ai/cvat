@@ -684,9 +684,10 @@ Each shape type can have their own spatial matching details. Specifically:
 - skeletons - The OKS metric [from the COCO](https://cocodataset.org/#keypoints-eval)
   dataset is used. Each skeleton point gets a circular area around,
   determined by the _object size_ (bounding box side) and _Point size_ values,
-  where this point can be matched. If a bounding box is grouped
-  with the skeleton, it is used for object size computation, otherwise a bounding box of
-  visible points of the skeleton is used. If the _Point size base_ setting is _Image size_,
+  where this point can be matched. The object size is computed from the bounding box
+  of the visible and occluded skeleton points.
+  If there are bounding boxes grouped with the skeleton, they are included in the object
+  bounding box too. If the _Point size base_ setting is _Image size_,
   the image size is used as the object size instead, which can be useful for skeletons
   with few visible points.
   The exact formulas are described in [Point matching](#point-matching).
@@ -732,9 +733,12 @@ The object area depends on the _Point size base_ setting:
 
 Single points without a group are always compared in the image space.
 
-The bounding box of an object is the bounding box of all its visible parts,
-including the grouped bounding boxes, if any. When the object bounding boxes are used,
-the objects are not matched, if their bounding boxes don't overlap.
+The bounding box of an object is the bounding box of all its visible and occluded parts,
+including grouped bounding boxes, if any.
+For skeleton keypoints, the object is the skeleton, and its bounding box only includes
+the skeleton points: the grouped bounding boxes are not used.
+When the object bounding boxes are used, the objects are not matched,
+if their bounding boxes don't overlap.
 
 In COCO, `sigma` is the standard deviation of the keypoint position in human annotations,
 relative to the object size, measured for each keypoint type in redundantly annotated images.
@@ -750,9 +754,9 @@ After the OKS is computed for a pair of annotations, the _Overlap threshold_ `t`
 is used to determine if they match:
 - single points and skeleton keypoints are matched, if their `OKS >= t`
 - skeletons and point annotations with multiple points are matched, if the mean OKS of
-  their points is `>= t`. The mean is computed over the points present in any of the compared
-  annotations (including occluded points): a point present only in one of the annotations
-  gets `OKS = 0`.
+  their points is `>= t`. The mean is computed over the visible points in any of the compared
+  annotations: a point present only in one of the annotations
+  gets `OKS = 0`. For skeletons, only keypoints with the same label can match.
 
 For single points and skeleton keypoints, it means that a checked point is matched, if it is
 inside the circle around the GT point with the radius:
