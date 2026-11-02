@@ -3,19 +3,23 @@
 # SPDX-License-Identifier: MIT
 
 import io
+import itertools
+import math
 import tempfile
 import threading
 from logging import Logger
 from pathlib import Path
 
+import av
 import cvat_sdk.datasets as cvatds
 import PIL.Image
 import pytest
 from cvat_sdk import Client, models
 from cvat_sdk.core.proxies.annotations import AnnotationUpdateAction
 from cvat_sdk.core.proxies.tasks import ResourceType
+from cvat_sdk.datasets._video_chunks.openh264.schemas import VideoFrame
 
-from shared.utils.helpers import generate_image_files, generate_video_file
+from shared.utils.helpers import generate_image_files
 
 from .util import restrict_api_requests
 
@@ -36,6 +40,35 @@ def _common_setup(
     api_client = client.api_client
     for k in api_client.configuration.logger:
         api_client.configuration.logger[k] = logger
+
+
+def _decode_with_ffmpeg(chunk: io.BytesIO) -> list[PIL.Image.Image]:
+    """
+    Decode a video chunk with FFmpeg into RGB images, in frame order.
+
+    The chunk's timestamps follow the frame order, and FFmpeg returns the frames by
+    timestamp, whatever order the chunk stores them in.
+
+    Only the decoding is FFmpeg's: the YUV-to-RGB conversion is the SDK's own, because
+    FFmpeg's chroma upsampling differs from it by up to ~120 levels on sharp colour edges.
+    """
+
+    images = []
+    timestamps = []
+    with av.open(chunk) as container:
+        for frame in container.decode(video=0):
+            timestamps.append(frame.pts)
+            planes = tuple(
+                PIL.Image.frombytes(
+                    "L", (plane.width, plane.height), bytes(plane), "raw", "L", plane.line_size, 1
+                )
+                for plane in frame.planes
+            )
+            images.append(VideoFrame(planes=planes).to_image())
+
+    assert all(earlier < later for earlier, later in itertools.pairwise(timestamps))
+
+    return images
 
 
 class TestTaskDataset:
@@ -369,33 +402,6 @@ class TestTaskDataset:
             with dataset.iter_samples(temporary_chunks=True):
                 pass
 
-    def test_non_imageset_video_task_is_unsupported_for_chunk_based_media_access(self):
-        video_file = generate_video_file(4)
-        video_path = self.tmp_path / video_file.name
-        video_path.write_bytes(video_file.getbuffer())
-
-        video_task = self.client.tasks.create_from_data(
-            models.TaskWriteRequest(
-                "Dataset layer video task",
-                labels=[models.PatchedLabelRequest(name="video-object")],
-            ),
-            resource_type=ResourceType.LOCAL,
-            resources=[video_path],
-        )
-
-        assert video_task.data_original_chunk_type != "imageset"
-
-        with pytest.raises(
-            cvatds.UnsupportedDatasetError,
-            match="Chunk-based media access is not supported",
-        ):
-            cvatds.TaskDataset(
-                self.client,
-                video_task.id,
-                load_annotations=False,
-                media_download_policy=cvatds.MediaDownloadPolicy.FETCH_CHUNKS_ON_DEMAND,
-            )
-
     @pytest.mark.parametrize(
         "media_download_policy",
         [
@@ -423,3 +429,102 @@ class TestTaskDataset:
                 )
 
         assert all((chunk_dir / f"{chunk_index}.zip").exists() for chunk_index in range(4))
+
+    def _create_video_task(self):
+        return self.client.tasks.create_from_data(
+            models.TaskWriteRequest(
+                "Dataset layer video task",
+                labels=[models.PatchedLabelRequest(name="car")],
+            ),
+            resource_type=ResourceType.LOCAL,
+            resources=[Path(__file__).parent / "assets" / "video_task" / "video.mp4"],
+            # 7 frames give chunks of 3, 3 and 1 frames
+            data_params={"chunk_size": 3},
+        )
+
+    @pytest.mark.parametrize(
+        "media_download_policy",
+        [
+            cvatds.MediaDownloadPolicy.PRELOAD_ALL,
+            cvatds.MediaDownloadPolicy.FETCH_CHUNKS_ON_DEMAND,
+        ],
+    )
+    def test_video_task(self, media_download_policy: cvatds.MediaDownloadPolicy):
+        video_task = self._create_video_task()
+        assert video_task.data_original_chunk_type == "video"
+
+        dataset = cvatds.TaskDataset(
+            self.client,
+            video_task.id,
+            load_annotations=False,
+            media_download_policy=media_download_policy,
+        )
+
+        # The server encodes the chunks itself, and its output is not reproducible across
+        # environments, so the expected frames come from FFmpeg decoding the same chunks.
+        expected_images = []
+        for chunk_index in range(math.ceil(video_task.size / video_task.data_chunk_size)):
+            chunk = io.BytesIO()
+            video_task.download_chunk(chunk_index, chunk, quality="original")
+            chunk.seek(0)
+            expected_images.extend(_decode_with_ffmpeg(chunk=chunk))
+
+        assert len(dataset.samples) == len(expected_images) == video_task.size == 7
+
+        with dataset.iter_samples() as samples:
+            for index, sample in zip(range(video_task.size), samples, strict=True):
+                assert sample.frame_index == index
+                assert sample.media.load_image() == expected_images[index]
+
+    def test_video_task_media_can_only_be_read_through_iter_samples(self):
+        video_task = self._create_video_task()
+
+        dataset = cvatds.TaskDataset(
+            self.client,
+            video_task.id,
+            load_annotations=False,
+            media_download_policy=cvatds.MediaDownloadPolicy.PRELOAD_ALL,
+        )
+
+        with pytest.raises(
+            cvatds.UnsupportedDatasetError, match="can only be read through iter_samples"
+        ):
+            dataset.samples[0].media.load_image()
+
+    @pytest.mark.parametrize(
+        "media_download_policy",
+        [
+            cvatds.MediaDownloadPolicy.PRELOAD_ALL,
+            cvatds.MediaDownloadPolicy.FETCH_CHUNKS_ON_DEMAND,
+        ],
+    )
+    def test_video_task_without_openh264_library_is_rejected(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+        media_download_policy: cvatds.MediaDownloadPolicy,
+    ):
+        video_task = self._create_video_task()
+        monkeypatch.delenv("CVAT_OPENH264_LIBRARY", raising=False)
+
+        with pytest.raises(cvatds.UnsupportedDatasetError, match="CVAT_OPENH264_LIBRARY"):
+            cvatds.TaskDataset(
+                self.client,
+                video_task.id,
+                load_annotations=False,
+                media_download_policy=media_download_policy,
+            )
+
+    def test_video_task_without_openh264_library_works_with_fetch_frames_on_demand(
+        self, monkeypatch: pytest.MonkeyPatch
+    ):
+        video_task = self._create_video_task()
+        monkeypatch.delenv("CVAT_OPENH264_LIBRARY", raising=False)
+
+        dataset = cvatds.TaskDataset(
+            self.client,
+            video_task.id,
+            load_annotations=False,
+            media_download_policy=cvatds.MediaDownloadPolicy.FETCH_FRAMES_ON_DEMAND,
+        )
+
+        assert len(dataset.samples) == video_task.size
