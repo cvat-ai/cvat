@@ -113,13 +113,6 @@ class TestComparator(unittest.TestCase):
         self.assertEqual(missing, [1])
         self.assertEqual(extra, [1])
 
-    @staticmethod
-    def _make_comparator() -> Comparator:
-        return Comparator(
-            {dm.AnnotationType.label: dm.LabelCategories.from_iterable(["car"])},
-            settings=ComparisonParameters(),
-        )
-
     def test_mask_only_comparator_matches_masks(self) -> None:
         mask = np.zeros((8, 8), dtype=bool)
         mask[2:6, 2:6] = True
