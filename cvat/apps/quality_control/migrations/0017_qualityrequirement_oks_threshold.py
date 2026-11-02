@@ -44,6 +44,12 @@ def get_point_requirement_ids(QualityRequirement) -> list[int]:
     return ids
 
 
+# The JSON functions are vendor-specific because of significant performance gains.
+# During testing on PostgreSQL with 900k root requirements, the native function update query took
+# ~18s, while a portable version (values_list().iterator() + bulk_update() in batches of 5000)
+# took ~150s.
+
+
 def is_number_iou_threshold(*, connection) -> Lookup:
     """
     IoU thresholds are stored as JSON, and can be either numbers or threshold policy objects.
