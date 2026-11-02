@@ -2674,7 +2674,7 @@ class TestGeneralizedQualityReportData(_QualityRequirementsTestBase):
         report_data = self._get_report_data(admin_user, report["id"])
         for name in [image_size_requirement_name, group_bbox_requirement_name]:
             parameters = report_data["groups"][name]["parameters"]
-            assert parameters["iou_threshold"] == 0.4
+            assert parameters["oks_threshold"] == 0.4
         image_size_summary = report_data["groups"][image_size_requirement_name][
             "comparison_summary"
         ]
