@@ -175,7 +175,7 @@ OUTSIDE_IMAGE_LIMIT_ABSOLUTE = 20
 def get_outside_image_limit(*, img_h: int, img_w: int) -> int:
     """
     The maximum distance, which annotations can extend outside the image, in pixels.
-    The annotation parts, extending farther, are ignored in the Boundary F comparisons.
+    The annotation parts, extending farther, can be ignored in comparisons.
     This also limits the computational costs for such annotations.
 
     The limit is the maximum of the absolute and relative limits.
