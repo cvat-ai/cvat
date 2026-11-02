@@ -41,9 +41,15 @@ class AnnotationIdSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
 
+class AnnotationConflictRequirementSerializer(serializers.Serializer):
+    id = serializers.IntegerField(allow_null=True, read_only=True)
+    name = serializers.CharField(read_only=True)
+
+
 class AnnotationConflictSerializer(serializers.ModelSerializer):
     annotation_ids = AnnotationIdSerializer(many=True)
     attribute_names = serializers.ListField(child=serializers.CharField(), read_only=True)
+    requirements = AnnotationConflictRequirementSerializer(many=True, read_only=True)
 
     class Meta:
         model = models.AnnotationConflict
@@ -55,6 +61,7 @@ class AnnotationConflictSerializer(serializers.ModelSerializer):
             "report_id",
             "severity",
             "attribute_names",
+            "requirements",
         )
         read_only_fields = fields
 

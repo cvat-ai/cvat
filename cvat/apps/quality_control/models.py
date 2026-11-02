@@ -303,6 +303,7 @@ class AnnotationConflict(models.Model):
     type = models.CharField(max_length=32, choices=AnnotationConflictType.choices())
     severity = models.CharField(max_length=32, choices=AnnotationConflictSeverity.choices())
     attribute_names = models.JSONField(default=list, blank=True)
+    requirements = models.JSONField(default=list, blank=True)
 
     annotation_ids: Sequence[AnnotationId]
 

@@ -34,7 +34,21 @@ export default function ConflictLabel(props: Props): ReactPortal {
 
     return ReactDOM.createPortal(
         <CVATTooltip
-            title={text}
+            title={(
+                <>
+                    <div>{text}</div>
+                    {!!conflict.requirements.length && (
+                        <div className='cvat-conflict-tooltip-requirements'>
+                            <div>Requirements:</div>
+                            {conflict.requirements.map((requirement) => (
+                                <div key={requirement.id ?? requirement.name} style={{ overflowWrap: 'anywhere' }}>
+                                    {requirement.name}
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </>
+            )}
             open={tooltipVisible}
         >
             <Tag

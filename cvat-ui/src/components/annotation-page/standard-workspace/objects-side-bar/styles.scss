@@ -228,6 +228,7 @@
         background: rgba(255, 255, 255, 92%);
     }
 
+    > .ant-row .ant-typography,
     p {
         margin-bottom: 0;
     }
@@ -235,6 +236,10 @@
 
 .cvat-objects-sidebar-warning-item {
     @extend .cvat-objects-sidebar-issue-item;
+}
+
+.cvat-conflict-requirements {
+    overflow-wrap: anywhere;
 }
 
 .cvat-objects-sidebar-item-active {

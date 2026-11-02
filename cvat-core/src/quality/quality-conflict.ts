@@ -16,6 +16,11 @@ export enum ConflictSeverity {
     WARNING = 'warning',
 }
 
+export interface QualityConflictRequirement {
+    readonly id: number | null;
+    readonly name: string;
+}
+
 export class AnnotationConflict {
     #jobID: number;
     #serverID: number;
@@ -73,12 +78,14 @@ export default class QualityConflict {
     #annotationConflicts: AnnotationConflict[];
     #severity: ConflictSeverity;
     #description: string;
+    #requirements: QualityConflictRequirement[];
 
     constructor(initialData: SerializedQualityConflictData) {
         this.#id = initialData.id;
         this.#frame = initialData.frame ?? null;
         this.#type = initialData.type as QualityConflictType;
         this.#severity = initialData.severity as ConflictSeverity;
+        this.#requirements = (initialData.requirements ?? []).map((requirement) => ({ ...requirement }));
         this.#annotationConflicts = initialData.annotation_ids
             .map((rawData: SerializedAnnotationConflictData) => new AnnotationConflict({
                 ...rawData,
@@ -112,6 +119,10 @@ export default class QualityConflict {
 
     get description(): string {
         return this.#description;
+    }
+
+    get requirements(): readonly QualityConflictRequirement[] {
+        return this.#requirements;
     }
 
     set description(newDescription: string) {

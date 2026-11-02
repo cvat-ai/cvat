@@ -773,6 +773,9 @@ class RequirementHandler(ABC):
             annotation_ids=annotation_ids,
             severity=AnnotationConflictSeverity.ERROR,
             attribute_names=sorted(set(attribute_names or [])),
+            requirements=[
+                {"id": self.requirement.source_requirement_id, "name": self.requirement.name}
+            ],
         )
 
     def _make_frame_summary(
