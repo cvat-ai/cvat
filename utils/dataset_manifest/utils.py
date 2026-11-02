@@ -428,6 +428,20 @@ def _prepare_context_list(files: Iterable[_AnyPath], base_dir: _AnyPath | None =
     )
 
 
+def _filter_related_image_metadata(
+    related_images: dict[_AnyPath, list[_AnyPath]],
+    related_image_metadata: dict[_AnyPath, RelatedImageMetadataLoader],
+) -> dict[_AnyPath, RelatedImageMetadataLoader]:
+    related_image_paths = {
+        image_path for image_paths in related_images.values() for image_path in image_paths
+    }
+    return {
+        image_path: metadata
+        for image_path, metadata in related_image_metadata.items()
+        if image_path in related_image_paths
+    }
+
+
 def _find_related_images_2D(
     dataset_paths: Sequence[_AnyPath],
     *,
@@ -586,14 +600,10 @@ def _find_related_images_3D(
         for scene_path, scene_related in related_images.items()
         if scene_related
     }
-    related_image_paths = {
-        image_path for image_paths in related_images.values() for image_path in image_paths
-    }
-    related_image_metadata = {
-        image_path: metadata
-        for image_path, metadata in related_image_metadata.items()
-        if image_path in related_image_paths
-    }
+    related_image_metadata = _filter_related_image_metadata(
+        related_images,
+        related_image_metadata,
+    )
 
     return set(scenes.values()), related_images, related_image_metadata
 
@@ -679,14 +689,10 @@ def find_related_images(
             related_images = {
                 scene: scene_ris for scene, scene_ris in related_images.items() if scene in scenes
             }
-            related_image_paths = {
-                image_path for image_paths in related_images.values() for image_path in image_paths
-            }
-            related_image_metadata = {
-                image_path: metadata
-                for image_path, metadata in related_image_metadata.items()
-                if image_path in related_image_paths
-            }
+            related_image_metadata = _filter_related_image_metadata(
+                related_images,
+                related_image_metadata,
+            )
     else:
         scenes, related_images = _find_related_images_2D(dataset_paths, is_scene_path=is_scene_path)
         related_image_metadata = {}  # No metadata for images related to 2D scenes yet
