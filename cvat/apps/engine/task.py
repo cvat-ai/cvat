@@ -13,7 +13,7 @@ from contextlib import closing
 from copy import deepcopy
 from datetime import datetime, timedelta, timezone
 from pathlib import Path, PurePath, PurePosixPath
-from typing import Any, NamedTuple, TypeAlias
+from typing import Any, NamedTuple, TypeAlias, TypeVar
 from urllib import parse as urlparse
 from urllib import request as urlrequest
 
@@ -68,6 +68,7 @@ from utils.dataset_manifest.core import (
 from utils.dataset_manifest.errors import InvalidRelatedImageMetadataError
 from utils.dataset_manifest.utils import (
     RELATED_IMAGE_CALIBRATION_MANIFEST_KEY,
+    OpenableGetter,
     RelatedImageMetadata,
     RelatedImageMetadataLoader,
     find_related_images,
@@ -657,6 +658,26 @@ def _create_task_manifest_based_on_cloud_storage_manifest(
     manifest.create(sorted_content)
 
 
+_RelatedImagePath = TypeVar("_RelatedImagePath", str, PurePath)
+
+
+def _load_related_image_metadata(
+    related_image_metadata_loaders: Mapping[_RelatedImagePath, RelatedImageMetadataLoader],
+    openable_getter: OpenableGetter,
+) -> dict[_RelatedImagePath, RelatedImageMetadata]:
+    related_image_metadata: dict[_RelatedImagePath, RelatedImageMetadata] = {}
+    for related_image_path, metadata_loader in related_image_metadata_loaders.items():
+        try:
+            metadata = metadata_loader(openable_getter)
+        except InvalidRelatedImageMetadataError as exc:
+            raise ValidationError(str(exc)) from exc
+
+        if metadata is not None:
+            related_image_metadata[related_image_path] = metadata
+
+    return related_image_metadata
+
+
 def _create_task_manifest_from_cloud_data(
     db_storage: models.CloudStorage,
     sorted_media: Sequence[PurePath],
@@ -681,15 +702,10 @@ def _create_task_manifest_from_cloud_data(
 
         return storage_client.get_openable(path)
 
-    source_related_image_metadata: dict[PurePath, RelatedImageMetadata] = {}
-    for related_image_path, metadata_loader in related_image_metadata_loaders.items():
-        try:
-            metadata = metadata_loader(get_cloud_storage_openable)
-        except InvalidRelatedImageMetadataError as exc:
-            raise ValidationError(str(exc)) from exc
-
-        if metadata is not None:
-            source_related_image_metadata[related_image_path] = metadata
+    source_related_image_metadata = _load_related_image_metadata(
+        related_image_metadata_loaders,
+        get_cloud_storage_openable,
+    )
 
     content_generator = storage_client.bulk_download_to_memory(
         list(map(os.fspath, sorted_media)),
@@ -1636,15 +1652,10 @@ def _create_image_task_media_descriptors(
         path = upload_dir / path
         return path if path.is_file() else None
 
-    source_related_image_metadata: dict[str, RelatedImageMetadata] = {}
-    for related_image_path, metadata_loader in related_image_metadata_loaders.items():
-        try:
-            metadata = metadata_loader(get_local_openable)
-        except InvalidRelatedImageMetadataError as exc:
-            raise ValidationError(str(exc)) from exc
-
-        if metadata is not None:
-            source_related_image_metadata[related_image_path] = metadata
+    source_related_image_metadata = _load_related_image_metadata(
+        related_image_metadata_loaders,
+        get_local_openable,
+    )
 
     images, manifest, effective_related_image_metadata = _collect_image_dataset_descriptors(
         extractor=extractor,
