@@ -253,7 +253,7 @@ python-dateutil==2.9.0.post0
     #   matplotlib
     #   pandas
     #   rq-scheduler
-python-ldap==3.4.7
+python-ldap==3.4.8
     # via
     #   -r cvat/requirements/base.in
     #   django-auth-ldap

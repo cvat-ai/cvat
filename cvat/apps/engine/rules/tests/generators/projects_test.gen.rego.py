@@ -98,10 +98,7 @@ def eval_rule(scope, context, ownership, privilege, membership, data):
     rules = list(
         filter(lambda r: not r["limit"] or eval(r["limit"], {"resource": resource}), rules)
     )
-    if (
-        not is_same_org(data["auth"]["organization"], data["resource"]["organization"])
-        and context != "sandbox"
-    ):
+    if not is_same_org(data["auth"]["organization"], data["resource"]["organization"]):
         return False
 
     return bool(rules)
@@ -133,6 +130,8 @@ def get_data(scope, context, ownership, privilege, membership, resource, same_or
 
         if same_org:
             data["resource"]["organization"]["id"] = org_id
+    elif same_org:
+        data["resource"]["organization"] = None
 
     if ownership == "owner":
         data["resource"]["owner"]["id"] = user_id
@@ -167,8 +166,6 @@ def is_valid(scope, context, ownership, privilege, membership, resource, same_or
     if context == "sandbox" and membership:
         return False
     if scope == "list" and ownership != "None":
-        return False
-    if context == "sandbox" and same_org is False:
         return False
 
     return True
