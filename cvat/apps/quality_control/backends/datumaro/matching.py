@@ -908,6 +908,8 @@ class DistanceComparator(datumaro.components.comparator.DistanceComparator):
         scale = None
         if self.point_size_base == PointSizeBase.IMAGE_SIZE:
             scale = np.prod(item_a.media_as(dm.Image).size)
+        elif self.point_size_base != PointSizeBase.GROUP_BBOX_SIZE:
+            raise AssertionError(f"Unknown point size base {self.point_size_base}")
 
         matcher = KeypointsMatcher(instance_map=instance_map, sigma=self.oks_sigma, scale=scale)
 

@@ -814,16 +814,17 @@ class QualityRequirementSerializer(serializers.ModelSerializer):
                 for points and skeletons, it's the OKS threshold.
             """,
             "point_size_base": """
-                When comparing point annotations (including both separate points and point groups),
+                When comparing point groups, skeletons, and skeleton keypoints,
                 the point size parameter defines matching area for each GT point based to the
                 object size. The point size base parameter allows to configure how to determine
-                the object size.
+                the object size. Single points without a group are always compared
+                using the image size.
                 If {image_size}, the image size is used. Useful if each point
                 annotation represents a separate object or boxes grouped with points do not
                 represent object boundaries.
                 If {group_bbox_size}, the object size is based on
-                the point group bbox size. Useful if each point group represents an object
-                or there is a bbox grouped with points, representing the object size.
+                the point group or skeleton bbox size. Useful if each point group represents
+                an object or there is a bbox grouped with points, representing the object size.
             """.format(
                 image_size=models.PointSizeBase.IMAGE_SIZE,
                 group_bbox_size=models.PointSizeBase.GROUP_BBOX_SIZE,
