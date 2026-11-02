@@ -2,6 +2,8 @@
 #
 # SPDX-License-Identifier: MIT
 
+import ctypes
+
 import attrs
 import PIL.Image
 
@@ -38,3 +40,10 @@ class VideoFrame:
                 ),
             ),
         ).convert("RGB")
+
+
+@attrs.frozen
+class LibraryInfo:
+    library_path: str
+    version: tuple[int, int, int]
+    library: ctypes.CDLL = attrs.field(repr=False, eq=False)
