@@ -6,6 +6,7 @@ import PluginRegistry from '../plugins';
 import serverProxy from '../server-proxy';
 import { fieldsToCamelCase, fieldsToSnakeCase } from '../common';
 import { CamelizedV2 } from '../type-utils';
+import { normalizeThresholdPolicy } from './threshold-policy';
 import {
     SerializedEffectiveQualityRequirementData,
     SerializedQualityRequirementAttributeComparison,
@@ -15,11 +16,16 @@ import {
     QualityRequirementJsonLogicFilter,
     QualityRequirementMetric,
     QualityRequirementPointSizeBase,
+    SimilarityThresholdPolicy,
 } from './server-response-types';
 
-export type QualityRequirementSaveFields = CamelizedV2<SerializedQualityRequirementSaveData>;
+export type QualityRequirementSaveFields = CamelizedV2<
+    Omit<SerializedQualityRequirementSaveData, 'iou_threshold'>
+> & { iouThreshold?: number | SimilarityThresholdPolicy | null };
 
-export type QualityRequirementEffectiveData = CamelizedV2<SerializedEffectiveQualityRequirementData>;
+export type QualityRequirementEffectiveData = CamelizedV2<
+    Omit<SerializedEffectiveQualityRequirementData, 'iou_threshold'>
+> & { iouThreshold?: number | SimilarityThresholdPolicy | null };
 
 export default class QualityRequirement {
     #id: number;
@@ -36,7 +42,7 @@ export default class QualityRequirement {
     #requiredScore: number | null;
     #parentRequirementId: number | null;
     #effective: QualityRequirementEffectiveData | null;
-    #iouThreshold: number | null;
+    #iouThreshold: number | SimilarityThresholdPolicy | null;
     #pointSize: number | null;
     #pointSizeBase: QualityRequirementPointSizeBase | null;
     #lineThickness: number | null;
@@ -66,7 +72,13 @@ export default class QualityRequirement {
         this.#requiredScore = initialData.required_score;
         this.#parentRequirementId = initialData.parent_requirement;
         this.#effective = initialData.effective ? fieldsToCamelCase(initialData.effective) : null;
-        this.#iouThreshold = initialData.iou_threshold;
+        if (this.#effective?.iouThreshold && typeof this.#effective.iouThreshold === 'object') {
+            this.#effective.iouThreshold = normalizeThresholdPolicy(
+                this.#effective.iouThreshold,
+            );
+        }
+        this.#iouThreshold = initialData.iou_threshold && typeof initialData.iou_threshold === 'object' ?
+            normalizeThresholdPolicy(initialData.iou_threshold) : initialData.iou_threshold;
         this.#pointSize = initialData.point_size;
         this.#pointSizeBase = initialData.point_size_base;
         this.#lineThickness = initialData.line_thickness;
@@ -138,7 +150,7 @@ export default class QualityRequirement {
         return this.#effective;
     }
 
-    get iouThreshold(): number | null {
+    get iouThreshold(): number | SimilarityThresholdPolicy | null {
         return this.#iouThreshold;
     }
 
@@ -218,6 +230,9 @@ Object.defineProperties(QualityRequirement.create, {
             fields: QualityRequirementSaveFields,
         ): Promise<QualityRequirement> {
             const data = fieldsToSnakeCase(fields);
+            if (data.iou_threshold && typeof data.iou_threshold === 'object') {
+                data.iou_threshold = normalizeThresholdPolicy(data.iou_threshold);
+            }
             const result = await serverProxy.analytics.quality.requirements.create(data);
             return new QualityRequirement(result);
         },
@@ -232,6 +247,9 @@ Object.defineProperties(QualityRequirement.prototype.save, {
             fields: Parameters<typeof QualityRequirement.prototype.save>[0],
         ): Promise<QualityRequirement> {
             const data = fieldsToSnakeCase(fields);
+            if (data.iou_threshold && typeof data.iou_threshold === 'object') {
+                data.iou_threshold = normalizeThresholdPolicy(data.iou_threshold);
+            }
             const result = await serverProxy.analytics.quality.requirements.update(this.id, data);
 
             return new QualityRequirement(result);

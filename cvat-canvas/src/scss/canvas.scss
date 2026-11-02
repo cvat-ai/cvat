@@ -476,7 +476,7 @@ g.cvat_canvas_shape_occluded {
 }
 
 .cvat-canvas-highlight-enabled {
-    svg {
+    #cvat_canvas_content {
         >rect:not(.cvat_canvas_issue_region,.cvat_canvas_conflicted,.cvat_canvas_warned),
         >ellipse:not(.cvat_canvas_issue_region,.cvat_canvas_conflicted,.cvat_canvas_warned),
         >polygon:not(.cvat_canvas_issue_region,.cvat_canvas_conflicted,.cvat_canvas_warned),

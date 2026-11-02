@@ -74,18 +74,25 @@ def oks(a, b, sigma=0.1, bbox=None, scale=None, visibility_a=None, visibility_b=
 
 @define(kw_only=True)
 class KeypointsMatcher(datumaro.components.annotations.matcher.PointsMatcher):
-    def distance(self, a: dm.Points, b: dm.Points) -> float:
-        a_bbox = self.instance_map[id(a)][1]
-        b_bbox = self.instance_map[id(b)][1]
-        if datumaro.util.annotation_util.bbox_iou(a_bbox, b_bbox) <= 0:
-            return 0
+    scale: float | None = None
+    "If set, used as the OKS scale instead of the instance bbox area"
 
-        bbox = datumaro.util.annotation_util.mean_bbox([a_bbox, b_bbox])
+    def distance(self, a: dm.Points, b: dm.Points) -> float:
+        bbox = None
+        if not self.scale:
+            a_bbox = self.instance_map[id(a)][1]
+            b_bbox = self.instance_map[id(b)][1]
+            if datumaro.util.annotation_util.bbox_iou(a_bbox, b_bbox) <= 0:
+                return 0
+
+            bbox = datumaro.util.annotation_util.mean_bbox([a_bbox, b_bbox])
+
         return oks(
             a,
             b,
             sigma=self.sigma,
             bbox=bbox,
+            scale=self.scale,
             visibility_a=[v == dm.Points.Visibility.visible for v in a.visibility],
             visibility_b=[v == dm.Points.Visibility.visible for v in b.visibility],
         )
@@ -289,12 +296,14 @@ class DistanceComparator(datumaro.components.comparator.DistanceComparator):
         panoptic_comparison: bool = False,
         allow_groups: bool = True,
         attribute_matcher: AttributeMatchingFunction | None = None,
+        gt_threshold: Callable[[Sequence[dm.Annotation]], float] | None = None,
     ):
         super().__init__(iou_threshold=iou_threshold)
         if return_distances and return_comparisons:
             raise ValueError("Pairwise distances and comparisons cannot be returned together")
 
         self.categories = categories
+        self.gt_threshold = gt_threshold
         self._skeleton_info = {}
         self.included_ann_types = included_ann_types
         self.return_distances = return_distances
@@ -467,11 +476,25 @@ class DistanceComparator(datumaro.components.comparator.DistanceComparator):
             if label_matcher:
                 extra_args["label_matcher"] = label_matcher
 
+            threshold = dist_thresh if dist_thresh is not None else self.iou_threshold
+            if (
+                self.gt_threshold
+                and dist_thresh is None
+                and t
+                in {
+                    dm.AnnotationType.bbox,
+                    dm.AnnotationType.polygon,
+                    dm.AnnotationType.mask,
+                    dm.AnnotationType.ellipse,
+                }
+            ):
+                threshold = lambda a: self.gt_threshold(a_annotations_getter(a))
+
             returned_values = match_segments(
                 a_objs,
                 b_objs,
                 distance=lambda a, b: compare(a, b).similarity,
-                dist_thresh=dist_thresh if dist_thresh is not None else self.iou_threshold,
+                dist_thresh=threshold,
                 **extra_args,
             )
 
@@ -882,7 +905,13 @@ class DistanceComparator(datumaro.components.comparator.DistanceComparator):
                 for ann in instance_group:
                     instance_map[id(ann)] = [instance_group, instance_bbox]
 
-        matcher = KeypointsMatcher(instance_map=instance_map, sigma=self.oks_sigma)
+        scale = None
+        if self.point_size_base == PointSizeBase.IMAGE_SIZE:
+            scale = np.prod(item_a.media_as(dm.Image).size)
+        elif self.point_size_base != PointSizeBase.GROUP_BBOX_SIZE:
+            raise AssertionError(f"Unknown point size base {self.point_size_base}")
+
+        matcher = KeypointsMatcher(instance_map=instance_map, sigma=self.oks_sigma, scale=scale)
 
         results = self.match_segments(
             dm.AnnotationType.points,
@@ -1015,6 +1044,7 @@ class Comparator:
         *,
         settings: ComparisonParameters,
         attribute_matcher: AttributeMatchingFunction | None = None,
+        gt_threshold: Callable[[Sequence[dm.Annotation]], float] | None = None,
     ):
         self.ignored_attrs = set(settings.ignored_attributes) | self.IGNORED_ATTRIBUTES
         self.included_ann_types = settings.included_annotation_types
@@ -1031,6 +1061,7 @@ class Comparator:
             compare_line_orientation=settings.compare_line_orientation,
             line_orientation_threshold=settings.line_orientation_threshold,
             attribute_matcher=attribute_matcher if settings.compare_attributes else None,
+            gt_threshold=gt_threshold,
         )
         self.coverage_threshold = settings.object_visibility_threshold
         self.group_match_threshold = settings.group_match_threshold

@@ -466,7 +466,7 @@ class QualityRequirement(TimestampedModel):
         "self", on_delete=models.DO_NOTHING, null=True, blank=True, related_name="children"
     )
 
-    iou_threshold = models.FloatField(null=True, blank=True)
+    iou_threshold = models.JSONField(null=True, blank=True)
     oks_sigma = models.FloatField(null=True, blank=True)
     line_thickness = models.FloatField(null=True, blank=True)
 
