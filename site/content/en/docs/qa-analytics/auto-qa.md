@@ -496,6 +496,50 @@ Save the settings after editing them. Changes apply when the next quality report
 calculated; they do not alter existing reports. Open the **Requirements** tab to see the results.
 A requirement passes when its score meets or exceeds its threshold.
 
+##### Interpolated annotation similarity thresholds
+
+Use interpolation when small and large objects need different matching thresholds.
+To evaluate them together, use one requirement and remove area filters that were used
+only to select different thresholds. Filters still apply to both annotation sets and
+can exclude candidates before matching.
+
+Rectangle, polygon, mask, and ellipse requirements offer two IoU threshold modes:
+
+- **Constant** uses one threshold for every object and is the default.
+- **Linear interpolation** uses the area of the original ground-truth shape in px² to
+  choose a threshold. The graph connects neighboring key points with straight lines.
+
+GT shapes with areas outside the interpolated regions take their threshold from the nearest point.
+For example, a zero-area shape gets the threshold from the first point.
+
+For example, points at **100 px² / 40%** and **1000 px² / 90%** give a threshold of **65%**
+for a GT shape of **550 px²**. The area is determined only by the GT annotations.
+
+![IoU threshold interpolation from 40% at 100 px² to 90% at 1000 px²](/images/iou-threshold-interpolation.png)
+
+Hover over the graph to see the area and its calculated threshold. Left-click an empty
+position to add a point, hold the left mouse button on a point to drag it, or right-click
+a point to delete it. The table below the graph provides numerical editing, search by
+area or IoU, and add/delete controls. Use the arrows inside a numerical field to increase
+or decrease its value. Selecting a point on the graph opens its table page.
+Values are displayed with up to two decimal places, and numerical input accepts at most two
+decimal places. Opening or focusing a field preserves the precision of an existing policy.
+Invalid values are explained below their fields and must be corrected before saving.
+**Undo** restores the preceding edit in this curve editor only; its tooltip describes the
+action and the button is disabled when there is nothing to undo. **Fit** shows the whole curve.
+Switching modes preserves both drafts while the form remains open and saves the active mode.
+
+![IoU curve editor with graph and an editable table of key points](/images/iou-threshold-editor.png)
+
+Interpolation requires 2–200 points with unique positive areas and thresholds from 0 to 100%.
+Child requirements inherit the whole policy and can override it or revert to their parent.
+
+Areas are measured before panoptic comparison. When polygon or mask parts are compared
+as one object, their union determines its area. Ellipse areas use the same rotated,
+rasterized geometry as their mask-based IoU comparison.
+
+Polylines and OKS keep their existing constant thresholds.
+
 ### Quality target metrics
 
 The target metric determines what a requirement measures. CVAT matches annotations against
@@ -642,7 +686,9 @@ Each shape type can have their own spatial matching details. Specifically:
   determined by the _object size_ (bounding box side) and _Point size_ values,
   where this point can be matched. If a bounding box is grouped
   with the skeleton, it is used for object size computation, otherwise a bounding box of
-  visible points of the skeleton is used.
+  visible points of the skeleton is used. If the _Point size base_ setting is _Image size_,
+  the image size is used as the object size instead, which can be useful for skeletons
+  with few visible points.
   The exact formulas are described in [Point matching](#point-matching).
 - points - The OKS metric is used for each point group annotation. Same as for skeletons,
   _Point size_ determines relative point sizes. The _Point size base_ setting allows
@@ -679,12 +725,12 @@ where:
 - `s` is the object size, in pixels, computed as `sqrt(object area)`
 - `sigma` is the _Point size_ value, a fraction of the object size
 
-The object area depends on the annotation type:
-- for skeletons, it's the area of the mean bounding box of the compared GT and checked skeletons
-- for points and skeleton keypoints, it depends on the _Point size base_ setting:
-  _Image size_ - the image area, _Group bbox size_ - the area of the mean bounding box
+The object area depends on the _Point size base_ setting:
+- _Image size_ - the image area
+- _Group bbox size_ - the area of the mean bounding box
   of the compared GT and checked objects (point groups or skeletons).
-  Single points without a group are always compared in the image space.
+
+Single points without a group are always compared in the image space.
 
 The bounding box of an object is the bounding box of all its visible parts,
 including the grouped bounding boxes, if any. When the object bounding boxes are used,

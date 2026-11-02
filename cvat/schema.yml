@@ -9199,6 +9199,11 @@ components:
         * `update:project` - UPDATE:PROJECT
         * `update:task` - UPDATE:TASK
         * `update:user` - UPDATE:USER
+    ExtrapolationEnum:
+      enum:
+      - clamp
+      type: string
+      description: '* `clamp` - clamp'
     FileInfo:
       type: object
       properties:
@@ -9412,6 +9417,11 @@ components:
       - ground_truth
       type: string
       description: '* `ground_truth` - GROUND_TRUTH'
+    InputEnum:
+      enum:
+      - gt.shape_area
+      type: string
+      description: '* `gt.shape_area` - gt.shape_area'
     InputTypeEnum:
       enum:
       - checkbox
@@ -11271,16 +11281,14 @@ components:
           description: The parent requirement. Child requirements inherit comparison
             settings from it.
         iou_threshold:
-          type: number
-          format: double
-          maximum: 1
-          minimum: 0
+          oneOf:
+          - type: number
+            minimum: 0
+            maximum: 1
+          - $ref: '#/components/schemas/SimilarityThresholdPolicyRequest'
           nullable: true
-          description: |
-            The overlap threshold used for distinction between matched / unmatched objects.
-            The specific meaning can vary depending on the shape type:
-            for rectangles, polygons, ellipses, lines and masks it's the IoU threshold;
-            for points and skeletons, it's the OKS threshold.
+          description: A constant threshold or an IoU policy by GT shape area (rectangle,
+            polygon, mask, ellipse). Null inherits the whole threshold from the parent.
         point_size:
           type: number
           format: double
@@ -12172,16 +12180,14 @@ components:
           type: object
           readOnly: true
         iou_threshold:
-          type: number
-          format: double
-          maximum: 1
-          minimum: 0
+          oneOf:
+          - type: number
+            minimum: 0
+            maximum: 1
+          - $ref: '#/components/schemas/SimilarityThresholdPolicy'
           nullable: true
-          description: |
-            The overlap threshold used for distinction between matched / unmatched objects.
-            The specific meaning can vary depending on the shape type:
-            for rectangles, polygons, ellipses, lines and masks it's the IoU threshold;
-            for points and skeletons, it's the OKS threshold.
+          description: A constant threshold or an IoU policy by GT shape area (rectangle,
+            polygon, mask, ellipse). Null inherits the whole threshold from the parent.
         point_size:
           type: number
           format: double
@@ -12346,16 +12352,14 @@ components:
           description: Required for root requirements and forbidden for nested requirements.
             Must identify an existing requirement from the selected quality settings.
         iou_threshold:
-          type: number
-          format: double
-          maximum: 1
-          minimum: 0
+          oneOf:
+          - type: number
+            minimum: 0
+            maximum: 1
+          - $ref: '#/components/schemas/SimilarityThresholdPolicyRequest'
           nullable: true
-          description: |
-            The overlap threshold used for distinction between matched / unmatched objects.
-            The specific meaning can vary depending on the shape type:
-            for rectangles, polygons, ellipses, lines and masks it's the IoU threshold;
-            for points and skeletons, it's the OKS threshold.
+          description: A constant threshold or an IoU policy by GT shape area (rectangle,
+            polygon, mask, ellipse). Null inherits the whole threshold from the parent.
         point_size:
           type: number
           format: double
@@ -12547,16 +12551,14 @@ components:
           description: The parent requirement. Child requirements inherit comparison
             settings from it.
         iou_threshold:
-          type: number
-          format: double
-          maximum: 1
-          minimum: 0
+          oneOf:
+          - type: number
+            minimum: 0
+            maximum: 1
+          - $ref: '#/components/schemas/SimilarityThresholdPolicy'
           nullable: true
-          description: |
-            The overlap threshold used for distinction between matched / unmatched objects.
-            The specific meaning can vary depending on the shape type:
-            for rectangles, polygons, ellipses, lines and masks it's the IoU threshold;
-            for points and skeletons, it's the OKS threshold.
+          description: A constant threshold or an IoU policy by GT shape area (rectangle,
+            polygon, mask, ellipse). Null inherits the whole threshold from the parent.
         point_size:
           type: number
           format: double
@@ -12723,16 +12725,14 @@ components:
           description: The parent requirement. Child requirements inherit comparison
             settings from it.
         iou_threshold:
-          type: number
-          format: double
-          maximum: 1
-          minimum: 0
+          oneOf:
+          - type: number
+            minimum: 0
+            maximum: 1
+          - $ref: '#/components/schemas/SimilarityThresholdPolicyRequest'
           nullable: true
-          description: |
-            The overlap threshold used for distinction between matched / unmatched objects.
-            The specific meaning can vary depending on the shape type:
-            for rectangles, polygons, ellipses, lines and masks it's the IoU threshold;
-            for points and skeletons, it's the OKS threshold.
+          description: A constant threshold or an IoU policy by GT shape area (rectangle,
+            polygon, mask, ellipse). Null inherits the whole threshold from the parent.
         point_size:
           type: number
           format: double
@@ -12891,16 +12891,14 @@ components:
           description: The parent requirement. Child requirements inherit comparison
             settings from it.
         iou_threshold:
-          type: number
-          format: double
-          maximum: 1
-          minimum: 0
+          oneOf:
+          - type: number
+            minimum: 0
+            maximum: 1
+          - $ref: '#/components/schemas/SimilarityThresholdPolicyRequest'
           nullable: true
-          description: |
-            The overlap threshold used for distinction between matched / unmatched objects.
-            The specific meaning can vary depending on the shape type:
-            for rectangles, polygons, ellipses, lines and masks it's the IoU threshold;
-            for points and skeletons, it's the OKS threshold.
+          description: A constant threshold or an IoU policy by GT shape area (rectangle,
+            polygon, mask, ellipse). Null inherits the whole threshold from the parent.
         point_size:
           type: number
           format: double
@@ -13360,6 +13358,139 @@ components:
         * `cuboid` - CUBOID
         * `mask` - MASK
         * `skeleton` - SKELETON
+    SimilarityThresholdPolicy:
+      type: object
+      description: |-
+        An IoU threshold policy for rectangle, polygon, mask, and ellipse requirements.
+
+        The `iou_threshold` field also accepts a finite number between 0 and 1, such as `0.7`.
+        Existing numeric thresholds are returned as numbers.
+
+        A constant policy uses one threshold for all shapes:
+
+        ```json
+        {"type": "iou", "mode": "constant", "value": 0.7}
+        ```
+
+        A linear policy chooses a threshold from the GT shape area in px²:
+
+        ```json
+        {
+          "type": "iou",
+          "mode": "linear",
+          "input": "gt.shape_area",
+          "extrapolation": "clamp",
+          "points": [{"x": 100, "y": 0.4}, {"x": 1000, "y": 0.9}]
+        }
+        ```
+
+        Linear policies require 2-200 points with unique positive areas sorted in ascending order
+        and thresholds between 0 and 1. Outside the curve, the nearest endpoint applies.
+        Policies without `type` are accepted as IoU for compatibility; responses include it.
+        Other threshold types are not supported.
+
+        Setting a child's threshold to `null` restores inheritance of the whole threshold.
+        Root requirements cannot inherit their threshold.
+      properties:
+        type:
+          allOf:
+          - $ref: '#/components/schemas/SimilarityThresholdPolicyTypeEnum'
+          description: |-
+            Threshold type. Omitted type is accepted as IoU for compatibility; responses always include it.
+
+            * `iou` - iou
+        mode:
+          $ref: '#/components/schemas/SimilarityThresholdPolicyModeEnum'
+        value:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+        input:
+          $ref: '#/components/schemas/InputEnum'
+        extrapolation:
+          $ref: '#/components/schemas/ExtrapolationEnum'
+        points:
+          type: array
+          items:
+            $ref: '#/components/schemas/ThresholdPolicyPoint'
+          description: 'Required in linear mode: 2-200 points sorted by unique positive
+            GT area.'
+      required:
+      - mode
+    SimilarityThresholdPolicyModeEnum:
+      enum:
+      - constant
+      - linear
+      type: string
+      description: |-
+        * `constant` - constant
+        * `linear` - linear
+    SimilarityThresholdPolicyRequest:
+      type: object
+      description: |-
+        An IoU threshold policy for rectangle, polygon, mask, and ellipse requirements.
+
+        The `iou_threshold` field also accepts a finite number between 0 and 1, such as `0.7`.
+        Existing numeric thresholds are returned as numbers.
+
+        A constant policy uses one threshold for all shapes:
+
+        ```json
+        {"type": "iou", "mode": "constant", "value": 0.7}
+        ```
+
+        A linear policy chooses a threshold from the GT shape area in px²:
+
+        ```json
+        {
+          "type": "iou",
+          "mode": "linear",
+          "input": "gt.shape_area",
+          "extrapolation": "clamp",
+          "points": [{"x": 100, "y": 0.4}, {"x": 1000, "y": 0.9}]
+        }
+        ```
+
+        Linear policies require 2-200 points with unique positive areas sorted in ascending order
+        and thresholds between 0 and 1. Outside the curve, the nearest endpoint applies.
+        Policies without `type` are accepted as IoU for compatibility; responses include it.
+        Other threshold types are not supported.
+
+        Setting a child's threshold to `null` restores inheritance of the whole threshold.
+        Root requirements cannot inherit their threshold.
+      properties:
+        type:
+          allOf:
+          - $ref: '#/components/schemas/SimilarityThresholdPolicyTypeEnum'
+          description: |-
+            Threshold type. Omitted type is accepted as IoU for compatibility; responses always include it.
+
+            * `iou` - iou
+        mode:
+          $ref: '#/components/schemas/SimilarityThresholdPolicyModeEnum'
+        value:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+        input:
+          $ref: '#/components/schemas/InputEnum'
+        extrapolation:
+          $ref: '#/components/schemas/ExtrapolationEnum'
+        points:
+          type: array
+          items:
+            $ref: '#/components/schemas/ThresholdPolicyPointRequest'
+          description: 'Required in linear mode: 2-200 points sorted by unique positive
+            GT area.'
+      required:
+      - mode
+    SimilarityThresholdPolicyTypeEnum:
+      enum:
+      - iou
+      type: string
+      description: '* `iou` - iou'
     SortingMethod:
       enum:
       - lexicographical
@@ -13941,6 +14072,38 @@ components:
           type: string
           format: uri
           readOnly: true
+    ThresholdPolicyPoint:
+      type: object
+      properties:
+        x:
+          type: number
+          format: double
+          minimum: 0
+          description: Finite GT shape area in px², strictly greater than zero.
+        y:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+      required:
+      - x
+      - y
+    ThresholdPolicyPointRequest:
+      type: object
+      properties:
+        x:
+          type: number
+          format: double
+          minimum: 0
+          description: Finite GT shape area in px², strictly greater than zero.
+        y:
+          type: number
+          format: double
+          maximum: 1
+          minimum: 0
+      required:
+      - x
+      - y
     Token:
       type: object
       description: Serializer for Token model.

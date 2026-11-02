@@ -46,7 +46,7 @@ Pillow>=12.3.0
 pottery~=3.0
 psutil==7.2.2
 psycopg2-binary~=2.9
-python-ldap==3.4.7
+python-ldap==3.4.8
 python-logstash-async==4.1.0
 python-rapidjson>=1.20
 redis~=8.1

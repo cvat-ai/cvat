@@ -16,6 +16,7 @@ from cvat.apps.quality_control.backends.datumaro.matching import (
     DistanceComparator,
 )
 from cvat.apps.quality_control.comparison_report import ComparisonParameters
+from cvat.apps.quality_control.matching import match_segments
 from cvat.apps.quality_control.models import PointSizeBase
 
 
@@ -64,6 +65,41 @@ def _match_attributes(
 
 
 class TestComparator(unittest.TestCase):
+    def test_zero_iou_is_not_matched_at_a_zero_threshold(self):
+        matches, mismatches, missing, extra = match_segments(
+            [0],
+            [0],
+            distance=lambda a, b: 0,
+            dist_thresh=lambda a: 0,
+            label_matcher=lambda a, b: True,
+        )
+        self.assertEqual((matches, mismatches, missing, extra), ([], [], [0], [0]))
+
+    def test_individual_thresholds_are_applied_before_assignment(self):
+        similarities = [[0.89, 0.6], [0.91, 0.89]]
+        matches, mismatches, missing, extra = match_segments(
+            [0, 1],
+            [0, 1],
+            distance=lambda a, b: similarities[a][b],
+            dist_thresh=lambda a: [0.4, 0.9][a],
+            label_matcher=lambda a, b: True,
+        )
+        self.assertEqual(matches, [(0, 1), (1, 0)])
+        self.assertFalse(mismatches or missing or extra)
+
+    def test_individual_thresholds_follow_gt_in_the_second_label_pass(self):
+        matches, mismatches, missing, extra = match_segments(
+            [0, 1],
+            [0, 1],
+            distance=lambda a, b: 0.6 if a == b else 0,
+            dist_thresh=lambda a: [0.4, 0.9][a],
+            label_matcher=lambda a, b: a == b == 1,
+        )
+        self.assertEqual(matches, [])
+        self.assertEqual(mismatches, [(0, 0)])
+        self.assertEqual(missing, [1])
+        self.assertEqual(extra, [1])
+
     @staticmethod
     def _make_comparator() -> Comparator:
         return Comparator(
@@ -166,6 +202,42 @@ class TestComparator(unittest.TestCase):
         self.assertFalse(group_bbox_results[0])
         self.assertEqual(len(group_bbox_results[2]), 2)
         self.assertEqual(len(group_bbox_results[3]), 2)
+
+    def test_image_size_point_base_matches_skeletons_without_bbox_overlap(self) -> None:
+        label_cat = dm.LabelCategories()
+        label_cat.add("skeleton")
+        label_cat.add("p1", parent="skeleton")
+        label_cat.add("p2", parent="skeleton")
+        categories = {dm.AnnotationType.label: label_cat}
+
+        def _make_skeleton(*points: tuple[float, float]) -> dm.Skeleton:
+            return dm.Skeleton(
+                [
+                    dm.Points(list(p), label=label_id, visibility=[dm.Points.Visibility.visible])
+                    for label_id, p in enumerate(points, start=1)
+                ],
+                label=0,
+            )
+
+        for gt_skeleton, ds_skeleton in [
+            # single visible point
+            (_make_skeleton((10, 10)), _make_skeleton((11, 11))),
+            # parallel axis-aligned lines
+            (_make_skeleton((10, 10), (10, 50)), _make_skeleton((11, 10), (11, 50))),
+        ]:
+            with self.subTest(gt=gt_skeleton.elements):
+                comparator = DistanceComparator(
+                    categories,
+                    included_ann_types=[dm.AnnotationType.skeleton],
+                    point_size_base=PointSizeBase.IMAGE_SIZE,
+                )
+                matches, _, gt_unmatched, ds_unmatched = comparator.match_skeletons(
+                    _make_image_item(gt_skeleton), _make_image_item(ds_skeleton)
+                )
+
+                self.assertEqual(matches, [(gt_skeleton, ds_skeleton)])
+                self.assertFalse(gt_unmatched)
+                self.assertFalse(ds_unmatched)
 
     def test_attributes_affect_matching_and_pairwise_diagnostics(self) -> None:
         settings = ComparisonParameters()
