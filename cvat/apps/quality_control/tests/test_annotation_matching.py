@@ -250,10 +250,13 @@ class TestComparator(unittest.TestCase):
             with self.subTest(gt=gt_skeleton.elements):
                 comparator = DistanceComparator(
                     categories,
-                    included_ann_types=[dm.AnnotationType.skeleton],
-                    point_size_base=PointSizeBase.IMAGE_SIZE,
+                    settings=ComparisonParameters(
+                        annotation_type=dm.AnnotationType.skeleton,
+                        similarity_metric=ShapeSimilarityMetricType.OKS,
+                        point_size_base=PointSizeBase.IMAGE_SIZE,
+                    ),
                 )
-                matches, _, gt_unmatched, ds_unmatched = comparator.match_skeletons(
+                matches, _, gt_unmatched, ds_unmatched, _ = comparator.match_skeletons(
                     _make_image_item(gt_skeleton), _make_image_item(ds_skeleton)
                 )
 

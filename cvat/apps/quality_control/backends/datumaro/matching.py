@@ -1472,7 +1472,9 @@ class DistanceComparator:
         elif self.settings.point_size_base != PointSizeBase.GROUP_BBOX_SIZE:
             raise AssertionError(f"Unknown point size base {self.settings.point_size_base}")
 
-        matcher = KeypointsMatcher(instance_map=instance_map, sigma=self.settings.oks_sigma, scale=scale)
+        matcher = KeypointsMatcher(
+            instance_map=instance_map, sigma=self.settings.oks_sigma, scale=scale
+        )
 
         results = self.match_segments(
             dm.AnnotationType.points,
