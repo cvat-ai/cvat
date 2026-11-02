@@ -27,7 +27,7 @@ const componentShortcuts: Record<string, KeyMapItem> = {
     TOGGLE_CAMERA_RAY: {
         name: 'Pick/clear camera ray',
         description: 'Pick a calibrated related-image point or clear the current 3D camera ray',
-        sequences: ['alt+r'],
+        sequences: ['shift+b'],
         scope: ShortcutScope['3D_ANNOTATION_WORKSPACE_CONTROLS'],
     },
 };
