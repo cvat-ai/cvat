@@ -146,6 +146,16 @@ jobs:
         run: |
           pip3 install -e ./cvat-sdk -e ./cvat-cli -e ./cvat-mp4-h264 -r ./tests/python/requirements.txt
 
+      - name: Download OpenH264
+        env:
+          OPENH264_URL: https://ciscobinary.openh264.org/libopenh264-2.6.0-linux64.8.so.bz2
+          OPENH264_SHA256: 27ab53323c110b76214c1c72222f459d17febbcd1e252136cadc292b0308d75b
+        run: |
+          curl -fsSL "${OPENH264_URL}" -o /tmp/libopenh264.so.bz2
+          echo "${OPENH264_SHA256}  /tmp/libopenh264.so.bz2" | sha256sum --check
+          bunzip2 /tmp/libopenh264.so.bz2
+          echo "CVAT_OPENH264_LIBRARY=/tmp/libopenh264.so" >> "${GITHUB_ENV}"
+
       - name: REST API and SDK tests
         run: |
           pytest tests/python --alluredir=tests/python/allure-results
