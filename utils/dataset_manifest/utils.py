@@ -114,6 +114,7 @@ _AnyPath = TypeVar("_AnyPath", bound=PurePath)
 _IMAGE_METADATA_FORMAT = "cvat-image-meta"
 _IMAGE_METADATA_VERSION = 1
 _CAMERA_ROTATION_TOLERANCE = 1e-5
+RELATED_IMAGE_CALIBRATION_MANIFEST_KEY = "related_image_calibration"
 
 
 @dataclass(frozen=True)
@@ -125,7 +126,22 @@ class RelatedImageMetadata:
     extrinsic_matrix: list[float]
 
 
-RelatedImageMetadataLoader: TypeAlias = Callable[[], RelatedImageMetadata | None]
+OpenableGetter: TypeAlias = Callable[[PurePath], NamedOpenable | None]
+"""
+Maps a path to an openable source.
+
+Must return a ``NamedOpenable`` when the path is available in the selected input data, or ``None`` when
+the optional source is absent.
+"""
+
+RelatedImageMetadataLoader: TypeAlias = Callable[[OpenableGetter], RelatedImageMetadata | None]
+"""
+Loads the native calibration candidate for one related image.
+
+The loader owns the format-specific candidate path and obtains its contents through an
+``OpenableGetter``. It returns ``None`` when the candidate is absent or does not declare
+calibration, and raises ``InvalidRelatedImageMetadataError`` for malformed metadata.
+"""
 
 
 def _parse_calibration_matrix(
@@ -240,33 +256,74 @@ def _validate_related_image_metadata(
     )
 
 
+def serialize_related_image_metadata(metadata: RelatedImageMetadata) -> dict[str, list[float]]:
+    return {
+        "intrinsic_matrix": metadata.intrinsic_matrix,
+        "extrinsic_matrix": metadata.extrinsic_matrix,
+    }
+
+
+def load_related_image_metadata_from_manifest(
+    metadata: object,
+    *,
+    manifest_path: PurePath,
+) -> RelatedImageMetadata:
+    if not isinstance(metadata, dict):
+        raise InvalidRelatedImageMetadataError(
+            manifest_path, "the calibration entry in the manifest must be an object"
+        )
+
+    intrinsic_matrix = _parse_flattened_calibration_matrix(
+        metadata.get("intrinsic_matrix"),
+        name="intrinsic_matrix",
+        rows=3,
+        columns=3,
+        sidecar_path=manifest_path,
+    )
+    extrinsic_matrix = _parse_flattened_calibration_matrix(
+        metadata.get("extrinsic_matrix"),
+        name="extrinsic_matrix",
+        rows=3,
+        columns=4,
+        sidecar_path=manifest_path,
+    )
+
+    return _validate_related_image_metadata(
+        intrinsic_matrix,
+        extrinsic_matrix,
+        intrinsic_matrix_name="intrinsic_matrix",
+        extrinsic_matrix_name="extrinsic_matrix",
+        sidecar_path=manifest_path,
+    )
+
+
 def _load_related_image_sidecar(
     sidecar_path: PurePath,
-) -> tuple[Path, dict[str, object]] | None:
-    sidecar_path = Path(sidecar_path)
-    if not sidecar_path.is_file():
+    openable_getter: OpenableGetter,
+) -> dict[str, object] | None:
+    sidecar = openable_getter(sidecar_path)
+    if sidecar is None:
         return None
 
     try:
-        with sidecar_path.open(encoding="utf-8") as sidecar_file:
-            sidecar = json.load(sidecar_file)
+        with sidecar.open("rb") as sidecar_file:
+            sidecar_data = json.load(sidecar_file)
     except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
         raise InvalidRelatedImageMetadataError(sidecar_path, f"could not read parse JSON ({exc})")
 
-    if not isinstance(sidecar, dict):
+    if not isinstance(sidecar_data, dict):
         raise InvalidRelatedImageMetadataError(sidecar_path, "the root value must be an object")
 
-    return sidecar_path, sidecar
+    return sidecar_data
 
 
 def _load_standard_related_image_metadata(
     sidecar_path: PurePath,
+    openable_getter: OpenableGetter,
 ) -> RelatedImageMetadata | None:
-    sidecar_data = _load_related_image_sidecar(sidecar_path)
-    if sidecar_data is None:
+    sidecar = _load_related_image_sidecar(sidecar_path, openable_getter)
+    if sidecar is None:
         return None
-
-    sidecar_path, sidecar = sidecar_data
 
     # replace with jsonschema validation if the schema grows more complex
     if sidecar.get("format") != _IMAGE_METADATA_FORMAT:
@@ -318,12 +375,12 @@ def _load_standard_related_image_metadata(
 
 def _load_sly_related_image_metadata(
     sidecar_path: PurePath,
+    openable_getter: OpenableGetter,
 ) -> RelatedImageMetadata | None:
-    sidecar_data = _load_related_image_sidecar(sidecar_path)
-    if sidecar_data is None:
+    sidecar = _load_related_image_sidecar(sidecar_path, openable_getter)
+    if sidecar is None:
         return None
 
-    sidecar_path, sidecar = sidecar_data
     meta = sidecar.get("meta")
     if meta is None:
         return None
@@ -562,7 +619,7 @@ def find_related_images(
     Returns: a 3-tuple (scene paths, related_images, related_image_metadata)
         scene_paths - a list of scene paths found;
         related_images - a dict {scene path -> [related image paths]}
-        related_image_metadata - a dict {related image path -> metadata loader}
+        related_image_metadata - a dict {related image path -> calibration candidate loader}
     """
 
     if root_path:

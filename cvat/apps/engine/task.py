@@ -8,7 +8,7 @@ import fnmatch
 import itertools
 import os
 import shutil
-from collections.abc import Callable, Iterable, Iterator, Sequence
+from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
 from contextlib import closing
 from copy import deepcopy
 from datetime import datetime, timedelta, timezone
@@ -67,9 +67,12 @@ from utils.dataset_manifest.core import (
 )
 from utils.dataset_manifest.errors import InvalidRelatedImageMetadataError
 from utils.dataset_manifest.utils import (
+    RELATED_IMAGE_CALIBRATION_MANIFEST_KEY,
     RelatedImageMetadata,
     RelatedImageMetadataLoader,
     find_related_images,
+    load_related_image_metadata_from_manifest,
+    serialize_related_image_metadata,
 )
 
 from .cloud_provider import HeaderFirstMediaDownloader
@@ -613,8 +616,31 @@ def _create_task_manifest_based_on_cloud_storage_manifest(
         )
 
         def _add_prefix(properties):
-            file_name = properties["name"]
-            properties["name"] = os.path.join(cloud_storage_manifest_prefix, file_name)
+            properties = dict(properties)
+            properties["name"] = os.path.join(cloud_storage_manifest_prefix, properties["name"])
+
+            metadata = properties.get("meta")
+            if not isinstance(metadata, dict):
+                return properties
+
+            metadata = dict(metadata)
+            related_images = metadata.get("related_images")
+            if isinstance(related_images, list):
+                metadata["related_images"] = [
+                    os.path.join(cloud_storage_manifest_prefix, related_image_path)
+                    for related_image_path in related_images
+                ]
+
+            calibration = metadata.get(RELATED_IMAGE_CALIBRATION_MANIFEST_KEY)
+            if isinstance(calibration, dict):
+                metadata[RELATED_IMAGE_CALIBRATION_MANIFEST_KEY] = {
+                    os.path.join(
+                        cloud_storage_manifest_prefix, related_image_path
+                    ): calibration_metadata
+                    for related_image_path, calibration_metadata in calibration.items()
+                }
+
+            properties["meta"] = metadata
             return properties
 
         content = list(map(_add_prefix, raw_content))
@@ -634,11 +660,12 @@ def _create_task_manifest_based_on_cloud_storage_manifest(
 def _create_task_manifest_from_cloud_data(
     db_storage: models.CloudStorage,
     sorted_media: Sequence[PurePath],
+    metadata_paths: set[str],
     manifest: ImageManifestManager,
 ) -> None:
     dimension = ValidateDimension().detect_dimension_for_paths(sorted_media)
 
-    regular_images, related_images, _ = find_related_images(
+    regular_images, related_images, related_image_metadata_loaders = find_related_images(
         sorted_media,
         # backward compatibility, deprecated in https://github.com/cvat-ai/cvat/pull/9757
         is_scene_path=(lambda p: not "related_images" in p.parts),
@@ -646,6 +673,24 @@ def _create_task_manifest_from_cloud_data(
     sorted_media = [f for f in sorted_media if f in regular_images]
 
     storage_client = db_storage.get_client()
+
+    def get_cloud_storage_openable(path: PurePath):
+        path = os.fspath(path)
+        if path not in metadata_paths:
+            return None
+
+        return storage_client.get_openable(path)
+
+    source_related_image_metadata: dict[PurePath, RelatedImageMetadata] = {}
+    for related_image_path, metadata_loader in related_image_metadata_loaders.items():
+        try:
+            metadata = metadata_loader(get_cloud_storage_openable)
+        except InvalidRelatedImageMetadataError as exc:
+            raise ValidationError(str(exc)) from exc
+
+        if metadata is not None:
+            source_related_image_metadata[related_image_path] = metadata
+
     content_generator = storage_client.bulk_download_to_memory(
         list(map(os.fspath, sorted_media)),
         object_downloader=HeaderFirstMediaDownloader.create(
@@ -655,10 +700,7 @@ def _create_task_manifest_from_cloud_data(
 
     manifest.link(
         sources=content_generator,
-        meta={
-            os.fspath(k): {"related_images": [ri.as_posix() for ri in related_images[k]]}
-            for k in related_images
-        },
+        meta=_build_related_images_manifest_meta(related_images, source_related_image_metadata),
         DIM_3D=(dimension == models.DimensionType.DIM_3D),
         stop=len(sorted_media) - 1,
         data_dir=".",
@@ -691,6 +733,74 @@ def _find_and_filter_related_images(
             for image_path, metadata_loader in related_image_metadata_loaders.items()
         },
     )
+
+
+def _build_related_images_manifest_meta(
+    related_images: Mapping[Any, Sequence[Any]],
+    source_related_image_metadata: Mapping[Any, RelatedImageMetadata],
+) -> dict[str, dict[str, object]]:
+    manifest_meta = {}
+    for scene_path, scene_related_images in related_images.items():
+        related_image_paths = [os.fspath(path) for path in scene_related_images]
+        calibration = {
+            related_image_path: serialize_related_image_metadata(
+                source_related_image_metadata[related_image]
+            )
+            for related_image, related_image_path in zip(scene_related_images, related_image_paths)
+            if related_image in source_related_image_metadata
+        }
+        manifest_meta[os.fspath(scene_path)] = {"related_images": related_image_paths}
+        if calibration:
+            manifest_meta[os.fspath(scene_path)][
+                RELATED_IMAGE_CALIBRATION_MANIFEST_KEY
+            ] = calibration
+
+    return manifest_meta
+
+
+def _load_related_image_metadata_from_manifest(
+    manifest: ImageManifestManager,
+    *,
+    related_images: Mapping[str, Sequence[str]],
+    source_related_image_paths: set[str],
+) -> dict[str, RelatedImageMetadata]:
+    manifest_related_image_metadata: dict[str, RelatedImageMetadata] = {}
+    for _, manifest_entry in manifest:
+        related_image_paths = set(related_images.get(manifest_entry.full_name, []))
+        fallback_paths = related_image_paths - source_related_image_paths
+        if not fallback_paths:
+            continue
+
+        manifest_metadata = manifest_entry.get("meta", {})
+        if not isinstance(manifest_metadata, dict):
+            raise ValidationError(
+                f"Invalid metadata in manifest entry '{manifest_entry.full_name}': expected an object"
+            )
+
+        calibration = manifest_metadata.get(RELATED_IMAGE_CALIBRATION_MANIFEST_KEY)
+        if calibration is None:
+            continue
+        if not isinstance(calibration, dict):
+            raise ValidationError(
+                f"Invalid calibration metadata in manifest entry '{manifest_entry.full_name}': "
+                "expected an object"
+            )
+
+        for related_image_path in fallback_paths:
+            if related_image_path not in calibration:
+                continue
+
+            try:
+                manifest_related_image_metadata[related_image_path] = (
+                    load_related_image_metadata_from_manifest(
+                        calibration[related_image_path],
+                        manifest_path=manifest.manifest.path,
+                    )
+                )
+            except InvalidRelatedImageMetadataError as exc:
+                raise ValidationError(str(exc)) from exc
+
+    return manifest_related_image_metadata
 
 
 def _allocate_honeypots(
@@ -1098,7 +1208,16 @@ def _get_dataset_files_from_manifest(
         case VideoManifestManager():
             return [manifest.video_name]
         case ImageManifestManager():
-            return [image.full_name for _, image in manifest]
+            dataset_files = []
+            for _, image in manifest:
+                dataset_files.append(image.full_name)
+                metadata = image.get("meta", {})
+                if isinstance(metadata, dict):
+                    related_images = metadata.get("related_images", [])
+                    if isinstance(related_images, list):
+                        dataset_files.extend(related_images)
+
+            return list(dict.fromkeys(dataset_files))
         case _:
             raise AssertionError(f"Unexpected manifest type '{type(manifest)}'")
 
@@ -1426,7 +1545,8 @@ def _collect_image_dataset_descriptors(
     upload_dir: Path,
     is_data_in_cloud: bool,
     related_images: dict[str, list[str]],
-) -> tuple[list[models.Image], ImageManifestManager]:
+    source_related_image_metadata: dict[str, RelatedImageMetadata],
+) -> tuple[list[models.Image], ImageManifestManager, dict[str, RelatedImageMetadata]]:
     db_data = db_task.require_data()
 
     manifest = ImageManifestManager(db_data.get_manifest_path())
@@ -1437,13 +1557,26 @@ def _collect_image_dataset_descriptors(
         # or copying them from the attached share (when using copy_data).
         manifest.link(
             sources=extractor.absolute_source_paths,
-            meta={k: {"related_images": related_images[k]} for k in related_images},
+            meta=_build_related_images_manifest_meta(
+                related_images,
+                source_related_image_metadata,
+            ),
             data_dir=upload_dir,
             DIM_3D=(db_task.dimension == models.DimensionType.DIM_3D),
         )
         manifest.create()
+        effective_related_image_metadata = source_related_image_metadata
     else:
         manifest.init_index()
+        manifest_related_image_metadata = _load_related_image_metadata_from_manifest(
+            manifest,
+            related_images=related_images,
+            source_related_image_paths=set(source_related_image_metadata),
+        )
+        effective_related_image_metadata = {
+            **manifest_related_image_metadata,
+            **source_related_image_metadata,
+        }
 
     images: list[models.Image] = []
     for frame_id in extractor.frame_range:
@@ -1482,7 +1615,7 @@ def _collect_image_dataset_descriptors(
             )
         )
 
-    return images, manifest
+    return images, manifest, effective_related_image_metadata
 
 
 def _create_image_task_media_descriptors(
@@ -1493,25 +1626,30 @@ def _create_image_task_media_descriptors(
     upload_dir: Path,
     is_data_in_cloud: bool,
     extractor: IMediaReader,
-    related_images: dict[str, Sequence[dict[str, Any]]],
+    related_images: dict[str, Sequence[str]],
     related_image_metadata_loaders: dict[str, RelatedImageMetadataLoader],
     job_file_mapping: JobFileMapping | None,
 ) -> tuple[list[models.Image], ImageManifestManager, JobFileMapping | None]:
     db_data = db_task.require_data()
 
-    related_image_metadata: dict[str, RelatedImageMetadata] = {}
+    def get_local_openable(path: PurePath):
+        path = upload_dir / path
+        return path if path.is_file() else None
+
+    source_related_image_metadata: dict[str, RelatedImageMetadata] = {}
     for related_image_path, metadata_loader in related_image_metadata_loaders.items():
         try:
-            metadata = metadata_loader()
+            metadata = metadata_loader(get_local_openable)
         except InvalidRelatedImageMetadataError as exc:
             raise ValidationError(str(exc)) from exc
 
         if metadata is not None:
-            related_image_metadata[related_image_path] = metadata
+            source_related_image_metadata[related_image_path] = metadata
 
-    images, manifest = _collect_image_dataset_descriptors(
+    images, manifest, effective_related_image_metadata = _collect_image_dataset_descriptors(
         extractor=extractor,
         related_images=related_images,
+        source_related_image_metadata=source_related_image_metadata,
         upload_dir=upload_dir,
         db_task=db_task,
         is_data_in_cloud=is_data_in_cloud,
@@ -1535,7 +1673,7 @@ def _create_image_task_media_descriptors(
             "data": db_data,
             "path": related_file_path,
         }
-        if metadata := related_image_metadata.get(related_file_path):
+        if metadata := effective_related_image_metadata.get(related_file_path):
             related_file_kwargs.update(
                 intrinsic_matrix=metadata.intrinsic_matrix,
                 extrinsic_matrix=metadata.extrinsic_matrix,
@@ -1800,6 +1938,7 @@ def initialize_task(
                 _create_task_manifest_from_cloud_data(
                     db_storage=db_data.cloud_storage,
                     sorted_media=sorted_media,
+                    metadata_paths=set(itertools.chain.from_iterable(metadata.values())),
                     manifest=manifest,
                 )
 

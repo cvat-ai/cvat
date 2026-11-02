@@ -2220,6 +2220,107 @@ class TaskCloudStorageTestCase(_CloudStorageTestBase):
             [1, 0, 0, 0.2, 0, 1, 0, 0, 0, 0, 1, 1.7],
         )
 
+    def test_create_cached_3d_task_with_calibrated_related_image(self):
+        with zipfile.ZipFile(ASSETS_DIR / "test_pointcloud_pcd.zip") as archive:
+            for entry in archive.infolist():
+                if not entry.is_dir():
+                    self.mock_aws.create_file(entry.filename, archive.read(entry))
+
+        cloud_storage_id = self._create_cloud_storage()
+        task = self._create_task(
+            {"name": "Cached 3D task with calibration"},
+            {
+                "server_files[0]": "test_pointcloud_pcd/",
+                "image_quality": 100,
+                "cloud_storage_id": cloud_storage_id,
+                "use_cache": True,
+            },
+        )
+
+        db_data = Task.objects.get(pk=task["id"]).require_data()
+        self.assertEqual(db_data.storage_method, StorageMethodChoice.CACHE)
+        self.assertFalse(
+            (
+                db_data.get_upload_dirname()
+                / "test_pointcloud_pcd/related_images/000001_pcd/000001.png.json"
+            ).exists()
+        )
+        related_file = RelatedFile.objects.get(
+            data=db_data,
+            path="test_pointcloud_pcd/related_images/000001_pcd/000001.png",
+        )
+        self.assertEqual(
+            related_file.intrinsic_matrix,
+            [721.5, 0, 609.6, 0, 721.5, 172.9, 0, 0, 1],
+        )
+        self.assertEqual(
+            related_file.extrinsic_matrix,
+            [1, 0, 0, 0.2, 0, 1, 0, 0, 0, 0, 1, 1.7],
+        )
+        manifest = ImageManifestManager(db_data.get_manifest_path())
+        manifest_entry = next(iter(manifest))[1]
+        self.assertEqual(
+            manifest_entry["meta"]["related_image_calibration"][
+                "test_pointcloud_pcd/related_images/000001_pcd/000001.png"
+            ],
+            {
+                "intrinsic_matrix": [721.5, 0, 609.6, 0, 721.5, 172.9, 0, 0, 1],
+                "extrinsic_matrix": [1, 0, 0, 0.2, 0, 1, 0, 0, 0, 0, 1, 1.7],
+            },
+        )
+
+    def test_create_cached_3d_task_with_calibration_from_manifest(self):
+        with zipfile.ZipFile(ASSETS_DIR / "test_pointcloud_pcd.zip") as archive:
+            for entry in archive.infolist():
+                if not entry.is_dir() and not entry.filename.endswith(".json"):
+                    self.mock_aws.create_file(entry.filename, archive.read(entry))
+
+        related_image_path = "test_pointcloud_pcd/related_images/000001_pcd/000001.png"
+        calibration = {
+            "intrinsic_matrix": [721.5, 0, 609.6, 0, 721.5, 172.9, 0, 0, 1],
+            "extrinsic_matrix": [1, 0, 0, 0.2, 0, 1, 0, 0, 0, 0, 1, 1.7],
+        }
+        self.mock_aws.create_file(
+            "manifest.jsonl",
+            "\n".join(
+                json.dumps(entry, separators=(",", ":"))
+                for entry in (
+                    {"version": "1.1"},
+                    {"type": "images"},
+                    {
+                        "name": "test_pointcloud_pcd/pointcloud/000001",
+                        "extension": ".pcd",
+                        "width": 100,
+                        "height": 1,
+                        "meta": {
+                            "related_images": [related_image_path],
+                            "related_image_calibration": {related_image_path: calibration},
+                        },
+                    },
+                )
+            ).encode(),
+        )
+
+        cloud_storage_id = self._create_cloud_storage()
+        task = self._create_task(
+            {"name": "Cached 3D task with manifest calibration"},
+            {
+                "server_files[0]": "manifest.jsonl",
+                "image_quality": 100,
+                "cloud_storage_id": cloud_storage_id,
+                "use_cache": True,
+            },
+        )
+
+        db_data = Task.objects.get(pk=task["id"]).require_data()
+        self.assertEqual(db_data.storage_method, StorageMethodChoice.CACHE)
+        related_file = RelatedFile.objects.get(
+            data=db_data,
+            path=related_image_path,
+        )
+        self.assertEqual(related_file.intrinsic_matrix, calibration["intrinsic_matrix"])
+        self.assertEqual(related_file.extrinsic_matrix, calibration["extrinsic_matrix"])
+
     def test_unsafe_paths_in_directory(self):
         cloud_storage_id = self._create_cloud_storage()
 
