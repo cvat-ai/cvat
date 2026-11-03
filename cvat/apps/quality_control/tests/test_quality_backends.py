@@ -338,6 +338,42 @@ class TestDatumaroQualityBackend(unittest.TestCase):
         self.assertNotIn("dm_dataset", provider.__dict__)
         self.assertNotIn("dataset", provider.__dict__)
 
+    def test_dm_dataset_remaps_duplicate_basename_ids_to_frames(self):
+        # Same stem, different extensions — the shared extractor uses splitext ids.
+        colliding_items = [
+            dm.DatasetItem(
+                id="image1",
+                media=dm.Image.from_numpy(data=np.zeros((8, 8, 3), dtype=np.uint8)),
+                attributes={"frame": 0},
+            ),
+            dm.DatasetItem(
+                id="image1",
+                media=dm.Image.from_numpy(data=np.zeros((8, 8, 3), dtype=np.uint8)),
+                attributes={"frame": 1},
+            ),
+        ]
+        categories = {dm.AnnotationType.label: dm.LabelCategories()}
+
+        class FakeExtractor:
+            def __iter__(self):
+                return iter(colliding_items)
+
+            def categories(self):
+                return categories
+
+        provider = DatumaroJobDataProvider.__new__(DatumaroJobDataProvider)
+        provider.job_data = SimpleNamespace()
+        provider._annotation_memo = _MemoizingAnnotationConverterFactory()
+
+        with mock.patch(
+            "cvat.apps.quality_control.datumaro_data_provider.GetCVATDataExtractor",
+            return_value=FakeExtractor(),
+        ):
+            dataset = provider.dm_dataset
+
+        self.assertEqual(sorted(item.id for item in dataset), ["0", "1"])
+        self.assertEqual(provider.dm_item_id_to_frame_id(next(iter(dataset))), 0)
+
     def test_provider_returns_cdm_data_and_direct_source_references(self):
         provider = make_provider(2, make_item(dm.Bbox(1, 1, 10, 10, id=11, label=0)))
         dataset = provider.dataset
