@@ -3931,6 +3931,19 @@ class TaskImportExportAPITestCase(ExportApiTestBase, ImportApiTestBase):
 
         return response.data
 
+    @staticmethod
+    def _get_related_image_calibrations(task_id):
+        task_data = Task.objects.get(pk=task_id).require_data()
+
+        return {
+            related_file.path: (
+                list(related_file.intrinsic_matrix),
+                list(related_file.extrinsic_matrix),
+            )
+            for related_file in RelatedFile.objects.filter(data=task_data)
+            if related_file.intrinsic_matrix and related_file.extrinsic_matrix
+        }
+
     def _run_api_v2_tasks_id_export_import(self, user):
         if user:
             expected_4xx_status_code = (
@@ -3987,6 +4000,46 @@ class TaskImportExportAPITestCase(ExportApiTestBase, ImportApiTestBase):
                             "jobs",
                         ),
                     )
+
+                    original_calibrations = self._get_related_image_calibrations(tid)
+                    if original_calibrations:
+                        self.assertEqual(
+                            self._get_related_image_calibrations(created_task_id),
+                            original_calibrations,
+                        )
+                        expected_job_calibrations = {
+                            path: {
+                                "intrinsic_matrix": [
+                                    intrinsic_matrix[index : index + 3]
+                                    for index in range(0, len(intrinsic_matrix), 3)
+                                ],
+                                "extrinsic_matrix": [
+                                    extrinsic_matrix[index : index + 4]
+                                    for index in range(0, len(extrinsic_matrix), 4)
+                                ],
+                            }
+                            for path, (
+                                intrinsic_matrix,
+                                extrinsic_matrix,
+                            ) in original_calibrations.items()
+                        }
+
+                        restored_job = Job.objects.get(segment__task_id=created_task_id)
+                        with ForceLogin(user, self.client):
+                            response = self.client.get(f"/api/jobs/{restored_job.id}/data/meta")
+
+                        self.assertEqual(response.status_code, status.HTTP_200_OK)
+                        self.assertEqual(
+                            {
+                                related_image["name"]: {
+                                    "intrinsic_matrix": related_image["intrinsic_matrix"],
+                                    "extrinsic_matrix": related_image["extrinsic_matrix"],
+                                }
+                                for frame in response.data["frames"]
+                                for related_image in frame.get("related_images", [])
+                            },
+                            expected_job_calibrations,
+                        )
 
     def test_api_v2_tasks_id_export_admin(self):
         self._run_api_v2_tasks_id_export_import(self.admin)
