@@ -10,7 +10,7 @@ import Crosshair from './crosshair';
 import {
     stringifyPoints, translateToCanvas, RLEToImageData,
     imageDataToDataURL, translateFromCanvas, translateToSVG,
-    clamp,
+    clamp, readPointsFromShape,
 } from './shared';
 import {
     InteractionData, InteractionResult, Geometry,
@@ -519,12 +519,57 @@ export class InteractionHandlerImpl implements InteractionHandler {
         }
     };
 
+    private reprojectOnOffsetChange(delta: number): void {
+        // Window resize updates canvas offset (fitCanvas). Interaction overlays are
+        // stored in SVG canvas coords (offset + image), so shift them by the delta
+        // instead of leaving them at stale positions (#7242).
+        const shiftPolygon = (shape: SVG.Polygon): void => {
+            const points = readPointsFromShape(shape);
+            shape.attr('points', stringifyPoints(translateToCanvas(delta, points)));
+        };
+
+        if (this.currentRectangle) {
+            this.currentRectangle.attr({
+                x: this.currentRectangle.x() + delta,
+                y: this.currentRectangle.y() + delta,
+            });
+        }
+
+        this.rectanglePrompts.forEach((rect) => {
+            rect.attr({
+                x: rect.x() + delta,
+                y: rect.y() + delta,
+            });
+        });
+
+        this.pointPrompts.forEach((point) => {
+            point.center(point.cx() + delta, point.cy() + delta);
+        });
+
+        this.intermediateShapes.forEach((shape) => {
+            if (shape.type === 'image') {
+                shape.move(shape.x() + delta, shape.y() + delta);
+            } else {
+                shiftPolygon(shape as SVG.Polygon);
+            }
+        });
+
+        this.intermediateMaskOutlines.forEach((outline) => {
+            shiftPolygon(outline);
+        });
+    }
+
     public transform(geometry: Geometry): void {
+        const offsetDelta = geometry.offset - this.geometry.offset;
         this.geometry = geometry;
         this.effectiveStrokeWidth = consts.BASE_STROKE_WIDTH / this.geometry.scale;
         this.effectivePointSize = (
             this.configuration.controlPointsSize ?? consts.BASE_POINT_SIZE
         ) / this.geometry.scale;
+
+        if (offsetDelta !== 0) {
+            this.reprojectOnOffsetChange(offsetDelta);
+        }
 
         if (this.currentRectangle) {
             this.currentRectangle.stroke({ width: this.effectiveStrokeWidth });
