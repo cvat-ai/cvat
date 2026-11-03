@@ -1838,7 +1838,7 @@ class MediaProvider3D(MediaProvider):
             )
             for frame_idx, ri_path, intrinsic_matrix, extrinsic_matrix in db_related_files:
                 camera_calibration = None
-                if intrinsic_matrix is not None and extrinsic_matrix is not None:
+                if intrinsic_matrix and extrinsic_matrix:
                     camera_calibration = datumaro.components.media.CameraCalibration(
                         intrinsic_matrix=tuple(intrinsic_matrix),
                         extrinsic_matrix=tuple(extrinsic_matrix),
