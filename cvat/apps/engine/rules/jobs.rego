@@ -214,18 +214,6 @@ allow if {
 }
 
 allow if {
-    input.scope in {
-        utils.VIEW, utils.VIEW_ANNOTATIONS, utils.VIEW_DATA, utils.VIEW_METADATA,
-        utils.UPDATE_STATE, utils.UPDATE_ANNOTATIONS, utils.DELETE_ANNOTATIONS,
-        utils.IMPORT_ANNOTATIONS, utils.UPDATE_METADATA
-    }
-    input.auth.organization.id == input.resource.organization.id
-    input.auth.user.privilege == utils.WORKER
-    input.auth.organization.user.role == null
-    is_job_assignee
-}
-
-allow if {
     input.scope in {utils.UPDATE_STAGE, utils.UPDATE_ASSIGNEE}
     organizations.is_same_context_as_resource
     utils.has_perm(utils.WORKER)

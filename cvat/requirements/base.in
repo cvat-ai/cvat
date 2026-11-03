@@ -53,6 +53,6 @@ redis~=8.1
 requests~=2.34
 rq-scheduler==0.13.1
 rq==1.16.0
-Shapely~=2.1
+Shapely~=2.2
 tenacity~=9.2
 xmlsec>=1.3.17,<2
