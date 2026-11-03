@@ -17,6 +17,8 @@ Sources and references:
 
 - S. McConnell, _Code Complete_, 2nd ed.
 
+- H. Abelson, G. J. Sussman, with J. Sussman, _Structure and Interpretation of Computer Programs_
+
 - [PEP 8](https://peps.python.org/pep-0008/), [PEP 20](https://peps.python.org/pep-0020/),
   [PEP 257](https://peps.python.org/pep-0257/)
 
@@ -29,9 +31,10 @@ Sources and references:
 
 ## 1. Code is written for people
 
-> Code is read much more often than it is written.
+> Programs must be written for people to read, and only incidentally for machines to execute.
 >
-> — Guido van Rossum, as quoted in [PEP 8](https://peps.python.org/pep-0008/)
+> — H. Abelson, G. J. Sussman, [_Structure and Interpretation of Computer Programs_](https://mitp-content-server.mit.edu/books/content/sectbyfn/books_pres_0/6515/sicp.zip/full-text/book/book-Z-H-7.html),
+> preface to the first edition
 
 The typical reader is a colleague who lacks your current context — possibly you,
 a year later. The primary technical goal is managing complexity (_Code Complete_).
@@ -47,6 +50,27 @@ a year later. The primary technical goal is managing complexity (_Code Complete_
 - **Docstrings describe the contract**: what the function does, what it expects,
   and what it guarantees.
 
+  Example:
+
+  ```python
+  # Before: explains why callers need the function
+  def key_with_prefix(self, key: str) -> str:
+      """
+      upload_file() and download_file() take a key as is and have no way to tell
+      whether it's already prefixed, so this exists for callers that...
+      """
+
+  # After: states the contract
+  def key_with_prefix(self, key: str) -> str:
+      """
+      Resolve a user-supplied key relative to the configured prefix, if there is one.
+      Both relative ("a/b.zip") and absolute ("/a/b.zip") keys are resolved relative to the prefix.
+      """
+  ```
+
+  It's not to say that the former docstring had no useful information. It did,
+  and that information could be mentioned in the pull request description instead.
+
 - **One function — one logical operation** (CG F.2, F.3). Extract a long inline block
   into a named function. Prefer guard clauses to deep nesting.
   Separate logical steps with blank lines.
@@ -59,27 +83,6 @@ a year later. The primary technical goal is managing complexity (_Code Complete_
 
   - In CamelCase identifiers, write abbreviations as words: `HttpServerError`,
     `IouThreshold`, not `HTTPServerError`, `IoUThreshold`.
-
-Example:
-
-```python
-# Before: explains why callers need the function
-def key_with_prefix(self, key: str) -> str:
-    """
-    upload_file() and download_file() take a key as is and have no way to tell
-    whether it's already prefixed, so this exists for callers that...
-    """
-
-# After: states the contract
-def key_with_prefix(self, key: str) -> str:
-    """
-    Resolve a user-supplied key relative to the configured prefix, if there is one.
-    Both relative ("a/b.zip") and absolute ("/a/b.zip") keys are resolved relative to the prefix.
-    """
-```
-
-It's not to say that the former docstring had no useful information. It had, and it could
-be mentioned in the pull request description instead.
 
 ## 2. Avoid unverified information
 
