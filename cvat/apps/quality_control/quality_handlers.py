@@ -118,7 +118,7 @@ class EffectiveQualityRequirement:
         }[models.QualityRequirementAnnotationType(self.annotation_type)]
 
 
-_INHERITED_REQUIREMENT_FIELDS = (
+INHERITED_REQUIREMENT_FIELDS = (
     "annotation_type",
     "target_metric",
     "target_metric_threshold",
@@ -138,7 +138,7 @@ _INHERITED_REQUIREMENT_FIELDS = (
 
 _REQUIRED_ROOT_REQUIREMENT_FIELDS = tuple(
     field_name
-    for field_name in _INHERITED_REQUIREMENT_FIELDS
+    for field_name in INHERITED_REQUIREMENT_FIELDS
     if field_name != "attribute_comparison"
 )
 
@@ -176,7 +176,7 @@ def _make_effective_requirement(
 
         values = {
             field_name: deepcopy(getattr(requirement, field_name))
-            for field_name in _INHERITED_REQUIREMENT_FIELDS
+            for field_name in INHERITED_REQUIREMENT_FIELDS
         }
 
         missing_fields = [
@@ -192,10 +192,10 @@ def _make_effective_requirement(
     else:
         values = {
             field_name: deepcopy(getattr(inherited, field_name))
-            for field_name in _INHERITED_REQUIREMENT_FIELDS
+            for field_name in INHERITED_REQUIREMENT_FIELDS
         }
 
-        for field_name in _INHERITED_REQUIREMENT_FIELDS:
+        for field_name in INHERITED_REQUIREMENT_FIELDS:
             local_value = getattr(requirement, field_name, None)
             if local_value is None:
                 continue
