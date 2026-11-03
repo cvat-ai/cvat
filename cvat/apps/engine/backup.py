@@ -47,7 +47,7 @@ from cvat.apps.dataset_manager.views import (
 from cvat.apps.engine import models
 from cvat.apps.engine.cache import MediaCache
 from cvat.apps.engine.log import ServerLogManager
-from cvat.apps.engine.media_extractors import files_to_ignore
+from cvat.apps.engine.media_extractors import should_ignore_path
 from cvat.apps.engine.models import DataChoice, StorageChoice, TaskMode
 from cvat.apps.engine.serializers import (
     AnnotationGuideWriteSerializer,
@@ -413,7 +413,7 @@ class _ExporterBase(metaclass=ABCMeta):
         self, source_dir, zip_object, target_dir, recursive=True, exclude_files=None
     ):
         for root, dirs, files in os.walk(source_dir, topdown=True):
-            dirs[:] = [directory for directory in dirs if files_to_ignore(directory)]
+            dirs[:] = [directory for directory in dirs if not should_ignore_path(directory)]
             if not recursive:
                 dirs.clear()
 
@@ -424,7 +424,8 @@ class _ExporterBase(metaclass=ABCMeta):
                     files=(
                         os.path.join(root, f)
                         for f in files
-                        if files_to_ignore(f) and (not exclude_files or f not in exclude_files)
+                        if not should_ignore_path(f)
+                        and (not exclude_files or f not in exclude_files)
                     ),
                     target_dir=target_dir,
                 )
@@ -1046,7 +1047,7 @@ class TaskImporter(_ImporterBase, _TaskBackupBase):
             if excluded_filenames and file_name in excluded_filenames:
                 continue
 
-            if file_name.startswith(input_data_dirname + "/") and files_to_ignore(file_name):
+            if file_name.startswith(input_data_dirname + "/") and not should_ignore_path(file_name):
                 # It should be impossible for file_name to enable a path traversal attack
                 # because it's the result of relpath(), which puts any ".." components in the front,
                 # and the if condition will be false for any path that starts with "..".
