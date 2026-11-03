@@ -767,15 +767,9 @@ This error means that there is not enough free disk space on the CVAT data stora
 By default, CVAT requires at least 10% free disk space. If you want to change the default value,
 it is possible to configure the required amount of free space used in such checks.
 
-Set the environment variable:
+Set the `CVAT_HEALTH_DISK_USAGE_MAX` environment variable before starting CVAT,
+and it will be passed to the backend containers by `docker-compose.yml`:
 
 ```shell
-export CVAT_HEALTH_DISK_USAGE_MAX=90
-```
-
-and add an extra environment variable to the `docker-compose.yml` file:
-
-```yaml
-x-backend-env: &backend-env
-  CVAT_HEALTH_DISK_USAGE_MAX: '${CVAT_HEALTH_DISK_USAGE_MAX:-90}'
+export CVAT_HEALTH_DISK_USAGE_MAX=95
 ```
