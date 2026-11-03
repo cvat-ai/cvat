@@ -301,15 +301,19 @@ def _load_related_image_sidecar(
     sidecar_path: PurePath,
     openable_getter: OpenableGetter,
 ) -> dict[str, object] | None:
-    sidecar = openable_getter(sidecar_path)
-    if sidecar is None:
-        return None
-
     try:
+        sidecar = openable_getter(sidecar_path)
+        if sidecar is None:
+            return None
+
         with sidecar.open("rb") as sidecar_file:
             sidecar_data = json.load(sidecar_file)
-    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
-        raise InvalidRelatedImageMetadataError(sidecar_path, f"could not read parse JSON ({exc})")
+    except Exception as exc:
+        # The openable can access a cloud provider. Its exceptions may disclose implementation
+        # details such as a bucket name or request ID, so do not expose their messages to users.
+        raise InvalidRelatedImageMetadataError(
+            sidecar_path, "could not read or parse JSON"
+        ) from exc
 
     if not isinstance(sidecar_data, dict):
         raise InvalidRelatedImageMetadataError(sidecar_path, "the root value must be an object")

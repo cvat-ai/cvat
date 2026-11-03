@@ -670,7 +670,10 @@ def _load_related_image_metadata(
         try:
             metadata = metadata_loader(openable_getter)
         except InvalidRelatedImageMetadataError as exc:
-            raise ValidationError(str(exc)) from exc
+            raise ValidationError(
+                "Invalid camera calibration sidecar for related image "
+                f"'{os.fspath(related_image_path)}': {exc.message}"
+            ) from exc
 
         if metadata is not None:
             related_image_metadata[related_image_path] = metadata
@@ -789,18 +792,13 @@ def _load_related_image_metadata_from_manifest(
 
         manifest_metadata = manifest_entry.get("meta", {})
         if not isinstance(manifest_metadata, dict):
-            raise ValidationError(
-                f"Invalid metadata in manifest entry '{manifest_entry.full_name}': expected an object"
-            )
+            raise ValidationError("Invalid metadata in manifest: expected an object")
 
         calibration = manifest_metadata.get(RELATED_IMAGE_CALIBRATION_MANIFEST_KEY)
         if calibration is None:
             continue
         if not isinstance(calibration, dict):
-            raise ValidationError(
-                f"Invalid calibration metadata in manifest entry '{manifest_entry.full_name}': "
-                "expected an object"
-            )
+            raise ValidationError("Invalid calibration metadata in manifest: expected an object")
 
         for related_image_path in fallback_paths:
             if related_image_path not in calibration:
@@ -814,7 +812,10 @@ def _load_related_image_metadata_from_manifest(
                     )
                 )
             except InvalidRelatedImageMetadataError as exc:
-                raise ValidationError(str(exc)) from exc
+                raise ValidationError(
+                    "Invalid calibration metadata in manifest for related image "
+                    f"'{related_image_path}': {exc.message}"
+                ) from exc
 
     return manifest_related_image_metadata
 
