@@ -1089,6 +1089,9 @@ export interface PlayerSettingsState {
     brightnessLevel: number;
     contrastLevel: number;
     saturationLevel: number;
+    relatedOverlayEnabled: boolean;
+    relatedOverlayOpacity: number; // in %
+    relatedOverlayIndex: number;
 }
 
 export interface WorkspaceSettingsState {
