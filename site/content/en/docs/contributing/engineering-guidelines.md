@@ -78,8 +78,11 @@ a year later. The primary technical goal is managing complexity (_Code Complete_
 - **Names.** Use the established domain terms. Prefer specific words to overloaded
   ones (`instance`, `support`, `api`, `data`, `info`).
   - Established abbreviations are fine (`gt`, `iou`, `oks`, `roi`, `bbox`).
-    Do not invent new ones and do not overuse them: dense abbreviations are clear
-    while you write the code, and opaque some months later.
+    Introduce a new one only when it makes the code easier to read, and define
+    the full form somewhere the reader can find it, e.g. in a docstring or
+    in the component's `README.md`.
+    Do not overuse abbreviations: dense abbreviations are clear while you write
+    the code, and opaque some months later.
 
   - In CamelCase identifiers, write abbreviations as words: `HttpServerError`,
     `IouThreshold`, not `HTTPServerError`, `IoUThreshold`.
