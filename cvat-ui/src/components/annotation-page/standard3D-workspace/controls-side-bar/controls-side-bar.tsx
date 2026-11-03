@@ -252,6 +252,9 @@ export default function ControlsSideBarComponent(props: Props): JSX.Element {
                 isDrawing={activeControl === ActiveControl.DRAW_CUBOID}
                 disabled={controlsDisabled}
             />
+
+            <hr />
+
             <ObservedCameraRayControl canvasInstance={canvasInstance} activeControl={activeControl} />
 
             <hr />
