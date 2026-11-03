@@ -49,6 +49,11 @@ const defaultState: PluginsState = {
         },
     },
     components: {
+        profilePage: {
+            privacyConsent: {
+                items: [],
+            },
+        },
         qualityControlPage: {
             tabs: {
                 items: [],

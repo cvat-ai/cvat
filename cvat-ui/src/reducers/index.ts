@@ -446,6 +446,11 @@ export interface PluginsState {
         };
     },
     components: {
+        profilePage: {
+            privacyConsent: {
+                items: PluginComponent[];
+            };
+        };
         qualityControlPage: {
             tabs: {
                 items: PluginComponent[];
