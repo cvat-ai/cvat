@@ -120,6 +120,29 @@ export function composeShapeDimensions(
     return text;
 }
 
+export function computePolygonArea(points: readonly number[]): number {
+    let doubledArea = 0;
+    // Shift the origin to the first vertex to reduce cancellation for small shapes
+    // whose coordinates are far from the image origin.
+    const [originX, originY] = points;
+    for (let i = 2; i < points.length - 2; i += 2) {
+        doubledArea += (points[i] - originX) * (points[i + 3] - originY) -
+            (points[i + 1] - originY) * (points[i + 2] - originX);
+    }
+
+    return Math.abs(doubledArea) / 2;
+}
+
+export function computeMaskArea(points: readonly number[]): number {
+    let area = 0;
+    // CVAT RLE starts with a background run; the final four values are the bounding box.
+    for (let i = 1; i < points.length - 4; i += 2) {
+        area += points[i];
+    }
+
+    return area;
+}
+
 export function getRoundedRotation(shape: SVG.Shape, defaultValue: number = 0): number {
     const rotation = shape.transform().rotation ?? defaultValue;
     // Due to floating point arithmeic, rotation value may be updated incorrectly

@@ -34,7 +34,7 @@ import {
     vectorLength, ShapeSizeElement, DrawnState, rotate2DPoints,
     readPointsFromShape, setupSkeletonEdges, makeSVGFromTemplate,
     imageDataToDataURL, RLEToImageData, stringifyPoints, imageDataToRLE,
-    composeShapeDimensions, getRoundedRotation,
+    composeShapeDimensions, computePolygonArea, computeMaskArea, getRoundedRotation,
     clamp, validateUnionResult, processPolygonUnionResult,
     applySnapToShapePoint, isPolygonSelfIntersecting,
 } from './shared';
@@ -4628,6 +4628,13 @@ export class CanvasViewImpl implements CanvasView, Listener {
                     if (withArea) {
                         sizeText.addClass('cvat_canvas_text_area');
                     }
+                } else if (withArea && ['polygon', 'mask'].includes(state.shapeType)) {
+                    const area = state.shapeType === 'polygon' ?
+                        computePolygonArea(state.points) : computeMaskArea(state.points);
+                    block
+                        .tspan(`${area.toFixed(1)}px²`)
+                        .attr({ dy: '1.25em', x: 0 })
+                        .addClass('cvat_canvas_text_area');
                 }
                 if (withDescriptions) {
                     descriptions.forEach((desc: string, idx: number) => {
