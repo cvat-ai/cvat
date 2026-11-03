@@ -12,7 +12,6 @@ import {
     useDispatch,
     useSelector,
 } from 'react-redux';
-import { shallowEqual, ThunkDispatch } from 'utils/redux';
 import PropTypes from 'prop-types';
 import notification from 'antd/lib/notification';
 import Spin from 'antd/lib/spin';
@@ -20,6 +19,7 @@ import Text from 'antd/lib/typography/Text';
 import { SettingOutlined } from '@ant-design/icons';
 import classNames from 'classnames';
 
+import { shallowEqual, ThunkDispatch } from 'utils/redux';
 import CVATTooltop from 'components/common/cvat-tooltip';
 import { setCameraRayFromContextImagePoint, updateActiveControl } from 'actions/annotation-actions';
 import { ActiveControl, CombinedState } from 'reducers';
