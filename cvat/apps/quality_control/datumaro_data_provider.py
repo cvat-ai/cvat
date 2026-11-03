@@ -138,9 +138,26 @@ class DatumaroJobDataProvider(JobDataProvider):
         from cvat.apps.dataset_manager.formats.registry import dm_env
 
         extractor = GetCVATDataExtractor(self.job_data, convert_annotations=self._annotation_memo)
-        return dm.Dataset.from_extractors(extractor, env=dm_env)
+        # Use frame numbers as Datumaro item ids for comparison/merging.
+        # The shared CVAT→Datumaro extractor strips file extensions from ids, so
+        # frames like image1.jpg and image1.png collide (#8029). Frame indices are
+        # unique within a job and are already stored on each item.
+        return dm.Dataset.from_iterable(
+            (
+                item.wrap(id=str(item.attributes["frame"]))
+                if "frame" in item.attributes
+                else item
+                for item in extractor
+            ),
+            categories=extractor.categories(),
+            env=dm_env,
+        )
 
     def dm_item_id_to_frame_id(self, item: dm.DatasetItem) -> int:
+        frame = item.attributes.get("frame")
+        if frame is not None:
+            return int(frame)
+
         return match_dm_item(item, self.job_data)
 
     def dm_ann_to_annotation_reference(self, ann: dm.Annotation) -> cdm.AnnotationReference:
