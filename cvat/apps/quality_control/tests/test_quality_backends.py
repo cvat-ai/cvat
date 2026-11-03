@@ -36,13 +36,13 @@ from cvat.apps.quality_control.backends import (
     make_quality_backend,
 )
 from cvat.apps.quality_control.backends.datumaro import Datumaro2DBackend
-from cvat.apps.quality_control.backends.datumaro.matching import Comparator, DistanceComparator
-from cvat.apps.quality_control.comparison_report import ComparisonReport, ComparisonReportParameters
-from cvat.apps.quality_control.data_providers import JobDataProvider
-from cvat.apps.quality_control.datumaro_data_provider import (
+from cvat.apps.quality_control.backends.datumaro.data_provider import (
     DatumaroJobDataProvider,
     _MemoizingAnnotationConverterFactory,
 )
+from cvat.apps.quality_control.backends.datumaro.matching import Comparator, DistanceComparator
+from cvat.apps.quality_control.comparison_report import ComparisonReport, ComparisonReportParameters
+from cvat.apps.quality_control.data_providers import JobDataProvider
 from cvat.apps.quality_control.matching import (
     AnnotationMatches,
     GroupComparison,
@@ -74,7 +74,12 @@ def make_requirement(annotation_type="rectangle", **kwargs):
         annotation_type=annotation_type,
         target_metric=models.QualityTargetMetricType.parse("accuracy"),
         target_metric_threshold=0.8,
-        **kwargs,
+        **{
+            "similarity_metric": models.DefaultComparisonSettings.get_default_similarity_metric(
+                annotation_type
+            ),
+            **kwargs,
+        },
     )
 
 
@@ -330,7 +335,7 @@ class TestDatumaroQualityBackend(unittest.TestCase):
         provider = DatumaroJobDataProvider.__new__(DatumaroJobDataProvider)
         provider._annotation_memo = _MemoizingAnnotationConverterFactory()
         with mock.patch(
-            "cvat.apps.quality_control.datumaro_data_provider.GetCVATDataExtractor",
+            "cvat.apps.quality_control.backends.datumaro.data_provider.GetCVATDataExtractor",
             side_effect=AssertionError,
         ):
             provider.close()
@@ -638,6 +643,26 @@ class TestAdaptiveShapeAreas(unittest.TestCase):
             policy={**LINEAR_POLICY, "points": [{"x": 100, "y": 0.4}, {"x": 300, "y": 0.95}]},
         )
         self.assertAlmostEqual(report.groups["ellipse"].comparison_summary.score, 1 / 3)
+
+    def test_linear_iou_policy_is_not_applied_to_boundary_f(self):
+        # the shapes are matched by Boundary F, but would not pass the IoU threshold
+        requirement = make_requirement(
+            "rectangle",
+            similarity_metric=models.ShapeSimilarityMetricType.BOUNDARY_F,
+            boundary_f_tolerance=2,
+            boundary_f_threshold=0.3,
+            iou_threshold=parse_threshold_policy(
+                {**LINEAR_POLICY, "points": [{"x": 100, "y": 1.0}, {"x": 1000, "y": 1.0}]}
+            ),
+        )
+        report = DatasetQualityEstimator(
+            make_provider(2, make_item(dm.Bbox(9, 5, 20, 20, label=0))),
+            make_provider(1, make_item(dm.Bbox(5, 5, 20, 20, label=0))),
+            requirements=[requirement],
+            report_parameters=ComparisonReportParameters(),
+        ).generate_report()
+
+        self.assertEqual(report.groups["rectangle"].comparison_summary.score, 1)
 
     def test_ellipse_area_matches_its_mask(self):
         ellipse = dm.Ellipse(5, 5, 25, 15, label=0, attributes={"rotation": 35})
