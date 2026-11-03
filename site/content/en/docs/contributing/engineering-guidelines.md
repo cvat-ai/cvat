@@ -176,8 +176,10 @@ A common issue is a change added _next to_ the existing code instead of _into_ i
 - **Prefer the canonical solution**: the standard library, the framework feature,
   an existing dependency (CG SL.1). Write your own only for a confirmed reason,
   such as a bug or a spec deviation, and document it in a comment.
-  Example: DRF's `FloatField(min_value=0, max_value=1)` accepts `True` (as `1.0`)
-  and `"nan"`, so the feature uses a custom field with a comment explaining why.
+  Example: [before 3.18.1](https://github.com/encode/django-rest-framework/pull/9998),
+  DRF's `FloatField(min_value=0, max_value=1)` incorrectly accepted `"nan"`,
+  so a feature used a custom field with a comment explaining why. A link to the public discussion,
+  if known, is welcome in such cases.
 
 - **Put code where it belongs**: an extra quality control check goes to the quality control package,
   an event handler goes to event handlers. Check for the existing locations first.
