@@ -10,7 +10,7 @@ import consts from './consts';
 
 export interface ShapeSizeElement {
     sizeElement: any;
-    update(shape: SVG.Shape): void;
+    update(shape: SVG.Shape, textContent?: string): void;
     rm(): void;
 }
 
@@ -98,11 +98,17 @@ export function composeShapeDimensions(
     height: number,
     rotation: number | null,
     shapeType: string,
+    options: { dimensions?: boolean; area?: boolean } = {},
 ): string {
-    const area = width * height * (shapeType === 'ellipse' ? Math.PI / 4 : 1);
-    const text = `${width.toFixed(1)}x${height.toFixed(1)}px = ${area.toFixed(1)}px²`;
+    const withDimensions = options.dimensions !== false;
+    let text = withDimensions ? `${width.toFixed(1)}x${height.toFixed(1)}px` : '';
+    if (options.area && ['rect', 'rectangle', 'ellipse'].includes(shapeType)) {
+        const area = width * height * (shapeType === 'ellipse' ? Math.PI / 4 : 1);
+        text += `${withDimensions ? ' = ' : ''}${area.toFixed(1)}px²`;
+    }
+
     let adjustableRotation = rotation;
-    if (adjustableRotation) {
+    if (withDimensions && adjustableRotation) {
         // make sure, that rotation is in range [0; 360]
         while (adjustableRotation < 0) {
             adjustableRotation += 360;
@@ -124,7 +130,11 @@ export function getRoundedRotation(shape: SVG.Shape, defaultValue: number = 0): 
     return +rotation.toFixed(5);
 }
 
-export function displayShapeSize(shapesContainer: SVG.Container, textContainer: SVG.Container): ShapeSizeElement {
+export function displayShapeSize(
+    shapesContainer: SVG.Container,
+    textContainer: SVG.Container,
+    shapeType?: string,
+): ShapeSizeElement {
     const shapeSize: ShapeSizeElement = {
         sizeElement: textContainer
             .text('')
@@ -133,10 +143,12 @@ export function displayShapeSize(shapesContainer: SVG.Container, textContainer: 
             })
             .fill('white')
             .addClass('cvat_canvas_text'),
-        update(shape: SVG.Shape): void {
+        update(shape: SVG.Shape, textContent: string = ''): void {
             const rotation = shape.type === 'rect' || shape.type === 'ellipse' ?
                 getRoundedRotation(shape) : null;
-            const text = composeShapeDimensions(shape.width(), shape.height(), rotation, shape.type);
+            const text = composeShapeDimensions(shape.width(), shape.height(), rotation, shapeType ?? shape.type, {
+                area: textContent.split(',').includes('area'),
+            });
             const [x, y, cx, cy]: number[] = translateToSVG(
                 (textContainer.node as any) as SVGSVGElement,
                 translateFromSVG((shapesContainer.node as any) as SVGSVGElement, [
