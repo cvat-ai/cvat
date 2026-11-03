@@ -142,14 +142,12 @@ class AudioCreateTaskContent extends React.PureComponent<Props & RouteComponentP
     private validateFiles = (): boolean => {
         const { activeFileManagerTab, files } = this.state;
 
-        if (activeFileManagerTab === 'cloudStorage') {
-            this.setState({
-                cloudStorageId: this.fileManagerComponent.getCloudStorageId(),
-            });
-        }
-        const totalLen = Object.keys(files).reduce((acc, key: string) => acc + files[(key as TabName)].length, 0);
+        this.setState({
+            cloudStorageId: activeFileManagerTab === 'cloudStorage' ?
+                this.fileManagerComponent.getCloudStorageId() : null,
+        });
 
-        return !!totalLen;
+        return files[activeFileManagerTab].length > 0;
     };
 
     private startLoading = (): void => {
@@ -407,8 +405,19 @@ class AudioCreateTaskContent extends React.PureComponent<Props & RouteComponentP
 
     private createOneTask = (): Promise<any> => {
         const { onCreate } = this.props;
+        const { activeFileManagerTab, files } = this.state;
         this.startLoading();
-        return onCreate(this.state, this.changeStatusInProgressTask)
+        // Use only the currently selected data source (see #8703). Keep other tab
+        // selections in component state so the user can switch back without losing them.
+        return onCreate({
+            ...this.state,
+            files: {
+                ...defaultState.files,
+                [activeFileManagerTab]: files[activeFileManagerTab],
+            },
+            cloudStorageId: activeFileManagerTab === 'cloudStorage' ?
+                this.fileManagerComponent.getCloudStorageId() : null,
+        }, this.changeStatusInProgressTask)
             .finally(this.stopLoading);
     };
 
