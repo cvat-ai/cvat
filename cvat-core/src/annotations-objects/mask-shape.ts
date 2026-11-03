@@ -9,7 +9,7 @@ import { ArgumentError } from '../exceptions';
 import { ShapeType, HistoryActions } from '../enums';
 import type { SerializedShape } from '../server-response-types';
 import { mask2Rle, rle2Mask } from '../rle-utils';
-import { cropMask } from '../object-utils';
+import { cropMask, subtractMasks } from '../object-utils';
 import { Shape } from './shape';
 import { computeNewSource } from './utils';
 import type { AnnotationInjection } from './types';
@@ -158,6 +158,59 @@ export class MaskShape extends Shape {
         };
     }
 
+    public subtractUnderlyingMasks(frame: number):
+    {
+        undo: () => void,
+        redo: () => void,
+        emptyMaskOccurred: boolean,
+    } {
+        if (frame !== this.frame) {
+            throw new ArgumentError(
+                `Wrong "frame" attribute: is not equal to the shape frame (${frame} vs ${this.frame})`,
+            );
+        }
+
+        const others = this.getMasksOnFrame(frame)
+            .filter((mask: MaskShape) => mask.clientID !== this.clientID && !mask.removed)
+            .map((mask: MaskShape) => [...mask.points, mask.left, mask.top, mask.right, mask.bottom]);
+        const { width: frameWidth, height: frameHeight } = this.framesInfo[frame];
+        const points = subtractMasks(
+            [...this.points, this.left, this.top, this.right, this.bottom], others, frameWidth, frameHeight,
+        );
+
+        const wrapper = {
+            stashedPoints: this.points,
+            stashedRemoved: this.removed,
+            stashedBox: [this.left, this.top, this.right, this.bottom],
+        };
+
+        let emptyMaskOccurred = false;
+        if (points.length < 6) {
+            this.removed = true;
+            emptyMaskOccurred = true;
+        } else {
+            [this.left, this.top, this.right, this.bottom] = points.splice(-4, 4);
+            this.points = points;
+        }
+        this.updated = Date.now();
+
+        const undo = (): void => {
+            const updatedStashedPoints = this.points;
+            const updatedStashedRemoved = this.removed;
+            const updatedStashedBox = [this.left, this.top, this.right, this.bottom];
+            this.points = wrapper.stashedPoints;
+            this.removed = wrapper.stashedRemoved;
+            [this.left, this.top, this.right, this.bottom] = wrapper.stashedBox;
+            this.updated = Date.now();
+            wrapper.stashedPoints = updatedStashedPoints;
+            wrapper.stashedRemoved = updatedStashedRemoved;
+            wrapper.stashedBox = updatedStashedBox;
+        };
+
+        const redo = undo;
+        return { undo, redo, emptyMaskOccurred };
+    }
+
     protected savePoints(maskPoints: number[], frame: number): void {
         const validatedMaskPoints = maskPoints as ValidatedMaskPoints;
         const { initialPoints } = validatedMaskPoints;
@@ -205,7 +258,29 @@ export class MaskShape extends Shape {
         };
 
         redo();
-        if (config.removeUnderlyingMaskPixels.enabled && !isTranslation) {
+        if (config.subtractUnderlyingMasks.enabled && !isTranslation) {
+            const {
+                emptyMaskOccurred,
+                undo: undoWithSubtractedMasks,
+                redo: redoWithSubtractedMasks,
+            } = this.subtractUnderlyingMasks(frame);
+            if (emptyMaskOccurred) {
+                config.subtractUnderlyingMasks?.onEmptyMaskOccurrence();
+            }
+            this.history.do(
+                HistoryActions.CHANGED_POINTS,
+                () => {
+                    undoWithSubtractedMasks();
+                    undo();
+                },
+                () => {
+                    redo();
+                    redoWithSubtractedMasks();
+                },
+                [this.clientID],
+                frame,
+            );
+        } else if (config.removeUnderlyingMaskPixels.enabled && !isTranslation) {
             const {
                 clientIDs,
                 emptyMaskOccurred,

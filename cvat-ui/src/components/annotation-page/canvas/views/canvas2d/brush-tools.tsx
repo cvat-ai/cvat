@@ -8,7 +8,9 @@ import React, { useCallback, useEffect, useState } from 'react';
 import ReactDOM from 'react-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import Button from 'antd/lib/button';
-import Icon, { EyeInvisibleFilled, EyeOutlined, VerticalAlignBottomOutlined } from '@ant-design/icons';
+import Icon, {
+    EyeInvisibleFilled, EyeOutlined, VerticalAlignBottomOutlined, VerticalAlignTopOutlined,
+} from '@ant-design/icons';
 import InputNumber from 'antd/lib/input-number';
 import Select from 'antd/lib/select';
 import notification from 'antd/lib/notification';
@@ -123,6 +125,7 @@ function BrushTools(): React.ReactPortal | null {
     };
 
     const [removeUnderlyingPixels, setRemoveUnderlyingPixels] = useState(false);
+    const [subtractUnderlyingMasks, setSubtractUnderlyingMasks] = useState(false);
     const dragBar = useDraggable(
         (): number[] => {
             const [element] = window.document.getElementsByClassName('cvat-brush-tools-toolbox');
@@ -146,6 +149,15 @@ function BrushTools(): React.ReactPortal | null {
             message: 'Some objects were deleted',
             description: 'As a result of removing the underlying pixels, some masks became empty and were subsequently deleted.',
             className: 'cvat-empty-masks-notification',
+            duration: null,
+        });
+    };
+
+    getCore().config.subtractUnderlyingMasks.onEmptyMaskOccurrence = () => {
+        notification.warning({
+            message: 'The mask was not saved',
+            description: 'As a result of subtracting the underlying masks, the mask became empty and was discarded.',
+            className: 'cvat-empty-subtracted-mask-notification',
             duration: null,
         });
     };
@@ -193,6 +205,10 @@ function BrushTools(): React.ReactPortal | null {
     useEffect(() => {
         getCore().config.removeUnderlyingMaskPixels.enabled = removeUnderlyingPixels;
     }, [removeUnderlyingPixels]);
+
+    useEffect(() => {
+        getCore().config.subtractUnderlyingMasks.enabled = subtractUnderlyingMasks;
+    }, [subtractUnderlyingMasks]);
 
     useEffect(() => {
         setApplicableLabels(filterApplicableForType(LabelType.MASK, labels));
@@ -371,12 +387,28 @@ function BrushTools(): React.ReactPortal | null {
                     <Select.Option value='square'>Square</Select.Option>
                 </Select>
             ) : null}
-            <Button
-                type='text'
-                className={['cvat-brush-tools-underlying-pixels', ...(removeUnderlyingPixels ? ['cvat-brush-tools-active-tool'] : [])].join(' ')}
-                icon={<VerticalAlignBottomOutlined />}
-                onClick={() => setRemoveUnderlyingPixels(!removeUnderlyingPixels)}
-            />
+            <CVATTooltip title='Remove underlying pixels: pixels of other masks covered by the mask are removed from them'>
+                <Button
+                    type='text'
+                    className={['cvat-brush-tools-underlying-pixels', ...(removeUnderlyingPixels ? ['cvat-brush-tools-active-tool'] : [])].join(' ')}
+                    icon={<VerticalAlignBottomOutlined />}
+                    onClick={() => {
+                        setRemoveUnderlyingPixels(!removeUnderlyingPixels);
+                        setSubtractUnderlyingMasks(false);
+                    }}
+                />
+            </CVATTooltip>
+            <CVATTooltip title='Subtract underlying masks: pixels of other masks covered by the mask are removed from it'>
+                <Button
+                    type='text'
+                    className={['cvat-brush-tools-subtract-underlying-masks', ...(subtractUnderlyingMasks ? ['cvat-brush-tools-active-tool'] : [])].join(' ')}
+                    icon={<VerticalAlignTopOutlined />}
+                    onClick={() => {
+                        setSubtractUnderlyingMasks(!subtractUnderlyingMasks);
+                        setRemoveUnderlyingPixels(false);
+                    }}
+                />
+            </CVATTooltip>
             <CVATTooltip title={`Hide mask ${normalizedKeyMap.SWITCH_HIDDEN}`}>
                 <Button
                     type='text'
