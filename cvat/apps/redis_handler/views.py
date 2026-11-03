@@ -26,7 +26,6 @@ from rq.command import send_stop_job_command
 from rq.exceptions import InvalidJobOperation
 from rq.job import Job as RQJob
 from rq.job import JobStatus as RQJobStatus
-from rq.worker import Worker as RQWorker
 
 from cvat.apps.engine.filters import (
     NonModelJsonLogicFilter,
@@ -41,10 +40,9 @@ from cvat.apps.redis_handler.apps import SELECTOR_TO_QUEUE
 from cvat.apps.redis_handler.permissions import RequestPermission
 from cvat.apps.redis_handler.rq import CustomRQJob, RequestId
 from cvat.apps.redis_handler.serializers import RequestSerializer, RequestStatus
+from cvat.apps.redis_handler.utils import can_worker_stop_started_jobs
 
 slogger = ServerLogManager(__name__)
-
-CVAT_CAN_STOP_STARTED_JOBS_KEY = "cvat_can_stop_started_jobs"
 
 
 @extend_schema(tags=["requests"])
@@ -225,21 +223,7 @@ class RequestViewSet(viewsets.GenericViewSet):
 
     @classmethod
     def _is_started_process_cancellable(cls, rq_job: CustomRQJob) -> bool:
-        if not cls._is_export_request(rq_job):
-            return False
-
-        worker_key = f"{RQWorker.redis_worker_namespace_prefix}{rq_job.worker_name}"
-        # The marker is CVAT-specific and can be absent on already running or older production
-        # workers. Only SimpleWorker writes "0", so default to "can stop" for backward
-        # compatibility.
-        can_stop_started_jobs = (
-            rq_job.connection.hget(worker_key, CVAT_CAN_STOP_STARTED_JOBS_KEY) or "1"
-        )
-
-        if isinstance(can_stop_started_jobs, bytes):
-            can_stop_started_jobs = can_stop_started_jobs.decode()
-
-        return can_stop_started_jobs != "0"
+        return cls._is_export_request(rq_job) and can_worker_stop_started_jobs(rq_job)
 
     def _handle_redis_exceptions(func):
         @functools.wraps(func)
