@@ -24,7 +24,11 @@ from cvat.apps.dataset_manager.bindings import (
 from cvat.apps.dataset_manager.util import make_zip_archive
 
 from .registry import dm_env, exporter, importer
-from .transformations import EllipsesToMasks, SetKeyframeForEveryTrackShape
+from .transformations import (
+    EllipsesToMasks,
+    SetKeyframeForEveryTrackShape,
+    SetPoseBboxFromGroup,
+)
 
 
 def _export_common(
@@ -123,8 +127,13 @@ def _export_yolo_ultralytics_segmentation(dst_file, temp_dir, instance_data, *, 
 
 
 @exporter(name="Ultralytics YOLO Pose", ext="ZIP", version="1.0")
-def _export_yolo_ultralytics_pose(*args, **kwargs):
-    _export_common(*args, format_name="yolo_ultralytics_pose", **kwargs)
+def _export_yolo_ultralytics_pose(dst_file, temp_dir, instance_data, *, save_images=False, **kwargs):
+    with GetCVATDataExtractor(instance_data, include_images=save_images) as extractor:
+        dataset = StreamDataset.from_extractors(extractor, env=dm_env)
+        dataset.transform(SetPoseBboxFromGroup)
+        dataset.export(temp_dir, "yolo_ultralytics_pose", save_media=save_images, **kwargs)
+
+    make_zip_archive(temp_dir, dst_file)
 
 
 @exporter(name="Ultralytics YOLO Classification", ext="ZIP", version="1.0")
